@@ -1,8 +1,9 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v2",
-  "status": "native_point_spot_row_schema_and_room_additional_data_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v3",
+  "status": "room_obb_pack_schema_and_quantized_candidates_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
     "selectedFragmentSha256": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
     "gachaPopulationSha256": "02e15c70197bcd96f804007fe042fcb46577c0014d956d78a28f2d96162e189a",
@@ -120,6 +121,21 @@
         "method": "LightExtensions.GetLightAdditionalData"
       },
       {
+        "offset": "0x0979",
+        "target": "0x18B3BDCA8",
+        "method": "HGSharedLightData.get_cullingBoxRelativePosition_Injected"
+      },
+      {
+        "offset": "0x09C2",
+        "target": "0x18B3BDBC8",
+        "method": "HGSharedLightData.get_cullingBoxHalfExtents_Injected"
+      },
+      {
+        "offset": "0x0A0C",
+        "target": "0x18B3BDC38",
+        "method": "HGSharedLightData.get_cullingBoxOrientation_Injected"
+      },
+      {
         "offset": "0x0A68",
         "target": "0x18B3BDD4C",
         "method": "HGSharedLightData.get_enableOBBCullingBox_Injected"
@@ -128,6 +144,56 @@
         "offset": "0x0A77",
         "target": "0x18B3BDD88",
         "method": "HGSharedLightData.get_enableOverrideShadowLight_Injected"
+      },
+      {
+        "offset": "0x0A91",
+        "target": "0x18B3BDD4C",
+        "method": "HGSharedLightData.get_enableOBBCullingBox_Injected"
+      },
+      {
+        "offset": "0x0B17",
+        "target": "0x182FA5910",
+        "method": "UnityEngine.Quaternion.Euler"
+      },
+      {
+        "offset": "0x0B91",
+        "target": "0x182FA4BB0",
+        "method": "UnityEngine.Matrix4x4.TRS"
+      },
+      {
+        "offset": "0x0BCF",
+        "target": "0x182FA2B80",
+        "method": "UnityEngine.Matrix4x4.get_inverse"
+      },
+      {
+        "offset": "0x0C2E",
+        "target": "0x189C0F0A4",
+        "method": "HGUtils.PackTwoHalfValuesAsFloat row0.xy"
+      },
+      {
+        "offset": "0x0C43",
+        "target": "0x189C0F0A4",
+        "method": "HGUtils.PackTwoHalfValuesAsFloat row0.zw"
+      },
+      {
+        "offset": "0x0C62",
+        "target": "0x189C0F0A4",
+        "method": "HGUtils.PackTwoHalfValuesAsFloat row1.xy"
+      },
+      {
+        "offset": "0x0C81",
+        "target": "0x189C0F0A4",
+        "method": "HGUtils.PackTwoHalfValuesAsFloat row1.zw"
+      },
+      {
+        "offset": "0x0CA0",
+        "target": "0x189C0F0A4",
+        "method": "HGUtils.PackTwoHalfValuesAsFloat row2.xy"
+      },
+      {
+        "offset": "0x0CBE",
+        "target": "0x189C0F0A4",
+        "method": "HGUtils.PackTwoHalfValuesAsFloat row2.zw"
       },
       {
         "offset": "0x0CF8",
@@ -205,6 +271,37 @@
           "0x1C": "float falloffExponent"
         }
       }
+    },
+    "obbHalfPacking": {
+      "packTwoHalfValuesAsFloat": {
+        "method": "HG.Rendering.Runtime.HGUtils.PackTwoHalfValuesAsFloat",
+        "methodIndex": 288325,
+        "virtualAddress": "0x189C0F0A4",
+        "fileOffset": "0x9C0D6A4",
+        "sizeBytesToNextManagedEntry": 124,
+        "bodySha256": "dad4b266316d3ba37f5c20fd92f2db90da363f7b65b3467bf313342c1a8814ce",
+        "layout": "x occupies low 16 bits; y occupies high 16 bits"
+      },
+      "f32ToF16": {
+        "method": "Unity.Mathematics.math.f32tof16",
+        "methodIndex": 451057,
+        "virtualAddress": "0x185F0CFFC",
+        "fileOffset": "0x5F0B5FC",
+        "sizeBytesThroughFirstReturn": 90,
+        "bodySha256": "dc4fa0754a86aed4b2d58a5a978fe6028d83257aa5fc8e0a06e8fa6b9b5dae62",
+        "magicBits": "0x4D77FF00",
+        "scaleBits": "0x07800000",
+        "quaternionEulerDegreesToRadiansBits": "0x3C8EFA35",
+        "rounding": "installed IEEE binary16 conversion including signed zero, infinity, and canonical NaN"
+      },
+      "prepareCpuDataPackOrder": [
+        "inverse row0 xy -> record5.x",
+        "inverse row0 zw -> record5.y",
+        "inverse row1 xy -> record5.z",
+        "inverse row1 zw -> record6.x",
+        "inverse row2 xy -> record6.y",
+        "inverse row2 zw -> record6.z"
+      ]
     }
   },
   "selectedConsumer": {
@@ -234,6 +331,22 @@
     "allUnshadowed": true,
     "allCookieFree": true,
     "allAdditionalComponentsResolved": true,
+    "obbHalfPackingSummary": {
+      "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
+      "wordPlacement": "six row-major half2 words in record5.xyz then record6.xyz",
+      "installedPackingMethodClosed": true,
+      "analyticCandidateCount": 11,
+      "oneFloat32UlpSensitiveLocations": [
+        {
+          "name": "Spot Light (12)",
+          "halfLanes": [
+            0
+          ]
+        }
+      ],
+      "signedZeroBitsCaptured": false,
+      "maximumAuthoredCornerBoundaryError": 0.002610735595226288
+    },
     "additionalLightDataSummary": {
       "scriptPathId": 4098216658219718577,
       "nprType": 0,
@@ -323,6 +436,90 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.15325927734375,
+              0.0,
+              -0.0,
+              -0.11234607547521591
+            ],
+            [
+              0.0,
+              1.617114782333374,
+              0.0,
+              10.403216361999512
+            ],
+            [
+              0.0,
+              0.0,
+              0.09122080355882645,
+              -0.05091021955013275
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x000030E8",
+            "0xAF318000",
+            "0x3E780000",
+            "0x49340000",
+            "0x00000000",
+            "0xAA842DD7"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x000030E8",
+            "0xAF310000",
+            "0x3E780000",
+            "0x49340000",
+            "0x00000000",
+            "0xAA842DD7"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFF7FFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [
+            0
+          ],
+          "decodedHalfInverseRows": [
+            [
+              0.1533203125,
+              0.0,
+              -0.0,
+              -0.11236572265625
+            ],
+            [
+              0.0,
+              1.6171875,
+              0.0,
+              10.40625
+            ],
+            [
+              0.0,
+              0.0,
+              0.09124755859375,
+              -0.0509033203125
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.002610735595226288,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -389,6 +586,88 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.2614278197288513,
+              0.0,
+              -0.0,
+              0.053357139229774475
+            ],
+            [
+              0.0,
+              1.154129147529602,
+              0.0,
+              -1.8414306640625
+            ],
+            [
+              0.0,
+              0.0,
+              0.4615808427333832,
+              1.2873539924621582
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x0000342F",
+            "0x2AD48000",
+            "0x3C9E0000",
+            "0xBF5E0000",
+            "0x00000000",
+            "0x3D263763"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x0000342F",
+            "0x2AD40000",
+            "0x3C9E0000",
+            "0xBF5E0000",
+            "0x00000000",
+            "0x3D263763"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFF7FFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.261474609375,
+              0.0,
+              -0.0,
+              0.0533447265625
+            ],
+            [
+              0.0,
+              1.154296875,
+              0.0,
+              -1.841796875
+            ],
+            [
+              0.0,
+              0.0,
+              0.461669921875,
+              1.287109375
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0006860746070742607,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -455,6 +734,86 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.9002581238746643,
+              0.0,
+              -0.02644028142094612,
+              -0.9455119371414185
+            ],
+            [
+              0.0,
+              0.3973386585712433,
+              0.0,
+              0.8488097786903381
+            ],
+            [
+              0.002935700584203005,
+              0.0,
+              0.09995689243078232,
+              -0.09067557007074356
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x00003B34",
+            "0xBB90A6C5",
+            "0x365B0000",
+            "0x3ACA0000",
+            "0x00001A03",
+            "0xADCE2E66"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x00003B34",
+            "0xBB90A6C5",
+            "0x365B0000",
+            "0x3ACA0000",
+            "0x00001A03",
+            "0xADCE2E66"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFFFFFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            4,
+            6,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.900390625,
+              0.0,
+              -0.0264434814453125,
+              -0.9453125
+            ],
+            [
+              0.0,
+              0.397216796875,
+              0.0,
+              0.8486328125
+            ],
+            [
+              0.0029354095458984375,
+              0.0,
+              0.0999755859375,
+              -0.0906982421875
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0004932105446420199,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -521,6 +880,86 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.9002581238746643,
+              0.0,
+              -0.02644035406410694,
+              0.9935230016708374
+            ],
+            [
+              0.0,
+              0.3973386585712433,
+              0.0,
+              0.8455657362937927
+            ],
+            [
+              0.0029357087332755327,
+              0.0,
+              0.09995689243078232,
+              -0.08812285959720612
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x00003B34",
+            "0x3BF3A6C5",
+            "0x365B0000",
+            "0x3AC40000",
+            "0x00001A03",
+            "0xADA42E66"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x00003B34",
+            "0x3BF3A6C5",
+            "0x365B0000",
+            "0x3AC40000",
+            "0x00001A03",
+            "0xADA42E66"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFFFFFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            4,
+            6,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.900390625,
+              0.0,
+              -0.0264434814453125,
+              0.99365234375
+            ],
+            [
+              0.0,
+              0.397216796875,
+              0.0,
+              0.845703125
+            ],
+            [
+              0.0029354095458984375,
+              0.0,
+              0.0999755859375,
+              -0.088134765625
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0007033701403997838,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -587,6 +1026,86 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.9002583622932434,
+              0.0,
+              -0.026440264657139778,
+              -2.7392022609710693
+            ],
+            [
+              0.0,
+              0.3266313672065735,
+              0.0,
+              0.8730475902557373
+            ],
+            [
+              0.0029356980230659246,
+              0.0,
+              0.09995689243078232,
+              -0.09890300035476685
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x00003B34",
+            "0xC17AA6C5",
+            "0x353A0000",
+            "0x3AFC0000",
+            "0x00001A03",
+            "0xAE542E66"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x00003B34",
+            "0xC17AA6C5",
+            "0x353A0000",
+            "0x3AFC0000",
+            "0x00001A03",
+            "0xAE542E66"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFFFFFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            4,
+            6,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.900390625,
+              0.0,
+              -0.0264434814453125,
+              -2.73828125
+            ],
+            [
+              0.0,
+              0.32666015625,
+              0.0,
+              0.873046875
+            ],
+            [
+              0.0029354095458984375,
+              0.0,
+              0.0999755859375,
+              -0.098876953125
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0014775886493647583,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -653,6 +1172,88 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.45199549198150635,
+              0.0,
+              -0.0,
+              0.6031197905540466
+            ],
+            [
+              0.0,
+              1.154129147529602,
+              0.0,
+              -1.5355863571166992
+            ],
+            [
+              0.0,
+              0.0,
+              0.33816808462142944,
+              0.2008211612701416
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x0000373B",
+            "0x38D38000",
+            "0x3C9E0000",
+            "0xBE240000",
+            "0x00000000",
+            "0x326D3569"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x0000373B",
+            "0x38D30000",
+            "0x3C9E0000",
+            "0xBE240000",
+            "0x00000000",
+            "0x326D3569"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFF7FFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.451904296875,
+              0.0,
+              -0.0,
+              0.60302734375
+            ],
+            [
+              0.0,
+              1.154296875,
+              0.0,
+              -1.53515625
+            ],
+            [
+              0.0,
+              0.0,
+              0.338134765625,
+              0.2008056640625
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0007985136471688747,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -719,6 +1320,86 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.9002580046653748,
+              0.0,
+              -0.026440350338816643,
+              1.9281688928604126
+            ],
+            [
+              0.0,
+              0.36710068583488464,
+              0.0,
+              0.8573184013366699
+            ],
+            [
+              0.0029357089661061764,
+              0.0,
+              0.09995689243078232,
+              -0.08082403242588043
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x00003B34",
+            "0x3FB6A6C5",
+            "0x35E00000",
+            "0x3ADC0000",
+            "0x00001A03",
+            "0xAD2C2E66"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x00003B34",
+            "0x3FB6A6C5",
+            "0x35E00000",
+            "0x3ADC0000",
+            "0x00001A03",
+            "0xAD2C2E66"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFFFFFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            4,
+            6,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.900390625,
+              0.0,
+              -0.0264434814453125,
+              1.927734375
+            ],
+            [
+              0.0,
+              0.3671875,
+              0.0,
+              0.857421875
+            ],
+            [
+              0.0029354095458984375,
+              0.0,
+              0.0999755859375,
+              -0.080810546875
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0008727937094201721,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -785,6 +1466,88 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.4606274962425232,
+              0.0,
+              -0.0,
+              -0.555049479007721
+            ],
+            [
+              0.0,
+              1.154129147529602,
+              0.0,
+              -1.500962495803833
+            ],
+            [
+              0.0,
+              0.0,
+              0.33816805481910706,
+              0.08043333888053894
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x0000375F",
+            "0xB8718000",
+            "0x3C9E0000",
+            "0xBE010000",
+            "0x00000000",
+            "0x2D263569"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x0000375F",
+            "0xB8710000",
+            "0x3C9E0000",
+            "0xBE010000",
+            "0x00000000",
+            "0x2D263569"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFF7FFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.460693359375,
+              0.0,
+              -0.0,
+              -0.55517578125
+            ],
+            [
+              0.0,
+              1.154296875,
+              0.0,
+              -1.5009765625
+            ],
+            [
+              0.0,
+              0.0,
+              0.338134765625,
+              0.0804443359375
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0003493279218673706,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -851,6 +1614,88 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.14704129099845886,
+              0.0,
+              -0.0,
+              0.07262790948152542
+            ],
+            [
+              0.0,
+              0.2760140597820282,
+              0.0,
+              0.44013267755508423
+            ],
+            [
+              0.0,
+              0.0,
+              0.2131432592868805,
+              -0.15272940695285797
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x000030B5",
+            "0x2CA68000",
+            "0x346B0000",
+            "0x370B0000",
+            "0x00000000",
+            "0xB0E332D2"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x000030B5",
+            "0x2CA60000",
+            "0x346B0000",
+            "0x370B0000",
+            "0x00000000",
+            "0xB0E332D2"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFF7FFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.1470947265625,
+              0.0,
+              -0.0,
+              0.0726318359375
+            ],
+            [
+              0.0,
+              0.276123046875,
+              0.0,
+              0.440185546875
+            ],
+            [
+              0.0,
+              0.0,
+              0.213134765625,
+              -0.1527099609375
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0005157379200682044,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -917,6 +1762,88 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 0.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.1260950118303299,
+              0.0,
+              -0.0,
+              0.11804448813199997
+            ],
+            [
+              0.0,
+              0.474282830953598,
+              0.0,
+              1.2845526933670044
+            ],
+            [
+              0.0,
+              0.0,
+              0.1789473593235016,
+              0.37808606028556824
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x00003009",
+            "0x2F8E8000",
+            "0x37970000",
+            "0x3D230000",
+            "0x00000000",
+            "0x360D31BA"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x00003009",
+            "0x2F8E0000",
+            "0x37970000",
+            "0x3D230000",
+            "0x00000000",
+            "0x360D31BA"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFF7FFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.1260986328125,
+              0.0,
+              -0.0,
+              0.1180419921875
+            ],
+            [
+              0.0,
+              0.474365234375,
+              0.0,
+              1.2841796875
+            ],
+            [
+              0.0,
+              0.0,
+              0.178955078125,
+              0.378173828125
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0007699725683778524,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       },
       {
@@ -983,6 +1910,88 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 0.0,
           "falloffExponent": -1.0
+        },
+        "obbPackedTransform": {
+          "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "inverseRowsFloat32Model": [
+            [
+              0.09685230255126953,
+              0.0,
+              -0.0,
+              0.09066873043775558
+            ],
+            [
+              0.0,
+              0.3187628984451294,
+              0.0,
+              1.3475531339645386
+            ],
+            [
+              0.0,
+              0.0,
+              0.17615851759910583,
+              0.7798744440078735
+            ]
+          ],
+          "analyticCandidateWordHex": [
+            "0x00002E33",
+            "0x2DCE8000",
+            "0x351A0000",
+            "0x3D640000",
+            "0x00000000",
+            "0x3A3D31A3"
+          ],
+          "signedZeroNormalizedCandidateWordHex": [
+            "0x00002E33",
+            "0x2DCE0000",
+            "0x351A0000",
+            "0x3D640000",
+            "0x00000000",
+            "0x3A3D31A3"
+          ],
+          "consumerComparisonMaskHex": [
+            "0x7FFFFFFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0xFFFF7FFF",
+            "0x7FFF7FFF",
+            "0xFFFFFFFF"
+          ],
+          "unresolvedSignedZeroHalfLanes": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "oneFloat32UlpSensitiveHalfLanes": [],
+          "decodedHalfInverseRows": [
+            [
+              0.09686279296875,
+              0.0,
+              -0.0,
+              0.0906982421875
+            ],
+            [
+              0.0,
+              0.31884765625,
+              0.0,
+              1.34765625
+            ],
+            [
+              0.0,
+              0.0,
+              0.1761474609375,
+              0.77978515625
+            ]
+          ],
+          "maximumAuthoredCornerBoundaryError": 0.0005210470408201218,
+          "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5"
+          },
+          "precisionBoundary": "the pack layout and analytic candidate are exact through the installed managed helpers; signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer inverse result and require its internal-call body or a retail buffer capture"
         }
       }
     ]
@@ -996,13 +2005,16 @@
       "all eleven selected room rows enable OBB culling and have no cookie, shadow, shadow-only, or override-shadow state",
       "all eleven room HGAdditionalLightData components, their exact source PathIDs/hashes, and the native 32-byte return layout",
       "all rows use NPR type 0 with (1,1,0,0), CharacterOnly false, and falloff exponent -1; volumetric values split 2/5/4 across 0/1/10",
-      "the corresponding producer lanes record3.yzw, record4.xyzw, and record6.w"
+      "the corresponding producer lanes record3.yzw, record4.xyzw, and record6.w",
+      "the OBB producer call chain: relative position, half extents, ZXY Euler orientation, inverse TRS, and six row-major half pairs",
+      "the installed HGUtils/math.f32tof16 method bodies, x-low/y-high word layout, and record5.xyz/record6.xyz placement",
+      "six-word analytic OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003"
     ],
     "open": [
       "exact float32 color/intensity helper results and camera-relative position/direction values at the target frame",
-      "exact packed OBB half words and shadow/cookie cache indices for the eleven rows",
+      "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, and shadow/cookie cache indices",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including their additional-light lanes, but do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until target-frame transforms, color/intensity helpers, packed OBB words, and the runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including their additional-light lanes and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame transforms, color/intensity helpers, and runtime list boundary are closed."
   }
 }

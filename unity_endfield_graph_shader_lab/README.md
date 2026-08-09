@@ -2240,8 +2240,13 @@ Hash-pinned installed `GetLightNPRData` and `GetLightAdditionalData` bodies
 close its 32-byte return layout: all rows use type-0 NPR `(1,1,0,0)`, are not
 CharacterOnly, use falloff `-1`, and split volumetric intensity 2/5/4 across
 0/1/10. This closes b31 record3.yzw, record4, and record6.w for the room rows.
-Target-frame color/transforms, packed OBB words, runtime/custom carry-in, the
-final light count, and a byte-exact room b31 fixture remain open.
+The pinned producer also builds the authored OBB as inverse TRS and writes six
+row-major half2 words to record5.xyz/6.xyz. Its installed pack and `f32tof16`
+bodies now yield bounded candidates for all 11 rows; decoded corners miss the
+unit-box boundary by at most `0.002611`. Signed-zero bits and one
+`Spot Light (12)` one-ULP half boundary still require the opaque UnityPlayer
+internal body or retail capture. Target-frame color/transforms, runtime carry-
+in, final light count, and a byte-exact room b31 fixture remain open.
 
 `ShaderVariablesGlobal` b35 is now exactly scoped and transported. The
 selected body references 33 fields, and installed native reset producers close

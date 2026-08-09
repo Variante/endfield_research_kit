@@ -114,9 +114,16 @@ NPC archetypes are imported as labeled source kits.
   default. Installed `GetLightNPRData`/`GetLightAdditionalData` close the
   32-byte return layout and b31 record3.yzw, record4, and record6.w: every row
   uses NPR type 0 with `(1,1,0,0)`, `CharacterOnly=false`, and falloff `-1`;
-  volumetric intensity is 0/1/10 on 2/5/4 rows. Target-frame color/transform
-  results, packed OBB words, runtime list carry-in, and final byte-exact b31
-  rows remain open.
+  volumetric intensity is 0/1/10 on 2/5/4 rows. The same body now closes the
+  OBB chain as inverse TRS of authored relative position, ZXY orientation, and
+  half extents, packed row-major into six half2 words at record5.xyz/6.xyz.
+  Installed `HGUtils.PackTwoHalfValuesAsFloat` and
+  `Unity.Mathematics.math.f32tof16` close the word order and IEEE conversion;
+  all 11 analytic candidates map authored corners back to the unit box within
+  `0.002611`. Exact signed-zero bits and one `Spot Light (12)` reciprocal at a
+  one-float32-ULP half boundary still need the opaque UnityPlayer internal body
+  or a retail buffer capture. Target-frame color/transforms, runtime carry-in,
+  and final byte-exact b31 rows remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

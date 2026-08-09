@@ -93,6 +93,66 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             result["getLightNprData"]["selectedTypeZeroPacking"],
         )
 
+    def test_installed_half_conversion_and_pair_layout(self) -> None:
+        self.assertEqual(AUDIT.f32_to_f16_bits(0.0), 0x0000)
+        self.assertEqual(AUDIT.f32_to_f16_bits(-0.0), 0x8000)
+        self.assertEqual(AUDIT.f32_to_f16_bits(1.0), 0x3C00)
+        self.assertEqual(AUDIT.f32_to_f16_bits(-2.0), 0xC000)
+        self.assertEqual(
+            AUDIT.pack_two_half_words(1.0, -2.0),
+            0xC0003C00,
+        )
+
+    def test_native_obb_half_pack_layout(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PACK_TWO_HALF_FILE_OFFSET)
+            pack_body = stream.read(AUDIT.PACK_TWO_HALF_SIZE)
+            stream.seek(AUDIT.F32_TO_F16_FILE_OFFSET)
+            helper_body = stream.read(AUDIT.F32_TO_F16_BODY_SIZE)
+            stream.seek(AUDIT.F32_TO_F16_MAGIC_FILE_OFFSET)
+            magic = stream.read(4)
+            stream.seek(AUDIT.F32_TO_F16_SCALE_FILE_OFFSET)
+            scale = stream.read(4)
+            stream.seek(AUDIT.DEGREES_TO_RADIANS_FILE_OFFSET)
+            degrees_to_radians = stream.read(4)
+        result = AUDIT.validate_obb_pack_native(
+            pack_body, helper_body, magic, scale, degrees_to_radians
+        )
+        self.assertEqual(
+            result["packTwoHalfValuesAsFloat"]["methodIndex"],
+            288325,
+        )
+        self.assertEqual(
+            result["prepareCpuDataPackOrder"][3],
+            "inverse row1 zw -> record6.x",
+        )
+
+    def test_changed_half_helper_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PACK_TWO_HALF_FILE_OFFSET)
+            pack_body = stream.read(AUDIT.PACK_TWO_HALF_SIZE)
+            stream.seek(AUDIT.F32_TO_F16_FILE_OFFSET)
+            helper_body = bytearray(stream.read(AUDIT.F32_TO_F16_BODY_SIZE))
+            stream.seek(AUDIT.F32_TO_F16_MAGIC_FILE_OFFSET)
+            magic = stream.read(4)
+            stream.seek(AUDIT.F32_TO_F16_SCALE_FILE_OFFSET)
+            scale = stream.read(4)
+            stream.seek(AUDIT.DEGREES_TO_RADIANS_FILE_OFFSET)
+            degrees_to_radians = stream.read(4)
+        helper_body[0x42] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=gacha_deferred_light_data; check=f32_to_f16_body_sha256;.*"
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_obb_pack_native(
+                pack_body,
+                bytes(helper_body),
+                magic,
+                scale,
+                degrees_to_radians,
+            )
+
     def test_changed_additional_layout_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.GET_LIGHT_NPR_DATA_FILE_OFFSET)
@@ -147,6 +207,46 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             ),
             [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0, 10.0, 10.0, 10.0],
         )
+
+    def test_selected_room_obb_half_payloads(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.room_light_rows(population, hierarchy)
+        recovered = [AUDIT.recover_obb_pack(row) for row in rows]
+        self.assertEqual(
+            recovered[0]["analyticCandidateWordHex"],
+            [
+                "0x000030E8",
+                "0xAF318000",
+                "0x3E780000",
+                "0x49340000",
+                "0x00000000",
+                "0xAA842DD7",
+            ],
+        )
+        self.assertEqual(
+            recovered[2]["signedZeroNormalizedCandidateWordHex"][4],
+            "0x00001A03",
+        )
+        self.assertEqual(recovered[0]["oneFloat32UlpSensitiveHalfLanes"], [0])
+        self.assertTrue(
+            all(not row["oneFloat32UlpSensitiveHalfLanes"] for row in recovered[1:])
+        )
+        self.assertTrue(
+            all(row["maximumAuthoredCornerBoundaryError"] < 0.003 for row in recovered)
+        )
+
+    def test_non_y_obb_orientation_fails_closed(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        row = copy.deepcopy(AUDIT.room_light_rows(population, hierarchy)[0])
+        row["cullingBoxOrientationZxyDegrees"]["x"] = 1.0
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=room_.*_obb_orientation_x_zero; source=.*Light.*; "
+            r"expected=True; actual=False",
+        ):
+            AUDIT.recover_obb_pack(row)
 
     def test_changed_room_falloff_reports_component(self) -> None:
         population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))

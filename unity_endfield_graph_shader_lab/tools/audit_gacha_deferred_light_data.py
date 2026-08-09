@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import struct
 from collections import Counter
 from pathlib import Path
@@ -16,6 +17,7 @@ LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
 GAME_ROOT = Path(r"D:/Program Files/Endfield Game")
 GAME_ASSEMBLY = GAME_ROOT / "GameAssembly.dll"
+UNITY_PLAYER = GAME_ROOT / "UnityPlayer.dll"
 GLOBAL_METADATA = GAME_ROOT / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
 SELECTED_FRAGMENT = (
     LAB_ROOT
@@ -53,10 +55,23 @@ GET_LIGHT_NPR_DATA_SIZE = 0x100
 GET_LIGHT_ADDITIONAL_DATA_VA = 0x1832040F0
 GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET = 0x32026F0
 GET_LIGHT_ADDITIONAL_DATA_SIZE = 0x440
+PACK_TWO_HALF_VA = 0x189C0F0A4
+PACK_TWO_HALF_FILE_OFFSET = 0x9C0D6A4
+PACK_TWO_HALF_SIZE = 0x7C
+F32_TO_F16_VA = 0x185F0CFFC
+F32_TO_F16_FILE_OFFSET = 0x5F0B5FC
+F32_TO_F16_BODY_SIZE = 0x5A
+F32_TO_F16_MAGIC_FILE_OFFSET = 0xDC7F17C
+F32_TO_F16_SCALE_FILE_OFFSET = 0xDC7EA3C
+F32_TO_F16_MAGIC_BITS = 0x4D77FF00
+F32_TO_F16_SCALE_BITS = 0x07800000
+DEGREES_TO_RADIANS_FILE_OFFSET = 0xB9576A0
+DEGREES_TO_RADIANS_BITS = 0x3C8EFA35
 HG_ADDITIONAL_LIGHT_DATA_SCRIPT_PATH_ID = 4098216658219718577
 
 EXPECTED_HASHES = {
     "gameAssembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "unityPlayer": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "globalMetadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
     "selectedFragment": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
     "gachaPopulation": "02e15c70197bcd96f804007fe042fcb46577c0014d956d78a28f2d96162e189a",
@@ -64,6 +79,8 @@ EXPECTED_HASHES = {
     "prepareCpuDataBody": "c55bd6dc86c971123c433a5dd29b446b557f8713f73b132da25c257369e9bd0b",
     "getLightNprDataBody": "49eeca70b72791b2ad58f8b77cf3fbc3f27149766dcc0510a00b9d129e6698c8",
     "getLightAdditionalDataBody": "071061feb7f3c76044273efe703f9bdf78288703516b863c10c592b263f73e00",
+    "packTwoHalfBody": "dad4b266316d3ba37f5c20fd92f2db90da363f7b65b3467bf313342c1a8814ce",
+    "f32ToF16Body": "dc4fa0754a86aed4b2d58a5a978fe6028d83257aa5fc8e0a06e8fa6b9b5dae62",
 }
 
 EXPECTED_ROOM_ORDER = [
@@ -103,8 +120,21 @@ COMMON_RECORD_WRITE = (0x15F8, 7, 13)
 
 NATIVE_CALLS = {
     0x08DB: (0x1832040F0, "LightExtensions.GetLightAdditionalData"),
+    0x0979: (0x18B3BDCA8, "HGSharedLightData.get_cullingBoxRelativePosition_Injected"),
+    0x09C2: (0x18B3BDBC8, "HGSharedLightData.get_cullingBoxHalfExtents_Injected"),
+    0x0A0C: (0x18B3BDC38, "HGSharedLightData.get_cullingBoxOrientation_Injected"),
     0x0A68: (0x18B3BDD4C, "HGSharedLightData.get_enableOBBCullingBox_Injected"),
     0x0A77: (0x18B3BDD88, "HGSharedLightData.get_enableOverrideShadowLight_Injected"),
+    0x0A91: (0x18B3BDD4C, "HGSharedLightData.get_enableOBBCullingBox_Injected"),
+    0x0B17: (0x182FA5910, "UnityEngine.Quaternion.Euler"),
+    0x0B91: (0x182FA4BB0, "UnityEngine.Matrix4x4.TRS"),
+    0x0BCF: (0x182FA2B80, "UnityEngine.Matrix4x4.get_inverse"),
+    0x0C2E: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row0.xy"),
+    0x0C43: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row0.zw"),
+    0x0C62: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row1.xy"),
+    0x0C81: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row1.zw"),
+    0x0CA0: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row2.xy"),
+    0x0CBE: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row2.zw"),
     0x0CF8: (0x18B3BDF2C, "HGSharedLightData.get_innerSpotAngle_Injected"),
     0x0D1C: (0x18B3BE5FC, "HGSharedLightData.get_spotAngle_Injected"),
     0x0DD9: (0x18B3BE4D0, "HGSharedLightData.get_shadowOnly_Injected"),
@@ -116,6 +146,52 @@ NATIVE_CALLS = {
     0x15BF: (0x18B3BE584, "HGSharedLightData.get_softSourceRadius_Injected"),
     0x15D0: (0x18B3BE5C0, "HGSharedLightData.get_specularIntensity_Injected"),
 }
+
+
+def f32(value: float) -> float:
+    return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
+def float32_bits(value: float) -> int:
+    return struct.unpack("<I", struct.pack("<f", f32(value)))[0]
+
+
+def float32_from_bits(bits: int) -> float:
+    return struct.unpack("<f", struct.pack("<I", bits))[0]
+
+
+def f32_to_f16_bits(value: float) -> int:
+    """Mirror installed Unity.Mathematics.math.f32tof16 through its first ret."""
+    bits = float32_bits(value)
+    magnitude = bits & 0x7FFFF000
+    scaled = f32(
+        float32_from_bits(magnitude)
+        * float32_from_bits(F32_TO_F16_SCALE_BITS)
+    )
+    if scaled < float32_from_bits(F32_TO_F16_MAGIC_BITS):
+        packed_magnitude = (float32_bits(scaled) + 0x1000) >> 13
+    else:
+        packed_magnitude = 0x7C00 if magnitude <= 0x7F800000 else 0x7E00
+    return ((bits >> 16) & 0x8000) | packed_magnitude
+
+
+def f16_bits_to_float(bits: int) -> float:
+    return struct.unpack("<e", struct.pack("<H", bits))[0]
+
+
+def pack_two_half_words(x: float, y: float) -> int:
+    return f32_to_f16_bits(x) | (f32_to_f16_bits(y) << 16)
+
+
+def is_f32_to_f16_one_ulp_sensitive(value: float) -> bool:
+    if value == 0.0 or not math.isfinite(value):
+        return False
+    bits = float32_bits(value)
+    packed = f32_to_f16_bits(value)
+    return (
+        f32_to_f16_bits(float32_from_bits(bits - 1)) != packed
+        or f32_to_f16_bits(float32_from_bits(bits + 1)) != packed
+    )
 
 
 def sha256(path: Path) -> str:
@@ -331,6 +407,265 @@ def validate_additional_data_native(
                 "0x1C": "float falloffExponent",
             },
         },
+    }
+
+
+def validate_obb_pack_native(
+    pack_body: bytes,
+    f32_to_f16_body: bytes,
+    magic_bytes: bytes,
+    scale_bytes: bytes,
+    degrees_to_radians_bytes: bytes,
+) -> dict[str, Any]:
+    require("pack_two_half_size", len(pack_body), PACK_TWO_HALF_SIZE, GAME_ASSEMBLY)
+    pack_hash = hashlib.sha256(pack_body).hexdigest()
+    require(
+        "pack_two_half_body_sha256",
+        pack_hash,
+        EXPECTED_HASHES["packTwoHalfBody"],
+        GAME_ASSEMBLY,
+    )
+    require(
+        "pack_two_half_y_call",
+        relative_call_target(pack_body, PACK_TWO_HALF_VA, 0x27),
+        F32_TO_F16_VA,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "pack_two_half_x_call",
+        relative_call_target(pack_body, PACK_TWO_HALF_VA, 0x36),
+        F32_TO_F16_VA,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "pack_two_half_shift_or",
+        pack_body[0x2C:0x3E],
+        bytes.fromhex("448bd00f28c741c1e210e81ddf2ffc440bd0"),
+        GAME_ASSEMBLY,
+    )
+
+    require(
+        "f32_to_f16_body_size",
+        len(f32_to_f16_body),
+        F32_TO_F16_BODY_SIZE,
+        GAME_ASSEMBLY,
+    )
+    helper_hash = hashlib.sha256(f32_to_f16_body).hexdigest()
+    require(
+        "f32_to_f16_body_sha256",
+        helper_hash,
+        EXPECTED_HASHES["f32ToF16Body"],
+        GAME_ASSEMBLY,
+    )
+    require(
+        "f32_to_f16_magic_bits",
+        struct.unpack("<I", magic_bytes)[0],
+        F32_TO_F16_MAGIC_BITS,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "f32_to_f16_scale_bits",
+        struct.unpack("<I", scale_bytes)[0],
+        F32_TO_F16_SCALE_BITS,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_degrees_to_radians_bits",
+        struct.unpack("<I", degrees_to_radians_bytes)[0],
+        DEGREES_TO_RADIANS_BITS,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "f32_to_f16_round_and_sign",
+        f32_to_f16_body[0x42:0x59],
+        bytes.fromhex("660f7ec181c100100000c1e90dc1e81025008000000bc1"),
+        GAME_ASSEMBLY,
+    )
+    return {
+        "packTwoHalfValuesAsFloat": {
+            "method": "HG.Rendering.Runtime.HGUtils.PackTwoHalfValuesAsFloat",
+            "methodIndex": 288325,
+            "virtualAddress": f"0x{PACK_TWO_HALF_VA:X}",
+            "fileOffset": f"0x{PACK_TWO_HALF_FILE_OFFSET:X}",
+            "sizeBytesToNextManagedEntry": PACK_TWO_HALF_SIZE,
+            "bodySha256": pack_hash,
+            "layout": "x occupies low 16 bits; y occupies high 16 bits",
+        },
+        "f32ToF16": {
+            "method": "Unity.Mathematics.math.f32tof16",
+            "methodIndex": 451057,
+            "virtualAddress": f"0x{F32_TO_F16_VA:X}",
+            "fileOffset": f"0x{F32_TO_F16_FILE_OFFSET:X}",
+            "sizeBytesThroughFirstReturn": F32_TO_F16_BODY_SIZE,
+            "bodySha256": helper_hash,
+            "magicBits": f"0x{F32_TO_F16_MAGIC_BITS:08X}",
+            "scaleBits": f"0x{F32_TO_F16_SCALE_BITS:08X}",
+            "quaternionEulerDegreesToRadiansBits": f"0x{DEGREES_TO_RADIANS_BITS:08X}",
+            "rounding": "installed IEEE binary16 conversion including signed zero, infinity, and canonical NaN",
+        },
+        "prepareCpuDataPackOrder": [
+            "inverse row0 xy -> record5.x",
+            "inverse row0 zw -> record5.y",
+            "inverse row1 xy -> record5.z",
+            "inverse row1 zw -> record6.x",
+            "inverse row2 xy -> record6.y",
+            "inverse row2 zw -> record6.z",
+        ],
+    }
+
+
+def recovered_y_rotation_inverse_rows(row: dict[str, Any]) -> tuple[list[list[float]], list[list[float]]]:
+    """Model the selected rows' Y-only inverse TRS with explicit float32 steps."""
+    orientation = row["cullingBoxOrientationZxyDegrees"]
+    require(
+        f"room_{row['lightPathId']}_obb_orientation_x_zero",
+        float(orientation["x"]) == 0.0,
+        True,
+        REPO_ROOT / row["sourcePath"],
+    )
+    require(
+        f"room_{row['lightPathId']}_obb_orientation_z_zero",
+        float(orientation["z"]) == 0.0,
+        True,
+        REPO_ROOT / row["sourcePath"],
+    )
+    position = [f32(float(row["cullingBoxRelativePosition"][key])) for key in "xyz"]
+    scale = [f32(float(row["cullingBoxHalfExtents"][key])) for key in "xyz"]
+    require(
+        f"room_{row['lightPathId']}_obb_positive_half_extents",
+        all(value > 0.0 for value in scale),
+        True,
+        REPO_ROOT / row["sourcePath"],
+    )
+
+    radians = f32(
+        f32(float(orientation["y"]))
+        * float32_from_bits(DEGREES_TO_RADIANS_BITS)
+    )
+    half_angle = f32(radians * f32(0.5))
+    quaternion_y = f32(math.sin(half_angle))
+    quaternion_w = f32(math.cos(half_angle))
+    doubled_y = f32(quaternion_y + quaternion_y)
+    cosine = f32(f32(1.0) - f32(quaternion_y * doubled_y))
+    sine = f32(quaternion_w * doubled_y)
+    rotation = [
+        [cosine, 0.0, sine],
+        [0.0, 1.0, 0.0],
+        [f32(-sine), 0.0, cosine],
+    ]
+
+    # Invert the only non-trivial XZ block. The installed UnityPlayer internal
+    # call remains opaque, so the resulting nonzero half payloads are reported
+    # with a quantization boundary rather than mislabeled as captured runtime bits.
+    matrix_xx = f32(rotation[0][0] * scale[0])
+    matrix_xz = f32(rotation[0][2] * scale[2])
+    matrix_zx = f32(rotation[2][0] * scale[0])
+    matrix_zz = f32(rotation[2][2] * scale[2])
+    determinant = f32(
+        f32(matrix_xx * matrix_zz) - f32(matrix_xz * matrix_zx)
+    )
+    inverse = [
+        [f32(matrix_zz / determinant), 0.0, f32(-matrix_xz / determinant), 0.0],
+        [0.0, f32(1.0 / scale[1]), 0.0, 0.0],
+        [f32(-matrix_zx / determinant), 0.0, f32(matrix_xx / determinant), 0.0],
+    ]
+    for output_row in inverse:
+        translated = f32(
+            f32(output_row[0] * position[0])
+            + f32(output_row[1] * position[1])
+            + f32(output_row[2] * position[2])
+        )
+        output_row[3] = f32(-translated)
+    return rotation, inverse
+
+
+def recover_obb_pack(row: dict[str, Any]) -> dict[str, Any]:
+    rotation, inverse = recovered_y_rotation_inverse_rows(row)
+    pairs = [
+        (inverse[output_row][lane], inverse[output_row][lane + 1])
+        for output_row in range(3)
+        for lane in (0, 2)
+    ]
+    words = [pack_two_half_words(x, y) for x, y in pairs]
+    masks = []
+    zero_lanes = []
+    one_ulp_sensitive_lanes = []
+    for pair_index, (x, y) in enumerate(pairs):
+        mask = 0xFFFFFFFF
+        if x == 0.0:
+            mask &= ~0x00008000
+            zero_lanes.append(pair_index * 2)
+        if y == 0.0:
+            mask &= ~0x80000000
+            zero_lanes.append(pair_index * 2 + 1)
+        if is_f32_to_f16_one_ulp_sensitive(x):
+            one_ulp_sensitive_lanes.append(pair_index * 2)
+        if is_f32_to_f16_one_ulp_sensitive(y):
+            one_ulp_sensitive_lanes.append(pair_index * 2 + 1)
+        masks.append(mask)
+
+    decoded = [
+        [
+            f16_bits_to_float(f32_to_f16_bits(inverse[output_row][lane]))
+            for lane in range(4)
+        ]
+        for output_row in range(3)
+    ]
+    position = [f32(float(row["cullingBoxRelativePosition"][key])) for key in "xyz"]
+    half_extents = [f32(float(row["cullingBoxHalfExtents"][key])) for key in "xyz"]
+    maximum_corner_error = 0.0
+    for sign_x in (-1.0, 1.0):
+        for sign_y in (-1.0, 1.0):
+            for sign_z in (-1.0, 1.0):
+                authored_local = [
+                    sign_x * half_extents[0],
+                    sign_y * half_extents[1],
+                    sign_z * half_extents[2],
+                ]
+                relative_corner = [
+                    position[axis]
+                    + sum(
+                        rotation[axis][lane] * authored_local[lane]
+                        for lane in range(3)
+                    )
+                    for axis in range(3)
+                ]
+                decoded_corner = [
+                    sum(decoded[axis][lane] * relative_corner[lane] for lane in range(3))
+                    + decoded[axis][3]
+                    for axis in range(3)
+                ]
+                maximum_corner_error = max(
+                    maximum_corner_error,
+                    max(abs(abs(value) - 1.0) for value in decoded_corner),
+                )
+    require(
+        f"room_{row['lightPathId']}_obb_half_round_trip_corner_error",
+        maximum_corner_error < 0.003,
+        True,
+        REPO_ROOT / row["sourcePath"],
+    )
+    return {
+        "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+        "inverseRowsFloat32Model": inverse,
+        "analyticCandidateWordHex": [f"0x{word:08X}" for word in words],
+        "signedZeroNormalizedCandidateWordHex": [
+            f"0x{word & mask:08X}" for word, mask in zip(words, masks)
+        ],
+        "consumerComparisonMaskHex": [f"0x{mask:08X}" for mask in masks],
+        "unresolvedSignedZeroHalfLanes": zero_lanes,
+        "oneFloat32UlpSensitiveHalfLanes": one_ulp_sensitive_lanes,
+        "decodedHalfInverseRows": decoded,
+        "maximumAuthoredCornerBoundaryError": maximum_corner_error,
+        "recordPlacement": {
+            "record5.xyz": "word 0, 1, 2",
+            "record6.xyz": "word 3, 4, 5",
+        },
+        "precisionBoundary": (
+            "the pack layout and analytic candidate are exact through the installed managed helpers; "
+            "signed-zero bits and any one-float32-ULP-sensitive half boundary remain conditional on the opaque UnityPlayer "
+            "inverse result and require its internal-call body or a retail buffer capture"
+        ),
     }
 
 
@@ -606,6 +941,13 @@ def validate_consumer(text: str) -> dict[str, Any]:
         "record2Direction": "_LightDataBuffer_f_96[_770].y",
         "record3CharacterOnly": "_LightDataBuffer_f_96[_773].z > 0.5f",
         "record5ObbFlags": "uint(_LightDataBuffer_f_96[_776].w)",
+        "record5ObbWord0": "asuint(_LightDataBuffer_f_96[_776].x)",
+        "record5ObbWord1": "asuint(_LightDataBuffer_f_96[_776].y)",
+        "record5ObbWord2": "asuint(_LightDataBuffer_f_96[_776].z)",
+        "record6ObbWord3": "asuint(_LightDataBuffer_f_96[_779].x)",
+        "record6ObbWord4": "asuint(_LightDataBuffer_f_96[_779].y)",
+        "record6ObbWord5": "asuint(_LightDataBuffer_f_96[_779].z)",
+        "obbRowTranspose": "spvUnpackHalf2x16(_792).x, spvUnpackHalf2x16(_806).x, spvUnpackHalf2x16(_820).x",
         "record6Falloff": "_LightDataBuffer_f_96[_779].w < 0.0f",
         "record7ObbThreshold": "_LightDataBuffer_f_96[_782].x * 0.5f",
         "record7SoftRadius": "_LightDataBuffer_f_96[_782].y * _1397",
@@ -632,6 +974,7 @@ def validate_consumer(text: str) -> dict[str, Any]:
 def build_audit() -> dict[str, Any]:
     hashes = {
         "gameAssemblySha256": verified_hash("gameAssembly", GAME_ASSEMBLY),
+        "unityPlayerSha256": verified_hash("unityPlayer", UNITY_PLAYER),
         "globalMetadataSha256": verified_hash("globalMetadata", GLOBAL_METADATA),
         "selectedFragmentSha256": verified_hash("selectedFragment", SELECTED_FRAGMENT),
         "gachaPopulationSha256": verified_hash("gachaPopulation", GACHA_POPULATION),
@@ -644,20 +987,57 @@ def build_audit() -> dict[str, Any]:
         npr_body = stream.read(GET_LIGHT_NPR_DATA_SIZE)
         stream.seek(GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET)
         additional_body = stream.read(GET_LIGHT_ADDITIONAL_DATA_SIZE)
+        stream.seek(PACK_TWO_HALF_FILE_OFFSET)
+        pack_body = stream.read(PACK_TWO_HALF_SIZE)
+        stream.seek(F32_TO_F16_FILE_OFFSET)
+        f32_to_f16_body = stream.read(F32_TO_F16_BODY_SIZE)
+        stream.seek(F32_TO_F16_MAGIC_FILE_OFFSET)
+        magic_bytes = stream.read(4)
+        stream.seek(F32_TO_F16_SCALE_FILE_OFFSET)
+        scale_bytes = stream.read(4)
+        stream.seek(DEGREES_TO_RADIANS_FILE_OFFSET)
+        degrees_to_radians_bytes = stream.read(4)
     population = json.loads(GACHA_POPULATION.read_text(encoding="utf-8"))
     hierarchy = json.loads(ROOM_HIERARCHY.read_text(encoding="utf-8"))
     rows = attach_room_additional_data(room_light_rows(population, hierarchy))
+    for row in rows:
+        row["obbPackedTransform"] = recover_obb_pack(row)
     consumer = validate_consumer(SELECTED_FRAGMENT.read_text(encoding="utf-8"))
     native = validate_native_body(body)
     native["additionalLightData"] = validate_additional_data_native(
         npr_body, additional_body
     )
+    native["obbHalfPacking"] = validate_obb_pack_native(
+        pack_body,
+        f32_to_f16_body,
+        magic_bytes,
+        scale_bytes,
+        degrees_to_radians_bytes,
+    )
     volumetric_counts = Counter(
         row["additionalLightData"]["volumetricScatteringIntensity"] for row in rows
     )
+    obb_boundaries = [
+        {
+            "name": row["name"],
+            "halfLanes": row["obbPackedTransform"]["oneFloat32UlpSensitiveHalfLanes"],
+        }
+        for row in rows
+        if row["obbPackedTransform"]["oneFloat32UlpSensitiveHalfLanes"]
+    ]
+    require(
+        "selected_room_obb_one_ulp_boundaries",
+        obb_boundaries,
+        [{"name": "Spot Light (12)", "halfLanes": [0]}],
+        ROOM_LIGHT_ROOT,
+    )
+    maximum_obb_corner_error = max(
+        row["obbPackedTransform"]["maximumAuthoredCornerBoundaryError"]
+        for row in rows
+    )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v2",
-        "status": "native_point_spot_row_schema_and_room_additional_data_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v3",
+        "status": "room_obb_pack_schema_and_quantized_candidates_closed",
         "installedInputs": hashes,
         "nativeProducer": native,
         "selectedConsumer": {
@@ -674,6 +1054,15 @@ def build_audit() -> dict[str, Any]:
             "allUnshadowed": True,
             "allCookieFree": True,
             "allAdditionalComponentsResolved": True,
+            "obbHalfPackingSummary": {
+                "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
+                "wordPlacement": "six row-major half2 words in record5.xyz then record6.xyz",
+                "installedPackingMethodClosed": True,
+                "analyticCandidateCount": len(rows),
+                "oneFloat32UlpSensitiveLocations": obb_boundaries,
+                "signedZeroBitsCaptured": False,
+                "maximumAuthoredCornerBoundaryError": maximum_obb_corner_error,
+            },
             "additionalLightDataSummary": {
                 "scriptPathId": HG_ADDITIONAL_LIGHT_DATA_SCRIPT_PATH_ID,
                 "nprType": 0,
@@ -705,17 +1094,20 @@ def build_audit() -> dict[str, Any]:
                 "all eleven room HGAdditionalLightData components, their exact source PathIDs/hashes, and the native 32-byte return layout",
                 "all rows use NPR type 0 with (1,1,0,0), CharacterOnly false, and falloff exponent -1; volumetric values split 2/5/4 across 0/1/10",
                 "the corresponding producer lanes record3.yzw, record4.xyzw, and record6.w",
+                "the OBB producer call chain: relative position, half extents, ZXY Euler orientation, inverse TRS, and six row-major half pairs",
+                "the installed HGUtils/math.f32tof16 method bodies, x-low/y-high word layout, and record5.xyz/record6.xyz placement",
+                "six-word analytic OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
             ],
             "open": [
                 "exact float32 color/intensity helper results and camera-relative position/direction values at the target frame",
-                "exact packed OBB half words and shadow/cookie cache indices for the eleven rows",
+                "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, and shadow/cookie cache indices",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including their additional-light lanes, but do not publish a byte-exact Gacha b31 fixture "
-                "or enable deferred pass 0 until target-frame transforms, color/intensity helpers, packed OBB "
-                "words, and the runtime list boundary are closed."
+                "including their additional-light lanes and bounded OBB transform candidates. Do not publish "
+                "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
+                "bits, target-frame transforms, color/intensity helpers, and runtime list boundary are closed."
             ),
         },
     }
@@ -732,8 +1124,8 @@ def main() -> int:
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
-        "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema "
-        "and all 11 room additional-light components closed."
+        "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
+        "all 11 additional-light components, and bounded OBB half candidates closed."
     )
     return 0
 
