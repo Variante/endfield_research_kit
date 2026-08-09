@@ -1,9 +1,9 @@
 {
   "schema": "endfield.charinfo.sphereoutside.deferred-lighting-recovery.v1",
-  "recovered_at": "2026-07-17",
+  "recovered_at": "2026-08-09",
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
-  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT formats plus D32S8, applies the source material's depth/stencil state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the presented beauty frame. The selected pass-0 _TransformVariables b30 reads are source-closed for view, inverse-view, inverse GPU view-projection, and camera-position fields. The selected _LightDataBuffer b31 reads are also source-closed for the isolated Wulfa/Zhuangfy CharInfo fixture: native allocation is six header vectors plus 256 eight-vector punctual records, the directional header is exact, and each CharacterOnly row exits before unresolved general-light or shadow words. Both full buffers publish bit-exactly on D3D11/D3D12 with unknown words zero. These transports remain non-presented/default-off and never enable pass 0. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, render-graph physical resource identity/lifetime, a binding-compatible pass-0 implementation, general-scene punctual payloads, and remaining frame-produced lighting resources are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
+  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT formats plus D32S8, applies the source material's depth/stencil state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the presented beauty frame. The selected pass-0 b30 TransformVariables and isolated-CharInfo b31 LightDataBuffer reads are source/GPU-closed. The selected b34 punctual transport is also same-frame closed for Wulfa spot slot 40 and Zhuangfy point slots 40..45 with the matching 6144x4096 D16 atlas; full named and original-DXBC bridge buffers read back bit-exactly with unowned words zero. These transports remain default-off and never enable pass 0; CharacterOnly exits before the selected resolver reads b34. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, render-graph physical resource identity/lifetime, a binding-compatible pass-0 implementation, general-scene/static-cache lighting rows, non-punctual ShadowData sections, and retail settled atlas pixels are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
   "selected_hgbuffer": {
     "shader": "HGRP/Lit",
     "pass": "HGBuffer",
@@ -185,8 +185,8 @@
     "source_audit": {"path": "scratch/character_recovery/deferred_light_data/audit.json", "sha256": "ae3fc61b167a017796371f674bcec5e5ce60d1402eb53787f7e6b4e022a3434f"},
     "sources": {
       "contract": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredLightDataContract.cs", "sha256": "af3d17ec8d18adba5cd0a2cb6b7f6809dc7424c64955fa05cf44eb0651a0f8f7"},
-      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredLightData.cs", "sha256": "c02678d0edf38349d6fce0c604a06f9465f9eb12f6f22c71f11733751918e844"},
-      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "bc18876a685e9f316b5555eba28d107f2cc16919f2a68448079dcba689bc41f2"},
+      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredLightData.cs", "sha256": "12d26e7ad790967c8ccace5b5c8fed35bcf79dbcdc7bb1c33baebef00282fde7"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "60fb6e49cfbfb6b23764688e7b38ca0748b7ab182171896ceb33790400ad6d06"},
       "probe": {"path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredDeferredLightDataProbe.compute", "sha256": "27355147d9dd502e4195b5555665bcfe0b29ca3d6e25e73ad1af32d87b192229"},
       "batch_verifier": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredDeferredLightDataBatchVerifier.cs", "sha256": "eaad687eb8705cea8b1e46319947aa952b415663511c57be3b8cf9e8f5e9a9ea"},
       "source_auditor": {"path": "tools/audit_deferred_light_data.py", "sha256": "2c8125f75f8b397a4d5e2e80cf582edfcca402cdedea34d110d7d934cc9c3a9a"},
@@ -205,6 +205,56 @@
       "fail_closed_without_canonical_prerequisites": true,
       "beauty_unchanged": true
     }
+  },
+  "selected_deferred_shadow_data_transport": {
+    "status": "selected original pass-0 b34 punctual reads are same-frame source/GPU-closed for the isolated Wulfa/Zhuangfy CharInfo fixture; pass 0 remains disabled because CharacterOnly exits before those reads",
+    "default_off": true,
+    "published_by_default": false,
+    "pass0_consumer_enabled": false,
+    "general_scene_shadow_data_recovered": false,
+    "selector": "ENDFIELD_RECOVERED_DEFERRED_SHADOW_DATA",
+    "canonical_property": "_ShadowData",
+    "original_dxbc_bridge_property": "EndfieldCB5",
+    "atlas_property": "_PunctualLightShadowTexV2",
+    "ready_property": "_EndfieldRecoveredDeferredShadowDataReady",
+    "pass0_subset_ready_property": "_EndfieldRecoveredDeferredPass0InputSubsetReady",
+    "logical_size_bytes": 11440,
+    "logical_vector_count": 715,
+    "d3d11_selected_size_bytes": 6416,
+    "d3d11_selected_vector_count": 401,
+    "selected_span": "punctual matrices c64..c287, params c288..c343, params2 c344..c399, texel size c400",
+    "isolated_rows": {
+      "Wulfa": "row 4 RimLight_2 (5), spot-like face 0, slot 40",
+      "Zhuangfy": "row 4 RimLight_2 (5), point faces 0..5, slots 40..45"
+    },
+    "atlas": "6144x4096 D16 at T=1024; the producer's matching same-frame atlas is bound with the packed punctual rows",
+    "selected_consumer_boundary": "all isolated rows are CharacterOnly, so SphereOutside exits after b31 record[3].z and before the first b34 or atlas read",
+    "source_audit": {"path": "scratch/character_recovery/deferred_shadow_data/audit.json", "sha256": "2f9ba6db602f533ba13515bc97eb55a0a6f289dd5ece94565edad30c379926df"},
+    "sources": {
+      "contract": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredShadowDataContract.cs", "sha256": "7b6a5a05395250f0d95b13624d2c7a8904d24b2cbfbe508d52615b8e22f08fe8"},
+      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredShadowData.cs", "sha256": "ae480635ba1cec685af4de67ab53c2b0c49ffa94913f12116c9b898eceb82891"},
+      "punctual_producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredPunctualShadowProducer.cs", "sha256": "9b761b4d9adb8b22174a95351c527c3ed8edf443630130ec776916b52b327b72"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "60fb6e49cfbfb6b23764688e7b38ca0748b7ab182171896ceb33790400ad6d06"},
+      "probe": {"path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredDeferredShadowDataProbe.compute", "sha256": "3496767af7e3bb8f8d2c13967dbf4693a5622d77e603f532eb68b7a18d7b0931"},
+      "batch_verifier": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredDeferredShadowDataBatchVerifier.cs", "sha256": "f3d8648ccd914122927ab5d92b1135672a5e57e9b68cc9489b4fabed6aba1fde"},
+      "source_auditor": {"path": "tools/audit_deferred_shadow_data.py", "sha256": "d242b8e58e0359cae0548c66dc9490a0154e1aaec5656f9ff481a33204d84d91"},
+      "validator": {"path": "tools/verify_deferred_shadow_data.py", "sha256": "3b2739f781a5e7b166d141cc408cd78530e842e02c9efc7cb43e6c359e0a490a"},
+      "wrapper": {"path": "verify_recovered_deferred_shadow_data.bat", "sha256": "a995c2fcded14ba41007b23e45b99cb75700e47f796f777b4bb67619ab694e1e"}
+    },
+    "validation": {
+      "frame_report": {"path": "scratch/character_recovery/deferred_shadow_data/frame_validation.json", "sha256": "522b92c7ff308ca05e2a8d3496eeb663fe01765191142dc4c43b0ae087ba4479"},
+      "gpu_reports": {
+        "d3d11": {"path": "scratch/character_recovery/deferred_shadow_data/gpu_validation_d3d11.json", "sha256": "f97417db740790dceb6e621701b49ffcabba1fa91d54ed01bce9a05f38e443e9", "beauty_sha256": "5af932a9d9a6a21e846aea6daa027f5412450357445e06f12c10baf7b0ed0402"},
+        "d3d12": {"path": "scratch/character_recovery/deferred_shadow_data/gpu_validation_d3d12.json", "sha256": "8fc001ea537e1c58244496a11dbb24fac59401e54575220a1e3008db8418b2c0", "beauty_sha256": "3c223fb0311ff677a80079c72adfacea724e4d568be596b72824a78acac65527"}
+      },
+      "zhuangfy_point_d3d12": {"log_sha256": "eff5ed01d3ba688a946f1227c9f443f24aa62ee6dc4dd1c4a5fec3032c6a2d52", "beauty_sha256": "c9fceb48173ea16d032d64f18a2ceec3c9c0e0352674c28bb06713c4ce6d0796"},
+      "full_named_and_d3d11_bridge_words_bit_exact": true,
+      "unowned_sections_zero": true,
+      "same_frame_spot_and_point_activation": true,
+      "fail_closed_without_punctual_producer": true,
+      "wulfa_active_control_beauty_unchanged": true
+    },
+    "remaining_boundary": "general-scene and static-cache ShadowData rows, non-punctual sections, retail physical-resource identity and settled atlas pixels, runtime IFix/setting overrides, and a binding-compatible pass-0 consumer remain open"
   },
   "default_deferred_gbuffer_submission": {
     "selected_installed_route": "HGRenderPathDefaultDeferred -> GBufferPassConstructor.ConstructPass",

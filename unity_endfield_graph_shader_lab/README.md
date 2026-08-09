@@ -1984,48 +1984,24 @@ native 48-byte field layout/upload and a default-off, fail-closed isolated-count
 Unity publisher are now source-closed; all 12 words read back bit-exactly on
 D3D11 and D3D12. The retail whole-scene cull survivors and final `lightCount`
 are still not captured. Exact original cross-shader layout identifies b34 as
-the 11,440-byte `ShadowData`. Its native `HGShadowConstantBufferUtils` owner
-allocates one full buffer, copies CSM/PunctualLight/Character/ASM sections at
-their exact same offsets, then binds the full size. The selected deferred
-resolver reads only PunctualLight bytes `1024..6415`; the rest is declaration-
-only. The exact enabled frame writer is also pinned: it serializes all 56
-matrix/params/params2 rows plus atlas texel size, then callback `b__49_2`
-publishes section enum `1` and binds the atlas. The disabled callback binds
-only a RenderGraph default texture and does not publish b34, so it proves no
-zero/neutral buffer. The matching atlas allocation and binding are now
-source-closed: `Punctual Shadowmap` is `4T x 4T` with no dynamic casters and
-`(ceil(N/4)+4)T x 4T` otherwise, with one Depth16 Tex2D slice, Point/Clamp,
-shadow-map sampling, and no mip/UAV/MSAA. The enabled path imports its RTHandle
-and binds `_PunctualLightShadowTexV2`; the disabled path binds the exact
-`HGRenderGraphDefaultResources.defaultShadowTexture`. Publication remains
-fail-closed, but the default sizing inputs are now binary-closed too:
-`HGSettingParameters` constructs `T=512`, environment/movable dynamic caps
-`6/2`, force-cull distance `200`, and screen-size minimum `0.001`; the manager
-sums `N=8`, squares the threshold, and derives a `3072x2048` atlas before any
-runtime setting override. The exact request also GPU-resolves to `D16_UNorm`
-on the pinned Unity 2022.3.62f3 D3D12 backend; raw depth loads, comparison
-samples, reversed-Z endpoints, and an intermediate value's exact D16
-quantization pass. Re-run this check with
-`probe_punctual_shadow_atlas_descriptor.bat`. The binary cache audit now closes
-the atlas population rules too. Static cache slots 0..39 form three nested
-levels: 12 at `T`, 12 at `T/2`, then 16 at `T/4`. Dynamic caster `i` uses
-global slot/ShadowData row `40+i` and tile
-`(4+floor(i/4), i mod 4)*T`; point lights construct face indices 0..5 and
-spot-like lights index 0. Unchanged static slots reuse depth, while at most one
-static allocation/migration redraw runs per frame; its priority is large-to-
-small, small-to-large, then new allocation. Allocation pressure evicts the
-oldest `lastVisitedTime` at the requested level, whereas every selected dynamic
-caster redraws each frame. The installed unpatched row formulas are now closed
-too. Point faces use the exact six 3-vector bases and a guarded 92-degree
-projection; spot lights use inverse local-to-world with the view Z row negated
-and their authored angle/guard. Both feed reversed-Z `B*(P*V)`. With
-`q=2/(projection.m00*shadowResolution)`, PCF_3x3 (enum 2) stores
-`(0, 1.5*q*normalBias, q, fadedStrength)`; strength fades as
-`lerp(0, shadowStrength, saturate((c-d)/(c-fadeRatio*c)))`. Params2 is the
-normalized atlas `xyxy`, and texel size is `(1/W,1/H,W,H)`. A matching capture
-immediately before `0x189b57155` is still required for live IFix state,
-overridden target `N/T`, caster/light inputs, target-client resource
-confirmation, atlas texels, and the settled 6,144-byte section.
+the 11,440-byte `ShadowData`; the selected resolver reads only PunctualLight
+rows `c64..c400`. The native four-section transport, atlas sizing/format,
+cache allocation, point/spot matrix construction, PCF_3x3 parameters,
+strength fade, normalized rects, and texel size are binary-source-closed. The
+default-off lab publisher now consumes the source-backed punctual producer in
+the same frame: Wulfa row 4 fills spot slot 40, while Zhuangfy row 4 fills
+point slots 40..45, with the matching `6144x4096` D16 atlas. Full
+`_ShadowData` and the D3D11 `EndfieldCB5` 401-vector prefix read back
+bit-exactly on D3D11/D3D12; all unowned rows remain zero and missing
+prerequisites fail closed. Wulfa active/control beauty remains bit-identical.
+Because every isolated light is `CharacterOnly`, the selected original
+consumer exits before reading b34 or `_PunctualLightShadowTexV2`; this closes
+transport and same-frame ownership, not pass 0. Run
+`verify_recovered_deferred_shadow_data.bat` to repeat the source audit, GPU
+probes, spot/point frames, beauty control, and failure gate. General-scene/
+static-cache rows, retail physical-resource identity and atlas pixels, runtime
+IFix/setting overrides, non-punctual sections, and a binding-compatible pass-0
+implementation remain open.
 Binding 37 now has its native
 `HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard

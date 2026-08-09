@@ -415,6 +415,8 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredTransformVariables;
         private readonly EndfieldRecoveredDeferredLightData
             recoveredDeferredLightData;
+        private readonly EndfieldRecoveredDeferredShadowData
+            recoveredDeferredShadowData;
         private readonly EndfieldRecoveredPunctualShadowProducer
             recoveredPunctualShadowProducer;
         private readonly EndfieldRecoveredPreGBufferDiagnostic
@@ -480,6 +482,8 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredDeferredTransformFailure;
         private bool loggedRecoveredDeferredLightDataActivation;
         private bool loggedRecoveredDeferredLightDataFailure;
+        private bool loggedRecoveredDeferredShadowDataActivation;
+        private bool loggedRecoveredDeferredShadowDataFailure;
 
         private static int[] CreateBloomMipIds(string prefix)
         {
@@ -512,6 +516,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredDeferredTransformVariables();
             recoveredDeferredLightData =
                 new EndfieldRecoveredDeferredLightData();
+            recoveredDeferredShadowData =
+                new EndfieldRecoveredDeferredShadowData();
             recoveredPunctualShadowProducer =
                 new EndfieldRecoveredPunctualShadowProducer();
             recoveredScreenDirectAudit =
@@ -603,6 +609,7 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredGBufferFrame?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
+            recoveredDeferredShadowData?.Dispose();
             recoveredDeferredLightData?.Dispose();
             recoveredDeferredTransformVariables?.Dispose();
             recoveredVisibilitySHConstants?.Dispose();
@@ -1041,6 +1048,7 @@ namespace EndfieldGraphShaderLab
             recoveredVisibilitySHConstants.ResetPublication(commandBuffer);
             recoveredDeferredTransformVariables.ResetPublication(commandBuffer);
             recoveredDeferredLightData.ResetPublication(commandBuffer);
+            recoveredDeferredShadowData.ResetPublication(commandBuffer);
             bool recoveredCanonicalBinningReady =
                 recoveredLightBinning.PrepareCamera(
                 camera,
@@ -1169,7 +1177,8 @@ namespace EndfieldGraphShaderLab
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
 
-            recoveredPunctualShadowProducer.Render(
+            bool recoveredPunctualShadowReady =
+                recoveredPunctualShadowProducer.Render(
                 context,
                 camera,
                 operatorLightRig,
@@ -1177,13 +1186,14 @@ namespace EndfieldGraphShaderLab
                     ? new RenderTargetIdentifier(CameraColorId)
                     : new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget));
 
+            bool recoveredDeferredLightDataReady = false;
             if (EndfieldRecoveredDeferredLightData.IsRequested)
             {
                 CommandBuffer lightDataCommand = new CommandBuffer
                 {
                     name = "Recovered selected deferred LightData"
                 };
-                bool recoveredDeferredLightDataReady =
+                recoveredDeferredLightDataReady =
                     recoveredDeferredLightData.PrepareAndPublish(
                         camera,
                         cullingResults,
@@ -1214,6 +1224,44 @@ namespace EndfieldGraphShaderLab
                         "Recovered selected deferred _LightDataBuffer failed " +
                         "closed: " + lightDataFailure + ".");
                     loggedRecoveredDeferredLightDataFailure = true;
+                }
+            }
+
+            if (EndfieldRecoveredDeferredShadowData.IsRequested)
+            {
+                CommandBuffer shadowDataCommand = new CommandBuffer
+                {
+                    name = "Recovered selected deferred ShadowData"
+                };
+                bool recoveredDeferredShadowDataReady =
+                    recoveredDeferredShadowData.PrepareAndPublish(
+                        camera,
+                        operatorLightRig,
+                        recoveredPunctualShadowProducer,
+                        recoveredDeferredLightDataReady,
+                        recoveredPunctualShadowReady,
+                        shadowDataCommand,
+                        out string shadowDataFailure);
+                context.ExecuteCommandBuffer(shadowDataCommand);
+                shadowDataCommand.Release();
+                if (recoveredDeferredShadowDataReady)
+                {
+                    if (!loggedRecoveredDeferredShadowDataActivation)
+                    {
+                        Debug.Log(
+                            "Recovered selected deferred ShadowData b34 " +
+                            "punctual section and matching D16 atlas are " +
+                            "active for the isolated Wulfa/Zhuangfy fixture; " +
+                            "pass0=disabled.");
+                        loggedRecoveredDeferredShadowDataActivation = true;
+                    }
+                }
+                else if (!loggedRecoveredDeferredShadowDataFailure)
+                {
+                    Debug.LogWarning(
+                        "Recovered selected deferred ShadowData failed " +
+                        "closed: " + shadowDataFailure + ".");
+                    loggedRecoveredDeferredShadowDataFailure = true;
                 }
             }
 
