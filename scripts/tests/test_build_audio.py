@@ -173,6 +173,186 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertEqual(labels["99"], "type99")
         self.assertEqual(selectors, [6])
 
+    def test_v150_play_action_decodes_properties_ranges_and_exact_tail(self) -> None:
+        data = b"".join([
+            pack("<HI", 0x0403, 1234),
+            bytes([0x01]),
+            bytes([4, 0x39, 0x3A, 0x3B, 0x7F]),
+            pack("<ii", 350, 500),
+            pack("<f", 25.0),
+            b"\x01\x02\x03\x04",
+            bytes([2, 0x39, 0x3B]),
+            pack("<ii", -25, 50),
+            pack("<ff", 5.0, 10.0),
+            bytes([0xA6]),
+            pack("<II", 9876, 30),
+        ])
+
+        result = build_audio.hirc_v150_playback_action(data, 150)
+
+        self.assertEqual(result["actionParserStatus"], "typedExactV150")
+        self.assertEqual(result["targetFlagsRaw"], 1)
+        self.assertTrue(result["targetIsBus"])
+        self.assertEqual(
+            [row["propertyName"] for row in result["properties"]],
+            ["delayTime", "transitionTime", "probability", "property0x7f"],
+        )
+        self.assertEqual(result["properties"][0]["value"], 350)
+        self.assertEqual(result["properties"][1]["value"], 500)
+        self.assertAlmostEqual(result["properties"][2]["value"], 25.0)
+        self.assertEqual(result["properties"][3]["encoding"], "rawUnion32")
+        self.assertEqual(result["properties"][3]["rawHex"], "01020304")
+        self.assertNotIn("value", result["properties"][3])
+        self.assertEqual(result["delay"], {
+            "serializationStatus": "explicitBaseAndRange",
+            "baseValuesMs": [350],
+            "modifierRangesMs": [{"minimum": -25, "maximum": 50}],
+            "runtimeSelection": "boundedModifierUnresolved",
+        })
+        self.assertEqual(result["transition"]["baseValuesMs"], [500])
+        self.assertEqual(result["probability"]["baseValuesPercent"], [25.0])
+        self.assertEqual(
+            result["probability"]["modifierRangesPercent"],
+            [{"minimum": 5.0, "maximum": 10.0}],
+        )
+        self.assertEqual(result["probability"]["runtimeSelection"], "actionGateNotEvaluated")
+        self.assertEqual(result["fade"], {
+            "flagsRaw": 0xA6,
+            "curveId": 6,
+            "curveLabel": "Exp1",
+            "bankId": 9876,
+            "bankType": 30,
+            "bankTypeLabel": "Event",
+        })
+
+    def test_v150_play_event_accepts_zero_tail_and_rejects_extra_bytes(self) -> None:
+        data = b"".join([
+            pack("<HI", 0x2103, 1234),
+            bytes([0]),
+            bytes([1, 0x39]),
+            pack("<i", 100),
+            bytes([0]),
+        ])
+
+        result = build_audio.hirc_v150_playback_action(data, 150)
+        self.assertEqual(result["actionParserStatus"], "typedExactV150")
+        self.assertEqual(result["delay"]["baseValuesMs"], [100])
+        self.assertNotIn("fade", result)
+
+        failed = build_audio.hirc_v150_playback_action(data + b"\x00", 150)
+        self.assertEqual(failed["actionParserStatus"], "failedClosed")
+        self.assertEqual(
+            failed["actionParserFailure"]["reason"],
+            "unexpectedPlayEventTrailingBytes",
+        )
+        self.assertNotIn("delay", failed)
+
+    def test_v150_playback_action_failures_are_bounded_and_claim_no_timing(self) -> None:
+        valid_empty_play = b"".join([
+            pack("<HI", 0x0403, 1234),
+            bytes([0, 0, 0, 4]),
+            pack("<II", 123, 30),
+        ])
+        cases = {
+            "unsupportedBankVersion": (valid_empty_play, 154),
+            "truncatedActionHeader": (pack("<HI", 0x0403, 1234), 150),
+            "truncatedScalarPropertyIds": (
+                pack("<HI", 0x0403, 1234) + bytes([0, 2, 0x39]),
+                150,
+            ),
+            "truncatedScalarPropertyValues": (
+                pack("<HI", 0x0403, 1234) + bytes([0, 1, 0x39, 1, 2]),
+                150,
+            ),
+            "truncatedRangePropertyValues": (
+                pack("<HI", 0x0403, 1234)
+                + bytes([0, 0, 1, 0x39])
+                + pack("<i", 1),
+                150,
+            ),
+            "truncatedPlayTail": (valid_empty_play[:-1], 150),
+            "unexpectedPlayTrailingBytes": (valid_empty_play + b"\x00", 150),
+        }
+        for reason, (data, version) in cases.items():
+            with self.subTest(reason=reason):
+                result = build_audio.hirc_v150_playback_action(data, version)
+                self.assertEqual(result["actionParserStatus"], "failedClosed")
+                self.assertEqual(result["actionParserFailure"]["reason"], reason)
+                self.assertGreaterEqual(result["actionParserFailure"]["remainingBytes"], 0)
+                self.assertNotIn("properties", result)
+                self.assertNotIn("delay", result)
+
+    def test_action_dispatch_preserves_ordinals_and_classifies_timing_conservatively(self) -> None:
+        def play(target_id: int, delay_ms: int | None = None) -> bytes:
+            property_bundle = bytes([0])
+            if delay_ms is not None:
+                property_bundle = bytes([1, 0x39]) + pack("<i", delay_ms)
+            return b"".join([
+                pack("<HI", 0x0403, target_id),
+                bytes([0]),
+                property_bundle,
+                bytes([0, 4]),
+                pack("<II", 99, 30),
+            ])
+
+        sound = bytearray(30)
+        sound[5:9] = pack("<I", 777)
+        objects = {
+            1: {"type": 4, "data": bytes([2]) + pack("<II", 2, 3)},
+            2: {"type": 3, "data": play(4)},
+            3: {"type": 3, "data": play(4)},
+            4: {"type": 2, "data": bytes(sound)},
+        }
+
+        result = build_audio.traverse_hirc_event(1, objects, {777}, bank_version=150)
+        self.assertEqual(result["mediaIds"], [777])
+        self.assertEqual(
+            [row["eventActionOrdinal"] for row in result["actionEvidence"]],
+            [0, 1],
+        )
+        self.assertEqual(
+            [row["dispatchEventId"] for row in result["actionEvidence"]],
+            [1, 1],
+        )
+        self.assertEqual(
+            result["actionDispatchEvidence"]["timingClass"],
+            "coDispatchNoExplicitDelay",
+        )
+        self.assertEqual(result["actionDispatchEvidence"]["typedPlaybackActionCount"], 2)
+        self.assertEqual(result["actionDispatchEvidence"]["failedPlaybackActionCount"], 0)
+        self.assertTrue(result["actionDispatchEvidence"]["simultaneityCandidate"])
+
+        objects[3] = {"type": 3, "data": play(4, 350)}
+        staggered = build_audio.traverse_hirc_event(1, objects, {777}, bank_version=150)
+        self.assertEqual(staggered["mediaIds"], [777])
+        self.assertEqual(
+            staggered["actionDispatchEvidence"]["timingClass"],
+            "coDispatchWithAuthoredDelayDifference",
+        )
+        self.assertFalse(staggered["actionDispatchEvidence"]["simultaneityCandidate"])
+        self.assertEqual(staggered["actionDispatchEvidence"]["explicitDelayActionCount"], 1)
+
+    def test_failed_action_evidence_does_not_change_target_reachability(self) -> None:
+        sound = bytearray(30)
+        sound[5:9] = pack("<I", 777)
+        objects = {
+            1: {"type": 4, "data": bytes([1]) + pack("<I", 2)},
+            # The legacy typed target prefix is valid, but the evidence bundle is truncated.
+            2: {"type": 3, "data": pack("<HI", 0x0403, 3)},
+            3: {"type": 2, "data": bytes(sound)},
+        }
+
+        result = build_audio.traverse_hirc_event(1, objects, {777}, bank_version=150)
+        self.assertEqual(result["mediaIds"], [777])
+        self.assertEqual(result["traversalStatus"], "complete")
+        self.assertEqual(result["actionDispatchEvidence"]["failedPlaybackActionCount"], 1)
+        self.assertTrue(result["actionEvidence"][0]["traversed"])
+        self.assertEqual(result["actionEvidence"][0]["actionParserStatus"], "failedClosed")
+        self.assertEqual(
+            result["actionEvidence"][0]["actionParserFailure"]["reason"],
+            "truncatedActionHeader",
+        )
+
     def test_typed_hirc_traversal_uses_reciprocal_children_and_sound_source(self) -> None:
         event_id = 100
         play_action = 101
@@ -372,6 +552,13 @@ class AudioCategoryTests(unittest.TestCase):
         result = build_audio.traverse_hirc_event(1, objects, {99})
         self.assertEqual(result["mediaIds"], [99])
         self.assertEqual([row["operation"] for row in result["actionEvidence"]], ["playEvent", "play"])
+        self.assertEqual(
+            [
+                (row["dispatchEventId"], row["eventActionOrdinal"], row["isRootEventAction"])
+                for row in result["actionEvidence"]
+            ],
+            [(1, 0, True), (3, 0, False)],
+        )
 
     def test_shared_sound_keeps_every_play_root_without_duplicate_media(self) -> None:
         sound = bytearray(30)
