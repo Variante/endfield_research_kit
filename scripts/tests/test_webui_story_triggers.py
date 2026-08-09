@@ -174,6 +174,11 @@ for (const [key, category] of [
         self.assertIn("timelineEmbeddedStoryRuntimeAudit", source)
         self.assertIn("timelineRuntimeHtml", source)
         self.assertIn('t("timelineEmbeddedRuntimeChain")', source)
+        self.assertIn("controlRuntimeContract", source)
+        self.assertIn("row.directorHosts", source)
+        self.assertIn("control.exposedReferenceKey", source)
+        self.assertIn("control.parentTimelineIdentity", source)
+        self.assertIn('t("timelineEmbeddedDirectorBoundary")', source)
         self.assertIn("file.rawDataSha256", source)
         self.assertIn(
             "It does not prove mission/quest ownership, branch selection, or cross-Timeline order.",

@@ -30,7 +30,7 @@ Latest CN reports:
 | Local DialogTree conditional census | 13 exact same-Story routes / 26 serialized arms across 7 Story files; hash-locked `DialogTreeIfNode` polarity, 0 validation failures; selection evidence only, never file order |
 | Serialized DialogTree IfNode census | 78 binary-validated nodes / 156 arms; 1 malformed node retained as a structured failure; internal selection evidence only |
 | Timeline option-route binary contract | 25 route groups / 84 related-file occurrences; exact serialized Runtime Jump/clip tracks plus hash-locked option-index/active-clip contract; 0 validation failures; selection/track evidence only |
-| Timeline-embedded Story runtime | 2 carrier families discovered by metadata shape / 21 exact clips / 16 Story keys / 14 Timeline roots / 1 same-track local-order edge / 0 ownership or branch-selection edges; all playable, track, and Actor-root objects retain original-byte SHA-256 |
+| Timeline-embedded Story runtime | 2 carrier families discovered by metadata shape / 21 exact clips / 16 Story keys / 14 Timeline roots / 24 exact PlayableDirector instances across 13 roots / 10 ExposedReference-ControlPlayableAsset chains / 1 same-track local-order edge / 0 ownership or branch-selection edges; every attached original object retains its original-byte SHA-256 |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
@@ -124,13 +124,21 @@ in five payloads.
   `DialogCenterTextPlayableAsset` and `LeftSubtitlePlayableAsset`, then joins
   their exact PathIDs to clips, tracks, and Actor roots without Story/Timeline
   allowlists or companion-track names. Twenty-one clips cover 16 Story keys in
-  14 roots. Non-overlapping times prove one local edge,
+  14 roots. A second shape-driven installed-binary contract validates the
+  general `ControlPlayableAsset` director-control path, then exact reverse
+  PPtrs recover 24 director instances for 13 roots and 10 nested playback
+  chains through `ExposedReference`, the resolved child GameObject, the parent
+  director/Timeline, its Control clip, and same-serialized-file
+  `CutsceneRoot`. The remaining `black_c27m3_2` root has no exported director
+  instance and stays an explicit gap. Non-overlapping times prove one local edge,
   `black_c31m2_2 -> black_c31m2_6`, inside one track/option lane. This is not a
   mission-order edge. For `black_c31m1_3`, live left-subtitle presentation at
-  0.167s for 3.7s and all three original object hashes are proven, while its
-  mission/quest owner and branch selection remain unknown. Ambiguous emitted
-  line IDs are enumerated and excluded rather than guessed; OCR and overrides
-  are not inputs.
+  0.167s for 3.7s plus its exact nested director composition under
+  `dlgtl_c31m1_9_sub_1` are proven, while its mission/quest activator, branch
+  selection, and cross-Timeline order remain unknown. Discovery is driven by
+  the recovered Timeline-root corpus and serialized identities, with no
+  Story/mission/CAB/PathID allowlist. Ambiguous emitted line IDs are enumerated
+  and excluded rather than guessed; OCR and overrides are not inputs.
 - A general, id-free direct-call census now maps the complete hash-pinned
   `GameAssembly.dll`/metadata method corpus and classifies every caller crossing
   MissionSystem, DynamicScene, LevelScript, or Story API families. Four

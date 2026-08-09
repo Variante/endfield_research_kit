@@ -760,6 +760,11 @@
       timelineEmbeddedRuntime: "exact Timeline runtime presentation",
       timelineEmbeddedClip: "serialized clip",
       timelineEmbeddedRuntimeChain: "installed-binary runtime chain",
+      timelineEmbeddedDirectorChain: "exact PlayableDirector control chain",
+      timelineEmbeddedDirectorInstance: "Timeline-referencing director instance",
+      timelineEmbeddedControlledDirector: "ExposedReference-controlled nested director",
+      timelineEmbeddedCutsceneRoot: "authored CutsceneRoot",
+      timelineEmbeddedDirectorBoundary: "Director and ControlPlayableAsset links prove playback composition only; they do not identify the mission/quest activator or server-selected branch.",
       timelineEmbeddedRuntimeBoundary: "This proves live Timeline presentation and local clip timing only. It does not prove mission/quest ownership, branch selection, or cross-Timeline order.",
       relationDialogNarrativeAction: "typed DialogTree action presents this black-screen text inside its parent dialog",
       relationDialogNarrativeActionUnscoped: "typed DialogTree containment is exact; parent mission/quest placement is unresolved",
@@ -1494,6 +1499,11 @@
       timelineEmbeddedRuntime: "精确 Timeline 运行时呈现",
       timelineEmbeddedClip: "序列化片段",
       timelineEmbeddedRuntimeChain: "已安装二进制运行链",
+      timelineEmbeddedDirectorChain: "精确 PlayableDirector 控制链",
+      timelineEmbeddedDirectorInstance: "引用该 Timeline 的 Director 实例",
+      timelineEmbeddedControlledDirector: "由 ExposedReference 控制的嵌套 Director",
+      timelineEmbeddedCutsceneRoot: "原始 CutsceneRoot",
+      timelineEmbeddedDirectorBoundary: "Director 与 ControlPlayableAsset 链仅证明播放组成；它们不识别使命/任务激活者或服务器选择的分支。",
       timelineEmbeddedRuntimeBoundary: "这仅证明 Timeline 实时呈现与局部片段时序；不证明使命/任务归属、分支选择或跨 Timeline 顺序。",
       relationDialogNarrativeAction: "类型化 DialogTree 动作在父对话中呈现该黑屏文本",
       relationDialogNarrativeActionUnscoped: "DialogTree 包含关系精确，但父对话的使命或任务位置尚未解析",
@@ -3786,15 +3796,41 @@
       timelineRuntimeRowsByKey.get(row.key).push(row);
     });
     const runtimeFamilies = timelineRuntimeAudit.runtimeContract?.families || [];
+    const controlRuntime = timelineRuntimeAudit.controlRuntimeContract?.controlPlayableAsset || {};
     const timelineRuntimeHtml = (key) => {
       const rows = timelineRuntimeRowsByKey.get(key) || [];
       if (!rows.length) return "";
+      const directorHosts = [];
+      const seenDirectors = new Set();
+      rows.forEach((row) => (row.directorHosts || []).forEach((host) => {
+        const identity = `${host.directorIdentity?.sourceFile || ""}:${host.directorIdentity?.pathId || ""}`;
+        if (!seenDirectors.has(identity)) {
+          seenDirectors.add(identity);
+          directorHosts.push(host);
+        }
+      }));
+      const directorHtml = directorHosts.map((host) => {
+        const director = host.directorIdentity || {};
+        const directRoots = (host.cutsceneRoots || []).map((root) => `<code>${esc(root.timelineName || "?")}</code>`).join(" ");
+        const controls = (host.controlChains || []).map((control) => {
+          const roots = (control.cutsceneRoots || []).map((root) => `<code>${esc(root.timelineName || "?")}</code>`).join(" ");
+          const gameObject = control.resolvedGameObjectIdentity || {};
+          const parentDirector = control.parentDirectorIdentity || {};
+          const parentTimeline = control.parentTimelineIdentity || {};
+          const binding = control.autoBindingPath
+            ? ` / <code>autoBinding=${esc(control.autoBindingPath)}</code>`
+            : "";
+          return `<small class="mp-timeline-director-chain"><strong>${esc(t("timelineEmbeddedControlledDirector"))}</strong> <code>${esc(control.exposedReferenceKey || "?")}</code><br><code>${esc(gameObject.sourceFile || "?")}</code> / GO PathID <code>${esc(gameObject.pathId || "?")}</code> &rarr; <code>${esc(parentDirector.sourceFile || "?")}</code> / Director PathID <code>${esc(parentDirector.pathId || "?")}</code> &rarr; <code>${esc(parentTimeline.sourceFile || "?")}</code> / Timeline PathID <code>${esc(parentTimeline.pathId || "?")}</code><br>Control clip <code>${Number(control.clipStart || 0).toFixed(3)}s + ${Number(control.clipDuration || 0).toFixed(3)}s</code> / <code>optionIndex=${esc(control.clipOptionIndex ?? "?")}</code>${binding}${roots ? `<br><strong>${esc(t("timelineEmbeddedCutsceneRoot"))}</strong> ${roots}` : ""}</small>`;
+        }).join("");
+        return `<article class="mp-timeline-director"><p><strong>${esc(t("timelineEmbeddedDirectorInstance"))}</strong> <code>${esc(director.sourceFile || "?")}</code> / PathID <code>${esc(director.pathId || "?")}</code></p>${directRoots ? `<small><strong>${esc(t("timelineEmbeddedCutsceneRoot"))}</strong> ${directRoots}</small>` : ""}${controls}</article>`;
+      }).join("");
       const clips = rows.map((row) => {
         const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code> <code>${esc(file.sourceFile || "")}</code> / PathID <code>${esc(file.pathId ?? "?")}</code>${file.rawDataSha256 ? ` / SHA-256 <code>${esc(file.rawDataSha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
         return `<article><p><strong>${esc(t("timelineEmbeddedClip"))}</strong> <code>${esc(row.timeline || "?")}</code> <code>${Number(row.clipStart || 0).toFixed(3)}s + ${Number(row.clipDuration || 0).toFixed(3)}s</code> <code>optionIndex=${esc(row.clipOptionIndex ?? "?")}</code></p><small><code>${esc(row.textId || "")}</code> / <code>${esc(row.dialogKey || "unresolved")}</code> / <code>${esc(row.sourceFile || "")}</code></small>${files}</article>`;
       }).join("");
       const chain = runtimeFamilies.map((family) => `<small><code>${esc(family.type || "")}</code> <code>CreatePlayable ${esc(family.createPlayable?.va || "?")}</code> &rarr; ${(family.createPlayable?.behaviourInitializers || []).map((value) => `<code>${esc(value)}</code>`).join(" ")}</small>`).join("");
-      return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
+      const controlChain = controlRuntime.type ? `<p><strong>${esc(t("timelineEmbeddedDirectorChain"))}</strong></p><small><code>${esc(controlRuntime.type)}</code> <code>CreatePlayable ${esc(controlRuntime.methods?.CreatePlayable?.va || "?")}</code></small>${directorHtml}<small>${esc(t("timelineEmbeddedDirectorBoundary"))}</small>` : "";
+      return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${controlChain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
     };
     return `<details class="mp-mission-story mp-unassigned-story" data-weight="context">
       <summary>${esc(t("unassignedStory"))} <span>${keys.length}</span></summary>

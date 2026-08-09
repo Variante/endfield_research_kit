@@ -707,6 +707,19 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   border-top: 1px dashed #aebdc1;
 }
 
+.mp-timeline-runtime .mp-timeline-director {
+  padding: 6px;
+  border: 1px solid rgba(101, 127, 135, 0.35);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.mp-timeline-director-chain {
+  display: block;
+  padding-left: 7px;
+  border-left: 2px solid #8aa0a6;
+}
+
 .mp-timeline-runtime p,
 .mp-timeline-runtime small { margin: 0; overflow-wrap: anywhere; }
 
