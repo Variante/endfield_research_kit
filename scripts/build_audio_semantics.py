@@ -1071,8 +1071,22 @@ LEVELSCRIPT_AUDIO_EVENT_FIELDS: dict[str, tuple[tuple[str, str], ...]] = {
     "PlayAudio": (("key", "play"),),
     "PlayAudioAndWait": (("eventName", "play"),),
     "PlayAudioOnTarget": (("audioKey", "play"),),
+    "PlayStandaloneMusic": (("startEvent", "standaloneStart"), ("stopEvent", "standaloneStop")),
     "PostAudioStatusEvent": (("statusEnterEvent", "statusEnter"), ("statusExitEvent", "statusExit")),
     "PostMusicEvent": (("musicEvent", "post"), ("musicEventOnRelease", "release")),
+}
+
+LEVELSCRIPT_AUDIO_CONTROL_ROLES = {
+    "ManualRestoreMusicState": "musicStateRestore",
+    "ManualSetMusicState": "musicStateOverride",
+    "PlayStandaloneMusic": "standaloneMusicLifecycle",
+    "SetAudioCueVar": "cueVariableWrite",
+    "StartPlaceholderMusic_DevOnly": "placeholderMusicStart",
+    "StopAudio": "playingAudioStop",
+    "StopPlaceholderMusic_DevOnly": "placeholderMusicStop",
+    "StopVoice": "voiceStop",
+    "SwitchAIBarkEnable": "aiBarkEnableSwitch",
+    "SwitchAudioState": "entityAudioStateSwitch",
 }
 
 
@@ -1099,9 +1113,12 @@ def collect_levelscript_audio_semantics(
                 levelscript_record_semantic_key,
             )
         target_keys = {
+            (0x0306, 0x09), (0x0307, 0x0B),
             (0x034C, 0x0C), (0x034E, 0x0B), (0x034F, 0x10),
-            (0x0352, 0x0C), (0x036B, 0x13), (0x0371, 0x0B),
-            (0x0373, 0x0C),
+            (0x0352, 0x0C), (0x0367, 0x11), (0x036B, 0x13),
+            (0x0371, 0x0B), (0x0373, 0x0C), (0x03D5, 0x0F),
+            (0x04A7, 0x0E), (0x04AC, 0x0A), (0x04B4, 0x0B),
+            (0x04B7, 0x0A), (0x04BA, 0x09), (0x04BC, 0x0B),
         }
 
         def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
@@ -1145,6 +1162,8 @@ def collect_levelscript_audio_semantics(
     seen: dict[str, set[str]] = defaultdict(set)
     cue_invocations: list[dict[str, Any]] = []
     dynamic_event_bindings: list[dict[str, Any]] = []
+    control_actions: list[dict[str, Any]] = []
+    dynamic_control_bindings: list[dict[str, Any]] = []
     action_counts: Counter[str] = Counter()
     source_files_with_actions = 0
     target_records = 0
@@ -1158,7 +1177,10 @@ def collect_levelscript_audio_semantics(
             str(name): {
                 key: value
                 for key, value in field.items()
-                if key in {"sourceField", "present", "bindingKind", "value", "idRef", "paramSource", "path"}
+                if key in {
+                    "sourceField", "present", "bindingKind", "value", "idRef",
+                    "paramSource", "path", "logicId", "slotId", "useSlotId",
+                }
                 and value not in (None, "", [])
             }
             for name, field in fields.items()
@@ -1231,6 +1253,24 @@ def collect_levelscript_audio_semantics(
                     "sourceField": str(binding.get("sourceField") or ""),
                     "definitionStatus": "runtimeNameToCueDefinitionUnresolved",
                 })
+            control_role = LEVELSCRIPT_AUDIO_CONTROL_ROLES.get(action_name)
+            if control_role:
+                control_actions.append({
+                    **common,
+                    "kind": "levelScriptAudioControl",
+                    "controlRole": control_role,
+                })
+                for field_name, field in fields.items():
+                    if field.get("bindingKind") != "dynamic":
+                        continue
+                    dynamic_control_bindings.append({
+                        **common,
+                        "kind": "levelScriptDynamicControlBinding",
+                        "controlRole": control_role,
+                        "sourceField": str(field.get("sourceField") or f"_{field_name}"),
+                        "binding": field,
+                        "resolutionStatus": "runtimeParamValueUnresolved",
+                    })
             for field_name, role in LEVELSCRIPT_AUDIO_EVENT_FIELDS.get(action_name, ()):
                 field = fields.get(field_name) or {}
                 if field.get("bindingKind") != "dynamic":
@@ -1249,6 +1289,8 @@ def collect_levelscript_audio_semantics(
         "eventContexts": dict(contexts),
         "cueInvocations": cue_invocations,
         "dynamicEventBindings": dynamic_event_bindings,
+        "controlActions": control_actions,
+        "dynamicControlBindings": dynamic_control_bindings,
         "stats": {
             "sourceFiles": len(overlay),
             "sourceFilesWithAudioActions": source_files_with_actions,
@@ -1259,12 +1301,18 @@ def collect_levelscript_audio_semantics(
             "constantEventNames": len(contexts),
             "cueInvocations": len(cue_invocations),
             "dynamicEventBindings": len(dynamic_event_bindings),
+            "controlActions": len(control_actions),
+            "dynamicControlBindings": len(dynamic_control_bindings),
             "actionCounts": dict(sorted(action_counts.items())),
+            "controlActionCounts": dict(sorted(Counter(
+                str(row.get("action") or "") for row in control_actions
+            ).items())),
         },
         "evidenceBoundary": (
             "Exact union/member-count fields prove authored LevelScript requests and routing. "
-            "Only constant Event parameters become Wwise Event contexts. Dynamic Param bindings and cue names "
-            "remain control records; action execution and live parameter values are not observed."
+            "Only constant Event parameters become Wwise Event contexts. Dynamic Param bindings, cue names, "
+            "state/variable writes, playback handles, and placeholder-music ids remain typed control records; "
+            "action execution and live parameter values are not observed."
         ),
     }
 
@@ -2615,6 +2663,8 @@ def build_audio_semantic_data(
             "levelScriptAudioActionContexts": context_kind_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
             "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
+            "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
+            "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
             "authoredPlaySoundActionEvents": play_sound_action_events,
             "authoredPlaySoundActionContexts": play_sound_action_contexts,
             "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
@@ -2659,6 +2709,8 @@ def build_audio_semantic_data(
                 "rtpcParameters": len(global_controls.get("rtpcParameters") or []) + len(managed_rtpc_parameters),
                 "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
                 "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
+                "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
+                "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
             },
             "audioCueDefinitions": [
                 {key: value for key, value in definition.items() if key not in {"behaviorEvents", "expressionOperands"}}
@@ -2673,7 +2725,9 @@ def build_audio_semantic_data(
             "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
             "levelScriptAudioCueInvocations": levelscript_semantics.get("cueInvocations") or [],
             "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
-            "evidenceBoundary": "Cue behavior exprType=3 values and constant LevelScript Event parameters are Event requests. exprType=8 strings, LevelScript cue names, dynamic Event Params, musicCue* values, and RTPC names remain typed controls until an exact runtime value/definition edge is recovered.",
+            "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
+            "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
+            "evidenceBoundary": "Cue behavior exprType=3 values and constant LevelScript Event parameters are Event requests. exprType=8 strings, LevelScript cue names, dynamic Params, state/variable writes, playback handles, placeholder-music ids, musicCue* values, and RTPC names remain typed controls until an exact runtime value/definition edge is recovered.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {

@@ -32,8 +32,18 @@ def string_param(
     )
 
 
-def i32_param(value: int) -> bytes:
-    return b"\x04" + struct.pack("<i", value) + DEFAULT_TAIL
+def i32_param(
+    value: int,
+    *,
+    id_ref: int = -1,
+    source: int = 0,
+    path: str | None = None,
+) -> bytes:
+    return b"\x04" + struct.pack("<i", value) + param_tail(
+        id_ref=id_ref,
+        source=source,
+        path=path,
+    )
 
 
 def float_param(value: float) -> bytes:
@@ -56,6 +66,10 @@ def vector3_param(
         id_ref=id_ref,
         source=source,
     )
+
+
+def quaternion_param(x: float, y: float, z: float, w: float) -> bytes:
+    return b"\x04" + struct.pack("<ffff", x, y, z, w) + DEFAULT_TAIL
 
 
 def entity_param(logic_id: int, slot_id: int, use_slot_id: bool) -> bytes:
@@ -198,6 +212,110 @@ class LevelScriptAudioActionTests(unittest.TestCase):
         )
         self.assertFalse(cue["fields"]["floatParam"]["present"])
         self.assertEqual("null", cue["fields"]["floatParam"]["bindingKind"])
+
+    def test_manual_and_standalone_music_controls_decode_exact_fields(self) -> None:
+        restore = decode_audio(float_param(1.0) + struct.pack("<I", 1), 0x0306, 0x09)
+        self.assertEqual("ManualRestoreMusicState", restore["action"])
+        self.assertEqual(1.0, restore["fields"]["delay"]["value"])
+        self.assertEqual([1], restore["trailingActionMapFramingU32s"])
+
+        manual = decode_audio(b"".join((
+            i32_param(2),
+            i32_param(2),
+            i32_param(1),
+        )), 0x0307, 0x0B)
+        self.assertEqual("ManualSetMusicState", manual["action"])
+        self.assertEqual(2, manual["fields"]["baseState"]["value"])
+        self.assertEqual(2, manual["fields"]["battleIntensityState"]["value"])
+        self.assertEqual(1, manual["fields"]["battleState"]["value"])
+
+        standalone = decode_audio(b"".join((
+            output_param("$2@_handleId"),
+            i32_param(1),
+            i32_param(3),
+            vector3_param(-78.21, 4.2, 7.7),
+            quaternion_param(0.0, 0.0, 0.0, 1.0),
+            vector3_param(62.06, 20.55, 87.69),
+            string_param("au_music_standalone_start"),
+            string_param("au_music_standalone_stop"),
+            bool_param(True),
+            struct.pack("<II", 0, 1),
+        )), 0x0367, 0x11)
+        self.assertEqual("PlayStandaloneMusic", standalone["action"])
+        self.assertEqual(1.0, standalone["fields"]["rotation"]["value"]["w"])
+        self.assertEqual(
+            ["standaloneStart", "standaloneStop"],
+            [binding["role"] for binding in standalone["eventBindings"]],
+        )
+
+    def test_cue_variable_and_placeholder_music_controls_preserve_null_params(self) -> None:
+        cue_var = decode_audio(b"".join((
+            bool_param(True),
+            b"\xff",
+            b"\xff",
+            i32_param(0),
+            b"\xff",
+            string_param("au_trigger_music_test"),
+            i32_param(0),
+        )), 0x03D5, 0x0F)
+        self.assertEqual("SetAudioCueVar", cue_var["action"])
+        self.assertEqual("au_trigger_music_test", cue_var["fields"]["varName"]["value"])
+        self.assertFalse(cue_var["fields"]["floatValue"]["present"])
+        self.assertEqual(0, cue_var["fields"]["scope"]["value"])
+
+        start = decode_audio(b"".join((
+            i32_param(28),
+            i32_param(0),
+            float_param(7.0),
+            bool_param(False),
+            bool_param(True),
+            float_param(10.0),
+        )), 0x04A7, 0x0E)
+        self.assertEqual("StartPlaceholderMusic_DevOnly", start["action"])
+        self.assertEqual(28, start["fields"]["musicId"]["value"])
+        self.assertEqual(10.0, start["fields"]["volume"]["value"])
+
+        stop = decode_audio(b"".join((
+            float_param(1.0),
+            i32_param(0),
+            bool_param(False),
+        )), 0x04B4, 0x0B)
+        self.assertEqual("StopPlaceholderMusic_DevOnly", stop["action"])
+        self.assertEqual(1.0, stop["fields"]["fadeOutTimeSeconds"]["value"])
+
+    def test_stop_and_switch_controls_preserve_dynamic_handles_and_targets(self) -> None:
+        stop_audio = decode_audio(b"".join((
+            i32_param(0, source=100, path="$28@_audioPlayingId"),
+            i32_param(100, source=100),
+        )), 0x04AC, 0x0A)
+        self.assertEqual("StopAudio", stop_audio["action"])
+        self.assertEqual("dynamic", stop_audio["fields"]["audioId"]["bindingKind"])
+        self.assertEqual("$28@_audioPlayingId", stop_audio["fields"]["audioId"]["path"])
+
+        stop_voice = decode_audio(b"".join((
+            i32_param(100),
+            i32_param(0, source=100, path="$1@_voiceHandle"),
+            struct.pack("<II", 0, 2),
+        )), 0x04B7, 0x0A)
+        self.assertEqual("StopVoice", stop_voice["action"])
+        self.assertEqual("dynamic", stop_voice["fields"]["voiceHandle"]["bindingKind"])
+
+        bark = decode_audio(bool_param(False), 0x04BA, 0x09)
+        self.assertEqual("SwitchAIBarkEnable", bark["action"])
+        self.assertFalse(bark["fields"]["enable"]["value"])
+
+        state = decode_audio(b"".join((
+            i32_param(0),
+            entity_param(0, 40003, True),
+            i32_param(1),
+        )), 0x04BC, 0x0B)
+        self.assertEqual("SwitchAudioState", state["action"])
+        self.assertEqual(40003, state["fields"]["target"]["slotId"])
+        self.assertEqual(1, state["fields"]["value"]["value"])
+
+        # The type exists in metadata, but no current LevelScript row proves
+        # its serialized field shape, so it remains deliberately unsupported.
+        self.assertFalse(decode_audio(string_param("rtpc") + float_param(1.0) + i32_param(100), 0x03D6, 0x0B))
 
     def test_exact_guards_reject_unknown_member_count_and_malformed_suffix(self) -> None:
         payload = b"".join((

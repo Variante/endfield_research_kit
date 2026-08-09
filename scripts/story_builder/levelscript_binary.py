@@ -6423,6 +6423,31 @@ def _decode_vector3_param(
     }, end
 
 
+def _decode_quaternion_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode one authored ``Param<Quaternion>`` and its binding tail."""
+    if cursor + 17 > len(payload) or payload[cursor] != 0x04:
+        return None
+    raw = struct.unpack_from("<ffff", payload, cursor + 1)
+    if not all(math.isfinite(value) for value in raw):
+        return None
+    tail = _decode_audio_param_tail(payload, cursor + 17)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {
+        "value": {
+            "x": _round_float(raw[0]),
+            "y": _round_float(raw[1]),
+            "z": _round_float(raw[2]),
+            "w": _round_float(raw[3]),
+        },
+        **detail,
+    }, end
+
+
 def _decode_nullable_audio_field(
     payload: bytes,
     cursor: int,
@@ -6505,6 +6530,20 @@ def _decode_audio_action(
         tuple[int, int],
         tuple[str, tuple[tuple[str, Any], ...]],
     ] = {
+        (0x0306, 0x09): (
+            "ManualRestoreMusicState",
+            (
+                ("delay", _decode_audio_float_param),
+            ),
+        ),
+        (0x0307, 0x0B): (
+            "ManualSetMusicState",
+            (
+                ("baseState", _decode_audio_i32_param),
+                ("battleIntensityState", _decode_audio_i32_param),
+                ("battleState", _decode_audio_i32_param),
+            ),
+        ),
         (0x034C, 0x0C): (
             "PlayAudiAtPosition",
             (
@@ -6544,6 +6583,20 @@ def _decode_audio_action(
                 ("target", _decode_audio_entity_param),
             ),
         ),
+        (0x0367, 0x11): (
+            "PlayStandaloneMusic",
+            (
+                ("handleId", _decode_param_output),
+                ("playKey", _decode_audio_i32_param),
+                ("playType", _decode_audio_i32_param),
+                ("position", _decode_vector3_param),
+                ("rotation", _decode_quaternion_param),
+                ("size", _decode_vector3_param),
+                ("startEvent", _decode_audio_string_param),
+                ("stopEvent", _decode_audio_string_param),
+                ("stopOnRelease", _decode_audio_bool_param),
+            ),
+        ),
         (0x036B, 0x13): (
             "PostAudioCue",
             (
@@ -6577,6 +6630,65 @@ def _decode_audio_action(
                 ("playingId", _decode_param_output),
             ),
         ),
+        (0x03D5, 0x0F): (
+            "SetAudioCueVar",
+            (
+                ("boolValue", _decode_audio_bool_param),
+                ("floatValue", _decode_audio_float_param),
+                ("intValue", _decode_audio_i32_param),
+                ("scope", _decode_audio_i32_param),
+                ("stringValue", _decode_audio_string_param),
+                ("varName", _decode_audio_string_param),
+                ("varType", _decode_audio_i32_param),
+            ),
+        ),
+        (0x04A7, 0x0E): (
+            "StartPlaceholderMusic_DevOnly",
+            (
+                ("musicId", _decode_audio_i32_param),
+                ("placeholderMusicFadeInType", _decode_audio_i32_param),
+                ("seekPositionSeconds", _decode_audio_float_param),
+                ("stopOnDialogEnd", _decode_audio_bool_param),
+                ("stopOnLoading", _decode_audio_bool_param),
+                ("volume", _decode_audio_float_param),
+            ),
+        ),
+        (0x04AC, 0x0A): (
+            "StopAudio",
+            (
+                ("audioId", _decode_audio_i32_param),
+                ("fadeTimeMs", _decode_audio_i32_param),
+            ),
+        ),
+        (0x04B4, 0x0B): (
+            "StopPlaceholderMusic_DevOnly",
+            (
+                ("fadeOutTimeSeconds", _decode_audio_float_param),
+                ("musicId", _decode_audio_i32_param),
+                ("stopSpecificMusic", _decode_audio_bool_param),
+            ),
+        ),
+        (0x04B7, 0x0A): (
+            "StopVoice",
+            (
+                ("fadeOutTime", _decode_audio_i32_param),
+                ("voiceHandle", _decode_audio_i32_param),
+            ),
+        ),
+        (0x04BA, 0x09): (
+            "SwitchAIBarkEnable",
+            (
+                ("enable", _decode_audio_bool_param),
+            ),
+        ),
+        (0x04BC, 0x0B): (
+            "SwitchAudioState",
+            (
+                ("modelLevel", _decode_audio_i32_param),
+                ("target", _decode_audio_entity_param),
+                ("value", _decode_audio_i32_param),
+            ),
+        ),
     }
     layout = layouts.get(semantic_key)
     if layout is None:
@@ -6599,6 +6711,10 @@ def _decode_audio_action(
         "PlayAudio": (("key", "play"),),
         "PlayAudioAndWait": (("eventName", "play"),),
         "PlayAudioOnTarget": (("audioKey", "play"),),
+        "PlayStandaloneMusic": (
+            ("startEvent", "standaloneStart"),
+            ("stopEvent", "standaloneStop"),
+        ),
         "PostAudioStatusEvent": (
             ("statusEnterEvent", "statusEnter"),
             ("statusExitEvent", "statusExit"),
@@ -6905,13 +7021,23 @@ def decode_levelscript_record_payload(
         if fmv_action:
             out["fmvAction"] = fmv_action
     if semantic_key in {
+        (0x0306, 0x09),
+        (0x0307, 0x0B),
         (0x034C, 0x0C),
         (0x034E, 0x0B),
         (0x034F, 0x10),
         (0x0352, 0x0C),
+        (0x0367, 0x11),
         (0x036B, 0x13),
         (0x0371, 0x0B),
         (0x0373, 0x0C),
+        (0x03D5, 0x0F),
+        (0x04A7, 0x0E),
+        (0x04AC, 0x0A),
+        (0x04B4, 0x0B),
+        (0x04B7, 0x0A),
+        (0x04BA, 0x09),
+        (0x04BC, 0x0B),
     }:
         audio_action = _decode_audio_action(payload, semantic_key)
         if audio_action:
