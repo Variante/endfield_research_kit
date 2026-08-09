@@ -91,8 +91,11 @@ NPC archetypes are imported as labeled source kits.
   bytes while writing the reflected final float4 at byte 3,552. Installed
   `UnityPlayer` recovery closes `CBHandle.size=3,552`, 16-byte length rounding,
   and 256-byte allocation-start alignment: the next allocation begins at byte
-  3,584, so the final CPU write is safe in padding. GPU visibility of that last
-  float4 and the settled active payload/resources remain open.
+  3,584, so the final CPU write is safe in padding. The recorded target forces
+  D3D11; its backend rounds 222 constants to 224 before
+  `PSSetConstantBuffers1`, exposing 3,584 bytes and proving c222 GPU-visible.
+  Only the settled active payload and matching HDPLS/atlas resources remain
+  open for this buffer.
 
 ## Main rendering gap
 

@@ -2046,9 +2046,11 @@ callback requests `0xDE0` bytes while writing the reflected final float4 at
 serialized command, and global shader state all retain the logical `0xDE0`
 size. The ring keeps that length after 16-byte rounding but aligns allocation
 starts to `0x100`, so the next allocation begins at `0xE00` and the final CPU
-float4 is isolated in inter-allocation padding. Publication remains fail-closed:
-backend GPU visibility of bytes `0xDE0..0xDEF`, settled active values, and their
-matching resources remain open.
+float4 is isolated in inter-allocation padding. The recorded target forces
+Direct3D 11; the installed backend converts `0xDE0` to 222 constants and rounds
+the `PSSetConstantBuffers1` range to 224 constants / `0xE00` bytes. The c222
+tail is therefore shader-visible on the target path. Publication remains
+fail-closed only for settled active values and their matching resources.
 The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution

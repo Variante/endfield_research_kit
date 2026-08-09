@@ -2416,6 +2416,10 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_native["ring_start_alignment_bytes"] == 256
     assert hdpls_native["next_allocation_start_delta"] == 3584
     assert hdpls_native["cpu_tail_write_end_bytes"] == 3568
+    assert hdpls_native["target_graphics_api"] == "Direct3D 11"
+    assert hdpls_native["d3d11_num_constants_before_alignment"] == 222
+    assert hdpls_native["d3d11_num_constants"] == 224
+    assert hdpls_native["d3d11_visible_size_bytes"] == 3584
     assert hdpls_native["publication_policy"].startswith("fail closed")
     require_hash(
         repo_path(hdpls_native["audit_path"]),
@@ -2453,6 +2457,10 @@ def verify_selected_resolver_binding_contract() -> None:
         repo_path(hdpls_native["unityplayer_disassembly_path"]),
         hdpls_native["unityplayer_disassembly_sha256"],
     )
+    require_text_hash(
+        repo_path(hdpls_native["target_player_log_excerpt_path"]),
+        hdpls_native["target_player_log_excerpt_sha256"],
+    )
 
     hdpls_constant_buffer = json.loads(
         repo_path(hdpls_native["constant_buffer_audit_path"]).read_text(
@@ -2463,7 +2471,7 @@ def verify_selected_resolver_binding_contract() -> None:
         "endfield.hdpls-constant-buffer-audit.v1"
     )
     assert hdpls_constant_buffer["verdict"] == (
-        "CPU_TAIL_SAFE_GPU_VISIBILITY_OPEN"
+        "TARGET_D3D11_CPU_AND_GPU_TAIL_CLOSED"
     )
     assert hdpls_constant_buffer["allocation"] == {
         "requested_bytes": 3552,
@@ -2477,6 +2485,12 @@ def verify_selected_resolver_binding_contract() -> None:
     }
     assert hdpls_constant_buffer["binding"]["serialized_size_bytes"] == 3552
     assert hdpls_constant_buffer["binding"]["global_state_size_bytes"] == 3552
+    assert hdpls_constant_buffer["binding"]["target_graphics_api"] == (
+        "Direct3D 11"
+    )
+    assert hdpls_constant_buffer["binding"]["d3d11_num_constants"] == 224
+    assert hdpls_constant_buffer["binding"]["d3d11_visible_bytes"] == 3584
+    assert hdpls_constant_buffer["binding"]["tail_gpu_visibility"] is True
     assert hdpls_constant_buffer["sources"]["unityplayer_sha256"] == (
         hdpls_native["unityplayer_sha256"]
     )
@@ -2504,7 +2518,7 @@ def verify_selected_resolver_binding_contract() -> None:
         "56 entries reset to 0"
     )
     assert len(hdpls_audit["capture_boundary"]["required"]) == 3
-    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 4
+    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 5
     for path_key, hash_key in (
         ("disassembly_path", "disassembly_sha256"),
         ("metadata_path", "metadata_sha256"),
@@ -2809,7 +2823,8 @@ def main() -> int:
         "zero-cookie isolated transport, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity, native reset/push owner, "
         "selected .y-only read path, exact 0xDE0 CBHandle/command size, "
-        "0x100-aligned CPU tail-write safety, and fail-closed GPU-tail/active-frame boundary), "
+        "0x100-aligned CPU tail-write safety, target-D3D11 224-constant c222 visibility, "
+        "and fail-closed active-frame boundary), "
         "all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "
         "wetness and volumetric-fog sampling while retaining live reflection, "
