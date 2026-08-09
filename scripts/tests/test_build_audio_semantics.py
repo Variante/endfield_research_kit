@@ -146,7 +146,11 @@ class AudioSemanticDataTests(unittest.TestCase):
                         "animationEvents": [{
                             "id": "au_sfx_test",
                             "actionKinds": ["attack"],
+                            "animationFunctions": ["OnCustomFootStep"],
                             "sourceAnimationClips": ["A_actor_test_battle_attack1"],
+                            "animationOwnerCount": 2,
+                            "animationOwnershipScope": "sharedPlayableCharacters",
+                            "possibleMediaScope": "sharedEventGraph",
                             "evidence": [{"time": 0.25, "function": "PostAudioEvent"}],
                         }],
                         "groups": {
@@ -159,7 +163,21 @@ class AudioSemanticDataTests(unittest.TestCase):
                                 }],
                             }
                         }
-                    }
+                    },
+                    "chr_test_2": {
+                        "animationOwnershipConfidence": "inferred",
+                        "animationEvents": [{
+                            "id": "au_sfx_test",
+                            "actionKinds": ["attack"],
+                            "animationFunctions": ["OnCustomFootStep"],
+                            "sourceAnimationClips": ["A_actor_test_2_battle_attack1"],
+                            "animationOwnerCount": 2,
+                            "animationOwnershipScope": "sharedPlayableCharacters",
+                            "possibleMediaScope": "sharedEventGraph",
+                            "evidence": [{"time": 0.5, "function": "OnCustomFootStep"}],
+                        }],
+                        "groups": {},
+                    },
                 },
                 "enemies": {},
             }), encoding="utf-8")
@@ -233,6 +251,9 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(event["selectionContainerTypes"], ["switchContainer"])
             self.assertEqual(event["candidateCount"], 1)
             self.assertEqual(event["possibleMediaCount"], 1)
+            self.assertEqual(event["playableCharacterAnimationOwnerCount"], 2)
+            self.assertEqual(event["animationContextScope"], "sharedPlayableCharacters")
+            self.assertEqual(event["animationFunctions"], ["OnCustomFootStep"])
             self.assertEqual(set(event_summary["contextGroups"]), {"gameplay", "animation", "authoredConfig", "cutscene"})
             self.assertGreater(payload["eventDetailShardCount"], 0)
             self.assertEqual(
@@ -241,6 +262,9 @@ class AudioSemanticDataTests(unittest.TestCase):
             )
             self.assertEqual(media["eventIds"], ["au_sfx_test"])
             self.assertIn("eventMedia", payload["evidenceBoundary"])
+            self.assertIn("animationOwnership", payload["evidenceBoundary"])
+            self.assertEqual(payload["counts"]["sharedPlayableCharacterAnimationEvents"], 1)
+            self.assertEqual(payload["counts"]["footstepSystemEvents"], 1)
 
 
 if __name__ == "__main__":

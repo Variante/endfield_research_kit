@@ -439,6 +439,14 @@ def animation_clip_action_kind(clip_name: str) -> str:
     return "action"
 
 
+def animation_clip_context(clip_name: str) -> str:
+    value = clip_name.lower()
+    for token in ("battle", "dialog", "customized", "ui", "interact", "idle", "relax"):
+        if re.search(rf"(?:^|_){token}(?:_|$)", value):
+            return token
+    return "other"
+
+
 def gameplay_character_token_owners(entries: list[dict[str, Any]]) -> dict[str, list[str]]:
     token_owners: dict[str, set[str]] = defaultdict(set)
     for entry in entries:
@@ -661,6 +669,7 @@ def collect_gameplay_animation_audio(
                 matched_clips += 1
                 callback_rows += len(clip_events)
                 clip_kind = animation_clip_action_kind(clip_name)
+                clip_context = animation_clip_context(clip_name)
                 try:
                     clip_source = normalize_posix(path.relative_to(export_root))
                 except ValueError:
@@ -672,11 +681,18 @@ def collect_gameplay_animation_audio(
                         "events": defaultdict(list),
                     })
                     for event in clip_events:
-                        record["events"][event["eventId"]].append({
+                        authored_event_id = str(event.get("eventId") or "").strip()
+                        event_key = authored_event_id.lower()
+                        if not event_key:
+                            continue
+                        record["events"][event_key].append({
                             "kind": "animationClipEvent",
+                            "authoredEventId": authored_event_id,
                             "clip": clip_name,
                             "clipSource": clip_source,
                             "actionKind": clip_kind,
+                            "clipContext": clip_context,
+                            "clipReachability": "unresolved",
                             "eventIndex": event.get("index"),
                             "time": event.get("time"),
                             "function": event.get("function"),
@@ -685,20 +701,20 @@ def collect_gameplay_animation_audio(
                         })
 
     event_names = {
-        event_id
+        event_key
         for owner in owners.values()
-        for event_id in owner["events"]
+        for event_key in owner["events"]
     }
     normalized_owners: list[dict[str, Any]] = []
     for owner in owners.values():
         normalized_owners.append({
             **owner,
             "events": {
-                event_id: sorted(
+                event_key: sorted(
                     evidence,
                     key=lambda row: (str(row.get("clip") or ""), float(row.get("time") or 0), str(row.get("function") or "")),
                 )
-                for event_id, evidence in sorted(owner["events"].items())
+                for event_key, evidence in sorted(owner["events"].items())
             },
         })
     return {
@@ -1045,6 +1061,28 @@ def link_gameplay_audio(
     animation_candidate_count = 0
     profile_voice_linked_refs = 0
     profile_voice_media_keys: set[str] = set()
+
+    def normalized_animation_events(owner: dict[str, Any]) -> list[tuple[str, list[dict[str, Any]]]]:
+        merged: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for authored_event_id, evidence_rows in (owner.get("events") or {}).items():
+            authored = str(authored_event_id or "").strip()
+            event_key = authored.lower()
+            if not event_key:
+                continue
+            for evidence in evidence_rows or []:
+                row = dict(evidence) if isinstance(evidence, dict) else {"value": evidence}
+                row.setdefault("authoredEventId", authored)
+                merged[event_key].append(row)
+        return sorted(merged.items())
+
+    animation_owner_ids: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for owner in references.get("animationOwners") or []:
+        owner_kind = str(owner.get("ownerKind") or "")
+        owner_id = str(owner.get("ownerId") or "")
+        if owner_kind not in {"character", "enemy"} or not owner_id:
+            continue
+        for event_key, _evidence in normalized_animation_events(owner):
+            animation_owner_ids[(owner_kind, event_key)].add(owner_id)
     for owner in references.get("owners") or []:
         event_rows: list[dict[str, Any]] = []
         for event_id, evidence in sorted((owner.get("events") or {}).items()):
@@ -1115,7 +1153,7 @@ def link_gameplay_audio(
         if owner_kind not in {"character", "enemy"}:
             continue
         resolved_events: list[dict[str, Any]] = []
-        for event_id, evidence in sorted((owner.get("events") or {}).items()):
+        for event_id, evidence in normalized_animation_events(owner):
             discovered_refs += 1
             linked = linked_event(event_id)
             if not linked:
@@ -1127,14 +1165,40 @@ def link_gameplay_audio(
             animation_candidate_count += candidates
             action_kinds = sorted({str(row.get("actionKind") or "action") for row in evidence})
             clips = sorted({str(row.get("clip") or "") for row in evidence if row.get("clip")})
+            functions = sorted({str(row.get("function") or "") for row in evidence if row.get("function")})
+            clip_contexts = sorted({str(row.get("clipContext") or "other") for row in evidence})
+            authored_event_ids = sorted({
+                str(row.get("authoredEventId") or event_id)
+                for row in evidence
+                if str(row.get("authoredEventId") or event_id)
+            })
+            owner_count = len(animation_owner_ids.get((owner_kind, event_id.lower()), set())) or 1
+            owner_scope = (
+                "sharedPlayableCharacters" if owner_kind == "character" and owner_count > 1
+                else "singlePlayableCharacter" if owner_kind == "character"
+                else "sharedEnemyTemplates" if owner_count > 1
+                else "singleEnemyTemplate"
+            )
             event = {
                 "id": event_id,
                 "foundInWwise": linked.get("foundInWwise"),
+                "possibleMediaCount": linked.get("possibleMediaCount"),
                 "playableCandidates": linked.get("playableCandidates"),
+                "playRootCount": linked.get("playRootCount"),
+                "mediaRelationTypes": linked.get("mediaRelationTypes") or [],
+                "traversalStatus": linked.get("traversalStatus"),
                 "runtimeSelection": linked.get("runtimeSelection"),
                 "evidence": evidence,
                 "actionKinds": action_kinds,
+                "animationFunctions": functions,
+                "animationClipContexts": clip_contexts,
+                "clipReachability": "unresolved",
+                "authoredEventIds": authored_event_ids,
+                "eventAliases": [value for value in authored_event_ids if value != event_id],
                 "sourceAnimationClips": clips,
+                "animationOwnerCount": owner_count,
+                "animationOwnershipScope": owner_scope,
+                "possibleMediaScope": "sharedEventGraph" if owner_count > 1 else "singleOwnerEventGraph",
             }
             animation_event_catalog.setdefault(event_id.lower(), linked)
             resolved_events.append(event)
@@ -1155,21 +1219,35 @@ def link_gameplay_audio(
         record["animationOwnershipMethod"] = "animationClipActorToken"
         record.setdefault("animationOwnershipSources", []).extend(owner.get("ownershipSources") or [])
         animation_events = record.setdefault("animationEvents", [])
-        existing = {str(row.get("id") or ""): row for row in animation_events}
+        existing = {str(row.get("id") or "").lower(): row for row in animation_events}
         for event in resolved_events:
             event_id = str(event.get("id") or "")
-            if event_id not in existing:
+            event_key = event_id.lower()
+            if event_key not in existing:
                 animation_events.append(event)
-                existing[event_id] = event
+                existing[event_key] = event
             else:
-                current = existing[event_id]
+                current = existing[event_key]
                 current.setdefault("evidence", []).extend(event.get("evidence") or [])
                 current["actionKinds"] = sorted(
                     set(current.get("actionKinds") or []).union(event.get("actionKinds") or [])
                 )
+                current["animationFunctions"] = sorted(
+                    set(current.get("animationFunctions") or []).union(event.get("animationFunctions") or [])
+                )
+                current["animationClipContexts"] = sorted(
+                    set(current.get("animationClipContexts") or []).union(event.get("animationClipContexts") or [])
+                )
+                current["authoredEventIds"] = sorted(
+                    set(current.get("authoredEventIds") or []).union(event.get("authoredEventIds") or [])
+                )
                 current["sourceAnimationClips"] = sorted(
                     set(current.get("sourceAnimationClips") or []).union(event.get("sourceAnimationClips") or [])
                 )
+                if event_id != current.get("id"):
+                    current["eventAliases"] = sorted(
+                        set(current.get("eventAliases") or []).union({event_id})
+                    )
 
     for owner in references.get("profileVoiceOwners") or []:
         owner_id = str(owner.get("ownerId") or "")
@@ -1228,6 +1306,78 @@ def link_gameplay_audio(
         value["animationOwnershipSources"] = sorted(set(filter(None, value.get("animationOwnershipSources") or [])))
         value.get("animationEvents", []).sort(key=lambda row: str(row.get("id") or ""))
 
+    def possible_media_count(event: dict[str, Any]) -> int:
+        return len([row for row in event.get("audio") or [] if row.get("src")]) or int(
+            event.get("possibleMediaCount") or event.get("playableCandidates") or 0
+        )
+
+    def character_audio_metrics(value: dict[str, Any]) -> dict[str, int]:
+        skill_events = [
+            event
+            for group in (value.get("groups") or {}).values()
+            for event in group.get("events") or []
+        ]
+        animation_events = list(value.get("animationEvents") or [])
+        profile_voices = list(value.get("profileVoices") or [])
+        wwise_event_keys = {
+            str(event.get("id") or "").lower()
+            for event in [*skill_events, *animation_events]
+            if event.get("id")
+        }
+        event_media_pairs: set[tuple[str, str]] = set()
+        media_ids: set[str] = set()
+        content_hashes: set[str] = set()
+        for event_key in wwise_event_keys:
+            linked = event_cache.get(event_key)
+            if not isinstance(linked, dict):
+                continue
+            for media in linked.get("audio") or []:
+                media_key = str(media.get("mediaId") or media.get("src") or "")
+                if not media_key:
+                    continue
+                event_media_pairs.add((event_key, media_key))
+                media_ids.add(media_key)
+                if media.get("contentSha256"):
+                    content_hashes.add(str(media["contentSha256"]))
+        for voice in profile_voices:
+            for media in voice.get("audio") or []:
+                media_key = str(media.get("mediaId") or media.get("src") or "")
+                if media_key:
+                    media_ids.add(media_key)
+                if media.get("contentSha256"):
+                    content_hashes.add(str(media["contentSha256"]))
+        shared_animation = [
+            event for event in animation_events
+            if int(event.get("animationOwnerCount") or 0) > 1
+        ]
+        single_owner_animation = [
+            event for event in animation_events
+            if int(event.get("animationOwnerCount") or 0) <= 1
+        ]
+        return {
+            "skillEventAssociationCount": len(skill_events),
+            "skillUniqueEventCount": len({str(event.get("id") or "").lower() for event in skill_events if event.get("id")}),
+            "skillPossibleMediaAssociationCount": sum(possible_media_count(event) for event in skill_events),
+            "animationEventCount": len(animation_events),
+            "animationCallbackOccurrenceCount": sum(int(event.get("animationOccurrenceCount") or len(event.get("evidence") or [])) for event in animation_events),
+            "animationPossibleMediaAssociationCount": sum(possible_media_count(event) for event in animation_events),
+            "sharedAnimationEventCount": len(shared_animation),
+            "sharedAnimationPossibleMediaAssociationCount": sum(possible_media_count(event) for event in shared_animation),
+            "singleOwnerAnimationEventCount": len(single_owner_animation),
+            "singleOwnerAnimationPossibleMediaAssociationCount": sum(possible_media_count(event) for event in single_owner_animation),
+            "footstepSystemEventCount": sum("OnCustomFootStep" in (event.get("animationFunctions") or []) for event in animation_events),
+            "directProfileFileCount": sum(possible_media_count(event) for event in profile_voices),
+            "eventAssociationCount": len(skill_events) + len(animation_events),
+            "candidateAssociationCount": sum(possible_media_count(event) for event in [*skill_events, *animation_events, *profile_voices]),
+            "uniqueWwiseEventCount": len(wwise_event_keys),
+            "uniqueEventMediaPairCount": len(event_media_pairs),
+            "uniqueMediaIdCount": len(media_ids),
+            "knownUniqueContentSha256Count": len(content_hashes),
+        }
+
+    for value in characters.values():
+        value["metrics"] = character_audio_metrics(value)
+
     unique_event_media_pairs = sum(
         len(value.get("audio") or [])
         for value in event_cache.values()
@@ -1241,16 +1391,81 @@ def link_gameplay_audio(
         if audio.get("src") or audio.get("mediaId")
     }
     unique_playable_files.update(profile_voice_media_keys)
+    character_animation_event_keys = {
+        str(event.get("id") or "").lower()
+        for owner in characters.values()
+        for event in owner.get("animationEvents") or []
+        if event.get("id")
+    }
+    character_animation_shared_event_keys = {
+        key for key in character_animation_event_keys
+        if len(animation_owner_ids.get(("character", key), set())) > 1
+    }
+    character_animation_shared_associations = sum(
+        1
+        for owner in characters.values()
+        for event in owner.get("animationEvents") or []
+        if int(event.get("animationOwnerCount") or 0) > 1
+    )
+    character_animation_single_owner_possible_media = sum(
+        int(event.get("possibleMediaCount") or event.get("playableCandidates") or 0)
+        for owner in characters.values()
+        for event in owner.get("animationEvents") or []
+        if int(event.get("animationOwnerCount") or 0) <= 1
+    )
+    character_animation_shared_graph_possible_media = sum(
+        int((animation_event_catalog.get(key) or {}).get("possibleMediaCount") or 0)
+        for key in character_animation_shared_event_keys
+    )
+    serialized_skill_events = [
+        event
+        for owner in characters.values()
+        for group in (owner.get("groups") or {}).values()
+        for event in group.get("events") or []
+    ] + [
+        event
+        for owner in enemies.values()
+        for event in owner.get("events") or []
+    ]
+    serialized_animation_events = [
+        event
+        for bucket in (characters, enemies)
+        for owner in bucket.values()
+        for event in owner.get("animationEvents") or []
+    ]
+    serialized_profile_voices = [
+        event
+        for owner in characters.values()
+        for event in owner.get("profileVoices") or []
+    ]
+    serialized_linked_refs = len(serialized_skill_events) + len(serialized_animation_events) + len(serialized_profile_voices)
+    serialized_candidate_associations = sum(
+        possible_media_count(event)
+        for event in [*serialized_skill_events, *serialized_animation_events, *serialized_profile_voices]
+    )
+    serialized_animation_candidates = sum(possible_media_count(event) for event in serialized_animation_events)
     stats = {
         **(references.get("counts") or {}),
         "gameplayAudioRefs": discovered_refs,
-        "gameplayAudioRefsLinked": linked_refs,
+        "gameplayAudioRefsDiscovered": discovered_refs,
+        "gameplayAudioRefsLinked": serialized_linked_refs,
+        "gameplaySerializedAudioRefs": serialized_linked_refs,
+        "gameplayRawAudioRefsLinked": linked_refs,
         "gameplayAudioCandidates": unique_event_media_pairs + len(profile_voice_media_keys),
-        "gameplayPossibleMediaAssociations": candidate_count,
+        "gameplayPossibleMediaAssociations": serialized_candidate_associations,
+        "gameplaySerializedPossibleMediaAssociations": serialized_candidate_associations,
+        "gameplayRawPossibleMediaAssociations": candidate_count,
         "gameplayUniqueEventMediaPairs": unique_event_media_pairs,
         "gameplayUniquePlayableFiles": len(unique_playable_files),
-        "animationAudioRefsLinked": animation_linked_refs,
-        "animationAudioPossibleMediaAssociations": animation_candidate_count,
+        "animationAudioRefsLinked": len(serialized_animation_events),
+        "animationAudioRawRefsLinked": animation_linked_refs,
+        "animationAudioPossibleMediaAssociations": serialized_animation_candidates,
+        "animationAudioRawPossibleMediaAssociations": animation_candidate_count,
+        "characterAnimationUniqueEvents": len(character_animation_event_keys),
+        "characterAnimationSharedEvents": len(character_animation_shared_event_keys),
+        "characterAnimationSharedEventAssociations": character_animation_shared_associations,
+        "characterAnimationSingleOwnerPossibleMediaAssociations": character_animation_single_owner_possible_media,
+        "characterAnimationSharedGraphPossibleMedia": character_animation_shared_graph_possible_media,
         "profileVoiceRefsLinked": profile_voice_linked_refs,
         "charactersWithPlayableSfx": len(characters),
         "enemiesWithPlayableSfx": len(enemies),
@@ -1267,7 +1482,15 @@ def link_gameplay_audio(
                 evidence_events.append({
                     "id": event.get("id"),
                     "actionKinds": event.get("actionKinds") or [],
+                    "animationFunctions": event.get("animationFunctions") or [],
+                    "animationClipContexts": event.get("animationClipContexts") or [],
+                    "clipReachability": event.get("clipReachability") or "unresolved",
                     "sourceAnimationClips": event.get("sourceAnimationClips") or [],
+                    "animationOwnerCount": event.get("animationOwnerCount"),
+                    "animationOwnershipScope": event.get("animationOwnershipScope"),
+                    "possibleMediaScope": event.get("possibleMediaScope"),
+                    "authoredEventIds": event.get("authoredEventIds") or [],
+                    "eventAliases": event.get("eventAliases") or [],
                     "evidence": event.get("evidence") or [],
                 })
                 clips = event.get("sourceAnimationClips") or []
@@ -1301,7 +1524,8 @@ def link_gameplay_audio(
             "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
             "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",
             "enemyTemplateBoundary": "AbilitySystemData containment is exact, while identifiers preserved only in partially decoded string-hint tails remain ownership-inferred.",
-            "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse",
+            "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse; current-controller clip reachability remains unresolved",
+            "animationMediaBoundary": "An owned clip proves that its callback requests the Event. Shared playable-character Events expose a shared Wwise selector graph; its reachable leaves are not attributed to one character until switch/state values are decoded.",
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
             "runtimeSelection": "Possible media files come from typed Wwise v150 edges and are grouped by Play root and selector relation; the live branch selected by switches, states, random/sequence containers, and layers remains unresolved.",
         },
@@ -4409,7 +4633,7 @@ def build_audio(args: argparse.Namespace) -> int:
         f" {len(dialog_audio):,} AudioDialog matches,"
         f" {len(event_entries):,} event media links,"
         f" {projectile_link_stats['projectileSoundRefsLinked']:,}/{projectile_link_stats['projectileSoundRefs']:,} projectile sound refs linked,"
-        f" {gameplay_link_stats['gameplayAudioRefsLinked']:,}/{gameplay_link_stats['gameplayAudioRefs']:,} gameplay skill/enemy sound refs linked,"
+        f" {gameplay_link_stats['gameplayAudioRefsLinked']:,}/{gameplay_link_stats['gameplayAudioRefs']:,} gameplay audio refs emitted/discovered,"
         f" {link_stats['lineAudioLinked']:,}/{link_stats['lineAudioRefs']:,} line refs linked,"
         f" {link_stats['conversationAudioEventsLinked']:,}/{link_stats['conversationAudioEvents']:,} conversation event refs linked,"
         f" {link_stats['cutsceneAudioEventsLinked']:,}/{link_stats['cutsceneAudioEvents']:,} cutscene event refs linked,"

@@ -315,6 +315,44 @@ class GameplayAudioLinkTests(unittest.TestCase):
             {"au_skill_test"},
         )
 
+    def test_animation_collection_normalizes_event_identity_and_preserves_authored_case(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            clip_root = export_root / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
+            clip_root.mkdir(parents=True)
+            (clip_root / "A_actor_test_battle_walk_p0000000000000001.anim").write_text(
+                """%YAML 1.1
+AnimationClip:
+  m_Name: A_actor_test_battle_walk
+  m_Events:
+  - time: 0.25
+    functionName: OnCustomFootStep
+    data: Player_FOL_FS_Walk
+    floatParameter: 0.5
+    intParameter: 0
+  - time: 0.75
+    functionName: OnCustomFootStep
+    data: player_fol_fs_walk
+    floatParameter: 0.5
+    intParameter: 1
+""",
+                encoding="utf-8",
+            )
+            result = build_audio.collect_gameplay_animation_audio(
+                export_root,
+                [{"kind": "character", "id": "chr_0001_test", "skillGroups": []}],
+                [],
+            )
+
+            owner = result["owners"][0]
+            self.assertEqual(set(owner["events"]), {"player_fol_fs_walk"})
+            self.assertEqual(
+                [row["authoredEventId"] for row in owner["events"]["player_fol_fs_walk"]],
+                ["Player_FOL_FS_Walk", "player_fol_fs_walk"],
+            )
+            self.assertEqual({row["clipContext"] for row in owner["events"]["player_fol_fs_walk"]}, {"battle"})
+            self.assertEqual({row["clipReachability"] for row in owner["events"]["player_fol_fs_walk"]}, {"unresolved"})
+
     def test_collects_direct_character_and_bounded_enemy_audio(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
@@ -575,6 +613,115 @@ class GameplayAudioLinkTests(unittest.TestCase):
                 payload["characters"]["chr_voice"]["profileVoices"][0]["actionKinds"],
                 ["attackVoice"],
             )
+
+    def test_animation_events_mark_shared_owner_scope_and_merge_case_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root)
+            callback = {
+                "kind": "animationClipEvent",
+                "clip": "A_actor_test_battle_walk",
+                "actionKind": "movement",
+                "function": "OnCustomFootStep",
+            }
+            references = {
+                "eventNames": {"player_fol_fs_walk"},
+                "owners": [],
+                "animationOwners": [{
+                    "ownerKind": "character",
+                    "ownerId": "chr_a",
+                    "events": {
+                        "Player_FOL_FS_Walk": [callback],
+                        "player_fol_fs_walk": [{**callback, "clip": "A_actor_test_battle_walk_b"}],
+                    },
+                }, {
+                    "ownerKind": "character",
+                    "ownerId": "chr_b",
+                    "events": {"player_fol_fs_walk": [callback]},
+                }],
+                "profileVoiceOwners": [],
+                "counts": {},
+            }
+            media = [{"src": "data/audio/shared/walk_1.wav", "mediaId": 1}, {
+                "src": "data/audio/shared/walk_2.wav", "mediaId": 2,
+            }]
+            stats = build_audio.link_gameplay_audio(
+                webui_root,
+                "CN",
+                references,
+                {"player_fol_fs_walk": media},
+                [{"eventId": "player_fol_fs_walk", "traversalStatus": "complete"}],
+            )
+
+            payload = json.loads(
+                (webui_root / "data/lang/CN/gameplay/sound_effects.json")
+                .read_text(encoding="utf-8")
+            )
+            event_a = payload["characters"]["chr_a"]["animationEvents"][0]
+            event_b = payload["characters"]["chr_b"]["animationEvents"][0]
+            self.assertEqual(len(payload["characters"]["chr_a"]["animationEvents"]), 1)
+            self.assertEqual(event_a["animationOwnerCount"], 2)
+            self.assertEqual(event_b["animationOwnerCount"], 2)
+            self.assertEqual(event_a["animationOwnershipScope"], "sharedPlayableCharacters")
+            self.assertEqual(event_a["possibleMediaScope"], "sharedEventGraph")
+            self.assertEqual(event_a["animationFunctions"], ["OnCustomFootStep"])
+            self.assertEqual(event_a["id"], "player_fol_fs_walk")
+            self.assertEqual(event_a["authoredEventIds"], ["Player_FOL_FS_Walk", "player_fol_fs_walk"])
+            self.assertEqual(event_a["eventAliases"], ["Player_FOL_FS_Walk"])
+            self.assertEqual(payload["characters"]["chr_a"]["metrics"]["sharedAnimationEventCount"], 1)
+            self.assertEqual(payload["characters"]["chr_a"]["metrics"]["uniqueEventMediaPairCount"], 2)
+            self.assertEqual(stats["characterAnimationUniqueEvents"], 1)
+            self.assertEqual(stats["characterAnimationSharedEvents"], 1)
+            self.assertEqual(stats["characterAnimationSharedEventAssociations"], 2)
+            self.assertEqual(stats["characterAnimationSingleOwnerPossibleMediaAssociations"], 0)
+            self.assertEqual(stats["characterAnimationSharedGraphPossibleMedia"], 2)
+            self.assertEqual(stats["gameplayAudioRefsLinked"], 2)
+            self.assertEqual(stats["gameplayPossibleMediaAssociations"], 4)
+            self.assertEqual(stats["gameplayRawPossibleMediaAssociations"], 4)
+
+    def test_published_counts_follow_serialized_skill_event_merges(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root)
+            references = {
+                "eventNames": {"au_shared_buff"},
+                "owners": [{
+                    "ownerKind": "character",
+                    "ownerId": "chr_test",
+                    "groupId": "normal",
+                    "skillId": "chr_test_normal_1",
+                    "events": {"au_shared_buff": [{"kind": "buffData"}]},
+                }, {
+                    "ownerKind": "character",
+                    "ownerId": "chr_test",
+                    "groupId": "normal",
+                    "skillId": "chr_test_normal_2",
+                    "events": {"au_shared_buff": [{"kind": "buffData"}]},
+                }],
+                "animationOwners": [],
+                "profileVoiceOwners": [],
+                "counts": {},
+            }
+            media = [{"src": "data/audio/shared/buff_1.wav", "mediaId": 1}, {
+                "src": "data/audio/shared/buff_2.wav", "mediaId": 2,
+            }]
+            stats = build_audio.link_gameplay_audio(
+                webui_root,
+                "CN",
+                references,
+                {"au_shared_buff": media},
+                [{"eventId": "au_shared_buff", "traversalStatus": "complete"}],
+            )
+
+            payload = json.loads(
+                (webui_root / "data/lang/CN/gameplay/sound_effects.json").read_text(encoding="utf-8")
+            )
+            group = payload["characters"]["chr_test"]["groups"]["normal"]
+            self.assertEqual(len(group["events"]), 1)
+            self.assertEqual(group["events"][0]["sourceSkillIds"], ["chr_test_normal_1", "chr_test_normal_2"])
+            self.assertEqual(stats["gameplayRawAudioRefsLinked"], 2)
+            self.assertEqual(stats["gameplayAudioRefsLinked"], 1)
+            self.assertEqual(stats["gameplayRawPossibleMediaAssociations"], 4)
+            self.assertEqual(stats["gameplayPossibleMediaAssociations"], 2)
+            self.assertEqual(payload["characters"]["chr_test"]["metrics"]["skillEventAssociationCount"], 1)
 
 
 if __name__ == "__main__":
