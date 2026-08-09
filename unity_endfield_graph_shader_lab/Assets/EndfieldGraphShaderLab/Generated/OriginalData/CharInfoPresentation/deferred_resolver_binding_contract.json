@@ -2396,7 +2396,7 @@
       "set": 3,
       "binding": 38,
       "size": 3568,
-      "status": "source-closed layout plus native owner/reset/push packing, selected read path, exact CBHandle size, and CPU tail-write safety; settled active payload and GPU tail visibility remain open",
+      "status": "source-closed layout plus native owner/reset/push packing, selected read path, exact CBHandle size, CPU tail-write safety, and target-D3D11 GPU tail visibility; settled active payload remains capture-only",
       "source_metadata_path": "scratch/character_recovery/screen_shadow_r_owner/shader_export_with_sidecars/Shader/HGRP_ScreenSpaceShadowResolve_pE36AF612B2CE3978.shader.bytecode/0017_endfield_spirv_1.spv.metadata.json",
       "source_metadata_sha256": "977fd3a71241c23ce61a2651261968fe63ad297cbbd7abd7a5a82eb50549cccd",
       "evidence": [
@@ -2410,13 +2410,14 @@
         "FrameSetup resets all 56 character-index/channel pairs to zero and all four screen-space indices to -1 before candidate processing",
         "the native push callback packs 0x800 matrices, 0x200 params, 0x380 interleaved uint4 selectors, and the trailing pass/global values",
         "UnityPlayer preserves the requested 0xDE0 as CBHandle.size and as the command/global-state logical binding size",
-        "the ring keeps the 0xDE0 length after 16-byte rounding but aligns allocation starts to 0x100, placing the next start at 0xE00 and isolating the final 0xDE0..0xDEF CPU write in inter-allocation padding"
+        "the ring keeps the 0xDE0 length after 16-byte rounding but aligns allocation starts to 0x100, placing the next start at 0xE00 and isolating the final 0xDE0..0xDEF CPU write in inter-allocation padding",
+        "the recorded target forces Direct3D 11; UnityPlayer converts 0xDE0 to 222 constants and rounds the D3D11.1 PSSetConstantBuffers1 range to 224 constants / 0xE00 bytes, making c222 shader-visible"
       ],
       "native_producer": {
         "audit_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/audit.json",
-        "audit_sha256": "108c849d51227dc50d2aaf4221843779f62cd85cb3b4ff52cf37d387d85c2d80",
+        "audit_sha256": "1252f50d22547e5a52122220274203e9304fa005d75c1ebc8809e28ccab5446b",
         "auditor_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/audit_hdpls_character_shadow_data.py",
-        "auditor_sha256": "43aabb865739687f146bbea3ce7927b2f65df377955f2ec904f067fc09298d70",
+        "auditor_sha256": "e59ac214b0d336f8ef83d62631532059329e497e22e5bc8ba5168f74723109e2",
         "disassembler_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/disassemble_hdpls_manager.py",
         "disassembler_sha256": "0cceee157a79b3bb00374fb5067e884300cfa902781aa18af178570bd02a2965",
         "native_disassembly_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/native_disassembly.json",
@@ -2431,19 +2432,26 @@
         "ring_start_alignment_bytes": 256,
         "next_allocation_start_delta": 3584,
         "cpu_tail_write_end_bytes": 3568,
+        "target_graphics_api": "Direct3D 11",
+        "d3d11_num_constants_before_alignment": 222,
+        "d3d11_num_constants": 224,
+        "d3d11_visible_size_bytes": 3584,
+        "d3d11_pixel_bind": "ID3D11DeviceContext1::PSSetConstantBuffers1 at vtable +0x3d8",
         "constant_buffer_audit_path": "scratch/reverse_engineering/hdpls_constant_buffer/audit.json",
-        "constant_buffer_audit_sha256": "f40c89554aa8a4262fddbb2f48c5ee0452fc4584370ad9ccb9681a93eb3fce82",
+        "constant_buffer_audit_sha256": "66f15a89f015f4bf48dc717d3f4951b1b152ab70a4fa7268cbdd1952fd1fc082",
         "constant_buffer_auditor_path": "scratch/reverse_engineering/hdpls_constant_buffer/audit_hdpls_constant_buffer.py",
-        "constant_buffer_auditor_sha256": "0f200a11cf4180422636296f2be32874634f0e0fdc930d05f166a2c9ef6cc2b9",
+        "constant_buffer_auditor_sha256": "08baaa54fb6163da06564d5dbda897b1b9f6e773d0616a7604d5bbb86fb9c0d4",
         "unityplayer_disassembler_path": "scratch/reverse_engineering/hdpls_constant_buffer/disassemble_hdpls_constant_buffer.py",
-        "unityplayer_disassembler_sha256": "2b644d2c77a55301e2a2a35a671f76566a43e45ccd1229aff95bfe6b05b5270b",
+        "unityplayer_disassembler_sha256": "eea4429047f5c84f35862600a62bc81d1e8e0795b65d237c91c0d43043c2baa0",
         "unityplayer_disassembly_path": "scratch/reverse_engineering/hdpls_constant_buffer/unityplayer_disassembly.json",
-        "unityplayer_disassembly_sha256": "c655d72ae384ecf02e5c1c9deaddb05917d551aa6d453aa4a0b10f63cbb2f021",
+        "unityplayer_disassembly_sha256": "a8ddbfcd59a72642c91209960775702813461887e6a20adc60895964f256b9de",
+        "target_player_log_excerpt_path": "scratch/reverse_engineering/hdpls_constant_buffer/target_player_log_excerpt.txt",
+        "target_player_log_excerpt_sha256": "b5830f20871cc5b04b3c644f6bf9109fe958d5382c6cd52b63ac01afdfc086bf",
         "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
         "inactive_selected_read_path": "all 56 .y selectors are zero, so the selected deferred resolver uses its punctual-shadow-atlas fallback",
         "publication_policy": "fail closed; no full constant-buffer fixture is published",
         "capture_boundary": "capture the settled CPU payload immediately before CommandBuffer.SetGlobalConstantBufferInternal0 in b__33_1, plus matching GPU-visible resources",
-        "remaining_boundary": "persistent matrices/params, frame-derived atlas/global values, active selector pairs, matching HDPLS/atlas resources, and backend visibility of the final 0xDE0..0xDEF float4 remain open; allocator-returned size and CPU write safety are offline-closed"
+        "remaining_boundary": "persistent matrices/params, frame-derived atlas/global values, active selector pairs, and matching HDPLS/atlas resources remain open; allocator size, CPU write safety, and the recorded target-D3D11 c222 visibility are offline-closed"
       }
     }
   ],
