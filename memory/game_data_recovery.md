@@ -101,6 +101,11 @@ duration on its audio track. `AudioDialogCustomEventTable` adds preload and
 pre/post-enter/exit event hooks, while dialog-tree output gives ordered lines
 and decoded durations. Those are playback schedules or hooks, not proof that
 the engine reached every branch during a particular session.
+The source graph now joins these layers: for example, `cs_video_e5m2_3`
+resolves to both its SFX and music event keys through
+`timelineEvidence.audioEventKeys`, with the originating Unity playable/path
+evidence retained. This is a strong authored cutscene-playback relation; it
+does not turn the timeline into a runtime profiler trace.
 
 Next audio-recovery work should decode HIRC action timing and switch/random
 semantics, identify Timeline/native audio receivers and activation paths, and
