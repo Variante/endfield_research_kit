@@ -7243,7 +7243,7 @@ LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID = (
     "gameassembly-2026-07-22-levelscript-task-check-mission-state-0x67"
 )
 LEVELSCRIPT_TASK_CONDITION_MAPPING_ID = (
-    "gameassembly-2026-08-02-levelscript-task-root-gamecondition-tags"
+    "gameassembly-2026-08-09-levelscript-task-root-gamecondition-tags-v2"
 )
 LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x0017: ("CheckBuildingConnected", 8),
@@ -7252,19 +7252,32 @@ LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x001A: ("CheckBuildingConnectedSpecify", 9),
     0x001B: ("CheckBuildingStateInArea", 9),
     0x0023: ("CheckClientGlobalVar", 7),
+    0x0029: ("CheckCutsceneFinish", 5),
+    0x002E: ("CheckDomainShopChannelLevel", 7),
     0x0035: ("CheckFacBuildingState", 8),
     0x0038: ("CheckFluidVolume", 9),
     0x0039: ("CheckFMVFinish", 5),
+    0x003D: ("CheckGuideGroupComplete", 6),
     0x0045: ("CheckInteractiveDestroyed", 6),
+    0x0048: ("CheckInteractiveLock", 7),
     0x0050: ("CheckLevelScriptPropertyBool", 9),
     0x0051: ("CheckLevelScriptPropertyInt", 9),
     0x0053: ("CheckLevelScriptStage", 8),
+    0x005C: ("CheckLsmEncounterCompleted", 7),
     0x0067: ("CheckMissionState", 7),
     0x006A: ("CheckMonsterKilled", 9),
     0x006B: ("CheckMonsterSpawnerComplete", 6),
+    0x0070: ("CheckPerfectlyPassDungeonId", 5),
+    0x0074: ("CheckPlayerInMap", 5),
+    0x007D: ("CheckPRTSUnlocked", 5),
+    0x007E: ("CheckQuestState", 7),
     0x0084: ("CheckRepairBuilding", 6),
+    0x0085: ("CheckRepeatableTalkFinish", 6),
+    0x0086: ("CheckRichContentReadingDone", 5),
+    0x0089: ("CheckScanInteractive", 6),
     0x008D: ("CheckScriptTaskStateEqual", 9),
     0x008F: ("CheckServerGlobalVar", 7),
+    0x0091: ("CheckSewageTreatPlantLevel", 7),
     0x009F: ("CheckTalkOptionFinish", 6),
     0x00B2: ("CombineCondition", 6),
     0x00D0: ("OnBuildingPanelOpen", 6),
@@ -7403,6 +7416,34 @@ def _decode_entity_ptr_list_param(
     return {"values": values, **detail}, end
 
 
+def _decode_string_collection_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the shared constant ``Param<collection<string>>`` wire shape."""
+    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
+        return None
+    count = struct.unpack_from("<i", payload, cursor + 1)[0]
+    cursor += 5
+    if count == -1:
+        values = None
+    elif 0 <= count <= 1024:
+        values = []
+        for _ in range(count):
+            decoded = _decode_nullable_string_value(payload, cursor)
+            if decoded is None:
+                return None
+            value, cursor = decoded
+            values.append(value.get("value"))
+    else:
+        return None
+    tail = _decode_param_tail(payload, cursor)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"values": values, **detail}, end
+
+
 def _decode_task_condition_union_header(
     data: bytes,
     offset: int,
@@ -7460,6 +7501,138 @@ def _condition_param(
     if decoded is None or decoded[1] > limit:
         return None
     return decoded
+
+
+def _decode_generic_task_condition_fields(
+    data: bytes,
+    offset: int,
+    limit: int,
+    *,
+    field_count: int,
+) -> tuple[list[dict[str, Any]], int] | None:
+    """Recover a unique authored ``Param`` sequence without per-type code.
+
+    Current ``GameConditionForMemoryPack`` payloads share four base members;
+    the union member count therefore bounds the number of concrete fields.
+    Generated condition formatters serialize those fields as self-delimiting
+    ``Param<T>`` values.  Try the reusable Param shapes, retain only endpoints
+    followed by the exact task-objective envelope, and fail closed unless one
+    field-boundary sequence survives.  Equal-size scalar interpretations are
+    deliberately kept opaque instead of guessing an enum/int/float meaning.
+    """
+    if field_count < 0 or field_count > 32:
+        return None
+
+    def scalar4_param(cursor: int) -> tuple[dict[str, Any], int] | None:
+        if cursor + 5 > limit or data[cursor] != 0x04:
+            return None
+        tail = _decode_param_tail(data, cursor + 5)
+        if tail is None or tail[1] > limit:
+            return None
+        raw = data[cursor + 1 : cursor + 5]
+        detail, end = tail
+        return {
+            "shape": "param-scalar4",
+            "rawHex": raw.hex(),
+            "int32Value": struct.unpack_from("<i", raw)[0],
+            "uint32Value": struct.unpack_from("<I", raw)[0],
+            **detail,
+        }, end
+
+    def wrap(
+        shape: str,
+        decoder: Any,
+        cursor: int,
+    ) -> tuple[dict[str, Any], int] | None:
+        decoded = decoder(data, cursor)
+        if decoded is None or decoded[1] > limit:
+            return None
+        value, end = decoded
+        return {"shape": shape, **value}, end
+
+    decoders = (
+        ("param-string", _decode_string_param),
+        ("param-string-collection", _decode_string_collection_param),
+        ("param-bool", _decode_bool_param),
+        ("param-entity-ptr", _decode_constant_entity_ptr_param),
+        ("param-entity-ptr-list", _decode_entity_ptr_list_param),
+        ("param-levelscript-ptr", _decode_levelscript_ptr_param),
+        ("param-levelscript-task-ptr", _decode_levelscript_task_ptr_param),
+        ("param-u64", _decode_u64_param),
+    )
+    memo: dict[tuple[int, int], list[tuple[list[dict[str, Any]], int]]] = {}
+
+    def visit(
+        cursor: int,
+        remaining: int,
+    ) -> list[tuple[list[dict[str, Any]], int]]:
+        memo_key = (cursor, remaining)
+        cached = memo.get(memo_key)
+        if cached is not None:
+            return cached
+        if remaining == 0:
+            if cursor + 5 > limit or data[cursor] not in (0, 1):
+                memo[memo_key] = []
+                return []
+            objective_enum = struct.unpack_from("<i", data, cursor + 1)[0]
+            memo[memo_key] = (
+                [([], cursor)] if 0 <= objective_enum <= 0x100 else []
+            )
+            return memo[memo_key]
+
+        candidates: dict[int, list[dict[str, Any]]] = {}
+        scalar = scalar4_param(cursor)
+        if scalar is not None:
+            candidates[scalar[1]] = [scalar[0]]
+        for shape, decoder in decoders:
+            decoded = wrap(shape, decoder, cursor)
+            if decoded is None:
+                continue
+            field, end = decoded
+            same_end = candidates.setdefault(end, [])
+            if not any(row.get("shape") == shape for row in same_end):
+                same_end.append(field)
+
+        rows: list[tuple[list[dict[str, Any]], int]] = []
+        for end, same_end_fields in sorted(candidates.items()):
+            if len(same_end_fields) == 1:
+                field = same_end_fields[0]
+            else:
+                field = {
+                    "shape": "ambiguous-same-boundary",
+                    "candidateShapes": [
+                        row.get("shape") for row in same_end_fields
+                    ],
+                    "candidates": same_end_fields,
+                }
+            for tail_fields, final_end in visit(end, remaining - 1):
+                rows.append(([field, *tail_fields], final_end))
+                if len(rows) > 128:
+                    memo[memo_key] = []
+                    return []
+        memo[memo_key] = rows
+        return rows
+
+    parses = visit(offset, field_count)
+    boundary_sequences = {
+        (
+            end,
+            tuple(
+                (
+                    str(field.get("shape") or ""),
+                    tuple(
+                        str(value)
+                        for value in field.get("candidateShapes") or []
+                    ),
+                )
+                for field in fields
+            ),
+        ): (fields, end)
+        for fields, end in parses
+    }
+    if len(boundary_sequences) != 1:
+        return None
+    return next(iter(boundary_sequences.values()))
 
 
 def _decode_levelscript_task_condition(
@@ -7817,7 +7990,22 @@ def _decode_levelscript_task_condition(
         fields["conditionEvalString"] = expression
         fields["subConditionCount"] = 0
     else:
-        return None
+        generic = _decode_generic_task_condition_fields(
+            data,
+            cursor,
+            limit,
+            field_count=member_count - 4,
+        )
+        if generic is None:
+            return None
+        serialized_fields, cursor = generic
+        fields["serializedFields"] = serialized_fields
+        fields["payloadShape"] = (
+            "unique-memorypack-param-boundary-sequence"
+        )
+        fields["fieldSemanticsStatus"] = (
+            "opaque_formatter_fields_no_semantic_name_in_decoder"
+        )
 
     return {
         "type": condition_type,

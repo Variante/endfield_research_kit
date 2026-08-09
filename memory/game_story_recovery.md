@@ -126,14 +126,17 @@ never promotes an edge.
   contracts.
 - The active LevelScript overlay (`Persistent` over the matching
   `StreamingAssets` path) contains 230 validated `CheckTalkOptionFinish`
-  consumers: 42 exact nonnegative finish ids and 188 any-finish checks. A
-  schema-driven decoder recovers complete task maps, while a bounded fragment
-  scanner admits a condition from mixed maps only when the union payload,
-  dictionary key, member-count envelope, and trailing objective fields all
-  agree. The exact set comprises 29 complete-map rows across 28 task identities
-  plus 13 bounded fragments. All 28 decoded tasks are authored type `None`,
-  untracked, and automatic-check; 25 contain one condition, while three retain
-  explicit `CombineCondition` or multi-dialog structure. The current binary
+  consumers: 42 exact nonnegative finish ids and 188 any-finish checks. All 230
+  now resolve through complete task maps, yielding 227 exact task identities
+  with no bounded fragment remaining. The decoder does not add a payload branch
+  per condition class: the current binary's root `GameCondition` formatter
+  supplies union identity and member count, then one reusable backtracking
+  decoder proves a unique sequence of self-delimiting `Param<T>` wire shapes
+  against the condition dictionary key, objective envelope, and complete task
+  map. Scalar interpretations with the same boundary remain opaque. A reusable
+  string-collection Param shape covers collection-valued fields. All 227 tasks
+  are authored type `None`, untracked, and automatic-check; 214 contain one
+  condition and 13 retain multi-condition structure. The current binary
   validates the general lifecycle without object-specific ids: the typed
   server state is forwarded through LevelScriptManager, LevelScriptRuntime,
   and ScriptTaskRuntime; Processing walks the task conditions, installs the
@@ -143,7 +146,7 @@ never promotes an edge.
   session. All 42 exact consumers join to a prime-reachable authored DialogTree
   finish endpoint; none lacks an original endpoint. Exact
   MissionRuntime finish matches publish 15 objective placements across 14 task
-  rows and 13 missions (12 complete maps and three bounded fragments). Five
+  rows and 13 missions, all from complete maps. Five
   any-finish objective placements across four missions accept an exact task
   outcome under the hash-locked native predicate, while 17 objective placements
   across five missions reference the same active LevelScript as eight task
@@ -151,9 +154,10 @@ never promotes an edge.
   same-mission SubGame task carrier. A general minimal-object field-shape census
   over the active GameplayConfig and MissionRuntime overlays independently
   finds that same `c28m3` script/task/mission carrier and no carrier for the
-  other 27 resolved task identities. The other 28 endpoint-to-task dependencies
-  lack an exact MissionRuntime finish match; this is no longer an endpoint gap,
-  but server selection and mission/task ownership remain unresolved. Every
+  other 39 exact-finish task identities. The other 28 endpoint-to-task
+  dependencies lack an exact MissionRuntime finish match; this is no longer an
+  endpoint gap, but server selection and mission/task ownership remain
+  unresolved. Every
   mission-to-script placement hash-matches the active `Persistent`-over-
   `StreamingAssets` source before publication. None of these tiers proves
   player choice, server successor selection, or Story order.
@@ -251,13 +255,11 @@ Reject as proof:
 1. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families.
-2. Extend the general LevelScript task-union decoder for the 13 remaining
-   bounded exact-finish fragments, preserving task identity as unresolved unless
-   the enclosing map validates. For the 27 resolved tasks without an exact
-   GameplayConfig/MissionRuntime carrier and the 28 dependencies without an
-   exact MissionRuntime finish match, seek a broader typed server-selection or
-   mission-owner carrier; their client lifecycle and authored DialogTree
-   endpoints are already recovered.
+2. For the 39 exact-finish task identities without an exact GameplayConfig or
+   MissionRuntime carrier and the 28 dependencies without an exact
+   MissionRuntime finish match, seek a broader typed server-selection or
+   mission-owner carrier. Their complete task maps, client lifecycle, and
+   authored DialogTree endpoints are already recovered.
 3. Find any client-visible carrier for server-side mission/quest successor
    selection or LevelScript activation policy. Current state/update packets do
    not co-carry Story ownership.

@@ -376,6 +376,10 @@ for (const [key, category] of [
         self.assertIn("definition.conditionTypeCounts", source)
         self.assertIn("externalTaskIdentityCarriers", source)
         self.assertIn('t("dialogFinishTaskUncarried")', source)
+        self.assertIn("levelScriptTaskExactCompleteMapConsumers", source)
+        self.assertIn("levelScriptTaskExactBoundedFragmentConsumers", source)
+        self.assertNotIn("recoveryCounts.levelScriptTaskSharedConsumerCompleteMaps", source)
+        self.assertNotIn("recoveryCounts.levelScriptTaskSharedConsumerFragments", source)
         self.assertIn("does not identify a mission owner or Story-file order", source)
 
     def test_mission_pipeline_labels_declared_story_variant_aggregates(self) -> None:

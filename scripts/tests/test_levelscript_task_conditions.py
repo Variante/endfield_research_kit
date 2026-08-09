@@ -52,6 +52,19 @@ def string_param(value: str | None, *, source: int = 0) -> bytes:
     )
 
 
+def string_collection_param(values: list[str]) -> bytes:
+    return (
+        b"\x04"
+        + struct.pack("<I", len(values))
+        + b"".join(
+            struct.pack("<I", len(value.encode("ascii")))
+            + value.encode("ascii")
+            for value in values
+        )
+        + PARAM_TAIL
+    )
+
+
 def entity_list_param(logic_ids: list[int]) -> bytes:
     return (
         b"\x04"
@@ -60,6 +73,14 @@ def entity_list_param(logic_ids: list[int]) -> bytes:
             b"\x03" + struct.pack("<QI?", logic_id, 0, False)
             for logic_id in logic_ids
         )
+        + PARAM_TAIL
+    )
+
+
+def entity_ptr_param(logic_id: int) -> bytes:
+    return (
+        b"\x04\x03"
+        + struct.pack("<QI?", logic_id, 0, False)
         + PARAM_TAIL
     )
 
@@ -211,6 +232,46 @@ def recovered_getter_condition_task_entry() -> bytes:
     )
 
 
+def generic_formatter_condition_task_entry() -> bytes:
+    """Fixture the shared Param sequence used by newly mapped binary tags."""
+    specs = [
+        (0x0029, 5, [string_param("cutscene_fixture")]),
+        (0x002E, 7, [string_param("channel"), i32_param(0), i32_param(3)]),
+        (0x003D, 6, [i32_param(0), string_param("guide_group")]),
+        (
+            0x0048,
+            7,
+            [
+                entity_ptr_param(21_000_010_515),
+                bool_param(False),
+                string_param(None, source=1000),
+            ],
+        ),
+        (0x007D, 5, [string_collection_param(["prts_fixture"])]),
+        (0x007E, 7, [i32_param(0), string_param("fixture_q#1"), i32_param(3)]),
+        (0x0085, 6, [string_param("dlg_repeat"), i32_param(1)]),
+        (0x0086, 5, [string_param("rich_content_level")]),
+        (0x0091, 7, [i32_param(0), string_param("plant_1"), i32_param(4)]),
+    ]
+    conditions = []
+    for index, (tag, member_count, fields) in enumerate(specs):
+        key = f"{index + 0x51:08x}"
+        conditions.append(
+            condition_entry(
+                key,
+                bytes([tag, member_count]) + common(key) + b"".join(fields),
+            )
+        )
+    return (
+        compact_string("dec0de01")
+        + b"\x04\x00"
+        + struct.pack("<I", len(conditions))
+        + b"".join(conditions)
+        + b"\x00"
+        + struct.pack("<i", 0)
+    )
+
+
 def levelscript_blob(entry: bytes) -> bytes:
     return (
         b"\x1b"
@@ -329,6 +390,99 @@ class LevelScriptTaskConditionTests(unittest.TestCase):
         self.assertEqual("cs_video_fixture", conditions[1]["fmvId"]["value"])
         self.assertEqual(100007, conditions[2]["key"]["value"])
         self.assertEqual("NotEqual", conditions[2]["comparerName"])
+
+    def test_formatter_param_family_decodes_without_per_type_payload_code(
+        self,
+    ) -> None:
+        rows = decode_levelscript_task_conditions(
+            levelscript_blob(generic_formatter_condition_task_entry()),
+            SCRIPT_ID,
+        )
+        conditions = [
+            row["condition"]
+            for row in rows[0]["tasks"][0]["conditions"]
+        ]
+        self.assertEqual(
+            [
+                "CheckCutsceneFinish",
+                "CheckDomainShopChannelLevel",
+                "CheckGuideGroupComplete",
+                "CheckInteractiveLock",
+                "CheckPRTSUnlocked",
+                "CheckQuestState",
+                "CheckRepeatableTalkFinish",
+                "CheckRichContentReadingDone",
+                "CheckSewageTreatPlantLevel",
+            ],
+            [row["type"] for row in conditions],
+        )
+        self.assertTrue(
+            all(
+                row["payloadShape"]
+                == "unique-memorypack-param-boundary-sequence"
+                for row in conditions
+            )
+        )
+        self.assertEqual(
+            [
+                "param-string",
+                "ambiguous-same-boundary",
+                "param-scalar4",
+            ],
+            [
+                field["shape"]
+                for field in conditions[1]["serializedFields"]
+            ],
+        )
+        self.assertEqual(
+            [
+                "param-scalar4",
+                "param-string",
+                "param-string-collection",
+                "param-entity-ptr-list",
+            ],
+            conditions[1]["serializedFields"][1]["candidateShapes"],
+        )
+        self.assertEqual(
+            "param-entity-ptr",
+            conditions[3]["serializedFields"][0]["shape"],
+        )
+        self.assertEqual(
+            "param-string-collection",
+            conditions[4]["serializedFields"][0]["shape"],
+        )
+        self.assertEqual(
+            ["param-string", "param-scalar4"],
+            [
+                field["shape"]
+                for field in conditions[6]["serializedFields"]
+            ],
+        )
+
+    def test_generic_formatter_member_count_drift_fails_closed(self) -> None:
+        valid = bytearray(
+            levelscript_blob(generic_formatter_condition_task_entry())
+        )
+        condition_offset = valid.index(b"\x29\x05")
+        valid[condition_offset + 1] = 6
+        diagnostics: list[dict[str, object]] = []
+        self.assertEqual(
+            [],
+            decode_levelscript_task_conditions(
+                bytes(valid),
+                SCRIPT_ID,
+                diagnostics=diagnostics,
+            ),
+        )
+        self.assertEqual(
+            "supportedConditionPayloadLayout",
+            diagnostics[0]["gate"],
+        )
+        self.assertEqual(
+            "CheckCutsceneFinish",
+            diagnostics[0]["expectedConditionType"],
+        )
+        self.assertEqual(5, diagnostics[0]["expectedSerializedMemberCount"])
 
     def test_getter_condition_member_count_drift_fails_closed(self) -> None:
         valid = bytearray(
