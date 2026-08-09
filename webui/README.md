@@ -93,6 +93,9 @@ are not a browser-playable output format. Event details list every typed
 possible media leaf together and group it by Play root and Random, Sequence,
 Switch/State, Layer, or direct-Sound evidence. Partial typed graphs and
 byte-identical decoded content under distinct media ids remain explicit.
+Version-150 music Events use the same evidence boundary but additionally show
+typed Music Switch, playlist, segment, track, and track-source nodes; these are
+possible authored paths, not an observed current track.
 Skill contexts separately tag exact Gameplay-action-to-SkillData dependencies and
 inferred child-skill-family ownership. Their evidence records whether the Event
 was found as a complete length-prefixed reference in SkillData or through an
@@ -117,7 +120,9 @@ branch selection remain unresolved.
 The Audio control catalog keeps cue and parameter entities separate from Wwise
 Events. Only AudioCue behavior expressions with `exprType=3` become Event
 contexts; `exprType=8` operands, Global `musicCue*` IDs, and RTPC names retain
-their own typed records and missing-definition state.
+their own typed records and missing-definition state. LevelScript `PostAudioCue`
+names are joined through the shipped exact string hash to cue definitions; the
+script action, handler condition, and Wwise branch remain separate runtime gates.
 
 ## Runtime overrides
 
