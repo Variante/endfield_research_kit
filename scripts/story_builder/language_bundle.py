@@ -5,6 +5,7 @@ import re as _radio_cont_re
 from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path as _RadioContPath
 from .context import *
+from common import write_report_json, write_text_if_changed
 from .anime_assets import *
 from .scene_graph import *
 from .level_bindings import *
@@ -27,6 +28,10 @@ from .mission_recovery import (
     is_play_dialog_hide_non_identifier_payload,
     natural_key,
     typed_cutscene_single_char_parameter_action,
+)
+from .source_provenance import (
+    enrich_story_connection_original_files,
+    render_story_connection_original_files_markdown,
 )
 
 _RADIO_CONTINUATION_REPORT_PATH = (
@@ -22887,6 +22892,31 @@ def build_language_bundle(
             flow_payload["unlinkedDefinitionOnly"] = definition_only_black_rows
         else:
             flow_payload.pop("unlinkedDefinitionOnly", None)
+
+    # Keep the connection corpus inspectable at the original-byte boundary.
+    # This is a generic shape-driven pass over every relation row; it does not
+    # add a connection and never promotes a source reference to ownership or
+    # order evidence.
+    story_connection_original_files = enrich_story_connection_original_files(
+        mission_flows_payload,
+        root=ROOT,
+    )
+    story_connection_original_files_json = (
+        REPORTS_DIR / f"story_connection_original_files_{language_code}.json"
+    )
+    story_connection_original_files_md = (
+        REPORTS_DIR / f"story_connection_original_files_{language_code}.md"
+    )
+    write_report_json(
+        story_connection_original_files_json,
+        story_connection_original_files,
+    )
+    write_text_if_changed(
+        story_connection_original_files_md,
+        render_story_connection_original_files_markdown(
+            story_connection_original_files,
+        ),
+    )
     mission_timeline_json = REPORTS_DIR / f"mission_timeline_recovery_{language_code}.json"
     mission_timeline_md = REPORTS_DIR / f"mission_timeline_recovery_{language_code}.md"
     write_mission_timeline_recovery_json(
@@ -23068,6 +23098,11 @@ def build_language_bundle(
             "bytes": mission_data_bytes,
         }
     index_payload["missionTimelineRecovery"] = mission_timeline_report
+    index_payload["storyConnectionOriginalFiles"] = {
+        "report": repo_rel(story_connection_original_files_json),
+        "markdown": repo_rel(story_connection_original_files_md),
+        "summary": story_connection_original_files.get("summary") or {},
+    }
     if story_source_link_report:
         index_payload["storySourceLinks"] = {
             "sourceIndex": story_source_link_report.get("sourceIndex"),
@@ -23159,6 +23194,15 @@ def build_language_bundle(
         "missionTimelineRecoveryData": mission_timeline_report["json"],
         "missionTimelineRecoveryMissions": mission_timeline_recovery_payload["summary"]["missionCount"],
         "missionTimelineRecoveryUnresolved": mission_timeline_recovery_payload["summary"].get("unresolvedByKind", {}),
+        "storyConnectionOriginalFilesReport": repo_rel(
+            story_connection_original_files_json
+        ),
+        "storyConnectionOriginalFilesMarkdown": repo_rel(
+            story_connection_original_files_md
+        ),
+        "storyConnectionOriginalFilesSummary": (
+            story_connection_original_files.get("summary") or {}
+        ),
         "referenceBytes": int(reference_stats.get("bytes", 0)) if reference_stats else 0,
         "referenceTables": int(reference_stats.get("tables", 0)) if reference_stats else 0,
         "referenceRows": int(reference_stats.get("rows", 0)) if reference_stats else 0,

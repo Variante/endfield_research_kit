@@ -64,6 +64,7 @@ Latest CN reports:
 | Story-order override/OCR cross-reference | 1,524 strict source edges across 216 source missions; manual override 940 agree / 253 disagree / 331 uncovered; OCR 406 / 10 / 1,108; 12 conflicts; all 216 pipeline destinations carry the per-mission diagnostic block, including one graph-neutral source-order shell |
 | Source-order original-file attachment | 281 pipeline missions carry 3,593 hash-validated source-order related-file records across 1,918 distinct originals; 215 of the 216 cross-reference destinations have at least one original file, while `map01_lv002_env` remains generated-only; binary/metadata files are context authority, never ownership or order evidence |
 | Authored Story-branch source catalog | 275 pipeline missions carry 3,242 hash-validated branch/validation/context-file records across 2,737 distinct originals; the collector walks both plural and singular source-file shapes plus normalized `relatedOriginalFiles` rows, exposing original DialogTree, LevelScript, MissionRuntime, binary, and metadata files wherever authored branch evidence cites them. Seven graph-neutral Story-branch shells are published; branch-source files remain definition context, never chronology, activation, or ownership evidence |
+| Story-connection original-file provenance | 4,180 accepted relation rows across 702 localized flows carry 7,396 hash-validated original-file attachments; the generic resolver now indexes bare file-like basenames (including both StreamingAssets/Persistent LevelData roots), retains 16 non-path tokens as diagnostics, and leaves one unresolved path in `e11m3`. This is provenance-only and adds no ownership, activation, branch, or order evidence |
 | Authored mission-to-LevelScript task dependencies | 2 exact `(level, script, task)` tuples across 2 missions; 0 unresolved; each joined to MissionRuntime, LevelScriptData, and ScriptTaskExtraInfoTable |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 | Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; the 174-type managed mission/quest census finds 2 reviewed cross-system callers and 0 mission+LevelScript signatures; its general callable-carrier pass resolves 13 fields, 5 typed entry methods, and 5 family-local native bindings with 0 mission+LevelScript bindings |
@@ -106,6 +107,12 @@ in five payloads.
   successor selection, sibling exclusivity, or Story-file order.
 - Story cards for dialog, radio, SNS, cutscenes, black screens, and remote
   communication.
+- Every accepted Story connection is now walked by a generic relation/source
+  shape collector. Existing `sourceFiles` references resolve to original
+  StreamingAssets/Persistent bytes (or an explicitly named original binary),
+  are SHA-256 checked, and are shown beside the connection. Missing path-like
+  references stay bounded diagnostics; asset tokens, OCR, overrides, and
+  manual order never enter this provenance pass.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and
   selected runtime receiver evidence.
 - A general, id-free direct-call census now maps the complete hash-pinned

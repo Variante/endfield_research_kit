@@ -964,6 +964,8 @@
       sourceOrderRelatedFilesHint: "These hash-validated original files are attached to the strict source-order report for auditability only. They do not establish mission ownership, activation, branch selection, or a total Story-file order.",
       storyBranchRelatedFiles: "Original Story-branch files",
       storyBranchRelatedFilesHint: "These hash-validated original files are collected from authored branch sourceFile/sourceFiles and normalized relatedOriginalFiles records. They provide branch-definition context only; they do not establish mission ownership, activation, or cross-file chronology.",
+      storyConnectionOriginalFiles: "Original files cited by Story connections",
+      storyConnectionOriginalFilesHint: "These SHA-256 records validate the original exported files cited by an accepted Story connection. They are provenance context only; unresolved references remain diagnostic and no ownership or chronology is inferred.",
       storyAggregateShell: "Declared Story variant aggregate",
       storyAggregateShellHint: "This Story namespace combines exact serialized evidence from its declared mission variants. It is not a MissionRuntime mission and does not establish mission ownership, quest ownership, branch selection, or extra chronology.",
       storyAggregateVariants: "Declared mission variants",
@@ -1690,6 +1692,8 @@
       sourceOrderRelatedFilesHint: "\u8fd9\u4e9b\u5df2\u54c8\u5e0c\u9a8c\u8bc1\u7684\u539f\u59cb\u6587\u4ef6\u4ec5\u4e3a\u4e25\u683c\u6e90\u6570\u636e\u987a\u5e8f\u62a5\u544a\u63d0\u4f9b\u5ba1\u8ba1\u53ef\u8ffd\u6eaf\u6027\uff1b\u4e0d\u5efa\u7acb\u4efb\u52a1\u5f52\u5c5e\u3001\u6fc0\u6d3b\u3001\u5206\u652f\u9009\u62e9\u6216\u5b8c\u6574 Story \u6587\u4ef6\u987a\u5e8f\u3002",
       storyBranchRelatedFiles: "\u539f\u59cb Story \u5206\u652f\u6587\u4ef6",
       storyBranchRelatedFilesHint: "\u8fd9\u4e9b\u5df2\u54c8\u5e0c\u9a8c\u8bc1\u7684\u539f\u59cb\u6587\u4ef6\u6765\u81ea\u4f5c\u8005\u5206\u652f sourceFile/sourceFiles \u4ee5\u53ca\u89c4\u8303\u5316 relatedOriginalFiles \u8bb0\u5f55\uff0c\u4ec5\u63d0\u4f9b\u5206\u652f\u5b9a\u4e49\u4e0a\u4e0b\u6587\uff1b\u4e0d\u5efa\u7acb\u4efb\u52a1\u5f52\u5c5e\u3001\u6fc0\u6d3b\u6216\u8de8\u6587\u4ef6\u65f6\u95f4\u987a\u5e8f\u3002",
+      storyConnectionOriginalFiles: "\u5267\u60c5\u8fde\u63a5\u5f15\u7528\u7684\u539f\u59cb\u6587\u4ef6",
+      storyConnectionOriginalFilesHint: "\u8fd9\u4e9b SHA-256 \u8bb0\u5f55\u9a8c\u8bc1\u5df2\u63a5\u53d7 Story \u8fde\u63a5\u5f15\u7528\u7684\u539f\u59cb\u5bfc\u51fa\u6587\u4ef6\u3002\u5b83\u4eec\u4ec5\u63d0\u4f9b\u6765\u6e90\u4e0a\u4e0b\u6587\uff1b\u672a\u89e3\u6790\u7684\u5f15\u7528\u4ecd\u662f\u8bca\u65ad\u4fe1\u606f\uff0c\u4e0d\u63a8\u65ad\u5f52\u5c5e\u6216\u65f6\u95f4\u987a\u5e8f\u3002",
       storyAggregateShell: "\u58f0\u660e\u7684 Story \u53d8\u4f53\u805a\u5408",
       storyAggregateShellHint: "\u8be5 Story \u547d\u540d\u7a7a\u95f4\u6c47\u603b\u4e86\u5176\u58f0\u660e\u7684\u4efb\u52a1\u53d8\u4f53\u4e2d\u7684\u7cbe\u786e\u5e8f\u5217\u5316\u8bc1\u636e\u3002\u5b83\u672c\u8eab\u4e0d\u662f MissionRuntime \u4efb\u52a1\uff0c\u4e5f\u4e0d\u8bc1\u660e\u4efb\u52a1\u5f52\u5c5e\u3001\u8282\u70b9\u5f52\u5c5e\u3001\u5206\u652f\u9009\u62e9\u6216\u989d\u5916\u65f6\u5e8f\u3002",
       storyAggregateVariants: "\u5df2\u58f0\u660e\u7684\u4efb\u52a1\u53d8\u4f53",
@@ -3408,15 +3412,31 @@
     </div>`;
   }
 
+  function storyConnectionOriginalFilesHtml(row) {
+    const files = (row?.relatedOriginalFiles || [])
+      .filter((file) => file && file.sourceFile)
+      .map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile)}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`)
+      .join("");
+    const validation = row?.relatedOriginalFilesValidation || {};
+    const unresolved = (validation.unresolvedSourceReferences || [])
+      .filter(Boolean)
+      .map((source) => `<code>${esc(source)}</code>`)
+      .join(" ");
+    if (!files && !unresolved) return "";
+    return `<span class="mp-story-connection-originals"><strong>${esc(t("storyConnectionOriginalFiles"))}</strong>${files}${unresolved ? `<small>${esc(t("storyConnectionOriginalFilesHint"))} / unresolved: ${unresolved}</small>` : ""}</span>`;
+  }
+
   function storyConnectionLink(row, className, questId = "") {
     const details = storyConnectionDetails(row);
     const routeHtml = storyTriggerRoutes(row, questId).map(triggerRouteHtml).join("");
     const rejectionHtml = storyPlaybackRejections(row).map(playbackRejectionHtml).join("");
     const offlineHtml = offlineRecoveryHtml(row);
+    const originalFilesHtml = storyConnectionOriginalFilesHtml(row);
     const evidence = [row.confidence, row.source || row.evidence].filter(Boolean).join(" · ");
     return `<a class="is-${className}" href="${esc(storyHref(row.key))}" title="${esc(`${t("openInStory")} · ${evidence}`)}">
       <span>${esc(storyDisplayKind(row))}</span><code>${esc(row.key)}</code><b aria-hidden="true">→</b>
       <em>${esc(details.join(" · "))}</em>${evidence ? `<small>${esc(evidence)}</small>` : ""}
+      ${originalFilesHtml}
       ${routeHtml}
       ${rejectionHtml}
       ${offlineHtml}
