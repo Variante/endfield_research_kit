@@ -1334,14 +1334,40 @@
 
   function renderEnemySoundEffects(entry) {
     const sounds = STATE.integration.soundEffects?.enemies?.[entry?.id] || {};
-    return `${renderGameplaySoundGroup(sounds.events || [], {
-      label: sounds.includesSpawnBuffAudio ? text("enemyCombatAndSpawnSounds") : text("enemyCombatSounds"),
-      confidence: sounds.ownershipConfidence,
-    })}${renderGameplaySoundGroup(sounds.animationEvents || [], {
-      label: text("animationTriggeredSounds"),
-      confidence: sounds.animationOwnershipConfidence,
-      note: text("animationSoundNote"),
-    })}`;
+    const merged = new Map();
+    for (const event of [...(sounds.events || []), ...(sounds.animationEvents || [])]) {
+      const key = String(event?.id || "").toLowerCase();
+      if (!key) continue;
+      const previous = merged.get(key);
+      if (!previous) {
+        merged.set(key, { ...event });
+        continue;
+      }
+      const audio = new Map();
+      for (const candidate of [...(previous.audio || []), ...(event.audio || [])]) {
+        const candidateKey = String(candidate?.src || candidate?.mediaId || "");
+        if (candidateKey) audio.set(candidateKey, candidate);
+      }
+      merged.set(key, {
+        ...previous,
+        ...event,
+        audio: [...audio.values()],
+        actionKinds: [...new Set([...(previous.actionKinds || []), ...(event.actionKinds || [])])],
+        sourceSkillIds: [...new Set([...(previous.sourceSkillIds || []), ...(event.sourceSkillIds || [])])],
+        sourceAnimationClips: [...new Set([...(previous.sourceAnimationClips || []), ...(event.sourceAnimationClips || [])])],
+        evidence: [...(previous.evidence || []), ...(event.evidence || [])],
+        playableCandidates: Math.max(Number(previous.playableCandidates || 0), Number(event.playableCandidates || 0)),
+      });
+    }
+    const playableEvents = gameplayResolvedSoundEvents([...merged.values()])
+      .filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.playableCandidates || 0) > 0);
+    if (!playableEvents.length) return "";
+    const confidence = integrationConfidence(
+      sounds.ownershipConfidence === "inferred" || sounds.animationOwnershipConfidence === "inferred" ? "inferred" : "direct",
+    );
+    const notes = [text("soundRuntimeNote")];
+    if ((sounds.animationEvents || []).length) notes.push(text("animationSoundNote"));
+    return `<div class="gameplay-enemy-sfx-meta"><strong>${escapeHtml(gameplaySoundCountText(playableEvents))}</strong>${confidence}</div><p class="gameplay-enemy-sfx-note">${escapeHtml(notes.join(" "))}</p>${renderGameplaySoundActionGroups(playableEvents)}`;
   }
 
   function renderCharacterAnimationSounds(entry) {
@@ -1872,7 +1898,6 @@
       body: [
         section(text("enemyVariants"), renderEnemyVariants(entry)),
         `<div data-enemy-variant-dependent>${renderEnemyVariantDependent(entry, selectedVariant)}</div>`,
-        section(text("relatedSoundEffects"), renderEnemySoundEffects(entry)),
         section(text("enemyAbilities"), renderEnemyAbilities(entry)),
         section(text("enemyDetails"), renderEnemyDetails(entry)),
       ].join(""),
@@ -2764,7 +2789,11 @@
       wikiSlot.innerHTML = wiki;
       wikiSlot.hidden = !wiki;
     }
-    gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${renderIntegratedSections(entry)}`;
+    const integrated = renderIntegratedSections(entry);
+    const trailingAudio = entry.kind === "enemy"
+      ? section(text("relatedSoundEffects"), renderEnemySoundEffects(entry))
+      : "";
+    gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}${trailingAudio}`;
     bindGameplayMediaPlayers(detail);
     bindIntegratedLinks(detail);
     bindLevelSliders(detail);
