@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import urlparse
 
 import requests
 
@@ -34,9 +35,12 @@ DEFAULT_OUTPUT_DIR = ROOT / "videos"
 DEFAULT_CONCURRENCY = 8
 DEFAULT_STALE_LOCK_MINUTES = 30
 DEFAULT_DURATION_TOLERANCE_SECONDS = 2.0
+MAX_PLAYURL_REFRESH_ATTEMPTS = 4
 
 VIEW_API = "https://api.bilibili.com/x/web-interface/view"
 PLAYURL_API = "https://api.bilibili.com/x/player/playurl"
+SEASON_ARCHIVES_API = "https://api.bilibili.com/x/polymer/web-space/seasons_archives_list"
+SEASON_PAGE_SIZE = 100
 CONTENT_RANGE_TOTAL_RE = re.compile(r"/(\d+)$")
 LOCAL_BVID_RE = re.compile(r"_((?:BV)[A-Za-z0-9]+)_P\d+_")
 
@@ -132,6 +136,74 @@ def api_get(session: requests.Session, url: str, *, params: dict, referer: str) 
     if not isinstance(data, dict):
         raise DownloadError("Bilibili API response did not contain a data object")
     return data
+
+
+def parse_season_url(url: str) -> tuple[str, str]:
+    """Return the owner mid and season id from a Bilibili season URL."""
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or parsed.netloc.lower() != "space.bilibili.com":
+        raise DownloadError(
+            "season URL must use https://space.bilibili.com/<mid>/lists/<season_id>"
+        )
+    parts = [part for part in parsed.path.split("/") if part]
+    if len(parts) != 3 or parts[1].lower() != "lists" or not parts[0].isdigit() or not parts[2].isdigit():
+        raise DownloadError(
+            "season URL must use https://space.bilibili.com/<mid>/lists/<season_id>"
+        )
+    return parts[0], parts[2]
+
+
+def fetch_season_bvids(session: requests.Session, season_url: str) -> tuple[list[str], dict]:
+    """Fetch all BVIDs in a Bilibili ``type=season`` collection in display order."""
+    mid, season_id = parse_season_url(season_url)
+    bvids: list[str] = []
+    seen: set[str] = set()
+    page_num = 1
+    total: int | None = None
+    meta: dict = {}
+
+    while True:
+        data = api_get(
+            session,
+            SEASON_ARCHIVES_API,
+            params={
+                "mid": mid,
+                "season_id": season_id,
+                "page_num": page_num,
+                "page_size": SEASON_PAGE_SIZE,
+            },
+            referer=season_url,
+        )
+        archives = data.get("archives")
+        if not isinstance(archives, list):
+            archives = []
+        for archive in archives:
+            if not isinstance(archive, dict):
+                continue
+            bvid = str(archive.get("bvid") or "").strip()
+            if bvid and bvid not in seen:
+                seen.add(bvid)
+                bvids.append(bvid)
+
+        page = data.get("page") if isinstance(data.get("page"), dict) else {}
+        if total is None:
+            total = int_value(page.get("total"))
+        if isinstance(data.get("meta"), dict):
+            meta = data["meta"]
+
+        if not archives or (total is not None and len(bvids) >= total) or len(archives) < SEASON_PAGE_SIZE:
+            break
+        page_num += 1
+        if page_num > 1000:
+            raise DownloadError(f"season pagination exceeded safety limit: {season_url}")
+
+    if total is not None and len(bvids) != total:
+        raise DownloadError(
+            f"season returned {len(bvids)} unique BVIDs but reported {total}: {season_url}"
+        )
+    if not bvids:
+        raise DownloadError(f"season returned no videos: {season_url}")
+    return bvids, meta
 
 
 def sanitize_title(text: str) -> str:
@@ -318,12 +390,20 @@ def download_stream(
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     last_error: BaseException | None = None
+    range_size = max(chunk_size, 8 * 1024 * 1024)
+    attempt = 1
+    printed_start = False
 
-    for attempt in range(1, max_attempts + 1):
+    while attempt <= max_attempts:
         downloaded = path.stat().st_size if path.exists() else 0
+        range_end = downloaded + range_size - 1
         headers = {**MEDIA_HEADERS, "Referer": referer}
-        if downloaded:
-            headers["Range"] = f"bytes={downloaded}-"
+        # Request a ranged response even for the first chunk. Some Bilibili
+        # mirrors leave an unbounded full-media response idle for a page while
+        # the equivalent bounded ``bytes=0-<end>`` request streams normally.
+        # A server may still ignore the range; the response handling below
+        # falls back to writing a fresh file for HTTP 200.
+        headers["Range"] = f"bytes={downloaded}-{range_end}"
 
         try:
             with session.get(url, headers=headers, stream=True, timeout=(30, 60)) as response:
@@ -334,19 +414,28 @@ def download_stream(
                         return
                     raise DownloadError(f"resume failed with HTTP 416 for incomplete part: {path}")
                 if downloaded and response.status_code == 200:
-                    print(f"    -> {path.name} restarting; server ignored Range for {downloaded} bytes")
-                    downloaded = 0
+                    raise DownloadError(
+                        f"server ignored Range for {path.name} at {downloaded} bytes; "
+                        "refreshing the media URL"
+                    )
                 elif response.status_code not in (200, 206):
                     raise DownloadError(f"media download failed with HTTP {response.status_code}: {url}")
 
                 mode = "ab" if downloaded and response.status_code == 206 else "wb"
                 remote_total = content_range_total(response)
                 content_length = response.headers.get("Content-Length")
-                if remote_total is None and content_length and content_length.isdigit():
+                if (
+                    remote_total is None
+                    and response.status_code == 200
+                    and content_length
+                    and content_length.isdigit()
+                ):
                     remote_total = downloaded + int(content_length)
                 total_text = f" ({remote_total} bytes)" if remote_total is not None else ""
                 resume_text = f" resume from {downloaded} bytes" if downloaded else ""
-                print(f"    -> {path.name}{resume_text}{total_text}")
+                if not printed_start or (downloaded and response.status_code == 200):
+                    print(f"    -> {path.name}{resume_text}{total_text}")
+                    printed_start = True
 
                 last_touch = 0.0
                 with path.open(mode) as f:
@@ -358,18 +447,28 @@ def download_stream(
                                 touch_lock(lock_path)
                                 last_touch = now
 
-            if remote_total is None:
-                return
-
             actual = path.stat().st_size
-            if actual == remote_total:
+            if remote_total is not None and actual == remote_total:
                 return
-            if actual > remote_total:
+            if remote_total is not None and actual > remote_total:
                 raise DownloadError(
                     f"media part {path.name} is larger than expected: downloaded {actual} bytes, expected {remote_total}"
                 )
+            if remote_total is None and response.status_code == 200:
+                return
+            if actual <= downloaded:
+                raise DownloadError(
+                    f"media part {path.name} made no progress at byte {downloaded}"
+                )
+            touch_lock(lock_path)
+            if remote_total is not None:
+                # A bounded range completed successfully but the media has
+                # more bytes. Continue at the new offset without consuming a
+                # retry attempt; only interrupted ranges count as retries.
+                attempt = 1
+                continue
             last_error = DownloadError(
-                f"incomplete media part {path.name}: downloaded {actual} bytes, expected {remote_total}"
+                f"incomplete media part {path.name}: downloaded {actual} bytes without a remote total"
             )
         except requests.RequestException as exc:
             last_error = exc
@@ -378,6 +477,7 @@ def download_stream(
             print(f"    -> retry {path.name} after interrupted stream (attempt {attempt + 1}/{max_attempts})")
             touch_lock(lock_path)
             time.sleep(min(10, attempt * 2))
+        attempt += 1
 
     raise DownloadError(f"failed to download complete media part {path.name}: {last_error}")
 
@@ -669,23 +769,52 @@ def download_page(
     audio_part = plan.target.with_suffix(plan.target.suffix + ".audio.m4s")
 
     try:
-        video_choice, audio_choice = fetch_playurl(session, plan, quality, prefer_codec)
-        print(f"  download {plan.filename}")
-        print(f"    {video_choice.label}")
-        download_stream(session, video_choice.url, video_part, referer=referer, lock_path=lock_path)
+        for stream_attempt in range(1, MAX_PLAYURL_REFRESH_ATTEMPTS + 1):
+            try:
+                video_choice, audio_choice = fetch_playurl(session, plan, quality, prefer_codec)
+                if stream_attempt == 1:
+                    print(f"  download {plan.filename}")
+                else:
+                    print(
+                        f"  refresh play URL for {plan.filename} "
+                        f"(attempt {stream_attempt}/{MAX_PLAYURL_REFRESH_ATTEMPTS})"
+                    )
+                print(f"    {video_choice.label}")
+                download_stream(
+                    session,
+                    video_choice.url,
+                    video_part,
+                    referer=referer,
+                    lock_path=lock_path,
+                    max_attempts=1,
+                )
 
-        if audio_choice is not None:
-            print(f"    {audio_choice.label}")
-            download_stream(session, audio_choice.url, audio_part, referer=referer, lock_path=lock_path)
-            touch_lock(lock_path)
-            mux_with_ffmpeg(video_part, audio_part, plan.target)
-            validate_downloaded_media(plan, video_choice=video_choice, audio_choice=audio_choice)
-            cleanup_parts(video_part, audio_part)
-        else:
-            touch_lock(lock_path)
-            mux_with_ffmpeg(video_part, None, plan.target)
-            validate_downloaded_media(plan, video_choice=video_choice, audio_choice=None)
-            cleanup_parts(video_part)
+                if audio_choice is not None:
+                    print(f"    {audio_choice.label}")
+                    download_stream(
+                        session,
+                        audio_choice.url,
+                        audio_part,
+                        referer=referer,
+                        lock_path=lock_path,
+                        max_attempts=1,
+                    )
+                    touch_lock(lock_path)
+                    mux_with_ffmpeg(video_part, audio_part, plan.target)
+                    validate_downloaded_media(plan, video_choice=video_choice, audio_choice=audio_choice)
+                    cleanup_parts(video_part, audio_part)
+                else:
+                    touch_lock(lock_path)
+                    mux_with_ffmpeg(video_part, None, plan.target)
+                    validate_downloaded_media(plan, video_choice=video_choice, audio_choice=None)
+                    cleanup_parts(video_part)
+                break
+            except (requests.RequestException, DownloadError) as exc:
+                if stream_attempt >= MAX_PLAYURL_REFRESH_ATTEMPTS:
+                    raise
+                print(f"    -> stream attempt failed; refreshing Bilibili URL: {exc}")
+                touch_lock(lock_path)
+                time.sleep(min(10, stream_attempt * 2))
     finally:
         if lock_path.exists():
             lock_path.unlink()
@@ -934,6 +1063,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Optional UTF-8 text file with one BVID per line. # comments are allowed.",
     )
     parser.add_argument(
+        "--season-url",
+        action="append",
+        default=[],
+        help=(
+            "Bilibili season URL such as "
+            "https://space.bilibili.com/609095014/lists/7246850?type=season. "
+            "All season BVIDs are added in displayed order; may be repeated."
+        ),
+    )
+    parser.add_argument(
         "--cookies",
         type=Path,
         default=DEFAULT_COOKIE_FILE,
@@ -1029,7 +1168,16 @@ def main(argv: list[str] | None = None) -> int:
         args.check_existing = True
 
     output_dir = args.output_dir.resolve()
-    bvids = list(args.bvids)
+    cookie_file = args.cookies.resolve()
+    session = make_session(cookie_file)
+
+    bvids: list[str] = []
+    for season_url in args.season_url:
+        season_bvids, season_meta = fetch_season_bvids(session, season_url)
+        season_name = str(season_meta.get("name") or season_meta.get("title") or "season")
+        print(f"season {season_name}: {len(season_bvids)} video(s) from {season_url}")
+        bvids.extend(season_bvids)
+    bvids.extend(args.bvids)
     if args.bvid_file:
         bvids.extend(read_bvid_file(args.bvid_file))
     if args.check_existing and not bvids:
@@ -1043,7 +1191,6 @@ def main(argv: list[str] | None = None) -> int:
     concurrency = max(1, args.concurrency)
     stale_lock_seconds = max(0, args.stale_lock_minutes) * 60
 
-    session = make_session(cookie_file)
     if args.check_existing:
         stats = {"ok": 0, "missing": 0, "incomplete": 0, "failed": 0}
         failures: list[CheckFailure] = []

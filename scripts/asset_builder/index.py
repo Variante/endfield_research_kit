@@ -6,6 +6,7 @@ import json
 import hashlib
 import os
 import re
+import struct
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -438,6 +439,89 @@ def _header_signature(path: Path) -> str:
         return ""
 
 
+def _image_dimensions(path: Path) -> tuple[int, int] | None:
+    """Read image dimensions without adding a runtime imaging dependency.
+
+    The asset index is also used by the compact Gameplay sidecar to choose
+    between exported Sprite/Texture2D variants.  File size is only a proxy
+    for resolution, so keep the real pixel dimensions when the common image
+    headers expose them.
+    """
+    try:
+        with path.open("rb") as fh:
+            header = fh.read(32)
+            if header.startswith(b"\x89PNG\r\n\x1a\n") and len(header) >= 24:
+                width, height = struct.unpack(">II", header[16:24])
+                return (width, height) if width and height else None
+            if header[:6] in {b"GIF87a", b"GIF89a"} and len(header) >= 10:
+                width, height = struct.unpack("<HH", header[6:10])
+                return (width, height) if width and height else None
+            if header[:2] == b"BM" and len(header) >= 26:
+                width, height = struct.unpack("<ii", header[18:26])
+                width, height = abs(width), abs(height)
+                return (width, height) if width and height else None
+            if header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+                chunk = header[12:16]
+                if chunk == b"VP8X" and len(header) >= 30:
+                    width = 1 + int.from_bytes(header[24:27], "little")
+                    height = 1 + int.from_bytes(header[27:30], "little")
+                    return (width, height) if width and height else None
+                if chunk == b"VP8L" and len(header) >= 25 and header[20] == 0x2F:
+                    packed = int.from_bytes(header[21:25], "little")
+                    width = 1 + (packed & 0x3FFF)
+                    height = 1 + ((packed >> 14) & 0x3FFF)
+                    return (width, height) if width and height else None
+                if chunk == b"VP8 " and len(header) >= 30 and header[23:26] == b"\x9d\x01\x2a":
+                    width = int.from_bytes(header[26:28], "little") & 0x3FFF
+                    height = int.from_bytes(header[28:30], "little") & 0x3FFF
+                    return (width, height) if width and height else None
+
+            if header[:2] == b"\xff\xd8":
+                # JPEG stores dimensions in one of the SOF marker segments.
+                fh.seek(2)
+                sof_markers = {
+                    *range(0xC0, 0xC4),
+                    *range(0xC5, 0xC8),
+                    *range(0xC9, 0xCC),
+                    *range(0xCD, 0xD0),
+                }
+                while True:
+                    byte = fh.read(1)
+                    if not byte:
+                        break
+                    if byte != b"\xFF":
+                        continue
+                    marker_byte = fh.read(1)
+                    while marker_byte == b"\xFF":
+                        marker_byte = fh.read(1)
+                    if not marker_byte:
+                        break
+                    marker = marker_byte[0]
+                    if marker in {0xD8, 0xD9}:
+                        continue
+                    length_bytes = fh.read(2)
+                    if len(length_bytes) != 2:
+                        break
+                    length = int.from_bytes(length_bytes, "big")
+                    if length < 2:
+                        break
+                    if marker in sof_markers:
+                        payload = fh.read(length - 2)
+                        if len(payload) >= 5:
+                            height = int.from_bytes(payload[1:3], "big")
+                            width = int.from_bytes(payload[3:5], "big")
+                            return (width, height) if width and height else None
+                    else:
+                        fh.seek(length - 2, os.SEEK_CUR)
+
+            if path.suffix.lower() == ".tga" and len(header) >= 16:
+                width, height = struct.unpack("<HH", header[12:16])
+                return (width, height) if width and height else None
+    except (OSError, struct.error, ValueError):
+        return None
+    return None
+
+
 def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str, Path]) -> None:
     coarse_counts: Counter[tuple[str, str, int]] = Counter()
     for entry in entries:
@@ -531,6 +615,10 @@ def scan_exported_media_assets(
         if path_id:
             entry["pid"] = path_id
         if kind == "image":
+            dimensions = _image_dimensions(path)
+            if dimensions:
+                # `h` is already reserved for duplicate-content SHA-256.
+                entry["iw"], entry["ih"] = dimensions
             image_category = classify_image_name(stem)
             image_category_counts[image_category] += 1
             if image_category != "other":

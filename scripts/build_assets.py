@@ -21,8 +21,9 @@ from asset_builder.index import (
     build_asset_indexes,
     scan_exported_media_assets,
 )
+from asset_builder.gameplay_refs import build_from_paths as build_gameplay_asset_refs
 from asset_builder.story_media import build_story_media_payload, write_story_media_index, write_story_media_payload
-from common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, read_json, write_json
+from common import ASSET_DIR, EXPORT_ROOT, LANG_DIR, OUT_DIR, ROOT, read_json, write_json
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -132,6 +133,27 @@ def _stats_from_compact_payloads(
         "indexBytes": video_index_path.stat().st_size,
     }
     return asset_stats, video_stats
+
+
+def write_gameplay_refs(asset_index_path: Path) -> None:
+    """Write the bounded asset sidecar used by Gameplay entity details."""
+    gameplay_path = LANG_DIR / "CN" / "gameplay" / "index.json"
+    output_path = ASSET_DIR / "gameplay_refs.json"
+    if not gameplay_path.is_file():
+        print("Gameplay asset refs: skipped (CN Gameplay index is missing)")
+        return
+    try:
+        payload = build_gameplay_asset_refs(gameplay_path, asset_index_path, output_path)
+    except (OSError, ValueError, TypeError) as error:
+        print(f"Gameplay asset refs: skipped ({error})")
+        return
+    counts = payload.get("counts") or {}
+    print(
+        "Gameplay asset refs written:",
+        output_path,
+        f"({counts.get('matchedEntries', 0)} entries; "
+        f"{counts.get('withImages', 0)} images; {counts.get('withModels', 0)} models)",
+    )
 
 
 def build_webui_asset_indexes(asset_index_path: Path, video_index_path: Path) -> tuple[dict, dict, dict]:
@@ -262,6 +284,7 @@ def main(argv: list[str] | None = None) -> None:
             f"{story_media_stats['videos']} videos from {story_media_stats['videoRefs']} refs)"
         ),
     )
+    write_gameplay_refs(asset_index_path)
     if args.mode == "focused" or args.fast or args.skip_bundles:
         write_empty_bundle_index()
         print("Asset bundle output: skipped (focused/fast/index-only mode)")

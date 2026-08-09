@@ -131,9 +131,13 @@ class DynamicSceneLevelScriptActionBridgeAuditTests(unittest.TestCase):
                     "volumes": [
                         {
                             "slotId": 80001,
+                            "keySlotId": 80001,
+                            "unionTag": 1,
                             "triggerVolumeType": "Leader",
                             "memberCount": 8,
                             "shapeList": {
+                                "status": "present",
+                                "parseStatus": "decoded",
                                 "shapes": [
                                     {
                                         "shapeType": "Sphere",
@@ -172,6 +176,36 @@ class DynamicSceneLevelScriptActionBridgeAuditTests(unittest.TestCase):
             "unresolved_local_levelscript_trigger_volume",
         )
         self.assertEqual(context["missingSlotIds"], [80001])
+
+    def test_duplicate_local_trigger_volume_slot_fails_closed(self) -> None:
+        volume = {
+            "slotId": 80001,
+            "keySlotId": 80001,
+            "unionTag": 1,
+            "triggerVolumeType": "Leader",
+            "memberCount": 8,
+            "shapeList": {
+                "status": "present",
+                "parseStatus": "decoded",
+                "shapes": [{"shapeType": "Sphere", "radius": 4.0}],
+            },
+        }
+        context = classify_local_trigger_volume_context(
+            {
+                "scriptIdVerified": True,
+                "triggerVolumesStatus": "present",
+                "triggerVolumesDetails": {
+                    "parseStatus": "decoded",
+                    "volumes": [volume, dict(volume)],
+                },
+            },
+            [80001],
+        )
+        self.assertEqual(
+            "unresolved_local_levelscript_trigger_volume",
+            context["status"],
+        )
+        self.assertEqual([80001], context["ambiguousSlotIds"])
 
 
 if __name__ == "__main__":

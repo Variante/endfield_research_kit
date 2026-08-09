@@ -245,7 +245,7 @@ python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\build_character_data.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
 python scripts\build_gameplay_data.py
-python scripts\build_progression_data.py
+python scripts\build_gameplay_asset_refs.py --language CN
 python scripts\build_projectile_data.py
 python scripts\build_combat_relationships.py --languages CN
 python scripts\build_economy_data.py --languages CN --default-language CN
@@ -256,8 +256,32 @@ python scripts\build_audio.py
 python scripts\pack_webui.py
 ```
 
+`build_projectile_data.py --require-exact` fails when any emitted projectile
+does not consume its complete managed-reference boundary. The compact payload
+preserves authored projectile behavior and confidence metadata; it does not
+promote identifier similarity into proven runtime spawn ownership. Normal
+projectile rebuilds reuse exact hash/media links from the current CN audio
+index; `build_audio.py` refreshes those links from the Wwise banks and writes
+the compact per-language Gameplay SFX sidecar.
+
 Story helpers live under `scripts/story_builder/`. Recovery audits live under
 `scripts/story_recovery/` and are not all part of the canonical export.
+
+For the current Bilibili Story-order source, download the season into its
+isolated intake directory and run the existing OCR sampler through the pinned
+wrapper:
+
+```bat
+python scripts\download_bilibili_video.py --season-url "https://space.bilibili.com/609095014/lists/7246850?type=season" --output-dir videos\bilibili_season_7246850
+python scripts\story_recovery\run_bilibili_season_ocr.py --limit 1 --limit-frames 20
+python scripts\story_recovery\run_bilibili_season_ocr.py
+python scripts\story_recovery\build_gameplay_video_story_order.py --ocr-report-dir reports\gameplay_video_ocr\bilibili_season_7246850
+```
+
+The first OCR command is a smoke test; omit `--limit` and `--limit-frames` for
+the complete season. The wrapper keeps this source's reports under
+`reports/gameplay_video_ocr/bilibili_season_7246850`; the matcher reads only
+that directory and the active Story-order override is not changed by OCR.
 
 Important Story components:
 
@@ -284,6 +308,62 @@ Important Story components:
   and character profile-voice non-mission classification, refreshed by
   `refresh_evidence.py`.
 
+## Characters catalog
+
+`build_character_data.py` builds the WebUI Characters (人物) page's identity
+catalog at `webui/data/lang/<LANG>/characters/index.json`. Sources:
+
+- Table rows: `TextTable` `npcName_*`, `CharacterTable`, `NpcTable`,
+  `SNSChatTable`, and the Story actor registry (`actors.json`).
+- Exported asset filenames, matched against `ASSET_MARKERS` (an ordered list
+  of regexes, most specific first): `_actor_`, `_major_npc_`/`_npc_major_`,
+  `dlg_npc_####_`, `icon_npc_[####_]`, `sns_npc_`, `_npc_animal_`, `_lod_`,
+  then a generic `_npc_<token>` fallback.
+
+Records are grouped into one identity per matching display name; the WebUI
+then re-keys each group by the smallest constituent record id (a table/asset
+key, not localized text) so the id stays stable across language builds — see
+`canonicalGroupId` in `webui/src/features/characters/index.js`.
+
+**Exclusions.** Filename markers are pattern-based and occasionally match
+something that isn't a character: a config/table file, a VFX material, a
+generic prop, or a UI icon whose captured "name" is really a qualifier word.
+Two allowlists in `build_character_data.py` suppress these before they become
+identities:
+
+- `EXCLUDED_TOKENS` — exact captured tokens known to be non-character (e.g.
+  `lodconfig`, `muzzle`, `prop`, `shared`, `terminal`, `robot`, `diffuse`).
+- `EXCLUDED_FILENAME_FRAGMENTS` — whole filename families skipped before
+  `ASSET_MARKERS` even runs, for cases where the family produces a different
+  bogus token per file (`icon_settlement_npc_bottom/left/right`,
+  `bg_blackbox_npc_1/2/...`).
+
+Add to these only after tracing a specific token back to its source
+filename(s) and confirming it isn't a character (both sets carry a comment
+recording that source). After editing either list, rebuild with
+`python scripts\build_character_data.py --languages CN` and check the
+`webui/overrides/character_merges.json` `merges`/`flagged` entries for
+references to the removed token(s) — a merge whose source id no longer
+exists after a rebuild is simply skipped (that record dropped out of
+grouping entirely, so it never reaches the merge-fold pass), but the dead
+entry stays in the file. Clean it up by hand so the file doesn't accumulate
+references to ids that can never resolve again.
+
+**Manual merges.** `webui/overrides/character_merges.json` folds identities
+the automatic name-matching left separate (typo variants, alternate
+transliterations, ...) or that the same underlying person produced under two
+different tokens. It is edited live from the Characters page UI — never by
+rebuilding — via `serve.py`'s `PUT /overrides/character_merges.json`
+endpoint:
+
+- `merges`: `{sourceId: targetId}`, both canonical (language-stable) ids. The
+  target inherits every name, evidence group, and alias from the source.
+  Cycles and self-merges are rejected server-side.
+- `flagged`: ids marked "this needs merging into something, but the target
+  isn't known yet" — surfaced as the "Flagged: needs merge" chip in the
+  Characters page's Other filter, and cleared automatically once that id is
+  actually merged.
+
 ## Updates
 
 ```bat
@@ -300,11 +380,19 @@ and decoded audio. Use `--full-export-scan` only for a broad audit. Never use
 
 ## Assets and audio
 
-`build_assets.py` creates the Assets tab indexes and compact Story-media lookup.
+`build_assets.py` creates the Assets tab indexes, compact Story-media lookup,
+and `webui/data/assets/gameplay_refs.json`, the bounded entity-to-image/model
+sidecar used by Gameplay. Run `build_gameplay_asset_refs.py` directly when the
+Gameplay index and broad Assets index already exist.
 `build_audio.py` writes shared audio once under
 `export_full/structured/Audio/shared/`, language voice under
 `export_full/structured/Audio/<LANG>/`, and relinks playable conversation
-audio.
+audio. It also resolves non-zero projectile sound hashes through Wwise HIRC,
+attaches playable media candidates to `webui/data/gameplay/projectiles.json`,
+recovers exact SkillData/BuffData event references for character skills and
+bounded enemy ownership into
+`webui/data/lang/<LANG>/gameplay/sound_effects.json`, and preserves the
+unresolved runtime switch/random-container boundary.
 
 Use `export_assets.bat --export-from-game` for installed-game image/model/
 Material/CN-audio refresh. Asset modes, from narrowest to broadest, are

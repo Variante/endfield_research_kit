@@ -2075,6 +2075,8 @@ def run_ocr(args: argparse.Namespace) -> None:
         str(args.frame_step),
         "--crop",
         args.ocr_crop,
+        "--report-dir",
+        str(args.ocr_report_dir.resolve()),
     ]
     if args.force_ocr:
         command.append("--force")
@@ -2106,6 +2108,12 @@ def run_ocr(args: argparse.Namespace) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-ocr", action="store_true", help="run OCR before matching")
+    parser.add_argument(
+        "--ocr-report-dir",
+        type=Path,
+        default=OCR_REPORT_DIR,
+        help="Directory containing completed per-video OCR reports",
+    )
     parser.add_argument("--frame-step", type=int, default=10, help="OCR frame step when --run-ocr is used")
     parser.add_argument("--ocr-crop", choices=["subtitle", "lower-half", "lower-third", "full"], default="subtitle")
     parser.add_argument(
@@ -2186,7 +2194,7 @@ def main() -> int:
     gram_index_by_scope: dict[tuple[str, ...], dict[str, list[int]]] = {}
     min_ocr_tool_version = 0 if args.include_stale_ocr else MIN_OCR_TOOL_VERSION
     ocr_reports, ocr_load_stats = load_ocr_reports(
-        OCR_REPORT_DIR,
+        args.ocr_report_dir,
         include_smoke=args.include_smoke,
         min_tool_version=min_ocr_tool_version,
         require_archive_box_ocr=not args.include_stale_ocr and not args.disable_archive_box_ocr,
@@ -2202,7 +2210,7 @@ def main() -> int:
         archive_note = "" if args.disable_archive_box_ocr else ", archive-box OCR enabled"
         stale_note = f", toolVersion >= {MIN_OCR_TOOL_VERSION}{archive_note} only"
     print(
-        f"Loaded {len(ocr_reports)} completed OCR report(s) from {rel_path(OCR_REPORT_DIR)} "
+        f"Loaded {len(ocr_reports)} completed OCR report(s) from {rel_path(args.ocr_report_dir)} "
         f"({'including' if args.include_smoke else 'excluding'} smoke reports{stale_note})."
     )
     if ocr_reports:

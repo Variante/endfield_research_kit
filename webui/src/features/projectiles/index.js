@@ -1,8 +1,8 @@
 (() => {
   const DEFAULT_CONTAINER = "#projectile-inspector";
   const DEFAULT_DATA_PATH = "data/gameplay/projectiles.json";
-  const PAGE_SIZE = 100;
-  const COMBAT_LINK_LIMIT = 40;
+  const PAGE_SIZE = Infinity;
+  const COMBAT_LINK_LIMIT = Infinity;
   let localeListenerBound = false;
   let languageListenerBound = false;
   const COMBAT_TEXT = {
@@ -28,7 +28,7 @@
       path: "Field / path",
       direct: "Exported link",
       inferred: "Matched link",
-      linkLimit: "Showing the first {shown} of {total} links. Use the debug-only Combat page for the exhaustive graph.",
+      linkLimit: "Showing the first {shown} of {total} links. Use the Combat sub-tab for the exhaustive graph.",
       graphUnavailable: "Combat relationship data is unavailable, so these records stay in the unresolved group.",
       noSpecificLinks: "No skill-specific combat links were exported for this projectile.",
       recordsInGroup: "records",
@@ -56,7 +56,7 @@
       path: "\u5b57\u6bb5 / \u8def\u5f84",
       direct: "\u5bfc\u51fa\u76f4\u94fe",
       inferred: "\u5339\u914d\u5173\u7cfb",
-      linkLimit: "\u663e\u793a\u524d {shown} / {total} \u6761\u5173\u7cfb\u3002\u8be6\u7ec6\u56fe\u8bf7\u4f7f\u7528\u4ec5\u8c03\u8bd5\u6a21\u5f0f\u53ef\u89c1\u7684 Combat \u9875\u3002",
+      linkLimit: "\u663e\u793a\u524d {shown} / {total} \u6761\u5173\u7cfb\u3002\u8bf7\u4f7f\u7528 Combat \u5b50\u6807\u7b7e\u67e5\u770b\u5b8c\u6574\u56fe\u3002",
       graphUnavailable: "\u6218\u6597\u5173\u7cfb\u6570\u636e\u4e0d\u53ef\u7528\uff0c\u56e0\u6b64\u8fd9\u4e9b\u8bb0\u5f55\u4fdd\u7559\u5728\u672a\u89e3\u6790\u5206\u7ec4\u4e2d\u3002",
       noSpecificLinks: "\u6ca1\u6709\u4e3a\u8be5\u6295\u5c04\u7269\u5bfc\u51fa\u6280\u80fd\u4e13\u5c5e\u6218\u6597\u5173\u7cfb\u3002",
       recordsInGroup: "\u6761\u8bb0\u5f55",
@@ -228,7 +228,16 @@
       ...((entry.template || {}).activeSkillIds || []),
       ...((entry.template || {}).passiveSkillIds || []),
       ...((entry.template || {}).normalAttackIds || []),
-    ].map((value) => String(value).toLowerCase());
+      ...((entry.template || {}).normalAttackList || []),
+      ...((entry.template || {}).enabledBreakingNormalAttacks || []),
+      ...((entry.template || {}).enabledPassiveSkills || []),
+      (entry.template || {}).normalSkillId,
+      (entry.template || {}).ultimateSkillId,
+      (entry.template || {}).plungingAttackStartId,
+      (entry.template || {}).plungingAttackEndId,
+      (entry.template || {}).dodgeSkillId,
+      (entry.template || {}).comboSkillId,
+    ].filter(Boolean).map((value) => String(value).toLowerCase());
 
     const directProjectile = uniqueMappings(index.projectileMappings.get(projectileId) || []);
     if (directProjectile.length === 1) {
@@ -372,6 +381,12 @@
     return value ? "Yes" : "No";
   }
 
+  function gameplayTagText(tag) {
+    if (typeof tag === "string") return tag;
+    if (!tag || typeof tag !== "object") return "";
+    return [tag.path, enumText(tag.tagId)].filter(Boolean).join(" / ");
+  }
+
   function row(label, value, hint = "") {
     return `<div class="projectile-field"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}${hint ? `<small>${escapeHtml(hint)}</small>` : ""}</dd></div>`;
   }
@@ -430,14 +445,21 @@
       ${row("Auto-set target faction", boolText(filter.autoSetTargetFaction))}
       ${row("Faction target", enumText(filter.factionTarget))}
       ${row("Target faction type", enumText(filter.targetFactionType))}
+      ${row("Target-filter layout", [filter.serializedLayout, filter.tagEntryLayout].filter(Boolean).join(" / "))}
+      ${row("Filter object type", boolText(filter.filterObjectType))}
+      ${row("Object type", enumText(filter.objectType))}
       ${row("Filter slot", boolText(filter.filterSlot))}
       ${row("Slot index", number(filter.slotIndex))}
       ${row("Filter gameplay tag", boolText(filter.filterGameplayTag))}
-      ${row("Tag query", `${enumText(query.queryType)}${(query.tags || []).length ? ` · ${query.tags.join(", ")}` : ""}`)}
+      ${row("Tag query", `${enumText(query.queryType)}${(query.tags || []).length ? ` / ${(query.tags || []).map(gameplayTagText).filter(Boolean).join(", ")}` : ""}`)}
       ${row("Ignore immune level", enumText(value.ignoreImmuneLevel))}
       ${row("Max hit count", scalarText(value.maxHitCount))}
       ${row("Allow same target", boolText(value.allowHitSameTarget))}
       ${row("Hit interval per target", number(value.hitIntervalPerTarget))}
+      ${row("Collision-detection timing", enumText(value.collisionDetectTiming))}
+      ${row("Detection delay time", scalarText(value.hitAndBlockDetectDelayTime))}
+      ${row("Detection delay distance", scalarText(value.hitAndBlockDetectDelayDistance))}
+      ${row("Trace target after reach", boolText(value.canTraceTargetAfterReach))}
     </dl>`;
   }
 
@@ -459,6 +481,7 @@
       ${row("Move mode", segment.moveModeId || "—")}
       ${row("Early next by duration", boolText(segment.earlyNextByDuration))}
       ${row("Duration", scalarText(segment.segmentDuration))}
+      ${row("Skip hit/block detection", boolText(segment.skipHitAndBlockDetection))}
       ${row("Speed lerp time", scalarText(segment.speedLerpTime))}
     </dl></article>`).join("");
     const modes = (movement.modes || []).map((mode, index) => `<article class="projectile-mode-card"><header><h4>${escapeHtml(mode.key || `Mode ${index + 1}`)}</h4><span class="projectile-confidence-pill">Exact structure · qualified semantics</span></header><dl class="projectile-fields">
@@ -476,6 +499,12 @@
       ${row("Travel duration", scalarText(mode.travelDuration))}
       ${row("Vertex Y offset", scalarText(mode.vertexYOffset))}
       ${row("Gravity", scalarText(mode.gravity))}
+      ${row("Surround center", mode.surroundCenterKey || "None")}
+      ${row("Surround line speed", scalarText(mode.surroundLineSpeed))}
+      ${row("Max centrifugal radius", `${scalarText(mode.surroundMaxCentrifugalRadius)} / reach ${boolText(mode.reachOnMaxCentrifugalRadius)}`)}
+      ${row("Surround axial speed", scalarText(mode.surroundAxialSpeed))}
+      ${row("Max axial height", `${scalarText(mode.surroundMaxAxialHeight)} / reach ${boolText(mode.reachOnMaxAxialHeight)}`)}
+      ${row("Surround axis rotation", vectorText(mode.surroundAxisRotation))}
     </dl><div class="projectile-curve-grid">${curveCard("Speed curve", mode.speedCurve)}${curveCard("Distance scale", mode.speedScaleWithDistance)}${curveCard("Angular-speed curve", mode.angularSpeedCurve)}</div><div class="projectile-mini-grid">${renderBezier("Bezier midpoint 1", mode.bezierMidPoint1)}${renderBezier("Bezier midpoint 2", mode.bezierMidPoint2)}</div></article>`).join("");
     return `<div class="projectile-inline-meta"><span>Segment movement: <strong>${boolText(movement.useSegmentMove)}</strong></span><span>Preset points: <strong>${escapeHtml((movement.presetPointKeys || []).join(", ") || "None")}</strong></span></div>${segments ? `<div class="projectile-mini-grid">${segments}</div>` : ""}${modes || '<p class="projectile-muted">No authored movement modes.</p>'}`;
   }
@@ -485,7 +514,10 @@
     return `<dl class="projectile-fields projectile-fields-compact">
       ${row("Move / position", `${enumText(value.moveType)} / ${enumText(value.positionRef)}`)}
       ${row("Visible with entity", boolText(value.visibleWithEntity))}
+      ${row("Ignore entity dither", boolText(value.ignoreEntityDither))}
+      ${row("Camera viewport anchor", `${boolText(value.useCameraViewportAnchor)} / ${vectorText(value.cameraViewportPosition)}`)}
       ${row("Follow grounded", `${boolText(value.followGrounded)} · max ${number(value.followGroundedMaxDistance)}`)}
+      ${row("Lerp to target", `${boolText(value.lerpToTargetTrans)} / ${number(value.lerpDuration)}`)}
       ${row("Position offset", value.usePositionOffsetBB ? vectorText(value.positionOffsetBB) : vectorText(value.positionOffset))}
       ${row("Rotation", `${enumText(value.rotType)} · ref ${enumText(value.rotRef)}`)}
       ${row("Alert type", enumText(value.alertType))}
@@ -500,6 +532,7 @@
       ${row("Guard / force guard", `${boolText(effect.guardEffect)} / ${boolText(effect.forceGuardEffect)}`)}
       ${row("Scale", vectorText({ valueCandidate: effect.scale }))}
       ${row("Length", scalarText(effect.lengthBB))}
+      ${row("Duration scale", scalarText(effect.durationScaleBB))}
       ${row("Release by action", boolText(effect.releaseByAction))}
       ${row("Ignore owner time scale", boolText(effect.ignoreOwnerTimeScale))}
       ${row("Interrupt time", number(effect.interruptTime))}
@@ -520,7 +553,27 @@
   function renderSounds(entry) {
     const sounds = entry.sounds || {};
     const keys = ["launchSound", "loopSound", "reachSound", "hitSound", "blockSound", "finishedSound", "sizzleSound"];
-    return `<p class="projectile-callout">These are metadata-named hash-like authored values. They are not presented as resolved Wwise event IDs.</p><dl class="projectile-fields">${keys.map((key) => row(key.replace(/([A-Z])/g, " $1"), enumText(sounds[key]))).join("")}${row("Sizzle trigger distance", number(sounds.sizzleSoundTriggerDistance))}${row("Ring sound smooth factor", number(sounds.ringProjectileSoundSmoothFactor))}</dl>`;
+    const phaseLabels = {
+      launchSound: ui("Launch", "\u53d1\u5c04"),
+      loopSound: ui("Flight loop", "\u98de\u884c\u5faa\u73af"),
+      reachSound: ui("Reach target", "\u5230\u8fbe\u76ee\u6807"),
+      hitSound: ui("Hit", "\u547d\u4e2d"),
+      blockSound: ui("Blocked", "\u88ab\u963b\u6321"),
+      finishedSound: ui("Finish", "\u7ed3\u675f"),
+      sizzleSound: ui("Fly-by / proximity", "\u63a0\u8fc7 / \u8fd1\u8ddd\u79bb"),
+    };
+    const active = keys.map((key) => ({ key, value: sounds[key] })).filter(({ value }) => {
+      const raw = typeof value === "object" ? value?.value : value;
+      return Boolean(raw);
+    });
+    if (!active.length) return `<p class="projectile-callout">${escapeHtml(ui("No authored projectile sound events.", "\u6ca1\u6709\u914d\u7f6e\u6295\u5c04\u7269\u58f0\u97f3\u4e8b\u4ef6\u3002"))}</p>`;
+    const cards = active.map(({ key, value }) => {
+      const event = value?.event || {};
+      const audio = Array.isArray(value?.audio) ? value.audio.filter((item) => item?.src) : [];
+      const candidates = audio.map((item, index) => `<div class="projectile-audio-candidate"><audio controls preload="none" src="${escapeHtml(item.src)}"></audio><small>${escapeHtml(`${ui("Candidate", "\u5019\u9009")} ${index + 1} · Media ${item.mediaId || "-"}`)}</small></div>`).join("");
+      return `<article class="projectile-sound-card"><header><div><span>${escapeHtml(phaseLabels[key])}</span><code>${escapeHtml(event.hex || value?.hex || enumText(value))}</code></div><strong>${escapeHtml(audio.length ? `${audio.length} ${ui("playable", "\u53ef\u64ad")}` : ui("Not linked", "\u672a\u8fde\u63a5"))}</strong></header>${candidates || `<p>${escapeHtml(ui("The event is authored, but no decoded media candidate is currently available.", "\u5df2\u914d\u7f6e\u58f0\u97f3\u4e8b\u4ef6\uff0c\u4f46\u5f53\u524d\u6ca1\u6709\u53ef\u64ad\u7684\u89e3\u7801\u5a92\u4f53\u3002"))}</p>`}</article>`;
+    }).join("");
+    return `<p class="projectile-callout">${escapeHtml(ui("Playable files are exact Wwise event-to-media candidates. Runtime switch and random-container selection is not recovered, so several candidates may belong to one phase.", "\u53ef\u64ad\u6587\u4ef6\u901a\u8fc7 Wwise \u4e8b\u4ef6\u7ed3\u6784\u7cbe\u786e\u8fde\u63a5\u3002\u8fd0\u884c\u65f6\u7684\u5207\u6362\u4e0e\u968f\u673a\u5bb9\u5668\u9009\u62e9\u5c1a\u672a\u6062\u590d\uff0c\u56e0\u6b64\u4e00\u4e2a\u9636\u6bb5\u53ef\u80fd\u6709\u591a\u4e2a\u5019\u9009\u3002"))}</p><div class="projectile-sound-grid">${cards}</div><details class="projectile-sound-technical"><summary>${escapeHtml(ui("Technical sound values", "\u6280\u672f\u58f0\u97f3\u503c"))}</summary><dl class="projectile-fields">${active.map(({ key, value }) => row(phaseLabels[key], enumText(value))).join("")}${row("Sizzle trigger distance", number(sounds.sizzleSoundTriggerDistance))}${row("Ring sound smooth factor", number(sounds.ringProjectileSoundSmoothFactor))}</dl></details>`;
   }
 
   function renderSource(entry) {
@@ -531,6 +584,7 @@
       ${row("Asset name", source.assetName)}
       ${row("Path ID", source.pathId)}
       ${row("CAB source", source.sourceFile)}
+      ${row("Source offset", number(source.sourceOffset))}
       ${row("VFS path", source.vfsPath)}
       ${row("Decoded JSON", source.jsonPath)}
       ${row("Raw byte size", number(source.byteSize))}
@@ -541,6 +595,11 @@
       ${row("Active skills", (template.activeSkillIds || []).join(", ") || "None")}
       ${row("Passive skills", (template.passiveSkillIds || []).join(", ") || "None")}
       ${row("Normal attacks", (template.normalAttackIds || []).join(", ") || "None")}
+      ${row("Normal skill", template.normalSkillId || "None")}
+      ${row("Ultimate skill", template.ultimateSkillId || "None")}
+      ${row("Combo skill", template.comboSkillId || "None")}
+      ${row("Dodge skill", template.dodgeSkillId || "None")}
+      ${row("HUD panel", template.hudPanelName || "None")}
     </dl>`;
   }
 
@@ -622,7 +681,7 @@
       ${section(ui("Targeting and hit rules", "目标与命中规则"), renderTargeting(entry))}
       ${section(ui("Movement segments, modes, and curves", "移动分段、模式与曲线"), renderMovement(entry), false)}
       ${section(ui("Effect lists and alert behavior", "特效列表与预警行为"), renderEffects(entry), false)}
-      ${section(ui("Sound hash fields", "声音哈希字段"), renderSounds(entry), false)}
+      ${section(ui("Related sound effects", "相关音效"), renderSounds(entry), false)}
       ${section(ui("Source and template identity", "来源与模板标识"), renderSource(entry), false)}
     </article>`;
   }
@@ -633,7 +692,7 @@
     const modes = ((entry.movement || {}).modes || []).map((mode) => mode.key).join(" ");
     const effects = Object.values(((entry.effects || {}).lists || {})).flat().map((effect) => effect.effectName).join(" ");
     const assignment = combatAssignment(entry);
-    return [entry.id, entryDisplayName(entry), source.assetName, source.pathId, source.root, source.sourceFile, source.vfsPath, ...(template.activeSkillIds || []), ...(template.passiveSkillIds || []), ...(template.normalAttackIds || []), assignment.owner?.label, assignment.owner?.key, assignment.group?.label, assignment.skillKey, modes, effects].filter(Boolean).join(" ").toLowerCase();
+    return [entry.id, entryDisplayName(entry), source.assetName, source.pathId, source.root, source.sourceFile, source.vfsPath, ...(template.activeSkillIds || []), ...(template.passiveSkillIds || []), ...(template.normalAttackIds || []), ...(template.normalAttackList || []), ...(template.enabledBreakingNormalAttacks || []), ...(template.enabledPassiveSkills || []), template.normalSkillId, template.ultimateSkillId, template.plungingAttackStartId, template.plungingAttackEndId, template.dodgeSkillId, template.comboSkillId, assignment.owner?.label, assignment.owner?.key, assignment.group?.label, assignment.skillKey, modes, effects].filter(Boolean).join(" ").toLowerCase();
   }
 
   function applyFilters() {
@@ -735,7 +794,14 @@
   function shell(payload) {
     const counts = (payload && payload.counts) || {};
     const sources = Object.keys(counts.bySource || {});
-    return `<div class="projectile-toolbar"><div><h1>${escapeHtml(ui("Combat & Projectile Explorer", "战斗与投射物查看器"))}</h1><p>${escapeHtml(ui("Browse projectiles by their resolved character or enemy sender, then inspect skill links, movement, collision, targeting, effects, and source evidence.", "按已解析的角色或敌人发起者浏览投射物，并查看技能关系、移动、碰撞、目标、特效与来源证据。"))}</p></div><div class="projectile-summary"><strong>${escapeHtml(number(counts.projectiles || 0))}</strong> ${escapeHtml(t("records"))}</div></div>
+    const summary = [
+      `${number(counts.projectiles || 0)} ${t("records")}`,
+      `${number(counts.byteComplete || 0)} ${ui("exact", "完整解码")}`,
+      `${number(counts.movementModes || 0)} ${ui("movement modes", "移动模式")}`,
+      `${number(counts.effectActions || 0)} ${ui("effect actions", "特效动作")}`,
+      `${number(counts.uniqueAuthoredSkills || 0)} ${ui("behavior skills", "自身技能")}`,
+    ];
+    return `<div class="projectile-toolbar"><div><h1>${escapeHtml(ui("Combat & Projectiles", "战斗与投射物"))}</h1><p>${escapeHtml(ui("Browse projectiles by their resolved character or enemy sender, then inspect skill links, movement, collision, targeting, effects, and source evidence.", "按已解析的角色或敌人发起者浏览投射物，并查看技能关系、移动、碰撞、目标、特效与来源证据。"))}</p></div><div class="projectile-summary"><strong>${escapeHtml(summary[0])}</strong><span>${escapeHtml(summary.slice(1).join(" · "))}</span></div></div>
       <section class="projectile-intro" aria-labelledby="projectile-why-title"><div class="projectile-intro-lead"><strong id="projectile-why-title">${escapeHtml(t("why"))}</strong><span>${escapeHtml(t("whyBody"))}</span></div><div class="projectile-question-grid"><article><strong>${escapeHtml(t("q1"))}</strong><span>${escapeHtml(t("q1b"))}</span></article><article><strong>${escapeHtml(t("q2"))}</strong><span>${escapeHtml(t("q2b"))}</span></article><article><strong>${escapeHtml(t("q3"))}</strong><span>${escapeHtml(t("q3b"))}</span></article></div><p class="projectile-first-step"><strong>${escapeHtml(t("start"))}</strong> ${escapeHtml(t("startBody"))}</p></section>
       <details class="projectile-scope"><summary>${escapeHtml(t("limits"))}</summary><div><p>${state.uiLocale === "zh" ? "投射物记录是配置的行为模板，不是在游戏中观察到的一发攻击。" : "A projectile record is an authored behavior template, not a shot observed in play."}</p><p>${state.uiLocale === "zh" ? "黑板键是在运行时提供的命名值。记录完整解码只表示字节已消费，并不表示每个枚举、单位、哈希或运行时交互都已理解。" : "A blackboard key is a named value supplied at runtime. A fully decoded record means its bytes were consumed, not that every enum, unit, hash, or runtime interaction is understood."}</p><p>${state.uiLocale === "zh" ? "文件组、CAB、VFS、TypeTree 与 Path ID 是提取诊断信息，不是玩法描述。" : "Source group, CAB, VFS, TypeTree, and Path ID are extraction diagnostics, not gameplay descriptions."}</p></div></details>
       <div class="projectile-layout"><aside class="projectile-sidebar" aria-label="${ui("Projectile results", "投射物结果")}"><div class="projectile-filters"><label>${escapeHtml(t("find"))}<input type="search" data-projectile-search placeholder="${escapeHtml(t("placeholder"))}" aria-controls="projectile-result-list" autocomplete="off"></label><label>${escapeHtml(t("fileGroup"))}<select data-projectile-source><option value="all">${escapeHtml(t("allGroups"))}</option>${sources.map((source) => `<option value="${escapeHtml(source)}">${escapeHtml(source)} (${escapeHtml(number(counts.bySource[source]))})</option>`).join("")}</select></label><button type="button" class="projectile-reset" data-projectile-reset hidden>${escapeHtml(t("clear"))}</button></div><div class="projectile-list-count" data-projectile-shown role="status"></div><div class="projectile-list" id="projectile-result-list" data-projectile-list></div></aside><main class="projectile-main" data-projectile-detail aria-label="${ui("Selected projectile", "已选择的投射物")}"></main></div>`;

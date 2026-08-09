@@ -1,6 +1,6 @@
 (() => {
-  const PAGE_SIZE = 150;
-  const RELATION_PAGE_SIZE = 40;
+  const PAGE_SIZE = Infinity;
+  const RELATION_PAGE_SIZE = Infinity;
   const state = {
     initialized: false,
     language: "",

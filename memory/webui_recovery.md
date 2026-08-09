@@ -58,9 +58,35 @@ their inputs.
 
 ## Frontend behavior
 
+- Playable-character Gameplay details own the four authored breakthrough
+  stages and their material quantities. There is no standalone Progression
+  view or generated `data/lang/<LANG>/progression/` payload.
+- Enemy Gameplay details use one highest-ranked source image, a selectable
+  row-per-variant difference table, and exact authored enemy-stat points only.
+  Variant selection switches the referenced attribute-template stats and
+  combat values; per-variant Story links are intentionally omitted. Combat
+  relationship rows expose original coordinates/values and node semantic
+  boundaries while retaining explicit direct versus identifier-match labels,
+  and are visible only with `Show debug info` alongside projectile details.
+- Character skill rows keep a normal-mode projectile column with one compact
+  behavior summary and playable sound links. The standalone Combat &
+  Projectiles page is retired; expand a Gameplay projectile entry to use its
+  `Related sound effects` player. A visible no-linked-template label and
+  coverage note distinguish this evidence boundary from missing export data;
+  raw identifiers, source fields,
+  and matching evidence remain debug-only. Character-internal projectile
+  templates without defensible playable-skill ownership remain visible in a
+  separate debug-only unresolved block. Sound controls are exact Wwise-event
+  media candidates and explicitly retain the runtime container-selection gap.
+- Gameplay character skills and enemy details also load compact playable SFX
+  from exact SkillData/BuffData string references followed through Wwise HIRC.
+  Each character skill and enemy gets one collapsed sound section; inferred
+  child-skill or enemy-prefix ownership remains visibly labeled, and records
+  without resolved media do not create empty players. Gameplay SFX are upgraded
+  lazily through the same shared enhanced audio player used by Story lines.
 - Story recovery issue/method filters remain visible in normal and debug mode.
 - Reset returns to Story sort while preserving expanded mission groups.
-- Disabling debug while a hidden page is active returns to a visible page.
+- Disabling debug while Mission Pipeline is active returns to a visible page.
 - Mission Pipeline links show evidence-typed trigger chains.
 - Exact typed cinematic actions show their original-binary producer method and
   both the decoded original-data file and binary audit file; the provenance

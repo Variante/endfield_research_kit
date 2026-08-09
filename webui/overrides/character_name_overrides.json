@@ -1,0 +1,7 @@
+{
+  "_schema": "characterNameOverrides.v1",
+  "_note": "Manual display name overrides for the Characters page. Each key is a character id (the canonical grouped identity id, same id space as character_merges.json) mapped to the display name that replaces its detected primaryName. Edited from the Characters page UI.",
+  "names": {
+    "deliveryb": "达宁"
+  }
+}

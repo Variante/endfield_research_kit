@@ -2,7 +2,8 @@
   const FILTER_PANEL_STORAGE_KEY = "gameplay_filters_collapsed";
   const COLLAPSED_KINDS_STORAGE_KEY = "gameplay_collapsed_kinds";
   const LEVEL_FRACTION_STORAGE_KEY = "gameplay_level_fraction";
-  const GAMEPLAY_DATA_VERSION = "20260701-gp5";
+  const GAMEPLAY_DATA_VERSION = "20260809-gp10";
+  const GAMEPLAY_INTEGRATION_VERSION = "20260809-sfx1";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   // Fixed display order for the data-type groups in the list.
   const KIND_ORDER = ["character", "weapon", "equipment", "item", "enemy"];
@@ -100,7 +101,20 @@
     entries: [],
     filtered: [],
     selected: null,
+    integration: {
+      language: "",
+      status: "idle",
+      loading: null,
+      token: 0,
+      combat: null,
+      projectiles: null,
+      soundEffects: null,
+      assets: null,
+      errors: [],
+      indexes: null,
+    },
     loading: null,
+    showDebug: false,
     searchTokens: [],
     collapsedKinds: new Set(),
     levelFraction: 1,
@@ -178,6 +192,12 @@
   function findGameplayEntry(value) {
     const id = normalizeGameplaySelection(value);
     if (!id) return null;
+    const raw = String(value || "").trim();
+    const exactKey = raw.includes(":") ? raw : "";
+    if (exactKey) {
+      const exact = STATE.entries.find((entry) => entry && `${entry.kind}:${entry.id}` === exactKey);
+      if (exact) return exact;
+    }
     const candidates = new Set([id]);
     if (!id.startsWith("wiki_")) candidates.add(`wiki_${id}`);
     return STATE.entries.find((entry) => entry && (
@@ -329,13 +349,28 @@
     return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
   }
 
+  function gameplayTargetForItem(item) {
+    const id = String(item?.id || "").trim();
+    if (!id) return null;
+    let kind = ["weapon", "character"].includes(String(item?.kind || "")) ? String(item.kind) : "";
+    if (!kind && id.startsWith("wpn_")) kind = "weapon";
+    if (!kind && id.startsWith("chr_")) kind = "character";
+    return kind ? findGameplayEntry(`${kind}:${id}`) : null;
+  }
+
   function materialChipRows(items) {
     return (items || [])
       .filter((item) => item && (item.name || item.id))
       .map((item) => {
         const label = item.name || item.id;
         const count = item.count !== undefined && item.count !== null && item.count !== "" ? formatValue(item.count) : "";
-        return `<span class="gameplay-value-chip"><b>${escapeHtml(label)}</b>${escapeHtml(count)}</span>`;
+        const target = gameplayTargetForItem(item);
+        const icon = renderGameplayItemIcon(item, label, { static: Boolean(target) });
+        if (target) {
+          const targetKey = `${target.kind}:${target.id}`;
+          return `<button type="button" class="gameplay-value-chip gameplay-item-chip gameplay-related-link gameplay-item-chip-link" data-gameplay-related-key="${escapeHtml(targetKey)}" title="${escapeHtml(target.id)}" aria-label="${escapeHtml(label)}">${icon}<b>${escapeHtml(label)}</b>${escapeHtml(count)}</button>`;
+        }
+        return `<span class="gameplay-value-chip gameplay-item-chip">${icon}<b>${escapeHtml(label)}</b>${escapeHtml(count)}</span>`;
       })
       .join("");
   }
@@ -361,7 +396,7 @@
     if (!row) return "";
     const chips = [];
     if (row.goldCost !== undefined && row.goldCost !== null && row.goldCost !== "") {
-      chips.push(`<span class="gameplay-value-chip"><b>${escapeHtml(text("gold"))}</b>${escapeHtml(formatValue(row.goldCost))}</span>`);
+      chips.push(renderValueChip(goldCostPair(row.goldCost)));
     }
     const materials = materialChipRows(row.itemBundle || []);
     if (materials) chips.push(materials);
@@ -513,7 +548,7 @@
     const brk = stage >= 1 ? costIndex.cumulativeBreakByStage.get(stage) : null;
     if (brk && ((brk.items || []).length || Number(brk.gold) > 0)) {
       const chips = [
-        Number(brk.gold) > 0 ? renderChipPairs([{ label: text("gold"), value: brk.gold }]) : "",
+        Number(brk.gold) > 0 ? renderChipPairs([goldCostPair(brk.gold)]) : "",
         renderMaterialChips(brk.items || []),
       ].filter(Boolean).join("");
       if (chips) parts.push(`<div class="gameplay-subheading">${escapeHtml(costIndex.breakLabel)}</div>${chips}`);
@@ -523,7 +558,7 @@
     const cp = costIndex.levelUpByLevel.get(Number(row.level)) || cumulativeLevelUpAt(costIndex.checkpoints, Number(row.level));
     const cumulativeExpItems = cp && (cp.expItems || []).length ? cp.expItems : null;
     let upPairs = cp && Number(cp.gold) > 0
-      ? [{ label: text("cumulativeGold"), value: cp.gold }]
+      ? [{ ...goldCostPair(cp.gold), label: text("cumulativeGold") }]
       : null;
     if (cp && !cumulativeExpItems && Number(cp.exp) > 0) {
       (upPairs || (upPairs = [])).unshift({ label: text("cumulativeExp"), value: cp.exp });
@@ -652,22 +687,28 @@
     return renderMaterialChips(items);
   }
 
-  function renderTalentLevelCell(level, groupTitle) {
+  function renderTalentLevelCell(level, groupTitle, groupKind) {
     const title = level.name || (level.title !== groupTitle ? level.title : "") || `${text("level")} ${formatValue(level.level || "")}`;
-    const meta = [
-      level.level ? `${text("level")} ${formatValue(level.level)}` : "",
-      level.breakStage ? `Break ${formatValue(level.breakStage)}` : "",
-      level.equipTierLimit ? `T${formatValue(level.equipTierLimit)}` : "",
-      level.unlockHint ? `${text("unlockHint")}: ${level.unlockHint}` : "",
-      level.id,
+    const coordinate = sourceCoordinate(level.source);
+      const meta = [
+        level.level ? `${text("level")} ${formatValue(level.level)}` : "",
+        level.breakStage ? `Break ${formatValue(level.breakStage)}` : "",
+        level.equipTierLimit ? `T${formatValue(level.equipTierLimit)}` : "",
+        level.unlockHint ? `${text("unlockHint")}: ${level.unlockHint}` : "",
+        level.iconId ? `${text("iconId")}: ${level.iconId}` : "",
+        coordinate ? `${text("dataCoordinate")}: ${coordinate}` : "",
+        level.id,
     ].filter(Boolean).join(" / ");
+    const icon = renderGameplayTokenIcon(level.iconId, title, {
+      className: groupKind === "passive" ? "gameplay-passive-talent-icon" : "",
+    });
     const attr = level.attributeModifier && Object.keys(level.attributeModifier).length
       ? renderBlackboard(Object.entries(level.attributeModifier).map(([key, value]) => ({ key, value })))
       : "";
     const required = renderRequiredItems(level.requiredItem || []);
     const values = [renderBlackboard(level.blackboard), attr].filter(Boolean).join("");
     return `<div class="gameplay-talent-level">
-      <div class="gameplay-talent-level-title">${escapeHtml(title)}</div>
+      <div class="gameplay-talent-level-title">${icon}<span>${escapeHtml(title)}</span></div>
       <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
       ${renderDescription(level.description)}
       ${values}
@@ -689,13 +730,35 @@
           <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
         </div>
       </header>
-      <div class="gameplay-talent-levels">${levels.map((level) => renderTalentLevelCell(level, group.title)).join("")}</div>
+      <div class="gameplay-talent-levels">${levels.map((level) => renderTalentLevelCell(level, group.title, group.kind)).join("")}</div>
     </article>`;
   }
 
   function renderTalentGroups(groups) {
-    const rows = (groups || []).map(renderTalentGroupRow).filter(Boolean);
+    // Breakthrough and attribute nodes belong to the removed character-growth
+    // surface. Keep actual passive/factory talents in the native talent table.
+    const rows = (groups || [])
+      .filter((group) => !["upgrade", "attribute"].includes(String(group?.kind || "")))
+      .map(renderTalentGroupRow)
+      .filter(Boolean);
     return rows.length ? `<div class="gameplay-talent-table">${rows.join("")}</div>` : "";
+  }
+
+  function goldCurrencyItem() {
+    const item = STATE.index?.currencyItems?.gold;
+    return item && item.id ? item : null;
+  }
+
+  function goldCostPair(value) {
+    const item = goldCurrencyItem();
+    const label = item?.name || text("gold");
+    return { label, value, iconItem: item, iconLabel: label };
+  }
+
+  function renderValueChip(item, opts = {}) {
+    const cls = opts.className || "";
+    const icon = item?.iconItem ? renderGameplayItemIcon(item.iconItem, item.iconLabel || item.label) : "";
+    return `<span class="gameplay-value-chip${cls ? ` ${escapeHtml(cls)}` : ""}">${icon}<b>${escapeHtml(item.label)}</b>${escapeHtml(formatValue(item.value))}</span>`;
   }
 
   function renderChipPairs(pairs, opts = {}) {
@@ -703,8 +766,8 @@
     const rows = (pairs || [])
       .filter((item) => item && item.value !== undefined && item.value !== null && item.value !== "")
       .map((item) => {
-        const cls = diff && diff.has(String(item.label || "")) ? " gameplay-diff" : "";
-        return `<span class="gameplay-value-chip${cls}"><b>${escapeHtml(item.label)}</b>${escapeHtml(formatValue(item.value))}</span>`;
+        const className = diff && diff.has(String(item.label || "")) ? "gameplay-diff" : "";
+        return renderValueChip(item, { className });
       });
     return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
   }
@@ -773,6 +836,7 @@
     if (!stats) return "";
     return [
       stats.source,
+      stats.templateId,
       stats.maxLevel ? `${text("maxLevel")} ${formatValue(stats.maxLevel)}` : "",
       stats.rawMaxLevel && String(stats.rawMaxLevel) !== String(stats.maxLevel) ? `${text("rawMaxLevel")} ${formatValue(stats.rawMaxLevel)}` : "",
       stats.extraRowsBeyondPlayable ? `${text("extraRawRows")} ${formatValue(stats.extraRowsBeyondPlayable)}` : "",
@@ -785,14 +849,15 @@
     const upgradeRows = renderProgressionRows(upgrade.checkpoints || [], (row) => renderChipPairs([
       { label: text("baseAtk"), value: row.baseAtk },
       { label: text("exp"), value: row.lvUpExp },
-      { label: text("gold"), value: row.lvUpGold },
+      { ...goldCostPair(row.lvUpGold) },
       { label: text("cumulativeExp"), value: row.lvUpExpSum },
-      { label: text("cumulativeGold"), value: row.lvUpGoldSum },
+      { ...goldCostPair(row.lvUpGoldSum), label: text("cumulativeGold") },
     ]));
     cards.push(progressionCard(text("upgradeCurve"), [upgrade.templateId, `${formatValue(upgrade.rowCount)} ${text("level")}`].filter(Boolean).join(" / "), upgradeRows));
 
     const breakthroughRows = (entry.breakthrough && entry.breakthrough.rows || []).map((row) => {
-      const meta = [row.showLevel ? `${text("showLevel")} ${formatValue(row.showLevel)}` : "", row.goldCost ? `${text("gold")} ${formatValue(row.goldCost)}` : ""].filter(Boolean).join(" / ");
+      const meta = row.showLevel ? `${text("showLevel")} ${formatValue(row.showLevel)}` : "";
+      const goldCost = row.goldCost ? renderChipPairs([goldCostPair(row.goldCost)]) : "";
       const bounds = renderBounds(row.skillLevelBounds || []);
       const items = renderRequiredItems(row.items || []);
       return `<div class="gameplay-talent-level">
@@ -809,66 +874,6 @@
     const body = cards.filter(Boolean).join("");
     return body ? `<div class="gameplay-card-grid">${body}</div>` : "";
   }
-
-  function renderCharacterProgression(entry) {
-    const cards = [];
-    const curve = entry.levelCurve || {};
-    const levelRows = renderProgressionRows(curve.checkpoints || [], (row) => renderChipPairs([
-      { label: text("exp"), value: row.exp },
-      { label: text("gold"), value: row.gold },
-    ]));
-    cards.push(progressionCard(text("characterLevelCurve"), [curve.table, curve.maxLevel ? `${text("maxLevel")} ${formatValue(curve.maxLevel)}` : ""].filter(Boolean).join(" / "), levelRows));
-
-    const stageRows = (entry.breakStages || []).map((row) => {
-      const caps = row.skillCaps && Object.keys(row.skillCaps).length
-        ? renderBlackboard(Object.entries(row.skillCaps).map(([key, value]) => ({ key, value })))
-        : "";
-      const facts = renderChipPairs([
-        { label: text("levelRange"), value: levelRangeLabel(row.levelRange) },
-        { label: text("breakStatus"), value: row.breakStatus },
-        { label: text("gold"), value: row.goldCost },
-      ]);
-      const expItems = renderRequiredItems(row.availableExpItems || []);
-      return `<div class="gameplay-talent-level">
-        <div class="gameplay-talent-level-title">${escapeHtml(`${text("stage")} ${formatValue(row.stage === undefined || row.stage === null ? "" : row.stage)}`)}</div>
-        ${facts}
-        ${caps ? `<div class="gameplay-subheading">${escapeHtml(text("skillCaps"))}</div>${caps}` : ""}
-        ${expItems ? `<div class="gameplay-subheading">${escapeHtml(text("expItems"))}</div>${expItems}` : ""}
-      </div>`;
-    }).join("");
-    cards.push(progressionCard(text("characterBreakStages"), "CharBreakStageTable.json", stageRows ? `<div class="gameplay-talent-levels">${stageRows}</div>` : ""));
-
-    const breakthroughRows = (entry.breakthroughs || []).map((row) => {
-      const meta = [row.id, row.stage ? `${text("stage")} ${formatValue(row.stage)}` : "", row.equipTierLimit ? `T${formatValue(row.equipTierLimit)}` : ""].filter(Boolean).join(" / ");
-      const required = renderRequiredItems(row.requiredItem || []);
-      return `<div class="gameplay-talent-level">
-        <div class="gameplay-talent-level-title">${escapeHtml(row.name || row.id || "")}</div>
-        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
-        ${renderDescription(row.description)}
-        ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
-      </div>`;
-    }).join("");
-    cards.push(progressionCard(text("characterBreakthroughs"), "CharGrowthTable.json", breakthroughRows ? `<div class="gameplay-talent-levels">${breakthroughRows}</div>` : ""));
-
-    const potentialRows = (entry.potentials && entry.potentials.levels || []).map((row) => {
-      const meta = [row.potentialEffectId, row.level ? `${text("level")} ${formatValue(row.level)}` : ""].filter(Boolean).join(" / ");
-      const required = renderRequiredItems(row.requiredItem || []);
-      const values = renderBlackboard(row.blackboard || []);
-      return `<div class="gameplay-talent-level">
-        <div class="gameplay-talent-level-title">${escapeHtml(row.name || `${text("potential")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
-        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
-        ${renderDescription(row.description)}
-        ${values}
-        ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
-      </div>`;
-    }).join("");
-    cards.push(progressionCard(text("characterPotentials"), entry.potentials && entry.potentials.firstItemId, potentialRows ? `<div class="gameplay-talent-levels">${potentialRows}</div>` : ""));
-
-    const body = cards.filter(Boolean).join("");
-    return body ? `<div class="gameplay-card-grid">${body}</div>` : "";
-  }
-
-
 
   function sortedSkillLevelsForGroup(group) {
     const levels = new Set();
@@ -888,57 +893,465 @@
     return (skill.levels || []).find((level) => level && String(level.level) === wanted) || null;
   }
 
-  function renderMergedSkillAction(skill, levelValue) {
-    const level = levelForSkill(skill, levelValue) || {};
-    const values = [renderBlackboard(level.blackboard), renderSubDesc(level.subDesc)].filter(Boolean).join("");
-    const desc = renderDescription(level.description || skill.description || "");
-    if (!values && !desc) return "";
-    return `<div class="gameplay-action-row">
-      <div class="gameplay-action-title">${escapeHtml(skill.name || skill.id || "")}</div>
-      ${desc}
-      ${values}
-    </div>`;
+  // Buff numbers live on each sub-skill's per-level entry (blackboard keys
+  // and subDesc labels). A group's visible action is a merge of every
+  // sub-skill sharing that level number, deduped so repeated keys (the same
+  // scale re-declared on a follow-up hit) only show once.
+  function collectGroupLevelChips(group, levelValue) {
+    const seen = new Set();
+    const chips = [];
+    for (const skill of group.skills || []) {
+      const level = levelForSkill(skill, levelValue);
+      if (!level) continue;
+      for (const item of level.blackboard || []) {
+        if (!item || !item.key) continue;
+        const key = `bb ${item.key} ${item.value}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        chips.push(`<span class="gameplay-value-chip"><b>${escapeHtml(item.key)}</b>${escapeHtml(formatValue(item.value))}</span>`);
+      }
+      for (const item of level.subDesc || []) {
+        if (!item || !(item.label || item.value)) continue;
+        const key = `sub ${item.label} ${item.value}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        chips.push(`<span class="gameplay-value-chip"><b>${escapeHtml(item.label || "-")}</b>${escapeHtml(item.value || "")}</span>`);
+      }
+    }
+    return chips.length ? `<div class="gameplay-blackboard">${chips.join("")}</div>` : "";
   }
 
-  function renderSkillGroupPane(group, levelValue, active) {
-    const actionRows = (group.skills || []).map((skill) => renderMergedSkillAction(skill, levelValue)).filter(Boolean).join("");
+  function renderActiveSkillLevelPane(group, levelValue, active) {
+    const values = collectGroupLevelChips(group, levelValue);
     const cost = renderUpgradeCost(levelUpForLevel({ level: levelValue }, group.levelUp || []));
-    return `<div class="gameplay-level-pane gameplay-merged-skill-pane" data-level-label="${escapeHtml(levelLabel({ level: levelValue }))}"${active ? "" : " hidden"}>
-      <div class="gameplay-action-group"><div class="gameplay-action-stack">${actionRows || `<span class="muted">-</span>`}</div></div>
+    return `<div class="gameplay-level-pane gameplay-active-skill-pane" data-level-label="${escapeHtml(levelLabel({ level: levelValue }))}"${active ? "" : " hidden"}>
+      ${values || `<span class="muted">-</span>`}
       ${cost}
     </div>`;
   }
 
-  function renderMergedSkillGroupLevels(group) {
+  function renderActiveSkillLevels(group) {
     const levels = sortedSkillLevelsForGroup(group);
-    if (!levels.length) return "";
-    if (levels.length === 1) {
-      return `<div class="gameplay-level-table">${renderSkillGroupPane(group, levels[0], true)}</div>`;
-    }
-    return `<div class="gameplay-level-slider-wrap" data-level-card>
-      <div class="gameplay-level-slider-control">
-        <span>${escapeHtml(text("selectedLevel"))}</span>
-        <input class="gameplay-level-slider" type="range" min="0" max="${levels.length - 1}" step="1" value="0" aria-label="${escapeHtml(text("selectedLevel"))}">
-        <output class="gameplay-level-slider-output">${escapeHtml(levelLabel({ level: levels[0] }))}</output>
-      </div>
-      <div class="gameplay-level-panes">${levels.map((level, index) => renderSkillGroupPane(group, level, index === 0)).join("")}</div>
-    </div>`;
+    const label = `<div class="gameplay-active-skill-col-label">${escapeHtml(text("level"))}</div>`;
+    if (!levels.length) return `<div class="gameplay-active-skill-levels">${label}<span class="muted">-</span></div>`;
+    const body = levels.length === 1
+      ? `<div class="gameplay-level-table">${renderActiveSkillLevelPane(group, levels[0], true)}</div>`
+      : `<div class="gameplay-level-slider-wrap" data-level-card>
+        <div class="gameplay-level-slider-control">
+          <span>${escapeHtml(text("selectedLevel"))}</span>
+          <input class="gameplay-level-slider" type="range" min="0" max="${levels.length - 1}" step="1" value="0" aria-label="${escapeHtml(text("selectedLevel"))}">
+          <output class="gameplay-level-slider-output">${escapeHtml(levelLabel({ level: levels[0] }))}</output>
+        </div>
+        <div class="gameplay-level-panes">${levels.map((level, index) => renderActiveSkillLevelPane(group, level, index === 0)).join("")}</div>
+      </div>`;
+    return `<div class="gameplay-active-skill-levels">${label}${body}</div>`;
   }
+  // Potential-unlock keepsake photos (levels 1/3/5) are wide, cinematic
+  // illustrations rather than square icons, and each one carries an authored
+  // flavor line (`decoDesc` in ItemTable) shown alongside it in-game. Render
+  // them as captioned figures instead of bare icon tiles so the source aspect
+  // ratio survives and the line is visible.
+  function renderPotentialPictures(pictures, alt = "") {
+    const cards = (pictures || []).map((picture) => {
+      const token = String(picture?.id || "").trim();
+      if (!token) return "";
+      const refs = integrationAssetRefsForToken(token);
+      const asset = refs?.images?.find((item) => item?.rel);
+      if (!asset) return "";
+      const name = picture.name || alt;
+      const image = renderGameplayImageButton(asset, {
+        className: "gameplay-potential-picture-asset",
+        alt: name,
+        token,
+        imageName: name || token,
+      });
+      const caption = [
+        name ? `<div class="gameplay-potential-picture-name">${escapeHtml(name)}</div>` : "",
+        picture.sentence ? `<div class="gameplay-potential-picture-quote">${escapeHtml(picture.sentence)}</div>` : "",
+      ].filter(Boolean).join("");
+      return `<figure class="gameplay-potential-picture">${image}${caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>`;
+    }).filter(Boolean).join("");
+    return cards ? `<div class="gameplay-potential-picture-row">${cards}</div>` : "";
+  }
+
   function renderCharacterPotentials(entry) {
     const potentialRows = (entry.potentials && entry.potentials.levels || []).map((row) => {
-      const meta = [row.potentialEffectId, row.level ? `${text("level")} ${formatValue(row.level)}` : ""].filter(Boolean).join(" / ");
+      const coordinate = sourceCoordinate(row.source);
+      const meta = [
+        row.potentialEffectId,
+        row.level ? `${text("level")} ${formatValue(row.level)}` : "",
+        coordinate ? `${text("dataCoordinate")}: ${coordinate}` : "",
+      ].filter(Boolean).join(" / ");
       const required = renderRequiredItems(row.requiredItem || []);
       const values = renderBlackboard(row.blackboard || []);
+      const alt = row.name || entry.title || entry.id;
+      const pictures = renderPotentialPictures(row.pictures, alt);
+      const topicImages = renderGameplayTokenImages([row.unlockCardTopicItem].filter(Boolean), alt, "gameplay-potential-assets");
       return `<div class="gameplay-talent-level">
         <div class="gameplay-talent-level-title">${escapeHtml(row.name || `${text("potential")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
-        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        ${meta ? `<div class="gameplay-skill-meta">${escapeHtml(meta)}</div>` : ""}
         ${renderDescription(row.description)}
         ${values}
+        ${pictures ? `<div class="gameplay-subheading">${escapeHtml(text("potentialPictures"))}</div>${pictures}` : ""}
+        ${topicImages ? `<div class="gameplay-subheading">${escapeHtml(text("potentialCardTopic"))}</div>${topicImages}` : ""}
         ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
       </div>`;
     }).join("");
     return potentialRows ? `<div class="gameplay-talent-levels">${potentialRows}</div>` : "";
   }
+
+  function renderCharacterBreakthroughs(entry) {
+    const rows = (entry.breakthroughs || []).map((row) => {
+      const meta = [
+        row.stage !== undefined && row.stage !== null ? `${text("stage")} ${formatValue(row.stage)}` : "",
+        row.level !== undefined && row.level !== null ? `${text("level")} ${formatValue(row.level)}` : "",
+        row.equipTierLimit ? `T${formatValue(row.equipTierLimit)}` : "",
+        row.id,
+      ].filter(Boolean).join(" / ");
+      const required = renderRequiredItems(row.requiredItem || []);
+      return `<article class="gameplay-skill-card">
+        <header>
+          <div class="gameplay-skill-title">${escapeHtml(row.name || row.id || text("characterBreakthroughs"))}</div>
+          <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        </header>
+        ${renderDescription(row.description)}
+        ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
+      </article>`;
+    }).filter(Boolean).join("");
+    return rows ? `<div class="gameplay-card-grid">${rows}</div>` : "";
+  }
+
+  function renderCharacterAssetStrip(entry) {
+    const key = `${entry?.kind || ""}:${entry?.id || ""}`;
+    const refs = STATE.integration.assets?.entries?.[key];
+    if (!refs) return "";
+    // The sidecar ranks character portraits by semantic category and image
+    // size: complete illustrations/poses first, then tighter crops. Keep the
+    // sidecar order so the crop/pose progression stays stable for every
+    // character instead of being re-sorted by the browser. Most characters
+    // have a single identity capped at 4 images, but a dual-identity entry
+    // (e.g. the Administrator's two gender portraits) carries each
+    // identity's own full set back to back, so allow up to 8 here.
+    const images = (Array.isArray(refs.images) ? refs.images : []).filter((item) => item?.rel).slice(0, 8);
+    const models = (Array.isArray(refs.models) ? refs.models : []).filter((item) => item?.rel);
+    const imageCards = images.map((asset, index) => {
+      const portraitName = `${entry.title || entry.id || asset.rel} #${index + 1}`;
+      return renderGameplayImageButton(asset, {
+        className: "gameplay-character-asset-thumb",
+        alt: entry.title || entry.id || "",
+        imageId: entry.id || asset.rel,
+        imageName: portraitName,
+      });
+    }).join("");
+    const model = models[0];
+    const modelLink = model
+      ? `<a class="gameplay-character-asset-model" href="${escapeHtml(gameplayAssetPageHref(model.rel))}" title="${escapeHtml(text("openAsset"))}"><span>${escapeHtml(text("assetModels"))}</span><code>${escapeHtml(model.rel)}</code></a>`
+      : "";
+    if (!imageCards && !modelLink) return "";
+    return `<div class="gameplay-character-asset-strip"><div class="gameplay-character-asset-images">${imageCards}</div>${modelLink}</div>`;
+  }
+
+  function projectileScalarText(value) {
+    if (value === null || value === undefined || value === "") return "";
+    if (typeof value !== "object") return formatValue(value);
+    const candidate = value.valueFloatCandidate ?? value.valueIntCandidate ?? value.value;
+    const display = formatValue(candidate);
+    if (value.useBlackboardKey && value.blackboardKey) return `${display} / BB: ${value.blackboardKey}`;
+    return value.blackboardKey ? `${display} / key: ${value.blackboardKey}` : display;
+  }
+
+  function projectileEnumText(value) {
+    if (value === null || value === undefined || value === "") return "";
+    if (typeof value !== "object") return formatValue(value);
+    const name = value.name || value.enumType || "";
+    const numeric = value.value === null || value.value === undefined ? "" : formatValue(value.value);
+    return [name, numeric && name ? `(${numeric})` : numeric].filter(Boolean).join(" ");
+  }
+
+  function projectileVectorText(value) {
+    if (!value || typeof value !== "object") return "";
+    const vector = value.valueCandidate || value;
+    const axes = ["x", "y", "z"].filter((axis) => vector[axis] !== undefined);
+    return axes.length ? `(${axes.map((axis) => projectileScalarText(vector[axis])).join(", ")})` : "";
+  }
+
+  function projectileFriendlyEnum(value) {
+    if (value === null || value === undefined || value === "") return "";
+    if (typeof value !== "object") return formatValue(value);
+    return value.name || "";
+  }
+
+  function projectileHitLimitText(value) {
+    const raw = typeof value === "object"
+      ? (value?.valueIntCandidate ?? value?.valueFloatCandidate ?? value?.value)
+      : value;
+    return Number(raw) === -1 ? text("projectileUnlimitedHits") : projectileScalarText(value);
+  }
+
+  function projectileBehaviorSkillIds(projectile) {
+    const template = projectile?.template || {};
+    return [...new Set([
+      ...(template.normalAttackIds || []),
+      ...(template.activeSkillIds || []),
+      ...(template.passiveSkillIds || []),
+      ...(template.normalAttackList || []),
+      ...(template.enabledBreakingNormalAttacks || []),
+      ...(template.enabledPassiveSkills || []),
+      template.normalSkillId,
+      template.ultimateSkillId,
+      template.plungingAttackStartId,
+      template.plungingAttackEndId,
+      template.comboSkillId,
+      template.dodgeSkillId,
+    ].map((value) => String(value || "").trim()).filter(Boolean))];
+  }
+
+  function projectileMatchMethodText(method) {
+    const key = `projectileMatch_${String(method || "unresolved").replace(/-([a-z])/g, (_, char) => char.toUpperCase())}`;
+    const translated = text(key);
+    return translated === key ? readableIntegrationId(method || "unresolved") : translated;
+  }
+
+  function projectileTagText(filter) {
+    const query = filter?.tagQuery || {};
+    const tags = (query.tags || []).map((tag) => {
+      if (typeof tag === "string") return tag;
+      if (!tag || typeof tag !== "object") return "";
+      return [tag.path, projectileEnumText(tag.tagId)].filter(Boolean).join(" / ");
+    }).filter(Boolean);
+    return [projectileEnumText(query.queryType), ...tags].filter(Boolean).join(" / ");
+  }
+
+  function projectileFriendlyTagText(filter) {
+    const query = filter?.tagQuery || {};
+    const tags = (query.tags || []).map((tag) => typeof tag === "string" ? tag : tag?.path).filter(Boolean);
+    return [projectileFriendlyEnum(query.queryType), ...tags].filter(Boolean).join(" / ");
+  }
+
+  const PROJECTILE_SOUND_PHASES = [
+    "launchSound", "loopSound", "reachSound", "hitSound", "blockSound", "finishedSound", "sizzleSound",
+  ];
+
+  function projectileFriendlyName(projectile) {
+    const id = String(projectile?.id || "")
+      .replace(/^data_/, "")
+      .replace(/^projectile_/, "")
+      .replace(/^(?:chr|eny)_\d+_[^_]+_/, "")
+      .replace(/^projectile/, "");
+    return readableIntegrationId(id) || projectileDisplayName(projectile);
+  }
+
+  function projectileSoundRows(projectile) {
+    const sounds = projectile?.sounds || {};
+    return PROJECTILE_SOUND_PHASES.map((field) => {
+      const value = sounds[field];
+      const raw = typeof value === "object" ? value?.value : value;
+      if (!raw) return null;
+      return {
+        field,
+        value,
+        event: value?.event || {},
+        audio: Array.isArray(value?.audio) ? value.audio.filter((row) => row?.src) : [],
+      };
+    }).filter(Boolean);
+  }
+
+  function renderProjectileAudio(soundRows) {
+    const playable = soundRows.filter((row) => row.audio.length);
+    if (!soundRows.length) return "";
+    const phases = soundRows.map((row) => {
+      const phaseLabel = text(`projectileSound_${row.field}`);
+      const candidates = row.audio.map((audio, index) => `<div class="gameplay-projectile-audio-candidate"><audio controls preload="none" src="${escapeHtml(audio.src)}"></audio><small>${escapeHtml(`${text("projectileAudioCandidate")} ${index + 1} · ${audio.mediaId || "-"}`)}</small></div>`).join("");
+      return `<details class="gameplay-projectile-audio-phase"${row.audio.length === 1 ? " open" : ""}><summary><strong>${escapeHtml(phaseLabel)}</strong><span>${escapeHtml(row.audio.length ? `${row.audio.length} ${text("projectilePlayableCandidates")}` : text("projectileSoundUnlinked"))}</span></summary>${candidates || `<p>${escapeHtml(text("projectileSoundUnlinkedNote"))}</p>`}</details>`;
+    }).join("");
+    return `<section class="gameplay-projectile-audio"><header><strong>${escapeHtml(text("projectileAudio"))}</strong><span>${escapeHtml(`${playable.reduce((total, row) => total + row.audio.length, 0)} ${text("projectilePlayableCandidates")}`)}</span></header><p>${escapeHtml(text("projectileAudioNote"))}</p>${phases}</section>`;
+  }
+
+  function gameplaySoundEventName(eventId) {
+    return readableIntegrationId(String(eventId || "")
+      .replace(/^(?:au|bark|radio)_/i, "")
+      .replace(/^(?:play_|sfx_)/i, "")
+      .replace(/^(?:chr|eny)_\d+_[^_]+_/i, ""));
+  }
+
+  function renderGameplaySoundEvents(events) {
+    const eventRows = events || [];
+    return eventRows.map((event) => {
+      const audio = (event.audio || []).filter((candidate) => candidate?.src);
+      const candidates = audio.map((candidate, index) => `<div class="gameplay-projectile-audio-candidate"><audio controls preload="none" src="${escapeHtml(candidate.src)}"></audio><small>${escapeHtml(`${text("soundCandidate")} ${index + 1}`)}${STATE.showDebug && candidate.mediaId ? ` · <code>${escapeHtml(candidate.mediaId)}</code>` : ""}</small></div>`).join("");
+      const technical = STATE.showDebug ? `<code class="gameplay-sfx-event-id">${escapeHtml(event.id || "")}</code>` : "";
+      return `<details class="gameplay-projectile-audio-phase"${audio.length === 1 || eventRows.length === 1 ? " open" : ""}><summary><strong>${escapeHtml(gameplaySoundEventName(event.id) || text("soundEvent"))}</strong><span>${escapeHtml(`${audio.length} ${text("projectilePlayableCandidates")}`)}</span></summary>${technical}${candidates}</details>`;
+    }).join("");
+  }
+
+  function renderGameplaySoundGroup(events, options = {}) {
+    const playable = (events || []).reduce((total, event) => total + (event.audio || []).filter((candidate) => candidate?.src).length, 0);
+    if (!playable) return "";
+    const confidence = options.confidence ? integrationConfidence(options.confidence) : "";
+    return `<details class="gameplay-related-sfx"><summary><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(`${playable} ${text("projectilePlayableCandidates")}`)}</span>${confidence}</summary><p>${escapeHtml(text("soundRuntimeNote"))}</p>${renderGameplaySoundEvents(events)}</details>`;
+  }
+
+  function renderActiveSkillSoundEffects(group) {
+    const groups = STATE.integration.soundEffects?.characters?.[STATE.selected?.id]?.groups || {};
+    const soundGroup = groups[group?.id] || {};
+    return renderGameplaySoundGroup(soundGroup.events || [], {
+      confidence: soundGroup.ownershipConfidence === "inferred" ? "inferred" : "",
+    });
+  }
+
+  function renderEnemySoundEffects(entry) {
+    const sounds = STATE.integration.soundEffects?.enemies?.[entry?.id] || {};
+    return renderGameplaySoundGroup(sounds.events || [], {
+      label: sounds.includesSpawnBuffAudio ? text("enemyCombatAndSpawnSounds") : text("enemyCombatSounds"),
+      confidence: sounds.ownershipConfidence,
+    });
+  }
+
+  function renderCharacterProjectileCompact(match) {
+    const projectile = match?.projectile || match;
+    const lifetime = projectile?.lifetime || {};
+    const collision = projectile?.collision || {};
+    const targeting = projectile?.targeting || {};
+    const filter = targeting.targetFilter || {};
+    const movement = projectile?.movement || {};
+    const modes = movement.modes || [];
+    const mode = modes[0] || {};
+    const effectNames = [...new Set(Object.values(projectile?.effects?.lists || {}).flat().map((effect) => effect?.effectName).filter(Boolean))];
+    const soundRows = projectileSoundRows(projectile);
+    const audioCandidateCount = soundRows.reduce((total, row) => total + row.audio.length, 0);
+    const behaviorSkills = projectileBehaviorSkillIds(projectile);
+    const matchedActions = match?.matchMethod === "skill-family-identifier"
+      ? []
+      : (match?.matched || []).filter((value) => String(value || "").includes("_"));
+    const summaryFacts = [
+      [text("projectileLifetimeShort"), projectileScalarText(lifetime.finishDuration)].filter(Boolean).join(" "),
+      [text("projectileDistanceShort"), projectileScalarText(lifetime.finishDistance)].filter(Boolean).join(" "),
+      [text("projectileHitsShort"), projectileHitLimitText(targeting.maxHitCount)].filter(Boolean).join(" "),
+      audioCandidateCount ? `${audioCandidateCount} ${text("projectileAudioShort")}` : "",
+    ].filter(Boolean);
+    const travelSummary = [
+      modes.map((item) => [item.key, projectileScalarText(item.speed) ? `${text("projectileSpeed")} ${projectileScalarText(item.speed)}` : ""].filter(Boolean).join(" · ")).filter(Boolean).join("; "),
+      lifetime.finishOnReach ? text("projectileFinishOnReach") : "",
+      lifetime.hitOnReach ? text("projectileHitOnReach") : "",
+    ].filter(Boolean).join(" · ");
+    const hitSummary = [
+      projectileFriendlyEnum(collision.shapeType),
+      targeting.allowHitSameTarget ? text("projectileRepeatHit") : text("projectileSingleHit"),
+      projectileFriendlyTagText(filter),
+    ].filter(Boolean).join(" · ");
+    const feedbackSummary = [
+      effectNames.length ? `${effectNames.length} ${text("projectileEffectRefs")}` : "",
+      soundRows.length ? `${soundRows.length} ${text("projectileSoundPhases")}` : "",
+    ].filter(Boolean).join(" · ");
+    const detailFacts = [
+      matchedActions.length ? [text("projectileAction"), matchedActions.join(", ")] : null,
+      [text("projectileAssignment"), projectileMatchMethodText(match?.matchMethod)],
+      [text("projectileLifetime"), [projectileScalarText(lifetime.finishDuration), projectileScalarText(lifetime.finishDistance), lifetime.finishOnReach ? text("projectileFinishOnReach") : "", lifetime.hitOnReach ? text("projectileHitOnReach") : ""].filter(Boolean).join(" / ")],
+      [text("projectileMovement"), modes.map((item) => [item.key, projectileEnumText(item.moveType), projectileScalarText(item.speed), item.surroundCenterKey].filter(Boolean).join(" / ")).filter(Boolean).join("; ")],
+      (movement.segments || []).length ? [text("projectileSegments"), (movement.segments || []).map((segment) => [segment.startPointKey, segment.moveModeId, segment.endPointKey, segment.skipHitAndBlockDetection ? text("projectileSkipCollision") : ""].filter(Boolean).join(" -> ")).join("; ")] : null,
+      [text("projectileCollision"), [projectileEnumText(collision.shapeType), projectileScalarText(collision.radius), projectileVectorText(collision.extent)].filter(Boolean).join(" / ")],
+      [text("projectileTargeting"), [projectileScalarText(targeting.maxHitCount), targeting.allowHitSameTarget ? `${text("projectileRepeatHit")} / ${formatValue(targeting.hitIntervalPerTarget)}` : text("projectileSingleHit"), projectileEnumText(targeting.collisionDetectTiming), projectileEnumText(filter.objectType), projectileTagText(filter)].filter(Boolean).join(" / ")],
+      [text("projectileDetectionDelay"), [projectileScalarText(targeting.hitAndBlockDetectDelayTime), projectileScalarText(targeting.hitAndBlockDetectDelayDistance), targeting.canTraceTargetAfterReach ? text("projectileTraceAfterReach") : ""].filter(Boolean).join(" / ")],
+      effectNames.length ? [text("projectileEffects"), effectNames.join(", ")] : null,
+      behaviorSkills.length ? [text("projectileBehaviorSkills"), behaviorSkills.join(", ")] : null,
+      [text("source"), [projectile?.source?.root, projectile?.source?.assetName, projectile?.source?.pathId].filter(Boolean).join(" / ")],
+    ].filter((row) => row && row[1]);
+    const complete = projectile?.confidence?.byteComplete;
+    const overview = [travelSummary, hitSummary, feedbackSummary].filter(Boolean).join(" · ");
+    const technical = STATE.showDebug ? `<details class="gameplay-projectile-technical"><summary>${escapeHtml(text("projectileTechnical"))}</summary><div class="gameplay-projectile-inline-details">${detailFacts.map(([label, value]) => `<span><b>${escapeHtml(label)}</b><code>${escapeHtml(value)}</code></span>`).join("")}</div></details>` : "";
+    return `<details class="gameplay-projectile-inline"><summary><span class="gameplay-projectile-friendly-name">${escapeHtml(projectileFriendlyName(projectile))}</span><span class="gameplay-projectile-status${complete ? " is-complete" : ""}">${escapeHtml(complete ? text("projectileComplete") : text("projectilePartial"))}</span><span class="gameplay-projectile-summary-chips">${summaryFacts.map((fact) => `<small>${escapeHtml(fact)}</small>`).join("")}</span></summary><div class="gameplay-projectile-body">${overview ? `<div class="gameplay-projectile-overview"><strong>${escapeHtml(text("projectileBehaviorSummary"))}</strong><span>${escapeHtml(overview)}</span></div>` : ""}${renderProjectileAudio(soundRows)}${technical}</div></details>`;
+  }
+
+  // One active skill (a skill group - Normal Attack / Skill / Ultimate /
+  // Combo) can be made of several authored sub-skills (combo hits, charged
+  // variants, ...). Merge their matched projectiles into a single deduped
+  // list plus whatever the group-level fallback match picks up, so the
+  // right-hand column shows every projectile that belongs to this skill
+  // exactly once.
+  function projectilesForGroup(group) {
+    const assigned = new Set();
+    // The generated payload normally carries full skill rows. Keep the action
+    // ID as a safe fallback so a partial export cannot silently lose a
+    // projectile (or make its ownership appear to belong to another group).
+    const skills = group.skills?.length
+      ? group.skills
+      : (group.actionSkillIds || []).map((id) => ({ id: String(id || "") })).filter((skill) => skill.id);
+    const siblingSkillIds = skills.map((skill) => skill?.id).filter(Boolean);
+    const matched = [];
+    for (const skill of skills) {
+      for (const row of projectilesForSkill(skill, siblingSkillIds)) {
+        const id = String(row.projectile?.id || "");
+        if (!id || assigned.has(id)) continue;
+        assigned.add(id);
+        matched.push(row);
+      }
+    }
+    matched.push(...projectilesForSkillGroupUnassigned(group, assigned));
+    return matched;
+  }
+
+  function renderActiveSkillProjectiles(group) {
+    const label = `<div class="gameplay-active-skill-col-label">${escapeHtml(text("projectiles"))}</div>`;
+    const projectiles = projectilesForGroup(group);
+    if (!projectiles.length) {
+      return `<div class="gameplay-active-skill-projectiles">${label}<span class="gameplay-projectile-no-template">${escapeHtml(text("projectileNoTemplate"))}</span></div>`;
+    }
+    const chips = projectiles.map(renderCharacterProjectileCompact).join("");
+    return `<div class="gameplay-active-skill-projectiles">${label}<div class="gameplay-skill-projectiles">${chips}</div></div>`;
+  }
+
+  function renderUnassignedCharacterProjectiles(entry) {
+    if (!STATE.showDebug) return "";
+    const assigned = new Set();
+    for (const group of entry?.skillGroups || []) {
+      for (const row of projectilesForGroup(group)) assigned.add(String(row.projectile?.id || ""));
+    }
+    const unresolved = projectilesForEntry(entry)
+      .filter(({ projectile }) => !assigned.has(String(projectile?.id || "")))
+      .map((row) => ({ ...row, matched: [], matchMethod: "ownership-unresolved" }));
+    if (!unresolved.length) return "";
+    return `<details class="gameplay-projectile-unassigned"><summary>${escapeHtml(`${text("projectileOwnershipUnresolved")} (${unresolved.length})`)}</summary><p>${escapeHtml(text("projectileOwnershipUnresolvedNote"))}</p><div class="gameplay-skill-projectiles">${unresolved.map(renderCharacterProjectileCompact).join("")}</div></details>`;
+  }
+
+  // Small debug-only combat-log evidence badge folded into the description
+  // column so it does not need its own row.
+  function renderActiveSkillCombatMeta(group) {
+    if (!STATE.showDebug) return "";
+    const edges = combatEdgesForNode(`skill_group:${group.id}`);
+    if (!edges.length) return "";
+    const direct = edges.filter((edge) => edge.confidence === "direct").length;
+    return `<div class="gameplay-skill-evidence-summary"><span class="gameplay-skill-evidence-chip"><b>${escapeHtml(text("skillCombat"))}</b>${formatNumber(edges.length)} / ${formatNumber(direct)} ${escapeHtml(text("directEvidence"))}</span></div>`;
+  }
+
+  // Active-skill table: one row per skill group (Normal Attack / Skill /
+  // Ultimate / Combo, i.e. the character's playable active skills, as
+  // opposed to passive talents). Column 1 is the authored description,
+  // column 2 is the selected level's buff numbers and upgrade cost. Debug mode
+  // Column 3 keeps the useful projectile summary visible in normal mode;
+  // debug-only identifiers and ownership evidence stay inside each card.
+  function renderActiveSkillTableHeader() {
+    const columns = [text("description"), text("level"), text("projectiles")];
+    return `<div class="gameplay-active-skill-header" aria-hidden="true">${columns.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}</div>`;
+  }
+
+  function renderActiveSkillRow(group) {
+    const groupIcon = renderGameplayTokenIcon(group.iconId, group.name || group.id, {
+      skillType: characterSkillIconType(group),
+    });
+    const meta = [group.typeLabel, group.id, group.iconId ? `${text("iconId")}: ${group.iconId}` : ""].filter(Boolean).join(" / ");
+    return `<article class="gameplay-active-skill-row">
+      <div class="gameplay-active-skill-desc">
+        <div class="gameplay-group-title-wrap">${groupIcon}<div class="gameplay-group-title">${escapeHtml(group.name || group.id || "")}</div></div>
+        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        ${renderActiveSkillCombatMeta(group)}
+        ${renderDescription(group.description)}
+        ${renderActiveSkillSoundEffects(group)}
+      </div>
+      ${renderActiveSkillLevels(group)}
+      ${renderActiveSkillProjectiles(group)}
+    </article>`;
+  }
+
   function renderWeaponDetail(entry) {
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
@@ -970,27 +1383,18 @@
       fact(text("defaultWeapon"), entry.defaultWeaponName || entry.defaultWeaponId),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
     ].filter(Boolean);
-    const groups = (entry.skillGroups || []).map((group) => {
-      const actionIds = renderIdChips(group.actionSkillIds || []);
-      const mergedLevels = renderMergedSkillGroupLevels(group);
-      return `<section class="gameplay-group-card">
-        <header>
-          <div class="gameplay-group-title">${escapeHtml(group.name || group.id || "")}</div>
-          <div class="gameplay-skill-meta">${escapeHtml([group.typeLabel, group.id].filter(Boolean).join(" / "))}</div>
-        </header>
-        ${renderDescription(group.description)}
-        ${actionIds ? `<div class="gameplay-subheading">${escapeHtml(text("actionSkillIds"))}</div>${actionIds}` : ""}
-        ${mergedLevels ? `<div class="gameplay-subheading">${escapeHtml(text("actionData"))}</div>${mergedLevels}` : ""}
-      </section>`;
-    }).join("");
+    const skillRows = (entry.skillGroups || []).map(renderActiveSkillRow).join("");
+    const unresolvedProjectiles = renderUnassignedCharacterProjectiles(entry);
     const talentGroups = renderTalentGroups(entry.talentGroups || []);
     const talentCards = (entry.talents || []).map(renderTalentCard).join("");
+    const characterAssets = renderCharacterAssetStrip(entry);
     return {
       facts,
       body: [
-        section(text("characterStats"), renderStats(entry.stats, statCostIndex(entry, "character"))),
-        section(text("characterSkills"), groups ? `<div class="gameplay-character-skill-grid">${groups}</div>` : ""),
+        section(text("characterAssets"), characterAssets),
+        section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${skillRows ? `<div class="gameplay-active-skill-table${STATE.showDebug ? " is-debug" : ""}">${renderActiveSkillTableHeader()}<p class="gameplay-projectile-coverage-note">${escapeHtml(text("projectileCoverageNote"))}</p>${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
+        section(text("characterBreakthroughs"), renderCharacterBreakthroughs(entry)),
         section(text("characterPotentials"), renderCharacterPotentials(entry)),
       ].join(""),
     };
@@ -1095,7 +1499,12 @@
       { label: text("modelId"), value: variant.modelId },
       { label: text("aiTemplateId"), value: variant.aiTemplateId },
       { label: text("displayType"), value: variant.displayTypeLabel || variant.displayType },
-      { label: text("dangerous"), value: variant.isDangerous ? text("dangerous") : "" },
+      { label: text("dangerous"), value: variant.isDangerous },
+      { label: text("showBigEffect"), value: variant.showBigEffect },
+      { label: text("showBigHeadbar"), value: variant.showBigHeadbar },
+      { label: text("autoLockCancelType"), value: variant.autoLockCancelType },
+      { label: text("autoLockCancelTime"), value: variant.autoLockCancelTime },
+      { label: text("serverDeathCheck"), value: variant.serverDeathCheck },
     ];
   }
 
@@ -1147,54 +1556,125 @@
     const details = renderChipPairs(variantDetailPairs(variant), { diffLabels });
     const buffs = renderIdChips(variant.bornBuffs || [], { highlight: buffDiff });
     const modifiers = renderEnemyModifierRows(variant, diffLabels);
-    const wiki = variant.storyWikiKey
-      ? `<a class="gameplay-detail-tag gameplay-detail-wiki-link gameplay-wiki-link" href="${escapeHtml(storyWikiHrefForKey(variant.storyWikiKey))}"><span>${escapeHtml(text("storyWiki"))}</span></a>`
-      : "";
     return `<div class="gameplay-skill-meta">${escapeHtml([variant.id, variant.displayTypeLabel].filter(Boolean).join(" / "))}</div>
-      ${wiki ? `<div class="gameplay-variant-links">${wiki}</div>` : ""}
       ${details}
       ${buffs ? `<div class="gameplay-subheading">${escapeHtml(text("bornBuffs"))}</div>${buffs}` : ""}
       ${modifiers ? `<div class="gameplay-subheading">${escapeHtml(text("attrModifiers"))}</div>${modifiers}` : ""}`;
   }
 
-  function variantChipLabel(variant, index) {
-    return variant.name || variant.displayTypeLabel || variant.id || `#${index + 1}`;
+  function stableVariantValue(value) {
+    if (Array.isArray(value)) return JSON.stringify(value);
+    if (value && typeof value === "object") return JSON.stringify(value, Object.keys(value).sort());
+    return value === undefined || value === null ? "" : String(value);
+  }
+
+  function variantModifierSummary(variant) {
+    return enemyModifierPairs(variant)
+      .map((pair) => `${pair.label}: ${formatValue(pair.value)}`)
+      .join("; ");
+  }
+
+  function variantTableColumns(variants) {
+    const candidates = variantDetailPairs({}).map((pair, index) => ({
+      key: `detail:${index}`,
+      label: pair.label,
+      value: (variant) => variantDetailPairs(variant)[index]?.value,
+    }));
+    candidates.push(
+      { key: "buffs", label: text("bornBuffs"), value: (variant) => (variant.bornBuffs || []).join(", ") },
+      { key: "modifiers", label: text("attrModifiers"), value: variantModifierSummary },
+    );
+    return candidates.filter((column) => {
+      const values = new Set(variants.map((variant) => stableVariantValue(column.value(variant))));
+      return values.size > 1;
+    });
+  }
+
+  function renderVariantTableCell(value) {
+    const display = formatValue(value);
+    return display ? `<code>${escapeHtml(display)}</code>` : `<span class="muted">-</span>`;
+  }
+
+  function enemyAttributeTemplate(entry, variant) {
+    const id = String(variant?.attrTemplateId || entry?.attrTemplateId || "");
+    const exact = entry?.attributeTemplates?.[id];
+    if (exact) return exact;
+    return {
+      stats: entry?.stats || {},
+      independentAttributes: entry?.independentAttributes || [],
+      damageScalars: entry?.damageScalars || [],
+      resilience: entry?.resilience || [],
+    };
+  }
+
+  function renderEnemyVariantDependent(entry, variant) {
+    const attributes = enemyAttributeTemplate(entry, variant);
+    const combatValues = {
+      damageScalars: attributes.damageScalars || [],
+      resilience: attributes.resilience || [],
+      independentAttributes: attributes.independentAttributes || [],
+      attrModifiers: variant?.attrModifiers || entry.attrModifiers || [],
+      bornBuffs: variant?.bornBuffs || entry.bornBuffs || [],
+    };
+    return [
+      section(text("enemyStats"), renderStats(attributes.stats || entry.stats)),
+      section(text("combatValues"), renderEnemyCombatValues(combatValues)),
+    ].join("");
   }
 
   function renderEnemyVariants(entry) {
     const variants = (entry.variants || []).filter(Boolean);
     if (!variants.length) return "";
-    // A single variant renders inline; multiple variants become a switcher so the
-    // user can flip between them (their modifiers / base numbers differ), with the
-    // differing fields highlighted.
-    if (variants.length === 1) {
-      const v = variants[0];
-      return `<article class="gameplay-skill-card gameplay-enemy-variant-card">
-        <header><div class="gameplay-skill-title">${escapeHtml(v.name || v.id || "")}</div></header>
-        ${variantPaneBody(v, null, null)}
-      </article>`;
-    }
     const diffLabels = variantDiffLabels(variants);
     const buffDiff = variantBuffDiff(variants);
-    const chips = variants.map((v, i) =>
-      `<button type="button" class="gameplay-variant-chip${i === 0 ? " is-active" : ""}" data-variant-index="${i}">${escapeHtml(variantChipLabel(v, i))}</button>`).join("");
-    const panes = variants.map((v, i) =>
-      `<div class="gameplay-variant-pane" data-variant-index="${i}"${i === 0 ? "" : " hidden"}>${variantPaneBody(v, diffLabels, buffDiff)}</div>`).join("");
+    const columns = variantTableColumns(variants);
+    const head = columns.map((column) => `<th scope="col">${escapeHtml(column.label)}</th>`).join("");
+    const rows = variants.map((variant, index) => {
+      const cells = columns.map((column) => `<td>${renderVariantTableCell(column.value(variant))}</td>`).join("");
+      return `<tr class="gameplay-variant-row${index === 0 ? " is-selected" : ""}" data-variant-index="${index}" role="option" tabindex="0" aria-selected="${index === 0 ? "true" : "false"}">
+        <th scope="row"><code>${escapeHtml(variant.id || "")}</code></th>${cells}
+      </tr>`;
+    }).join("");
     return `<div class="gameplay-variant-switch" data-variant-card>
-      <div class="gameplay-variant-chips">${chips}</div>
-      <div class="gameplay-variant-panes">${panes}</div>
+      <div class="gameplay-variant-table-wrap"><table class="gameplay-variant-table" role="listbox" aria-label="${escapeHtml(text("enemyVariants"))}">
+        <thead><tr><th scope="col">${escapeHtml(text("selectedVariant"))}</th>${head}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      ${columns.length ? "" : `<p class="gameplay-variant-no-diff muted">${escapeHtml(text("noVariantDifferences"))}</p>`}
+      <div class="gameplay-variant-pane" data-selected-variant-pane>${variantPaneBody(variants[0], diffLabels, buffDiff)}</div>
     </div>`;
   }
 
   function bindVariantSwitches(root) {
     root.querySelectorAll(".gameplay-variant-switch").forEach((card) => {
-      const chips = [...card.querySelectorAll(".gameplay-variant-chip")];
-      const panes = [...card.querySelectorAll(".gameplay-variant-pane")];
-      chips.forEach((chip) => {
-        chip.addEventListener("click", () => {
-          const index = Number(chip.dataset.variantIndex || 0);
-          chips.forEach((c) => c.classList.toggle("is-active", Number(c.dataset.variantIndex) === index));
-          panes.forEach((p) => { p.hidden = Number(p.dataset.variantIndex) !== index; });
+      const rows = [...card.querySelectorAll(".gameplay-variant-row")];
+      const pane = card.querySelector("[data-selected-variant-pane]");
+      const dependent = root.querySelector("[data-enemy-variant-dependent]");
+      const entry = STATE.selected;
+      const variants = (entry?.variants || []).filter(Boolean);
+      const diffLabels = variantDiffLabels(variants);
+      const buffDiff = variantBuffDiff(variants);
+      const select = (row) => {
+        const index = Number(row.dataset.variantIndex || 0);
+        const variant = variants[index];
+        if (!variant) return;
+        rows.forEach((candidate) => {
+          const selected = candidate === row;
+          candidate.classList.toggle("is-selected", selected);
+          candidate.setAttribute("aria-selected", selected ? "true" : "false");
+        });
+        if (pane) pane.innerHTML = variantPaneBody(variant, diffLabels, buffDiff);
+        if (dependent) {
+          dependent.innerHTML = renderEnemyVariantDependent(entry, variant);
+          bindLevelSliders(dependent);
+        }
+      };
+      rows.forEach((row) => {
+        row.addEventListener("click", () => select(row));
+        row.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          select(row);
         });
       });
     });
@@ -1216,6 +1696,7 @@
   }
 
   function renderEnemyDetail(entry) {
+    const selectedVariant = (entry.variants || []).find(Boolean) || null;
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
       fact(text("templateId"), entry.templateId, { mono: true }),
@@ -1232,31 +1713,53 @@
       facts,
       body: [
         section(text("enemyVariants"), renderEnemyVariants(entry)),
-        section(text("enemyStats"), renderStats(entry.stats)),
+        `<div data-enemy-variant-dependent>${renderEnemyVariantDependent(entry, selectedVariant)}</div>`,
+        section(text("relatedSoundEffects"), renderEnemySoundEffects(entry)),
         section(text("enemyAbilities"), renderEnemyAbilities(entry)),
-        section(text("combatValues"), renderEnemyCombatValues(entry)),
         section(text("enemyDetails"), renderEnemyDetails(entry)),
       ].join(""),
     };
   }
 
+  function itemUseActionHasEffect(action) {
+    if (!action || typeof action !== "object") return false;
+    const identifiers = [action.buffId, action.skillId, action.skillPath]
+      .some((value) => String(value || "").trim());
+    if (identifiers) return true;
+    return [action.buffBlackboard, action.skillBlackboard].some((rows) =>
+      Array.isArray(rows) && rows.some((row) => row && (
+        String(row.key || "").trim()
+        || row.value !== undefined && row.value !== null && row.value !== ""
+      ))
+    );
+  }
+
+  function itemUseActions(entry) {
+    return (((entry?.useData || {}).actions) || []).filter(itemUseActionHasEffect);
+  }
+
   function renderItemUse(entry) {
     const use = entry.useData || {};
-    if (!use.description && !(use.actions || []).length) return "";
-    const details = renderChipPairs([
-      { label: text("duration"), value: use.duration },
-      { label: text("effectType"), value: use.effectType },
-      { label: text("uiType"), value: use.uiType },
-      { label: text("targetNumType"), value: use.targetNumType },
+    const actions = itemUseActions(entry);
+    const description = String(use.description || "").trim();
+    if (!description && !actions.length) return "";
+    // Numeric use metadata is only useful when a real buff/skill action is
+    // present. Detector/revival items can have a textual use description but
+    // no structured action; showing their default enum values as an effect is
+    // misleading, so keep those entries description-only.
+    const details = actions.length ? renderChipPairs([
+      { label: text("duration"), value: Number(use.duration) > 0 ? use.duration : "" },
+      { label: text("effectType"), value: Number(use.effectType) > 0 ? use.effectType : "" },
+      { label: text("uiType"), value: Number(use.uiType) > 0 ? use.uiType : "" },
+      { label: text("targetNumType"), value: Number(use.targetNumType) > 0 ? use.targetNumType : "" },
       { label: text("persistentBuff"), value: use.isPersistentBuff ? "true" : "" },
-      { label: text("valuableDepot"), value: use.isValuableDepot ? "true" : "" },
       { label: text("stackKey"), value: use.stackingKey },
-    ]);
+    ]) : "";
     return [renderDescription(use.description), details].filter(Boolean).join("");
   }
 
   function renderItemActions(entry) {
-    const rows = (((entry.useData || {}).actions) || []).map((action, index) => {
+    const rows = itemUseActions(entry).map((action, index) => {
       if (!action) return "";
       const title = action.buffId || action.skillId || `${text("actionData")} ${index + 1}`;
       const details = renderChipPairs([
@@ -1294,11 +1797,15 @@
       if (!reward) return "";
       const fixed = renderMaterialChips(reward.items || []);
       const probable = renderMaterialChips(reward.probableItems || []);
+      const quantityNote = reward.quantityDataUnavailable
+        ? `<div class="gameplay-integration-note is-warning" role="status">${escapeHtml(text("rewardQuantityUnavailable"))}</div>`
+        : "";
       return `<article class="gameplay-skill-card">
         <header>
           <div class="gameplay-skill-title">${escapeHtml(reward.id || text("rewardId"))}</div>
           <div class="gameplay-skill-meta">${escapeHtml(text("rewardId"))}</div>
         </header>
+        ${quantityNote}
         ${fixed ? `<div class="gameplay-subheading">${escapeHtml(text("fixedRewards"))}</div>${fixed}` : ""}
         ${probable ? `<div class="gameplay-subheading">${escapeHtml(text("probableRewards"))}</div>${probable}` : ""}
       </article>`;
@@ -1330,6 +1837,613 @@
       ].join(""),
     };
   }
+
+  const INTEGRATION_ASSET_SOURCE_ROOTS = Object.freeze({
+    StreamingAssets: "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type",
+    "StreamingAssets-maps": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps",
+    "StreamingAssets-structured": "export_full/structured/StreamingAssets",
+    Persistent: "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type",
+    "Persistent-maps": "export_full/recovered/AnimeStudio-cli/Persistent/maps",
+    "Persistent-structured": "export_full/structured/Persistent",
+    "StreamingAssets-materials": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type",
+    "Persistent-materials": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type",
+  });
+
+  function integrationPath(kind, language) {
+    const code = encodeURIComponent(String(language || "CN").toUpperCase());
+    if (kind === "combat") return `data/lang/${code}/gameplay/combat_relationships.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
+    if (kind === "projectiles") return `data/gameplay/projectiles.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
+    if (kind === "soundEffects") return `data/lang/${code}/gameplay/sound_effects.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
+    return `data/assets/gameplay_refs.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
+  }
+
+  async function fetchIntegrationJson(path, validator) {
+    const response = await fetch(path, { cache: "no-store" });
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`.trim());
+    const payload = await response.json();
+    if (validator && !validator(payload)) throw new Error("Unsupported integration payload");
+    return payload;
+  }
+
+  function buildIntegrationIndexes() {
+    const combat = STATE.integration.combat;
+    const projectile = STATE.integration.projectiles;
+    const indexes = { combat: null };
+    if (combat && Array.isArray(combat.nodes) && Array.isArray(combat.edges)) {
+      const nodes = new Map(combat.nodes.map((node) => [String(node.id || ""), node]));
+      const outgoing = new Map();
+      combat.edges.forEach((edge, index) => {
+        if (!edge) return;
+        const source = String(edge.source || "");
+        if (!outgoing.has(source)) outgoing.set(source, []);
+        outgoing.get(source).push(index);
+      });
+      indexes.combat = { nodes, outgoing };
+    }
+    if (projectile && Array.isArray(projectile.entries)) {
+      indexes.projectiles = projectile.entries;
+    }
+    return indexes;
+  }
+
+  function integrationNodeCandidates(entry) {
+    if (!entry || !entry.id) return [];
+    const id = String(entry.id);
+    const candidates = [`${entry.kind}:${id}`];
+    if (entry.kind === "item") candidates.push(`equipment:${id}`);
+    if (entry.kind === "equipment") candidates.push(`item:${id}`);
+    if (entry.kind === "enemy") candidates.push(`enemy:${id}`);
+    return [...new Set(candidates)];
+  }
+
+  function readableIntegrationId(value) {
+    return String(value || "")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/[_:]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function integrationConfidence(value) {
+    if (value === "direct") return `<span class="gameplay-integration-confidence is-direct">${escapeHtml(text("directEvidence"))}</span>`;
+    if (value === "inferred") return `<span class="gameplay-integration-confidence is-inferred">${escapeHtml(text("inferredEvidence"))}</span>`;
+    return value ? `<span class="gameplay-integration-confidence">${escapeHtml(readableIntegrationId(value))}</span>` : "";
+  }
+
+  function gameplayAssetPageHref(rel) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("asset", String(rel || ""));
+    url.hash = "#assets";
+    return url.toString();
+  }
+
+  function gameplayAssetHref(rel) {
+    const helper = window.WebUI?.exportFullHref;
+    if (typeof helper === "function") return helper(rel, INTEGRATION_ASSET_SOURCE_ROOTS, "export_full");
+    return `/export_full/${String(rel || "").split("/").map((part) => encodeURIComponent(part)).join("/")}`;
+  }
+
+  function gameplayAssetRefsForItem(item) {
+    const itemId = String(item?.id || "").trim();
+    if (!itemId) return null;
+    const tokenRefs = integrationAssetRefsForToken(itemId);
+    if (tokenRefs?.images?.some((asset) => asset?.rel)) return tokenRefs;
+    const refsByKey = STATE.integration.assets?.entries || {};
+    const entry = findGameplayEntry(itemId);
+    const keys = [
+      entry ? `${entry.kind}:${entry.id}` : "",
+      `item:${itemId}`,
+      `equipment:${itemId}`,
+      `weapon:${itemId}`,
+    ].filter(Boolean);
+    for (const key of [...new Set(keys)]) {
+      const refs = refsByKey[key];
+      if (refs?.images?.some((asset) => asset?.rel)) return refs;
+    }
+    return null;
+  }
+
+  function renderGameplayItemIcon(item, label = "", opts = {}) {
+    const refs = gameplayAssetRefsForItem(item);
+    const asset = refs?.images?.find((candidate) => candidate?.rel);
+    if (!asset) return "";
+    if (opts.static) {
+      const src = gameplayAssetHref(asset.rel);
+      const title = label || item?.id || asset.rel;
+      return `<span class="gameplay-item-chip-icon gameplay-item-chip-icon-static" title="${escapeHtml(title)}"><img src="${escapeHtml(src)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.closest('.gameplay-item-chip-icon')?.classList.add('is-missing')"></span>`;
+    }
+    return renderGameplayImageButton(asset, {
+      className: "gameplay-item-chip-icon",
+      alt: label || item?.id || "",
+      imageId: `item:${item?.id || asset.rel}`,
+      imageName: label || item?.id || asset.rel,
+    });
+  }
+
+  function renderGameplayImageButton(asset, opts = {}) {
+    const rel = String(asset?.rel || "");
+    if (!rel) return "";
+    const src = gameplayAssetHref(rel);
+    const token = String(opts.token || "");
+    const imageId = String(opts.imageId || token || rel);
+    const imageName = String(opts.imageName || opts.alt || token || rel);
+    const className = [
+      opts.className || "",
+      "gameplay-image-preview",
+      "inline-image-tag",
+      "has-preview",
+    ].filter(Boolean).join(" ");
+    const title = opts.title || `${text("previewImage")}: ${imageName}`;
+    const image = `<img src="${escapeHtml(src)}" alt="${escapeHtml(opts.alt || imageName)}" loading="lazy" onerror="this.closest('.gameplay-image-preview')?.classList.add('is-missing')">`;
+    const content = opts.content || image;
+    return `<button type="button" class="${escapeHtml(className)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" data-inline-image-id="${escapeHtml(imageId)}" data-inline-image-name="${escapeHtml(imageName)}" data-inline-image-src="${escapeHtml(src)}"${token ? ` data-gameplay-token="${escapeHtml(token)}"` : ""}>${content}</button>`;
+  }
+
+  function sourceCoordinate(source) {
+    return [source?.table, source?.id].filter(Boolean).join(" / ");
+  }
+
+  function integrationAssetRefsForToken(token) {
+    const raw = String(token || "").trim();
+    if (!raw) return null;
+    const tokens = STATE.integration.assets?.tokens || {};
+    const variants = [raw, raw.replace(/^item_pic_/i, "pic_")];
+    if (/^item_topic_/i.test(raw)) {
+      variants.push(raw.replace(/^item_topic_/i, "business_card_topic_"));
+    }
+    for (const variant of [...new Set(variants)]) {
+      if (tokens[variant]) return tokens[variant];
+    }
+    return null;
+  }
+
+  function characterSkillIconType(group) {
+    const numericType = Number(group?.type);
+    if (numericType === 0) return "normal-attack";
+    if (numericType === 1) return "normal-skill";
+    if (numericType === 2) return "ultimate";
+    if (numericType === 3) return "combo";
+    const id = String(group?.id || "");
+    const suffix = id.match(/_(NormalAttack|NormalSkill|UltimateSkill|ComboSkill)$/i)?.[1]?.toLowerCase();
+    if (suffix === "normalattack") return "normal-attack";
+    if (suffix === "normalskill") return "normal-skill";
+    if (suffix === "ultimateskill") return "ultimate";
+    if (suffix === "comboskill") return "combo";
+    const label = `${group?.typeLabel || ""} ${group?.name || ""}`.toLowerCase();
+    if (label.includes("normal attack") || label.includes("普通攻击")) return "normal-attack";
+    if (label.includes("ultimate") || label.includes("终结")) return "ultimate";
+    if (label.includes("combo") || label.includes("连携")) return "combo";
+    if (label.includes("skill") || label.includes("技能")) return "normal-skill";
+    return "";
+  }
+
+  function renderGameplayTokenIcon(token, alt = "", opts = {}) {
+    const refs = integrationAssetRefsForToken(token);
+    const asset = refs?.images?.find((item) => item?.rel);
+    if (!asset) return "";
+    const skillType = String(opts.skillType || "").trim();
+    return renderGameplayImageButton(asset, {
+      className: [
+        "gameplay-token-icon",
+        skillType ? "gameplay-attack-skill-icon" : "",
+        skillType ? `gameplay-attack-skill-${skillType}` : "",
+        opts.className || "",
+      ].filter(Boolean).join(" "),
+      alt,
+      token,
+      imageName: readableIntegrationId(token) || alt || token,
+    });
+  }
+
+  function renderGameplayTokenImages(tokens, alt = "", className = "") {
+    const images = [];
+    const seen = new Set();
+    for (const token of tokens || []) {
+      const refs = integrationAssetRefsForToken(token);
+      for (const asset of refs?.images || []) {
+        const rel = String(asset?.rel || "");
+        if (!rel || seen.has(rel)) continue;
+        seen.add(rel);
+        images.push({ asset, token });
+      }
+    }
+    if (!images.length) return "";
+    const cards = images.slice(0, 4).map(({ asset, token }) => {
+      return renderGameplayImageButton(asset, {
+        className: "gameplay-token-asset",
+        alt,
+        token,
+        imageName: readableIntegrationId(token) || alt || token,
+      });
+    }).join("");
+    return `<div class="gameplay-token-image-row${className ? ` ${className}` : ""}">${cards}${images.length > 4 ? `<span class="gameplay-character-asset-more">+${formatNumber(images.length - 4)}</span>` : ""}</div>`;
+  }
+
+  function renderGameplayAssetLink(asset, label = "") {
+    const rel = String(asset?.rel || "");
+    if (!rel) return "";
+    const title = label || rel;
+    return `<a class="gameplay-asset-path" href="${escapeHtml(gameplayAssetPageHref(rel))}" title="${escapeHtml(text("openAsset"))}"><span>${escapeHtml(title)}</span><code>${escapeHtml(rel)}</code></a>`;
+  }
+
+  function renderGameplayAssetGallery(entry) {
+    const key = `${entry?.kind || ""}:${entry?.id || ""}`;
+    const refs = STATE.integration.assets?.entries?.[key];
+    if (!refs) return "";
+    const kind = String(entry?.kind || "");
+    const iconLike = ["weapon", "equipment", "item"].includes(kind);
+    const allImages = Array.isArray(refs.images) ? refs.images.filter((item) => item?.rel) : [];
+    const images = kind === "weapon" ? allImages : (iconLike || kind === "enemy") ? allImages.slice(0, 1) : allImages;
+    const models = Array.isArray(refs.models) ? refs.models.filter((item) => item?.rel) : [];
+    const imageCards = images.map((asset, index) => {
+      const caption = asset.category || (index === 0 ? text("assetImages") : "");
+      return renderGameplayImageButton(asset, {
+        className: `gameplay-asset-thumb${kind === "weapon" ? " gameplay-weapon-asset-thumb" : iconLike ? " gameplay-item-weapon-thumb" : ""}`,
+        alt: entry.title || entry.id || "",
+        imageId: `${entry.id || "entry"}:${asset.rel}`,
+        imageName: [entry.title || entry.id || "", caption].filter(Boolean).join(" / "),
+        content: `<figure><img src="${escapeHtml(gameplayAssetHref(asset.rel))}" alt="${escapeHtml(entry.title || entry.id || "")}" loading="lazy" onerror="this.closest('.gameplay-image-preview')?.classList.add('is-missing')"><figcaption>${escapeHtml(caption)}</figcaption></figure>`,
+      });
+    }).join("");
+    const modelLinks = models.map((asset) => renderGameplayAssetLink(asset, asset.category || text("assetModels"))).join("");
+    if (!imageCards && !modelLinks) return "";
+    return `<div class="gameplay-asset-gallery"><div class="gameplay-subheading">${escapeHtml(text("assetImages"))}</div><div class="gameplay-asset-images">${imageCards || `<span class="gameplay-asset-no-preview">${escapeHtml(text("noAssetPreview"))}</span>`}</div>${modelLinks ? `<div class="gameplay-asset-models"><div class="gameplay-subheading">${escapeHtml(text("assetModels"))}</div>${modelLinks}</div>` : ""}</div>`;
+  }
+
+  function renderIntegrationNode(nodeId, node) {
+    const target = findGameplayEntry(nodeId);
+    const label = node?.name || node?.label || node?.key || nodeId;
+    if (target) {
+      const key = `${target.kind}:${target.id}`;
+      return `<button type="button" class="gameplay-related-link" data-gameplay-related-key="${escapeHtml(key)}" title="${escapeHtml(target.id)}">${escapeHtml(label)}</button>`;
+    }
+    if (node?.kind === "asset" && node?.path) {
+      return renderGameplayAssetLink({ rel: node.path }, label);
+    }
+    return `<code class="gameplay-integration-node">${escapeHtml(label)}</code>`;
+  }
+
+  function combatRootForEntry(entry) {
+    if (!entry || !["character", "enemy"].includes(entry.kind)) return "";
+    const id = `${entry.kind}:${entry.id}`;
+    return STATE.integration.indexes?.combat?.nodes.has(id) ? id : "";
+  }
+
+  function combatEdgesFromRoot(rootId) {
+    const index = STATE.integration.indexes?.combat;
+    const payload = STATE.integration.combat;
+    if (!index || !payload) return [];
+    const indexedEdges = payload.rootEdges?.[rootId];
+    if (Array.isArray(indexedEdges)) {
+      return indexedEdges
+        .slice(0, 160)
+        .map((edgeIndex) => payload.edges[edgeIndex])
+        .filter(Boolean)
+        .sort((left, right) => {
+          const confidence = (left.confidence === "direct" ? 0 : 1) - (right.confidence === "direct" ? 0 : 1);
+          if (confidence) return confidence;
+          return String(left.type || "").localeCompare(String(right.type || ""));
+        });
+    }
+    const queue = [[rootId, 0]];
+    const visitedNodes = new Set([rootId]);
+    const edgeIds = new Set();
+    const out = [];
+    while (queue.length && out.length < 120) {
+      const [nodeId, depth] = queue.shift();
+      for (const edgeIndex of index.outgoing.get(nodeId) || []) {
+        if (edgeIds.has(edgeIndex)) continue;
+        const edge = payload.edges[edgeIndex];
+        if (!edge) continue;
+        edgeIds.add(edgeIndex);
+        out.push(edge);
+        const target = String(edge.target || "");
+        if (depth < 2 && target && !visitedNodes.has(target)) {
+          visitedNodes.add(target);
+          queue.push([target, depth + 1]);
+        }
+      }
+    }
+    return out;
+  }
+
+  function combatEdgesForNode(nodeId) {
+    const index = STATE.integration.indexes?.combat;
+    const payload = STATE.integration.combat;
+    if (!index || !payload) return [];
+    return (index.outgoing.get(String(nodeId || "")) || [])
+      .map((edgeIndex) => payload.edges[edgeIndex])
+      .filter(Boolean);
+  }
+
+  function combatRelationLabel(value) {
+    const key = `combatRelation_${String(value || "")}`;
+    const translated = text(key);
+    return translated === key ? readableIntegrationId(value) : translated;
+  }
+
+  function compactEvidenceValue(value, maxLength = 360) {
+    if (value === undefined || value === null || value === "") return "";
+    let rendered;
+    if (typeof value === "string") rendered = value;
+    else {
+      try { rendered = JSON.stringify(value); }
+      catch (_) { rendered = String(value); }
+    }
+    return rendered.length > maxLength ? `${rendered.slice(0, maxLength - 1)}…` : rendered;
+  }
+
+  function integrationNodeSemantics(node) {
+    if (!node) return "";
+    const raw = node.raw || {};
+    const source = node.source || {};
+    const sourceValue = typeof source === "string"
+      ? source
+      : [source.table, source.id, source.file, source.path, source.layout].filter(Boolean).join(" / ");
+    const authoredFields = ["attrTemplateId", "modelId", "aiTemplateId", "displayType", "isDangerous"]
+      .filter((key) => raw[key] !== undefined && raw[key] !== null && raw[key] !== "")
+      .map((key) => `${readableIntegrationId(key)}=${formatValue(raw[key])}`);
+    if (Array.isArray(raw.bornBuffs) && raw.bornBuffs.length) authoredFields.push(`${text("bornBuffs")}: ${raw.bornBuffs.join(", ")}`);
+    if (Array.isArray(raw.attrModifiers) && raw.attrModifiers.length) authoredFields.push(`${text("attrModifiers")}: ${formatNumber(raw.attrModifiers.length)}`);
+    const scalarFields = [...(raw.damageScalars || []), ...(raw.resilience || [])]
+      .filter((item) => item && item.value !== undefined && item.value !== null)
+      .slice(0, 8)
+      .map((item) => `${item.label || readableIntegrationId(item.key)}=${formatValue(item.value)}`);
+    const authored = [
+      raw.description,
+      raw.dataPath,
+      raw.domain,
+      Array.isArray(raw.fields) ? raw.fields.join(", ") : "",
+      raw.statPointCount !== undefined ? `${text("statPointCount")}: ${formatValue(raw.statPointCount)}` : "",
+      raw.interpolated === false ? text("noInterpolation") : "",
+      ...authoredFields,
+      ...scalarFields,
+      node.classification?.basis,
+    ].filter(Boolean).join(" · ");
+    const rows = [
+      node.semanticStatus ? `<span><b>${escapeHtml(text("semanticStatus"))}</b>${escapeHtml(node.semanticStatus)}</span>` : "",
+      sourceValue ? `<span><b>${escapeHtml(text("source"))}</b><code>${escapeHtml(sourceValue)}</code></span>` : "",
+      authored ? `<span><b>${escapeHtml(text("authoredSemantics"))}</b>${escapeHtml(authored)}</span>` : "",
+    ].filter(Boolean).join("");
+    return rows ? `<div class="gameplay-integration-semantics">${rows}</div>` : "";
+  }
+
+  function renderCombatEdge(edge) {
+    const index = STATE.integration.indexes?.combat;
+    const source = index?.nodes.get(String(edge.source || ""));
+    const targetId = String(edge.target || "");
+    const target = index?.nodes.get(targetId);
+    const evidence = edge.evidence || {};
+    const evidenceText = [evidence.source, evidence.path].filter(Boolean).join(" / ");
+    const rawEvidence = compactEvidenceValue(evidence.raw);
+    return `<article class="gameplay-integration-relation gameplay-combat-relation">
+      <div class="gameplay-integration-relation-main">${renderIntegrationNode(String(edge.source || ""), source)}<span class="gameplay-integration-arrow">→</span><span class="gameplay-integration-relation-kind">${escapeHtml(combatRelationLabel(edge.type))}</span><span class="gameplay-integration-arrow">→</span>${renderIntegrationNode(targetId, target)}${integrationConfidence(edge.confidence)}</div>
+      ${evidenceText || rawEvidence || edge.note ? `<div class="gameplay-integration-evidence">${evidenceText ? `<span><b>${escapeHtml(text("evidenceCoordinate"))}</b><code>${escapeHtml(evidenceText)}</code></span>` : ""}${rawEvidence ? `<span><b>${escapeHtml(text("evidenceValue"))}</b><code>${escapeHtml(rawEvidence)}</code></span>` : ""}${edge.note ? `<span><b>${escapeHtml(text("evidenceMeaning"))}</b>${escapeHtml(edge.note)}</span>` : ""}</div>` : ""}
+      ${integrationNodeSemantics(target)}
+    </article>`;
+  }
+
+  function renderCombatIntegration(entry) {
+    const rootId = combatRootForEntry(entry);
+    if (!rootId) return "";
+    const edges = combatEdgesFromRoot(rootId);
+    if (!edges.length) return section(text("combatLinks"), `<p class="gameplay-integration-empty">${escapeHtml(text("noCombatLinks"))}</p>`, { open: false });
+    const direct = edges.filter((edge) => edge.confidence === "direct").length;
+    const body = `<div class="gameplay-integration-summary"><span>${formatNumber(edges.length)} ${escapeHtml(text("combatLinks"))}</span><span>${formatNumber(direct)} ${escapeHtml(text("directEvidence"))}</span><span>${formatNumber(edges.length - direct)} ${escapeHtml(text("inferredEvidence"))}</span></div>${edges.map(renderCombatEdge).join("")}`;
+    return section(text("combatLinks"), body, { open: true });
+  }
+
+  function projectileTokenMatches(value, token) {
+    const haystack = `_${String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "_")}_`;
+    const needle = String(token || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    return !!needle && haystack.includes(`_${needle}_`);
+  }
+
+  function projectileTokenKey(value) {
+    return String(value || "").toLowerCase().replace(/^(?:data_)?projectile_/, "");
+  }
+
+  function projectileCanonicalKey(value) {
+    return projectileTokenKey(value).replace(/[^a-z0-9]+/g, "");
+  }
+
+  function projectileTokenEquals(value, token) {
+    const left = projectileTokenKey(value);
+    const right = projectileTokenKey(token);
+    return !!right && left === right;
+  }
+
+  function projectileTokensForEntry(entry) {
+    const tokens = [entry?.id];
+    for (const skill of entry?.skills || []) tokens.push(skill?.id);
+    for (const group of entry?.skillGroups || []) {
+      tokens.push(...(group?.actionSkillIds || []));
+      for (const skill of group?.skills || []) tokens.push(skill?.id);
+    }
+    for (const action of entry?.useData?.actions || []) tokens.push(action?.skillId);
+    return [...new Set(tokens.map((value) => String(value || "").trim()).filter(Boolean))];
+  }
+
+  function projectilesForTokens(tokens, preferredToken = "", valueSelector = projectileValues) {
+    const rows = STATE.integration.indexes?.projectiles || [];
+    if (!tokens.length) return [];
+    return rows.map((projectile) => {
+      const values = valueSelector(projectile);
+      const matched = tokens.filter((token) => values.some((value) => projectileTokenMatches(value, token)));
+      if (!matched.length) return null;
+      return { projectile, score: matched.some((token) => token === preferredToken) ? 0 : 1, matched };
+    }).filter(Boolean).sort((left, right) => left.score - right.score || String(left.projectile.id).localeCompare(String(right.projectile.id)));
+  }
+
+  function projectilesForEntry(entry) {
+    return projectilesForTokens(projectileTokensForEntry(entry), entry?.id || "");
+  }
+
+  function projectileTokenVariants(token) {
+    const variants = [String(token || "").trim()];
+    let current = variants[0];
+    while (/_\d+$/.test(current)) {
+      current = current.replace(/_\d+$/, "");
+      variants.push(current);
+    }
+    return variants.filter(Boolean);
+  }
+
+  function projectileValues(projectile) {
+    return [
+      projectile?.id,
+      projectile?.source?.assetName,
+      ...projectileBehaviorSkillIds(projectile),
+    ].map((value) => String(value || "").toLowerCase());
+  }
+
+  function projectileIdentityValues(projectile) {
+    return [projectile?.id, projectile?.source?.assetName]
+      .map((value) => String(value || "").toLowerCase())
+      .filter(Boolean);
+  }
+
+  function projectileMatchesSkillFamily(projectile, baseId, family) {
+    const values = projectileIdentityValues(projectile);
+    if (!baseId || !values.some((value) => projectileTokenMatches(value, baseId))) return false;
+    const haystack = values.join(" ");
+    const isUltimate = /(?:^|_)ult(?:_|$)/.test(haystack) || haystack.includes("ultimate_skill") || haystack.includes("ultimate");
+    const isNormalSkill = haystack.includes("normal_skill");
+    const isCombo = haystack.includes("combo_skill");
+    if (family === "NormalAttack") return !isUltimate && !isNormalSkill && !isCombo && haystack.includes("attack");
+    if (family === "NormalSkill") return isNormalSkill;
+    if (family === "UltimateSkill") return isUltimate;
+    if (family === "ComboSkill") return isCombo;
+    return false;
+  }
+
+  function projectilesForSkill(skill, siblingSkillIds = []) {
+    const skillId = String(skill?.id || "");
+    const rows = STATE.integration.indexes?.projectiles || [];
+    const siblingIds = new Set(siblingSkillIds.map((id) => projectileTokenKey(id)).filter(Boolean));
+    const skillCanonical = projectileCanonicalKey(skillId);
+    const siblingCanonical = siblingSkillIds.map((id) => ({
+      id: String(id || ""),
+      key: projectileCanonicalKey(id),
+    })).filter((item) => item.key && item.id !== skillId);
+    const exact = rows
+      .filter((projectile) => projectileIdentityValues(projectile).some((value) => projectileTokenEquals(value, skillId)))
+      .map((projectile) => ({ projectile, score: 0, matched: [skillId], matchMethod: "exact-action-id" }));
+    const fallbackTokens = projectileTokenVariants(skillId).slice(1);
+    // Some authored projectile assets add a descriptive suffix (for example
+    // `attack2_robot`) while the skill action remains `attack2`. The same
+    // fallback also collects numeric variants such as `attack3_2` when there
+    // is no sibling skill with that exact identifier.
+    const tokens = fallbackTokens.length ? fallbackTokens : [skillId];
+    const exactIds = new Set(exact.map(({ projectile }) => String(projectile?.id || "")));
+    const fallback = projectilesForTokens([...new Set(tokens)], skillId, projectileIdentityValues)
+      // If a sibling action has the exact projectile identifier, do not let a
+      // shorter parent action claim it through the boundary-aware fallback.
+      .filter(({ projectile }) => !exactIds.has(String(projectile?.id || "")))
+      .filter(({ projectile }) => !projectileIdentityValues(projectile).some((value) => siblingIds.has(projectileTokenKey(value))))
+      .map((row) => ({ ...row, matchMethod: "action-id-family" }));
+    const claimedIds = new Set([...exact, ...fallback].map(({ projectile }) => String(projectile?.id || "")));
+    const separatorVariants = rows
+      .filter((projectile) => !claimedIds.has(String(projectile?.id || "")))
+      .filter((projectile) => projectileIdentityValues(projectile).some((value) => {
+        const key = projectileCanonicalKey(value);
+        if (!skillCanonical || !key.startsWith(skillCanonical)) return false;
+        return !siblingCanonical.some((sibling) => sibling.key.length > skillCanonical.length && key.startsWith(sibling.key));
+      }))
+      .map((projectile) => ({ projectile, score: 1, matched: [skillId], matchMethod: "normalized-action-prefix" }));
+    return [...exact, ...fallback, ...separatorVariants];
+  }
+
+  function projectilesForSkillGroupUnassigned(group, assignedIds) {
+    const groupId = String(group?.id || "");
+    const familyMatch = groupId.match(/^(.*)_(NormalAttack|NormalSkill|UltimateSkill|ComboSkill)$/);
+    if (!familyMatch) return [];
+    const rows = STATE.integration.indexes?.projectiles || [];
+    return rows
+      .filter((projectile) => projectileMatchesSkillFamily(projectile, familyMatch[1], familyMatch[2]))
+      .filter((projectile) => !assignedIds.has(String(projectile?.id || "")))
+      .map((projectile) => ({ projectile, score: 2, matched: [familyMatch[1]], matchMethod: "skill-family-identifier" }));
+  }
+
+  function projectileDisplayName(projectile) {
+    const id = String(projectile?.id || "").replace(/^data_projectile_/, "");
+    return readableIntegrationId(id) || String(projectile?.id || "");
+  }
+
+  function projectileEffectCount(projectile) {
+    return Object.values(projectile?.effects?.lists || {}).reduce((total, items) => total + (Array.isArray(items) ? items.length : 0), 0);
+  }
+
+  function projectileSoundCount(projectile) {
+    return Object.values(projectile?.sounds || {}).filter((value) => value !== null && value !== undefined && value !== "").length;
+  }
+
+  function renderProjectileIntegration(entry) {
+    const matches = projectilesForEntry(entry);
+    if (!matches.length) return "";
+    const cards = matches.map(({ projectile }) => {
+      const lifetime = projectile.lifetime || {};
+      const movement = projectile.movement || {};
+      const collision = projectile.collision || {};
+      const targeting = projectile.targeting || {};
+      const effects = projectileEffectCount(projectile);
+      const sounds = projectileSoundCount(projectile);
+      const complete = projectile.confidence?.byteComplete;
+      const facts = [
+        [text("projectileLifetime"), [lifetime.finishDuration, lifetime.finishDistance].filter((value) => value !== null && value !== undefined && value !== "").map(formatValue).join(" / ")],
+        [text("projectileMovement"), `${(movement.modes || []).length}`],
+        [text("projectileCollision"), formatValue(collision.shapeType)],
+        [text("projectileTargeting"), formatValue(targeting.maxHitCount)],
+        [text("projectileEffects"), `${effects} / ${sounds}`],
+      ].filter(([, value]) => value !== "" && value !== "undefined");
+      const source = projectile.source || {};
+      return `<article class="gameplay-projectile-card"><header><div><strong>${escapeHtml(projectileDisplayName(projectile))}</strong><code>${escapeHtml(projectile.id || "")}</code></div><span class="gameplay-projectile-status${complete ? " is-complete" : ""}">${escapeHtml(complete ? text("projectileComplete") : text("projectilePartial"))}</span></header><div class="gameplay-projectile-facts">${facts.map(([label, value]) => `<span><b>${escapeHtml(label)}</b><code>${escapeHtml(value)}</code></span>`).join("")}</div><div class="gameplay-integration-evidence"><code>${escapeHtml([source.root, source.assetName, source.pathId].filter(Boolean).join(" / "))}</code></div></article>`;
+    }).join("");
+    return section(`${text("projectiles")} (${matches.length})`, `<div class="gameplay-projectile-grid">${cards}</div>`, { open: true });
+  }
+
+  function renderIntegratedSections(entry) {
+    if (entry?.kind === "character") return "";
+    const blocks = [renderGameplayAssetGallery(entry)];
+    if (STATE.showDebug) {
+      blocks.push(renderCombatIntegration(entry), renderProjectileIntegration(entry));
+    }
+    const visibleBlocks = blocks.filter(Boolean);
+    if (visibleBlocks.length) return visibleBlocks.join("");
+    if (!STATE.showDebug) return "";
+    if (STATE.integration.status === "loading") {
+      return `<div class="gameplay-integration-note" role="status">${escapeHtml(text("integrationLoading"))}</div>`;
+    }
+    if (STATE.integration.errors.length) {
+      return `<div class="gameplay-integration-note is-warning" role="status">${escapeHtml(text("integrationUnavailable"))}</div>`;
+    }
+    return "";
+  }
+
+  function bindIntegratedLinks(root) {
+    root.querySelectorAll("[data-gameplay-related-key]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = findGameplayEntry(button.dataset.gameplayRelatedKey || "");
+        if (!target) return;
+        STATE.selected = target;
+        // A related reward often points outside the current search/filter
+        // result (for example, an item search pointing at a weapon).  Clear
+        // conflicting filters before rendering so renderList does not reset
+        // the selection back to the source item.
+        if (!STATE.filtered.includes(target)) {
+          const query = gp$("#gameplay-q");
+          if (query) query.value = "";
+          Object.values(STATE.filters).forEach((filter) => filter.clear());
+          buildFilterChips();
+          applyFilters();
+        } else {
+          renderList();
+        }
+        revealSelectedInList();
+      });
+    });
+  }
+
   function renderEquipmentFormula(entry) {
     const formula = entry.formula || {};
     if (!formula.formulaName && !(formula.costs || []).length) return "";
@@ -1407,6 +2521,28 @@
     return true;
   }
 
+  function bindGameplayMediaPlayers(root) {
+    if (!root || !window.WebUI.enhanceMediaPlayers) return;
+    const isRevealed = (media) => {
+      for (let node = media.parentElement; node && node !== root; node = node.parentElement) {
+        if (node.tagName === "DETAILS" && !node.open) return false;
+      }
+      return true;
+    };
+    const enhanceVisible = () => {
+      root.querySelectorAll("audio:not([data-media-player]), video:not([data-media-player])").forEach((media) => {
+        if (!isRevealed(media) || !media.parentElement) return;
+        window.WebUI.enhanceMediaPlayers(media.parentElement);
+      });
+    };
+    enhanceVisible();
+    root.querySelectorAll("details").forEach((details) => {
+      details.addEventListener("toggle", () => {
+        if (details.open) enhanceVisible();
+      });
+    });
+  }
+
   function renderDetail(entry) {
     const empty = gp$("#gameplay-empty");
     const detail = gp$("#gameplay-detail");
@@ -1438,7 +2574,9 @@
       wikiSlot.innerHTML = wiki;
       wikiSlot.hidden = !wiki;
     }
-    gp$("#gameplay-detail-body").innerHTML = rendered.body || "";
+    gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${renderIntegratedSections(entry)}`;
+    bindGameplayMediaPlayers(detail);
+    bindIntegratedLinks(detail);
     bindLevelSliders(detail);
     bindVariantSwitches(detail);
     syncLocateCurrentButton();
@@ -1699,6 +2837,16 @@
     const tokens = parseQuery(gp$("#gameplay-q") && gp$("#gameplay-q").value);
     const scores = new Map();
     STATE.searchTokens = tokens;
+    window.WebUI?.setFilterSectionActiveCounts?.({
+      "gameplay-basic": tokens.length ? 1 : 0,
+      "gameplay-kind": STATE.filters.kinds.size,
+      "gameplay-job": STATE.filters.jobs.size,
+      "gameplay-character-property": STATE.filters.characterProperties.size,
+      "gameplay-weapon-type": STATE.filters.weaponTypes.size,
+      "gameplay-equipment-type": STATE.filters.equipmentTypes.size,
+      "gameplay-enemy-type": STATE.filters.enemyTypes.size,
+      "gameplay-rarity": STATE.filters.rarities.size,
+    });
     STATE.filtered = STATE.entries.filter((entry) => {
       if (STATE.filters.kinds.size && !STATE.filters.kinds.has(entry.kind)) return false;
       if (STATE.filters.jobs.size && !STATE.filters.jobs.has(jobFilterKey(entry))) return false;
@@ -1740,8 +2888,9 @@
   }
 
   function applyUiStrings() {
+    // #gameplay-tab is owned by the shared data-i18n loop in app.js
+    // (gameplayTab in app_labels.js) — not repeated here.
     const pairs = [
-      ["#gameplay-tab", "tab"],
       ["#gameplay-title", "title"],
       ["#gameplay-count-label", "countLabel"],
       ["#gameplay-basic-filter-label", "basicFilters"],
@@ -1767,9 +2916,67 @@
     buildFilterChips();
     if (STATE.entries.length) renderList();
   }
+
+  function loadGameplayIntegration(language = currentLanguage(), force = false) {
+    const nextLanguage = String(language || "CN").toUpperCase();
+    const integration = STATE.integration;
+    if (!force && integration.language === nextLanguage && integration.status === "ready") {
+      return Promise.resolve(integration);
+    }
+    if (!force && integration.loading && integration.language === nextLanguage) return integration.loading;
+    const token = ++integration.token;
+    integration.language = nextLanguage;
+    integration.status = "loading";
+    integration.combat = null;
+    integration.projectiles = null;
+    integration.soundEffects = null;
+    integration.assets = null;
+    integration.errors = [];
+    integration.indexes = null;
+    const requests = [
+      ["combat", integrationPath("combat", nextLanguage), (payload) => payload && Array.isArray(payload.nodes) && Array.isArray(payload.edges)],
+      ["projectiles", integrationPath("projectiles", nextLanguage), (payload) => payload && Array.isArray(payload.entries)],
+      ["soundEffects", integrationPath("soundEffects", nextLanguage), (payload) => payload && payload.schemaVersion === 1 && payload.characters && payload.enemies],
+      ["assets", integrationPath("assets", nextLanguage), (payload) => payload && payload.entries && typeof payload.entries === "object"],
+    ];
+    const promise = Promise.all(requests.map(async ([kind, path, validator]) => {
+      try {
+        return { kind, payload: await fetchIntegrationJson(path, validator), error: "" };
+      } catch (error) {
+        return { kind, payload: null, error: String(error?.message || error) };
+      }
+    })).then((results) => {
+      if (integration.token !== token) return null;
+      for (const result of results) {
+        integration[result.kind] = result.payload;
+        // Asset refs are an optional visual enhancement. Missing visual refs
+        // must not turn a valid Gameplay/Combat/Projectile build into an error.
+        if (result.error && !["assets", "soundEffects"].includes(result.kind)) integration.errors.push({ kind: result.kind, message: result.error });
+      }
+      integration.indexes = buildIntegrationIndexes();
+      integration.status = "ready";
+      integration.loading = null;
+      if (STATE.selected) renderDetail(STATE.selected);
+      return integration;
+    }).catch((error) => {
+      if (integration.token !== token) return null;
+      integration.status = "ready";
+      integration.loading = null;
+      integration.errors = [{ kind: "integration", message: String(error?.message || error) }];
+      integration.indexes = buildIntegrationIndexes();
+      if (STATE.selected) renderDetail(STATE.selected);
+      return integration;
+    });
+    integration.loading = promise;
+    return promise;
+  }
+
   async function loadGameplay(force = false) {
     const language = currentLanguage();
-    if (!force && STATE.index && STATE.language === language) return;
+    if (!force && STATE.index && STATE.language === language) {
+      if (STATE.integration.language !== language || STATE.integration.status === "idle") void loadGameplayIntegration(language);
+      return;
+    }
     if (STATE.loading) return STATE.loading;
     STATE.language = language;
     window.WebUI.showLoader?.("gameplay", text("loading"));
@@ -1789,6 +2996,7 @@
         gp$("#gameplay-count").textContent = formatNumber(STATE.entries.length);
         buildFilterChips();
         applyFilters();
+        void loadGameplayIntegration(language, force);
       } catch (err) {
         STATE.index = null;
         STATE.entries = [];
@@ -1823,12 +3031,18 @@
       STATE.uiLocale = normalizeUiLocale(event.detail && event.detail.locale) || STATE.uiLocale;
       applyUiStrings();
     });
+    window.addEventListener("webui:debug-changed", (event) => {
+      STATE.showDebug = Boolean(event.detail && event.detail.enabled);
+      if (STATE.selected) renderDetail(STATE.selected);
+    });
   }
 
   function init() {
     if (!gp$("#gameplay-app")) return;
     STATE.uiLocale = resolveInitialUiLocale();
     STATE.language = currentLanguage();
+    STATE.showDebug = document.body.classList.contains("show-debug")
+      || gp$("#show-debug")?.getAttribute("aria-pressed") === "true";
     STATE.collapsedKinds = loadCollapsedKinds();
     STATE.levelFraction = loadLevelFraction();
     ensurePanelToggle();

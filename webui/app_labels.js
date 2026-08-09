@@ -6,10 +6,22 @@ const UI_TEXTS = {
     storyTab: "\u5267\u60c5",
     missionPipelineTab: "\u4efb\u52a1\u6d41\u7a0b\uff08\u5b9e\u9a8c\uff09",
     assetsTab: "\u8d44\u6e90",
+    gameplayTab: "\u73a9\u6cd5",
+    charactersTab: "\u4eba\u7269",
+    referenceTab: "\u6587\u672c",
+    updatesTab: "\u66f4\u65b0",
     uiLanguage: "\u754c\u9762",
     uiLanguageChinese: "\u4e2d\u6587",
     uiLanguageEnglish: "English",
-    pageTitle: "\u7ec8\u672b\u5730\u7814\u7a76\u5de5\u5177 / Endfield Research Kit",
+    siteTitle: "\u7ec8\u672b\u5730\u7814\u7a76\u5de5\u5177",
+    pageTitle: "\u5267\u60c5\u5bf9\u8bdd \u00b7 \u7ec8\u672b\u5730\u7814\u7a76\u5de5\u5177",
+    storyPageTitle: "\u5267\u60c5\u5bf9\u8bdd",
+    charactersPageTitle: "\u4eba\u7269",
+    gameplayPageTitle: "\u73a9\u6cd5\u6570\u636e",
+    missionPipelinePageTitle: "\u4efb\u52a1\u6d41\u7a0b",
+    assetsPageTitle: "\u5bfc\u51fa\u8d44\u6e90",
+    referencePageTitle: "\u6587\u672c\u8868",
+    updatesPageTitle: "\u6570\u636e\u66f4\u65b0",
     appTitle: "\u5267\u60c5\u5bf9\u8bdd",
     countLabel: "\u6761\u4f1a\u8bdd",
     searchPlaceholder: "\u641c\u7d22 ID / \u4efb\u52a1 / \u89d2\u8272 / \u6587\u672c",
@@ -404,10 +416,22 @@ const UI_TEXTS = {
     storyTab: "Story",
     missionPipelineTab: "Mission Pipeline (Experimental)",
     assetsTab: "Assets",
+    gameplayTab: "Gameplay",
+    charactersTab: "Characters",
+    referenceTab: "Reference",
+    updatesTab: "Updates",
     uiLanguage: "UI",
     uiLanguageChinese: "Chinese",
     uiLanguageEnglish: "English",
-    pageTitle: "Endfield Research Kit",
+    siteTitle: "Endfield Research Kit",
+    pageTitle: "Story Dialogue \u00b7 Endfield Research Kit",
+    storyPageTitle: "Story Dialogue",
+    charactersPageTitle: "Characters & NPCs",
+    gameplayPageTitle: "Gameplay Data",
+    missionPipelinePageTitle: "Mission Pipeline",
+    assetsPageTitle: "Exported Assets",
+    referencePageTitle: "Text Tables",
+    updatesPageTitle: "Data Updates",
     appTitle: "Story Dialogue",
     countLabel: "conversations",
     searchPlaceholder: "Search ID / mission / actor / text",
@@ -1967,6 +1991,33 @@ function characterTailFromMissionId(missionId) {
   return m ? m[1] : "";
 }
 
+function computeCharacterNames(entries) {
+  const names = {};
+  const priorities = {};
+  for (const entry of entries || []) {
+    const missionId = String(entry && entry.m || "").trim();
+    const characterId = characterTailFromMissionId(missionId);
+    if (!characterId) continue;
+
+    const key = String(entry && entry.k || "").trim();
+    const tags = Array.isArray(entry && entry.tags) ? entry.tags : [];
+    const isCharacterReference = key.startsWith("wiki_chr_") || tags.includes("character");
+    if (!isCharacterReference) continue;
+
+    const title = String(entry && entry.title || "").trim();
+    if (!title || title === key || title === missionId || title === characterId) continue;
+
+    // Prefer the direct CharacterTable archive page over secondary character
+    // references when more than one index entry carries the same character id.
+    const priority = key.startsWith("wiki_chr_") ? 2 : 1;
+    if ((priorities[missionId] || 0) > priority) continue;
+    names[missionId] = title;
+    names[characterId] = title;
+    priorities[missionId] = priority;
+  }
+  return names;
+}
+
 function characterDisplayFromActorId(aid, preferExplicit = false) {
   const actorId = String(aid || "");
   if (!actorId) return "";
@@ -1978,6 +2029,14 @@ function characterDisplayFromActorId(aid, preferExplicit = false) {
     }
   }
   if (names.length) return actorDisplay(actorId);
+  const indexedName = STATE.characterNames[actorId] || "";
+  if (indexedName) {
+    if (preferExplicit) {
+      const explicit = extractExplicitBraceText(indexedName);
+      if (explicit) return explicit;
+    }
+    return stripBraceSegments(indexedName) || String(indexedName || "").trim();
+  }
   if (/^endmin(?:[fm])?$/.test(actorId)) return "\u7ba1\u7406\u5458";
   return "";
 }
@@ -1985,6 +2044,16 @@ function characterDisplayFromActorId(aid, preferExplicit = false) {
 function characterDisplayFromMissionId(missionId, preferExplicit = false) {
   const mid = String(missionId || "");
   if (!mid.startsWith("chr_")) return "";
+
+  const characterId = characterTailFromMissionId(mid);
+  const indexedName = STATE.characterNames[mid] || STATE.characterNames[characterId] || "";
+  if (indexedName) {
+    if (preferExplicit) {
+      const explicit = extractExplicitBraceText(indexedName);
+      if (explicit) return explicit;
+    }
+    return stripBraceSegments(indexedName) || String(indexedName || "").trim();
+  }
 
   const missionName = STATE.missionNames[mid] || "";
   if (missionName && missionName !== mid) {
@@ -1995,7 +2064,7 @@ function characterDisplayFromMissionId(missionId, preferExplicit = false) {
     return stripBraceSegments(missionName) || String(missionName || "").trim();
   }
 
-  return characterDisplayFromActorId(characterTailFromMissionId(mid), preferExplicit);
+  return characterDisplayFromActorId(characterId, preferExplicit);
 }
 
 function continueActorIdFromMissionId(missionId) {

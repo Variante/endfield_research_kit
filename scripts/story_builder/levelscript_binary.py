@@ -40,6 +40,30 @@ LEVELSCRIPT_TRIGGER_VOLUME_UNION_TAG_NAMES = {
     1: "Leader",
 }
 
+LEVELSCRIPT_TRIGGER_VOLUME_SCHEMA_MAPPING_ID = (
+    "current-global-metadata-levelscript-trigger-volume-data-fields"
+)
+LEVELSCRIPT_TRIGGER_VOLUME_BASE_FIELDS = [
+    "isImportant",
+    "waitSrvRes",
+    "enterCheckOnGround",
+    "triggerOnPole",
+    "slotId",
+    "triggerCountLimit",
+    "exitShapeStartIndex",
+    "shapeList",
+]
+LEVELSCRIPT_TRIGGER_VOLUME_SERIALIZED_FIELDS = [
+    "enterCheckOnGround",
+    "exitShapeStartIndex",
+    "isImportant",
+    "shapeList",
+    "slotId",
+    "triggerCountLimit",
+    "triggerOnPole",
+    "waitSrvRes",
+]
+
 SCRIPT_POINTER_REF_RECORDS = {
     (0x045D, 0x0A),
 }
@@ -8060,3 +8084,103 @@ def decode_levelscript_binary_file(path: Path, script_id: int | str) -> dict[str
     except OSError:
         return {}
     return decode_levelscript_binary_summary(data, numeric_script_id)
+
+
+def classify_local_trigger_volume_context(
+    decoded: dict[str, Any],
+    selector_slot_ids: list[int],
+    *,
+    trigger_volume_type: str = "Leader",
+) -> dict[str, Any]:
+    """Resolve typed event selectors to exact same-LevelScript volumes.
+
+    The join is deliberately identifier-agnostic: callers supply selector
+    slots decoded from a typed event payload, and this function validates the
+    current MemoryPack trigger-volume schema before matching those slots.  The
+    serialized volume has no dynamic-scene, mission, or quest foreign key, so
+    a successful result proves local playback geometry only.
+    """
+    unique_slots = sorted({
+        slot_id
+        for slot_id in selector_slot_ids
+        if isinstance(slot_id, int)
+        and not isinstance(slot_id, bool)
+        and slot_id > 0
+    })
+    details = decoded.get("triggerVolumesDetails") or {}
+    volumes = details.get("volumes") or []
+    expected_union_tags = {
+        union_tag
+        for union_tag, name in LEVELSCRIPT_TRIGGER_VOLUME_UNION_TAG_NAMES.items()
+        if name == trigger_volume_type
+    }
+    matches: list[dict[str, Any]] = []
+    ambiguous_slots: list[int] = []
+    for slot_id in unique_slots:
+        candidates = [
+            volume
+            for volume in volumes
+            if isinstance(volume, dict)
+            and volume.get("slotId") == slot_id
+            and volume.get("keySlotId") == slot_id
+            and volume.get("triggerVolumeType") == trigger_volume_type
+            and volume.get("unionTag") in expected_union_tags
+            and volume.get("memberCount")
+            == len(LEVELSCRIPT_TRIGGER_VOLUME_SERIALIZED_FIELDS)
+            and isinstance(volume.get("shapeList"), dict)
+            and volume["shapeList"].get("status") == "present"
+            and volume["shapeList"].get("parseStatus") == "decoded"
+            and bool(volume["shapeList"].get("shapes"))
+        ]
+        if len(candidates) == 1:
+            matches.append(candidates[0])
+        elif len(candidates) > 1:
+            ambiguous_slots.append(slot_id)
+    matched_slots = sorted(int(volume["slotId"]) for volume in matches)
+    missing_slots = sorted(set(unique_slots) - set(matched_slots))
+    exact = (
+        bool(unique_slots)
+        and decoded.get("scriptIdVerified") is True
+        and decoded.get("triggerVolumesStatus") == "present"
+        and details.get("parseStatus") == "decoded"
+        and not missing_slots
+        and not ambiguous_slots
+        and len(matches) == len(unique_slots)
+    )
+    return {
+        "status": (
+            "exact_local_levelscript_trigger_volume_without_foreign_identity"
+            if exact
+            else "unresolved_local_levelscript_trigger_volume"
+        ),
+        "selectorSlotIds": unique_slots,
+        "matchedSlotIds": matched_slots,
+        "missingSlotIds": missing_slots,
+        "ambiguousSlotIds": ambiguous_slots,
+        "triggerVolumesStatus": decoded.get("triggerVolumesStatus") or "",
+        "triggerVolumesParseStatus": details.get("parseStatus") or "",
+        "triggerVolumesOffsetHex": decoded.get("triggerVolumesOffsetHex") or "",
+        "topLevelSerializedMemberCount": decoded.get("serializedMemberCount"),
+        "scriptIdVerified": bool(decoded.get("scriptIdVerified")),
+        "triggerVolumes": matches,
+        "schema": {
+            "baseType": "Beyond.Gameplay.LevelScriptTriggerVolumeData",
+            "baseDeclaredFieldCount": len(LEVELSCRIPT_TRIGGER_VOLUME_BASE_FIELDS),
+            "baseDeclaredFields": LEVELSCRIPT_TRIGGER_VOLUME_BASE_FIELDS,
+            "leaderType": (
+                "Beyond.Gameplay.LevelScriptTriggerVolumeDataForLeader"
+                if trigger_volume_type == "Leader"
+                else ""
+            ),
+            "leaderDeclaredFieldCount": 0 if trigger_volume_type == "Leader" else None,
+            "serializedMemberCount": len(
+                LEVELSCRIPT_TRIGGER_VOLUME_SERIALIZED_FIELDS
+            ),
+            "serializedFields": LEVELSCRIPT_TRIGGER_VOLUME_SERIALIZED_FIELDS,
+            "mappingId": LEVELSCRIPT_TRIGGER_VOLUME_SCHEMA_MAPPING_ID,
+        },
+        "dynamicSceneIdentityFieldPresent": False,
+        "missionOrQuestIdentityFieldPresent": False,
+        "foreignKeyBridgeFound": False,
+        "missionGraphAction": "none",
+    }

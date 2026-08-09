@@ -37,9 +37,13 @@ from story_builder.level_bindings import (  # noqa: E402
     _prepare_levelscript_native_control_context,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
+    LEVELSCRIPT_TRIGGER_VOLUME_BASE_FIELDS,
+    LEVELSCRIPT_TRIGGER_VOLUME_SCHEMA_MAPPING_ID,
+    LEVELSCRIPT_TRIGGER_VOLUME_SERIALIZED_FIELDS,
     _decode_bool_param,
     _decode_u64_param,
     _record_payload_window,
+    classify_local_trigger_volume_context,
     decode_levelscript_binary_file,
     extract_levelscript_uid_records,
     levelscript_action_map_membership,
@@ -92,29 +96,9 @@ ACTION_SCHEMAS = {
     },
 }
 MAPPING_ID = "current-global-metadata-dynamic-scene-decoration-action-fields"
-TRIGGER_VOLUME_SCHEMA_MAPPING_ID = (
-    "current-global-metadata-levelscript-trigger-volume-data-fields"
-)
-TRIGGER_VOLUME_BASE_FIELDS = [
-    "isImportant",
-    "waitSrvRes",
-    "enterCheckOnGround",
-    "triggerOnPole",
-    "slotId",
-    "triggerCountLimit",
-    "exitShapeStartIndex",
-    "shapeList",
-]
-TRIGGER_VOLUME_SERIALIZED_FIELDS = [
-    "enterCheckOnGround",
-    "exitShapeStartIndex",
-    "isImportant",
-    "shapeList",
-    "slotId",
-    "triggerCountLimit",
-    "triggerOnPole",
-    "waitSrvRes",
-]
+TRIGGER_VOLUME_SCHEMA_MAPPING_ID = LEVELSCRIPT_TRIGGER_VOLUME_SCHEMA_MAPPING_ID
+TRIGGER_VOLUME_BASE_FIELDS = LEVELSCRIPT_TRIGGER_VOLUME_BASE_FIELDS
+TRIGGER_VOLUME_SERIALIZED_FIELDS = LEVELSCRIPT_TRIGGER_VOLUME_SERIALIZED_FIELDS
 
 
 def _safe_text(value: Any) -> str:
@@ -254,57 +238,6 @@ def shared_control_paths(
                 "decorationPath": action_path.get("path") or [],
             })
     return out
-
-
-def classify_local_trigger_volume_context(
-    decoded: dict[str, Any],
-    selector_slot_ids: list[int],
-) -> dict[str, Any]:
-    """Join exact event selectors to embedded same-LevelScript trigger volumes."""
-    unique_slots = sorted(set(selector_slot_ids))
-    details = decoded.get("triggerVolumesDetails") or {}
-    by_slot = {
-        int(volume["slotId"]): volume
-        for volume in details.get("volumes") or []
-        if isinstance(volume, dict) and isinstance(volume.get("slotId"), int)
-    }
-    matches = [by_slot[slot_id] for slot_id in unique_slots if slot_id in by_slot]
-    missing = [slot_id for slot_id in unique_slots if slot_id not in by_slot]
-    exact = bool(unique_slots) and not missing and len(matches) == len(unique_slots)
-    return {
-        "status": (
-            "exact_local_levelscript_trigger_volume_without_foreign_identity"
-            if exact
-            else "unresolved_local_levelscript_trigger_volume"
-        ),
-        "selectorSlotIds": unique_slots,
-        "matchedSlotIds": [
-            int(volume["slotId"]) for volume in matches
-        ],
-        "missingSlotIds": missing,
-        "triggerVolumesStatus": decoded.get("triggerVolumesStatus") or "",
-        "triggerVolumesParseStatus": details.get("parseStatus") or "",
-        "triggerVolumesOffsetHex": decoded.get("triggerVolumesOffsetHex") or "",
-        "topLevelSerializedMemberCount": decoded.get("serializedMemberCount"),
-        "scriptIdVerified": bool(decoded.get("scriptIdVerified")),
-        "triggerVolumes": matches,
-        "schema": {
-            "baseType": "Beyond.Gameplay.LevelScriptTriggerVolumeData",
-            "baseDeclaredFieldCount": 8,
-            "baseDeclaredFields": TRIGGER_VOLUME_BASE_FIELDS,
-            "leaderType": (
-                "Beyond.Gameplay.LevelScriptTriggerVolumeDataForLeader"
-            ),
-            "leaderDeclaredFieldCount": 0,
-            "serializedMemberCount": 8,
-            "serializedFields": TRIGGER_VOLUME_SERIALIZED_FIELDS,
-            "mappingId": TRIGGER_VOLUME_SCHEMA_MAPPING_ID,
-        },
-        "dynamicSceneIdentityFieldPresent": False,
-        "missionOrQuestIdentityFieldPresent": False,
-        "foreignKeyBridgeFound": False,
-        "missionGraphAction": "none",
-    }
 
 
 def local_trigger_volume_context(

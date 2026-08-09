@@ -45,6 +45,15 @@ WEAPON_PREFIX_TYPE_IDS = {
     "pistol": 6,
 }
 
+# These CN UseItemTable rows point at shared/stale descriptions in the
+# exported I18n table. ItemTable.desc is the authored, item-specific
+# activation effect and is localized per build.
+ITEM_USE_DESCRIPTION_FROM_ITEM_DESC = frozenset({
+    "item_cbp_voucher_pay",
+    "item_cbp_voucher_originium",
+    "item_resetid_1",
+})
+
 SKILL_GROUP_TYPE_LABELS = {
     0: "Normal Attack",
     1: "Skill",
@@ -75,183 +84,6 @@ CHAR_BREAK_RE = re.compile(r"^charBreak(?P<level>\d+)$")
 EQUIP_BREAK_RE = re.compile(r"^equipBreakT(?P<tier>\d+)$")
 CURVE_SAMPLE_LEVELS = (1, 20, 40, 60, 70, 80, 90)
 
-REFERENCE_CHARACTER_EXP_POOLS = {
-    "stage1": {"id": "character_exp_stage1", "name": "作战记录经验值"},
-    "stage2": {"id": "character_exp_stage2", "name": "认知载体经验值"},
-}
-REFERENCE_CHARACTER_LEVEL_COSTS = ((1, 2, 0, 'stage1', 20),
- (2, 3, 0, 'stage1', 30),
- (3, 4, 0, 'stage1', 40),
- (4, 5, 0, 'stage1', 60),
- (5, 6, 0, 'stage1', 80),
- (6, 7, 0, 'stage1', 100),
- (7, 8, 0, 'stage1', 200),
- (8, 9, 0, 'stage1', 280),
- (9, 10, 5, 'stage1', 390),
- (10, 11, 10, 'stage1', 510),
- (11, 12, 15, 'stage1', 700),
- (12, 13, 20, 'stage1', 940),
- (13, 14, 30, 'stage1', 1230),
- (14, 15, 40, 'stage1', 1580),
- (15, 16, 50, 'stage1', 2000),
- (16, 17, 100, 'stage1', 2560),
- (17, 18, 130, 'stage1', 3210),
- (18, 19, 170, 'stage1', 3990),
- (19, 20, 250, 'stage1', 4890),
- (20, 21, 310, 'stage1', 6080),
- (21, 22, 400, 'stage1', 7610),
- (22, 23, 440, 'stage1', 8440),
- (23, 24, 470, 'stage1', 9200),
- (24, 25, 500, 'stage1', 9890),
- (25, 26, 530, 'stage1', 10510),
- (26, 27, 560, 'stage1', 11050),
- (27, 28, 600, 'stage1', 11830),
- (28, 29, 610, 'stage1', 12370),
- (29, 30, 640, 'stage1', 12690),
- (30, 31, 665, 'stage1', 13100),
- (31, 32, 675, 'stage1', 13510),
- (32, 33, 705, 'stage1', 14100),
- (33, 34, 730, 'stage1', 14580),
- (34, 35, 750, 'stage1', 14950),
- (35, 36, 770, 'stage1', 15210),
- (36, 37, 780, 'stage1', 15460),
- (37, 38, 790, 'stage1', 15720),
- (38, 39, 800, 'stage1', 15990),
- (39, 40, 815, 'stage1', 16250),
- (40, 41, 830, 'stage1', 16520),
- (41, 42, 855, 'stage1', 17010),
- (42, 43, 885, 'stage1', 17510),
- (43, 44, 915, 'stage1', 18030),
- (44, 45, 945, 'stage1', 18570),
- (45, 46, 975, 'stage1', 19050),
- (46, 47, 1005, 'stage1', 19760),
- (47, 48, 1040, 'stage1', 20470),
- (48, 49, 1075, 'stage1', 21230),
- (49, 50, 1110, 'stage1', 22070),
- (50, 51, 1150, 'stage1', 22990),
- (51, 52, 1200, 'stage1', 23980),
- (52, 53, 1255, 'stage1', 25050),
- (53, 54, 1310, 'stage1', 26210),
- (54, 55, 1370, 'stage1', 27460),
- (55, 56, 1450, 'stage1', 28820),
- (56, 57, 1510, 'stage1', 30270),
- (57, 58, 1580, 'stage1', 31840),
- (58, 59, 1670, 'stage1', 33530),
- (59, 60, 1770, 'stage1', 35340),
- (60, 61, 1820, 'stage2', 14510),
- (61, 62, 2000, 'stage2', 14710),
- (62, 63, 2120, 'stage2', 14910),
- (63, 64, 2250, 'stage2', 15030),
- (64, 65, 2380, 'stage2', 15390),
- (65, 66, 2670, 'stage2', 15920),
- (66, 67, 3000, 'stage2', 16620),
- (67, 68, 3150, 'stage2', 17500),
- (68, 69, 3700, 'stage2', 18560),
- (69, 70, 3885, 'stage2', 19810),
- (70, 71, 4720, 'stage2', 21250),
- (71, 72, 5170, 'stage2', 22880),
- (72, 73, 5650, 'stage2', 24710),
- (73, 74, 6650, 'stage2', 26750),
- (74, 75, 7480, 'stage2', 29000),
- (75, 76, 8630, 'stage2', 31460),
- (76, 77, 9290, 'stage2', 33400),
- (77, 78, 10280, 'stage2', 35440),
- (78, 79, 11650, 'stage2', 37580),
- (79, 80, 12685, 'stage2', 39800),
- (80, 81, 14180, 'stage2', 42100),
- (81, 82, 15650, 'stage2', 45220),
- (82, 83, 17380, 'stage2', 48510),
- (83, 84, 19620, 'stage2', 51960),
- (84, 85, 22000, 'stage2', 55550),
- (85, 86, 24140, 'stage2', 59300),
- (86, 87, 26830, 'stage2', 63180),
- (87, 88, 30160, 'stage2', 67190),
- (88, 89, 32780, 'stage2', 71340),
- (89, 90, 36240, 'stage2', 75600))
-REFERENCE_WEAPON_LEVEL_STAGES = ((1, 6, 20, 0),
- (6, 7, 40, 0),
- (7, 9, 95, 0),
- (9, 10, 150, 0),
- (10, 11, 200, 10),
- (11, 12, 270, 10),
- (12, 13, 370, 10),
- (13, 14, 480, 20),
- (14, 15, 620, 30),
- (15, 16, 780, 50),
- (16, 17, 990, 70),
- (17, 18, 1250, 100),
- (18, 19, 1550, 140),
- (19, 20, 1900, 200),
- (20, 21, 2360, 240),
- (21, 22, 2960, 300),
- (22, 23, 3280, 330),
- (23, 24, 3580, 360),
- (24, 25, 3850, 390),
- (25, 26, 4090, 410),
- (26, 27, 4300, 430),
- (27, 28, 4600, 460),
- (28, 29, 4810, 490),
- (29, 30, 4940, 500),
- (30, 31, 5090, 510),
- (31, 32, 5250, 530),
- (32, 33, 5480, 550),
- (33, 34, 5670, 570),
- (34, 35, 5820, 590),
- (35, 36, 5910, 600),
- (36, 37, 6010, 610),
- (37, 38, 6110, 620),
- (38, 39, 6220, 630),
- (39, 40, 6320, 640),
- (40, 41, 6430, 650),
- (41, 42, 6620, 670),
- (42, 43, 6810, 690),
- (43, 44, 7010, 710),
- (44, 45, 7220, 730),
- (45, 46, 7410, 750),
- (46, 47, 7690, 770),
- (47, 48, 7960, 800),
- (48, 49, 8260, 830),
- (49, 50, 8580, 860),
- (50, 51, 8940, 900),
- (51, 52, 9320, 940),
- (52, 53, 9740, 980),
- (53, 54, 10190, 1020),
- (54, 55, 10680, 1070),
- (55, 56, 11210, 1130),
- (56, 57, 11770, 1180),
- (57, 58, 12380, 1240),
- (58, 59, 13040, 1310),
- (59, 60, 13740, 1380),
- (60, 61, 14110, 1420),
- (61, 62, 15870, 1540),
- (62, 63, 17690, 1670),
- (63, 64, 19480, 1800),
- (64, 65, 21670, 1960),
- (65, 66, 24220, 2160),
- (66, 67, 27210, 2390),
- (67, 68, 30700, 2680),
- (68, 69, 34780, 3010),
- (69, 70, 39510, 3400),
- (70, 71, 44990, 3860),
- (71, 72, 48870, 4400),
- (72, 73, 53240, 5020),
- (73, 74, 58140, 5730),
- (74, 75, 63580, 6560),
- (75, 76, 69600, 7500),
- (76, 77, 74420, 8380),
- (77, 78, 79530, 9350),
- (78, 79, 84940, 10420),
- (79, 80, 90620, 11590),
- (80, 81, 96570, 12880),
- (81, 82, 103570, 14400),
- (82, 83, 110930, 16070),
- (83, 84, 118620, 17900),
- (84, 85, 126650, 19910),
- (85, 86, 134990, 22090),
- (86, 87, 143620, 24470),
- (87, 88, 152540, 27060),
- (88, 89, 161720, 29860),
- (89, 90, 171160, 32900))
 CHARACTER_STAT_ATTR_TYPES = (1, 2, 3, 39, 40, 41, 42)
 ENEMY_STAT_ATTR_TYPES = (1, 2, 3)
 ENEMY_COMBAT_SCALAR_FIELDS = (
@@ -1027,13 +859,16 @@ def character_stat_curve_payload(char_row: dict[str, Any], attr_meta: dict[str, 
 
 def enemy_stat_curve_payload(attr_row: dict[str, Any], attr_meta: dict[str, Any]) -> dict[str, Any]:
     stat_rows = []
-    for index, row in enumerate(attr_row.get("levelDependentAttributes") or []):
+    for row in attr_row.get("levelDependentAttributes") or []:
         if not isinstance(row, dict):
             continue
         values = attribute_values(row)
         level = int_value(values.get(0))
         if level is None:
-            level = index + 1
+            # Enemy stat points are source rows, not a curve to reconstruct.
+            # A row without its authored level coordinate cannot be displayed
+            # honestly, so omit it instead of deriving a level from position.
+            continue
         attrs = [
             stat_attr_payload(attr_type, values[attr_type], attr_meta)
             for attr_type in ENEMY_STAT_ATTR_TYPES
@@ -1047,8 +882,10 @@ def enemy_stat_curve_payload(attr_row: dict[str, Any], attr_meta: dict[str, Any]
         "source": "EnemyAttributeTemplateTable.levelDependentAttributes",
         "templateId": normalize_id(attr_row.get("templateId")),
         "rowCount": len(stat_rows),
+        "pointCount": len(stat_rows),
         "maxLevel": max_level,
-        "checkpoints": sampled_curve_rows(stat_rows, "level", max_level),
+        "interpolated": False,
+        "rows": stat_rows,
     }
 
 
@@ -1427,29 +1264,6 @@ def build_equipment_entries(
         })
     return entries
 
-def reference_weapon_level_cost(level: int | None) -> dict[str, int] | None:
-    if level is None:
-        return None
-    for start, end, exp, gold in REFERENCE_WEAPON_LEVEL_STAGES:
-        if start <= level < end:
-            return {"exp": exp, "gold": gold}
-    return None
-
-
-def reference_weapon_cumulative_costs(max_level: int | None) -> dict[int, dict[str, int]]:
-    if not max_level:
-        return {}
-    out: dict[int, dict[str, int]] = {1: {"exp": 0, "gold": 0}}
-    exp_sum = 0
-    gold_sum = 0
-    for level in range(1, int(max_level)):
-        cost = reference_weapon_level_cost(level) or {}
-        exp_sum += int(cost.get("exp") or 0)
-        gold_sum += int(cost.get("gold") or 0)
-        out[level + 1] = {"exp": exp_sum, "gold": gold_sum}
-    return out
-
-
 def weapon_upgrade_payload(template_id_raw: Any, upgrades: dict[str, Any], upgrade_sums: dict[str, Any]) -> dict[str, Any]:
     template_id = normalize_id(template_id_raw)
     rows = (upgrades.get(template_id) or {}).get("list") or []
@@ -1457,34 +1271,28 @@ def weapon_upgrade_payload(template_id_raw: Any, upgrades: dict[str, Any], upgra
     sums_by_level = {row.get("weaponLv"): row for row in sum_rows if isinstance(row, dict)}
     max_row = rows[-1] if rows else {}
     max_level = int_value(max_row.get("weaponLv"))
-    reference_sums = reference_weapon_cumulative_costs(max_level)
     checkpoints = []
     for row in sampled_curve_rows([row for row in rows if isinstance(row, dict)], "weaponLv", max_row.get("weaponLv")):
         level = row.get("weaponLv")
-        level_int = int_value(level)
         sum_row = sums_by_level.get(level) or {}
-        level_cost = reference_weapon_level_cost(level_int) or {}
-        level_sum = reference_sums.get(level_int) or {}
         checkpoints.append({
             "level": level,
             "baseAtk": row.get("baseAtk"),
-            "lvUpExp": level_cost.get("exp", row.get("lvUpExp")),
-            "lvUpGold": level_cost.get("gold", row.get("lvUpGold")),
-            "lvUpExpSum": level_sum.get("exp", sum_row.get("lvUpExpSum")),
-            "lvUpGoldSum": level_sum.get("gold", sum_row.get("lvUpGoldSum")),
+            "lvUpExp": row.get("lvUpExp"),
+            "lvUpGold": row.get("lvUpGold"),
+            "lvUpExpSum": sum_row.get("lvUpExpSum"),
+            "lvUpGoldSum": sum_row.get("lvUpGoldSum"),
         })
     per_level = []
     for row in rows:
         if not isinstance(row, dict):
             continue
         level = row.get("weaponLv")
-        level_int = int_value(level)
         sum_row = sums_by_level.get(level) or {}
-        level_sum = reference_sums.get(level_int) or {}
         per_level.append({
             "level": level,
-            "expSum": level_sum.get("exp", sum_row.get("lvUpExpSum")),
-            "goldSum": level_sum.get("gold", sum_row.get("lvUpGoldSum")),
+            "expSum": sum_row.get("lvUpExpSum"),
+            "goldSum": sum_row.get("lvUpGoldSum"),
         })
     return {
         "templateId": template_id,
@@ -1527,45 +1335,38 @@ def weapon_talent_payload(template_id_raw: Any, talents: dict[str, Any]) -> dict
     }
 
 
-def character_exp_items(pool_sums: dict[str, int]) -> list[dict[str, Any]]:
-    items = []
-    for pool_key in ("stage1", "stage2"):
-        count = int(pool_sums.get(pool_key) or 0)
-        if count <= 0:
-            continue
-        meta = REFERENCE_CHARACTER_EXP_POOLS[pool_key]
-        items.append({"id": meta["id"], "name": meta["name"], "count": count})
-    return items
-
-
 def character_level_curve_payload(char_level_up: dict[str, Any]) -> dict[str, Any]:
-    # The table rows and the reference calculator both describe the cost from
-    # current level -> next level. Store cumulative costs on the reached level
-    # (level 1 is zero), and keep the two character EXP pools separate.
-    rows: list[dict[str, Any]] = [{"level": 1, "exp": 0, "gold": 0, "expSum": 0, "goldSum": 0, "expItems": []}]
-    pool_sums = {"stage1": 0, "stage2": 0}
-    cum_gold = 0
-    for start, end, gold, pool_key, exp in REFERENCE_CHARACTER_LEVEL_COSTS:
-        pool_sums[pool_key] += int(exp or 0)
-        cum_gold += int(gold or 0)
-        exp_sum = sum(pool_sums.values())
+    # CharLevelUpTable rows describe the cost from current level -> next level.
+    # Store the cumulative cost on the reached level (level 1 is zero). The
+    # final negative sentinel row is metadata, not a playable level.
+    rows: list[dict[str, Any]] = [{"level": 1, "exp": 0, "gold": 0, "expSum": 0, "goldSum": 0}]
+    exp_sum = 0
+    gold_sum = 0
+    raw_rows = char_level_up if isinstance(char_level_up, dict) else {}
+    sorted_raw_rows = sorted(raw_rows.items(), key=lambda item: int_value(item[0]) if int_value(item[0]) is not None else 999999)
+    for start_raw, raw_row in sorted_raw_rows:
+        if not isinstance(raw_row, dict):
+            continue
+        start = int_value(start_raw)
+        exp = int_value(raw_row.get("exp"))
+        gold = int_value(raw_row.get("gold"))
+        if start is None or exp is None or gold is None or exp < 0 or gold < 0:
+            continue
+        exp_sum += exp
+        gold_sum += gold
         rows.append({
-            "level": end,
+            "level": start + 1,
             "exp": exp,
             "gold": gold,
             "expSum": exp_sum,
-            "goldSum": cum_gold,
-            "expItems": character_exp_items(pool_sums),
+            "goldSum": gold_sum,
         })
     max_level = rows[-1]["level"] if rows else None
-    per_level = [
-        {"level": row["level"], "expSum": row["expSum"], "goldSum": row["goldSum"], "expItems": row.get("expItems") or []}
-        for row in rows
-    ]
+    per_level = [{"level": row["level"], "expSum": row["expSum"], "goldSum": row["goldSum"]} for row in rows]
     return {
         "table": "CharLevelUpTable.json",
-        "source": "zmdgraph reference level-cost curve",
-        "rowCount": len(char_level_up) if isinstance(char_level_up, dict) else len(rows),
+        "source": "CharLevelUpTable.json",
+        "rowCount": len(raw_rows),
         "maxLevel": max_level,
         "checkpoints": sampled_curve_rows(rows, "level", max_level),
         "perLevel": per_level,
@@ -1614,6 +1415,24 @@ def character_breakthrough_payload(growth_row: dict[str, Any], item_table: dict[
     return rows
 
 
+def potential_picture_payload(item_id: Any, item_table: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> dict[str, Any] | None:
+    # A potential-unlock picture item carries two authored strings beyond its
+    # name: `desc` is generic backpack boilerplate ("unlocks the operator's
+    # keepsake photo ..."), while `decoDesc` is the actual flavor line/quote
+    # shown alongside the photo in-game. Surface `decoDesc` as the sentence.
+    normalized_id = normalize_id(item_id)
+    if not normalized_id:
+        return None
+    item = item_table.get(normalized_id)
+    if not isinstance(item, dict):
+        return {"id": normalized_id, "name": "", "sentence": ""}
+    return {
+        "id": normalized_id,
+        "name": clean_text(i18n_text(i18n, item.get("name"), fallback_i18n)),
+        "sentence": clean_text(i18n_text(i18n, item.get("decoDesc"), fallback_i18n)),
+    }
+
+
 def character_potential_payload(char_id: str, tables: dict[str, Any], item_table: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> dict[str, Any]:
     potentials = tables.get("CharacterPotentialTable.json") or {}
     effects = tables.get("PotentialTalentEffectTable.json") or {}
@@ -1626,6 +1445,12 @@ def character_potential_payload(char_id: str, tables: dict[str, Any], item_table
         effect = effects.get(effect_id) or {}
         desc_template = i18n_text(i18n, effect.get("desc"), fallback_i18n) if isinstance(effect, dict) else ""
         blackboard = potential_effect_blackboard(effect if isinstance(effect, dict) else {})
+        pictures = [
+            picture for picture in (
+                potential_picture_payload(picture_id, item_table, i18n, fallback_i18n)
+                for picture_id in item.get("unlockCharPictureItemList") or []
+            ) if picture
+        ]
         levels.append({
             "level": item.get("level"),
             "name": i18n_text(i18n, item.get("name"), fallback_i18n),
@@ -1636,6 +1461,7 @@ def character_potential_payload(char_id: str, tables: dict[str, Any], item_table
             "requiredItem": item_ids_counts_payload(item.get("itemIds"), item.get("itemCnts"), item_table, i18n, fallback_i18n),
             "unlockCardTopicItem": normalize_id(item.get("unlockCardTopicItem")),
             "unlockCharPictureItemList": [normalize_id(value) for value in item.get("unlockCharPictureItemList") or [] if normalize_id(value)],
+            "pictures": pictures,
             "effectRefs": potential_effect_refs(effect if isinstance(effect, dict) else {}),
         })
     return {
@@ -1999,11 +1825,46 @@ def game_object_payload(
     return {"id": object_id, "name": name, "count": count, "kind": kind}
 
 
+def description_reward_quantity_overrides(
+    description: str,
+    item_table: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> dict[str, list[int]]:
+    """Recover authored quantity variants from an item's use description.
+
+    A few usable reward items intentionally leave RewardTable.count at zero
+    because the actual quantity is presented as a list in the item text (for
+    example, the three fortune-ticket outcomes).  Preserve those authored
+    values in the compact Gameplay payload instead of exposing a misleading
+    zero quantity.
+    """
+    names = {
+        item_name(item_table, item_id, i18n, fallback_i18n): item_id
+        for item_id in item_table
+        if item_name(item_table, item_id, i18n, fallback_i18n)
+    }
+    overrides: dict[str, list[int]] = {}
+    for raw_line in clean_text(description).splitlines():
+        line = raw_line.strip()
+        match = re.match(r"^-?\s*(.+?)\s*[\u00d7x]\s*(\d+(?:\.\d+)?)\s*$", line, re.IGNORECASE)
+        if not match:
+            continue
+        item_id = names.get(match.group(1).strip())
+        if not item_id:
+            continue
+        count = float(match.group(2))
+        if count.is_integer() and count > 0:
+            overrides.setdefault(item_id, []).append(int(count))
+    return overrides
+
+
 def reward_bundle_payload(
     bundles: Any,
     tables: dict[str, Any],
     i18n: dict[str, Any],
     fallback_i18n: dict[str, Any],
+    quantity_overrides: dict[str, list[int]] | None = None,
 ) -> list[dict[str, Any]]:
     out = []
     for bundle in bundles or []:
@@ -2012,8 +1873,35 @@ def reward_bundle_payload(
         object_id = normalize_id(bundle.get("id"))
         if not object_id:
             continue
-        out.append(game_object_payload(object_id, bundle.get("count"), tables, i18n, fallback_i18n))
+        override_counts = (quantity_overrides or {}).get(object_id) or []
+        if override_counts:
+            out.extend(game_object_payload(object_id, count, tables, i18n, fallback_i18n) for count in override_counts)
+            continue
+        raw_count = bundle.get("count")
+        count = None if raw_count in (0, 0.0, "0") else raw_count
+        out.append(game_object_payload(object_id, count, tables, i18n, fallback_i18n))
     return out
+
+
+def reward_quantities_unavailable(
+    bundles: Any,
+    quantity_overrides: dict[str, list[int]] | None = None,
+) -> bool:
+    """Report missing quantities without filling them from external guesses."""
+    found_bundle = False
+    for bundle in bundles or []:
+        if not isinstance(bundle, dict):
+            continue
+        object_id = normalize_id(bundle.get("id"))
+        if not object_id:
+            continue
+        found_bundle = True
+        if (quantity_overrides or {}).get(object_id):
+            return False
+        raw_count = bundle.get("count")
+        if raw_count not in (None, "", 0, 0.0, "0"):
+            return False
+    return found_bundle
 
 
 def reward_payload(
@@ -2021,14 +1909,20 @@ def reward_payload(
     tables: dict[str, Any],
     i18n: dict[str, Any],
     fallback_i18n: dict[str, Any],
+    quantity_overrides: dict[str, list[int]] | None = None,
 ) -> dict[str, Any]:
     reward_id = normalize_id(reward_id_raw)
     rewards = tables.get("RewardTable.json") or {}
     row = rewards.get(reward_id) if isinstance(rewards.get(reward_id), dict) else {}
+    item_bundles = row.get("itemBundles") if isinstance(row, dict) else []
+    probable_bundles = row.get("probItemBundles") if isinstance(row, dict) else []
     return {
         "id": reward_id,
-        "items": reward_bundle_payload(row.get("itemBundles") if isinstance(row, dict) else [], tables, i18n, fallback_i18n),
-        "probableItems": reward_bundle_payload(row.get("probItemBundles") if isinstance(row, dict) else [], tables, i18n, fallback_i18n),
+        "quantityDataUnavailable": reward_quantities_unavailable(
+            [*(item_bundles or []), *(probable_bundles or [])], quantity_overrides
+        ),
+        "items": reward_bundle_payload(item_bundles, tables, i18n, fallback_i18n, quantity_overrides),
+        "probableItems": reward_bundle_payload(probable_bundles, tables, i18n, fallback_i18n, quantity_overrides),
     }
 
 
@@ -2130,6 +2024,10 @@ def build_usable_item_entries(
             desc_blackboard.extend(action_desc_blackboard)
         desc_template = i18n_text(i18n, row.get("itemUseDesc"), fallback_i18n)
         use_description = render_description(desc_template, desc_blackboard) if desc_template else ""
+        effective_description_template = clean_text(desc_template)
+        if item_id in ITEM_USE_DESCRIPTION_FROM_ITEM_DESC and base.get("description"):
+            use_description = base.get("description") or use_description
+            effective_description_template = base.get("description") or effective_description_template
         search = " ".join([
             item_id,
             base.get("title") or "",
@@ -2156,7 +2054,7 @@ def build_usable_item_entries(
                 "targetNumType": row.get("targetNumType"),
                 "uiType": row.get("uiType"),
                 "description": use_description,
-                "descriptionTemplate": clean_text(desc_template),
+                "descriptionTemplate": effective_description_template,
                 "actions": actions,
             },
             "source": {"table": "UseItemTable.json", "nameTable": "ItemTable.json", "id": item_id},
@@ -2169,7 +2067,24 @@ def build_usable_item_entries(
         item_id = normalize_id(row.get("id")) or normalize_id(item_id)
         base = common_item_payload(item_id, tables, i18n, fallback_i18n, story_wiki_titles)
         random_items = item_ids_counts_payload(row.get("randomChestItemIds"), row.get("randomChestItemCounts"), tables.get("ItemTable.json") or {}, i18n, fallback_i18n)
-        rewards = [reward_payload(reward_id, tables, i18n, fallback_i18n) for reward_id in row.get("rewardIdList") or [] if normalize_id(reward_id)]
+        quantity_overrides = description_reward_quantity_overrides(
+            base.get("description") or "",
+            tables.get("ItemTable.json") or {},
+            i18n,
+            fallback_i18n,
+        )
+        rewards = []
+        for reward_id_raw in row.get("rewardIdList") or []:
+            reward_id = normalize_id(reward_id_raw)
+            if not reward_id:
+                continue
+            rewards.append(reward_payload(
+                reward_id,
+                tables,
+                i18n,
+                fallback_i18n,
+                quantity_overrides,
+            ))
         search = " ".join([
             item_id,
             base.get("title") or "",
@@ -2264,15 +2179,12 @@ def build_enemy_entries(
         drops = enemy_drop_payload(drop_row.get("dropItemIds") if isinstance(drop_row, dict) else [], item_table, i18n, fallback_i18n)
         attr_template_id = normalize_id(primary_row.get("attrTemplateId")) or template_id
         attr_row = attr_templates.get(attr_template_id) if isinstance(attr_templates.get(attr_template_id), dict) else {}
-        stats = enemy_stat_curve_payload(attr_row, attr_meta)
-        independent_attrs = enemy_attr_list_payload(attr_row.get("levelIndependentAttributes"), attr_meta)
-        damage_scalars = labeled_value_payload(attr_row, ENEMY_COMBAT_SCALAR_FIELDS)
-        resilience = labeled_value_payload(attr_row, ENEMY_RESILIENCE_FIELDS)
         distribution_ids = [normalize_id(value) for value in template_display.get("distributionIds") or [] if normalize_id(value)]
 
         variants = []
         variant_ids = []
         story_wiki_keys = [f"wiki_{template_id}"]
+        variant_attr_template_ids = []
         born_buffs: list[str] = []
         attr_modifiers: list[dict[str, Any]] = []
         for variant_id, variant_row in variant_rows:
@@ -2286,9 +2198,7 @@ def build_enemy_entries(
             born_buffs.extend(variant_buffs)
             attr_modifiers.extend(variant_modifiers)
             variant_ids.append(variant_id)
-            variant_story_key = f"wiki_{variant_id}"
-            if variant_story_key in story_wiki_titles:
-                story_wiki_keys.append(variant_story_key)
+            variant_attr_template_ids.append(variant_attr_template_id)
             variants.append({
                 "id": variant_id,
                 "name": variant_name,
@@ -2306,10 +2216,27 @@ def build_enemy_entries(
                 "serverDeathCheck": variant_row.get("serverDeathCheck"),
                 "bornBuffs": variant_buffs,
                 "attrModifiers": variant_modifiers,
-                "storyWikiKey": variant_story_key if variant_story_key in story_wiki_titles else "",
+                "source": {"table": "EnemyTable.json", "id": variant_id},
             })
 
         story_wiki_keys = dedupe_values(story_wiki_keys)
+        attribute_templates = {}
+        for variant_attr_template_id in dedupe_values(variant_attr_template_ids):
+            variant_attr_row = attr_templates.get(variant_attr_template_id) if isinstance(attr_templates.get(variant_attr_template_id), dict) else {}
+            attribute_templates[variant_attr_template_id] = {
+                "id": variant_attr_template_id,
+                "source": {"table": "EnemyAttributeTemplateTable.json", "id": variant_attr_template_id},
+                "stats": enemy_stat_curve_payload(variant_attr_row, attr_meta),
+                "independentAttributes": enemy_attr_list_payload(variant_attr_row.get("levelIndependentAttributes"), attr_meta),
+                "damageScalars": labeled_value_payload(variant_attr_row, ENEMY_COMBAT_SCALAR_FIELDS),
+                "resilience": labeled_value_payload(variant_attr_row, ENEMY_RESILIENCE_FIELDS),
+            }
+        primary_attributes = attribute_templates.get(attr_template_id) or {
+            "stats": enemy_stat_curve_payload(attr_row, attr_meta),
+            "independentAttributes": enemy_attr_list_payload(attr_row.get("levelIndependentAttributes"), attr_meta),
+            "damageScalars": labeled_value_payload(attr_row, ENEMY_COMBAT_SCALAR_FIELDS),
+            "resilience": labeled_value_payload(attr_row, ENEMY_RESILIENCE_FIELDS),
+        }
         born_buffs = dedupe_values(born_buffs)
         attr_modifiers = dedupe_payloads(attr_modifiers)
         model_id = normalize_id(primary_row.get("modelId"))
@@ -2363,10 +2290,11 @@ def build_enemy_entries(
             "dropItems": drops,
             "bornBuffs": born_buffs,
             "attrModifiers": attr_modifiers,
-            "independentAttributes": independent_attrs,
-            "damageScalars": damage_scalars,
-            "resilience": resilience,
-            "stats": stats,
+            "independentAttributes": primary_attributes.get("independentAttributes") or [],
+            "damageScalars": primary_attributes.get("damageScalars") or [],
+            "resilience": primary_attributes.get("resilience") or [],
+            "stats": primary_attributes.get("stats") or {},
+            "attributeTemplates": attribute_templates,
             "variants": variants,
             "variantCount": len(variants),
             "variantIds": variant_ids,
@@ -2564,6 +2492,7 @@ def build_language_payload(
     fallback_i18n = load_merged_table(table_roots, f"I18nTextTable_{fallback_language}.json", {})
     i18n = fallback_i18n if language == fallback_language else load_merged_table(table_roots, f"I18nTextTable_{language}.json", fallback_i18n)
     table_names = [
+        "GlobalConst.json",
         "ItemTable.json",
         "ItemTypeTable.json",
         "UseItemTable.json",
@@ -2608,6 +2537,13 @@ def build_language_payload(
         "TextTable.json",
     ]
     tables = {name: load_merged_table(table_roots, name, {}) for name in table_names}
+    global_const = tables.get("GlobalConst.json") or {}
+    gold_item_id = normalize_id(global_const.get("goldItemId")) if isinstance(global_const, dict) else ""
+    currency_items = {}
+    if gold_item_id:
+        gold_item = game_object_payload(gold_item_id, None, tables, i18n, fallback_i18n)
+        gold_item["source"] = {"table": "GlobalConst.json", "field": "goldItemId", "itemId": gold_item_id}
+        currency_items["gold"] = gold_item
     weapons = build_weapon_entries(tables, i18n, fallback_i18n)
     equipment = build_equipment_entries(tables, i18n, fallback_i18n)
     characters = build_character_entries(tables, i18n, fallback_i18n)
@@ -2629,6 +2565,7 @@ def build_language_payload(
         "sourceRoot": ", ".join(rel_path(root) for _label, root in table_roots),
         "sourceRoots": [{"source": label, "root": rel_path(root)} for label, root in table_roots],
         "tables": table_names,
+        "currencyItems": currency_items,
         "counts": {
             "entries": len(entries),
             "weapons": len(weapons),

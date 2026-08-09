@@ -773,14 +773,14 @@
     const payload = UPDATE_STATE.payload || {};
     const assets = payload.assets || {};
     if (entry && entry.old_asset_export_rel) {
-      return exportRouteHref(entry.old_asset_export_rel, {}, assets.previousSourceRoot || "export_122", "export_previous");
+      return exportRouteHref(entry.old_asset_export_rel, {}, assets.previousSourceRoot || "export_1d2", "export_previous");
     }
     const rel = entry && entry.old_asset_rel;
     if (!rel) return "";
     return exportRouteHref(
       rel,
       { ...fallbackAssetSourceRoots(), ...(assets.previousSourceRoots || {}) },
-      assets.previousSourceRoot || "export_122",
+      assets.previousSourceRoot || "export_1d2",
       "export_previous",
     );
   }

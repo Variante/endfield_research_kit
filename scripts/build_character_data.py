@@ -18,11 +18,77 @@ TABLE_ROOT_RELS = (
     ("Persistent", Path("structured") / "Persistent" / "Table"),
 )
 ASSET_MARKERS = (
-    ("actor_asset", re.compile(r"_actor_([a-z0-9]+)", re.IGNORECASE)),
-    ("major_npc_asset", re.compile(r"(?:_major_npc_|_npc_major_)([a-z0-9]+)", re.IGNORECASE)),
+    # "lod" is a LOD-variant marker, not a name (e.g. M_actor_lod_aglina_* is
+    # the LOD material set for "aglina") — skip over it to reach the real name.
+    # A trailing "_gender" (e.g. SK_actor_no_gender_*) is part of the token
+    # itself, not a name suffix to drop — it's a generic genderless skeleton,
+    # not a specific character, so keep "no_gender" whole rather than
+    # truncating it to the misleading "no".
+    ("actor_asset", re.compile(r"_actor_(?:lod_)?([a-z0-9]+(?:_gender)?)", re.IGNORECASE)),
+    ("major_npc_asset", re.compile(r"(?:_major_npc_|_npc_major_)(?:lod_)?([a-z0-9]+)", re.IGNORECASE)),
+    # dlg_npc_XXXX_<name>... → capture <name> (e.g. dlg_npc_0004_pelica_* → pelica)
+    ("dlg_npc_asset", re.compile(r"dlg_npc_\d{4}_([a-z][a-z0-9]+)", re.IGNORECASE)),
+    # icon_npc_XXXX_<name>... or icon_npc_<name>... → capture <name>
+    # (e.g. icon_npc_1001_andrew* → andrew, icon_npc_buyuan* → buyuan)
+    ("icon_npc_asset", re.compile(r"icon_npc_(?:\d{4}_)?([a-z][a-z0-9]+)", re.IGNORECASE)),
+    # sns_npc_<name>_NN... → capture <name> (e.g. sns_npc_madina_01* → madina)
+    ("sns_npc_asset", re.compile(r"sns_npc_([a-z][a-z0-9]+)", re.IGNORECASE)),
+    # _npc_animal_<type>... → capture animal_<type> (e.g. P_npc_animal_bat → animal_bat)
+    ("npc_animal_asset", re.compile(r"_npc_(animal_[a-z][a-z0-9]+)", re.IGNORECASE)),
+    # _lod_<name>... → capture <name> (e.g. P_npc_lod_aglina → aglina, not "lod")
+    ("npc_asset", re.compile(r"_lod_([a-z][a-z0-9]+)", re.IGNORECASE)),
+    # generic fallback: _npc_<token>
     ("npc_asset", re.compile(r"_npc_([a-z0-9]+)", re.IGNORECASE)),
 )
 PATH_ID_SUFFIX_RE = re.compile(r"_p[0-9a-f]{16}(?=\.[^.]+$)", re.IGNORECASE)
+# Tokens that ASSET_MARKERS can capture but that never name a character —
+# config/table files, level-editor markers, generic shared props, or a
+# marker-word left over once its real qualifier is stripped (e.g.
+# "map_racing_NPC_unactive_*" → "unactive", "bg_npc_list_topic_*" → "list").
+# These are excluded outright rather than recorded as identities.
+EXCLUDED_TOKENS = frozenset({
+    "lodconfig",
+    "levelmapmark",
+    "muzzle",
+    "prefabtable",
+    "prop",
+    "shared",
+    "general",
+    "general_item",
+    "list",
+    "unactive",
+    # "ztc" is a numbered VFX material group (M_fxgp_actor_ztc_001/002/...),
+    # not a character; "shadow" is a generic decoration/blackbox shadow
+    # sprite (bg_blackbox_npc_shadow, icon_blackbox_npc_shadow, ...).
+    "ztc",
+    "shadow",
+    # "terminal"/"sterminal" are generic interactable-terminal animator sets
+    # (AC_npc_terminal_*, AC_npc_sterminal_*); "social"/"single"/"group" are
+    # generic SNS/social UI category icons, not per-NPC art; "phantp" is a
+    # VFX soul-effect material (M_actor_phantp_souleffect_*); "diffuse" is a
+    # VFX diffuse-texture material channel (..._npc_diffuse_1101_*), not a
+    # character.
+    "terminal",
+    "sterminal",
+    "social",
+    "single",
+    "group",
+    "phantp",
+    "diffuse",
+    # "robot"/"machine"/"signaltower" are generic props/effects (a robot-
+    # welcome VFX material, a machine mesh, a signal-tower mesh), not named
+    # characters.
+    "robot",
+    "machine",
+    "signaltower",
+})
+# Whole filename families to skip outright, before ASSET_MARKERS even runs —
+# used when the family produces a different bogus token per file (numbered
+# background plates, positional UI icons) rather than one fixed token.
+EXCLUDED_FILENAME_FRAGMENTS = frozenset({
+    "icon_settlement_npc",  # positional settlement-panel icons: _bottom/_left/_right
+    "bg_blackbox_npc",  # numbered blackbox background plates: _1/_2/...
+})
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -237,6 +303,8 @@ class CharacterCatalog:
     def add_asset(self, path: str, asset_kind: str = "", path_id: str = "") -> None:
         basename = PATH_ID_SUFFIX_RE.sub("", Path(path).name)
         lowered = basename.lower()
+        if any(fragment in lowered for fragment in EXCLUDED_FILENAME_FRAGMENTS):
+            return
         matched: tuple[str, str] | None = None
         for evidence_type, pattern in ASSET_MARKERS:
             match = pattern.search(lowered)
@@ -247,6 +315,8 @@ class CharacterCatalog:
             return
         evidence_type, token = matched
         token_id = normalize_identity(token)
+        if token_id in EXCLUDED_TOKENS:
+            return
         kind = "actor" if evidence_type == "actor_asset" else "asset_npc"
         row, resolution = self.resolve_asset_identity(token_id)
         if row is None:

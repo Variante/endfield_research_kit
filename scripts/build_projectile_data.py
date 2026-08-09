@@ -25,6 +25,8 @@ DEFAULT_INPUTS = (
     REPO_ROOT / "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour",
 )
 DEFAULT_OUTPUT = REPO_ROOT / "webui/data/gameplay/projectiles.json"
+DEFAULT_AUDIO_INDEX = REPO_ROOT / "export_full/structured/Audio/CN/index.json"
+PROJECTILE_EVENT_PREFIX = "projectile-event:"
 EFFECT_LIST_FIELDS = (
     ("main", "mainEffects"),
     ("launch", "launchEffects"),
@@ -43,6 +45,12 @@ SOUND_FIELDS = (
     "sizzleSound",
 )
 
+AUDIO_LINK_FIELDS = (
+    "src", "mediaId", "format", "bytes", "audioScope", "audioCategory",
+    "audioCategoryDetail", "sourceBlock", "sourceBlockLabel", "sourceBank",
+    "bankId", "bank",
+)
+
 
 def compact_dict(**values: Any) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
@@ -57,6 +65,91 @@ def enum_value(value: Any) -> Any:
         hex=value.get("hex"),
         enumType=value.get("enumType"),
     )
+
+
+def hydrate_audio_links(entries: list[dict[str, Any]], audio_index_path: Path) -> dict[str, Any] | None:
+    """Reuse the current canonical HIRC mapping without rescanning game banks."""
+
+    try:
+        audio_index = json.loads(audio_index_path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    requested_hashes = {
+        int(value) & 0xFFFFFFFF
+        for value in (audio_index.get("projectileEventHashes") or [])
+        if isinstance(value, int)
+    }
+    if not requested_hashes:
+        return None
+    found_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in (audio_index.get("eventEvidence") or [])
+        if isinstance(row, dict)
+        and str(row.get("eventId") or "").startswith(PROJECTILE_EVENT_PREFIX)
+        and isinstance(row.get("eventHash"), int)
+    }
+    audio_by_hash: dict[int, list[dict[str, Any]]] = {}
+    for row in audio_index.get("events") or []:
+        if not isinstance(row, dict) or not str(row.get("eventId") or "").startswith(PROJECTILE_EVENT_PREFIX):
+            continue
+        try:
+            event_hash = int(row.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            continue
+        if not row.get("src"):
+            continue
+        audio_by_hash.setdefault(event_hash, []).append({
+            key: row[key]
+            for key in AUDIO_LINK_FIELDS
+            if row.get(key) is not None
+        })
+
+    refs = 0
+    linked_refs = 0
+    candidate_count = 0
+    resolved_hashes: set[int] = set()
+    for entry in entries:
+        sounds = entry.get("sounds") or {}
+        for field in SOUND_FIELDS:
+            value = sounds.get(field)
+            raw = value.get("value") if isinstance(value, dict) else value
+            if not isinstance(value, dict) or not isinstance(raw, int) or not raw:
+                continue
+            refs += 1
+            event_hash = raw & 0xFFFFFFFF
+            if event_hash not in requested_hashes:
+                continue
+            media: list[dict[str, Any]] = []
+            seen: set[tuple[str, str]] = set()
+            for audio in audio_by_hash.get(event_hash, []):
+                key = (str(audio.get("src") or ""), str(audio.get("mediaId") or ""))
+                if not key[0] or key in seen:
+                    continue
+                seen.add(key)
+                media.append(audio)
+            event_found = event_hash in found_hashes
+            resolved_hashes.update([event_hash] if event_found else [])
+            if media:
+                linked_refs += 1
+                candidate_count += len(media)
+            value["event"] = {
+                "hash": event_hash,
+                "hex": f"0x{event_hash:08x}",
+                "foundInWwise": event_found,
+                "playableCandidates": len(media),
+                "source": "wwiseHirc" if event_found else "unresolved",
+                "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate" if media else "none",
+            }
+            if media:
+                value["audio"] = media
+    return {
+        "projectileSoundRefs": refs,
+        "projectileSoundEvents": len(resolved_hashes),
+        "projectileSoundRefsLinked": linked_refs,
+        "projectileAudioCandidates": candidate_count,
+        "source": "Wwise HIRC event traversal (reused from current audio index)",
+        "note": "Playable files are event media candidates; runtime switch/container selection is not recovered.",
+    }
 
 
 def blackboard_scalar(value: Any) -> Any:
@@ -158,10 +251,14 @@ def target_filter_payload(value: Any) -> dict[str, Any]:
         return {}
     query = value.get("tagQuery") if isinstance(value.get("tagQuery"), dict) else {}
     return compact_dict(
+        serializedLayout=value.get("serializedLayout"),
+        tagEntryLayout=value.get("tagEntryLayout"),
         checkAlive=value.get("checkAlive"),
         autoSetTargetFaction=value.get("autoSetTargetFaction"),
         factionTarget=enum_value(value.get("factionTarget")),
         targetFactionType=enum_value(value.get("targetFactionType")),
+        filterObjectType=value.get("filterObjectType"),
+        objectType=enum_value(value.get("objectType")),
         filterSlot=value.get("filterSlot"),
         slotIndex=value.get("slotIndex"),
         filterGameplayTag=value.get("filterGameplayTag"),
@@ -193,6 +290,18 @@ def move_mode_payload(value: Any) -> dict[str, Any]:
         gravity=blackboard_scalar(value.get("gravity")),
         bezierMidPoint1=bezier_point(value.get("bezierMidPoint1"), value.get("bezierMidPoint1Status")),
         bezierMidPoint2=bezier_point(value.get("bezierMidPoint2"), value.get("bezierMidPoint2Status")),
+        surroundCenterKey=value.get("surroundCenterKey"),
+        surroundLineSpeed=blackboard_scalar(value.get("surroundLineSpeed")),
+        surroundLineSpeedCurve=curve(value.get("surroundLineSpeedCurve")),
+        surroundCentrifugalSpeed=blackboard_scalar(value.get("surroundCentrifugalSpeed")),
+        surroundCentrifugalSpeedCurve=curve(value.get("surroundCentrifugalSpeedCurve")),
+        surroundMaxCentrifugalRadius=blackboard_scalar(value.get("surroundMaxCentrifugalRadius")),
+        reachOnMaxCentrifugalRadius=value.get("reachOnMaxCentrifugalRadius"),
+        surroundAxialSpeed=blackboard_scalar(value.get("surroundAxialSpeed")),
+        surroundAxialSpeedCurve=curve(value.get("surroundAxialSpeedCurve")),
+        surroundMaxAxialHeight=blackboard_scalar(value.get("surroundMaxAxialHeight")),
+        reachOnMaxAxialHeight=value.get("reachOnMaxAxialHeight"),
+        surroundAxisRotation=blackboard_vector(value.get("surroundAxisRotation")),
         confidence={
             "structure": "exact",
             "semantics": "qualified",
@@ -207,7 +316,9 @@ def effect_tail_payload(value: Any) -> dict[str, Any]:
     scalar_keys = (
         "isShowInDialog", "isLimitEffectCount", "limitCount", "protectTime", "limitTime", "limitKey",
         "assetOnlyAffectModelRoot", "isUltimateShow", "visibleWithEntity", "grounded", "followGrounded",
-        "followGroundedMaxDistance", "followHideTarget", "visibleWhenHideTarget", "slotIndex",
+        "ignoreEntityDither", "useCameraViewportAnchor", "cameraAnchorDistance", "cameraReferenceFov",
+        "cameraReferenceAspect", "followGroundedMaxDistance", "lerpToTargetTrans", "lerpDuration",
+        "followHideTarget", "visibleWhenHideTarget", "slotIndex",
         "useWeaponMountPoint", "useAccurateMp", "isClothMountPoint", "weaponIndex", "showHideWithWeapon",
         "offsetDirRevert", "usePositionOffsetBB", "useTargetRotation", "scaleWithTargetSize", "fxSize",
         "unpackPosDelayFrame", "unpackFollowTargetOnRelease", "rotUseWeaponMountPoint", "rotWeaponIndex",
@@ -217,12 +328,12 @@ def effect_tail_payload(value: Any) -> dict[str, Any]:
     )
     result = {key: value[key] for key in scalar_keys if key in value}
     for key in (
-        "visibleWithEntityType", "moveType", "positionRef", "mountPoint", "weaponMountPoint", "offsetDir",
+        "visibleWithEntityType", "moveType", "cameraScreenSizeScaleMode", "positionRef", "mountPoint", "weaponMountPoint", "offsetDir",
         "rotType", "rotRef", "directionRef", "rotMountPoint", "rotWeaponMountPoint", "alertType", "modifyType",
     ):
         if key in value:
             result[key] = enum_value(value[key])
-    for key in ("positionOffset", "selfRotation"):
+    for key in ("cameraViewportPosition", "positionOffset", "selfRotation"):
         if key in value:
             result[key] = value[key]
     for key in ("positionOffsetBB", "selfRotationBB"):
@@ -245,6 +356,8 @@ def effect_payload(value: Any) -> dict[str, Any]:
         scaleBB=blackboard_vector(value.get("scaleBB")),
         useLengthBB=value.get("useLengthBB"),
         lengthBB=blackboard_scalar(value.get("lengthBB")),
+        useDurationScaleBB=value.get("useDurationScaleBB"),
+        durationScaleBB=blackboard_scalar(value.get("durationScaleBB")),
         releaseByAction=value.get("releaseByAction"),
         ignoreOwnerTimeScale=value.get("ignoreOwnerTimeScale"),
         interruptTime=value.get("interruptTime"),
@@ -334,6 +447,7 @@ def build_entry(path: Path, root: Path) -> dict[str, Any] | None:
                 endPointKey=row.get("endPointKey"),
                 earlyNextByDuration=row.get("earlyNextByDuration"),
                 segmentDuration=blackboard_scalar(row.get("segmentDuration")),
+                skipHitAndBlockDetection=row.get("skipHitAndBlockDetection"),
                 speedLerpTime=blackboard_scalar(row.get("speedLerpTime")),
             )
         )
@@ -348,6 +462,7 @@ def build_entry(path: Path, root: Path) -> dict[str, Any] | None:
             assetName=metadata.get("name") or payload.get("m_Name"),
             pathId=path_id,
             sourceFile=metadata.get("sourceFile"),
+            sourceOffset=metadata.get("sourceOffset"),
             vfsPath=relative_vfs_path(metadata.get("sourceOriginalPath"), source),
             byteSize=metadata.get("byteSize"),
             rawDataSha256=metadata.get("rawDataSha256"),
@@ -369,6 +484,21 @@ def build_entry(path: Path, root: Path) -> dict[str, Any] | None:
             activeSkillIds=skills.get("allActiveSkillId") or [],
             passiveSkillIds=skills.get("allPassiveSkillId") or [],
             normalAttackIds=skills.get("allNormalAttackId") or [],
+            normalAttackList=skills.get("normalAttackList") or [],
+            enabledBreakingNormalAttacks=skills.get("enabledBreakingNormalAttacks") or [],
+            enabledPassiveSkills=skills.get("enabledPassiveSkills") or [],
+            normalSkillId=skills.get("normalSkillId"),
+            ultimateSkillId=skills.get("ultimateSkillId"),
+            plungingAttackStartId=skills.get("plungingAttackStartId"),
+            plungingAttackEndId=skills.get("plungingAttackEndId"),
+            dodgeSkillId=skills.get("dodgeSkillId"),
+            comboSkillPriorityType=enum_value(skills.get("comboSkillPriorityType")),
+            enableComboSkillBlackboard=skills.get("enableComboSkillBlackboard"),
+            comboSkillBlackboard=skills.get("comboSkillBlackboard"),
+            comboSkillId=skills.get("comboSkillId"),
+            comboSkillSpecialNodeName=skills.get("comboSkillSpecialNodeName"),
+            hudPanelName=skills.get("hudPanelName"),
+            activeSkillTypeOverrides=skills.get("activeSkillTypeOverrides"),
         ),
         "lifetime": compact_dict(
             finishDuration=blackboard_scalar(component.get("finishDuration")),
@@ -389,6 +519,10 @@ def build_entry(path: Path, root: Path) -> dict[str, Any] | None:
             maxHitCount=blackboard_scalar(component.get("maxHitCount")),
             allowHitSameTarget=component.get("allowHitSameTarget"),
             hitIntervalPerTarget=component.get("hitIntervalPerTarget"),
+            collisionDetectTiming=enum_value(component.get("collisionDetectTiming")),
+            hitAndBlockDetectDelayTime=blackboard_scalar(component.get("hitAndBlockDetectDelayTime")),
+            hitAndBlockDetectDelayDistance=blackboard_scalar(component.get("hitAndBlockDetectDelayDistance")),
+            canTraceTargetAfterReach=component.get("canTraceTargetAfterReach"),
         ),
         "movement": {
             "presetPointKeys": component.get("presetPointKeys") or [],
@@ -412,7 +546,7 @@ def build_entry(path: Path, root: Path) -> dict[str, Any] | None:
                 "ProjectileComponentData boundaries and exact tail consumption are validated for the current installed-game export.",
                 "Authored numeric values and blackboard keys are preserved; the WebUI does not evaluate runtime blackboards.",
                 "Exporter-provided enum member names are shown where validated; otherwise the numeric value and enum type are retained.",
-                "The seven sound fields are metadata-named hash-like values, not resolved Wwise events.",
+                "The seven sound fields preserve authored Wwise event hashes; build_audio.py may attach exact HIRC event-to-media candidates when decoded audio is current.",
                 "Effect bodies are byte-complete for observed projectile variants while some wrapper semantics remain inferred.",
             ],
         },
@@ -437,6 +571,8 @@ def parse_args() -> argparse.Namespace:
         help="MonoBehaviour JSON directory to scan; repeat for multiple source roots. Defaults to StreamingAssets and Persistent.",
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help=f"Output JSON path (default: {DEFAULT_OUTPUT})")
+    parser.add_argument("--audio-index", type=Path, default=DEFAULT_AUDIO_INDEX, help=f"Current decoded audio index used to reuse projectile HIRC links (default: {DEFAULT_AUDIO_INDEX})")
+    parser.add_argument("--skip-audio-links", action="store_true", help="Do not hydrate projectile sound links from the current decoded audio index.")
     parser.add_argument("--pretty", action="store_true", help="Write indented JSON for inspection instead of compact JSON.")
     parser.add_argument("--require-exact", action="store_true", help="Fail if any emitted projectile lacks exact tail consumption.")
     return parser.parse_args()
@@ -463,8 +599,33 @@ def main() -> int:
     for row in entries:
         source = row["source"]["root"]
         source_counts[source] = source_counts.get(source, 0) + 1
+    authored_skill_refs: list[str] = []
+    movement_modes = 0
+    effect_actions = 0
+    id_only_tag_filters = 0
+    character_projectiles = 0
+    enemy_projectiles = 0
+    for row in entries:
+        projectile_id = str(row.get("id") or "").lower()
+        character_projectiles += int("projectile_chr_" in projectile_id)
+        enemy_projectiles += int("projectile_eny_" in projectile_id)
+        template = row.get("template") or {}
+        for key in (
+            "activeSkillIds", "passiveSkillIds", "normalAttackIds", "normalAttackList",
+            "enabledBreakingNormalAttacks", "enabledPassiveSkills",
+        ):
+            authored_skill_refs.extend(str(value) for value in (template.get(key) or []) if value)
+        for key in (
+            "normalSkillId", "ultimateSkillId", "plungingAttackStartId", "plungingAttackEndId",
+            "dodgeSkillId", "comboSkillId",
+        ):
+            if template.get(key):
+                authored_skill_refs.append(str(template[key]))
+        movement_modes += len((row.get("movement") or {}).get("modes") or [])
+        effect_actions += sum(len(values or []) for values in ((row.get("effects") or {}).get("lists") or {}).values())
+        id_only_tag_filters += int((((row.get("targeting") or {}).get("targetFilter") or {}).get("tagEntryLayout") == "idOnly"))
     output = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "source": "AnimeStudio exact MonoBehaviour projectile decode",
         "sourceRoots": [source_label(root) for root in roots],
         "counts": {
@@ -472,6 +633,14 @@ def main() -> int:
             "byteComplete": len(entries) - incomplete,
             "incomplete": incomplete,
             "bySource": dict(sorted(source_counts.items())),
+            "characterProjectiles": character_projectiles,
+            "enemyProjectiles": enemy_projectiles,
+            "otherProjectiles": len(entries) - character_projectiles - enemy_projectiles,
+            "movementModes": movement_modes,
+            "effectActions": effect_actions,
+            "authoredSkillRefs": len(authored_skill_refs),
+            "uniqueAuthoredSkills": len(set(authored_skill_refs)),
+            "idOnlyTagFilters": id_only_tag_filters,
         },
         "confidence": {
             "structure": "exact" if entries and incomplete == 0 else "mixed",
@@ -480,6 +649,9 @@ def main() -> int:
         },
         "entries": entries,
     }
+    audio_links = None if args.skip_audio_links else hydrate_audio_links(entries, args.audio_index.resolve())
+    if audio_links is not None:
+        output["audioLinks"] = audio_links
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(output, ensure_ascii=False, indent=2 if args.pretty else None, separators=None if args.pretty else (",", ":")) + "\n",

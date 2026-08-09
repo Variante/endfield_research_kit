@@ -40,6 +40,7 @@
   --warn: #ff5722;
 
   --accent-rgb: 255, 87, 34;
+  --accent-2-rgb: 118, 171, 174;
   --fg-rgb: 48, 56, 65;
   --on-accent: #f5f5f5;
 }
@@ -478,22 +479,6 @@ textarea:focus-visible,
   position: relative;
 }
 
-#projectiles-view,
-#combat-view,
-#economy-view,
-#world-view,
-#progression-view,
-#presentation-view {
-  overflow: auto;
-}
-
-#gameplay-combat-relationships,
-#economy-app,
-#world-app {
-  min-height: 100%;
-  padding: 18px 20px 28px;
-}
-
 /* ------- Per-view loading overlay ------- */
 .view-loader {
   position: absolute;
@@ -817,13 +802,13 @@ textarea:focus-visible,
   font-weight: 600;
 }
 
-#reset, #asset-reset, #reference-reset, #gameplay-reset, #updates-reset {
+#reset, #asset-reset, #reference-reset, #gameplay-reset, #updates-reset, #characters-reset {
   padding: 6px 10px; font-size: 12px;
   background: transparent; color: var(--muted);
   border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
   line-height: 1.2;
 }
-#reset:hover, #asset-reset:hover, #reference-reset:hover, #gameplay-reset:hover, #updates-reset:hover { color: var(--text); border-color: var(--muted); }
+#reset:hover, #asset-reset:hover, #reference-reset:hover, #gameplay-reset:hover, #updates-reset:hover, #characters-reset:hover { color: var(--text); border-color: var(--muted); }
 
 #list-meta, #asset-list-meta {
   padding: 6px 16px; font-size: 11px; color: var(--muted);
@@ -1038,28 +1023,28 @@ textarea:focus-visible,
   height: 16px;
   padding: 0 5px;
   border-radius: 4px;
-  border: 1px solid var(--border);
-  background: rgba(var(--fg-rgb), 0.1);
-  color: var(--muted);
+  border: 1px solid #5a9fd4;
+  background: rgba(90, 159, 210, 0.18);
+  color: #7ec8f0;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 10px;
   line-height: 1;
   flex-shrink: 0;
 }
 .story-order-badge.is-strong {
-  border-color: var(--border);
-  background: rgba(var(--fg-rgb), 0.13);
-  color: var(--text);
+  border-color: #f0c040;
+  background: rgba(240, 192, 64, 0.2);
+  color: #ffe080;
 }
 .story-order-badge.is-hint {
-  border-color: var(--border);
-  background: rgba(var(--accent-rgb), 0.12);
-  color: var(--text);
+  border-color: #60d060;
+  background: rgba(96, 208, 96, 0.18);
+  color: #90f090;
 }
 .story-order-badge.is-weak {
-  border-color: var(--border);
-  background: rgba(var(--fg-rgb), 0.11);
-  color: var(--text);
+  border-color: #888;
+  background: rgba(136, 136, 136, 0.15);
+  color: #bbb;
 }
 .story-order-flag {
   display: inline-flex;
@@ -4518,11 +4503,83 @@ body.is-resizing-filter * {
   min-width: 0;
 }
 
-.gameplay-character-skill-grid {
+/* Active-skill table: one row per playable skill (Normal Attack / Skill /
+   Ultimate / Combo), each split into a description / level+buffs+cost /
+   projectiles column. */
+.gameplay-active-skill-table {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gameplay-projectile-coverage-note {
+  margin: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--accent-rgb), 0.045);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.gameplay-projectile-no-template {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.gameplay-active-skill-header,
+.gameplay-active-skill-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  align-items: start;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(200px, 1fr) minmax(190px, 0.9fr);
+  gap: 14px;
+}
+
+.gameplay-active-skill-header {
+  padding: 8px 14px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(var(--fg-rgb), 0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.gameplay-active-skill-row {
+  padding: 14px;
+  background: var(--bg-3);
+}
+
+.gameplay-active-skill-row + .gameplay-active-skill-row {
+  border-top: 1px solid var(--border);
+}
+
+.gameplay-active-skill-desc,
+.gameplay-active-skill-levels,
+.gameplay-active-skill-projectiles {
+  min-width: 0;
+}
+
+.gameplay-active-skill-desc > .gameplay-group-title-wrap {
+  margin-bottom: 4px;
+}
+
+.gameplay-active-skill-desc > .gameplay-description {
+  margin-top: 8px;
+}
+
+.gameplay-active-skill-levels .gameplay-level-table,
+.gameplay-active-skill-levels .gameplay-level-slider-wrap {
+  margin-top: 0;
+}
+
+.gameplay-level-pane.gameplay-active-skill-pane {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.gameplay-active-skill-col-label {
+  display: none;
 }
 
 .gameplay-section h2 {
@@ -4546,96 +4603,87 @@ body.is-resizing-filter * {
 }
 
 
-.gameplay-action-group {
-  min-width: 0;
-  border: 1px solid rgba(var(--fg-rgb), 0.11);
-  border-radius: 7px;
-  background: rgba(var(--fg-rgb), 0.025);
-  overflow: hidden;
-}
-
-.gameplay-action-row {
-  min-width: 0;
-  padding: 10px;
-  border-top: 1px solid rgba(var(--fg-rgb), 0.09);
-}
-
-.gameplay-action-row:first-child {
-  border-top: 0;
-}
-
-.gameplay-action-title {
-  margin-bottom: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-/* Compound selector so this wins over the 2-column .gameplay-level-pane rule
-   defined later in the file (equal specificity would otherwise lose). */
-.gameplay-level-pane.gameplay-merged-skill-pane {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 .gameplay-equipment-property-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 10px;
 }
-/* Lay the actions out horizontally, the same way talent levels do. */
-.gameplay-action-stack {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0;
+
+/* Enemy variants are compared as selectable source rows. Only columns that
+   differ in the current export are included. */
+.gameplay-variant-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(var(--fg-rgb), 0.11);
+  border-radius: 7px;
 }
 
-.gameplay-action-stack .gameplay-action-row {
-  border-top: 0;
-  border-left: 1px solid rgba(var(--fg-rgb), 0.09);
+.gameplay-variant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
 }
 
-.gameplay-action-stack .gameplay-action-row:first-child {
+.gameplay-variant-table th,
+.gameplay-variant-table td {
+  min-width: 110px;
+  padding: 7px 9px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.09);
+  border-left: 1px solid rgba(var(--fg-rgb), 0.07);
+  text-align: left;
+  vertical-align: top;
+}
+
+.gameplay-variant-table th:first-child,
+.gameplay-variant-table td:first-child {
   border-left: 0;
 }
 
-.gameplay-variant-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
+.gameplay-variant-table thead th {
+  border-top: 0;
+  background: rgba(var(--fg-rgb), 0.04);
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-/* Enemy variant switcher: a row of chips over a single visible variant pane. */
-.gameplay-variant-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.gameplay-variant-chip {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(var(--accent-rgb), 0.18);
-  background: rgba(var(--fg-rgb), 0.03);
-  color: var(--text);
+.gameplay-variant-row {
   cursor: pointer;
-  font-size: 12px;
 }
 
-.gameplay-variant-chip:hover {
-  background: rgba(var(--accent-rgb), 0.12);
-  border-color: var(--border);
+.gameplay-variant-row:hover,
+.gameplay-variant-row:focus-visible {
+  background: var(--hover);
+  outline: 0;
 }
 
-.gameplay-variant-chip.is-active {
-  background: rgba(var(--accent-rgb), 0.2);
-  border-color: var(--border);
-  font-weight: 600;
+.gameplay-variant-row.is-selected {
+  background: rgba(var(--accent-rgb), 0.15);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
-.gameplay-variant-pane[hidden] {
-  display: none;
+.gameplay-variant-row th > code {
+  display: block;
+}
+
+.gameplay-variant-row th > code,
+.gameplay-variant-row td code {
+  margin-top: 2px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.gameplay-variant-pane {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.04);
+}
+
+.gameplay-variant-no-diff {
+  margin: 8px 0 0;
 }
 
 .gameplay-skill-card {
@@ -4646,8 +4694,7 @@ body.is-resizing-filter * {
   background: var(--bg-3);
 }
 
-.gameplay-skill-card header,
-.gameplay-group-card > header {
+.gameplay-skill-card header {
   margin-bottom: 8px;
 }
 
@@ -4809,20 +4856,31 @@ body.is-resizing-filter * {
   font-weight: 700;
 }
 
-.gameplay-group-card + .gameplay-group-card {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+.gameplay-item-chip-icon {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 4px;
+  background: rgba(var(--fg-rgb), 0.06);
 }
 
-.gameplay-character-skill-grid .gameplay-group-card + .gameplay-group-card {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
+.gameplay-item-chip-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.gameplay-group-card > .gameplay-description {
-  margin-bottom: 10px;
+.gameplay-item-chip-icon.is-missing {
+  display: none;
+}
+
+.gameplay-item-chip-link {
+  align-items: center;
+  cursor: pointer;
+  text-align: left;
 }
 
 .gameplay-subheading {
@@ -4834,9 +4892,557 @@ body.is-resizing-filter * {
   text-transform: uppercase;
 }
 
-.gameplay-group-card > .gameplay-blackboard,
-.gameplay-group-card > .gameplay-level-table {
-  margin-bottom: 10px;
+.gameplay-character-asset-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(var(--fg-rgb), 0.1);
+  border-radius: 7px;
+  background: rgba(var(--fg-rgb), 0.025);
+}
+
+.gameplay-character-asset-images {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.gameplay-character-asset-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 112px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 5px;
+  background: rgba(var(--fg-rgb), 0.06);
+}
+
+.gameplay-image-preview.inline-image-tag {
+  box-sizing: border-box;
+  display: block;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: zoom-in;
+  appearance: none;
+}
+
+.gameplay-image-preview:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gameplay-character-asset-thumb.gameplay-image-preview,
+.gameplay-token-icon.gameplay-image-preview,
+.gameplay-token-asset.gameplay-image-preview,
+.gameplay-asset-thumb.gameplay-image-preview {
+  border-style: solid;
+}
+
+.gameplay-character-asset-thumb img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.gameplay-character-asset-thumb.is-missing {
+  display: none;
+}
+
+.gameplay-character-asset-more {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.gameplay-character-asset-model {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.gameplay-character-asset-model:hover {
+  color: var(--accent-text);
+}
+
+.gameplay-character-asset-model span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.gameplay-character-asset-model code {
+  max-width: 42ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameplay-group-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gameplay-token-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 6px;
+  background: rgba(var(--fg-rgb), 0.06);
+}
+
+.gameplay-token-icon.gameplay-image-preview.inline-image-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Skill icons use the game's four semantic skill families rather than the
+   square material/talent treatment. White source glyphs need a solid,
+   type-specific disc behind them to remain legible at a glance. */
+.gameplay-token-icon.gameplay-attack-skill-icon {
+  border-width: 2px;
+  border-radius: 50%;
+  border-color: rgba(var(--gameplay-skill-rgb), 0.78);
+  background: rgb(var(--gameplay-skill-rgb));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 2px 5px rgba(var(--gameplay-skill-rgb), 0.22);
+}
+
+.gameplay-token-icon.gameplay-attack-skill-normal-attack {
+  --gameplay-skill-rgb: 82, 94, 105;
+}
+
+.gameplay-token-icon.gameplay-attack-skill-normal-skill {
+  --gameplay-skill-rgb: 61, 116, 120;
+}
+
+.gameplay-token-icon.gameplay-attack-skill-ultimate {
+  --gameplay-skill-rgb: 111, 82, 145;
+}
+
+.gameplay-token-icon.gameplay-attack-skill-combo {
+  --gameplay-skill-rgb: 177, 104, 36;
+}
+
+.gameplay-token-icon img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.gameplay-token-icon.is-missing {
+  display: none;
+}
+
+.gameplay-token-image-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.gameplay-token-asset {
+  display: block;
+  width: 76px;
+  height: 56px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 5px;
+  background: rgba(var(--fg-rgb), 0.06);
+}
+
+.gameplay-token-asset img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Item picture cards are illustrations, not fixed-ratio icon tiles. Keep the
+   source aspect ratio so a 2:1 or portrait picture is displayed naturally. */
+.gameplay-potential-assets .gameplay-token-asset {
+  box-sizing: border-box;
+  width: min(180px, 100%) !important;
+  height: auto !important;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto !important;
+  overflow: visible;
+  line-height: 0;
+}
+
+.gameplay-potential-assets .gameplay-token-asset img {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100%;
+  max-height: none;
+  aspect-ratio: auto !important;
+  object-fit: contain;
+}
+
+.gameplay-token-asset.is-missing {
+  display: none;
+}
+
+/* Potential-unlock keepsake photos (levels 1/3/5): captioned figures with
+   the authored flavor line under each cinematic, non-square illustration. */
+.gameplay-potential-picture-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 7px;
+}
+
+.gameplay-potential-picture {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(220px, 100%);
+  margin: 0;
+}
+
+.gameplay-potential-picture-asset {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  line-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 5px;
+  background: rgba(var(--fg-rgb), 0.06);
+}
+
+.gameplay-potential-picture-asset img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.gameplay-potential-picture-asset.is-missing {
+  display: none;
+}
+
+.gameplay-potential-picture-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.gameplay-potential-picture-quote {
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.gameplay-skill-evidence-summary,
+.gameplay-skill-projectiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gameplay-skill-evidence-summary {
+  margin: 4px 0 6px;
+}
+
+.gameplay-skill-evidence-chip {
+  display: inline-flex;
+  gap: 5px;
+  align-items: baseline;
+  padding: 3px 6px;
+  border: 1px solid rgba(var(--accent-2-rgb), 0.24);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.gameplay-skill-evidence-chip b {
+  color: var(--text);
+}
+
+.gameplay-skill-projectiles {
+  margin-top: 7px;
+}
+
+.gameplay-projectile-inline {
+  display: block;
+  flex: 1 1 230px;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 8px;
+  background: rgba(var(--accent-rgb), 0.035);
+  overflow: hidden;
+}
+
+.gameplay-projectile-inline > summary {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 5px 7px;
+  padding: 8px 9px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.gameplay-projectile-inline > summary::-webkit-details-marker {
+  display: none;
+}
+
+.gameplay-projectile-inline > summary::before {
+  content: "+";
+  grid-column: 1;
+  grid-row: 1;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.gameplay-projectile-inline[open] > summary::before {
+  content: "-";
+}
+
+.gameplay-projectile-friendly-name {
+  grid-column: 2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.gameplay-projectile-inline > summary > .gameplay-projectile-status {
+  grid-column: 3;
+}
+
+.gameplay-projectile-summary-chips {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.gameplay-projectile-summary-chips small {
+  padding: 2px 5px;
+  border-radius: 99px;
+  background: rgba(var(--fg-rgb), 0.065);
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-projectile-body {
+  display: grid;
+  gap: 8px;
+  padding: 8px 9px 10px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.09);
+  background: var(--bg-3);
+}
+
+.gameplay-projectile-overview {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid rgba(var(--fg-rgb), 0.08);
+  border-radius: 6px;
+  background: rgba(var(--fg-rgb), 0.025);
+}
+
+.gameplay-projectile-overview strong {
+  color: var(--text);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.gameplay-projectile-overview span {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.gameplay-projectile-inline-details {
+  display: grid;
+  gap: 4px;
+}
+
+.gameplay-projectile-inline-details > span {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.45fr) minmax(0, 1fr);
+  gap: 6px;
+  align-items: baseline;
+  font-size: 10px;
+}
+
+.gameplay-projectile-inline-details b {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.gameplay-projectile-inline-details code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.gameplay-projectile-audio {
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid rgba(var(--accent-2-rgb), 0.22);
+  border-radius: 7px;
+  background: rgba(var(--accent-2-rgb), 0.045);
+}
+
+.gameplay-projectile-audio > header,
+.gameplay-projectile-audio-phase > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gameplay-projectile-audio > header span,
+.gameplay-projectile-audio-phase > summary span,
+.gameplay-projectile-audio > p,
+.gameplay-projectile-audio-phase > p {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-projectile-audio > p,
+.gameplay-projectile-audio-phase > p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.gameplay-projectile-audio-phase {
+  padding-top: 5px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.08);
+}
+
+.gameplay-projectile-audio-phase > summary {
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.gameplay-projectile-audio-candidate {
+  display: grid;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.gameplay-projectile-audio-candidate audio {
+  width: 100%;
+  height: 30px;
+}
+
+.gameplay-projectile-audio-candidate small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-related-sfx {
+  margin-top: 10px;
+  padding: 7px 8px;
+  border: 1px solid rgba(var(--accent-2-rgb), 0.22);
+  border-radius: 7px;
+  background: rgba(var(--accent-2-rgb), 0.045);
+}
+
+.gameplay-related-sfx > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.gameplay-related-sfx > summary > span:not(.gameplay-integration-confidence) {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-related-sfx > p {
+  margin: 7px 0 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.gameplay-sfx-event-id {
+  display: block;
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 9px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.gameplay-projectile-technical {
+  border-top: 1px dashed rgba(var(--fg-rgb), 0.14);
+  padding-top: 6px;
+}
+
+.gameplay-projectile-technical > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.gameplay-projectile-technical .gameplay-projectile-inline-details {
+  margin-top: 6px;
+}
+
+.gameplay-projectile-unassigned {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1px dashed rgba(var(--accent-rgb), 0.34);
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.035);
+}
+
+.gameplay-projectile-unassigned > summary {
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.gameplay-projectile-unassigned > p {
+  margin: 7px 0 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .gameplay-talent-table {
@@ -4857,6 +5463,11 @@ body.is-resizing-filter * {
   padding: 10px 12px;
   border-bottom: 1px solid rgba(var(--fg-rgb), 0.09);
   background: rgba(var(--fg-rgb), 0.025);
+}
+
+.gameplay-token-icon.gameplay-passive-talent-icon {
+  background: #dfe2e5;
+  border-color: rgba(24, 28, 32, 0.2);
 }
 
 .gameplay-talent-levels {
@@ -4881,9 +5492,18 @@ body.is-resizing-filter * {
 }
 
 .gameplay-talent-level-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin-bottom: 3px;
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+.gameplay-talent-level-title .gameplay-token-icon {
+  flex-basis: 28px;
+  width: 28px;
+  height: 28px;
 }
 
 .gameplay-talent-level .gameplay-description,
@@ -4924,6 +5544,15 @@ body.is-resizing-filter * {
     padding: 14px 12px 24px;
   }
 
+  .gameplay-character-asset-strip {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .gameplay-character-asset-model {
+    flex: 1 1 180px;
+  }
+
   .gameplay-level-row {
     grid-template-columns: 38px minmax(0, 1fr);
   }
@@ -4960,6 +5589,31 @@ body.is-resizing-filter * {
 
   #gameplay-reset {
     width: 100%;
+  }
+
+  .gameplay-active-skill-header {
+    display: none;
+  }
+
+  .gameplay-active-skill-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .gameplay-active-skill-levels,
+  .gameplay-active-skill-projectiles {
+    padding-top: 10px;
+    border-top: 1px dashed rgba(var(--fg-rgb), 0.16);
+  }
+
+  .gameplay-active-skill-col-label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 }
 /* ------- Updates view ------- */
@@ -5776,6 +6430,8 @@ body.is-resizing-filter * {
 
 #asset-preview-stage {
   min-height: 420px;
+  max-height: 80vh;
+  width: 100%;
   border: 1px dashed rgba(var(--accent-rgb), 0.24);
   border-radius: 10px;
   background: transparent;
@@ -6124,7 +6780,8 @@ body.is-resizing-filter * {
   #reset,
   #asset-reset,
   #reference-reset,
-  #updates-reset {
+  #updates-reset,
+  #characters-reset {
     width: 100%;
   }
 
@@ -6272,7 +6929,7 @@ html, body, #topbar, #left, #asset-left, #reference-left, #updates-app aside,
 .topbar-subtitle { color: var(--muted); }
 
 /* Page-level titles inside each view */
-#left h1, #asset-left h1, #reference-left h1, #updates-left h1 {
+#left h1, #asset-left h1, #reference-left h1, #updates-left h1, #characters-left h1 {
   color: var(--text);
   font-weight: 700;
   text-transform: uppercase;
@@ -6935,4 +7592,358 @@ code, kbd, samp, pre, tt {
 /* Shared table chrome: tabular figures so dense numeric columns line up. */
 table {
   font-variant-numeric: tabular-nums;
+}
+
+/* ------- Gameplay integrated evidence ------- */
+.gameplay-asset-gallery {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-3);
+}
+
+.gameplay-asset-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.gameplay-asset-thumb {
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.gameplay-asset-thumb.gameplay-image-preview {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.gameplay-asset-thumb figure {
+  height: 132px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(var(--fg-rgb), 0.12);
+  border-radius: 7px;
+  background: rgba(var(--fg-rgb), 0.06);
+}
+
+.gameplay-asset-thumb img {
+  display: block;
+  width: 100%;
+  height: 106px;
+  object-fit: contain;
+}
+
+.gameplay-item-weapon-thumb figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gameplay-item-weapon-thumb img {
+  flex: 0 0 106px;
+  width: min(106px, 100%);
+  height: 106px;
+  margin-inline: auto;
+}
+
+/* Weapon entries can have an icon plus authored horizontal/vertical art.
+   Let each card follow the source aspect ratio instead of forcing every
+   weapon image into the icon tile height. */
+.gameplay-weapon-asset-thumb figure {
+  height: auto;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gameplay-weapon-asset-thumb img {
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  object-fit: contain;
+}
+
+.gameplay-asset-thumb figcaption {
+  padding: 5px 7px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameplay-asset-thumb.is-missing {
+  display: none;
+}
+
+.gameplay-asset-no-preview {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.gameplay-asset-models {
+  display: grid;
+  gap: 6px;
+}
+
+.gameplay-asset-path {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(var(--fg-rgb), 0.1);
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.gameplay-asset-path:hover,
+.gameplay-related-link:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+}
+
+.gameplay-asset-path span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.gameplay-asset-path code {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameplay-integration-note,
+.gameplay-integration-summary {
+  padding: 9px 11px;
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.06);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.gameplay-integration-note.is-warning {
+  border-color: rgba(var(--accent-rgb), 0.44);
+  color: var(--text);
+}
+
+.gameplay-integration-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.gameplay-integration-subgroup {
+  margin-top: 12px;
+}
+
+.gameplay-integration-subgroup h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gameplay-integration-subgroup h3 span {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.gameplay-integration-relation {
+  min-width: 0;
+  padding: 8px 9px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.09);
+}
+
+.gameplay-integration-relation-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gameplay-integration-relation-kind {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gameplay-integration-arrow {
+  color: var(--muted);
+}
+
+.gameplay-related-link {
+  max-width: min(46ch, 100%);
+  padding: 2px 5px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 4px;
+  background: rgba(var(--accent-rgb), 0.06);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameplay-integration-node {
+  max-width: min(46ch, 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameplay-integration-confidence {
+  padding: 2px 5px;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.gameplay-integration-confidence.is-direct {
+  border-color: rgba(var(--accent-2-rgb), 0.34);
+  color: var(--accent-2);
+}
+
+.gameplay-integration-confidence.is-inferred {
+  border-color: rgba(var(--accent-rgb), 0.34);
+  color: var(--accent);
+}
+
+.gameplay-integration-evidence {
+  display: grid;
+  gap: 5px 9px;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.gameplay-integration-evidence span,
+.gameplay-integration-semantics span {
+  min-width: 0;
+}
+
+.gameplay-integration-evidence b,
+.gameplay-integration-semantics b {
+  margin-right: 5px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.gameplay-integration-evidence code {
+  color: var(--muted);
+}
+
+.gameplay-integration-semantics {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-left: 2px solid rgba(var(--accent-2-rgb), 0.34);
+  background: rgba(var(--accent-2-rgb), 0.035);
+  color: var(--muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.gameplay-projectile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 9px;
+}
+
+.gameplay-projectile-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-3);
+}
+
+.gameplay-projectile-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.gameplay-projectile-card header > div {
+  min-width: 0;
+}
+
+.gameplay-projectile-card strong,
+.gameplay-projectile-card header code {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.gameplay-projectile-card header code {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.gameplay-projectile-status {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.gameplay-projectile-status.is-complete {
+  border-color: rgba(var(--accent-2-rgb), 0.34);
+  color: var(--accent-2);
+}
+
+.gameplay-projectile-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.gameplay-projectile-facts span {
+  min-width: 0;
+}
+
+.gameplay-projectile-facts b,
+.gameplay-projectile-facts code {
+  display: block;
+}
+
+.gameplay-projectile-facts b {
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.gameplay-projectile-facts code {
+  overflow-wrap: anywhere;
 }

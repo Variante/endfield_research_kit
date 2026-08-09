@@ -2833,6 +2833,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     advanced = argparse.SUPPRESS
     parser.add_argument("--video-root", type=Path, default=VIDEO_ROOT, help="Directory containing final video files")
+    parser.add_argument("--report-dir", type=Path, default=REPORT_DIR, help="Directory for per-video OCR reports")
+    parser.add_argument("--tmp-root", type=Path, default=TMP_ROOT, help=advanced)
     parser.add_argument("--frame-step", type=int, default=10, help="OCR every Nth source frame")
     parser.add_argument("--crop", choices=["subtitle", "lower-half", "lower-third", "full"], default="subtitle")
     parser.add_argument(
@@ -2992,8 +2994,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--sns-interface-min-band-height-ratio must be <= --sns-interface-max-band-height-ratio")
     if args.sns_interface_min_band_y0_ratio > args.sns_interface_max_band_y0_ratio:
         parser.error("--sns-interface-min-band-y0-ratio must be <= --sns-interface-max-band-y0-ratio")
-    global VIDEO_ROOT
-    VIDEO_ROOT = args.video_root
+    global VIDEO_ROOT, REPORT_DIR, TMP_ROOT, FRAME_CACHE_ROOT, OCR_DICTIONARY_CACHE_PATH, INDEX_PATH, INDEX_MD_PATH
+    VIDEO_ROOT = args.video_root.resolve()
+    REPORT_DIR = args.report_dir.resolve()
+    TMP_ROOT = args.tmp_root.resolve()
+    FRAME_CACHE_ROOT = TMP_ROOT / "frames"
+    OCR_DICTIONARY_CACHE_PATH = TMP_ROOT / "ocr_dictionary_allowlist.json"
+    INDEX_PATH = REPORT_DIR / "gameplay_video_ocr_index.json"
+    INDEX_MD_PATH = REPORT_DIR / "gameplay_video_ocr_index.md"
     ffmpeg = resolve_executable("ffmpeg", args.ffmpeg)
     ffprobe = resolve_executable("ffprobe", args.ffprobe)
     if not ffmpeg:
@@ -3008,7 +3016,23 @@ def main(argv: list[str] | None = None) -> int:
         print("ffmpeg decode acceleration: CUDA/NVDEC requested with CPU fallback")
     else:
         print("ffmpeg decode acceleration: CPU")
-    ocr_dictionary = build_ocr_dictionary_allowlist(args)
+    # A dry-run only inventories pending videos. Do not build or cache the
+    # Story-derived character allowlist in that mode; apart from being
+    # unnecessary work, it would make --dry-run mutate the disposable OCR
+    # cache before any OCR dependency is checked.
+    ocr_dictionary = (
+        {
+            "allowlist": None,
+            "source": "dry-run",
+            "charCount": 0,
+            "hash": "",
+            "files": 0,
+            "strings": 0,
+            "cacheHit": False,
+        }
+        if args.dry_run
+        else build_ocr_dictionary_allowlist(args)
+    )
     args.easyocr_allowlist = ocr_dictionary.get("allowlist")
     args.ocr_dictionary_source = ocr_dictionary.get("source") or ""
     args.ocr_dictionary_char_count = int(ocr_dictionary.get("charCount") or 0)

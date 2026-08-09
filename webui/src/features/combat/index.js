@@ -2,7 +2,7 @@
   "use strict";
 
   const DEFAULT_CONTAINER_ID = "gameplay-combat-relationships";
-  const EDGE_PAGE_SIZE = 120;
+  const EDGE_PAGE_SIZE = Infinity;
   const instances = new Map();
   const pendingLoads = new WeakMap();
   let nextInstanceId = 0;

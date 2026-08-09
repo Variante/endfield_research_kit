@@ -3,6 +3,10 @@
   const PANE_STORAGE_KEY = "webui_characters_splitter_width";
   const FILTER_HEIGHT_STORAGE_KEY = "webui_filter_splitter_height_characters";
   const FILTER_PANEL_STORAGE_KEY = "webui_characters_filters_collapsed";
+  const MERGE_OVERRIDE_PATH = "overrides/character_merges.json";
+  const MERGE_OVERRIDE_SCHEMA = "characterMerges.v1";
+  const NAME_OVERRIDE_PATH = "overrides/character_name_overrides.json";
+  const NAME_OVERRIDE_SCHEMA = "characterNameOverrides.v1";
   const state = {
     container: null,
     data: null,
@@ -10,9 +14,17 @@
     query: "",
     kind: "all",
     source: "all",
+    evidenceType: "all",
+    identitiesRange: [0, Infinity],
+    evidenceGroupsRange: [0, Infinity],
+    assetCountRange: [0, Infinity],
+    specialFilters: new Set(),
     selectedId: "",
     loadToken: 0,
     filterPanel: null,
+    mergeOverrides: null,
+    flaggedIds: new Set(),
+    nameOverrides: null,
   };
 
   const esc = (value) => String(value ?? "")
@@ -31,6 +43,52 @@
     "Story actor registry": ui("Story sources", "剧情角色来源"),
     "Exported assets": ui("Exported assets", "导出资源"),
   }[source] || source);
+  const EVIDENCE_TYPE_FILTERS = ["major_npc_asset", "npc_animal_asset", "dlg_npc_asset", "icon_npc_asset", "sns_npc_asset", "actor_asset", "npc_asset"];
+  const evidenceTypeLabel = (type) => ({
+    actor_asset: ui("Story actor", "剧情角色"),
+    major_npc_asset: ui("Major NPC", "重要 NPC"),
+    dlg_npc_asset: ui("Dialogue NPC", "对话 NPC"),
+    icon_npc_asset: ui("Icon NPC", "图标 NPC"),
+    sns_npc_asset: ui("SNS NPC", "社交 NPC"),
+    npc_animal_asset: ui("Animal NPC", "动物 NPC"),
+    npc_asset: ui("Asset NPC", "资源 NPC"),
+  }[type] || type);
+  const SPECIAL_FILTERS = ["no_i18n", "merged", "needs_merge", "name_overridden"];
+  const specialFilterLabel = (key) => ({
+    no_i18n: ui("No official name", "无官方译名"),
+    merged: ui("Manually merged", "已合并"),
+    needs_merge: ui("Flagged: needs merge", "已标记：待合并"),
+    name_overridden: ui("Name overridden", "已覆盖名称"),
+  }[key] || key);
+  // A group has no official name when every observed name came from the
+  // "Exported asset identifier" fallback (i.e. no CharacterTable/NpcTable/
+  // TextTable/SNSChatTable/Story actor registry entry ever named it).
+  function hasOfficialName(row) {
+    return (row.names || []).some((name) => name.source !== "Exported asset identifier");
+  }
+  const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"]);
+  function isImagePath(path) {
+    const name = String(path || "").split(/[?#]/)[0];
+    const dotIdx = name.lastIndexOf(".");
+    if (dotIdx < 0) return false;
+    return IMAGE_EXTENSIONS.has(name.slice(dotIdx).toLowerCase());
+  }
+  // Same fallback used by the Updates feature: the full sourceRoots map lives
+  // in the ~150MB assets/index.json, so this mirrors its convert_by_type
+  // layout instead of loading that file just to preview a thumbnail.
+  const ASSET_SOURCE_ROOTS = {
+    StreamingAssets: "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type",
+    "StreamingAssets-maps": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps",
+    "StreamingAssets-structured": "export_full/structured/StreamingAssets",
+    Persistent: "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type",
+    "Persistent-maps": "export_full/recovered/AnimeStudio-cli/Persistent/maps",
+    "Persistent-structured": "export_full/structured/Persistent",
+    Audio: "export_full/structured/Audio",
+  };
+  function assetImageHref(rel) {
+    const exportFullHref = window.WebUI?.exportFullHref;
+    return exportFullHref ? exportFullHref(rel, ASSET_SOURCE_ROOTS, "export_full") : "";
+  }
   const kindLabel = (kind) => ({
     character: ui("Playable character", "可玩角色"),
     npc: "NPC",
@@ -58,26 +116,39 @@
       .sort();
   }
 
+  // A stable, language-independent id for an auto-grouped identity: the
+  // smallest of its constituent record ids (table/asset keys, e.g.
+  // "chr_0017_yvonne" or "aglina"). Those ids come from table keys and
+  // English filename markers, not localized text, so — unlike the display
+  // name used below to detect which records belong together — this id stays
+  // the same across every language build, and is safe to persist in manual
+  // merge overrides.
+  function canonicalGroupId(records) {
+    const ids = (records || []).map((r) => normalizedName(r.id)).filter(Boolean).sort();
+    return ids[0] || "";
+  }
+
   function groupedRecords() {
-    const groups = new Map();
+    const byName = new Map();
     for (const row of state.data?.records || []) {
       const primaryName = String(row.primaryName || row.id || "").trim();
       const nameKey = normalizedName(primaryName) || normalizedName(row.id);
-      const foundNames = knownNames(row);
-      const groupKey = JSON.stringify([nameKey, foundNames]);
-      let group = groups.get(groupKey);
+      let group = byName.get(nameKey);
       if (!group) {
         group = {
-          id: groupKey,
           primaryName,
-          knownNames: foundNames,
+          knownNames: [],
           records: [],
           kinds: [],
           sourceTypes: [],
           aliases: [],
           names: [],
         };
-        groups.set(groupKey, group);
+        byName.set(nameKey, group);
+      }
+      const foundNames = knownNames(row);
+      for (const fn of foundNames) {
+        if (!group.knownNames.includes(fn)) group.knownNames.push(fn);
       }
       group.records.push(row);
       if (row.kind && !group.kinds.includes(row.kind)) group.kinds.push(row.kind);
@@ -94,24 +165,224 @@
         }
       }
     }
-    return [...groups.values()].map((group) => ({
+
+    // Re-key by the stable canonical id now that each group's full member
+    // list is known — this id (not the localized nameKey used above just to
+    // detect co-membership) is what gets exposed and persisted.
+    const groups = new Map();
+    for (const group of byName.values()) {
+      const id = canonicalGroupId(group.records) || normalizedName(group.primaryName);
+      groups.set(id, { ...group, id });
+    }
+
+    const merges = state.mergeOverrides || {};
+    if (!Object.keys(merges).length) {
+      return applyNameOverrides([...groups.values()].map(finalizeGroup));
+    }
+
+    // Fold merged-away groups into their resolved root last, so a root group
+    // (one that isn't itself a merge source) always seeds the merged primaryName.
+    const order = [...groups.keys()].sort((a, b) => {
+      const aRoot = resolveMergeTarget(a, merges) === a ? 0 : 1;
+      const bRoot = resolveMergeTarget(b, merges) === b ? 0 : 1;
+      return aRoot - bRoot;
+    });
+    const merged = new Map();
+    for (const id of order) {
+      const group = groups.get(id);
+      const targetId = resolveMergeTarget(id, merges);
+      let target = merged.get(targetId);
+      if (!target) {
+        target = { id: targetId, primaryName: group.primaryName, knownNames: [], records: [], kinds: [], sourceTypes: [], aliases: [], names: [], mergedIds: [] };
+        merged.set(targetId, target);
+      }
+      if (id !== targetId) {
+        target.mergedIds.push(id);
+        target.aliases.push(group.primaryName, id);
+      }
+      target.knownNames.push(...group.knownNames);
+      target.records.push(...group.records);
+      target.kinds.push(...group.kinds);
+      target.sourceTypes.push(...group.sourceTypes);
+      target.aliases.push(...group.aliases);
+      target.names.push(...group.names);
+    }
+    return applyNameOverrides([...merged.values()].map(finalizeGroup));
+  }
+
+  function finalizeGroup(group) {
+    return {
       ...group,
-      kinds: [...group.kinds].sort(),
-      sourceTypes: [...group.sourceTypes].sort(),
-      aliases: [...group.aliases].sort(),
+      knownNames: [...new Set(group.knownNames)].sort(),
+      kinds: [...new Set(group.kinds)].sort(),
+      sourceTypes: [...new Set(group.sourceTypes)].sort(),
+      aliases: [...new Set(group.aliases)].sort(),
+      mergedIds: [...new Set(group.mergedIds || [])].sort(),
       names: group.names.map(({ _identity, ...name }) => name),
-    }));
+    };
+  }
+
+  // Applies a manual display-name override on top of an already-merged group:
+  // keyed by the same canonical id space character_merges.json targets use, so
+  // an override survives regrouping regardless of merge state. The detected
+  // name is preserved as `detectedName` and folded into aliases so it stays
+  // searchable even after being overridden.
+  function applyNameOverrides(rows) {
+    const overrides = state.nameOverrides || {};
+    return rows.map((row) => {
+      const override = String(overrides[row.id] || "").trim();
+      if (!override || override === row.primaryName) return row;
+      return {
+        ...row,
+        primaryName: override,
+        detectedName: row.primaryName,
+        nameOverridden: true,
+        aliases: [...new Set([...row.aliases, row.primaryName])].sort(),
+      };
+    });
+  }
+
+  function resolveMergeTarget(id, merges) {
+    let current = id;
+    const seen = new Set();
+    while (merges[current] && merges[current] !== current && !seen.has(current)) {
+      seen.add(current);
+      current = merges[current];
+    }
+    return current;
   }
 
   function allSources() {
     return [...new Set(groupedRecords().flatMap((row) => row.sourceTypes || []))].sort();
   }
 
+  function allEvidenceTypes() {
+    const types = new Set();
+    for (const row of groupedRecords()) {
+      for (const record of row.records) {
+        for (const ev of (record.evidence || [])) {
+          if (ev.type && EVIDENCE_TYPE_FILTERS.includes(ev.type)) types.add(ev.type);
+        }
+      }
+    }
+    return EVIDENCE_TYPE_FILTERS.filter((t) => types.has(t));
+  }
+
+  function rowStats(row) {
+    let evidenceGroups = 0;
+    let assetPathSamples = 0;
+    let assetCount = 0;
+    for (const record of row.records || []) {
+      const evidence = record.evidence || [];
+      evidenceGroups += evidence.length;
+      for (const item of evidence) {
+        assetPathSamples += (item.paths || []).length;
+        // `count` is the true number of matching exported files (paths[] is
+        // just a capped sample of it); table-row evidence has no `count`.
+        assetCount += Number(item.count) || 0;
+      }
+    }
+    return { identities: (row.records || []).length, evidenceGroups, assetPathSamples, assetCount };
+  }
+
+  // Renders a dual-handle range slider into `containerSel` for `state[stateKey]`,
+  // a [min, max] pair where max === Infinity means "no upper bound". The slider's
+  // own max is the largest observed value across `records`; dragging the upper
+  // handle all the way to that end is what represents "infinity", so the bound
+  // widens automatically as new data raises the ceiling.
+  function renderCountRangeFilter(containerSel, stateKey, metricKey, records, labelText) {
+    const container = state.container?.querySelector(containerSel);
+    if (!container) return;
+    const dataMax = records.reduce((best, row) => Math.max(best, rowStats(row)[metricKey]), 0);
+    const safeMax = Math.max(1, dataMax);
+    const range = state[stateKey];
+    const lo = Math.min(Math.max(0, range[0]), safeMax);
+    const hi = Number.isFinite(range[1]) ? Math.min(Math.max(lo, range[1]), safeMax) : safeMax;
+    const loPct = (lo / safeMax) * 100;
+    const hiPct = (hi / safeMax) * 100;
+    const infinityLabel = ui("∞", "∞");
+    const hiText = hi >= safeMax ? infinityLabel : hi.toLocaleString();
+    container.innerHTML = `
+      <label>${esc(labelText)}</label>
+      <div class="characters-range-value">${lo.toLocaleString()} – ${hiText}</div>
+      <div class="characters-range-slider" style="--characters-range-lo:${loPct}%;--characters-range-hi:${hiPct}%">
+        <div class="characters-range-track"></div>
+        <div class="characters-range-fill"></div>
+        <input type="range" class="characters-range-input characters-range-min" min="0" max="${safeMax}" step="1" value="${lo}" aria-label="${esc(labelText)} ${esc(ui("minimum", "最小值"))}">
+        <input type="range" class="characters-range-input characters-range-max" min="0" max="${safeMax}" step="1" value="${hi}" aria-label="${esc(labelText)} ${esc(ui("maximum", "最大值"))}">
+      </div>`;
+    const sliderEl = container.querySelector(".characters-range-slider");
+    const minInput = container.querySelector(".characters-range-min");
+    const maxInput = container.querySelector(".characters-range-max");
+    const valueEl = container.querySelector(".characters-range-value");
+    let renderScheduled = false;
+    const scheduleListRender = () => {
+      if (renderScheduled) return;
+      renderScheduled = true;
+      requestAnimationFrame(() => {
+        renderScheduled = false;
+        renderList();
+      });
+    };
+    const sync = (moved) => {
+      let loVal = Number(minInput.value);
+      let hiVal = Number(maxInput.value);
+      if (loVal > hiVal) {
+        if (moved === "min") { hiVal = loVal; maxInput.value = String(hiVal); }
+        else { loVal = hiVal; minInput.value = String(loVal); }
+      }
+      sliderEl.style.setProperty("--characters-range-lo", `${(loVal / safeMax) * 100}%`);
+      sliderEl.style.setProperty("--characters-range-hi", `${(hiVal / safeMax) * 100}%`);
+      valueEl.textContent = `${loVal.toLocaleString()} – ${hiVal >= safeMax ? infinityLabel : hiVal.toLocaleString()}`;
+      state[stateKey] = [loVal, hiVal >= safeMax ? Infinity : hiVal];
+      scheduleListRender();
+    };
+    minInput.addEventListener("input", () => sync("min"));
+    maxInput.addEventListener("input", () => sync("max"));
+  }
+
+  // Each entry drives one range slider in the "Evidence counts" filter group:
+  // stateKey holds the [min, max] pair (max === Infinity means unbounded),
+  // metricKey looks the current value up on rowStats(row).
+  const COUNT_RANGE_FILTERS = [
+    { stateKey: "identitiesRange", metricKey: "identities" },
+    { stateKey: "evidenceGroupsRange", metricKey: "evidenceGroups" },
+    { stateKey: "assetCountRange", metricKey: "assetCount" },
+  ];
+
+  // A range filter counts as "active" once it's been narrowed off its
+  // full-span default — shared by the list filter and the active-count badge
+  // so the two never disagree about which ranges are actually constraining.
+  function activeCountRangeFilters() {
+    return COUNT_RANGE_FILTERS.filter(({ stateKey }) => {
+      const range = state[stateKey];
+      return range[0] > 0 || Number.isFinite(range[1]);
+    });
+  }
+
   function filteredRecords() {
     const query = state.query.trim().toLocaleLowerCase();
+    const activeCountFilters = activeCountRangeFilters();
     return groupedRecords().filter((row) => {
       if (state.kind !== "all" && !(row.kinds || []).includes(state.kind)) return false;
       if (state.source !== "all" && !(row.sourceTypes || []).includes(state.source)) return false;
+      if (state.evidenceType !== "all") {
+        const hasType = row.records.some((r) => (r.evidence || []).some((e) => e.type === state.evidenceType));
+        if (!hasType) return false;
+      }
+      if (activeCountFilters.length) {
+        const stats = rowStats(row);
+        for (const { stateKey, metricKey } of activeCountFilters) {
+          const [min, max] = state[stateKey];
+          const value = stats[metricKey];
+          if (value < min) return false;
+          if (Number.isFinite(max) && value > max) return false;
+        }
+      }
+      if (state.specialFilters.has("no_i18n") && hasOfficialName(row)) return false;
+      if (state.specialFilters.has("merged") && !(row.mergedIds || []).length) return false;
+      if (state.specialFilters.has("needs_merge") && !state.flaggedIds.has(row.id)) return false;
+      if (state.specialFilters.has("name_overridden") && !row.nameOverridden) return false;
       if (!query) return true;
       const haystack = [
         row.id,
@@ -168,6 +439,47 @@
       count: sourceCounts,
       onToggle: (next) => {
         state.source = next || "all";
+        renderFilterChips();
+        renderList();
+      },
+    });
+    const evidenceTypeCounts = new Map();
+    for (const row of records) {
+      const rowTypes = new Set();
+      for (const record of row.records) {
+        for (const ev of (record.evidence || [])) {
+          if (ev.type && EVIDENCE_TYPE_FILTERS.includes(ev.type)) rowTypes.add(ev.type);
+        }
+      }
+      for (const t of rowTypes) {
+        evidenceTypeCounts.set(t, (evidenceTypeCounts.get(t) || 0) + 1);
+      }
+    }
+    buildChips("#characters-evidence-type-filter", allEvidenceTypes(), {
+      active: state.evidenceType === "all" ? "" : state.evidenceType,
+      single: true,
+      label: (type) => evidenceTypeLabel(type),
+      count: evidenceTypeCounts,
+      onToggle: (next) => {
+        state.evidenceType = next || "all";
+        renderFilterChips();
+        renderList();
+      },
+    });
+    renderCountRangeFilter("#characters-identities-range", "identitiesRange", "identities", records, ui("Identities", "身份数"));
+    renderCountRangeFilter("#characters-evidence-range", "evidenceGroupsRange", "evidenceGroups", records, ui("Evidence groups", "证据组数"));
+    renderCountRangeFilter("#characters-asset-count-range", "assetCountRange", "assetCount", records, ui("Assets", "资源数量"));
+    const specialCounts = new Map([
+      ["no_i18n", records.filter((row) => !hasOfficialName(row)).length],
+      ["merged", records.filter((row) => (row.mergedIds || []).length).length],
+      ["needs_merge", records.filter((row) => state.flaggedIds.has(row.id)).length],
+      ["name_overridden", records.filter((row) => row.nameOverridden).length],
+    ]);
+    buildChips("#characters-special-filter", SPECIAL_FILTERS, {
+      active: state.specialFilters,
+      label: (key) => specialFilterLabel(key),
+      count: specialCounts,
+      onToggle: () => {
         renderFilterChips();
         renderList();
       },
@@ -325,7 +637,7 @@
 
         <div id="characters-filter-panel" class="filters">
           <section class="filter-section filter-section-basic" data-filter-section="characters-basic" data-fixed-open="1">
-            <div class="filter-section-title"><span>${ui("Basic filters", "基础筛选")}</span></div>
+            <div class="filter-section-title"><span id="characters-basic-filter-label">${ui("Basic filters", "基础筛选")}</span></div>
             <div class="filter-section-body filter-section-body-stack">
               <div class="filter-control-row">
                 <label for="characters-q">${ui("Search", "搜索")}</label>
@@ -335,7 +647,7 @@
           </section>
           <section class="filter-section is-collapsed" data-filter-section="characters-kind">
             <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="characters-kind-filter-body">
-              <span>${ui("Kind", "类型")}</span>
+              <span id="characters-kind-filter-label">${ui("Kind", "类型")}</span>
             </button>
             <div id="characters-kind-filter-body" class="filter-section-body" hidden>
               <div id="characters-kind-filter" class="chips" data-multi="1"></div>
@@ -343,10 +655,36 @@
           </section>
           <section class="filter-section is-collapsed" data-filter-section="characters-source">
             <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="characters-source-filter-body">
-              <span>${ui("Evidence source", "证据来源")}</span>
+              <span id="characters-source-filter-label">${ui("Evidence source", "证据来源")}</span>
             </button>
             <div id="characters-source-filter-body" class="filter-section-body" hidden>
               <div id="characters-source-filter" class="chips" data-multi="1"></div>
+            </div>
+          </section>
+          <section class="filter-section is-collapsed" data-filter-section="characters-evidence-type">
+            <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="characters-evidence-type-filter-body">
+              <span id="characters-evidence-type-filter-label">${ui("NPC type", "NPC类型")}</span>
+            </button>
+            <div id="characters-evidence-type-filter-body" class="filter-section-body" hidden>
+              <div id="characters-evidence-type-filter" class="chips" data-multi="1"></div>
+            </div>
+          </section>
+          <section class="filter-section is-collapsed" data-filter-section="characters-counts">
+            <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="characters-counts-filter-body">
+              <span id="characters-counts-filter-label">${ui("Evidence counts", "证据数量")}</span>
+            </button>
+            <div id="characters-counts-filter-body" class="filter-section-body filter-section-body-stack" hidden>
+              <div class="filter-control-row characters-range-row" id="characters-identities-range"></div>
+              <div class="filter-control-row characters-range-row" id="characters-evidence-range"></div>
+              <div class="filter-control-row characters-range-row" id="characters-asset-count-range"></div>
+            </div>
+          </section>
+          <section class="filter-section is-collapsed" data-filter-section="characters-special">
+            <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="characters-special-filter-body">
+              <span id="characters-special-filter-label">${ui("Other", "其他筛选")}</span>
+            </button>
+            <div id="characters-special-filter-body" class="filter-section-body" hidden>
+              <div id="characters-special-filter" class="chips" data-multi="1"></div>
             </div>
           </section>
         </div>
@@ -364,6 +702,11 @@
       state.query = "";
       state.kind = "all";
       state.source = "all";
+      state.evidenceType = "all";
+      state.identitiesRange = [0, Infinity];
+      state.evidenceGroupsRange = [0, Infinity];
+      state.assetCountRange = [0, Infinity];
+      state.specialFilters.clear();
       const search = state.container.querySelector("#characters-q");
       if (search) search.value = "";
       renderFilterChips();
@@ -376,28 +719,45 @@
     renderList();
   }
 
+  // Mirrors the (N) active-filter badge the Story and Text Tables pages show
+  // on each filter section title — same shared helper, same section keys as
+  // the `data-filter-section` attributes in renderShell().
+  function syncFilterSectionActiveCounts() {
+    window.WebUI?.setFilterSectionActiveCounts?.({
+      "characters-basic": state.query.trim() ? 1 : 0,
+      "characters-kind": state.kind === "all" ? 0 : 1,
+      "characters-source": state.source === "all" ? 0 : 1,
+      "characters-evidence-type": state.evidenceType === "all" ? 0 : 1,
+      "characters-counts": activeCountRangeFilters().length,
+      "characters-special": state.specialFilters.size,
+    });
+  }
+
   function renderList() {
     const list = state.container?.querySelector("#characters-list");
     const meta = state.container?.querySelector("#characters-list-meta");
     if (!list || !meta) return;
+    syncFilterSectionActiveCounts();
     const rows = filteredRecords();
     if (state.selectedId && !rows.some((row) => row.id === state.selectedId)) state.selectedId = "";
     if (!state.selectedId && rows.length) state.selectedId = rows[0].id;
     meta.textContent = `${rows.length.toLocaleString()} ${ui("matching names", "个匹配名称")}`;
-    list.innerHTML = rows.map((row) => `
+    list.innerHTML = rows.map((row) => {
+      const evidenceTypes = [...new Set(row.records.flatMap((r) => (r.evidence || []).map((e) => e.type).filter(Boolean)))].sort();
+      const typeTags = evidenceTypes.map((t) => `<span class="characters-evidence-type" data-evidence-type="${esc(t)}">${esc(evidenceTypeLabel(t))}</span>`).join("");
+      const stats = rowStats(row);
+      return `
       <button class="characters-list-row${row.id === state.selectedId ? " is-selected" : ""}" type="button" data-character-id="${esc(row.id)}">
-        <span class="characters-row-name">${esc(row.primaryName || row.id)}</span>
+        <span class="characters-row-name">${(row.kinds || []).map((kind) => `<span class="characters-kind">${esc(kindLabel(kind))}</span>`).join(" ")} ${esc(row.primaryName || row.id)}</span>
+        ${typeTags ? `<span class="characters-row-sources">${typeTags}</span>` : ""}
         <span class="characters-row-meta">
           <span>${(row.kinds || []).map((kind) => esc(kindLabel(kind))).join(" · ")}</span>
-          <code>${row.records.length.toLocaleString()} ${ui(row.records.length === 1 ? "identity" : "identities", "身份")}</code>
+          <code>${stats.identities.toLocaleString()} ${ui(stats.identities === 1 ? "identity" : "identities", "身份")}</code>
+          <code>${stats.evidenceGroups.toLocaleString()} ${ui(stats.evidenceGroups === 1 ? "evidence group" : "evidence groups", "组证据")}</code>
+          <code>${stats.assetPathSamples.toLocaleString()} ${ui(stats.assetPathSamples === 1 ? "asset path sample" : "asset path samples", "资源路径示例")}</code>
         </span>
-        ${(row.knownNames || []).some((name) => name !== normalizedName(row.primaryName)) ? `
-          <span class="characters-row-found-names">${ui("Also found", "其他名称")}: ${row.knownNames
-            .filter((name) => name !== normalizedName(row.primaryName))
-            .map(esc)
-            .join(" · ")}</span>` : ""}
-        <span class="characters-row-sources">${(row.sourceTypes || []).map((source) => `<span>${esc(sourceLabel(source))}</span>`).join("")}</span>
-      </button>`).join("");
+      </button>`;
+    }).join("");
     list.querySelectorAll("[data-character-id]").forEach((button) => {
       button.addEventListener("click", () => {
         state.selectedId = button.dataset.characterId || "";
@@ -430,7 +790,16 @@
   }
 
   function renderAssetPathLink(rel) {
-    return `<a class="characters-asset-link" href="${esc(assetPageUrl(rel))}" title="${esc(ui("Open in Assets", "在资源页打开"))}"><code>${esc(rel)}</code></a>`;
+    const url = assetPageUrl(rel);
+    const title = esc(ui("Open in Assets", "在资源页打开"));
+    if (isImagePath(rel)) {
+      const imgPath = assetImageHref(rel);
+      return `<a class="characters-asset-link has-preview" href="${esc(url)}" title="${title}">
+        <code>${esc(rel)}</code>
+        <span class="characters-asset-preview"><img src="${esc(imgPath)}" alt="${esc(rel)}" loading="lazy" onerror="this.closest('.has-preview').classList.remove('has-preview')"/></span>
+      </a>`;
+    }
+    return `<a class="characters-asset-link" href="${esc(url)}" title="${title}"><code>${esc(rel)}</code></a>`;
   }
 
   function renderEvidence(item) {
@@ -443,13 +812,20 @@
       <article class="characters-evidence">
         <header>
           <span class="characters-evidence-source">${esc(sourceLabel(item.source))}</span>
-          <span class="characters-evidence-type">${esc(String(item.type || "").replaceAll("_", " "))}</span>
+          ${item.type ? `<span class="characters-evidence-type" title="${esc(String(item.type).replaceAll("_", " "))}">${esc(evidenceTypeLabel(item.type))}</span>` : ""}
         </header>
         ${evidenceKey}
         ${facts.length ? `<ul>${facts.map((fact) => `<li>${esc(fact)}</li>`).join("")}</ul>` : ""}
         ${item.note ? `<p>${esc(item.note)}</p>` : ""}
-        ${paths.length ? `<details><summary>${ui("Asset path samples", "资源路径示例")} (${paths.length}${item.count > paths.length ? ` / ${item.count}` : ""})</summary><div class="characters-paths">${paths.map((path) => renderAssetPathLink(path)).join("")}</div></details>` : ""}
+        ${paths.length ? (item.count < 20 ? `<div class="characters-paths" style="margin-top:.5rem">${paths.map((path) => renderAssetPathLink(path)).join("")}</div>` : `<details><summary>${ui("Asset path samples", "资源路径示例")} (${paths.length}${item.count > paths.length ? ` / ${item.count}` : ""})</summary><div class="characters-paths">${paths.map((path) => renderAssetPathLink(path)).join("")}</div></details>`) : ""}
       </article>`;
+  }
+
+  function mergeTargetOptions(excludeId) {
+    return groupedRecords()
+      .filter((row) => row.id !== excludeId)
+      .map((row) => ({ id: row.id, label: row.primaryName || row.id }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }
 
   function renderDetail() {
@@ -460,14 +836,20 @@
       detail.innerHTML = `<div class="characters-empty">${ui("Select an identity to inspect its names and evidence.", "选择一个身份以查看名称与证据。")}</div>`;
       return;
     }
+    const stats = rowStats(row);
+    const isFlagged = state.flaggedIds.has(row.id);
     detail.innerHTML = `
       <header class="characters-detail-header">
         <div>
           ${(row.kinds || []).map((kind) => `<span class="characters-kind">${esc(kindLabel(kind))}</span>`).join(" ")}
+          ${row.nameOverridden ? `<span class="characters-kind characters-name-override-badge">${esc(ui("Renamed", "已改名"))}</span>` : ""}
           <h2>${esc(row.primaryName || row.id)}</h2>
-          <code>${row.records.length.toLocaleString()} ${ui(row.records.length === 1 ? "grouped identity" : "grouped identities", "已合并身份")}</code>
+          <code>${stats.identities.toLocaleString()} ${ui(stats.identities === 1 ? "grouped identity" : "grouped identities", "已合并身份")}</code>
         </div>
-        <div class="characters-detail-count">${row.records.reduce((total, identity) => total + (identity.evidence || []).length, 0)} ${ui("evidence groups", "组证据")}</div>
+        <div class="characters-detail-count">
+          <div>${stats.evidenceGroups.toLocaleString()} ${ui("evidence groups", "组证据")}</div>
+          <div>${stats.assetPathSamples.toLocaleString()} ${ui("asset path samples", "资源路径示例")}</div>
+        </div>
       </header>
       <section class="characters-section">
         <h3>${ui("Grouped identities", "已合并的身份")}</h3>
@@ -493,6 +875,50 @@
         <h3>${ui("Identifiers and aliases", "标识与别名")}</h3>
         <div class="characters-aliases">${(row.aliases || []).map((alias) => `<code>${esc(alias)}</code>`).join("")}</div>
       </section>
+      <section class="characters-section characters-merge-section">
+        <h3>${ui("Display name override", "覆盖显示名称")}</h3>
+        ${row.nameOverridden ? `
+          <div class="characters-name-detected-row">
+            <span class="characters-merge-list-label">${ui("Detected name:", "自动识别名称：")}</span>
+            <span class="characters-merge-chip">
+              <code>${esc(row.detectedName)}</code>
+              <button type="button" class="characters-merge-undo" data-name-reset="${esc(row.id)}" title="${esc(ui("Reset to detected name", "重置为识别名称"))}">&times;</button>
+            </span>
+          </div>` : ""}
+        <form class="characters-merge-form characters-name-form" data-name-source="${esc(row.id)}">
+          <label for="characters-name-input">${ui("Custom display name", "自定义显示名称")}</label>
+          <div class="characters-merge-form-row">
+            <input id="characters-name-input" type="text" value="${esc(row.primaryName || row.id)}" placeholder="${esc(ui("Display name…", "显示名称…"))}" autocomplete="off">
+            <button type="submit">${ui("Save", "保存")}</button>
+          </div>
+          <p id="characters-name-status" class="characters-merge-status"></p>
+        </form>
+      </section>
+      <section class="characters-section characters-merge-section">
+        <h3>${ui("Manual identity merge", "手动合并身份")}</h3>
+        <div class="characters-merge-flag-row">
+          <button type="button" class="characters-flag-toggle${isFlagged ? " is-active" : ""}" data-flag-id="${esc(row.id)}">
+            ${isFlagged ? ui("✓ Flagged: needs merge", "✓ 已标记：待合并") : ui("Flag: needs merge (target unknown)", "标记：待合并（合并对象未知）")}
+          </button>
+        </div>
+        ${(row.mergedIds || []).length ? `
+          <p class="characters-merge-list-label">${ui("Merged into this identity:", "已合并到此身份：")}</p>
+          <div class="characters-merge-list">${row.mergedIds.map((id) => `
+            <span class="characters-merge-chip">
+              <code>${esc(id)}</code>
+              <button type="button" class="characters-merge-undo" data-unmerge-id="${esc(id)}" title="${esc(ui("Undo merge", "撤销合并"))}">&times;</button>
+            </span>`).join("")}
+          </div>` : ""}
+        <form class="characters-merge-form" data-merge-source="${esc(row.id)}">
+          <label for="characters-merge-target">${ui("Merge this identity into", "将此身份合并到")}</label>
+          <div class="characters-merge-form-row">
+            <input id="characters-merge-target" list="characters-merge-target-options" placeholder="${ui("Type a name or id…", "输入名称或 ID…")}" autocomplete="off">
+            <button type="submit">${ui("Merge", "合并")}</button>
+          </div>
+          <datalist id="characters-merge-target-options">${mergeTargetOptions(row.id).map((opt) => `<option value="${esc(opt.label)}">${esc(opt.id)}</option>`).join("")}</datalist>
+          <p id="characters-merge-status" class="characters-merge-status"></p>
+        </form>
+      </section>
       <section class="characters-section">
         <h3>${ui("Evidence", "证据")}</h3>
         <div class="characters-identity-evidence-list">${row.records.map((identity) => `
@@ -506,6 +932,254 @@
           </section>`).join("")}
         </div>
       </section>`;
+    detail.querySelectorAll("[data-unmerge-id]").forEach((button) => {
+      button.addEventListener("click", () => unmergeCharacter(button.dataset.unmergeId || ""));
+    });
+    detail.querySelector("[data-flag-id]")?.addEventListener("click", (event) => {
+      toggleNeedsMerge(event.currentTarget.dataset.flagId || "");
+    });
+    detail.querySelector("[data-name-reset]")?.addEventListener("click", (event) => {
+      clearNameOverride(event.currentTarget.dataset.nameReset || "");
+    });
+    const nameForm = detail.querySelector("[data-name-source]");
+    nameForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const sourceId = nameForm.dataset.nameSource || "";
+      const input = nameForm.querySelector("#characters-name-input");
+      const typed = String(input?.value || "").trim();
+      if (!typed) {
+        setNameStatus(ui("Enter a name.", "请输入名称。"), "error");
+        return;
+      }
+      const detected = row.nameOverridden ? row.detectedName : row.primaryName;
+      if (typed === String(detected || "").trim()) {
+        clearNameOverride(sourceId);
+        return;
+      }
+      setNameOverride(sourceId, typed);
+    });
+    const mergeForm = detail.querySelector("[data-merge-source]");
+    mergeForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const sourceId = mergeForm.dataset.mergeSource || "";
+      const input = mergeForm.querySelector("#characters-merge-target");
+      const typed = String(input?.value || "").trim().toLocaleLowerCase();
+      if (!typed) return;
+      const options = mergeTargetOptions(sourceId);
+      const match = options.find((opt) => opt.label.toLocaleLowerCase() === typed)
+        || options.find((opt) => opt.id.toLocaleLowerCase() === typed);
+      if (!match) {
+        setMergeStatus(ui("No matching identity found. Pick one from the list.", "未找到匹配身份，请从列表中选择。"), "error");
+        return;
+      }
+      mergeCharacterInto(sourceId, match.id);
+    });
+  }
+
+  function setMergeStatus(text, cls) {
+    const node = state.container?.querySelector("#characters-merge-status");
+    if (!node) return;
+    node.textContent = text || "";
+    node.className = "characters-merge-status" + (cls ? ` is-${cls}` : "");
+  }
+
+  function mergeCharacterInto(sourceId, targetId) {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    const merges = { ...(state.mergeOverrides || {}) };
+    let probe = targetId;
+    const seen = new Set();
+    while (merges[probe]) {
+      if (probe === sourceId || seen.has(probe)) {
+        setMergeStatus(ui("That merge would create a cycle.", "该合并会形成循环。"), "error");
+        return;
+      }
+      seen.add(probe);
+      probe = merges[probe];
+    }
+    merges[sourceId] = targetId;
+    state.mergeOverrides = merges;
+    // The merge resolves whatever review was pending — clear the flag now
+    // that it has an actual target instead of leaving a stale "needs merge".
+    state.flaggedIds.delete(sourceId);
+    const resolvedTarget = resolveMergeTarget(targetId, merges);
+    // The source id stops being a top-level group id once merged away, so a
+    // name override keyed on it would otherwise go silently unapplied —
+    // carry it over to the target (without clobbering a target override).
+    let nameOverridesChanged = false;
+    if (state.nameOverrides && sourceId in state.nameOverrides) {
+      const overrides = { ...state.nameOverrides };
+      const carried = overrides[sourceId];
+      delete overrides[sourceId];
+      if (!(resolvedTarget in overrides)) overrides[resolvedTarget] = carried;
+      state.nameOverrides = overrides;
+      nameOverridesChanged = true;
+    }
+    state.selectedId = resolvedTarget;
+    renderFilterChips();
+    renderList();
+    setMergeStatus(ui("Saving…", "正在保存…"), "saving");
+    Promise.all([saveMergeOverrides(), nameOverridesChanged ? saveNameOverrides() : Promise.resolve()])
+      .then(() => setMergeStatus(ui("Saved", "已保存"), "saved"))
+      .catch((error) => {
+        console.warn("Unable to save character overrides", error);
+        setMergeStatus(ui("Failed to save merge", "保存合并失败"), "error");
+      });
+  }
+
+  function toggleNeedsMerge(id) {
+    if (!id) return;
+    if (state.flaggedIds.has(id)) state.flaggedIds.delete(id);
+    else state.flaggedIds.add(id);
+    renderFilterChips();
+    renderList();
+    setMergeStatus(ui("Saving…", "正在保存…"), "saving");
+    saveMergeOverrides()
+      .then(() => setMergeStatus(ui("Saved", "已保存"), "saved"))
+      .catch((error) => {
+        console.warn("Unable to save overrides/character_merges.json", error);
+        setMergeStatus(ui("Failed to save flag", "保存标记失败"), "error");
+      });
+  }
+
+  function unmergeCharacter(sourceId) {
+    if (!sourceId || !state.mergeOverrides || !(sourceId in state.mergeOverrides)) return;
+    const merges = { ...state.mergeOverrides };
+    delete merges[sourceId];
+    state.mergeOverrides = merges;
+    renderFilterChips();
+    renderList();
+    setMergeStatus(ui("Saving…", "正在保存…"), "saving");
+    saveMergeOverrides()
+      .then(() => setMergeStatus(ui("Saved", "已保存"), "saved"))
+      .catch((error) => {
+        console.warn("Unable to save overrides/character_merges.json", error);
+        setMergeStatus(ui("Failed to save merge", "保存合并失败"), "error");
+      });
+  }
+
+  function setNameStatus(text, cls) {
+    const node = state.container?.querySelector("#characters-name-status");
+    if (!node) return;
+    node.textContent = text || "";
+    node.className = "characters-merge-status" + (cls ? ` is-${cls}` : "");
+  }
+
+  function setNameOverride(id, name) {
+    if (!id) return;
+    const trimmed = String(name || "").trim();
+    if (!trimmed) {
+      setNameStatus(ui("Enter a name.", "请输入名称。"), "error");
+      return;
+    }
+    state.nameOverrides = { ...(state.nameOverrides || {}), [id]: trimmed };
+    renderFilterChips();
+    renderList();
+    setNameStatus(ui("Saving…", "正在保存…"), "saving");
+    saveNameOverrides()
+      .then(() => setNameStatus(ui("Saved", "已保存"), "saved"))
+      .catch((error) => {
+        console.warn("Unable to save overrides/character_name_overrides.json", error);
+        setNameStatus(ui("Failed to save name", "保存名称失败"), "error");
+      });
+  }
+
+  function clearNameOverride(id) {
+    if (!id || !state.nameOverrides || !(id in state.nameOverrides)) return;
+    const overrides = { ...state.nameOverrides };
+    delete overrides[id];
+    state.nameOverrides = overrides;
+    renderFilterChips();
+    renderList();
+    setNameStatus(ui("Saving…", "正在保存…"), "saving");
+    saveNameOverrides()
+      .then(() => setNameStatus(ui("Saved", "已保存"), "saved"))
+      .catch((error) => {
+        console.warn("Unable to save overrides/character_name_overrides.json", error);
+        setNameStatus(ui("Failed to reset name", "重置名称失败"), "error");
+      });
+  }
+
+  async function loadNameOverrides(force = false) {
+    if (state.nameOverrides && !force) return state.nameOverrides;
+    try {
+      const response = await fetch(NAME_OVERRIDE_PATH, { cache: "no-store" });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      const payload = await response.json();
+      const names = payload && payload.names && typeof payload.names === "object" ? payload.names : {};
+      state.nameOverrides = { ...names };
+    } catch (error) {
+      console.warn("Unable to load overrides/character_name_overrides.json", error);
+      state.nameOverrides = state.nameOverrides || {};
+    }
+    return state.nameOverrides;
+  }
+
+  function saveNameOverrides() {
+    const payload = {
+      _schema: NAME_OVERRIDE_SCHEMA,
+      _note: "Manual display name overrides for the Characters page. Each key is a character id (the canonical grouped identity id, same id space as character_merges.json) mapped to the display name that replaces its detected primaryName. Edited from the Characters page UI.",
+      names: state.nameOverrides || {},
+    };
+    return fetch(NAME_OVERRIDE_PATH, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify(payload, null, 2) + "\n",
+    }).then(async (res) => {
+      if (!res.ok) {
+        let message = "";
+        try {
+          const body = await res.json();
+          message = body && body.error ? String(body.error) : "";
+        } catch (_error) {
+          message = "";
+        }
+        throw new Error(message || `HTTP ${res.status}`);
+      }
+      return true;
+    });
+  }
+
+  async function loadMergeOverrides(force = false) {
+    if (state.mergeOverrides && !force) return state.mergeOverrides;
+    try {
+      const response = await fetch(MERGE_OVERRIDE_PATH, { cache: "no-store" });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      const payload = await response.json();
+      const merges = payload && payload.merges && typeof payload.merges === "object" ? payload.merges : {};
+      state.mergeOverrides = { ...merges };
+      const flagged = Array.isArray(payload?.flagged) ? payload.flagged : [];
+      state.flaggedIds = new Set(flagged.filter((id) => typeof id === "string" && id));
+    } catch (error) {
+      console.warn("Unable to load overrides/character_merges.json", error);
+      state.mergeOverrides = state.mergeOverrides || {};
+    }
+    return state.mergeOverrides;
+  }
+
+  function saveMergeOverrides() {
+    const payload = {
+      _schema: MERGE_OVERRIDE_SCHEMA,
+      _note: "Manual identity merges for the Characters page. Each key is a character id (as shown in the app) folded into the value's id; the target inherits all names, evidence, and aliases from the merged key. `flagged` lists ids the user has marked as needing a merge whose target isn't known yet. Edited from the Characters page UI.",
+      merges: state.mergeOverrides || {},
+      flagged: [...state.flaggedIds].sort(),
+    };
+    return fetch(MERGE_OVERRIDE_PATH, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify(payload, null, 2) + "\n",
+    }).then(async (res) => {
+      if (!res.ok) {
+        let message = "";
+        try {
+          const body = await res.json();
+          message = body && body.error ? String(body.error) : "";
+        } catch (_error) {
+          message = "";
+        }
+        throw new Error(message || `HTTP ${res.status}`);
+      }
+      return true;
+    });
   }
 
   async function load(language = currentLanguage(), force = false) {
@@ -518,7 +1192,11 @@
     state.language = nextLanguage;
     if (state.container) state.container.innerHTML = `<div class="characters-empty">${ui("Loading character evidence…", "正在加载人物证据…")}</div>`;
     try {
-      const response = await fetch(dataPath(nextLanguage), { cache: "no-store" });
+      const [response] = await Promise.all([
+        fetch(dataPath(nextLanguage), { cache: "no-store" }),
+        loadMergeOverrides(force),
+        loadNameOverrides(force),
+      ]);
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       const data = await response.json();
       if (token !== state.loadToken) return null;

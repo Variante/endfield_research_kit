@@ -3,16 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>&#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855; / Endfield Research Kit</title>
+<title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260701-gp5">
-<link rel="stylesheet" href="style.css?v=20260725-shellaudit1">
-<link rel="stylesheet" href="src/features/projectiles/projectiles.css?v=20260715-combatmerge2">
-<link rel="stylesheet" href="src/features/combat/style.css?v=20260715-explain2">
-<link rel="stylesheet" href="src/features/economy/index.css?v=20260715-explain3">
-<link rel="stylesheet" href="src/features/world/style.css?v=20260715-worldmap2">
-<link rel="stylesheet" href="src/features/progression/style.css?v=20260715-explain2">
-<link rel="stylesheet" href="src/features/presentation/index.css?v=20260715-presentation4">
-  <link rel="stylesheet" href="src/features/characters/style.css?v=20260724-characters6">
+<link rel="stylesheet" href="style.css?v=20260809-projectiles7">
+  <link rel="stylesheet" href="src/features/characters/style.css?v=20260808-characters14">
   <link rel="stylesheet" href="src/features/mission_pipeline/style.css?v=20260808-leveldata2">
 </head>
 <body data-active-view="story">
@@ -34,19 +28,13 @@
     </div>
     <nav id="view-tabs" role="tablist" aria-label="Primary views" aria-describedby="view-tabs-hint" aria-orientation="horizontal">
       <span id="view-tabs-hint" class="sr-only">Use the left and right arrow keys to move between views.</span>
-      <button id="story-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="story-view" tabindex="0" data-view="story">&#21095;&#24773;</button>
-      <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay">Gameplay</button>
-      <button id="mission-pipeline-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="mission-pipeline-view" tabindex="-1" data-view="mission-pipeline" data-debug-view>Mission Pipeline (Experimental)</button>
-      <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-debug-view>&#20154;&#29289;</button>
-      <button id="progression-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="progression-view" tabindex="-1" data-view="progression" data-debug-view>Progression</button>
-      <button id="projectiles-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="projectiles-view" tabindex="-1" data-view="projectiles" data-debug-view>Combat &amp; Projectiles</button>
-      <button id="combat-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="combat-view" tabindex="-1" data-view="combat" data-debug-view>Combat</button>
-      <button id="economy-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="economy-view" tabindex="-1" data-view="economy" data-debug-view>Factory</button>
-      <button id="world-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="world-view" tabindex="-1" data-view="world" data-debug-view>World</button>
-      <button id="presentation-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="presentation-view" tabindex="-1" data-view="presentation" data-debug-view>Presentation</button>
-      <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets">&#36164;&#28304;</button>
-      <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference">&#25991;&#26412;</button>
-      <button id="updates-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="updates-view" tabindex="-1" data-view="updates">&#26356;&#26032;</button>
+      <button id="story-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="story-view" tabindex="0" data-view="story" data-i18n="storyTab">剧情</button>
+      <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-i18n="charactersTab">人物</button>
+      <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
+      <button id="mission-pipeline-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="mission-pipeline-view" tabindex="-1" data-view="mission-pipeline" data-debug-view data-i18n="missionPipelineTab">任务流程 (Experimental)</button>
+      <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets" data-i18n="assetsTab">资源</button>
+      <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
+      <button id="updates-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="updates-view" tabindex="-1" data-view="updates" data-i18n="updatesTab">更新</button>
     </nav>
     <div class="topbar-actions">
       <label class="topbar-control" for="language">
@@ -196,7 +184,7 @@
       <div id="reference-app">
         <aside id="reference-left">
           <header>
-            <h1 id="reference-title">&#25991;&#26412;</h1>
+            <h1 id="reference-title">&#25991;&#26412;&#34920;</h1>
             <div id="reference-stats"><span id="reference-count">?</span> <span id="reference-count-label">&#24352;&#34920;</span></div>
             <div class="sidebar-header-actions">
               <button id="reference-filter-toggle" class="panel-toggle" type="button" aria-controls="reference-filter-panel" aria-expanded="true">&#38544;&#34255;&#31579;&#36873;</button>
@@ -367,30 +355,6 @@
 
     <section id="mission-pipeline-view" class="page-view" data-view="mission-pipeline" role="tabpanel" aria-labelledby="mission-pipeline-tab" tabindex="0" hidden>
       <div id="mission-pipeline-app"></div>
-    </section>
-
-    <section id="projectiles-view" class="page-view" data-view="projectiles" role="tabpanel" aria-labelledby="projectiles-tab" tabindex="0" hidden>
-      <div id="projectile-inspector"></div>
-    </section>
-
-    <section id="progression-view" class="page-view" data-view="progression" role="tabpanel" aria-labelledby="progression-tab" tabindex="0" hidden>
-      <div id="progression-app"></div>
-    </section>
-
-    <section id="combat-view" class="page-view" data-view="combat" role="tabpanel" aria-labelledby="combat-tab" tabindex="0" hidden>
-      <div id="gameplay-combat-relationships"></div>
-    </section>
-
-    <section id="economy-view" class="page-view" data-view="economy" role="tabpanel" aria-labelledby="economy-tab" tabindex="0" hidden>
-      <div id="economy-app"></div>
-    </section>
-
-    <section id="world-view" class="page-view" data-view="world" role="tabpanel" aria-labelledby="world-tab" tabindex="0" hidden>
-      <div id="world-app"></div>
-    </section>
-
-    <section id="presentation-view" class="page-view" data-view="presentation" role="tabpanel" aria-labelledby="presentation-tab" tabindex="0" hidden>
-      <div id="presentation-app"></div>
     </section>
 
     <section id="updates-view" class="page-view" data-view="updates" role="tabpanel" aria-labelledby="updates-tab" tabindex="0" hidden>
@@ -663,23 +627,17 @@
 <script src="src/ui/media_player.js?v=20260701-gp5"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
 <script src="src/ui/filters.js?v=20260701-gp5"></script>
-<script src="app_labels.js?v=20260729-missionexperimental1"></script>
-<script src="app_tree.js?v=20260723-storytriggers2"></script>
+<script src="app_labels.js?v=20260808-titles1"></script>
+<script src="app_tree.js?v=20260808-gameplay-image-modal1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="app.js?v=20260725-mplayout2"></script>
-<script src="assets.js?v=20260729-missionexperimental1"></script>
-  <script src="src/features/characters/index.js?v=20260724-characters6"></script>
-<script src="src/features/gameplay/labels.js?v=20260701-gp5"></script>
-<script src="src/features/gameplay/index.js?v=20260701-gp5"></script>
-<script src="src/features/projectiles/index.js?v=20260715-combatmerge2"></script>
-<script src="src/features/combat/index.js?v=20260715-explain2"></script>
-<script src="src/features/economy/index.js?v=20260715-explain2"></script>
-<script src="src/features/world/index.js?v=20260715-worldmap2"></script>
-<script src="src/features/progression/index.js?v=20260715-explain2"></script>
-<script src="src/features/presentation/index.js?v=20260715-presentation3"></script>
+<script src="assets.js?v=20260808-titles1"></script>
+  <script src="src/features/characters/index.js?v=20260808-characters14"></script>
+<script src="src/features/gameplay/labels.js?v=20260809-sfx6"></script>
+    <script src="src/features/gameplay/index.js?v=20260809-sfx6"></script>
   <script src="src/features/mission_pipeline/index.js?v=20260808-dialogbranch3"></script>
-<script src="src/features/next_views.js?v=20260715-combatmerge1"></script>
-<script src="src/features/reference/index.js?v=20260701-gp5"></script>
+<script src="src/features/next_views.js?v=20260809-projectiles7"></script>
+<script src="src/features/reference/index.js?v=20260808-titles1"></script>
 <script src="src/features/updates/index.js?v=20260701-gp5"></script>
 </body>
 </html>
