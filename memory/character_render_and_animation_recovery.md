@@ -94,8 +94,15 @@ NPC archetypes are imported as labeled source kits.
   3,584, so the final CPU write is safe in padding. The recorded target forces
   D3D11; its backend rounds 222 constants to 224 before
   `PSSetConstantBuffers1`, exposing 3,584 bytes and proving c222 GPU-visible.
-  Only the settled active payload and matching HDPLS/atlas resources remain
-  open for this buffer.
+  Native getter/constructor recovery also closes the six HDPLS setting offsets
+  and current defaults: enabled, atlas height 2,048, reduced screen-space
+  resolution enabled, and zero depth bias/normal bias/softness. With
+  `S=max(256, atlasHeight)`, the atlas is `2S x S`; requests use a `4x2` grid
+  through eight entries or `8x4` above eight at the default. Normalized tile
+  rectangles, `(1/(2S),1/S,2S,S)` texel size, `(softness,0,0,0)` global params,
+  `float4(worldPosition,0)` screen-space positions, and both selector writes are
+  exact. Only settled matrices/params, their live inputs and resulting selector
+  values, plus matching HDPLS/atlas resources remain open for this buffer.
 
 ## Main rendering gap
 

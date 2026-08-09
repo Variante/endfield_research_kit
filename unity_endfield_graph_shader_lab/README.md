@@ -2050,7 +2050,18 @@ float4 is isolated in inter-allocation padding. The recorded target forces
 Direct3D 11; the installed backend converts `0xDE0` to 222 constants and rounds
 the `PSSetConstantBuffers1` range to 224 constants / `0xE00` bytes. The c222
 tail is therefore shader-visible on the target path. Publication remains
-fail-closed only for settled active values and their matching resources.
+fail-closed only for settled active values and their matching resources. The
+same native path now closes all six `HGSettingParameters` HDPLS offsets and the
+current constructor defaults: enabled, atlas height 2048, reduced screen-space
+resolution enabled, and zero depth bias/normal bias/softness. With
+`S=max(256,hdplsAtlasHeight)`, the atlas is `2S x S`; the default is `4096x2048`
+with a `4x2` tile grid through eight requests or `8x4` above eight. Each active
+params row is its normalized tile `xyxy`; atlas texel size is
+`(1/(2S),1/S,2S,S)`, global params are `(softness,0,0,0)`, screen-space
+positions are `float4(HGSharedLightData.worldPosition.xyz,0)`, and both channel
+and bit selectors have exact native formulas. Settled matrices/params, live
+inputs and resulting active selector values, plus matching HDPLS/atlas contents
+remain capture-only.
 The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution

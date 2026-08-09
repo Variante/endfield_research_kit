@@ -2420,6 +2420,13 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_native["d3d11_num_constants_before_alignment"] == 222
     assert hdpls_native["d3d11_num_constants"] == 224
     assert hdpls_native["d3d11_visible_size_bytes"] == 3584
+    assert hdpls_native["setting_defaults"] == (
+        "hdpls enabled; atlas height=2048; screen-space reduce-resolution "
+        "enabled; depth bias=0; normal bias=0; softness=0"
+    )
+    assert hdpls_native["default_atlas"] == (
+        "4096x2048; 4x2 grid for requestCount<=8, 8x4 grid for requestCount>8"
+    )
     assert hdpls_native["publication_policy"].startswith("fail closed")
     require_hash(
         repo_path(hdpls_native["audit_path"]),
@@ -2441,6 +2448,17 @@ def verify_selected_resolver_binding_contract() -> None:
         repo_path(hdpls_native["metadata_path"]),
         hdpls_native["metadata_sha256"],
     )
+    for path_key, hash_key in (
+        ("native_map_path", "native_map_sha256"),
+        ("setting_parameters_metadata_path", "setting_parameters_metadata_sha256"),
+        ("setting_parameters_native_path", "setting_parameters_native_sha256"),
+        ("setting_getters_metadata_path", "setting_getters_metadata_sha256"),
+        ("setting_getters_native_path", "setting_getters_native_sha256"),
+    ):
+        require_hash(
+            repo_path(hdpls_native[path_key]),
+            hdpls_native[hash_key],
+        )
     require_hash(
         repo_path(hdpls_native["constant_buffer_audit_path"]),
         hdpls_native["constant_buffer_audit_sha256"],
@@ -2517,11 +2535,54 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_audit["frame_lifecycle"]["screen_space_channels"] == (
         "56 entries reset to 0"
     )
+    hdpls_formulas = hdpls_audit["frame_derived_formulas"]
+    assert hdpls_formulas["setting_field_offsets"] == {
+        "hdplsCharacterShadowEnabled": "0x368",
+        "hdplsAtlasHeight": "0x370",
+        "hdplsScreenSpaceReduceResolution": "0x378",
+        "hdplsDepthBias": "0x380",
+        "hdplsNormalBias": "0x388",
+        "hdplsSoftness": "0x390",
+    }
+    assert hdpls_formulas["constructor_defaults"] == {
+        "hdplsCharacterShadowEnabled": True,
+        "hdplsAtlasHeight": 2048,
+        "hdplsScreenSpaceReduceResolution": True,
+        "hdplsDepthBias": 0.0,
+        "hdplsNormalBias": 0.0,
+        "hdplsSoftness": 0.0,
+    }
+    assert hdpls_formulas["atlas"]["default_dimensions"] == [4096, 2048]
+    assert hdpls_formulas["atlas"]["default_grid_le_8"] == [4, 2]
+    assert hdpls_formulas["atlas"]["default_grid_gt_8"] == [8, 4]
+    assert hdpls_formulas["atlas_texel_size"] == "(1/(2*S),1/S,2*S,S)"
+    assert hdpls_formulas["global_params"] == "(hdplsSoftness.value,0,0,0)"
+    assert hdpls_formulas["screen_space_light_positions"] == (
+        "screenSlot stores float4(HGSharedLightData.worldPosition.xyz,0)"
+    )
+    assert hdpls_formulas["selector_publication"] == {
+        "screen_space_shadow_index": (
+            "screenSpaceShadowIndices[screenSlot] = punctualLightShadowIndex"
+        ),
+        "screen_space": (
+            "punctualLightShadowSSChannel[punctualLightShadowIndex] = "
+            "screenSlot + 1"
+        ),
+        "hdpls_atlas": (
+            "punctualLightShadowHDCharacterIndices[punctualLightShadowIndex] "
+            "sets bit (requestIndex & 31)"
+        ),
+    }
     assert len(hdpls_audit["capture_boundary"]["required"]) == 3
-    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 5
+    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 8
     for path_key, hash_key in (
         ("disassembly_path", "disassembly_sha256"),
         ("metadata_path", "metadata_sha256"),
+        ("native_map_path", "native_map_sha256"),
+        ("setting_parameters_metadata_path", "setting_parameters_metadata_sha256"),
+        ("setting_parameters_native_path", "setting_parameters_native_sha256"),
+        ("setting_getters_metadata_path", "setting_getters_metadata_sha256"),
+        ("setting_getters_native_path", "setting_getters_native_sha256"),
         ("selected_shader_path", "selected_shader_sha256"),
         ("source_sidecar_path", "source_sidecar_sha256"),
         ("constant_buffer_audit_path", "constant_buffer_audit_sha256"),
@@ -2824,6 +2885,7 @@ def main() -> int:
         "HDPunctualLightCharacterShadowData identity, native reset/push owner, "
         "selected .y-only read path, exact 0xDE0 CBHandle/command size, "
         "0x100-aligned CPU tail-write safety, target-D3D11 224-constant c222 visibility, "
+        "exact HDPLS setting/default, atlas/rect/texel/global/world-position/selector formulas, "
         "and fail-closed active-frame boundary), "
         "all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "
