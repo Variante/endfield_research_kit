@@ -1,11 +1,15 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v1",
-  "status": "installed_windows_desktop_punctual_cap_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The target-frame LightCullResult and unrelated live native lights remain capture-only.",
+  "schema": "endfield.recovered-light-cull-cap.v2",
+  "status": "installed_cap_native_producer_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. The target-frame pointer/count and unrelated live native lights remain capture-only.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
       "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "unityPlayer": {
+      "sizeBytes": 38194232,
+      "sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2"
     },
     "globalMetadata": {
       "sizeBytes": 62925560,
@@ -145,6 +149,234 @@
       "directCallSiteCount": 2,
       "maxCount": 256
     },
+    "gameAssemblyHandoff": {
+      "resultAbi": {
+        "type": "UnityEngine.HyperGryph.LightCullResult",
+        "sizeBytes": 16,
+        "fields": {
+          "visibleLightsPtr": {
+            "offset": 0,
+            "sizeBytes": 8
+          },
+          "visibleLightCount": {
+            "offset": 8,
+            "sizeBytes": 4
+          },
+          "tailPadding": {
+            "offset": 12,
+            "sizeBytes": 4
+          }
+        },
+        "nativeArrayProjection": {
+          "sizeBytes": 16,
+          "bufferOffset": 0,
+          "lengthOffset": 8,
+          "allocatorLabelOffset": 12,
+          "allocatorLabel": 1
+        }
+      },
+      "managedCallSites": {
+        "caller": "HG.Rendering.Runtime.HGCamera.DoECSCulling",
+        "offsets": [
+          "0x63E",
+          "0x7E4"
+        ],
+        "hiddenSret": "rcx=&[rbp-0x60]",
+        "viewHandle": "edx=ebx",
+        "cameraPosition": "r8=&[rbp-0x70]",
+        "maxCount": 256,
+        "cameraInstanceId": "stack+0x20",
+        "currentDeviceTier": "stack+0x28",
+        "resultCopy": "16 bytes to culling output +0x28"
+      },
+      "captureRowContract": {
+        "elementType": "UnityEngine.Rendering.VisibleLight",
+        "elementStrideBytes": 148,
+        "minimumRawBytesEquation": "visibleLightCount * 148",
+        "validatedConsumerOffsets": {
+          "lightType": "0x00",
+          "lightPriority": "0x70",
+          "worldPosition": "0x74..0x7F"
+        },
+        "setupStateInputCap": 256,
+        "acceptedPunctualTypes": [
+          0,
+          2
+        ]
+      },
+      "methodBodies": [
+        {
+          "name": "do_ecs_culling",
+          "method": "HG.Rendering.Runtime.HGCamera.DoECSCulling",
+          "methodIndex": 286733,
+          "virtualAddress": "0x189B721CC",
+          "fileOffset": "0x9B707CC",
+          "sizeBytes": 2132,
+          "sha256": "bcbfa96588743701a5d1992256c68f193e624dc01ead47e86b80eb0a7653151b"
+        },
+        {
+          "name": "cull_lights_injected",
+          "method": "UnityEngine.HyperGryph.HGCullingSystem.CullLightsInternal_Injected",
+          "methodIndex": 407492,
+          "virtualAddress": "0x18B3EA710",
+          "fileOffset": "0xB3E8D10",
+          "sizeBytes": 96,
+          "sha256": "90fe3e38d69fd29a65c4fdc3e472199d9fa0e67733d220875cff6925b4f25503"
+        },
+        {
+          "name": "cull_lights_internal",
+          "method": "UnityEngine.HyperGryph.HGCullingSystem.CullLightsInternal",
+          "methodIndex": 407488,
+          "virtualAddress": "0x18B3EA770",
+          "fileOffset": "0xB3E8D70",
+          "sizeBytes": 44,
+          "sha256": "552b658de9533980b813706c457551aa508c0a2d0fa30dd9817a166898c73564"
+        },
+        {
+          "name": "cull_lights",
+          "method": "UnityEngine.HyperGryph.HGCullingSystem.CullLights",
+          "methodIndex": 407487,
+          "virtualAddress": "0x18B3EA79C",
+          "fileOffset": "0xB3E8D9C",
+          "sizeBytes": 124,
+          "sha256": "457b6e62ebd5b4aab211b552da8b3f22a8156c7005a88c21c65f223903ee7245"
+        },
+        {
+          "name": "get_visible_lights",
+          "method": "UnityEngine.HyperGryph.LightCullResult.get_visibleLights",
+          "methodIndex": 407475,
+          "virtualAddress": "0x18B3EABD8",
+          "fileOffset": "0xB3E91D8",
+          "sizeBytes": 44,
+          "sha256": "f2d8a942ff09c2a07ee960760bf7e3a2c9bd878955fd7bb0d709c3e1fca3ab66"
+        },
+        {
+          "name": "setup_state",
+          "method": "HG.Rendering.Runtime.LightClusteringPassConstructor.SetupState",
+          "methodIndex": 285302,
+          "virtualAddress": "0x189D09F50",
+          "fileOffset": "0x9D08550",
+          "sizeBytes": 988,
+          "sha256": "76dcba4f0f93db50a7fdbf2f3fed3084229be907526ff6a33c9556496a81ceab"
+        }
+      ]
+    },
+    "unityPlayerCandidateProducer": {
+      "internalCall": {
+        "index": 3320,
+        "name": "UnityEngine.HyperGryph.HGCullingSystem::CullLightsInternal_Injected",
+        "targetVirtualAddress": "0x1800FBCE0"
+      },
+      "callChain": [
+        "0x1800FBCE0 injected binding",
+        "0x181050FC0 result/lifetime wrapper",
+        "0x181051A40 native candidate core"
+      ],
+      "candidateRecord": {
+        "sizeBytes": 12,
+        "fields": [
+          "native light pointer (8 bytes)",
+          "camera distanceSquared (4 bytes)"
+        ]
+      },
+      "closedBehavior": [
+        "PC device-tier min/max gate",
+        "maximum culling-distance gate",
+        "minimum far-show-distance gate",
+        "authored OBB gate and builder call",
+        "directional/Spot/Point geometry branches",
+        "Spot/frustum helper call",
+        "occlusion result-bit consumption",
+        "ascending distance sort call and comparator",
+        "maxCount output cap"
+      ],
+      "verifiedInstructionSlices": [
+        {
+          "label": "binding_to_result_wrapper",
+          "virtualAddress": "0x1800FBD2B",
+          "sizeBytes": 5,
+          "sha256": "15649fafb23f6c9f44292541a1a91c7262df70974fc21b1859d0159888f25b2c"
+        },
+        {
+          "label": "result_wrapper_to_candidate_core",
+          "virtualAddress": "0x18105104A",
+          "sizeBytes": 5,
+          "sha256": "9eea471da8edd242cd288d39343b3433330999e8c694e2c4ba4d8ef5289d0c87"
+        },
+        {
+          "label": "fallback_mode_gate_manager_9d8",
+          "virtualAddress": "0x181051A5E",
+          "sizeBytes": 7,
+          "sha256": "e2896169272742f5eed15ecbdfd1ed5d7df5f6a6a78cd7944e7f461d0487962a"
+        },
+        {
+          "label": "pc_device_tier_gate",
+          "virtualAddress": "0x1810520A0",
+          "sizeBytes": 56,
+          "sha256": "42137541a988768216bda5a79567f26a500333502b9e247536fb3d8a82187f42"
+        },
+        {
+          "label": "maximum_culling_distance_gate",
+          "virtualAddress": "0x181052124",
+          "sizeBytes": 26,
+          "sha256": "fd89befc2aa1b2f741b59a8fa85f8038a3b9f8a3a4996fcbd3998271a69d7b63"
+        },
+        {
+          "label": "minimum_far_show_distance_gate",
+          "virtualAddress": "0x18105213E",
+          "sizeBytes": 31,
+          "sha256": "563f9c932d14f3a9b0e67388b13921aecdf5ffdbff43766833ff5eb8fbfad6a5"
+        },
+        {
+          "label": "explicit_obb_gate_and_builder",
+          "virtualAddress": "0x181052161",
+          "sizeBytes": 88,
+          "sha256": "11d4d55285533ba29050dde73995883d2192da9add7ddd0beffafb0cc24978ec"
+        },
+        {
+          "label": "light_type_geometry_branches",
+          "virtualAddress": "0x1810521C2",
+          "sizeBytes": 30,
+          "sha256": "eaabbe8b4922a7c8d20ae3709630fe64972dcdf0a141d6c04d11eb1ed3c09083"
+        },
+        {
+          "label": "spot_frustum_helper_call",
+          "virtualAddress": "0x1810522FF",
+          "sizeBytes": 42,
+          "sha256": "e3725c713f64c7d4bb91829cbd22548653b3d36b777e2a4e737a082d3c23fffe"
+        },
+        {
+          "label": "occlusion_query_and_result_bit",
+          "virtualAddress": "0x18105261B",
+          "sizeBytes": 8,
+          "sha256": "1b31b2d4554d9dd2f0c2ca5091ffe06b362bbfff26ec2a501a46d8b1ddf3399b"
+        },
+        {
+          "label": "native_distance_sort_call",
+          "virtualAddress": "0x18105280C",
+          "sizeBytes": 5,
+          "sha256": "badf48a488b2a4221ee919ef95e8c9c31687ef4534640e663cee3ec335b06665"
+        },
+        {
+          "label": "native_output_max_count_cap",
+          "virtualAddress": "0x181052830",
+          "sizeBytes": 9,
+          "sha256": "97238483dcbf05df891d304253178f29c824c8f1789c6a34ad6620315e2d9311"
+        },
+        {
+          "label": "candidate_pointer_distance2_row",
+          "virtualAddress": "0x181052913",
+          "sizeBytes": 9,
+          "sha256": "9ec02f672517ff7846be72b72d976a89bbcdefe8ecde33014dc872e32da17214"
+        },
+        {
+          "label": "ascending_float_sort_comparison",
+          "virtualAddress": "0x181043948",
+          "sizeBytes": 29,
+          "sha256": "d107b0f0229e83cdaf12fc45558dcd25364a21dbb9c12d995b67a4dbf60b983f"
+        }
+      ]
+    },
     "desktopNoSecondTruncation": true
   },
   "sourceFiles": {
@@ -171,10 +403,14 @@
       "type 0/2 punctual filter",
       "priority/distance shortlist order",
       "min survivor/cap final-count rule",
-      "desktop cap cannot truncate the upstream max-256 cull result"
+      "desktop cap cannot truncate the upstream max-256 cull result",
+      "the unique UnityPlayer CullLightsInternal_Injected binding and native candidate gate chain",
+      "both GameAssembly DoECSCulling call sites and their exact input/result registers",
+      "the 16-byte LightCullResult pointer/count ABI and NativeArray projection",
+      "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets"
     ],
     "captureOnly": [
-      "target-frame LightCullResult pointer and count",
+      "target-frame LightCullResult pointer, count, and 148-byte rows",
       "unrelated active native lights",
       "arbitrary/asymmetric final selected-view planes",
       "future or separately delivered IFix/settings payloads"

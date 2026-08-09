@@ -7,6 +7,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).with_name("audit_light_cull_cap.py")
@@ -88,6 +89,55 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"CommonSettings.*64",
             ):
                 AUDIT.validate_settings_payloads(root, verify_hashes=False)
+
+    def test_native_handoff_and_capture_row_contract(self) -> None:
+        result = AUDIT.validate_native_handoff(AUDIT.read_native_method_bodies())
+        self.assertEqual(result["resultAbi"]["sizeBytes"], 16)
+        self.assertEqual(
+            result["resultAbi"]["fields"]["visibleLightCount"]["offset"], 8
+        )
+        self.assertEqual(result["managedCallSites"]["maxCount"], 256)
+        self.assertEqual(result["captureRowContract"]["elementStrideBytes"], 148)
+        self.assertEqual(
+            result["captureRowContract"]["validatedConsumerOffsets"]["lightPriority"],
+            "0x70",
+        )
+
+    def test_changed_visible_light_stride_fails_closed(self) -> None:
+        bodies = AUDIT.read_native_method_bodies()
+        changed = bytearray(bodies["setup_state"])
+        changed[0x1E8] = 0x95
+        bodies["setup_state"] = bytes(changed)
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; check=setup_state_priority_and_stride; "
+            r"source=.*GameAssembly.dll; expected=.*actual=",
+        ):
+            AUDIT.validate_native_handoff(bodies, verify_hashes=False)
+
+    def test_unity_native_candidate_producer(self) -> None:
+        result = AUDIT.validate_unity_native_producer(AUDIT.PEImage(AUDIT.UNITY_PLAYER))
+        self.assertEqual(result["internalCall"]["index"], 3320)
+        self.assertEqual(result["candidateRecord"]["sizeBytes"], 12)
+        self.assertIn("maxCount output cap", result["closedBehavior"])
+
+    def test_changed_unity_native_cap_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181052830:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; check=unity_native_output_max_count_cap; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_native_producer(image)
 
 
 if __name__ == "__main__":
