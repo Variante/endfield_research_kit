@@ -8,12 +8,17 @@ import base64
 import hashlib
 import json
 import re
+import struct
 from pathlib import Path
 
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
 GAME_ASSEMBLY = Path(r"D:/Program Files/Endfield Game/GameAssembly.dll")
+GLOBAL_METADATA = Path(
+    r"D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/"
+    r"global-metadata.dat"
+)
 SOURCES = {
     "selectedFragment": (
         LAB_ROOT
@@ -55,10 +60,23 @@ SOURCES = {
         / "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/"
         "MonoBehaviour#1116_p2FDBEDA931885FC8.json"
     ),
+    "selectedEnvironmentVolume": (
+        LAB_ROOT
+        / "scratch/character_recovery/charinfo_volume_state/prefab_export/"
+        "MonoBehaviour/MonoBehaviour#263_pD07FBA9DF34A6703.json"
+    ),
+    "selectedEnvironmentPhase": (
+        REPO_ROOT
+        / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/"
+        "MonoBehaviour/CharInfo_Env_p10AB447A9F33D0F3.json"
+    ),
 }
 EXPECTED_HASHES = {
     "gameAssembly": (
         "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    ),
+    "globalMetadata": (
+        "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
     ),
     "selectedFragment": (
         "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db"
@@ -83,6 +101,12 @@ EXPECTED_HASHES = {
     ),
     "selectedCameraLens": (
         "f7c053539d3abbd40aff2dd51ea450a869ee78409220163267ef9445362c26fb"
+    ),
+    "selectedEnvironmentVolume": (
+        "0c10d9772a6256187c0d4682b5826d6a3c298d8b7fa2949f095da44dad89a627"
+    ),
+    "selectedEnvironmentPhase": (
+        "33bb9d19d4a7c1e0dfb5e82117821c908108059f76b7103c2c0ed5e8ba7f873c"
     ),
 }
 OUTPUT = (
@@ -471,6 +495,125 @@ NATIVE_PROJECTION_METHODS = {
     },
 }
 
+# The legacy/default irradiance path reads the interpolated HGSkyConfig,
+# selects skyAmbientSH when useCustomIVDefaultSH is false, converts each color's
+# coefficients to (L1x, L1y, L1z, L0), scales by skyDirectIntensity, and writes
+# ShaderVariablesGlobal c135..c137. Metadata-derived field offsets are recorded
+# with the exact installed method bodies so this route fails closed on drift.
+NATIVE_DEFAULT_SH_METHODS = {
+    "updateIrradianceVolume": {
+        "method": (
+            "HG.Rendering.Runtime.HGRenderPathBase."
+            "UpdateShaderVariablesIrradianceVolume"
+        ),
+        "methodIndex": 287936,
+        "token": "0x0600133c",
+        "va": "0x189bdeb2c",
+        "fileOffset": 0x9BDD12C,
+        "size": 0x570,
+        "sha256": "409b4efb4118dbdba601a9705db762f0a7968cf6b02c2f2ef0408ec1bf56e349",
+        "fieldOffsets": {
+            "interpolatedPhaseSkyConfig": "0x190",
+            "skyDirectIntensity": "0x20 object / 0x10 embedded",
+            "useCustomIVDefaultSH": "0x24 object / 0x14 embedded",
+            "customIVDefaultSH": "0x28 object / 0x18 embedded",
+            "skyAmbientSH": "0xec object / 0xdc embedded",
+            "destinationIVDefaultSHAr": "this+0xdf0 / ShaderVariablesGlobal+0x880 / c135",
+            "destinationIVDefaultSHAg": "this+0xe00 / ShaderVariablesGlobal+0x890 / c136",
+            "destinationIVDefaultSHAb": "this+0xe10 / ShaderVariablesGlobal+0x8a0 / c137",
+        },
+        "byteChecks": [
+            {
+                "offset": 0x1C0,
+                "hex": (
+                    "33d2498bcee8ca7852f94885c07506e860954ff6cc41b802000000"
+                    "488d8890010000488bc1488d9590010000"
+                ),
+                "meaning": (
+                    "GetInterpolatedPhase(0), require a result, then address "
+                    "the embedded HGSkyConfig at phase+0x190"
+                ),
+            },
+            {
+                "offset": 0x2ED,
+                "hex": "488b454048c1e820488d553084c00f84a9000000",
+                "meaning": (
+                    "test embedded HGSkyConfig.useCustomIVDefaultSH and branch "
+                    "to skyAmbientSH when false"
+                ),
+            },
+            {
+                "offset": 0x422,
+                "hex": (
+                    "0f10850c0100008b85740100000f108d1c0100000f10952c010000"
+                    "0f109d3c0100000f10a54c0100000f10ad5c010000f20f10b56c"
+                    "0100004533c00f2945c0488d55c00f294dd0488d4c24500f2955"
+                    "e00f295df00f2965000f296d10f20f117520894528e819fed2f9"
+                ),
+                "meaning": (
+                    "load skyAmbientSH from embedded offset 0xdc and call "
+                    "HGEnvironmentUtils.GetCoefficientsL1"
+                ),
+            },
+            {
+                "offset": 0x48B,
+                "hex": (
+                    "f30f10ada0010000488d5424400f28d5488d4d800f10000f107010"
+                    "0f107820660f7f442440e81f75bbf90f28d5660f7f742440488d"
+                    "542440488d4d80f30f6f20f30f7fa6f00d0000e8fc74bbf90f28"
+                    "d5660f7f7c2440488d542440488d4d80f30f6f20f30f7fa6000e"
+                    "0000e8d974bbf9f30f6f20f30f7fa6100e0000"
+                ),
+                "meaning": (
+                    "scale all three L1 vectors by skyDirectIntensity and "
+                    "write c135, c136, and c137"
+                ),
+            },
+        ],
+    },
+    "getCoefficientsL1": {
+        "method": "HG.Rendering.Runtime.HGEnvironmentUtils.GetCoefficientsL1",
+        "methodIndex": 284574,
+        "token": "0x0600061a",
+        "va": "0x18390edd0",
+        "fileOffset": 0x390D3D0,
+        "size": 0x290,
+        "sha256": "acc6c2d1d74a42179b31d138d0aeaf5fcf0cb29c8f25fcf15aa311fc0d7f1db4",
+        "formula": {
+            "red": ["sh[0,3]", "sh[0,1]", "sh[0,2]", "sh[0,0]"],
+            "green": ["sh[1,3]", "sh[1,1]", "sh[1,2]", "sh[1,0]"],
+            "blue": ["sh[2,3]", "sh[2,1]", "sh[2,2]", "sh[2,0]"],
+        },
+        "byteChecks": [
+            {
+                "offset": 0x8E,
+                "hex": (
+                    "4533c933d241b803000000488bcbe8ef0100004533c933d241b801"
+                    "000000488bcb440f28e8e8d80100004533c933d241b80200000048"
+                    "8bcb440f28e0e8c10100004533c94533c033d2488bcb440f28d8"
+                    "e8ad010000"
+                ),
+                "meaning": "read red SH coefficients in 3,1,2,0 order",
+            },
+            {
+                "offset": 0x1C2,
+                "hex": (
+                    "450fc6ede1f3450f10ec450fc6edc6f3450f10eb440f28a424e0"
+                    "000000488bc7440f289c24f0000000450fc6c0e1f3440f10c745"
+                    "0fc6ed270f28bc2430010000f3450f10e9440f288c2410010000"
+                    "450fc6c0c6f3440f10c6450fc6ed390f28b42440010000450fc6"
+                    "c027440f112f440f28ac24d0000000f3440f10c0450fc6c03944"
+                    "0f115710440f28942400010000440f114720"
+                ),
+                "meaning": (
+                    "pack the three (coefficient 3,1,2,0) vectors and store "
+                    "red/green/blue at result+0x0/+0x10/+0x20"
+                ),
+            },
+        ],
+    },
+}
+
 EXPECTED_USED_FIELDS = {
     "AtmosphereFogParams0",
     "AtmosphereFogParams1",
@@ -531,6 +674,10 @@ def relative(path: Path) -> str:
         return str(path)
 
 
+def f32_bits(value: float) -> str:
+    return f"0x{struct.unpack('<I', struct.pack('<f', value))[0]:08x}"
+
+
 def decode_text_asset(path: Path) -> bytes:
     payload = json.loads(path.read_text(encoding="utf-8"))
     require(f"{path.name}_m_Script", isinstance(payload.get("m_Script"), str), True)
@@ -588,9 +735,15 @@ def parse_body_uses(source: str, layout: dict[str, dict[str, object]]) -> list[d
 def build_audit() -> dict[str, object]:
     hashes = {name: sha256(path) for name, path in SOURCES.items()}
     game_hash = sha256(GAME_ASSEMBLY)
+    metadata_hash = sha256(GLOBAL_METADATA)
     require("gameAssembly_sha256", game_hash, EXPECTED_HASHES["gameAssembly"])
+    require(
+        "globalMetadata_sha256",
+        metadata_hash,
+        EXPECTED_HASHES["globalMetadata"],
+    )
     for name, expected in EXPECTED_HASHES.items():
-        if name == "gameAssembly":
+        if name in {"gameAssembly", "globalMetadata"}:
             continue
         require(f"{name}_sha256", hashes[name], expected)
 
@@ -614,6 +767,23 @@ def build_audit() -> dict[str, object]:
             method["sha256"],
         )
     for name, method in NATIVE_PROJECTION_METHODS.items():
+        start = method["fileOffset"]
+        body = game_bytes[start : start + method["size"]]
+        require(f"{name}_size", len(body), method["size"])
+        require(
+            f"{name}_sha256",
+            hashlib.sha256(body).hexdigest(),
+            method["sha256"],
+        )
+        for index, check in enumerate(method["byteChecks"]):
+            expected_bytes = bytes.fromhex(check["hex"])
+            offset = check["offset"]
+            require(
+                f"{name}_byte_check_{index}",
+                body[offset : offset + len(expected_bytes)],
+                expected_bytes,
+            )
+    for name, method in NATIVE_DEFAULT_SH_METHODS.items():
         start = method["fileOffset"]
         body = game_bytes[start : start + method["size"]]
         require(f"{name}_size", len(body), method["size"])
@@ -794,6 +964,89 @@ def build_audit() -> dict[str, object]:
     require("selected_camera_lens_near_clip", lens_payload["m_Lens"]["NearClipPlane"], 0.1)
     require("selected_camera_lens_far_clip", lens_payload["m_Lens"]["FarClipPlane"], 50.0)
 
+    environment_volume = json.loads(
+        SOURCES["selectedEnvironmentVolume"].read_text(encoding="utf-8")
+    )
+    require("environment_volume_enabled", environment_volume["m_Enabled"], 1)
+    require("environment_volume_type", environment_volume["_volumeType"], 0)
+    require("environment_volume_blend_mode", environment_volume["_blendMode"], 0)
+    require("environment_volume_priority", environment_volume["_priority"], 600)
+    require(
+        "environment_volume_manual_blend_factor",
+        environment_volume["_manualBlendFactor"],
+        1.0,
+    )
+    environment_path_id = environment_volume["_envPhase"]["m_PathID"]
+    require("environment_volume_phase_path_id", environment_path_id, 1201129019072041203)
+    require(
+        "environment_volume_raw_sha256",
+        environment_volume["$animestudio"]["rawDataSha256"],
+        "be70748fe214daad8a45450dd095a5f984a29f427d3c30ebcff231ffa5440a76",
+    )
+
+    environment_phase = json.loads(
+        SOURCES["selectedEnvironmentPhase"].read_text(encoding="utf-8")
+    )
+    require(
+        "environment_phase_path_id",
+        environment_phase["$animestudio"]["pathId"],
+        environment_path_id,
+    )
+    require("environment_phase_name", environment_phase["$animestudio"]["name"], "CharInfo_Env")
+    require(
+        "environment_phase_raw_sha256",
+        environment_phase["$animestudio"]["rawDataSha256"],
+        "f9d1384c29f1e54599cd55e5f9c5c6d7eb9bd6f678d9fd104c7c329e6f1a66f9",
+    )
+    sky = environment_phase["skyConfig"]
+    require("environment_sky_active", sky["m_active"], 1)
+    require("environment_use_custom_default_sh", sky["useCustomIVDefaultSH"], 0)
+    require("environment_sky_direct_intensity_bits", f32_bits(sky["skyDirectIntensity"]), "0x3f800000")
+    custom_sh = [sky["customIVDefaultSH"][f"sh[{index:2d}]"] for index in range(27)]
+    require("environment_custom_default_sh", custom_sh, [0.0] * 27)
+    ambient_sh = [sky["skyAmbientSH"][f"sh[{index:2d}]"] for index in range(27)]
+    ambient_bits = [f32_bits(value) for value in ambient_sh]
+    expected_channel_bits = [
+        "0x3f8c53be",
+        "0x3ef1c917",
+        "0x3c476813",
+        "0xbbf76c60",
+        "0x3ab9bcf1",
+        "0xbb92cc26",
+        "0xbd4352ee",
+        "0x3b71ed4d",
+        "0xbe0ee977",
+    ]
+    require(
+        "environment_ambient_sh_bits",
+        ambient_bits,
+        expected_channel_bits * 3,
+    )
+    selected_default_sh: dict[str, dict[str, object]] = {}
+    for channel_index, (channel, row) in enumerate(
+        (("red", "c135"), ("green", "c136"), ("blue", "c137"))
+    ):
+        source_indices = [channel_index * 9 + index for index in (3, 1, 2, 0)]
+        values = [ambient_sh[index] * sky["skyDirectIntensity"] for index in source_indices]
+        selected_default_sh[channel] = {
+            "row": row,
+            "sourceCoefficientIndices": source_indices,
+            "value": [struct.unpack("<f", struct.pack("<f", value))[0] for value in values],
+            "float32Bits": [f32_bits(value) for value in values],
+        }
+    expected_default_sh_bits = [
+        "0xbbf76c60",
+        "0x3ef1c917",
+        "0x3c476813",
+        "0x3f8c53be",
+    ]
+    for channel, value in selected_default_sh.items():
+        require(
+            f"environment_{channel}_default_sh_bits",
+            value["float32Bits"],
+            expected_default_sh_bits,
+        )
+
     compact_uses: dict[str, dict[str, object]] = {}
     for row in uses:
         entry = compact_uses.setdefault(
@@ -815,7 +1068,7 @@ def build_audit() -> dict[str, object]:
 
     return {
         "schema": "endfield.deferred-shader-variables-global-audit.v1",
-        "status": "selected_consumer_exactly_scoped_but_not_fully_source_closed",
+        "status": "selected_consumer_exactly_scoped_and_value_source_closed",
         "binding": {
             "canonicalName": "ShaderVariablesGlobal",
             "spirvSet": 3,
@@ -910,6 +1163,53 @@ def build_audit() -> dict[str, object]:
                 "selected c3.y value is exactly 0.1."
             ),
         },
+        "defaultIrradianceSHProducer": {
+            "selectedRows": ["c135", "c136", "c137"],
+            "environmentVolume": {
+                "source": relative(SOURCES["selectedEnvironmentVolume"]),
+                "enabled": True,
+                "volumeType": environment_volume["_volumeType"],
+                "blendMode": environment_volume["_blendMode"],
+                "priority": environment_volume["_priority"],
+                "manualBlendFactor": environment_volume["_manualBlendFactor"],
+                "environmentPhasePathId": environment_path_id,
+                "rawDataSha256": environment_volume["$animestudio"]["rawDataSha256"],
+            },
+            "environmentPhase": {
+                "source": relative(SOURCES["selectedEnvironmentPhase"]),
+                "pathId": environment_path_id,
+                "name": environment_phase["$animestudio"]["name"],
+                "rawDataSha256": environment_phase["$animestudio"]["rawDataSha256"],
+                "skyActive": bool(sky["m_active"]),
+                "useCustomIVDefaultSH": bool(sky["useCustomIVDefaultSH"]),
+                "selectedSH": "skyAmbientSH",
+                "skyDirectIntensity": sky["skyDirectIntensity"],
+                "skyDirectIntensityFloat32Bits": f32_bits(sky["skyDirectIntensity"]),
+                "ambientSHFloat32Bits": ambient_bits,
+            },
+            "nativeMethods": {
+                name: {
+                    key: value
+                    for key, value in method.items()
+                    if key not in {"fileOffset"}
+                }
+                | {"fileOffset": hex(method["fileOffset"])}
+                for name, method in NATIVE_DEFAULT_SH_METHODS.items()
+            },
+            "formula": (
+                "for each RGB channel, "
+                "float4(sh[channel,3], sh[channel,1], sh[channel,2], "
+                "sh[channel,0]) * skyDirectIntensity"
+            ),
+            "selectedValues": selected_default_sh,
+            "closure": (
+                "The enabled weight-1 CharInfo Global Env Volume selects the "
+                "serialized CharInfo_Env phase. Its custom-default selector is "
+                "false, so the installed native producer chooses skyAmbientSH, "
+                "reorders coefficients 3/1/2/0, multiplies by the exact 1.0 "
+                "skyDirectIntensity, and writes c135/c136/c137."
+            ),
+        },
         "closedSelectedRows": {
             "c3.y": "selected serialized Overview nearClipPlane=0.1 through exact HGCamera projectionParams producer",
             "c4.w": "perspective ExternalCamera => unity_OrthoParams.w=0",
@@ -921,6 +1221,7 @@ def build_audit() -> dict[str, object]:
             "c77..c82": "exact installed height-fog reset producer",
             "c83..c87": "exact installed disabled-volumetric reset producer; c83.z gates the branch off",
             "c132..c134": "installed no-reload V2 irradiance result parameters are all zero",
+            "c135..c137": "selected CharInfo skyAmbientSH reordered 3/1/2/0 and scaled by exact skyDirectIntensity=1",
             "c31.x": "exact installed reflectionProbeMaxSampleMip code default and every shipped override are 7",
             "c156.x": "serialized CharInfo wetness is disabled/zero",
         },
@@ -930,19 +1231,23 @@ def build_audit() -> dict[str, object]:
         },
         "remainingSelectedRows": {
             "c0.zw": "same-target inverse screen dimensions; producer formula is known but target-frame dimensions remain dynamic",
-            "c135..c137": "IVDefaultSHAr/Ag/Ab remain live and exact selected-scene values are not yet recovered",
         },
         "decision": (
-            "Do not publish EndfieldCB1 or enable pass 0 yet. The reset producers "
-            "close fog rows exactly, c30 is exact (0,0,1,1), and c31.x is exact 7, "
-            "and c3.y is the exact selected near clip 0.1, but c135..c137 still "
-            "affect the selected resolver outside dead branches."
+            "The selected ShaderVariablesGlobal value contract is now source-closed; "
+            "c0.zw remains a known same-target runtime formula rather than an unknown "
+            "constant. EndfieldCB1 is still deliberately unpublished and pass 0 "
+            "disabled until a default-off runtime publisher and GPU binding verifier "
+            "are implemented."
         ),
         "sources": {
             "gameAssembly": {
                 "path": str(GAME_ASSEMBLY),
                 "sha256": game_hash,
-            }
+            },
+            "globalMetadata": {
+                "path": str(GLOBAL_METADATA),
+                "sha256": metadata_hash,
+            },
         }
         | {
             name: {"path": relative(path), "sha256": hashes[name]}
@@ -965,7 +1270,7 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Deferred ShaderVariablesGlobal audit passed: 33 selected fields; "
-        "fog resets plus c3/c30/c31 exact; b1 remains blocked by c135..c137."
+        "fog resets, c3/c30/c31, and c135..c137 exact; selected values closed."
     )
     return 0
 

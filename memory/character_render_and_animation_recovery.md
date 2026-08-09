@@ -113,9 +113,15 @@ NPC archetypes are imported as labeled source kits.
   Zhuangfy Overview lens is exactly near=0.1/far=50, closing live c3.y as 0.1.
   The selected route also closes perspective c4.w, mip bias c26.x,
   binning/environment rows c28/c29, inactive IV params c132..c134, and wetness
-  c156.x; frame count is behind the exact-zero volumetric gate. `EndfieldCB1`
-  remains unpublished only because default SH c135..c137 still affects live
-  control flow. Pass 0 remains disabled.
+  c156.x; frame count is behind the exact-zero volumetric gate. The enabled
+  weight-1 CharInfo environment volume selects `CharInfo_Env`; native
+  `UpdateShaderVariablesIrradianceVolume` and `GetCoefficientsL1` prove that
+  c135..c137 each equal the serialized ambient-SH reorder
+  `(SH3,SH1,SH2,SH0) * skyDirectIntensity`, or exactly
+  `(-0.0075507611,0.4722373188,0.0121708093,1.0963056087)`. All selected b35
+  value producers are now source-closed. `EndfieldCB1` remains unpublished
+  pending a default-off runtime publisher and D3D11/D3D12 verifier; pass 0
+  remains disabled.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
@@ -237,8 +243,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Complete the minimum binding-compatible deferred CharInfo frame, starting
-   with the remaining b35 default SH c135..c137 rather than filling unused rows.
+1. Implement and GPU-verify a default-off selected-row `ShaderVariablesGlobal`
+   / `EndfieldCB1` publisher; keep unselected rows zero and fail closed.
 2. Recover the retail light-cull survivor list, then populate exact shadow,
    depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH inputs.
 3. Validate selected paths against accepted retail captures.

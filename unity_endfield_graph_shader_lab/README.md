@@ -2212,10 +2212,15 @@ binning/environment c28/c29, inactive IV parameters c132..c134, and disabled
 wetness c156.x are also closed; frame count is read only behind the exact-zero
 volumetric gate. Native `HGCamera.UpdateFrustum` builds c3 as
 `(-1, near, far, 1/far)`; the original serialized Zhuangfy Overview lens is
-near=0.1/far=50, so live c3.y is exactly 0.1. The D3D11 `EndfieldCB1` bridge
-remains deliberately unpublished because default SH c135..c137 still affects
-live selected control flow. Unused rows are not guessed, and pass 0 remains
-disabled.
+near=0.1/far=50, so live c3.y is exactly 0.1. The enabled weight-1 CharInfo
+environment volume selects `CharInfo_Env`; installed
+`UpdateShaderVariablesIrradianceVolume` and `GetCoefficientsL1` code proves
+c135..c137 each equal the serialized ambient-SH reorder
+`(SH3,SH1,SH2,SH0) * skyDirectIntensity`, exactly
+`(-0.0075507611,0.4722373188,0.0121708093,1.0963056087)`. All selected b35
+value producers are now source-closed. The D3D11 `EndfieldCB1` bridge remains
+deliberately unpublished pending a default-off publisher and D3D11/D3D12 GPU
+verifier. Unused rows are not guessed, and pass 0 remains disabled.
 
 The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,

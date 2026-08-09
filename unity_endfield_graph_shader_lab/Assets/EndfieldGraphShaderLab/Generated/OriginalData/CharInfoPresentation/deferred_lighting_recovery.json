@@ -257,7 +257,7 @@
     "remaining_boundary": "general-scene and static-cache ShadowData rows, non-punctual sections, retail physical-resource identity and settled atlas pixels, runtime IFix/setting overrides, and a binding-compatible pass-0 consumer remain open"
   },
   "selected_shader_variables_global_boundary": {
-    "status": "selected b35 consumer reads exactly scoped; native disabled-fog and graphics-feature rows source-closed; live remainder fail-closed",
+    "status": "selected b35 consumer reads exactly scoped and all selected value producers source-closed; runtime transport remains unpublished",
     "published": false,
     "pass0_consumer_enabled": false,
     "canonical_property": "ShaderVariablesGlobal",
@@ -267,14 +267,15 @@
     "d3d11_selected_size_bytes": 2512,
     "d3d11_selected_vector_count": 157,
     "actual_selected_field_count": 33,
-    "source_audit": {"path": "scratch/character_recovery/deferred_shader_variables_global/audit.json", "sha256": "1426bff95a092cc87529f2376b3cd3f4d1fd25dea55d5b5f72010bb2068b6624"},
-    "auditor": {"path": "tools/audit_deferred_shader_variables_global.py", "sha256": "e45041339b9a343f3f855c1cbd0e18428739a14311fcef92fbdb39cfdbb28442"},
-    "closed_rows": "c3.y=0.1, c4.w, c26.x, c28, c29, c30=(0,0,1,1), c31.x=7, c71..c87, c132..c134, and c156.x for the selected CharInfo route",
+    "source_audit": {"path": "scratch/character_recovery/deferred_shader_variables_global/audit.json", "sha256": "5c81871116bc6618c51be65437bb826a1b7a0b6c9e5c2715b57279469e770e76"},
+    "auditor": {"path": "tools/audit_deferred_shader_variables_global.py", "sha256": "8be014b859d882ffc672c4172da0167ea01e7fcb20411af068a109606ddd8ced"},
+    "closed_rows": "c3.y=0.1, c4.w, c26.x, c28, c29, c30=(0,0,1,1), c31.x=7, c71..c87, c132..c137, and c156.x for the selected CharInfo route",
     "selected_projection_params": {"value": [-1.0, 0.1, 50.0, 0.02], "formula": "(-1, nearClipPlane, farClipPlane, 1/farClipPlane)", "camera": "track_chr_0030_zhuangfy/DollyCart/vcam_overview", "lens_raw_sha256": "fa79069273ac59573dc8f103566122dc27f5a46b95c1adfeedf324993b5cad55"},
+    "selected_default_irradiance_sh": {"rows": ["c135", "c136", "c137"], "value_each": [-0.007550761103630066, 0.47223731875419617, 0.01217080932110548, 1.0963056087493896], "float32_bits_each": ["0xbbf76c60", "0x3ef1c917", "0x3c476813", "0x3f8c53be"], "formula": "float4(SH3,SH1,SH2,SH0)*skyDirectIntensity", "environment_phase_path_id": 1201129019072041203, "environment_phase_raw_sha256": "f9d1384c29f1e54599cd55e5f9c5c6d7eb9bd6f678d9fd104c7c329e6f1a66f9"},
     "branch_dead_rows": "c26.w and downstream c84..c87 reads are gated off by exact c83.z=0",
-    "remaining_selected_rows": ["c135..c137"],
+    "remaining_selected_rows": [],
     "dynamic_formula_boundary": "c0.zw inverse screen dimensions are producer-defined but target-size dynamic",
-    "activation_decision": "do not publish EndfieldCB1 or enable pass 0 until every remaining live row is source-closed"
+    "activation_decision": "selected values no longer block EndfieldCB1; keep it unpublished and pass 0 disabled until a default-off runtime publisher and GPU binding verifier are implemented"
   },
   "default_deferred_gbuffer_submission": {
     "selected_installed_route": "HGRenderPathDefaultDeferred -> GBufferPassConstructor.ConstructPass",
@@ -815,7 +816,7 @@
   "unresolved_exact_contract": [
     "A future/network-patched CharInfo result of InitDeferredLightingRenderParams. The current installed Persistent target table is exact and excludes InitDeferredLightingRenderParams plus the 0x19c/0x19d feature-switch accessors, but a later delivered table could replace them.",
     "Retail render-graph physical resource identity, alias lifetime, and settled contents. The lab now closes the source-camera 640x720 logical five-MRT plus D32S8 producer route and its cross-API bytes, but the non-presented sidecar is not evidence of physical render-graph equivalence.",
-    "The remaining live selected ShaderVariablesGlobal rows are c135..c137; c0.zw remains target-size dynamic. Exact c3.y=0.1 from the installed HGCamera producer plus serialized Zhuangfy Overview lens, c30=(0,0,1,1), c31.x=7, fog reset rows, inactive V2 IV params, wetness, mip bias, binning/environment rows, and the full ReflectionProbeGlobalData plus CB2 prefix are closed.",
+    "All selected ShaderVariablesGlobal value producers are now source-closed. Exact c135..c137 come from the enabled weight-1 CharInfo environment phase, its skyAmbientSH coefficients, the installed SH 3/1/2/0 reorder, and exact skyDirectIntensity=1; c0.zw remains a known target-size runtime formula. EndfieldCB1 still needs a default-off publisher and GPU binding verifier before pass-0 activation. Exact c3.y=0.1, c30=(0,0,1,1), c31.x=7, fog reset rows, inactive V2 IV params, wetness, mip bias, binning/environment rows, and the full ReflectionProbeGlobalData plus CB2 prefix are closed.",
     "Frame-produced AO, SSR, planar reflection, screen-space shadow mask, subsurface, fog-LUT, and wetness bindings, including exact neutral bindings for disabled features.",
     "Canonical promotion plus a resource-binding-compatible pass-0 lighting implementation in the lab SRP. The simple resource-free WriteAlpha program and its three exact render-state variants are ported and D3D12-validated, but correctly remain unsubmitted for the source-closed RenderWithAlpha=false selected Gacha route; the recovered pass-0 lighting dump still contains bytecode/disassembly rather than directly importable ShaderLab source for Unity's current binding model."
   ],
