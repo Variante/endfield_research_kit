@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v1",
-  "status": "native_point_spot_row_schema_closed_room_inputs_censused",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v2",
+  "status": "native_point_spot_row_schema_and_room_additional_data_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
@@ -179,7 +179,33 @@
         "target": "0x18B3BE5C0",
         "method": "HGSharedLightData.get_specularIntensity_Injected"
       }
-    ]
+    ],
+    "additionalLightData": {
+      "getLightNprData": {
+        "method": "HG.Rendering.Runtime.HGAdditionalLightData.GetLightNPRData",
+        "methodIndex": 285199,
+        "virtualAddress": "0x1832025A0",
+        "fileOffset": "0x3200BA0",
+        "sizeBytes": 256,
+        "bodySha256": "49eeca70b72791b2ad58f8b77cf3fbc3f27149766dcc0510a00b9d129e6698c8",
+        "selectedTypeZeroPacking": "(defaultContrast, defaultAutoLimit ? 1.0 : 0.0, 0, 0)"
+      },
+      "getLightAdditionalData": {
+        "method": "HG.Rendering.Runtime.LightExtensions.GetLightAdditionalData",
+        "methodIndex": 285217,
+        "virtualAddress": "0x1832040F0",
+        "fileOffset": "0x32026F0",
+        "sizeBytes": 1088,
+        "bodySha256": "071061feb7f3c76044273efe703f9bdf78288703516b863c10c592b263f73e00",
+        "returnLayout": {
+          "0x00": "float4 lightNPRData",
+          "0x10": "int lightNPRType",
+          "0x14": "bool LightCharacterOnly plus padding",
+          "0x18": "float volumetricScatteringIntensity",
+          "0x1C": "float falloffExponent"
+        }
+      }
+    }
   },
   "selectedConsumer": {
     "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/selected_fragment.hlsl",
@@ -189,7 +215,7 @@
       "0": "final color xyz; packed light-kind/shadow-only discriminator w",
       "1": "world position xyz; inverse range w",
       "2": "octahedral direction xy; spot cone or linear-area terms zw",
-      "3": "shadow/cookie addressing and additional-light flags; CharacterOnly is z",
+      "3": "shadow/cookie address x; volumetric intensity y; CharacterOnly z; NPR type w",
       "4": "HGLightAdditionalData.lightNPRData",
       "5": "first packed OBB transform words; OBB/override bit field w",
       "6": "remaining packed OBB transform words; falloff exponent/mode w",
@@ -207,6 +233,31 @@
     "allObbEnabled": true,
     "allUnshadowed": true,
     "allCookieFree": true,
+    "allAdditionalComponentsResolved": true,
+    "additionalLightDataSummary": {
+      "scriptPathId": 4098216658219718577,
+      "nprType": 0,
+      "nprDataNativePacked": [
+        1.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "allCharacterOnly": false,
+      "allFalloffExponent": -1.0,
+      "volumetricScatteringIntensityCounts": {
+        "0": 2,
+        "1": 5,
+        "10": 4
+      },
+      "b31ProducerLanesClosed": [
+        "record3.y volumetricScatteringIntensity",
+        "record3.z LightCharacterOnly",
+        "record3.w lightNPRType",
+        "record4.xyzw lightNPRData",
+        "record6.w falloffExponent"
+      ]
+    },
     "rows": [
       {
         "name": "Spot Light (12)",
@@ -246,7 +297,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": 5984914939117874656,
+        "additionalLightData": {
+          "componentPathId": 131563742791577056,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#292_p01D36886EA69ADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#292_p01D36886EA69ADE0.raw.bin",
+          "sourceRawDataSha256": "4f3c0e50977008fcf005d1af4c29cf6cb7774230e36bf25c4177c751104aa050",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 1.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Spot Light (19)",
@@ -286,7 +363,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": 7333223719365619168,
+        "additionalLightData": {
+          "componentPathId": -6000736473603199520,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#94_pACB919F87426ADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#94_pACB919F87426ADE0.raw.bin",
+          "sourceRawDataSha256": "e3b9b279b360a11af456b35202bcae27e85a691264f79e66764bf414cc03f417",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 10.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Linear Light (12)",
@@ -326,7 +429,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": 6094014835465629152,
+        "additionalLightData": {
+          "componentPathId": -4566151076357231136,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#148_pC0A1C5C9DEF5ADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#148_pC0A1C5C9DEF5ADE0.raw.bin",
+          "sourceRawDataSha256": "f3429f8cd1afc54a2d784c142eb8c587fc15a21dc91ae86ca307032cef327337",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 1.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Linear Light (13)",
@@ -366,7 +495,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": 6812381659781443040,
+        "additionalLightData": {
+          "componentPathId": -6434313692577354272,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#79_pA6B4B9C97C7EADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#79_pA6B4B9C97C7EADE0.raw.bin",
+          "sourceRawDataSha256": "412ec6f199ef22f53335e449ce80ebaea1979845f74304b3ca65e7cb5c55c45b",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 1.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Linear Light (14)",
@@ -406,7 +561,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": -2342457652508971552,
+        "additionalLightData": {
+          "componentPathId": 6449319832300531168,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#464_p59809637AF27ADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#464_p59809637AF27ADE0.raw.bin",
+          "sourceRawDataSha256": "cf6b9bdfd7df5a99f33fc21c65e47d979d508396db5d1da1f9a3c2fbf7b99014",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 1.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Spot Light (17)",
@@ -446,7 +627,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": -8277908077795955232,
+        "additionalLightData": {
+          "componentPathId": 7658305038908763616,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#506_p6A47C3DB81BDADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#506_p6A47C3DB81BDADE0.raw.bin",
+          "sourceRawDataSha256": "d28908f4c66cebda36e7859cb9e97d502cb663c629c64938d8e77662090cf013",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 10.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Linear Light (15)",
@@ -486,7 +693,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": -5234593887898784288,
+        "additionalLightData": {
+          "componentPathId": 793479633833668064,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#312_p0B030185DF29ADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#312_p0B030185DF29ADE0.raw.bin",
+          "sourceRawDataSha256": "a99bb22c9213deaf1c3578072369bb9b8e524c4b774d02a490a0874e8a5ed8e0",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 1.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Spot Light (18)",
@@ -526,7 +759,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": -2293898799088816672,
+        "additionalLightData": {
+          "componentPathId": -4254896755410227744,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#162_pC4F391F1C1CFADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#162_pC4F391F1C1CFADE0.raw.bin",
+          "sourceRawDataSha256": "9300a9c48f6d6e95458bdc29cbcb3a07d9c283043289b14cb9e301e50f880bdd",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 10.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Spot Light (9)",
@@ -566,7 +825,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": -3971220345318494752,
+        "additionalLightData": {
+          "componentPathId": -7850925599009165856,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#27_p930BE8C38109ADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#27_p930BE8C38109ADE0.raw.bin",
+          "sourceRawDataSha256": "5c36a2b745775efa1aef06e9578fa1e818a3c521349c19a43e9b806ba11866b8",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 10.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Spot Light (11)",
@@ -606,7 +891,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": 1718015503729470944,
+        "additionalLightData": {
+          "componentPathId": 2140963938482630112,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#356_p1DB63B5BD62DADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#356_p1DB63B5BD62DADE0.raw.bin",
+          "sourceRawDataSha256": "49bbb3dc09c18db43360a81cb5470fd1b1b0160d4608bb17642e8368fdfa1a93",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 0.0,
+          "falloffExponent": -1.0
+        }
       },
       {
         "name": "Spot Light (10)",
@@ -646,7 +957,33 @@
         "shadowOnly": false,
         "overrideShadowLight": false,
         "cookiePathId": 0,
-        "shadowType": 0
+        "shadowType": 0,
+        "gameObjectPathId": -7274218476356522528,
+        "additionalLightData": {
+          "componentPathId": -7600925337055351328,
+          "sourcePath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#37_p968416AD688CADE0.json",
+          "rawSidecarPath": "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour/MonoBehaviour#37_p968416AD688CADE0.raw.bin",
+          "sourceRawDataSha256": "edc8f420884b4b0426acb0e575f8ce44e3bdeb88fc4179e8add98b3460b5783e",
+          "scriptFileId": 1,
+          "scriptPathId": 4098216658219718577,
+          "typeTreeSource": "serializedType",
+          "nprType": 0,
+          "nprDataSerialized": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "nprDataNativePacked": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "characterOnly": false,
+          "volumetricScatteringIntensity": 0.0,
+          "falloffExponent": -1.0
+        }
       }
     ]
   },
@@ -656,14 +993,16 @@
       "the selected deferred consumer's record offsets and observed lane semantics",
       "the exact selected-aspect 11-row authored room membership and raw Unity Light inputs",
       "one Spot, six ordinary Point, and four positive-length linear-extension Point rows",
-      "all eleven selected room rows enable OBB culling and have no cookie, shadow, shadow-only, or override-shadow state"
+      "all eleven selected room rows enable OBB culling and have no cookie, shadow, shadow-only, or override-shadow state",
+      "all eleven room HGAdditionalLightData components, their exact source PathIDs/hashes, and the native 32-byte return layout",
+      "all rows use NPR type 0 with (1,1,0,0), CharacterOnly false, and falloff exponent -1; volumetric values split 2/5/4 across 0/1/10",
+      "the corresponding producer lanes record3.yzw, record4.xyzw, and record6.w"
     ],
     "open": [
-      "room HGAdditionalLightData component/default resolution, including NPR data, CharacterOnly, volumetric, and falloff lanes",
       "exact float32 color/intensity helper results and camera-relative position/direction values at the target frame",
       "exact packed OBB half words and shadow/cookie cache indices for the eleven rows",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, but do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the additional-light defaults, target-frame transforms, and runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including their additional-light lanes, but do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until target-frame transforms, color/intensity helpers, packed OBB words, and the runtime list boundary are closed."
   }
 }
