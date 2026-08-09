@@ -2152,14 +2152,22 @@ Four exact shipped indices also close the on-disk record families: marker
 stored/decoded lengths and a counted 20-byte tail after 36-byte records. The
 extracted gacha-character index's 24 contiguous records exactly cover its
 1,399,240-byte `iv_0_0.bytes`, but that payload belongs to the separately
-proven old gacha manager and is not a CharInfo V2 fixture. Native missing-map
-initialization/clear behavior, any indirect reload path, persistent-atlas
-transient dimensions, and per-frame IV parameters remain open.
+proven old gacha manager and is not a CharInfo V2 fixture. The native missing-
+map path is now exact: `SetMap` clears/releases all six full-size clipmaps,
+settles inactive, and publishes one shared Unity default 1x1x1 zero Tex3D plus
+parameters `0/0/0/(0,1/3,0,0)`. Generic reflection/external reload invocation,
+populated transient-atlas dimensions, live parameters, and texels remain open.
 The character cubemap (`T_hdri_reflection_char_01`), sky cubemap
 (`T_hdri_006`), and environment reflection-map cubemap
 (`T_hdri_env_char_01`, PathID `2404688955498524548`) are exact 128x128 BC6H
 six-face/eight-mip payloads. `recover_charinfo_cubemap.bat` re-extracts and
-hash-verifies all three. The installed `ReflectionProbeBinningCS`
+hash-verifies all three. The installed `LightBinningXYCS` and
+`LightBinningZCS` assets are now exact too: all eight D3D11/Vulkan programs,
+the 28-byte host `BinningData` layout, 32-pixel/2,048-slice light segment,
+8x8/64x1 dispatch formulas, and combined light/reflection word offsets are
+hash-pinned. The existing equation-level Unity producer remains an isolated
+diagnostic buffer; canonical combined `_BinningBuffer` publication is still
+default-off. The installed `ReflectionProbeBinningCS`
 `SampleOneTextureMip4AndNotReadSrc` producer is now source-closed: two exact
 dispatches populate slice 0, mips 0..7 of a 576x576x32 linear RGBAHalf
 `_ReflectionProbeOctTextureArray`, and a Unity GPU diagnostic reproduces every

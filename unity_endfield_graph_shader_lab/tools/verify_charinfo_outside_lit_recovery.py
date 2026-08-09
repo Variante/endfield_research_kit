@@ -412,6 +412,183 @@ def verify_charinfo_v2_data_path_contract(
         require_charinfo_v2_path_value(source, check, actual, expected)
 
 
+def require_light_binning_value(
+    source: Path,
+    check: str,
+    actual: object,
+    expected: object,
+) -> None:
+    if actual != expected:
+        raise AssertionError(
+            "CharInfo light-binning validator failed: "
+            f"check={check}; source={source}; "
+            f"expected={expected!r}; actual={actual!r}"
+        )
+
+
+def verify_light_binning_contract(
+    runtime: dict[str, object],
+    audit: dict[str, object],
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    expected_assets = {
+        "LightBinningXYCS": {
+            "pathId": 4548070058470272991,
+            "sourceCab": "CAB-2894b8a1c7ce2e6f58bc1c00db01d58d",
+            "serializedSha256": (
+                "0817ef60ae7b9e1d5c2b2358e2e8f63a"
+                "d3073cc15b3184d74eb7f05e20de2561"
+            ),
+            "sourceOffset": 7776767,
+        },
+        "LightBinningZCS": {
+            "pathId": -7926954666264468449,
+            "sourceCab": "CAB-39f802e0747697a03fa65bb3c7439cab",
+            "serializedSha256": (
+                "89ca3fbcaf8283edfa6b3bf16b1206733"
+                "2b49dc212adde955a97291de9cec2a4"
+            ),
+            "sourceOffset": 4917612,
+        },
+    }
+    audited_assets = {
+        row["name"]: {
+            key: row[key]
+            for key in (
+                "pathId",
+                "sourceCab",
+                "serializedSha256",
+                "sourceOffset",
+            )
+        }
+        for row in audit["assets"]
+    }
+    expected_programs = [
+        (
+            "LightBinningXYCS",
+            "CSMain",
+            "d3d11",
+            [8, 8, 1],
+            "608523c1a5c42430629885eced9c2cd39dea9b446916f4e02461527b00edce3b",
+        ),
+        (
+            "LightBinningXYCS",
+            "CSMainWithTileDrawResult",
+            "d3d11",
+            [8, 8, 1],
+            "608523c1a5c42430629885eced9c2cd39dea9b446916f4e02461527b00edce3b",
+        ),
+        (
+            "LightBinningXYCS",
+            "CSClear",
+            "d3d11",
+            [64, 1, 1],
+            "ad570420e19ec470afecd867b0b58bfb626b5c4068d289776a5cb15438ce0574",
+        ),
+        (
+            "LightBinningXYCS",
+            "CSMain",
+            "vulkan",
+            [8, 8, 1],
+            "7bc92dd208a2e84a1b1a0041acc9667b145f6f13db9f08790e61957a9fe3f346",
+        ),
+        (
+            "LightBinningXYCS",
+            "CSMainWithTileDrawResult",
+            "vulkan",
+            [8, 8, 1],
+            "7bc92dd208a2e84a1b1a0041acc9667b145f6f13db9f08790e61957a9fe3f346",
+        ),
+        (
+            "LightBinningXYCS",
+            "CSClear",
+            "vulkan",
+            [64, 1, 1],
+            "99c6691fb03b6a1c6381764b9443b4d3a7b93e8046e92629941fb8b77770b17b",
+        ),
+        (
+            "LightBinningZCS",
+            "CSMain",
+            "d3d11",
+            [64, 1, 1],
+            "51c6e5de76f7eb1d5913cf2aa65d75096b2802cfeeb0ebf0e972d165f36ae085",
+        ),
+        (
+            "LightBinningZCS",
+            "CSMain",
+            "vulkan",
+            [64, 1, 1],
+            "98567e52ff0479884a822b47e1180499ccac7f86c49c25a40bb72bf9bdbff761",
+        ),
+    ]
+    audited_programs = [
+        (
+            row["asset"],
+            row["kernel"],
+            row["rendererName"],
+            row["threadGroupSize"],
+            row["sha256"],
+        )
+        for row in audit["programs"]
+    ]
+    checks = (
+        ("contract.published", runtime["published"], False),
+        (
+            "contract.pass0_consumer_enabled",
+            runtime["pass0_consumer_enabled"],
+            False,
+        ),
+        ("audit.schema", audit["schema"], "endfield.charinfo.light-binning.v1"),
+        ("audit.valid", audit["valid"], True),
+        ("contract.assets", runtime["assets"], expected_assets),
+        ("audit.assets", audited_assets, expected_assets),
+        ("contract.program_count", runtime["program_count"], 8),
+        ("audit.programs", audited_programs, expected_programs),
+        (
+            "contract.static_constants",
+            runtime["static_constants"],
+            audit["staticConstants"],
+        ),
+        (
+            "contract.binning_data_layout",
+            runtime["binning_data_layout"],
+            audit["binningDataLayout"],
+        ),
+        (
+            "contract.light_segment.core",
+            runtime["light_segment"],
+            {
+                key: audit["lightSegment"][key]
+                for key in (
+                    "tileSize",
+                    "sliceZ",
+                    "uintCountPerBin",
+                    "maxLightMasks",
+                    "xyDispatch",
+                    "zDispatch",
+                )
+            },
+        ),
+        (
+            "contract.combined_buffer",
+            runtime["combined_buffer"],
+            audit["combinedBuffer"],
+        ),
+        (
+            "audit.recovery_boundary.canonical_combined_publication",
+            audit["recoveryBoundary"]["canonicalCombinedPublication"],
+            False,
+        ),
+        (
+            "contract.runtime_port.canonical_combined_publication",
+            runtime["runtime_port"]["canonicalCombinedPublication"],
+            False,
+        ),
+    )
+    for check, actual, expected in checks:
+        require_light_binning_value(source, check, actual, expected)
+
+
 def require_hdpls_matrix_value(
     source: Path,
     check: str,
@@ -1573,6 +1750,52 @@ def verify_selected_resolver_binding_contract() -> None:
     require_hash(
         installed_metadata,
         identifier_evidence["source"]["sha256"],
+    )
+    light_binning = contract["light_binning_runtime"]
+    assert light_binning["status"].startswith("binary-source-closed")
+    for path_key, hash_key in (
+        ("audit_path", "audit_sha256"),
+        ("auditor_path", "auditor_sha256"),
+        ("extractor_path", "extractor_sha256"),
+        ("program_manifest_path", "program_manifest_sha256"),
+    ):
+        require_hash(LAB_ROOT / light_binning[path_key], light_binning[hash_key])
+    light_binning_audit = json.loads(
+        (LAB_ROOT / light_binning["audit_path"]).read_text(encoding="utf-8")
+    )
+    verify_light_binning_contract(
+        light_binning,
+        light_binning_audit,
+        BINDING_CONTRACT_PATH,
+    )
+    light_runtime = light_binning["runtime_port"]
+    require_hash(
+        LAB_ROOT / light_runtime["compute_path"],
+        light_runtime["compute_sha256"],
+    )
+    require_hash(
+        LAB_ROOT / light_runtime["owner_path"],
+        light_runtime["owner_sha256"],
+    )
+    require_tokens(
+        LAB_ROOT / light_runtime["compute_path"],
+        [
+            "#pragma kernel BuildXY",
+            "#pragma kernel BuildZ",
+            "RWStructuredBuffer<uint> _EndfieldRecoveredLightBinningBuffer;",
+            "(dispatchThreadID.y * (uint)_NumTilesX + dispatchThreadID.x) * 8u;",
+            "(uint)_EndfieldRecoveredLightBinningZOffset + dispatchThreadID.x * 8u;",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / light_runtime["owner_path"],
+        [
+            "internal sealed class EndfieldRecoveredLightBinning",
+            "private const int WordsPerBin = 8;",
+            "int tileCountX = (width + TileSize - 1) / TileSize;",
+            "(tileCountX + 7) / 8,",
+            "(SliceCount + 63) / 64,",
+        ],
     )
     reflection_runtime = contract["reflection_probe_runtime"]
     assert reflection_runtime["status"].startswith("binary-source-closed")

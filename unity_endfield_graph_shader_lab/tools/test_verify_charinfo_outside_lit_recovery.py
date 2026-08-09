@@ -149,6 +149,45 @@ class CharInfoV2DataPathContractTests(unittest.TestCase):
             )
 
 
+class LightBinningContractTests(unittest.TestCase):
+    @staticmethod
+    def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
+        contract = json.loads(
+            verifier.BINDING_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+        runtime = contract["light_binning_runtime"]
+        audit = json.loads(
+            (verifier.LAB_ROOT / runtime["audit_path"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        return runtime, audit
+
+    def test_current_light_binning_contract_passes(self) -> None:
+        runtime, audit = self.load_current_contract()
+        verifier.verify_light_binning_contract(
+            runtime,
+            audit,
+            Path("fixture_contract.json"),
+        )
+
+    def test_combined_buffer_size_failure_is_actionable(self) -> None:
+        runtime, audit = self.load_current_contract()
+        changed = copy.deepcopy(audit)
+        changed["combinedBuffer"]["example3840x2160"]["totalBytes"] = 0
+        with self.assertRaisesRegex(
+            AssertionError,
+            "CharInfo light-binning validator failed: "
+            "check=contract.combined_buffer; source=fixture_contract.json; "
+            "expected=.*totalBytes.*0",
+        ):
+            verifier.verify_light_binning_contract(
+                runtime,
+                changed,
+                Path("fixture_contract.json"),
+            )
+
+
 class HdplsMatrixFormulaContractTests(unittest.TestCase):
     @staticmethod
     def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
