@@ -580,10 +580,124 @@ def verify_light_binning_contract(
             False,
         ),
         (
+            "audit.recovery_boundary.canonical_combined_capability",
+            audit["recoveryBoundary"]["canonicalCombinedCapability"],
+            (
+                "implemented as a default-off raw ByteAddressBuffer bridge "
+                "with exact light words, zero-local-reflection tail, and four "
+                "installed offsets"
+            ),
+        ),
+        (
             "contract.runtime_port.canonical_combined_publication",
             runtime["runtime_port"]["canonicalCombinedPublication"],
             False,
         ),
+    )
+    for check, actual, expected in checks:
+        require_light_binning_value(source, check, actual, expected)
+
+
+def verify_canonical_binning_gpu_report(
+    transport: dict[str, object],
+    report: dict[str, object],
+    api: str,
+    audit_sha256: str,
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    fixture = transport["fixture"]
+    expected_gates = [
+        {
+            "gate": "zero_width",
+            "input": "width=0, height=2160",
+            "requiredDiagnosticToken": "render dimensions must be positive",
+            "diagnostic": "render dimensions must be positive",
+            "rejected": True,
+            "diagnosticMatched": True,
+        },
+        {
+            "gate": "tile_x_overflow",
+            "input": "width=8193, height=2160",
+            "requiredDiagnosticToken": "exceed the installed 256x128 limit",
+            "diagnostic": (
+                "tile dimensions 257x68 exceed the installed 256x128 limit"
+            ),
+            "rejected": True,
+            "diagnosticMatched": True,
+        },
+        {
+            "gate": "tile_y_overflow",
+            "input": "width=3840, height=4097",
+            "requiredDiagnosticToken": "exceed the installed 256x128 limit",
+            "diagnostic": (
+                "tile dimensions 120x129 exceed the installed 256x128 limit"
+            ),
+            "rejected": True,
+            "diagnosticMatched": True,
+        },
+    ]
+    checks = (
+        (
+            f"gpu_report.{api}.schema",
+            report["schema"],
+            "endfield-recovered-canonical-binning-validation-v1",
+        ),
+        (f"gpu_report.{api}.valid", report["valid"], True),
+        (f"gpu_report.{api}.graphics_api", report["graphicsApi"], api),
+        (
+            f"gpu_report.{api}.canonical_publication_default_off",
+            report["canonicalPublicationDefaultOff"],
+            True,
+        ),
+        (
+            f"gpu_report.{api}.no_local_reflection_source_closed",
+            report["noLocalReflectionSourceClosed"],
+            True,
+        ),
+        (
+            f"gpu_report.{api}.source_audit",
+            (
+                report["sourceAuditSha256"],
+                report["expectedSourceAuditSha256"],
+                report["sourceAuditHashMatches"],
+            ),
+            (audit_sha256, audit_sha256, True),
+        ),
+        (
+            f"gpu_report.{api}.fixture",
+            {
+                "width": report["fixtureWidth"],
+                "height": report["fixtureHeight"],
+                "tileX": report["tileX"],
+                "tileY": report["tileY"],
+                "offsets": [
+                    report["lightXYOffset"],
+                    report["lightZOffset"],
+                    report["reflectionXYOffset"],
+                    report["reflectionZOffset"],
+                ],
+                "lightWords": report["lightWordCount"],
+                "reflectionZeroWords": report["reflectionWordCount"],
+                "totalWords": report["totalWordCount"],
+                "totalBytes": report["totalBytes"],
+            },
+            fixture,
+        ),
+        (
+            f"gpu_report.{api}.readback",
+            (
+                report["rawGlobalReadbackMatches"],
+                report["lightSegmentMatches"],
+                report["reflectionSegmentIsZero"],
+            ),
+            (True, True, True),
+        ),
+        (
+            f"gpu_report.{api}.fail_closed_gates",
+            report["failClosedGates"],
+            expected_gates,
+        ),
+        (f"gpu_report.{api}.failures", report["failures"], []),
     )
     for check, actual, expected in checks:
         require_light_binning_value(source, check, actual, expected)
@@ -1795,8 +1909,76 @@ def verify_selected_resolver_binding_contract() -> None:
             "int tileCountX = (width + TileSize - 1) / TileSize;",
             "(tileCountX + 7) / 8,",
             "(SliceCount + 63) / 64,",
+            "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
+            "_EndfieldRecoveredCanonicalBinningReady",
+            "ComputeBufferType.Raw",
+            "PublishCanonicalBinning(",
         ],
     )
+    canonical_transport = light_binning["canonical_combined_transport"]
+    assert canonical_transport["published_by_default"] is False
+    assert canonical_transport["environment_selector"] == (
+        "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER=1"
+    )
+    assert canonical_transport["command_line_selector"] == (
+        "-endfield-recovered-canonical-binning-buffer"
+    )
+    assert canonical_transport["ready_property"] == (
+        "_EndfieldRecoveredCanonicalBinningReady"
+    )
+    for path_key, hash_key in (
+        ("layout_contract_path", "layout_contract_sha256"),
+        ("compute_path", "compute_sha256"),
+        ("verifier_path", "verifier_sha256"),
+        ("wrapper_path", "wrapper_sha256"),
+    ):
+        require_hash(
+            LAB_ROOT / canonical_transport[path_key],
+            canonical_transport[hash_key],
+        )
+    require_tokens(
+        LAB_ROOT / canonical_transport["layout_contract_path"],
+        [
+            "public const int MaxTileX = 256;",
+            "public const int MaxTileY = 128;",
+            "public const int LightSliceCount = 2048;",
+            "public const int ReflectionSliceCount = 1024;",
+            "int totalWordCount = checked(",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / canonical_transport["compute_path"],
+        [
+            "#pragma kernel BuildCanonicalCombined",
+            "#pragma kernel ReadCanonicalGlobal",
+            "RWByteAddressBuffer _EndfieldRecoveredCanonicalBinningBuffer;",
+            "ByteAddressBuffer _BinningBuffer;",
+            "_EndfieldRecoveredCanonicalBinningBuffer.Store(wordIndex * 4u, value);",
+            "_BinningBuffer.Load(wordIndex * 4u);",
+        ],
+    )
+    for api, evidence in canonical_transport["gpu_reports"].items():
+        report_path = LAB_ROOT / evidence["path"]
+        require_hash(report_path, evidence["sha256"])
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        verify_canonical_binning_gpu_report(
+            canonical_transport,
+            report,
+            api,
+            light_binning["audit_sha256"],
+            BINDING_CONTRACT_PATH,
+        )
+        require_unity_log(
+            LAB_ROOT / evidence["log_path"],
+            evidence["log_sha256"],
+            [
+                "Recovered canonical _BinningBuffer validation passed:",
+                "raw global readback exact",
+                "fail-closed gates=3/3",
+                f"api={api}",
+                "Exiting batchmode successfully now!",
+            ],
+        )
     reflection_runtime = contract["reflection_probe_runtime"]
     assert reflection_runtime["status"].startswith("binary-source-closed")
     assert reflection_runtime["published"] is False
@@ -3798,8 +3980,9 @@ def main() -> int:
         "payload span, plus the shipped Lua old-gacha ownership boundary, "
         "the exact reflection Cubemap's binary-derived 576x576x32 RGBAHalf "
         "slice-0 oct producer, the 4,160-byte global-buffer producer and "
-        "serialized CharInfo SH-luminance fallback, and the binning "
-        "byte-address buffer are pinned; presentation remains "
+        "serialized CharInfo SH-luminance fallback, plus the default-off "
+        "D3D11/D3D12 bit-exact canonical light/zero-reflection binning "
+        "byte-address transport are pinned; presentation remains "
         "default-off because the CharInfo-frame runtime contract is not closed."
     )
     return 0

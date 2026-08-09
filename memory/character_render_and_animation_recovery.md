@@ -47,9 +47,11 @@ NPC archetypes are imported as labeled source kits.
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
   reflection word offsets. The existing Unity light producer matches those
-  equations for the isolated Overview rig, but still writes a diagnostic-only
-  buffer; canonical combined `_BinningBuffer` composition/publication stays
-  off until target-frame descriptors and the reflection segment are closed.
+  equations for the isolated Overview rig. A default-off raw bridge now
+  publishes its exact light words plus the source-closed zero-local-reflection
+  tail through canonical `_BinningBuffer`; all 90,848 words at 3840x2160 read
+  back bit-exactly on D3D11/D3D12. Retail light survivors, reflection oct/global
+  co-publication, and pass-0 activation remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
   `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
   of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character

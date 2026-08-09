@@ -187,6 +187,29 @@ class LightBinningContractTests(unittest.TestCase):
                 Path("fixture_contract.json"),
             )
 
+    def test_canonical_reflection_tail_failure_is_actionable(self) -> None:
+        runtime, _ = self.load_current_contract()
+        transport = runtime["canonical_combined_transport"]
+        evidence = transport["gpu_reports"]["d3d12"]
+        report = json.loads(
+            (verifier.LAB_ROOT / evidence["path"]).read_text(encoding="utf-8")
+        )
+        changed = copy.deepcopy(report)
+        changed["reflectionSegmentIsZero"] = False
+        with self.assertRaisesRegex(
+            AssertionError,
+            "CharInfo light-binning validator failed: "
+            "check=gpu_report.d3d12.readback; "
+            "source=fixture_contract.json; expected=.*True.*actual=.*False",
+        ):
+            verifier.verify_canonical_binning_gpu_report(
+                transport,
+                changed,
+                "d3d12",
+                runtime["audit_sha256"],
+                Path("fixture_contract.json"),
+            )
+
 
 class HdplsMatrixFormulaContractTests(unittest.TestCase):
     @staticmethod
