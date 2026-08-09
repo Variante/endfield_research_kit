@@ -1,0 +1,594 @@
+{
+  "schema": "endfield.charinfo.sphereoutside.deferred-lighting-recovery.v1",
+  "recovered_at": "2026-07-17",
+  "runtime_ready": false,
+  "activation_policy": "default-off-fail-closed",
+  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. The selected Gacha SceneColor format/descriptor policy and clear are recovered as B10G11R11_UFloatPack32 with Point/Clamp and (0.025,0.07,0.19,0); exact dimensions, possible live MSAA mutation, physical aliasing, and retirement remain runtime boundaries. The runtime-resource PPtrs and runtime Material construction for DeferredLighting, DeferredLightingPerLight, and DeferredLightingWriteAlpha are exact. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, the exact executed resolver program pair, physical scene-color allocation/lifetime, and frame-produced lighting resources are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
+  "selected_hgbuffer": {
+    "shader": "HGRP/Lit",
+    "pass": "HGBuffer",
+    "material": {
+      "path": "Materials/M_CharInfo_outside.raw.json",
+      "size": 56590,
+      "sha256": "45b4e36ddf66010b838abdbad0e7bf8906d5cf2ec2ea9997771bd14c75ecfaf7"
+    },
+    "keywords": [
+      "HG_ENABLE_MV",
+      "SRP_INSTANCING_ON"
+    ],
+    "vertex_dxbc": {
+      "path": "ShaderEvidence/HGRPLitHGBuffer.vertex.dxbc.bytes",
+      "sha256": "7be4c9935209bc165682ca459c60149dfc67892b98e76cf0e6b8aff6cc3c67df"
+    },
+    "fragment_dxbc": {
+      "path": "ShaderEvidence/HGRPLitHGBuffer.fragment.dxbc.bytes",
+      "sha256": "1bdda9c60972b0a28325411d7438f7ce4335ef8820ef3b91dc05b564f749d5e7"
+    },
+    "decompiled_vertex": {
+      "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/hgbuffer_vertex.hlsl",
+      "sha256": "3523017d737da259f780d3e30e918be8cbc6995489e0b1411aa4f396ae8c53b0"
+    },
+    "decompiled_fragment": {
+      "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/hgbuffer_fragment.hlsl",
+      "sha256": "2309df0908a1d645cbd7d51940d9937cc44d6ede00390d344bf6e3435ff618c5"
+    },
+    "observed_outputs": [
+      "SV_Target0 scene-color contribution initialized to (0,0,0,0.5)",
+      "SV_Target1 encoded motion-vector payload",
+      "SV_Target2 packed material payload",
+      "SV_Target3 octahedral world normal plus packed material flags",
+      "SV_Target4 base-color/occlusion payload"
+    ]
+  },
+  "high_end_attachments": {
+    "depth_intent": "D32_SFloat_S8_UInt; runtime may select a supported fallback",
+    "sampled_depth_copy": "R32_SFloat",
+    "gbuffer_a": "A2B10G10R10_UNormPack32",
+    "gbuffer_b": "A2B10G10R10_UNormPack32",
+    "gbuffer_c": "R8G8B8A8_SRGB",
+    "binding_note": "With scene motion vectors enabled, the observed five MRTs are scene color, motion, GBuffer A, GBuffer B, and GBuffer C. Native code selects GBuffer handles by ID rather than assuming a fixed MRT number."
+  },
+  "default_deferred_gbuffer_submission": {
+    "selected_installed_route": "HGRenderPathDefaultDeferred -> GBufferPassConstructor.ConstructPass",
+    "shader_pass_name": "HGBuffer",
+    "renderer_list_light_mode": "GBuffer",
+    "sorting": "CommonOpaque",
+    "execution_queue": "graphics",
+    "color_attachments_in_order": [
+      "SceneColor",
+      "SceneMV when valid",
+      "GBufferA",
+      "GBufferB",
+      "GBufferC"
+    ],
+    "scene_mv_clear": [
+      0.5,
+      0.5,
+      0.0,
+      0.0
+    ],
+    "depth_attachment": {
+      "resource": "sceneDepth",
+      "access": "Write",
+      "access_value": 2
+    },
+    "load_store": "automatic render-graph selection; GBufferPassConstructor does not manually override load/store",
+    "scene_color_producer": {
+      "audit_path": "scratch/reverse_engineering/gacha_scene_color_producer/gacha_scene_color_producer_audit.json",
+      "audit_sha256": "c20d6727f3e177670d6183919ba057541611297f089771cd03db29ac2c822c83",
+      "logical_descriptor_source_closed": true,
+      "graphics_format": "B10G11R11_UFloatPack32",
+      "graphics_format_enum": 74,
+      "has_alpha_channel": false,
+      "filter_mode": "Point",
+      "wrap_mode": "Clamp",
+      "dimension": "Tex2D",
+      "clear_buffer": true,
+      "clear_color": [0.025, 0.07, 0.19, 0.0],
+      "transient_render_graph_texture": true,
+      "physical_allocation_source_closed": false
+    },
+    "first_unresolved_resource_producer": "Settled Gacha SceneColor exact dimensions and possible live MSAA mutation, followed by render-graph physical alias selection and retirement",
+    "lab_boundary": "Adding LightMode GBuffer to the compatibility opaque list alone is invalid because that path does not bind the exact five color targets plus depth or run the deferred consumer."
+  },
+  "runtime_resolver_resources": {
+    "runtime_resources_path_id": 5613980184714137857,
+    "deferred": {
+      "file_id": 89,
+      "path_id": 6850169740889141214,
+      "shader": "HGRP/DeferredLighting"
+    },
+    "write_alpha": {
+      "file_id": 76,
+      "path_id": 1251403764302302053,
+      "shader": "HGRP/DeferredLightingWriteAlpha"
+    },
+    "per_light": {
+      "file_id": 112,
+      "path_id": 1386032630407682696,
+      "shader": "HGRP/DeferredLightingPerLight"
+    },
+    "material_construction": "DeferredLightingPassConstructor..ctor creates runtime Materials from the shader slots; there are no serialized deferred Material PathIDs.",
+    "unity_write_alpha_port": {
+      "path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldDeferredLightingWriteAlphaRecovered.shader",
+      "sha256": "1261444ba89971e1f32894f2d54e7dfb7ed1040c5d73c2662a733320680f5d83",
+      "shader": "Hidden/Endfield/HGRPCompat/RecoveredDeferredLightingWriteAlpha",
+      "runtime_enabled": false,
+      "vertex_dxbc_sha256": "81C3531A3981DC2C4367449B4148613912C228572770511BB0AD767363F3E810",
+      "fragment_dxbc_sha256": "E1C62FBCEC8B1ADB4F28717C4A9D5A47D7D517D456F07945B60C1891C4191E32",
+      "pass_indices": [
+        0,
+        1,
+        2
+      ],
+      "stencil_refs": [
+        0,
+        1,
+        2
+      ],
+      "render_state": "ColorMask A; ZTest Greater; ZWrite Off; Cull Off; Stencil ReadMask 7, Comp Equal, Keep",
+      "program": "SV_VertexID fullscreen triangle; resource-free fragment returns (0,0,0,1)",
+      "activation_gate": "The selected installed Gacha camera is source-closed HGUtils.RenderWithAlpha=false, so this exact port remains unsubmitted on that route.",
+      "gpu_validation": {
+        "graphics_device": "Direct3D12",
+        "report_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/deferred_write_alpha_diagnostic/unity_validation.json",
+        "report_sha256": "49ad6f5ea15020220e7fdb4f35523c6157cde87bc75b11e862904ac04c742ad6",
+        "log_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/deferred_write_alpha_diagnostic/unity_build.log",
+        "log_sha256": "6e76034342ad151c49b548ebf2c3617c602ec1563921ad156486c956902352ec",
+        "matching_stencil_rgba_sha256": "0169c50a9e1b5d6f3e55374a8d9b4952a2cf72e0203a9c7f2b68d7da91747d97",
+        "mismatching_stencil_rgba_sha256": "e877d1046b540ac9dacdd405d4750eb32ecce1f6925500ac56653d30f0a7fcf8",
+        "result": "All passes preserve nonzero RGB through ColorMask A, write alpha only for matching stencil refs 0/1/2 under the exact depth state, and reject the paired mismatching stencil case."
+      }
+    }
+  },
+  "selected_resolver_keyword_state": {
+    "audit_path": "scratch/reverse_engineering/gacha_deferred_keyword_state/audit.json",
+    "audit_sha256": "2dbdc0a7aadcb15592c8f74ccd871329ad5ecc2bbd976feec625766de1f241d9",
+    "source_closed": true,
+    "HG_ENABLE_SCREEN_SPACE_SHADOW_MASK": true,
+    "HG_USE_SUBPASS_INPUT_UNDER_ONE_PASS_DEFERRED": false,
+    "exact_executed_pass0_program_pair_source_closed": true,
+    "installed_player_fallback_selection": {
+      "source_closed": true,
+      "fallback_program_audit_path": "scratch/reverse_engineering/gacha_deferred_fallback_program/audit.json",
+      "fallback_program_audit_sha256": "cd02cc0a8636546a8d3d45a5e322eced8ff26dfae68eff1643e33cbdaf16e409",
+      "selection_rule": "popcount(request & variant) - 16 * popcount((~request) & variant); strict-greater updates retain the first serialized variant on ties",
+      "variant_pair_count": 64,
+      "unique_winner": true,
+      "selected_serialized_order": 96,
+      "selected_score": -15,
+      "runner_up_score": -16,
+      "request_enabled_keywords": [
+        "HG_ENABLE_SCREEN_SPACE_SHADOW_MASK"
+      ],
+      "selected_compiled_keywords": [
+        "HG_ENABLE_SCREEN_SPACE_SHADOW_MASK",
+        "HG_USE_SUBPASS_INPUT_UNDER_ONE_PASS_DEFERRED"
+      ],
+      "selected_d3d11_pair": {
+        "vertex": {
+          "path": "scratch/reverse_engineering/gacha_deferred_resolver_chain/deferred_lighting_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0096_endfield_dxbc_0.dxbc",
+          "sha256": "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155"
+        },
+        "fragment": {
+          "path": "scratch/reverse_engineering/gacha_deferred_resolver_chain/deferred_lighting_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0097_endfield_dxbc_1.dxbc",
+          "sha256": "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f"
+        }
+      },
+      "isolated_original_bytecode_execution": {
+        "audit_path": "scratch/reverse_engineering/gacha_unity_original_bytecode_execution/unity_live_validation.json",
+        "audit_sha256": "9ca5b321e0a31fb058d9043e328d222b492188f09e298167fc2df807620fa6a6",
+        "scope": "standalone_d3d11_isolated_diagnostic",
+        "resource_binding_compatible": true,
+        "vertex_swap_count": 1,
+        "fragment_swap_count": 1,
+        "production_room_submitted": false,
+        "numeric_render_fidelity_proven": false
+      }
+    },
+    "boundary": "The installed UnityPlayer fallback scorer selects serialized pair 96 as the unique winner for the source-closed DefaultDeferred request. The exact VS/PS hashes each execute once in a fail-closed standalone D3D11 diagnostic with compatible neutral bindings; live production-frame resource values and numeric fidelity remain open."
+  },
+  "resolver_shader_dumps": [
+    {
+      "shader": "HGRP/DeferredLighting",
+      "repo_path": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader",
+      "size": 34682137,
+      "sha256": "7328c9d2e6052073764b1901216d6c34a9bfa40c2456240fbb0bb4d6c6f2a7f2"
+    },
+    {
+      "shader": "HGRP/DeferredLightingPerLight",
+      "repo_path": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_DeferredLightingPerLight_p133C2D55768CDA88.shader",
+      "size": 29213136,
+      "sha256": "faa238477df1b80c46f195f0221755cf01e1599426ff44922f6a1f4c958dc356"
+    },
+    {
+      "shader": "HGRP/DeferredLightingWriteAlpha",
+      "repo_path": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_DeferredLightingWriteAlpha_p115DE117E9D34B65.shader",
+      "size": 12804,
+      "sha256": "7a6d3ab6c2ffe553b94d09f5a80ee3ee8e721b39dbaa4fd388f70360a030a6e6"
+    },
+    {
+      "shader": "HGRP/Lit",
+      "repo_path": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_Lit_p49E2B3F8CF6DB5CE.shader",
+      "size": 34516410,
+      "sha256": "35d7bd995e67abe61c3c87fa61078139dcecb2f05ca26bef670e248119047378"
+    }
+  ],
+  "deferred_resolver": {
+    "pass_names": [
+      "Default Lit - Full Lighting",
+      "Two sided foliage - Full Lighting",
+      "Subsurface - Full Lighting",
+      "Default Lit - Directional Light",
+      "Two sided foliage - Directional Light",
+      "Subsurface - Directional Light",
+      "Default Lit - Punctual lights",
+      "Two sided foliage - Punctual lights",
+      "Subsurface - Punctual lights",
+      "Default Lit - Indirect lighting",
+      "Two sided foliage - Indirect lighting",
+      "Subsurface - Indirect lighting",
+      "Default Lit - Full Lighting Per Tile",
+      "Default Lit - No Dynamic Light Per Tile"
+    ],
+    "serialized_subshader_count": 4,
+    "d3d11_variant_count": 640,
+    "keyword_axes": [
+      "HG_DISABLE_DYNAMIC_LIGHTLOOP",
+      "HG_ENABLE_SCREEN_SPACE_SHADOW_MASK",
+      "HG_ENABLE_WETNESS",
+      "HG_RAIN_WETNESS_HIGH_QUALITY",
+      "HG_USE_SUBPASS_INPUT_UNDER_ONE_PASS_DEFERRED",
+      "_HEIGHT_FOG_FLOW_NOISE",
+      "_SUBSURFACE_PROFILE_SIMPLE"
+    ],
+    "known_charinfo_state": {
+      "height_fog_flow_noise": false,
+      "source": "Recovered CharInfo atmosphere state disables fog, height fog, volumetric fog, and flow noise."
+    },
+    "render_state": {
+      "blend_target_0": "One SrcAlpha, One SrcAlpha",
+      "blend_target_1": "One One, One One",
+      "z_test": "Greater (reversed Z)",
+      "z_write": false,
+      "cull": "Off",
+      "stencil_read_mask": 7,
+      "stencil_compare": "Equal"
+    }
+  },
+  "native_runtime_evidence": {
+    "global_metadata": {
+      "path_at_recovery": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "game_assembly": {
+      "path_at_recovery": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "code_registration": "0x18b9217d0",
+    "targeted_metadata": {
+      "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_runtime_metadata.json",
+      "sha256": "7203db6c143b2bae7cdd45dce1426b46e1e339c7c5055e1a399cbd1dc302cbb2"
+    },
+    "targeted_native_map": {
+      "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_runtime_native.json",
+      "sha256": "ef7ecfc4486b7d0963f707a37f63c3a1863bd91455aae7165eb72f6cccbf15c7",
+      "mapped_targets": 7,
+      "catalog_targets": 7
+    },
+    "method_indices": {
+      "DeferredLightingPass.InitDeferredLightingRenderParams": 287098,
+      "DeferredLightingPass.DrawDeferredLighting": 287099,
+      "DeferredLightingPass.DrawPerLightDeferredLighting": 287100,
+      "DeferredLightingPass.DrawDeferredLightingWriteAlpha": 287101,
+      "HGRendererListUtils.DrawDeferredLighting": 288235,
+      "HGRendererListUtils.DrawDeferredLightingWriteAlpha": 288236,
+      "HGRendererListUtils.DrawPerLightDeferredLighting": 288237
+    },
+    "method_vas": {
+      "DeferredLightingPass.InitDeferredLightingRenderParams": "0x189b9445c",
+      "DeferredLightingPass.DrawDeferredLighting": "0x189b93778",
+      "DeferredLightingPass.DrawPerLightDeferredLighting": "0x189b93ca4",
+      "DeferredLightingPass.DrawDeferredLightingWriteAlpha": "0x189b93614",
+      "HGRendererListUtils.DrawDeferredLighting": "0x189c09568",
+      "HGRendererListUtils.DrawDeferredLightingWriteAlpha": "0x189c09464",
+      "HGRendererListUtils.DrawPerLightDeferredLighting": "0x189c09a30"
+    },
+    "unpatched_init_semantics": {
+      "ifix_patch_id": "0xbe4",
+      "feature_manager_static_field_base_offset": "0x140",
+      "feature_switch_pointer_stride": 8,
+      "ordered_feature_sources": [
+        "HGGraphicsFeatureManager.deferredShadingDefaultLit",
+        "HGGraphicsFeatureManager.deferredShadingTwoSidedFoliage",
+        "HGGraphicsFeatureManager.deferredShadingSubsurface",
+        "HGGraphicsFeatureManager.splitDeferredShadingStage",
+        "HGGraphicsFeatureManager.usePerLightDynamicLighting",
+        "HGGraphicsFeatureManager.deferredShadingDirectionalLightStage",
+        "HGGraphicsFeatureManager.deferredShadingDynamicLightStage",
+        "HGGraphicsFeatureManager.deferredShadingIndirectStage",
+        "HGGraphicsFeatureManager.usePerTileDeferredLighting"
+      ],
+      "ordered_result_fields": [
+        "enableDeferredShadingDefaultLit",
+        "enableDeferredShadingTwoSidedFoliage",
+        "enableDeferredShadingSubsurface",
+        "splitDeferredShadingStage",
+        "usePerLightDynamicLighting",
+        "enableDeferredShadingDirectionalLightStage",
+        "enableDeferredShadingDynamicLightStage",
+        "enableDeferredShadingIndirectStage",
+        "enableDeferredShadingTileDraw"
+      ],
+      "when_is_one_pass_deferred_false_force_off": [
+        "splitDeferredShadingStage",
+        "enableDeferredShadingTileDraw"
+      ],
+      "buffer_fields_default": "zero/null until populated by the calling light-culling path",
+      "evidence_boundary": "This is the exact unpatched native body. IFix patch 0xbe4 can replace its result, and the settled CharInfo feature-switch values are not present in static metadata."
+    },
+    "static_supporting_evidence": {
+      "feature_manager_metadata": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_feature_manager_metadata.json",
+        "sha256": "a16aa7f2be29950f4b0a2d52a47a6ac5c09809df4197502ae7fd5257c9fd46c3"
+      },
+      "feature_manager_native_map": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_feature_manager_native.json",
+        "sha256": "fda2887aaf8ead4f391267578277d19b42297a11d3685c7b469ec7829107f6a6",
+        "mapped_targets": 5,
+        "catalog_targets": 5,
+        "cctor_method_index": 284059,
+        "cctor_va": "0x184579410"
+      },
+      "constructor_metadata": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_constructor_metadata.json",
+        "sha256": "4e0eedeb5f0e9fbbe1bf13ee0d421db69fdb64f98bc8d8723c88678133da75f6"
+      },
+      "constructor_native_map": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_constructor_native.json",
+        "sha256": "481ee0526eb045908149e0c0ba32e41c7d572ce31187b4ad68c96f086136eddd",
+        "mapped_targets": 3,
+        "catalog_targets": 3,
+        "render_lambda_method_index": 287114,
+        "render_lambda_va": "0x189b9cdb4"
+      },
+      "shader_ids_metadata": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_shader_ids_metadata.json",
+        "sha256": "bf9370391075839f63d01a060d881ea4ee9a1df5c60747e780e4b9870bab9b9f"
+      },
+      "render_graph_metadata": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/deferred_rendergraph_metadata.json",
+        "sha256": "5986f609e8a7312625becc5c48cb0c3e96c502688e4c0bb41e21977318c3f71c"
+      },
+      "unity_texture_defaults_metadata": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/unity_texture_defaults_metadata.json",
+        "sha256": "9583156021827d934ae2fe5fadaa92d1e67f5e1ecbda1e922c059ea04ee3b0a2"
+      },
+      "unity_texture_defaults_native_map": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/unity_texture_defaults_native.json",
+        "sha256": "5c43553fb383700e0ff934e71cf1c5383dce606d970bd4e01f7bf5b13c581b10",
+        "mapped_targets": 2,
+        "catalog_targets": 2,
+        "white_texture_va": "0x182eddc00"
+      },
+      "installed_ifix_patch_index": {
+        "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/persistent_primary_ifix_vfs_index.json",
+        "sha256": "f68f5dc7664c5a60fcde811f05cbfa37567487bcd304baee8001fba7a1546800",
+        "block": "IFixPatchOut",
+        "file_count": 1,
+        "chunk_count": 1,
+        "byte_count": 82021,
+        "block_version": 22764515,
+        "target_count": 30,
+        "character_recovery_locally_replaced": false,
+        "state_report": {
+          "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
+          "size": 16530,
+          "sha256": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1"
+        }
+      }
+    },
+    "offline_unpatched_charinfo_route": {
+      "evidence_scope": "Current installed GameAssembly plus the decoded Persistent VFS patch snapshot. The active 30-target Gameplay.Beyond patch is signature-disjoint from this HGRP route and its render-pipeline settings lifecycle. Future/network-delivered IFix patches and live GPU bindings remain outside scope.",
+      "feature_defaults": {
+        "deferredShading": true,
+        "deferredShadingDefaultLit": true,
+        "deferredShadingTwoSidedFoliage": true,
+        "deferredShadingSubsurface": true,
+        "splitDeferredShadingStage": false,
+        "usePerLightDynamicLighting": false,
+        "deferredShadingDirectionalLightStage": true,
+        "deferredShadingDynamicLightStage": true,
+        "deferredShadingIndirectStage": true,
+        "usePerTileDeferredLighting": true
+      },
+      "switch_accessor_ifix_patch_ids": {
+        "get_enabled": "0x19c",
+        "get_enabledForCPUCommands": "0x19d"
+      },
+      "render_lambda_is_one_pass_deferred": false,
+      "resolved_render_booleans": {
+        "enableDeferredShadingDefaultLit": true,
+        "enableDeferredShadingTwoSidedFoliage": true,
+        "enableDeferredShadingSubsurface": true,
+        "splitDeferredShadingStage": false,
+        "usePerLightDynamicLighting": false,
+        "enableDeferredShadingDirectionalLightStage": true,
+        "enableDeferredShadingDynamicLightStage": true,
+        "enableDeferredShadingIndirectStage": true,
+        "enableDeferredShadingTileDraw": false
+      },
+      "resolver_draws": [
+        {
+          "pass_index": 0,
+          "pass": "Default Lit - Full Lighting"
+        },
+        {
+          "pass_index": 1,
+          "pass": "Two sided foliage - Full Lighting"
+        },
+        {
+          "pass_index": 2,
+          "pass": "Subsurface - Full Lighting"
+        },
+        {
+          "shader": "HGRP/DeferredLightingWriteAlpha",
+          "selection": "the render callback invokes the helper, but the selected physical Gacha camera is source-closed HGUtils.RenderWithAlpha=false",
+          "pass_indices_when_enabled": [
+            0,
+            1,
+            2
+          ],
+          "settled_gacha_result": false,
+          "selected_gacha_draws": []
+        }
+      ],
+      "routes_not_drawn": [
+        "split directional/dynamic/indirect passes 3..11",
+        "tile passes 12..13",
+        "HGRendererListUtils.DrawPerLightDeferredLighting"
+      ],
+      "render_lambda_global_bindings": [
+        {
+          "pass_data_field": "gbuffer",
+          "object_offset": "0xb0",
+          "shader_id": "HGShaderIDs._GBufferTexture[i]",
+          "shader_id_static_offset": "0x230",
+          "condition": "for i=0..3, bind each valid handle"
+        },
+        {
+          "pass_data_field": "depthTexture",
+          "object_offset": "0x30",
+          "shader_id": "HGShaderIDs._CameraDepthTexture",
+          "shader_id_static_offset": "0x3a0",
+          "condition": "bound directly"
+        },
+        {
+          "pass_data_field": "previousSceneColorTexture",
+          "object_offset": "0x40",
+          "shader_id": "HGShaderIDs._PreviousSceneColorTexture",
+          "shader_id_static_offset": "0x1e4",
+          "condition": "bind when valid"
+        },
+        {
+          "pass_data_field": "waterWetnessMaskTexture",
+          "object_offset": "0xa0",
+          "shader_id": "HGShaderIDs._WaterWetnessMaskTexture",
+          "shader_id_static_offset": "0xbb8",
+          "condition": "bind handle when valid; otherwise bind UnityEngine.Texture2D.whiteTexture"
+        },
+        {
+          "pass_data_field": "fogBakeLutTexture",
+          "object_offset": "0x90",
+          "binding": "HGAtmosphereRenderer.SetupFogBakeLutParam followed by SetupRenderHeightFogFlowNoiseParam"
+        },
+        {
+          "pass_data_field": "ssrLightingTexture",
+          "object_offset": "0x60",
+          "shader_id": "HGShaderIDs._SSRLightingTexture",
+          "shader_id_static_offset": "0xa70",
+          "condition": "bind when HGCamera.ssrEnable"
+        },
+        {
+          "pass_data_field": "ssrFadenessTexture",
+          "object_offset": "0x70",
+          "shader_id": "HGShaderIDs._SSRFadenessTexture",
+          "shader_id_static_offset": "0xa74",
+          "condition": "bound directly after the conditional SSR-lighting branch"
+        },
+        {
+          "pass_data_field": "indirectAmbientOcclusionTexture",
+          "object_offset": "0x50",
+          "shader_id": "HGShaderIDs._IndirectAmbientOcclusionTexture",
+          "shader_id_static_offset": "0x208",
+          "condition": "bind when the handle is valid and HGCamera.aoEnable"
+        },
+        {
+          "pass_data_field": "planarReflectionTexture",
+          "object_offset": "0x80",
+          "shader_id": "HGShaderIDs._FakePlanarReflectionTexture",
+          "shader_id_static_offset": "0xacc",
+          "condition": "bound directly"
+        }
+      ],
+      "render_graph_attachment_route": {
+        "change_color_rt": false,
+        "color": {
+          "source": "PassInput.sceneColor",
+          "input_object_offset": "0x0",
+          "attachment_index": 0,
+          "load_action": "Load",
+          "store_action": "Store",
+          "clear_color_argument": "UnityEngine.Color.black (ignored by Load)",
+          "depth_slice": 0,
+          "builder_overload_method_index": 283474
+        },
+        "depth": {
+          "source": "PassInput.sceneDepth",
+          "input_object_offset": "0x10",
+          "access": "Read",
+          "access_value": 1,
+          "depth_slice": 0,
+          "builder_overload_method_index": 283475
+        },
+        "alternate_color_clone_branch": "Exists in PrepareDeferredLightingPass for changeColorRT=true but is not selected by ConstructPass.",
+        "gbuffer_usage": "GBuffer attachments are ReadTexture inputs and are published as globals; they are not color attachments of the resolver pass."
+      },
+      "sphere_stencil_contract": {
+        "hgbuffer_material_stencil_ref": 0,
+        "hgbuffer_material_stencil_op": "Replace",
+        "hgbuffer_material_stencil_op_value": 2,
+        "resolver_read_mask": 7,
+        "resolver_pass_refs": {
+          "Default Lit - Full Lighting": 0,
+          "Two sided foliage - Full Lighting": 1,
+          "Subsurface - Full Lighting": 2
+        },
+        "write_alpha_ref": 0,
+        "sphere_effective_resolver": "M_CharInfo_outside writes shading-model value 0, so Default Lit - Full Lighting affects its pixels. The selected Gacha camera has RenderWithAlpha=false, so no ref-0/ref-1/ref-2 WriteAlpha draw executes."
+      }
+    },
+    "render_parameter_fields": [
+      "enableDeferredShadingDefaultLit",
+      "enableDeferredShadingTwoSidedFoliage",
+      "enableDeferredShadingSubsurface",
+      "splitDeferredShadingStage",
+      "usePerLightDynamicLighting",
+      "enableDeferredShadingDirectionalLightStage",
+      "enableDeferredShadingDynamicLightStage",
+      "enableDeferredShadingIndirectStage",
+      "enableDeferredShadingTileDraw",
+      "drawTileArgs",
+      "tileInstanceIndices",
+      "quadIndexBuffer"
+    ],
+    "native_draw_sequence_components": [
+      "HGAtmosphereRenderer.SetupFogBakeLutParam",
+      "SubsurfaceProfileManager.BindProfileData",
+      "SubsurfaceManager.BindSubsurfaceData",
+      "bind render-graph textures/globals and material keyword",
+      "HGRendererListUtils.DrawDeferredLighting",
+      "HGRendererListUtils.DrawDeferredLightingWriteAlpha"
+    ]
+  },
+  "unresolved_exact_contract": [
+    "A future/network-patched CharInfo result of InitDeferredLightingRenderParams. The current installed Persistent target table is exact and excludes InitDeferredLightingRenderParams plus the 0x19c/0x19d feature-switch accessors, but a later delivered table could replace them.",
+    "Live SceneColor dimensions and physical alias lifetime. The selected logical format, Point/Clamp descriptor policy, exact clear, 1x MSAA state, resolver Load/Store, read-only scene-depth attachment, ref-0 sphere stencil route, PassData-to-HGShaderIDs routing, installed fallback selection, and exact executed pass-0 D3D11 program pair are closed, but live resource contents and physical instance identity remain open.",
+    "Frame-produced main-light, shadow, tiled/clustered light-loop, irradiance, reflection, exposure, camera, and history constants/resources.",
+    "Frame-produced AO, SSR, planar reflection, screen-space shadow mask, subsurface, fog-LUT, and wetness bindings, including exact neutral bindings for disabled features.",
+    "A resource-binding-compatible pass-0 lighting implementation in the lab SRP. The simple resource-free WriteAlpha program and its three exact render-state variants are ported and D3D12-validated, but correctly remain unsubmitted for the source-closed RenderWithAlpha=false selected Gacha route; the recovered pass-0 lighting dump still contains bytecode/disassembly rather than directly importable ShaderLab source for Unity's current binding model."
+  ],
+  "required_next_capture": {
+    "target": "one settled original-client CharInfo frame with SphereOutside visible",
+    "collect": [
+      "HGRP/DeferredLighting and DeferredLightingPerLight production draw-event order, with confirmation that the already source-closed pass-0 pair is submitted",
+      "all color/depth attachment formats, load/store operations, sample counts, and stencil reference/masks",
+      "CBV/SRV/UAV/sampler bindings and raw constant-buffer bytes at the HGBuffer and deferred-resolve draws",
+      "confirmation of the resolved render-parameter booleans and IFix patch-table state, plus drawTileArgs, tileInstanceIndices, and per-light draw requests",
+      "resource exports for GBuffer A/B/C, sampled depth, scene color before/after resolve, shadow mask, AO, SSR, reflection, fog LUT, wetness, and light-loop buffers"
+    ],
+    "safety_boundary": "Use an offline/noncompetitive client session and supported GPU-capture tooling. Do not bypass anti-cheat or other access controls."
+  }
+}

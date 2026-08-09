@@ -1,0 +1,3566 @@
+{
+  "schema": "endfield.charinfo.sphereoutside.deferred-binding-contract.v1",
+  "runtime_ready": false,
+  "activation_policy": "default-off-fail-closed",
+  "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, but its selected SPIR-V debug name is absent. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 is role-identified as the 32-entry light-cookie atlas transform data. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are now binary-source-closed; the source-derived Unity compute port is GPU-verified but deliberately unpublished. The retail deferred and volumetric binders also close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame resources are not yet closed.",
+  "source_filter": {
+    "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/deferred_lighting_filter.json",
+    "sha256": "37e0a45e2aad998ad85a2f6a213139a94b1f6e5cff83ea4bdc3bc6f86508d4ee",
+    "asset": {
+      "Name": "HGRP/DeferredLighting",
+      "Container": "assets/beyond/initialassets/settings/renderpipeline/hgrenderpipelineglobalsettings.asset",
+      "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+      "PathID": 6850169740889141214,
+      "Type": "Shader",
+      "Hash": "906180dff70e7db",
+      "Offset": 102276665
+    }
+  },
+  "installed_texture_identifier_evidence": {
+    "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/global_texture_identifier_evidence.json",
+    "sha256": "54c9d001face6bb4e953d1cc7f5a18f80a219508551e3bc84d8f1368f1f83cfb",
+    "source": {
+      "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "identifier_count": 16
+  },
+  "reflection_probe_runtime": {
+    "status": "binary-source-closed producer and no-local CharInfo fallback; Unity publication and pass-0 consumption remain default-off",
+    "published": false,
+    "pass0_consumer_enabled": false,
+    "source_cubemap": "T_hdri_env_char_01",
+    "source_cubemap_path_id": 2404688955498524548,
+    "runtime_producer_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredReflectionProbeFallback.cs",
+    "runtime_producer_sha256": "327698f076ec2c1bb90529fb3c10720322b9afda22c49536eef0e1d50c9d7745",
+    "camera_binning": {
+      "prepareShaderVariablesGlobalVa": "0x189b9073c",
+      "generateBinningDataVa": "0x189b90558",
+      "renderTargetSizeSource": "ShaderVariablesGlobal first two floats, truncated to int",
+      "tileSize": 32,
+      "light": {
+        "sliceZ": 2048,
+        "uintCountPerBin": 8,
+        "punctualLightsMax": 32,
+        "maskUnitDivisor": 4
+      },
+      "reflection": {
+        "sliceZ": 1024,
+        "uintCountPerBin": 1,
+        "tileX": "ceil(renderTargetWidth / 32)",
+        "tileY": "ceil(renderTargetHeight / 32)",
+        "xyOffset": "(tileX * tileY + 2048) * 8",
+        "zOffset": "(tileX * tileY + 2048) * 8 + tileX * tileY",
+        "uintCount": "tileX * tileY + 1024"
+      },
+      "shaderVariablesGlobalBinningBufferOffsets": [
+        "light.xyOffset",
+        "light.zOffset",
+        "reflection.xyOffset",
+        "reflection.zOffset"
+      ]
+    },
+    "oct_texture_array": {
+      "format": "R16G16B16A16_SFloat",
+      "width": 576,
+      "height": 576,
+      "slices": 32,
+      "physical_mip_count": 10,
+      "populated_mips": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "destination_slice": 0,
+      "first_dispatch": "size=512, sourceMip=0, slice=0, padding=32, groups=32x32x1, outputs=mips0..3",
+      "second_dispatch": "size=32, sourceMip=4, slice=0, padding=2, groups=2x2x1, outputs=mips4..7",
+      "slice0_mip_sha256": {
+        "0": "51a9f6e8c9cac7cb3b57c2b1f00341ca579f86220c8c6345a819264370d84b68",
+        "1": "eba655a4eca3a7e3fa4fab402b914c0a7b42f7877cfe47b46091b0664c9f74dc",
+        "2": "2d80cf7c62e528dbccb7fa435af93d58cdd8c938f6a27c78b55f486fc9df51b9",
+        "3": "3fa3a63ceae7a23e8f2fdd3d9ef7a4b399016044ecee3de39ab76706b9b8579f",
+        "4": "fdbbc8070238c7857417d9f64ab46ab366f4035f3c4fdab2192d7e52913026e5",
+        "5": "28e10eea295b226b2d53046dde9c8558d1b53c426863cb87c0c43dfb76d61b24",
+        "6": "8957d831c59c97cd1c1c0063df0ed0450d2e0266935598e2740f1888d28574e4",
+        "7": "b91f9dca3b9afe7683efe9952ec00845c30a64d57c3d0ae9f80c9c0adfb04ba8"
+      },
+      "gpu_repeat_byte_identical": true,
+      "diagnostic_report_path": "scratch/character_recovery/charinfo_reflection_runtime/unity_oct_diagnostic/reflection_probe_oct_validation.json",
+      "diagnostic_report_sha256": "32993f9183774f2d9056c86ca7a0abf3260a67a2bb39531c2943b45fbac46d71",
+      "compute_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredReflectionProbeOct.compute",
+      "compute_sha256": "e46ccfc586d0f03a60f998428fa5432ece8e97b48d154d968fd779dc3d55c811",
+      "verifier_path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredReflectionProbeOctBatchVerifier.cs",
+      "verifier_sha256": "5e1493c6820d2fda2d2430326f5e0feea8464ba1be77bf83bb6618765d14574f"
+    },
+    "global_buffer": {
+      "byte_size": 4160,
+      "header_bytes": 64,
+      "reserved_global_record_bytes": 128,
+      "local_record_start": 192,
+      "local_record_stride": 128,
+      "local_record_count": 31,
+      "no_local_probe_slice": 0,
+      "charinfo_param3": [
+        -0.0075507620349526405,
+        0.01217081118375063,
+        0.47223734855651855,
+        1.0963057279586792
+      ],
+      "audit_path": "scratch/character_recovery/charinfo_reflection_runtime/reflection_global_buffer_audit.json",
+      "audit_sha256": "ad3ce9e92b60e8e47dc55a695fca668ab477ee2757a0fdc956bbf12fc73b17b3",
+      "auditor_path": "scratch/character_recovery/charinfo_reflection_runtime/audit_reflection_global_buffer.py",
+      "auditor_sha256": "37b59dd896b3401c39697bdf18879ba6d2bd8314a6507ec1406d8c6bfe589b23",
+      "gameassembly_va": "0x189d10660",
+      "unityplayer_icall_index": 423,
+      "unityplayer_implementation_va": "0x18108a090"
+    }
+  },
+  "disabled_feature_resource_bindings": {
+    "status": "binary-source-closed for the selected disabled wetness and volumetric-fog texture paths; pass-0 publication remains default-off",
+    "published": false,
+    "audit_path": "scratch/character_recovery/charinfo_pass0_resources/deferred_resource_layouts.json",
+    "audit_sha256": "1a66d75359f48f065b5a891ca22b60dac0f2bb4ac5470f72f66891adfea461e6",
+    "auditor_path": "scratch/character_recovery/charinfo_pass0_resources/audit_deferred_resource_bindings.py",
+    "auditor_sha256": "7fcbb52cb45edb0a62e9cdd3ca1cb3f424d50f8be74d0a52f953c9a810be6f4e",
+    "water_wetness_mask": {
+      "property": "_WaterWetnessMaskTexture",
+      "propertyIdStaticOffset": 3000,
+      "passInputFieldOffset": 160,
+      "passDataFieldOffset": 160,
+      "renderFunctionValidityTestOffset": 664,
+      "invalidHandleFallback": "UnityEngine.Texture2D.whiteTexture",
+      "invalidHandleFallbackCallOffset": 719,
+      "setGlobalTextureCallOffset": 780,
+      "behavior": "publish the valid render-graph texture handle; otherwise publish Texture2D.whiteTexture"
+    },
+    "integrated_light_scattering": {
+      "property": "_IntegratedLightScattering",
+      "propertyIdStaticOffset": 1088,
+      "renderPredicate": "HG.Rendering.Runtime.HGRenderPathScene.ShouldRenderVolumetricFog",
+      "predicateCallOffset": 59,
+      "disabledBranchOffset": 345,
+      "disabledFallback": "HG.Rendering.Runtime.HGVolumetricFogUtils.volumetricBlackTexture3D",
+      "disabledFallbackCallOffset": 392,
+      "setGlobalTextureCallOffset": 462,
+      "fallbackTexture": {
+        "dimension": "Texture3D",
+        "width": 1,
+        "height": 1,
+        "depth": 1,
+        "textureFormatNumeric": 48,
+        "textureFormatUnity2022_3_62f3": "ASTC_4x4",
+        "mipChain": false,
+        "createUninitialized": false,
+        "pixel": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "setPixelCoordinates": [
+          0,
+          0,
+          0
+        ],
+        "applyUpdateMipmaps": false,
+        "applyMakeNoLongerReadable": true,
+        "constructorCallOffset": 85,
+        "colorBlackCallOffset": 113,
+        "setPixelCallOffset": 159,
+        "applyCallOffset": 175,
+        "unityEnumEvidence": {
+          "assembly": "D:\\Program Files\\2022.3.62f3\\Editor\\Data\\Managed\\UnityEngine\\UnityEngine.CoreModule.dll",
+          "assemblySha256": "9ac427b73dfda8d44d8179b614e8928ad92d459e83cdbe053f0c5c3266385c37",
+          "enum": "UnityEngine.TextureFormat",
+          "numericValue": 48,
+          "name": "ASTC_4x4"
+        }
+      },
+      "behavior": "when ShouldRenderVolumetricFog is false, publish the shared exact 1x1x1 black ASTC_4x4 Texture3D"
+    }
+  },
+  "visibility_sh_resource_binding": {
+    "status": "binary-source-closed for the exact VisibilitySH target, black empty/disabled fallback, both shipped LUT payloads/descriptors, native 128x48-byte output ABI, exact transform-to-record packing, and selected pass-2 producer; pass-0 publication remains default-off",
+    "published_by_lab": false,
+    "audit_path": "scratch/character_recovery/charinfo_pass0_resources/deferred_resource_layouts.json",
+    "audit_sha256": "1a66d75359f48f065b5a891ca22b60dac0f2bb4ac5470f72f66891adfea461e6",
+    "properties": {
+      "logSHLut": {
+        "property": "_LogSHLutTex",
+        "propertyIdStaticOffset": 3524,
+        "passDataFieldOffset": 88,
+        "activeRenderBindOffset": 283
+      },
+      "abLut": {
+        "property": "_ABLutTex",
+        "propertyIdStaticOffset": 3528,
+        "passDataFieldOffset": 96,
+        "activeRenderBindOffset": 693,
+        "emptyRenderBindOffset": 219
+      },
+      "visibilitySH": {
+        "property": "_VisibilitySHRT",
+        "propertyIdStaticOffset": 3532,
+        "activeTextureHandleFieldOffset": 64,
+        "emptyTextureFieldOffset": 80,
+        "activeRenderBindOffset": 795,
+        "emptyRenderBindOffset": 320
+      }
+    },
+    "active_render_target": {
+      "width": "camera view width, or signed half-width when PassInput.enableHalfRez is true",
+      "height": "camera view height, or signed half-height when PassInput.enableHalfRez is true",
+      "colorFormatNumeric": 48,
+      "colorFormatUnity2022_3_62f3": "R16G16B16A16_SFloat",
+      "filterModeNumeric": 1,
+      "filterModeUnity2022_3_62f3": "Bilinear",
+      "wrapModeNumeric": 1,
+      "wrapModeUnity2022_3_62f3": "Clamp",
+      "enableRandomWrite": false,
+      "useMipMap": false,
+      "constructorCallOffset": 2864,
+      "createTextureCallOffset": 3091
+    },
+    "empty_or_disabled_fallback": {
+      "texture": "UnityEngine.Texture2D.blackTexture",
+      "constructorBranches": [
+        {
+          "reason": "post-cull capsule count is zero",
+          "branchOffset": 2293,
+          "blackTextureCallOffset": 3483,
+          "passDataStoreOffset": 3497
+        },
+        {
+          "reason": "PassInput.enabled is false or maximum render capsule count is zero",
+          "branchOffsets": [
+            1970,
+            1979
+          ],
+          "blackTextureCallOffset": 3777,
+          "passDataStoreOffset": 3791
+        }
+      ],
+      "publishedByEmptyRenderFunction": true,
+      "emptyRenderSetGlobalTextureCallOffset": 320
+    },
+    "lut_manifest_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/visibility_luts.json",
+    "lut_manifest_sha256": "48c2080d532e1f3a9a43e50849cf49940c79b760497f2415058c1aad4bb8fcd5",
+    "lut_auditor_path": "scratch/character_recovery/visibility_luts/recover_visibility_luts.py",
+    "lut_auditor_sha256": "7495937f397728cb134470f2b68c4eaa78497ede31f210972f6b40b2778ffe8b",
+    "lut_runtime_resources": {
+      "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\json_by_type\\MonoBehaviour\\HGRenderPipelineRuntimeResources_p4DE8DD3BDDF7D101.json",
+      "sha256": "4974a13946826207d78d8c2f054bd1b1da559287ad993e98bb22cbaae64568be",
+      "pathId": 5613980184714137857
+    },
+    "lookup_textures": {
+      "VisibilityABLut": {
+        "name": "visibility_ab_lut",
+        "pathId": 2892350180982884757,
+        "runtimeResourceField": "VisibilityABLut",
+        "serializedDescriptor": {
+          "width": 256,
+          "height": 1,
+          "textureFormatNumeric": 4,
+          "textureFormatUnity2022_3_62f3": "RGBA32",
+          "mipCount": 1,
+          "textureDimensionNumeric": 2,
+          "textureDimensionUnity2022_3_62f3": "Tex2D",
+          "filterModeNumeric": 1,
+          "filterModeUnity2022_3_62f3": "Bilinear",
+          "wrapModeNumeric": 1,
+          "wrapModeUnity2022_3_62f3": "Clamp",
+          "colorSpaceNumeric": 0,
+          "colorSpaceUnity2022_3_62f3": "Gamma",
+          "aniso": 1,
+          "mipBias": 0.0
+        },
+        "sourcePng": {
+          "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\convert_by_type\\Texture2D\\visibility_ab_lut_p2823B12A4F858995.png",
+          "sha256": "53196c2cd65d43da3293a95d6e2b39eab85681d435217f285c54ff1b7ea58d1b",
+          "width": 256,
+          "height": 1,
+          "bitDepth": 8,
+          "colorType": 6
+        },
+        "persistentPng": {
+          "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\Persistent\\convert_by_type\\Texture2D\\visibility_ab_lut_p2823B12A4F858995.png",
+          "sha256": "53196c2cd65d43da3293a95d6e2b39eab85681d435217f285c54ff1b7ea58d1b"
+        },
+        "descriptorJson": {
+          "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\visibility_luts\\animestudio_json\\Texture2D\\Texture2D#46_p2823B12A4F858995.json",
+          "sha256": "6fa9334ecc7700b6304cf840e1f9d26dd79a039bafc518a45bc2b98f7e3f65b5",
+          "rawObjectSha256": "b420034134d90ef7a7998087197dabdf1fb599d1aea646e28bbbdf19e4291f85",
+          "streamOffset": 12841248,
+          "streamSize": 1024,
+          "streamPath": "archive:/CAB-5edbf457631197eaf84a8374582f8cca/CAB-5edbf457631197eaf84a8374582f8cca.resS"
+        },
+        "rawRgba32": {
+          "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Textures/visibility_ab_lut.rgba32.bytes",
+          "byteLength": 1024,
+          "sha256": "ca1a648d1a19434b41a9dbbe9f6ad0191c4c4e7f088341761725895748f33ed0"
+        }
+      },
+      "VisibilitySHLut": {
+        "name": "visibility_sh_lut",
+        "pathId": 8323377478838034894,
+        "runtimeResourceField": "VisibilitySHLut",
+        "serializedDescriptor": {
+          "width": 256,
+          "height": 1,
+          "textureFormatNumeric": 4,
+          "textureFormatUnity2022_3_62f3": "RGBA32",
+          "mipCount": 1,
+          "textureDimensionNumeric": 2,
+          "textureDimensionUnity2022_3_62f3": "Tex2D",
+          "filterModeNumeric": 1,
+          "filterModeUnity2022_3_62f3": "Bilinear",
+          "wrapModeNumeric": 1,
+          "wrapModeUnity2022_3_62f3": "Clamp",
+          "colorSpaceNumeric": 0,
+          "colorSpaceUnity2022_3_62f3": "Gamma",
+          "aniso": 1,
+          "mipBias": 0.0
+        },
+        "sourcePng": {
+          "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\convert_by_type\\Texture2D\\visibility_sh_lut_p738293B7C5A0A1CE.png",
+          "sha256": "5e10cd58f104c221ce58e83842b5608ffb64b8fb00d6b0803c684bcd9bfa7663",
+          "width": 256,
+          "height": 1,
+          "bitDepth": 8,
+          "colorType": 6
+        },
+        "persistentPng": {
+          "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\Persistent\\convert_by_type\\Texture2D\\visibility_sh_lut_p738293B7C5A0A1CE.png",
+          "sha256": "5e10cd58f104c221ce58e83842b5608ffb64b8fb00d6b0803c684bcd9bfa7663"
+        },
+        "descriptorJson": {
+          "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\visibility_luts\\animestudio_json\\Texture2D\\Texture2D#64_p738293B7C5A0A1CE.json",
+          "sha256": "75e0f98bb68462740b5e5bc631c45c8840562ad6965be657b89f102dad6feccd",
+          "rawObjectSha256": "5c7bec8899a9aebf56153a28ec5b4df4d7f57a0d85320658c1cdc02546cb757b",
+          "streamOffset": 15463792,
+          "streamSize": 1024,
+          "streamPath": "archive:/CAB-5edbf457631197eaf84a8374582f8cca/CAB-5edbf457631197eaf84a8374582f8cca.resS"
+        },
+        "rawRgba32": {
+          "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Textures/visibility_sh_lut.rgba32.bytes",
+          "byteLength": 1024,
+          "sha256": "3e5d7d50ed14ab927676cb638eebcedfb8e02766b8e0d01164105d519d925bf3"
+        }
+      }
+    },
+    "capsule_runtime_audit_path": "scratch/character_recovery/visibility_capsule_runtime/visibility_capsule_runtime.json",
+    "capsule_runtime_audit_sha256": "2a68681336b4a83f350b19e7385aefe069021ae0d1303967677dfe34df9574ab",
+    "capsule_runtime_auditor_path": "scratch/character_recovery/visibility_capsule_runtime/audit_visibility_capsule_runtime.py",
+    "capsule_runtime_auditor_sha256": "1b93f79236d28f42d3261c837fa40613706231a3dc7b2c562840b15eeeacd604",
+    "capsule_runtime": {
+      "managed_activation": {
+        "on_enable_va": "0x18435d900",
+        "on_disable_va": "0x18435d6a0",
+        "add_capsule_list_binding_va": "0x18351ff70",
+        "add_capsule_binding_va": "0x18351faf0",
+        "contract": "The unpatched OnEnable path enqueues the helper, registers it with the interaction manager when present, and calls AddCapsuleListBinding. When m_interactionOnly is zero, that method enumerates m_capsuleShadowContainers and calls AddCapsuleBinding for every serialized element."
+      },
+      "actors": [
+        {
+          "label": "Wulfa",
+          "file": "unity_endfield_graph_shader_lab/scratch/character_recovery/overview_controller_native/wulfa_postmodel_export/MonoBehaviour/MonoBehaviour#723_p1EB84AFC849D06B0.json",
+          "file_sha256": "788b435fab7dc38aaff9b607fc1bb11956a326532fda7014a8479b7b96cdd092",
+          "helper_path_id": 2213601665269696176,
+          "helper_raw_data_sha256": "3b34cee23e0d655b3d861adaf550775e8ccbffaf7c9d2f9024b42bd77af3fe69",
+          "game_object_path_id": -6199632229345589584,
+          "serialized_enabled": 1,
+          "interaction_only": 0,
+          "enable_ccd": 0,
+          "intensity": 2.0,
+          "dither_alpha": 1.0,
+          "radius_scale": 1.0,
+          "height_scale": 1.0,
+          "authored_candidate_count": 10,
+          "all_candidates_serialized_enabled": true,
+          "candidates": [
+            {
+              "root_transform_path_id": -3396525607427766608,
+              "radius": 0.07,
+              "height": 0.35797012,
+              "local_offset": {
+                "x": -0.17898516,
+                "y": 7.802547e-08,
+                "z": -3.1337525e-08
+              },
+              "local_rotation_euler": {
+                "x": 89.78971,
+                "y": 180.00464,
+                "z": 270.00464
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 4634980728574510768,
+              "radius": 0.07,
+              "height": 0.3579701,
+              "local_offset": {
+                "x": -0.1789851,
+                "y": 4.452339e-08,
+                "z": -1.0698982e-08
+              },
+              "local_rotation_euler": {
+                "x": 89.79064,
+                "y": -0.0051097223,
+                "z": 89.994896
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": -6934102126940387664,
+              "radius": 0.07,
+              "height": 0.42519912,
+              "local_offset": {
+                "x": -0.2126,
+                "y": 2.015418e-07,
+                "z": -9.011242e-08
+              },
+              "local_rotation_euler": {
+                "x": 89.79064,
+                "y": 180.00418,
+                "z": 270.00418
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": -5693872835834673488,
+              "radius": 0.07,
+              "height": 0.42519918,
+              "local_offset": {
+                "x": -0.21259987,
+                "y": 1.4877607e-07,
+                "z": -1.277681e-07
+              },
+              "local_rotation_euler": {
+                "x": 89.78878,
+                "y": -0.004186316,
+                "z": 89.99582
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 7402918273698432688,
+              "radius": 0.07,
+              "height": 0.37336054,
+              "local_offset": {
+                "x": -0.18660209,
+                "y": -0.0054066363,
+                "z": -3.9257877e-08
+              },
+              "local_rotation_euler": {
+                "x": 0.8324427,
+                "y": 179.97588,
+                "z": 268.34018
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 2662857724355282608,
+              "radius": 0.07,
+              "height": 0.37336054,
+              "local_offset": {
+                "x": -0.186602,
+                "y": -0.0054065404,
+                "z": -1.2007965e-08
+              },
+              "local_rotation_euler": {
+                "x": 359.16754,
+                "y": 180.02412,
+                "z": 268.34018
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 7863402053073700528,
+              "radius": 0.05,
+              "height": 0.19745924,
+              "local_offset": {
+                "x": -0.088077255,
+                "y": 0.023729868,
+                "z": -2.7998137e-06
+              },
+              "local_rotation_euler": {
+                "x": -4.2622607e-05,
+                "y": 270.00003,
+                "z": 0.0065837796
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 1
+            },
+            {
+              "root_transform_path_id": 229660224966887088,
+              "radius": 0.05,
+              "height": 0.19745918,
+              "local_offset": {
+                "x": -0.08807699,
+                "y": 0.023729866,
+                "z": 2.543832e-06
+              },
+              "local_rotation_euler": {
+                "x": -8.205003e-05,
+                "y": 270.00006,
+                "z": 359.9935
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 1
+            },
+            {
+              "root_transform_path_id": 339026859296818864,
+              "radius": 0.15,
+              "height": 0.55,
+              "local_offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "local_rotation_euler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 90.0
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": -5692639246981724496,
+              "radius": 0.15,
+              "height": 0.3,
+              "local_offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "local_rotation_euler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            }
+          ]
+        },
+        {
+          "label": "Zhuang",
+          "file": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/zhuangfy_postmodel_export/MonoBehaviour/MonoBehaviour#76_p8F2BFF331E84851A.json",
+          "file_sha256": "26c5829a26186e7b7a36110d596697128ed3c0c1a033abf3d5b6c368ee9be218",
+          "helper_path_id": -8130124107266882278,
+          "helper_raw_data_sha256": "8a5ec26398d98192879f06dd589e5ee76b128f9a488684983b00139e0fdd9717",
+          "game_object_path_id": 3850301389399950618,
+          "serialized_enabled": 1,
+          "interaction_only": 0,
+          "enable_ccd": 0,
+          "intensity": 2.0,
+          "dither_alpha": 1.0,
+          "radius_scale": 1.0,
+          "height_scale": 1.0,
+          "authored_candidate_count": 10,
+          "all_candidates_serialized_enabled": true,
+          "candidates": [
+            {
+              "root_transform_path_id": 7378712528188704026,
+              "radius": 0.07,
+              "height": 0.454623,
+              "local_offset": {
+                "x": -0.22731145,
+                "y": 4.131504e-08,
+                "z": -6.2948726e-09
+              },
+              "local_rotation_euler": {
+                "x": 359.7866,
+                "y": -4.595735e-06,
+                "z": 89.99999
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": -8766415541296069350,
+              "radius": 0.07,
+              "height": 0.45462307,
+              "local_offset": {
+                "x": -0.22731157,
+                "y": 1.306587e-08,
+                "z": -5.346844e-08
+              },
+              "local_rotation_euler": {
+                "x": 0.1551501,
+                "y": -6.6768007e-06,
+                "z": 90.0
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 715884393909486874,
+              "radius": 0.07,
+              "height": 0.48471403,
+              "local_offset": {
+                "x": -0.24235715,
+                "y": 7.085017e-08,
+                "z": -6.401513e-08
+              },
+              "local_rotation_euler": {
+                "x": 89.868774,
+                "y": 0.0022343053,
+                "z": 90.002235
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 4318170936461133082,
+              "radius": 0.07,
+              "height": 0.4847141,
+              "local_offset": {
+                "x": -0.2423574,
+                "y": 1.437137e-07,
+                "z": -1.0843112e-07
+              },
+              "local_rotation_euler": {
+                "x": 89.93439,
+                "y": 269.92688,
+                "z": 0.0
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 3181205072760440090,
+              "radius": 0.07,
+              "height": 0.4627973,
+              "local_offset": {
+                "x": -0.23107772,
+                "y": -0.0121860625,
+                "z": 5.1560853e-09
+              },
+              "local_rotation_euler": {
+                "x": 358.9172,
+                "y": 180.05711,
+                "z": 266.9807
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": 5745711503179744538,
+              "radius": 0.07,
+              "height": 0.462741,
+              "local_offset": {
+                "x": -0.23101397,
+                "y": -0.012837905,
+                "z": -4.3215522e-08
+              },
+              "local_rotation_euler": {
+                "x": 1.0827171,
+                "y": 179.9398,
+                "z": 266.81863
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": -1376021012127185638,
+              "radius": 0.05,
+              "height": 0.24814686,
+              "local_offset": {
+                "x": -0.12010883,
+                "y": 0.034073442,
+                "z": -2.3467801e-05
+              },
+              "local_rotation_euler": {
+                "x": 2.4509307e-05,
+                "y": 270.0,
+                "z": 0.03932501
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 1
+            },
+            {
+              "root_transform_path_id": -1314002800933960422,
+              "radius": 0.05,
+              "height": 0.24814673,
+              "local_offset": {
+                "x": -0.12010931,
+                "y": 0.034073394,
+                "z": 2.3235707e-05
+              },
+              "local_rotation_euler": {
+                "x": 3.741763e-05,
+                "y": 270.0,
+                "z": 359.9607
+              },
+              "intensity_scale": 0.75,
+              "enabled": 1,
+              "is_foot": 1
+            },
+            {
+              "root_transform_path_id": -1322975000581012198,
+              "radius": 0.15,
+              "height": 0.55,
+              "local_offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "local_rotation_euler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 90.0
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            },
+            {
+              "root_transform_path_id": -6313673995101895398,
+              "radius": 0.15,
+              "height": 0.3,
+              "local_offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "local_rotation_euler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "intensity_scale": 1.0,
+              "enabled": 1,
+              "is_foot": 0
+            }
+          ]
+        }
+      ],
+      "isolated_unity_pose_fixtures": {
+        "Wulfa": {
+          "actor": "Wulfa",
+          "count": 10,
+          "stride": 48,
+          "order": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "record_sha256": "0e418fd299cfaa88e8de5ef0388bb5328e326c5afd0b4c69cf2cf47b4a440a08",
+          "records": [
+            {
+              "actor": "Wulfa",
+              "output_index": 0,
+              "source_index": 0,
+              "pa": [
+                0.121096112,
+                0.782090664,
+                0.09510617,
+                0.07
+              ],
+              "pb": [
+                0.130821377,
+                0.5643904,
+                0.09990129,
+                0.357970119
+              ],
+              "dir": [
+                0.04461739,
+                -0.9987619,
+                0.0219989531,
+                1.0
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 1,
+              "source_index": 1,
+              "pa": [
+                -0.008961959,
+                0.759289563,
+                0.116586946,
+                0.07
+              ],
+              "pb": [
+                -0.048337698,
+                0.5457782,
+                0.135910511,
+                0.3579701
+              ],
+              "dir": [
+                -0.180647448,
+                -0.9795444,
+                0.08865239,
+                1.0
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 2,
+              "source_index": 2,
+              "pa": [
+                0.134292766,
+                0.426515758,
+                0.08467242,
+                0.07
+              ],
+              "pb": [
+                0.135711715,
+                0.149624392,
+                0.01635195,
+                0.425199121
+              ],
+              "dir": [
+                0.00497531844,
+                -0.970870435,
+                -0.239553586,
+                0.75
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 3,
+              "source_index": 3,
+              "pa": [
+                -0.077578865,
+                0.4111923,
+                0.125798464,
+                0.07
+              ],
+              "pb": [
+                -0.145194739,
+                0.142218783,
+                0.05931601,
+                0.425199181
+              ],
+              "dir": [
+                -0.237083033,
+                -0.943107545,
+                -0.233108878,
+                0.75
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 4,
+              "source_index": 4,
+              "pa": [
+                0.141900629,
+                1.137299,
+                0.0184788,
+                0.07
+              ],
+              "pb": [
+                0.264569849,
+                1.0125097,
+                -0.135913819,
+                0.373360544
+              ],
+              "dir": [
+                0.525663853,
+                -0.5347484,
+                -0.6616055,
+                1.0
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 5,
+              "source_index": 5,
+              "pa": [
+                -0.109845154,
+                1.125972,
+                0.09902006,
+                0.07
+              ],
+              "pb": [
+                -0.258224666,
+                0.963694751,
+                0.0208744034,
+                0.373360544
+              ],
+              "dir": [
+                -0.6358381,
+                -0.6953931,
+                -0.3348709,
+                1.0
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 6,
+              "source_index": 6,
+              "pa": [
+                0.140926838,
+                0.08399376,
+                -0.0472716279,
+                0.05
+              ],
+              "pb": [
+                0.145571053,
+                0.03820613,
+                0.0386366062,
+                0.197459236
+              ],
+              "dir": [
+                0.04765297,
+                -0.4698132,
+                0.881478667,
+                0.75
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 7,
+              "source_index": 7,
+              "pa": [
+                -0.153524771,
+                0.05508927,
+                0.03245451,
+                0.05
+              ],
+              "pb": [
+                -0.15058504,
+                0.05274826,
+                0.129841208,
+                0.197459176
+              ],
+              "dir": [
+                0.0301636085,
+                -0.0240203887,
+                0.9992563,
+                0.75
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 8,
+              "source_index": 8,
+              "pa": [
+                0.0547497533,
+                0.8497367,
+                0.129493073,
+                0.15
+              ],
+              "pb": [
+                0.03888992,
+                1.09865785,
+                0.146425411,
+                0.55
+              ],
+              "dir": [
+                -0.06343934,
+                0.9956848,
+                0.06772934,
+                1.0
+              ]
+            },
+            {
+              "actor": "Wulfa",
+              "output_index": 9,
+              "source_index": 9,
+              "pa": [
+                0.0222503841,
+                1.28250337,
+                0.111996084,
+                0.15
+              ],
+              "pb": [
+                0.0222503841,
+                1.28250337,
+                0.111996084,
+                0.3
+              ],
+              "dir": [
+                0.1772951,
+                -0.113144122,
+                0.9776323,
+                1.0
+              ]
+            }
+          ],
+          "gpu": {
+            "actor": "Wulfa",
+            "width": 480,
+            "height": 270,
+            "byte_count": 1036800,
+            "nonzero_pixels": 41820,
+            "sha256": "f9c268f1d8432dfcce797fc73d9e20f8a88f654dfe5b5c0291af9f4216a240db"
+          },
+          "repeat_exact": true,
+          "run_logs": [
+            "unity_endfield_graph_shader_lab/scratch/character_recovery/visibility_capsule_runtime/wulfa_fixture_run1.log",
+            "unity_endfield_graph_shader_lab/scratch/character_recovery/visibility_capsule_runtime/wulfa_fixture_run2.log"
+          ],
+          "scope": "Two independent isolated Unity D3D12 runs of the default-off diagnostic. This is not a retail settled-frame fixture."
+        },
+        "Zhuangfy": {
+          "actor": "Zhuangfy",
+          "count": 10,
+          "stride": 48,
+          "order": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "record_sha256": "1f72039bdd39a1ae073dd2629f0e1245145a852e78dd4114778204ddde654264",
+          "records": [
+            {
+              "actor": "Zhuangfy",
+              "output_index": 0,
+              "source_index": 0,
+              "pa": [
+                0.06556217,
+                0.9632845,
+                -0.021120891,
+                0.07
+              ],
+              "pb": [
+                0.06814024,
+                0.648689747,
+                -0.0177899785,
+                0.454623
+              ],
+              "dir": [
+                0.008194156,
+                -0.999910355,
+                0.0105869928,
+                1.0
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 1,
+              "source_index": 1,
+              "pa": [
+                -0.0840059444,
+                0.972503066,
+                -0.03151719,
+                0.07
+              ],
+              "pb": [
+                -0.078478314,
+                0.6598754,
+                0.0034262063,
+                0.454623073
+              ],
+              "dir": [
+                0.01756906,
+                -0.9936579,
+                0.111064315,
+                1.0
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 2,
+              "source_index": 2,
+              "pa": [
+                0.0731605142,
+                0.5099382,
+                -0.0294032823,
+                0.07
+              ],
+              "pb": [
+                0.09505814,
+                0.171342775,
+                -0.09024238,
+                0.484714031
+              ],
+              "dir": [
+                0.06352405,
+                -0.982250154,
+                -0.1764915,
+                0.75
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 3,
+              "source_index": 3,
+              "pa": [
+                -0.0733563751,
+                0.521137238,
+                0.00125848688,
+                0.07
+              ],
+              "pb": [
+                -0.05587635,
+                0.1802051,
+                -0.0465698764,
+                0.4847141
+              ],
+              "dir": [
+                0.0507087559,
+                -0.9890287,
+                -0.138747916,
+                0.75
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 4,
+              "source_index": 4,
+              "pa": [
+                0.102495968,
+                1.34433341,
+                0.0192972422,
+                0.07
+              ],
+              "pb": [
+                0.110484049,
+                1.03608632,
+                0.114785165,
+                0.4627973
+              ],
+              "dir": [
+                0.0247464068,
+                -0.954925,
+                0.2958139,
+                1.0
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 5,
+              "source_index": 5,
+              "pa": [
+                -0.113170207,
+                1.34487033,
+                -0.008210592,
+                0.07
+              ],
+              "pb": [
+                -0.1260965,
+                1.05064106,
+                0.123788349,
+                0.462741
+              ],
+              "dir": [
+                -0.04005161,
+                -0.911658,
+                0.408993453,
+                1.0
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 6,
+              "source_index": 6,
+              "pa": [
+                0.109373033,
+                0.06289546,
+                -0.153963119,
+                0.05
+              ],
+              "pb": [
+                0.09245311,
+                0.0308961738,
+                -0.0103063807,
+                0.248146862
+              ],
+              "dir": [
+                -0.114210442,
+                -0.215997055,
+                0.969691336,
+                0.75
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 7,
+              "source_index": 7,
+              "pa": [
+                -0.05685498,
+                0.06255111,
+                -0.09335679,
+                0.05
+              ],
+              "pb": [
+                -0.0528412461,
+                0.05428485,
+                0.05450466,
+                0.248146728
+              ],
+              "dir": [
+                0.0270929635,
+                -0.0557978153,
+                0.9980745,
+                0.75
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 8,
+              "source_index": 8,
+              "pa": [
+                -0.0137201678,
+                1.06664419,
+                0.0160128288,
+                0.15
+              ],
+              "pb": [
+                -0.001162969,
+                1.31582713,
+                0.0318282172,
+                0.55
+              ],
+              "dir": [
+                0.0502287932,
+                0.9967322,
+                0.06326155,
+                1.0
+              ]
+            },
+            {
+              "actor": "Zhuangfy",
+              "output_index": 9,
+              "source_index": 9,
+              "pa": [
+                -0.009865265,
+                1.56395757,
+                -0.0210167877,
+                0.15
+              ],
+              "pb": [
+                -0.009865265,
+                1.56395757,
+                -0.0210167877,
+                0.3
+              ],
+              "dir": [
+                -0.024229778,
+                -0.222041965,
+                0.974736035,
+                1.0
+              ]
+            }
+          ],
+          "gpu": {
+            "actor": "Zhuangfy",
+            "width": 480,
+            "height": 270,
+            "byte_count": 1036800,
+            "nonzero_pixels": 65667,
+            "sha256": "d663c2a0d17fd19a2b9329fb5363a705538e7e756dbd777cb9137a0bed954357"
+          },
+          "repeat_exact": true,
+          "run_logs": [
+            "unity_endfield_graph_shader_lab/scratch/character_recovery/visibility_capsule_runtime/zhuang_fixture_run1.log",
+            "unity_endfield_graph_shader_lab/scratch/character_recovery/visibility_capsule_runtime/zhuang_fixture_run2.log"
+          ],
+          "scope": "Two independent isolated Unity D3D12 runs of the default-off diagnostic. This is not a retail settled-frame fixture."
+        }
+      },
+      "native_manager": {
+        "managed_methods": {
+          "GetRenderCapsuleNum": {
+            "method_index": 477893,
+            "token": "0x06000061",
+            "managed_wrapper_va": "0x18b3f86d8",
+            "icall_index": 177,
+            "icall_name": "UnityEngine.HyperGryph.HGCapsuleShadowManager::GetRenderCapsuleNum",
+            "icall_wrapper_va": "0x1801e9d70",
+            "native_va": "0x180fcb620"
+          },
+          "CullAndGetRenderCapsuleData": {
+            "method_index": 477894,
+            "token": "0x06000062",
+            "managed_wrapper_va": "0x18b3f8688",
+            "icall_index": 178,
+            "icall_name": "UnityEngine.HyperGryph.HGCapsuleShadowManager::CullAndGetRenderCapsuleData",
+            "icall_wrapper_va": "0x1801e9d90",
+            "native_va": "0x180fcaba0"
+          }
+        },
+        "manager_field_offset": 424,
+        "count_storage_offset": 24,
+        "count_storage_has_sentinel": true,
+        "max_render_capsules": 128,
+        "internal_record_stride": 52,
+        "output_record_stride": 48,
+        "output_record": [
+          {
+            "name": "pa",
+            "offset": 0,
+            "size": 16
+          },
+          {
+            "name": "pb",
+            "offset": 16,
+            "size": 16
+          },
+          {
+            "name": "dir",
+            "offset": 32,
+            "size": 16
+          }
+        ],
+        "pre_copy_validity": [
+          "internal byte +0x01 is nonzero",
+          "internal float +0x30 is greater than zero",
+          "internal float +0x20 is greater than zero",
+          "internal float +0x10 is greater than zero"
+        ],
+        "culler_instruction_evidence": [
+          {
+            "offset": 27,
+            "mnemonic": "mov",
+            "operands": "eax, 0x80"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "cmp",
+            "operands": "r9d, eax"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "cmova",
+            "operands": "r13d, eax"
+          },
+          {
+            "offset": 70,
+            "mnemonic": "cmp",
+            "operands": "edx, -1"
+          },
+          {
+            "offset": 79,
+            "mnemonic": "test",
+            "operands": "r8, r8"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "test",
+            "operands": "r13d, r13d"
+          },
+          {
+            "offset": 1188,
+            "mnemonic": "imul",
+            "operands": "r8, rax, 0x34"
+          },
+          {
+            "offset": 1199,
+            "mnemonic": "cmp",
+            "operands": "byte ptr [r8 + 1], 0"
+          },
+          {
+            "offset": 1206,
+            "mnemonic": "movss",
+            "operands": "xmm0, dword ptr [r8 + 0x30]"
+          },
+          {
+            "offset": 1217,
+            "mnemonic": "movss",
+            "operands": "xmm0, dword ptr [r8 + 0x20]"
+          },
+          {
+            "offset": 1228,
+            "mnemonic": "movss",
+            "operands": "xmm0, dword ptr [r8 + 0x10]"
+          },
+          {
+            "offset": 1239,
+            "mnemonic": "movups",
+            "operands": "xmm0, xmmword ptr [r8 + 4]"
+          },
+          {
+            "offset": 1247,
+            "mnemonic": "movups",
+            "operands": "xmmword ptr [rdi], xmm0"
+          },
+          {
+            "offset": 1250,
+            "mnemonic": "movups",
+            "operands": "xmm1, xmmword ptr [r8 + 0x14]"
+          },
+          {
+            "offset": 1255,
+            "mnemonic": "movups",
+            "operands": "xmmword ptr [rdi + 0x10], xmm1"
+          },
+          {
+            "offset": 1259,
+            "mnemonic": "movups",
+            "operands": "xmm0, xmmword ptr [r8 + 0x24]"
+          },
+          {
+            "offset": 1264,
+            "mnemonic": "movups",
+            "operands": "xmmword ptr [rdi + 0x20], xmm0"
+          },
+          {
+            "offset": 1268,
+            "mnemonic": "add",
+            "operands": "rdi, 0x30"
+          },
+          {
+            "offset": 2232,
+            "mnemonic": "mov",
+            "operands": "eax, r14d"
+          },
+          {
+            "offset": 2272,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      "component_native_packing": {
+        "setter_icalls": {
+          "enabled": {
+            "index": 1,
+            "name": "UnityEngine.HGCapsuleBindingComponent::set_enabled",
+            "name_va": 6472958424,
+            "function_va": 6444383504
+          },
+          "capsuleRadius": {
+            "index": 3,
+            "name": "UnityEngine.HGCapsuleBindingComponent::set_capsuleRadius",
+            "name_va": 6472958544,
+            "function_va": 6444384464
+          },
+          "capsuleHeight": {
+            "index": 5,
+            "name": "UnityEngine.HGCapsuleBindingComponent::set_capsuleHeight",
+            "name_va": 6472958672,
+            "function_va": 6444385024
+          },
+          "localOffset": {
+            "index": 7,
+            "name": "UnityEngine.HGCapsuleBindingComponent::set_localOffset_Injected",
+            "name_va": 6472958800,
+            "function_va": 6444385712
+          },
+          "localRotation": {
+            "index": 9,
+            "name": "UnityEngine.HGCapsuleBindingComponent::set_localRotation_Injected",
+            "name_va": 6472958944,
+            "function_va": 6444386736
+          },
+          "intensityScale": {
+            "index": 11,
+            "name": "UnityEngine.HGCapsuleBindingComponent::set_intensityScale",
+            "name_va": 6472959080,
+            "function_va": 6444387344
+          },
+          "forceRender": {
+            "index": 13,
+            "name": "UnityEngine.HGCapsuleBindingComponent::set_forceRender",
+            "name_va": 6472959200,
+            "function_va": 6444387968
+          }
+        },
+        "set_enabled_native_va": "0x180fcb8f0",
+        "update_native_va": "0x180fcb900",
+        "pack_record_native_va": "0x180fcb950",
+        "component_storage_offsets": {
+          "enabled": 56,
+          "capsuleRadius": 60,
+          "capsuleHeight": 64,
+          "localOffset": 68,
+          "localRotationEulerDegrees": 80,
+          "intensityScale": 92,
+          "forceRender": 96,
+          "managerHandleA": 100,
+          "managerHandleB": 104,
+          "managerRecordIndex": 108
+        },
+        "constants": {
+          "degrees_to_radians": 0.01745329238474369,
+          "half": 0.5,
+          "culling_range": 5.0,
+          "intensity_min": 0.009999999776482582,
+          "intensity_max": 2.0
+        },
+        "culling_bounds": {
+          "native_aabb_test_va": "0x180411410",
+          "center": "world_center",
+          "extent": "float3(0.5 * full_height * 5.0); the same conservative extent is written on X, Y, and Z",
+          "plane_test": "center dot plane.xyz + plane.w <= dot(abs(plane.xyz), extent)",
+          "ordering": "manager query/chunk order is retained; records that fail the plane test are skipped without re-sorting survivors"
+        },
+        "record_formula": {
+          "world_center": "current root transform composed with authored localOffset/localRotation; matrix translation",
+          "world_direction": "normalized composed local +Y basis",
+          "full_height": "max(capsuleHeight, 2 * capsuleRadius)",
+          "half_segment": "0.5 * full_height - capsuleRadius",
+          "pa": "float4(world_center - world_direction * half_segment, capsuleRadius)",
+          "pb": "float4(world_center + world_direction * half_segment, full_height)",
+          "dir": "float4(world_direction, clamp(intensityScale, 0.01, 2.0))"
+        },
+        "internal_record_writes": {
+          "valid": 1,
+          "pa": 4,
+          "pb": 20,
+          "dir": 36,
+          "stride": 52
+        }
+      },
+      "producer_pass": {
+        "shader": "HGRP/VisibilitySH",
+        "path_id": -4362943401419010014,
+        "active_render_va": "0x189d25e7c",
+        "selected_pass_index": 2,
+        "draw_method": "CommandBuffer.HGDrawMeshInstanced",
+        "draw_method_index": 407754,
+        "render_state": {
+          "blend": "One One, One One",
+          "z_test": "Greater",
+          "z_write": "Off",
+          "cull": "Front",
+          "stencil_ref": 4,
+          "stencil_read_mask": 7,
+          "stencil_compare": "NotEqual"
+        },
+        "resources": {
+          "textures": {
+            "_CameraDepthTexture": 8,
+            "_LogSHLutTex": 6,
+            "_GBufferTexture1": 7
+          },
+          "VisibilitySHConstData_size": 128,
+          "VisibilityCapsuleData_size": 6160,
+          "capsule_array_offset": 16,
+          "capsule_capacity": 128,
+          "capsule_stride": 48,
+          "capsule_members": {
+            "pa": 16,
+            "pb": 32,
+            "dir": 48
+          }
+        },
+        "constructor_constants": {
+          "log_sh_params": [
+            4.914289951324463,
+            4.668489933013916,
+            -4.914289951324463,
+            -4.668489933013916
+          ],
+          "g_star_params": [
+            17.420700073242188,
+            9.554789543151855,
+            -17.420700073242188,
+            -9.554789543151855
+          ],
+          "ab_params": [
+            1.0,
+            0.31518998742103577,
+            1.0,
+            1.0
+          ],
+          "f_hat_x_bits": "0x3e5b57c6",
+          "f_hat_x": 0.21420201659202576,
+          "sphere_interval_scale_clamp": [
+            0.8,
+            2.0
+          ],
+          "sphere_range_scale_clamp": [
+            0.01,
+            5.0
+          ],
+          "sphere_params": "[clamped interval scale, clamped range scale, 1/render width, 1/render height]"
+        },
+        "algorithm_boundary": "The selected fragment bytecode reconstructs world position from depth, decodes the GBuffer normal, evaluates a bounded sphere chain along each capsule, samples _LogSHLutTex, emits L0/L1 SH coefficients, applies distance falloff and dir.w intensity, then adds the result into the VisibilitySH target.",
+        "render_scene_callsite": {
+          "method": "HG.Rendering.Runtime.HGRenderPathDefaultDeferred.RenderScene",
+          "method_index": 287987,
+          "method_va": "0x189bf0890",
+          "construct_pass_call_offset": "0x4033"
+        },
+        "retail_defaults": {
+          "settings_type": "HG.Rendering.Runtime.HGSettingParameters",
+          "settings_type_index": 38603,
+          "constructor_va": "0x1836590a0",
+          "enabled": true,
+          "sphere_interval_scale": 0.800000011920929,
+          "sphere_range_scale": 5.0,
+          "half_resolution": true,
+          "use_tile_rendering": false,
+          "tile_size": 32,
+          "boundary": "These are the effective values for the current installed route: the active Persistent patch is target-disjoint from the render-pipeline settings path. A future downloaded IFix patch or external reflection/debug mutation remains outside this snapshot."
+        },
+        "settings_lifecycle": {
+          "prepare_method_va": "0x183948e30",
+          "prepare_direct_call_sites": [
+            "0x183947fd5"
+          ],
+          "constructor_direct_call_sites": [
+            "0x183948e78"
+          ],
+          "pipeline_storage_offset": 352,
+          "setter_va": "0x186b8b288",
+          "setter_direct_call_sites": [],
+          "visibility_feature_key_offset": 104,
+          "registered_callback_key_offsets": [
+            96,
+            112,
+            0,
+            192,
+            184,
+            32,
+            248,
+            256
+          ],
+          "visibility_callback_registered": false,
+          "ifix_patch_id_checked": 472,
+          "base_ifix_patch_block": {
+            "name": "IFixPatchOut",
+            "file_count": 0,
+            "chunk_count": 0,
+            "byte_count": 0
+          },
+          "persistent_ifix_patch_overlay": {
+            "name": "IFixPatchOut",
+            "block_version": 22764515,
+            "file_count": 1,
+            "chunk_count": 1,
+            "byte_count": 82021,
+            "target_count": 30,
+            "render_pipeline_settings_target_count": 0,
+            "state_report": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json"
+          }
+        },
+        "half_resolution_path": {
+          "downsample_render_va": "0x189d26338",
+          "downsample_shader_pass": 0,
+          "depth_reduction": "minimum of a 2x2 Gather from _InputDepthTexture",
+          "active_shader_pass": 2,
+          "color_format": "R16G16B16A16_SFloat",
+          "active_depth_attachment": "fresh half-resolution depth when enableHalfRez; source sceneDepth otherwise",
+          "sampled_depth": "PassInput.sceneDepthCopied",
+          "sampled_normal": "GBuffer attachment 1"
+        }
+      },
+      "source_closed": [
+        "Wulfa and Zhuang each serialize one enabled helper with ten enabled capsule candidates and m_interactionOnly=0.",
+        "The unpatched managed activation and per-container binding route is pinned.",
+        "The UnityPlayer manager cap, culling guards, 52-byte internal stride, and 48-byte pa/pb/dir output ABI are pinned.",
+        "The native conservative culling cube is centered on the posed capsule with extent 0.5 * fullHeight * 5.0 on every axis; the SIMD plane test and stable survivor copy order are pinned.",
+        "The native HGCapsuleBindingComponent setter storage and exact posed transform-to-pa/pb/dir packing formula are pinned.",
+        "Two independent isolated Unity D3D12 runs reproduce byte-identical 10x48-byte pa/pb/dir fixtures and identical nonzero VisibilitySH outputs for Wulfa and Zhuang; these fixtures validate the lab transport but are not retail settled-frame evidence.",
+        "The active render function selects HGRP/VisibilitySH pass 2, and its exact D3D11 vertex/fragment payloads and binding metadata are pinned.",
+        "The pass-2 render state, constant-buffer layouts, fixed SH constants, and scale clamps are pinned.",
+        "RenderScene's settings-object chain is pinned; retail defaults are enabled, interval 0.8, range 5.0, half-resolution enabled, tiled rendering disabled, and tile size 32.",
+        "The current installed route constructs the settings object once, has no direct caller of its replacement setter, and registers no VisibilitySH setting-hub callback. Its base IFixPatchOut block is empty; the active Persistent overlay has 30 exact Gameplay.Beyond targets, all disjoint from HG render-pipeline settings, so the constructor values are effective for this snapshot.",
+        "The half-resolution branch uses shader pass 0 to write min(Gather2x2(source depth)) into a fresh half-size depth attachment before pass 2 writes R16G16B16A16_SFloat."
+      ],
+      "still_open": [
+        "A future downloaded IFix patch or external reflection/debug mutation could replace the source-closed current installed settings route.",
+        "The exact settled-frame view handle, view-cull survivor count, and survivor order.",
+        "The exact retail settled-frame posed pa/pb/dir values for Wulfa and Zhuang; the isolated Unity numeric fixtures are closed separately.",
+        "The Unity replay remains diagnostic/default-off until these retail live-frame boundaries and a retail target capture are closed, despite passing isolated Wulfa/Zhuang A/B validation."
+      ]
+    }
+  },
+  "charinfo_irradiance_volume_ownership": {
+    "status": "binary-source-closed: the live V2 manager always renders m_defaultIV; shipped Lua independently confirms CharInfo does not call the old gacha-IV lifecycle",
+    "active_owner": "m_defaultIV",
+    "active_manager": "HG.Rendering.Runtime.HGIrradianceVolumeManagerV2",
+    "creates_gacha_override": false,
+    "calls_old_gacha_lifecycle": false,
+    "api_symbol_owners_across_decoded_lua": {
+      "CreateGachaIV": [
+        "Data/LuaScripts/LuaSystem/GachaSystem.lua"
+      ],
+      "UpdateGachaIV": [],
+      "DestroyGachaIV": [
+        "Data/LuaScripts/LuaSystem/GachaSystem.lua"
+      ]
+    },
+    "legacy_selector": {
+      "method": "HG.Rendering.Runtime.HGIrradianceVolumeManager.GetActiveIV",
+      "methodVa": "0x183e6dac0",
+      "defaultIVFieldOffset": 16,
+      "gachaIVFieldOffset": 48,
+      "behavior": "return m_gachaIV when non-null; otherwise return m_defaultIV",
+      "status": "legacy-manager selection is binary-source-closed, but this is not the live renderer called by HGRenderPipeline.Render in the installed build; use the separate V2 audit for the live object and resource contract"
+    },
+    "live_v2_selection": {
+      "renderedField": "m_defaultIV",
+      "renderedFieldOffset": 16,
+      "gachaField": "m_gachaIV",
+      "gachaFieldOffset": 48,
+      "gachaRole": "gates update-center selection only; it does not replace the V2 object passed to native PipelineUpdate",
+      "behavior": "V2 PipelineUpdate always passes m_defaultIV to the native renderer"
+    },
+    "active_clipmap_descriptors": [
+      {
+        "role": "clipmapTextureALod0",
+        "name": "HGIrradianceVolume::ClipMapALod0",
+        "dimensions": [
+          128,
+          64,
+          128
+        ],
+        "graphicsFormatNumeric": 74,
+        "graphicsFormatUnity2022_3_62f3": "B10G11R11_UFloatPack32",
+        "dimension": "Tex3D",
+        "randomWrite": true,
+        "mipCount": 1,
+        "filterModeNumeric": 0,
+        "filterModeUnity2022_3_62f3": "Point",
+        "wrapModeNumeric": 0,
+        "wrapModeUnity2022_3_62f3": "Repeat"
+      },
+      {
+        "role": "clipmapTextureBLod0",
+        "name": "HGIrradianceVolume::ClipMapBLod0",
+        "dimensions": [
+          128,
+          64,
+          384
+        ],
+        "lowQualityDimensions": [
+          128,
+          64,
+          128
+        ],
+        "graphicsFormatNumeric": 8,
+        "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+        "dimension": "Tex3D",
+        "randomWrite": true,
+        "mipCount": 1,
+        "filterModeNumeric": 0,
+        "filterModeUnity2022_3_62f3": "Point",
+        "wrapModeNumeric": 0,
+        "wrapModeUnity2022_3_62f3": "Repeat"
+      },
+      {
+        "role": "clipmapTextureALod1",
+        "name": "HGIrradianceVolume::ClipMapALod1",
+        "dimensions": [
+          128,
+          64,
+          128
+        ],
+        "graphicsFormatNumeric": 74,
+        "graphicsFormatUnity2022_3_62f3": "B10G11R11_UFloatPack32",
+        "dimension": "Tex3D",
+        "randomWrite": true,
+        "mipCount": 1,
+        "filterModeNumeric": 0,
+        "filterModeUnity2022_3_62f3": "Point",
+        "wrapModeNumeric": 0,
+        "wrapModeUnity2022_3_62f3": "Repeat"
+      },
+      {
+        "role": "clipmapTextureBLod1",
+        "name": "HGIrradianceVolume::ClipMapBLod1",
+        "dimensions": [
+          128,
+          64,
+          384
+        ],
+        "lowQualityDimensions": [
+          128,
+          64,
+          128
+        ],
+        "graphicsFormatNumeric": 8,
+        "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+        "dimension": "Tex3D",
+        "randomWrite": true,
+        "mipCount": 1,
+        "filterModeNumeric": 0,
+        "filterModeUnity2022_3_62f3": "Point",
+        "wrapModeNumeric": 0,
+        "wrapModeUnity2022_3_62f3": "Repeat"
+      },
+      {
+        "role": "clipmapTextureALod3",
+        "name": "HGIrradianceVolume::ClipMapALod3",
+        "dimensions": [
+          128,
+          64,
+          128
+        ],
+        "graphicsFormatNumeric": 74,
+        "graphicsFormatUnity2022_3_62f3": "B10G11R11_UFloatPack32",
+        "dimension": "Tex3D",
+        "randomWrite": true,
+        "mipCount": 1,
+        "filterModeNumeric": 0,
+        "filterModeUnity2022_3_62f3": "Point",
+        "wrapModeNumeric": 0,
+        "wrapModeUnity2022_3_62f3": "Repeat"
+      },
+      {
+        "role": "clipmapTextureBLod3",
+        "name": "HGIrradianceVolume::ClipMapBLod3",
+        "dimensions": [
+          128,
+          64,
+          384
+        ],
+        "lowQualityDimensions": [
+          128,
+          64,
+          128
+        ],
+        "graphicsFormatNumeric": 8,
+        "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+        "dimension": "Tex3D",
+        "randomWrite": true,
+        "mipCount": 1,
+        "filterModeNumeric": 0,
+        "filterModeUnity2022_3_62f3": "Point",
+        "wrapModeNumeric": 0,
+        "wrapModeUnity2022_3_62f3": "Repeat"
+      }
+    ],
+    "active_clipmap_result_order": [
+      "clipmapTextureALod0",
+      "clipmapTextureBLod0",
+      "clipmapTextureALod1",
+      "clipmapTextureBLod1",
+      "clipmapTextureALod3",
+      "clipmapTextureBLod3"
+    ],
+    "missing_object_fallback": {
+      "resource": "UnityDefault3D zero variant",
+      "dimensions": [
+        1,
+        1,
+        1
+      ],
+      "pixel": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sameResourcePublishedToAllSixSlots": true,
+      "globalPointerVa": "0x1821abfc8"
+    },
+    "shader_publication": {
+      "resultStoredInRenderRequestField": "irradianceVolumeResultV2",
+      "resultStoredAtObjectOffset": 528,
+      "renderRequestPayloadSizeBeforeWetness": 640,
+      "onPreRenderingStackResultOffset": 1168,
+      "parameters": {
+        "param0To2": "copied verbatim to render-path native slots +0xe20/+0xe30/+0xe40",
+        "param3": "result param3.xy plus (curFrameIdx % 64) as z and zero as w, stored at +0xe50"
+      },
+      "textureResultPayloadOffsets": [
+        64,
+        72,
+        80,
+        88,
+        96,
+        104
+      ],
+      "shaderIDStaticOffsets": [
+        3244,
+        3248,
+        3252,
+        3256,
+        3260,
+        3264
+      ],
+      "order": [
+        "_IrradianceVolumeClipmapTextureALod0",
+        "_IrradianceVolumeClipmapTextureBLod0",
+        "_IrradianceVolumeClipmapTextureALod1",
+        "_IrradianceVolumeClipmapTextureBLod1",
+        "_IrradianceVolumeClipmapTextureALod3",
+        "_IrradianceVolumeClipmapTextureBLod3"
+      ]
+    },
+    "remaining_boundary": "Exact current-scene streamed irradiance voxel payloads, transient dimension inputs for the persistent basis/coeff atlases, and the per-frame param0..param3 values remain scene/runtime data. They must be recovered or captured before original pass-0 replay can claim scene-identical irradiance.",
+    "audit_path": "scratch/character_recovery/charinfo_pass0_resources/charinfo_irradiance_owner.json",
+    "audit_sha256": "2a378b2585c71701b8bdb1f4798fd2f5387a03efce1829d781bd0662d3883041",
+    "auditor_path": "scratch/character_recovery/charinfo_pass0_resources/audit_charinfo_irradiance_owner.py",
+    "auditor_sha256": "e55b9642fcfab974239f72647e0733e6298b39a40e3790e967f36388299c3ac9",
+    "v2_audit_path": "scratch/character_recovery/charinfo_pass0_resources/charinfo_v2_irradiance.json",
+    "v2_audit_sha256": "139c868a3410bcc25d036c280fc427b66176bf69e05821a7c72bf8efdc93deca",
+    "v2_auditor_path": "scratch/character_recovery/charinfo_pass0_resources/audit_charinfo_v2_irradiance.py",
+    "v2_auditor_sha256": "3d36a96b34cb995823b5de4f5bad4ff8fbd81712aa105ed3312d84f050cd3b72",
+    "lua_index": {
+      "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\charinfo_pass0_resources\\lua_vfs_index.jsonl",
+      "sha256": "d02445bce0fa5e94ef4428717fa9481c2e27a966a05b839acd2375779454ae14",
+      "block": {
+        "blockType": "Lua",
+        "chunkCount": 1,
+        "codeVersion": 4,
+        "declaredChunkBytes": 20131202,
+        "declaredFileCount": 1291,
+        "groupConfigHashName": 1169089305,
+        "hashDirectory": "19E3AE45",
+        "version": 22097503
+      },
+      "chunk": {
+        "contentMd5": "1586E385D1FDD76F3C881648007C918A",
+        "fileCount": 1291,
+        "length": 20131202,
+        "source": "primary"
+      },
+      "indexed_file_count": 1291,
+      "decoded_file_count": 1290,
+      "known_non_lua_decode_failure": "Data/LuaScripts/UI/Panels/ChangePortableDevice/ChangePortableDeviceCtrl.md"
+    },
+    "gacha_system": {
+      "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\charinfo_pass0_resources\\lua_full_probe\\Lua\\Data\\LuaScripts\\LuaSystem\\GachaSystem.lua",
+      "sha256": "a0882b986461706509d6cf8ed230fb5da3513f4987b79c3ad13efa3f00789f1b",
+      "relevant_lines": [
+        {
+          "line": 51,
+          "text": "PhaseId.GachaChar,"
+        },
+        {
+          "line": 71,
+          "text": "local GachaCharPhaseIds = {"
+        },
+        {
+          "line": 75,
+          "text": "[PhaseId.GachaChar] = true,"
+        },
+        {
+          "line": 88,
+          "text": "[PhaseId.GachaChar] = true,"
+        },
+        {
+          "line": 98,
+          "text": "elseif GachaCharPhaseIds[topPhaseId] or GachaWeaponPhaseIds[topPhaseId] then"
+        },
+        {
+          "line": 104,
+          "text": "PhaseManager:IsOpenAndValid(PhaseId.GachaChar) or"
+        },
+        {
+          "line": 119,
+          "text": "return GachaCharPhaseIds[topPhaseId] == true"
+        },
+        {
+          "line": 139,
+          "text": "ivPath = \"Data/IrradianceVolume/\" .. platformPathName .. \"/gacha/character\""
+        },
+        {
+          "line": 141,
+          "text": "self:SetGachaIV(ivPath)"
+        },
+        {
+          "line": 151,
+          "text": "ivPath = \"Data/IrradianceVolume/\" .. platformPathName .. \"/gacha/weapon\""
+        },
+        {
+          "line": 153,
+          "text": "self:SetGachaIV(ivPath)"
+        },
+        {
+          "line": 156,
+          "text": "GachaSystem.SetGachaIV = HL.Method(HL.Opt(HL.String)) << function(self, ivPath)"
+        },
+        {
+          "line": 163,
+          "text": "CS.HG.Rendering.Runtime.HGManagerContext.currentManagerContext.ivManager:DestroyGachaIV()"
+        },
+        {
+          "line": 164,
+          "text": "logger.info(\"GachaSystem.SetGachaIV DestroyGachaIV\")"
+        },
+        {
+          "line": 167,
+          "text": "CS.HG.Rendering.Runtime.HGManagerContext.currentManagerContext.ivManager:CreateGachaIV(ivPath)"
+        },
+        {
+          "line": 168,
+          "text": "logger.info(\"GachaSystem.SetGachaIV\", ivPath)"
+        },
+        {
+          "line": 210,
+          "text": "GachaSystem.OnRelease = HL.Override() << function(self)"
+        },
+        {
+          "line": 212,
+          "text": "self:SetGachaIV()"
+        }
+      ]
+    },
+    "charinfo_phase": {
+      "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\charinfo_pass0_resources\\lua_full_probe\\Lua\\Data\\LuaScripts\\Phase\\CharInfo\\PhaseCharInfo.lua",
+      "sha256": "5c1044771f68a7e1b897f797b1d2fd8e43f0ef14af88083cb88d31541dbd4b0c",
+      "lifecycle_lines": [
+        {
+          "line": 336,
+          "text": "PhaseCharInfo._OnActivated = HL.Override() << function(self)"
+        },
+        {
+          "line": 381,
+          "text": "PhaseCharInfo._OnDeActivated = HL.Override() << function(self)"
+        }
+      ]
+    }
+  },
+  "selected_original_program": {
+    "pass_index": 0,
+    "pass_name": "Default Lit - Full Lighting",
+    "serialized_stage": "vertex",
+    "program_payload": "fragment snippet 1",
+    "keywords": [
+      "HG_ENABLE_SCREEN_SPACE_SHADOW_MASK",
+      "HG_USE_SUBPASS_INPUT_UNDER_ONE_PASS_DEFERRED"
+    ],
+    "spirv_path": "scratch/reverse_engineering/sphereoutside_deferred_variant/original_shader_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0101_endfield_spirv_1.spv",
+    "spirv_size": 79584,
+    "spirv_sha256": "112bcb9fd9152c6530c576e6c9431d37a12cd826e4116d114d360986109f8030",
+    "source_metadata_path": "scratch/reverse_engineering/sphereoutside_deferred_variant/original_shader_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0101_endfield_spirv_1.spv.metadata.json",
+    "source_metadata_sha256": "1aaae80e21b3fce5138d6524badc0eb3e606681679314e0f7ee2ac648b76ed88",
+    "enriched_metadata_path": "scratch/reverse_engineering/sphereoutside_deferred_variant/selected_fragment.enriched.metadata.json",
+    "enriched_metadata_sha256": "c296317ff6e7aa8d5d35b1c6705117dbdee37ff4163b4b093e69262e85e3a826",
+    "decompiled_hlsl_path": "scratch/reverse_engineering/sphereoutside_deferred_variant/selected_fragment.hlsl",
+    "decompiled_hlsl_sha256": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
+    "dxbc_path": "scratch/reverse_engineering/sphereoutside_deferred_variant/original_shader_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0097_endfield_dxbc_1.dxbc",
+    "dxbc_size": 48984,
+    "dxbc_sha256": "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f",
+    "dxbc_metadata_path": "scratch/reverse_engineering/sphereoutside_deferred_variant/original_shader_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0097_endfield_dxbc_1.dxbc.metadata.json",
+    "dxbc_metadata_sha256": "07b16f92bce820666837e624777b4160d89bb5faf9a57e8eafe48c6041501cff",
+    "decompiled_dxbc_hlsl_path": "scratch/reverse_engineering/sphereoutside_deferred_variant/selected_fragment_dxbc.hlsl",
+    "decompiled_dxbc_hlsl_sha256": "c748ee49a72794ef81f6795bee934775e42958ad74e9560c0730e8d83686906d",
+    "installed_d3d11_selection": {
+      "source_closed": true,
+      "keyword_state_audit_path": "scratch/reverse_engineering/gacha_deferred_keyword_state/audit.json",
+      "keyword_state_audit_sha256": "2dbdc0a7aadcb15592c8f74ccd871329ad5ecc2bbd976feec625766de1f241d9",
+      "fallback_program_audit_path": "scratch/reverse_engineering/gacha_deferred_fallback_program/audit.json",
+      "fallback_program_audit_sha256": "cd02cc0a8636546a8d3d45a5e322eced8ff26dfae68eff1643e33cbdaf16e409",
+      "selection_rule": "popcount(request & variant) - 16 * popcount((~request) & variant); strict-greater updates retain the first serialized variant on ties",
+      "variant_pair_count": 64,
+      "selected_serialized_order": 96,
+      "selected_score": -15,
+      "runner_up_score": -16,
+      "unique_winner": true,
+      "global_keywords": {
+        "HG_ENABLE_SCREEN_SPACE_SHADOW_MASK": true,
+        "HG_USE_SUBPASS_INPUT_UNDER_ONE_PASS_DEFERRED": false
+      },
+      "selected_pair": {
+        "vertex_path": "scratch/reverse_engineering/gacha_deferred_resolver_chain/deferred_lighting_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0096_endfield_dxbc_0.dxbc",
+        "vertex_sha256": "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155",
+        "fragment_path": "scratch/reverse_engineering/gacha_deferred_resolver_chain/deferred_lighting_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0097_endfield_dxbc_1.dxbc",
+        "fragment_sha256": "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f"
+      },
+      "isolated_execution_audit_path": "scratch/reverse_engineering/gacha_unity_original_bytecode_execution/unity_live_validation.json",
+      "isolated_execution_audit_sha256": "9ca5b321e0a31fb058d9043e328d222b492188f09e298167fc2df807620fa6a6",
+      "isolated_execution_scope": "standalone_d3d11_isolated_diagnostic",
+      "resource_binding_compatible": true,
+      "numeric_render_fidelity_proven": false
+    }
+  },
+  "named_constant_buffers": [
+    {
+      "name": "_TransformVariables",
+      "set": 3,
+      "binding": 30,
+      "size": 1312,
+      "partial": true
+    },
+    {
+      "name": "_LightDataBuffer",
+      "set": 3,
+      "binding": 31,
+      "size": 32864,
+      "partial": true
+    },
+    {
+      "name": "VisibilitySHConstData",
+      "set": 3,
+      "binding": 33,
+      "size": 128,
+      "partial": true
+    },
+    {
+      "name": "ShaderVariablesGlobal",
+      "set": 3,
+      "binding": 35,
+      "size": 3200,
+      "partial": true
+    },
+    {
+      "name": "ReflectionProbeGlobalData",
+      "set": 3,
+      "binding": 36,
+      "size": 4160,
+      "partial": true
+    }
+  ],
+  "unnamed_constant_buffers": [
+    {
+      "symbol": "_28_29",
+      "binding": 32,
+      "set": 3
+    },
+    {
+      "symbol": "_32_33",
+      "binding": 34,
+      "set": 3
+    },
+    {
+      "symbol": "_44_45",
+      "binding": 37,
+      "set": 3
+    },
+    {
+      "symbol": "_34_35",
+      "binding": 38,
+      "set": 3
+    }
+  ],
+  "identified_unnamed_constant_buffer_roles": [
+    {
+      "role": "_LightBinningConstants",
+      "symbol": "_28_29",
+      "set": 3,
+      "binding": 32,
+      "size": 48,
+      "status": "binary-role-identified; selected SPIR-V debug metadata does not carry the source name",
+      "evidence": [
+        "selected SPIR-V b32 is exactly four int scalars plus eight float scalars (48 bytes)",
+        "its used lanes calculate 32x32 screen tiles, z bins, and offsets into the light-list ByteAddressBuffer",
+        "the same selected DXBC fragment carries the equivalent 3xfloat4 layout at b3",
+        "the original shader family metadata exposes _LightBinningConstants as a 48-byte constant buffer"
+      ]
+    },
+    {
+      "role": "ShadowData",
+      "symbol": "_32_33",
+      "set": 3,
+      "binding": 34,
+      "size": 11440,
+      "status": "source-closed by exact selected layout match against original ShadowReceiver metadata",
+      "source_metadata_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/ShadowReceiver.fragment.metadata.json",
+      "source_metadata_sha256": "2a3136eec2cae762ac5c89cc56e8891457cf0547b23b53a48a250934e71ac533",
+      "evidence": [
+        "five _CSMWorldToShadow matrices begin at byte 0 / c0",
+        "15 _CharacterWorldToShadow matrices begin at byte 7168 / c448",
+        "_ASMWorldToShadowBaseMat and _ASMIndirectWorldToShadow begin at bytes 9216/9280 / c576/c580",
+        "128 _ASMIndirectParams vectors begin at byte 9392 / c587"
+      ]
+    },
+    {
+      "role": "LightCookieData",
+      "symbol": "_44_45",
+      "set": 3,
+      "binding": 37,
+      "size": 2560,
+      "status": "binary-role-identified; selected SPIR-V debug metadata does not carry the source name",
+      "evidence": [
+        "32 float4 atlas scale/offset records occupy bytes 0..511",
+        "32 float4x4 world/direction-to-cookie matrices occupy bytes 512..2559",
+        "the selected resolver transforms each light through the indexed matrix and atlas scale/offset before sampling the light-cookie texture",
+        "installed metadata carries lightCookieData/lightCookieMatricesData and _LightCookie identifiers"
+      ]
+    },
+    {
+      "role": "HDPunctualLightCharacterShadowData",
+      "symbol": "_34_35",
+      "set": 3,
+      "binding": 38,
+      "size": 3568,
+      "status": "source-closed by exact selected layout match against an original ScreenSpaceShadowResolve sidecar; selected resolver debug metadata does not carry the source name",
+      "source_metadata_path": "scratch/character_recovery/screen_shadow_r_owner/shader_export_with_sidecars/Shader/HGRP_ScreenSpaceShadowResolve_pE36AF612B2CE3978.shader.bytecode/0017_endfield_spirv_1.spv.metadata.json",
+      "source_metadata_sha256": "977fd3a71241c23ce61a2651261968fe63ad297cbbd7abd7a5a82eb50549cccd",
+      "evidence": [
+        "32 _HDPLSCharacterWorldToShadow matrices occupy bytes 0..2047",
+        "32 _HDPLSParams vectors occupy bytes 2048..2559",
+        "56 uint4 _HDPLSCharacterIndices records occupy bytes 2560..3455",
+        "_HDPLSScreenSpaceShadowIndices begins at byte 3456 / c216",
+        "four _HDPLSScreenSpaceLightPositions vectors begin at byte 3488 / c218",
+        "_HDPLSGlobalParams begins at byte 3552 / c222",
+        "the selected deferred resolver uses _HDPLSCharacterIndices[punctualShadowIndex].y to select a screen-space shadow channel before falling back to the punctual shadow atlas"
+      ]
+    }
+  ],
+  "charinfo_scene_resource_state": {
+    "status": "serialized-source-closed for the current installed CharInfo prefab, its two global VolumeProfiles, and its global HGEnvironmentPhase; runtime-produced resource contents remain fail-closed",
+    "sources": [
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/prefab_export/MonoBehaviour/MonoBehaviour#792_p655F4ABBD4D76703.json",
+        "sha256": "0ea2e4040eb99a6b6e02371920e0d9da587b067e6576a9a746f309195ffd8bbd",
+        "raw_data_sha256": "fe9a7959a3d6f0ea27c3295276af52fb567d9f052fe4dda3e2e2f3875e74ec7f"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/prefab_export/MonoBehaviour/MonoBehaviour#174_pB658384F9D0D6703.json",
+        "sha256": "228ee988faee4aa8f5ddd952d89b163a3a45af245bc7cd97a303ce1e66c80d60",
+        "raw_data_sha256": "ba9416c69b25214151c92cb2d3775b433e78987f7b8813a9f139094ab9fe148b"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/prefab_export/MonoBehaviour/MonoBehaviour#353_pE7A573BD8DDB6703.json",
+        "sha256": "b1e7dd1c5ae01cc34285c286dec7485b31da1dd7e9ba4bdc89209bb99d2356c6",
+        "raw_data_sha256": "389e56eeebb4d5e60812fa447892efed2bd44a5bfa74ea44d10708192d04e02a"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/prefab_export/MonoBehaviour/MonoBehaviour#263_pD07FBA9DF34A6703.json",
+        "sha256": "0c10d9772a6256187c0d4682b5826d6a3c298d8b7fa2949f095da44dad89a627",
+        "raw_data_sha256": "be70748fe214daad8a45450dd095a5f984a29f427d3c30ebcff231ffa5440a76"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/export/MonoBehaviour/CharOverrideVolumeProfile_p1F791EC790728B5D.json",
+        "sha256": "d103e65b492bd2ae402efaa086c34817c7df03f35dba7820f4f31e0fd944cebf",
+        "raw_data_sha256": "fe9b08280d9c6e0f6494afcd52dff278583d9c5240cc38bcf77324ffae2490b5"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/export/MonoBehaviour/HGCharacterVolume_pC3C630E578828B5D.json",
+        "sha256": "1c48d63d3d0a8b373d04b3061df46b04aa2ba2f9547efc777e397e7c4fb77165",
+        "raw_data_sha256": "acce5e4a8979a1b757db35ab0392de491a02b9d637c5d14d32d8dbc3b08d6def"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/export/MonoBehaviour/CharInfo_Volume_p8B672C2D300FB560.json",
+        "sha256": "7e1fa59a6924952519c1672abdb159b036a209dd347e7533a5c0c3e6152a4f4c",
+        "raw_data_sha256": "6e364b1d060c84d32b3d17c39d589fba072d44b09e0d528bca2f5adda3afdb0e"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/export/MonoBehaviour/HGCharacterVolume_pEAFD4394B4A8B560.json",
+        "sha256": "d01bbc77d97820bb9b4315335e7cc47b36cbe7af94c4d7787a83b86b9b70a125",
+        "raw_data_sha256": "5133a5977d6cf4321e9f61795c55ba9218bfc1cbce83738d2da91f94001370b0"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/export/MonoBehaviour/HGShadowSettings_p11B7E519682CB560.json",
+        "sha256": "639f8cbbb3f267b8136c279fb936176048908120106f05286e471a9b157236b2",
+        "raw_data_sha256": "6e9d83af7c735b09438d6a20f476bcd6b0092587a9697424cecd7a31487499bd"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/export/MonoBehaviour/HGDisableDirectionalShadowComponent_p726D45BDDA45B560.json",
+        "sha256": "654f3d840cd7aa5d7c6b2d01dac865a133358e6011f95ebbc0554b6a8527d18d",
+        "raw_data_sha256": "d4d51f1f20fa696e5871b42e71e888dde9a484bfa68ad912bec4f8c8821ce5f2"
+      },
+      {
+        "path": "scratch/character_recovery/charinfo_volume_state/export/MonoBehaviour/CharInfo_Env_p10AB447A9F33D0F3.json",
+        "sha256": "33bb9d19d4a7c1e0dfb5e82117821c908108059f76b7103c2c0ed5e8ba7f873c",
+        "raw_data_sha256": "f9d1384c29f1e54599cd55e5f9c5c6d7eb9bd6f678d9fd104c7c329e6f1a66f9"
+      }
+    ],
+    "volume_routing": {
+      "controller_keys": {
+        "charOverrideVolume": -5307430246267656445,
+        "overrideVolume": -5307430246267656445
+      },
+      "char_override_volume": {
+        "enabled": true,
+        "global": true,
+        "priority": 30001.0,
+        "weight": 1.0,
+        "profile_path_id": 2267877729828506461,
+        "profile_components": [
+          "HGCharacterVolume"
+        ]
+      },
+      "global_volume": {
+        "enabled": true,
+        "global": true,
+        "priority": 30000.0,
+        "weight": 1.0,
+        "profile_path_id": -8401698007244884640,
+        "profile_component_count": 12,
+        "resolver_relevant_components": [
+          "HGCharacterVolume",
+          "HGShadowSettings",
+          "HGDisableDirectionalShadowComponent"
+        ]
+      },
+      "global_environment_volume": {
+        "enabled": true,
+        "priority": 600,
+        "manual_blend_factor": 1.0,
+        "environment_phase_path_id": 1201129019072041203
+      }
+    },
+    "disabled_or_overridden_features": {
+      "rain_wetness": {
+        "enabled": false,
+        "wetness": 0.0,
+        "shader_gate": "ShaderVariablesGlobal_WaterWetnessMaskParam0.x > 0.00048828125",
+        "disabled_shader_value": [
+          1.0,
+          1.0
+        ],
+        "native_invalid_handle_fallback": "UnityEngine.Texture2D.whiteTexture",
+        "binding_status": "binary-source-closed: the deferred binder publishes the valid render-graph handle or Unity's built-in white Texture2D when the handle is invalid; CharInfo also gates the original fragment's sample off",
+        "binding_evidence": {
+          "property": "_WaterWetnessMaskTexture",
+          "propertyIdStaticOffset": 3000,
+          "passInputFieldOffset": 160,
+          "passDataFieldOffset": 160,
+          "renderFunctionValidityTestOffset": 664,
+          "invalidHandleFallback": "UnityEngine.Texture2D.whiteTexture",
+          "invalidHandleFallbackCallOffset": 719,
+          "setGlobalTextureCallOffset": 780,
+          "behavior": "publish the valid render-graph texture handle; otherwise publish Texture2D.whiteTexture"
+        }
+      },
+      "volumetric_fog": {
+        "fog_enabled": false,
+        "height_fog_enabled": false,
+        "volumetric_fog_enabled": false,
+        "flow_noise_enabled": false,
+        "shader_gate": "ShaderVariablesGlobal_VolumetricFogParams0.z > 0",
+        "binding_status": "binary-source-closed: the disabled volumetric pass publishes HGVolumetricFogUtils' shared exact 1x1x1 black ASTC_4x4 Texture3D; the selected fragment also gates the sample off",
+        "binding_evidence": {
+          "property": "_IntegratedLightScattering",
+          "propertyIdStaticOffset": 1088,
+          "renderPredicate": "HG.Rendering.Runtime.HGRenderPathScene.ShouldRenderVolumetricFog",
+          "predicateCallOffset": 59,
+          "disabledBranchOffset": 345,
+          "disabledFallback": "HG.Rendering.Runtime.HGVolumetricFogUtils.volumetricBlackTexture3D",
+          "disabledFallbackCallOffset": 392,
+          "setGlobalTextureCallOffset": 462,
+          "fallbackTexture": {
+            "dimension": "Texture3D",
+            "width": 1,
+            "height": 1,
+            "depth": 1,
+            "textureFormatNumeric": 48,
+            "textureFormatUnity2022_3_62f3": "ASTC_4x4",
+            "mipChain": false,
+            "createUninitialized": false,
+            "pixel": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "setPixelCoordinates": [
+              0,
+              0,
+              0
+            ],
+            "applyUpdateMipmaps": false,
+            "applyMakeNoLongerReadable": true,
+            "constructorCallOffset": 85,
+            "colorBlackCallOffset": 113,
+            "setPixelCallOffset": 159,
+            "applyCallOffset": 175,
+            "unityEnumEvidence": {
+              "assembly": "D:\\Program Files\\2022.3.62f3\\Editor\\Data\\Managed\\UnityEngine\\UnityEngine.CoreModule.dll",
+              "assemblySha256": "9ac427b73dfda8d44d8179b614e8928ad92d459e83cdbe053f0c5c3266385c37",
+              "enum": "UnityEngine.TextureFormat",
+              "numericValue": 48,
+              "name": "ASTC_4x4"
+            }
+          },
+          "behavior": "when ShouldRenderVolumetricFog is false, publish the shared exact 1x1x1 black ASTC_4x4 Texture3D"
+        }
+      },
+      "cloud_shadow": {
+        "enabled": false,
+        "texture_path_id": 0
+      },
+      "asm": {
+        "disabled": true,
+        "source_value": 1
+      },
+      "directional_shadow": {
+        "disabled": true,
+        "disable_override": 1.0,
+        "character_ignores_main_light_shadow": true,
+        "character_shadow_resolution_override": -1,
+        "environment_csm_enabled": true,
+        "csm_ramp_texture": "null",
+        "csm_ramp_binding": "UnityEngine.Texture2D.blackTexture",
+        "screen_shadow_contract_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/screen_shadow_r_contract.json",
+        "screen_shadow_contract_sha256": "47cf259ca66dfe9e5c4baa72dbc231ebc4e1587b2e9d396b8ccc8579022d4c8e",
+        "binding_status": "the null _CSMShadowRampTex binding is source-closed as Texture2D.blackTexture; the three-target _LowResDirectionalShadow chain and applicable ordinary-Unity caster path are reproduced in lab-prefixed resources, while canonical publication, game-only ECS/grass/tree casters, and complete same-frame ownership remain open"
+      }
+    },
+    "live_environment_resources": {
+      "character_max_cubemap": {
+        "path_id": -8084913603968714749,
+        "override_state": true,
+        "name": "T_hdri_reflection_char_01",
+        "format": "BC6H",
+        "width": 128,
+        "height": 128,
+        "mip_count": 8,
+        "face_count": 6,
+        "payload_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/T_hdri_reflection_char_01.cubemap.bc6h.bytes",
+        "payload_sha256": "898ff663c8d447456666612e55697f7aecde13c03b19b74f9df5b73735e2c9df",
+        "manifest_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/T_hdri_reflection_char_01.cubemap.manifest.json",
+        "manifest_sha256": "05f48042e8fa56a50ebe24d98bdf2dc6ff7981f6c3243c996588702b7ee5c692",
+        "status": "exact serialized BC6H payload recovered"
+      },
+      "environment_reflection": {
+        "reflection_type": 1,
+        "reflection_map_path_id": 2404688955498524548,
+        "skybox_cubemap_path_id": -5544960624411894816,
+        "reflection_map_cubemap": {
+          "name": "T_hdri_env_char_01",
+          "path_id": 2404688955498524548,
+          "format": "BC6H",
+          "width": 128,
+          "height": 128,
+          "mip_count": 8,
+          "face_count": 6,
+          "source_file": "CAB-7e9fb62841465607699a223e58b64af8",
+          "source_original_path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source_offset": 1026030945,
+          "payload_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/T_hdri_env_char_01.cubemap.bc6h.bytes",
+          "payload_sha256": "948f8d8dfb77e1b29171c4b04caaa679202e06624ab7be2203719e11ca6ee7b7",
+          "manifest_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/T_hdri_env_char_01.cubemap.manifest.json",
+          "manifest_sha256": "c37dceb5dee3f8c664e89cbee4ce7f015635418803b4ebfcb876f49ebfa66c77",
+          "recovery_filter_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/charinfo_environment_reflection_cubemap_filter.json",
+          "recovery_filter_sha256": "cb70001f656868b7ba908ce899f0a2f7100a2b042591dff04e1e56e536559fd2",
+          "runtime_binding_status": "exact serialized source recovered and imported; the installed one-Cubemap conversion and source-derived Unity GPU output are closed, but _ReflectionProbeOctTextureArray publication remains deliberately default-off"
+        },
+        "skybox_cubemap": {
+          "name": "T_hdri_006",
+          "format": "BC6H",
+          "width": 128,
+          "height": 128,
+          "mip_count": 8,
+          "face_count": 6,
+          "payload_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/T_hdri_006.cubemap.bc6h.bytes",
+          "payload_sha256": "070fd7c568b9db9c1cfc936e3fe081465807e761d28090761c92f6f94444214e",
+          "manifest_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/T_hdri_006.cubemap.manifest.json",
+          "manifest_sha256": "8896ac5d154d27477486c84e9008b1bfa1daf2bd24feb693389dd71d46527304"
+        },
+        "status": "live; the exact sky and environment-reflection Cubemaps, native _ReflectionProbeOctTextureArray conversion, and ReflectionProbeGlobalData no-local fallback are recovered; publication into pass 0 remains default-off and must not be neutralized"
+      },
+      "irradiance_volume": {
+        "use_custom_default_sh": false,
+        "legacy_selector_not_live": {
+          "method": "HG.Rendering.Runtime.HGIrradianceVolumeManager.GetActiveIV",
+          "methodVa": "0x183e6dac0",
+          "defaultIVFieldOffset": 16,
+          "gachaIVFieldOffset": 48,
+          "behavior": "return m_gachaIV when non-null; otherwise return m_defaultIV",
+          "status": "legacy-manager selection is binary-source-closed, but this is not the live renderer called by HGRenderPipeline.Render in the installed build; use the separate V2 audit for the live object and resource contract"
+        },
+        "active_selector": {
+          "renderedField": "m_defaultIV",
+          "renderedFieldOffset": 16,
+          "gachaField": "m_gachaIV",
+          "gachaFieldOffset": 48,
+          "gachaRole": "gates update-center selection only; it does not replace the V2 object passed to native PipelineUpdate",
+          "behavior": "V2 PipelineUpdate always passes m_defaultIV to the native renderer"
+        },
+        "charinfo_active_owner": "m_defaultIV",
+        "ownership_evidence": "HGRenderPipeline.Render directly calls manager V2; its native PipelineUpdate always receives m_defaultIV. The complete pinned shipped Lua block also confines the old CreateGachaIV/DestroyGachaIV lifecycle to GachaSystem",
+        "default_config": {
+          "enableLowQualityMode": false,
+          "clipMapTextureSize": [
+            128,
+            64,
+            128
+          ],
+          "basisBaseGridDim": [
+            3,
+            4,
+            5,
+            7,
+            8,
+            9
+          ],
+          "basisVoxelDataDim": [
+            6,
+            6,
+            6,
+            3,
+            3,
+            3
+          ],
+          "coeffBaseGridDim": 6,
+          "coeffVoxelDataDim": 27,
+          "perCoeffLodBudget": [
+            8,
+            128,
+            128
+          ],
+          "perBasisLodBudget": [
+            8,
+            64,
+            128
+          ],
+          "lod3BaseGridDim": 5,
+          "lod3VoxelDataDim": 13,
+          "lod3Budget": 2048,
+          "rawDataSize": 52,
+          "modelBufferBudget": 288,
+          "perLOD": [
+            0,
+            1,
+            3
+          ],
+          "perHalfStreamingChunkCountsX": [
+            3,
+            3,
+            17
+          ],
+          "perHalfStreamingChunkCountsY": [
+            2,
+            2,
+            9
+          ],
+          "perHalfStreamingChunkCountsZ": [
+            3,
+            3,
+            17
+          ],
+          "perRawBufferOffsets": [
+            0,
+            144,
+            288
+          ],
+          "perRawBufferCounts": [
+            144,
+            144,
+            0
+          ],
+          "perBlockInfoBufferOffsets": [
+            0,
+            9216,
+            18432
+          ],
+          "perBlockInfoSize": [
+            9216,
+            9216,
+            0
+          ],
+          "perBasisTextureOffset": [
+            0,
+            256,
+            512
+          ],
+          "perBasisTextureBlockCounts": [
+            256,
+            256,
+            0
+          ],
+          "perCoeffTextureOffset": [
+            0,
+            256,
+            512
+          ],
+          "perCoeffTextureBlockCounts": [
+            256,
+            256,
+            0
+          ],
+          "perFrameMaxLoadingByteCount": [
+            1048576,
+            1048576,
+            1048576
+          ],
+          "perFrameMaxUploadChunkCount": [
+            4,
+            4,
+            8
+          ],
+          "maxRegionCount": 8,
+          "regionAtlasSize": [
+            80,
+            40,
+            80
+          ],
+          "streamingCenterBias": [
+            16.0,
+            64.0,
+            256.0
+          ]
+        },
+        "persistent_atlases": {
+          "basis": [
+            {
+              "slot": 0,
+              "name": "HGIrradianceVolume::BasisAtlas0",
+              "dimensionsFromTransientConfig": [
+                "3 * transientConfig.x",
+                "2 * 3 * transientConfig.y",
+                "3 * transientConfig.z"
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "slot": 1,
+              "name": "HGIrradianceVolume::BasisAtlas1",
+              "dimensionsFromTransientConfig": [
+                "4 * transientConfig.x",
+                "2 * 4 * transientConfig.y",
+                "4 * transientConfig.z"
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "slot": 2,
+              "name": "HGIrradianceVolume::BasisAtlas2",
+              "dimensionsFromTransientConfig": [
+                "5 * transientConfig.x",
+                "2 * 5 * transientConfig.y",
+                "5 * transientConfig.z"
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "slot": 3,
+              "name": "HGIrradianceVolume::BasisAtlas3",
+              "dimensionsFromTransientConfig": [
+                "7 * transientConfig.x",
+                "1 * 7 * transientConfig.y",
+                "7 * transientConfig.z"
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "slot": 4,
+              "name": "HGIrradianceVolume::BasisAtlas4",
+              "dimensionsFromTransientConfig": [
+                "8 * transientConfig.x",
+                "1 * 8 * transientConfig.y",
+                "8 * transientConfig.z"
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "slot": 5,
+              "name": "HGIrradianceVolume::BasisAtlas5",
+              "dimensionsFromTransientConfig": [
+                "9 * transientConfig.x",
+                "1 * 9 * transientConfig.y",
+                "9 * transientConfig.z"
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            }
+          ],
+          "coeff": {
+            "name": "HGIrradianceVolume::CoeffAtlas",
+            "dimensionsFromTransientConfig": [
+              "6 * transientConfig.coeffX",
+              "ceil(27 / 3) * 6 * transientConfig.coeffY",
+              "6 * transientConfig.coeffZ"
+            ],
+            "graphicsFormatNumeric": 8,
+            "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+            "dimension": "Tex3D",
+            "randomWrite": true,
+            "mipCount": 1,
+            "filterModeNumeric": 0,
+            "filterModeUnity2022_3_62f3": "Point",
+            "wrapModeNumeric": 0,
+            "wrapModeUnity2022_3_62f3": "Repeat"
+          }
+        },
+        "active_clipmaps": {
+          "resultOrder": [
+            "clipmapTextureALod0",
+            "clipmapTextureBLod0",
+            "clipmapTextureALod1",
+            "clipmapTextureBLod1",
+            "clipmapTextureALod3",
+            "clipmapTextureBLod3"
+          ],
+          "descriptors": [
+            {
+              "role": "clipmapTextureALod0",
+              "name": "HGIrradianceVolume::ClipMapALod0",
+              "dimensions": [
+                128,
+                64,
+                128
+              ],
+              "graphicsFormatNumeric": 74,
+              "graphicsFormatUnity2022_3_62f3": "B10G11R11_UFloatPack32",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "role": "clipmapTextureBLod0",
+              "name": "HGIrradianceVolume::ClipMapBLod0",
+              "dimensions": [
+                128,
+                64,
+                384
+              ],
+              "lowQualityDimensions": [
+                128,
+                64,
+                128
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "role": "clipmapTextureALod1",
+              "name": "HGIrradianceVolume::ClipMapALod1",
+              "dimensions": [
+                128,
+                64,
+                128
+              ],
+              "graphicsFormatNumeric": 74,
+              "graphicsFormatUnity2022_3_62f3": "B10G11R11_UFloatPack32",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "role": "clipmapTextureBLod1",
+              "name": "HGIrradianceVolume::ClipMapBLod1",
+              "dimensions": [
+                128,
+                64,
+                384
+              ],
+              "lowQualityDimensions": [
+                128,
+                64,
+                128
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "role": "clipmapTextureALod3",
+              "name": "HGIrradianceVolume::ClipMapALod3",
+              "dimensions": [
+                128,
+                64,
+                128
+              ],
+              "graphicsFormatNumeric": 74,
+              "graphicsFormatUnity2022_3_62f3": "B10G11R11_UFloatPack32",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            },
+            {
+              "role": "clipmapTextureBLod3",
+              "name": "HGIrradianceVolume::ClipMapBLod3",
+              "dimensions": [
+                128,
+                64,
+                384
+              ],
+              "lowQualityDimensions": [
+                128,
+                64,
+                128
+              ],
+              "graphicsFormatNumeric": 8,
+              "graphicsFormatUnity2022_3_62f3": "R8G8B8A8_UNorm",
+              "dimension": "Tex3D",
+              "randomWrite": true,
+              "mipCount": 1,
+              "filterModeNumeric": 0,
+              "filterModeUnity2022_3_62f3": "Point",
+              "wrapModeNumeric": 0,
+              "wrapModeUnity2022_3_62f3": "Repeat"
+            }
+          ],
+          "missingObjectFallback": {
+            "resource": "UnityDefault3D zero variant",
+            "dimensions": [
+              1,
+              1,
+              1
+            ],
+            "pixel": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "sameResourcePublishedToAllSixSlots": true,
+            "globalPointerVa": "0x1821abfc8"
+          }
+        },
+        "shader_publication": {
+          "resultStoredInRenderRequestField": "irradianceVolumeResultV2",
+          "resultStoredAtObjectOffset": 528,
+          "renderRequestPayloadSizeBeforeWetness": 640,
+          "onPreRenderingStackResultOffset": 1168,
+          "parameters": {
+            "param0To2": "copied verbatim to render-path native slots +0xe20/+0xe30/+0xe40",
+            "param3": "result param3.xy plus (curFrameIdx % 64) as z and zero as w, stored at +0xe50"
+          },
+          "textureResultPayloadOffsets": [
+            64,
+            72,
+            80,
+            88,
+            96,
+            104
+          ],
+          "shaderIDStaticOffsets": [
+            3244,
+            3248,
+            3252,
+            3256,
+            3260,
+            3264
+          ],
+          "order": [
+            "_IrradianceVolumeClipmapTextureALod0",
+            "_IrradianceVolumeClipmapTextureBLod0",
+            "_IrradianceVolumeClipmapTextureALod1",
+            "_IrradianceVolumeClipmapTextureBLod1",
+            "_IrradianceVolumeClipmapTextureALod3",
+            "_IrradianceVolumeClipmapTextureBLod3"
+          ]
+        },
+        "status": "the live V2 owner, six A/B clipmap descriptors/order, zero fallback, and shader-publication bridge are source-closed; exact current-scene streamed voxel payloads and per-frame parameters remain open"
+      },
+      "visibility_sh": {
+        "binding": {
+          "properties": {
+            "logSHLut": {
+              "property": "_LogSHLutTex",
+              "propertyIdStaticOffset": 3524,
+              "passDataFieldOffset": 88,
+              "activeRenderBindOffset": 283
+            },
+            "abLut": {
+              "property": "_ABLutTex",
+              "propertyIdStaticOffset": 3528,
+              "passDataFieldOffset": 96,
+              "activeRenderBindOffset": 693,
+              "emptyRenderBindOffset": 219
+            },
+            "visibilitySH": {
+              "property": "_VisibilitySHRT",
+              "propertyIdStaticOffset": 3532,
+              "activeTextureHandleFieldOffset": 64,
+              "emptyTextureFieldOffset": 80,
+              "activeRenderBindOffset": 795,
+              "emptyRenderBindOffset": 320
+            }
+          },
+          "activeRenderTarget": {
+            "width": "camera view width, or signed half-width when PassInput.enableHalfRez is true",
+            "height": "camera view height, or signed half-height when PassInput.enableHalfRez is true",
+            "colorFormatNumeric": 48,
+            "colorFormatUnity2022_3_62f3": "R16G16B16A16_SFloat",
+            "filterModeNumeric": 1,
+            "filterModeUnity2022_3_62f3": "Bilinear",
+            "wrapModeNumeric": 1,
+            "wrapModeUnity2022_3_62f3": "Clamp",
+            "enableRandomWrite": false,
+            "useMipMap": false,
+            "constructorCallOffset": 2864,
+            "createTextureCallOffset": 3091
+          },
+          "emptyOrDisabledFallback": {
+            "texture": "UnityEngine.Texture2D.blackTexture",
+            "constructorBranches": [
+              {
+                "reason": "post-cull capsule count is zero",
+                "branchOffset": 2293,
+                "blackTextureCallOffset": 3483,
+                "passDataStoreOffset": 3497
+              },
+              {
+                "reason": "PassInput.enabled is false or maximum render capsule count is zero",
+                "branchOffsets": [
+                  1970,
+                  1979
+                ],
+                "blackTextureCallOffset": 3777,
+                "passDataStoreOffset": 3791
+              }
+            ],
+            "publishedByEmptyRenderFunction": true,
+            "emptyRenderSetGlobalTextureCallOffset": 320
+          },
+          "linkedSourceClosedAudits": {
+            "visibilityLuts": "../visibility_luts/visibility_luts.json",
+            "capsuleRuntimeAndProducerPass": "../visibility_capsule_runtime/visibility_capsule_runtime.json"
+          },
+          "status": "producer descriptor and exact empty/disabled black fallback are binary-source-closed; exact LUT payloads, native output ABI, and selected producer pass are source-closed in linked audits; settled CharInfo PassInput.enabled, posed records, and view-cull survivors remain open"
+        },
+        "lookup_textures": {
+          "VisibilityABLut": {
+            "name": "visibility_ab_lut",
+            "pathId": 2892350180982884757,
+            "runtimeResourceField": "VisibilityABLut",
+            "serializedDescriptor": {
+              "width": 256,
+              "height": 1,
+              "textureFormatNumeric": 4,
+              "textureFormatUnity2022_3_62f3": "RGBA32",
+              "mipCount": 1,
+              "textureDimensionNumeric": 2,
+              "textureDimensionUnity2022_3_62f3": "Tex2D",
+              "filterModeNumeric": 1,
+              "filterModeUnity2022_3_62f3": "Bilinear",
+              "wrapModeNumeric": 1,
+              "wrapModeUnity2022_3_62f3": "Clamp",
+              "colorSpaceNumeric": 0,
+              "colorSpaceUnity2022_3_62f3": "Gamma",
+              "aniso": 1,
+              "mipBias": 0.0
+            },
+            "sourcePng": {
+              "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\convert_by_type\\Texture2D\\visibility_ab_lut_p2823B12A4F858995.png",
+              "sha256": "53196c2cd65d43da3293a95d6e2b39eab85681d435217f285c54ff1b7ea58d1b",
+              "width": 256,
+              "height": 1,
+              "bitDepth": 8,
+              "colorType": 6
+            },
+            "persistentPng": {
+              "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\Persistent\\convert_by_type\\Texture2D\\visibility_ab_lut_p2823B12A4F858995.png",
+              "sha256": "53196c2cd65d43da3293a95d6e2b39eab85681d435217f285c54ff1b7ea58d1b"
+            },
+            "descriptorJson": {
+              "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\visibility_luts\\animestudio_json\\Texture2D\\Texture2D#46_p2823B12A4F858995.json",
+              "sha256": "6fa9334ecc7700b6304cf840e1f9d26dd79a039bafc518a45bc2b98f7e3f65b5",
+              "rawObjectSha256": "b420034134d90ef7a7998087197dabdf1fb599d1aea646e28bbbdf19e4291f85",
+              "streamOffset": 12841248,
+              "streamSize": 1024,
+              "streamPath": "archive:/CAB-5edbf457631197eaf84a8374582f8cca/CAB-5edbf457631197eaf84a8374582f8cca.resS"
+            },
+            "rawRgba32": {
+              "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Textures/visibility_ab_lut.rgba32.bytes",
+              "byteLength": 1024,
+              "sha256": "ca1a648d1a19434b41a9dbbe9f6ad0191c4c4e7f088341761725895748f33ed0"
+            }
+          },
+          "VisibilitySHLut": {
+            "name": "visibility_sh_lut",
+            "pathId": 8323377478838034894,
+            "runtimeResourceField": "VisibilitySHLut",
+            "serializedDescriptor": {
+              "width": 256,
+              "height": 1,
+              "textureFormatNumeric": 4,
+              "textureFormatUnity2022_3_62f3": "RGBA32",
+              "mipCount": 1,
+              "textureDimensionNumeric": 2,
+              "textureDimensionUnity2022_3_62f3": "Tex2D",
+              "filterModeNumeric": 1,
+              "filterModeUnity2022_3_62f3": "Bilinear",
+              "wrapModeNumeric": 1,
+              "wrapModeUnity2022_3_62f3": "Clamp",
+              "colorSpaceNumeric": 0,
+              "colorSpaceUnity2022_3_62f3": "Gamma",
+              "aniso": 1,
+              "mipBias": 0.0
+            },
+            "sourcePng": {
+              "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\convert_by_type\\Texture2D\\visibility_sh_lut_p738293B7C5A0A1CE.png",
+              "sha256": "5e10cd58f104c221ce58e83842b5608ffb64b8fb00d6b0803c684bcd9bfa7663",
+              "width": 256,
+              "height": 1,
+              "bitDepth": 8,
+              "colorType": 6
+            },
+            "persistentPng": {
+              "path": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\Persistent\\convert_by_type\\Texture2D\\visibility_sh_lut_p738293B7C5A0A1CE.png",
+              "sha256": "5e10cd58f104c221ce58e83842b5608ffb64b8fb00d6b0803c684bcd9bfa7663"
+            },
+            "descriptorJson": {
+              "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\visibility_luts\\animestudio_json\\Texture2D\\Texture2D#64_p738293B7C5A0A1CE.json",
+              "sha256": "75e0f98bb68462740b5e5bc631c45c8840562ad6965be657b89f102dad6feccd",
+              "rawObjectSha256": "5c7bec8899a9aebf56153a28ec5b4df4d7f57a0d85320658c1cdc02546cb757b",
+              "streamOffset": 15463792,
+              "streamSize": 1024,
+              "streamPath": "archive:/CAB-5edbf457631197eaf84a8374582f8cca/CAB-5edbf457631197eaf84a8374582f8cca.resS"
+            },
+            "rawRgba32": {
+              "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Textures/visibility_sh_lut.rgba32.bytes",
+              "byteLength": 1024,
+              "sha256": "3e5d7d50ed14ab927676cb638eebcedfb8e02766b8e0d01164105d519d925bf3"
+            }
+          }
+        },
+        "status": "the exact output descriptor, black empty/disabled fallback, and both 256x1 RGBA32 Gamma LUT payloads are source-closed; the native 128x48-byte output ABI, exact transform-to-record formula, Wulfa/Zhuang authored candidates, and active pass-2 producer are also source-closed; the current installed settings lifecycle/defaults (enabled/0.8/5.0/half-resolution), exact half-depth path, pSphere1 mesh/bone ownership, conservative cull, and isolated Wulfa/Zhuang survivor order plus repeat-exact numeric pa/pb/dir fixtures are closed; a future IFix patch and the corresponding retail settled posed records/view survivors remain open"
+      }
+    },
+    "texture_relevance": {
+      "_WaterWetnessMaskTexture": "shader-gated off by serialized scene state",
+      "_IntegratedLightScattering": "shader-gated off by serialized scene state",
+      "_LowResDirectionalShadow": "equation, descriptor, three-target blur chain, and ordinary-Unity caster path are reproduced in a lab-prefixed default-off owner; canonical publication and game-only caster content remain open",
+      "_CSMShadowRampTex": "source-closed as UnityEngine.Texture2D.blackTexture for the installed CharInfo null csmRampTexture",
+      "_ReflectionProbeOctTextureArray": "live and required",
+      "_IrradianceVolumeClipmapTexture*": "live V2 producer descriptors/order are source-closed; scene voxel payloads remain unresolved; do not neutralize",
+      "_VisibilitySHRT": "live producer descriptor is closed; black fallback is valid only for the empty/disabled retail branch",
+      "_LogSHLutTex": "exact VisibilitySHLut 256x1 RGBA32 Gamma payload and Bilinear/Clamp sampling are source-closed",
+      "_ABLutTex": "exact VisibilityABLut 256x1 RGBA32 Gamma payload and Bilinear/Clamp sampling are source-closed"
+    }
+  },
+  "declared_bindings": {
+    "constant_buffers": [
+      {
+        "symbol": "type_TransformVariables",
+        "binding": 30,
+        "set": 3
+      },
+      {
+        "symbol": "type_LightDataBuffer",
+        "binding": 31,
+        "set": 3
+      },
+      {
+        "symbol": "_28_29",
+        "binding": 32,
+        "set": 3
+      },
+      {
+        "symbol": "type_VisibilitySHConstData",
+        "binding": 33,
+        "set": 3
+      },
+      {
+        "symbol": "_32_33",
+        "binding": 34,
+        "set": 3
+      },
+      {
+        "symbol": "type_ShaderVariablesGlobal",
+        "binding": 35,
+        "set": 3
+      },
+      {
+        "symbol": "type_ReflectionProbeGlobalData",
+        "binding": 36,
+        "set": 3
+      },
+      {
+        "symbol": "_44_45",
+        "binding": 37,
+        "set": 3
+      },
+      {
+        "symbol": "_34_35",
+        "binding": 38,
+        "set": 3
+      }
+    ],
+    "textures": [
+      {
+        "symbol": "_59",
+        "dimension": "Texture2D<float4>",
+        "binding": 5,
+        "set": 3
+      },
+      {
+        "symbol": "_52",
+        "dimension": "Texture2D<float4>",
+        "binding": 6,
+        "set": 3
+      },
+      {
+        "symbol": "_37",
+        "dimension": "Texture2D<float4>",
+        "binding": 7,
+        "set": 3
+      },
+      {
+        "symbol": "_19",
+        "dimension": "Texture2D<float4>",
+        "binding": 8,
+        "set": 3
+      },
+      {
+        "symbol": "_20",
+        "dimension": "Texture2D<float4>",
+        "binding": 9,
+        "set": 3
+      },
+      {
+        "symbol": "_22",
+        "dimension": "Texture2DArray<float4>",
+        "binding": 10,
+        "set": 3
+      },
+      {
+        "symbol": "_36",
+        "dimension": "Texture2D<float4>",
+        "binding": 11,
+        "set": 3
+      },
+      {
+        "symbol": "_41",
+        "dimension": "Texture2D<float4>",
+        "binding": 12,
+        "set": 3
+      },
+      {
+        "symbol": "_43",
+        "dimension": "Texture2D<float4>",
+        "binding": 13,
+        "set": 3
+      },
+      {
+        "symbol": "_58",
+        "dimension": "Texture3D<float4>",
+        "binding": 14,
+        "set": 3
+      },
+      {
+        "symbol": "_56",
+        "dimension": "Texture3D<float4>",
+        "binding": 15,
+        "set": 3
+      },
+      {
+        "symbol": "_54",
+        "dimension": "Texture3D<float4>",
+        "binding": 16,
+        "set": 3
+      },
+      {
+        "symbol": "_57",
+        "dimension": "Texture3D<float4>",
+        "binding": 17,
+        "set": 3
+      },
+      {
+        "symbol": "_55",
+        "dimension": "Texture3D<float4>",
+        "binding": 18,
+        "set": 3
+      },
+      {
+        "symbol": "_53",
+        "dimension": "Texture3D<float4>",
+        "binding": 19,
+        "set": 3
+      },
+      {
+        "symbol": "_48",
+        "dimension": "Texture3D<float4>",
+        "binding": 20,
+        "set": 3
+      },
+      {
+        "symbol": "_21",
+        "dimension": "Texture2D<float4>",
+        "binding": 21,
+        "set": 3
+      },
+      {
+        "symbol": "_38",
+        "dimension": "Texture2D<float4>",
+        "binding": 22,
+        "set": 3
+      },
+      {
+        "symbol": "_62",
+        "dimension": "Texture2D<float4>",
+        "binding": 23,
+        "set": 3
+      },
+      {
+        "symbol": "_61",
+        "dimension": "Texture2D<float4>",
+        "binding": 24,
+        "set": 3
+      },
+      {
+        "symbol": "_60",
+        "dimension": "Texture2D<float4>",
+        "binding": 25,
+        "set": 3
+      },
+      {
+        "symbol": "_42",
+        "dimension": "Texture2D<float4>",
+        "binding": 26,
+        "set": 3
+      },
+      {
+        "symbol": "_18",
+        "dimension": "Texture2D<float4>",
+        "binding": 27,
+        "set": 3
+      },
+      {
+        "symbol": "_39",
+        "dimension": "Texture2D<float4>",
+        "binding": 28,
+        "set": 3
+      },
+      {
+        "symbol": "_51",
+        "dimension": "Texture2D<float4>",
+        "binding": 29,
+        "set": 3
+      }
+    ],
+    "buffers": [
+      {
+        "symbol": "_24",
+        "kind": "ByteAddressBuffer",
+        "binding": 39,
+        "set": 3
+      }
+    ],
+    "samplers": [
+      {
+        "symbol": "sampler_LinearClamp",
+        "kind": "SamplerState",
+        "binding": 0,
+        "set": 3
+      },
+      {
+        "symbol": "sampler_LinearRepeat",
+        "kind": "SamplerState",
+        "binding": 1,
+        "set": 3
+      },
+      {
+        "symbol": "sampler_LinearMirror",
+        "kind": "SamplerState",
+        "binding": 2,
+        "set": 3
+      },
+      {
+        "symbol": "sampler_LinearMirrorOnce",
+        "kind": "SamplerState",
+        "binding": 3,
+        "set": 3
+      },
+      {
+        "symbol": "sampler_PointClamp",
+        "kind": "SamplerComparisonState",
+        "binding": 4,
+        "set": 3
+      }
+    ]
+  },
+  "core_texture_roles": [
+    {
+      "role": "_CameraDepthTexture",
+      "symbol": "_18",
+      "set": 3,
+      "binding": 27,
+      "evidence": "_18.SampleLevel(sampler_LinearRepeat, _428, 0.0f).x",
+      "confidence": "source-closed by native pass binding plus depth reconstruction use"
+    },
+    {
+      "role": "_GBufferTexture[0] / GBuffer A",
+      "symbol": "_60",
+      "set": 3,
+      "binding": 25,
+      "evidence": "float4 _389 = _60.Load(int3(_387, 0));",
+      "confidence": "source-closed by packed metallic/occlusion/roughness decode"
+    },
+    {
+      "role": "_GBufferTexture[1] / GBuffer B",
+      "symbol": "_61",
+      "set": 3,
+      "binding": 24,
+      "evidence": "float4 _391 = _61.Load(int3(_387, 0));",
+      "confidence": "source-closed by octahedral normal decode"
+    },
+    {
+      "role": "_GBufferTexture[2] / GBuffer C",
+      "symbol": "_62",
+      "set": 3,
+      "binding": 23,
+      "evidence": "float3 _510 = _62.Load(int3(_387, 0)).xyz",
+      "confidence": "source-closed by base-color decode"
+    },
+    {
+      "role": "_ScreenSpaceShadowMask",
+      "symbol": "_42",
+      "set": 3,
+      "binding": 26,
+      "evidence": "_42.SampleLevel(sampler_LinearMirrorOnce, _436, 0.0f).x",
+      "confidence": "source-closed for the selected keyword variant and R consumer"
+    },
+    {
+      "role": "_WaterWetnessMaskTexture",
+      "symbol": "_59",
+      "set": 3,
+      "binding": 5,
+      "evidence": "_59.SampleBias(sampler_LinearMirrorOnce, _4",
+      "confidence": "source-closed by native white-fallback binding and wetness branch"
+    },
+    {
+      "role": "_SSRLightingTexture",
+      "symbol": "_19",
+      "set": 3,
+      "binding": 8,
+      "evidence": "_19.SampleBias(sampler_LinearMirrorOnce, _4",
+      "confidence": "source-closed by native conditional binding and RGB use"
+    },
+    {
+      "role": "_SSRFadenessTexture",
+      "symbol": "_20",
+      "set": 3,
+      "binding": 9,
+      "evidence": "_20.SampleBias(sampler_LinearMirrorOnce, _4",
+      "confidence": "source-closed by native binding and scalar blend use"
+    },
+    {
+      "role": "_IndirectAmbientOcclusionTexture",
+      "symbol": "_21",
+      "set": 3,
+      "binding": 21,
+      "evidence": "_21.SampleBias(sampler_LinearRepeat, _4",
+      "confidence": "source-closed by the native aoEnable binding and the resolver's scalar indirect-occlusion response"
+    },
+    {
+      "role": "_LowResDirectionalShadow",
+      "symbol": "_37",
+      "set": 3,
+      "binding": 7,
+      "evidence": "_37.Load(int3(_387, 0))",
+      "confidence": "source-closed by the installed identifier and its full-screen scalar directional-shadow use"
+    },
+    {
+      "role": "_CSMShadowRampTex",
+      "symbol": "_39",
+      "set": 3,
+      "binding": 28,
+      "evidence": "_39.SampleBias(sampler_LinearMirrorOnce, float2(_556, 0.5f)",
+      "confidence": "source-closed by the installed identifier and ramp lookup driven by _LowResDirectionalShadow"
+    },
+    {
+      "role": "_HDPLSTex",
+      "symbol": "_38",
+      "set": 3,
+      "binding": 22,
+      "evidence": "_38.SampleBias(sampler_LinearMirrorOnce, _428",
+      "confidence": "source-closed by the original HDPLS constant-buffer layout, installed identifier, and selected-channel use"
+    },
+    {
+      "role": "_PunctualLightShadowTexV2",
+      "symbol": "_36",
+      "set": 3,
+      "binding": 11,
+      "evidence": "_36.SampleCmpLevelZero(sampler_PointClamp",
+      "confidence": "source-closed by the installed identifier and comparison sampling through ShadowData punctual matrices/atlas params"
+    },
+    {
+      "role": "_LightCookie",
+      "symbol": "_43",
+      "set": 3,
+      "binding": 13,
+      "evidence": "_43.SampleLevel(sampler_LinearMirrorOnce",
+      "confidence": "source-closed by the installed identifier and indexed LightCookieData matrix/atlas transform"
+    },
+    {
+      "role": "_MultiscatteringLUT",
+      "symbol": "_41",
+      "set": 3,
+      "binding": 12,
+      "evidence": "_41.SampleLevel(sampler_LinearMirrorOnce",
+      "confidence": "source-closed by the installed identifier and paired roughness/angular multi-scattering response lookups"
+    },
+    {
+      "role": "_IrradianceVolumeClipmapTextureALod0",
+      "symbol": "_53",
+      "set": 3,
+      "binding": 19,
+      "evidence": "_53.SampleLevel(sampler_LinearMirror, _2147",
+      "confidence": "source-closed by installed identifier and 2x nearest clipmap sampling"
+    },
+    {
+      "role": "_IrradianceVolumeClipmapTextureBLod0",
+      "symbol": "_54",
+      "set": 3,
+      "binding": 16,
+      "evidence": "_54.SampleLevel(sampler_LinearMirrorOnce",
+      "confidence": "source-closed by installed identifier and matching LOD0 SH decode"
+    },
+    {
+      "role": "_IrradianceVolumeClipmapTextureALod1",
+      "symbol": "_55",
+      "set": 3,
+      "binding": 18,
+      "evidence": "_55.SampleLevel(sampler_LinearMirror, _2246",
+      "confidence": "source-closed by installed identifier and 0.5x middle clipmap sampling"
+    },
+    {
+      "role": "_IrradianceVolumeClipmapTextureBLod1",
+      "symbol": "_56",
+      "set": 3,
+      "binding": 15,
+      "evidence": "_56.SampleLevel(sampler_LinearMirrorOnce",
+      "confidence": "source-closed by installed identifier and matching LOD1 SH decode"
+    },
+    {
+      "role": "_IrradianceVolumeClipmapTextureALod3",
+      "symbol": "_57",
+      "set": 3,
+      "binding": 17,
+      "evidence": "_57.SampleLevel(sampler_LinearMirror, _2332",
+      "confidence": "source-closed by installed identifier and 0.125x far clipmap sampling"
+    },
+    {
+      "role": "_IrradianceVolumeClipmapTextureBLod3",
+      "symbol": "_58",
+      "set": 3,
+      "binding": 14,
+      "evidence": "_58.SampleLevel(sampler_LinearMirrorOnce",
+      "confidence": "source-closed by installed identifier and matching LOD3 SH decode"
+    },
+    {
+      "role": "_VisibilitySHRT",
+      "symbol": "_52",
+      "set": 3,
+      "binding": 6,
+      "evidence": "_52.SampleLevel(sampler_LinearMirrorOnce, _436",
+      "confidence": "source-closed by installed identifier and per-screen visibility-SH coefficient decode"
+    },
+    {
+      "role": "_LogSHLutTex",
+      "symbol": "_51",
+      "set": 3,
+      "binding": 29,
+      "evidence": "_51.SampleLevel(sampler_LinearMirrorOnce",
+      "confidence": "source-closed by installed identifier and FHat/AB log-SH reconstruction"
+    },
+    {
+      "role": "_ReflectionProbeOctTextureArray",
+      "symbol": "_22",
+      "set": 3,
+      "binding": 10,
+      "evidence": "_22.SampleLevel(sampler_LinearClamp",
+      "confidence": "source-closed by installed identifier, octahedral direction mapping, and probe-array slice use"
+    },
+    {
+      "role": "_IntegratedLightScattering",
+      "symbol": "_48",
+      "set": 3,
+      "binding": 20,
+      "evidence": "_48.SampleLevel(sampler_LinearMirrorOnce",
+      "confidence": "source-closed by installed identifier and final froxel RGB/scalar-transmittance fog composition"
+    }
+  ],
+  "core_buffer_roles": [
+    {
+      "role": "_BinningBuffer",
+      "symbol": "_24",
+      "kind": "ByteAddressBuffer",
+      "set": 3,
+      "binding": 39,
+      "evidence": "two masked loads use ShaderVariablesGlobal.BinningBufferOffsets for the light and reflection-probe tile/z-bin lists",
+      "confidence": "source-closed semantic role from the original resolver algorithm and installed metadata identifier"
+    }
+  ],
+  "binary_observations": {
+    "selected_fragment_line_count": 1391,
+    "named_constant_buffer_count": 5,
+    "unnamed_constant_buffer_count": 4,
+    "texture_count": 25,
+    "buffer_count": 1,
+    "sampler_count": 5,
+    "descriptor_set": 3,
+    "note": "The original program is materially larger than a generic PBR sphere: it declares 25 sampled textures, one byte-address binning buffer, nine constant buffers, and five samplers."
+  },
+  "remaining_blockers": [
+    "Populate the now role-closed bindings 32/34/37/38 with the exact settled CharInfo per-frame values from _LightBinningConstants, ShadowData, LightCookieData, and HDPunctualLightCharacterShadowData.",
+    "Capture and reproduce the remaining shadow and cookie resources plus exact retail settled VisibilitySH posed pa/pb/dir values and the matching retail-view survivors/target. The current installed settings lifecycle/defaults, both shipped VisibilitySH LUT payloads/descriptors, native 128x48-byte output ABI, exact posed transform-to-record formula, conservative culling cube/plane test, Wulfa/Zhuang's authored candidates, and selected additive producer pass are now exact; two independent isolated Unity D3D12 runs retain all ten records in registration order and reproduce byte-identical numeric record fixtures and GPU outputs. Those fixtures validate the lab transport but do not substitute for retail settled-frame evidence. A future downloaded IFix patch remains an explicit version boundary. The live V2 irradiance owner, six A/B texture descriptors/order, zero fallback, and publication bridge are closed; exact current-scene streamed voxel payloads, persistent-atlas transient dimensions, and per-frame IV parameters remain open. The VisibilitySH output descriptor and exact black empty/disabled fallback are closed. The reflection-probe oct producer and no-local global buffer are closed but remain deliberately unpublished. The exact disabled wetness and _IntegratedLightScattering placeholders are closed but likewise remain unpublished.",
+    "Capture or derive the settled per-frame values for all used named and unnamed constants.",
+    "Move the validated SphereOutside HGBuffer packing into the exact depth/render-graph route and implement a binding-compatible pass-0 resolver plus conditionally selected WriteAlpha passes before enabling the renderer."
+  ]
+}
