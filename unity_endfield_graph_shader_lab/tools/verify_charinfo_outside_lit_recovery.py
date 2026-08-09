@@ -220,6 +220,153 @@ def verify_hdpls_matrix_formula_contract(
         require_hdpls_matrix_value(source, check, actual, expected)
 
 
+def require_hdpls_resource_value(
+    source: Path,
+    check: str,
+    actual: object,
+    expected: object,
+) -> None:
+    if actual != expected:
+        raise AssertionError(
+            "HDPLS resource-lifecycle validator failed: "
+            f"check={check}; source={source}; "
+            f"expected={expected!r}; actual={actual!r}"
+        )
+
+
+def verify_hdpls_resource_lifecycle_contract(
+    hdpls_native: dict[str, object],
+    hdpls_audit: dict[str, object],
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    lifecycle = hdpls_audit["resource_lifecycle"]
+    atlas = hdpls_audit["frame_derived_formulas"]["atlas"]
+    checks = (
+        (
+            "audit.verdict",
+            hdpls_audit["verdict"],
+            "RESOURCE_LIFECYCLE_CLOSED_ACTIVE_PIXELS_CAPTURE_REQUIRED",
+        ),
+        (
+            "native.texture_roles",
+            hdpls_native["texture_roles"],
+            {
+                "raw_atlas_global": "_HDPLSTex",
+                "screen_resolve_global": "_HDPLSScreenSpaceShadowMask",
+                "deferred_binding_22": "_HDPLSScreenSpaceShadowMask",
+            },
+        ),
+        (
+            "atlas.descriptor",
+            atlas["descriptor"],
+            {
+                "depth_buffer_bits": 16,
+                "graphics_format_value": 90,
+                "graphics_format": "D16_UNorm",
+                "filter_mode_value": 1,
+                "filter_mode": "Bilinear",
+                "wrap_mode_value": 1,
+                "wrap_mode": "Clamp",
+                "dimension_value": 2,
+                "dimension": "Tex2D",
+                "slices": 1,
+                "is_shadow_map": False,
+                "use_mip_map": False,
+                "enable_random_write": False,
+                "msaa_samples": 1,
+                "clear_buffer": False,
+            },
+        ),
+        (
+            "screen_resolve.size",
+            lifecycle["screen_resolve"]["size"],
+            "camera render size; when reduction is enabled and width>1920 or "
+            "height>1080, floor(size*min(1920/width,1080/height)), each axis "
+            "clamped to at least 1",
+        ),
+        (
+            "screen_resolve.descriptor",
+            lifecycle["screen_resolve"]["descriptor"],
+            {
+                "graphics_format_value": 8,
+                "graphics_format": "R8G8B8A8_UNorm",
+                "filter_mode_value": 1,
+                "filter_mode": "Bilinear",
+                "wrap_mode_value": 1,
+                "wrap_mode": "Clamp",
+                "dimension": "Tex2D",
+                "slices": 1,
+                "use_mip_map": False,
+                "enable_random_write": False,
+                "msaa_samples": 1,
+            },
+        ),
+        (
+            "screen_resolve.render_graph",
+            lifecycle["screen_resolve"]["render_graph"],
+            {
+                "allow_pass_culling": False,
+                "reads": [
+                    "scene depth buffer",
+                    "sampleable depth",
+                    "s_hdplsAtlas",
+                ],
+                "writes": "hdplsScreenSpaceShadowTexture",
+                "color_attachment": {
+                    "index": 0,
+                    "load_action_value": 2,
+                    "load_action": "DontCare",
+                    "store_action_value": 3,
+                    "store_action": "DontCare",
+                    "explicit_clear": False,
+                },
+                "depth_attachment": {
+                    "resource": "scene depth buffer",
+                    "access_value": 1,
+                    "access": "Read",
+                    "slice": 0,
+                },
+            },
+        ),
+        (
+            "screen_resolve.shader",
+            lifecycle["screen_resolve"]["shader"],
+            {
+                "material_pass": 2,
+                "inputs": [
+                    "_CameraDepthTexture",
+                    "_PunctualLightShadowTexV2",
+                    "_HDPLSTex",
+                    "_GBufferTexture1",
+                ],
+                "output": "four independent HDPLS screen-space channels in RGBA",
+                "global_output": "HGShaderIDs._HDPLSScreenSpaceShadowMask",
+            },
+        ),
+        (
+            "inactive_fallback",
+            lifecycle["inactive_fallback"],
+            {
+                "constant_buffer": "all 56 selected channel values are zero",
+                "_HDPLSTex": "Texture2D.whiteTexture",
+                "_HDPLSScreenSpaceShadowMask": "Texture2D.whiteTexture",
+                "consumer_result": (
+                    "selected deferred resolver takes punctual-atlas fallback"
+                ),
+            },
+        ),
+        (
+            "logical_global_boundary",
+            lifecycle["logical_global_boundary"],
+            "_HDPLSTex is the raw D16 atlas input; "
+            "_HDPLSScreenSpaceShadowMask is the RGBA8 resolved output consumed "
+            "by the deferred HDPLS channel path",
+        ),
+    )
+    for check, actual, expected in checks:
+        require_hdpls_resource_value(source, check, actual, expected)
+
+
 def verify_visibility_sh_unity_replay() -> None:
     payload = json.loads(
         VISIBILITY_RUNTIME_PATH.read_text(encoding="utf-8")
@@ -2551,6 +2698,11 @@ def verify_selected_resolver_binding_contract() -> None:
         "4096x2048; 4x2 grid for requestCount<=8, 8x4 grid for requestCount>8"
     )
     assert hdpls_native["publication_policy"].startswith("fail closed")
+    assert hdpls_native["texture_roles"] == {
+        "raw_atlas_global": "_HDPLSTex",
+        "screen_resolve_global": "_HDPLSScreenSpaceShadowMask",
+        "deferred_binding_22": "_HDPLSScreenSpaceShadowMask",
+    }
     require_hash(
         repo_path(hdpls_native["audit_path"]),
         hdpls_native["audit_sha256"],
@@ -2644,7 +2796,7 @@ def verify_selected_resolver_binding_contract() -> None:
         "endfield.hdpls-character-shadow-data-audit.v1"
     )
     assert hdpls_audit["verdict"] == (
-        "UNPATCHED_MATRIX_PRODUCTION_CLOSED_ACTIVE_FRAME_CAPTURE_REQUIRED"
+        "RESOURCE_LIFECYCLE_CLOSED_ACTIVE_PIXELS_CAPTURE_REQUIRED"
     )
     assert hdpls_audit["publication_allowed"] is False
     assert hdpls_audit["layout"]["reflected_size_bytes"] == 3568
@@ -2711,8 +2863,13 @@ def verify_selected_resolver_binding_contract() -> None:
         hdpls_audit,
         BINDING_CONTRACT_PATH,
     )
+    verify_hdpls_resource_lifecycle_contract(
+        hdpls_native,
+        hdpls_audit,
+        BINDING_CONTRACT_PATH,
+    )
     assert len(hdpls_audit["capture_boundary"]["required"]) == 3
-    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 10
+    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 12
     for path_key, hash_key in (
         ("disassembly_path", "disassembly_sha256"),
         ("metadata_path", "metadata_sha256"),
@@ -2722,6 +2879,9 @@ def verify_selected_resolver_binding_contract() -> None:
         ("setting_getters_metadata_path", "setting_getters_metadata_sha256"),
         ("setting_getters_native_path", "setting_getters_native_sha256"),
         ("punctual_row_audit_path", "punctual_row_audit_sha256"),
+        ("resource_metadata_path", "resource_metadata_sha256"),
+        ("resolve_shader_path", "resolve_shader_sha256"),
+        ("resolve_dxbc_sidecar_path", "resolve_dxbc_sidecar_sha256"),
         ("selected_shader_path", "selected_shader_sha256"),
         ("source_sidecar_path", "source_sidecar_sha256"),
         ("constant_buffer_audit_path", "constant_buffer_audit_sha256"),
@@ -2747,7 +2907,7 @@ def verify_selected_resolver_binding_contract() -> None:
         "_IndirectAmbientOcclusionTexture": ("_21", 3, 21),
         "_LowResDirectionalShadow": ("_37", 3, 7),
         "_CSMShadowRampTex": ("_39", 3, 28),
-        "_HDPLSTex": ("_38", 3, 22),
+        "_HDPLSScreenSpaceShadowMask": ("_38", 3, 22),
         "_PunctualLightShadowTexV2": ("_36", 3, 11),
         "_LightCookie": ("_43", 3, 13),
         "_MultiscatteringLUT": ("_41", 3, 12),

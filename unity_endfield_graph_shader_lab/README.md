@@ -2068,9 +2068,14 @@ degree cone from `2*asin(radius/distance)`. `FrameSetup` feeds this result and
 the light near/far/guard values through the already closed reversed-Z
 `ExtractSpotLightMatrix` / `GetShadowTransform` path, stores the matrix by
 request index, and forwards the HDPLS depth/normal bias to the caster pass.
-Live IFix `0x877` state, bounds/light/settings values, resulting active rows and
-selectors, unused persistent rows, and matching HDPLS/atlas contents remain
-capture-only.
+Resource recovery now distinguishes the request-gated `2S x S` D16
+`_HDPLSTex` caster atlas from the reduced/full-size RGBA8
+`_HDPLSScreenSpaceShadowMask` consumed by deferred binding 22. Their
+RenderGraph dependencies and global publication are closed; inactive frames
+clear all selectors and bind white to both slots, so stale resources cannot
+escape. Live IFix `0x877/0x890` state, bounds/light/settings values, resulting
+active rows/selectors, unused persistent rows, atlas texels, and resolved RGBA
+pixels remain capture-only.
 The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution

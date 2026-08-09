@@ -2,7 +2,7 @@
   "schema": "endfield.charinfo.sphereoutside.deferred-binding-contract.v1",
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
-  "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, its exact native producer field layout and upload are source-closed, and a default-off Unity publisher is D3D11/D3D12 GPU-verified for source-closed isolated Overview light counts. Offline IL2CPP/xref recovery additionally closes LightCullResult as pointer+count, its unique HGCullingSystem.CullLights producer, both direct HGCamera.DoECSCulling call sites, their exact 256-candidate cap, and the first SetupState consumer. The target-frame native pointer contents/count and therefore final retail lightCount remain capture-only. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 now has its exact 32-entry/2,560-byte native initialization and upload closed; a default-off zero-cookie publisher is D3D11/D3D12 GPU-verified for the source-closed isolated Wulfa/Zhuangfy Overview lists, while non-empty retail atlas values remain capture-only. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar; its native manager, per-frame reset, push-pass packing, selected .y-only consumer, and exact pre-bind capture boundary are now closed. An inactive frame provably clears all 56 channel selectors, but persistent/frame-derived fields and the allocator-returned size prevent claiming a byte-exact zero fixture. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are now binary-source-closed; the source-derived Unity compute port is GPU-verified but deliberately unpublished. The retail deferred and volumetric binders also close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame resources are not yet closed.",
+  "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, its exact native producer field layout and upload are source-closed, and a default-off Unity publisher is D3D11/D3D12 GPU-verified for source-closed isolated Overview light counts. Offline IL2CPP/xref recovery additionally closes LightCullResult as pointer+count, its unique HGCullingSystem.CullLights producer, both direct HGCamera.DoECSCulling call sites, their exact 256-candidate cap, and the first SetupState consumer. The target-frame native pointer contents/count and therefore final retail lightCount remain capture-only. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 now has its exact 32-entry/2,560-byte native initialization and upload closed; a default-off zero-cookie publisher is D3D11/D3D12 GPU-verified for the source-closed isolated Wulfa/Zhuangfy Overview lists, while non-empty retail atlas values remain capture-only. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar; its native manager, per-frame reset, push-pass packing, selected .y-only consumer, active D16 atlas and RGBA8 screen-resolve resource lifecycle, and exact pre-bind capture boundary are now closed. The deferred binding is the resolved _HDPLSScreenSpaceShadowMask, while _HDPLSTex is the raw atlas input. An inactive frame clears all 56 channel selectors and binds white to both globals, preventing stale-frame reuse, but persistent/frame-derived fields and active pixels prevent claiming a byte-exact full fixture. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are now binary-source-closed; the source-derived Unity compute port is GPU-verified but deliberately unpublished. The retail deferred and volumetric binders also close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame pixels are not yet closed.",
   "source_filter": {
     "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/deferred_lighting_filter.json",
     "sha256": "37e0a45e2aad998ad85a2f6a213139a94b1f6e5cff83ea4bdc3bc6f86508d4ee",
@@ -18,7 +18,7 @@
   },
   "installed_texture_identifier_evidence": {
     "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/global_texture_identifier_evidence.json",
-    "sha256": "54c9d001face6bb4e953d1cc7f5a18f80a219508551e3bc84d8f1368f1f83cfb",
+    "sha256": "629a29d4c578e628ae85b604661e4082e4af1fb810819dd1573fbd5a6b480e1c",
     "source": {
       "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
       "size": 62925560,
@@ -2423,13 +2423,13 @@
       ],
       "native_producer": {
         "audit_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/audit.json",
-        "audit_sha256": "1ac7cd6e873f4f83f8ad52b60cbcde735adc8aeb7a60d68505510ddc96c75307",
+        "audit_sha256": "83a6664f4b1be280ee7d60cf661f51cf250477a491d8fc3dac15263a03f112ce",
         "auditor_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/audit_hdpls_character_shadow_data.py",
-        "auditor_sha256": "1a946f8b1d79f9e961750290edb628e59450bae65ec7df6bc99be91b4ec55094",
+        "auditor_sha256": "53ed0eebab1e86688aaedf18598a01d45dc7acc72b1e586e97eec9c2843cf464",
         "disassembler_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/disassemble_hdpls_manager.py",
-        "disassembler_sha256": "ecc494e62f11936a5e74cda7db589c19333fb075b0e74f0f7a0384cf723fecbd",
+        "disassembler_sha256": "8b086639d2b5231f2d33bd0aabd00d843bc148888e1ab3ebe0baec8e5ff6c75b",
         "native_disassembly_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/native_disassembly.json",
-        "native_disassembly_sha256": "9559d39cdf4eb0867acc196f52498cbac7690b96836757ea6aba705b5ace3321",
+        "native_disassembly_sha256": "a749a43a33deae854f01ee063dea9a91bdaeb5ff74185fa2f952a2d045a4df94",
         "metadata_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/metadata.json",
         "metadata_sha256": "42a6cf706776773a54c3525ad305b3f2800bdf0e2ad743e5af119541318ae389",
         "native_map_path": "scratch/reverse_engineering/hdpunctual_character_shadow_data/body_map.json",
@@ -2467,6 +2467,12 @@
         "character_spot_angle": "radius<=1e-6 -> 0.1 degrees; radius+1e-5>=distance -> 179.9 degrees; else clamp(2*asinf(clamp(radius/distance,0,1))*57.295780181884766,0.1,179.9)",
         "character_world_to_shadow": "ExtractSpotLightMatrix(derived localToWorld/spotAngle, light near/far/guard) followed by reversed-Z B*(P*V), stored at characterWorldToShadowMatrices[requestIndex]",
         "render_pass_bias": "hdplsDepthBias.value and hdplsNormalBias.value publish to caster pass data offsets +0x10/+0x14",
+        "texture_roles": {
+          "raw_atlas_global": "_HDPLSTex",
+          "screen_resolve_global": "_HDPLSScreenSpaceShadowMask",
+          "deferred_binding_22": "_HDPLSScreenSpaceShadowMask"
+        },
+        "resource_lifecycle": "FrameSetup creates the active 2S x S D16_UNorm atlas only for requests; the pass-2 screen resolve reads depth, GBuffer1, punctual shadow, and that atlas into a reduced-or-full-size R8G8B8A8_UNorm target, then publishes _HDPLSScreenSpaceShadowMask. Inactive push binds Texture2D.whiteTexture to both HDPLS globals.",
         "constant_buffer_audit_path": "scratch/reverse_engineering/hdpls_constant_buffer/audit.json",
         "constant_buffer_audit_sha256": "66f15a89f015f4bf48dc717d3f4951b1b152ab70a4fa7268cbdd1952fd1fc082",
         "constant_buffer_auditor_path": "scratch/reverse_engineering/hdpls_constant_buffer/audit_hdpls_constant_buffer.py",
@@ -2481,7 +2487,7 @@
         "inactive_selected_read_path": "all 56 .y selectors are zero, so the selected deferred resolver uses its punctual-shadow-atlas fallback",
         "publication_policy": "fail closed; no full constant-buffer fixture is published",
         "capture_boundary": "capture the settled CPU payload immediately before CommandBuffer.SetGlobalConstantBufferInternal0 in b__33_1, plus matching GPU-visible resources",
-        "remaining_boundary": "live bounds/light/near/far/guard/settings values, IFix state, resulting active matrix/parameter/selector rows, unused persistent rows, and matching HDPLS/atlas resources remain open; their installed unpatched matrix path, atlas/global/selector production formulas, allocator size, CPU write safety, and the recorded target-D3D11 c222 visibility are offline-closed"
+        "remaining_boundary": "live bounds/light/near/far/guard/settings values, IFix state, resulting active matrix/parameter/selector rows, unused persistent rows, and matching active atlas/screen pixels remain open; their installed unpatched matrix path, descriptors, RenderGraph lifecycle, active/inactive global publication, allocator size, CPU write safety, and the recorded target-D3D11 c222 visibility are offline-closed"
       }
     }
   ],
@@ -2672,7 +2678,7 @@
         "csm_ramp_texture": "null",
         "csm_ramp_binding": "UnityEngine.Texture2D.blackTexture",
         "screen_shadow_contract_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/screen_shadow_r_contract.json",
-        "screen_shadow_contract_sha256": "47cf259ca66dfe9e5c4baa72dbc231ebc4e1587b2e9d396b8ccc8579022d4c8e",
+        "screen_shadow_contract_sha256": "f72cb436957e88bb45705cdff3ca866e25a0e2d0d9b627edf7ab0954c3b58af1",
         "binding_status": "the null _CSMShadowRampTex binding is source-closed as Texture2D.blackTexture; the three-target _LowResDirectionalShadow chain and applicable ordinary-Unity caster path are reproduced in lab-prefixed resources, while canonical publication, game-only ECS/grass/tree casters, and complete same-frame ownership remain open"
       }
     },
@@ -3696,12 +3702,12 @@
       "confidence": "source-closed by the installed identifier and ramp lookup driven by _LowResDirectionalShadow"
     },
     {
-      "role": "_HDPLSTex",
+      "role": "_HDPLSScreenSpaceShadowMask",
       "symbol": "_38",
       "set": 3,
       "binding": 22,
       "evidence": "_38.SampleBias(sampler_LinearMirrorOnce, _428",
-      "confidence": "source-closed by the original HDPLS constant-buffer layout, installed identifier, and selected-channel use"
+      "confidence": "source-closed by the original HDPLS constant-buffer layout, installed identifier, and native raw-atlas to RGBA8 screen-resolve publication path"
     },
     {
       "role": "_PunctualLightShadowTexV2",
