@@ -153,7 +153,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 7
+EVENT_EVIDENCE_SCHEMA_VERSION = 8
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -165,6 +165,28 @@ HIRC_ACTION_OPERATION_LABELS = {
     0x2100: "playEvent",
 }
 HIRC_PLAYBACK_ACTION_OPERATIONS = frozenset({0x0400, 0x2100})
+HIRC_ACTION_PROPERTY_LABELS = {
+    0x39: "delayTime",
+    0x3A: "transitionTime",
+    0x3B: "probability",
+}
+HIRC_FADE_CURVE_LABELS = {
+    0: "Log3",
+    1: "Sine",
+    2: "Log1",
+    3: "InvSCurve",
+    4: "Linear",
+    5: "SCurve",
+    6: "Exp1",
+    7: "SineRecip",
+    8: "Exp3",
+    9: "Constant",
+}
+HIRC_BANK_TYPE_LABELS = {
+    0: "User",
+    30: "Event",
+    31: "Bus",
+}
 HIRC_MUSIC_NODE_TYPES = frozenset({10, 11, 12, 13})
 HIRC_MUSIC_PARENT_NODE_TYPES = frozenset({10, 12, 13})
 HIRC_MUSIC_CHILD_TYPES = {
@@ -2542,6 +2564,195 @@ def hirc_action_type(data: bytes) -> int | None:
     return unpack_from("<H", data, 0)[0]
 
 
+def _hirc_v150_action_property_value(property_id: int, raw: bytes) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "rawHex": raw.hex(),
+        "rawU32": unpack_from("<I", raw, 0)[0],
+    }
+    if property_id in {0x39, 0x3A}:
+        row.update({
+            "encoding": "signedInt32Milliseconds",
+            "value": unpack_from("<i", raw, 0)[0],
+            "unit": "ms",
+        })
+    elif property_id == 0x3B:
+        row.update({
+            "encoding": "float32Percent",
+            "value": unpack_from("<f", raw, 0)[0],
+            "unit": "percent",
+        })
+    else:
+        row["encoding"] = "rawUnion32"
+    return row
+
+
+def _hirc_v150_action_property_summary(
+    property_id: int,
+    properties: list[dict[str, Any]],
+    ranged_modifiers: list[dict[str, Any]],
+) -> dict[str, Any]:
+    scalar_values = [
+        row["value"]
+        for row in properties
+        if row["propertyId"] == property_id and "value" in row
+    ]
+    modifier_ranges = [
+        {
+            "minimum": row["minimum"]["value"],
+            "maximum": row["maximum"]["value"],
+        }
+        for row in ranged_modifiers
+        if row["propertyId"] == property_id
+        and "value" in row["minimum"]
+        and "value" in row["maximum"]
+    ]
+    if scalar_values and modifier_ranges:
+        status = "explicitBaseAndRange"
+    elif scalar_values:
+        status = "explicitBase"
+    elif modifier_ranges:
+        status = "explicitRangeOnly"
+    else:
+        status = "implicitDefaultNotSerialized"
+    suffix = "Percent" if property_id == 0x3B else "Ms"
+    summary: dict[str, Any] = {
+        "serializationStatus": status,
+        f"baseValues{suffix}": scalar_values,
+        f"modifierRanges{suffix}": modifier_ranges,
+    }
+    if modifier_ranges:
+        summary["runtimeSelection"] = "boundedModifierUnresolved"
+    if property_id == 0x3B:
+        summary["runtimeSelection"] = "actionGateNotEvaluated"
+    return summary
+
+
+def hirc_v150_playback_action(data: bytes, bank_version: int | None) -> dict[str, Any]:
+    """Decode exact v150 Play/PlayEvent Action evidence without creating edges.
+
+    The target helpers above deliberately remain independent: a failed evidence
+    parse must never suppress an otherwise valid typed playback target.  This
+    decoder returns no property/timing claims unless the complete Action body is
+    consumed according to its operation-specific v150 layout.
+    """
+
+    def failed(reason: str, offset: int = 0, expected_bytes: int | None = None) -> dict[str, Any]:
+        failure: dict[str, Any] = {
+            "reason": reason,
+            "offset": offset,
+            "dataSize": len(data),
+            "remainingBytes": max(0, len(data) - offset),
+        }
+        if expected_bytes is not None:
+            failure["expectedBytes"] = expected_bytes
+        return {
+            "actionParserStatus": "failedClosed",
+            "actionParserFailure": failure,
+        }
+
+    if bank_version != 150:
+        result = failed("unsupportedBankVersion")
+        result["actionParserFailure"]["bankVersion"] = bank_version
+        return result
+    if len(data) < 7:
+        return failed("truncatedActionHeader", 0, 7)
+
+    action_type = unpack_from("<H", data, 0)[0]
+    operation = action_type & 0xFF00
+    if operation not in HIRC_PLAYBACK_ACTION_OPERATIONS:
+        result = failed("unsupportedPlaybackOperation")
+        result["actionParserFailure"]["operation"] = operation
+        return result
+
+    def read_count(offset: int, reason: str) -> tuple[int, int] | dict[str, Any]:
+        if offset >= len(data):
+            return failed(reason, offset, 1)
+        return data[offset], offset + 1
+
+    pos = 7
+    scalar_count_row = read_count(pos, "truncatedScalarPropertyCount")
+    if isinstance(scalar_count_row, dict):
+        return scalar_count_row
+    scalar_count, pos = scalar_count_row
+    if pos + scalar_count > len(data):
+        return failed("truncatedScalarPropertyIds", pos, scalar_count)
+    scalar_ids = list(data[pos : pos + scalar_count])
+    pos += scalar_count
+    scalar_bytes = scalar_count * 4
+    if pos + scalar_bytes > len(data):
+        return failed("truncatedScalarPropertyValues", pos, scalar_bytes)
+    properties: list[dict[str, Any]] = []
+    for property_id in scalar_ids:
+        value = _hirc_v150_action_property_value(property_id, data[pos : pos + 4])
+        properties.append({
+            "propertyId": property_id,
+            "propertyName": HIRC_ACTION_PROPERTY_LABELS.get(
+                property_id, f"property0x{property_id:02x}"
+            ),
+            **value,
+        })
+        pos += 4
+
+    range_count_row = read_count(pos, "truncatedRangePropertyCount")
+    if isinstance(range_count_row, dict):
+        return range_count_row
+    range_count, pos = range_count_row
+    if pos + range_count > len(data):
+        return failed("truncatedRangePropertyIds", pos, range_count)
+    range_ids = list(data[pos : pos + range_count])
+    pos += range_count
+    range_bytes = range_count * 8
+    if pos + range_bytes > len(data):
+        return failed("truncatedRangePropertyValues", pos, range_bytes)
+    ranged_modifiers: list[dict[str, Any]] = []
+    for property_id in range_ids:
+        minimum = _hirc_v150_action_property_value(property_id, data[pos : pos + 4])
+        maximum = _hirc_v150_action_property_value(property_id, data[pos + 4 : pos + 8])
+        ranged_modifiers.append({
+            "propertyId": property_id,
+            "propertyName": HIRC_ACTION_PROPERTY_LABELS.get(
+                property_id, f"property0x{property_id:02x}"
+            ),
+            "encoding": minimum["encoding"],
+            "minimum": minimum,
+            "maximum": maximum,
+            "runtimeSelection": "boundedModifierUnresolved",
+        })
+        pos += 8
+
+    evidence: dict[str, Any] = {
+        "actionParserStatus": "typedExactV150",
+        "targetFlagsRaw": data[6],
+        "targetIsBus": bool(data[6] & 0x01),
+        "properties": properties,
+        "rangedModifiers": ranged_modifiers,
+        "delay": _hirc_v150_action_property_summary(0x39, properties, ranged_modifiers),
+        "transition": _hirc_v150_action_property_summary(0x3A, properties, ranged_modifiers),
+        "probability": _hirc_v150_action_property_summary(0x3B, properties, ranged_modifiers),
+    }
+    remaining = len(data) - pos
+    if operation == 0x0400:
+        if remaining < 9:
+            return failed("truncatedPlayTail", pos, 9)
+        if remaining > 9:
+            return failed("unexpectedPlayTrailingBytes", pos + 9, 0)
+        fade_flags = data[pos]
+        curve_id = fade_flags & 0x1F
+        bank_id = unpack_from("<I", data, pos + 1)[0]
+        bank_type = unpack_from("<I", data, pos + 5)[0]
+        evidence["fade"] = {
+            "flagsRaw": fade_flags,
+            "curveId": curve_id,
+            "curveLabel": HIRC_FADE_CURVE_LABELS.get(curve_id, f"curve{curve_id}"),
+            "bankId": bank_id,
+            "bankType": bank_type,
+            "bankTypeLabel": HIRC_BANK_TYPE_LABELS.get(bank_type, f"bankType{bank_type}"),
+        }
+    elif remaining:
+        return failed("unexpectedPlayEventTrailingBytes", pos, 0)
+    return evidence
+
+
 def hirc_sound_media_id(data: bytes) -> int | None:
     """Return the v150 AkBankSourceData source ID from a Sound object.
 
@@ -3116,6 +3327,81 @@ def hirc_random_sequence_properties(data: bytes, children_offset: int) -> dict[s
     }
 
 
+def summarize_hirc_action_dispatch(
+    event_id: int,
+    root_action_ids: list[int],
+    action_evidence: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Describe serialized Event dispatch without claiming runtime sequence."""
+
+    root_rows = sorted(
+        (
+            row
+            for row in action_evidence
+            if row.get("dispatchEventId") == event_id and row.get("isRootEventAction")
+        ),
+        key=lambda row: int(row.get("eventActionOrdinal") or 0),
+    )
+    playback_rows = [
+        row
+        for row in root_rows
+        if row.get("operation") in {"play", "playEvent"}
+    ]
+    playback_count = len(playback_rows)
+    if not playback_count:
+        timing_class = "noPlayback"
+    elif playback_count == 1:
+        timing_class = "singlePlayback"
+    elif any(row.get("actionParserStatus") != "typedExactV150" for row in playback_rows):
+        timing_class = "coDispatchActionTimingUnresolved"
+    elif any(
+        (row.get("delay") or {}).get("modifierRangesMs")
+        for row in playback_rows
+    ):
+        timing_class = "dynamicDelayRangeUnresolved"
+    else:
+        delay_signatures = {
+            tuple((row.get("delay") or {}).get("baseValuesMs") or [])
+            for row in playback_rows
+        }
+        if delay_signatures == {()}:
+            timing_class = "coDispatchNoExplicitDelay"
+        elif len(delay_signatures) > 1:
+            timing_class = "coDispatchWithAuthoredDelayDifference"
+        else:
+            timing_class = "coDispatchUniformExplicitDelay"
+
+    def explicit_property_count(name: str) -> int:
+        return sum(
+            (row.get(name) or {}).get("serializationStatus")
+            not in {None, "implicitDefaultNotSerialized"}
+            for row in playback_rows
+        )
+
+    return {
+        "serializedActionCount": len(root_action_ids),
+        "serializedActionIds": root_action_ids,
+        "playbackActionCount": playback_count,
+        "playbackActionOrdinals": [row["eventActionOrdinal"] for row in playback_rows],
+        "typedPlaybackActionCount": sum(
+            row.get("actionParserStatus") == "typedExactV150" for row in playback_rows
+        ),
+        "failedPlaybackActionCount": sum(
+            row.get("actionParserStatus") == "failedClosed" for row in playback_rows
+        ),
+        "multiPlayback": playback_count > 1,
+        "timingClass": timing_class,
+        "simultaneityCandidate": timing_class == "coDispatchNoExplicitDelay",
+        "explicitDelayActionCount": explicit_property_count("delay"),
+        "explicitTransitionActionCount": explicit_property_count("transition"),
+        "probabilityGatedActionCount": explicit_property_count("probability"),
+        "evidenceBoundary": (
+            "Action ordinals prove serialized Event membership, not sequential "
+            "execution or sample-accurate simultaneous audible onset."
+        ),
+    }
+
+
 def traverse_hirc_event(
     event_id: int,
     objects: dict[int, dict[str, Any]],
@@ -3127,11 +3413,14 @@ def traverse_hirc_event(
     decoded_media_ids = decoded_media_ids or set()
     event_object = objects.get(event_id) or {}
     root_action_ids = hirc_event_action_ids(event_object.get("data") or b"")
-    queue: deque[tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[str, ...]]] = deque(
-        (action_id, action_id, (event_id,), (4,), ()) for action_id in root_action_ids
+    queue: deque[
+        tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[str, ...], int | None, int | None]
+    ] = deque(
+        (action_id, action_id, (event_id,), (4,), (), ordinal, event_id)
+        for ordinal, action_id in enumerate(root_action_ids)
     )
     visited: set[int] = {event_id}
-    visited_paths: set[tuple[int, int]] = set()
+    visited_paths: set[tuple[int, int, int | None, int | None]] = set()
     source_media_ids: list[int] = []
     resolved_media_ids: list[int] = []
     media_evidence_by_id: dict[int, dict[str, Any]] = {}
@@ -3139,7 +3428,6 @@ def traverse_hirc_event(
     container_evidence: list[dict[str, Any]] = []
     music_node_evidence: list[dict[str, Any]] = []
     unresolved_nodes: list[dict[str, Any]] = []
-    root_operations: dict[int, int | None] = {}
 
     def record_media(
         media_id: int,
@@ -3170,8 +3458,16 @@ def traverse_hirc_event(
         media_row["selectionPaths"].add(relations)
 
     while queue:
-        object_id, root_action_id, path_ids, path_types, path_relations = queue.popleft()
-        visit_key = (object_id, root_action_id)
+        (
+            object_id,
+            root_action_id,
+            path_ids,
+            path_types,
+            path_relations,
+            event_action_ordinal,
+            dispatch_event_id,
+        ) = queue.popleft()
+        visit_key = (object_id, root_action_id, dispatch_event_id, event_action_ordinal)
         if visit_key in visited_paths:
             continue
         visited_paths.add(visit_key)
@@ -3200,8 +3496,16 @@ def traverse_hirc_event(
             continue
 
         if object_type == 4:
-            for action_id in hirc_event_action_ids(data):
-                queue.append((action_id, root_action_id, current_path_ids, current_path_types, path_relations))
+            for ordinal, action_id in enumerate(hirc_event_action_ids(data)):
+                queue.append((
+                    action_id,
+                    root_action_id,
+                    current_path_ids,
+                    current_path_types,
+                    path_relations,
+                    ordinal,
+                    object_id,
+                ))
             continue
 
         if object_type == 3:
@@ -3209,21 +3513,33 @@ def traverse_hirc_event(
             operation = (action_type & 0xFF00) if action_type is not None else None
             target_id = hirc_action_target_id(data)
             target_type = int((objects.get(target_id) or {}).get("type") or 0) if target_id is not None else 0
-            if object_id in root_action_ids:
-                root_operations[object_id] = operation
             traversed = operation in HIRC_PLAYBACK_ACTION_OPERATIONS and target_id is not None
-            action_evidence.append({
+            action_row = {
                 "actionId": object_id,
                 "rootActionId": root_action_id,
+                "dispatchEventId": dispatch_event_id,
+                "eventActionOrdinal": event_action_ordinal,
+                "isRootEventAction": len(path_ids) == 1 and dispatch_event_id == event_id,
                 "actionType": action_type,
                 "operation": HIRC_ACTION_OPERATION_LABELS.get(operation, f"operation0x{operation:04x}" if operation is not None else "truncated"),
                 "scope": (action_type & 0x00FF) if action_type is not None else None,
                 "targetId": target_id,
                 "targetType": target_type or None,
                 "traversed": traversed,
-            })
+            }
+            if operation in HIRC_PLAYBACK_ACTION_OPERATIONS:
+                action_row.update(hirc_v150_playback_action(data, bank_version))
+            action_evidence.append(action_row)
             if traversed:
-                queue.append((target_id, root_action_id, current_path_ids, current_path_types, path_relations))
+                queue.append((
+                    target_id,
+                    root_action_id,
+                    current_path_ids,
+                    current_path_types,
+                    path_relations,
+                    event_action_ordinal,
+                    dispatch_event_id,
+                ))
             continue
 
         if object_type == 2:
@@ -3347,7 +3663,15 @@ def traverse_hirc_event(
                     continue
             child_relations = (*path_relations, relation)
             for child_id in child_ids:
-                queue.append((child_id, root_action_id, current_path_ids, current_path_types, child_relations))
+                queue.append((
+                    child_id,
+                    root_action_id,
+                    current_path_ids,
+                    current_path_types,
+                    child_relations,
+                    event_action_ordinal,
+                    dispatch_event_id,
+                ))
             continue
 
         unresolved_nodes.append({
@@ -3375,18 +3699,22 @@ def traverse_hirc_event(
         }
         for media_id, row in sorted(media_evidence_by_id.items())
     ]
+    action_dispatch_evidence = summarize_hirc_action_dispatch(
+        event_id, root_action_ids, action_evidence
+    )
     return {
         "actionIds": root_action_ids,
-        "rootPlayActionCount": sum(
-            operation in HIRC_PLAYBACK_ACTION_OPERATIONS
-            for operation in root_operations.values()
+        "rootPlayActionCount": action_dispatch_evidence["playbackActionCount"],
+        "rootStopActionCount": sum(
+            row.get("isRootEventAction") and row.get("operation") == "stop"
+            for row in action_evidence
         ),
-        "rootStopActionCount": sum(operation == 0x0100 for operation in root_operations.values()),
         "visitedObjectIds": sorted(visited),
         "sourceMediaIds": source_media_ids,
         "mediaIds": resolved_media_ids,
         "mediaEvidence": media_evidence,
         "actionEvidence": action_evidence,
+        "actionDispatchEvidence": action_dispatch_evidence,
         "containerEvidence": container_evidence,
         "musicNodeEvidence": music_node_evidence,
         "unresolvedNodes": unresolved_nodes,
@@ -4544,6 +4872,8 @@ def collect_event_audio_index(
                     "bank": bank_name,
                     "actionIds": action_ids,
                     "actionEvidence": traversal["actionEvidence"],
+                    "actionDispatchEvidence": traversal["actionDispatchEvidence"],
+                    "actionParser": "wwise150TypedPlaybackActionBundles",
                     "rootPlayActionCount": traversal["rootPlayActionCount"],
                     "rootStopActionCount": traversal["rootStopActionCount"],
                     "visitedObjectIds": sorted(visited),
