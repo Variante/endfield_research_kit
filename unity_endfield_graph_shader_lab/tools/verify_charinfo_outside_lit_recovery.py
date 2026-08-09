@@ -1954,6 +1954,64 @@ def verify_selected_resolver_binding_contract() -> None:
     assert punctual_writer_audit["capture_boundary"]["recommended_hook"].endswith(
         "VA 0x189b57155"
     )
+    assert shadow_native["atlas_name"] == "Punctual Shadowmap"
+    assert shadow_native["atlas_size"].startswith(
+        "N == 0 ? 4*T x 4*T : (ceil(N*0.25)+4)*T x 4*T"
+    )
+    assert "Depth16" in shadow_native["atlas_descriptor"]
+    assert "_PunctualLightShadowTexV2" in shadow_native[
+        "atlas_enabled_binding"
+    ]
+    assert "defaultShadowTexture" in shadow_native["atlas_disabled_binding"]
+    require_hash(
+        repo_path(shadow_native["atlas_audit_path"]),
+        shadow_native["atlas_audit_sha256"],
+    )
+    require_text_hash(
+        repo_path(shadow_native["atlas_auditor_path"]),
+        shadow_native["atlas_auditor_sha256"],
+    )
+    punctual_atlas_audit = json.loads(
+        repo_path(shadow_native["atlas_audit_path"]).read_text(encoding="utf-8")
+    )
+    assert punctual_atlas_audit["schema"] == (
+        "endfield.punctual-shadow-atlas-audit.v1"
+    )
+    assert punctual_atlas_audit["verdict"] == (
+        "ALLOCATION_AND_BINDING_CLOSED_SETTLED_ATLAS_CAPTURE_REQUIRED"
+    )
+    assert punctual_atlas_audit["publication_allowed"] is False
+    assert punctual_atlas_audit["allocation"]["name"] == "Punctual Shadowmap"
+    assert punctual_atlas_audit["allocation"]["width_formula"] == (
+        "N == 0 ? 4*T : (ceil(N*0.25)+4)*T"
+    )
+    assert punctual_atlas_audit["allocation"]["height_formula"] == "4*T"
+    assert punctual_atlas_audit["allocation"]["descriptor"] == {
+        "slices": 1,
+        "depthBufferBits": "DepthBits.Depth16 (16)",
+        "colorFormat": "GraphicsFormat.R8G8B8A8_SRGB (4)",
+        "filterMode": "FilterMode.Point (0)",
+        "wrapMode": "TextureWrapMode.Clamp (1)",
+        "dimension": "TextureDimension.Tex2D (2)",
+        "enableRandomWrite": False,
+        "useMipMap": False,
+        "autoGenerateMips": False,
+        "isShadowMap": True,
+        "anisoLevel": 1,
+        "mipMapBias": 0.0,
+        "msaaSamples": "MSAASamples.None (1)",
+        "bindTextureMS": False,
+        "memoryless": 0,
+    }
+    assert punctual_atlas_audit["enabled_path"]["shader_property"] == (
+        "_PunctualLightShadowTexV2"
+    )
+    assert punctual_atlas_audit["disabled_path"]["resource"] == (
+        "HGRenderGraphDefaultResources.defaultShadowTexture"
+    )
+    assert punctual_atlas_audit["physical_boundary"][
+        "recommended_hook"
+    ].endswith("VA 0x189b57155")
     assert (
         identified[2]["role"],
         identified[2]["symbol"],
