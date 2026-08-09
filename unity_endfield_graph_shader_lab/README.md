@@ -1500,6 +1500,18 @@ filters native types 0/2 and applies the punctual capacity. Closing the retail
 value now requires an explicitly authorized target-frame capture of that
 pointer/count and array; no retail-process attachment or injection was used.
 
+Binding 37 has a similarly narrow recovered transport. Installed
+`HGLightCookieManager` code creates 32 zero atlas records plus 32 zero matrices,
+then uploads exactly 512+2,048 bytes. Missing cookies map to index `-1`, and the
+selected resolver samples `_LightCookie` only for nonnegative indices. Set
+`ENDFIELD_RECOVERED_LIGHT_COOKIE_DATA=1` (or pass
+`-endfield-recovered-light-cookie-data`) to publish the exact all-zero
+`_LightCookieData` only for the source-closed Wulfa/Zhuangfy isolated Overview
+lists; every cookie-bearing or mismatched frame clears
+`_EndfieldRecoveredLightCookieDataReady`. Run
+`verify_recovered_light_cookie_data.bat --all` for the 640-word D3D11/D3D12
+transport check. This does not recover a non-empty retail cookie atlas.
+
 The normal-mapped body Skin branch is separate from that face reduction and is
 source-gated to exactly `M_actor_wulfa_body_01` (Material PathID
 `7152188194418193687`) and `M_actor_zhuangfy_body_01` (Material PathID
@@ -1972,8 +1984,13 @@ native 48-byte field layout/upload and a default-off, fail-closed isolated-count
 Unity publisher are now source-closed; all 12 words read back bit-exactly on
 D3D11 and D3D12. The retail whole-scene cull survivors and final `lightCount`
 are still not captured. Exact original cross-shader layout also identifies b34 as
-`ShadowData`; binary use identifies b37 as the 32-entry `LightCookieData`
-layout. Exact original `ScreenSpaceShadowResolve` metadata identifies b38 as
+`ShadowData`. Binding 37 now has its native `HGLightCookieManager` initialization,
+32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
+closed. A default-off publisher emits the exact all-zero buffer only for the
+source-closed Wulfa/Zhuangfy isolated Overview lists; all 640 words read back
+bit-exactly on D3D11 and D3D12. Any cookie-bearing light fails closed because
+non-empty retail atlas allocation, pixels, transforms, and settled whole-scene
+values remain open. Exact original `ScreenSpaceShadowResolve` metadata identifies b38 as
 the 3,568-byte `HDPunctualLightCharacterShadowData` layout. The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution

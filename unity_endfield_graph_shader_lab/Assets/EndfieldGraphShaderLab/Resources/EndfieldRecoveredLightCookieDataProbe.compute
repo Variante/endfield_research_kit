@@ -1,0 +1,18 @@
+#pragma kernel Readback
+
+cbuffer _LightCookieData
+{
+    float4 _EndfieldRecoveredLightCookieWords[160];
+};
+
+RWStructuredBuffer<uint4> _EndfieldRecoveredLightCookieDataReadback;
+
+[numthreads(64, 1, 1)]
+void Readback(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadID.x;
+    if (index >= 160u)
+        return;
+    _EndfieldRecoveredLightCookieDataReadback[index] =
+        asuint(_EndfieldRecoveredLightCookieWords[index]);
+}

@@ -16,6 +16,10 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_LIGHT_BINNING_CONSTANTS";
         private const string ConstantsCommandLineArgument =
             "-endfield-recovered-light-binning-constants";
+        private const string LightCookieDataEnvironmentVariable =
+            "ENDFIELD_RECOVERED_LIGHT_COOKIE_DATA";
+        private const string LightCookieDataCommandLineArgument =
+            "-endfield-recovered-light-cookie-data";
         private const int TileSize = EndfieldRecoveredLightBinningConstantsContract.TileSize;
         private const int SliceCount = EndfieldRecoveredLightBinningConstantsContract.SliceCount;
         private const int WordsPerBin = 8;
@@ -57,11 +61,18 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_LightBinningConstants");
         private static readonly int RetailConstantsReadyId =
             Shader.PropertyToID("_EndfieldRecoveredLightBinningConstantsReady");
+        private static readonly int RetailLightCookieDataId =
+            Shader.PropertyToID("_LightCookieData");
+        private static readonly int RetailLightCookieTextureId =
+            Shader.PropertyToID("_LightCookie");
+        private static readonly int RetailLightCookieDataReadyId =
+            Shader.PropertyToID("_EndfieldRecoveredLightCookieDataReady");
 
         private readonly Vector4[] descriptors =
             new Vector4[EndfieldHGOperatorLightRig.DescriptorVectorCount];
         private readonly ComputeShader compute;
         private readonly bool retailConstantsRequested;
+        private readonly bool retailLightCookieDataRequested;
         private readonly int xyKernel = -1;
         private readonly int zKernel = -1;
         private ComputeBuffer descriptorBuffer;
@@ -69,11 +80,14 @@ namespace EndfieldGraphShaderLab
         private ComputeBuffer zeroFallbackBuffer;
         private ComputeBuffer retailConstantsBuffer;
         private ComputeBuffer zeroRetailConstantsBuffer;
+        private ComputeBuffer zeroRetailLightCookieDataBuffer;
         private readonly Vector4[] retailConstantsVectors = new Vector4[3];
         private bool loggedActivation;
         private bool loggedFailure;
         private bool loggedConstantsActivation;
         private bool loggedConstantsFailure;
+        private bool loggedLightCookieDataActivation;
+        private bool loggedLightCookieDataFailure;
         private bool disposed;
 
         internal EndfieldRecoveredLightBinning()
@@ -81,6 +95,9 @@ namespace EndfieldGraphShaderLab
             retailConstantsRequested =
                 ReadBooleanEnvironment(ConstantsEnvironmentVariable) ||
                 HasCommandLineArgument(ConstantsCommandLineArgument);
+            retailLightCookieDataRequested =
+                ReadBooleanEnvironment(LightCookieDataEnvironmentVariable) ||
+                HasCommandLineArgument(LightCookieDataCommandLineArgument);
             compute = Resources.Load<ComputeShader>(ComputeResourceName);
             if (compute != null)
             {
@@ -136,6 +153,7 @@ namespace EndfieldGraphShaderLab
             if (!membershipRequested)
             {
                 BindRetailConstantsFallback(commandBuffer);
+                BindRetailLightCookieDataFallback(commandBuffer);
                 BindFallback(commandBuffer);
                 return;
             }
@@ -144,6 +162,7 @@ namespace EndfieldGraphShaderLab
                 ReportFailure(
                     "orthographic cameras are outside the recovered perspective CharInfo contract");
                 BindRetailConstantsFallback(commandBuffer);
+                BindRetailLightCookieDataFallback(commandBuffer);
                 BindFallback(commandBuffer);
                 return;
             }
@@ -155,6 +174,10 @@ namespace EndfieldGraphShaderLab
                 height,
                 camera.nearClipPlane,
                 camera.farClipPlane);
+            PublishRetailLightCookieData(
+                commandBuffer,
+                rig,
+                lightCount);
 
             if (!SystemInfo.supportsComputeShaders)
             {
@@ -273,7 +296,7 @@ namespace EndfieldGraphShaderLab
             }
 
             EndfieldRecoveredLightBinningConstantsContract.Data data;
-            string failure;
+            string failure = string.Empty;
             if (!EndfieldRecoveredLightBinningConstantsContract.TryBuild(
                     sourceClosedLightCount,
                     width,
@@ -345,6 +368,147 @@ namespace EndfieldGraphShaderLab
             }
         }
 
+        private void PublishRetailLightCookieData(
+            CommandBuffer commandBuffer,
+            EndfieldHGOperatorLightRig rig,
+            int sourceClosedLightCount)
+        {
+            if (!retailLightCookieDataRequested)
+            {
+                commandBuffer.SetGlobalFloat(RetailLightCookieDataReadyId, 0.0f);
+                return;
+            }
+
+            string failure = string.Empty;
+            if (!TryValidateSourceClosedZeroCookieFrame(
+                    rig,
+                    sourceClosedLightCount,
+                    out failure))
+            {
+                ReportLightCookieDataFailure(
+                    failure);
+                BindRetailLightCookieDataFallback(commandBuffer);
+                return;
+            }
+
+            try
+            {
+                EnsureZeroRetailLightCookieDataBuffer();
+                commandBuffer.SetGlobalConstantBuffer(
+                    zeroRetailLightCookieDataBuffer,
+                    RetailLightCookieDataId,
+                    0,
+                    EndfieldRecoveredLightCookieDataContract.SizeBytes);
+                // The exact resolver skips this texture when every packed
+                // cookie index is -1. A valid black descriptor is therefore
+                // transport-only and cannot affect the source-closed path.
+                commandBuffer.SetGlobalTexture(
+                    RetailLightCookieTextureId,
+                    Texture2D.blackTexture);
+                commandBuffer.SetGlobalFloat(RetailLightCookieDataReadyId, 1.0f);
+            }
+            catch (Exception exception)
+            {
+                ReportLightCookieDataFailure(
+                    "2,560-byte constant-buffer publication failed: " + exception.Message);
+                BindRetailLightCookieDataFallback(commandBuffer);
+                return;
+            }
+
+            if (!loggedLightCookieDataActivation)
+            {
+                Debug.Log(
+                    "Recovered _LightCookieData publication active for the source-closed " +
+                    $"zero-cookie isolated Overview rig ({sourceClosedLightCount} lights). " +
+                    "The exact 2,560-byte binding is zero and _LightCookie is unobserved " +
+                    "because every packed cookie index is -1. This does not claim the " +
+                    "retail whole-scene cookie atlas.");
+                loggedLightCookieDataActivation = true;
+            }
+        }
+
+        private static bool TryValidateSourceClosedZeroCookieFrame(
+            EndfieldHGOperatorLightRig rig,
+            int preparedLightCount,
+            out string failure)
+        {
+            failure = string.Empty;
+            if (rig == null)
+            {
+                failure = "no isolated Overview light rig is bound";
+                return false;
+            }
+            if (!rig.sourceBackedClusteredNprLightLoop ||
+                !rig.sourceBackedLightBinningMembership)
+            {
+                failure =
+                    "the source-backed clustered loop and exact isolated membership are not both enabled";
+                return false;
+            }
+
+            int installedFixtureCount;
+            if (rig.actorRoot != null && string.Equals(
+                    rig.actorRoot.name,
+                    "Wulfa",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                installedFixtureCount = 8;
+            }
+            else if (rig.actorRoot != null && string.Equals(
+                         rig.actorRoot.name,
+                         "Zhuangfy",
+                         StringComparison.OrdinalIgnoreCase))
+            {
+                installedFixtureCount = 6;
+            }
+            else
+            {
+                failure =
+                    $"actor identity '{(rig.actorRoot != null ? rig.actorRoot.name : "<null>")}' " +
+                    "is outside the source-closed Wulfa/Zhuangfy Overview fixtures";
+                return false;
+            }
+            if (rig.lights == null || rig.lights.Length != installedFixtureCount ||
+                preparedLightCount != installedFixtureCount)
+            {
+                failure =
+                    $"installed Overview light-list identity mismatch: expected " +
+                    $"{installedFixtureCount}, found {preparedLightCount}";
+                return false;
+            }
+
+            for (int sourceIndex = 0; sourceIndex < rig.lights.Length; sourceIndex++)
+            {
+                if (rig.lights[sourceIndex].hasCookie)
+                {
+                    failure =
+                        $"source light {sourceIndex} ('{rig.lights[sourceIndex].sourceName}') " +
+                        "references a cookie";
+                    return false;
+                }
+            }
+
+            return EndfieldRecoveredLightCookieDataContract.TryValidateZeroCookieFrame(
+                preparedLightCount,
+                false,
+                out failure);
+        }
+
+        private void EnsureZeroRetailLightCookieDataBuffer()
+        {
+            if (zeroRetailLightCookieDataBuffer != null)
+                return;
+            zeroRetailLightCookieDataBuffer = new ComputeBuffer(
+                EndfieldRecoveredLightCookieDataContract.VectorCount,
+                sizeof(float) * 4,
+                ComputeBufferType.Constant)
+            {
+                name = "Endfield Recovered LightCookieData Zero-Cookie Fixture"
+            };
+            zeroRetailLightCookieDataBuffer.SetData(
+                new Vector4[EndfieldRecoveredLightCookieDataContract.VectorCount]);
+        }
+
         private void BindRetailConstantsFallback(CommandBuffer commandBuffer)
         {
             if (!retailConstantsRequested)
@@ -367,6 +531,33 @@ namespace EndfieldGraphShaderLab
                     "zero constant-buffer fallback failed: " + exception.Message);
             }
             commandBuffer.SetGlobalFloat(RetailConstantsReadyId, 0.0f);
+        }
+
+        private void BindRetailLightCookieDataFallback(CommandBuffer commandBuffer)
+        {
+            if (!retailLightCookieDataRequested)
+            {
+                commandBuffer.SetGlobalFloat(RetailLightCookieDataReadyId, 0.0f);
+                return;
+            }
+            try
+            {
+                EnsureZeroRetailLightCookieDataBuffer();
+                commandBuffer.SetGlobalConstantBuffer(
+                    zeroRetailLightCookieDataBuffer,
+                    RetailLightCookieDataId,
+                    0,
+                    EndfieldRecoveredLightCookieDataContract.SizeBytes);
+                commandBuffer.SetGlobalTexture(
+                    RetailLightCookieTextureId,
+                    Texture2D.blackTexture);
+            }
+            catch (Exception exception)
+            {
+                ReportLightCookieDataFailure(
+                    "zero LightCookieData fallback failed: " + exception.Message);
+            }
+            commandBuffer.SetGlobalFloat(RetailLightCookieDataReadyId, 0.0f);
         }
 
         internal static void PackRetailConstants(
@@ -516,6 +707,16 @@ namespace EndfieldGraphShaderLab
             loggedConstantsFailure = true;
         }
 
+        private void ReportLightCookieDataFailure(string message)
+        {
+            if (loggedLightCookieDataFailure)
+                return;
+            Debug.LogWarning(
+                "Recovered _LightCookieData is disabled for this camera because " +
+                message + ". The canonical binding is zeroed and its ready flag is false.");
+            loggedLightCookieDataFailure = true;
+        }
+
         private static bool ReadBooleanEnvironment(string name)
         {
             string value = Environment.GetEnvironmentVariable(name);
@@ -550,6 +751,8 @@ namespace EndfieldGraphShaderLab
             retailConstantsBuffer = null;
             zeroRetailConstantsBuffer?.Release();
             zeroRetailConstantsBuffer = null;
+            zeroRetailLightCookieDataBuffer?.Release();
+            zeroRetailLightCookieDataBuffer = null;
         }
     }
 }

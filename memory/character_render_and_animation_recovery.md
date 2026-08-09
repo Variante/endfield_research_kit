@@ -43,6 +43,13 @@ NPC archetypes are imported as labeled source kits.
   `CullLights` producer, two `HGCamera.DoECSCulling` call sites, 256-candidate
   cap, pointer/count ABI, and first consumer are also closed; only an
   authorized target-frame array capture can settle retail order/`lightCount`.
+- Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
+  initialization/upload and `cookieIndex >= 0` consumer guard closed. The
+  source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
+  all-zero publisher is exact for that narrow path and is bit-verified on
+  D3D11/D3D12 (640/640 words). Cookie-bearing or non-isolated frames fail
+  closed; non-empty retail atlas history, pixels, transforms, and settled
+  whole-scene values still require capture.
 
 ## Main rendering gap
 
@@ -96,6 +103,8 @@ cd unity_endfield_graph_shader_lab
 .\render_playable_character_widget_previews.bat
 .\build_fast_render_style_viewer.bat
 .\verify_fast_render_style_viewer.bat
+.\verify_recovered_light_binning_constants.bat --all
+.\verify_recovered_light_cookie_data.bat --all
 ```
 
 Canonical viewer:
@@ -111,7 +120,7 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 1. Complete the minimum binding-compatible deferred CharInfo frame.
 2. Recover the retail light-cull survivor list, then populate exact shadow,
-   depth, GBuffer, irradiance, cookie, and VisibilitySH inputs.
+   depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH inputs.
 3. Validate selected paths against accepted retail captures.
 4. Extend exact texture/mip and material-variant support only where visible.
 5. Generalize animation from a second exact Avatar/clip oracle.
