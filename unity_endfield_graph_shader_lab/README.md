@@ -2184,11 +2184,11 @@ oct texture/global buffer in the same camera command stream without replacing
 the canonical `_BinningBuffer`. D3D11/D3D12 probes observe both ready flags,
 preserved light/reflection sentinels, exact header words, and the 576x576x32
 texture together; missing or wrong sources clear readiness and fail closed.
-The native 128-byte `VisibilitySHConstData` b33 layout and fixed rows are also
-closed. Its camera-derived dimensions/scales plus the selected deferred
-consumer's exact bytes 32..63 now join that same default-off frame gate and
-read back bit-exactly on D3D11/D3D12. The lab keeps bytes 80..127 deterministic
-zero without claiming the native stack-derived values used by other consumers.
+The native 128-byte `VisibilitySHConstData` b33 layout is also fully closed.
+The producer zero-fills all 128 source bytes, overwrites fixed rows 0..2 and
+camera-derived rows 3..4, then copies untouched zero rows 5..7. All 32 words
+join that same default-off frame gate and read back bit-exactly on D3D11/D3D12;
+the selected deferred consumer itself reads bytes 32..63.
 The original pass-0 consumer remains deliberately disabled. The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and

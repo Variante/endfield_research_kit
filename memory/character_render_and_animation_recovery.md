@@ -55,10 +55,11 @@ NPC archetypes are imported as labeled source kits.
   resources in the same camera command stream without overwriting that buffer;
   both readiness gates, exact header, 576x576x32 texture, and source rejection
   pass on D3D11/D3D12. The native 128-byte `VisibilitySHConstData` b33 layout,
-  fixed rows, frame dimensions/scales, and the selected deferred consumer's
-  bytes 32..63 are now source-closed and bit-exact on D3D11/D3D12 under that
-  same frame gate. Native stack-derived tail bytes 80..127 for other consumers,
-  the settled retail VisibilitySH texture, target-frame light survivors, and
+  fixed rows and frame dimensions/scales are now source-closed. The producer's
+  pinned 128-byte zero-fill proves untouched rows 5..7 are exact zero, so all
+  32 words—not only the selected consumer's bytes 32..63—read back bit-exactly
+  on D3D11/D3D12 under that same frame gate. The settled retail VisibilitySH
+  texture, live posed/view-culled capsules, target-frame light survivors, and
   pass-0 activation remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
   `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one

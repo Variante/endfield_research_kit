@@ -4,10 +4,10 @@ using UnityEngine;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Source-closed portion of the installed 128-byte VisibilitySHConstData
-    /// producer. The selected deferred resolver reads only vectors 2 and 3.
-    /// Vectors 5..7 are deterministic zero in the lab and are not claimed as
-    /// native stack-byte recovery for other shader consumers.
+    /// Exact installed 128-byte VisibilitySHConstData producer for the current
+    /// active untiled route. The native function zero-fills the entire source
+    /// struct, overwrites vectors 0..4, and copies untouched zero vectors 5..7.
+    /// The selected deferred resolver itself reads only vectors 2 and 3.
     /// </summary>
     public static class EndfieldRecoveredVisibilitySHConstantsContract
     {
@@ -49,6 +49,8 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
+            // Matches the native 0x80-byte zero-fill before rows 0..4 are
+            // overwritten. Rows 5..7 consequently remain exact zero.
             Array.Clear(destination, 0, destination.Length);
             destination[0] = Bits(
                 0x409D41DDu,

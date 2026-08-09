@@ -21,7 +21,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string SourceAuditRelativePath =
             "scratch/reverse_engineering/visibility_sh_constants/audit.json";
         private const string ExpectedSourceAuditSha256 =
-            "4e9ac02669723268776af350fa27e87709b766872547c9805903d504753b7cc3";
+            "338b29513855466b7bf5b245639b20af5f1540e4727352898b71a485e2370882";
 
         private static readonly int ReadbackId = Shader.PropertyToID(
             "_EndfieldRecoveredVisibilitySHConstantsReadback");
@@ -46,6 +46,7 @@ namespace EndfieldGraphShaderLabEditor
             public string diagnosticScope;
             public bool defaultOff;
             public bool retailVisibilityTextureClosed;
+            public bool fullConstantBufferSourceClosed;
             public string sourceAuditPath;
             public string sourceAuditSha256;
             public string expectedSourceAuditSha256;
@@ -59,7 +60,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool readyObserved;
             public bool allPublishedWordsMatch;
             public bool selectedDeferredWordsMatch;
-            public bool deterministicLabTailIsZero;
+            public bool nativeZeroTailMatch;
             public int selectedFirstWord;
             public int selectedWordCount;
             public string[] expectedWords;
@@ -177,7 +178,7 @@ namespace EndfieldGraphShaderLabEditor
             if (!selectedWordsMatch)
                 failures.Add("selected_consumer: words 8..15 differ from native b33 rows 2..3");
             if (!tailZero)
-                failures.Add("lab_tail: deterministic non-native-claim tail words 20..31 are not zero");
+                failures.Add("native_zero_tail: source-closed words 20..31 are not zero");
 
             RejectionReport[] rejections =
             {
@@ -212,15 +213,16 @@ namespace EndfieldGraphShaderLabEditor
             var report = new ValidationReport
             {
                 schema =
-                    "endfield-recovered-visibility-sh-constants-validation-v1",
+                    "endfield-recovered-visibility-sh-constants-validation-v2",
                 valid = failures.Count == 0,
                 graphicsApi = api,
                 diagnosticScope =
-                    "installed 128-byte b33 producer rows with selected deferred " +
-                    "consumer bytes 32..63 source-closed; retail VisibilitySH " +
-                    "texture contents remain open",
+                    "all installed 128-byte b33 producer rows source-closed: " +
+                    "fixed/frame rows 0..4 and native-zero rows 5..7; retail " +
+                    "VisibilitySH texture contents remain open",
                 defaultOff = true,
                 retailVisibilityTextureClosed = false,
+                fullConstantBufferSourceClosed = true,
                 sourceAuditPath = sourceAuditPath,
                 sourceAuditSha256 = sourceHash,
                 expectedSourceAuditSha256 = ExpectedSourceAuditSha256,
@@ -235,7 +237,7 @@ namespace EndfieldGraphShaderLabEditor
                 readyObserved = readyObserved,
                 allPublishedWordsMatch = allWordsMatch,
                 selectedDeferredWordsMatch = selectedWordsMatch,
-                deterministicLabTailIsZero = tailZero,
+                nativeZeroTailMatch = tailZero,
                 selectedFirstWord = selectedFirstWord,
                 selectedWordCount = selectedWordCount,
                 expectedWords = HexWords(expected),
@@ -258,7 +260,7 @@ namespace EndfieldGraphShaderLabEditor
             }
             Debug.Log(
                 "Recovered VisibilitySHConstData validation passed: " +
-                "128-byte global binding exact, selected words=8/8, " +
+                "all 32 native words exact, selected words=8/8, " +
                 "fail-closed gates=3/3, api=" + api +
                 ", report=" + reportPath +
                 ". Retail VisibilitySH texture contents remain open.");
