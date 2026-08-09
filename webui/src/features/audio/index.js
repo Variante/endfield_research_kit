@@ -98,6 +98,14 @@
       relationSwitch: "Switch / State branches",
       relationLayer: "Layer branches",
       relationDirectSound: "Direct Sound leaf",
+      relationMusicSwitch: "Music Switch branches",
+      relationMusicPlaylist: "Music playlist branches",
+      relationMusicTrack: "Music tracks",
+      relationMusicSource: "Music track sources",
+      musicSwitchContainer: "Music Switch container",
+      musicRandomSequenceContainer: "Music Random / Sequence container",
+      musicSegment: "Music segment",
+      musicTrack: "Music track",
       possibleMedia: "Possible media",
       playRoots: "Play roots",
       typedTraversal: "Typed traversal",
@@ -205,6 +213,14 @@
       relationSwitch: "Switch / State \u5206\u652f",
       relationLayer: "Layer \u5206\u652f",
       relationDirectSound: "\u76f4\u63a5 Sound \u53f6",
+      relationMusicSwitch: "\u97f3\u4e50 Switch \u5206\u652f",
+      relationMusicPlaylist: "\u97f3\u4e50\u64ad\u653e\u5217\u8868\u5206\u652f",
+      relationMusicTrack: "\u97f3\u4e50\u8f68\u9053",
+      relationMusicSource: "\u97f3\u4e50\u8f68\u9053\u97f3\u6e90",
+      musicSwitchContainer: "\u97f3\u4e50 Switch \u5bb9\u5668",
+      musicRandomSequenceContainer: "\u97f3\u4e50\u968f\u673a / \u5e8f\u5217\u5bb9\u5668",
+      musicSegment: "\u97f3\u4e50\u7247\u6bb5",
+      musicTrack: "\u97f3\u4e50\u8f68\u9053",
       possibleMedia: "\u53ef\u80fd\u5a92\u4f53",
       playRoots: "Play \u6839",
       typedTraversal: "\u7c7b\u578b\u5316\u904d\u5386",
@@ -357,6 +373,10 @@
     switchCandidate: "relationSwitch",
     layerChild: "relationLayer",
     directSound: "relationDirectSound",
+    musicSwitchCandidate: "relationMusicSwitch",
+    musicPlaylistCandidate: "relationMusicPlaylist",
+    musicTrack: "relationMusicTrack",
+    musicTrackSource: "relationMusicSource",
   };
 
   function taxonomyLabel(value) {
@@ -1529,6 +1549,7 @@
   function selectorEvidenceSummary(record) {
     const actions = new Map();
     const containers = new Map();
+    const musicNodes = new Map();
     let unresolved = 0;
     for (const evidence of asArray(record?.evidence)) {
       for (const action of asArray(evidence?.actionEvidence)) {
@@ -1542,11 +1563,31 @@
         current.children += Number(container?.childCount || 0);
         containers.set(relation, current);
       }
+      for (const node of asArray(evidence?.musicNodeEvidence)) {
+        const kind = normalize(node?.nodeKind) || `musicType${node?.objectType ?? "?"}`;
+        const current = musicNodes.get(kind) || {
+          count: 0, children: 0, sources: 0, selectionTypes: new Set(),
+        };
+        current.count += 1;
+        current.children += Number(node?.childCount || 0);
+        current.sources += Number(node?.sourceCount || 0);
+        for (const label of asArray(node?.selectionTypeLabels).filter(Boolean)) current.selectionTypes.add(humanize(label));
+        musicNodes.set(kind, current);
+      }
       unresolved += asArray(evidence?.unresolvedNodes).length;
     }
     const values = [...actions].map(([operation, count]) => `${operation} × ${formatNumber(count)}`);
     for (const [relation, value] of containers) {
       values.push(`${taxonomyLabel(relation)}: ${formatNumber(value.count)} nodes / ${formatNumber(value.children)} child edges`);
+    }
+    for (const [kind, value] of musicNodes) {
+      const detail = [
+        `${formatNumber(value.count)} nodes`,
+        value.children ? `${formatNumber(value.children)} children` : "",
+        value.sources ? `${formatNumber(value.sources)} sources` : "",
+        value.selectionTypes.size ? [...value.selectionTypes].join(" / ") : "",
+      ].filter(Boolean).join(" / ");
+      values.push(`${taxonomyLabel(kind)}: ${detail}`);
     }
     if (unresolved) values.push(`${t("relationPartialGraph")}: ${formatNumber(unresolved)} unresolved nodes`);
     return values;
