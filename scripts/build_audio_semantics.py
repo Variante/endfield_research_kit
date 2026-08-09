@@ -90,6 +90,16 @@ AUDIO_CONFIG_TABLE_NAMES = (
     "SpaceshipAlbumMusicTable.json",
 )
 AUDIO_TABLE_NAMES = tuple(dict.fromkeys((*NARRATIVE_AUDIO_TABLE_NAMES, *AUDIO_CONFIG_TABLE_NAMES)))
+PROJECTILE_DATA_REL = Path("data/gameplay/projectiles.json")
+PROJECTILE_SOUND_PHASES = {
+    "launchSound": "launch",
+    "loopSound": "loop",
+    "reachSound": "reach",
+    "hitSound": "hit",
+    "blockSound": "block",
+    "finishedSound": "finish",
+    "sizzleSound": "proximitySizzle",
+}
 AUDIO_HASH_FIELD_RE = re.compile(
     r"(?:^audio[A-Z_]|(?:Audio|Music)?Event(?:s|Ids?)?$|levelInitEvent$|battleMusicTriggerEvent$)",
     re.IGNORECASE,
@@ -846,6 +856,56 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                     "authoredEventIds": list(event.get("authoredEventIds") or [])[:8],
                 }
                 _append_context(contexts, seen, event.get("id"), context)
+    return dict(contexts)
+
+
+def collect_projectile_contexts(webui_root: Path) -> dict[str, list[dict[str, Any]]]:
+    """Recover exact projectile lifecycle sound slots as uint32 Event contexts."""
+
+    payload = load_json(webui_root / PROJECTILE_DATA_REL, {})
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    for entry in payload.get("entries") or []:
+        if not isinstance(entry, dict):
+            continue
+        projectile_id = str(entry.get("id") or "")
+        projectile_key = str(entry.get("key") or "")
+        source = entry.get("source") if isinstance(entry.get("source"), dict) else {}
+        template = entry.get("template") if isinstance(entry.get("template"), dict) else {}
+        authored_skill_ids = sorted({
+            str(skill_id)
+            for field in (
+                "activeSkillIds", "passiveSkillIds", "normalAttackIds",
+                "normalAttackList", "enabledBreakingNormalAttacks",
+                "enabledPassiveSkills",
+            )
+            for skill_id in template.get(field) or []
+            if str(skill_id)
+        })
+        for field, phase in PROJECTILE_SOUND_PHASES.items():
+            value = (entry.get("sounds") or {}).get(field)
+            raw = value.get("value") if isinstance(value, dict) else value
+            if not isinstance(raw, int) or not raw:
+                continue
+            event_hash = raw & 0xFFFFFFFF
+            context = {
+                "kind": "projectileSoundField",
+                "confidence": "direct",
+                "semanticRole": "authoredProjectileLifecycleSound",
+                "projectileId": projectile_id,
+                "projectileKey": projectile_key,
+                "soundField": field,
+                "triggerPhase": phase,
+                "eventHash": event_hash,
+                "runtimeActivationStatus": "projectileLifecycleExecutionNotObserved",
+                "sourceRoot": str(source.get("root") or ""),
+                "sourcePathId": str(source.get("pathId") or ""),
+                "sourceJsonPath": str(source.get("jsonPath") or ""),
+            }
+            if authored_skill_ids:
+                context["authoredSkillIds"] = authored_skill_ids[:16]
+                context["skillOwnershipStatus"] = "projectileTemplateReferenceOnly"
+            _append_context(contexts, seen, event_hash_context_key(event_hash), context)
     return dict(contexts)
 
 
@@ -1610,7 +1670,7 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
 
 def semantic_context_group(kind: Any) -> str:
     value = str(kind or "")
-    if value in {"characterSkill", "enemySkill", "buffPlaySoundAction"}:
+    if value in {"characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"}:
         return "gameplay"
     if value == "cutsceneTimeline":
         return "cutscene"
@@ -1639,6 +1699,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "modelId", "subTemplateId", "triggerStateId", "triggerStateName",
             "triggerCustomState", "ownerKind", "stateDirection", "audioStateMask",
             "componentIndex", "sourceOffset", "sourceFingerprint",
+            "projectileId", "projectileKey", "soundField", "triggerPhase",
+            "runtimeActivationStatus", "sourceRoot", "sourcePathId", "sourceJsonPath",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -1650,6 +1712,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "triggerOwnershipMethods", "triggerEvidenceKinds", "triggerBuffIds",
             "triggerSourcePaths",
             "sourcePaths",
+            "authoredSkillIds",
         ):
             context_search.update(str(value) for value in context.get(key) or [] if str(value))
         for action in context.get("triggerPlaySoundActions") or []:
@@ -1715,6 +1778,7 @@ def build_audio_semantic_data(
     literal_context_index, managed_literal_names = managed_literal_contexts(metadata_path)
     contexts = merge_contexts(
         collect_gameplay_contexts(webui_root, language),
+        collect_projectile_contexts(webui_root),
         collect_table_contexts(export_root, runtime_model),
         cutscene_contexts(cutscene_events),
         literal_context_index,
@@ -1883,6 +1947,8 @@ def build_audio_semantic_data(
                 context_kind_counts.get("audioGlobalConfigEvent", 0)
                 + context_kind_counts.get("audioGlobalConfigEventHash", 0)
             ),
+            "projectileSoundEvents": context_kind_event_counts.get("projectileSoundField", 0),
+            "projectileSoundContexts": context_kind_counts.get("projectileSoundField", 0),
             "authoredPlaySoundActionEvents": play_sound_action_events,
             "authoredPlaySoundActionContexts": play_sound_action_contexts,
             "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
@@ -1914,6 +1980,7 @@ def build_audio_semantic_data(
             "authoredContext": "Table, Timeline, SkillData, and BuffData references prove authored consumers, not a live playback trace.",
             "animationOwnership": "An AnimationClip callback proves that the owned clip requests the Event. If the same Event is used by multiple playable characters, its complete Wwise leaf graph is a shared selector surface and is not character-specific media ownership.",
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
+            "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
         },
     }

@@ -244,6 +244,44 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(custom_component["triggerCustomState"], "panel_open")
             self.assertEqual(custom_component["componentIndex"], 2)
 
+    def test_collects_exact_projectile_lifecycle_sound_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            path = root / "data/gameplay/projectiles.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({
+                "entries": [{
+                    "key": "StreamingAssets:projectile_chr_test:42",
+                    "id": "projectile_chr_test",
+                    "source": {
+                        "root": "StreamingAssets",
+                        "pathId": "42",
+                        "jsonPath": "export_full/recovered/projectile_chr_test.json",
+                    },
+                    "template": {
+                        "activeSkillIds": ["chr_test_skill"],
+                        "passiveSkillIds": [],
+                    },
+                    "sounds": {
+                        "launchSound": {"value": -2, "hex": "0xfffffffe"},
+                        "loopSound": {"value": 0, "hex": "0x00000000"},
+                        "hitSound": {"value": 123, "hex": "0x0000007b"},
+                    },
+                }],
+            }), encoding="utf-8")
+
+            contexts = audio_semantics.collect_projectile_contexts(root)
+
+            self.assertEqual(set(contexts), {"#0xfffffffe", "#0x0000007b"})
+            launch = contexts["#0xfffffffe"][0]
+            self.assertEqual(launch["kind"], "projectileSoundField")
+            self.assertEqual(launch["soundField"], "launchSound")
+            self.assertEqual(launch["triggerPhase"], "launch")
+            self.assertEqual(launch["eventHash"], 0xFFFFFFFE)
+            self.assertEqual(launch["authoredSkillIds"], ["chr_test_skill"])
+            self.assertEqual(launch["skillOwnershipStatus"], "projectileTemplateReferenceOnly")
+            self.assertEqual(launch["runtimeActivationStatus"], "projectileLifecycleExecutionNotObserved")
+
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)

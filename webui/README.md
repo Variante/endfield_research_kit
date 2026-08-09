@@ -109,6 +109,11 @@ from per-entity `InteractiveData` component overrides. Both expose exact
 lifecycle/custom state, identity, source path, and Event evidence; global audio
 policy adds entity-init and enter/exit state-mask Event mappings. These are
 authored state-entry requests, not live traces or Wwise SetState operations.
+Projectile contexts expose each exact nonzero launch, loop, reach, hit, block,
+finish, or proximity-sizzle Event field with projectile identity and source
+PathID. Skill ids stored by the projectile remain template references rather
+than proof that a displayed skill spawned it; lifecycle execution and Wwise
+branch selection remain unresolved.
 
 ## Runtime overrides
 

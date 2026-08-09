@@ -180,6 +180,14 @@ the state in a captured session. `AudioGlobalConfig` adds 486 exact global
 init, entity-init, audio-state-transition, and music/lifecycle Event contexts;
 state masks are high-level engine lifecycle conditions, not Wwise SetState
 operations.
+
+Projectile audio preserves seven exact uint32 Wwise Event slots per decoded
+projectile: launch, loop, reach, hit, block, finish, and proximity sizzle. The
+current 265 nonzero field occurrences cover 123 Events; 96 previously
+context-free playable Events now gain 343 possible leaves. Projectile identity,
+source PathID, field/phase, and exact template SkillData references are retained,
+but the skill reference proves projectile configuration only. Runtime spawn,
+lifecycle execution, and Wwise branch selection remain unobserved.
 Gameplay audio also consumes recovered Unity `AnimationClip.m_Events` rows for
 the exact `PostAudioEvent`, `PostAudioEventAdvance`,
 `PostAudioEventAtPosition`, and `OnCustomFootStep` callbacks. The callback

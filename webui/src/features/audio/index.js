@@ -63,6 +63,7 @@
       contextExactSkillTrigger: "Exact skill-config Event reference",
       contextInferredSkillTrigger: "Inferred skill ownership",
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
+      contextProjectileTrigger: "Projectile lifecycle sound",
       contextInteractiveTrigger: "Interactive object trigger",
       contextGlobalLifecycle: "Global audio lifecycle",
       contextAuthoredConfig: "Authored config",
@@ -156,6 +157,7 @@
       contextExactSkillTrigger: "\u7cbe\u786e\u6280\u80fd\u914d\u7f6e Event \u5f15\u7528",
       contextInferredSkillTrigger: "\u63a8\u65ad\u6280\u80fd\u5f52\u5c5e",
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
+      contextProjectileTrigger: "\u6295\u5c04\u7269\u751f\u547d\u5468\u671f\u97f3\u6548",
       contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
       contextAuthoredConfig: "\u914d\u7f6e\u8868",
@@ -299,6 +301,7 @@
     exactSkillTrigger: "contextExactSkillTrigger",
     inferredSkillTrigger: "contextInferredSkillTrigger",
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
+    projectileTrigger: "contextProjectileTrigger",
     interactiveTrigger: "contextInteractiveTrigger",
     globalLifecycle: "contextGlobalLifecycle",
     authoredConfig: "contextAuthoredConfig",
@@ -336,7 +339,7 @@
   }
 
   function contextGroup(kind) {
-    if (["characterSkill", "enemySkill", "buffPlaySoundAction"].includes(kind)) return "gameplay";
+    if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation"].includes(kind)) return "animation";
     if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash"].includes(kind)) return "authoredConfig";
@@ -358,6 +361,7 @@
       if (context.triggerBindingStatus === "exactSkillConfig") tags.add("exactSkillTrigger");
       else if (context.triggerBindingStatus === "inferredSkillConfigOwner") tags.add("inferredSkillTrigger");
       if (Number(context.triggerPlaySoundActionCount || 0) > 0) tags.add("authoredPlaySoundAction");
+      if (context.kind === "projectileSoundField") tags.add("projectileTrigger");
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(context.kind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash"].includes(context.kind)) tags.add("globalLifecycle");
     }
@@ -369,7 +373,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "animation", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "interactiveTrigger", "globalLifecycle",
+        "sharedPlayableAnimation", "footstepSystem", "projectileTrigger", "interactiveTrigger", "globalLifecycle",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -1326,6 +1330,14 @@
     if (context?.sourceOffset !== undefined) parts.push(`source offset 0x${Number(context.sourceOffset).toString(16)}`);
     if (context?.stateDirection) parts.push(`${context.stateDirection} state mask ${context.audioStateMask ?? "?"}`);
     if (context?.description) parts.push(context.description);
+    if (context?.projectileId) parts.push(`projectile ${context.projectileId}`);
+    if (context?.soundField) parts.push(`${humanize(context.soundField)} / ${humanize(context.triggerPhase || "")}`);
+    if (context?.eventHash !== undefined) parts.push(`Event 0x${Number(context.eventHash).toString(16).padStart(8, "0")}`);
+    if (context?.runtimeActivationStatus) parts.push(humanize(context.runtimeActivationStatus));
+    const authoredSkillIds = asArray(context?.authoredSkillIds).filter(Boolean);
+    if (authoredSkillIds.length) parts.push(`projectile template skills: ${authoredSkillIds.length === 1 ? authoredSkillIds[0] : `${authoredSkillIds[0]} +${authoredSkillIds.length - 1}`}`);
+    if (context?.skillOwnershipStatus) parts.push(humanize(context.skillOwnershipStatus));
+    if (context?.sourceJsonPath) parts.push(context.sourceJsonPath);
     const sourcePaths = asArray(context?.sourcePaths).filter(Boolean);
     if (sourcePaths.length) parts.push(sourcePaths.length === 1 ? sourcePaths[0] : `${sourcePaths[0]} +${sourcePaths.length - 1}`);
     if (context?.triggerBindingStatus) parts.push(humanize(context.triggerBindingStatus));
