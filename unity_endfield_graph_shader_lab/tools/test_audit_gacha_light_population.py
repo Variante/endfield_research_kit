@@ -30,6 +30,43 @@ self.m_phase.m_roomObjItem.view.sceneLight4Rarity.gameObject:SetActive(rarity <=
 """
 
 
+def native_cull_fixtures() -> tuple[dict, dict, dict, list[dict]]:
+    native = {
+        "status": (
+            "native candidate producer substantially source-closed; scheduled generic "
+            "cull-view internals remain bounded open"
+        )
+    }
+    view = {
+        "nativeProof": {
+            "fallbackMode": {
+                "useFallbackLightCullingOnSourceClosedShippedRoute": False
+            },
+            "occlusion": {"addCullViewDimensions": [0, 0]},
+        },
+        "strongestExactOutput": {
+            "authoredRoomMaximumContributionCount": 11,
+            "excludedAuthoredRoomRows": ["Spot Light (20)"],
+            "remainingAuthoredRoomOrderIsExactSubsequenceOf": AUDIT.ROOM_SURVIVOR_SUBSEQUENCE,
+        },
+        "noRuntimeLaunches": {
+            "endfieldLaunched": False,
+            "unityLaunched": False,
+            "retailModuleLoaded": False,
+            "processAttached": False,
+        },
+    }
+    selected = {
+        "strongestExactOutput": {
+            "genericFlagMaskGateClosedForAll12": True,
+            "guaranteedAbsent": ["Spot Light (20)"],
+            "remainingStrictRelativeOrderIfAdmitted": AUDIT.ROOM_SURVIVOR_SUBSEQUENCE,
+        },
+        "noRuntimeLaunches": view["noRuntimeLaunches"],
+    }
+    return native, view, selected, [{"name": "Spot Light (20)"}]
+
+
 class GachaLightPopulationAuditTests(unittest.TestCase):
     def test_successful_lua_gate(self) -> None:
         result = AUDIT.validate_lua_contract(GOOD_LUA, "fixture.lua")
@@ -57,6 +94,21 @@ class GachaLightPopulationAuditTests(unittest.TestCase):
                 GOOD_LUA.replace("uiModelMono:InitLightFollower(childTrans)", ""),
                 "missing_follower.lua",
             )
+
+    def test_native_cull_boundary_success(self) -> None:
+        result = AUDIT.validate_native_cull_boundary(*native_cull_fixtures())
+        self.assertEqual(result["knownAuthoredSurvivorUpperBound"], 17)
+        self.assertFalse(result["gachaOcclusionActive"])
+
+    def test_native_cull_wrong_exclusion_reports_expected_and_actual(self) -> None:
+        native, view, selected, room_rows = native_cull_fixtures()
+        view["strongestExactOutput"]["excludedAuthoredRoomRows"] = []
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=gacha_light_population; check=room_exact_exclusion;.*"
+            r"expected=\['Spot Light \(20\)'\]; actual=\[\]",
+        ):
+            AUDIT.validate_native_cull_boundary(native, view, selected, room_rows)
 
 
 if __name__ == "__main__":

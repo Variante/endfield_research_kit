@@ -56,9 +56,14 @@ NPC archetypes are imported as labeled source kits.
   truncate the list again. Installed Gacha Lua plus decoded Zhuangfy and room
   prefabs now close the known authored input as 6 `light_overview` lights + 12
   `SceneLight6Rarity` lights: 3 type 0, 15 type 2, zero authored cookies, one
-  shadow request, and four bone followers. Only an authorized target-frame
-  array capture can settle runtime/custom carry-in, native rejection, live
-  survivor order, and final retail `lightCount`.
+  shadow request, and four bone followers. The shipped Gacha cull route uses
+  the normal core with fallback and occlusion disabled; its settled camera
+  sample rejects `Spot Light (20)` independently of aspect, tightening the
+  known authored survivor upper bound to 17. The other room AABB outcomes
+  still depend on live horizontal planes/final aspect, while character-light
+  culling and unrelated runtime lights remain open. Only an authorized
+  target-frame array capture can settle the live survivor order and final
+  retail `lightCount`.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -256,10 +261,11 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Recover the retail light-cull survivor list from the source-closed 18-row
-   Zhuangfy authored population, preserving runtime/custom carry-in and native
-   rejection, then populate exact shadow, depth, GBuffer, irradiance,
-   non-empty cookie, and VisibilitySH inputs.
+1. Recover the remaining aspect-dependent room AABB and character-light cull
+   outcomes, then the retail survivor list from the source-closed 18-row input
+   / 17-row upper bound while preserving runtime/custom carry-in; populate
+   exact shadow, depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH
+   inputs afterward.
 2. Validate selected paths against accepted retail captures.
 3. Extend exact texture/mip and material-variant support only where visible.
 4. Generalize animation from a second exact Avatar/clip oracle.
