@@ -159,7 +159,7 @@ namespace EndfieldGraphShaderLab
             EnsureZeroFallbackBuffer();
         }
 
-        internal void PrepareCamera(
+        internal bool PrepareCamera(
             Camera camera,
             int width,
             int height,
@@ -199,7 +199,7 @@ namespace EndfieldGraphShaderLab
                 BindRetailConstantsFallback(commandBuffer);
                 BindRetailLightCookieDataFallback(commandBuffer);
                 BindFallback(commandBuffer);
-                return;
+                return false;
             }
             if (camera.orthographic)
             {
@@ -208,7 +208,7 @@ namespace EndfieldGraphShaderLab
                 BindRetailConstantsFallback(commandBuffer);
                 BindRetailLightCookieDataFallback(commandBuffer);
                 BindFallback(commandBuffer);
-                return;
+                return false;
             }
 
             PublishRetailConstants(
@@ -227,14 +227,14 @@ namespace EndfieldGraphShaderLab
             {
                 ReportFailure("the active graphics device does not support compute shaders");
                 BindFallback(commandBuffer);
-                return;
+                return false;
             }
             if (compute == null || xyKernel < 0 || zKernel < 0)
             {
                 ReportFailure(
                     $"Resources/{ComputeResourceName}.compute or its BuildXY/BuildZ kernels are unavailable");
                 BindFallback(commandBuffer);
-                return;
+                return false;
             }
 
             width = Mathf.Max(width, 1);
@@ -251,7 +251,7 @@ namespace EndfieldGraphShaderLab
             {
                 ReportFailure(bufferFailure);
                 BindFallback(commandBuffer);
-                return;
+                return false;
             }
 
             try
@@ -262,7 +262,7 @@ namespace EndfieldGraphShaderLab
             {
                 ReportFailure("descriptor upload failed: " + exception.Message);
                 BindFallback(commandBuffer);
-                return;
+                return false;
             }
 
             float nearClip = camera.nearClipPlane;
@@ -306,7 +306,7 @@ namespace EndfieldGraphShaderLab
                 1,
                 1);
 
-            PublishCanonicalBinning(
+            bool canonicalBinningPublished = PublishCanonicalBinning(
                 commandBuffer,
                 width,
                 height,
@@ -329,16 +329,17 @@ namespace EndfieldGraphShaderLab
                     $"{SliceCount} one-unit Z slices, {requiredWordCount} uint words.");
                 loggedActivation = true;
             }
+            return canonicalBinningPublished;
         }
 
-        private void PublishCanonicalBinning(
+        private bool PublishCanonicalBinning(
             CommandBuffer commandBuffer,
             int width,
             int height,
             int recoveredLightWordCount)
         {
             if (!canonicalBinningRequested)
-                return;
+                return false;
 
             EndfieldRecoveredCanonicalBinningLayoutContract.Layout layout;
             string failure;
@@ -349,21 +350,21 @@ namespace EndfieldGraphShaderLab
                     out failure))
             {
                 ReportCanonicalBinningFailure(failure);
-                return;
+                return false;
             }
             if (layout.lightWordCount != recoveredLightWordCount)
             {
                 ReportCanonicalBinningFailure(
                     "light segment size disagrees with the installed layout: " +
                     $"expected {layout.lightWordCount}, actual {recoveredLightWordCount}");
-                return;
+                return false;
             }
             if (canonicalBinningCompute == null || canonicalBinningKernel < 0)
             {
                 ReportCanonicalBinningFailure(
                     $"Resources/{CanonicalBinningComputeResourceName}.compute or " +
                     "BuildCanonicalCombined is unavailable");
-                return;
+                return false;
             }
 
             try
@@ -410,7 +411,7 @@ namespace EndfieldGraphShaderLab
                 ReportCanonicalBinningFailure(
                     "combined raw-buffer publication failed: " + exception.Message);
                 commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 0.0f);
-                return;
+                return false;
             }
 
             if (!loggedCanonicalBinningActivation)
@@ -423,6 +424,14 @@ namespace EndfieldGraphShaderLab
                     $"combined={layout.totalWordCount} words.");
                 loggedCanonicalBinningActivation = true;
             }
+            return true;
+        }
+
+        internal void DisableCanonicalPublication(CommandBuffer commandBuffer)
+        {
+            if (commandBuffer == null)
+                throw new ArgumentNullException(nameof(commandBuffer));
+            commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 0.0f);
         }
 
         private void EnsureCanonicalBinningBuffer(int wordCount)

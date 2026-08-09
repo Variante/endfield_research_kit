@@ -1211,7 +1211,7 @@ textarea:focus-visible,
 }
 .conv-controls label { cursor: pointer; }
 
-#conv-lines { padding: 16px 24px 80px; max-width: 880px; }
+#conv-lines { padding: 16px 24px 80px; max-width: none; }
 
 #conv-related {
   margin: 8px 24px 0;
@@ -1246,7 +1246,7 @@ textarea:focus-visible,
 
 #conv-trigger {
   margin: 8px 24px 0;
-  max-width: 880px;
+  max-width: none;
 }
 .story-trigger-panel {
   padding: 12px 14px;
@@ -5013,14 +5013,14 @@ body.is-resizing-filter * {
 }
 
 .gameplay-token-icon.gameplay-image-preview.inline-image-tag {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  line-height: 0;
 }
 
-/* Skill icons use the game's four semantic skill families rather than the
-   square material/talent treatment. White source glyphs need a solid,
-   type-specific disc behind them to remain legible at a glance. */
+/* White skill glyph textures are centered on a solid disc. Normal Skill,
+   Ultimate, and Combo colors come directly from the current game's
+   CharTypeTable.json; Normal Attack remains neutral. */
 .gameplay-token-icon.gameplay-attack-skill-icon {
   border-width: 2px;
   border-radius: 50%;
@@ -5034,7 +5034,7 @@ body.is-resizing-filter * {
 }
 
 .gameplay-token-icon.gameplay-attack-skill-normal-skill {
-  --gameplay-skill-rgb: 61, 116, 120;
+  --gameplay-skill-rgb: 136, 136, 136;
 }
 
 .gameplay-token-icon.gameplay-attack-skill-ultimate {
@@ -5045,14 +5045,35 @@ body.is-resizing-filter * {
   --gameplay-skill-rgb: 177, 104, 36;
 }
 
+.gameplay-token-icon.gameplay-attack-skill-icon.gameplay-attack-skill-element-cryst {
+  --gameplay-skill-rgb: 33, 198, 208;
+}
+
+.gameplay-token-icon.gameplay-attack-skill-icon.gameplay-attack-skill-element-fire {
+  --gameplay-skill-rgb: 255, 98, 61;
+}
+
+.gameplay-token-icon.gameplay-attack-skill-icon.gameplay-attack-skill-element-natural {
+  --gameplay-skill-rgb: 158, 220, 35;
+}
+
+.gameplay-token-icon.gameplay-attack-skill-icon.gameplay-attack-skill-element-physical {
+  --gameplay-skill-rgb: 136, 136, 136;
+}
+
+.gameplay-token-icon.gameplay-attack-skill-icon.gameplay-attack-skill-element-pulse {
+  --gameplay-skill-rgb: 255, 192, 0;
+}
+
 .gameplay-token-icon img {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: auto;
   object-fit: contain;
-  object-position: center;
+  object-position: 50% 50%;
 }
 
 .gameplay-token-icon.is-missing {

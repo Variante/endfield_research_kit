@@ -30,8 +30,10 @@ Primary outputs:
 export_full/recovered/AnimeStudio-cli/
 export_full/structured/Audio/
 webui/data/assets/index.json
+webui/data/assets/gameplay_refs.json
 webui/data/assets/story_media.json
 webui/data/assets/videos.json
+webui/data/lang/<LANG>/gameplay/sound_effects.json
 reports/assets/
 reports/source_graph/
 ```
@@ -57,6 +59,8 @@ unique binding.
 - WebUI asset and Story-media indexes.
 - Renderable asset-entity grouping for many models and prefabs.
 - Material, texture, shader, controller, animation, audio, and video links.
+- Compact Gameplay-to-image/model links and playable Wwise-event media
+  candidates for projectiles, character skills, and bounded enemy ownership.
 - Exact character post-model enumeration and baseline prefab generation.
 - Selected static world placements and gameplay/entity associations.
 
@@ -69,6 +73,8 @@ unique binding.
 - Modular NPC and VFX composition.
 - World visibility/spawn policy.
 - Broader exact audio/video trigger ownership.
+- Runtime-selected Wwise switch/random media and stronger inferred
+  skill/enemy sound ownership.
 
 The goal is an evidence-first catalog, not a claim that every gameplay id has
 one uniquely reconstructed renderable prefab.

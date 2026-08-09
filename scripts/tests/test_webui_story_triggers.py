@@ -185,12 +185,15 @@ for (const [key, category] of [
         self.assertIn('t("timelineEmbeddedActivationRoute")', source)
         self.assertIn("route.missionShellIds", source)
         self.assertIn("route.actionChain", source)
+        self.assertIn("route.controlDecisions", source)
+        self.assertIn("missionTimelineActivationHtml", source)
+        self.assertIn("route?.missionShellOwnership", source)
         self.assertIn("route.localTriggerVolumeContext", source)
         self.assertIn('t("timelineEmbeddedTriggerVolume")', source)
         self.assertIn("volume.waitSrvRes", source)
         self.assertIn("route.relatedOriginalFiles", source)
         self.assertIn(
-            "None proves the activating quest, selected branch, or cross-Timeline order.",
+            "A conditional path proves the authored route, not that its case was selected at runtime; parallel siblings remain unordered.",
             source,
         )
 

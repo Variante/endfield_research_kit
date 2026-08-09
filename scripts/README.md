@@ -1,8 +1,8 @@
 # Scripts
 
 Maintained scripts support the static WebUI, installed-data export, update
-tracking, Story recovery, source graph, and Unity character lab. Prefer the
-root wrappers for normal use.
+tracking, Story recovery, source graph, and Unity character lab. Use the root
+wrappers for normal work; call Python builders directly for focused iteration.
 
 ## Root workflows
 
@@ -10,237 +10,67 @@ root wrappers for normal use.
 | --- | --- |
 | First setup | `.\setup_first_time.bat` |
 | Rebuild from current `export_full/` | `.\export.bat` |
-| Refresh from installed game | `.\export.bat --export-from-game` |
+| Refresh Story from the installed game | `.\export.bat --export-from-game` |
 | Refresh Story and assets | `.\export.bat --export-from-game --with-assets` |
-| Story/Mission iteration | `.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference` |
-| Mission data only | `.\export.bat --mission-pipeline-data-only` |
+| Story/Mission recovery loop | `.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference` |
+| Mission Pipeline data only | `.\export.bat --mission-pipeline-data-only` |
 | Asset/audio maintenance | `.\export_assets.bat` |
 | Build Updates feed | `.\build_updates.bat` |
 | Apply installed-game patch | `.\build_updates_by_patch.bat` |
 | Serve WebUI | `python serve.py` |
 | Package WebUI | `python scripts\pack_webui.py` |
 
-Root wrappers load defaults from `endfield_paths.bat`. Explicit path flags
-override those defaults for one run.
+Root wrappers load repeated local defaults from `endfield_paths.bat`; explicit
+path flags override them for one run.
 
 ## Export rules
 
 - `export.bat` reuses and freshness-checks `export_full/` by default.
 - Use `--export-from-game` only for an intentional installed-game refresh.
-- Add `--with-assets` when asset indexes and CN audio must refresh too.
-- Use `--full-source-graph` only for exhaustive Unity-object/PathID work.
-- Use `--mission-pipeline-data-only` only when generated Story evidence is
-  already current.
-- Canonical `export.bat` runs refresh and validate the source Story gap queue
-  after current partial-order and coverage reports are published, before
-  Mission Pipeline recovery cards are projected. Data-only runs reuse it.
-- Mission Pipeline builds also ensure the protocol registry audit matches the
-  exact installed `GameAssembly.dll` and metadata hashes. Its state-update
-  census discovers message shapes, typed handlers, runtime field offsets, and
-  lifecycle argument flow generically. Its quest-start audit extends the same
-  decoder with typed call-return provenance, structurally discovers
-  `QuestInfo`, and compares native field reads with metadata topology fields;
-  stale, invalid, or missing reports are rebuilt. The whole-client topology
-  census re-decodes direct-call candidates inside metadata method bounds and
-  uses general register plus entry-relative stack-slot provenance to classify
-  every predecessor, flow-index, and main-path consumer. It fails closed on
-  an active predecessor reader, a non-sort flow consumer, or any
-  topology-driven lifecycle call.
-- The same state census constrains native control flow by the discovered packet
-  enum field. It currently validates `Processing -> StartQuest` and
-  `Completed -> SucceedQuest` for the exact server-supplied `questId`, then
-  projects that one corpus contract onto every authored fork arm. Message IDs,
-  addresses, enum values, and quest IDs are recovered inputs rather than
-  per-object rules; server-only selection and exclusivity remain unresolved.
-- The same solver follows corpus-discovered Boolean field values into native
-  zero/nonzero branches. It resolves the quest-enable packet control and the
-  current runtime pause field from metadata, validates the complete four-route
-  matrix (`StartQuest`, `PauseQuest`, or `DisableQuest`), and reports serialized
-  but unread controls. Mission IDs, quest IDs, packet IDs, native addresses,
-  and object allowlists are not discovery inputs.
-- The same corpus-wide census recovers `QuestType` and `QuestShowMode` enum
-  values and follows both `QuestInfo` fields through every verified direct
-  getter caller. Its field-driven branch analyzer validates the sole
-  `Optional` comparison as an `ObjectiveShowData.optional` write and both
-  post-lifecycle `Block` comparisons as `EventManager.SendGlobal` notification
-  corridors. It fails closed if visibility reaches lifecycle code, a quest-type
-  read interleaves with state application, or a bounded native back-edge could
-  revisit lifecycle calls. None of these paths selects a successor arm.
-- The protocol audit also recovers the `QuestAction` enum and validates every
-  current AOT fallback dispatcher and pending replay into `RunQuestAction`.
-  `FailQuest` and `SucceedQuest` are the complete direct `SafeRunQuestAction`
-  caller set; the shared pending list is the only replay carrier. The complete
-  bounded census currently finds no `OnStartClientAction` producer, so authored
-  start rows are published as definition evidence and never order edges. The
-  partial-order builder may then join only same-quest objective Story
-  completion and native-typed succeed Story actions. This is a corpus rule,
-  not a mission/Story allowlist; reverse strong conflicts fail closed, and
-  success occurrence or successor selection is not inferred.
-- The protocol audit structurally discovers the ActionBase extra-thread list
-  and scheduler, then scans every direct child `Execute` body for typed child
-  fields or typed collection members flowing into that scheduler/list. New
-  writer shapes fail closed. Mission Pipeline uses the admitted current-build
-  class names to label parallel `actions[i]` edges; array position never becomes
-  chronology, and IFix substitution remains outside the static proof.
-- The same hash-locked protocol audit discovers the generic LevelScript start
-  policy from metadata method signatures, enum constants, and decoded native
-  branch targets. It validates that an `Active`, unfinished
-  `SameWithActive` script reaches the common internal `PreStart` transition
-  without accepting any level/script/object id as a discovery input. This
-  closes the start-policy question, not the mission/server source of `Active`
-  state or cross-Story ordering.
-- The audit also resolves `ManualStartLevelScript` fields through the current
-  MetadataRegistration type table and validates the native
-  `Execute -> TryGetLevelScript -> ManualStart -> PreStart` path. Serialized
-  controls using the metadata-defined `CURRENT_LEVEL_ID` and
-  `CURRENT_SCRIPT_ID` operands are therefore recovered as hosting-script
-  self-targets for every matching row; no scene or script id participates in
-  discovery. Promotion still requires an authored event-header link and adds
-  no mission ownership or cross-Story order.
-- `story_recovery/build_nested_managed_identity_carrier_census.py` follows the
-  installed MetadataRegistration custom-type graph with cycle-safe shortest-
-  path traversal to a fixed point; it has no per-object ids or arbitrary depth
-  cutoff. Shared runtime Entity/component and MissionRuntime aggregate paths
-  remain non-owning unless an exact serialized instance joins their values.
-  The validator scans both complete original-object indexes and fails closed on
-  a new exact type label, an incomplete index, or an unclassified path family;
-  truncated scalar projections stay visible as a bounded limitation.
-- `story_recovery/build_native_cross_system_consumer_census.py` maps every
-  current IL2CPP method pointer and scans both executable `GameAssembly.dll`
-  sections for direct callers crossing MissionSystem, DynamicScene,
-  LevelScript, or Story API families. Discovery uses no content ids, rejects
-  ambiguous shared generic pointers, and fails closed on new call shapes or
-  changed class counts. From every mission-state/DynamicScene consumer it also
-  follows unambiguous gameplay calls to a fixed point, reviews decoded indirect
-  call shapes, and validates the metadata field/native writer-reader bridge
-  through the deferred `BeforeTick` availability refresh. A second corpus-
-  derived pass discovers the full managed mission/quest identity type surface,
-  then audits all cross-family callers and method signatures against
-  LevelScript and Story. The same hash-locked pass resolves every callable
-  field type through MetadataRegistration, discovers callable-parameter entry
-  methods without member-name allowlists, and scans every direct native caller
-  of those bindings. It distinguishes
-  mission-controlled DynamicScene availability from shared geometry, global
-  loading, Story visual context, and family-local delegate notifications; none
-  creates ownership or order.
-- A second general activation contract inventories every direct current-client
-  `ManualStart` caller, validates the public state-notify application chain,
-  and recovers the generic client request lifecycle. Exact metadata schemas,
-  runtime field offsets, and decoded call sites prove `ManualStart` flag ->
-  `PreStart` -> typed CS start request -> `PreStartActionRunning`; the runtime
-  true/false request sites are both inside `UpdateRuntimeState`. The public
-  network sender implementations each call `BaseNetworkSystem.SendMsg`, but
-  have zero direct callers in the current AOT corpus, so indirect/IFix/server
-  selection remains outside the contract.
-  The same contract generically validates receiver timing: `Setup` registers
-  the serialized trigger graph, and `UpdateRuntimeState` enables
-  `TriggerActiveDuring.Active` while advancing from `ActiveBegin`. Mission
-  Pipeline joins exact receiver header ids back to the original LevelScript;
-  it never uses scene ids or filenames as rules. Active-phase receivers do not
-  require the later ManualStart/Start transition. The same decoded state
-  machine separates `SubLevelScript` from every other metadata-defined type.
-  Joining the exact LevelData brief type proves that all 95 current receivers
-  use `Enabled -> UpdateWithinActiveArea -> PreActive -> active=true ->
-  WaitForStateActive`; no script-id exception exists. A bounded structural
-  MemoryPack scan also decodes each script's top-level active-shape list without
-  ids or filenames (86 sphere / 9 box), while the installed binary validates
-  the active/outside-list state transitions. A complete direct-call census also
-  separates the full-scene `SC_SELF_SCENE_INFO`/`LEVEL_SCRIPT_INFO` snapshot
-  path from incremental state notifications and proves both public-state values
-  are server-supplied; the other two direct setters only initialize state zero.
-  The server-side selection rule, player position and playthrough-specific area
-  result, server acceptance, event occurrence, mission ownership, and Story
-  order remain unknown.
-  The receiver frontier also performs a schema-key-driven census of every JSON
-  record under the selected original structured-data root. It accepts only
-  reviewed exact script-identity plus mission/quest-identity pairs in the same
-  record, currently `bindScriptId + dungeonMissionId`; any new pair shape,
-  parse failure, or missing corpus fails publication with a bounded diagnostic.
-  Filenames, neighboring records, OCR, and overrides never create an edge.
-  It proves that `InteractiveLogicChallengeStartPoint` resolves the typed
-  `SubGameInstanceData` row by `m_subGameId`, reads `bindScriptId`, looks up the
-  LevelScript, and calls `ManualStart`. Exact SubGame bindings are therefore
-  interaction-start carriers. The public packet contains only scene, script,
-  state, and completion fields, so neither path supplies mission ownership,
-  server branch selection, or Story order.
-- LevelScript task recovery is corpus-driven rather than keyed to individual
-  scenes. The builder validates the installed binary/protobuf task contract,
-  joins every decoded task condition to its exact `lt:p` and `lt:mp` LevelData
-  properties, and scans only actual original MissionRuntime filenames for
-  possible foreign-key tokens. Scene/script/task identity proves server-backed
-  task lifecycle, but does not supply mission ownership or Story order.
-  Mission objective conditions carrying the complete tuple are also joined by
-  field shape to the original nested `ScriptTaskExtraInfoTable` and exact
-  `LevelScriptData` file. Missing task rows or files fail with mission, quest,
-  tuple, source path, expected/actual state, and source hashes.
-- Mission Pipeline resolves exact native receiver playback gates generically
-  through serialized `ActionHeader._validate` getter references. The resolver
-  walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,
-  missing, cyclic, and malformed children fail closed instead of receiving
-  object-specific rules.
-- Mission-state Story alternatives are projected corpus-wide from exact typed
-  `CompareMissionState` / `GetMissionState` control paths. Complete serialized
-  arms may cross nominal mission Story groups, but remain non-owning and add no
-  chronology edge; original LevelScript, MissionRuntime, binary, and metadata
-  files are attached with hashes.
-- Native branch grouping is anchor-based rather than mission-filtered: once an
-  exact event/branch contains a mission Story file, every exact Story-bearing
-  arm is retained, including nominally external files. Split fan-outs require
-  the current binary scheduler contract; all such cross-boundary rows remain
-  non-owning and non-ordering and carry hashed original files.
-- Story-anchored native branches are also expanded generically from the
-  runtime-active original LevelScript action map. The typed control schema
-  exposes every Split/IfElse/Switch slot, including active non-Story actions,
-  inactive targets, runtime terminals, arm-exclusive actions, and shared
-  downstream nodes. Runtime-mapping or topology mismatches fail closed with
-  bounded source/hash diagnostics; no mission/object allowlist is used.
-- Source-order publication is corpus-wide and runs again after recovery shells
-  are created. Missing Story namespaces receive an aggregate shell only when
-  their generated Story bundle explicitly declares variant mission bundles,
-  every variant resolves to an existing pipeline mission, and each mission is
-  backed by a hash-checked original MissionRuntime file. The publication gate
-  fails closed if any recovered native branch placement remains unattached;
-  aggregates and offline shells never imply ownership or server branch choice.
-- Story-branch file attachment walks the evidence shape generically, retaining
-  normalized `relatedOriginalFiles` as well as producer `sourceFiles` and
-  validating every cited original hash. This can expose additional
-  graph-neutral Story-branch shells without a mission/object allowlist.
-- MissionRuntime-to-receiver context joins are likewise corpus-driven and
-  require the exact typed `(mapId, scriptId)` operand from the recursive
-  objective condition tree. Flat script-id summaries cannot attach a mission.
-  Exact matches publish related files as context only and never create
-  ownership, activation, property-writer, or Story-order edges.
-- Authored quest forks are recovered generically from normalized
-  MissionRuntime predecessor graphs. The builder classifies main/auxiliary
-  arms, guards, terminals, and shortest common descendants, attaches the exact
-  hashed source file, and fails closed on unresolved arms. Story projections
-  resolve variant MissionRuntime forks through globally unique quest identity,
-  not filename conventions or mission-specific mappings. Each arm also expands
-  to its sibling-exclusive reachable quest corridor and publishes every typed
-  quest Story relation plus hash-checked original source files. Action types
-  require the complete installed-binary ActionBase formatter audit; context
-  relations remain non-owning, and OCR/manual order never participate.
-- Shipped-Lua Story playback is likewise corpus-driven: the Lua consumer audit
-  enumerates typed `GameAction` calls, exact literals, and simple
-  `Tables.<name>` row-field flows. A table field resolves only when the current
-  original table has one possible non-empty value; mission/quest ownership is
-  admitted only from the same resolved row. Mission Pipeline validates Lua and
-  table hashes and admits no case-folded match without a matching
-  installed-binary case-resolution audit. The cinematic-queue runtime audit
-  structurally discovers the native base/handle/payload contract, mapped
-  one-handle dispatchers, and enqueue edge; handle branches are one runtime
-  family rather than unresolved authored Story references.
-- Reuse Timeline/reference outputs only when their original inputs did not
-  change.
-- The direct Story builder can take several minutes; allow 10–15 minutes for
+- Add `--with-assets` when image/model/material indexes and CN audio must also
+  refresh. Combining both flags uses one AnimeStudio export.
+- Use `--full-source-graph` only for exhaustive Unity-object/PathID work. The
+  default graph retains only exact original AssetMap rows consumed by WebUI
+  material, shader, texture, and FMV edges.
+- Use `--mission-pipeline-data-only` only when generated Story bundles and
+  evidence are current.
+- Reuse Timeline order and localized reference outputs only when their source
+  inputs did not change; reference reuse is rejected with `--export-from-game`.
+- The default AnimeStudio type-job mode is `auto`: broad Story JSON families
+  run sequentially in isolated processes while map-filtered asset conversion
+  remains sharded. Reduce `--animestudio-jobs` when memory is constrained.
+- Direct Story builds can take several minutes. Allow 10–15 minutes for
   multi-language or forced recovery runs.
+
+During Story recovery, batch at least three independently validated edits or a
+coherent 30–60 minute work session before a canonical Mission Pipeline build.
+Prefer focused tests, direct probes, and data-only builds during the batch.
 
 ## Main WebUI builders
 
+| Builder | Output or purpose |
+| --- | --- |
+| `verify_export_freshness.py` | Validate `export_full/` against installed data |
+| `story_builder/refresh_evidence.py` | Refresh Story evidence inputs |
+| `story_builder/source_links.py` | Rebuild original-source links |
+| `story_builder/build.py` | Story, mission, and Text payloads |
+| `build_character_data.py` | Characters identity catalog |
+| `build_mission_pipeline_data.py` | Experimental mission/quest evidence view |
+| `build_gameplay_data.py` | Gameplay base index |
+| `build_gameplay_asset_refs.py` | Compact Gameplay-to-Assets sidecar |
+| `build_projectile_data.py` | Exact projectile behavior payload |
+| `build_combat_relationships.py` | Debug-only combat relationships |
+| `build_economy_data.py` | Economy semantic data |
+| `build_world_data.py` | World semantic data |
+| `build_presentation_data.py` | Presentation semantic data |
+| `build_assets.py` | Assets, Story media, and Gameplay asset indexes |
+| `build_audio.py` | Audio decode/relink and Gameplay SFX sidecar |
+| `pack_webui.py` | Static package and optional media archives |
+
+Typical focused commands:
+
 ```bat
 python scripts\verify_export_freshness.py
-python scripts\story_builder\refresh_evidence.py
-python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\build_character_data.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
@@ -248,28 +78,37 @@ python scripts\build_gameplay_data.py
 python scripts\build_gameplay_asset_refs.py --language CN
 python scripts\build_projectile_data.py
 python scripts\build_combat_relationships.py --languages CN
-python scripts\build_economy_data.py --languages CN --default-language CN
-python scripts\build_world_data.py --languages CN --default-language CN
-python scripts\build_presentation_data.py --languages CN
 python scripts\build_assets.py
 python scripts\build_audio.py
 python scripts\pack_webui.py
 ```
 
-`build_projectile_data.py --require-exact` fails when any emitted projectile
-does not consume its complete managed-reference boundary. The compact payload
-preserves authored projectile behavior and confidence metadata; it does not
-promote identifier similarity into proven runtime spawn ownership. Normal
-projectile rebuilds reuse exact hash/media links from the current CN audio
-index; `build_audio.py` refreshes those links from the Wwise banks and writes
-the compact per-language Gameplay SFX sidecar.
+`build_projectile_data.py --require-exact` fails if an emitted projectile does
+not consume its validated managed-reference boundary. Missing playable-skill
+ownership remains explicit; identifier similarity is not promoted to a runtime
+spawn proof.
 
-Story helpers live under `scripts/story_builder/`. Recovery audits live under
-`scripts/story_recovery/` and are not all part of the canonical export.
+## Story recovery
 
-For the current Bilibili Story-order source, download the season into its
-isolated intake directory and run the existing OCR sampler through the pinned
-wrapper:
+Maintained Story components live in `scripts/story_builder/`; focused audits
+live in `scripts/story_recovery/` and are not all part of `export.bat`.
+
+High-value entry points:
+
+- `dialog_registry.py`: DialogIdTable registration.
+- `video_bindings.py`: narrative video definitions and attachments.
+- `timeline_recovery.py` and `timeline_action_evidence.py`: Timeline order,
+  action, and control evidence.
+- `mission_recovery.py`: mission/quest relationships.
+- `build_source_story_gap_queue.py`: source-only recovery queue.
+- `build_levelscript_actionbase_tag_audit.py`: hash-pinned native ActionBase
+  names.
+- `build_callserver_callback_contract.py` and
+  `build_callserver_callback_audit.py`: exact local callback graphs.
+- `build_cinematic_queue_runtime_audit.py`: native cinematic handle and
+  producer routes.
+
+For the maintained Bilibili Story-order intake:
 
 ```bat
 python scripts\download_bilibili_video.py --season-url "https://space.bilibili.com/609095014/lists/7246850?type=season" --output-dir videos\bilibili_season_7246850
@@ -278,91 +117,28 @@ python scripts\story_recovery\run_bilibili_season_ocr.py
 python scripts\story_recovery\build_gameplay_video_story_order.py --ocr-report-dir reports\gameplay_video_ocr\bilibili_season_7246850
 ```
 
-The first OCR command is a smoke test; omit `--limit` and `--limit-frames` for
-the complete season. The wrapper keeps this source's reports under
-`reports/gameplay_video_ocr/bilibili_season_7246850`; the matcher reads only
-that directory and the active Story-order override is not changed by OCR.
-
-Important Story components:
-
-- `dialog_registry.py`: DialogIdTable registration.
-- `video_bindings.py`: FMV/video definitions and attachments.
-- `timeline_recovery.py`: Timeline evidence.
-- `timeline_action_evidence.py`: typed action/control evidence.
-- `mission_recovery.py`: mission and quest relationships.
-- `build_source_story_gap_queue.py`: actionable source-only recovery queue.
-- `story_recovery/build_levelscript_actionbase_tag_audit.py`: recovers the
-  complete ActionBase MemoryPack formatter table from installed
-  GameAssembly/metadata and refreshes the compact hash-pinned runtime name
-  contract under `reports/mission_order/`.
-- `story_recovery/build_callserver_callback_contract.py` and
-  `build_callserver_callback_audit.py`: hash-pin the installed native
-  `CallServer` possible-subexecutor contract, then recover every exact
-  same-file callback-header control graph across the LevelScript corpus without
-  mission, object, or Story allowlists.
-- `story_recovery/build_cinematic_queue_runtime_audit.py`: repeatable installed
-  metadata/GameAssembly audit that structurally discovers the cinematic handle,
-  enqueue/producer call graph, and typed action-to-producer routes without
-  per-object allowlists.
-- `build_spaceship_story_content_audit.py`: exact typed spacecraft DialogTree
-  and character profile-voice non-mission classification, refreshed by
-  `refresh_evidence.py`.
+The first OCR run is a smoke test. OCR writes a proposal under generated data;
+it never edits `webui/overrides/story_order.json`.
 
 ## Characters catalog
 
-`build_character_data.py` builds the WebUI Characters (人物) page's identity
-catalog at `webui/data/lang/<LANG>/characters/index.json`. Sources:
+`build_character_data.py` combines `CharacterTable`, `NpcTable`,
+`SNSChatTable`, `TextTable`, Story actors, and recognized exported-asset
+filename families into `webui/data/lang/<LANG>/characters/index.json`.
 
-- Table rows: `TextTable` `npcName_*`, `CharacterTable`, `NpcTable`,
-  `SNSChatTable`, and the Story actor registry (`actors.json`).
-- Exported asset filenames, matched against `ASSET_MARKERS` (an ordered list
-  of regexes, most specific first): `_actor_`, `_major_npc_`/`_npc_major_`,
-  `dlg_npc_####_`, `icon_npc_[####_]`, `sns_npc_`, `_npc_animal_`, `_lod_`,
-  then a generic `_npc_<token>` fallback.
+Automatic groups use a stable canonical constituent id rather than localized
+text. Two reviewed lists prevent filename false positives:
 
-Records are grouped into one identity per matching display name; the WebUI
-then re-keys each group by the smallest constituent record id (a table/asset
-key, not localized text) so the id stays stable across language builds — see
-`canonicalGroupId` in `webui/src/features/characters/index.js`.
+- `EXCLUDED_TOKENS`: exact captured non-character tokens.
+- `EXCLUDED_FILENAME_FRAGMENTS`: non-character filename families.
 
-**Exclusions.** Filename markers are pattern-based and occasionally match
-something that isn't a character: a config/table file, a VFX material, a
-generic prop, or a UI icon whose captured "name" is really a qualifier word.
-Two allowlists in `build_character_data.py` suppress these before they become
-identities:
+Add exclusions only after tracing the exact source filenames. Rebuild the
+catalog, then remove dead ids from character overrides.
 
-- `EXCLUDED_TOKENS` — exact captured tokens known to be non-character (e.g.
-  `lodconfig`, `muzzle`, `prop`, `shared`, `terminal`, `robot`, `diffuse`).
-- `EXCLUDED_FILENAME_FRAGMENTS` — whole filename families skipped before
-  `ASSET_MARKERS` even runs, for cases where the family produces a different
-  bogus token per file (`icon_settlement_npc_bottom/left/right`,
-  `bg_blackbox_npc_1/2/...`).
-
-Add to these only after tracing a specific token back to its source
-filename(s) and confirming it isn't a character (both sets carry a comment
-recording that source). After editing either list, rebuild with
-`python scripts\build_character_data.py --languages CN` and check the
-`webui/overrides/character_merges.json` `merges`/`flagged` entries for
-references to the removed token(s) — a merge whose source id no longer
-exists after a rebuild is simply skipped (that record dropped out of
-grouping entirely, so it never reaches the merge-fold pass), but the dead
-entry stays in the file. Clean it up by hand so the file doesn't accumulate
-references to ids that can never resolve again.
-
-**Manual merges.** `webui/overrides/character_merges.json` folds identities
-the automatic name-matching left separate (typo variants, alternate
-transliterations, ...) or that the same underlying person produced under two
-different tokens. It is edited live from the Characters page UI — never by
-rebuilding — via `serve.py`'s `PUT /overrides/character_merges.json`
-endpoint:
-
-- `merges`: `{sourceId: targetId}`, both canonical (language-stable) ids. The
-  target inherits every name, evidence group, and alias from the source.
-  Cycles and self-merges are rejected server-side.
-- `flagged`: ids marked "this needs merging into something, but the target
-  isn't known yet" — surfaced as the "Flagged: needs merge" chip in the
-  Characters page's Other filter, and cleared automatically once that id is
-  actually merged.
+`webui/overrides/character_merges.json` and
+`character_name_overrides.json` are edited live by the Characters page through
+`serve.py`. Merges are additive, cycles/self-merges are rejected, and the
+`flagged` list records identities whose target is still unknown.
 
 ## Updates
 
@@ -374,29 +150,26 @@ python scripts\build_updates.py --skip-audio-updates
 python scripts\build_updates.py --refresh-previous-export-baseline
 ```
 
-Normal Updates scope includes exported Story/Text JSON, images, models, videos,
-and decoded audio. Use `--full-export-scan` only for a broad audit. Never use
-`webui/`, `reports/`, `memory/`, or `scratch/` as comparison roots.
+Normal scope includes exported Story/Text JSON, images, models, videos, and
+decoded audio. Use `--full-export-scan` only for a broad audit. Never compare
+`webui/`, `reports/`, `memory/`, or `scratch/` as game-data roots.
 
 ## Assets and audio
 
-`build_assets.py` creates the Assets tab indexes, compact Story-media lookup,
-and `webui/data/assets/gameplay_refs.json`, the bounded entity-to-image/model
-sidecar used by Gameplay. Run `build_gameplay_asset_refs.py` directly when the
-Gameplay index and broad Assets index already exist.
-`build_audio.py` writes shared audio once under
-`export_full/structured/Audio/shared/`, language voice under
-`export_full/structured/Audio/<LANG>/`, and relinks playable conversation
-audio. It also resolves non-zero projectile sound hashes through Wwise HIRC,
-attaches playable media candidates to `webui/data/gameplay/projectiles.json`,
-recovers exact SkillData/BuffData event references for character skills and
-bounded enemy ownership into
-`webui/data/lang/<LANG>/gameplay/sound_effects.json`, and preserves the
-unresolved runtime switch/random-container boundary.
+`build_assets.py` creates the Assets index, Story-media lookup, video index,
+and `data/assets/gameplay_refs.json`. Run `build_gameplay_asset_refs.py`
+directly when Gameplay and the broad Assets index are already current.
 
-Use `export_assets.bat --export-from-game` for installed-game image/model/
-Material/CN-audio refresh. Asset modes, from narrowest to broadest, are
-`--focused-assets`, `--default-assets`, and `--debug-assets`.
+`build_audio.py` writes shared SFX/music once under
+`export_full/structured/Audio/shared/`, language voice under
+`export_full/structured/Audio/<LANG>/`, relinks Story audio, and produces the
+compact per-language Gameplay SFX sidecar. Exact Wwise event traversal can
+yield multiple media candidates; unresolved runtime switch/random selection is
+preserved.
+
+Use `export_assets.bat --export-from-game` for installed-game image, model,
+Material, and CN-audio refresh. Asset modes are `--focused-assets`,
+`--default-assets`, and `--debug-assets`.
 
 ## Source graph
 
@@ -404,40 +177,25 @@ Material/CN-audio refresh. Asset modes, from narrowest to broadest, are
 python tools\endfield_source_graph.py build --relevant-asset-maps --skip-reference-rows --skip-followups
 python tools\endfield_source_graph.py query ID_OR_NAME
 python tools\endfield_source_graph.py story STORY_KEY
+python tools\endfield_source_graph.py issues --limit 20
 ```
 
-The default WebUI graph keeps only exact AssetMap source/PathID rows consumed
-by material, shader, texture, and FMV edges. Full graph builds are for
-investigation.
+Graph edges retain evidence provenance. Exact foreign keys, serialized PPtrs,
+and typed native paths outrank normalized names and token similarity.
 
-## Output locations
+## Outputs and validation
 
 - `webui/data/`: generated browser payloads.
-- `reports/export/`: export summaries, runs, and benchmarks.
+- `reports/export/`: export summaries, run logs, and benchmarks.
 - `reports/story/build/`: canonical Story build reports.
-- `reports/story/recovery/`: recovery audits.
+- `reports/story/recovery/`: focused recovery audits.
 - `reports/mission_order/`: partial-order and gap reports.
-- `reports/updates/`: Updates comparisons.
-- `reports/assets/`: asset diagnostics.
-- `reports/source_graph/`: SQLite graph and graph reports.
+- `reports/updates/`, `reports/assets/`, `reports/source_graph/`: topic outputs.
 
-Put revisitable experiments in `scratch/<topic>/<task>/` and disposable work in
-`tmp/<topic>/<run>/`. Do not add one-off scripts to `scripts/` unless they
-become maintained WebUI or character-lab workflow code.
+Put revisitable experiments in `scratch/<topic>/<task>/` and disposable work
+in `tmp/<topic>/<run>/`.
 
-## Validation policy
-
-During Story recovery, batch several independently validated edits before a
-canonical rebuild. Prefer focused tests, direct probes, and
-`--mission-pipeline-data-only` during iteration.
-
-Validators must fail closed and report:
-
-- validator and failed gate;
-- affected mission or Story key;
-- source path and relevant hashes;
-- bounded expected versus actual values;
-- deterministic failure details in structured data and CLI output.
-
-Add tests for successful and representative failure cases when validator
-behavior changes.
+Validators must fail closed and report the validator and gate, affected mission
+or Story key, source path and hashes, bounded expected-versus-actual values,
+and deterministic details in both structured data and CLI output. Add success
+and representative failure tests whenever validator behavior changes.

@@ -772,7 +772,12 @@
       timelineEmbeddedMissionShell: "validated mission shell",
       timelineEmbeddedMissionAreaContext: "mission-area context only",
       timelineEmbeddedActivationFiles: "related original files",
-      timelineEmbeddedActivationBoundary: "The event/action chain proves parent-dialog playback, exact local trigger geometry proves where the event listens, and a unique LevelData member-22 host proves only the mission shell. None proves the activating quest, selected branch, or cross-Timeline order.",
+      timelineEmbeddedActivationBoundary: "The typed event/action path proves parent-dialog playback, exact local trigger geometry proves where the event listens, and a unique LevelData member-22 host proves only the mission shell. A conditional path proves the authored route, not that its case was selected at runtime; parallel siblings remain unordered. None proves the activating quest or cross-Timeline order.",
+      timelineEmbeddedParallelFanout: "parallel fan-out; siblings unordered",
+      timelineEmbeddedConditionalRoute: "conditional authored route",
+      timelineEmbeddedSelectionUnobserved: "runtime selection not observed",
+      timelineEmbeddedEventPredicate: "event validation parameter",
+      timelineEmbeddedBranchPredicate: "branch predicate",
       timelineEmbeddedRuntimeBoundary: "This proves live Timeline presentation and local clip timing. Mission ownership is published only for exact parent-dialog routes with a unique validated LevelData shell; quest activation, branch selection, and cross-Timeline order remain unresolved.",
       relationDialogNarrativeAction: "typed DialogTree action presents this black-screen text inside its parent dialog",
       relationDialogNarrativeActionUnscoped: "typed DialogTree containment is exact; parent mission/quest placement is unresolved",
@@ -1519,7 +1524,12 @@
       timelineEmbeddedMissionShell: "已验证使命外壳",
       timelineEmbeddedMissionAreaContext: "仅使命区域上下文",
       timelineEmbeddedActivationFiles: "相关原始文件",
-      timelineEmbeddedActivationBoundary: "事件/动作链证明父对话播放，精确本地触发区域证明事件监听位置，唯一的 LevelData member-22 宿主仅证明使命外壳；这些都不证明激活任务、所选分支或跨 Timeline 顺序。",
+      timelineEmbeddedActivationBoundary: "类型化事件/动作路径证明父对话播放，精确本地触发区域证明事件监听位置，唯一的 LevelData member-22 宿主仅证明使命外壳。条件路径只证明作者编写了该路线，不证明运行时实际选择了该分支；并行同级保持无序。这些都不证明激活任务或跨 Timeline 顺序。",
+      timelineEmbeddedParallelFanout: "并行分流；同级无序",
+      timelineEmbeddedConditionalRoute: "作者编写的条件路线",
+      timelineEmbeddedSelectionUnobserved: "未观测到运行时选择",
+      timelineEmbeddedEventPredicate: "事件验证参数",
+      timelineEmbeddedBranchPredicate: "分支谓词",
       timelineEmbeddedRuntimeBoundary: "这证明 Timeline 实时呈现与局部片段时序。仅当父对话路径精确且 LevelData 宿主唯一时才发布使命归属；任务激活、分支选择与跨 Timeline 顺序仍未解析。",
       relationDialogNarrativeAction: "类型化 DialogTree 动作在父对话中呈现该黑屏文本",
       relationDialogNarrativeActionUnscoped: "DialogTree 包含关系精确，但父对话的使命或任务位置尚未解析",
@@ -3578,6 +3588,30 @@
     </details>`;
   }
 
+  function missionTimelineActivationHtml() {
+    const missionId = String(state.missionId || state.mission?.mission?.id || "");
+    const audit = state.index?.storyCoverage?.timelineEmbeddedStoryRuntimeAudit || {};
+    const routes = (audit.activationRoutes || []).filter((route) =>
+      route?.missionShellOwnership
+      && (route.missionShellIds || []).map(String).includes(missionId),
+    );
+    if (!routes.length) return "";
+    const routeHtml = routes.map((route) => {
+      const storyKeys = (route.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
+      const path = (route.actionChain || []).map((step) => `<li><code>${esc(step.edge || "edge")} &rarr; #${esc(step.localId ?? "?")}</code> <b>${esc(step.actionName || step.recordClass || "action")}</b></li>`).join("");
+      const decisions = (route.controlDecisions || []).map((decision) => {
+        const conditional = decision.controlKind === "conditional_choice" || decision.controlKind === "conditional_loop";
+        const label = decision.controlKind === "parallel_fanout"
+          ? t("timelineEmbeddedParallelFanout")
+          : t("timelineEmbeddedConditionalRoute");
+        return `<small class="mp-timeline-control-decision ${conditional ? "is-conditional" : "is-parallel"}"><b>${esc(label)}</b> <code>${esc(decision.selectedEdge || "?")}</code>${conditional ? `<br>${esc(t("timelineEmbeddedSelectionUnobserved"))}` : ""}</small>`;
+      }).join("");
+      const files = (route.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
+      return `<article><header><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code><b>${esc(route.dialogKey || "?")}</b></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} ${esc(route.playActionName || "play_dialog")}</code></p><p>${storyKeys}</p>${path ? `<ol>${path}</ol>` : ""}${decisions}<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details></article>`;
+    }).join("");
+    return `<details class="mp-mission-story mp-timeline-activation" data-weight="context" open><summary>${esc(t("timelineEmbeddedActivationChain"))} <span>${routes.length}</span></summary>${routeHtml}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></details>`;
+  }
+
   function missionStateDependenciesHtml() {
     const rows = (state.localized?.flow?.missionStateStoryDependencies || [])
       .filter((row) => row && row.key);
@@ -3862,7 +3896,20 @@
       const controlChain = controlRuntime.type ? `<p><strong>${esc(t("timelineEmbeddedDirectorChain"))}</strong></p><small><code>${esc(controlRuntime.type)}</code> <code>CreatePlayable ${esc(controlRuntime.methods?.CreatePlayable?.va || "?")}</code></small>${directorHtml}<small>${esc(t("timelineEmbeddedDirectorBoundary"))}</small>` : "";
       const activationHtml = activationRoutes.length ? `<section class="mp-timeline-activation"><h5>${esc(t("timelineEmbeddedActivationChain"))} <span>${activationRoutes.length}</span></h5>${activationRoutes.map((route) => {
         const missions = (route.missionShellIds || []).map((missionId) => `<code>${esc(missionId)}</code>`).join(" ");
-        const actionChain = (route.actionChain || []).map((action) => `<li><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.class || action.hint || action.opcode || "action")}</b>${(action.texts || []).map((value) => `<code>${esc(value)}</code>`).join(" ")}</li>`).join("");
+        const actionChain = (route.actionChain || []).map((action) => `<li><code>${esc(action.edge || "edge")} &rarr; #${esc(action.localId ?? "?")}</code><b>${esc(action.actionName || action.recordClass || action.class || action.hint || action.opcode || "action")}</b>${action.controlKind ? `<span>${esc(action.controlKind)}</span>` : ""}${(action.texts || []).map((value) => `<code>${esc(value)}</code>`).join(" ")}</li>`).join("");
+        const controlDecisions = (route.controlDecisions || []).map((decision) => {
+          const conditional = decision.controlKind === "conditional_choice" || decision.controlKind === "conditional_loop";
+          const label = decision.controlKind === "parallel_fanout"
+            ? t("timelineEmbeddedParallelFanout")
+            : t("timelineEmbeddedConditionalRoute");
+          const predicate = decision.branchPredicate || {};
+          const predicateText = [predicate.getterName, predicate.detailKind, predicate.status].filter(Boolean).join(" / ");
+          return `<small class="mp-timeline-control-decision ${conditional ? "is-conditional" : "is-parallel"}"><b>${esc(label)}</b> <code>#${esc(decision.sourceLocalId ?? "?")} ${esc(decision.sourceActionName || "control")}</code> &rarr; <code>${esc(decision.selectedEdge || "?")}</code>${predicateText ? `<br><strong>${esc(t("timelineEmbeddedBranchPredicate"))}</strong> <code>${esc(predicateText)}</code>` : ""}${conditional ? `<br>${esc(t("timelineEmbeddedSelectionUnobserved"))}` : ""}</small>`;
+        }).join("");
+        const eventValidate = route.eventDetail?.validateParam || {};
+        const eventPredicate = Object.keys(eventValidate).length
+          ? `<small class="mp-timeline-event-predicate"><strong>${esc(t("timelineEmbeddedEventPredicate"))}</strong> <code>${esc(JSON.stringify(eventValidate))}</code></small>`
+          : "";
         const triggerContext = route.localTriggerVolumeContext || {};
         const triggerVolumes = (triggerContext.triggerVolumes || []).map((volume) => {
           const shapes = (volume.shapes || []).map((shape) => {
@@ -3883,7 +3930,7 @@
         const triggerHtml = triggerVolumes ? `<details open><summary>${esc(t("timelineEmbeddedTriggerVolume"))} <span>${(triggerContext.triggerVolumes || []).length}</span></summary>${triggerVolumes}<small>${esc(t("timelineEmbeddedTriggerVolumeBoundary"))}</small></details>` : "";
         const missionAreas = (route.missionAreaReferences || []).map((reference) => `<small><code>${esc(reference.missionId || "?")}</code> / <code>${esc(reference.questId || "?")}</code> / <code>${esc(reference.missionAreaId || "?")}</code></small>`).join("");
         const files = (route.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
-        return `<article><header><b>${esc(t("timelineEmbeddedActivationRoute"))}</b><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} play_dialog</code> &rarr; <code>${esc(route.dialogKey || "?")}</code></p>${actionChain ? `<ol>${actionChain}</ol>` : ""}${triggerHtml}${missions ? `<p><strong>${esc(t("timelineEmbeddedMissionShell"))}</strong> ${missions}</p>` : ""}${missionAreas ? `<details><summary>${esc(t("timelineEmbeddedMissionAreaContext"))} <span>${(route.missionAreaReferences || []).length}</span></summary>${missionAreas}</details>` : ""}${files ? `<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></article>`;
+        return `<article><header><b>${esc(t("timelineEmbeddedActivationRoute"))}</b><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} ${esc(route.playActionName || "play_dialog")}</code> &rarr; <code>${esc(route.dialogKey || "?")}</code></p>${eventPredicate}${actionChain ? `<ol>${actionChain}</ol>` : ""}${controlDecisions}${triggerHtml}${missions ? `<p><strong>${esc(t("timelineEmbeddedMissionShell"))}</strong> ${missions}</p>` : ""}${missionAreas ? `<details><summary>${esc(t("timelineEmbeddedMissionAreaContext"))} <span>${(route.missionAreaReferences || []).length}</span></summary>${missionAreas}</details>` : ""}${files ? `<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></article>`;
       }).join("")}</section>` : "";
       return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${activationHtml}${controlChain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
     };
@@ -5078,6 +5125,7 @@
     ["runtime", "summarySectionRuntime", () => [nativeRuntimeBindingsHtml(), runtimeTraceHtml()]],
     ["story", "summarySectionStory", () => [
       missionStoryConnectionsHtml(),
+      missionTimelineActivationHtml(),
       missionStateDependenciesHtml(),
       envTalkContextHtml(),
     ]],

@@ -762,6 +762,19 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
 }
 
 .mp-timeline-activation details > small { display: block; }
+.mp-timeline-control-decision,
+.mp-timeline-event-predicate {
+  display: block;
+  margin: 3px 0;
+  padding: 5px 7px;
+  border-left: 3px solid #728d96;
+  border-radius: 3px;
+  background: rgba(114, 141, 150, 0.09);
+}
+.mp-timeline-control-decision.is-parallel { border-left-color: #477fa1; }
+.mp-timeline-control-decision.is-conditional { border-left-color: #9a6c2f; }
+.mp-timeline-control-decision code,
+.mp-timeline-event-predicate code { overflow-wrap: anywhere; }
 .mp-timeline-activation details > div {
   display: grid;
   gap: 2px;

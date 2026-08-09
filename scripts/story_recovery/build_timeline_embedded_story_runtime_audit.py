@@ -567,9 +567,56 @@ def _compact_local_trigger_context(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+EXACT_NATIVE_CONTROL_PATH_STATUSES = {
+    "exact_serialized_control_path",
+    "exact_serialized_control_path_equivalent_duplicates",
+    "exact_serialized_control_path_runtime_shadowing",
+}
+
+
+def _activation_control_decisions(path: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Retain typed branch semantics along one exact native control path.
+
+    A path step stores the incoming edge on the target action.  The control
+    kind and runtime proof belong to the preceding source action.  Joining the
+    two by their position in this already-validated path is therefore a typed
+    control-flow interpretation, not serialized-record adjacency.
+    """
+    decisions: list[dict[str, Any]] = []
+    for index in range(1, len(path)):
+        source = path[index - 1]
+        target = path[index]
+        control_kind = str(source.get("controlKind") or "")
+        if control_kind not in {
+            "parallel_fanout", "conditional_choice", "conditional_loop",
+        }:
+            continue
+        decisions.append({
+            key: value
+            for key, value in {
+                "controlKind": control_kind,
+                "sourceLocalId": source.get("localId"),
+                "sourceActionName": source.get("actionName"),
+                "selectedEdge": target.get("edge"),
+                "targetLocalId": target.get("localId"),
+                "branchPredicate": source.get("branchPredicate") or None,
+                "controlRuntimeMappingId": source.get("controlRuntimeMappingId"),
+                "siblingOrder": (
+                    "unordered"
+                    if control_kind == "parallel_fanout"
+                    else None
+                ),
+                "selectionObserved": False,
+            }.items()
+            if value not in (None, "", [], {})
+        })
+    return decisions
+
+
 def join_parent_dialog_activation_routes(
     rows: list[dict[str, Any]],
     header_report: dict[str, Any],
+    playback_index: dict[str, list[dict[str, Any]]],
     mission_hosts: dict[tuple[str, str], dict[str, Any]],
     mission_area_hosts: dict[tuple[str, str], dict[str, Any]],
     *,
@@ -581,7 +628,7 @@ def join_parent_dialog_activation_routes(
 
     The general shape is:
 
-    ``active header slot -> nextId action chain -> StartDialog(dialog key)``
+    ``active header slot -> typed action-control path -> StartDialog(dialog key)``
     ``-> dialog registry Timeline -> PlayableDirector/ControlPlayableAsset``.
 
     A fully decoded LevelData member-22 host can additionally prove the owning
@@ -600,54 +647,104 @@ def join_parent_dialog_activation_routes(
     )
     failures: list[dict[str, Any]] = []
     routes: list[dict[str, Any]] = []
-
+    header_rows_by_key: dict[tuple[str, str, int], list[dict[str, Any]]] = (
+        defaultdict(list)
+    )
     for header_row in header_report.get("headerRows") or []:
         if not isinstance(header_row, dict):
             continue
-        dialogs = sorted(
-            wanted.intersection(
-                str(value) for value in header_row.get("sceneTexts") or []
+        header = header_row.get("header") or {}
+        header_local_id = header.get("localId")
+        if isinstance(header_local_id, int):
+            header_rows_by_key[(
+                str(header_row.get("levelId") or ""),
+                str(header_row.get("sourceScript") or ""),
+                header_local_id,
+            )].append(header_row)
+
+    playback_actions = [
+        (dialog_key, occurrence)
+        for dialog_key in sorted(wanted)
+        for occurrence in playback_index.get(dialog_key) or []
+        if isinstance(occurrence, dict)
+        and occurrence.get("recordClass") == "play_dialog"
+        and occurrence.get("actionName")
+    ]
+    dialogs_with_playback = {dialog_key for dialog_key, _row in playback_actions}
+    candidate_owner_count = 0
+
+    for dialog_key, occurrence in playback_actions:
+        level_id = str(occurrence.get("levelId") or "")
+        script_id = str(occurrence.get("scriptId") or "")
+        source_file = str(occurrence.get("sourceFile") or "")
+        owners = occurrence.get("nativeEventOwners") or []
+        candidate_owner_count += len(owners)
+        for owner in owners:
+            if not isinstance(owner, dict):
+                continue
+            header_local_id = owner.get("headerLocalId")
+            path = owner.get("path") or []
+            header_matches = (
+                header_rows_by_key.get((level_id, script_id, header_local_id), [])
+                if isinstance(header_local_id, int)
+                else []
             )
-        )
-        if not dialogs:
-            continue
-        level_id = str(header_row.get("levelId") or "")
-        script_id = str(header_row.get("sourceScript") or "")
-        source_file = str(header_row.get("file") or "")
-        strict_common = (
-            bool(expected_slot_mapping)
-            and
-            header_row.get("runtimeSlotStatus") == "active-final-serialized-slot"
-            and str(header_row.get("runtimeSlotMappingId") or "")
-            == expected_slot_mapping
-            and header_row.get("targetStatus") == "action-list"
-            and header_row.get("chainStatus") == "complete"
-            and bool(header_row.get("headerName"))
-            and level_id
-            and script_id.isdigit()
-            and source_file
-        )
-        for dialog_key in dialogs:
-            play_actions = [
-                action
-                for action in header_row.get("playActions") or []
-                if isinstance(action, dict)
-                and action.get("class") == "play_dialog"
+            header_row = header_matches[0] if len(header_matches) == 1 else {}
+            header_source_file = str(header_row.get("file") or "")
+            final_step = path[-1] if path and isinstance(path[-1], dict) else {}
+            strict_common = (
+                owner.get("status") in EXACT_NATIVE_CONTROL_PATH_STATUSES
+                and len(header_matches) == 1
+                and bool(expected_slot_mapping)
+                and header_row.get("runtimeSlotStatus")
+                == "active-final-serialized-slot"
+                and str(header_row.get("runtimeSlotMappingId") or "")
+                == expected_slot_mapping
+                and header_row.get("targetStatus") == "action-list"
+                and header_row.get("headerName") == owner.get("headerName")
+                and (header_row.get("eventDetail") or {})
+                == (owner.get("eventDetail") or {})
+                and header_row.get("targetLocalId") == owner.get("targetLocalId")
+                and bool(level_id)
+                and script_id.isdigit()
+                and bool(source_file)
+                and header_source_file == source_file
+                and bool(path)
+                and final_step.get("localId") == occurrence.get("localId")
+                and final_step.get("recordClass") == "play_dialog"
                 and dialog_key in {
-                    str(value) for value in action.get("texts") or []
+                    str(value) for value in final_step.get("texts") or []
                 }
-            ]
-            if not strict_common or len(play_actions) != 1:
+            )
+            if not strict_common:
                 failures.append(validation_failure(
                     "parent_dialog_event_action_path",
-                    "one active named header -> complete action-list chain -> exact play_dialog",
                     {
+                        "nativeOwnerStatus": sorted(EXACT_NATIVE_CONTROL_PATH_STATUSES),
+                        "headerMatches": 1,
+                        "runtimeSlotStatus": "active-final-serialized-slot",
+                        "runtimeSlotMappingId": expected_slot_mapping,
+                        "targetStatus": "action-list",
+                        "sourceFileMatches": True,
+                        "eventDetailMatches": True,
+                        "pathTargetLocalId": occurrence.get("localId"),
+                        "pathTargetClass": "play_dialog",
+                        "pathTargetDialog": dialog_key,
+                    },
+                    {
+                        "nativeOwnerStatus": owner.get("status"),
+                        "headerMatches": len(header_matches),
                         "runtimeSlotStatus": header_row.get("runtimeSlotStatus"),
                         "runtimeSlotMappingId": header_row.get("runtimeSlotMappingId"),
-                        "expectedRuntimeSlotMappingId": expected_slot_mapping,
                         "targetStatus": header_row.get("targetStatus"),
-                        "chainStatus": header_row.get("chainStatus"),
-                        "playDialogMatches": len(play_actions),
+                        "sourceFileMatches": header_source_file == source_file,
+                        "eventDetailMatches": (
+                            (header_row.get("eventDetail") or {})
+                            == (owner.get("eventDetail") or {})
+                        ),
+                        "pathTargetLocalId": final_step.get("localId"),
+                        "pathTargetClass": final_step.get("recordClass"),
+                        "pathTargetTexts": final_step.get("texts") or [],
                     },
                     source_file or f"{level_id}/{script_id}",
                 ))
@@ -769,10 +866,17 @@ def join_parent_dialog_activation_routes(
                 for file in related_files
             }
             header = header_row.get("header") or {}
-            play_action = play_actions[0]
+            control_decisions = _activation_control_decisions(path)
+            path_signature = hashlib.sha256(json.dumps(
+                [
+                    [str(step.get("edge") or ""), step.get("localId")]
+                    for step in path if isinstance(step, dict)
+                ],
+                separators=(",", ":"),
+            ).encode("utf-8")).hexdigest()[:12]
             route_id = (
-                f"{level_id}/{script_id}/"
-                f"{header.get('localId')}/{dialog_key}"
+                f"{level_id}/{script_id}/{header.get('localId')}/"
+                f"{occurrence.get('localId')}/{dialog_key}/{path_signature}"
             )
             routes.append({
                 "id": route_id,
@@ -787,11 +891,27 @@ def join_parent_dialog_activation_routes(
                 "headerOpcode": header.get("opcode"),
                 "targetSource": header_row.get("targetSource"),
                 "targetLocalId": header_row.get("targetLocalId"),
-                "playActionLocalId": play_action.get("localId"),
-                "playActionOffset": play_action.get("offset"),
-                "playActionOpcode": play_action.get("opcode"),
-                "actionChain": header_row.get("chain") or [],
-                "chainStatus": header_row.get("chainStatus"),
+                "playActionLocalId": occurrence.get("localId"),
+                "playActionOffset": occurrence.get("recordOffset"),
+                "playActionOpcode": (
+                    f"{occurrence.get('actionCode')}/{occurrence.get('actionKind')}"
+                    if occurrence.get("actionCode") and occurrence.get("actionKind")
+                    else ""
+                ),
+                "playActionName": occurrence.get("actionName"),
+                "actionChain": path,
+                "chainStatus": owner.get("status"),
+                "controlDecisions": control_decisions,
+                "parallelFanout": any(
+                    row.get("controlKind") == "parallel_fanout"
+                    for row in control_decisions
+                ),
+                "conditionalActivation": any(
+                    row.get("controlKind") in {
+                        "conditional_choice", "conditional_loop",
+                    }
+                    for row in control_decisions
+                ),
                 "runtimeSlotStatus": header_row.get("runtimeSlotStatus"),
                 "runtimeSlotMappingId": header_row.get("runtimeSlotMappingId"),
                 "localTriggerVolumeContext": (
@@ -846,21 +966,36 @@ def join_parent_dialog_activation_routes(
         mission_shell_ids.update(owned_missions)
 
     matched_dialogs = {str(route["dialogKey"]) for route in routes}
+    unresolved_dialogs = [
+        {
+            "dialogKey": dialog_key,
+            "reason": (
+                "no_exact_native_playback_action"
+                if dialog_key not in dialogs_with_playback
+                else "no_validated_native_event_control_path"
+            ),
+        }
+        for dialog_key in sorted(wanted - matched_dialogs)
+    ]
     return {
         "validation": {
             "status": "validated" if not failures else "failed",
             "failures": failures,
         },
         "routes": routes,
+        "unresolvedParentDialogs": unresolved_dialogs,
         "counts": {
             "parentDialogKeys": len(wanted),
-            "candidateHeaderRows": sum(
-                1
-                for header_row in header_report.get("headerRows") or []
-                if isinstance(header_row, dict) and wanted.intersection(
-                    str(value) for value in header_row.get("sceneTexts") or []
+            "exactPlaybackActions": len(playback_actions),
+            "candidateEventControlPaths": candidate_owner_count,
+            "candidateHeaderRows": len({
+                (
+                    str(route.get("levelId") or ""),
+                    str(route.get("scriptId") or ""),
+                    route.get("headerLocalId"),
                 )
-            ),
+                for route in routes
+            }),
             "exactActivationRoutes": len(routes),
             "parentDialogsWithExactActivation": len(matched_dialogs),
             "parentDialogsWithoutExactActivation": len(wanted - matched_dialogs),
@@ -875,6 +1010,9 @@ def join_parent_dialog_activation_routes(
         },
         "evidenceBoundary": {
             "eventToActionTopology": True,
+            "typedBranchSemantics": True,
+            "parallelFanoutSiblingOrder": False,
+            "conditionalRouteSelectionObserved": False,
             "parentDialogPlayback": True,
             "missionShellOwnership": "unique_validated_leveldata_hosts_only",
             "localTriggerVolumeGeometry": (
@@ -897,6 +1035,7 @@ def recover_parent_dialog_activation_routes(
 ) -> dict[str, Any]:
     """Run the exact activation join over every discovered parent dialog."""
     story_context, level_bindings, header_audit = _story_recovery_modules()
+    use_default_levelscript_root = levelscript_root is None
     levelscript_root = levelscript_root or story_context.LEVELSCRIPT_DIR
     dialog_keys = {
         str(row.get("dialogKey") or "") for row in rows if row.get("dialogKey")
@@ -905,6 +1044,7 @@ def recover_parent_dialog_activation_routes(
         empty = join_parent_dialog_activation_routes(
             rows,
             {"summary": {}, "headerRows": []},
+            {},
             {},
             {},
             gameassembly=gameassembly,
@@ -917,6 +1057,21 @@ def recover_parent_dialog_activation_routes(
             "runtimeSlotMappingId": "",
         }
         return empty
+    if use_default_levelscript_root:
+        playback_index = level_bindings.build_levelscript_native_story_playback_index()
+    else:
+        playback_index = {
+            story_key: [
+                occurrence
+                for occurrence in occurrences
+                if occurrence.get("actionName") and occurrence.get("recordClass")
+            ]
+            for story_key, occurrences in (
+                level_bindings.build_levelscript_action_story_occurrences(
+                    levelscript_root
+                ).items()
+            )
+        }
     levels = discover_parent_dialog_candidate_levels(dialog_keys, levelscript_root)
     header_report = header_audit.build_report(SimpleNamespace(
         level=levels,
@@ -927,11 +1082,10 @@ def recover_parent_dialog_activation_routes(
         unresolved_samples=0,
     ))
     script_pairs = {
-        (str(row.get("levelId") or ""), str(row.get("sourceScript") or ""))
-        for row in header_report.get("headerRows") or []
-        if dialog_keys.intersection(
-            str(value) for value in row.get("sceneTexts") or []
-        )
+        (str(occurrence.get("levelId") or ""), str(occurrence.get("scriptId") or ""))
+        for dialog_key in dialog_keys
+        for occurrence in playback_index.get(dialog_key) or []
+        if occurrence.get("recordClass") == "play_dialog"
     }
     mission_runtime_ids = {
         path.stem
@@ -947,6 +1101,7 @@ def recover_parent_dialog_activation_routes(
     result = join_parent_dialog_activation_routes(
         rows,
         header_report,
+        playback_index,
         mission_hosts,
         mission_area_hosts,
         gameassembly=gameassembly,
@@ -1655,7 +1810,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
     edges = local_order_edges(rows)
     return {
-        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v3",
+        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v4",
         "source": {
             "gameAssembly": str(args.gameassembly),
             "gameAssemblySha256": sha256_path(args.gameassembly),
@@ -1696,6 +1851,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             ),
             "missionOwnershipEdges": activation["counts"]["missionOwnedRoutes"],
             "branchSelectionEdges": 0,
+            "parallelFanoutActivationRoutes": sum(
+                bool(route.get("parallelFanout")) for route in activation["routes"]
+            ),
+            "conditionalActivationRoutes": sum(
+                bool(route.get("conditionalActivation"))
+                for route in activation["routes"]
+            ),
         },
         "rows": rows,
         "localOrderEdges": edges,
@@ -1706,6 +1868,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "playableDirectorInstances": True,
             "exposedReferenceControlChains": True,
             "parentDialogEventActionChains": True,
+            "typedBranchSemantics": True,
+            "parallelFanoutSiblingOrder": False,
+            "conditionalRouteSelectionObserved": False,
             "missionOwnership": "unique_validated_leveldata_hosts_only",
             "questActivation": False,
             "branchSelection": False,
@@ -1768,7 +1933,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         "path can prove parent-dialog playback; a unique validated LevelData member-22 host "
         "can additionally prove only the mission shell. Non-overlapping clip times prove only "
         "local order inside one track and option lane. These joins do not prove the quest "
-        "activator, selected branch, or any order across Timeline roots. OCR and manual "
+        "activator or any order across Timeline roots. A typed conditional edge proves that "
+        "the authored route exists but not that runtime selected it; Split siblings remain "
+        "unordered. OCR and manual "
         "overrides are not used.",
         "",
         "## Recovered Rows",
@@ -1791,11 +1958,22 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Parent Dialog Activation", ""])
     for route in report.get("activationRoutes") or []:
         missions = ", ".join(route.get("missionShellIds") or []) or "unresolved"
+        decisions = "; ".join(
+            f"{decision.get('controlKind')}: {decision.get('selectedEdge')}"
+            for decision in route.get("controlDecisions") or []
+        ) or "linear"
         lines.append(
             f"- `{route['headerName']}` in `{route['levelId']}/{route['scriptId']}` "
             f"-> `#{route['playActionLocalId']}` `{route['dialogKey']}` -> "
             f"`{', '.join(route['storyKeys'])}`; mission shell `{missions}`; "
-            "quest activation and branch selection unresolved"
+            f"typed control `{decisions}`; quest activation unresolved"
+        )
+    for unresolved in (
+        report.get("parentDialogActivation", {}).get("unresolvedParentDialogs") or []
+    ):
+        lines.append(
+            f"- unresolved `{unresolved.get('dialogKey')}`: "
+            f"`{unresolved.get('reason')}`"
         )
     lines.append("")
     return "\n".join(lines)
