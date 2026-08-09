@@ -37,6 +37,10 @@ NPC archetypes are imported as labeled source kits.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
+- Deferred binding 32 now has its exact native 48-byte
+  `_LightBinningConstants` layout/upload and a default-off isolated-count
+  publisher verified bit-for-bit on D3D11/D3D12. Retail whole-scene light-cull
+  survivors and the final `lightCount` remain open.
 
 ## Main rendering gap
 
@@ -104,7 +108,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 ## Highest-value next work
 
 1. Complete the minimum binding-compatible deferred CharInfo frame.
-2. Populate exact light, shadow, depth, GBuffer, and VisibilitySH inputs.
+2. Recover the retail light-cull survivor list, then populate exact shadow,
+   depth, GBuffer, irradiance, cookie, and VisibilitySH inputs.
 3. Validate selected paths against accepted retail captures.
 4. Extend exact texture/mip and material-variant support only where visible.
 5. Generalize animation from a second exact Avatar/clip oracle.

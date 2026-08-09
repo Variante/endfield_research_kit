@@ -69,5 +69,24 @@ class UnityLogEvidenceTests(unittest.TestCase):
                 )
 
 
+class SourceTextEvidenceTests(unittest.TestCase):
+    def test_source_hash_accepts_crlf_checkout_of_pinned_lf_text(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "source.cs"
+            path.write_bytes(b"first\r\nsecond\r\n")
+            expected = hashlib.sha256(b"first\nsecond\n").hexdigest()
+            verifier.require_text_hash(path, expected)
+
+    def test_source_hash_reports_expected_and_actual_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "source.cs"
+            path.write_text("actual\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                AssertionError,
+                "canonical-LF SHA-256.*does not match pinned",
+            ):
+                verifier.require_text_hash(path, "0" * 64)
+
+
 if __name__ == "__main__":
     unittest.main()

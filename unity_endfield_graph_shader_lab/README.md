@@ -1479,6 +1479,20 @@ D3D11 verifier reported zero XY, Z, and fragment-consumer word mismatches on an
 RTX 5080; its result is
 `scratch/light_binning_reference_vectors_20260713/gpu_verification.json`.
 
+The resolver-side binding is now closed one step further. Installed
+`GameAssembly` evidence fixes `_LightBinningConstants` at 48 bytes: four ints
+followed by eight floats, with 32-pixel tiles, 2,048 Z slices, camera near/far,
+and a native-cull survivor count capped at 32. The runtime can publish that
+exact ABI under the default-off
+`ENDFIELD_RECOVERED_LIGHT_BINNING_CONSTANTS=1` selector, but only when the
+isolated Overview rig supplies a source-closed count; otherwise it binds 48
+zero bytes and clears `_EndfieldRecoveredLightBinningConstantsReady`. Run
+`verify_recovered_light_binning_constants.bat --all` to check the 12 words,
+field offsets, and failure diagnostics on D3D11 and D3D12. The verified Wulfa
+fixture has 8 isolated lights and 120x68 tiles at 3840x2160. It is not the
+retail room census: the native whole-scene candidate/survivor list and final
+`lightCount` remain open, and the 12 authored room lights are not substituted.
+
 The normal-mapped body Skin branch is separate from that face reduction and is
 source-gated to exactly `M_actor_wulfa_body_01` (Material PathID
 `7152188194418193687`) and `M_actor_zhuangfy_body_01` (Material PathID
@@ -1946,8 +1960,11 @@ source-specialized five-MRT diagnostic
 also validates the exact sphere/material packing on D3D12. It uses a
 deterministic packing-audit projection and `ZTest Always`; it is not the
 original depth owner or deferred resolve. Exact SPIR-V/DXBC comparison
-role-identifies unnamed binding 32 as `_LightBinningConstants`; its live values
-are not captured. Exact original cross-shader layout also identifies b34 as
+role-identifies unnamed binding 32 as `_LightBinningConstants`. Its exact
+native 48-byte field layout/upload and a default-off, fail-closed isolated-count
+Unity publisher are now source-closed; all 12 words read back bit-exactly on
+D3D11 and D3D12. The retail whole-scene cull survivors and final `lightCount`
+are still not captured. Exact original cross-shader layout also identifies b34 as
 `ShadowData`; binary use identifies b37 as the 32-entry `LightCookieData`
 layout. Exact original `ScreenSpaceShadowResolve` metadata identifies b38 as
 the 3,568-byte `HDPunctualLightCharacterShadowData` layout. The remaining

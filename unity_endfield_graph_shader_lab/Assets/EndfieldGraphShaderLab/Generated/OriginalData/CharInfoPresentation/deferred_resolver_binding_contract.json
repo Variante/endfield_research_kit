@@ -2,7 +2,7 @@
   "schema": "endfield.charinfo.sphereoutside.deferred-binding-contract.v1",
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
-  "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, but its selected SPIR-V debug name is absent. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 is role-identified as the 32-entry light-cookie atlas transform data. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are now binary-source-closed; the source-derived Unity compute port is GPU-verified but deliberately unpublished. The retail deferred and volumetric binders also close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame resources are not yet closed.",
+  "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, its exact native producer field layout and upload are source-closed, and a default-off Unity publisher is D3D11/D3D12 GPU-verified for source-closed isolated Overview light counts. The retail whole-scene cull survivors and therefore its final lightCount remain open. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 is role-identified as the 32-entry light-cookie atlas transform data. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are now binary-source-closed; the source-derived Unity compute port is GPU-verified but deliberately unpublished. The retail deferred and volumetric binders also close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame resources are not yet closed.",
   "source_filter": {
     "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/deferred_lighting_filter.json",
     "sha256": "37e0a45e2aad998ad85a2f6a213139a94b1f6e5cff83ea4bdc3bc6f86508d4ee",
@@ -2155,13 +2155,63 @@
       "set": 3,
       "binding": 32,
       "size": 48,
-      "status": "binary-role-identified; selected SPIR-V debug metadata does not carry the source name",
+      "status": "binary-role-identified; exact native 48-byte producer/upload source-closed; isolated-count Unity transport GPU-verified; retail whole-scene lightCount open",
       "evidence": [
         "selected SPIR-V b32 is exactly four int scalars plus eight float scalars (48 bytes)",
         "its used lanes calculate 32x32 screen tiles, z bins, and offsets into the light-list ByteAddressBuffer",
         "the same selected DXBC fragment carries the equivalent 3xfloat4 layout at b3",
         "the original shader family metadata exposes _LightBinningConstants as a 48-byte constant buffer"
-      ]
+      ],
+      "native_producer": {
+        "audit_path": "scratch/reverse_engineering/zhuangfy_gacha_light_binning_producer/audit.json",
+        "audit_sha256": "a0faf1fcc22e144efe01a62b0de922ee9910f64543a0c5d09577b72f0e7af61e",
+        "owner": "LightCulling+0x60",
+        "upload_size_bytes": 48,
+        "light_cap": 32,
+        "layout": [
+          "int lightCount@0",
+          "int numTiles@4",
+          "int actualWidth@8",
+          "int actualHeight@12",
+          "float tileSize@16",
+          "float numTilesX@20",
+          "float numTilesY@24",
+          "float numSliceZ@28",
+          "float nearClipPlane@32",
+          "float farClipPlane@36",
+          "float zBinSlice@40",
+          "float invZBinSlice@44"
+        ],
+        "closed_values": "tileSize=32, numSliceZ=2048, zBinSlice=1, invZBinSlice=1; tile counts derive from actual dimensions; near/far derive from the active camera",
+        "remaining_boundary": "lightCount is the native cull-survivor count. The 12 authored room lights are not a valid substitute, and the retail whole-scene candidate/survivor list is not yet closed."
+      },
+      "unity_transport": {
+        "activation_policy": "default-off-fail-closed",
+        "environment_variable": "ENDFIELD_RECOVERED_LIGHT_BINNING_CONSTANTS",
+        "command_line_argument": "-endfield-recovered-light-binning-constants",
+        "ready_property": "_EndfieldRecoveredLightBinningConstantsReady",
+        "runtime_scope": "Publishes canonical _LightBinningConstants only when the existing isolated Overview rig supplies a source-closed count; otherwise binds 48 zero bytes and ready=0. It does not claim the retail whole-scene light list.",
+        "contract_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinningConstantsContract.cs",
+        "contract_sha256": "3aa329efd8fee08ed2db58f876043add5ca7a6a25c252871adf478cb88f2ba5b",
+        "runtime_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs",
+        "runtime_sha256": "2b7d67bd728cf4dc5614ba58f528dba7bc31638558bc5da6ffeae94e229c8826",
+        "probe_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredLightBinningConstantsProbe.compute",
+        "probe_sha256": "248d993c03bcb352b8d5c58349c9dc5810d94cd7ac582a52166e60c86b4fc755",
+        "verifier_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredLightBinningConstantsBatchVerifier.cs",
+        "verifier_sha256": "0a0a89e17bd82df1efdf85917417fca7402e8a20d58114823178e6956a0f2bfb",
+        "fixture": "Wulfa isolated Overview: lightCount=8, 3840x2160, near=0.1, far=50, tiles=120x68=8160",
+        "gpu_validation": {
+          "d3d11_report_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/light_binning_constants/gpu_validation_d3d11.json",
+          "d3d11_report_sha256": "f1aa02f11c5248b265cb1fe0dcae635fcf9a473ed84cde4680c7ee48a3c2128d",
+          "d3d11_log_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/light_binning_constants/unity_validation_d3d11.log",
+          "d3d11_log_sha256": "3eb50a52e5036de950515415672de7133076219eb4ec96517d47d70b26edbb4c",
+          "d3d12_report_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/light_binning_constants/gpu_validation_d3d12.json",
+          "d3d12_report_sha256": "8207618e24480e8b908e78d614077c90e4880e8bc31209a914e5bd60dfaf1aaa",
+          "d3d12_log_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/light_binning_constants/unity_validation_d3d12.log",
+          "d3d12_log_sha256": "55d000653fafb6fe5c677d88f7dbede2f52237674716141628dd733594da7eed",
+          "result": "Both APIs read back all 12 words bit-exactly and reject negative/over-cap counts, zero dimensions, reversed clip ranges, and overflowing tile counts with actionable diagnostics."
+        }
+      }
     },
     {
       "role": "ShadowData",
@@ -3558,7 +3608,7 @@
     "note": "The original program is materially larger than a generic PBR sphere: it declares 25 sampled textures, one byte-address binning buffer, nine constant buffers, and five samplers."
   },
   "remaining_blockers": [
-    "Populate the now role-closed bindings 32/34/37/38 with the exact settled CharInfo per-frame values from _LightBinningConstants, ShadowData, LightCookieData, and HDPunctualLightCharacterShadowData.",
+    "For binding 32, recover the retail whole-scene native cull candidates/survivors and final lightCount; its 48-byte ABI, native upload, derivable fields, default-off isolated-count publisher, and D3D11/D3D12 transport are closed. Populate bindings 34/37/38 with exact settled CharInfo per-frame ShadowData, LightCookieData, and HDPunctualLightCharacterShadowData values.",
     "Capture and reproduce the remaining shadow and cookie resources plus exact retail settled VisibilitySH posed pa/pb/dir values and the matching retail-view survivors/target. The current installed settings lifecycle/defaults, both shipped VisibilitySH LUT payloads/descriptors, native 128x48-byte output ABI, exact posed transform-to-record formula, conservative culling cube/plane test, Wulfa/Zhuang's authored candidates, and selected additive producer pass are now exact; two independent isolated Unity D3D12 runs retain all ten records in registration order and reproduce byte-identical numeric record fixtures and GPU outputs. Those fixtures validate the lab transport but do not substitute for retail settled-frame evidence. A future downloaded IFix patch remains an explicit version boundary. The live V2 irradiance owner, six A/B texture descriptors/order, zero fallback, and publication bridge are closed; exact current-scene streamed voxel payloads, persistent-atlas transient dimensions, and per-frame IV parameters remain open. The VisibilitySH output descriptor and exact black empty/disabled fallback are closed. The reflection-probe oct producer and no-local global buffer are closed but remain deliberately unpublished. The exact disabled wetness and _IntegratedLightScattering placeholders are closed but likewise remain unpublished.",
     "Capture or derive the settled per-frame values for all used named and unnamed constants.",
     "Move the validated SphereOutside HGBuffer packing into the exact depth/render-graph route and implement a binding-compatible pass-0 resolver plus conditionally selected WriteAlpha passes before enabling the renderer."
