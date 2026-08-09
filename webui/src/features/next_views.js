@@ -1,4 +1,5 @@
 (() => {
+  let audioLanguage = "";
   let missionPipelineLanguage = "";
   const trackedLoads = new Map();
 
@@ -8,9 +9,11 @@
 
   function errorText(view) {
     const english = {
+      audio: "Audio-system data could not be loaded. Check the inline error and try opening the view again.",
       "mission-pipeline": "Mission pipeline data could not be loaded. Check the inline error and try opening the view again.",
     };
     const chinese = {
+      audio: "\u65e0\u6cd5\u52a0\u8f7d\u97f3\u9891\u7cfb\u7edf\u6570\u636e\u3002\u8bf7\u67e5\u770b\u9875\u9762\u5185\u9519\u8bef\u5e76\u91cd\u65b0\u6253\u5f00\u6b64\u89c6\u56fe\u3002",
       "mission-pipeline": "\u65e0\u6cd5\u52a0\u8f7d\u4efb\u52a1\u7ba1\u7ebf\u6570\u636e\u3002\u8bf7\u67e5\u770b\u9875\u9762\u5185\u9519\u8bef\u5e76\u91cd\u65b0\u6253\u5f00\u6b64\u89c6\u56fe\u3002",
     };
     const locale = String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").toLowerCase();
@@ -50,6 +53,24 @@
     return result;
   }
 
+  function initAudio(language = currentLanguage(), { force = false } = {}) {
+    const nextLanguage = String(language || "CN").toUpperCase();
+    if (!force && audioLanguage === nextLanguage) return trackedLoads.get("audio")?.promise;
+    audioLanguage = nextLanguage;
+    window.WebUI?.audio?.init?.();
+    const result = window.WebUI?.audio?.load?.(nextLanguage, { force });
+    if (!result) {
+      audioLanguage = "";
+      finishLoad("audio", false);
+      return null;
+    }
+    if (typeof result.then === "function") {
+      trackLoad("audio", result, () => audioLanguage === nextLanguage);
+      result.catch(() => { if (audioLanguage === nextLanguage) audioLanguage = ""; });
+    }
+    return result;
+  }
+
   function initMissionPipeline(language = currentLanguage(), { force = false } = {}) {
     const nextLanguage = String(language || "CN").toUpperCase();
     if (!force && missionPipelineLanguage === nextLanguage) return trackedLoads.get("mission-pipeline")?.promise;
@@ -71,6 +92,10 @@
   function retryView(view = document.body.dataset.activeView, language = currentLanguage()) {
     const target = String(view || "").toLowerCase();
     const nextLanguage = String(language || currentLanguage()).toUpperCase();
+    if (target === "audio") {
+      audioLanguage = "";
+      return initAudio(nextLanguage, { force: true });
+    }
     if (target === "mission-pipeline") {
       missionPipelineLanguage = "";
       return initMissionPipeline(nextLanguage, { force: true });
@@ -79,6 +104,7 @@
   }
 
   function activate(view) {
+    if (view === "audio") initAudio();
     if (view === "mission-pipeline") initMissionPipeline();
   }
 
@@ -91,6 +117,8 @@
     });
     window.addEventListener("webui:language-changed", (event) => {
       const language = String(event.detail?.language || currentLanguage()).toUpperCase();
+      if (document.body.dataset.activeView === "audio") initAudio(language);
+      else audioLanguage = "";
       if (document.body.dataset.activeView === "mission-pipeline") initMissionPipeline(language);
       else missionPipelineLanguage = "";
     });

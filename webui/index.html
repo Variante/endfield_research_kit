@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="style.css?v=20260809-skillicons2">
   <link rel="stylesheet" href="src/features/characters/style.css?v=20260808-characters14">
   <link rel="stylesheet" href="src/features/mission_pipeline/style.css?v=20260809-proxycontext1">
+  <link rel="stylesheet" href="src/features/audio/style.css?v=20260809-audio1">
 </head>
 <body data-active-view="story">
 <a class="skip-link" href="#views">Skip to current view</a>
@@ -31,6 +32,7 @@
       <button id="story-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="story-view" tabindex="0" data-view="story" data-i18n="storyTab">剧情</button>
       <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-i18n="charactersTab">人物</button>
       <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
+      <button id="audio-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="audio-view" tabindex="-1" data-view="audio" data-debug-view data-i18n="audioTab">&#38899;&#39057;</button>
       <button id="mission-pipeline-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="mission-pipeline-view" tabindex="-1" data-view="mission-pipeline" data-debug-view data-i18n="missionPipelineTab">任务流程 (Experimental)</button>
       <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets" data-i18n="assetsTab">资源</button>
       <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
@@ -353,6 +355,10 @@
       </div>
     </section>
 
+    <section id="audio-view" class="page-view" data-view="audio" role="tabpanel" aria-labelledby="audio-tab" tabindex="0" hidden>
+      <div id="audio-app"></div>
+    </section>
+
     <section id="mission-pipeline-view" class="page-view" data-view="mission-pipeline" role="tabpanel" aria-labelledby="mission-pipeline-tab" tabindex="0" hidden>
       <div id="mission-pipeline-app"></div>
     </section>
@@ -627,16 +633,17 @@
 <script src="src/ui/media_player.js?v=20260701-gp5"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
 <script src="src/ui/filters.js?v=20260701-gp5"></script>
-<script src="app_labels.js?v=20260808-titles1"></script>
+<script src="app_labels.js?v=20260809-audio1"></script>
 <script src="app_tree.js?v=20260808-gameplay-image-modal1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="app.js?v=20260725-mplayout2"></script>
-<script src="assets.js?v=20260808-titles1"></script>
+<script src="assets.js?v=20260809-audio1"></script>
   <script src="src/features/characters/index.js?v=20260808-characters14"></script>
 <script src="src/features/gameplay/labels.js?v=20260809-sfx6"></script>
     <script src="src/features/gameplay/index.js?v=20260809-skillicons2"></script>
+  <script src="src/features/audio/index.js?v=20260809-audio1"></script>
   <script src="src/features/mission_pipeline/index.js?v=20260809-proxycontext1"></script>
-<script src="src/features/next_views.js?v=20260809-projectiles7"></script>
+<script src="src/features/next_views.js?v=20260809-audio1"></script>
 <script src="src/features/reference/index.js?v=20260808-titles1"></script>
 <script src="src/features/updates/index.js?v=20260701-gp5"></script>
 </body>

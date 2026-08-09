@@ -66,10 +66,10 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "characters", "gameplay", "mission-pipeline", "projectiles", "combat", "economy", "world", "presentation", "reference", "updates"]);
+  const AVAILABLE_VIEWS = new Set(["story", "characters", "gameplay", "audio", "mission-pipeline", "reference", "updates"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
-  const DEBUG_ONLY_VIEWS = new Set(["characters", "projectiles", "combat", "economy", "world", "presentation"]);
-  const DEBUG_VIEW_FALLBACKS = Object.freeze({ characters: "story", projectiles: "gameplay", combat: "gameplay", economy: "gameplay", world: "gameplay", presentation: "story" });
+  const DEBUG_ONLY_VIEWS = new Set(["audio", "mission-pipeline"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", "mission-pipeline": "gameplay" });
   let activeView = "story";
 
   function resolveViewFromHash() {
@@ -169,11 +169,11 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes story, characters/NPC evidence, gameplay, the experimental mission pipeline, projectile, combat, factory/economy,
-static world, entity presentation,
-reference text data, WebUI code, emoji
-images, and the compact media indexes. Larger story images and videos are in
-the companion assets zip. Decoded story audio is in the standalone audio zip.
+This package includes Story, Characters, Gameplay, Text, Updates, the
+experimental Mission Pipeline, the debug-only Audio semantic index, WebUI code,
+emoji images, and compact media indexes. Larger story images and videos are in
+the companion assets zip. Decoded audio and raw audio indexes are in the
+standalone audio zip.
 Extract those zips into the same directory after this one when you want
 inline/wiki media or playable audio too.
 
@@ -222,10 +222,11 @@ AUDIO_PACKAGE_README = """Endfield WebUI story audio package
 Extract this zip into the same directory as the matching story package, after
 the story package has been extracted.
 
-It contains lossless FLAC story audio files and audio indexes used by WebUI
-dialog and cutscene audio controls. Legacy WAV/WEM files are intentionally not
-included. Larger image/video media is in the companion assets package. Emoji
-images, WebUI code, and story/reference text data are in the main story package.
+It contains lossless FLAC audio files and raw audio indexes used by WebUI dialog,
+cutscene, Gameplay, and debug Audio controls. Legacy WAV/WEM files are
+intentionally not included. Larger image/video media is in the companion assets
+package. Emoji images, WebUI code, and story/reference text data are in the main
+story package.
 """
 
 
