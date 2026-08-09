@@ -1727,6 +1727,65 @@
       "gachaRole": "gates update-center selection only; it does not replace the V2 object passed to native PipelineUpdate",
       "behavior": "V2 PipelineUpdate always passes m_defaultIV to the native renderer"
     },
+    "installed_map_path_selection": {
+      "constructor_fields": {
+        "m_irradianceDataPathV2": "System.String.Empty",
+        "m_exportpathV2": "System.String.Empty",
+        "m_gachaDataPathV2": "System.String.Empty"
+      },
+      "pipeline_behavior": "when m_defaultIV exists, reset m_irradianceDataPathV2 to System.String.Empty, substitute non-null m_exportpathV2, and call SetMap only when it differs from m_lastDataPathV2",
+      "streaming_in_new_map_behavior": "m_exportpathV2 = indexRootPath + '/aiTest/index.bytes'",
+      "streaming_suffix": "/aiTest/index.bytes",
+      "matching_shipped_iv_files": 0,
+      "direct_managed_call_sites": {
+        "ReloadIndexFileV2": [],
+        "StreamingInNewMapV2": []
+      },
+      "shipped_lua_mentions": {
+        "ReloadIndexFileV2": [],
+        "StreamingInNewMapV2": [],
+        "HGIrradianceVolumeManagerV2": []
+      },
+      "installed_ifix_target_count": 30,
+      "matching_installed_ifix_targets": [],
+      "reload_escape_hatch": "ReloadIndexFileV2(rootPath) directly calls SetMap on m_defaultIV; indirect/native invocation remains an explicit runtime boundary"
+    },
+    "shipped_iv_data": {
+      "vfs_index_sha256": "12b98032562588ff2519adc6f9e00674870f7ae42f36fe47425c9c7682b261e6",
+      "inventory": {
+        "iv_files": 224,
+        "v3_index_files": 85,
+        "legacy_index_files": 2,
+        "gacha_files": 12,
+        "ai_test_index_files": 0
+      },
+      "index_record_formats": {
+        "marker_0x03000002": {
+          "record_stride": 32,
+          "length_fields": "one stored/decoded length",
+          "tail_record_count": 0,
+          "sample_sha256": "d0ba47a7d92820598ade4039807f9cb5fe28b190825205835ccf17b69ba79eb3",
+          "sample_record_count": 24
+        },
+        "marker_0x03000003": {
+          "record_stride": 36,
+          "length_fields": "separate stored and decoded lengths",
+          "tail_record_stride": 20,
+          "sample_sha256": "1726f8d11aa7c2706d95e0e4163cb776f9bfa2eb54787bb672dd9a7d868a360c",
+          "sample_record_count": 18,
+          "sample_tail_record_count": 12
+        }
+      },
+      "gacha_character_sample": {
+        "index_path": "Data/IrradianceVolume/PC/gacha/character/v3/index.bytes",
+        "payload_path": "Data/IrradianceVolume/PC/gacha/character/v3/iv_0_0.bytes",
+        "payload_sha256": "ccba259839d3b91cf9d32c2edce1d672eb82f489c7aae33014982aa310b351b4",
+        "payload_bytes": 1399240,
+        "covered_exactly_by_index_stored_ranges": true,
+        "charinfo_v2_owner": false
+      },
+      "ownership_boundary": "The extracted gacha sample is exact shipped format evidence, but shipped Lua routes it through the separate old manager; it is not a CharInfo V2 fixture."
+    },
     "active_clipmap_descriptors": [
       {
         "role": "clipmapTextureALod0",
@@ -1910,15 +1969,15 @@
         "_IrradianceVolumeClipmapTextureBLod3"
       ]
     },
-    "remaining_boundary": "Exact current-scene streamed irradiance voxel payloads, transient dimension inputs for the persistent basis/coeff atlases, and the per-frame param0..param3 values remain scene/runtime data. They must be recovered or captured before original pass-0 replay can claim scene-identical irradiance.",
+    "remaining_boundary": "The current installed V2 new-map suffix has no shipped file and no direct managed or Lua owner, but ReloadIndexFileV2 can accept an arbitrary path and indirect/native invocation is not excluded. Native missing-map initialization/clear behavior, any runtime reload path, persistent-atlas transient dimensions, and per-frame param0..param3 values remain open.",
     "audit_path": "scratch/character_recovery/charinfo_pass0_resources/charinfo_irradiance_owner.json",
     "audit_sha256": "2a378b2585c71701b8bdb1f4798fd2f5387a03efce1829d781bd0662d3883041",
     "auditor_path": "scratch/character_recovery/charinfo_pass0_resources/audit_charinfo_irradiance_owner.py",
     "auditor_sha256": "e55b9642fcfab974239f72647e0733e6298b39a40e3790e967f36388299c3ac9",
     "v2_audit_path": "scratch/character_recovery/charinfo_pass0_resources/charinfo_v2_irradiance.json",
-    "v2_audit_sha256": "139c868a3410bcc25d036c280fc427b66176bf69e05821a7c72bf8efdc93deca",
+    "v2_audit_sha256": "5882147afeee8c7a0b955e7e03a8a16bc6c2719750a4bb0373d9ff3380482f1d",
     "v2_auditor_path": "scratch/character_recovery/charinfo_pass0_resources/audit_charinfo_v2_irradiance.py",
-    "v2_auditor_sha256": "3d36a96b34cb995823b5de4f5bad4ff8fbd81712aa105ed3312d84f050cd3b72",
+    "v2_auditor_sha256": "eafc3d5847d4cc89dd10d884ad9ada7af392e168dca33737c5663e546181a22c",
     "lua_index": {
       "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\charinfo_pass0_resources\\lua_vfs_index.jsonl",
       "sha256": "d02445bce0fa5e94ef4428717fa9481c2e27a966a05b839acd2375779454ae14",
@@ -3201,7 +3260,9 @@
             "_IrradianceVolumeClipmapTextureBLod3"
           ]
         },
-        "status": "the live V2 owner, six A/B clipmap descriptors/order, zero fallback, and shader-publication bridge are source-closed; exact current-scene streamed voxel payloads and per-frame parameters remain open"
+        "map_path_status": "the current installed non-IFix new-map branch constructs /aiTest/index.bytes, which has zero matches in the complete 224-file primary-plus-fallback IV inventory; ReloadIndexFileV2 indirect/native use and native missing-map behavior remain open",
+        "index_format_status": "marker-2 32-byte and marker-3 36-byte index records, contiguous stored ranges, basis/coeff decoded spans, and marker-3 20-byte tail shape are source-closed from four exact shipped samples",
+        "status": "the live V2 owner, six A/B clipmap descriptors/order, zero fallback, shader-publication bridge, installed map-path construction, VFS suffix absence, and shipped index record formats are source-closed; runtime reload/missing-map behavior, transient atlas dimensions, and per-frame parameters remain open"
       },
       "visibility_sh": {
         "binding": {
@@ -3847,7 +3908,7 @@
   },
   "remaining_blockers": [
     "For binding 32, capture the target-frame HGCullingSystem.CullLights pointer/count at the now exact HGCamera.DoECSCulling return boundary, then preserve SetupState's selected order and final lightCount; its producer/caller/consumer chain, 256-candidate cap, 48-byte ABI, native upload, derivable fields, default-off isolated-count publisher, and D3D11/D3D12 transport are closed. Populate binding 34 with exact settled CharInfo per-frame ShadowData. Binding 38's native owner, reset, packing, .y-only selected consumer, and pre-bind capture boundary are closed; capture its allocator-returned size, full settled payload, and matching shadow resources rather than treating the inactive selector reset as a byte-exact full fixture. Binding 37's zero-cookie isolated state is closed, while non-empty whole-scene cookie values still require capture.",
-    "Capture and reproduce the remaining shadow and cookie resources plus exact retail settled VisibilitySH posed pa/pb/dir values and the matching retail-view survivors/target. The current installed settings lifecycle/defaults, both shipped VisibilitySH LUT payloads/descriptors, native 128x48-byte output ABI, exact posed transform-to-record formula, conservative culling cube/plane test, Wulfa/Zhuang's authored candidates, and selected additive producer pass are now exact; two independent isolated Unity D3D12 runs retain all ten records in registration order and reproduce byte-identical numeric record fixtures and GPU outputs. Those fixtures validate the lab transport but do not substitute for retail settled-frame evidence. A future downloaded IFix patch remains an explicit version boundary. The live V2 irradiance owner, six A/B texture descriptors/order, zero fallback, and publication bridge are closed; exact current-scene streamed voxel payloads, persistent-atlas transient dimensions, and per-frame IV parameters remain open. The VisibilitySH output descriptor and exact black empty/disabled fallback are closed. The reflection-probe oct producer and no-local global buffer are closed but remain deliberately unpublished. The exact disabled wetness and _IntegratedLightScattering placeholders are closed but likewise remain unpublished.",
+    "Capture and reproduce the remaining shadow and cookie resources plus exact retail settled VisibilitySH posed pa/pb/dir values and the matching retail-view survivors/target. The current installed settings lifecycle/defaults, both shipped VisibilitySH LUT payloads/descriptors, native 128x48-byte output ABI, exact posed transform-to-record formula, conservative culling cube/plane test, Wulfa/Zhuang's authored candidates, and selected additive producer pass are now exact; two independent isolated Unity D3D12 runs retain all ten records in registration order and reproduce byte-identical numeric record fixtures and GPU outputs. Those fixtures validate the lab transport but do not substitute for retail settled-frame evidence. A future downloaded IFix patch remains an explicit version boundary. The live V2 irradiance owner, six A/B texture descriptors/order, zero fallback, publication bridge, installed /aiTest path construction, complete IV VFS suffix absence, and marker-2/marker-3 index record shapes are closed. ReloadIndexFileV2 indirect/native use, native missing-map behavior, persistent-atlas transient dimensions, and per-frame IV parameters remain open. The VisibilitySH output descriptor and exact black empty/disabled fallback are closed. The reflection-probe oct producer and no-local global buffer are closed but remain deliberately unpublished. The exact disabled wetness and _IntegratedLightScattering placeholders are closed but likewise remain unpublished.",
     "Capture or derive the settled per-frame values for all used named and unnamed constants.",
     "Move the validated SphereOutside HGBuffer packing into the exact depth/render-graph route and implement a binding-compatible pass-0 resolver plus conditionally selected WriteAlpha passes before enabling the renderer."
   ]

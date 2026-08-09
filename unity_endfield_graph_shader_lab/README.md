@@ -2139,9 +2139,22 @@ publication order. A textures are 128x64x128
 `B10G11R11_UFloatPack32`; default-quality B textures are 128x64x384
 `R8G8B8A8_UNorm`. All are random-write point/repeat `Tex3D` resources with one
 mip, named `ClipMapA/BLod{0,1,3}`. A missing native object publishes the same
-1x1x1 zero `UnityDefault3D` resource to all six globals. Exact streamed scene
-voxel payloads, persistent-atlas transient dimensions, and per-frame IV
-parameters remain open.
+1x1x1 zero `UnityDefault3D` resource to all six globals. The installed
+non-IFix V2 path is now closed further: its constructor initializes all three
+path fields to `System.String.Empty`; `StreamingInNewMapV2` sets
+`m_exportpathV2 = indexRootPath + "/aiTest/index.bytes"`; and that suffix has
+zero matches in the complete 224-file primary-plus-fallback IV VFS inventory.
+Neither installed IFix, a direct managed call, nor the 1,290 decoded Lua files
+replace or invoke that path. `ReloadIndexFileV2` can still pass an arbitrary
+path through `SetMap`, so indirect/native invocation remains a runtime boundary.
+Four exact shipped indices also close the on-disk record families: marker
+`0x03000002` uses 32-byte records, while marker `0x03000003` adds separate
+stored/decoded lengths and a counted 20-byte tail after 36-byte records. The
+extracted gacha-character index's 24 contiguous records exactly cover its
+1,399,240-byte `iv_0_0.bytes`, but that payload belongs to the separately
+proven old gacha manager and is not a CharInfo V2 fixture. Native missing-map
+initialization/clear behavior, any indirect reload path, persistent-atlas
+transient dimensions, and per-frame IV parameters remain open.
 The character cubemap (`T_hdri_reflection_char_01`), sky cubemap
 (`T_hdri_006`), and environment reflection-map cubemap
 (`T_hdri_env_char_01`, PathID `2404688955498524548`) are exact 128x128 BC6H
