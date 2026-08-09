@@ -2165,9 +2165,11 @@ hash-verifies all three. The installed `LightBinningXYCS` and
 `LightBinningZCS` assets are now exact too: all eight D3D11/Vulkan programs,
 the 28-byte host `BinningData` layout, 32-pixel/2,048-slice light segment,
 8x8/64x1 dispatch formulas, and combined light/reflection word offsets are
-hash-pinned. The existing equation-level Unity producer remains an isolated
-diagnostic buffer; canonical combined `_BinningBuffer` publication is still
-default-off. The installed `ReflectionProbeBinningCS`
+hash-pinned. A default-off raw bridge now combines the exact isolated light
+words with the source-closed zero-local-reflection tail and publishes canonical
+`_BinningBuffer` plus all four offsets. At 3840x2160, all 90,848 words / 363,392
+bytes read back bit-exactly on both D3D11 and D3D12; retail target-frame light
+survivors and pass-0 activation remain open. The installed `ReflectionProbeBinningCS`
 `SampleOneTextureMip4AndNotReadSrc` producer is now source-closed: two exact
 dispatches populate slice 0, mips 0..7 of a 576x576x32 linear RGBAHalf
 `_ReflectionProbeOctTextureArray`, and a Unity GPU diagnostic reproduces every
@@ -2199,6 +2201,7 @@ imitate the screenshot. Build/verify this imported asset graph with:
 build_charinfo_presentation_recovery.bat
 verify_charinfo_presentation_recovery.bat
 python tools\verify_charinfo_outside_lit_recovery.py
+verify_recovered_canonical_binning_buffer.bat --all
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```

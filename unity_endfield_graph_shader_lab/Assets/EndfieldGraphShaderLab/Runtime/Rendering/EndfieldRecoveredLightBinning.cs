@@ -20,6 +20,12 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_LIGHT_COOKIE_DATA";
         private const string LightCookieDataCommandLineArgument =
             "-endfield-recovered-light-cookie-data";
+        private const string CanonicalBinningComputeResourceName =
+            "EndfieldRecoveredCanonicalBinning";
+        private const string CanonicalBinningEnvironmentVariable =
+            "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER";
+        private const string CanonicalBinningCommandLineArgument =
+            "-endfield-recovered-canonical-binning-buffer";
         private const int TileSize = EndfieldRecoveredLightBinningConstantsContract.TileSize;
         private const int SliceCount = EndfieldRecoveredLightBinningConstantsContract.SliceCount;
         private const int WordsPerBin = 8;
@@ -67,16 +73,32 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_LightCookie");
         private static readonly int RetailLightCookieDataReadyId =
             Shader.PropertyToID("_EndfieldRecoveredLightCookieDataReady");
+        private static readonly int CanonicalBinningBufferId =
+            Shader.PropertyToID("_BinningBuffer");
+        private static readonly int CanonicalBinningOffsetsId =
+            Shader.PropertyToID("_BinningBufferOffsets");
+        private static readonly int CanonicalBinningReadyId =
+            Shader.PropertyToID("_EndfieldRecoveredCanonicalBinningReady");
+        private static readonly int CanonicalBinningOutputId =
+            Shader.PropertyToID("_EndfieldRecoveredCanonicalBinningBuffer");
+        private static readonly int CanonicalLightWordCountId =
+            Shader.PropertyToID("_EndfieldRecoveredCanonicalLightWordCount");
+        private static readonly int CanonicalCombinedWordCountId =
+            Shader.PropertyToID("_EndfieldRecoveredCanonicalCombinedWordCount");
 
         private readonly Vector4[] descriptors =
             new Vector4[EndfieldHGOperatorLightRig.DescriptorVectorCount];
         private readonly ComputeShader compute;
+        private readonly ComputeShader canonicalBinningCompute;
         private readonly bool retailConstantsRequested;
         private readonly bool retailLightCookieDataRequested;
+        private readonly bool canonicalBinningRequested;
         private readonly int xyKernel = -1;
         private readonly int zKernel = -1;
+        private readonly int canonicalBinningKernel = -1;
         private ComputeBuffer descriptorBuffer;
         private ComputeBuffer binningBuffer;
+        private ComputeBuffer canonicalBinningBuffer;
         private ComputeBuffer zeroFallbackBuffer;
         private ComputeBuffer retailConstantsBuffer;
         private ComputeBuffer zeroRetailConstantsBuffer;
@@ -88,6 +110,8 @@ namespace EndfieldGraphShaderLab
         private bool loggedConstantsFailure;
         private bool loggedLightCookieDataActivation;
         private bool loggedLightCookieDataFailure;
+        private bool loggedCanonicalBinningActivation;
+        private bool loggedCanonicalBinningFailure;
         private bool disposed;
 
         internal EndfieldRecoveredLightBinning()
@@ -98,6 +122,9 @@ namespace EndfieldGraphShaderLab
             retailLightCookieDataRequested =
                 ReadBooleanEnvironment(LightCookieDataEnvironmentVariable) ||
                 HasCommandLineArgument(LightCookieDataCommandLineArgument);
+            canonicalBinningRequested =
+                ReadBooleanEnvironment(CanonicalBinningEnvironmentVariable) ||
+                HasCommandLineArgument(CanonicalBinningCommandLineArgument);
             compute = Resources.Load<ComputeShader>(ComputeResourceName);
             if (compute != null)
             {
@@ -111,6 +138,22 @@ namespace EndfieldGraphShaderLab
                     Debug.LogWarning(
                         "Recovered light binning could not resolve BuildXY/BuildZ: " +
                         exception.Message);
+                }
+            }
+            canonicalBinningCompute =
+                Resources.Load<ComputeShader>(CanonicalBinningComputeResourceName);
+            if (canonicalBinningCompute != null)
+            {
+                try
+                {
+                    canonicalBinningKernel = canonicalBinningCompute.FindKernel(
+                        "BuildCanonicalCombined");
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning(
+                        "Recovered canonical binning could not resolve " +
+                        "BuildCanonicalCombined: " + exception.Message);
                 }
             }
             EnsureZeroFallbackBuffer();
@@ -129,6 +172,7 @@ namespace EndfieldGraphShaderLab
                 throw new ArgumentNullException(nameof(camera));
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
+            commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 0.0f);
 
             bool membershipRequested =
                 rig != null &&
@@ -262,6 +306,12 @@ namespace EndfieldGraphShaderLab
                 1,
                 1);
 
+            PublishCanonicalBinning(
+                commandBuffer,
+                width,
+                height,
+                requiredWordCount);
+
             commandBuffer.SetGlobalBuffer(BinningBufferId, binningBuffer);
             commandBuffer.SetGlobalVector(
                 GlobalLayoutId,
@@ -279,6 +329,117 @@ namespace EndfieldGraphShaderLab
                     $"{SliceCount} one-unit Z slices, {requiredWordCount} uint words.");
                 loggedActivation = true;
             }
+        }
+
+        private void PublishCanonicalBinning(
+            CommandBuffer commandBuffer,
+            int width,
+            int height,
+            int recoveredLightWordCount)
+        {
+            if (!canonicalBinningRequested)
+                return;
+
+            EndfieldRecoveredCanonicalBinningLayoutContract.Layout layout;
+            string failure;
+            if (!EndfieldRecoveredCanonicalBinningLayoutContract.TryBuild(
+                    width,
+                    height,
+                    out layout,
+                    out failure))
+            {
+                ReportCanonicalBinningFailure(failure);
+                return;
+            }
+            if (layout.lightWordCount != recoveredLightWordCount)
+            {
+                ReportCanonicalBinningFailure(
+                    "light segment size disagrees with the installed layout: " +
+                    $"expected {layout.lightWordCount}, actual {recoveredLightWordCount}");
+                return;
+            }
+            if (canonicalBinningCompute == null || canonicalBinningKernel < 0)
+            {
+                ReportCanonicalBinningFailure(
+                    $"Resources/{CanonicalBinningComputeResourceName}.compute or " +
+                    "BuildCanonicalCombined is unavailable");
+                return;
+            }
+
+            try
+            {
+                EnsureCanonicalBinningBuffer(layout.totalWordCount);
+                commandBuffer.SetComputeBufferParam(
+                    canonicalBinningCompute,
+                    canonicalBinningKernel,
+                    BinningBufferId,
+                    binningBuffer);
+                commandBuffer.SetComputeBufferParam(
+                    canonicalBinningCompute,
+                    canonicalBinningKernel,
+                    CanonicalBinningOutputId,
+                    canonicalBinningBuffer);
+                commandBuffer.SetComputeIntParam(
+                    canonicalBinningCompute,
+                    CanonicalLightWordCountId,
+                    layout.lightWordCount);
+                commandBuffer.SetComputeIntParam(
+                    canonicalBinningCompute,
+                    CanonicalCombinedWordCountId,
+                    layout.totalWordCount);
+                commandBuffer.DispatchCompute(
+                    canonicalBinningCompute,
+                    canonicalBinningKernel,
+                    (layout.totalWordCount + 63) / 64,
+                    1,
+                    1);
+                commandBuffer.SetGlobalBuffer(
+                    CanonicalBinningBufferId,
+                    canonicalBinningBuffer);
+                commandBuffer.SetGlobalVector(
+                    CanonicalBinningOffsetsId,
+                    new Vector4(
+                        layout.lightXYOffset,
+                        layout.lightZOffset,
+                        layout.reflectionXYOffset,
+                        layout.reflectionZOffset));
+                commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 1.0f);
+            }
+            catch (Exception exception)
+            {
+                ReportCanonicalBinningFailure(
+                    "combined raw-buffer publication failed: " + exception.Message);
+                commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 0.0f);
+                return;
+            }
+
+            if (!loggedCanonicalBinningActivation)
+            {
+                Debug.Log(
+                    "Recovered canonical _BinningBuffer active for the " +
+                    "source-closed no-local-probe CharInfo fixture: " +
+                    $"light={layout.lightWordCount} words, " +
+                    $"reflection={layout.reflectionWordCount} zero words, " +
+                    $"combined={layout.totalWordCount} words.");
+                loggedCanonicalBinningActivation = true;
+            }
+        }
+
+        private void EnsureCanonicalBinningBuffer(int wordCount)
+        {
+            if (canonicalBinningBuffer != null &&
+                canonicalBinningBuffer.count == wordCount)
+            {
+                return;
+            }
+            canonicalBinningBuffer?.Release();
+            canonicalBinningBuffer = new ComputeBuffer(
+                wordCount,
+                EndfieldRecoveredCanonicalBinningLayoutContract.WordStrideBytes,
+                ComputeBufferType.Raw)
+            {
+                name = "Endfield Recovered Canonical Light/Reflection Binning"
+            };
         }
 
         private void PublishRetailConstants(
@@ -717,6 +878,16 @@ namespace EndfieldGraphShaderLab
             loggedLightCookieDataFailure = true;
         }
 
+        private void ReportCanonicalBinningFailure(string message)
+        {
+            if (loggedCanonicalBinningFailure)
+                return;
+            Debug.LogWarning(
+                "Recovered canonical _BinningBuffer remains disabled because " +
+                message + ". Its ready flag is false and no canonical buffer is published.");
+            loggedCanonicalBinningFailure = true;
+        }
+
         private static bool ReadBooleanEnvironment(string name)
         {
             string value = Environment.GetEnvironmentVariable(name);
@@ -745,6 +916,8 @@ namespace EndfieldGraphShaderLab
             descriptorBuffer = null;
             binningBuffer?.Release();
             binningBuffer = null;
+            canonicalBinningBuffer?.Release();
+            canonicalBinningBuffer = null;
             zeroFallbackBuffer?.Release();
             zeroFallbackBuffer = null;
             retailConstantsBuffer?.Release();
