@@ -16,6 +16,7 @@ import hashlib
 import importlib.util
 import json
 import re
+import struct
 import sys
 import time
 from collections import Counter, defaultdict
@@ -113,7 +114,7 @@ HIRC_OBJECT_TYPE_LABELS = {
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
 AUDIO_SEMANTIC_SCHEMA_VERSION = 3
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 2
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 3
 
 
 def runtime_spec(
@@ -217,6 +218,32 @@ RUNTIME_SYSTEM_SPECS = (
             "timeDilationFadeInDurationMs",
         ),
         methods=("get_actionType", "get_isNonLoopEvent", "get_showTempEmitterWarning"),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.InteractiveAudioSetting",
+        "interactive_audio",
+        "Maps interactive model/sub-template identities and lifecycle states to named audio Events.",
+        fields=("subTemplateList",),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.InteractiveAudioComponent",
+        "interactive_audio",
+        (
+            "Resolves the serialized interactive-audio map, enters and exits lifecycle states, "
+            "and posts the mapped normal or custom audio Event on the interactive object."
+        ),
+        fields=("m_curState", "m_hasInitConfig", "m_audioData", "m_openAudio", "m_currentLevel"),
+        methods=(
+            "AssignData", "InitSelf", "_ParseAudioData", "IsAudioStateValid",
+            "SwitchAudioCustomState", "SwitchAudioState", "_SwitchState", "_EnterState",
+            "_PostAudioEvent", "_ExitState", "_ProcessAudio", "_ProcessCustomAudio",
+        ),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.InteractiveAudioComponent+EAudioTriggerState",
+        "interactive_audio",
+        "Exact interactive-object lifecycle states accepted by the runtime audio component.",
+        enum_values=True,
     ),
     runtime_spec(
         "Beyond.Gameplay.Audio.AudioMusicSystem",
@@ -527,6 +554,62 @@ def _runtime_cache_hit(cache: dict[str, Any], sha256: str, size: int) -> dict[st
     return runtime
 
 
+def _read_compressed_uint32(data: bytes, offset: int) -> int | None:
+    """Decode the integer form used by current IL2CPP metadata defaults."""
+
+    if offset < 0 or offset >= len(data):
+        return None
+    first = data[offset]
+    if first < 0x80:
+        return first
+    if first < 0xC0 and offset + 1 < len(data):
+        return ((first & 0x3F) << 8) | data[offset + 1]
+    if first < 0xE0 and offset + 3 < len(data):
+        return (
+            ((first & 0x1F) << 24)
+            | (data[offset + 1] << 16)
+            | (data[offset + 2] << 8)
+            | data[offset + 3]
+        )
+    if first == 0xF0 and offset + 4 < len(data):
+        return struct.unpack_from(">I", data, offset + 1)[0]
+    if first == 0xFE:
+        return 0xFFFFFFFE
+    if first == 0xFF:
+        return 0xFFFFFFFF
+    return None
+
+
+def _metadata_enum_values(module: Any, md: Any, type_def: Any) -> dict[str, int]:
+    """Read exact enum constants from field-default records when available."""
+
+    fields = {
+        index: md.string(md.fields[index].name_index)
+        for index in range(type_def.field_start, type_def.field_start + type_def.field_count)
+        if index < len(md.fields)
+    }
+    default_section = md.sections.get("fieldDefaultValues")
+    data_section = md.sections.get("fieldAndParameterDefaultValueData")
+    if default_section is None or data_section is None or default_section.size % 12:
+        return {}
+    out: dict[str, int] = {}
+    for offset in range(default_section.offset, default_section.offset + default_section.size, 12):
+        field_index, metadata_type_index, data_index = struct.unpack_from("<iii", md.buf, offset)
+        field_name = fields.get(field_index)
+        if not field_name or field_name == "value__" or data_index < 0:
+            continue
+        raw = _read_compressed_uint32(md.buf, data_section.offset + data_index)
+        if raw is None:
+            continue
+        type_name = md.type_name_by_metadata_type_index.get(metadata_type_index, "")
+        if type_name in {"System.SByte", "System.Int16", "System.Int32", "System.Int64"}:
+            value = (raw >> 1) ^ -(raw & 1)
+        else:
+            value = raw
+        out[field_name] = int(value)
+    return out
+
+
 def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[str, Any]:
     cache_path = export_root / RUNTIME_CACHE_REL
     if metadata_path is None or not metadata_path.is_file():
@@ -566,7 +649,7 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
             else [name for name in expected_fields if name in field_set]
         )
         present_methods = [name for name in expected_methods if name in method_set]
-        systems.append({
+        system = {
             "type": spec["type"],
             "image": md.image_name_by_type_index.get(type_def.index, ""),
             "typeIndex": type_def.index,
@@ -578,7 +661,12 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
             "missingFields": [name for name in expected_fields if name not in field_set],
             "missingMethods": [name for name in expected_methods if name not in method_set],
             "evidence": "installedIl2cppMetadata",
-        })
+        }
+        if spec["enumValues"]:
+            enum_values = _metadata_enum_values(module, md, type_def)
+            if enum_values:
+                system["enumValues"] = enum_values
+        systems.append(system)
 
     metadata = module.catalog_metadata_summary(md)
     runtime = {
@@ -726,7 +814,6 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                     }
                     if trigger_play_sound_actions:
                         context["triggerPlaySoundActionCount"] = len(trigger_play_sound_actions)
-                        context["triggerPlaySoundActions"] = trigger_play_sound_actions
                     if group_id:
                         context["groupId"] = group_id
                     skill_ids = event.get("sourceSkillIds") or group.get("skillIds") or owner.get("skillIds")
@@ -762,12 +849,329 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
     return dict(contexts)
 
 
-def collect_table_contexts(export_root: Path) -> dict[str, list[dict[str, Any]]]:
+def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None:
+    root = export_root / "recovered/AnimeStudio-cli"
+    for source_root in ("Persistent", "StreamingAssets"):
+        matches = sorted((root / source_root / "json_by_type/MonoBehaviour").glob(f"{stem}_p*.json"))
+        if matches:
+            return matches[0]
+    return None
+
+
+def collect_interactive_component_contexts(
+    export_root: Path,
+    *,
+    decoder: Any | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Decode per-entity InteractiveAudioData state maps from MemoryPack."""
+
+    if decoder is None:
+        try:
+            from build_data_index import parse_interactive_audio_component
+        except ImportError:
+            from scripts.build_data_index import parse_interactive_audio_component
+
+        def decoder(_path: Path, data: bytes, _size: int) -> dict[str, Any]:
+            components: list[dict[str, Any]] = []
+            signature = bytes((0x5D, 0x02, 0, 0, 0, 0, 0x0D))
+            cursor = 0
+            while True:
+                candidate = data.find(signature, cursor)
+                if candidate < 0:
+                    break
+                cursor = candidate + 1
+                try:
+                    parsed, end = parse_interactive_audio_component(data, candidate + 2, 2)
+                except (UnicodeDecodeError, struct.error, ValueError):
+                    continue
+                if end <= candidate + len(signature) or end > len(data):
+                    continue
+                components.append({
+                    "index": len(components),
+                    "sourceOffset": candidate,
+                    **parsed,
+                })
+            return {"decoded": {"componentAudioComponents": components}}
+    paths_by_identity: dict[str, list[Path]] = defaultdict(list)
+    for source_root in ("Persistent", "StreamingAssets"):
+        root = export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveData"
+        if not root.is_dir():
+            continue
+        for path in sorted(root.glob("*.json")):
+            paths_by_identity[path.stem].append(path)
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    for owner_id, paths in sorted(paths_by_identity.items()):
+        paths_by_hash: dict[str, list[Path]] = defaultdict(list)
+        data_by_hash: dict[str, bytes] = {}
+        for path in paths:
+            try:
+                data = path.read_bytes()
+            except OSError:
+                continue
+            digest = hashlib.sha256(data).hexdigest()
+            paths_by_hash[digest].append(path)
+            data_by_hash[digest] = data
+        for digest, version_paths in sorted(paths_by_hash.items()):
+            data = data_by_hash[digest]
+            decoded = decoder(version_paths[0], data, len(data))
+            body = decoded.get("decoded") if isinstance(decoded, dict) else None
+            components = body.get("componentAudioComponents") if isinstance(body, dict) else None
+            if not isinstance(components, list):
+                continue
+            source_paths = [normalize_posix(path.relative_to(export_root)) for path in version_paths]
+            for component in components:
+                if not isinstance(component, dict):
+                    continue
+                component_index = component.get("index")
+                for state_index, row in enumerate(component.get("audioRows") or []):
+                    if not isinstance(row, dict):
+                        continue
+                    for event_index, event_id in enumerate(row.get("events") or []):
+                        event_name = str(event_id or "").strip()
+                        if not event_name:
+                            continue
+                        _append_context(contexts, seen, event_name, {
+                            "kind": "interactiveComponentTrigger",
+                            "table": "InteractiveData",
+                            "semanticRole": "entityInteractiveLifecycleEvent",
+                            "ownerKind": "interactiveEntityConfig",
+                            "ownerId": owner_id,
+                            "componentIndex": component_index,
+                            "sourceOffset": component.get("sourceOffset"),
+                            "triggerStateId": row.get("state"),
+                            "triggerStateName": str(row.get("stateName") or ""),
+                            "triggerRequestEvidence": ["decodedInteractiveAudioComponentStateMap"],
+                            "triggerRuntimeActivationStatuses": ["runtimeInteractiveStateEntryRequired"],
+                            "path": f"componentAudioComponents[{component_index}].audioRows[{state_index}].events[{event_index}]",
+                            "sourcePaths": source_paths,
+                            "sourceFingerprint": digest,
+                            "evidence": "exactDecodedMemoryPackInteractiveAudioData",
+                        })
+                for custom_index, row in enumerate(component.get("customRows") or []):
+                    if not isinstance(row, dict):
+                        continue
+                    event_name = str(row.get("event") or "").strip()
+                    if not event_name:
+                        continue
+                    context = {
+                        "kind": "interactiveComponentTrigger",
+                        "table": "InteractiveData",
+                        "semanticRole": "entityInteractiveCustomStateEvent",
+                        "ownerKind": "interactiveEntityConfig",
+                        "ownerId": owner_id,
+                        "componentIndex": component_index,
+                        "sourceOffset": component.get("sourceOffset"),
+                        "triggerCustomState": str(row.get("name") or ""),
+                        "triggerRequestEvidence": ["decodedInteractiveAudioComponentCustomStateMap"],
+                        "triggerRuntimeActivationStatuses": ["runtimeInteractiveCustomStateEntryRequired"],
+                        "path": f"componentAudioComponents[{component_index}].customRows[{custom_index}].event",
+                        "sourcePaths": source_paths,
+                        "sourceFingerprint": digest,
+                        "evidence": "exactDecodedMemoryPackInteractiveAudioData",
+                    }
+                    note = str(row.get("note") or "").strip()
+                    if note:
+                        context["description"] = note
+                    _append_context(contexts, seen, event_name, context)
+    return dict(contexts)
+
+
+def collect_authored_runtime_config_contexts(
+    export_root: Path,
+    runtime_model: dict[str, Any] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Recover exact interactive-state and global lifecycle Event requests."""
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    for event_id, rows in collect_interactive_component_contexts(export_root).items():
+        for row in rows:
+            _append_context(contexts, seen, event_id, row)
+    trigger_state_names: dict[int, str] = {}
+    for system in (runtime_model or {}).get("systems") or []:
+        if not isinstance(system, dict) or not str(system.get("type") or "").endswith("+EAudioTriggerState"):
+            continue
+        trigger_state_names = {
+            int(value): str(name)
+            for name, value in (system.get("enumValues") or {}).items()
+            if isinstance(value, int)
+        }
+        break
+
+    interactive_path = _first_recovered_mono_behaviour(export_root, "InteractiveAudioSetting")
+    interactive = load_json(interactive_path, {}) if interactive_path else {}
+    if isinstance(interactive, dict) and interactive_path is not None:
+        source = normalize_posix(interactive_path.relative_to(export_root))
+        for row_index, row in enumerate(interactive.get("subTemplateList") or []):
+            if not isinstance(row, dict):
+                continue
+            model_id = str(row.get("modelId") or "")
+            sub_template_id = str(row.get("subTemplateId") or "")
+            for state_index, state_row in enumerate(row.get("audioList") or []):
+                if not isinstance(state_row, dict):
+                    continue
+                try:
+                    trigger_state_id = int(state_row.get("state"))
+                except (TypeError, ValueError):
+                    continue
+                for event_index, event_id in enumerate(state_row.get("audio") or []):
+                    event_name = str(event_id or "").strip()
+                    if not event_name:
+                        continue
+                    context = {
+                        "kind": "interactiveAudioTrigger",
+                        "table": "InteractiveAudioSetting",
+                        "semanticRole": "interactiveLifecycleEvent",
+                        "modelId": model_id,
+                        "subTemplateId": sub_template_id,
+                        "triggerStateId": trigger_state_id,
+                        "triggerRequestEvidence": ["serializedInteractiveAudioStateMap"],
+                        "triggerRuntimeActivationStatuses": ["runtimeInteractiveStateEntryRequired"],
+                        "path": f"subTemplateList[{row_index}].audioList[{state_index}].audio[{event_index}]",
+                        "source": source,
+                        "evidence": "exactSerializedInteractiveAudioSetting",
+                    }
+                    if trigger_state_id in trigger_state_names:
+                        context["triggerStateName"] = trigger_state_names[trigger_state_id]
+                    _append_context(contexts, seen, event_name, context)
+            for custom_index, custom_row in enumerate(row.get("customAudioList") or []):
+                if not isinstance(custom_row, dict):
+                    continue
+                event_name = str(custom_row.get("audioEvent") or "").strip()
+                if not event_name:
+                    continue
+                context = {
+                    "kind": "interactiveAudioTrigger",
+                    "table": "InteractiveAudioSetting",
+                    "semanticRole": "interactiveCustomStateEvent",
+                    "modelId": model_id,
+                    "subTemplateId": sub_template_id,
+                    "triggerCustomState": str(custom_row.get("audioState") or ""),
+                    "triggerRequestEvidence": ["serializedInteractiveAudioCustomStateMap"],
+                    "triggerRuntimeActivationStatuses": ["runtimeInteractiveCustomStateEntryRequired"],
+                    "path": f"subTemplateList[{row_index}].customAudioList[{custom_index}].audioEvent",
+                    "source": source,
+                    "evidence": "exactSerializedInteractiveAudioSetting",
+                }
+                description = str(custom_row.get("desc") or "").strip()
+                if description:
+                    context["description"] = description
+                _append_context(contexts, seen, event_name, context)
+
+    global_path = _first_recovered_mono_behaviour(export_root, "AudioGlobalConfig")
+    global_config = load_json(global_path, {}) if global_path else {}
+    if isinstance(global_config, dict) and global_path is not None:
+        source = normalize_posix(global_path.relative_to(export_root))
+
+        def append_named(value: Any, path: str, semantic_role: str) -> None:
+            event_name = str(value or "").strip()
+            if not event_name:
+                return
+            _append_context(contexts, seen, event_name, {
+                "kind": "audioGlobalConfigEvent",
+                "table": "AudioGlobalConfig",
+                "semanticRole": semantic_role,
+                "path": path,
+                "source": source,
+                "evidence": "exactSerializedAudioGlobalConfig",
+                "triggerRequestEvidence": ["serializedGlobalAudioPolicy"],
+                "triggerRuntimeActivationStatuses": ["runtimeLifecycleConditionRequired"],
+            })
+
+        def append_hash(value: Any, path: str, semantic_role: str, **extra: Any) -> None:
+            raw = value.get("_id") if isinstance(value, dict) else value
+            if not isinstance(raw, int) or isinstance(raw, bool) or raw == 0:
+                return
+            event_hash = raw & 0xFFFFFFFF
+            context = {
+                "kind": "audioGlobalConfigEventHash",
+                "table": "AudioGlobalConfig",
+                "semanticRole": semantic_role,
+                "path": path,
+                "source": source,
+                "signedValue": raw,
+                "eventHash": event_hash,
+                "evidence": "exactSerializedAudioId",
+                "triggerRequestEvidence": ["serializedGlobalAudioPolicy"],
+                "triggerRuntimeActivationStatuses": ["runtimeLifecycleConditionRequired"],
+            }
+            context.update({key: value for key, value in extra.items() if value not in (None, "", [])})
+            _append_context(contexts, seen, event_hash_context_key(event_hash), context)
+
+        for field, role in (
+            ("loginMusicStartEvent", "loginMusicStartEvent"),
+            ("metaMusicStartEvent", "metaMusicStartEvent"),
+            ("gameplayMusicStartEvent", "gameplayMusicStartEvent"),
+            ("rushWindEventName", "rushWindStartEvent"),
+            ("rushWindStopEventName", "rushWindStopEvent"),
+        ):
+            append_named(global_config.get(field), field, role)
+        for field, role in (
+            ("initEvents", "audioEngineInitEvent"),
+            ("preloadEvents", "audioPreloadEvent"),
+            ("onLoginEvents", "loginLifecycleEvent"),
+        ):
+            for index, value in enumerate(global_config.get(field) or []):
+                append_named(value, f"{field}[{index}]", role)
+        for field, role in (
+            ("globalEventLocal", "globalLocalEvent"),
+            ("globalEventRemote", "globalRemoteEvent"),
+            ("globalEventLeaveMainGame", "leaveMainGameEvent"),
+            ("musicEventCutsceneForceEmpty", "cutsceneForceEmptyMusicEvent"),
+            ("specialGameplayGenderSelectIn", "genderSelectEnterEvent"),
+            ("specialGameplayGenderSelectOut", "genderSelectExitEvent"),
+        ):
+            append_hash(global_config.get(field), field, role)
+        for field, role in (
+            ("persistantPreparedEvents", "persistentPreparedEvent"),
+            ("musicCommonEventList", "commonMusicEvent"),
+        ):
+            for index, value in enumerate(global_config.get(field) or []):
+                append_hash(value, f"{field}[{index}]", role)
+        for field, owner_kind in (
+            ("charInitEvent", "character"),
+            ("npcInitEvent", "npc"),
+            ("enemyInitEvent", "enemy"),
+        ):
+            mapping = global_config.get(field) or {}
+            keys = mapping.get("_keyData") or [] if isinstance(mapping, dict) else []
+            values = mapping.get("_valueData") or [] if isinstance(mapping, dict) else []
+            for index, (owner_id, value) in enumerate(zip(keys, values)):
+                append_hash(
+                    value,
+                    f"{field}._valueData[{index}]",
+                    "entityInitEvent",
+                    ownerKind=owner_kind,
+                    ownerId=str(owner_id or ""),
+                )
+        for field, direction in (("audioStatesIn", "enter"), ("audioStatesOut", "exit")):
+            mapping = global_config.get(field) or {}
+            masks = mapping.get("_keyData") or [] if isinstance(mapping, dict) else []
+            values = mapping.get("_valueData") or [] if isinstance(mapping, dict) else []
+            for state_index, (state_mask, value) in enumerate(zip(masks, values)):
+                ids = value.get("_ids") or [] if isinstance(value, dict) else []
+                for event_index, event_id in enumerate(ids):
+                    append_hash(
+                        event_id,
+                        f"{field}._valueData[{state_index}]._ids[{event_index}]",
+                        "audioStateTransitionEvent",
+                        stateDirection=direction,
+                        audioStateMask=state_mask,
+                    )
+    return dict(contexts)
+
+
+def collect_table_contexts(
+    export_root: Path,
+    runtime_model: dict[str, Any] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     prefix_re = re.compile(r"^(?:au_|bark_|radio_)", re.IGNORECASE)
     named_event_field_re = re.compile(
-        r"(?:event(?:s|ids?)?$|^audio(?:collect|die|hit|pick|drag|drop)$)",
+        r"(?:event(?:s|ids?)?$|musicEventSample$|^audio(?:collect|die|hit|pick|drag|drop)$)",
         re.IGNORECASE,
     )
 
@@ -828,6 +1232,9 @@ def collect_table_contexts(export_root: Path) -> dict[str, list[dict[str, Any]]]
         payload = load_json(path, None)
         if payload is not None:
             visit(payload, "", path.stem, normalize_posix(path.relative_to(export_root)))
+    for event_id, rows in collect_authored_runtime_config_contexts(export_root, runtime_model).items():
+        for row in rows:
+            _append_context(contexts, seen, event_id, row)
     return dict(contexts)
 
 
@@ -842,6 +1249,21 @@ def collect_table_audio_event_hashes(export_root: Path) -> set[int]:
         except ValueError:
             continue
     return hashes
+
+
+def collect_table_audio_event_names(export_root: Path) -> set[str]:
+    """Return exact authored Event names from tables and recovered audio configs."""
+
+    return {
+        key
+        for key, rows in collect_table_contexts(export_root).items()
+        if key
+        and not key.startswith("#0x")
+        and any(
+            isinstance(row, dict) and row.get("semanticRole") != "cueExpressionValue"
+            for row in rows
+        )
+    }
 
 
 def merge_contexts(*sources: dict[str, list[dict[str, Any]]]) -> dict[str, list[dict[str, Any]]]:
@@ -1194,7 +1616,10 @@ def semantic_context_group(kind: Any) -> str:
         return "cutscene"
     if value in {"characterAnimation", "enemyAnimation"}:
         return "animation"
-    if value in {"table", "tableEventHash"}:
+    if value in {
+        "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
+        "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
+    }:
         return "authoredConfig"
     if value == "binaryManagedLiteral":
         return "managedRuntime"
@@ -1211,6 +1636,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "kind", "ownerId", "groupId", "storyKey", "table", "path",
             "semanticRole", "confidence", "skillId", "actionKind", "clip",
             "animationOwnershipScope", "possibleMediaScope", "triggerBindingStatus",
+            "modelId", "subTemplateId", "triggerStateId", "triggerStateName",
+            "triggerCustomState", "ownerKind", "stateDirection", "audioStateMask",
+            "componentIndex", "sourceOffset", "sourceFingerprint",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -1221,6 +1649,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "triggerRuntimeActivationStatuses", "triggerRelationTypes",
             "triggerOwnershipMethods", "triggerEvidenceKinds", "triggerBuffIds",
             "triggerSourcePaths",
+            "sourcePaths",
         ):
             context_search.update(str(value) for value in context.get(key) or [] if str(value))
         for action in context.get("triggerPlaySoundActions") or []:
@@ -1286,9 +1715,24 @@ def build_audio_semantic_data(
     literal_context_index, managed_literal_names = managed_literal_contexts(metadata_path)
     contexts = merge_contexts(
         collect_gameplay_contexts(webui_root, language),
-        collect_table_contexts(export_root),
+        collect_table_contexts(export_root, runtime_model),
         cutscene_contexts(cutscene_events),
         literal_context_index,
+    )
+    context_kind_counts = Counter(
+        str(context.get("kind") or "unknown")
+        for rows in contexts.values()
+        for context in rows
+        if isinstance(context, dict)
+    )
+    context_kind_event_counts = Counter(
+        kind
+        for rows in contexts.values()
+        for kind in {
+            str(context.get("kind") or "unknown")
+            for context in rows
+            if isinstance(context, dict)
+        }
     )
     events, media_to_events, banks = build_event_rows(audio_index, contexts)
     media = build_media_rows(audio_index, media_to_events)
@@ -1427,6 +1871,18 @@ def build_audio_semantic_data(
             "authoredTableEventHashes": len(table_event_hashes),
             "authoredTableEventHashesFound": table_event_hash_matches,
             "runtimeSystems": len(runtime_systems),
+            "interactiveAudioTriggerEvents": context_kind_event_counts.get("interactiveAudioTrigger", 0),
+            "interactiveAudioTriggerContexts": context_kind_counts.get("interactiveAudioTrigger", 0),
+            "interactiveComponentTriggerEvents": context_kind_event_counts.get("interactiveComponentTrigger", 0),
+            "interactiveComponentTriggerContexts": context_kind_counts.get("interactiveComponentTrigger", 0),
+            "audioGlobalConfigEvents": (
+                context_kind_event_counts.get("audioGlobalConfigEvent", 0)
+                + context_kind_event_counts.get("audioGlobalConfigEventHash", 0)
+            ),
+            "audioGlobalConfigContexts": (
+                context_kind_counts.get("audioGlobalConfigEvent", 0)
+                + context_kind_counts.get("audioGlobalConfigEventHash", 0)
+            ),
             "authoredPlaySoundActionEvents": play_sound_action_events,
             "authoredPlaySoundActionContexts": play_sound_action_contexts,
             "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
@@ -1443,6 +1899,7 @@ def build_audio_semantic_data(
             "mediaCategories": dict(sorted(media_categories.items())),
             "eventMediaRelations": dict(sorted(media_relations.items())),
             "runtimeLayers": dict(sorted(runtime_layers.items())),
+            "contextKinds": dict(sorted(context_kind_counts.items())),
         },
         "categories": [
             {"id": key, "label": label, "eventCount": event_categories.get(key, 0), "mediaCount": media_categories.get(key, 0)}

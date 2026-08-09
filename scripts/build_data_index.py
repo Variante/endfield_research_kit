@@ -151,7 +151,7 @@ INTERACTIVE_LOGIC_CONTROLLER_MEMBER_COUNT = 2
 INTERACTIVE_HITTABLE_COMPONENT_TAG = 0x004A
 INTERACTIVE_HITTABLE_MEMBER_COUNT = 3
 INTERACTIVE_HITTABLE_COLLIDER_SHAPE_BLOB_LENGTH = 80
-INTERACTIVE_AUDIO_COMPONENT_TAG = 0x0051
+INTERACTIVE_AUDIO_COMPONENT_TAG = 0x005D
 INTERACTIVE_AUDIO_MEMBER_COUNT = 2
 INTERACTIVE_AUDIO_DATA_MEMBER_COUNT = 13
 INTERACTIVE_SHOW_GUIDE_COMPONENT_TAGS = {
@@ -290,7 +290,7 @@ BASE_COMPONENT_UNION_TAGS = {
     0x0049: "Core_HeightZeroMarkerComponentData",
     0x004A: "Core_HittableComponentForIntData",
     0x004F: "Core_InteractCommonTwoStateComponentData",
-    0x0051: "Core_InteractiveAudioData",
+    0x005D: "Core_InteractiveAudioData",
     0x0059: "Core_InteractiveCommonMultiStateComponentData",
     0x005A: "Core_InteractiveCommonPerformComponentData",
     0x005B: "Core_InteractiveCoolerUnitComponentData",
@@ -1793,13 +1793,12 @@ def parse_interactive_audio_component(
             )
             events.append(event)
             audio_event_counts[event] += 1
-        if len(audio_rows) < 16:
-            audio_rows.append({
-                "state": state,
-                "stateName": state_name,
-                "audioCount": event_count,
-                "events": events[:12],
-            })
+        audio_rows.append({
+            "state": state,
+            "stateName": state_name,
+            "audioCount": event_count,
+            "events": events,
+        })
 
     custom_audio_count, offset = read_memorypack_u32_count(
         data,
@@ -1837,12 +1836,11 @@ def parse_interactive_audio_component(
         )
         custom_name_counts[name] += 1
         custom_event_counts[event] += 1
-        if len(custom_rows) < 16:
-            custom_rows.append({
-                "event": event,
-                "name": name,
-                "note": note,
-            })
+        custom_rows.append({
+            "event": event,
+            "name": name,
+            "note": note,
+        })
 
     bools: dict[str, bool] = {}
     true_fields: list[str] = []
@@ -1873,8 +1871,10 @@ def parse_interactive_audio_component(
         "customEventCounts": dict(custom_event_counts.most_common(24)),
         "booleans": bools,
         "trueBooleanFields": true_fields,
-        "sampleAudioRows": audio_rows,
-        "sampleCustomRows": custom_rows,
+        "audioRows": audio_rows,
+        "customRows": custom_rows,
+        "sampleAudioRows": audio_rows[:16],
+        "sampleCustomRows": custom_rows[:16],
     }, offset
 
 

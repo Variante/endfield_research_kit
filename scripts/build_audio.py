@@ -27,6 +27,7 @@ try:
         build_audio_semantic_data,
         collect_metadata_audio_literals,
         collect_table_audio_event_hashes,
+        collect_table_audio_event_names,
         hashed_event_key,
     )
 except ImportError:  # Imported as scripts.build_audio from repository-root tests.
@@ -36,6 +37,7 @@ except ImportError:  # Imported as scripts.build_audio from repository-root test
         build_audio_semantic_data,
         collect_metadata_audio_literals,
         collect_table_audio_event_hashes,
+        collect_table_audio_event_names,
         hashed_event_key,
     )
 
@@ -1207,7 +1209,7 @@ def link_gameplay_audio(
         evidence_kinds = sorted({str(row.get("kind") or "") for row in evidence if isinstance(row, dict) and row.get("kind")})
         relation_types: list[str] = []
         if "skillData" in evidence_kinds:
-            relation_types.append("skillDataEventField")
+            relation_types.append("skillDataEventReference")
         if "skillBuffData" in evidence_kinds:
             relation_types.append("skillBuffChain")
         if "enemyBornBuffData" in evidence_kinds:
@@ -4860,6 +4862,7 @@ def build_audio(args: argparse.Namespace) -> int:
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
     event_names = collect_audio_event_names(conv_dir, args.export_root)
+    event_names.update(collect_table_audio_event_names(args.export_root))
     metadata_path = args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
     if not metadata_path.is_file():
         cached_metadata_path = args.export_root / "recovered" / "il2cpp" / "global-metadata.dat"

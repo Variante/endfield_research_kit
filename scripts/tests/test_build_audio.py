@@ -16,6 +16,38 @@ SPEC.loader.exec_module(build_audio)
 
 
 class AudioCategoryTests(unittest.TestCase):
+    def test_current_interactive_audio_union_tag_and_complete_rows(self) -> None:
+        from scripts import build_data_index
+
+        def string(value: str) -> bytes:
+            raw = value.encode("utf-8")
+            return pack("<I", len(raw)) + raw
+
+        body = b"".join([
+            pack("<I", 0),
+            bytes([13]),
+            pack("<I", 1),
+            pack("<iI", 13, 1),
+            string("au_int_fixture_break"),
+            pack("<I", 1),
+            bytes([3]),
+            string("au_int_fixture_open"),
+            string("panel_open"),
+            string("Open panel"),
+            bytes([1] + [0] * 10),
+        ])
+
+        self.assertEqual(build_data_index.INTERACTIVE_AUDIO_COMPONENT_TAG, 0x005D)
+        self.assertEqual(
+            build_data_index.BASE_COMPONENT_UNION_TAGS[0x005D],
+            "Core_InteractiveAudioData",
+        )
+        decoded, end = build_data_index.parse_interactive_audio_component(body, 0, 2)
+        self.assertEqual(end, len(body))
+        self.assertEqual(decoded["audioRows"][0]["stateName"], "Destroy")
+        self.assertEqual(decoded["audioRows"][0]["events"], ["au_int_fixture_break"])
+        self.assertEqual(decoded["customRows"][0]["name"], "panel_open")
+
     def test_current_play_sound_union_tag_matches_binary_formatter_audit(self) -> None:
         from scripts import build_data_index
 
@@ -654,7 +686,7 @@ AnimationClip:
             self.assertEqual(stats["profileVoiceRefsLinked"], 1)
             self.assertEqual([row["id"] for row in events], ["au_yes"])
             self.assertEqual(events[0]["triggerBindingStatus"], "exactSkillConfig")
-            self.assertEqual(events[0]["triggerRelationTypes"], ["skillDataEventField"])
+            self.assertEqual(events[0]["triggerRelationTypes"], ["skillDataEventReference"])
             self.assertEqual(events[0]["triggerBindings"][0]["ownershipMethod"], "gameplaySkillId")
             enemy = payload["enemies"]["eny_test"]
             self.assertEqual(enemy["ownershipConfidence"], "inferred")

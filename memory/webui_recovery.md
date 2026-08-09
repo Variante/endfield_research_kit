@@ -82,7 +82,8 @@ Runtime overrides:
   selectable enemy variants, linked assets, compact projectile behavior, and
   playable Story-style sound controls. Only Events joined through the exact
   displayed Gameplay action id and its SkillData or referenced BuffData return
-  to that skill row. Decoded BuffData PlaySound actions add exact authored frame
+  to that skill row as exact Event dependencies, not generic playback claims.
+  Decoded BuffData PlaySound actions add exact authored frame
   windows and stop/fade lifetime where available; activation conditions and
   Wwise selection remain unresolved. Inferred skill links, animation systems,
   profile voice, and all enemy audio stay in the final detail section. Shared
