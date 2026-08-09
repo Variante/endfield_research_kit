@@ -87,6 +87,8 @@
       exactPlayback: "exact native playback",
       exactReceiverNodes: "Exact serialized runtime receivers",
       exactReceiverNodesHint: "Each node is an original LevelScript event selector with an exact control path to Story playback. It organizes more recovered files without claiming a mission or quest owner.",
+      nativeReceiverStoryContext: "exact receiver context",
+      nativeReceiverStoryContextHint: "This Story key is joined to an exact native receiver and its original files. The join is context only; it does not add mission ownership, activation, branching, or Story order.",
       playbackGate: "exact receiver playback gate",
       playbackGateTrue: "playback allowed when true",
       playbackGateBoundary: "This original-binary predicate controls only this receiver playback. It does not prove mission ownership, order between Story files, or a later server-side state write.",
@@ -3442,17 +3444,37 @@
     return `<span class="mp-story-connection-originals"><strong>${esc(t("storyConnectionOriginalFiles"))}</strong>${files}${unresolved ? `<small>${esc(t("storyConnectionOriginalFilesHint"))} / unresolved: ${unresolved}</small>` : ""}${nonPath ? `<small>${esc(t("storyConnectionProvenanceSummaryHint"))} / non-path: ${nonPath}</small>` : ""}</span>`;
   }
 
+  function nativeReceiverStoryContextHtml(row) {
+    const storyKey = String(row?.key || "");
+    if (!storyKey) return "";
+    const contexts = (state.index?.storyCoverage?.nativeReceiverStoryContextIndex?.rows || [])
+      .filter((context) => context && context.storyKey === storyKey);
+    if (!contexts.length) return "";
+    const contextRows = contexts.map((context) => {
+      const location = [context.levelId, context.scriptId].filter(Boolean).join("/") || "?";
+      const events = (context.eventNames || []).filter(Boolean).join(", ");
+      const files = (context.relatedOriginalFiles || [])
+        .filter((file) => file && file.sourceFile)
+        .map((file) => `<code>${esc(file.sourceFile)}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}`)
+        .join(" 路 ");
+      return `<span class="mp-story-receiver-context-row"><code>${esc(location)}</code>${events ? `<small>${esc(events)}</small>` : ""}${context.activationClass ? `<small>${esc(String(context.activationClass).replaceAll("_", " "))}</small>` : ""}${files ? `<small>${files}</small>` : ""}</span>`;
+    }).join("");
+    return `<span class="mp-story-receiver-context"><strong>${esc(t("nativeReceiverStoryContext"))} <span>${contexts.length}</span></strong>${contextRows}<small>${esc(t("nativeReceiverStoryContextHint"))}</small></span>`;
+  }
+
   function storyConnectionLink(row, className, questId = "") {
     const details = storyConnectionDetails(row);
     const routeHtml = storyTriggerRoutes(row, questId).map(triggerRouteHtml).join("");
     const rejectionHtml = storyPlaybackRejections(row).map(playbackRejectionHtml).join("");
     const offlineHtml = offlineRecoveryHtml(row);
     const originalFilesHtml = storyConnectionOriginalFilesHtml(row);
+    const receiverContextHtml = nativeReceiverStoryContextHtml(row);
     const evidence = [row.confidence, row.source || row.evidence].filter(Boolean).join(" · ");
     return `<a class="is-${className}" href="${esc(storyHref(row.key))}" title="${esc(`${t("openInStory")} · ${evidence}`)}">
       <span>${esc(storyDisplayKind(row))}</span><code>${esc(row.key)}</code><b aria-hidden="true">→</b>
       <em>${esc(details.join(" · "))}</em>${evidence ? `<small>${esc(evidence)}</small>` : ""}
       ${originalFilesHtml}
+      ${receiverContextHtml}
       ${routeHtml}
       ${rejectionHtml}
       ${offlineHtml}

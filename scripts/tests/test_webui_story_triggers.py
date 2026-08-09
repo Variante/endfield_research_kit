@@ -161,6 +161,14 @@ for (const [key, category] of [
         self.assertIn("storyConnectionProvenanceSummary", source)
         self.assertIn("storyConnectionNonPath", source)
 
+    def test_mission_pipeline_surfaces_generic_receiver_story_context(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("nativeReceiverStoryContextIndex", source)
+        self.assertIn("nativeReceiverStoryContextHtml", source)
+        self.assertIn('t("nativeReceiverStoryContext")', source)
+        self.assertIn("context.relatedOriginalFiles", source)
+        self.assertIn("nativeReceiverStoryContextHint", source)
+
     def test_mission_pipeline_surfaces_fixed_point_carrier_closure(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("metadata?.maximumShortestPathDepth", source)
