@@ -2412,6 +2412,10 @@ def verify_selected_resolver_binding_contract() -> None:
     )
     assert hdpls_native["reflected_size_bytes"] == 3568
     assert hdpls_native["native_requested_size_bytes"] == 3552
+    assert hdpls_native["cbhandle_size_bytes"] == 3552
+    assert hdpls_native["ring_start_alignment_bytes"] == 256
+    assert hdpls_native["next_allocation_start_delta"] == 3584
+    assert hdpls_native["cpu_tail_write_end_bytes"] == 3568
     assert hdpls_native["publication_policy"].startswith("fail closed")
     require_hash(
         repo_path(hdpls_native["audit_path"]),
@@ -2432,6 +2436,49 @@ def verify_selected_resolver_binding_contract() -> None:
     require_hash(
         repo_path(hdpls_native["metadata_path"]),
         hdpls_native["metadata_sha256"],
+    )
+    require_hash(
+        repo_path(hdpls_native["constant_buffer_audit_path"]),
+        hdpls_native["constant_buffer_audit_sha256"],
+    )
+    require_text_hash(
+        repo_path(hdpls_native["constant_buffer_auditor_path"]),
+        hdpls_native["constant_buffer_auditor_sha256"],
+    )
+    require_text_hash(
+        repo_path(hdpls_native["unityplayer_disassembler_path"]),
+        hdpls_native["unityplayer_disassembler_sha256"],
+    )
+    require_hash(
+        repo_path(hdpls_native["unityplayer_disassembly_path"]),
+        hdpls_native["unityplayer_disassembly_sha256"],
+    )
+
+    hdpls_constant_buffer = json.loads(
+        repo_path(hdpls_native["constant_buffer_audit_path"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert hdpls_constant_buffer["schema"] == (
+        "endfield.hdpls-constant-buffer-audit.v1"
+    )
+    assert hdpls_constant_buffer["verdict"] == (
+        "CPU_TAIL_SAFE_GPU_VISIBILITY_OPEN"
+    )
+    assert hdpls_constant_buffer["allocation"] == {
+        "requested_bytes": 3552,
+        "cbhandle_size_bytes": 3552,
+        "ring_rounded_bytes": 3552,
+        "start_alignment_bytes": 256,
+        "next_aligned_start_delta": 3584,
+        "reflected_write_end_bytes": 3568,
+        "padding_remaining_after_tail_bytes": 16,
+        "next_allocation_overlap": False,
+    }
+    assert hdpls_constant_buffer["binding"]["serialized_size_bytes"] == 3552
+    assert hdpls_constant_buffer["binding"]["global_state_size_bytes"] == 3552
+    assert hdpls_constant_buffer["sources"]["unityplayer_sha256"] == (
+        hdpls_native["unityplayer_sha256"]
     )
 
     hdpls_audit = json.loads(
@@ -2456,12 +2503,14 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_audit["frame_lifecycle"]["screen_space_channels"] == (
         "56 entries reset to 0"
     )
-    assert len(hdpls_audit["capture_boundary"]["required"]) == 4
+    assert len(hdpls_audit["capture_boundary"]["required"]) == 3
+    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 4
     for path_key, hash_key in (
         ("disassembly_path", "disassembly_sha256"),
         ("metadata_path", "metadata_sha256"),
         ("selected_shader_path", "selected_shader_sha256"),
         ("source_sidecar_path", "source_sidecar_sha256"),
+        ("constant_buffer_audit_path", "constant_buffer_audit_sha256"),
     ):
         require_hash(
             repo_path(hdpls_audit["sources"][path_key]),
@@ -2759,7 +2808,8 @@ def main() -> int:
         "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
         "zero-cookie isolated transport, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity, native reset/push owner, "
-        "selected .y-only read path, and fail-closed pre-bind capture boundary), "
+        "selected .y-only read path, exact 0xDE0 CBHandle/command size, "
+        "0x100-aligned CPU tail-write safety, and fail-closed GPU-tail/active-frame boundary), "
         "all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "
         "wetness and volumetric-fog sampling while retaining live reflection, "
