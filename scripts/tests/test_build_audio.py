@@ -16,6 +16,28 @@ SPEC.loader.exec_module(build_audio)
 
 
 class AudioCategoryTests(unittest.TestCase):
+    def test_wav_decode_defaults_to_lossless_flac_output(self) -> None:
+        self.assertEqual(
+            build_audio.audio_output_format(argparse.Namespace(format="wav", audio_format=None)),
+            "flac",
+        )
+        self.assertEqual(
+            build_audio.audio_output_format(argparse.Namespace(format="wem", audio_format=None)),
+            "wem",
+        )
+
+    def test_wem_decode_cannot_claim_browser_flac_output(self) -> None:
+        with self.assertRaises(SystemExit):
+            build_audio.audio_output_format(
+                argparse.Namespace(format="wem", audio_format="flac")
+            )
+
+    def test_dialog_path_uses_requested_browser_extension(self) -> None:
+        self.assertEqual(
+            build_audio.audio_rel_for_dialog_path("v1d3/line.wem", ".flac"),
+            "voice/other/line.flac",
+        )
+
     def test_voice_categories_keep_useful_story_detail(self) -> None:
         self.assertEqual(
             build_audio.audio_category_for_rel("voice/story/main_episodes/line.wav"),
@@ -77,6 +99,14 @@ class AudioDumperTests(unittest.TestCase):
                 self.assertIn("--block", command)
                 self.assertEqual(command[command.index("--block") + 1], "all")
                 self.assertIn("--shared-output", command)
+
+    def test_audio_file_priority_prefers_flac_over_legacy_wav(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            (root / "same.wav").write_bytes(b"wav")
+            (root / "same.flac").write_bytes(b"flac")
+            files = build_audio.iter_audio_files(root)
+            self.assertEqual([path.suffix for path in files], [".flac", ".wav"])
 
 
 class ProjectileAudioLinkTests(unittest.TestCase):

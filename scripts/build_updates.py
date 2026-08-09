@@ -63,6 +63,7 @@ ASSET_HASH_CHUNK_SIZE = 1024 * 1024
 ASSET_DEFAULT_FINGERPRINT_MODE = "size"
 ASSET_HASH_FINGERPRINT_MODE = "content_hash"
 AUDIO_EXTENSIONS = {
+    ".flac",
     ".wav",
     ".wem",
 }

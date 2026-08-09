@@ -14,6 +14,11 @@ from pathlib import Path, PurePosixPath
 from struct import unpack_from
 from typing import Any
 
+try:
+    from convert_audio_to_flac import convert_audio_root
+except ImportError:  # Imported as scripts.build_audio from repository-root tests.
+    from scripts.convert_audio_to_flac import convert_audio_root
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
@@ -71,7 +76,8 @@ LANGUAGES = {
     },
 }
 
-AUDIO_EXTENSIONS = {".wav", ".wem"}
+AUDIO_EXTENSIONS = {".flac", ".wav", ".wem"}
+AUDIO_EXTENSION_PRIORITY = {".flac": 0, ".wav": 1, ".wem": 2}
 EVENT_CATEGORY_PREFIXES = {
     "au_sfx_": "au_sfx",
     "au_vo_": "au_vo",
@@ -143,6 +149,34 @@ AUDIO_META_KEYS = (
 
 def normalize_posix(value: str | Path) -> str:
     return PurePosixPath(str(value).replace("\\", "/")).as_posix()
+
+
+def audio_output_format(args: argparse.Namespace) -> str:
+    """Return the browser-facing format while preserving legacy WEM calls."""
+    source_format = str(getattr(args, "format", "wav") or "wav").lower()
+    requested = str(getattr(args, "audio_format", "") or "").lower()
+    output_format = requested or ("flac" if source_format == "wav" else source_format)
+    if output_format not in {"flac", "wav", "wem"}:
+        raise SystemExit(f"Unsupported browser audio format: {output_format}")
+    if source_format == "wem" and output_format != "wem":
+        raise SystemExit(
+            "WEM decoding can only keep WEM output; omit --format wem for "
+            "browser-playable WAV/FLAC output."
+        )
+    if source_format == "wav" and output_format == "wem":
+        raise SystemExit(
+            "WEM output requires --format wem; use the default FLAC output for "
+            "browser-playable audio."
+        )
+    return output_format
+
+
+def audio_rel_with_extension(rel: str | Path, extension: str) -> str:
+    suffix = str(extension or "").strip().lower()
+    if suffix and not suffix.startswith("."):
+        suffix = "." + suffix
+    path = PurePosixPath(normalize_posix(rel))
+    return normalize_posix(path.with_suffix(suffix)) if suffix else normalize_posix(path)
 
 
 def json_dump(path: Path, payload: Any) -> None:
@@ -1165,9 +1199,10 @@ def audio_rel_for_dialog_path(dialog_path: str, extension: str) -> str:
     # the language segment; the leading v1dN batch folder is merged away to match the
     # decoded layout before the exporter folds it into the browser-facing voice tree.
     path = dialog_path.replace("\\", "/")
-    if extension.lower() == ".wav":
-        path = str(PurePosixPath(path).with_suffix(".wav"))
-    return canonical_audio_rel(normalize_posix(Path("voice") / strip_voice_batch_prefix(path.lower())))
+    path = audio_rel_with_extension(path, extension)
+    return canonical_audio_rel(
+        normalize_posix(Path("voice") / strip_voice_batch_prefix(path.lower()))
+    )
 
 
 def storage_root_for_block(block: str, language: str) -> str:
@@ -1304,7 +1339,11 @@ def existing_shared_audio_metadata() -> dict[str, str]:
     }
 
 
-def prior_source_metadata_by_rel(language_root: Path, language: str) -> dict[tuple[str, str], dict[str, str]]:
+def prior_source_metadata_by_rel(
+    language_root: Path,
+    language: str,
+    output_format: str | None = None,
+) -> dict[tuple[str, str], dict[str, str]]:
     payload = load_json(language_root / "index.json", {})
     if not isinstance(payload, dict):
         return {}
@@ -1316,6 +1355,8 @@ def prior_source_metadata_by_rel(language_root: Path, language: str) -> dict[tup
             rel = normalize_posix(str(entry.get("rel") or "").strip())
             if not rel:
                 continue
+            if output_format:
+                rel = audio_rel_with_extension(rel, output_format)
             storage_root = entry_storage_root(entry, language)
             key = (storage_root, rel)
             if key in out:
@@ -1420,9 +1461,16 @@ def iter_audio_files(language_root: Path) -> list[Path]:
     if not language_root.exists():
         return []
     return sorted(
-        path
-        for path in language_root.rglob("*")
-        if path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS
+        [
+            path
+            for path in language_root.rglob("*")
+            if path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS
+        ],
+        key=lambda path: (
+            normalize_posix(path.relative_to(language_root)).rsplit(".", 1)[0].lower(),
+            AUDIO_EXTENSION_PRIORITY.get(path.suffix.lower(), 99),
+            normalize_posix(path.relative_to(language_root)).lower(),
+        ),
     )
 
 
@@ -1498,13 +1546,28 @@ def build_dialog_audio_index(
             if not dialog_path:
                 continue
             audio_id = audio_id_from_path(dialog_path)
-            rel = audio_rel_for_dialog_path(dialog_path, preferred_extension)
-            file_path = language_root / Path(*PurePosixPath(rel).parts)
-            if not file_path.exists() and preferred_extension.lower() == ".wav":
-                rel = audio_rel_for_dialog_path(dialog_path, ".wem")
-                file_path = language_root / Path(*PurePosixPath(rel).parts)
-            if not file_path.exists():
+            candidates = []
+            for extension in (
+                preferred_extension,
+                ".flac",
+                ".wav",
+                ".wem",
+            ):
+                normalized_extension = str(extension).lower()
+                if not normalized_extension.startswith("."):
+                    normalized_extension = "." + normalized_extension
+                if normalized_extension in {item[0] for item in candidates}:
+                    continue
+                candidate_rel = audio_rel_for_dialog_path(dialog_path, normalized_extension)
+                candidate_path = language_root / Path(*PurePosixPath(candidate_rel).parts)
+                candidates.append((normalized_extension, candidate_rel, candidate_path))
+            selected = next(
+                ((rel, file_path) for _, rel, file_path in candidates if file_path.exists()),
+                None,
+            )
+            if selected is None:
                 continue
+            rel, file_path = selected
             duration = row.get(duration_field)
             entry = {
                 "id": audio_id,
@@ -2182,10 +2245,13 @@ def load_cached_event_audio_index(
     webui_root: Path,
     language: str,
     explicit_event_hashes: set[int] | None = None,
+    expected_format: str | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]] | None:
     """Reuse event-to-media links from the last audio index when complete."""
     payload = load_json(language_root / "index.json", {})
     if not isinstance(payload, dict):
+        return None
+    if expected_format and str(payload.get("format") or "").lower() != expected_format.lower():
         return None
     wanted_names = {
         str(name or "").strip().lower()
@@ -2358,6 +2424,53 @@ def run_audio_dumper(
                 f"under {storage_root}"
             )
     return source_by_rel
+
+
+def remap_audio_metadata_extension(
+    source_by_rel: dict[tuple[str, str], dict[str, str]],
+    output_format: str,
+) -> dict[tuple[str, str], dict[str, str]]:
+    """Move source provenance keys from decoded WAV paths to WebUI paths."""
+    if output_format == "wav":
+        return source_by_rel
+    out: dict[tuple[str, str], dict[str, str]] = {}
+    for (storage_root, rel), metadata in source_by_rel.items():
+        normalized = normalize_posix(rel)
+        remapped = audio_rel_with_extension(normalized, output_format)
+        out[(storage_root, remapped)] = metadata
+    return out
+
+
+def convert_audio_for_webui(
+    args: argparse.Namespace,
+    language: str,
+    output_format: str,
+) -> dict[str, int]:
+    """Convert the selected decoded storage roots to the browser format."""
+    if output_format != "flac":
+        return {"scanned": 0, "converted": 0, "skipped": 0, "planned": 0, "failed": 0}
+
+    storage_names = (
+        (SHARED_AUDIO_STORAGE, language)
+        if args.block == "all"
+        else (storage_root_for_block(args.block, language),)
+    )
+    total = {"scanned": 0, "converted": 0, "skipped": 0, "planned": 0, "failed": 0}
+    for storage_name in dict.fromkeys(storage_names):
+        stats = convert_audio_root(
+            args.audio_root / storage_name,
+            ffmpeg=getattr(args, "ffmpeg", None),
+            jobs=getattr(args, "audio_conversion_jobs", None) or 1,
+            delete_source=True,
+        )
+        for key, value in stats.items():
+            total[key] = total.get(key, 0) + int(value)
+        if stats["scanned"]:
+            print(
+                f"Audio FLAC conversion [{storage_name}]: "
+                f"{stats['converted']:,} converted, {stats['skipped']:,} skipped"
+            )
+    return total
 
 def append_audio_id_candidate(ids: list[str], seen: set[str], value: object) -> None:
     if isinstance(value, (list, tuple, set)):
@@ -2851,6 +2964,7 @@ def build_audio(args: argparse.Namespace) -> int:
     args.audio_root = args.audio_root.resolve()
     language = args.language.upper()
     language_info = LANGUAGES[language]
+    output_format = audio_output_format(args)
     shared_root = args.audio_root / SHARED_AUDIO_STORAGE
     language_root = args.audio_root / language
     if args.skip_decode and not has_decoded_audio_in_roots(shared_root, language_root):
@@ -2862,8 +2976,14 @@ def build_audio(args: argparse.Namespace) -> int:
     language_root.mkdir(parents=True, exist_ok=True)
 
     started = time.time()
-    prior_source_by_rel = prior_source_metadata_by_rel(language_root, language)
+    prior_source_by_rel = prior_source_metadata_by_rel(language_root, language, output_format)
     decoded_source_by_rel = run_audio_dumper(args, language, language_info)
+    convert_audio_for_webui(args, language, output_format)
+    if output_format == "flac":
+        decoded_source_by_rel = remap_audio_metadata_extension(
+            decoded_source_by_rel,
+            output_format,
+        )
 
     for regroup_storage in (SHARED_AUDIO_STORAGE, language):
         bank_counts, bank_metadata = regroup_unmapped_by_bank(args.audio_root, regroup_storage, args.export_root)
@@ -2914,7 +3034,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language_root,
         language,
         language_info,
-        "." + args.format.lower(),
+        "." + output_format.lower(),
     )
     audio_by_id = {**generic_audio, **dialog_audio}
 
@@ -2956,6 +3076,7 @@ def build_audio(args: argparse.Namespace) -> int:
             args.webui_root,
             language,
             projectile_event_hashes,
+            expected_format=output_format,
         )
         if args.skip_decode
         else None
@@ -3006,7 +3127,8 @@ def build_audio(args: argparse.Namespace) -> int:
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "language": language,
         "dumperLanguage": language_info["dumper"],
-        "format": args.format,
+        "format": output_format,
+        "sourceFormat": args.format,
         "block": args.block,
         "decodeBlocks": list(selected_audio_blocks(args.block)),
         "sourceSummary": source_summary,
@@ -3057,7 +3179,21 @@ def build_audio(args: argparse.Namespace) -> int:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", choices=sorted(LANGUAGES), default="CN")
-    parser.add_argument("--format", choices=("wav", "wem"), default="wav")
+    parser.add_argument(
+        "--format",
+        choices=("wav", "wem"),
+        default="wav",
+        help="AnimeStudio decode format before WebUI conversion (default: wav).",
+    )
+    parser.add_argument(
+        "--audio-format",
+        choices=("flac", "wav", "wem"),
+        default=None,
+        help=(
+            "Browser-facing output format. WAV decodes default to lossless FLAC; "
+            "explicit --format wem keeps legacy WEM output."
+        ),
+    )
     parser.add_argument(
         "--block",
         choices=("all", "voice", "audio", "initial-audio", "audit-audio", "hotfix-audio"),
@@ -3074,6 +3210,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)
+    parser.add_argument("--ffmpeg", type=Path, default=None, help="Path to ffmpeg for WAV-to-FLAC conversion.")
+    parser.add_argument(
+        "--audio-conversion-jobs",
+        type=int,
+        default=1,
+        help="Concurrent ffmpeg FLAC encoders (default: 1).",
+    )
     parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
     parser.add_argument("--webui-root", type=Path, default=DEFAULT_WEBUI_ROOT)
     parser.add_argument(

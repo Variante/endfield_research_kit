@@ -146,6 +146,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     _range_remaining: int | None = None
     error_message_format = ERROR_PAGE_TEMPLATE
     error_content_type = "text/html; charset=utf-8"
+    extensions_map = {
+        **http.server.SimpleHTTPRequestHandler.extensions_map,
+        ".flac": "audio/flac",
+        ".wav": "audio/wav",
+    }
 
     def _redirect_webui_alias(self) -> bool:
         """Redirect the common repo-relative WebUI URL to this server's root."""

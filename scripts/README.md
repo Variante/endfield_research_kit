@@ -64,7 +64,8 @@ Prefer focused tests, direct probes, and data-only builds during the batch.
 | `build_world_data.py` | World semantic data |
 | `build_presentation_data.py` | Presentation semantic data |
 | `build_assets.py` | Assets, Story media, and Gameplay asset indexes |
-| `build_audio.py` | Audio decode/relink and Gameplay SFX sidecar |
+| `build_audio.py` | Lossless FLAC audio decode/relink and Gameplay SFX sidecar |
+| `convert_audio_to_flac.py` | Standalone WAV-to-FLAC migration helper |
 | `pack_webui.py` | Static package and optional media archives |
 
 Typical focused commands:
@@ -163,9 +164,21 @@ directly when Gameplay and the broad Assets index are already current.
 `build_audio.py` writes shared SFX/music once under
 `export_full/structured/Audio/shared/`, language voice under
 `export_full/structured/Audio/<LANG>/`, relinks Story audio, and produces the
-compact per-language Gameplay SFX sidecar. Exact Wwise event traversal can
-yield multiple media candidates; unresolved runtime switch/random selection is
-preserved.
+compact per-language Gameplay SFX sidecar. AnimeStudio still decodes Wwise
+media to WAV internally; the builder converts the browser-facing files to
+lossless FLAC and removes the temporary WAV after each successful conversion.
+`ffmpeg` is required when conversion is needed. Pass `--audio-format wav` to
+retain WAV, or `--format wem` to keep the legacy compact WEM output. Exact
+Wwise event traversal can yield multiple media candidates; unresolved runtime
+switch/random selection is preserved.
+
+For a one-off migration of an existing export, preview first and then run:
+
+```bat
+python scripts\convert_audio_to_flac.py --audio-root export_full\structured\Audio --dry-run
+python scripts\convert_audio_to_flac.py --audio-root export_full\structured\Audio --delete-source --jobs 4
+python scripts\build_audio.py --skip-decode --audio-format flac --audio-conversion-jobs 4
+```
 
 Use `export_assets.bat --export-from-game` for installed-game image, model,
 Material, and CN-audio refresh. Asset modes are `--focused-assets`,

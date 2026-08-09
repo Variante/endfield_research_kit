@@ -50,7 +50,7 @@ TEXT_EXTENSIONS = {
     ".yaml",
 }
 
-AUDIO_EXTENSIONS = {".wav", ".wem"}
+AUDIO_EXTENSIONS = {".flac", ".wav", ".wem"}
 
 IMAGE_TOKEN_RE = re.compile(
     r"<image\b(?!\s*=)[^>]*>[\s\S]*?</image>"

@@ -69,6 +69,45 @@ through nested buff references and Wwise HIRC to playable media. Exact
 character skill ids prove ownership; authored child-skill and enemy-id-prefix
 placement remains inferred, while explicit enemy born-buff links are direct.
 
+## Audio binary and playback evidence
+
+The audio container is now understood far enough to preserve source identity
+without treating decoded files as the source of truth. An AKPK payload may be
+wrapped in the encrypted `:)xD` PCK form; after the VFS XOR step its sectors
+describe languages, banks, sounds, and externals. Bank entries contain Wwise
+`BKHD`/`DIDX`/`DATA` records, where `DIDX` supplies the media id, byte offset,
+and byte length. Sound and external sectors can also point directly to WEM
+media. WEM decryption is keyed by the media id, and already-RIFF/RIFX payloads
+are left unchanged.
+
+The HIRC parser follows event objects through action/container references and
+records candidate numeric media ids. This is strong event-to-media evidence,
+but a switch, random, or sequence container can select among candidates at
+runtime; an exported link does not claim that every candidate always plays.
+The current full-bank probe confirms that Endfield uses sound, action, event,
+random/sequence-container, switch-container, actor-mixer, layer, and music
+object families in the HIRC graph. Action objects consistently expose their
+target id at the current offset-2 layout, but their remaining bytes are still
+version-sensitive action flags and parameters; they must not be treated as
+playback timestamps.
+The strongest current authored playback joins are SkillData/BuffData audio
+references, Timeline/cutscene audio fields, and AudioDialog-to-lipsync
+`pathStem` associations. We do not yet have a complete runtime receiver,
+activation chronology, or proof of which branch was selected in a live game.
+There is nevertheless exact authored timing for a useful subset: recovered
+Timeline `AudioEventPlayable` assets carry the event key plus stop/fade/seek
+behavior, and the generated video bindings carry each clip's start and
+duration on its audio track. `AudioDialogCustomEventTable` adds preload and
+pre/post-enter/exit event hooks, while dialog-tree output gives ordered lines
+and decoded durations. Those are playback schedules or hooks, not proof that
+the engine reached every branch during a particular session.
+
+Next audio-recovery work should decode HIRC action timing and switch/random
+semantics, identify Timeline/native audio receivers and activation paths, and
+validate the resulting chronology against a captured game session. Keep
+source WEM ids, authored references, and runtime-selected candidates separate
+in reports and WebUI labels.
+
 ## Source graph
 
 Primary database:
