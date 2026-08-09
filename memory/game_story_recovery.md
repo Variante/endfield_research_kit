@@ -130,12 +130,20 @@ never promotes an edge.
   schema-driven decoder recovers complete task maps, while a bounded fragment
   scanner admits a condition from mixed maps only when the union payload,
   dictionary key, member-count envelope, and trailing objective fields all
-  agree. Joining exact finish state to MissionRuntime publishes 15 objective
-  placements across 14 task rows and 13 missions (12 complete maps and three
-  bounded fragments). One row, `c28m3`, also has an exact same-mission SubGame
-  task carrier. This proves shared branch-state fan-out and a mission shell,
-  not task activation, player choice, server successor selection, or Story
-  order. Twenty-eight exact LevelScript consumers remain unmatched.
+  agree. All 42 exact consumers now join to a prime-reachable authored
+  DialogTree finish endpoint; none lacks an original endpoint. Exact
+  MissionRuntime finish matches publish 15 objective placements across 14 task
+  rows and 13 missions (12 complete maps and three bounded fragments). Five
+  any-finish objective placements across four missions accept an exact task
+  outcome under the hash-locked native predicate, while 17 objective placements
+  across five missions reference the same active LevelScript as eight task
+  consumers. These remain context-only. One row, `c28m3`, also has an exact
+  same-mission SubGame task carrier. The other 28 endpoint-to-task dependencies
+  lack an exact MissionRuntime finish match; this is no longer an endpoint gap,
+  but mission/task activation and ownership remain unresolved. Every
+  mission-to-script placement hash-matches the active `Persistent`-over-
+  `StreamingAssets` source before publication. None of these tiers proves
+  player choice, server successor selection, or Story order.
 - Split/fan-out scheduling preserves sibling actions as parallel or unordered.
   Array/list position is never chronology.
 - Parent-dialog activation uses the same corpus-wide typed control-path walker,
@@ -230,9 +238,11 @@ Reject as proof:
 1. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families.
-2. Extend the general LevelScript task-union decoder for the remaining mixed
-   maps, then investigate the 28 exact unmatched finish consumers. Preserve
-   fragment task identity as unresolved unless the enclosing map validates.
+2. Extend the general LevelScript task-union decoder for the ten remaining
+   bounded mixed-map consumers, preserving task identity as unresolved unless
+   the enclosing map validates. For the 28 dependencies without an exact
+   MissionRuntime finish match, seek a typed task-activation or mission-owner
+   carrier; their authored DialogTree endpoints are already recovered.
 3. Find any client-visible carrier for server-side mission/quest successor
    selection or LevelScript activation policy. Current state/update packets do
    not co-carry Story ownership.

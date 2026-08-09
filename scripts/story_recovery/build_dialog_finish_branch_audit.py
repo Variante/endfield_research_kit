@@ -661,6 +661,56 @@ def decode_dialog_tree_finish_routes(
     return rows, rejected
 
 
+def _validated_finish_endpoint_rows(
+    dialog_id: str,
+    recovered: dict[str, Any],
+    *,
+    source_file: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Normalize validated endpoint rows from one decoded DialogTree graph."""
+    rows: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for endpoint in recovered.get("endpoints") or []:
+        if endpoint.get("status") != "validated":
+            rejected.append(
+                {
+                    "sourceFile": source_file,
+                    "dialogId": dialog_id,
+                    "nodeId": endpoint.get("nodeId"),
+                    "nodeOrdinal": endpoint.get("nodeOrdinal"),
+                    "failureClass": endpoint.get("failureClass"),
+                    **(endpoint.get("issue") or {}),
+                }
+            )
+            continue
+        rows.append(
+            {
+                "dialogId": dialog_id,
+                "finishId": endpoint.get("finishId"),
+                "finishIdSource": endpoint.get("finishIdSource"),
+                "producerFamily": "dialog_tree_prime_reachable_finish_endpoint",
+                "finishNodeId": endpoint.get("nodeId"),
+                "finishNodeOrdinal": endpoint.get("nodeOrdinal"),
+                "primeNodeId": endpoint.get("primeNodeId"),
+                "incomingConnectionCount": endpoint.get(
+                    "incomingConnectionCount"
+                ),
+                "predecessorNodeIds": endpoint.get("predecessorNodeIds") or [],
+                "predecessorNodeTypes": endpoint.get("predecessorNodeTypes") or [],
+                "nodePath": endpoint.get("nodePath") or [],
+                "connectionPath": endpoint.get("connectionPath") or [],
+                "sourceFiles": [
+                    {
+                        "kind": "dialog_tree_text_asset",
+                        "sourceFile": source_file,
+                        "relationship": "exact_prime_reachable_finish_endpoint",
+                    }
+                ],
+            }
+        )
+    return rows, rejected
+
+
 def decode_dialog_tree_finish_endpoints(
     outer: Any,
     *,
@@ -704,45 +754,11 @@ def decode_dialog_tree_finish_endpoints(
         "endpoints": recovered.get("endpoints") or [],
         "issues": recovered.get("issues") or [],
     }
-    rows: list[dict[str, Any]] = []
-    rejected: list[dict[str, Any]] = []
-    for endpoint in recovered.get("endpoints") or []:
-        if endpoint.get("status") != "validated":
-            rejected.append(
-                {
-                    "sourceFile": source_file,
-                    "nodeId": endpoint.get("nodeId"),
-                    "nodeOrdinal": endpoint.get("nodeOrdinal"),
-                    "failureClass": endpoint.get("failureClass"),
-                    **(endpoint.get("issue") or {}),
-                }
-            )
-            continue
-        rows.append(
-            {
-                "dialogId": dialog_id,
-                "finishId": endpoint.get("finishId"),
-                "finishIdSource": endpoint.get("finishIdSource"),
-                "producerFamily": "dialog_tree_prime_reachable_finish_endpoint",
-                "finishNodeId": endpoint.get("nodeId"),
-                "finishNodeOrdinal": endpoint.get("nodeOrdinal"),
-                "primeNodeId": endpoint.get("primeNodeId"),
-                "incomingConnectionCount": endpoint.get(
-                    "incomingConnectionCount"
-                ),
-                "predecessorNodeIds": endpoint.get("predecessorNodeIds") or [],
-                "predecessorNodeTypes": endpoint.get("predecessorNodeTypes") or [],
-                "nodePath": endpoint.get("nodePath") or [],
-                "connectionPath": endpoint.get("connectionPath") or [],
-                "sourceFiles": [
-                    {
-                        "kind": "dialog_tree_text_asset",
-                        "sourceFile": source_file,
-                        "relationship": "exact_prime_reachable_finish_endpoint",
-                    }
-                ],
-            }
-        )
+    rows, rejected = _validated_finish_endpoint_rows(
+        dialog_id,
+        recovered,
+        source_file=source_file,
+    )
     return rows, rejected, coverage
 
 
@@ -891,8 +907,13 @@ def _hash_source_rows(
 def _collect_mission_consumers(
     index: dict[str, Any],
     pipeline_root: Path,
-) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
-    consumers: list[dict[str, Any]] = []
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    dict[str, dict[str, Any]],
+]:
+    exact_consumers: list[dict[str, Any]] = []
+    any_finish_consumers: list[dict[str, Any]] = []
     payloads: dict[str, dict[str, Any]] = {}
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
@@ -918,19 +939,98 @@ def _collect_mission_consumers(
                         continue
                     dialog_id = str(finish.get("dialogId") or "")
                     finish_id = finish.get("finishId")
-                    if dialog_id and isinstance(finish_id, int) and finish_id >= 0:
-                        consumers.append(
-                            {
-                                "missionId": mission_id,
-                                "questId": quest_id,
-                                "objectiveIndex": objective.get("index"),
-                                "conditionId": str(objective.get("conditionId") or ""),
-                                "dialogId": dialog_id,
-                                "finishId": finish_id,
-                                "missionSource": mission_source,
-                            }
+                    if not dialog_id or not isinstance(finish_id, int):
+                        continue
+                    consumer = {
+                        "missionId": mission_id,
+                        "questId": quest_id,
+                        "objectiveIndex": objective.get("index"),
+                        "conditionId": str(objective.get("conditionId") or ""),
+                        "dialogId": dialog_id,
+                        "finishId": finish_id,
+                        "missionSource": mission_source,
+                    }
+                    if finish_id >= 0:
+                        exact_consumers.append(consumer)
+                    elif finish_id == -1:
+                        any_finish_consumers.append(consumer)
+    return exact_consumers, any_finish_consumers, payloads
+
+
+def _collect_mission_levelscript_contexts(
+    payloads: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Collect exact MissionRuntime objective-to-LevelScript identities.
+
+    These rows are mission-to-script observation contexts.  They do not name a
+    task and therefore cannot establish task activation or task ownership.
+    """
+    contexts: list[dict[str, Any]] = []
+    for mission_id, payload in sorted(payloads.items()):
+        mission_source = str((payload.get("mission") or {}).get("source") or "")
+        for node in payload.get("nodes") or []:
+            if not isinstance(node, dict):
+                continue
+            quest_id = str(node.get("id") or "")
+            for objective in node.get("objectives") or []:
+                if not isinstance(objective, dict):
+                    continue
+                for source in objective.get("levelScriptSources") or []:
+                    if not isinstance(source, dict):
+                        continue
+                    level_id = str(source.get("levelId") or "")
+                    script_id = str(source.get("scriptId") or "")
+                    active_file = str(
+                        (source.get("levelScriptOverlay") or {}).get(
+                            "activeSourceFile"
                         )
-    return consumers, payloads
+                        or ""
+                    )
+                    active_hash = str(
+                        (source.get("levelScriptOverlay") or {}).get(
+                            "activeSha256"
+                        )
+                        or ""
+                    )
+                    if not level_id or not script_id:
+                        continue
+                    if not active_file or not active_hash:
+                        raise AuditValidationError(
+                            "validator=dialog_finish_mission_levelscript_context "
+                            "gate=activeLevelScriptOverlay "
+                            f"mission={mission_id} quest={quest_id} "
+                            f"identity={level_id}/{script_id} "
+                            "expected=activeSourceFile+activeSha256 "
+                            f"actual={source.get('levelScriptOverlay')!r} "
+                            f"source={mission_source or 'mission_pipeline'}"
+                        )
+                    contexts.append({
+                        "missionId": mission_id,
+                        "questId": quest_id,
+                        "objectiveIndex": objective.get("index"),
+                        "missionConditionId": str(
+                            objective.get("conditionId") or ""
+                        ),
+                        "missionConditionType": str(
+                            source.get("conditionType") or ""
+                        ),
+                        "levelId": level_id,
+                        "scriptId": script_id,
+                        "missionSource": mission_source,
+                        "activeLevelScriptSourceFile": active_file,
+                        "activeLevelScriptSha256": active_hash,
+                        "levelScriptOverlay": source.get("levelScriptOverlay") or {},
+                    })
+    contexts.sort(
+        key=lambda row: (
+            row["missionId"],
+            row["questId"],
+            row.get("objectiveIndex") or 0,
+            row["levelId"],
+            int(row["scriptId"]),
+        )
+    )
+    return contexts
 
 
 def _validate_levelscript_task_contracts(
@@ -1209,6 +1309,17 @@ def _collect_levelscript_task_finish_consumers(
             "types cannot create a consumer."
         ),
     }
+
+
+def _levelscript_task_consumer_signature(row: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        row.get("levelId"),
+        row.get("scriptId"),
+        row.get("taskId"),
+        row.get("conditionId") or row.get("taskConditionId"),
+        row.get("dialogId"),
+        row.get("finishId"),
+    )
 
 
 def _load_subgame_task_owners(
@@ -1493,7 +1604,7 @@ def _collect_dialog_tree_corpus_coverage(
     root: Path,
     *,
     runtime_defaults: dict[str, Any] | None = None,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
     """Validate option routes and finish endpoints over every DialogTree."""
     if not root.is_dir():
         raise AuditValidationError(
@@ -1502,6 +1613,7 @@ def _collect_dialog_tree_corpus_coverage(
         )
     coverage_sources: list[dict[str, Any]] = []
     finish_endpoint_sources: list[dict[str, Any]] = []
+    validated_finish_endpoint_rows: list[dict[str, Any]] = []
     scanned_json_files = 0
     for path in sorted(root.rglob("*.json")):
         scanned_json_files += 1
@@ -1549,6 +1661,14 @@ def _collect_dialog_tree_corpus_coverage(
                 "issues": finish_endpoints.get("issues") or [],
             }
         )
+        dialog_id = str(outer.get("m_Name") or outer.get("Name") or "").strip()
+        if dialog_id:
+            rows, _rejected = _validated_finish_endpoint_rows(
+                dialog_id,
+                finish_endpoints,
+                source_file=source_label(path),
+            )
+            validated_finish_endpoint_rows.extend(rows)
     route_summary = _summarize_dialog_tree_route_coverage(coverage_sources)
     endpoint_summary = _summarize_dialog_tree_finish_endpoint_coverage(
         finish_endpoint_sources
@@ -1560,7 +1680,15 @@ def _collect_dialog_tree_corpus_coverage(
     }
     route_summary.update(shared)
     endpoint_summary.update(shared)
-    return route_summary, endpoint_summary
+    validated_finish_endpoint_rows.sort(
+        key=lambda row: (
+            row["dialogId"],
+            row["finishId"],
+            row.get("finishNodeOrdinal") or 0,
+            (row.get("sourceFiles") or [{}])[0].get("sourceFile") or "",
+        )
+    )
+    return route_summary, endpoint_summary, validated_finish_endpoint_rows
 
 
 def _normalize_producers(
@@ -1657,7 +1785,11 @@ def build_report(
         index,
         native_contract,
     )
-    consumers, payloads = _collect_mission_consumers(index, pipeline_root)
+    consumers, any_finish_mission_consumers, payloads = _collect_mission_consumers(
+        index,
+        pipeline_root,
+    )
+    mission_levelscript_contexts = _collect_mission_levelscript_contexts(payloads)
     levelscript_consumers, levelscript_census = (
         _collect_levelscript_task_finish_consumers(levelscript_roots)
     )
@@ -1681,7 +1813,11 @@ def build_report(
         finish_endpoint_sources
     )
     finish_endpoint_counts = finish_endpoint_coverage.get("counts") or {}
-    corpus_route_coverage, corpus_finish_endpoint_coverage = (
+    (
+        corpus_route_coverage,
+        corpus_finish_endpoint_coverage,
+        corpus_finish_endpoint_rows,
+    ) = (
         _collect_dialog_tree_corpus_coverage(
             dialog_tree_root,
             runtime_defaults=runtime_defaults,
@@ -1838,6 +1974,239 @@ def build_report(
             row["missionShellOwner"] = owner
         levelscript_by_finish[(row["dialogId"], row["finishId"])].append(row)
 
+    corpus_endpoints_by_finish: dict[
+        tuple[str, int], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for endpoint in corpus_finish_endpoint_rows:
+        finish_id = endpoint.get("finishId")
+        if isinstance(finish_id, int) and finish_id >= 0:
+            corpus_endpoints_by_finish[
+                (str(endpoint.get("dialogId") or ""), finish_id)
+            ].append(endpoint)
+
+    task_finish_dependencies: list[dict[str, Any]] = []
+    unresolved_task_finish_endpoints: list[dict[str, Any]] = []
+    for task_consumer in exact_levelscript_consumers:
+        endpoint_matches = corpus_endpoints_by_finish.get(
+            (task_consumer["dialogId"], task_consumer["finishId"]),
+            [],
+        )
+        if not endpoint_matches:
+            unresolved_task_finish_endpoints.append(task_consumer)
+            continue
+        source_rows = [
+            source
+            for endpoint in endpoint_matches
+            for source in endpoint.get("sourceFiles") or []
+        ]
+        source_rows.append({
+            "kind": "level_script",
+            "sourceFile": task_consumer["sourceFile"],
+            "relationship": "exact_dialog_finish_task_consumer_active_overlay",
+        })
+        source_rows.extend(binary_files)
+        owner = task_consumer.get("missionShellOwner")
+        if owner:
+            source_rows.append({
+                "kind": "subgame_instance_table",
+                "sourceFile": owner["sourceFile"],
+                "relationship": "exact_mission_script_task_co_carrier",
+            })
+        dependency = {
+            **task_consumer,
+            "taskConditionId": task_consumer["conditionId"],
+            "classification": "authored_finish_endpoint_to_levelscript_task",
+            "producerFamilies": [
+                "dialog_tree_prime_reachable_finish_endpoint"
+            ],
+            "producerEvidence": endpoint_matches,
+            "missionShellOwner": owner,
+            "missionOwnershipStatus": (
+                "exact_subgame_script_task_carrier"
+                if owner
+                else "unresolved"
+            ),
+            "relatedOriginalFiles": _hash_source_rows(
+                source_rows,
+                hash_cache,
+                validator=validator,
+            ),
+            "evidenceBoundary": (
+                "A finish node is reachable from the binary-proven serialized "
+                "DialogTree prime node and emits the exact value consumed by this "
+                "original LevelScript task condition. This proves an authored "
+                "Story-finish-to-task dependency, not the route or player choice "
+                "that reaches the endpoint, task activation, mission ownership, "
+                "or cross-file chronology."
+            ),
+        }
+        task_finish_dependencies.append(dependency)
+    task_finish_dependencies.sort(
+        key=lambda row: (
+            row["dialogId"],
+            row["finishId"],
+            row["levelId"],
+            int(row["scriptId"]),
+            row.get("taskId") or "",
+            row["taskConditionId"],
+        )
+    )
+
+    any_finish_by_dialog: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for consumer in any_finish_mission_consumers:
+        any_finish_by_dialog[consumer["dialogId"]].append(consumer)
+    any_finish_task_contexts: list[dict[str, Any]] = []
+    for task_dependency in task_finish_dependencies:
+        for mission_context in any_finish_by_dialog.get(
+            task_dependency["dialogId"],
+            [],
+        ):
+            source_rows = list(task_dependency.get("relatedOriginalFiles") or [])
+            if mission_context["missionSource"]:
+                source_rows.append({
+                    "kind": "mission_runtime",
+                    "sourceFile": mission_context["missionSource"],
+                    "relationship": "same_dialog_any_finish_consumer",
+                })
+            any_finish_task_contexts.append({
+                **{
+                    key: task_dependency.get(key)
+                    for key in (
+                        "dialogId",
+                        "finishId",
+                        "levelId",
+                        "scriptId",
+                        "taskId",
+                        "taskConditionId",
+                        "taskMapDecodeStatus",
+                        "taskIdentityStatus",
+                        "conditionOffsetHex",
+                    )
+                },
+                "missionId": mission_context["missionId"],
+                "questId": mission_context["questId"],
+                "objectiveIndex": mission_context["objectiveIndex"],
+                "missionConditionId": mission_context["conditionId"],
+                "missionFinishId": -1,
+                "predicateRelation": (
+                    "exact_task_finish_satisfies_mission_any_finish"
+                ),
+                "classification": (
+                    "mission_any_finish_and_exact_levelscript_task_context"
+                ),
+                "missionOwnershipStatus": "unresolved",
+                "relatedOriginalFiles": _hash_source_rows(
+                    source_rows,
+                    hash_cache,
+                    validator=validator,
+                ),
+                "evidenceBoundary": (
+                    "The hash-validated CheckTalkOptionFinish.Check body proves "
+                    "that a negative MissionRuntime operand accepts any recorded "
+                    "finish while this LevelScript task requires the displayed "
+                    "exact finish. The exact task outcome therefore satisfies both "
+                    "observers. This is mission dialog context, not proof that the "
+                    "mission activates or owns the script/task, and not Story order."
+                ),
+            })
+    any_finish_task_contexts.sort(
+        key=lambda row: (
+            row["missionId"],
+            row["questId"],
+            row.get("objectiveIndex") or 0,
+            row["dialogId"],
+            row["finishId"],
+            row["levelId"],
+            int(row["scriptId"]),
+        )
+    )
+
+    mission_script_contexts_by_identity: dict[
+        tuple[str, str], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for context in mission_levelscript_contexts:
+        mission_script_contexts_by_identity[
+            (context["levelId"], context["scriptId"])
+        ].append(context)
+    mission_script_task_contexts: list[dict[str, Any]] = []
+    for task_dependency in task_finish_dependencies:
+        for mission_context in mission_script_contexts_by_identity.get(
+            (task_dependency["levelId"], task_dependency["scriptId"]),
+            [],
+        ):
+            actual_source = source_label(resolve_source(task_dependency["sourceFile"]))
+            expected_source = source_label(
+                resolve_source(mission_context["activeLevelScriptSourceFile"])
+            )
+            actual_hash = str(task_dependency.get("sourceSha256") or "")
+            expected_hash = str(mission_context["activeLevelScriptSha256"])
+            if actual_source != expected_source or actual_hash != expected_hash:
+                raise AuditValidationError(
+                    "validator=dialog_finish_mission_levelscript_context "
+                    "gate=activeOverlayAgreement "
+                    f"mission={mission_context['missionId']} "
+                    f"quest={mission_context['questId']} "
+                    f"identity={task_dependency['levelId']}/{task_dependency['scriptId']} "
+                    f"expected={{'source':{expected_source!r},'sha256':{expected_hash!r}}} "
+                    f"actual={{'source':{actual_source!r},'sha256':{actual_hash!r}}}"
+                )
+            source_rows = list(task_dependency.get("relatedOriginalFiles") or [])
+            if mission_context["missionSource"]:
+                source_rows.append({
+                    "kind": "mission_runtime",
+                    "sourceFile": mission_context["missionSource"],
+                    "relationship": "exact_levelscript_condition_operand",
+                })
+            mission_script_task_contexts.append({
+                **{
+                    key: task_dependency.get(key)
+                    for key in (
+                        "dialogId",
+                        "finishId",
+                        "levelId",
+                        "scriptId",
+                        "taskId",
+                        "taskConditionId",
+                        "taskMapDecodeStatus",
+                        "taskIdentityStatus",
+                        "conditionOffsetHex",
+                    )
+                },
+                "missionId": mission_context["missionId"],
+                "questId": mission_context["questId"],
+                "objectiveIndex": mission_context["objectiveIndex"],
+                "missionConditionId": mission_context["missionConditionId"],
+                "missionConditionType": mission_context[
+                    "missionConditionType"
+                ],
+                "classification": "mission_exact_levelscript_context",
+                "missionOwnershipStatus": "script_context_only",
+                "levelScriptOverlay": mission_context["levelScriptOverlay"],
+                "relatedOriginalFiles": _hash_source_rows(
+                    source_rows,
+                    hash_cache,
+                    validator=validator,
+                ),
+                "evidenceBoundary": (
+                    "This MissionRuntime objective references the exact active "
+                    "LevelScript that contains the displayed task finish consumer. "
+                    "It proves a mission-to-script observation context, not that "
+                    "the mission starts the script, owns this task or dialog, "
+                    "selects the finish outcome, or orders Story files."
+                ),
+            })
+    mission_script_task_contexts.sort(
+        key=lambda row: (
+            row["missionId"],
+            row["questId"],
+            row.get("objectiveIndex") or 0,
+            row["levelId"],
+            int(row["scriptId"]),
+            row.get("taskId") or "",
+            row["taskConditionId"],
+        )
+    )
+
     resolved_mission_dependencies = [*dependencies, *endpoint_dependencies]
     shared_task_dependencies: list[dict[str, Any]] = []
     matched_levelscript_signatures: set[tuple[Any, ...]] = set()
@@ -1913,14 +2282,9 @@ def build_report(
                 ),
             }
             shared_task_dependencies.append(row)
-            matched_levelscript_signatures.add((
-                task_consumer["levelId"],
-                task_consumer["scriptId"],
-                task_consumer.get("taskId"),
-                task_consumer["conditionId"],
-                task_consumer["dialogId"],
-                task_consumer["finishId"],
-            ))
+            matched_levelscript_signatures.add(
+                _levelscript_task_consumer_signature(task_consumer)
+            )
     shared_task_dependencies.sort(
         key=lambda row: (
             row["missionId"],
@@ -1935,18 +2299,53 @@ def build_report(
     unmatched_levelscript_consumers = [
         row
         for row in exact_levelscript_consumers
-        if (
-            row["levelId"],
-            row["scriptId"],
-            row.get("taskId"),
-            row["conditionId"],
-            row["dialogId"],
-            row["finishId"],
-        )
+        if _levelscript_task_consumer_signature(row)
+        not in matched_levelscript_signatures
+    ]
+    any_contexts_by_signature: dict[
+        tuple[Any, ...], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for context in any_finish_task_contexts:
+        any_contexts_by_signature[
+            _levelscript_task_consumer_signature(context)
+        ].append(context)
+    script_contexts_by_signature: dict[
+        tuple[Any, ...], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for context in mission_script_task_contexts:
+        script_contexts_by_signature[
+            _levelscript_task_consumer_signature(context)
+        ].append(context)
+    exact_contexts_by_signature: dict[
+        tuple[Any, ...], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for context in shared_task_dependencies:
+        exact_contexts_by_signature[
+            _levelscript_task_consumer_signature(context)
+        ].append(context)
+    for dependency in task_finish_dependencies:
+        signature = _levelscript_task_consumer_signature(dependency)
+        dependency["missionContextSummary"] = {
+            "exactFinishPlacements": len(exact_contexts_by_signature[signature]),
+            "anyFinishPlacements": len(any_contexts_by_signature[signature]),
+            "exactScriptPlacements": len(script_contexts_by_signature[signature]),
+            "missionIds": sorted({
+                row["missionId"]
+                for row in [
+                    *exact_contexts_by_signature[signature],
+                    *any_contexts_by_signature[signature],
+                    *script_contexts_by_signature[signature],
+                ]
+            }),
+        }
+    mission_exact_unmatched_task_finish_dependencies = [
+        dependency
+        for dependency in task_finish_dependencies
+        if _levelscript_task_consumer_signature(dependency)
         not in matched_levelscript_signatures
     ]
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v6",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v7",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
@@ -1960,8 +2359,10 @@ def build_report(
             "reflected-field default contract. ShowOptions sets doNext before "
             "selection, so missing physical successors are retained as failures, "
             "not reclassified as terminal choices. Exact LevelScript task "
-            "conditions that consume the same finish state are published as "
-            "fan-out dependencies without inferring task activation or ownership. "
+            "conditions are joined to prime-reachable authored finish endpoints "
+            "across the full corpus. Exact MissionRuntime matches, any-finish "
+            "observers, and exact mission-to-script references remain separate "
+            "evidence tiers; none infers task activation or ownership. "
             "OCR and manual overrides are not read."
         ),
         "nativeContract": native_contract,
@@ -1973,6 +2374,7 @@ def build_report(
         },
         "counts": {
             "exactMissionConsumers": len(consumers),
+            "anyFinishMissionConsumers": len(any_finish_mission_consumers),
             "dialogTreeProducerRows": len(tree_rows),
             "dialogTreeExplicitFinishRows": sum(
                 row.get("finishIdSource") == "serialized_explicit" for row in tree_rows
@@ -2120,6 +2522,12 @@ def build_report(
             "levelScriptTaskAnyFinishConsumers": sum(
                 row["finishId"] < 0 for row in levelscript_consumers
             ),
+            "levelScriptTaskAuthoredFinishDependencies": len(
+                task_finish_dependencies
+            ),
+            "levelScriptTaskUnresolvedAuthoredFinishEndpoints": len(
+                unresolved_task_finish_endpoints
+            ),
             "levelScriptTaskSharedConsumerDependencies": len(
                 shared_task_dependencies
             ),
@@ -2148,6 +2556,25 @@ def build_report(
             "levelScriptTaskUnmatchedExactConsumers": len(
                 unmatched_levelscript_consumers
             ),
+            "levelScriptTaskWithoutExactMissionFinishMatch": len(
+                mission_exact_unmatched_task_finish_dependencies
+            ),
+            "levelScriptTaskAnyFinishMissionContexts": len(
+                any_finish_task_contexts
+            ),
+            "levelScriptTaskAnyFinishMissionContextMissions": len({
+                row["missionId"] for row in any_finish_task_contexts
+            }),
+            "levelScriptTaskMissionScriptContexts": len(
+                mission_script_task_contexts
+            ),
+            "levelScriptTaskMissionScriptContextConsumers": len({
+                _levelscript_task_consumer_signature(row)
+                for row in mission_script_task_contexts
+            }),
+            "levelScriptTaskMissionScriptContextMissions": len({
+                row["missionId"] for row in mission_script_task_contexts
+            }),
         },
         "producerFamilyCounts": dict(
             sorted(Counter(family for row in producers for family in row["producerFamilies"]).items())
@@ -2160,11 +2587,20 @@ def build_report(
             **levelscript_census,
             "exactConsumers": exact_levelscript_consumers,
             "unmatchedExactConsumers": unmatched_levelscript_consumers,
+            "unresolvedAuthoredFinishEndpoints": (
+                unresolved_task_finish_endpoints
+            ),
         },
         "subGameTaskOwnerCensus": subgame_owner_census,
         "dependencies": dependencies,
         "endpointDependencies": endpoint_dependencies,
+        "levelScriptTaskAuthoredFinishDependencies": task_finish_dependencies,
         "levelScriptTaskSharedConsumerDependencies": shared_task_dependencies,
+        "levelScriptTaskAnyFinishMissionContexts": any_finish_task_contexts,
+        "levelScriptTaskMissionScriptContexts": mission_script_task_contexts,
+        "levelScriptTaskWithoutExactMissionFinishMatch": (
+            mission_exact_unmatched_task_finish_dependencies
+        ),
         "unresolvedExactConsumers": unresolved,
         "rejectedProducerShapes": [*tree_rejected, *timeline_rejected],
         "rejectedFinishEndpointShapes": finish_endpoint_rejected,
@@ -2193,10 +2629,24 @@ def publish_to_pipeline_index(
     ] = defaultdict(list)
     for row in report.get("levelScriptTaskSharedConsumerDependencies") or []:
         task_by_quest[(row["missionId"], row["questId"])].append(row)
+    any_finish_task_by_quest: dict[
+        tuple[str, str], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for row in report.get("levelScriptTaskAnyFinishMissionContexts") or []:
+        any_finish_task_by_quest[(row["missionId"], row["questId"])].append(row)
+    mission_script_task_by_quest: dict[
+        tuple[str, str], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for row in report.get("levelScriptTaskMissionScriptContexts") or []:
+        mission_script_task_by_quest[
+            (row["missionId"], row["questId"])
+        ].append(row)
     published = 0
     published_endpoints = 0
     published_task_dependencies = 0
     published_owned_task_dependencies = 0
+    published_any_finish_task_contexts = 0
+    published_mission_script_task_contexts = 0
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
@@ -2207,17 +2657,27 @@ def publish_to_pipeline_index(
         mission_rows: list[dict[str, Any]] = []
         mission_endpoint_rows: list[dict[str, Any]] = []
         mission_task_rows: list[dict[str, Any]] = []
+        mission_any_finish_task_rows: list[dict[str, Any]] = []
+        mission_script_task_rows: list[dict[str, Any]] = []
         for node in payload.get("nodes") or []:
             if not isinstance(node, dict):
                 continue
             node.pop("dialogFinishBranchDependencies", None)
             node.pop("dialogFinishEndpointDependencies", None)
             node.pop("dialogFinishLevelScriptTaskDependencies", None)
+            node.pop("dialogFinishLevelScriptTaskAnyFinishContexts", None)
+            node.pop("dialogFinishLevelScriptTaskMissionScriptContexts", None)
             rows = by_quest.get((mission_id, str(node.get("id") or "")), [])
             endpoint_rows = endpoint_by_quest.get(
                 (mission_id, str(node.get("id") or "")), []
             )
             task_rows = task_by_quest.get(
+                (mission_id, str(node.get("id") or "")), []
+            )
+            any_finish_task_rows = any_finish_task_by_quest.get(
+                (mission_id, str(node.get("id") or "")), []
+            )
+            mission_script_rows = mission_script_task_by_quest.get(
                 (mission_id, str(node.get("id") or "")), []
             )
             if rows:
@@ -2229,12 +2689,30 @@ def publish_to_pipeline_index(
             if task_rows:
                 node["dialogFinishLevelScriptTaskDependencies"] = task_rows
                 mission_task_rows.extend(task_rows)
+            if any_finish_task_rows:
+                node["dialogFinishLevelScriptTaskAnyFinishContexts"] = (
+                    any_finish_task_rows
+                )
+                mission_any_finish_task_rows.extend(any_finish_task_rows)
+            if mission_script_rows:
+                node["dialogFinishLevelScriptTaskMissionScriptContexts"] = (
+                    mission_script_rows
+                )
+                mission_script_task_rows.extend(mission_script_rows)
             for objective in node.get("objectives") or []:
                 if not isinstance(objective, dict):
                     continue
                 objective.pop("dialogFinishBranchDependencies", None)
                 objective.pop("dialogFinishEndpointDependencies", None)
                 objective.pop("dialogFinishLevelScriptTaskDependencies", None)
+                objective.pop(
+                    "dialogFinishLevelScriptTaskAnyFinishContexts",
+                    None,
+                )
+                objective.pop(
+                    "dialogFinishLevelScriptTaskMissionScriptContexts",
+                    None,
+                )
                 objective_rows = [
                     row for row in rows
                     if row.get("objectiveIndex") == objective.get("index")
@@ -2254,6 +2732,20 @@ def publish_to_pipeline_index(
                     and row.get("missionConditionId")
                     == str(objective.get("conditionId") or "")
                 ]
+                objective_any_finish_task_rows = [
+                    row
+                    for row in any_finish_task_rows
+                    if row.get("objectiveIndex") == objective.get("index")
+                    and row.get("missionConditionId")
+                    == str(objective.get("conditionId") or "")
+                ]
+                objective_mission_script_task_rows = [
+                    row
+                    for row in mission_script_rows
+                    if row.get("objectiveIndex") == objective.get("index")
+                    and row.get("missionConditionId")
+                    == str(objective.get("conditionId") or "")
+                ]
                 if objective_rows:
                     objective["dialogFinishBranchDependencies"] = objective_rows
                 if objective_endpoint_rows:
@@ -2264,6 +2756,14 @@ def publish_to_pipeline_index(
                     objective["dialogFinishLevelScriptTaskDependencies"] = (
                         objective_task_rows
                     )
+                if objective_any_finish_task_rows:
+                    objective[
+                        "dialogFinishLevelScriptTaskAnyFinishContexts"
+                    ] = objective_any_finish_task_rows
+                if objective_mission_script_task_rows:
+                    objective[
+                        "dialogFinishLevelScriptTaskMissionScriptContexts"
+                    ] = objective_mission_script_task_rows
         for binding in (payload.get("mission") or {}).get(
             "nativeRuntimeBindings", []
         ):
@@ -2295,6 +2795,12 @@ def publish_to_pipeline_index(
                 row.get("missionShellRelationship") == "same_mission_shell"
                 for row in mission_task_rows
             ),
+            "levelScriptTaskAnyFinishMissionContextCount": len(
+                mission_any_finish_task_rows
+            ),
+            "levelScriptTaskMissionScriptContextCount": len(
+                mission_script_task_rows
+            ),
             "evidenceBoundary": report.get("evidencePolicy"),
         }
         summary["dialogFinishBranchDependencyCount"] = len(mission_rows)
@@ -2304,6 +2810,12 @@ def publish_to_pipeline_index(
         summary["dialogFinishLevelScriptTaskDependencyCount"] = len(
             mission_task_rows
         )
+        summary["dialogFinishLevelScriptTaskAnyFinishContextCount"] = len(
+            mission_any_finish_task_rows
+        )
+        summary["dialogFinishLevelScriptTaskMissionScriptContextCount"] = len(
+            mission_script_task_rows
+        )
         write_json(pipeline_root / str(summary.get("file") or ""), payload)
         published += len(mission_rows)
         published_endpoints += len(mission_endpoint_rows)
@@ -2312,12 +2824,17 @@ def publish_to_pipeline_index(
             row.get("missionShellRelationship") == "same_mission_shell"
             for row in mission_task_rows
         )
+        published_any_finish_task_contexts += len(mission_any_finish_task_rows)
+        published_mission_script_task_contexts += len(mission_script_task_rows)
     index["dialogFinishBranchRecovery"] = {
         "schema": report.get("schemaVersion"),
         "status": report.get("status"),
         "counts": report.get("counts"),
         "producerFamilyCounts": report.get("producerFamilyCounts"),
         "nativeContract": report.get("nativeContract"),
+        "missionRuntimeUnmatchedLevelScriptTaskFinishDependencies": (
+            report.get("levelScriptTaskWithoutExactMissionFinishMatch") or []
+        ),
         "reportJson": source_label(DEFAULT_JSON),
         "reportMarkdown": source_label(DEFAULT_MARKDOWN),
     }
@@ -2332,7 +2849,22 @@ def publish_to_pipeline_index(
     index["counts"]["dialogFinishOwnedLevelScriptTaskDependencies"] = (
         published_owned_task_dependencies
     )
-    return published + published_endpoints + published_task_dependencies
+    index["counts"]["dialogFinishLevelScriptTaskAuthoredFinishDependencies"] = len(
+        report.get("levelScriptTaskAuthoredFinishDependencies") or []
+    )
+    index["counts"]["dialogFinishLevelScriptTaskAnyFinishContexts"] = (
+        published_any_finish_task_contexts
+    )
+    index["counts"]["dialogFinishLevelScriptTaskMissionScriptContexts"] = (
+        published_mission_script_task_contexts
+    )
+    return (
+        published
+        + published_endpoints
+        + published_task_dependencies
+        + published_any_finish_task_contexts
+        + published_mission_script_task_contexts
+    )
 
 
 def markdown_report(report: dict[str, Any]) -> str:
@@ -2367,10 +2899,13 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Rejected / conflicting producer shapes: {counts.get('rejectedProducerShapes', 0)} / {counts.get('conflictingOptionProducers', 0)}",
         f"- Localization option IDs reused across runtime scopes: {counts.get('reusedOptionIdsAcrossScopes', 0)}",
         f"- Active LevelScript finish consumers: {counts.get('levelScriptTaskFinishConsumers', 0)} total; {counts.get('levelScriptTaskExactFinishConsumers', 0)} exact / {counts.get('levelScriptTaskAnyFinishConsumers', 0)} any-finish",
+        f"- Authored finish endpoint -> exact LevelScript task dependencies: {counts.get('levelScriptTaskAuthoredFinishDependencies', 0)}; unresolved authored endpoints: {counts.get('levelScriptTaskUnresolvedAuthoredFinishEndpoints', 0)}",
         f"- Shared MissionRuntime/LevelScript finish dependencies: {counts.get('levelScriptTaskSharedConsumerDependencies', 0)} placements across {counts.get('levelScriptTaskSharedConsumerMissions', 0)} missions",
         f"- Shared dependencies from complete maps / bounded mixed-map fragments: {counts.get('levelScriptTaskSharedConsumerCompleteMaps', 0)} / {counts.get('levelScriptTaskSharedConsumerFragments', 0)}",
         f"- Exact SubGame mission-shell task owners: {counts.get('levelScriptTaskMissionShellOwners', 0)} consumers; {counts.get('levelScriptTaskSameMissionShellDependencies', 0)} same-mission dependency placements",
-        f"- Exact LevelScript consumers without a MissionRuntime finish match: {counts.get('levelScriptTaskUnmatchedExactConsumers', 0)}",
+        f"- Mission any-finish contexts: {counts.get('levelScriptTaskAnyFinishMissionContexts', 0)} placements across {counts.get('levelScriptTaskAnyFinishMissionContextMissions', 0)} missions",
+        f"- Exact mission -> active LevelScript contexts: {counts.get('levelScriptTaskMissionScriptContexts', 0)} placements for {counts.get('levelScriptTaskMissionScriptContextConsumers', 0)} task consumers across {counts.get('levelScriptTaskMissionScriptContextMissions', 0)} missions",
+        f"- Authored endpoint -> task dependencies without an exact MissionRuntime finish match: {counts.get('levelScriptTaskWithoutExactMissionFinishMatch', 0)}",
         "",
         "## Recovered dependencies",
         "",
@@ -2442,6 +2977,41 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{row['taskConditionId']}` | "
                 f"`{row['taskMapDecodeStatus']}` | {owner_text} |"
             )
+    lines.extend(["", "## Mission context for LevelScript task dependencies", ""])
+    any_context_rows = report.get("levelScriptTaskAnyFinishMissionContexts") or []
+    script_context_rows = report.get("levelScriptTaskMissionScriptContexts") or []
+    lines.append(
+        "These rows attach original mission files as bounded context only. "
+        "They do not establish task activation, task ownership, player choice, "
+        "or cross-file order."
+    )
+    lines.append("")
+    lines.append(
+        f"- Any-finish mission observers paired with exact task outcomes: "
+        f"{len(any_context_rows)}"
+    )
+    lines.append(
+        f"- Exact mission-to-active-LevelScript observations: "
+        f"{len(script_context_rows)}"
+    )
+    lines.extend(["", "## MissionRuntime-unmatched authored task dependencies", ""])
+    unmatched_task_rows = (
+        report.get("levelScriptTaskWithoutExactMissionFinishMatch") or []
+    )
+    if unmatched_task_rows:
+        for row in unmatched_task_rows:
+            task_id = row.get("taskId") or "task-id-unresolved"
+            context = row.get("missionContextSummary") or {}
+            lines.append(
+                f"- `{row['dialogId']}` / `{row['finishId']}` -> "
+                f"`{row['levelId']}/{row['scriptId']}` / `{task_id}` / "
+                f"`{row['taskConditionId']}`; mission contexts: "
+                f"exact finish `{context.get('exactFinishPlacements', 0)}`, "
+                f"any finish `{context.get('anyFinishPlacements', 0)}`, "
+                f"exact script `{context.get('exactScriptPlacements', 0)}`."
+            )
+    else:
+        lines.append("- None.")
     lines.extend(["", "## Reused localization IDs", ""])
     reused = report.get("reusedOptionIdsAcrossScopes") or []
     if reused:
@@ -2530,7 +3100,11 @@ def main() -> int:
         "dialog finish branch audit: "
         f"{report['counts']['publishedDependencies']} option dependencies, "
         f"{report['counts']['publishedEndpointDependencies']} endpoint-only dependencies, "
+        f"{report['counts']['levelScriptTaskAuthoredFinishDependencies']} authored endpoint-to-task dependencies, "
         f"{report['counts']['levelScriptTaskSharedConsumerDependencies']} shared LevelScript task dependencies, "
+        f"{report['counts']['levelScriptTaskAnyFinishMissionContexts']} any-finish contexts, "
+        f"{report['counts']['levelScriptTaskMissionScriptContexts']} mission-script contexts, "
+        f"{report['counts']['levelScriptTaskUnresolvedAuthoredFinishEndpoints']} unresolved task endpoints, "
         f"{report['counts']['unresolvedExactConsumers']} unresolved exact consumers"
     )
     return 0

@@ -474,6 +474,166 @@ class PipelinePublicationTests(unittest.TestCase):
                 index["counts"]["dialogFinishOwnedLevelScriptTaskDependencies"],
             )
 
+    def test_publishes_context_tiers_without_claiming_task_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = {
+                "missions": [{"id": "mission_fixture", "file": "mission.json"}],
+                "counts": {},
+            }
+            payload = {
+                "nodes": [{
+                    "id": "quest_fixture",
+                    "objectives": [{
+                        "index": 0,
+                        "conditionId": "mission_condition",
+                    }],
+                }],
+            }
+            context = {
+                "missionId": "mission_fixture",
+                "questId": "quest_fixture",
+                "objectiveIndex": 0,
+                "missionConditionId": "mission_condition",
+                "dialogId": "dlg_fixture",
+                "finishId": 2,
+                "levelId": "level_fixture",
+                "scriptId": "4242",
+                "taskConditionId": "task_condition",
+                "missionOwnershipStatus": "unresolved",
+            }
+            global_dependency = {
+                "dialogId": "dlg_fixture",
+                "finishId": 2,
+                "levelId": "level_fixture",
+                "scriptId": "4242",
+                "taskConditionId": "task_condition",
+                "missionOwnershipStatus": "unresolved",
+            }
+            report = {
+                "schemaVersion": "dialogFinishMissionBranchAudit.v7",
+                "status": "validated",
+                "evidencePolicy": "fixture",
+                "counts": {},
+                "producerFamilyCounts": {},
+                "nativeContract": {},
+                "dependencies": [],
+                "endpointDependencies": [],
+                "levelScriptTaskSharedConsumerDependencies": [],
+                "levelScriptTaskAuthoredFinishDependencies": [global_dependency],
+                "levelScriptTaskAnyFinishMissionContexts": [context],
+                "levelScriptTaskMissionScriptContexts": [
+                    {**context, "missionOwnershipStatus": "script_context_only"}
+                ],
+                "levelScriptTaskWithoutExactMissionFinishMatch": [
+                    global_dependency
+                ],
+            }
+
+            published = audit.publish_to_pipeline_index(
+                index,
+                report,
+                {"mission_fixture": payload},
+                root,
+            )
+
+            self.assertEqual(2, published)
+            objective = payload["nodes"][0]["objectives"][0]
+            self.assertEqual(
+                "unresolved",
+                objective["dialogFinishLevelScriptTaskAnyFinishContexts"][0][
+                    "missionOwnershipStatus"
+                ],
+            )
+            self.assertEqual(
+                "script_context_only",
+                objective[
+                    "dialogFinishLevelScriptTaskMissionScriptContexts"
+                ][0]["missionOwnershipStatus"],
+            )
+            self.assertEqual(
+                [global_dependency],
+                index["dialogFinishBranchRecovery"][
+                    "missionRuntimeUnmatchedLevelScriptTaskFinishDependencies"
+                ],
+            )
+            self.assertEqual(
+                1,
+                index["counts"][
+                    "dialogFinishLevelScriptTaskAuthoredFinishDependencies"
+                ],
+            )
+
+
+class MissionContextCollectionTests(unittest.TestCase):
+    def test_separates_exact_and_any_finish_consumers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mission_file = root / "mission.json"
+            mission_file.write_text(
+                json.dumps({
+                    "nodes": [{
+                        "id": "quest_fixture",
+                        "objectives": [{
+                            "index": 0,
+                            "conditionId": "condition_fixture",
+                            "dialogFinishes": [
+                                {"dialogId": "dlg_fixture", "finishId": 2},
+                                {"dialogId": "dlg_fixture", "finishId": -1},
+                            ],
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            exact, any_finish, _payloads = audit._collect_mission_consumers(
+                {
+                    "missions": [{
+                        "id": "mission_fixture",
+                        "file": "mission.json",
+                    }]
+                },
+                root,
+            )
+        self.assertEqual([2], [row["finishId"] for row in exact])
+        self.assertEqual([-1], [row["finishId"] for row in any_finish])
+
+    def test_levelscript_context_requires_hash_bound_active_overlay(self) -> None:
+        payloads = {
+            "mission_fixture": {
+                "mission": {"source": "MissionRuntimeDataTable.json"},
+                "nodes": [{
+                    "id": "quest_fixture",
+                    "objectives": [{
+                        "index": 0,
+                        "conditionId": "condition_fixture",
+                        "levelScriptSources": [{
+                            "conditionType": "CheckLevelScriptStage",
+                            "levelId": "level_fixture",
+                            "scriptId": "4242",
+                            "levelScriptOverlay": {
+                                "activeSourceFile": "Persistent/4242.json",
+                                "activeSha256": "a" * 64,
+                            },
+                        }],
+                    }],
+                }],
+            }
+        }
+        rows = audit._collect_mission_levelscript_contexts(payloads)
+        self.assertEqual(1, len(rows))
+        self.assertEqual("4242", rows[0]["scriptId"])
+        self.assertEqual("a" * 64, rows[0]["activeLevelScriptSha256"])
+
+        del payloads["mission_fixture"]["nodes"][0]["objectives"][0][
+            "levelScriptSources"
+        ][0]["levelScriptOverlay"]
+        with self.assertRaisesRegex(
+            audit.AuditValidationError,
+            "gate=activeLevelScriptOverlay",
+        ):
+            audit._collect_mission_levelscript_contexts(payloads)
+
 
 class LevelScriptTaskConsumerTests(unittest.TestCase):
     @staticmethod

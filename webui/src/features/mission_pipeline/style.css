@@ -996,6 +996,54 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   padding: 4px 8px;
 }
 
+.mp-dialog-finish-task-context {
+  margin-top: 6px;
+  border: 1px dashed rgba(45, 111, 126, 0.34);
+  border-left: 3px solid #2d6f7e;
+  border-radius: 6px;
+  background: rgba(45, 111, 126, 0.045);
+}
+
+.mp-dialog-finish-task-context.is-any-finish-context {
+  border-left-color: #9b6a27;
+  background: rgba(155, 106, 39, 0.045);
+}
+
+.mp-dialog-finish-task-context > summary,
+.mp-dialog-finish-task-context > p,
+.mp-dialog-finish-task-context > small,
+.mp-dialog-finish-task-context > details {
+  display: block;
+  margin: 0;
+  padding: 5px 8px;
+}
+
+.mp-dialog-finish-unmatched > small {
+  display: block;
+  padding: 6px 10px;
+}
+
+.mp-dialog-finish-unmatched-list {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px 12px;
+}
+
+.mp-dialog-finish-unmatched-row {
+  padding: 7px 9px;
+  border: 1px dashed rgba(111, 76, 164, 0.3);
+  border-radius: 6px;
+  background: rgba(111, 76, 164, 0.04);
+}
+
+.mp-dialog-finish-unmatched-row header,
+.mp-dialog-finish-unmatched-row p,
+.mp-dialog-finish-unmatched-row small,
+.mp-dialog-finish-unmatched-row details {
+  display: block;
+  margin: 2px 0;
+}
+
 .mp-contract-details {
   border-top: 1px solid var(--border);
   background: #fbfcfc;
