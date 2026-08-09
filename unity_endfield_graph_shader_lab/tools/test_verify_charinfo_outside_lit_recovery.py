@@ -130,6 +130,24 @@ class CharInfoV2DataPathContractTests(unittest.TestCase):
                 Path("fixture_contract.json"),
             )
 
+    def test_missing_map_parameter_failure_is_actionable(self) -> None:
+        ownership, report = self.load_current_contract()
+        changed = copy.deepcopy(report)
+        changed["activeClipmaps"]["installedMissingMapState"]["parameters"][
+            "param3"
+        ][1] = 1.0
+        with self.assertRaisesRegex(
+            AssertionError,
+            "CharInfo V2 irradiance data-path validator failed: "
+            "check=audit.active_clipmap.installed_missing_map; "
+            "source=fixture_contract.json; expected=.*actual=.*1.0",
+        ):
+            verifier.verify_charinfo_v2_data_path_contract(
+                ownership,
+                changed,
+                Path("fixture_contract.json"),
+            )
+
 
 class HdplsMatrixFormulaContractTests(unittest.TestCase):
     @staticmethod

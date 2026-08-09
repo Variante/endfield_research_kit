@@ -1697,7 +1697,7 @@
     }
   },
   "charinfo_irradiance_volume_ownership": {
-    "status": "binary-source-closed: the live V2 manager always renders m_defaultIV; shipped Lua independently confirms CharInfo does not call the old gacha-IV lifecycle",
+    "status": "binary-source-closed for the installed no-reload route: the live V2 manager renders m_defaultIV and settles on the shared inactive 3D-zero fallback",
     "active_owner": "m_defaultIV",
     "active_manager": "HG.Rendering.Runtime.HGIrradianceVolumeManagerV2",
     "creates_gacha_override": false,
@@ -1741,6 +1741,14 @@
         "ReloadIndexFileV2": [],
         "StreamingInNewMapV2": []
       },
+      "absolute_method_pointer_sites": {
+        "ReloadIndexFileV2": [
+          "0x18eabd458"
+        ],
+        "StreamingInNewMapV2": [
+          "0x18eabd498"
+        ]
+      },
       "shipped_lua_mentions": {
         "ReloadIndexFileV2": [],
         "StreamingInNewMapV2": [],
@@ -1748,7 +1756,28 @@
       },
       "installed_ifix_target_count": 30,
       "matching_installed_ifix_targets": [],
-      "reload_escape_hatch": "ReloadIndexFileV2(rootPath) directly calls SetMap on m_defaultIV; indirect/native invocation remains an explicit runtime boundary"
+      "reload_escape_hatch": "ReloadIndexFileV2(rootPath) directly calls SetMap on m_defaultIV; its only absolute function-pointer occurrence is the IL2CPP method table, but generic reflection/external invocation remains an explicit runtime boundary",
+      "native_missing_map": {
+        "set_map_native_va": "0x18111b690",
+        "loader_state_offset": 920,
+        "loader_handle_offset": 928,
+        "path_offset": 944,
+        "active_resource_flag_offset": 1184,
+        "transitions": [
+          "SetMap -> state 4 (clear requested)",
+          "state 4 -> release six clipmaps, active=false, state 0",
+          "state 0 + empty/unresolved path -> state 2",
+          "state 2 -> stable inactive result"
+        ],
+        "creates_full_size_clipmaps": false,
+        "inactive_parameters": {
+          "param0": [0.0, 0.0, 0.0, 0.0],
+          "param1": [0.0, 0.0, 0.0, 0.0],
+          "param2": [0.0, 0.0, 0.0, 0.0],
+          "param3": [0.0, 0.3333333432674408, 0.0, 0.0]
+        },
+        "textures": "the same 1x1x1 UnityDefault3D zero texture in all six result slots"
+      }
     },
     "shipped_iv_data": {
       "vfs_index_sha256": "12b98032562588ff2519adc6f9e00674870f7ae42f36fe47425c9c7682b261e6",
@@ -1969,15 +1998,15 @@
         "_IrradianceVolumeClipmapTextureBLod3"
       ]
     },
-    "remaining_boundary": "The current installed V2 new-map suffix has no shipped file and no direct managed or Lua owner, but ReloadIndexFileV2 can accept an arbitrary path and indirect/native invocation is not excluded. Native missing-map initialization/clear behavior, any runtime reload path, persistent-atlas transient dimensions, and per-frame param0..param3 values remain open.",
+    "remaining_boundary": "The installed no-reload CharInfo route is closed as a stable inactive V2 result. Generic reflection/external invocation of ReloadIndexFileV2 is not excluded; if observed, the caller-supplied path, transient atlas dimensions, populated parameters, and texture contents remain open.",
     "audit_path": "scratch/character_recovery/charinfo_pass0_resources/charinfo_irradiance_owner.json",
     "audit_sha256": "2a378b2585c71701b8bdb1f4798fd2f5387a03efce1829d781bd0662d3883041",
     "auditor_path": "scratch/character_recovery/charinfo_pass0_resources/audit_charinfo_irradiance_owner.py",
     "auditor_sha256": "e55b9642fcfab974239f72647e0733e6298b39a40e3790e967f36388299c3ac9",
     "v2_audit_path": "scratch/character_recovery/charinfo_pass0_resources/charinfo_v2_irradiance.json",
-    "v2_audit_sha256": "5882147afeee8c7a0b955e7e03a8a16bc6c2719750a4bb0373d9ff3380482f1d",
+    "v2_audit_sha256": "1f77756f536c394efcbfcd1d6d00fca9ed4b40e86f7cdad9c14cf7379af5a5b3",
     "v2_auditor_path": "scratch/character_recovery/charinfo_pass0_resources/audit_charinfo_v2_irradiance.py",
-    "v2_auditor_sha256": "eafc3d5847d4cc89dd10d884ad9ada7af392e168dca33737c5663e546181a22c",
+    "v2_auditor_sha256": "fe9b1800b53b249ac67753af7eb3988aa701fa6c2469de2314ceaf884016ef08",
     "lua_index": {
       "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\charinfo_pass0_resources\\lua_vfs_index.jsonl",
       "sha256": "d02445bce0fa5e94ef4428717fa9481c2e27a966a05b839acd2375779454ae14",

@@ -175,6 +175,22 @@ def verify_charinfo_v2_data_path_contract(
             {"0x189d025a0": [], "0x184843fb0": []},
         ),
         (
+            "installed_map_path_selection.absolute_method_pointer_sites",
+            contract_selection["absolute_method_pointer_sites"],
+            {
+                "ReloadIndexFileV2": ["0x18eabd458"],
+                "StreamingInNewMapV2": ["0x18eabd498"],
+            },
+        ),
+        (
+            "audit.installed_map_path_selection.absolute_method_pointer_sites",
+            selection["absoluteMethodPointerSites"],
+            {
+                "0x189d025a0": ["0x18eabd458"],
+                "0x184843fb0": ["0x18eabd498"],
+            },
+        ),
+        (
             "installed_map_path_selection.shipped_lua_mentions",
             contract_selection["shipped_lua_mentions"],
             {
@@ -201,6 +217,62 @@ def verify_charinfo_v2_data_path_contract(
                 selection["installedIfix"]["currentRoute"],
             ),
             (30, [], "all three recovered non-IFix branches"),
+        ),
+        (
+            "installed_map_path_selection.native_missing_map",
+            contract_selection["native_missing_map"],
+            {
+                "set_map_native_va": "0x18111b690",
+                "loader_state_offset": 0x398,
+                "loader_handle_offset": 0x3A0,
+                "path_offset": 0x3B0,
+                "active_resource_flag_offset": 0x4A0,
+                "transitions": [
+                    "SetMap -> state 4 (clear requested)",
+                    "state 4 -> release six clipmaps, active=false, state 0",
+                    "state 0 + empty/unresolved path -> state 2",
+                    "state 2 -> stable inactive result",
+                ],
+                "creates_full_size_clipmaps": False,
+                "inactive_parameters": {
+                    "param0": [0.0, 0.0, 0.0, 0.0],
+                    "param1": [0.0, 0.0, 0.0, 0.0],
+                    "param2": [0.0, 0.0, 0.0, 0.0],
+                    "param3": [0.0, 0.3333333432674408, 0.0, 0.0],
+                },
+                "textures": (
+                    "the same 1x1x1 UnityDefault3D zero texture in all six "
+                    "result slots"
+                ),
+            },
+        ),
+        (
+            "audit.active_clipmap.installed_missing_map",
+            report["activeClipmaps"]["installedMissingMapState"],
+            {
+                "setMapNativeVa": "0x18111b690",
+                "loaderStateOffset": 0x398,
+                "loaderHandleOffset": 0x3A0,
+                "pathOffset": 0x3B0,
+                "activeResourceFlagOffset": 0x4A0,
+                "transitions": [
+                    "SetMap -> state 4 (clear requested)",
+                    "state 4 -> release six clipmaps, active=false, state 0",
+                    "state 0 + empty/unresolved path -> state 2",
+                    "state 2 -> stable inactive result",
+                ],
+                "createsFullSizeClipmaps": False,
+                "parameters": {
+                    "param0": [0.0, 0.0, 0.0, 0.0],
+                    "param1": [0.0, 0.0, 0.0, 0.0],
+                    "param2": [0.0, 0.0, 0.0, 0.0],
+                    "param3": [0.0, 0.3333333432674408, 0.0, 0.0],
+                },
+                "textures": (
+                    "the same 1x1x1 UnityDefault3D zero texture in all six "
+                    "result slots"
+                ),
+            },
         ),
         (
             "shipped_iv_data.vfs_index_sha256",
