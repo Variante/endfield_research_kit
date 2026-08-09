@@ -105,12 +105,14 @@ NPC archetypes are imported as labeled source kits.
 - `ShaderVariablesGlobal` b35 is no longer an undifferentiated 3,200-byte gap.
   A hash-pinned selected-body audit finds 33 referenced fields and closes exact
   installed reset output for atmosphere c71..c76, height fog c77..c82, and
-  disabled volumetric fog c83..c87. The selected route also closes perspective
-  c4.w, mip bias c26.x, binning/environment rows c28/c29, inactive IV params
-  c132..c134, and wetness c156.x; frame count is behind the exact-zero
-  volumetric gate. `EndfieldCB1` remains unpublished because depth-bin c3.y,
-  feature values c30.xy/c31.x, and default SH c135..c137 still affect live
-  control flow. Pass 0 remains disabled.
+  disabled volumetric fog c83..c87. Current constructors, `IsActive`/camera
+  getters, and all selected/global/LookDev VolumeProfiles close c30 as
+  `(0,0,1,1)`; the code default and every shipped setting override close
+  c31.x as `reflectionProbeMaxSampleMip=7`. The selected route also closes
+  perspective c4.w, mip bias c26.x, binning/environment rows c28/c29, inactive
+  IV params c132..c134, and wetness c156.x; frame count is behind the exact-zero
+  volumetric gate. `EndfieldCB1` remains unpublished because depth-bin c3.y and
+  default SH c135..c137 still affect live control flow. Pass 0 remains disabled.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
@@ -233,7 +235,7 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 ## Highest-value next work
 
 1. Complete the minimum binding-compatible deferred CharInfo frame, starting
-   with b35 c3.y, c30.xy, c31.x, and c135..c137 rather than filling unused rows.
+   with the remaining b35 c3.y and c135..c137 rather than filling unused rows.
 2. Recover the retail light-cull survivor list, then populate exact shadow,
    depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH inputs.
 3. Validate selected paths against accepted retail captures.
