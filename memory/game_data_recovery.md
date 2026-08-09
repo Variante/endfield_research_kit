@@ -58,9 +58,10 @@ unassigned. Absence of a projectile template is not evidence of an incomplete
 skill: visually ranged behavior can be authored as direct `SkillData` actions,
 effects, hitboxes, summons, or another runtime system. Non-zero projectile
 sound values are direct Wwise HIRC event IDs;
-exact event traversal can link them to decoded media candidates. A Wwise
-switch/random container may select one or several candidates at runtime, so
-the exported link is not a claim that every candidate always plays.
+exact event traversal can link them to decoded possible media leaves. Wwise
+Play roots and switch/random/layer containers can represent different logical
+branches, so the exported set is not a claim that every file always plays or
+that every file is one equivalent option.
 
 Current SkillData and BuffData blobs use MemoryPack member counts 47 and 30;
 the source graph also accepts the previously observed 45 and 29 variants.
@@ -97,8 +98,14 @@ runtime alternatives; action delay/timing properties are not decoded far
 enough to claim simultaneity. Distinct media ids remain distinct authored
 leaves, while SHA-256 content equivalence identifies byte-identical decoded
 files. A partial typed graph fails closed and is visibly marked partial rather
-than implying silence. Music object types 10-13 remain unsupported typed
-topologies and likewise fail closed.
+than implying silence. Wwise v150 MusicSegment, MusicTrack, MusicSwitch, and
+MusicRandomSequence objects now use bounded type-specific layouts: all 5,405
+current music objects expose an exact parent, and all 3,380 parent-node child
+structures parse through reciprocal non-empty lists or a unique typed empty
+tail. The `au_music_main`, `au_music_meta`, and `au_music_login` roots reach
+1,175 unique decoded media ids with complete traversal. This recovers the
+authored music graph and possible leaves; live music state, cue conditions,
+switch values, playlist position, and the selected track remain unobserved.
 
 The current binary also proves that audio is not one flat event namespace.
 `AudioAdapter` separately exposes event posting, states, switches, RTPCs,
@@ -200,13 +207,25 @@ This proves authored spawn-warning requests, not that a spawner executed.
 Every current `bornBehaviorData` value is null, so a future non-null member-18
 payload fails closed until an authored fixture proves its serialized layout.
 
-Seven current LevelScript audio ActionBase layouts now decode from their exact
-union tag/member count and generated-setter field order. The overlaid corpus has
-1,690/1,690 decoded records: 1,390 constant Event requests, 290 named AudioCue
-invocations, and 22 dynamic Event parameters. Constant Events receive exact
-script/action/role/routing contexts in Audio. Cue names and dynamic parameters
-remain separate control records because the runtime cue-definition lookup and
-live Param values are not yet recovered; no name is synthesized for them.
+Seventeen current LevelScript audio ActionBase layouts now decode from their
+exact union tag/member count and generated-setter field order. The overlaid
+corpus has 1,842/1,842 decoded records: 1,394 constant Event requests, 290 named
+AudioCue invocations, 22 dynamic Event parameters, and 152 exact music/state/
+variable/stop/bark controls with 23 dynamic control bindings. Constant Events
+receive exact script/action/role/routing contexts in Audio. Cue names, dynamic
+parameters, playback handles, placeholder-music ids, and state/variable writes
+remain typed control records when their runtime value is unresolved; no name or
+live value is synthesized for them. Native `AudioCueSystem.PostCue(string)`
+hashes the exact managed string with `AudioHashGenerator.Compute`, then looks up
+the resulting uint32 in `AudioCueHandlerIndex`. The hash is FNV-1 over UTF-16
+code units with ASCII-only `A-Z` folding and no whitespace trim. Normalizing the
+signed `AudioCueTable` keys to uint32 resolves 207/290 invocations and 103/170
+distinct authored names without collisions; 83 invocations remain explicitly
+missing from the current table. Exact matched `behaviourExpr` type-3 rows add
+222 LevelScript cue-to-Event contexts across 103 Events. Script execution,
+current-level handler selection, condition evaluation, and Wwise playback stay
+unobserved. The shipped `SetAudioGlobalParameter` type is not decoded because
+no current serialized row proves its field shape.
 
 `AudioCueTable` is an expression system rather than a flat Event list. The
 current 175 cue definitions contain 291 handlers: only 325 `behaviourExpr`
