@@ -106,8 +106,11 @@ installed-game refresh. Asset modes, from narrowest to broadest, are
 Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
 maintenance. The audio builder writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
-`export_full/structured/Audio/<LANG>/`, parses Wwise bank event-to-media links, and post-processes generated
-conversation JSON with playable `audioSrc` links. The default exporter mode is
+`export_full/structured/Audio/<LANG>/`, parses Wwise bank event-to-media links,
+and post-processes generated conversation JSON with playable `audioSrc` links.
+It also writes the compact
+per-language Gameplay skill/enemy SFX sidecar from exact SkillData/BuffData
+references and Wwise event traversal. The default exporter mode is
 `--animestudio-type-job-mode auto`: it merges map-filtered JSON, runs broad Story
 JSON types sequentially in isolated processes, and keeps map-filtered asset
 conversion sharded; use `parallel` only when comparing concurrent per-type jobs.
@@ -169,7 +172,6 @@ python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 python scripts\build_character_data.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
 python scripts\build_gameplay_data.py
-python scripts\build_progression_data.py
 python scripts\build_projectile_data.py
 python scripts\build_combat_relationships.py --languages CN
 python scripts\build_economy_data.py --languages CN --default-language CN
@@ -216,19 +218,18 @@ Browser behavior:
   manual order-edit controls are behind `Show debug info`.
 - The Story reset button returns filters to Story sort while preserving
   expanded mission groups.
-- Normal semantic navigation exposes Gameplay. Mission Pipeline, Characters,
-  Progression, Combat & Projectiles, the retained standalone Combat graph,
-  Factory, World, and Presentation are experimental and hidden unless the
-  top-right `Show debug info` switch is enabled; disabling debug while one is
-  active must normalize to a visible page and URL.
+- Normal semantic navigation exposes Gameplay and Characters. Mission Pipeline
+  is experimental and hidden unless the top-right `Show debug info` switch is
+  enabled; disabling debug while it is active must normalize to a visible page
+  and URL. The standalone Combat & Projectiles page is retired. Keep useful
+  projectile behavior and playable sound links in Gameplay character skills;
+  expose recovered character-skill and enemy SFX there as compact collapsed
+  players with inferred ownership labeled;
+  keep raw identity, source, matching, and unresolved ownership debug-only.
 - Mission Pipeline Story cards show evidence-typed trigger chains. Preserve an
   explicit ownership gap for unlinked native playback, keep definition-only
   rows distinct, and never infer mission order from native registration or code
   address order.
-- Combat & Projectiles groups records by evidence-backed character/enemy sender
-  and must label identifier-only ownership as inferred. World groups by authored
-  level IDs and may plot X/Z positions, but rows without an exported level ID
-  must remain unassigned rather than being inferred from coordinates.
 
 Export freshness:
 
@@ -282,13 +283,13 @@ Browser data inputs and outputs:
   `webui/data/lang/<code>/index.json`, `conv/*.json`, `mission/*.json`,
   `reference/**`, `webui/data/mission_pipeline/index.json`,
   `webui/data/mission_pipeline/missions/*.json`, `webui/data/gameplay/projectiles.json`,
+  `webui/data/lang/<code>/gameplay/sound_effects.json`,
   `webui/data/lang/<code>/characters/index.json`,
-  `webui/data/lang/<code>/progression/index.json`,
   `webui/data/lang/<code>/gameplay/combat_relationships.json`,
   `webui/data/lang/<code>/economy/index.json`,
   `webui/data/lang/<code>/world/index.json`,
   `webui/data/lang/<code>/presentation/index.json`,
-  `webui/data/assets/index.json`, and
+  `webui/data/assets/index.json`, `webui/data/assets/gameplay_refs.json`, and
   `webui/data/updates/latest.json`.
 - The current `export.bat` skips raw VFS output and source inventory because
   the browser does not need them.
@@ -513,8 +514,8 @@ WebUI:
 - `scripts/story_builder/timeline_action_evidence.py`
 - `scripts/build_character_data.py`
 - `scripts/build_gameplay_data.py`
+- `scripts/build_gameplay_asset_refs.py`
 - `scripts/build_mission_pipeline_data.py`
-- `scripts/build_progression_data.py`
 - `scripts/build_projectile_data.py`
 - `scripts/build_combat_relationships.py`
 - `scripts/build_economy_data.py`

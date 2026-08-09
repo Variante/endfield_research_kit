@@ -15,27 +15,15 @@
     "characters",
     "gameplay",
     "mission-pipeline",
-    "progression",
-    "projectiles",
-    "combat",
-    "economy",
-    "world",
-    "presentation",
     "assets",
     "reference",
     "updates",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline", "characters", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
+  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({
     "mission-pipeline": "gameplay",
-    characters: "story",
-    progression: "gameplay",
-    projectiles: "gameplay",
-    combat: "gameplay",
-    economy: "gameplay",
-    world: "gameplay",
-    presentation: "assets",
   });
+  const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay" });
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
   const MODEL_PREFIX_RE = /^([A-Z])_(.+)$/;
   const MODEL_UNPATTERNED_OBJ_GROUP = Object.freeze({
@@ -581,6 +569,7 @@
   function setAssetUiLocale(locale, { refresh = true } = {}) {
     ASSET_STATE.uiLocale = normalizeUiLocale(locale) || "en";
     applyAssetUiStrings();
+    setDocumentTitleForView(ASSET_STATE.activeView);
 
     if (!refresh || !ASSET_STATE.loaded) return;
     buildTypeChips();
@@ -592,6 +581,7 @@
 
   function resolveViewFromHash() {
     const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
+    if (RETIRED_VIEW_FALLBACKS[hash]) return RETIRED_VIEW_FALLBACKS[hash];
     return AVAILABLE_VIEWS.has(hash) ? hash : "story";
   }
 
@@ -648,59 +638,17 @@
   }
 
   function setDocumentTitleForView(view) {
-    if (view === "characters") {
-      document.title = "Endfield Characters and NPC Evidence";
-      return;
-    }
-    if (view === "assets") {
-      document.title = assetUiText("title");
-      return;
-    }
-    if (view === "reference") {
-      const referenceTitle = ($("#reference-title") && $("#reference-title").textContent) || "Endfield Text Reference";
-      document.title = referenceTitle;
-      return;
-    }
-    if (view === "updates") {
-      const updatesTitle = ($("#updates-title") && $("#updates-title").textContent) || "Endfield WebUI Content Updates";
-      document.title = updatesTitle;
-      return;
-    }
-    if (view === "gameplay") {
-      const gameplayTitle = ($("#gameplay-title") && $("#gameplay-title").textContent) || "Endfield Gameplay Data";
-      document.title = gameplayTitle;
-      return;
-    }
-    if (view === "mission-pipeline") {
-      document.title = "Endfield Mission Pipeline";
-      return;
-    }
-    if (view === "progression") {
-      document.title = "Endfield Upgrade Costs and Rewards";
-      return;
-    }
-    if (view === "projectiles") {
-      document.title = "Endfield Combat and Projectile Explorer";
-      return;
-    }
-    if (view === "combat") {
-      document.title = "Endfield Character and Enemy Combat Links";
-      return;
-    }
-    if (view === "economy") {
-      document.title = "Endfield Production, Technology, and Shops";
-      return;
-    }
-    if (view === "world") {
-      document.title = "Endfield World Placements and Evidence";
-      return;
-    }
-    if (view === "presentation") {
-      document.title = "Endfield Entity Presentation";
-      return;
-    }
-    const storyTitle = ($("#app-title") && $("#app-title").textContent) || "Endfield Story Browser";
-    document.title = storyTitle;
+    const titleKeys = {
+      story: "storyPageTitle",
+      characters: "charactersPageTitle",
+      gameplay: "gameplayPageTitle",
+      "mission-pipeline": "missionPipelinePageTitle",
+      assets: "assetsPageTitle",
+      reference: "referencePageTitle",
+      updates: "updatesPageTitle",
+    };
+    const pageTitle = uiText(titleKeys[view] || titleKeys.story);
+    document.title = `${pageTitle} \u00b7 ${uiText("siteTitle")}`;
   }
 
   function setActiveView(view, { updateHash = true } = {}) {
@@ -768,7 +716,8 @@
       setActiveView(nextTab.dataset.view);
     });
     window.addEventListener("hashchange", () => {
-      setActiveView(resolveViewFromHash(), { updateHash: false });
+      // Normalize retired/unknown hashes as well as selecting valid views.
+      setActiveView(resolveViewFromHash());
     });
   }
 
@@ -3530,7 +3479,7 @@
     });
     window.addEventListener("webui:debug-changed", syncDebugViewVisibility);
     ensureAssetPanelToggle();
-    setActiveView(resolveViewFromHash(), { updateHash: false });
+    setActiveView(resolveViewFromHash());
     Object.assign(window.WebUI, { setViewBusy, setShellStatus, clearShellStatus });
   }
 

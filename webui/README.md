@@ -18,17 +18,28 @@ Reuse `http://127.0.0.1:8765/` if it is already running.
 
 - **Story:** recovered dialog, radio, SNS, cutscenes, options, media, and
   evidence.
+- **Characters:** grouped identity evidence — names, evidence groups, and
+  assets — across CharacterTable, NpcTable, SNSChatTable, TextTable, and
+  story actor/asset markers, with manual merge overrides.
 - **Text Tables:** searchable localized table rows.
 - **Gameplay:** curated character, weapon, ability, progression, economy, and
-  world records.
+  world records. Playable-character details include breakthrough material
+  requirements; each detail view also surfaces related progression and linked
+  image/model assets.
 - **Mission Pipeline (experimental):** quest DAG plus evidence-typed Story
   trigger chains.
 - **Assets:** exported images, models, materials, video, and metadata.
 - **Updates:** differences between previous and current exported game data.
 
-Mission Pipeline, Characters, Progression, Combat & Projectiles, standalone
-Combat, Factory, World, and Presentation are experimental and appear only with
-`Show debug info`.
+Standalone Mission Pipeline is experimental and appears only with `Show debug
+info`. The former standalone Combat & Projectiles page is retired; its useful
+projectile summaries and playable audio stay with character skills in Gameplay.
+SkillData/BuffData sound effects also appear as compact players on character
+skills and enemy details when their Wwise media can be resolved.
+Gameplay combat relationships remain debug-only. Character skill rows keep a
+compact player-facing projectile behavior summary visible normally and explain
+when a skill has no linked separate projectile template; raw projectile identity,
+source, matching evidence, and unresolved ownership remain debug-only.
 
 ## Main files
 
@@ -52,7 +63,8 @@ data/lang/<LANG>/conv/
 data/lang/<LANG>/mission/
 data/lang/<LANG>/reference/
 data/mission_pipeline/
-data/assets/
+data/assets/index.json
+data/assets/gameplay_refs.json
 data/updates/latest.json
 ```
 
@@ -61,8 +73,12 @@ Manual runtime inputs live under `webui/overrides/`:
 - `story_order.json`: complete user-managed mission order.
 - `options.json`: manual option positions and responses.
 - `narrative_videos.json`: explicit video attachment/suppression rules.
+- `character_merges.json`: manual identity merges for the Characters page,
+  plus a `flagged` list of ids marked "needs a merge, target unknown" —
+  both edited live from that page's UI (no rebuild needed).
 
-Rebuild Story data after editing overrides.
+Rebuild Story data after editing `story_order.json`, `options.json`, or
+`narrative_videos.json`.
 
 ## Behavior contract
 
@@ -70,6 +86,59 @@ Rebuild Story data after editing overrides.
 - Debug panels and manual order controls are behind `Show debug info`.
 - Reset returns to Story sort and preserves expanded mission groups.
 - Disabling debug from a hidden page returns to a visible page and URL.
+- Gameplay details load the Combat, Projectile, skill/enemy sound-effect, and compact asset sidecars
+  independently. Character skill rows show one compact projectile behavior
+  summary plus playable sound links in normal mode. Expand a projectile entry
+  and use the player under `Related sound effects`. The column covers only
+  linked separate projectile templates; direct skill actions/effects, melee
+  hitboxes, summons, and unrecovered runtime links can have no row.
+  `Show debug info` adds raw identifiers,
+  source coordinates, match evidence, combat relationships, and the unresolved
+  internal-projectile block. Missing sidecars degrade to the base record.
+  - Playable projectile sounds are exact Wwise-event media candidates. Multiple
+    candidates remain grouped because runtime switch/random selection is not
+    statically recovered. Projectile, character-skill, and enemy SFX use the
+    same enhanced audio player as Story lines, including seek, volume,
+    waveform, and download controls. Hidden Gameplay candidates are upgraded
+    lazily when their sound group opens.
+  - Character-skill sound ownership is direct for exact playable skill ids and
+    visibly inferred for authored child SkillData families. Enemy sound
+    ownership is visibly inferred from the longest exact enemy/variant-id
+    prefix unless an explicit born-buff field supplies the link. Unowned global
+    SkillData is not promoted to an entity.
+  - Playable-character details keep identity assets in Character stats,
+    breakthrough material requirements in the character detail,
+    combat/projectile evidence inside the matching skill group, and
+    skill/talent costs, icons, and source coordinates in their existing structures; potential
+    pictures stay inside the corresponding potential row. Do not append duplicate
+    entity-level panels after the character detail.
+- Gameplay image thumbnails and model paths link back to the selected item in
+  Assets; the compact `gameplay_refs.json` sidecar is regenerated from the
+  broad exported asset index.
+- Enemy details keep only the highest-ranked original image. Variant rows form
+  a selectable difference table with no per-variant Story link; selecting a
+  row swaps the exact referenced attribute template. Enemy stat sliders expose
+  only authored `EnemyAttributeTemplateTable` points and never interpolate or
+  derive missing level coordinates. Combat links show original table/field
+  coordinates, authored values, semantic boundaries, and direct-versus-matched
+  confidence.
+- Characters groups identity records under one entry per matching display
+  name, then re-keys each group by its smallest constituent record id (a
+  table/asset key, not localized text) so the id — and anything stored
+  against it in `overrides/character_merges.json` — stays valid across
+  language builds.
+- Characters identities built from exported-asset filenames exclude a
+  code-reviewed, source-commented allowlist of non-character tokens and
+  filename families (`EXCLUDED_TOKENS`, `EXCLUDED_FILENAME_FRAGMENTS` in
+  `scripts/build_character_data.py`): config/table files, VFX materials,
+  generic props, and positional/numbered UI icons. See that script's
+  "Characters catalog" contract in `scripts/README.md` before adding to
+  either list.
+- Manual Characters merges (`overrides/character_merges.json`) are additive
+  on top of automatic grouping, never a rebuild input: the target inherits
+  every name, evidence group, and alias from the source, cycles/self-merges
+  are rejected, and an id flagged "needs merge, target unknown" clears
+  automatically once it is actually merged.
 - Mission Pipeline distinguishes ownership, context, definition-only rows, and
   unresolved native playback.
 - Mission objective cards expose every complete authored LevelScript task
@@ -304,7 +373,6 @@ Rebuild Story data after editing overrides.
   branch context remains visible even when it cannot identify a unique trigger.
 - Mission order is never inferred from registration, source-file order, or
   code addresses.
-- World rows without an exported level remain unassigned.
 - Identifier-only Combat ownership remains visibly inferred.
 
 ## Inline media
@@ -331,7 +399,9 @@ After frontend changes:
 3. Check normal and debug navigation.
 4. Verify Mission Pipeline unresolved/definition-only labeling.
 5. Check emoji, sticker, image, hover, and modal behavior.
-6. Confirm no generated data contract changed unintentionally.
+6. Open a Gameplay character/enemy and confirm progression and asset sections
+   render normally; enable debug and confirm combat/projectile sections appear.
+7. Confirm no generated data contract changed unintentionally.
 
 ## Scope
 

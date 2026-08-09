@@ -762,6 +762,13 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
 }
 
 .mp-timeline-activation details > small { display: block; }
+.mp-timeline-activation details > div {
+  display: grid;
+  gap: 2px;
+  margin: 3px 0;
+  padding-left: 7px;
+  border-left: 2px solid rgba(63, 126, 93, 0.35);
+}
 .mp-timeline-activation-boundary { color: var(--muted); }
 
 .mp-timeline-runtime p,

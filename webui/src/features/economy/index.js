@@ -1,8 +1,8 @@
 (() => {
   const DATA_VERSION = "20260715-econ1";
   const DEFAULT_CONTAINER = "#economy-app";
-  const LIST_PAGE_SIZE = 100;
-  const RELATION_PAGE_SIZE = 40;
+  const LIST_PAGE_SIZE = Infinity;
+  const RELATION_PAGE_SIZE = Infinity;
   const VIEWS = ["recipes", "machines", "technology", "logistics", "resources", "shops", "activities"];
   const UI = {
     clear: "Clear search", retry: "Retry", results: "results", showing: "showing", of: "of", selected: "Selected",

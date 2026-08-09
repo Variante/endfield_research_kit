@@ -30,7 +30,7 @@ Latest CN reports:
 | Local DialogTree conditional census | 13 exact same-Story routes / 26 serialized arms across 7 Story files; hash-locked `DialogTreeIfNode` polarity, 0 validation failures; selection evidence only, never file order |
 | Serialized DialogTree IfNode census | 78 binary-validated nodes / 156 arms; 1 malformed node retained as a structured failure; internal selection evidence only |
 | Timeline option-route binary contract | 25 route groups / 84 related-file occurrences; exact serialized Runtime Jump/clip tracks plus hash-locked option-index/active-clip contract; 0 validation failures; selection/track evidence only |
-| Timeline-embedded Story runtime | 2 carrier families / 21 exact clips / 16 Story keys / 14 Timeline roots / 24 exact PlayableDirector instances across 13 roots / 10 ExposedReference-ControlPlayableAsset chains / 8 exact parent-dialog event/action routes covering 10 Story keys and 7 unique mission shells / 1 same-track local-order edge / 0 quest-activation or branch-selection edges; every attached original input retains its SHA-256 |
+| Timeline-embedded Story runtime | 2 carrier families / 21 exact clips / 16 Story keys / 14 Timeline roots / 24 exact PlayableDirector instances across 13 roots / 10 ExposedReference-ControlPlayableAsset chains / 8 exact parent-dialog event/action routes with 8 exact event-selector-to-local-volume joins, covering 10 Story keys and 7 unique mission shells / 1 same-track local-order edge / 0 quest-activation or branch-selection edges; every attached original input retains its SHA-256 |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
@@ -140,13 +140,22 @@ in five payloads.
   `LevelData/43.member22` BriefData dictionary; a unique mission-named shell is
   published as mission-shell ownership only. Eight exact
   `OnLeaderEnterTriggerVolume -> StartDialog` routes cover 10 of the 16 Story
-  keys and seven mission shells. For `black_c31m1_3`, this closes the chain from
+  keys and seven mission shells. The generic header audit now also exposes each
+  typed event payload and resolves its exact `triggerSlotIdFilter` against the
+  same LevelScript's fully decoded MemoryPack trigger-volume map. All eight
+  routes select exactly one local Leader volume (five spheres and three boxes),
+  all have `waitSrvRes=false`, and all pass the current schema/slot validator.
+  None exactly matches a typed MissionArea shape or PosTracking center, and the
+  volume schema carries no mission/quest foreign identity, so this adds exact
+  listening geometry but no quest activation or branch edge. For
+  `black_c31m1_3`, this closes the chain from
   `indie_dg005/25600140003` header `#5`, through action `#6` and
   `dlg_c31m1_9`, into the nested director composition under
   `dlgtl_c31m1_9_sub_1`, with exact LevelScript, LevelData, MissionRuntime,
   GameAssembly, and metadata hashes. Six parent dialogs still have no exact
   client-visible event/action route; all eight recovered routes still lack an
-  activating quest and selected-branch carrier. Discovery uses no
+  activating quest and selected-branch carrier. Discovery and volume matching
+  use no
   Story/mission/level/script/CAB/PathID allowlist. Ambiguous emitted line IDs
   are excluded rather than guessed; OCR and overrides are not inputs.
 - A general, id-free direct-call census now maps the complete hash-pinned
@@ -1862,7 +1871,8 @@ binary or serialized producer/consumer surface contains an exact row identity;
 numeric suffixes, dungeon sort ids, guide-hint names, task ids, asset paths,
 OCR, and manual order remain non-evidence. Highest-value next work has two
 bounded fronts: recover a typed quest/event owner for the eight newly
-mission-scoped parent-dialog routes (without treating same-scene tracking as
+mission-scoped parent-dialog routes after the now-closed local-volume and
+spatial-tracking joins (without treating nearby or same-scene tracking as
 activation), and inspect the six remaining Timeline parent dialogs that have no
 exact LevelScript event/action route. The broader queue still contains 156
 exact native playback files without a mission/quest activation bridge,

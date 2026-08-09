@@ -19,8 +19,9 @@
 
 .projectile-toolbar h1 { margin: 0; font-size: 1.35rem; }
 .projectile-toolbar p { margin: .3rem 0 0; color: var(--muted, #697386); }
-.projectile-summary { white-space: nowrap; color: var(--muted, #697386); }
+.projectile-summary { display: grid; gap: 2px; justify-items: end; white-space: nowrap; color: var(--muted, #697386); }
 .projectile-summary strong { color: var(--fg, #20242c); }
+.projectile-summary span { font-size: 11px; }
 
 .projectile-intro {
   display: grid;
@@ -392,6 +393,41 @@
 .projectile-effect-group > h4 { margin: 0; text-transform: capitalize; }
 .projectile-effect-group > h4 span { color: var(--muted, #697386); font-size: .75rem; font-weight: 500; }
 .projectile-alert { padding-top: .8rem; border-top: 1px solid var(--projectile-border); }
+
+.projectile-sound-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: .7rem;
+}
+
+.projectile-sound-card {
+  min-width: 0;
+  padding: .75rem;
+  border: 1px solid var(--projectile-border);
+  border-radius: .55rem;
+  background: var(--projectile-soft);
+}
+
+.projectile-sound-card > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.projectile-sound-card > header > div { display: grid; gap: .2rem; min-width: 0; }
+.projectile-sound-card > header span { font-weight: 750; }
+.projectile-sound-card > header code { color: var(--muted, #697386); font-size: .72rem; }
+.projectile-sound-card > header strong { color: var(--projectile-accent); font-size: .72rem; white-space: nowrap; }
+.projectile-sound-card > p { margin: .65rem 0 0; color: var(--muted, #697386); font-size: .78rem; }
+
+.projectile-audio-candidate { display: grid; gap: .2rem; margin-top: .65rem; }
+.projectile-audio-candidate audio { width: 100%; height: 34px; }
+.projectile-audio-candidate small { color: var(--muted, #697386); font-size: .7rem; }
+
+.projectile-sound-technical { margin-top: .8rem; }
+.projectile-sound-technical > summary { cursor: pointer; color: var(--muted, #697386); font-size: .78rem; font-weight: 700; }
+.projectile-sound-technical > .projectile-fields { margin-top: .55rem; }
 
 .projectile-table-wrap { overflow-x: auto; }
 .projectile-curve table { width: 100%; border-collapse: collapse; font-size: .75rem; }

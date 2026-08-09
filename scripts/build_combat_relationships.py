@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
 DEFAULT_ANIMESTUDIO_ROOT = ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 GRAPH_EDGE_TYPES = {
     "skill_data_has_param_string",
@@ -86,19 +86,21 @@ def graph_json(value: str | None) -> Any:
 
 def raw_stats(entry: dict[str, Any]) -> dict[str, Any]:
     stats = entry.get("stats") or {}
-    checkpoints = stats.get("checkpoints") or []
+    points = stats.get("rows") or stats.get("checkpoints") or []
     selected: list[Any] = []
-    if checkpoints:
-        selected.append(checkpoints[0])
-        if len(checkpoints) > 1:
-            selected.append(checkpoints[-1])
+    if points:
+        selected.append(points[0])
+        if len(points) > 1:
+            selected.append(points[-1])
     return {
         key: value
         for key, value in {
             "source": stats.get("source"),
             "templateId": stats.get("templateId"),
             "maxLevel": stats.get("maxLevel"),
-            "checkpoints": selected,
+            "pointCount": stats.get("pointCount") or stats.get("rowCount"),
+            "interpolated": stats.get("interpolated"),
+            "authoredBoundaryPoints": selected,
         }.items()
         if value not in (None, "", [], {})
     }
@@ -292,6 +294,9 @@ class PayloadBuilder:
                 )
 
     def add_enemy_relations(self, enemy_id: str, entry: dict[str, Any]) -> None:
+        display_source = entry.get("displaySource") or {}
+        display_table = str(display_source.get("table") or "EnemyTemplateDisplayInfoTable.json")
+        display_key = str(display_source.get("id") or entry.get("id") or "")
         for index, ability in enumerate(entry.get("abilities") or []):
             key = str(ability.get("id") or "").strip()
             if not key:
@@ -310,39 +315,141 @@ class PayloadBuilder:
                 ability_id,
                 "has_enemy_ability",
                 confidence="direct",
-                evidence_source="webui/gameplay",
-                evidence_path=f"abilities[{index}]",
+                evidence_source=display_table,
+                evidence_path=f"{display_key}.abilityDescIds[{index}]",
                 raw=key,
+                note="The enemy display table directly lists this localized ability description ID.",
             )
-        for index, buff_value in enumerate(entry.get("bornBuffs") or []):
-            key = str(buff_value).strip()
+
+        variants = [variant for variant in entry.get("variants") or [] if isinstance(variant, dict)]
+        for variant_index, variant in enumerate(variants):
+            key = str(variant.get("id") or "").strip()
             if not key:
                 continue
-            buff_id = f"buff:{key}"
-            self.buff_ids.add(key)
-            self.add_node(buff_id, "buff", key, key=key)
+            source = variant.get("source") or {}
+            source_table = str(source.get("table") or "EnemyTable.json")
+            source_key = str(source.get("id") or key)
+            variant_id = f"enemy_variant:{key}"
+            raw = {
+                name: value
+                for name, value in {
+                    "templateId": variant.get("templateId"),
+                    "attrTemplateId": variant.get("attrTemplateId"),
+                    "modelId": variant.get("modelId"),
+                    "aiTemplateId": variant.get("aiTemplateId"),
+                    "displayType": variant.get("displayType"),
+                    "isDangerous": variant.get("isDangerous"),
+                    "bornBuffs": variant.get("bornBuffs") or [],
+                    "attrModifiers": variant.get("attrModifiers") or [],
+                }.items()
+                if value not in (None, "", [], {})
+            }
+            self.add_node(
+                variant_id,
+                "enemy_variant",
+                str(variant.get("name") or key),
+                key=key,
+                semanticStatus="exact authored EnemyTable row",
+                source={"table": source_table, "id": source_key},
+                raw=raw,
+            )
             self.add_edge(
                 enemy_id,
-                buff_id,
-                "starts_with_buff",
+                variant_id,
+                "has_authored_variant",
                 confidence="direct",
-                evidence_source="webui/gameplay",
-                evidence_path=f"bornBuffs[{index}]",
-                raw=key,
+                evidence_source=source_table,
+                evidence_path=source_key,
+                raw={"variantIndex": variant_index, "id": key},
+                note="Template grouping and the complete variant row are preserved from EnemyTable.",
             )
-        model_key = str(entry.get("modelId") or "").strip()
-        if model_key:
-            model_id = f"model_ref:{model_key}"
-            self.add_node(model_id, "model", model_key, key=model_key)
-            self.add_edge(
-                enemy_id,
-                model_id,
-                "uses_model_id",
-                confidence="direct",
-                evidence_source="webui/gameplay",
-                evidence_path="modelId",
-                raw=model_key,
-            )
+
+            attr_template_key = str(variant.get("attrTemplateId") or "").strip()
+            if attr_template_key:
+                attr_template_id = f"enemy_attr_template:{attr_template_key}"
+                attr_payload = (entry.get("attributeTemplates") or {}).get(attr_template_key) or {}
+                self.add_node(
+                    attr_template_id,
+                    "attribute_template",
+                    attr_template_key,
+                    key=attr_template_key,
+                    semanticStatus="exact authored attribute-template reference",
+                    source=compact_source(attr_payload.get("source")) or {
+                        "table": "EnemyAttributeTemplateTable.json",
+                        "id": attr_template_key,
+                    },
+                    raw={
+                        "statPointCount": (attr_payload.get("stats") or {}).get("pointCount"),
+                        "interpolated": (attr_payload.get("stats") or {}).get("interpolated"),
+                        "damageScalars": attr_payload.get("damageScalars") or [],
+                        "resilience": attr_payload.get("resilience") or [],
+                    },
+                )
+                self.add_edge(
+                    variant_id,
+                    attr_template_id,
+                    "uses_attribute_template",
+                    confidence="direct",
+                    evidence_source=source_table,
+                    evidence_path=f"{source_key}.attrTemplateId",
+                    raw=attr_template_key,
+                )
+
+            for field, kind, edge_type in (
+                ("modelId", "model", "uses_model_id"),
+                ("aiTemplateId", "ai_template", "uses_ai_template"),
+            ):
+                value = str(variant.get(field) or "").strip()
+                if not value:
+                    continue
+                target_id = f"{kind}_ref:{value}"
+                self.add_node(target_id, kind, value, key=value, semanticStatus=f"exact {field} reference")
+                self.add_edge(
+                    variant_id,
+                    target_id,
+                    edge_type,
+                    confidence="direct",
+                    evidence_source=source_table,
+                    evidence_path=f"{source_key}.{field}",
+                    raw=value,
+                )
+
+            for buff_index, buff_value in enumerate(variant.get("bornBuffs") or []):
+                buff_key = str(buff_value).strip()
+                if not buff_key:
+                    continue
+                buff_id = f"buff:{buff_key}"
+                self.buff_ids.add(buff_key)
+                self.add_node(buff_id, "buff", buff_key, key=buff_key)
+                self.add_edge(
+                    variant_id,
+                    buff_id,
+                    "starts_with_buff",
+                    confidence="direct",
+                    evidence_source=source_table,
+                    evidence_path=f"{source_key}.bornBuffs[{buff_index}]",
+                    raw=buff_key,
+                )
+
+        # Compatibility fallback for older Gameplay payloads that did not
+        # retain variant rows.
+        if not variants:
+            for index, buff_value in enumerate(entry.get("bornBuffs") or []):
+                key = str(buff_value).strip()
+                if not key:
+                    continue
+                buff_id = f"buff:{key}"
+                self.buff_ids.add(key)
+                self.add_node(buff_id, "buff", key, key=key)
+                self.add_edge(
+                    enemy_id,
+                    buff_id,
+                    "starts_with_buff",
+                    confidence="direct",
+                    evidence_source="EnemyTable.json",
+                    evidence_path=f"{entry.get('id')}.bornBuffs[{index}]",
+                    raw=key,
+                )
 
     def ability_entity_paths(self) -> list[Path]:
         paths: list[Path] = []

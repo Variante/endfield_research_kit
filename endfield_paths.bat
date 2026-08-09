@@ -7,7 +7,7 @@ rem Installed Endfield_Data directory.
 set "ENDFIELD_GAME_ROOT=D:\Program Files\Endfield Game\Endfield_Data"
 
 rem Saved previous game-data export used by build_updates.bat.
-set "ENDFIELD_PREVIOUS_EXPORT_ROOT=export_1d2"
+set "ENDFIELD_PREVIOUS_EXPORT_ROOT=export_full_1d3d2"
 
 rem Current game-data export used by build_updates.bat.
 set "ENDFIELD_EXPORT_ROOT=export_full"

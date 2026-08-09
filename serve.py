@@ -27,6 +27,8 @@ EXPORT_FULL_ROOT = PROJECT_ROOT / "export_full"
 DATA_EXPORT_ROOT_ENV = "WEBUI_DATA_EXPORT_ROOT"
 DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "structured" / "StreamingAssets" / "Data"
 STORY_ORDER_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "story_order.json"
+CHARACTER_MERGES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "character_merges.json"
+CHARACTER_NAME_OVERRIDES_PATH = WEBUI_ROOT / "overrides" / "character_name_overrides.json"
 MAX_WRITE_BYTES = 5 * 1024 * 1024
 
 
@@ -52,13 +54,12 @@ def resolve_previous_export_root() -> Path:
     previous_root = (
         payload.get("previousSourceRoot")
         or (payload.get("tracker") or {}).get("previousSourceRoot")
-        or "export_122"
+        or "export_1d2"
     )
     root = Path(str(previous_root))
     return root if root.is_absolute() else PROJECT_ROOT / root
 
 
-PREVIOUS_EXPORT_ROOT = resolve_previous_export_root()
 DATA_EXPORT_ROOT = resolve_data_export_root()
 
 
@@ -176,11 +177,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    WRITABLE_OVERRIDES = {
+        "/overrides/story_order.json": (STORY_ORDER_OVERRIDE_PATH, "validate_story_order_payload"),
+        "/overrides/character_merges.json": (CHARACTER_MERGES_OVERRIDE_PATH, "validate_character_merges_payload"),
+        "/overrides/character_name_overrides.json": (CHARACTER_NAME_OVERRIDES_PATH, "validate_character_name_overrides_payload"),
+    }
+
     def do_PUT(self) -> None:
         request_path = urlsplit(self.path).path or "/"
-        if request_path != "/overrides/story_order.json":
+        entry = self.WRITABLE_OVERRIDES.get(request_path)
+        if not entry:
             self.send_error(404, "Writable endpoint not found")
             return
+        target, validator_name = entry
+        validator = globals()[validator_name]
 
         try:
             length = int(self.headers.get("Content-Length") or "0")
@@ -198,12 +208,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._send_json(400, {"ok": False, "error": f"Invalid JSON: {exc}"})
             return
 
-        error = validate_story_order_payload(payload)
+        error = validator(payload)
         if error:
             self._send_json(400, {"ok": False, "error": error})
             return
 
-        target = STORY_ORDER_OVERRIDE_PATH.resolve()
+        target = target.resolve()
         overrides_root = (WEBUI_ROOT / "overrides").resolve()
         if target.parent != overrides_root:
             self._send_json(403, {"ok": False, "error": "Refusing to write outside webui/overrides"})
@@ -211,7 +221,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         text = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
         target.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_name = tempfile.mkstemp(prefix=".story_order.", suffix=".tmp", dir=target.parent)
+        fd, tmp_name = tempfile.mkstemp(prefix=f".{target.stem}.", suffix=".tmp", dir=target.parent)
         tmp_path = Path(tmp_name)
         try:
             with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
@@ -259,7 +269,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             else:
                 root = DATA_EXPORT_ROOT
         elif export_previous:
-            root = PREVIOUS_EXPORT_ROOT
+            # The Updates feed can be rebuilt while this server is running.
+            # Resolve its previous-export root for every request so links do
+            # not remain pinned to the feed that existed at startup.
+            root = resolve_previous_export_root()
             request_path = "/" + request_path.removeprefix("/export_previous").lstrip("/")
 
         if not export_full and not export_previous and not export_data and request_path in ("", "/"):
@@ -373,13 +386,60 @@ def validate_story_order_payload(payload: object) -> str:
     return ""
 
 
+def validate_character_merges_payload(payload: object) -> str:
+    if not isinstance(payload, dict):
+        return "Character merges payload must be a JSON object"
+    merges = payload.get("merges")
+    if not isinstance(merges, dict):
+        return "Character merges payload must contain a merges object"
+    for source_id, target_id in merges.items():
+        if not isinstance(source_id, str) or not source_id.strip():
+            return "Character merge source ids must be non-empty strings"
+        if not isinstance(target_id, str) or not target_id.strip():
+            return f"Character merge target for {source_id!r} must be a non-empty string"
+        if source_id == target_id:
+            return f"Character merge source {source_id!r} cannot target itself"
+    for start in merges:
+        seen: set[str] = set()
+        current = start
+        while current in merges:
+            if current in seen:
+                return f"Character merge chain starting at {start!r} contains a cycle"
+            seen.add(current)
+            current = merges[current]
+    flagged = payload.get("flagged", [])
+    if not isinstance(flagged, list):
+        return "Character merges payload's flagged field must be a list"
+    for flagged_id in flagged:
+        if not isinstance(flagged_id, str) or not flagged_id.strip():
+            return "Flagged ids must be non-empty strings"
+    return ""
+
+
+def validate_character_name_overrides_payload(payload: object) -> str:
+    if not isinstance(payload, dict):
+        return "Character name overrides payload must be a JSON object"
+    names = payload.get("names")
+    if not isinstance(names, dict):
+        return "Character name overrides payload must contain a names object"
+    for character_id, name in names.items():
+        if not isinstance(character_id, str) or not character_id.strip():
+            return "Character name override ids must be non-empty strings"
+        if not isinstance(name, str) or not name.strip():
+            return f"Character name override for {character_id!r} must be a non-empty string"
+    return ""
+
+
 def main(argv: list[str] | None = None) -> None:
     argv = argv or sys.argv
     port = int(argv[1]) if len(argv) > 1 else DEFAULT_PORT
 
     with http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler) as httpd:
         url = f"http://127.0.0.1:{port}/"
-        print(f"Serving {WEBUI_ROOT}, {EXPORT_FULL_ROOT}, {DATA_EXPORT_ROOT}, and {PREVIOUS_EXPORT_ROOT} at {url}")
+        print(
+            f"Serving {WEBUI_ROOT}, {EXPORT_FULL_ROOT}, {DATA_EXPORT_ROOT}, "
+            f"and {resolve_previous_export_root()} at {url}"
+        )
         print("Press Ctrl-C to stop.")
         if os.environ.get("WEBUI_NO_BROWSER", "").lower() not in {"1", "true", "yes"}:
             webbrowser.open(url)

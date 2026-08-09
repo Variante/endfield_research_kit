@@ -1587,7 +1587,7 @@ def decode_navmesh_state_container_fields(data: bytes) -> dict[str, Any] | None:
     }
 
 
-BUFF_DATA_MEMBER_COUNT = 29
+BUFF_DATA_MEMBER_COUNTS = frozenset({29, 30})
 BUFF_DATA_STRING_MAX_SAMPLES = 512
 BUFF_DATA_PARAM_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{1,48}$")
 BUFF_DATA_POST_ID_RE = re.compile(r"(?:^|; )postId=([^;]+)")
@@ -1711,8 +1711,9 @@ def buff_data_string_ref_kind(value: Any, buff_id: str) -> str:
 
 
 def extract_buff_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
-    if not data or data[0] != BUFF_DATA_MEMBER_COUNT:
+    if not data or data[0] not in BUFF_DATA_MEMBER_COUNTS:
         return None
+    member_count = data[0]
     buff_id = buff_data_id_from_entry(entry)
     id_offsets = length_prefixed_utf8_marker_offsets(data, buff_id)
     hits = scan_length_prefixed_utf8_string_hits(data, max_samples=BUFF_DATA_STRING_MAX_SAMPLES)
@@ -1736,7 +1737,7 @@ def extract_buff_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, A
         })
     return {
         "buffId": buff_id,
-        "memberCount": BUFF_DATA_MEMBER_COUNT,
+        "memberCount": member_count,
         "idStringVerified": bool(id_offsets),
         "idMarkerCount": len(id_offsets),
         "idMarkerOffsets": [mp_format_offset(offset) for offset in id_offsets[:16]],
@@ -1749,7 +1750,7 @@ def extract_buff_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, A
     }
 
 
-SKILL_DATA_MEMBER_COUNT = 45
+SKILL_DATA_MEMBER_COUNTS = frozenset({45, 47})
 SKILL_DATA_STRING_MAX_SAMPLES = 512
 SKILL_DATA_POST_ID_RE = re.compile(r"(?:^|; )postId=([^;]+)")
 
@@ -1818,8 +1819,9 @@ def skill_data_string_ref_kind(value: Any, skill_id: str) -> str:
 
 
 def extract_skill_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
-    if not data or data[0] != SKILL_DATA_MEMBER_COUNT:
+    if not data or data[0] not in SKILL_DATA_MEMBER_COUNTS:
         return None
+    member_count = data[0]
     skill_id = skill_data_id_from_entry(entry)
     id_offsets = length_prefixed_utf8_marker_offsets(data, skill_id)
     hits = scan_length_prefixed_utf8_string_hits(data, max_samples=SKILL_DATA_STRING_MAX_SAMPLES)
@@ -1843,7 +1845,7 @@ def extract_skill_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, 
         })
     return {
         "skillId": skill_id,
-        "memberCount": SKILL_DATA_MEMBER_COUNT,
+        "memberCount": member_count,
         "idStringVerified": bool(id_offsets),
         "idMarkerCount": len(id_offsets),
         "idMarkerOffsets": [mp_format_offset(offset) for offset in id_offsets[:16]],

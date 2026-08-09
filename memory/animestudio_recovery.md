@@ -75,6 +75,10 @@ processes while map-filtered asset conversion remains sharded. Reduce
 - AnimationClip fixes must preserve runtime curves and fail visibly on new
   layouts.
 - Audio decoding separates shared media from language voice.
+- Projectile managed references use current IL2CPP field order plus guarded
+  path-plus-id/id-only gameplay-tag variants. A projectile component is marked
+  exact only when its full prefix, movement dictionary, effect lists, alert,
+  sound tail, and final scalars consume the managed-reference boundary.
 
 ## Diagnostics
 

@@ -42,6 +42,8 @@ from story_builder.level_bindings import (  # noqa: E402
     classify_levelscript_record,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
+    classify_local_trigger_volume_context,
+    decode_levelscript_binary_summary,
     decode_levelscript_record_payload,
     levelscript_action_map_membership,
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
@@ -306,6 +308,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 if safe_text(membership.get(record_start(record))).startswith("headerList")
             ]
             header_by_local = runtime_context.get("headerByLocal") or {}
+            binary_summary: dict[str, Any] | None = None
             active_header_records = sorted(
                 header_by_local.values(),
                 key=record_start,
@@ -350,6 +353,28 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                     if isinstance(decoded_header.get("actionHeader"), dict)
                     else {}
                 )
+                event_detail = (
+                    decoded_header.get("nativeEventDetail")
+                    if isinstance(decoded_header.get("nativeEventDetail"), dict)
+                    else {}
+                )
+                local_trigger_context: dict[str, Any] = {}
+                trigger_slot_id = event_detail.get("triggerSlotIdFilter")
+                script_id = safe_text(file_info.get("fileStem"))
+                if (
+                    isinstance(trigger_slot_id, int)
+                    and not isinstance(trigger_slot_id, bool)
+                    and trigger_slot_id > 0
+                    and script_id.isdigit()
+                ):
+                    if binary_summary is None:
+                        binary_summary = decode_levelscript_binary_summary(
+                            data, int(script_id)
+                        )
+                    local_trigger_context = classify_local_trigger_volume_context(
+                        binary_summary,
+                        [trigger_slot_id],
+                    )
                 if isinstance(action_header.get("priority"), int):
                     stats[f"priority:{action_header['priority']}"] += 1
                 header_next_id = action_header.get("nextId")
@@ -424,6 +449,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                     "targetLocalId": target_local_id,
                     "recordNextId": header.get("nextId"),
                     "actionHeader": action_header,
+                    "eventDetail": event_detail,
+                    "localTriggerVolumeContext": local_trigger_context,
                     "runtimeSlotStatus": "active-final-serialized-slot",
                     "runtimeShadowedHeaderRecordOffsets": (
                         shadowed_headers.get(header.get("localId")) or []

@@ -23,6 +23,26 @@ DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
 DEFAULT_AUDIO_ROOT = DEFAULT_EXPORT_ROOT / "structured" / "Audio"
 NARRATIVE_VIDEO_OVERRIDES_NAME = "narrative_videos.json"
+PROJECTILE_DATA_REL = Path("data/gameplay/projectiles.json")
+PROJECTILE_EVENT_PREFIX = "projectile-event:"
+GAMEPLAY_INDEX_REL = Path("data/lang/{language}/gameplay/index.json")
+GAMEPLAY_SFX_REL = Path("data/lang/{language}/gameplay/sound_effects.json")
+GAMEPLAY_AUDIO_EVENT_BYTES_RE = re.compile(rb"\b(?:au|bark|radio)_[A-Za-z0-9_]{2,160}\b")
+GAMEPLAY_BUFF_BYTES_RE = re.compile(rb"\bbuff_[A-Za-z0-9_]{2,160}\b")
+GAMEPLAY_AUDIO_LINK_FIELDS = (
+    "src", "mediaId", "format", "bytes", "audioScope", "audioCategory",
+    "audioCategoryDetail", "sourceBlock", "sourceBlockLabel", "sourceBank",
+    "bankId", "bank",
+)
+PROJECTILE_SOUND_FIELDS = (
+    "launchSound",
+    "loopSound",
+    "reachSound",
+    "hitSound",
+    "blockSound",
+    "finishedSound",
+    "sizzleSound",
+)
 
 LANGUAGES = {
     "CN": {
@@ -135,6 +155,461 @@ def load_json(path: Path, fallback: Any) -> Any:
         return fallback
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def projectile_event_key(event_hash: int) -> str:
+    return f"{PROJECTILE_EVENT_PREFIX}0x{event_hash & 0xFFFFFFFF:08x}"
+
+
+def length_prefixed_matches(data: bytes, pattern: re.Pattern[bytes]) -> set[str]:
+    """Return exact MemoryPack UTF-8 strings matching ``pattern``.
+
+    Gameplay config strings are encoded as a four-byte byte length followed by
+    UTF-8.  Requiring that boundary prevents incidental ASCII fragments from
+    being promoted to authored references.
+    """
+
+    values: set[str] = set()
+    for match in pattern.finditer(data):
+        start = match.start()
+        if start < 4 or unpack_from("<I", data, start - 4)[0] != len(match.group(0)):
+            continue
+        try:
+            values.add(match.group(0).decode("ascii"))
+        except UnicodeDecodeError:
+            continue
+    return values
+
+
+def gameplay_config_records(export_root: Path, family: str) -> dict[str, dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    for source in ("StreamingAssets", "Persistent"):
+        root = export_root / "structured" / source / "Data" / "Json" / family
+        if not root.exists():
+            continue
+        for path in sorted(root.glob("*.json")):
+            try:
+                data = path.read_bytes()
+            except OSError:
+                continue
+            events = length_prefixed_matches(data, GAMEPLAY_AUDIO_EVENT_BYTES_RE)
+            buffs = length_prefixed_matches(data, GAMEPLAY_BUFF_BYTES_RE)
+            if not events and not buffs:
+                continue
+            record = records.setdefault(path.stem, {"events": set(), "buffs": set(), "sources": set()})
+            record["events"].update(events)
+            record["buffs"].update(buffs)
+            record["sources"].add(normalize_posix(path.relative_to(export_root)))
+    return records
+
+
+def gameplay_buff_audio(
+    initial_buff_ids: set[str],
+    buff_records: dict[str, dict[str, Any]],
+) -> dict[str, set[str]]:
+    """Return event -> contributing BuffData ids through exact buff references."""
+
+    events: dict[str, set[str]] = defaultdict(set)
+    queue: deque[str] = deque(sorted(initial_buff_ids))
+    visited: set[str] = set()
+    while queue:
+        buff_id = queue.popleft()
+        if not buff_id or buff_id in visited:
+            continue
+        visited.add(buff_id)
+        record = buff_records.get(buff_id) or {}
+        for event_id in record.get("events") or set():
+            events[event_id].add(buff_id)
+        for linked_id in sorted(record.get("buffs") or set()):
+            if linked_id not in visited:
+                queue.append(linked_id)
+    return events
+
+
+def collect_gameplay_audio_references(
+    webui_root: Path,
+    export_root: Path,
+    language: str,
+) -> dict[str, Any]:
+    """Collect evidence-backed SkillData/BuffData audio ownership for Gameplay."""
+
+    gameplay_path = webui_root / Path(str(GAMEPLAY_INDEX_REL).format(language=language))
+    gameplay = load_json(gameplay_path, {})
+    entries = (gameplay.get("entries") or []) if isinstance(gameplay, dict) else []
+    character_skills: dict[str, tuple[str, str]] = {}
+    enemies: list[dict[str, Any]] = []
+    enemy_ids: list[tuple[str, str]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        kind = str(entry.get("kind") or "")
+        owner_id = str(entry.get("id") or "")
+        if kind == "character":
+            for group in entry.get("skillGroups") or []:
+                if not isinstance(group, dict):
+                    continue
+                group_id = str(group.get("id") or "")
+                skills = group.get("skills") or [
+                    {"id": value}
+                    for value in group.get("actionSkillIds") or []
+                ]
+                for skill in skills:
+                    skill_id = str((skill or {}).get("id") or "") if isinstance(skill, dict) else ""
+                    if skill_id:
+                        character_skills[skill_id] = (owner_id, group_id)
+        elif kind == "enemy" and owner_id:
+            enemies.append(entry)
+            for value in (entry.get("id"), entry.get("templateId"), *(entry.get("variantIds") or [])):
+                key = str(value or "").strip()
+                if key:
+                    enemy_ids.append((key, owner_id))
+    enemy_ids = sorted(set(enemy_ids), key=lambda row: (-len(row[0]), row[0], row[1]))
+    character_skill_ids = sorted(character_skills, key=lambda value: (-len(value), value))
+
+    skill_records = gameplay_config_records(export_root, "SkillData")
+    buff_records = gameplay_config_records(export_root, "BuffData")
+    owners: list[dict[str, Any]] = []
+    event_names: set[str] = set()
+    owned_skill_ids: set[str] = set()
+
+    for skill_id, record in sorted(skill_records.items()):
+        owner_kind = ""
+        owner_id = ""
+        group_id = ""
+        confidence = ""
+        if skill_id in character_skills:
+            owner_kind = "character"
+            owner_id, group_id = character_skills[skill_id]
+            confidence = "direct"
+        else:
+            character_match = next(
+                (candidate for candidate in character_skill_ids if skill_id.startswith(candidate + "_")),
+                None,
+            )
+            if character_match:
+                owner_kind = "character"
+                owner_id, group_id = character_skills[character_match]
+                confidence = "inferred"
+            enemy_match = next(
+                ((candidate, enemy_id) for candidate, enemy_id in enemy_ids if skill_id == candidate or skill_id.startswith(candidate + "_")),
+                None,
+            )
+            if not owner_kind and enemy_match:
+                owner_kind = "enemy"
+                owner_id = enemy_match[1]
+                confidence = "inferred"
+        if not owner_kind or not owner_id:
+            continue
+
+        event_evidence: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for event_id in sorted(record.get("events") or set()):
+            event_evidence[event_id].append({"kind": "skillData", "skillId": skill_id})
+        for event_id, buff_ids in gameplay_buff_audio(set(record.get("buffs") or set()), buff_records).items():
+            event_evidence[event_id].append({
+                "kind": "skillBuffData",
+                "skillId": skill_id,
+                "buffIds": sorted(buff_ids),
+            })
+        if not event_evidence:
+            continue
+        owned_skill_ids.add(skill_id)
+        event_names.update(event_evidence)
+        owners.append({
+            "ownerKind": owner_kind,
+            "ownerId": owner_id,
+            "groupId": group_id,
+            "skillId": skill_id,
+            "confidence": confidence,
+            "sources": sorted(record.get("sources") or set()),
+            "events": dict(event_evidence),
+        })
+
+    for enemy in enemies:
+        owner_id = str(enemy.get("id") or "")
+        born_buffs = {str(value or "").strip() for value in enemy.get("bornBuffs") or [] if str(value or "").strip()}
+        buff_events = gameplay_buff_audio(born_buffs, buff_records)
+        if not buff_events:
+            continue
+        event_names.update(buff_events)
+        owners.append({
+            "ownerKind": "enemy",
+            "ownerId": owner_id,
+            "groupId": "",
+            "skillId": "",
+            "confidence": "direct",
+            "sources": [],
+            "events": {
+                event_id: [{"kind": "enemyBornBuffData", "buffIds": sorted(buff_ids)}]
+                for event_id, buff_ids in sorted(buff_events.items())
+            },
+        })
+
+    return {
+        "eventNames": event_names,
+        "owners": owners,
+        "counts": {
+            "gameplayCharacterSkills": len(character_skills),
+            "audioOwnedSkills": len(owned_skill_ids),
+            "audioReferences": sum(len(owner.get("events") or {}) for owner in owners),
+            "audioEventNames": len(event_names),
+        },
+    }
+
+
+def compact_gameplay_audio_link(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: entry[key]
+        for key in GAMEPLAY_AUDIO_LINK_FIELDS
+        if entry.get(key) is not None
+    }
+
+
+def link_gameplay_audio(
+    webui_root: Path,
+    language: str,
+    references: dict[str, Any],
+    event_audio_by_id: dict[str, list[dict[str, Any]]],
+    event_evidence: list[dict[str, Any]],
+) -> dict[str, int]:
+    """Write compact character-skill/enemy SFX sidecar with playable candidates."""
+
+    found_events = {
+        str(row.get("eventId") or "").strip().lower()
+        for row in event_evidence
+        if isinstance(row, dict) and str(row.get("eventId") or "").strip()
+    }
+    event_cache: dict[str, dict[str, Any] | None] = {}
+
+    def linked_event(event_id: str) -> dict[str, Any] | None:
+        event_key = event_id.lower()
+        if event_key in event_cache:
+            return event_cache[event_key]
+        media: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        for entry in event_audio_by_id.get(event_key) or []:
+            compact = compact_gameplay_audio_link(entry)
+            key = (str(compact.get("src") or ""), str(compact.get("mediaId") or ""))
+            if not key[0] or key in seen:
+                continue
+            seen.add(key)
+            media.append(compact)
+        if not media:
+            event_cache[event_key] = None
+            return None
+        value = {
+            "id": event_id,
+            "foundInWwise": event_key in found_events,
+            "playableCandidates": len(media),
+            "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate",
+            "audio": media,
+        }
+        event_cache[event_key] = value
+        return value
+
+    characters: dict[str, dict[str, Any]] = {}
+    enemies: dict[str, dict[str, Any]] = {}
+    discovered_refs = 0
+    linked_refs = 0
+    candidate_count = 0
+    for owner in references.get("owners") or []:
+        event_rows: list[dict[str, Any]] = []
+        for event_id, evidence in sorted((owner.get("events") or {}).items()):
+            discovered_refs += 1
+            linked = linked_event(event_id)
+            if not linked:
+                continue
+            linked_refs += 1
+            candidate_count += int(linked.get("playableCandidates") or 0)
+            event_rows.append({**linked, "evidence": evidence})
+        if not event_rows:
+            continue
+        owner_kind = str(owner.get("ownerKind") or "")
+        owner_id = str(owner.get("ownerId") or "")
+        if owner_kind == "character":
+            group_id = str(owner.get("groupId") or "")
+            groups = characters.setdefault(owner_id, {"groups": {}})["groups"]
+            group = groups.setdefault(group_id, {"skillIds": [], "events": []})
+            skill_id = str(owner.get("skillId") or "")
+            if skill_id and skill_id not in group["skillIds"]:
+                group["skillIds"].append(skill_id)
+            group.setdefault("ownershipConfidence", []).append(owner.get("confidence") or "direct")
+            existing = {str(row.get("id") or ""): row for row in group["events"]}
+            for event in event_rows:
+                event_id = str(event.get("id") or "")
+                if event_id not in existing:
+                    event["sourceSkillIds"] = [skill_id] if skill_id else []
+                    group["events"].append(event)
+                    existing[event_id] = event
+                elif skill_id and skill_id not in existing[event_id].setdefault("sourceSkillIds", []):
+                    existing[event_id]["sourceSkillIds"].append(skill_id)
+        elif owner_kind == "enemy":
+            skill_id = str(owner.get("skillId") or "")
+            record = enemies.setdefault(owner_id, {
+                "skillIds": [],
+                "ownershipConfidence": [],
+                "includesSpawnBuffAudio": False,
+                "events": [],
+            })
+            if skill_id and skill_id not in record["skillIds"]:
+                record["skillIds"].append(skill_id)
+            if not skill_id:
+                record["includesSpawnBuffAudio"] = True
+            record["ownershipConfidence"].append(owner.get("confidence") or "inferred")
+            existing = {str(row.get("id") or ""): row for row in record["events"]}
+            for event in event_rows:
+                event_id = str(event.get("id") or "")
+                if event_id not in existing:
+                    record["events"].append(event)
+                    existing[event_id] = event
+                else:
+                    existing[event_id].setdefault("evidence", []).extend(event.get("evidence") or [])
+
+    for value in characters.values():
+        for group in value.get("groups", {}).values():
+            group["skillIds"].sort()
+            group["ownershipConfidence"] = "inferred" if "inferred" in group.pop("ownershipConfidence", []) else "direct"
+            group["events"].sort(key=lambda row: str(row.get("id") or ""))
+    for value in enemies.values():
+        value["skillIds"].sort()
+        value["events"].sort(key=lambda row: str(row.get("id") or ""))
+        value["ownershipConfidence"] = "inferred" if "inferred" in value.pop("ownershipConfidence", []) else "direct"
+
+    stats = {
+        **(references.get("counts") or {}),
+        "gameplayAudioRefs": discovered_refs,
+        "gameplayAudioRefsLinked": linked_refs,
+        "gameplayAudioCandidates": candidate_count,
+        "charactersWithPlayableSfx": len(characters),
+        "enemiesWithPlayableSfx": len(enemies),
+    }
+    path = webui_root / Path(str(GAMEPLAY_SFX_REL).format(language=language))
+    json_dump(path, {
+        "schemaVersion": 1,
+        "language": language,
+        "counts": stats,
+        "characters": characters,
+        "enemies": enemies,
+        "scope": {
+            "source": "Exact length-prefixed SkillData/BuffData event references plus Wwise HIRC event traversal",
+            "characterOwnership": "direct gameplay skill id",
+            "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
+            "enemyOwnership": "enemy id prefix inferred unless attached through an exact born-buff field",
+            "runtimeSelection": "Switch/random container selection remains unresolved when an event has multiple candidates.",
+        },
+    })
+    return stats
+
+
+def projectile_sound_hashes(webui_root: Path) -> set[int]:
+    payload = load_json(webui_root / PROJECTILE_DATA_REL, {})
+    hashes: set[int] = set()
+    for entry in payload.get("entries") or []:
+        if not isinstance(entry, dict):
+            continue
+        sounds = entry.get("sounds") or {}
+        for field in PROJECTILE_SOUND_FIELDS:
+            value = sounds.get(field)
+            raw = value.get("value") if isinstance(value, dict) else value
+            if isinstance(raw, int) and raw:
+                hashes.add(raw & 0xFFFFFFFF)
+    return hashes
+
+
+def link_projectile_audio(
+    webui_root: Path,
+    event_audio_by_id: dict[str, list[dict[str, Any]]],
+    event_evidence: list[dict[str, Any]],
+) -> dict[str, int]:
+    """Attach exact HIRC event-to-media candidates to projectile sound fields."""
+
+    path = webui_root / PROJECTILE_DATA_REL
+    payload = load_json(path, {})
+    entries = payload.get("entries") or []
+    if not isinstance(payload, dict) or not isinstance(entries, list):
+        return {"projectileSoundRefs": 0, "projectileSoundEvents": 0, "projectileSoundRefsLinked": 0, "projectileAudioCandidates": 0}
+
+    evidence_by_hash: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for row in event_evidence:
+        if not isinstance(row, dict):
+            continue
+        try:
+            event_hash = int(row.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            continue
+        if str(row.get("eventId") or "").startswith(PROJECTILE_EVENT_PREFIX):
+            evidence_by_hash[event_hash].append(row)
+
+    refs = 0
+    linked_refs = 0
+    candidates = 0
+    resolved_hashes: set[int] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        sounds = entry.get("sounds") or {}
+        if not isinstance(sounds, dict):
+            continue
+        for field in PROJECTILE_SOUND_FIELDS:
+            value = sounds.get(field)
+            if not isinstance(value, dict):
+                continue
+            value.pop("event", None)
+            value.pop("audio", None)
+            raw = value.get("value")
+            if not isinstance(raw, int) or not raw:
+                continue
+            refs += 1
+            event_hash = raw & 0xFFFFFFFF
+            key = projectile_event_key(event_hash)
+            evidence = evidence_by_hash.get(event_hash) or []
+            media: list[dict[str, Any]] = []
+            seen_media: set[tuple[str, str]] = set()
+            for audio in event_audio_by_id.get(key, []):
+                src = str(audio.get("src") or "")
+                media_id = str(audio.get("mediaId") or audio.get("id") or "")
+                dedupe_key = (src, media_id)
+                if not src or dedupe_key in seen_media:
+                    continue
+                seen_media.add(dedupe_key)
+                media.append({
+                    key: audio[key]
+                    for key in (
+                        "src", "mediaId", "format", "bytes", "audioScope",
+                        "audioCategory", "audioCategoryDetail", "sourceBlock",
+                        "sourceBlockLabel", "sourceBank", "bankId", "bank",
+                    )
+                    if audio.get(key) is not None
+                })
+            event_found = bool(evidence)
+            if event_found:
+                resolved_hashes.add(event_hash)
+            if media:
+                linked_refs += 1
+                candidates += len(media)
+            value["event"] = {
+                "hash": event_hash,
+                "hex": f"0x{event_hash:08x}",
+                "foundInWwise": event_found,
+                "playableCandidates": len(media),
+                "source": "wwiseHirc" if event_found else "unresolved",
+                "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate" if media else "none",
+            }
+            if media:
+                value["audio"] = media
+
+    stats = {
+        "projectileSoundRefs": refs,
+        "projectileSoundEvents": len(resolved_hashes),
+        "projectileSoundRefsLinked": linked_refs,
+        "projectileAudioCandidates": candidates,
+    }
+    payload["audioLinks"] = {
+        **stats,
+        "source": "Wwise HIRC event traversal",
+        "note": "Playable files are event media candidates; runtime switch/container selection is not recovered.",
+    }
+    json_dump(path, payload)
+    return stats
 
 
 def normalize_video_override_stem(value: object) -> str:
@@ -1514,14 +1989,22 @@ def collect_event_audio_index(
     event_names: set[str],
     audio_by_id: dict[str, dict[str, Any]],
     args: argparse.Namespace,
+    explicit_event_hashes: set[int] | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
-    if not event_names:
+    explicit_event_hashes = {
+        int(value) & 0xFFFFFFFF
+        for value in (explicit_event_hashes or set())
+        if int(value) & 0xFFFFFFFF
+    }
+    if not event_names and not explicit_event_hashes:
         return {}, []
 
     wanted_by_hash: dict[int, str] = {
         fnv1_32(name.lower()): name
         for name in event_names
     }
+    for event_hash in explicit_event_hashes:
+        wanted_by_hash.setdefault(event_hash, projectile_event_key(event_hash))
     numeric_audio_ids = {
         int(audio_id)
         for audio_id in audio_by_id
@@ -1597,6 +2080,7 @@ def collect_event_audio_index(
                         **audio_entry,
                         "id": event_name,
                         "eventId": event_name,
+                        "eventHash": event_hash,
                         "mediaId": media_id,
                         "bankId": bank_id,
                         "bank": bank_name,
@@ -1697,6 +2181,7 @@ def load_cached_event_audio_index(
     audio_root: Path,
     webui_root: Path,
     language: str,
+    explicit_event_hashes: set[int] | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]] | None:
     """Reuse event-to-media links from the last audio index when complete."""
     payload = load_json(language_root / "index.json", {})
@@ -1707,8 +2192,22 @@ def load_cached_event_audio_index(
         for name in event_names
         if str(name or "").strip()
     }
+    wanted_hashes = {
+        int(value) & 0xFFFFFFFF
+        for value in (explicit_event_hashes or set())
+        if int(value) & 0xFFFFFFFF
+    }
     cached_names = _event_name_set(payload.get("eventNames"))
-    if not wanted_names or not cached_names or not wanted_names.issubset(cached_names):
+    cached_hashes = {
+        int(value) & 0xFFFFFFFF
+        for value in (payload.get("projectileEventHashes") or [])
+        if isinstance(value, int)
+    }
+    if wanted_names and (not cached_names or not wanted_names.issubset(cached_names)):
+        return None
+    if wanted_hashes and not wanted_hashes.issubset(cached_hashes):
+        return None
+    if not wanted_names and not wanted_hashes:
         return None
 
     event_audio_by_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -1716,7 +2215,11 @@ def load_cached_event_audio_index(
         if not isinstance(entry, dict):
             continue
         event_key = str(entry.get("eventId") or entry.get("id") or "").strip().lower()
-        if event_key not in wanted_names:
+        try:
+            event_hash = int(entry.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            event_hash = 0
+        if event_key not in wanted_names and event_hash not in wanted_hashes:
             continue
         cached = dict(entry)
         cached.setdefault("storageRoot", entry_storage_root(cached, language))
@@ -1739,7 +2242,13 @@ def load_cached_event_audio_index(
         entry
         for entry in (payload.get("eventEvidence") or [])
         if isinstance(entry, dict)
-        and str(entry.get("eventId") or "").strip().lower() in wanted_names
+        and (
+            str(entry.get("eventId") or "").strip().lower() in wanted_names
+            or (
+                isinstance(entry.get("eventHash"), int)
+                and (int(entry.get("eventHash")) & 0xFFFFFFFF) in wanted_hashes
+            )
+        )
     ]
     return dict(event_audio_by_id), event_evidence
 
@@ -2432,6 +2941,13 @@ def build_audio(args: argparse.Namespace) -> int:
     )
     for events in cutscene_audio_events.values():
         event_names.update(str(event or "").strip() for event in events if str(event or "").strip())
+    gameplay_audio_references = collect_gameplay_audio_references(
+        args.webui_root,
+        args.export_root,
+        language,
+    )
+    event_names.update(gameplay_audio_references.get("eventNames") or set())
+    projectile_event_hashes = projectile_sound_hashes(args.webui_root)
     cached_event_index = (
         load_cached_event_audio_index(
             language_root,
@@ -2439,6 +2955,7 @@ def build_audio(args: argparse.Namespace) -> int:
             args.audio_root,
             args.webui_root,
             language,
+            projectile_event_hashes,
         )
         if args.skip_decode
         else None
@@ -2447,7 +2964,12 @@ def build_audio(args: argparse.Namespace) -> int:
         event_audio_by_id, event_evidence = cached_event_index
         print("Audio events: reused existing event-media index")
     else:
-        event_audio_by_id, event_evidence = collect_event_audio_index(event_names, audio_by_id, args)
+        event_audio_by_id, event_evidence = collect_event_audio_index(
+            event_names,
+            audio_by_id,
+            args,
+            projectile_event_hashes,
+        )
     event_entries = [
         entry
         for entries in event_audio_by_id.values()
@@ -2471,6 +2993,14 @@ def build_audio(args: argparse.Namespace) -> int:
         print(f"Audio layout [{language}]: {category_moved:,} Wwise files filed under event-category folders")
     source_summary = summarize_audio_sources(list(generic_audio.values()))
     link_stats = link_conversation_audio(conv_dir, audio_by_id, event_audio_by_id, cutscene_audio_events)
+    projectile_link_stats = link_projectile_audio(args.webui_root, event_audio_by_id, event_evidence)
+    gameplay_link_stats = link_gameplay_audio(
+        args.webui_root,
+        language,
+        gameplay_audio_references,
+        event_audio_by_id,
+        event_evidence,
+    )
 
     index_payload = {
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -2491,9 +3021,12 @@ def build_audio(args: argparse.Namespace) -> int:
             "eventNames": len(event_names),
             "eventAudio": len(event_entries),
             "eventEvidence": len(event_evidence),
+            **projectile_link_stats,
+            **gameplay_link_stats,
             **link_stats,
         },
         "eventNames": sorted(event_names),
+        "projectileEventHashes": sorted(projectile_event_hashes),
         "eventEvidence": event_evidence,
         "events": sorted(event_entries, key=lambda item: (str(item.get("eventId") or ""), int(item.get("mediaId") or 0))),
         "entries": sorted(audio_by_id.values(), key=lambda item: (str(item.get("id") or ""), str(item.get("rel") or ""))),
@@ -2510,6 +3043,8 @@ def build_audio(args: argparse.Namespace) -> int:
         f"{int(scope_counts.get('unknown', 0)):,} unknown-source,"
         f" {len(dialog_audio):,} AudioDialog matches,"
         f" {len(event_entries):,} event media links,"
+        f" {projectile_link_stats['projectileSoundRefsLinked']:,}/{projectile_link_stats['projectileSoundRefs']:,} projectile sound refs linked,"
+        f" {gameplay_link_stats['gameplayAudioRefsLinked']:,}/{gameplay_link_stats['gameplayAudioRefs']:,} gameplay skill/enemy sound refs linked,"
         f" {link_stats['lineAudioLinked']:,}/{link_stats['lineAudioRefs']:,} line refs linked,"
         f" {link_stats['conversationAudioEventsLinked']:,}/{link_stats['conversationAudioEvents']:,} conversation event refs linked,"
         f" {link_stats['cutsceneAudioEventsLinked']:,}/{link_stats['cutsceneAudioEvents']:,} cutscene event refs linked,"

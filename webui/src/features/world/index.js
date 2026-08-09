@@ -4,8 +4,8 @@
   const DEFAULT_CONTAINER = "#world-app";
   const DEFAULT_LANGUAGE = "CN";
   const DEFAULT_LEVEL = "base01_lv001";
-  const LIST_PAGE_SIZE = 200;
-  const RELATION_PAGE_SIZE = 80;
+  const LIST_PAGE_SIZE = Infinity;
+  const RELATION_PAGE_SIZE = Infinity;
   const MAP_POINT_LIMIT = 600;
   const UI = {
     clearFilters: "Clear filters", retry: "Retry", kind: "Record type", level: "Map / level", confidence: "Link evidence",

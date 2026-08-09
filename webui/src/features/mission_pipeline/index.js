@@ -767,10 +767,12 @@
       timelineEmbeddedDirectorBoundary: "Director and ControlPlayableAsset links prove playback composition only; they do not identify the mission/quest activator or server-selected branch.",
       timelineEmbeddedActivationChain: "exact parent-dialog activation",
       timelineEmbeddedActivationRoute: "native event/action route",
+      timelineEmbeddedTriggerVolume: "exact local trigger geometry",
+      timelineEmbeddedTriggerVolumeBoundary: "The event selector resolves to this same-LevelScript volume. Its serialized fields contain no mission or quest foreign identity.",
       timelineEmbeddedMissionShell: "validated mission shell",
       timelineEmbeddedMissionAreaContext: "mission-area context only",
       timelineEmbeddedActivationFiles: "related original files",
-      timelineEmbeddedActivationBoundary: "The event/action chain proves parent-dialog playback, and a unique LevelData member-22 host proves only the mission shell. It does not prove the activating quest, selected branch, or cross-Timeline order.",
+      timelineEmbeddedActivationBoundary: "The event/action chain proves parent-dialog playback, exact local trigger geometry proves where the event listens, and a unique LevelData member-22 host proves only the mission shell. None proves the activating quest, selected branch, or cross-Timeline order.",
       timelineEmbeddedRuntimeBoundary: "This proves live Timeline presentation and local clip timing. Mission ownership is published only for exact parent-dialog routes with a unique validated LevelData shell; quest activation, branch selection, and cross-Timeline order remain unresolved.",
       relationDialogNarrativeAction: "typed DialogTree action presents this black-screen text inside its parent dialog",
       relationDialogNarrativeActionUnscoped: "typed DialogTree containment is exact; parent mission/quest placement is unresolved",
@@ -1512,10 +1514,12 @@
       timelineEmbeddedDirectorBoundary: "Director 与 ControlPlayableAsset 链仅证明播放组成；它们不识别使命/任务激活者或服务器选择的分支。",
       timelineEmbeddedActivationChain: "精确父对话激活链",
       timelineEmbeddedActivationRoute: "原生事件/动作路径",
+      timelineEmbeddedTriggerVolume: "精确本地触发区域",
+      timelineEmbeddedTriggerVolumeBoundary: "事件选择器解析到同一 LevelScript 中的该触发区域；其序列化字段不含使命或任务外键身份。",
       timelineEmbeddedMissionShell: "已验证使命外壳",
       timelineEmbeddedMissionAreaContext: "仅使命区域上下文",
       timelineEmbeddedActivationFiles: "相关原始文件",
-      timelineEmbeddedActivationBoundary: "事件/动作链证明父对话播放，唯一的 LevelData member-22 宿主仅证明使命外壳；不证明激活任务、所选分支或跨 Timeline 顺序。",
+      timelineEmbeddedActivationBoundary: "事件/动作链证明父对话播放，精确本地触发区域证明事件监听位置，唯一的 LevelData member-22 宿主仅证明使命外壳；这些都不证明激活任务、所选分支或跨 Timeline 顺序。",
       timelineEmbeddedRuntimeBoundary: "这证明 Timeline 实时呈现与局部片段时序。仅当父对话路径精确且 LevelData 宿主唯一时才发布使命归属；任务激活、分支选择与跨 Timeline 顺序仍未解析。",
       relationDialogNarrativeAction: "类型化 DialogTree 动作在父对话中呈现该黑屏文本",
       relationDialogNarrativeActionUnscoped: "DialogTree 包含关系精确，但父对话的使命或任务位置尚未解析",
@@ -3859,9 +3863,27 @@
       const activationHtml = activationRoutes.length ? `<section class="mp-timeline-activation"><h5>${esc(t("timelineEmbeddedActivationChain"))} <span>${activationRoutes.length}</span></h5>${activationRoutes.map((route) => {
         const missions = (route.missionShellIds || []).map((missionId) => `<code>${esc(missionId)}</code>`).join(" ");
         const actionChain = (route.actionChain || []).map((action) => `<li><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.class || action.hint || action.opcode || "action")}</b>${(action.texts || []).map((value) => `<code>${esc(value)}</code>`).join(" ")}</li>`).join("");
+        const triggerContext = route.localTriggerVolumeContext || {};
+        const triggerVolumes = (triggerContext.triggerVolumes || []).map((volume) => {
+          const shapes = (volume.shapes || []).map((shape) => {
+            const position = shape.position || {};
+            const size = shape.size || {};
+            const positionText = [position.x, position.y, position.z].every((value) => value != null)
+              ? `${t("triggerVolumePosition")}: ${position.x}, ${position.y}, ${position.z}`
+              : "";
+            const dimensions = shape.shapeType === "Sphere" && shape.radius != null
+              ? `${t("triggerVolumeRadius")} ${shape.radius}`
+              : [size.x, size.y, size.z].every((value) => value != null)
+                ? `size ${size.x}, ${size.y}, ${size.z}`
+                : "";
+            return `<small><code>${esc(shape.shapeType || "?")}</code>${dimensions ? ` <code>${esc(dimensions)}</code>` : ""}${positionText ? `<br>${esc(positionText)}` : ""}</small>`;
+          }).join("");
+          return `<div><code>slot ${esc(volume.slotId ?? "?")}</code> <code>${esc(volume.triggerVolumeType || "?")}</code> <code>waitSrvRes=${esc(volume.waitSrvRes ?? "?")}</code>${shapes}</div>`;
+        }).join("");
+        const triggerHtml = triggerVolumes ? `<details open><summary>${esc(t("timelineEmbeddedTriggerVolume"))} <span>${(triggerContext.triggerVolumes || []).length}</span></summary>${triggerVolumes}<small>${esc(t("timelineEmbeddedTriggerVolumeBoundary"))}</small></details>` : "";
         const missionAreas = (route.missionAreaReferences || []).map((reference) => `<small><code>${esc(reference.missionId || "?")}</code> / <code>${esc(reference.questId || "?")}</code> / <code>${esc(reference.missionAreaId || "?")}</code></small>`).join("");
         const files = (route.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
-        return `<article><header><b>${esc(t("timelineEmbeddedActivationRoute"))}</b><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} play_dialog</code> &rarr; <code>${esc(route.dialogKey || "?")}</code></p>${actionChain ? `<ol>${actionChain}</ol>` : ""}${missions ? `<p><strong>${esc(t("timelineEmbeddedMissionShell"))}</strong> ${missions}</p>` : ""}${missionAreas ? `<details><summary>${esc(t("timelineEmbeddedMissionAreaContext"))} <span>${(route.missionAreaReferences || []).length}</span></summary>${missionAreas}</details>` : ""}${files ? `<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></article>`;
+        return `<article><header><b>${esc(t("timelineEmbeddedActivationRoute"))}</b><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} play_dialog</code> &rarr; <code>${esc(route.dialogKey || "?")}</code></p>${actionChain ? `<ol>${actionChain}</ol>` : ""}${triggerHtml}${missions ? `<p><strong>${esc(t("timelineEmbeddedMissionShell"))}</strong> ${missions}</p>` : ""}${missionAreas ? `<details><summary>${esc(t("timelineEmbeddedMissionAreaContext"))} <span>${(route.missionAreaReferences || []).length}</span></summary>${missionAreas}</details>` : ""}${files ? `<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></article>`;
       }).join("")}</section>` : "";
       return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${activationHtml}${controlChain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
     };

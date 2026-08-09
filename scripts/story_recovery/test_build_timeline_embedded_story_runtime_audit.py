@@ -432,6 +432,48 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                         "opcode": "0x1000/0x00",
                     },
                     "headerName": "ScriptEvent_OnGeneralEvent",
+                    "eventDetail": {
+                        "type": "ScriptEvent_OnGeneralEvent",
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                        "triggerSlotIdFilter": 80007,
+                    },
+                    "localTriggerVolumeContext": {
+                        "status": (
+                            "exact_local_levelscript_trigger_volume_"
+                            "without_foreign_identity"
+                        ),
+                        "selectorSlotIds": [80007],
+                        "matchedSlotIds": [80007],
+                        "missingSlotIds": [],
+                        "ambiguousSlotIds": [],
+                        "triggerVolumesStatus": "present",
+                        "triggerVolumesParseStatus": "decoded",
+                        "triggerVolumesOffsetHex": "0x80",
+                        "scriptIdVerified": True,
+                        "foreignKeyBridgeFound": False,
+                        "missionGraphAction": "none",
+                        "schema": {
+                            "mappingId": (
+                                "current-global-metadata-levelscript-trigger-"
+                                "volume-data-fields"
+                            ),
+                        },
+                        "triggerVolumes": [{
+                            "slotId": 80007,
+                            "keySlotId": 80007,
+                            "triggerVolumeType": "Leader",
+                            "offset": "0x84",
+                            "waitSrvRes": False,
+                            "shapeList": {
+                                "shapes": [{
+                                    "offset": "0x90",
+                                    "shapeType": "Sphere",
+                                    "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+                                    "radius": 5.0,
+                                }],
+                            },
+                        }],
+                    },
                     "targetSource": "actionHeader.nextId",
                     "targetLocalId": 6,
                     "runtimeSlotStatus": "active-final-serialized-slot",
@@ -490,6 +532,12 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         self.assertEqual(["mission_general"], route["missionShellIds"])
         self.assertTrue(route["missionShellOwnership"])
         self.assertFalse(route["questActivation"])
+        trigger_context = route["localTriggerVolumeContext"]
+        self.assertEqual([80007], trigger_context["selectorSlotIds"])
+        self.assertEqual(
+            {"x": 1.0, "y": 2.0, "z": 3.0},
+            trigger_context["triggerVolumes"][0]["shapes"][0]["position"],
+        )
         self.assertEqual([route["id"]], timeline_rows[0]["parentDialogActivationRouteIds"])
         self.assertTrue(timeline_rows[0]["missionOwnership"])
         roles = {row["role"] for row in route["relatedOriginalFiles"]}
@@ -528,6 +576,55 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         self.assertEqual("parent_dialog_event_action_path", failure["gate"])
         self.assertEqual("truncated", failure["actual"]["chainStatus"])
         self.assertEqual("missing.json", failure["sourceFile"])
+
+    def test_parent_dialog_trigger_selector_fails_closed(self) -> None:
+        rows = [{"key": "black_general", "dialogKey": "dlg_general"}]
+        mapping = "runtime-indexed-general"
+        result = audit.join_parent_dialog_activation_routes(
+            rows,
+            {
+                "summary": {"runtimeSlotMappingId": mapping},
+                "headerRows": [{
+                    "levelId": "level_general",
+                    "sourceScript": "1",
+                    "file": "level_general/1.json",
+                    "header": {"localId": 2},
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "eventDetail": {
+                        "type": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                        "triggerSlotIdFilter": 80001,
+                    },
+                    "localTriggerVolumeContext": {
+                        "status": "unresolved_local_levelscript_trigger_volume",
+                        "selectorSlotIds": [80001],
+                        "matchedSlotIds": [],
+                        "missingSlotIds": [80001],
+                    },
+                    "runtimeSlotStatus": "active-final-serialized-slot",
+                    "runtimeSlotMappingId": mapping,
+                    "targetStatus": "action-list",
+                    "chainStatus": "complete",
+                    "playActions": [{
+                        "localId": 3,
+                        "class": "play_dialog",
+                        "texts": ["dlg_general"],
+                    }],
+                    "sceneTexts": ["dlg_general"],
+                    "chain": [],
+                }],
+            },
+            {},
+            {},
+            gameassembly=Path("unused"),
+            metadata=Path("unused"),
+            mission_runtime_root=Path("unused"),
+        )
+        self.assertEqual("failed", result["validation"]["status"])
+        self.assertEqual([], result["routes"])
+        failure = result["validation"]["failures"][0]
+        self.assertEqual("parent_dialog_trigger_volume_selector", failure["gate"])
+        self.assertEqual([80001], failure["actual"]["missingSlotIds"])
 
     def test_candidate_level_discovery_uses_dialog_bytes_not_names(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

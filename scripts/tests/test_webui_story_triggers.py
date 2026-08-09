@@ -185,9 +185,12 @@ for (const [key, category] of [
         self.assertIn('t("timelineEmbeddedActivationRoute")', source)
         self.assertIn("route.missionShellIds", source)
         self.assertIn("route.actionChain", source)
+        self.assertIn("route.localTriggerVolumeContext", source)
+        self.assertIn('t("timelineEmbeddedTriggerVolume")', source)
+        self.assertIn("volume.waitSrvRes", source)
         self.assertIn("route.relatedOriginalFiles", source)
         self.assertIn(
-            "It does not prove the activating quest, selected branch, or cross-Timeline order.",
+            "None proves the activating quest, selected branch, or cross-Timeline order.",
             source,
         )
 

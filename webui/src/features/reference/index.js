@@ -2,7 +2,7 @@
   const REF_TEXTS = {
     zh: {
       tab: "\u6587\u672c",
-      title: "\u6587\u672c",
+      title: "\u6587\u672c\u8868",
       countLabel: "\u5f20\u8868",
       search: "\u641c\u7d22\u8868 / ID / \u6587\u672c",
       showFilters: "\u663e\u793a\u7b5b\u9009",
@@ -32,7 +32,7 @@
     },
     en: {
       tab: "Text",
-      title: "Text",
+      title: "Text Tables",
       countLabel: "tables",
       search: "Search table / ID / text",
       showFilters: "Show filters",
@@ -61,7 +61,7 @@
       sameHashFiles: "Same-hash files",
     },
   };
-  const ROW_RENDER_LIMIT = 500;
+  const ROW_RENDER_LIMIT = Infinity;
   const FILTER_PANEL_STORAGE_KEY = "reference_browser_filters_collapsed";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const RAW_EXPORT_SOURCE_ROOTS = {
@@ -495,8 +495,9 @@
   }
 
   function applyReferenceStrings() {
+    // #reference-tab is owned by the shared data-i18n loop in app.js
+    // (referenceTab in app_labels.js) — not repeated here.
     const labels = [
-      ["#reference-tab", "tab"],
       ["#reference-title", "title"],
       ["#reference-count-label", "countLabel"],
       ["#reference-basic-filter-label", "basicFilters"],

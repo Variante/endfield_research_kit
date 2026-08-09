@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -1249,6 +1250,29 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
             reason = graph_freshness_reason(graph)
 
             self.assertIn("no completed coverage metadata", reason)
+
+
+class SourceGraphGameplayAudioTests(unittest.TestCase):
+    @staticmethod
+    def memorypack_strings(member_count: int, *values: str) -> bytes:
+        return bytes([member_count]) + b"".join(
+            struct.pack("<I", len(value.encode("utf-8"))) + value.encode("utf-8")
+            for value in values
+        )
+
+    def test_current_skill_and_buff_member_counts_recover_audio_refs(self) -> None:
+        skill = endfield_source_graph.extract_skill_data_summary(
+            {"p": "Data/Json/SkillData/skill_test.json"},
+            self.memorypack_strings(47, "skill_test", "au_skill_test"),
+        )
+        buff = endfield_source_graph.extract_buff_data_summary(
+            {"p": "Data/Json/BuffData/buff_test.json"},
+            self.memorypack_strings(30, "buff_test", "au_buff_test"),
+        )
+        self.assertEqual(skill["memberCount"], 47)
+        self.assertEqual(skill["refs"]["audio"][0]["value"], "au_skill_test")
+        self.assertEqual(buff["memberCount"], 30)
+        self.assertEqual(buff["refs"]["audio"][0]["value"], "au_buff_test")
 
 
 if __name__ == "__main__":

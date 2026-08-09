@@ -523,6 +523,50 @@ def _compact_mission_host(host: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _compact_local_trigger_context(context: dict[str, Any]) -> dict[str, Any]:
+    """Keep the exact selector/geometry proof without copying parser noise."""
+    return {
+        "status": context.get("status"),
+        "selectorSlotIds": context.get("selectorSlotIds") or [],
+        "matchedSlotIds": context.get("matchedSlotIds") or [],
+        "missingSlotIds": context.get("missingSlotIds") or [],
+        "ambiguousSlotIds": context.get("ambiguousSlotIds") or [],
+        "triggerVolumesStatus": context.get("triggerVolumesStatus"),
+        "triggerVolumesParseStatus": context.get("triggerVolumesParseStatus"),
+        "triggerVolumesOffsetHex": context.get("triggerVolumesOffsetHex"),
+        "scriptIdVerified": context.get("scriptIdVerified") is True,
+        "schemaMappingId": (context.get("schema") or {}).get("mappingId"),
+        "foreignKeyBridgeFound": context.get("foreignKeyBridgeFound") is True,
+        "missionGraphAction": context.get("missionGraphAction"),
+        "triggerVolumes": [
+            {
+                "slotId": volume.get("slotId"),
+                "keySlotId": volume.get("keySlotId"),
+                "triggerVolumeType": volume.get("triggerVolumeType"),
+                "offset": volume.get("offset"),
+                "triggerCountLimit": volume.get("triggerCountLimit"),
+                "enterCheckOnGround": volume.get("enterCheckOnGround"),
+                "isImportant": volume.get("isImportant"),
+                "triggerOnPole": volume.get("triggerOnPole"),
+                "waitSrvRes": volume.get("waitSrvRes"),
+                "shapes": [
+                    {
+                        key: shape.get(key)
+                        for key in (
+                            "offset", "shapeType", "position", "radius",
+                            "rotation", "size",
+                        )
+                    }
+                    for shape in (volume.get("shapeList") or {}).get("shapes") or []
+                    if isinstance(shape, dict)
+                ],
+            }
+            for volume in context.get("triggerVolumes") or []
+            if isinstance(volume, dict)
+        ],
+    }
+
+
 def join_parent_dialog_activation_routes(
     rows: list[dict[str, Any]],
     header_report: dict[str, Any],
@@ -609,6 +653,67 @@ def join_parent_dialog_activation_routes(
                 ))
                 continue
 
+            event_detail = header_row.get("eventDetail") or {}
+            trigger_slot_id = (
+                event_detail.get("triggerSlotIdFilter")
+                if isinstance(event_detail, dict)
+                else None
+            )
+            local_trigger_context = header_row.get("localTriggerVolumeContext") or {}
+            if isinstance(trigger_slot_id, int) and not isinstance(trigger_slot_id, bool):
+                schema = local_trigger_context.get("schema") or {}
+                volume_matches = local_trigger_context.get("triggerVolumes") or []
+                valid_trigger_context = (
+                    event_detail.get("type") == header_row.get("headerName")
+                    and event_detail.get("payloadSchemaStatus")
+                    == "exact_current_build_memorypack_fields"
+                    and local_trigger_context.get("status")
+                    == "exact_local_levelscript_trigger_volume_without_foreign_identity"
+                    and local_trigger_context.get("selectorSlotIds") == [trigger_slot_id]
+                    and local_trigger_context.get("matchedSlotIds") == [trigger_slot_id]
+                    and local_trigger_context.get("missingSlotIds") in ([], None)
+                    and local_trigger_context.get("ambiguousSlotIds") in ([], None)
+                    and local_trigger_context.get("scriptIdVerified") is True
+                    and local_trigger_context.get("triggerVolumesStatus") == "present"
+                    and local_trigger_context.get("triggerVolumesParseStatus") == "decoded"
+                    and local_trigger_context.get("foreignKeyBridgeFound") is False
+                    and local_trigger_context.get("missionGraphAction") == "none"
+                    and schema.get("mappingId")
+                    == "current-global-metadata-levelscript-trigger-volume-data-fields"
+                    and len(volume_matches) == 1
+                    and volume_matches[0].get("slotId") == trigger_slot_id
+                    and volume_matches[0].get("keySlotId") == trigger_slot_id
+                )
+                if not valid_trigger_context:
+                    failures.append(validation_failure(
+                        "parent_dialog_trigger_volume_selector",
+                        {
+                            "eventType": header_row.get("headerName"),
+                            "selectorSlotId": trigger_slot_id,
+                            "contextStatus": (
+                                "exact_local_levelscript_trigger_volume_"
+                                "without_foreign_identity"
+                            ),
+                            "matchedSlotIds": [trigger_slot_id],
+                        },
+                        {
+                            "eventType": event_detail.get("type"),
+                            "selectorSlotId": trigger_slot_id,
+                            "contextStatus": local_trigger_context.get("status"),
+                            "matchedSlotIds": (
+                                local_trigger_context.get("matchedSlotIds") or []
+                            ),
+                            "missingSlotIds": (
+                                local_trigger_context.get("missingSlotIds") or []
+                            ),
+                            "ambiguousSlotIds": (
+                                local_trigger_context.get("ambiguousSlotIds") or []
+                            ),
+                        },
+                        source_file or f"{level_id}/{script_id}",
+                    ))
+                    continue
+
             pair = (level_id, script_id)
             host = mission_hosts.get(pair) or {}
             host_ids = sorted({
@@ -676,6 +781,7 @@ def join_parent_dialog_activation_routes(
                 "levelId": level_id,
                 "scriptId": script_id,
                 "headerName": header_row.get("headerName"),
+                "eventDetail": event_detail,
                 "headerLocalId": header.get("localId"),
                 "headerOffset": header.get("offset"),
                 "headerOpcode": header.get("opcode"),
@@ -688,6 +794,10 @@ def join_parent_dialog_activation_routes(
                 "chainStatus": header_row.get("chainStatus"),
                 "runtimeSlotStatus": header_row.get("runtimeSlotStatus"),
                 "runtimeSlotMappingId": header_row.get("runtimeSlotMappingId"),
+                "localTriggerVolumeContext": (
+                    _compact_local_trigger_context(local_trigger_context)
+                    if local_trigger_context else {}
+                ),
                 "missionShellStatus": host.get("status") or "unresolved",
                 "missionShellIds": host_ids,
                 "missionShellOwnership": mission_shell_ownership,
@@ -759,11 +869,17 @@ def join_parent_dialog_activation_routes(
             "missionOwnedRoutes": sum(
                 bool(route.get("missionShellOwnership")) for route in routes
             ),
+            "exactLocalTriggerVolumeRoutes": sum(
+                bool(route.get("localTriggerVolumeContext")) for route in routes
+            ),
         },
         "evidenceBoundary": {
             "eventToActionTopology": True,
             "parentDialogPlayback": True,
             "missionShellOwnership": "unique_validated_leveldata_hosts_only",
+            "localTriggerVolumeGeometry": (
+                "exact_event_selector_to_same_levelscript_memorypack_volume"
+            ),
             "questActivation": False,
             "branchSelection": False,
             "crossTimelineOrder": False,

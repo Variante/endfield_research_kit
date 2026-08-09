@@ -231,7 +231,7 @@ if "%MISSION_PIPELINE_ONLY%"=="1" (
 python .\scripts\build_gameplay_data.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\build_progression_data.py --languages CN --default-language CN
+python .\scripts\build_gameplay_asset_refs.py --language CN
 if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\build_projectile_data.py
@@ -306,7 +306,7 @@ echo Usage: export.bat [--export-from-game] [--with-assets] [--mission-pipeline-
 echo.
 echo Runs the Story/Reference WebUI refresh from existing export_full by default,
 echo rebuilds source-link evidence, builds CN Story/Text/Gameplay plus the experimental mission pipeline,
-echo Progression/Projectile/Factory/World data, refreshes the local source graph, then
+echo Projectile/Factory/World data, refreshes the local source graph, then
 echo builds Presentation and Combat from fresh graph and AnimeStudio evidence,
 echo and preserves OCR-managed Story sort order. Use --with-assets to also
 echo rebuild Assets tab data and relink CN audio in the same command.
@@ -324,7 +324,7 @@ echo                         by WebUI views and omits duplicate reference rows.
 echo   --mission-pipeline-only
 echo                         Refresh original Story evidence, CN Story data, and
 echo                         Mission Pipeline data, then stop before unrelated
-echo                         Gameplay/Progression/Factory/World/graph views.
+echo                         Gameplay/Factory/World/graph views.
 echo   --mission-pipeline-data-only
 echo                         Rebuild Mission Pipeline JSON from the current generated
 echo                         Story bundles. Use for pipeline builder or frontend work;
