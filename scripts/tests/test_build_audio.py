@@ -430,6 +430,19 @@ AnimationClip:
 """,
                 encoding="utf-8",
             )
+            (clip_root / "A_actor_unknown_ui_generic_p0000000000000002.anim").write_text(
+                """%YAML 1.1
+AnimationClip:
+  m_Name: A_actor_unknown_ui_generic
+  m_Events:
+  - time: 0.5
+    functionName: PostAudioEvent
+    data: au_ui_generic
+    floatParameter: 0
+    intParameter: 0
+""",
+                encoding="utf-8",
+            )
             result = build_audio.collect_gameplay_animation_audio(
                 export_root,
                 [{"kind": "character", "id": "chr_0001_test", "skillGroups": []}],
@@ -444,6 +457,10 @@ AnimationClip:
             )
             self.assertEqual({row["clipContext"] for row in owner["events"]["player_fol_fs_walk"]}, {"battle"})
             self.assertEqual({row["clipReachability"] for row in owner["events"]["player_fol_fs_walk"]}, {"unresolved"})
+            self.assertEqual(set(result["unownedEvents"]), {"au_ui_generic"})
+            self.assertEqual(result["unownedEvents"]["au_ui_generic"][0]["ownerStatus"], "unresolved")
+            self.assertEqual(result["counts"]["animationAudioClipsScanned"], 2)
+            self.assertEqual(result["counts"]["animationAudioClipsOwnerUnresolved"], 1)
 
     def test_collects_direct_character_and_bounded_enemy_audio(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -655,6 +672,19 @@ AnimationClip:
                         "function": "PostAudioEvent",
                     }]},
                 }],
+                "unownedAnimationEvents": {
+                    "au_owner_unresolved": [{
+                        "kind": "animationClipEvent",
+                        "authoredEventId": "au_owner_unresolved",
+                        "clip": "UI_Generic",
+                        "clipSource": "AnimationClip/UI_Generic.anim",
+                        "actionKind": "action",
+                        "clipContext": "ui",
+                        "function": "PostAudioEvent",
+                        "time": 0.5,
+                        "ownerStatus": "unresolved",
+                    }],
+                },
                 "profileVoiceOwners": [{
                     "ownerId": "chr_voice",
                     "voices": [{
@@ -713,6 +743,14 @@ AnimationClip:
                 animation["animationEvents"][0]["sourceAnimationClips"],
                 ["A_monster_test_battle_attack1"],
             )
+            animation_evidence = json.loads(
+                (webui_root / "data/lang/CN/gameplay/sound_effects_animation_evidence.json")
+                .read_text(encoding="utf-8")
+            )
+            unresolved_animation = animation_evidence["ownerUnresolved"][0]
+            self.assertEqual(unresolved_animation["id"], "au_owner_unresolved")
+            self.assertEqual(unresolved_animation["ownerStatus"], "unresolved")
+            self.assertEqual(unresolved_animation["animationClipContexts"], ["ui"])
             self.assertEqual(
                 payload["characters"]["chr_voice"]["profileVoices"][0]["actionKinds"],
                 ["attackVoice"],

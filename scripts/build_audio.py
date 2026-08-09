@@ -645,39 +645,54 @@ def collect_gameplay_animation_audio(
         / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
     )
     owners: dict[tuple[str, str], dict[str, Any]] = {}
+    unowned_events: dict[str, list[dict[str, Any]]] = defaultdict(list)
     scanned_clips = 0
     matched_clips = 0
-    callback_rows = 0
+    unowned_clips = 0
+    owned_callback_rows = 0
+    unowned_callback_rows = 0
     if root.exists():
-        for pattern in ("A_actor_*.anim", "A_monster_*.anim"):
-            for path in sorted(root.glob(pattern)):
-                scanned_clips += 1
-                filename_clip_name = ANIMATION_CLIP_HASH_SUFFIX_RE.sub("", path.stem)
-                filename_match = ANIMATION_ACTOR_RE.match(filename_clip_name)
-                if not filename_match:
-                    continue
-                matched_owners = token_owners.get(
+        candidate_paths = sorted([
+            *root.glob("A_actor_*.anim"),
+            *root.glob("A_monster_*.anim"),
+        ])
+        for path in candidate_paths:
+            scanned_clips += 1
+            filename_clip_name = ANIMATION_CLIP_HASH_SUFFIX_RE.sub("", path.stem)
+            filename_match = ANIMATION_ACTOR_RE.match(filename_clip_name)
+            matched_owners = (
+                token_owners.get(
                     (filename_match.group(1).lower(), filename_match.group(2).lower())
                 ) or []
-                if not matched_owners:
-                    continue
-                try:
-                    data = path.read_bytes()
-                except OSError:
-                    continue
-                if b"functionName: PostAudio" not in data and b"functionName: OnCustomFootStep" not in data:
-                    continue
-                clip_name, clip_events = animation_clip_audio_events(data)
-                if not clip_events:
-                    continue
+                if filename_match
+                else []
+            )
+            try:
+                data = path.read_bytes()
+            except OSError:
+                continue
+            if b"functionName: PostAudio" not in data and b"functionName: OnCustomFootStep" not in data:
+                continue
+            clip_name, clip_events = animation_clip_audio_events(data)
+            if not clip_events:
+                continue
+            clip_kind = animation_clip_action_kind(clip_name)
+            clip_context = animation_clip_context(clip_name)
+            try:
+                clip_source = normalize_posix(path.relative_to(export_root))
+            except ValueError:
+                clip_source = normalize_posix(path)
+            base_evidence = {
+                "kind": "animationClipEvent",
+                "clip": clip_name,
+                "clipSource": clip_source,
+                "actionKind": clip_kind,
+                "clipContext": clip_context,
+                "clipReachability": "unresolved",
+            }
+            if matched_owners:
                 matched_clips += 1
-                callback_rows += len(clip_events)
-                clip_kind = animation_clip_action_kind(clip_name)
-                clip_context = animation_clip_context(clip_name)
-                try:
-                    clip_source = normalize_posix(path.relative_to(export_root))
-                except ValueError:
-                    clip_source = normalize_posix(path)
+                owned_callback_rows += len(clip_events)
                 for owner in matched_owners:
                     owner_key = (owner["ownerKind"], owner["ownerId"])
                     record = owners.setdefault(owner_key, {
@@ -690,25 +705,40 @@ def collect_gameplay_animation_audio(
                         if not event_key:
                             continue
                         record["events"][event_key].append({
-                            "kind": "animationClipEvent",
+                            **base_evidence,
                             "authoredEventId": authored_event_id,
-                            "clip": clip_name,
-                            "clipSource": clip_source,
-                            "actionKind": clip_kind,
-                            "clipContext": clip_context,
-                            "clipReachability": "unresolved",
                             "eventIndex": event.get("index"),
                             "time": event.get("time"),
                             "function": event.get("function"),
                             "floatParameter": event.get("floatParameter"),
                             "intParameter": event.get("intParameter"),
                         })
+            else:
+                unowned_clips += 1
+                unowned_callback_rows += len(clip_events)
+                for event in clip_events:
+                    authored_event_id = str(event.get("eventId") or "").strip()
+                    event_key = authored_event_id.lower()
+                    if not event_key:
+                        continue
+                    unowned_events[event_key].append({
+                        **base_evidence,
+                        "authoredEventId": authored_event_id,
+                        "ownerStatus": "unresolved",
+                        "actorKindToken": filename_match.group(1).lower() if filename_match else "",
+                        "actorIdentityToken": filename_match.group(2).lower() if filename_match else "",
+                        "eventIndex": event.get("index"),
+                        "time": event.get("time"),
+                        "function": event.get("function"),
+                        "floatParameter": event.get("floatParameter"),
+                        "intParameter": event.get("intParameter"),
+                    })
 
     event_names = {
         event_key
         for owner in owners.values()
         for event_key in owner["events"]
-    }
+    }.union(unowned_events)
     normalized_owners: list[dict[str, Any]] = []
     for owner in owners.values():
         normalized_owners.append({
@@ -724,12 +754,27 @@ def collect_gameplay_animation_audio(
     return {
         "eventNames": event_names,
         "owners": sorted(normalized_owners, key=lambda row: (row["ownerKind"], row["ownerId"])),
+        "unownedEvents": {
+            event_key: sorted(
+                evidence,
+                key=lambda row: (
+                    str(row.get("clip") or ""),
+                    float(row.get("time") or 0),
+                    str(row.get("function") or ""),
+                ),
+            )
+            for event_key, evidence in sorted(unowned_events.items())
+        },
         "counts": {
             "animationAudioClipsScanned": scanned_clips,
             "animationAudioClipsOwned": matched_clips,
-            "animationAudioCallbackRows": callback_rows,
+            "animationAudioClipsOwnerUnresolved": unowned_clips,
+            "animationAudioCallbackRows": owned_callback_rows + unowned_callback_rows,
+            "animationAudioOwnedCallbackRows": owned_callback_rows,
+            "animationAudioOwnerUnresolvedCallbackRows": unowned_callback_rows,
             "animationAudioEventNames": len(event_names),
             "animationAudioOwnerEventRefs": sum(len(owner["events"]) for owner in owners.values()),
+            "animationAudioOwnerUnresolvedEventRefs": len(unowned_events),
         },
     }
 
@@ -1149,6 +1194,7 @@ def collect_gameplay_audio_references(
         "owners": owners,
         "authoredPlaySoundActions": authored_play_sound_actions,
         "animationOwners": animation_audio.get("owners") or [],
+        "unownedAnimationEvents": animation_audio.get("unownedEvents") or {},
         "profileVoiceOwners": profile_voices.get("owners") or [],
         "counts": {
             "gameplayCharacterSkills": len(character_skills),
@@ -1865,7 +1911,7 @@ def link_gameplay_audio(
         "enemiesWithPlayableSfx": len(enemies),
     }
     path = webui_root / Path(str(GAMEPLAY_SFX_REL).format(language=language))
-    animation_evidence: dict[str, dict[str, list[dict[str, Any]]]] = {
+    animation_evidence: dict[str, Any] = {
         "characters": {},
         "enemies": {},
     }
@@ -1894,6 +1940,26 @@ def link_gameplay_audio(
                 event.pop("evidence", None)
             if evidence_events:
                 animation_evidence[bucket_name][owner_id] = evidence_events
+    unresolved_animation_events: list[dict[str, Any]] = []
+    for event_id, evidence in sorted((references.get("unownedAnimationEvents") or {}).items()):
+        rows = [row for row in evidence or [] if isinstance(row, dict)]
+        unresolved_animation_events.append({
+            "id": event_id,
+            "actionKinds": sorted({str(row.get("actionKind") or "action") for row in rows}),
+            "animationFunctions": sorted({str(row.get("function") or "") for row in rows if row.get("function")}),
+            "animationClipContexts": sorted({str(row.get("clipContext") or "other") for row in rows}),
+            "clipReachability": "unresolved",
+            "sourceAnimationClips": sorted({str(row.get("clip") or "") for row in rows if row.get("clip")}),
+            "authoredEventIds": sorted({
+                str(row.get("authoredEventId") or event_id)
+                for row in rows
+                if str(row.get("authoredEventId") or event_id)
+            }),
+            "ownerStatus": "unresolved",
+            "evidence": rows,
+        })
+    if unresolved_animation_events:
+        animation_evidence["ownerUnresolved"] = unresolved_animation_events
     json_dump(path.with_name(GAMEPLAY_SFX_ANIMATION_CATALOG_NAME), {
         "schemaVersion": 1,
         "language": language,
@@ -1921,6 +1987,7 @@ def link_gameplay_audio(
             "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",
             "enemyTemplateBoundary": "AbilitySystemData containment is exact, while identifiers preserved only in partially decoded string-hint tails remain ownership-inferred.",
             "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse; current-controller clip reachability remains unresolved",
+            "unownedAnimationBoundary": "Every actor/monster AnimationClip callback with a supported audio function is retained. Clips without a bounded playable-character or enemy-template token stay owner-unresolved and appear only in the debug Audio evidence surface; generic non-actor clip indexing remains a separate exporter gap.",
             "animationMediaBoundary": "An owned clip proves that its callback requests the Event. Shared playable-character Events expose a shared Wwise selector graph; its reachable leaves are not attributed to one character until switch/state values are decoded.",
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
             "referenceOnlyBoundary": "Exact SkillData/BuffData and owned AnimationClip trigger contexts remain serialized when the Event is absent from current Wwise banks or has no decoded possible media; Gameplay only renders records with playable files.",
