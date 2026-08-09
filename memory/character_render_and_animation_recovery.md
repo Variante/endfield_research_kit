@@ -109,10 +109,14 @@ NPC archetypes are imported as labeled source kits.
   write schema for both Spot and Point/linear-extension rows. The exact
   selected-aspect Gacha room contribution is one Spot, six ordinary Point,
   and four positive-length linear-extension Point lights; all eleven enable
-  authored OBB culling and are unshadowed/cookie-free. Their serialized Unity
-  Light inputs are censused, but the room `HGAdditionalLightData` defaults,
-  target-frame packed OBB words/transforms, runtime list carry-in, and final
-  byte-exact b31 rows remain open.
+  authored OBB culling and are unshadowed/cookie-free. Each has an exact
+  serialized `HGAdditionalLightData` component rather than an unresolved
+  default. Installed `GetLightNPRData`/`GetLightAdditionalData` close the
+  32-byte return layout and b31 record3.yzw, record4, and record6.w: every row
+  uses NPR type 0 with `(1,1,0,0)`, `CharacterOnly=false`, and falloff `-1`;
+  volumetric intensity is 0/1/10 on 2/5/4 rows. Target-frame color/transform
+  results, packed OBB words, runtime list carry-in, and final byte-exact b31
+  rows remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

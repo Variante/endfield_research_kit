@@ -2234,10 +2234,14 @@ now closes the native eight-float4 row schema itself for both Spot and
 Point/linear-extension branches. For the selected-aspect Gacha room, the exact
 authored contribution is one Spot, six ordinary Point, and four
 positive-length linear-extension Point rows. All eleven source Lights enable
-OBB culling and carry no cookie or shadow. The serialized Light inputs are now
-audited, while `HGAdditionalLightData` defaults, target-frame packed OBB
-words/transforms, runtime/custom carry-in, the final light count, and a
-byte-exact room b31 fixture remain open.
+OBB culling and carry no cookie or shadow. Each row's third GameObject
+component resolves to the same serialized `HGAdditionalLightData` script.
+Hash-pinned installed `GetLightNPRData` and `GetLightAdditionalData` bodies
+close its 32-byte return layout: all rows use type-0 NPR `(1,1,0,0)`, are not
+CharacterOnly, use falloff `-1`, and split volumetric intensity 2/5/4 across
+0/1/10. This closes b31 record3.yzw, record4, and record6.w for the room rows.
+Target-frame color/transforms, packed OBB words, runtime/custom carry-in, the
+final light count, and a byte-exact room b31 fixture remain open.
 
 `ShaderVariablesGlobal` b35 is now exactly scoped and transported. The
 selected body references 33 fields, and installed native reset producers close

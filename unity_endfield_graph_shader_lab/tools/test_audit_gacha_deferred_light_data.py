@@ -79,6 +79,33 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual([row["record"] for row in result["spot"]], list(range(7)))
         self.assertEqual(result["common"][0]["record"], 7)
 
+    def test_native_additional_data_layout(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_LIGHT_NPR_DATA_FILE_OFFSET)
+            npr_body = stream.read(AUDIT.GET_LIGHT_NPR_DATA_SIZE)
+            stream.seek(AUDIT.GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET)
+            additional_body = stream.read(AUDIT.GET_LIGHT_ADDITIONAL_DATA_SIZE)
+        result = AUDIT.validate_additional_data_native(npr_body, additional_body)
+        layout = result["getLightAdditionalData"]["returnLayout"]
+        self.assertEqual(layout["0x14"], "bool LightCharacterOnly plus padding")
+        self.assertIn(
+            "defaultAutoLimit",
+            result["getLightNprData"]["selectedTypeZeroPacking"],
+        )
+
+    def test_changed_additional_layout_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_LIGHT_NPR_DATA_FILE_OFFSET)
+            npr_body = stream.read(AUDIT.GET_LIGHT_NPR_DATA_SIZE)
+            stream.seek(AUDIT.GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET)
+            additional_body = bytearray(stream.read(AUDIT.GET_LIGHT_ADDITIONAL_DATA_SIZE))
+        additional_body[0x28B + 4] = 0x85
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=get_light_additional_data_body_sha256;.*expected=.*actual=",
+        ):
+            AUDIT.validate_additional_data_native(npr_body, bytes(additional_body))
+
     def test_changed_record_address_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
@@ -97,6 +124,49 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual(len(rows), 11)
         self.assertEqual(sum(row["unityLightType"] == 0 for row in rows), 1)
         self.assertEqual(sum(row["linearLightLength"] > 0 for row in rows), 4)
+
+    def test_selected_room_additional_components(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.attach_room_additional_data(
+            AUDIT.room_light_rows(population, hierarchy)
+        )
+        self.assertEqual(len(rows), 11)
+        self.assertTrue(all("additionalLightData" in row for row in rows))
+        self.assertTrue(
+            all(
+                row["additionalLightData"]["nprDataNativePacked"]
+                == [1.0, 1.0, 0.0, 0.0]
+                for row in rows
+            )
+        )
+        self.assertEqual(
+            sorted(
+                row["additionalLightData"]["volumetricScatteringIntensity"]
+                for row in rows
+            ),
+            [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0, 10.0, 10.0, 10.0],
+        )
+
+    def test_changed_room_falloff_reports_component(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.room_light_rows(population, hierarchy)
+        game_objects = AUDIT.dump_index(AUDIT.ROOM_RAW_DUMP_ROOT / "GameObject")
+        behaviours = AUDIT.dump_index(AUDIT.ROOM_RAW_DUMP_ROOT / "MonoBehaviour")
+        light = AUDIT.load_json(AUDIT.REPO_ROOT / rows[0]["sourcePath"])
+        game_object_id = int(light["m_GameObject"]["m_PathID"])
+        component_id = int(
+            game_objects[game_object_id][1]["m_Components"][2]["m_PathID"]
+        )
+        changed = copy.deepcopy(behaviours)
+        changed[component_id][1]["m_falloffExponent"] = 2.0
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=room_.*_falloff_exponent; source=.*MonoBehaviour.*; "
+            r"expected=-1.0; actual=2.0",
+        ):
+            AUDIT.attach_room_additional_data(rows, game_objects, changed)
 
     def test_changed_room_order_reports_expected_and_actual(self) -> None:
         population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
