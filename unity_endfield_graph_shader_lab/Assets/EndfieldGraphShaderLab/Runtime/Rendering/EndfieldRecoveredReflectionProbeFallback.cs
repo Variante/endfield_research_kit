@@ -66,6 +66,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_ReflectionProbeOctTextureArray");
         private static readonly int ReflectionGlobalDataId =
             Shader.PropertyToID("ReflectionProbeGlobalData");
+        private static readonly int ExactDxbcBridgeGlobalDataId =
+            Shader.PropertyToID("EndfieldCB2");
         private static readonly int BinningBufferId =
             Shader.PropertyToID("_BinningBuffer");
         private static readonly int BinningBufferOffsetsId =
@@ -250,6 +252,13 @@ namespace EndfieldGraphShaderLab
                 ReflectionGlobalDataId,
                 0,
                 GlobalBufferBytes);
+            // The selected installed D3D11 fallback resolver addresses this
+            // same source buffer as b2 and reads only vectors c0..c258.
+            commandBuffer.SetGlobalConstantBuffer(
+                reflectionGlobalData,
+                ExactDxbcBridgeGlobalDataId,
+                0,
+                259 * sizeof(float) * 4);
             if (publishLegacyZeroBinningBuffer)
             {
                 commandBuffer.SetGlobalBuffer(

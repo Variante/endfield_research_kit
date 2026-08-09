@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using EndfieldGraphShaderLab;
 using UnityEditor;
 using UnityEngine;
@@ -21,6 +22,8 @@ namespace EndfieldGraphShaderLabEditor
         private const int Width = 3840;
         private const int Height = 2160;
         private const int ReadbackWordCount = 30;
+        private const int NamedGlobalVectorCount = 260;
+        private const int D3D11BridgeGlobalVectorCount = 259;
 
         private static readonly int BinningBufferId =
             Shader.PropertyToID("_BinningBuffer");
@@ -48,6 +51,14 @@ namespace EndfieldGraphShaderLabEditor
             public bool reflectionReadyObserved;
             public bool canonicalBufferPreserved;
             public bool reflectionGlobalDataMatches;
+            public bool namedGlobalReadyObserved;
+            public bool bridgeGlobalReadyObserved;
+            public bool namedGlobalWordsExact;
+            public bool bridgeGlobalWordsExact;
+            public bool namedBridgePrefixExact;
+            public string expectedNamedGlobalWordsSha256;
+            public string namedGlobalWordsSha256;
+            public string bridgeGlobalWordsSha256;
             public bool octDimensionsMatch;
             public bool octCenterFiniteNonzero;
             public string[] canonicalSentinelWords;
@@ -107,6 +118,8 @@ namespace EndfieldGraphShaderLabEditor
             EndfieldRecoveredReflectionProbeFallback owner = null;
             ComputeBuffer canonical = null;
             ComputeBuffer readback = null;
+            ComputeBuffer namedGlobalReadback = null;
+            ComputeBuffer bridgeGlobalReadback = null;
             CommandBuffer command = null;
             bool missingSourceRejected = false;
             string missingSourceDiagnostic = string.Empty;
@@ -114,6 +127,9 @@ namespace EndfieldGraphShaderLabEditor
             string wrongSourceDiagnostic = string.Empty;
             bool publicationReady = false;
             uint[] actual = new uint[ReadbackWordCount];
+            uint[] namedGlobal = new uint[1 + NamedGlobalVectorCount * 4];
+            uint[] bridgeGlobal =
+                new uint[1 + D3D11BridgeGlobalVectorCount * 4];
             uint[] canonicalWords = BuildCanonicalWords(layout);
             try
             {
@@ -137,6 +153,16 @@ namespace EndfieldGraphShaderLabEditor
                     sizeof(uint),
                     ComputeBufferType.Structured);
                 readback.SetData(actual);
+                namedGlobalReadback = new ComputeBuffer(
+                    namedGlobal.Length,
+                    sizeof(uint),
+                    ComputeBufferType.Structured);
+                namedGlobalReadback.SetData(namedGlobal);
+                bridgeGlobalReadback = new ComputeBuffer(
+                    bridgeGlobal.Length,
+                    sizeof(uint),
+                    ComputeBufferType.Structured);
+                bridgeGlobalReadback.SetData(bridgeGlobal);
                 command = new CommandBuffer
                 {
                     name = "Verify Recovered Canonical Reflection Frame"
@@ -206,12 +232,30 @@ namespace EndfieldGraphShaderLabEditor
                     ReadbackId,
                     readback);
                 command.DispatchCompute(probe, probeKernel, 1, 1, 1);
+                int namedGlobalKernel = probe.FindKernel("ReadNamedGlobal");
+                command.SetComputeBufferParam(
+                    probe,
+                    namedGlobalKernel,
+                    ReadbackId,
+                    namedGlobalReadback);
+                command.DispatchCompute(probe, namedGlobalKernel, 1, 1, 1);
+                int bridgeGlobalKernel = probe.FindKernel("ReadBridgeGlobal");
+                command.SetComputeBufferParam(
+                    probe,
+                    bridgeGlobalKernel,
+                    ReadbackId,
+                    bridgeGlobalReadback);
+                command.DispatchCompute(probe, bridgeGlobalKernel, 1, 1, 1);
                 Graphics.ExecuteCommandBuffer(command);
                 readback.GetData(actual);
+                namedGlobalReadback.GetData(namedGlobal);
+                bridgeGlobalReadback.GetData(bridgeGlobal);
             }
             finally
             {
                 command?.Release();
+                bridgeGlobalReadback?.Release();
+                namedGlobalReadback?.Release();
                 readback?.Release();
                 canonical?.Release();
                 owner?.Dispose();
@@ -219,7 +263,11 @@ namespace EndfieldGraphShaderLabEditor
                     UnityEngine.Object.DestroyImmediate(cameraObject);
             }
 
-            uint[] expectedGlobal = BuildExpectedGlobalWords();
+            uint[] expectedGlobal = BuildExpectedGlobalWords(4);
+            uint[] expectedNamedGlobal = BuildExpectedGlobalWords(
+                NamedGlobalVectorCount);
+            uint[] expectedBridgeGlobal = BuildExpectedGlobalWords(
+                D3D11BridgeGlobalVectorCount);
             uint[] actualGlobal = new uint[expectedGlobal.Length];
             Array.Copy(actual, 6, actualGlobal, 0, actualGlobal.Length);
             bool canonicalReadyObserved = actual[0] == FloatBits(1.0f);
@@ -230,6 +278,19 @@ namespace EndfieldGraphShaderLabEditor
                 actual[4] == 0u &&
                 actual[5] == 0u;
             bool globalMatches = WordsEqual(expectedGlobal, actualGlobal);
+            bool namedGlobalReady = namedGlobal[0] == FloatBits(1.0f);
+            bool bridgeGlobalReady = bridgeGlobal[0] == FloatBits(1.0f);
+            uint[] namedGlobalPayload = Payload(namedGlobal);
+            uint[] bridgeGlobalPayload = Payload(bridgeGlobal);
+            bool namedGlobalExact = WordsEqual(
+                expectedNamedGlobal,
+                namedGlobalPayload);
+            bool bridgeGlobalExact = WordsEqual(
+                expectedBridgeGlobal,
+                bridgeGlobalPayload);
+            bool namedBridgePrefixExact = PrefixEqual(
+                namedGlobalPayload,
+                bridgeGlobalPayload);
             bool dimensionsMatch =
                 actual[22] == 576u &&
                 actual[23] == 576u &&
@@ -244,6 +305,16 @@ namespace EndfieldGraphShaderLabEditor
                 failures.Add("canonical_buffer: reflection publication overwrote a sentinel");
             if (!globalMatches)
                 failures.Add("reflection_global: first four vectors differ");
+            if (!namedGlobalReady)
+                failures.Add("reflection_named_ready: probe did not observe 1.0");
+            if (!bridgeGlobalReady)
+                failures.Add("reflection_bridge_ready: probe did not observe 1.0");
+            if (!namedGlobalExact)
+                failures.Add("reflection_named_global: 260 vectors differ");
+            if (!bridgeGlobalExact)
+                failures.Add("reflection_bridge_global: CB2 259-vector prefix differs");
+            if (!namedBridgePrefixExact)
+                failures.Add("reflection_named_bridge: first 259 vectors differ");
             if (!dimensionsMatch)
                 failures.Add("reflection_oct: expected 576x576x32 with 10 mips");
             if (!centerFiniteNonzero)
@@ -274,6 +345,15 @@ namespace EndfieldGraphShaderLabEditor
                 reflectionReadyObserved = reflectionReadyObserved,
                 canonicalBufferPreserved = canonicalPreserved,
                 reflectionGlobalDataMatches = globalMatches,
+                namedGlobalReadyObserved = namedGlobalReady,
+                bridgeGlobalReadyObserved = bridgeGlobalReady,
+                namedGlobalWordsExact = namedGlobalExact,
+                bridgeGlobalWordsExact = bridgeGlobalExact,
+                namedBridgePrefixExact = namedBridgePrefixExact,
+                expectedNamedGlobalWordsSha256 =
+                    Sha256Words(expectedNamedGlobal),
+                namedGlobalWordsSha256 = Sha256Words(namedGlobalPayload),
+                bridgeGlobalWordsSha256 = Sha256Words(bridgeGlobalPayload),
                 octDimensionsMatch = dimensionsMatch,
                 octCenterFiniteNonzero = centerFiniteNonzero,
                 canonicalSentinelWords = HexWords(new[]
@@ -308,7 +388,8 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 "Recovered canonical reflection frame validation passed: " +
                 "both readiness flags=1, canonical sentinels preserved, " +
-                "ReflectionProbeGlobalData vectors exact, oct=576x576x32/10 mips, " +
+                "ReflectionProbeGlobalData 260 named/259 CB2 vectors exact, " +
+                "oct=576x576x32/10 mips, " +
                 "source gates=2/2, api=" + api + ", report=" + reportPath +
                 ". Pass-0 remains default-off.");
         }
@@ -322,7 +403,7 @@ namespace EndfieldGraphShaderLabEditor
             return words;
         }
 
-        private static uint[] BuildExpectedGlobalWords()
+        private static uint[] BuildExpectedGlobalWords(int vectorCount)
         {
             const float nearClip = 0.1f;
             float nearHeight = 2.0f * nearClip * Mathf.Tan(
@@ -342,7 +423,7 @@ namespace EndfieldGraphShaderLabEditor
                     0.47223734855651855f,
                     1.0963057279586792f)
             };
-            var words = new uint[16];
+            var words = new uint[vectorCount * 4];
             for (int index = 0; index < values.Length; index++)
             {
                 words[index * 4 + 0] = FloatBits(values[index].x);
@@ -351,6 +432,25 @@ namespace EndfieldGraphShaderLabEditor
                 words[index * 4 + 3] = FloatBits(values[index].w);
             }
             return words;
+        }
+
+        private static uint[] Payload(uint[] readback)
+        {
+            var result = new uint[readback.Length - 1];
+            Array.Copy(readback, 1, result, 0, result.Length);
+            return result;
+        }
+
+        private static bool PrefixEqual(uint[] full, uint[] prefix)
+        {
+            if (prefix.Length > full.Length)
+                return false;
+            for (int index = 0; index < prefix.Length; index++)
+            {
+                if (full[index] != prefix[index])
+                    return false;
+            }
+            return true;
         }
 
         private static bool IsFiniteNonzeroFloat4(uint[] words, int offset)
@@ -377,6 +477,18 @@ namespace EndfieldGraphShaderLabEditor
                     return false;
             }
             return true;
+        }
+
+        private static string Sha256Words(uint[] words)
+        {
+            var bytes = new byte[words.Length * sizeof(uint)];
+            Buffer.BlockCopy(words, 0, bytes, 0, bytes.Length);
+            using (SHA256 sha = SHA256.Create())
+            {
+                return BitConverter.ToString(sha.ComputeHash(bytes))
+                    .Replace("-", string.Empty)
+                    .ToLowerInvariant();
+            }
         }
 
         private static uint FloatBits(float value)

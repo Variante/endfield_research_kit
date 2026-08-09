@@ -2157,9 +2157,11 @@ slots, zero-local-probe count, exact CharInfo sky-SH luminance vector, and the
 pipeline now owns that producer and, only under the existing default-off
 canonical selector and exact `T_hdri_env_char_01` asset gate, co-publishes its
 oct texture/global buffer in the same camera command stream without replacing
-the canonical `_BinningBuffer`. D3D11/D3D12 probes observe both ready flags,
-preserved light/reflection sentinels, exact header words, and the 576x576x32
-texture together; missing or wrong sources clear readiness and fail closed.
+the canonical `_BinningBuffer`. It now binds both the full 260-vector canonical
+buffer and the selected original D3D11 `EndfieldCB2` 259-vector prefix.
+D3D11/D3D12 probes read both paths bit-exactly, observe both ready flags,
+preserve light/reflection sentinels, and see the 576x576x32 texture; missing or
+wrong sources clear readiness and fail closed.
 The native 128-byte `VisibilitySHConstData` b33 layout is also fully closed.
 The producer zero-fills all 128 source bytes, overwrites fixed rows 0..2 and
 camera-derived rows 3..4, then copies untouched zero rows 5..7. All 32 words
@@ -2199,6 +2201,16 @@ original DXBC-shell `EndfieldCB4` bridge, with unknown words zero and unchanged
 beauty output. This source-closes only that consumer subset; general-scene
 punctual records and pass 0 remain open.
 
+`ShaderVariablesGlobal` b35 is now exactly scoped before implementation. The
+selected body references 33 fields, and installed native reset producers close
+atmosphere rows c71..c76, height-fog rows c77..c82, and disabled-volumetric rows
+c83..c87. Perspective c4.w, mip bias c26.x, binning/environment c28/c29,
+inactive IV parameters c132..c134, and disabled wetness c156.x are also closed;
+frame count is read only behind the exact-zero volumetric gate. The D3D11
+`EndfieldCB1` bridge remains deliberately unpublished because c3.y, c30.xy,
+c31.x, and default SH c135..c137 still affect live selected control flow.
+Unused rows are not guessed, and pass 0 remains disabled.
+
 The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and
@@ -2230,6 +2242,7 @@ verify_recovered_visibility_sh_frame.bat --fail-closed-d3d12
 verify_recovered_deferred_gbuffer_frame.bat --all
 verify_recovered_deferred_gbuffer_frame.bat --fail-closed-d3d12
 verify_recovered_deferred_transform_variables.bat --all
+python tools\audit_deferred_shader_variables_global.py --check
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```

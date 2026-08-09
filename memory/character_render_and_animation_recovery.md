@@ -60,8 +60,10 @@ NPC archetypes are imported as labeled source kits.
   back bit-exactly on D3D11/D3D12. Under the same default-off selector, the
   pipeline now co-publishes the exact `T_hdri_env_char_01` reflection oct/global
   resources in the same camera command stream without overwriting that buffer;
-  both readiness gates, exact header, 576x576x32 texture, and source rejection
-  pass on D3D11/D3D12. The native 128-byte `VisibilitySHConstData` b33 layout,
+  the full 260-vector `ReflectionProbeGlobalData` and original D3D11
+  `EndfieldCB2` 259-vector prefix now read back bit-exactly on both APIs, while
+  both readiness gates, the 576x576x32 texture, and source rejection also pass.
+  The native 128-byte `VisibilitySHConstData` b33 layout,
   fixed rows and frame dimensions/scales are now source-closed. The producer's
   pinned 128-byte zero-fill proves untouched rows 5..7 are exact zero, so all
   32 words—not only the selected consumer's bytes 32..63—read back bit-exactly
@@ -100,6 +102,15 @@ NPC archetypes are imported as labeled source kits.
   pass 0 remains disabled. General-scene/static-cache rows, retail physical
   resource identity and settled atlas pixels, runtime IFix/setting overrides,
   and the non-punctual sections remain open.
+- `ShaderVariablesGlobal` b35 is no longer an undifferentiated 3,200-byte gap.
+  A hash-pinned selected-body audit finds 33 referenced fields and closes exact
+  installed reset output for atmosphere c71..c76, height fog c77..c82, and
+  disabled volumetric fog c83..c87. The selected route also closes perspective
+  c4.w, mip bias c26.x, binning/environment rows c28/c29, inactive IV params
+  c132..c134, and wetness c156.x; frame count is behind the exact-zero
+  volumetric gate. `EndfieldCB1` remains unpublished because depth-bin c3.y,
+  feature values c30.xy/c31.x, and default SH c135..c137 still affect live
+  control flow. Pass 0 remains disabled.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
@@ -221,7 +232,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Complete the minimum binding-compatible deferred CharInfo frame.
+1. Complete the minimum binding-compatible deferred CharInfo frame, starting
+   with b35 c3.y, c30.xy, c31.x, and c135..c137 rather than filling unused rows.
 2. Recover the retail light-cull survivor list, then populate exact shadow,
    depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH inputs.
 3. Validate selected paths against accepted retail captures.
