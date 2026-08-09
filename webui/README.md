@@ -30,9 +30,9 @@ Normal navigation exposes:
 
 **Mission Pipeline** is experimental and appears only with `Show debug info`.
 **Audio** is also debug-only. It exposes the current binary-validated runtime
-model, Wwise HIRC object families, authored event contexts, candidate media,
-and the physical decoded-media inventory without presenting candidates as a
-live playback trace.
+model, Wwise HIRC object families, authored event contexts, typed possible
+media leaves, and the physical decoded-media inventory without presenting the
+offline graph as a live playback trace.
 
 The standalone Progression and Combat & Projectiles pages are retired. Their
 useful player-facing data now appears in Gameplay; raw combat relationships,
@@ -83,12 +83,16 @@ visible degraded reason when their source graph is absent or stale.
 
 The Audio overview and Event inventory load only when its debug view is opened;
 the larger media inventory remains deferred until the Media mode is selected.
-Both lists are virtualized. Playable recovered audio is served from
+Both lists are virtualized, and selecting an Event fetches only its keyed detail
+shard before rendering contexts, branch evidence, and players. Playable recovered audio is served from
 `/export_full/structured/Audio/{shared,<LANG>}/`. The normal builder emits
 lossless `.flac` files and writes those paths into Story, cutscene, projectile,
 and Gameplay sound payloads; the frontend uses the same native audio control
 for FLAC and WAV links. Legacy WEM files remain indexable for diagnostics but
-are not a browser-playable output format.
+are not a browser-playable output format. Event details list every typed
+possible media leaf together and group it by Play root and Random, Sequence,
+Switch/State, Layer, or direct-Sound evidence. Partial typed graphs and
+byte-identical decoded content under distinct media ids remain explicit.
 
 ## Runtime overrides
 

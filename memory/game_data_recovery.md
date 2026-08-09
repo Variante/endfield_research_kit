@@ -80,16 +80,25 @@ and byte length. Sound and external sectors can also point directly to WEM
 media. WEM decryption is keyed by the media id, and already-RIFF/RIFX payloads
 are left unchanged.
 
-The HIRC parser follows event objects through action/container references and
-records candidate numeric media ids. This is strong event-to-media evidence,
-but a switch, random, or sequence container can select among candidates at
-runtime; an exported link does not claim that every candidate always plays.
-The current full-bank probe confirms that Endfield uses sound, action, event,
-random/sequence-container, switch-container, actor-mixer, layer, and music
-object families in the HIRC graph. Action objects consistently expose their
-target id at the current offset-2 layout, but their remaining bytes are still
-version-sensitive action flags and parameters; they must not be treated as
-playback timestamps.
+The current banks are Wwise bank version 150. Event traversal now uses only
+typed downward edges: Event action arrays; Action `U16 actionType` plus target
+at offset 2; reciprocal-parent-proven Children arrays for object types 5/6/7/9;
+and the Sound `AkBankSourceData` media id at offset 5. Play (`0x0400`) and
+PlayEvent (`0x2100`) are traversed, while Stop (`0x0100`) and other control
+actions are recorded but not followed. This replaced the former byte-sliding
+u32 scan, which could climb Sound parents or follow incidental property,
+playlist, and switch-map integers into sibling graphs.
+
+The output calls decoded Sound leaves *possible media*, not equivalent options
+or a playback trace. Each leaf retains its Play roots and Random, Sequence,
+Switch/State, Layer, or direct-Sound relation. Multiple Play roots are separate
+logical playback branches, while children below selector containers are
+runtime alternatives; action delay/timing properties are not decoded far
+enough to claim simultaneity. Distinct media ids remain distinct authored
+leaves, while SHA-256 content equivalence identifies byte-identical decoded
+files. A partial typed graph fails closed and is visibly marked partial rather
+than implying silence. Music object types 10-13 remain unsupported typed
+topologies and likewise fail closed.
 
 The current binary also proves that audio is not one flat event namespace.
 `AudioAdapter` separately exposes event posting, states, switches, RTPCs,
@@ -120,7 +129,8 @@ python scripts\build_audio_semantics.py --language CN
 
 It keeps the large media inventory lazy, preserves event/media/physical-file
 identity, exposes exact authored contexts and current-binary runtime types, and
-labels HIRC descendants as runtime-selection candidates.
+groups possible media by semantic context, Play root, selector relation,
+traversal completeness, and decoded-content equivalence.
 The strongest current authored playback joins are SkillData/BuffData audio
 references, Timeline/cutscene audio fields, and AudioDialog-to-lipsync
 `pathStem` associations. We do not yet have a complete runtime receiver,
@@ -158,17 +168,17 @@ resolves to both its SFX and music event keys through
 evidence retained. This is a strong authored cutscene-playback relation; it
 does not turn the timeline into a runtime profiler trace.
 
-Next audio-recovery work should replace byte-sliding descendant discovery with
-version-150 typed Sound/container/music decoding, beginning with the validated
-Sound media/source field, then recover switch/state/random/music branch rules.
-Also retain exact PCK sector and embedded-bank provenance during extraction,
-identify Timeline/native audio receivers and activation paths, and validate
-chronology against a captured game session. Gameplay follow-up should finish
-the partial `EnemyData.AbilitySystemData` mode-tail decoder, connect animation
-clips through controllers instead of filename ownership alone, and recover
-native effect-audio components for the remaining silent templates. Keep source
-WEM ids, authored references, controls, and runtime-selected candidates
-separate in reports and WebUI labels.
+Next audio-recovery work should decode v150 switch-value mappings, Action
+delay/property bundles, and music types 10-13, then connect current music-table
+state/control rows to MusicTrack source media. Also fingerprint PCK inputs for
+cache invalidation, identify Timeline/native audio receivers and activation
+paths, and validate chronology against a captured game session. Gameplay
+follow-up should finish the partial `EnemyData.AbilitySystemData` mode-tail
+decoder, connect animation clips through controllers instead of filename
+ownership alone, and recover native effect-audio components for the remaining
+silent templates. Keep source WEM ids, authored references, control/state
+objects, possible media leaves, and observed live playback separate in reports
+and WebUI labels.
 
 ## Source graph
 
