@@ -113,6 +113,12 @@
       playRoots: "Play roots",
       typedTraversal: "Typed traversal",
       selectorEvidence: "Selector evidence",
+      actionDispatch: "Action dispatch",
+      actionOrdinal: "Action",
+      serializedNoDelay: "no serialized delay",
+      probabilityGate: "probability gate",
+      transitionTime: "transition",
+      fadeCurve: "fade curve",
       uniqueContent: "Unique decoded content",
       equivalentContent: "Content-equivalent leaves",
       rawRecord: "Raw record",
@@ -231,6 +237,12 @@
       playRoots: "Play \u6839",
       typedTraversal: "\u7c7b\u578b\u5316\u904d\u5386",
       selectorEvidence: "\u9009\u62e9\u5668\u8bc1\u636e",
+      actionDispatch: "Action \u6d3e\u53d1",
+      actionOrdinal: "Action",
+      serializedNoDelay: "\u672a\u5e8f\u5217\u5316\u5ef6\u8fdf",
+      probabilityGate: "\u6982\u7387\u95e8",
+      transitionTime: "\u8fc7\u6e21",
+      fadeCurve: "\u6de1\u5165\u66f2\u7ebf",
       uniqueContent: "\u552f\u4e00\u89e3\u7801\u5185\u5bb9",
       equivalentContent: "\u5185\u5bb9\u7b49\u4ef7\u53f6",
       rawRecord: "\u539f\u59cb\u8bb0\u5f55",
@@ -1628,11 +1640,35 @@
     const actions = new Map();
     const containers = new Map();
     const musicNodes = new Map();
+    const actionDetails = [];
     let unresolved = 0;
     for (const evidence of asArray(record?.evidence)) {
+      const dispatch = evidence?.actionDispatchEvidence;
+      if (dispatch && typeof dispatch === "object" && dispatch.timingClass) {
+        actionDetails.push([
+          `${t("actionDispatch")}: ${humanize(dispatch.timingClass)}`,
+          `${formatNumber(dispatch.playbackActionCount || 0)} playback actions`,
+          dispatch.explicitDelayActionCount ? `${formatNumber(dispatch.explicitDelayActionCount)} delayed` : "",
+          dispatch.explicitTransitionActionCount ? `${formatNumber(dispatch.explicitTransitionActionCount)} transitions` : "",
+          dispatch.probabilityGatedActionCount ? `${formatNumber(dispatch.probabilityGatedActionCount)} probability gates` : "",
+        ].filter(Boolean).join(" / "));
+      }
       for (const action of asArray(evidence?.actionEvidence)) {
         const operation = humanize(action?.operation || "unknown action");
         actions.set(operation, (actions.get(operation) || 0) + 1);
+        if (action?.actionParserStatus !== "typedExactV150" || !["play", "playEvent"].includes(action?.operation)) continue;
+        const delay = asArray(action?.delay?.baseValuesMs);
+        const delayRanges = asArray(action?.delay?.modifierRangesMs);
+        const transition = asArray(action?.transition?.baseValuesMs);
+        const probability = asArray(action?.probability?.baseValuesPercent);
+        const detail = [
+          delay.length ? `delay ${delay.join(" / ")} ms` : t("serializedNoDelay"),
+          delayRanges.length ? `delay range ${delayRanges.map((row) => `${row.minimum}-${row.maximum} ms`).join(" / ")}` : "",
+          transition.length ? `${t("transitionTime")} ${transition.join(" / ")} ms` : "",
+          probability.length ? `${t("probabilityGate")} ${probability.join(" / ")}%` : "",
+          action?.fade?.curveLabel ? `${t("fadeCurve")} ${action.fade.curveLabel}` : "",
+        ].filter(Boolean).join(" / ");
+        actionDetails.push(`${t("actionOrdinal")} ${Number(action.eventActionOrdinal || 0) + 1} (${operation}): ${detail}`);
       }
       for (const container of asArray(evidence?.containerEvidence)) {
         const relation = normalize(container?.edgeKind) || "unknown";
@@ -1658,6 +1694,7 @@
     for (const [relation, value] of containers) {
       values.push(`${taxonomyLabel(relation)}: ${formatNumber(value.count)} nodes / ${formatNumber(value.children)} child edges`);
     }
+    for (const detail of actionDetails) values.push(detail);
     for (const [kind, value] of musicNodes) {
       const detail = [
         `${formatNumber(value.count)} nodes`,

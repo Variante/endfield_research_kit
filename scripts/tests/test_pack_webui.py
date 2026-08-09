@@ -89,6 +89,9 @@ class PackWebuiAudioTests(unittest.TestCase):
         self.assertIn('musicTrackSource: "relationMusicSource"', source)
         self.assertIn('asArray(evidence?.musicNodeEvidence)', source)
         self.assertIn('asArray(node?.selectionTypeLabels)', source)
+        self.assertIn('evidence?.actionDispatchEvidence', source)
+        self.assertIn('coDispatchWithAuthoredDelayDifference', (project_root / "scripts" / "build_audio.py").read_text(encoding="utf-8"))
+        self.assertIn('action?.probability?.baseValuesPercent', source)
 
 
 if __name__ == "__main__":
