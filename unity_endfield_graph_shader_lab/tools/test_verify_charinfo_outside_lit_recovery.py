@@ -210,6 +210,30 @@ class LightBinningContractTests(unittest.TestCase):
                 Path("fixture_contract.json"),
             )
 
+    def test_same_frame_canonical_buffer_failure_is_actionable(self) -> None:
+        runtime, _ = self.load_current_contract()
+        resources = runtime["canonical_combined_transport"][
+            "same_frame_reflection_resources"
+        ]
+        evidence = resources["gpu_reports"]["d3d12"]
+        report = json.loads(
+            (verifier.LAB_ROOT / evidence["path"]).read_text(encoding="utf-8")
+        )
+        changed = copy.deepcopy(report)
+        changed["canonicalBufferPreserved"] = False
+        with self.assertRaisesRegex(
+            AssertionError,
+            "CharInfo light-binning validator failed: "
+            "check=gpu_report.d3d12.canonical_buffer_preserved; "
+            "source=fixture_contract.json; expected=True; actual=False",
+        ):
+            verifier.verify_canonical_reflection_frame_gpu_report(
+                resources,
+                changed,
+                "d3d12",
+                Path("fixture_contract.json"),
+            )
+
 
 class HdplsMatrixFormulaContractTests(unittest.TestCase):
     @staticmethod

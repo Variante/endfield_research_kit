@@ -23,7 +23,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string SourceAuditRelativePath =
             "scratch/character_recovery/charinfo_light_binning/audit.json";
         private const string ExpectedSourceAuditSha256 =
-            "2645ce94ea683d6b224928dfcf834c0a05cef4a01060ed081069777533c3977c";
+            "7ad71a66f2c7a76554d8b0e2848995ec9ff63361b404539163c974aa859ef6ad";
 
         private static readonly int LightInputId =
             Shader.PropertyToID("_EndfieldRecoveredLightBinningBuffer");

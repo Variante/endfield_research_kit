@@ -2177,10 +2177,14 @@ expected mip byte-for-byte on repeated runs. The installed managed/native
 producer for the 4,160-byte `ReflectionProbeGlobalData` buffer is also pinned,
 including its four-vector header, reserved global record, 31 local-record
 slots, zero-local-probe count, exact CharInfo sky-SH luminance vector, and the
-32-pixel camera binning/combined byte-address-buffer layout. The lab contains
-a source-derived owner for this exact no-local-probe resource set, but nothing
-constructs or publishes it in the presentation path; it and the original
-pass-0 consumer remain deliberately default-off. The remaining streamed
+32-pixel camera binning/combined byte-address-buffer layout. The compatibility
+pipeline now owns that producer and, only under the existing default-off
+canonical selector and exact `T_hdri_env_char_01` asset gate, co-publishes its
+oct texture/global buffer in the same camera command stream without replacing
+the canonical `_BinningBuffer`. D3D11/D3D12 probes observe both ready flags,
+preserved light/reflection sentinels, exact header words, and the 576x576x32
+texture together; missing or wrong sources clear readiness and fail closed.
+The original pass-0 consumer remains deliberately disabled. The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and
 view-cull survivors, render-graph/subpass state, and a binding-compatible
@@ -2202,6 +2206,7 @@ build_charinfo_presentation_recovery.bat
 verify_charinfo_presentation_recovery.bat
 python tools\verify_charinfo_outside_lit_recovery.py
 verify_recovered_canonical_binning_buffer.bat --all
+verify_recovered_canonical_reflection_frame.bat --all
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```

@@ -1,0 +1,66 @@
+// Readback probe for the default-off same-frame canonical binning plus
+// reflection oct/global publication contract. Diagnostic only.
+
+#pragma kernel ReadFrame
+#pragma target 5.0
+
+ByteAddressBuffer _BinningBuffer;
+Texture2DArray<float4> _ReflectionProbeOctTextureArray;
+
+cbuffer ReflectionProbeGlobalData
+{
+    float4 _EndfieldRecoveredReflectionGlobalData[260];
+};
+
+float _EndfieldRecoveredCanonicalBinningReady;
+float _EndfieldRecoveredReflectionProbeFallbackReady;
+RWStructuredBuffer<uint> _EndfieldRecoveredReflectionFrameReadback;
+
+[numthreads(1, 1, 1)]
+void ReadFrame(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    _EndfieldRecoveredReflectionFrameReadback[0] =
+        asuint(_EndfieldRecoveredCanonicalBinningReady);
+    _EndfieldRecoveredReflectionFrameReadback[1] =
+        asuint(_EndfieldRecoveredReflectionProbeFallbackReady);
+    _EndfieldRecoveredReflectionFrameReadback[2] = _BinningBuffer.Load(0u);
+    _EndfieldRecoveredReflectionFrameReadback[3] =
+        _BinningBuffer.Load(81663u * 4u);
+    _EndfieldRecoveredReflectionFrameReadback[4] =
+        _BinningBuffer.Load(81664u * 4u);
+    _EndfieldRecoveredReflectionFrameReadback[5] =
+        _BinningBuffer.Load(90847u * 4u);
+
+    [unroll]
+    for (uint vectorIndex = 0u; vectorIndex < 4u; ++vectorIndex)
+    {
+        uint4 bits = asuint(_EndfieldRecoveredReflectionGlobalData[vectorIndex]);
+        uint wordBase = 6u + vectorIndex * 4u;
+        _EndfieldRecoveredReflectionFrameReadback[wordBase + 0u] = bits.x;
+        _EndfieldRecoveredReflectionFrameReadback[wordBase + 1u] = bits.y;
+        _EndfieldRecoveredReflectionFrameReadback[wordBase + 2u] = bits.z;
+        _EndfieldRecoveredReflectionFrameReadback[wordBase + 3u] = bits.w;
+    }
+
+    uint width;
+    uint height;
+    uint slices;
+    uint mipCount;
+    _ReflectionProbeOctTextureArray.GetDimensions(
+        0u,
+        width,
+        height,
+        slices,
+        mipCount);
+    _EndfieldRecoveredReflectionFrameReadback[22] = width;
+    _EndfieldRecoveredReflectionFrameReadback[23] = height;
+    _EndfieldRecoveredReflectionFrameReadback[24] = slices;
+    _EndfieldRecoveredReflectionFrameReadback[25] = mipCount;
+
+    uint4 centerBits = asuint(
+        _ReflectionProbeOctTextureArray.Load(int4(288, 288, 0, 0)));
+    _EndfieldRecoveredReflectionFrameReadback[26] = centerBits.x;
+    _EndfieldRecoveredReflectionFrameReadback[27] = centerBits.y;
+    _EndfieldRecoveredReflectionFrameReadback[28] = centerBits.z;
+    _EndfieldRecoveredReflectionFrameReadback[29] = centerBits.w;
+}

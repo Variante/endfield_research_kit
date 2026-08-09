@@ -50,8 +50,12 @@ NPC archetypes are imported as labeled source kits.
   equations for the isolated Overview rig. A default-off raw bridge now
   publishes its exact light words plus the source-closed zero-local-reflection
   tail through canonical `_BinningBuffer`; all 90,848 words at 3840x2160 read
-  back bit-exactly on D3D11/D3D12. Retail light survivors, reflection oct/global
-  co-publication, and pass-0 activation remain open.
+  back bit-exactly on D3D11/D3D12. Under the same default-off selector, the
+  pipeline now co-publishes the exact `T_hdri_env_char_01` reflection oct/global
+  resources in the same camera command stream without overwriting that buffer;
+  both readiness gates, exact header, 576x576x32 texture, and source rejection
+  pass on D3D11/D3D12. Retail target-frame light survivors and pass-0 activation
+  remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
   `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
   of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character

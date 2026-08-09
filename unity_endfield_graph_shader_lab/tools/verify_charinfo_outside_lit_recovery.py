@@ -584,8 +584,9 @@ def verify_light_binning_contract(
             audit["recoveryBoundary"]["canonicalCombinedCapability"],
             (
                 "implemented as a default-off raw ByteAddressBuffer bridge "
-                "with exact light words, zero-local-reflection tail, and four "
-                "installed offsets"
+                "with exact light words, zero-local-reflection tail, four "
+                "installed offsets, and same-frame recovered reflection "
+                "oct/global co-publication"
             ),
         ),
         (
@@ -696,6 +697,130 @@ def verify_canonical_binning_gpu_report(
             f"gpu_report.{api}.fail_closed_gates",
             report["failClosedGates"],
             expected_gates,
+        ),
+        (f"gpu_report.{api}.failures", report["failures"], []),
+    )
+    for check, actual, expected in checks:
+        require_light_binning_value(source, check, actual, expected)
+
+
+def verify_canonical_reflection_frame_gpu_report(
+    resources: dict[str, object],
+    report: dict[str, object],
+    api: str,
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    expected_global_words = [
+        "0x42F00000",
+        "0x42880000",
+        "0x45FF0000",
+        "0x3D000000",
+        "0x44800000",
+        "0x3F800000",
+        "0x3F800000",
+        "0x3F638E39",
+        "0x00000000",
+        "0x3DEC7B90",
+        "0x3D5E9269",
+        "0x3D638E39",
+        "0xBBF76C62",
+        "0x3C476815",
+        "0x3EF1C918",
+        "0x3F8C53BF",
+    ]
+    checks = (
+        (
+            f"gpu_report.{api}.schema",
+            report["schema"],
+            "endfield-recovered-canonical-reflection-frame-v1",
+        ),
+        (f"gpu_report.{api}.valid", report["valid"], True),
+        (f"gpu_report.{api}.graphics_api", report["graphicsApi"], api),
+        (f"gpu_report.{api}.default_off", report["defaultOff"], True),
+        (
+            f"gpu_report.{api}.source",
+            (
+                report["sourceCubemapAssetPath"],
+                report["sourcePayloadSha256"],
+            ),
+            (
+                resources["source_cubemap_asset_path"],
+                resources["source_payload_sha256"],
+            ),
+        ),
+        (
+            f"gpu_report.{api}.source_gates",
+            (
+                report["missingSourceRejected"],
+                report["missingSourceDiagnostic"],
+                report["wrongSourceRejected"],
+                report["wrongSourceDiagnostic"],
+            ),
+            (
+                True,
+                "the exact T_hdri_env_char_01 Cubemap is not bound",
+                True,
+                "the source Cubemap is not the exact T_hdri_env_char_01 asset",
+            ),
+        ),
+        (
+            f"gpu_report.{api}.publication_ready",
+            (
+                report["recoveredPublicationReturnedReady"],
+                report["canonicalReadyObserved"],
+                report["reflectionReadyObserved"],
+            ),
+            (True, True, True),
+        ),
+        (
+            f"gpu_report.{api}.canonical_buffer_preserved",
+            report["canonicalBufferPreserved"],
+            True,
+        ),
+        (
+            f"gpu_report.{api}.canonical_sentinels",
+            report["canonicalSentinelWords"],
+            [
+                "0xA5C31F29",
+                "0x27AF0A66",
+                "0x00000000",
+                "0x00000000",
+            ],
+        ),
+        (
+            f"gpu_report.{api}.reflection_global_data",
+            (
+                report["reflectionGlobalDataMatches"],
+                report["expectedGlobalWords"],
+                report["actualGlobalWords"],
+            ),
+            (True, expected_global_words, expected_global_words),
+        ),
+        (
+            f"gpu_report.{api}.oct_texture",
+            (
+                report["octDimensionsMatch"],
+                report["octWidth"],
+                report["octHeight"],
+                report["octSlices"],
+                report["octMipCount"],
+                report["octCenterFiniteNonzero"],
+                report["octCenterBits"],
+            ),
+            (
+                True,
+                576,
+                576,
+                32,
+                10,
+                True,
+                [
+                    "0x3F67A000",
+                    "0x3F67A000",
+                    "0x3F67A000",
+                    "0x00000000",
+                ],
+            ),
         ),
         (f"gpu_report.{api}.failures", report["failures"], []),
     )
@@ -1979,6 +2104,110 @@ def verify_selected_resolver_binding_contract() -> None:
                 "Exiting batchmode successfully now!",
             ],
         )
+    reflection_frame = canonical_transport["same_frame_reflection_resources"]
+    assert reflection_frame["reflection_ready_property"] == (
+        "_EndfieldRecoveredReflectionProbeFallbackReady"
+    )
+    for path_key, hash_key in (
+        ("runtime_pipeline_path", "runtime_pipeline_sha256"),
+        ("reflection_owner_path", "reflection_owner_sha256"),
+        ("lighting_volume_path", "lighting_volume_sha256"),
+        ("presentation_controller_path", "presentation_controller_sha256"),
+        ("scene_setup_path", "scene_setup_sha256"),
+        ("cubemap_importer_path", "cubemap_importer_sha256"),
+        ("probe_path", "probe_sha256"),
+        ("verifier_path", "verifier_sha256"),
+        ("wrapper_path", "wrapper_sha256"),
+    ):
+        require_hash(
+            LAB_ROOT / reflection_frame[path_key],
+            reflection_frame[hash_key],
+        )
+    require_tokens(
+        LAB_ROOT / reflection_frame["runtime_pipeline_path"],
+        [
+            "recoveredReflectionProbeFallback.ResetPublication(commandBuffer);",
+            "bool recoveredCanonicalBinningReady =",
+            ".PrepareAndPublishRecoveredResources(",
+            "recoveredLightBinning.DisableCanonicalPublication(",
+            "Recovered canonical CharInfo binning + reflection",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / reflection_frame["reflection_owner_path"],
+        [
+            "public sealed class EndfieldRecoveredReflectionProbeFallback",
+            'Shader.PropertyToID("_EndfieldRecoveredReflectionProbeFallbackReady")',
+            "public bool PrepareAndPublishRecoveredResources(",
+            'source.name,\n                    "T_hdri_env_char_01"',
+            "if (publishLegacyZeroBinningBuffer)",
+            "commandBuffer.SetGlobalFloat(ReadyId, 1.0f);",
+            "internal void ResetPublication(CommandBuffer commandBuffer)",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / reflection_frame["lighting_volume_path"],
+        ["public Cubemap environmentReflectionCubemap;"],
+    )
+    require_tokens(
+        LAB_ROOT / reflection_frame["presentation_controller_path"],
+        [
+            "Cubemap environmentReflectionCubemap =",
+            "characterLighting.environmentReflectionCubemap =",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / reflection_frame["scene_setup_path"],
+        [
+            "volume.environmentReflectionCubemap =",
+            "LoadRecoveredEnvironmentReflectionCubemap()",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / reflection_frame["cubemap_importer_path"],
+        [
+            "BindEnvironmentReflectionIntoGeneratedScenes(imported);",
+            "volume.environmentReflectionCubemap = cubemap;",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / reflection_frame["probe_path"],
+        [
+            "ByteAddressBuffer _BinningBuffer;",
+            "Texture2DArray<float4> _ReflectionProbeOctTextureArray;",
+            "_EndfieldRecoveredCanonicalBinningReady",
+            "_EndfieldRecoveredReflectionProbeFallbackReady",
+            "_BinningBuffer.Load(90847u * 4u);",
+        ],
+    )
+    assert reflection_frame["selector_on_off_pixel_oracle"] == {
+        "png_sha256": (
+            "59902c424de630a496364d57e404a5a72"
+            "bcbcc42712bf7ef6935900d7500cac3"
+        ),
+        "pixel_identical": True,
+    }
+    for api, evidence in reflection_frame["gpu_reports"].items():
+        report_path = LAB_ROOT / evidence["path"]
+        require_hash(report_path, evidence["sha256"])
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        verify_canonical_reflection_frame_gpu_report(
+            reflection_frame,
+            report,
+            api,
+            BINDING_CONTRACT_PATH,
+        )
+        require_unity_log(
+            LAB_ROOT / evidence["log_path"],
+            evidence["log_sha256"],
+            [
+                "Recovered canonical reflection frame validation passed:",
+                "canonical sentinels preserved",
+                "source gates=2/2",
+                f"api={api}",
+                "Exiting batchmode successfully now!",
+            ],
+        )
     reflection_runtime = contract["reflection_probe_runtime"]
     assert reflection_runtime["status"].startswith("binary-source-closed")
     assert reflection_runtime["published"] is False
@@ -1995,8 +2224,7 @@ def verify_selected_resolver_binding_contract() -> None:
         LAB_ROOT / reflection_runtime["runtime_producer_path"]
     ).read_text(encoding="utf-8")
     for token in (
-        "Nothing constructs this class",
-        "internal sealed class EndfieldRecoveredReflectionProbeFallback",
+        "public sealed class EndfieldRecoveredReflectionProbeFallback",
         "private const int TileSize = 32;",
         "private const int LightSliceCount = 2048;",
         "private const int LightWordsPerBin = 8;",
@@ -2004,7 +2232,9 @@ def verify_selected_resolver_binding_contract() -> None:
         "private const int ReflectionWordsPerBin = 1;",
         "private const int OctPhysicalSize =",
         "private const int GlobalBufferBytes = 4160;",
-        "internal bool PrepareAndPublishDiagnostic(",
+        "public bool PrepareAndPublishRecoveredResources(",
+        "if (publishLegacyZeroBinningBuffer)",
+        "internal void ResetPublication(CommandBuffer commandBuffer)",
         "float tileHeightAtNear = nearHeight * TileSize / tileY;",
         "ComputeBufferType.Constant",
         "commandBuffer.SetGlobalConstantBuffer(",
