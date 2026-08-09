@@ -1782,6 +1782,40 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   line-height: 1.35;
 }
 
+.mp-story-receiver-context {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 2px;
+  padding: 4px 6px;
+  border-left: 2px solid var(--mp-client);
+  background: rgba(54, 127, 132, 0.055);
+  overflow-wrap: anywhere;
+}
+
+.mp-story-receiver-context strong {
+  color: var(--mp-client);
+  font-size: 8px;
+}
+
+.mp-story-receiver-context-row {
+  display: grid;
+  gap: 1px;
+  color: var(--muted);
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+.mp-story-receiver-context-row code {
+  color: var(--text);
+  font-size: 7.5px;
+}
+
+.mp-story-receiver-context > small {
+  color: var(--muted);
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
 .mp-story-connection-provenance {
   margin: 8px 0;
   padding: 7px 8px;

@@ -355,6 +355,143 @@ def _receiver_story_context(
     }
 
 
+def _receiver_story_context_index(
+    report: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a compact Story-key index for every exact receiver placement.
+
+    This is a presentation join only.  It is keyed by the serialized
+    ``(levelId, scriptId, storyKey)`` shape recovered from native receiver
+    rows, never by a hand-maintained Story/object list.  The index keeps the
+    exact source files and binary boundary beside unassigned Story cards while
+    explicitly retaining the unresolved ownership/order status.
+    """
+    contexts: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for row in report.get("rows") or []:
+        if not isinstance(row, dict):
+            continue
+        level_id = safe_text(row.get("levelId"))
+        script_id = safe_text(row.get("scriptId"))
+        if not level_id or not script_id:
+            continue
+        story_keys = sorted({
+            safe_text(key)
+            for key in row.get("storyKeys") or []
+            if safe_text(key)
+        })
+        if not story_keys:
+            continue
+        related_files = _receiver_related_files(row)
+        context_boundary = (
+            "The exact serialized native receiver path and activation-frontier "
+            "files are attached for this Story key. They prove receiver "
+            "availability/control shape only; they do not prove mission or "
+            "quest ownership, event firing, branch selection, or Story order."
+        )
+        for story_key in story_keys:
+            key = (story_key, level_id, script_id)
+            context = contexts.setdefault(
+                key,
+                {
+                    "relation": "native_receiver_story_context",
+                    "storyKey": story_key,
+                    "levelId": level_id,
+                    "scriptId": script_id,
+                    "storyKinds": [],
+                    "eventNames": [],
+                    "listenerHeaderLocalIds": [],
+                    "receiverNodeCount": 0,
+                    "receiverToStoryPlacementCount": 0,
+                    "activationClass": safe_text(row.get("activationClass")),
+                    "missionOwnerStatus": safe_text(
+                        row.get("missionOwnerStatus")
+                    ) or "unresolved",
+                    "relatedOriginalFiles": related_files,
+                    "ownership": False,
+                    "activation": False,
+                    "storyPlayback": False,
+                    "orderEvidence": False,
+                    "evidenceBoundary": context_boundary,
+                },
+            )
+            context["storyKinds"] = sorted({
+                *context.get("storyKinds", []),
+                *(
+                    safe_text(kind)
+                    for kind in row.get("storyKinds") or []
+                    if safe_text(kind)
+                ),
+            })
+            context["eventNames"] = sorted({
+                *context.get("eventNames", []),
+                *(
+                    safe_text(name)
+                    for name in row.get("eventNames") or []
+                    if safe_text(name)
+                ),
+            })
+            context["listenerHeaderLocalIds"] = sorted({
+                *context.get("listenerHeaderLocalIds", []),
+                *(
+                    value
+                    for value in row.get("listenerHeaderLocalIds") or []
+                    if isinstance(value, int)
+                ),
+            })
+            context["receiverNodeCount"] += int(
+                row.get("receiverNodeCount") or 0
+            )
+            context["receiverToStoryPlacementCount"] += int(
+                row.get("receiverToStoryPlacementCount") or 0
+            )
+            file_map = {
+                (
+                    safe_text(item.get("sourceFile")),
+                    safe_text(item.get("sha256")),
+                ): item
+                for item in context.get("relatedOriginalFiles") or []
+                if isinstance(item, dict) and safe_text(item.get("sourceFile"))
+            }
+            file_map.update({
+                (
+                    safe_text(item.get("sourceFile")),
+                    safe_text(item.get("sha256")),
+                ): item
+                for item in related_files
+                if isinstance(item, dict) and safe_text(item.get("sourceFile"))
+            })
+            context["relatedOriginalFiles"] = [
+                file_map[file_key]
+                for file_key in sorted(file_map)
+            ]
+
+    rows = [contexts[key] for key in sorted(contexts)]
+    return {
+        "schema": "nativeReceiverStoryContextIndex.v1",
+        "rows": rows,
+        "counts": {
+            "storyKeys": len({row["storyKey"] for row in rows}),
+            "contextRows": len(rows),
+            "relatedOriginalFiles": len({
+                (
+                    safe_text(item.get("sourceFile")),
+                    safe_text(item.get("sha256")),
+                )
+                for row in rows
+                for item in row.get("relatedOriginalFiles") or []
+                if isinstance(item, dict) and safe_text(item.get("sourceFile"))
+            }),
+        },
+        "evidenceBoundary": (
+            "This index joins exact serialized native receiver placements to "
+            "their Story keys for inspection. It is non-owning context: no row "
+            "adds mission ownership, activation, branch, completion, or Story "
+            "order evidence."
+        ),
+        "usesOcrOrManualOrder": False,
+    }
+
+
 def _original_file_kind(source_file: str) -> str:
     normalized = source_file.replace("\\", "/")
     for marker, kind in (
@@ -369,6 +506,32 @@ def _original_file_kind(source_file: str) -> str:
         if marker in normalized:
             return kind
     return "original_game_data"
+
+
+_SOURCE_FILE_HASH_CACHE: dict[Path, str] = {}
+
+
+def _source_file_sha256(source_file: str) -> str:
+    """Hash an exported original-data path when it is present.
+
+    Receiver reports are also used with reduced fixture corpora, so a missing
+    fixture path remains a context row with an empty hash rather than making
+    publication fail.  The root and export boundary are explicit; arbitrary
+    WebUI or scratch paths are never treated as original bytes.
+    """
+    normalized = safe_text(source_file).replace("\\", "/")
+    if not normalized.startswith("export_full/"):
+        return ""
+    path = (ROOT / Path(normalized)).resolve()
+    export_root = (ROOT / "export_full").resolve()
+    if not path.is_file() or not path.is_relative_to(export_root):
+        return ""
+    cached = _SOURCE_FILE_HASH_CACHE.get(path)
+    if cached:
+        return cached
+    digest = hashlib.sha256(read_bytes_cached(path)).hexdigest()
+    _SOURCE_FILE_HASH_CACHE[path] = digest
+    return digest
 
 
 def collect_related_original_files(*values: Any) -> list[dict[str, str]]:
@@ -405,6 +568,11 @@ def collect_related_original_files(*values: Any) -> list[dict[str, str]]:
             "kind": _original_file_kind(path),
             "sourceFile": path,
             "relationship": "exact_typed_activation_frontier_context",
+            **(
+                {"sha256": digest}
+                if (digest := _source_file_sha256(path))
+                else {}
+            ),
         }
         for path in sorted(paths)
     ]
@@ -3820,6 +3988,12 @@ def publish_to_pipeline_index(
     coverage = index_payload.get("storyCoverage")
     if not isinstance(coverage, dict):
         return 0
+    # Keep a compact Story-key lookup beside the full receiver nodes.  The
+    # WebUI uses this to show exact native receiver files on unassigned Story
+    # cards without copying the entire activation contract into every card.
+    coverage["nativeReceiverStoryContextIndex"] = _receiver_story_context_index(
+        report
+    )
     row_index = {
         (safe_text(row.get("levelId")), safe_text(row.get("scriptId"))): row
         for row in report.get("rows") or []

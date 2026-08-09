@@ -1288,6 +1288,54 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ],
         )
 
+    def test_pipeline_publishes_generic_story_receiver_context_index(self) -> None:
+        index = {
+            "storyCoverage": {
+                "missionlessNativeRuntimeNodes": [],
+            }
+        }
+        report = {
+            "rows": [{
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "receiverNodeCount": 2,
+                "receiverToStoryPlacementCount": 3,
+                "storyKeys": ["black_fixture_1", "dlg_fixture_1"],
+                "storyKinds": ["black", "dlg"],
+                "eventNames": ["ScriptEvent_OnCustomEvent"],
+                "listenerHeaderLocalIds": [11],
+                "activationClass": "manual_start_active_phase_receiver",
+                "relatedOriginalFiles": [{
+                    "kind": "levelscript",
+                    "sourceFile": "source/1001.json",
+                    "relationship": "exact receiver",
+                    "sha256": "a" * 64,
+                }],
+            }],
+        }
+
+        self.assertEqual(0, frontier.publish_to_pipeline_index(index, report))
+        context_index = index["storyCoverage"][
+            "nativeReceiverStoryContextIndex"
+        ]
+        self.assertEqual("nativeReceiverStoryContextIndex.v1", context_index["schema"])
+        self.assertEqual(2, context_index["counts"]["storyKeys"])
+        self.assertEqual(2, context_index["counts"]["contextRows"])
+        self.assertEqual(
+            {"black_fixture_1", "dlg_fixture_1"},
+            {row["storyKey"] for row in context_index["rows"]},
+        )
+        self.assertTrue(all(
+            row["ownership"] is False
+            and row["activation"] is False
+            and row["orderEvidence"] is False
+            for row in context_index["rows"]
+        ))
+        self.assertEqual(
+            "source/1001.json",
+            context_index["rows"][0]["relatedOriginalFiles"][0]["sourceFile"],
+        )
+
     def test_publish_attaches_exact_mission_levelscript_context_without_edge(
         self,
     ) -> None:

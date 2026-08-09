@@ -60,6 +60,7 @@ Latest CN reports:
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
 | Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
+| Unowned receiver Story-key context index | 156 Story keys / 170 exact `(Story, level, script)` contexts / 143 distinct related original files; every current LevelScript, LevelData, gameplay-config, table, binary, and metadata path is SHA-256 validated; context only, with ownership, activation, branching, and order flags false |
 | Receiver Story context projection | 34 mission payloads / 96 exact receiver-to-Story intersections / 156 mission Story keys; every row retains compact binary receiver contracts and related original-file hashes; all ownership, activation, playback, and order flags remain false |
 | Story-order override/OCR cross-reference | 1,524 strict source edges across 216 source missions; manual override 940 agree / 253 disagree / 331 uncovered; OCR 406 / 10 / 1,108; 12 conflicts; all 216 pipeline destinations carry the per-mission diagnostic block, including one graph-neutral source-order shell |
 | Source-order original-file attachment | 281 pipeline missions carry 3,593 hash-validated source-order related-file records across 1,918 distinct originals; 215 of the 216 cross-reference destinations have at least one original file, while `map01_lv002_env` remains generated-only; binary/metadata files are context authority, never ownership or order evidence |
@@ -1578,10 +1579,13 @@ groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
    161 runtime receiver nodes and 186 receiver-to-Story placements. Twenty-seven
    of those Story keys now have exact Encounter-controller and related-file
    context, but remain unowned. The general activation-frontier publisher now
-   attaches 237 placements of 141 distinct authoritative LevelScript,
+   attaches 427 placements of 143 distinct authoritative LevelScript,
    LevelData, MissionRuntime, SpawnerConfig, gameplay-config, and table files
    found recursively in the typed evidence; these are related context, not
-   inferred owners. Two additional generic context rows attach the exact
+   inferred owners. A corpus-generated Story-key index also publishes all 156
+   keys as 170 exact `(Story, level, script)` contexts with those original-file
+   hashes, including every playback-bearing black-screen gap. Two additional
+   generic context rows attach the exact
    mission-named LevelData receiver hosts for `e9m3`/`cutscene_e9m3_2` and
    `e3m6`/`cutscene_e3m5_3`; the filename token plus validated member-22
    dictionary still do not prove activation, ownership, playback, branch
@@ -1592,8 +1596,9 @@ groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
    The strict-order cross-reference publishes `eny_0052_palesent` as a
    graph-neutral source-order shell because its original Story/LevelScript data
    has no MissionRuntime payload; this is not inferred ownership.
-2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
-   current-build playback consumer; five have playback but no static owner.
+2. **Black screens:** 64 remain unassigned. Fifty-eight are definition-only
+   without a current-build playback consumer; five have exact native playback
+   but no static owner, and one retains unresolved serialized containment.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
    character, and other missions have no actionable core-isolated files. Missing
