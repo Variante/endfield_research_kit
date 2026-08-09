@@ -50,6 +50,14 @@ NPC archetypes are imported as labeled source kits.
   D3D11/D3D12 (640/640 words). Cookie-bearing or non-isolated frames fail
   closed; non-empty retail atlas history, pixels, transforms, and settled
   whole-scene values still require capture.
+- Deferred binding 38 now has its native `HGHDPLSCharacterShadowManager`
+  owner, per-frame reset, 3,568-byte reflected layout, push-pass packing, and
+  selected `.y`-only consumer closed. Inactive frames clear all 56 HDPLS
+  channel selectors, proving the selected resolver falls back to the punctual
+  atlas. Do not publish a full zero fixture: matrices/params persist, trailing
+  values are frame-derived, and the native callback requests 3,552 bytes while
+  writing the reflected final float4 at byte 3,552. Capture the allocator-
+  returned size and settled payload immediately before its global-buffer bind.
 
 ## Main rendering gap
 
