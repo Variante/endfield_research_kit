@@ -2708,6 +2708,52 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }],
         )
 
+    def test_story_branch_related_files_collect_singular_source_file_shape(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "dlg_branch.json"
+            source.write_bytes(b"singular-source")
+            related = pipeline._story_branch_related_original_files({
+                "mission": "singular_branch_source",
+                "branches": {
+                    "dialogLineOptions": [{
+                        "outcomesByOption": {
+                            "option_a": [{
+                                "sourceFile": str(source),
+                            }],
+                        },
+                    }],
+                },
+            })
+
+        self.assertEqual(
+            related,
+            [{
+                "kind": "original_authored_source",
+                "sourceFile": str(source).replace("\\", "/"),
+                "sha256": hashlib.sha256(b"singular-source").hexdigest(),
+                "relationship": "authored_story_branch_source_file",
+            }],
+        )
+
+    def test_story_branch_related_files_validate_singular_source_hash(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "dlg_branch.json"
+            source.write_bytes(b"singular-source")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"validator=story_branch_original_files gate=sourceHash "
+                r"mission=singular_branch_hash",
+            ):
+                pipeline._story_branch_related_original_files({
+                    "mission": "singular_branch_hash",
+                    "branches": {
+                        "dialogLineOptions": [{
+                            "sourceFile": str(source),
+                            "sourceSha256": "0" * 64,
+                        }],
+                    },
+                })
+
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

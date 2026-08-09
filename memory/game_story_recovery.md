@@ -63,7 +63,7 @@ Latest CN reports:
 | Receiver Story context projection | 34 mission payloads / 96 exact receiver-to-Story intersections / 156 mission Story keys; every row retains compact binary receiver contracts and related original-file hashes; all ownership, activation, playback, and order flags remain false |
 | Story-order override/OCR cross-reference | 1,524 strict source edges across 216 source missions; manual override 940 agree / 253 disagree / 331 uncovered; OCR 406 / 10 / 1,108; 12 conflicts; all 216 pipeline destinations carry the per-mission diagnostic block, including one graph-neutral source-order shell |
 | Source-order original-file attachment | 281 pipeline missions carry 3,593 hash-validated source-order related-file records across 1,918 distinct originals; 215 of the 216 cross-reference destinations have at least one original file, while `map01_lv002_env` remains generated-only; binary/metadata files are context authority, never ownership or order evidence |
-| Authored Story-branch source catalog | 265 pipeline missions carry 2,708 hash-validated branch/validation/context-file records across 2,206 distinct originals; normalized `relatedOriginalFiles` rows are now retained alongside source paths, exposing the original binary/metadata authority wherever a branch producer cited it. Seven graph-neutral Story-branch shells are published; branch-source files remain definition context, never chronology, activation, or ownership evidence |
+| Authored Story-branch source catalog | 275 pipeline missions carry 3,242 hash-validated branch/validation/context-file records across 2,737 distinct originals; the collector walks both plural and singular source-file shapes plus normalized `relatedOriginalFiles` rows, exposing original DialogTree, LevelScript, MissionRuntime, binary, and metadata files wherever authored branch evidence cites them. Seven graph-neutral Story-branch shells are published; branch-source files remain definition context, never chronology, activation, or ownership evidence |
 | Authored mission-to-LevelScript task dependencies | 2 exact `(level, script, task)` tuples across 2 missions; 0 unresolved; each joined to MissionRuntime, LevelScriptData, and ScriptTaskExtraInfoTable |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 | Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; the 174-type managed mission/quest census finds 2 reviewed cross-system callers and 0 mission+LevelScript signatures; its general callable-carrier pass resolves 13 fields, 5 typed entry methods, and 5 family-local native bindings with 0 mission+LevelScript bindings |
@@ -235,8 +235,8 @@ in five payloads.
   file records across three distinct originals (LevelScript in two evidence
   roles, GameAssembly, and metadata). The attachment pass also catalogs every
   validated original file named by strict source-order evidence (and the exact
-  MissionRuntime source when present) on the mission card: 275 missions, 3,574
-  records, and 1,913 distinct files. The strict source-order destination for
+  MissionRuntime source when present) on the mission card: 281 missions, 3,593
+  records, and 1,918 distinct files. The strict source-order destination for
   `map01_lv002_env` remains generated-only, but its authored branch records now
   attach three hash-validated DialogTree TextAssets as definition context. The
   same catalog retains bounded branch-validation sources, including the
