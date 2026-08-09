@@ -2222,7 +2222,7 @@
       "set": 3,
       "binding": 34,
       "size": 11440,
-      "status": "source-closed layout plus native four-section allocation/copy/bind transport, punctual-atlas allocation/binding/default sizing, and pinned Unity/D3D12 physical-format resolution; settled punctual payload and atlas texels remain capture-only",
+      "status": "source-closed layout plus native four-section allocation/copy/bind transport, punctual-atlas allocation/binding/default sizing, pinned Unity/D3D12 physical-format resolution, and exact cache-slot/redraw scheduling; settled punctual payload and atlas texels remain capture-only",
       "source_metadata_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/ShadowReceiver.fragment.metadata.json",
       "source_metadata_sha256": "2a3136eec2cae762ac5c89cc56e8891457cf0547b23b53a48a250934e71ac533",
       "evidence": [
@@ -2238,6 +2238,8 @@
         "the matching Punctual Shadowmap RTHandle uses the native N/T-dependent atlas size, one Tex2D slice, Depth16, R8G8B8A8_SRGB numeric format, Point/Clamp, no mip/UAV/MSAA, and isShadowMap=true",
         "HGSettingParameters constructs the punctual defaults as enabled, T=512, force-cull distance 200, environment/movable dynamic caps 6/2, and screen-size minimum 0.001; the manager sums N=8 and therefore requests 3072x2048 before any runtime override",
         "the exact 3072x2048 request resolves to D16_UNorm on the pinned Unity 2022.3.62f3 D3D12 backend; raw depth loads, comparison samples, reversed-Z endpoints, and an intermediate value's exact 16-bit quantization execute successfully",
+        "the static cache has 40 exact hierarchical slots (12 T, 12 T/2, 16 T/4); dynamic casters use global slot 40+i and tile (4+floor(i/4), i mod 4), point lights construct face indices 0..5, and spot-like lights use index 0",
+        "unchanged static caches reuse depth, at most one prioritized static allocation/migration redraw runs per frame, allocation pressure evicts the oldest lastVisitedTime at the requested level, and every selected dynamic caster redraws each frame",
         "the enabled path imports that RTHandle into RenderGraph and b__49_2 binds its TextureHandle as _PunctualLightShadowTexV2; the disabled path uses the exact HGRenderGraphDefaultResources.defaultShadowTexture field"
       ],
       "native_producer": {
@@ -2271,6 +2273,18 @@
         "atlas_descriptor_probe_sha256": "b2f3ee0b1d1394ac9f03522b0423c85b25659e9ebc34238a098ad52c2ca42272",
         "atlas_descriptor_probe_source_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldPunctualShadowAtlasDescriptorBatchProbe.cs",
         "atlas_descriptor_probe_source_sha256": "ebeb9c8b6f13055825bb19a8f9b25663bdf10a2c525fb9f99106eb34bf052014",
+        "cache_audit_path": "scratch/reverse_engineering/punctual_shadow_cache/cache_audit.json",
+        "cache_audit_sha256": "e6729fe5a8ca2e8c85243a161deb4310eadb53fd4da138ebf8be9a372f6b91be",
+        "cache_auditor_path": "scratch/reverse_engineering/punctual_shadow_cache/audit_punctual_shadow_cache.py",
+        "cache_auditor_sha256": "5ae06e1db804b515d7a930e24f5617647a53af7f84d6fb7997e287b737fdd9a4",
+        "cache_disassembler_path": "scratch/reverse_engineering/punctual_shadow_cache/disassemble_punctual_shadow_cache.py",
+        "cache_disassembler_sha256": "37fec6fc9d761f214f44843c5a48b8c03edcebfafd95eae1d7d0f569360e03eb",
+        "cache_disassembly_path": "scratch/reverse_engineering/punctual_shadow_cache/cache_disassembly.json",
+        "cache_disassembly_sha256": "a5f21d255844f1e98e226f1b5cbb6b88849630712922081fd4f2a8b5e7541e85",
+        "cache_metadata_path": "scratch/reverse_engineering/punctual_shadow_cache/cache_metadata.json",
+        "cache_metadata_sha256": "a25374faf11c46848eda1e56d0e25365bebaac633a9d351a4eb18ae1b4edd867",
+        "cache_native_map_path": "scratch/reverse_engineering/punctual_shadow_cache/cache_native.json",
+        "cache_native_map_sha256": "71ae3b158326c35afcdce23258ecf1e39edd74ae721ea505944a7414851d867a",
         "owner": "HG.Rendering.Runtime.HGShadowConstantBufferUtils",
         "frame_writer_owner": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2",
         "max_shadow_caster_count": 56,
@@ -2281,6 +2295,10 @@
         "setting_defaults": "punctual shadows enabled; T=512; force-cull distance=200; environment/movable dynamic caps=6/2; screen-size minimum=0.001 (manager stores its square); N=8 derives a 3072x2048 atlas before runtime overrides",
         "atlas_descriptor": "one Tex2D slice; Depth16; R8G8B8A8_SRGB numeric format; Point/Clamp; no mip, UAV, or MSAA; isShadowMap=true",
         "pinned_d3d12_physical_resolution": "Unity 2022.3.62f3 D3D12 resolves the exact default request to D16_UNorm; raw/comparison sampling, reversed-Z 1/0 endpoints, and exact D16 quantization are GPU-verified",
+        "static_cache_layout": "40 slots: level 0 absolute 0..11 at T, level 1 absolute 12..23 at T/2, level 2 absolute 24..39 at T/4; exact 16-entry RECT_OFFSETS nest each smaller level in the prior lower-right remainder",
+        "dynamic_slot_layout": "dynamic caster i uses global slot/ShadowData row 40+i and atlas rect x=(4+floor(i/4))*T, y=(i mod 4)*T, width=height=T; default N=8 occupies rows 40..47",
+        "caster_face_mapping": "LightCaster.index is the point-light cube face: point lights construct indices 0..5; spot-like lights construct index 0 only",
+        "cache_redraw_policy": "unchanged static entries reuse cached depth; one request per frame prioritizes LargeChunkToSmallChunk over SmallChunkToLargeChunk over AllocNewChunk; migrations allocate target then free source; allocation failure evicts the oldest lastVisitedTime at the requested level; dynamic casters redraw every frame",
         "atlas_enabled_binding": "imports RTHandle this+0x58, converts the pass TextureHandle, and binds _PunctualLightShadowTexV2 in b__49_2",
         "atlas_disabled_binding": "copies HGRenderGraphDefaultResources.defaultShadowTexture at this+0x100 and binds it in b__49_1",
         "size_bytes": 11440,
@@ -2288,8 +2306,8 @@
         "punctual_section_size_bytes": 6144,
         "selected_read_span": "bytes 1024..6415",
         "publication_policy": "fail closed; no target-frame ShadowData fixture is published",
-        "capture_boundary": "capture shadowData bytes 1024..7167 and the matching physical atlas in b__49_2 immediately before SetGlobalConstantBuffer at VA 0x189b57155",
-        "remaining_boundary": "runtime-overridden target N/T (if different from constructor defaults), target-client physical-resource confirmation, target-frame atlas texels/cache allocation, punctual matrices/parameters/rectangles/texel size, and index mapping require one matching capture"
+        "capture_boundary": "capture shadowData bytes 1024..7167 and the matching physical atlas in b__49_2 immediately before SetGlobalConstantBuffer at VA 0x189b57155; record the static/dynamic LightCaster arrays and cache request fields in the same frame",
+        "remaining_boundary": "runtime-overridden target N/T (if different from constructor defaults), live selected caster membership, target-client physical-resource confirmation, target-frame atlas texels, and matching punctual matrices/parameters/rectangles/texel size require one matching capture"
       }
     },
     {

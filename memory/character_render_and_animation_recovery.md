@@ -61,10 +61,15 @@ NPC archetypes are imported as labeled source kits.
   distance `200`, and screen minimum `0.001`; the manager derives `N=8` and
   `3072x2048` before runtime overrides. The exact request resolves to
   `D16_UNorm` on pinned Unity 2022.3.62f3 D3D12; raw/comparison sampling,
-  reversed-Z endpoints, and exact D16 quantization pass. Overridden target
-  `N/T`, target-client resource confirmation, texels/cache allocation, and
-  matching b34 values still require one capture immediately before
-  `0x189b57155`.
+  reversed-Z endpoints, and exact D16 quantization pass. Cache population is
+  now binary-closed too: static rows 0..39 are nested 12/12/16 slots at
+  `T`/`T/2`/`T/4`; dynamic caster `i` uses row `40+i` and tile
+  `(4+floor(i/4), i mod 4)*T`; point/spot indices are 0..5/0. Unchanged static
+  depth is reused, only one prioritized static allocation/migration redraw can
+  run per frame, same-level pressure evicts the oldest visit, and dynamic rows
+  redraw every frame. Overridden target `N/T`, live caster membership, target-
+  client resource confirmation, atlas texels, and matching b34 values still
+  require one capture immediately before `0x189b57155`.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off

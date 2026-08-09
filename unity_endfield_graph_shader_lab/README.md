@@ -2006,10 +2006,19 @@ runtime setting override. The exact request also GPU-resolves to `D16_UNorm`
 on the pinned Unity 2022.3.62f3 D3D12 backend; raw depth loads, comparison
 samples, reversed-Z endpoints, and an intermediate value's exact D16
 quantization pass. Re-run this check with
-`probe_punctual_shadow_atlas_descriptor.bat`. A matching capture immediately
-before `0x189b57155` is still required for overridden target `N/T`, target-
-client resource confirmation, texels/cache allocation, and the 6,144-byte
-section. Binding 37 now has its native
+`probe_punctual_shadow_atlas_descriptor.bat`. The binary cache audit now closes
+the atlas population rules too. Static cache slots 0..39 form three nested
+levels: 12 at `T`, 12 at `T/2`, then 16 at `T/4`. Dynamic caster `i` uses
+global slot/ShadowData row `40+i` and tile
+`(4+floor(i/4), i mod 4)*T`; point lights construct face indices 0..5 and
+spot-like lights index 0. Unchanged static slots reuse depth, while at most one
+static allocation/migration redraw runs per frame; its priority is large-to-
+small, small-to-large, then new allocation. Allocation pressure evicts the
+oldest `lastVisitedTime` at the requested level, whereas every selected dynamic
+caster redraws each frame. A matching capture immediately before `0x189b57155`
+is still required for overridden target `N/T`, live caster membership, target-
+client resource confirmation, atlas texels, and the matching 6,144-byte section.
+Binding 37 now has its native
 `HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
 closed. A default-off publisher emits the exact all-zero buffer only for the
@@ -3190,7 +3199,8 @@ Skin/Cloth/Hair/Eye diagnostic binding, but mixed material-reference results
 and unrecovered retail surface ownership prevent global promotion. The lab now
 executes all 14 active character-shadow slots (the shader ABI retains 15), but
 still lacks the generic ECS backend/live caster census, complete client
-consumption, and full-client punctual visible-light/cache-slot population,
+consumption, and target-frame punctual visible-light/caster membership plus
+physical atlas contents,
 capsule visibility-SH and generic scene-R screen-space shadow resolve, full pre-depth/stencil
 schedule, irradiance-volume sampling, the native arbitrary-scene light
 candidate list and full eight-word camera-cluster population (pass-0

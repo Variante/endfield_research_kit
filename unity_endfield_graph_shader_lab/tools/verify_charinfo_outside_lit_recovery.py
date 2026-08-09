@@ -2059,6 +2059,99 @@ def verify_selected_resolver_binding_contract() -> None:
     assert punctual_atlas_audit["physical_boundary"][
         "recommended_hook"
     ].endswith("VA 0x189b57155")
+    assert shadow_native["static_cache_layout"].startswith("40 slots")
+    assert "40+i" in shadow_native["dynamic_slot_layout"]
+    assert "indices 0..5" in shadow_native["caster_face_mapping"]
+    assert "one request per frame" in shadow_native["cache_redraw_policy"]
+    for path_key, hash_key, text_file in [
+        ("cache_audit_path", "cache_audit_sha256", False),
+        ("cache_auditor_path", "cache_auditor_sha256", True),
+        ("cache_disassembler_path", "cache_disassembler_sha256", True),
+        ("cache_disassembly_path", "cache_disassembly_sha256", False),
+        ("cache_metadata_path", "cache_metadata_sha256", False),
+        ("cache_native_map_path", "cache_native_map_sha256", False),
+    ]:
+        verifier = require_text_hash if text_file else require_hash
+        verifier(
+            repo_path(shadow_native[path_key]),
+            shadow_native[hash_key],
+        )
+    punctual_cache_audit = json.loads(
+        repo_path(shadow_native["cache_audit_path"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert punctual_cache_audit["schema"] == (
+        "endfield.punctual-shadow-cache-audit.v1"
+    )
+    assert punctual_cache_audit["verdict"] == (
+        "CACHE_SLOT_AND_REDRAW_SCHEDULING_CLOSED_"
+        "TARGET_FRAME_CAPTURE_REQUIRED"
+    )
+    assert punctual_cache_audit["publication_allowed"] is False
+    static_cache = punctual_cache_audit["staticAllocator"]
+    assert static_cache["levelCount"] == 3
+    assert static_cache["slotCount"] == 40
+    assert static_cache["levels"] == [
+        {
+            "level": 0,
+            "absoluteSlots": [0, 11],
+            "slotCount": 12,
+            "cellSizeT": 1.0,
+            "baseOffsetT": 0.0,
+        },
+        {
+            "level": 1,
+            "absoluteSlots": [12, 23],
+            "slotCount": 12,
+            "cellSizeT": 0.5,
+            "baseOffsetT": 2.0,
+        },
+        {
+            "level": 2,
+            "absoluteSlots": [24, 39],
+            "slotCount": 16,
+            "cellSizeT": 0.25,
+            "baseOffsetT": 3.0,
+        },
+    ]
+    assert static_cache["rectOffsets"] == [
+        [0, 0], [1, 0], [2, 0], [3, 0],
+        [0, 1], [1, 1], [2, 1], [3, 1],
+        [0, 2], [1, 2], [0, 3], [1, 3],
+        [2, 2], [3, 2], [2, 3], [3, 3],
+    ]
+    dynamic_cache = punctual_cache_audit["dynamicRegion"]
+    assert dynamic_cache["globalSlotFormula"] == "40+i"
+    assert dynamic_cache["rectFormula"] == (
+        "x=(4+floor(i/4))*T; y=(i mod 4)*T; width=height=T"
+    )
+    assert dynamic_cache["defaultCasterCount"] == 8
+    assert dynamic_cache["defaultGlobalSlots"] == [40, 47]
+    assert "every frame" in dynamic_cache["renderPolicy"]
+    assert punctual_cache_audit["lightCaster"]["faceMapping"] == (
+        "point lights construct six casters with index 0..5; "
+        "spot-like lights construct index 0 only"
+    )
+    cache_schedule = punctual_cache_audit["staticCacheScheduling"]
+    assert cache_schedule["requestTypes"] == {
+        "None": 0,
+        "AllocNewChunk": 1,
+        "SmallChunkToLargeChunk": 2,
+        "LargeChunkToSmallChunk": 3,
+    }
+    assert cache_schedule["singleRequestPerFrame"] is True
+    assert cache_schedule["priority"] == [
+        "LargeChunkToSmallChunk",
+        "SmallChunkToLargeChunk",
+        "AllocNewChunk",
+    ]
+    assert "lastVisitedTime" in punctual_cache_audit[
+        "invalidationAndEviction"
+    ]["allocationFailure"]
+    assert "56-row ShadowData" in punctual_cache_audit[
+        "captureBoundary"
+    ]["open"]
     assert (
         identified[2]["role"],
         identified[2]["symbol"],
@@ -2555,6 +2648,7 @@ def main() -> int:
         "11,440-byte four-section native transport, selected punctual-only read span, "
         "exact 56-row punctual frame writer, enabled section-1 push callback, disabled "
         "texture-only path, pinned D3D12 D16_UNorm resolution/reversed-Z/quantization, "
+        "exact 40-static/40+i-dynamic cache slots and single-static-redraw scheduling, "
         "and fail-closed pre-push capture boundary, plus b37 "
         "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
         "zero-cookie isolated transport, plus exact b38 "
