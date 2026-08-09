@@ -5419,6 +5419,21 @@ body.is-resizing-filter * {
   line-height: 1.4;
 }
 
+.gameplay-enemy-sfx-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.gameplay-enemy-sfx-note {
+  margin: 7px 0 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
 .gameplay-sfx-action {
   margin-top: 5px;
   padding-top: 5px;
