@@ -45,6 +45,16 @@ SOURCES = {
         / "scratch/character_recovery/charinfo_pass0_resources/"
         "charinfo_v2_irradiance.json"
     ),
+    "selectedCameraProfiles": (
+        LAB_ROOT
+        / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
+        "CharInfoPlayableProfiles/source_profiles.json"
+    ),
+    "selectedCameraLens": (
+        REPO_ROOT
+        / "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/"
+        "MonoBehaviour#1116_p2FDBEDA931885FC8.json"
+    ),
 }
 EXPECTED_HASHES = {
     "gameAssembly": (
@@ -67,6 +77,12 @@ EXPECTED_HASHES = {
     ),
     "inactiveIrradianceV2": (
         "1f77756f536c394efcbfcd1d6d00fca9ed4b40e86f7cdad9c14cf7379af5a5b3"
+    ),
+    "selectedCameraProfiles": (
+        "09867b8a1263ffaec1457e2390e51d1333b01861900f9a9d87f2db5d6bfe8566"
+    ),
+    "selectedCameraLens": (
+        "f7c053539d3abbd40aff2dd51ea450a869ee78409220163267ef9445362c26fb"
     ),
 }
 OUTPUT = (
@@ -344,6 +360,117 @@ NATIVE_GRAPHICS_FEATURE_METHODS = {
     },
 }
 
+# UnityEngine.Camera getter wrappers and HGCamera.UpdateFrustum prove the two
+# indirect scalar inputs are nearClipPlane and farClipPlane. UpdateFrustum
+# constructs projectionParams as
+# (-1, nearClipPlane, farClipPlane, 1/farClipPlane) at object offset 0x798.
+# The four-argument UpdateShaderVariablesGlobalCB overload then copies that
+# exact vector to ShaderVariablesGlobal c3. Complete body hashes plus the
+# bounded instruction bytes make both the field route and lane order fail
+# closed on an installed-binary change.
+NATIVE_PROJECTION_METHODS = {
+    "updateFrustum": {
+        "method": "HG.Rendering.Runtime.HGCamera.UpdateFrustum",
+        "methodIndex": 286759,
+        "token": "0x06000ea3",
+        "va": "0x183252130",
+        "fileOffset": 0x3250730,
+        "size": 0x6B0,
+        "sha256": "3b93667a1deb3b76e8ddff63b5ae25fe68c6790218df395bbc1558aabedb0f0c",
+        "byteChecks": [
+            {
+                "offset": 0x133,
+                "hex": (
+                    "488b0546ce110c4885c00f84d21ddb01488bcbffd0488b5f60"
+                    "440f28d04885db0f840f050000488b0530ce110c4885c00f84"
+                    "e01ddb01488bcbffd0440f28c8"
+                ),
+                "meaning": (
+                    "call Camera nearClipPlane slot 0x18f36f0b0 into xmm10, "
+                    "then farClipPlane slot 0x18f36f0c0 into xmm9"
+                ),
+            },
+            {
+                "offset": 0x29A,
+                "hex": (
+                    "b8ffffffff0f57c0f30f2ac0f3410f5ee90fc6c0e1f3410f10c2"
+                    "0fc6c0c6f3410f10c10fc6c027f30f10c50fc6c0390f118798070000"
+                ),
+                "meaning": (
+                    "assemble (-1, nearClipPlane, farClipPlane, "
+                    "1/farClipPlane) and store HGCamera.projectionParams@0x798"
+                ),
+            }
+        ],
+    },
+    "cameraNearClipGetter": {
+        "method": "UnityEngine.Camera.get_nearClipPlane",
+        "methodIndex": 402327,
+        "token": "0x0600021e",
+        "va": "0x18324d130",
+        "fileOffset": 0x324B730,
+        "size": 0x40,
+        "sha256": "78e1415719b357fd11b027f7e1c1b074268a68de25e0c7de5f289f93c84eb1f9",
+        "byteChecks": [
+            {
+                "offset": 0x6,
+                "hex": "488b05731f120c",
+                "meaning": "load native getter slot 0x18f36f0b0",
+            }
+        ],
+    },
+    "cameraFarClipGetter": {
+        "method": "UnityEngine.Camera.get_farClipPlane",
+        "methodIndex": 402329,
+        "token": "0x06000220",
+        "va": "0x18324dc80",
+        "fileOffset": 0x324C280,
+        "size": 0x40,
+        "sha256": "6288d419cb7211384bfad831f5e2c27d1642c148f227d04401c024a2dcee79ce",
+        "byteChecks": [
+            {
+                "offset": 0x6,
+                "hex": "488b053314120c",
+                "meaning": "load native getter slot 0x18f36f0c0",
+            }
+        ],
+    },
+    "updateGlobalWrapper": {
+        "method": "HG.Rendering.Runtime.HGCamera.UpdateShaderVariablesGlobalCB",
+        "overload": "(cb, basicTransformConstants, preTransform)",
+        "methodIndex": 286747,
+        "token": "0x06000e97",
+        "va": "0x1832de2d0",
+        "fileOffset": 0x32DC8D0,
+        "size": 0xC0,
+        "sha256": "8cbdcffa1dc69ea1bfd36508d32f21b8153d234ff4a86893da19b237a435d377",
+        "byteChecks": [],
+    },
+    "updateGlobalBody": {
+        "method": "HG.Rendering.Runtime.HGCamera.UpdateShaderVariablesGlobalCB",
+        "overload": "(basicTransformConstants, cb, preTransform, frameCount)",
+        "methodIndex": 286748,
+        "token": "0x06000e98",
+        "va": "0x1832e0020",
+        "fileOffset": 0x32DE620,
+        "size": 0xB40,
+        "sha256": "31937f3310ede8f299b5387a85b35bb290973c0e049d1baa5de99356a0d17539",
+        "byteChecks": [
+            {
+                "offset": 0x211,
+                "hex": (
+                    "0f1083780700000f1147200f108b980700000f114f30"
+                    "0f1083880700000f114740"
+                ),
+                "meaning": (
+                    "copy zBufferParams@0x778 to c2, projectionParams@0x798 "
+                    "to c3, and unity_OrthoParams@0x788 to c4"
+                ),
+            }
+        ],
+    },
+}
+
 EXPECTED_USED_FIELDS = {
     "AtmosphereFogParams0",
     "AtmosphereFogParams1",
@@ -486,6 +613,23 @@ def build_audit() -> dict[str, object]:
             hashlib.sha256(body).hexdigest(),
             method["sha256"],
         )
+    for name, method in NATIVE_PROJECTION_METHODS.items():
+        start = method["fileOffset"]
+        body = game_bytes[start : start + method["size"]]
+        require(f"{name}_size", len(body), method["size"])
+        require(
+            f"{name}_sha256",
+            hashlib.sha256(body).hexdigest(),
+            method["sha256"],
+        )
+        for index, check in enumerate(method["byteChecks"]):
+            expected_bytes = bytes.fromhex(check["hex"])
+            offset = check["offset"]
+            require(
+                f"{name}_byte_check_{index}",
+                body[offset : offset + len(expected_bytes)],
+                expected_bytes,
+            )
 
     manifest_path = SETTING_TEXT_ROOT / SETTING_MANIFEST["file"]
     require(
@@ -593,6 +737,63 @@ def build_audit() -> dict[str, object]:
     for index in range(3):
         require(f"inactive_iv_param{index}", inactive[f"param{index}"], [0.0] * 4)
 
+    profile_source = json.loads(
+        SOURCES["selectedCameraProfiles"].read_text(encoding="utf-8")
+    )
+    require(
+        "camera_profile_source_policy",
+        profile_source["policy"]["production_parameter_source"],
+        "serialized_original_game_data_only",
+    )
+    require(
+        "camera_profile_visual_fitting",
+        profile_source["policy"]["visual_fitting_allowed"],
+        False,
+    )
+    selected_profiles = [
+        row
+        for row in profile_source["characters"]
+        if row["character_id"] == "chr_0030_zhuangfy"
+    ]
+    require("selected_camera_profile_count", len(selected_profiles), 1)
+    selected_camera = selected_profiles[0]["camera"]
+    require("selected_camera_track", selected_camera["track_root"], "track_chr_0030_zhuangfy")
+    require(
+        "selected_camera_vcam",
+        selected_camera["vcam_path"],
+        "track_chr_0030_zhuangfy/DollyCart/vcam_overview",
+    )
+    require("selected_camera_near_clip", selected_camera["near_clip"], 0.1)
+    require("selected_camera_far_clip", selected_camera["far_clip"], 50.0)
+    selected_lens_source = selected_camera["sources"]["lens"]
+    require(
+        "selected_camera_lens_path",
+        selected_lens_source["path"],
+        relative(SOURCES["selectedCameraLens"]),
+    )
+    require(
+        "selected_camera_lens_sha256",
+        selected_lens_source["sha256"],
+        EXPECTED_HASHES["selectedCameraLens"],
+    )
+    require(
+        "selected_camera_lens_raw_sha256",
+        selected_lens_source["raw_data_sha256"],
+        "fa79069273ac59573dc8f103566122dc27f5a46b95c1adfeedf324993b5cad55",
+    )
+    lens_payload = json.loads(
+        SOURCES["selectedCameraLens"].read_text(encoding="utf-8")
+    )
+    require("selected_camera_lens_path_id", lens_payload["$animestudio"]["pathId"], 3448611250618523592)
+    require("selected_camera_lens_raw_length", lens_payload["$animestudio"]["rawDataLength"], 164)
+    require(
+        "selected_camera_lens_payload_raw_sha256",
+        lens_payload["$animestudio"]["rawDataSha256"],
+        selected_lens_source["raw_data_sha256"],
+    )
+    require("selected_camera_lens_near_clip", lens_payload["m_Lens"]["NearClipPlane"], 0.1)
+    require("selected_camera_lens_far_clip", lens_payload["m_Lens"]["FarClipPlane"], 50.0)
+
     compact_uses: dict[str, dict[str, object]] = {}
     for row in uses:
         entry = compact_uses.setdefault(
@@ -675,7 +876,42 @@ def build_audit() -> dict[str, object]:
                 "override. The SSR capability gates are therefore not reached."
             ),
         },
+        "projectionParamsProducer": {
+            "selectedRow": "c3.y",
+            "hgCameraField": "projectionParams",
+            "hgCameraFieldOffset": "0x798",
+            "shaderVariablesGlobalDestination": "c3",
+            "formula": ["-1", "nearClipPlane", "farClipPlane", "1/farClipPlane"],
+            "nativeMethods": {
+                name: {
+                    key: value
+                    for key, value in method.items()
+                    if key not in {"fileOffset"}
+                }
+                | {"fileOffset": hex(method["fileOffset"])}
+                for name, method in NATIVE_PROJECTION_METHODS.items()
+            },
+            "selectedCamera": {
+                "characterId": "chr_0030_zhuangfy",
+                "trackRoot": selected_camera["track_root"],
+                "vcamPath": selected_camera["vcam_path"],
+                "nearClipPlane": selected_camera["near_clip"],
+                "farClipPlane": selected_camera["far_clip"],
+                "projectionParams": [-1.0, 0.1, 50.0, 0.02],
+                "lensPathId": selected_lens_source["path_id"],
+                "lensRawDataLength": selected_lens_source["raw_data_length"],
+                "lensRawDataSha256": selected_lens_source["raw_data_sha256"],
+                "lensSourceFile": selected_lens_source["source_file"],
+            },
+            "closure": (
+                "The installed native producer constructs c3 as "
+                "(-1, near, far, 1/far), and the selected serialized original "
+                "Overview lens supplies near=0.1 and far=50. Therefore the live "
+                "selected c3.y value is exactly 0.1."
+            ),
+        },
         "closedSelectedRows": {
+            "c3.y": "selected serialized Overview nearClipPlane=0.1 through exact HGCamera projectionParams producer",
             "c4.w": "perspective ExternalCamera => unity_OrthoParams.w=0",
             "c26.x": "selected HGAdditionalCameraData materialMipBias=0",
             "c28": "same-frame recovered light/reflection binning offsets",
@@ -694,14 +930,13 @@ def build_audit() -> dict[str, object]:
         },
         "remainingSelectedRows": {
             "c0.zw": "same-target inverse screen dimensions; producer formula is known but target-frame dimensions remain dynamic",
-            "c3.y": "depth/z-bin projection term; exact HGCamera producer expression/value remains open",
             "c135..c137": "IVDefaultSHAr/Ag/Ab remain live and exact selected-scene values are not yet recovered",
         },
         "decision": (
             "Do not publish EndfieldCB1 or enable pass 0 yet. The reset producers "
             "close fog rows exactly, c30 is exact (0,0,1,1), and c31.x is exact 7, "
-            "but c3.y and c135..c137 "
-            "still affect the selected resolver outside dead branches."
+            "and c3.y is the exact selected near clip 0.1, but c135..c137 still "
+            "affect the selected resolver outside dead branches."
         ),
         "sources": {
             "gameAssembly": {
@@ -730,7 +965,7 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Deferred ShaderVariablesGlobal audit passed: 33 selected fields; "
-        "fog resets plus c30/c31 exact; b1 remains blocked by c3/c135..c137."
+        "fog resets plus c3/c30/c31 exact; b1 remains blocked by c135..c137."
     )
     return 0
 
