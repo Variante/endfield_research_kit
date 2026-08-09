@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import struct
 import unittest
 from pathlib import Path
 
@@ -16,7 +17,9 @@ SPEC.loader.exec_module(AUDIT)
 
 
 GOOD_LUA = """
+local charObj = CSUtils.CreateObject(prefab, self.m_phase.m_roomObjItem.view.timelineRoot)
 local lightPrefab = self.loader:LoadGameObject(string.format("Assets/Beyond/DynamicAssets/Gameplay/Prefabs/CharInfo/AdditionalLights/light_%s.prefab", charId))
+local lightObj = CSUtils.CreateObject(lightPrefab, charObj.transform)
 lightObj.transform:DoActionOnChildren(function(childTrans)
     local isTarget = childTrans.name == "light_overview"
     childTrans.gameObject:SetActive(isTarget)
@@ -24,6 +27,7 @@ lightObj.transform:DoActionOnChildren(function(childTrans)
         uiModelMono:InitLightFollower(childTrans)
     end
 end)
+charObj:SetLayerRecursive(UIConst.GACHA_LAYER)
 self.m_phase.m_roomObjItem.view.sceneLight6Rarity.gameObject:SetActive(rarity >= 6)
 self.m_phase.m_roomObjItem.view.sceneLight5Rarity.gameObject:SetActive(rarity == 5)
 self.m_phase.m_roomObjItem.view.sceneLight4Rarity.gameObject:SetActive(rarity <= 4)
@@ -142,9 +146,107 @@ class GachaLightPopulationAuditTests(unittest.TestCase):
                 "missing_follower.lua",
             )
 
+    def test_missing_recursive_layer_assignment_fails_closed(self) -> None:
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=gacha_light_population; check=lua_recursiveGachaLayer;.*"
+            r"expected=True; actual=False",
+        ):
+            AUDIT.validate_lua_contract(
+                GOOD_LUA.replace("charObj:SetLayerRecursive(UIConst.GACHA_LAYER)", ""),
+                "missing_layer.lua",
+            )
+
+    def test_aligned_layer_array_round_trip(self) -> None:
+        payload = bytearray(struct.pack("<I", len(AUDIT.EXPECTED_LAYERS)))
+        for value in AUDIT.EXPECTED_LAYERS:
+            encoded = value.encode("utf-8")
+            payload.extend(struct.pack("<I", len(encoded)))
+            payload.extend(encoded)
+            payload.extend(b"\0" * ((-len(payload)) & 3))
+        self.assertEqual(
+            AUDIT.parse_aligned_string_array(bytes(payload), 0),
+            AUDIT.EXPECTED_LAYERS,
+        )
+
+    def test_character_survivor_gate(self) -> None:
+        AUDIT.validate_character_survivor_names(
+            AUDIT.CHARACTER_SURVIVORS,
+            [],
+            "fixture geometry",
+        )
+
+    def test_character_survivor_mismatch_reports_names(self) -> None:
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=gacha_light_population; check=selected_aspect_character_survivors;.*"
+            r"actual=\['FogLight_1 \(2\)'\]",
+        ):
+            AUDIT.validate_character_survivor_names(
+                ["FogLight_1 (2)"],
+                [],
+                "fixture geometry",
+            )
+
+    def test_fixed_offset_follower_world_position(self) -> None:
+        row = {
+            "follower": {
+                "followableNodeName": "BIP001",
+                "followType": 0,
+                "positionOffset": [0.5, 0.0, -1.0],
+            },
+            "serializedPosition": [0.0, 0.0, 0.0],
+            "serializedForward": [0.0, 0.0, 1.0],
+            "type": 2,
+            "range": 1.0,
+            "spotAngle": 30.0,
+        }
+        nodes = {
+            "BIP001": ([1.0, 2.0, 3.0], [0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0])
+        }
+        result = AUDIT.evaluate_character_light(
+            row,
+            nodes,
+            [("fixture", [1.0, 0.0, 0.0], 100.0)],
+            [0.0, 0.0, 0.0],
+        )
+        self.assertEqual(result["worldPosition"], [1.5, 2.0, 2.0])
+        self.assertEqual(
+            result["positionEquation"],
+            "target.worldPosition + positionOffset",
+        )
+
+    def test_parent_follower_world_position(self) -> None:
+        row = {
+            "follower": {
+                "followableNodeName": "HEAD_LOCAL",
+                "followType": 1,
+                "localPosition": [0.5, 0.0, -1.0],
+            },
+            "serializedPosition": [0.0, 0.0, 0.0],
+            "serializedForward": [0.0, 0.0, 1.0],
+            "type": 2,
+            "range": 1.0,
+            "spotAngle": 30.0,
+        }
+        nodes = {
+            "HEAD_LOCAL": ([1.0, 2.0, 3.0], [0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0])
+        }
+        result = AUDIT.evaluate_character_light(
+            row,
+            nodes,
+            [("fixture", [1.0, 0.0, 0.0], 100.0)],
+            [0.0, 0.0, 0.0],
+        )
+        self.assertEqual(result["worldPosition"], [1.5, 2.0, 2.0])
+        self.assertEqual(
+            result["positionEquation"],
+            "target.worldPosition + target.worldRotation * localPosition",
+        )
+
     def test_native_cull_boundary_success(self) -> None:
         result = AUDIT.validate_native_cull_boundary(*native_cull_fixtures())
-        self.assertEqual(result["knownAuthoredSurvivorUpperBound"], 17)
+        self.assertEqual(result["preCharacterEvaluationKnownAuthoredUpperBound"], 17)
         self.assertFalse(result["gachaOcclusionActive"])
 
     def test_native_cull_wrong_exclusion_reports_expected_and_actual(self) -> None:

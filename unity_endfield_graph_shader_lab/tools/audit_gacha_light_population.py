@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import math
 import re
 import struct
+import subprocess
+import tempfile
 import winreg
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -21,6 +24,7 @@ GAME_ROOT = Path(r"D:/Program Files/Endfield Game")
 GAME_ASSEMBLY = GAME_ROOT / "GameAssembly.dll"
 UNITY_PLAYER = GAME_ROOT / "UnityPlayer.dll"
 GLOBAL_METADATA = GAME_ROOT / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
+GLOBAL_GAME_MANAGERS = GAME_ROOT / "Endfield_Data/globalgamemanagers"
 ROOM_CHUNK = (
     GAME_ROOT
     / "Endfield_Data/StreamingAssets/VFS/7064D8E2/"
@@ -35,6 +39,11 @@ LUA_SOURCE = (
     REPO_ROOT
     / "scratch/animestudio/gacha_light_population/lua_dump/Lua/Data/LuaScripts/"
     "UI/Panels/GachaChar/GachaCharCtrl.lua"
+)
+UI_CONST_SOURCE = (
+    REPO_ROOT
+    / "scratch/animestudio/gacha_aspect_constraints/lua_dump/Lua/Data/LuaScripts/"
+    "Const/UIConst.lua"
 )
 CHARACTER_TABLE = (
     REPO_ROOT / "export_full/structured/StreamingAssets/Table/CharacterTable.json"
@@ -72,6 +81,69 @@ GACHA_CULL_VIEW_AUDIT = (
 GACHA_SELECTED_LIST_AUDIT = (
     REPO_ROOT / "scratch/reverse_engineering/gacha_light_selected_list/audit.json"
 )
+ACTOR_TIMELINE_AUDIT = (
+    REPO_ROOT
+    / "scratch/reverse_engineering/zhuangfy_gacha_actor_timeline/"
+    "actor_timeline_audit.json"
+)
+ZHUANGFY_MANIFEST = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Zhuangfy/"
+    "zhuangfy_ui_recovery_manifest.json"
+)
+ACTOR_TIMELINE_JSON_ROOT = (
+    REPO_ROOT
+    / "scratch/animestudio/zhuangfy_gacha_actor_timeline/"
+    "full_timeline_export_json/MonoBehaviour"
+)
+ACTOR_TRACK = ACTOR_TIMELINE_JSON_ROOT / "Animation Track_pC647253461C288D6.json"
+ACTOR_PLAYABLE_ENTRANCE = (
+    ACTOR_TIMELINE_JSON_ROOT / "AnimationPlayableAsset_pA69BB75A314C88D6.json"
+)
+ACTOR_PLAYABLE_LOOP = (
+    ACTOR_TIMELINE_JSON_ROOT / "AnimationPlayableAsset_p1E75C442588C88D6.json"
+)
+ACTOR_ANIMATION_ROOT = (
+    REPO_ROOT
+    / "scratch/character_ui_import/characters/chr_0030_zhuangfy/"
+    "animation_scopes/all-ui"
+)
+ACTOR_CLIP_ENTRANCE = (
+    ACTOR_ANIMATION_ROOT
+    / "animation_clips/AnimationClip/A_actor_zhuangfy_gacha_pE87492C48C117993.json"
+)
+ACTOR_CLIP_LOOP = (
+    ACTOR_ANIMATION_ROOT
+    / "animation_clips/AnimationClip/"
+    "A_actor_zhuangfy_ui_overview_loop_01_pDCA810D9F64A7993.json"
+)
+ACTOR_SAMPLE_ENTRANCE = ACTOR_ANIMATION_ROOT / "samples/A_actor_zhuangfy_gacha.json"
+ACTOR_SAMPLE_LOOP = (
+    ACTOR_ANIMATION_ROOT / "samples/A_actor_zhuangfy_ui_overview_loop_01.json"
+)
+GACHA_ROOM_ROOT = (
+    REPO_ROOT
+    / "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/"
+    "GameObject/GachaRoom_p6BA6C284A446ADE0.json"
+)
+TIMELINE_ROOT = (
+    REPO_ROOT
+    / "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/"
+    "GameObject/TimelineRoot_p0D60F289A5FBADE0.json"
+)
+ACTOR_PREFAB_TRANSFORM_ROOT = (
+    REPO_ROOT
+    / "scratch/animestudio/zhuangfy_gacha_start_order/"
+    "zhuangfy_prefab_dump_tree/Transform"
+)
+ACTOR_PREFAB_TRANSFORMS = {
+    "gacha_char_zhuangfy": ACTOR_PREFAB_TRANSFORM_ROOT / "Transform#525_pCD407D5AEAC4AD17.txt",
+    "Actor": ACTOR_PREFAB_TRANSFORM_ROOT / "Transform#612_pD95B4B7B5557AD17.txt",
+    "chr_0030_zhuangfy_uimodel": ACTOR_PREFAB_TRANSFORM_ROOT / "Transform#1228_p340F1304A6CFAD17.txt",
+    "Root": ACTOR_PREFAB_TRANSFORM_ROOT / "Transform#1596_p6A9DD478123EAD17.txt",
+}
+ACL_SAMPLER = REPO_ROOT / "tools/endfield_acl_sampler/bin/endfield_acl_sampler.exe"
+ACL_SAMPLER_SOURCE = REPO_ROOT / "tools/endfield_acl_sampler/endfield_acl_sampler.cpp"
 ROTATEHOUSE = (
     REPO_ROOT
     / "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/"
@@ -87,9 +159,11 @@ EXPECTED_HASHES = {
     "gameAssembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayer": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "globalMetadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "globalGameManagers": "191619377ff312b785aae10faec8a75e39caf1ba60016ad08eff040b8c54f20d",
     "roomChunk": "4b4ae868dc333fd5b22fc30e667d3156675178bfffd57b93e0e4b625c89f0b26",
     "charInfoChunk": "db94219ee4f522a824c32ec979c2dc5bfd7b1013b4e45c18b77fb3ae4809694e",
     "gachaLua": "94815321515ebf7d4067f60f2f6e2a1d25611bc2e40f712e22cd40a6d159ae19",
+    "uiConstLua": "a2b5798cbf4500e0a3e12e2747ab04b412efe1789b3198d19557f868415e7ea5",
     "characterTable": "50392af8d8c93854b99e5342b4b70c049b68d2da306e366325d749ba77bf4779",
     "gachaCharTable": "05c1b414bab1f3fbb7a9a983c7193c40ccf0884d6cb50edf7469d8ee05dd50fb",
     "roomHierarchy": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9",
@@ -98,6 +172,23 @@ EXPECTED_HASHES = {
     "gachaCullViewAudit": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4",
     "gachaSelectedListAudit": "7b3624526a77102fb075cdc1ad98277eb6746b5a1853faa1fd2ad2032951e1b3",
     "rotatehouse": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4",
+    "actorTimelineAudit": "575b8b4967cf3458e93b6e883679a19bb985b0888a1d8fde5f81876bf14dfdee",
+    "zhuangfyManifest": "63bd1cbc2de2acfa8cb507d1186dec736cbdbaacf4c861e803b802a04b1e8ae9",
+    "actorTrack": "2b37d07f4a2b6964a7cf66d10de2bd41211af8e78ceba1ce03c2647eecfece31",
+    "actorPlayableEntrance": "55b80868b750786b07c38dff5bc71fa0517b950acbb669d8f68acf1d22461e1e",
+    "actorPlayableLoop": "2b24eed5a1488a722e516730fa557e904259213f3f655b79240749aa1f558bed",
+    "actorClipEntrance": "5a977b29300ba8991bad2c5bdad82eed99c38d07722ebaa2b649061818dc0803",
+    "actorClipLoop": "387593a1d02d8d02232101839c1e8e73f0dc30788e5f17deb2798cb2ce5048f7",
+    "actorSampleEntrance": "5271fee6c466d8a87a743d65c9ab9944c10e16ea9ebab2fe7aab070bea3fc2d5",
+    "actorSampleLoop": "3bd36a3968fb043e1221aa9f54932a40100c8c9f7f2df533c3df1f28f410a80e",
+    "gachaRoomRoot": "4b90b2c1b0cf270b19d44a48d07216d072548e10c3b49e9a0759d0a0faa1ae8f",
+    "timelineRoot": "7af46240c5880c8f38b71df0cf3a743b888827704cfdc4357240cc3561fd37b2",
+    "actorPrefabRoot": "bd22ee727957046e5ddcfa49f82e8c2a461745ac10289914d329afabafe22a88",
+    "actorContainer": "28f697ca93516ed65065f6925b546dbc0c46fc9f4d7b45d47356596d1320782e",
+    "actorModel": "5a68fb202e1dfd72d41f8247d3d2f54a46bbed6f53ada7638a97dc95650283bb",
+    "actorSkeletonRoot": "4a98c8341b807f830f7ec13c1a8c325e2910f9bc9dd155313b455d02ab80563d",
+    "aclSampler": "2805096f5df56d7a0f3790ded815955fc4227f2f8decf941d4a1e88e1ab586df",
+    "aclSamplerSource": "c44bd1a08ecbf3ea4f46107d6faf084218fee7df33616fd59d44aaa4a797d1e2",
 }
 
 REGISTRY_KEY = r"Software\Hypergryph\Endfield"
@@ -161,6 +252,34 @@ ROOM_SURVIVOR_SUBSEQUENCE = [
     "Spot Light (9)",
     "Spot Light (11)",
     "Spot Light (10)",
+]
+
+CHARACTER_SURVIVORS = [
+    "FogLight_1 (2)",
+    "Point Light_overview (2)",
+    "RimLight_2 (4)",
+    "SpecLight_1 (8)",
+    "RimLight_2 (5)",
+    "SpecLight_1 (11)",
+]
+
+KNOWN_AUTHORED_SURVIVOR_ORDER = [
+    "SpecLight_1 (8)",
+    "RimLight_2 (5)",
+    "SpecLight_1 (11)",
+    "Point Light_overview (2)",
+    "RimLight_2 (4)",
+    "FogLight_1 (2)",
+    *ROOM_SURVIVOR_SUBSEQUENCE,
+]
+
+EXPECTED_LAYERS = [
+    "Default", "TransparentFX", "Ignore Raycast", "Fog", "Water", "UI",
+    "Walkable", "Climbable", "PostProcessVolume", "Trigger", "UIPP",
+    "Character", "Enemy", "UIModel", "Building", "UIInteract", "WorldUI",
+    "Projectile", "AbilityEntity", "Interactive", "Terrain", "IK", "NPC", "",
+    "UltimateShow", "BattleShape", "Physics", "DropItem", "Hide", "Liquid",
+    "Gacha", "",
 ]
 
 NATIVE_METHODS = {
@@ -356,6 +475,28 @@ def quaternion_rotate(q: list[float], value: list[float]) -> list[float]:
     ]
 
 
+def vector_add(left: list[float], right: list[float]) -> list[float]:
+    return [f32(left[index] + right[index]) for index in range(3)]
+
+
+def vector_scale_components(left: list[float], right: list[float]) -> list[float]:
+    return [f32(left[index] * right[index]) for index in range(3)]
+
+
+def compose_transform(
+    parent: tuple[list[float], list[float], list[float]],
+    local: tuple[list[float], list[float], list[float]],
+) -> tuple[list[float], list[float], list[float]]:
+    parent_position, parent_rotation, parent_scale = parent
+    local_position, local_rotation, local_scale = local
+    scaled = vector_scale_components(parent_scale, local_position)
+    return (
+        vector_add(parent_position, quaternion_rotate(parent_rotation, scaled)),
+        quaternion_multiply(parent_rotation, local_rotation),
+        vector_scale_components(parent_scale, local_scale),
+    )
+
+
 def dot(a: list[float], b: list[float]) -> float:
     return f32(a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
 
@@ -430,6 +571,86 @@ def validate_room_survivor_names(
     require("selected_aspect_room_rejections", rejected, ["Spot Light (20)"], source)
 
 
+def validate_character_survivor_names(
+    admitted: list[str], rejected: list[str], source: Path | str
+) -> None:
+    require("selected_aspect_character_survivors", admitted, CHARACTER_SURVIVORS, source)
+    require("selected_aspect_character_rejections", rejected, [], source)
+
+
+def parse_aligned_string_array(data: bytes, offset: int) -> list[str]:
+    require("layer_array_count_bounds", offset + 4 <= len(data), True, GLOBAL_GAME_MANAGERS)
+    count = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    rows = []
+    for index in range(count):
+        require(
+            f"layer_{index}_length_bounds",
+            offset + 4 <= len(data),
+            True,
+            GLOBAL_GAME_MANAGERS,
+        )
+        size = struct.unpack_from("<I", data, offset)[0]
+        offset += 4
+        require(
+            f"layer_{index}_data_bounds",
+            offset + size <= len(data),
+            True,
+            GLOBAL_GAME_MANAGERS,
+        )
+        rows.append(data[offset : offset + size].decode("utf-8"))
+        offset = (offset + size + 3) & ~3
+    return rows
+
+
+def validate_gacha_layer(
+    ui_const_text: str,
+    global_game_managers: Path,
+    selected: dict[str, Any],
+) -> dict[str, object]:
+    compact = re.sub(r"\s+", " ", ui_const_text)
+    require(
+        "ui_const_gacha_layer",
+        bool(re.search(r'GACHA_LAYER = Unity\.LayerMask\.NameToLayer\("Gacha"\)', compact)),
+        True,
+        UI_CONST_SOURCE,
+    )
+    layers = parse_aligned_string_array(global_game_managers.read_bytes(), 42220)
+    require("installed_layer_names", layers, EXPECTED_LAYERS, global_game_managers)
+    layer = layers.index("Gacha")
+    record_mask = 1 << layer
+    selected_mask = int(
+        str(selected["recoveredNativeLayout"]["selectedCullView"]["cameraMask"]),
+        16,
+    )
+    generic_record = selected["recoveredNativeLayout"]["genericRecord"]
+    active_flags = int(str(generic_record["activeRoomInitializer"]["flags"]), 16)
+    require(
+        "generic_record_layer_mask_formula",
+        generic_record["activeRoomInitializer"]["maskFormula"],
+        "1 << GameObject.layer",
+        GACHA_SELECTED_LIST_AUDIT,
+    )
+    require(
+        "generic_record_active_flag",
+        bool(active_flags & 1),
+        True,
+        GACHA_SELECTED_LIST_AUDIT,
+    )
+    require("gacha_layer_index", layer, 30, global_game_managers)
+    require("gacha_layer_mask_gate", bool(record_mask & selected_mask), True, GACHA_SELECTED_LIST_AUDIT)
+    return {
+        "name": "Gacha",
+        "index": layer,
+        "recordMask": f"0x{record_mask:08X}",
+        "activeRecordFlags": f"0x{active_flags:08X}",
+        "selectedViewMask": f"0x{selected_mask:08X}",
+        "maskGatePasses": True,
+        "installedLayerArrayOffset": 42220,
+        "installedLayerCount": len(layers),
+    }
+
+
 def validate_lua_contract(text: str, source: Path | str) -> dict[str, object]:
     compact = re.sub(r"\s+", " ", text)
     checks = {
@@ -443,6 +664,12 @@ def validate_lua_contract(text: str, source: Path | str) -> dict[str, object]:
         "rarity6": r"sceneLight6Rarity\.gameObject:SetActive\(rarity >= 6\)",
         "rarity5": r"sceneLight5Rarity\.gameObject:SetActive\(rarity == 5\)",
         "rarity4": r"sceneLight4Rarity\.gameObject:SetActive\(rarity <= 4\)",
+        "characterCreation": (
+            r"local charObj = CSUtils\.CreateObject\(prefab, "
+            r"self\.m_phase\.m_roomObjItem\.view\.timelineRoot\)"
+        ),
+        "lightParent": r"local lightObj = CSUtils\.CreateObject\(lightPrefab, charObj\.transform\)",
+        "recursiveGachaLayer": r"charObj:SetLayerRecursive\(UIConst\.GACHA_LAYER\)",
     }
     for name, pattern in checks.items():
         require(f"lua_{name}", bool(re.search(pattern, compact)), True, source)
@@ -453,6 +680,15 @@ def validate_lua_contract(text: str, source: Path | str) -> dict[str, object]:
         compact,
     )
     require("lua_selector_block_order", bool(selector_block), True, source)
+    hierarchy_order = re.search(
+        r"local charObj = CSUtils\.CreateObject\(prefab, "
+        r"self\.m_phase\.m_roomObjItem\.view\.timelineRoot\).*?"
+        r"local lightObj = CSUtils\.CreateObject\(lightPrefab, charObj\.transform\).*?"
+        r"uiModelMono:InitLightFollower\(childTrans\).*?"
+        r"charObj:SetLayerRecursive\(UIConst\.GACHA_LAYER\)",
+        compact,
+    )
+    require("lua_character_light_layer_order", bool(hierarchy_order), True, source)
     return {
         "characterLightPrefabEquation": (
             "Assets/Beyond/DynamicAssets/Gameplay/Prefabs/CharInfo/"
@@ -462,6 +698,9 @@ def validate_lua_contract(text: str, source: Path | str) -> dict[str, object]:
         "otherDirectChildrenActive": False,
         "selectedChildActive": True,
         "initLightFollowerOnSelectedChild": True,
+        "characterParent": "GachaRoom/TimelineRoot",
+        "lightPrefabParent": "character root",
+        "recursiveLayerAssignment": "UIConst.GACHA_LAYER after follower initialization",
         "roomRarityRules": {
             "SceneLight6Rarity": "rarity >= 6",
             "SceneLight5Rarity": "rarity == 5",
@@ -516,9 +755,11 @@ def analyze_character_prefab(
         for transform_id, (_, data) in transforms.items()
     }
     parent_by_go = {}
+    transform_by_go = {}
     for transform_id, (_, data) in transforms.items():
         go_id = go_by_transform[transform_id]
         parent_by_go[go_id] = go_by_transform.get(int(data["m_Father"]["m_PathID"]))
+        transform_by_go[go_id] = (transform_id, data)
     name_by_go = {go_id: data["m_Name"] for go_id, (_, data) in game_objects.items()}
     active_by_go = {}
     for go_id, (path, _) in game_objects.items():
@@ -624,10 +865,30 @@ def analyze_character_prefab(
         (row for row in rows if row["group"] == "light_overview"),
         key=lambda row: row["pathId"],
     )
+    identity_nodes = []
+    for name in ("light_chr_0030_zhuangfy", "light_overview"):
+        matches = [go_id for go_id, value in name_by_go.items() if value == name]
+        require(f"{name}_identity_unique", len(matches), 1, json_root)
+        transform_id, transform = transform_by_go[matches[0]]
+        position = transform["m_LocalPosition"]
+        rotation = transform["m_LocalRotation"]
+        scale = transform["m_LocalScale"]
+        require(
+            f"{name}_identity_transform",
+            (
+                [float(position[key]) for key in ("X", "Y", "Z")],
+                [float(rotation[key]) for key in ("X", "Y", "Z", "W")],
+                [float(scale[key]) for key in ("X", "Y", "Z")],
+            ),
+            ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0]),
+            json_root,
+        )
+        identity_nodes.append({"name": name, "transformPathId": transform_id})
     return {
         "root": "light_chr_0030_zhuangfy",
         "totalLightCount": len(lights),
         "groups": groups,
+        "selectedHierarchyIdentity": identity_nodes,
     }, selected
 
 
@@ -847,17 +1108,38 @@ def validate_operator_population(
     require("operator_light_count", int(actor["count"]), 6, OPERATOR_LIGHTS)
     rows = []
     for row in actor["lights"]:
+        follower = row["follower"]
         rows.append(
             {
                 "pathId": int(row["light_path_id"]),
                 "name": row["name"],
                 "type": int(row["light_type"]),
+                "range": float(row["range"]),
+                "spotAngle": float(row["outer_spot_angle"]),
                 "priority": int(row["priority"]),
                 "enabled": bool(row["enabled"]),
                 "cookiePathId": int(row["cookie_path_id"]),
                 "shadowType": int(row["shadow_type"]),
                 "characterOnly": bool(row["character_only"]),
-                "hasFollower": row["follower"] is not None,
+                "enableOBBCullingBox": bool(row["enable_obb_culling_box"]),
+                "serializedPosition": [float(value) for value in row["position"]],
+                "serializedRotation": [float(value) for value in row["rotation_xyzw"]],
+                "serializedForward": [float(value) for value in row["forward"]],
+                "hasFollower": follower is not None,
+                "follower": None
+                if follower is None
+                else {
+                    "componentPathId": int(follower["component_path_id"]),
+                    "followType": int(follower["follow_type"]),
+                    "followableNodeType": int(follower["followable_node_type"]),
+                    "followableNodeName": follower["followable_node_name"],
+                    "positionOffset": [float(value) for value in follower["position_offset"]],
+                    "localPosition": [float(value) for value in follower["local_position"]],
+                    "localRotationEulerDegrees": [
+                        float(value) for value in follower["local_rotation_euler_degrees"]
+                    ],
+                    "sourceRawSha256": follower["source"]["raw_data_sha256"],
+                },
             }
         )
     require("operator_all_enabled", all(row["enabled"] for row in rows), True, OPERATOR_LIGHTS)
@@ -865,10 +1147,470 @@ def validate_operator_population(
     require("operator_cookie_count", sum(bool(row["cookiePathId"]) for row in rows), 0, OPERATOR_LIGHTS)
     require("operator_shadow_count", sum(bool(row["shadowType"]) for row in rows), 1, OPERATOR_LIGHTS)
     require("operator_follower_count", sum(row["hasFollower"] for row in rows), 4, OPERATOR_LIGHTS)
+    require("operator_obb_disabled", any(row["enableOBBCullingBox"] for row in rows), False, OPERATOR_LIGHTS)
     prefab_membership = [(row["pathId"], row["name"], row["type"]) for row in prefab_rows]
     operator_membership = sorted((row["pathId"], row["name"], row["type"]) for row in rows)
     require("operator_prefab_membership", operator_membership, prefab_membership, OPERATOR_LIGHTS)
     return rows
+
+
+def parse_transform_dump(path: Path) -> dict[str, list[float]]:
+    text = path.read_text(encoding="utf-8-sig")
+    rows: dict[str, list[float]] = {}
+    specs = (
+        ("localRotation", "Quaternionf m_LocalRotation", ("x", "y", "z", "w")),
+        ("localPosition", "Vector3f m_LocalPosition", ("x", "y", "z")),
+        ("localScale", "Vector3f m_LocalScale", ("x", "y", "z")),
+    )
+    number = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][-+]?\d+)?"
+    for output_name, marker, axes in specs:
+        start = text.find(marker)
+        require(f"transform_dump_{output_name}_marker", start >= 0, True, path)
+        values = []
+        cursor = start + len(marker)
+        for axis in axes:
+            match = re.search(rf"float\s+{axis}\s*=\s*({number})", text[cursor:])
+            require(f"transform_dump_{output_name}_{axis}", bool(match), True, path)
+            assert match is not None
+            values.append(float(match.group(1)))
+            cursor += match.end()
+        rows[output_name] = values
+    return rows
+
+
+def validate_actor_placement() -> dict[str, object]:
+    identity = ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0])
+    room_rows = []
+    for name, path in (("GachaRoom", GACHA_ROOM_ROOT), ("TimelineRoot", TIMELINE_ROOT)):
+        data = load_json(path)
+        require(f"{name}_name", data["m_Name"], name, path)
+        transform = data["m_Transform"]
+        actual = (
+            [float(transform["m_LocalPosition"][key]) for key in ("X", "Y", "Z")],
+            [float(transform["m_LocalRotation"][key]) for key in ("X", "Y", "Z", "W")],
+            [float(transform["m_LocalScale"][key]) for key in ("X", "Y", "Z")],
+        )
+        require(f"{name}_identity", actual, identity, path)
+        room_rows.append({"name": name, "identity": True})
+
+    prefab_rows = []
+    for name, path in ACTOR_PREFAB_TRANSFORMS.items():
+        transform = parse_transform_dump(path)
+        require(f"{name}_position", transform["localPosition"], identity[0], path)
+        require(f"{name}_scale", transform["localScale"], identity[2], path)
+        if name == "Root":
+            rotation = transform["localRotation"]
+            require(
+                "actor_skeleton_root_near_identity",
+                abs(rotation[0]) < 1.0e-6
+                and rotation[1] == 0.0
+                and rotation[2] == 0.0
+                and rotation[3] == 1.0,
+                True,
+                path,
+            )
+        else:
+            require(f"{name}_rotation", transform["localRotation"], identity[1], path)
+        prefab_rows.append({"name": name, "identity": True})
+    return {
+        "roomToTimelineRoot": room_rows,
+        "characterPrefabChain": prefab_rows,
+        "worldPlacement": "identity before Animation Track evaluation",
+    }
+
+
+def decode_root_motion(
+    clip: dict[str, Any],
+    source: Path,
+    expected_samples: int,
+) -> dict[str, object]:
+    acl = clip["m_AclCompressedBuffer"]
+    require("root_motion_track_count", int(acl["RootTrackCount"]), 21, source)
+    require("root_motion_position_index", int(acl["RootPosIndex"]), 0, source)
+    require("root_motion_rotation_index", int(acl["RootRotIndex"]), 0, source)
+    require("root_motion_scale_index", int(acl["RootScaleIndex"]), 65535, source)
+    raw = base64.b64decode(str(acl["RootMotionBufferData"]), validate=True)
+    require("root_motion_buffer_size", len(raw), 176, source)
+    with tempfile.TemporaryDirectory(prefix="endfield-gacha-root-motion-") as temp_name:
+        temp = Path(temp_name)
+        acl_path = temp / "RootMotionBufferData.acl"
+        output_path = temp / "RootMotionBufferData.json"
+        acl_path.write_bytes(raw)
+        completed = subprocess.run(
+            [str(ACL_SAMPLER), str(acl_path), str(output_path)],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        require("acl_sampler_return_code", completed.returncode, 0, ACL_SAMPLER)
+        decoded = load_json(output_path)
+    require("root_motion_acl_ok", decoded["ok"], True, source)
+    require("root_motion_acl_hash_ok", decoded["hash_ok"], True, source)
+    require("root_motion_decoded_tracks", int(decoded["num_tracks"]), 21, source)
+    require("root_motion_decoded_samples", int(decoded["num_samples"]), expected_samples, source)
+    require("root_motion_sample_rate", float(decoded["sample_rate"]), 60.0, source)
+    start = clip["m_MuscleClip"]["m_StartX"]
+    base = [
+        f32(float(start["t"][key])) for key in ("X", "Y", "Z")
+    ] + [f32(float(start["q"][key])) for key in ("X", "Y", "Z", "W")]
+    expected = base * 3
+    stop = clip["m_MuscleClip"]["m_StopX"]
+    stop_values = [
+        f32(float(stop["t"][key])) for key in ("X", "Y", "Z")
+    ] + [f32(float(stop["q"][key])) for key in ("X", "Y", "Z", "W")]
+    require("root_motion_stop_matches_start", stop_values, base, source)
+    first_values = [float(track["value"]) for track in decoded["frames"][0]["tracks"]]
+    require(
+        "root_motion_start_transform_error",
+        max(abs(actual - wanted) for actual, wanted in zip(first_values, expected)) < 1.0e-12,
+        True,
+        source,
+    )
+    varying = []
+    for frame in decoded["frames"]:
+        values = [float(track["value"]) for track in frame["tracks"]]
+        if values != first_values:
+            varying.append(int(frame["index"]))
+            if len(varying) >= 8:
+                break
+    require("root_motion_constant_start_transform", varying, [], source)
+    return {
+        "compressedBytes": len(raw),
+        "compressedSha256": hashlib.sha256(raw).hexdigest(),
+        "trackCount": 21,
+        "sampleCount": expected_samples,
+        "sampleRate": 60.0,
+        "constantTransform": {
+            "translation": first_values[:3],
+            "rotation": first_values[3:7],
+        },
+        "removeStartOffsetResult": "identity for every decoded sample",
+    }
+
+
+def validate_actor_pose_sources() -> tuple[dict[str, object], dict[str, Any]]:
+    audit = load_json(ACTOR_TIMELINE_AUDIT)
+    require("actor_timeline_audit_passed", audit["passed"], True, ACTOR_TIMELINE_AUDIT)
+    require("actor_timeline_visual_admission", audit["visualAdmission"], False, ACTOR_TIMELINE_AUDIT)
+    require(
+        "actor_track_binding",
+        audit["tracks"][0]["autoBindingPath"],
+        "Actor/chr_0030_zhuangfy_uimodel",
+        ACTOR_TIMELINE_AUDIT,
+    )
+    timeline_clips = {row["displayName"]: row for row in audit["clips"]}
+    require("actor_entrance_start", float(timeline_clips["A_actor_zhuangfy_gacha"]["start"]), 0.0, ACTOR_TIMELINE_AUDIT)
+    require("actor_entrance_duration", float(timeline_clips["A_actor_zhuangfy_gacha"]["duration"]), 10.7, ACTOR_TIMELINE_AUDIT)
+    require("actor_loop_start", float(timeline_clips["A_actor_zhuangfy_ui_overview_loop_01"]["start"]), 10.7, ACTOR_TIMELINE_AUDIT)
+
+    track = load_json(ACTOR_TRACK)
+    require("actor_track_offset_mode", int(track["m_TrackOffset"]), 0, ACTOR_TRACK)
+    require("actor_track_position", track["m_Position"], {"x": 0.0, "y": 0.0, "z": 0.0}, ACTOR_TRACK)
+    require("actor_track_euler", track["m_EulerAngles"], {"x": 0.0, "y": 0.0, "z": 0.0}, ACTOR_TRACK)
+    require("actor_track_avatar_mask", int(track["m_AvatarMask"]["m_PathID"]), 0, ACTOR_TRACK)
+
+    for path in (ACTOR_PLAYABLE_ENTRANCE, ACTOR_PLAYABLE_LOOP):
+        playable = load_json(path)
+        require("actor_playable_position", playable["m_Position"], {"x": 0.0, "y": 0.0, "z": 0.0}, path)
+        require("actor_playable_euler", playable["m_EulerAngles"], {"x": 0.0, "y": 0.0, "z": 0.0}, path)
+        require("actor_playable_rotation", playable["m_Rotation"], {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0}, path)
+        require("actor_playable_track_match", int(playable["m_UseTrackMatchFields"]), 1, path)
+        require("actor_playable_remove_start", int(playable["m_RemoveStartOffset"]), 1, path)
+
+    manifest = load_json(ZHUANGFY_MANIFEST)
+    clip_manifest = {row["name"]: row for row in manifest["clips"]}
+    head_local_rows = [row for row in manifest["transforms"] if row["name"] == "Head_Local"]
+    require("head_local_unique", len(head_local_rows), 1, ZHUANGFY_MANIFEST)
+    head_local = head_local_rows[0]
+    expected_head_path = (
+        "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/"
+        "Bip001_Spine2/Bip001_Neck/Bip001_Head/Head_Local"
+    )
+    require("head_local_path", head_local["path"], expected_head_path, ZHUANGFY_MANIFEST)
+
+    clip_specs = (
+        ("A_actor_zhuangfy_gacha", ACTOR_CLIP_ENTRANCE, ACTOR_SAMPLE_ENTRANCE, 643, 642),
+        ("A_actor_zhuangfy_ui_overview_loop_01", ACTOR_CLIP_LOOP, ACTOR_SAMPLE_LOOP, 201, 200),
+    )
+    pose_clips = {}
+    report_clips = []
+    required_paths = [
+        "Root",
+        "Root/Bip001",
+        "Root/Bip001/Bip001_Pelvis",
+        "Root/Bip001/Bip001_Pelvis/Bip001_Spine",
+        "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1",
+        "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2",
+        "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck",
+        "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head",
+    ]
+    for name, clip_path, sample_path, frame_count, root_frame_count in clip_specs:
+        clip = load_json(clip_path)
+        sample = load_json(sample_path)
+        manifest_row = clip_manifest[name]
+        require(f"{name}_sample_ok", sample["ok"], True, sample_path)
+        require(f"{name}_sample_hash_ok", sample["hash_ok"], True, sample_path)
+        require(f"{name}_sample_source", manifest_row["sample_source"], "acl_transform_buffer", ZHUANGFY_MANIFEST)
+        require(f"{name}_frame_count", int(sample["num_samples"]), frame_count, sample_path)
+        require(f"{name}_track_count", int(sample["num_tracks"]), 437, sample_path)
+        require(f"{name}_matched_tracks", int(manifest_row["matched_transform_count"]), 437, ZHUANGFY_MANIFEST)
+        require(f"{name}_missing_tracks", int(manifest_row["missing_transform_count"]), 0, ZHUANGFY_MANIFEST)
+        index_array = [int(value) for value in clip["m_MuscleClip"]["m_IndexArray"]]
+        mapped = [(index, value) for index, value in enumerate(index_array) if value >= 0]
+        require(f"{name}_motion_root_only_mapping", mapped, [(index, 3059 + index) for index in range(14)], clip_path)
+        mapping = {row["path"]: int(row["track_index"]) for row in manifest_row["bones"]}
+        require(f"{name}_follower_chain_tracks", [mapping[path] for path in required_paths], list(range(8)), ZHUANGFY_MANIFEST)
+        for frame in sample["frames"]:
+            require(
+                f"{name}_root_qvv_identity_frame_{frame['index']}",
+                frame["tracks"][0],
+                {
+                    "rotation": [0, 0, 0, 1],
+                    "translation": [0, 0, 0],
+                    "scale": [1, 1, 1],
+                },
+                sample_path,
+            )
+        root_motion = decode_root_motion(clip, clip_path, root_frame_count)
+        pose_clips[name] = {
+            "frames": sample["frames"],
+            "mapping": mapping,
+            "requiredPaths": required_paths,
+            "sourcePath": str(sample_path),
+        }
+        report_clips.append(
+            {
+                "name": name,
+                "qvvFrameCount": frame_count,
+                "qvvTrackCount": 437,
+                "directFollowerChainTrackIndices": list(range(8)),
+                "mappedMuscleClipInputs": "Motion/Root 0..13 only; no muscle lanes",
+                "rootMotion": root_motion,
+            }
+        )
+    return (
+        {
+            "bindingPath": "Actor/chr_0030_zhuangfy_uimodel",
+            "trackOffsetMode": "ApplyTransformOffsets",
+            "trackPosition": [0.0, 0.0, 0.0],
+            "trackRotation": [0.0, 0.0, 0.0, 1.0],
+            "removeStartOffset": True,
+            "settledLoopStart": 10.7,
+            "headLocalStaticTransform": {
+                "path": head_local["path"],
+                "position": head_local["local_pos"],
+                "rotation": head_local["local_rot"],
+                "scale": head_local["local_scale"],
+            },
+            "clips": report_clips,
+        },
+        {
+            "clips": pose_clips,
+            "headLocal": (
+                [float(value) for value in head_local["local_pos"]],
+                [float(value) for value in head_local["local_rot"]],
+                [float(value) for value in head_local["local_scale"]],
+            ),
+        },
+    )
+
+
+def follower_nodes_for_frame(
+    frame: dict[str, Any], pose_source: dict[str, Any], head_local: tuple[list[float], list[float], list[float]]
+) -> dict[str, tuple[list[float], list[float], list[float]]]:
+    transforms: dict[str, tuple[list[float], list[float], list[float]]] = {}
+    for path in pose_source["requiredPaths"]:
+        track = frame["tracks"][pose_source["mapping"][path]]
+        local = (
+            [float(value) for value in track["translation"]],
+            [float(value) for value in track["rotation"]],
+            [float(value) for value in track["scale"]],
+        )
+        if "/" not in path:
+            transforms[path] = local
+        else:
+            transforms[path] = compose_transform(transforms[path.rsplit("/", 1)[0]], local)
+    head_path = pose_source["requiredPaths"][-1]
+    transforms[head_path + "/Head_Local"] = compose_transform(transforms[head_path], head_local)
+    return {
+        "BIP001": transforms["Root/Bip001"],
+        "HEAD_LOCAL": transforms[head_path + "/Head_Local"],
+    }
+
+
+def evaluate_character_light(
+    row: dict[str, object],
+    nodes: dict[str, tuple[list[float], list[float], list[float]]],
+    planes: list[tuple[str, list[float], float]],
+    camera_position: list[float],
+) -> dict[str, object]:
+    follower = row["follower"]
+    if follower is None:
+        world = list(row["serializedPosition"])
+        position_equation = "serialized static transform under identity light root"
+    else:
+        node = nodes[str(follower["followableNodeName"])]
+        if int(follower["followType"]) == 0:
+            world = vector_add(node[0], list(follower["positionOffset"]))
+            position_equation = "target.worldPosition + positionOffset"
+        else:
+            require("parent_follower_mode", int(follower["followType"]), 1, OPERATOR_LIGHTS)
+            world = vector_add(node[0], quaternion_rotate(node[1], list(follower["localPosition"])))
+            position_equation = "target.worldPosition + target.worldRotation * localPosition"
+
+    light_type = int(row["type"])
+    light_range = float(row["range"])
+    forward = list(row["serializedForward"])
+    if light_type == 2:
+        bounds_center = world
+        bounds_extents = [light_range, light_range, light_range]
+    else:
+        cone_radius = light_range * math.tan(math.radians(float(row["spotAngle"]) * 0.5))
+        base_center = [f32(world[index] + forward[index] * light_range) for index in range(3)]
+        minimum = []
+        maximum = []
+        for axis in range(3):
+            disk_extent = cone_radius * math.sqrt(max(0.0, 1.0 - forward[axis] * forward[axis]))
+            minimum.append(min(world[axis], base_center[axis] - disk_extent))
+            maximum.append(max(world[axis], base_center[axis] + disk_extent))
+        bounds_center = [f32((minimum[index] + maximum[index]) * 0.5) for index in range(3)]
+        bounds_extents = [f32((maximum[index] - minimum[index]) * 0.5) for index in range(3)]
+    initial = [(plane[0], aabb_margin(plane, bounds_center, bounds_extents)) for plane in planes]
+    initial_min = min(initial, key=lambda item: item[1])
+    if light_type == 2:
+        geometry = [(plane[0], sphere_margin(plane, world, light_range)) for plane in planes]
+        kind = "point_sphere"
+    else:
+        geometry = [
+            (
+                plane[0],
+                cone_margin(plane, world, forward, light_range, float(row["spotAngle"]) * 0.5),
+            )
+            for plane in planes
+        ]
+        kind = "spot_cone"
+    geometry_min = min(geometry, key=lambda item: item[1])
+    delta = [f32(world[index] - camera_position[index]) for index in range(3)]
+    return {
+        "admitted": initial_min[1] >= 0.0 and geometry_min[1] >= 0.0,
+        "worldPosition": world,
+        "positionEquation": position_equation,
+        "initialAabbMinimum": initial_min,
+        "typeGeometryKind": kind,
+        "typeGeometryMinimum": geometry_min,
+        "cameraDistanceSquared": f32(dot(delta, delta)),
+    }
+
+
+def validate_character_geometry(
+    view: dict[str, Any],
+    resolution: dict[str, object],
+    operator_rows: list[dict[str, object]],
+    pose_sources: dict[str, Any],
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    camera = view["settledCamera"]
+    camera_position = vector_values(camera["position"])
+    planes = settled_frustum_planes(camera, float(resolution["aspect"]["value"]))
+    per_clip = []
+    target_results = None
+    for clip_name, pose_source in pose_sources["clips"].items():
+        worst = {
+            row["name"]: {"initial": ("", math.inf), "geometry": ("", math.inf)}
+            for row in operator_rows
+        }
+        for frame in pose_source["frames"]:
+            nodes = follower_nodes_for_frame(frame, pose_source, pose_sources["headLocal"])
+            results = [
+                evaluate_character_light(row, nodes, planes, camera_position)
+                for row in operator_rows
+            ]
+            for row, result in zip(operator_rows, results):
+                current = worst[row["name"]]
+                if result["initialAabbMinimum"][1] < current["initial"][1]:
+                    current["initial"] = result["initialAabbMinimum"]
+                if result["typeGeometryMinimum"][1] < current["geometry"][1]:
+                    current["geometry"] = result["typeGeometryMinimum"]
+            require(
+                f"{clip_name}_all_character_lights_admitted_frame_{frame['index']}",
+                all(result["admitted"] for result in results),
+                True,
+                pose_source["sourcePath"],
+            )
+            if clip_name == "A_actor_zhuangfy_ui_overview_loop_01" and int(frame["index"]) == 0:
+                target_results = results
+        per_clip.append(
+            {
+                "name": clip_name,
+                "frameCount": len(pose_source["frames"]),
+                "allSixAdmitted": True,
+                "worstMargins": [
+                    {
+                        "name": row["name"],
+                        "initialAabb": {
+                            "plane": worst[row["name"]]["initial"][0],
+                            "margin": float_evidence(worst[row["name"]]["initial"][1]),
+                        },
+                        "typeGeometry": {
+                            "plane": worst[row["name"]]["geometry"][0],
+                            "margin": float_evidence(worst[row["name"]]["geometry"][1]),
+                        },
+                    }
+                    for row in operator_rows
+                ],
+            }
+        )
+    require("settled_loop_target_present", target_results is not None, True, ACTOR_SAMPLE_LOOP)
+    assert target_results is not None
+    admitted = [row["name"] for row, result in zip(operator_rows, target_results) if result["admitted"]]
+    rejected = [row["name"] for row, result in zip(operator_rows, target_results) if not result["admitted"]]
+    validate_character_survivor_names(admitted, rejected, ACTOR_SAMPLE_LOOP)
+    target_rows = []
+    for row, result in zip(operator_rows, target_results):
+        target_rows.append(
+            {
+                "name": row["name"],
+                "lightPathId": row["pathId"],
+                "type": row["type"],
+                "priority": row["priority"],
+                "hasFollower": row["hasFollower"],
+                "worldPosition": [float_evidence(value) for value in result["worldPosition"]],
+                "positionEquation": result["positionEquation"],
+                "cameraDistanceSquared": float_evidence(result["cameraDistanceSquared"]),
+                "selectedAspectAdmitted": result["admitted"],
+                "initialAabb": {
+                    "result": result["initialAabbMinimum"][1] >= 0.0,
+                    "minimumPlane": result["initialAabbMinimum"][0],
+                    "minimumSupportMargin": float_evidence(result["initialAabbMinimum"][1]),
+                },
+                "typeGeometry": {
+                    "kind": result["typeGeometryKind"],
+                    "result": result["typeGeometryMinimum"][1] >= 0.0,
+                    "minimumPlane": result["typeGeometryMinimum"][0],
+                    "minimumSupportMargin": float_evidence(result["typeGeometryMinimum"][1]),
+                },
+            }
+        )
+    return (
+        {
+            "cameraSampleTime": camera["time"],
+            "targetActorClip": "A_actor_zhuangfy_ui_overview_loop_01",
+            "targetActorFrame": 0,
+            "targetClipLocalTime": 0.0,
+            "selectedAspectSurvivors": admitted,
+            "selectedAspectRejections": rejected,
+            "exactSelectedAspectCharacterContributionCount": len(admitted),
+            "allEntranceAndLoopFrames": per_clip,
+            "characterRows": target_rows,
+            "precisionBoundary": (
+                "Claims use float32-style source equations; every target and all-frame "
+                "minimum is separated from zero. Parent-mode light rotations are not "
+                "needed because both selected parent followers are point lights."
+            ),
+        },
+        target_rows,
+    )
 
 
 def validate_native_methods(game_assembly: Path) -> list[dict[str, object]]:
@@ -970,13 +1712,13 @@ def validate_native_cull_boundary(
         "genericFlagMaskGateClosedForAll12RoomLights": True,
         "guaranteedAbsentRoomLights": ["Spot Light (20)"],
         "authoredRoomMaximumContributionCount": 11,
-        "knownAuthoredSurvivorUpperBound": 17,
+        "preCharacterEvaluationKnownAuthoredUpperBound": 17,
         "remainingRoomOrderIfAdmitted": ROOM_SURVIVOR_SUBSEQUENCE,
         "nativeOutputOrder": (
             "accepted non-directionals sort by ascending camera distance squared; "
             "SetupState then sorts types 0/2 by priority descending and distance ascending"
         ),
-        "firstOpenRoomBoundary": (
+        "firstOpenBoundary": (
             "the synchronous AABB/plane result for the other eleven room rows depends "
             "on live horizontal planes derived from final render-target aspect"
         ),
@@ -988,9 +1730,11 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
         "gameAssembly": GAME_ASSEMBLY,
         "unityPlayer": UNITY_PLAYER,
         "globalMetadata": GLOBAL_METADATA,
+        "globalGameManagers": GLOBAL_GAME_MANAGERS,
         "roomChunk": ROOM_CHUNK,
         "charInfoChunk": CHARINFO_CHUNK,
         "gachaLua": LUA_SOURCE,
+        "uiConstLua": UI_CONST_SOURCE,
         "characterTable": CHARACTER_TABLE,
         "gachaCharTable": GACHA_CHAR_TABLE,
         "roomHierarchy": ROOM_HIERARCHY,
@@ -999,6 +1743,23 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
         "gachaCullViewAudit": GACHA_CULL_VIEW_AUDIT,
         "gachaSelectedListAudit": GACHA_SELECTED_LIST_AUDIT,
         "rotatehouse": ROTATEHOUSE,
+        "actorTimelineAudit": ACTOR_TIMELINE_AUDIT,
+        "zhuangfyManifest": ZHUANGFY_MANIFEST,
+        "actorTrack": ACTOR_TRACK,
+        "actorPlayableEntrance": ACTOR_PLAYABLE_ENTRANCE,
+        "actorPlayableLoop": ACTOR_PLAYABLE_LOOP,
+        "actorClipEntrance": ACTOR_CLIP_ENTRANCE,
+        "actorClipLoop": ACTOR_CLIP_LOOP,
+        "actorSampleEntrance": ACTOR_SAMPLE_ENTRANCE,
+        "actorSampleLoop": ACTOR_SAMPLE_LOOP,
+        "gachaRoomRoot": GACHA_ROOM_ROOT,
+        "timelineRoot": TIMELINE_ROOT,
+        "actorPrefabRoot": ACTOR_PREFAB_TRANSFORMS["gacha_char_zhuangfy"],
+        "actorContainer": ACTOR_PREFAB_TRANSFORMS["Actor"],
+        "actorModel": ACTOR_PREFAB_TRANSFORMS["chr_0030_zhuangfy_uimodel"],
+        "actorSkeletonRoot": ACTOR_PREFAB_TRANSFORMS["Root"],
+        "aclSampler": ACL_SAMPLER,
+        "aclSamplerSource": ACL_SAMPLER_SOURCE,
     }
     source_hashes = (
         {name: verified_hash(name, path) for name, path in source_paths.items()}
@@ -1007,6 +1768,12 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     )
     lua_contract = validate_lua_contract(
         LUA_SOURCE.read_text(encoding="utf-8-sig"), LUA_SOURCE
+    )
+    selected_audit = load_json(GACHA_SELECTED_LIST_AUDIT)
+    gacha_layer = validate_gacha_layer(
+        UI_CONST_SOURCE.read_text(encoding="utf-8-sig"),
+        GLOBAL_GAME_MANAGERS,
+        selected_audit,
     )
     character_table = load_json(CHARACTER_TABLE)
     gacha_table = load_json(GACHA_CHAR_TABLE)
@@ -1017,6 +1784,8 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
 
     prefab, prefab_rows = analyze_character_prefab(CHAR_JSON_ROOT, CHAR_DUMP_ROOT)
     operator_rows = validate_operator_population(load_json(OPERATOR_LIGHTS), prefab_rows)
+    actor_placement = validate_actor_placement()
+    actor_pose, pose_sources = validate_actor_pose_sources()
     room_rows = validate_room_population(load_json(ROOM_HIERARCHY), ROOM_LIGHT_ROOT)
     native_rows = validate_native_methods(GAME_ASSEMBLY)
     native_geometry_regions = {
@@ -1028,14 +1797,23 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     native_cull_boundary = validate_native_cull_boundary(
         load_json(NATIVE_CULL_REPORT),
         cull_view,
-        load_json(GACHA_SELECTED_LIST_AUDIT),
+        selected_audit,
         room_rows,
     )
     room_geometry = validate_room_geometry(cull_view, room_rows, installed_resolution)
+    character_geometry, character_target_rows = validate_character_geometry(
+        cull_view,
+        installed_resolution,
+        operator_rows,
+        pose_sources,
+    )
     native_cull_boundary["selectedAspectRoomGeometry"] = room_geometry
-    native_cull_boundary["firstOpenRoomBoundary"] = (
-        "room geometry is closed for the selected installed-client 3840x2160 state; "
-        "character-light follower transforms and cull outcomes remain open"
+    native_cull_boundary["selectedAspectCharacterGeometry"] = character_geometry
+    native_cull_boundary["exactKnownAuthoredSurvivorCount"] = 17
+    native_cull_boundary["firstOpenBoundary"] = (
+        "all known authored room and character-light geometry is closed for the selected "
+        "installed-client 3840x2160 state; runtime/custom carry-in and the native target-frame "
+        "pointer/count remain open"
     )
     union = room_rows + operator_rows
     type_counts = Counter(row["type"] for row in union)
@@ -1043,9 +1821,48 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     require("authored_union_types", type_counts, Counter({2: 15, 0: 3}), "room + character overview")
     require("authored_union_cookie_count", sum(bool(row["cookiePathId"]) for row in union), 0, "room + character overview")
 
+    camera_position = vector_values(cull_view["settledCamera"]["position"])
+    room_by_name = {row["name"]: row for row in room_rows}
+    room_position_by_name = {
+        row["name"]: vector_values(row["worldPosition"])
+        for row in cull_view["authoredRoomRowsInStrictNativeDistanceOrder"]
+    }
+    known_authored = []
+    for name in room_geometry["exactSelectedAspectRoomSurvivors"]:
+        position = room_position_by_name[name]
+        delta = [f32(position[index] - camera_position[index]) for index in range(3)]
+        known_authored.append(
+            {
+                "name": name,
+                "source": "SceneLight6Rarity",
+                "priority": int(room_by_name[name]["priority"]),
+                "cameraDistanceSquared": f32(dot(delta, delta)),
+            }
+        )
+    for row in character_target_rows:
+        known_authored.append(
+            {
+                "name": row["name"],
+                "source": "light_overview",
+                "priority": int(row["priority"]),
+                "cameraDistanceSquared": float(row["cameraDistanceSquared"]["value"]),
+            }
+        )
+    known_authored.sort(
+        key=lambda row: (-int(row["priority"]), float(row["cameraDistanceSquared"]))
+    )
+    require("known_authored_survivor_count", len(known_authored), 17, "room + character overview")
+    known_authored_order = [row["name"] for row in known_authored]
+    require(
+        "known_authored_survivor_order",
+        known_authored_order,
+        KNOWN_AUTHORED_SURVIVOR_ORDER,
+        "room + character overview",
+    )
+
     return {
-        "schema": "endfield.gacha-light-population-recovery.v3",
-        "status": "zhuangfy_gacha_selected_aspect_authored_room_subset_source_closed",
+        "schema": "endfield.gacha-light-population-recovery.v4",
+        "status": "zhuangfy_gacha_selected_aspect_known_authored_survivors_source_closed",
         "runtimeReady": False,
         "outcome": (
             "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, "
@@ -1057,9 +1874,12 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
             "occlusion. The selected installed-client state is independently stored as "
             "3840x2160 by Unity and the game. At that 16:9 aspect, native AABB, authored "
             "OBB, and type-specific geometry admit exactly 11 room rows and reject only "
-            "Spot Light (20), retaining the known authored survivor upper bound of 17. "
-            "This still does not close the "
-            "target-frame LightCullResult, dynamic/custom lights, final order, or lightCount."
+            "Spot Light (20). Installed layer data, identity placement, two decoded ACL "
+            "pose streams, constant root motion, and the native follower equations admit "
+            "all six character rows at the settled loop boundary and throughout both "
+            "authored clips. The exact known authored contribution is therefore 17. This "
+            "still does not close runtime/custom carry-in, the target-frame LightCullResult "
+            "pointer/count, whole-list order, or retail lightCount."
         ),
         "installedInputs": source_hashes,
         "selection": {
@@ -1067,8 +1887,11 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
             "rarity": 6,
             "timelineAssetName": "gacha_char_zhuangfy",
             **lua_contract,
+            "gachaLayer": gacha_layer,
             "activeRoomGroup": "SceneLight6Rarity",
         },
+        "actorPlacement": actor_placement,
+        "actorPose": actor_pose,
         "serializedCharacterPrefab": prefab,
         "knownActiveAuthoredCandidates": {
             "count": 18,
@@ -1086,13 +1909,34 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
                 "each component with that transform."
             ),
             "lateTickModes": {
-                "0": "fixed world position offset",
-                "1": "parent-space position and rotation",
+                "0": {
+                    "position": "target.worldPosition + positionOffset",
+                    "rotation": "unchanged",
+                },
+                "1": {
+                    "position": "target.worldPosition + target.worldRotation * localPosition",
+                    "rotation": "target.worldRotation * Quaternion.Euler(localRotationEuler)",
+                },
             },
             "selectedFollowerCount": 4,
         },
         "nativeGeometryMethods": native_geometry_regions,
         "nativeCullBoundary": native_cull_boundary,
+        "exactKnownAuthoredSelectedAspectSurvivors": {
+            "count": len(known_authored),
+            "setupStateRelativeOrder": known_authored_order,
+            "rows": [
+                {
+                    **row,
+                    "cameraDistanceSquared": float_evidence(row["cameraDistanceSquared"]),
+                }
+                for row in known_authored
+            ],
+            "scope": (
+                "exact relative order of the 17 known authored survivors only; unknown "
+                "persistent/global or runtime-created records may interleave"
+            ),
+        },
         "evidenceBoundary": {
             "closed": [
                 "installed Lua prefab path and direct-child activation rule",
@@ -1102,25 +1946,31 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
                 "twelve selected SceneLight6Rarity room rows",
                 "known 18-row authored type/cookie/shadow census",
                 "installed native follower traversal, node selection, and transform modes",
+                "installed Gacha layer index 30, recursive assignment, and selected-view mask gate",
+                "identity GachaRoom/TimelineRoot, character prefab, model, and light-root placement",
+                "entrance and loop direct QVV pose chains with no mapped muscle lanes",
+                "constant decoded ACL root-motion streams and remove-start-offset identity result",
                 "shipped normal candidate core with fallback and Gacha occlusion disabled",
                 "generic room layer/mask gate for all twelve room rows",
                 "read-only installed-client 3840x2160 selection from matching Unity and game registry values",
                 "selected-aspect initial AABB, authored OBB, and type-specific geometry for all twelve room rows",
-                "exact 11-row selected-aspect room subset, Spot Light (20) rejection, and 17-row authored upper bound",
+                "exact 11-row selected-aspect room subset and Spot Light (20) rejection",
+                "exact six-row selected-aspect character subset at the settled loop boundary and across all 844 decoded QVV frames",
+                "exact 17-row known authored contribution and its internal priority/distance order",
             ],
             "open": [
                 "target-frame HGCullingSystem.CullLights pointer/count and survivors",
-                "character-light cull outcomes and evaluated follower transforms",
                 "room outcomes for display aspects other than this installed-client 16:9 selection",
                 "persistent/global carry-in or runtime-created custom lights",
-                "final priority/distance order, LightDataBuffer rows, and lightCount",
+                "whole-list priority/distance order, LightDataBuffer rows, and lightCount",
             ],
             "decision": (
                 "Use 18 as the exact known serialized input population, 11 as the exact "
-                "selected-aspect authored room contribution, and 17 only as the combined "
-                "authored survivor upper bound. Do not publish the latter as the retail "
-                "survivor array or enable deferred pass 0 until the target-frame result is "
-                "captured or otherwise source-closed."
+                "selected-aspect authored room contribution, six as the exact character "
+                "contribution, and 17 as the exact known authored survivor contribution. "
+                "Do not publish those 17 rows as the complete retail survivor array or "
+                "enable deferred pass 0 until runtime/custom carry-in and the native "
+                "target-frame result are captured or otherwise source-closed."
             ),
         },
     }

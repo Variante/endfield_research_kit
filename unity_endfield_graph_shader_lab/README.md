@@ -1498,17 +1498,22 @@ the six-light `light_overview` character group, initializes its four
 therefore 18 lights (3 type 0, 15 type 2), with no authored cookies and one
 character-light shadow request. Run
 `python tools\audit_gacha_light_population.py --check` to validate the pinned
-Lua, tables, prefabs, group membership, and native follower-method evidence.
+Lua/layer data, tables, prefabs, Timeline/ACL pose inputs, group membership,
+and native follower-method evidence.
 The same audit now also pins the native normal candidate core. The shipped
 Gacha route has `useFallbackLightCulling=false` and `0 x 0` occlusion
 dimensions. Read-only installed-client registry values independently store
 `3840x2160` in Unity and game settings. At that selected 16:9 aspect, the
 hash-pinned native AABB, authored OBB, point-sphere, and spot-cone paths admit
-exactly 11 room rows; only `Spot Light (20)` is rejected. This closes the
-selected-aspect authored room subset while retaining 17 as the combined
-authored survivor upper bound. Character-light follower transforms/culling,
-other display aspects, and unrelated live lights remain open, so 17 is not the
-target-frame survivor array.
+exactly 11 room rows; only `Spot Light (20)` is rejected. Installed layer data
+fixes the recursively assigned Gacha layer at 30. Identity placement, exact
+native follower equations, and the original entrance/loop ACL streams admit
+all six character rows across all 844 decoded QVV frames; both root-motion
+streams are constant and remove to identity, with no mapped muscle lanes. The
+exact known authored contribution is therefore 17, including its internal
+priority/distance order. Other display aspects, runtime/custom carry-in, the
+target-frame pointer/count, whole-list order, and final `lightCount` remain
+open, so those 17 rows are not the complete retail survivor array.
 Offline IL2CPP/xref recovery now fixes the handoff precisely:
 `LightCullResult` is `visibleLightsPtr + visibleLightCount`; its only direct
 producer is `HGCullingSystem.CullLights`, both GameAssembly call sites belong
