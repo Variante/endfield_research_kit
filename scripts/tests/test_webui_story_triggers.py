@@ -152,6 +152,13 @@ for (const [key, category] of [
         self.assertIn("nativeCinematicProducerRouteAttachments", source)
         self.assertIn("route.sourceFiles", source)
 
+    def test_mission_pipeline_surfaces_hash_validated_story_connection_files(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("storyConnectionOriginalFilesHtml", source)
+        self.assertIn("relatedOriginalFilesValidation", source)
+        self.assertIn('t("storyConnectionOriginalFiles")', source)
+        self.assertIn("file.sha256", source)
+
     def test_mission_pipeline_surfaces_fixed_point_carrier_closure(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("metadata?.maximumShortestPathDepth", source)
