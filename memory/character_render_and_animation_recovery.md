@@ -96,7 +96,18 @@ NPC archetypes are imported as labeled source kits.
   `4 + 0x18*capacity`. Each source record calls `0x181086050` with
   `batchKey`, mesh/material PPtrs, and `subMeshIndex`; its returned 16-bit
   handle plus `batchKey/renderFlags` enter the runtime record, while the two
-  serialized LOD floats copy verbatim to the pair array. Dispatch segment
+  serialized LOD floats copy verbatim to the pair array. Dedicated HG entries
+  568/569 are `UnregisterTreeBatchGroup` and
+  `UnregisterTreeBatchGroupWithHandle`; owner cleanup `0x1810BCE00` iterates
+  the same blob and passes record `+0x04` as `batchKey` and `+0x02` as the
+  16-bit handle to `0x181087E00`, closing that registration lifecycle. This
+  loader blob is not the other 24-byte structure used by LOD jobs. The latter
+  is archetype component bit 67: `+0x00` is LOD count, `+0x01/+0x02` are the
+  desired and availability-resolved indices, `+0x03` carries transition/output
+  history, `+0x04/+0x05` are pending/available LOD masks, `+0x08` is a 64-bit
+  renderer-readiness set, and `+0x10..+0x17` are eight cumulative renderer
+  range endpoints. Writer `0x1810842E0` closes the request, completion, and
+  unload bit transitions. Dispatch segment
   `0x181079FB1` selects the recovered LOD job variants. The direct route uses
   `minSquared < distanceSquared <= maxSquared`; the scaled route uses
   `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` and the same
@@ -113,9 +124,10 @@ NPC archetypes are imported as labeled source kits.
   `[0,lodCount-1]`. The
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
-  crossed the HG table boundary into unrelated Animator code. The meanings of
-  the initially zero runtime state bytes, the unrelated scheduled consumer of
-  view `+0x18`, any separate
+  crossed the HG table boundary into unrelated Animator code. The remaining
+  initially zero loader-record bytes, the ECS LOD-count producer and exact
+  component type-name link, the unrelated scheduled consumer of view `+0x18`,
+  any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
@@ -348,9 +360,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 1. Recover the actual scheduled renderer/entity consumer of cull-view
    `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
-   bounds, and resolve the write chain and meanings of the initially zero
-   HGTree runtime-state bytes. Then recover the retail survivor
-   list at the exact `HGCamera.DoECSCulling` return boundary,
+   bounds. Resolve the remaining loader-record zero bytes plus the component-67
+   LOD-count producer and exact native type-name link. Then recover the retail
+   survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
    carry-in and other display aspects; populate exact shadow, depth, GBuffer,

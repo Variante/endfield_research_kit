@@ -1552,7 +1552,16 @@ Loader `0x1810C5F30` now closes that transform: `count` is followed by a
 LOD pair array at `4 + 0x18*capacity`. It passes each serialized record's
 `batchKey`, mesh/material PPtrs, and `subMeshIndex` to `0x181086050`, stores the
 returned 16-bit handle with `batchKey/renderFlags`, and copies the LOD max/min
-floats verbatim to the pair array. Dispatch segment `0x181079FB1` selects the
+floats verbatim to the pair array. Dedicated HG entries 568/569 are
+`UnregisterTreeBatchGroup` and `UnregisterTreeBatchGroupWithHandle`; cleanup
+`0x1810BCE00` reads record `+0x04` as `batchKey` and `+0x02` as handle before
+calling `0x181087E00`, closing the blob lifecycle. This loader blob is separate
+from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
+at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
+available masks at `+0x04/+0x05`, a 64-bit renderer-readiness set at `+0x08`,
+and eight cumulative renderer-range endpoints at `+0x10..+0x17`. Writer
+`0x1810842E0` closes its request, completion, and unload transitions. Dispatch
+segment `0x181079FB1` selects the
 LOD variants. The direct path selects
 `minSquared < distanceSquared <= maxSquared`; the scaled path tests
 `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` against the same
@@ -1568,8 +1577,9 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The initially zero runtime-state byte
-semantics, unrelated scheduled consumer of view `+0x18`, any separate
+boundary into unrelated Animator code. The remaining initially zero loader
+bytes, component-67 LOD-count producer and exact type-name link, unrelated
+scheduled consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
