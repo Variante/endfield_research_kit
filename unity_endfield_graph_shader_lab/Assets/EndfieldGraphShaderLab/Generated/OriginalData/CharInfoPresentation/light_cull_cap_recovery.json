@@ -720,13 +720,29 @@
         "screenSizeMinimumSquaredAt0x18Read": false,
         "boundary": "the two complete hash-pinned predicates selected by this dispatch stage do not read cull-view +0x18; this does not prove that later renderer/entity jobs omit the threshold"
       },
+      "screenSizeMinimumSquaredDataflow": {
+        "viewRecordOffset": "0x18",
+        "scheduledBatchCoreDirectMovssDisplacement0x18Loads": 0,
+        "dispatchStageConclusion": "the complete hash-pinned scheduled batch core has no legacy scalar-float load at displacement +0x18; its selected view predicates also omit the view field",
+        "independentParentLODBiasSquaredFlow": [
+          "0x181053358 reads HGCullingSystem state+0x180",
+          "0x1810533B3 projects it to the batch-core stack argument",
+          "0x1810537F0 reloads it at core entry",
+          "0x181054679 forwards it to child-job payload+0x1B0",
+          "0x181045F8E reloads the callback-visible payload+0x3C"
+        ],
+        "nonEquivalence": "parentLODBiasSquared is an independent HGCullingSystem state value and is not evidence of a cull-view +0x18 read",
+        "openBoundary": "a separate later system may still copy or consume the view threshold outside this dispatch stage"
+      },
       "evidenceBoundary": {
         "closed": [
           "DispatchBatchCullingJobs internal-call binding and native call chain",
           "camera-type predicate selection",
           "standard six-plane AABB predicate",
           "cameraType 0x80 sphere/distance predicate",
-          "absence of cull-view +0x18 from those two selected predicates"
+          "absence of cull-view +0x18 from those two selected predicates",
+          "absence of any direct legacy MOVSS +0x18 load from the complete scheduled batch core",
+          "the independent parentLODBiasSquared batch/child-job forwarding chain"
         ],
         "open": [
           "the later renderer/entity consumer, if any, of cull-view +0x18",
@@ -758,6 +774,12 @@
           "virtualAddress": "0x181053730",
           "sizeBytes": 11518,
           "sha256": "e98d6f1048d417b86a65a9a8328e6edf7fbc9f2d91e3c94464e4586e1bb5eb45"
+        },
+        {
+          "label": "parallel_batch_thunk",
+          "virtualAddress": "0x181045F80",
+          "sizeBytes": 222,
+          "sha256": "c3cdc2ccc3b96eaa31ce470f0f3a1313c795da8bef5e4b4cc3645e71b68fce0c"
         },
         {
           "label": "standard_predicate_wrapper",
@@ -796,6 +818,24 @@
           "virtualAddress": "0x180FEAEF0",
           "sizeBytes": 96,
           "sha256": "e0404f9a11a72bc0c563e51e1c55fe16c4e5df6a4740a7f07501c32ec09254f5"
+        },
+        {
+          "label": "parent_lod_bias_to_batch_core",
+          "virtualAddress": "0x181053351",
+          "sizeBytes": 128,
+          "sha256": "19a38fef6a1c0aaab5de15a55bb84e92f04bf524cab6f1a02a6c93e51733a1f7"
+        },
+        {
+          "label": "batch_core_parent_lod_bias_ingress",
+          "virtualAddress": "0x1810537F0",
+          "sizeBytes": 30,
+          "sha256": "4bd61115dae1a16f90e36980dcf0d883d87f48a9f8270b2be745e32c8cf1abd8"
+        },
+        {
+          "label": "parallel_batch_parent_lod_bias_projection",
+          "virtualAddress": "0x181054665",
+          "sizeBytes": 28,
+          "sha256": "fb74eccc3f55bfe26815845bb1838298dc2d90037021ef8a96566c962d35f3ba"
         }
       ]
     },

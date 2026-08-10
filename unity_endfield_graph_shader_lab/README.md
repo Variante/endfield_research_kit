@@ -1538,7 +1538,11 @@ then mask-enabled bit 0, then `view.cullingMask & candidate.layerMask`.
 not read its slot. Internal call 3315 now closes the next dispatch boundary:
 normal views select the exact six-plane AABB predicate, while
 `cameraType == 0x80` selects the exact sphere/distance predicate; neither reads
-view `+0x18`. Independent retail serializer/deserializer code fixes the
+view `+0x18`. The complete hash-pinned scheduled batch core likewise contains
+no direct scalar load from view `+0x18`. Its separate `state +0x180` input is
+proven to be squared `parentLODBias` and is only forwarded through the batch
+core and child-job thunk, so it is not this view threshold. Independent retail
+serializer/deserializer code fixes the
 formerly generic 28-byte record as `HGTreeRenderer`, nested under
 `HGTreeInstance.renderers`: `batchKey`, `renderFlags`, `mesh`, `material`,
 `subMeshIndex`, `lodScreenSizeMaxSquared`, and `lodScreenSizeMinSquared`, with
@@ -1660,8 +1664,8 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 standalone native type name, unrelated
-scheduled consumer of view `+0x18`, any separate
+bytes, component-67 standalone native type name, any separate post-dispatch
+copy or consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned

@@ -19,6 +19,10 @@ SPEC.loader.exec_module(AUDIT)
 
 
 class LightCullCapAuditTests(unittest.TestCase):
+    def test_movss_displacement_counter_covers_rex_prefixes(self) -> None:
+        body = bytes.fromhex("f30f104018 f3410f104018 f30f10c0")
+        self.assertEqual(AUDIT.count_legacy_movss_disp_loads(body, 0x18), 2)
+
     def write_fixture(
         self,
         root: Path,
@@ -573,6 +577,18 @@ class LightCullCapAuditTests(unittest.TestCase):
                 "screenSizeMinimumSquaredAt0x18Read"
             ]
         )
+        self.assertEqual(
+            result["screenSizeMinimumSquaredDataflow"][
+                "scheduledBatchCoreDirectMovssDisplacement0x18Loads"
+            ],
+            0,
+        )
+        self.assertIn(
+            "state+0x180",
+            result["screenSizeMinimumSquaredDataflow"][
+                "independentParentLODBiasSquaredFlow"
+            ][0],
+        )
         self.assertNotIn("rendererCandidateRecord", result)
 
     def test_unity_hgtree_renderer_boundary(self) -> None:
@@ -1013,6 +1029,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_scheduled_cull_camera_type_0x80_sphere_predicate_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_scheduled_culling_boundary(image)
+
+    def test_changed_scheduled_cull_parallel_thunk_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181045F80 and size == 0xDE:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_scheduled_cull_parallel_batch_thunk_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_scheduled_culling_boundary(image)

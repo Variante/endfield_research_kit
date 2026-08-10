@@ -82,7 +82,11 @@ NPC archetypes are imported as labeled source kits.
   but not read by this hash-pinned constructor. The next dispatch boundary is
   now split exactly: normal views use a six-plane AABB predicate, while
   `cameraType == 0x80` uses a sphere/distance predicate; neither reads view
-  `+0x18`. Retail serializer/deserializer evidence now identifies the formerly
+  `+0x18`. The complete hash-pinned scheduled batch core also has no direct
+  scalar load from that offset. Its separate `state +0x180` input is squared
+  `parentLODBias` and is only forwarded through the core and child-job thunk,
+  not consumed as the view threshold. Retail serializer/deserializer evidence
+  now identifies the formerly
   generic 28-byte record exactly as `HGTreeRenderer`, nested under
   `HGTreeInstance.renderers`, with `lodScreenSizeMaxSquared` and
   `lodScreenSizeMinSquared` at `+0x14/+0x18`. The dedicated 729-entry HG
@@ -214,8 +218,7 @@ NPC archetypes are imported as labeled source kits.
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The remaining
   initially zero loader-record bytes, the component-67 standalone native type
-  name, the unrelated scheduled consumer of view
-  `+0x18`,
+  name, any separate post-dispatch copy or consumer of view `+0x18`,
   any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
@@ -447,9 +450,11 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Recover the actual scheduled renderer/entity consumer of cull-view
-   `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
-   bounds. Resolve the remaining loader-record zero bytes and the exact native
+1. Search for a separate post-dispatch copy or consumer of cull-view
+   `screenSizeMinimumSquared`; the current scheduled batch core directly
+   excludes it. Keep that value distinct from both squared `parentLODBias` and
+   the HGTreeRenderer LOD bounds. Resolve the remaining loader-record zero bytes
+   and the exact native
    type-name link for component 67; its serialized LOD-count/range producer is
    now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
