@@ -117,6 +117,12 @@ NPC archetypes are imported as labeled source kits.
   desired/resolved/history indices, changes pending/available masks to `0/1`,
   and fills readiness bits from the companion renderer/subresource count;
   otherwise it writes sentinel 8 to all three indices and clears readiness.
+  The intervening `+0x06/+0x07` word is now closed as reserved/alignment on
+  the direct accessor-derived surface: all 25 direct calls and 21 logical
+  caller bodies are pinned, no caller gives it a standalone/field-specific
+  access or writes it, and all 1,305,818 serialized instances initialize it
+  to zero. Dword reads rooted at `+0x04` include it physically but only update
+  the lower pending/available bytes.
   It does not produce the LOD count or cumulative range endpoints. Installed
   scripting registration `0x1807EEEE0 -> 0x1807EC5E0` now directly closes
   `::Scripting::UnityEngine::HyperGryph::ECS::HGTreeComponentProxy` to native
@@ -177,8 +183,9 @@ NPC archetypes are imported as labeled source kits.
   `entityCount*elementSize` slice directly into native ECS storage. Across all
   83 map scopes, its 1,230,041 distinct entity IDs exactly match the type-0/9
   owner set. The 1,305,818 serialized occurrences initialize LOD count 1..6,
-  fixed state bytes `8/8/8/0/0`, zero readiness, and 102 cumulative renderer
-  range patterns; repeated map/entity records are byte-identical. Thus the
+  fixed state bytes `8/8/8/0/0`, the `+0x06` reserved word to zero, zero
+  readiness, and 102 cumulative renderer range patterns; repeated map/entity
+  records are byte-identical. Thus the
   LOD-count/range producer is now closed to original game-binary data rather
   than a later `ConvertFrom` inference. Only the standalone native component
   name remains open. All 1,576
@@ -217,8 +224,9 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The remaining
-  initially zero loader-record bytes, the component-67 standalone native type
-  name, any separate post-dispatch copy or consumer of view `+0x18`,
+  loader-registration record `+0x0C..+0x17` zero-field roles, the component-67
+  standalone native type name, any separate post-dispatch copy or consumer of
+  view `+0x18`,
   any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
@@ -453,8 +461,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 1. Search for a separate post-dispatch copy or consumer of cull-view
    `screenSizeMinimumSquared`; the current scheduled batch core directly
    excludes it. Keep that value distinct from both squared `parentLODBias` and
-   the HGTreeRenderer LOD bounds. Resolve the remaining loader-record zero bytes
-   and the exact native
+   the HGTreeRenderer LOD bounds. Resolve the remaining loader-registration
+   record `+0x0C..+0x17` zero-field roles and the exact native
    type-name link for component 67; its serialized LOD-count/range producer is
    now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,

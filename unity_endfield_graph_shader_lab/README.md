@@ -1562,8 +1562,11 @@ floats verbatim to the pair array. Dedicated HG entries 568/569 are
 calling `0x181087E00`, closing the blob lifecycle. This loader blob is separate
 from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
 at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
-available masks at `+0x04/+0x05`, a 64-bit renderer-readiness set at `+0x08`,
-and eight cumulative renderer-range endpoints at `+0x10..+0x17`. Writer
+available masks at `+0x04/+0x05`, a reserved/alignment word at `+0x06`, a
+64-bit renderer-readiness set at `+0x08`, and eight cumulative renderer-range
+endpoints at `+0x10..+0x17`. All 25 direct calls to the archetype/indexed
+accessors and their 21 logical caller bodies are pinned; control-flow dataflow
+finds no independent `+0x06/+0x07` access or writer on that surface. Writer
 `0x1810842E0` closes its request, completion, and unload transitions. Indexed
 accessor `0x1811648A0` reaches the same state per entity; writer `0x181159010`
 closes the initial LOD0 completion/fallback transition. With only LOD0 pending,
@@ -1626,8 +1629,9 @@ data. Hash-pinned native copier `0x1801F95E0` copies each
 `entityCount*elementSize` slice directly into ECS storage. Across all 83 map
 scopes, the 1,230,041 distinct component-67 IDs exactly equal the distinct
 type-0/type-9 owner set. All 1,305,818 occurrences initialize LOD count 1..6,
-state bytes `8/8/8/0/0`, zero readiness, and one of 102 cumulative renderer
-range patterns; repeated map/entity records are byte-identical. This closes
+state bytes `8/8/8/0/0`, the `+0x06` reserved word to zero, zero readiness,
+and one of 102 cumulative renderer range patterns; repeated map/entity records
+are byte-identical. This closes
 the LOD-count/range producer to original game-binary data while leaving the
 standalone native component name open. All
 1,576 DynamicStreaming init/stream payloads contain only tag-2 records and no
@@ -1663,8 +1667,9 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 standalone native type name, any separate post-dispatch
+boundary into unrelated Animator code. The remaining loader-registration
+record `+0x0C..+0x17` zero-field roles, component-67 standalone native type
+name, any separate post-dispatch
 copy or consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.
