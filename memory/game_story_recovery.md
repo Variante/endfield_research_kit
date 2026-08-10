@@ -118,15 +118,24 @@ never promotes an edge.
   Duplicate Timeline clips must agree within their runtime option scope. These
   rows prove an objective dependency, not player selection, dialog activation,
   server successor choice, or total Story-file order.
-- Plain registered DialogTree recovery is corpus-driven: core isolated Story
-  targets join mechanically through `misc_dlg_` aliases, the current DialogId
-  registry, exact hash-validated TextAssets, Timeline definitions, typed
-  LevelScript/native/object carrier censuses, and the installed binaries. In
-  the current corpus this replaces per-object definition declarations for 43
-  rows; 59 legacy rows remain only because they carry separately typed
-  NpcProxy, MissionRuntime, LevelScript, shared-Timeline, or non-owning context.
-  The generic definition path never creates mission activation or cross-file
-  order, and malformed or ambiguous current sources fail closed.
+- Registered DialogTree and NpcProxy-consumer recovery is corpus-driven: core
+  isolated Story targets join mechanically through `misc_dlg_` aliases, the
+  current DialogId registry, exact hash-validated TextAssets, authored option
+  routes and finish endpoints, exact `NpcProxyEx`/`NpcProxy` rows, typed
+  LevelScript/native/object carrier censuses, and the installed binaries. The
+  current definition path ignores the copied per-object definition fields for
+  72 of 102 maintained rows. The NpcProxy pattern independently validates 54
+  DialogTrees and 60 selected rows, including aliases and multi-proxy cases;
+  all 44 formerly copied consumer declarations (48 rows) match it exactly and
+  have been removed. Fifteen retained mission-tracking/LevelScript contexts now
+  consume the same general result. This family retains 312 authored lines, 90
+  validated option routes, and 68 prime-reachable finish endpoints; three
+  unresolved option-node identities remain visibly fail closed. One transient
+  row without a current
+  `NpcProxyTable` identity fails closed with a bounded diagnostic. Internal
+  DialogTree routes remain local structure and NpcProxy active-row selection
+  remains a consumer relation; neither creates mission activation or
+  cross-file order.
 
 ## LevelScript and native conclusions
 
@@ -309,6 +318,11 @@ Reject as proof:
    routes are structurally classified; revisit them only if a new original
    connection or native fallback appears. Do not repair them with positional
    replication or object-specific exceptions.
+7. Republish the StreamingAssets object-index commit marker only through a
+   current-CLI Story carrier refresh. The surviving merged outputs and worker
+   parts still hash-match their last valid report and the installed-data
+   fingerprint is unchanged, but the current AnimeStudio implementation hashes
+   differ from that producer; copying the old marker would violate provenance.
 
 The current source-only gap queue ranks actionable isolated scenes by mission.
 Use it as a work queue, not as a proposed Story order.
