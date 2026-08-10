@@ -244,7 +244,7 @@ NPC archetypes are imported as labeled source kits.
   `0x308`-byte slots, selects one with `bsf(componentTypeMask)`, and requires
   a non-empty component list whose first entry is Transform. These values are
   converter bits, not ECS component IDs, so they narrow the component-67
-  search to the native LOD-state producer rather than either managed name.
+  search to the native LOD-state type identity rather than either managed name.
   The native entity lifecycle registry is now closed separately: one
   `ECSEntityType` record is `0x288` bytes, with ten `0x40`-byte callback
   slots at `+0x08`. Installed `EntityTransition` metadata names slots 0..9.
@@ -254,7 +254,20 @@ NPC archetypes are imported as labeled source kits.
   `UnloadedToLoading`, `LoadingToLoaded`, `UnloadingToUnloaded`, and
   `LoadingToUnloaded`; waiting slots 2/7 are unbound. The managed constructor
   replaces only `Water` and `WaterDecal`, so it does not overwrite either
-  component-67 owner registry.
+  component-67 owner registry. The two teardown paths are now exact too.
+  Callbacks intersect the archetype high mask with `0x7F0`; the complete
+  serialized corpus makes that selection one-hot with exactly one of IDs
+  68..73 beside every component-67 archetype. Their sizes
+  `48/88/168/328/648/1288` are an 8-byte header plus 1/2/4/8/16/32 rows of
+  40 bytes, each holding three source pointers and three resource handles.
+  Transition 6 (`UnloadingToUnloaded`) walks `pending|available` LOD ranges,
+  releases all three handles, clears the mapped Material/main-Mesh/
+  shadow-proxy runtime words, and zeroes both mask bytes; type 9 alone adds
+  merged-render-collider cleanup. Shared transition 8
+  (`LoadingToUnloaded`) walks only pending ranges, releases owner handles,
+  clears only pending byte `+0x04`, and preserves the available byte and
+  mapped runtime words. Code admits selector bit 74, but no serialized ID-74
+  companion or native name is claimed.
   The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
   converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
   binding, excluding that static constructor delegate route. A direct installed-VFS
@@ -564,11 +577,11 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the exact native type-name link for component 67 by following the
-   now-closed transition callbacks into their remaining native component
-   descriptor/type registry; the complete lifecycle slot map, managed
-   `get_id` namespace, serialized LOD-count/range producer, and HGTree
-   renderer-list filter callers are closed. Then recover the retail
+1. Resolve the exact native type names for component 67 and its 68..74
+   companion-capacity family from the remaining native descriptor/RTTI
+   registries; lifecycle slots, transition-6/8 teardown, managed `get_id`
+   namespace, serialized LOD-count/range producer, and HGTree renderer-list
+   filter callers are closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom

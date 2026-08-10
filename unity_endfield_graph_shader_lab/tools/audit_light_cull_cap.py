@@ -1517,6 +1517,26 @@ UNITY_HGTREE_BODIES = {
         0x84,
         "956019335a64fb5538d947ba107a385515085c041a9923b1069f9caf9025c883",
     ),
+    "lod_ecs_component_67_companion_accessor": (
+        0x181164760,
+        0x137,
+        "9c0cc1e11c8d4a5f078f7a2cacd346c00822a68363abd116892fc25e92cc9872",
+    ),
+    "lod_ecs_component_67_type9_unload_to_unloaded": (
+        0x18115BC90,
+        0x1EA,
+        "562e48e34b9e7296e947500f80e4f7dcf20d40c365b61d90916704a961168548",
+    ),
+    "lod_ecs_component_67_type0_unload_to_unloaded": (
+        0x18115BFC0,
+        0x196,
+        "4564e22adf8397fb1c98654a17f014f26b9e170273db05e835c0ca0b534cc31f",
+    ),
+    "lod_ecs_component_67_loading_to_unloaded": (
+        0x18115C8A0,
+        0x13E,
+        "c92e3ad737722d1bf874b259e5e871ae5365c61b20ae1dc1a51ae7a1a07ba723",
+    ),
     "lod_ecs_initial_completion_writer": (
         0x181159010,
         0x398,
@@ -2132,6 +2152,10 @@ UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
 }
 
 UNITY_HGTREE_SLICES = {
+    "component67_companion_component_mask": (
+        0x181E22FC0,
+        "0000000000000000f007000000000000",
+    ),
     "create_renderer_list_render_flag_parameter_handoff": (
         0x1801D9D24,
         "418bd9418bf88bf28be9e82dc1de0080bc249000000000448bcf48c744244000"
@@ -9275,6 +9299,114 @@ def validate_unity_hgtree_renderer_boundary(
                         "produce lodCount or the cumulative endpoints"
                     ),
                 },
+                "resourceCompanion": {
+                    "selectorMaskConstantVirtualAddress": "0x181E22FC0",
+                    "selectorMaskLowQword": "0x0000000000000000",
+                    "selectorMaskHighQword": "0x00000000000007F0",
+                    "candidateComponentIds": list(range(68, 75)),
+                    "serializedComponentIds": list(range(68, 74)),
+                    "selectionRule": (
+                        "intersect the archetype high-qword mask with bits "
+                        "4..10; every component-67 archetype in the complete "
+                        "serialized corpus yields exactly one bit"
+                    ),
+                    "indexedAccessorVirtualAddress": "0x181164760",
+                    "exactlyOneSerializedCompanionPerComponent67Archetype": True,
+                    "recordLayout": {
+                        "headerBytes": 8,
+                        "rowStrideBytes": 40,
+                        "sourcePointerOffsets": ["0x00", "0x08", "0x10"],
+                        "resourceHandleOffsets": ["0x18", "0x1C", "0x20"],
+                    },
+                    "serializedCapacityClasses": [
+                        {
+                            "componentId": component_id,
+                            "elementSize": 8 + 40 * capacity,
+                            "rowCapacity": capacity,
+                        }
+                        for component_id, capacity in zip(
+                            range(68, 74), (1, 2, 4, 8, 16, 32), strict=True
+                        )
+                    ],
+                    "boundary": (
+                        "the installed callbacks support selector bit 74, but "
+                        "the complete serialized corpus contains only ids "
+                        "68..73; no native type names are claimed for this "
+                        "capacity-class family"
+                    ),
+                },
+                "unloadStateMachine": {
+                    "releaseCoreVirtualAddress": "0x180FBF6B0",
+                    "lodRangeEquation": {
+                        "start": (
+                            "0 for LOD0, otherwise "
+                            "cumulativeRange[lodIndex - 1]"
+                        ),
+                        "end": "cumulativeRange[lodIndex]",
+                    },
+                    "resourceTriplet": [
+                        "m_Materials owner handle / runtime record+0x04",
+                        "m_Meshes owner handle / runtime record+0x08",
+                        (
+                            "m_ShadowProxyMeshes owner handle / runtime "
+                            "record+0x0C"
+                        ),
+                    ],
+                    "unloadingToUnloaded": {
+                        "transitionValue": 6,
+                        "callbacks": [
+                            {
+                                "entityType": 0,
+                                "entityTypeName": "Render",
+                                "virtualAddress": "0x18115BFC0",
+                            },
+                            {
+                                "entityType": 9,
+                                "entityTypeName": "MergedRenderCollider",
+                                "virtualAddress": "0x18115BC90",
+                            },
+                        ],
+                        "selectedLodMask": "pendingMask | availableMask",
+                        "ownerResourceEffect": (
+                            "release each non-null source's three handles and "
+                            "zero the companion handle words"
+                        ),
+                        "runtimeRendererEffect": (
+                            "zero blob+0x08/+0x0C/+0x10, corresponding to "
+                            "runtime record+0x04/+0x08/+0x0C"
+                        ),
+                        "component67Effect": (
+                            "write zero to the word at +0x04, clearing pending "
+                            "and available masks together"
+                        ),
+                        "type9AdditionalCleanup": {
+                            "lookupVirtualAddress": "0x181071450",
+                            "cleanupVirtualAddress": "0x1806BCBF0",
+                            "type0UsesThisPath": False,
+                        },
+                    },
+                    "loadingToUnloaded": {
+                        "transitionValue": 8,
+                        "sharedCallbackVirtualAddress": "0x18115C8A0",
+                        "selectedLodMask": "pendingMask only",
+                        "ownerResourceEffect": (
+                            "release each non-null source's three handles and "
+                            "zero the companion handle words"
+                        ),
+                        "runtimeRendererEffect": "leave mapped runtime words unchanged",
+                        "component67Effect": (
+                            "write zero only to byte +0x04; preserve available "
+                            "mask byte +0x05"
+                        ),
+                    },
+                    "closedBoundary": (
+                        "the two cancellation/unload transitions, companion "
+                        "capacity records, exact LOD ranges, resource releases, "
+                        "runtime-word clearing, and pending/available mask "
+                        "differences are closed; standalone native component "
+                        "names remain open"
+                    ),
+                },
                 "componentIdMaskRegistration": {
                     "internalCallIndex": (
                         UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX
@@ -9831,8 +9963,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v39",
-        "status": "component67_native_transition_registry_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v40",
+        "status": "component67_unload_state_machine_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -10003,7 +10135,18 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "LoadingToLoaded, UnloadingToUnloaded, and LoadingToUnloaded. The "
             "managed StreamingSceneManagerScript replaces only Water/type 1 and "
             "WaterDecal/type 13 registries, so it does not displace either native "
-            "component-67 owner path. The "
+            "component-67 owner path. The transition teardown is now closed as "
+            "well. A high-qword 0x7F0 intersection admits capacity-class "
+            "companion ids 68..74; every component-67 archetype in the complete "
+            "serialized corpus yields exactly one of ids 68..73, whose 8-byte "
+            "header plus 40-byte rows provide capacities 1/2/4/8/16/32. "
+            "UnloadingToUnloaded walks pending|available LOD ranges, releases "
+            "all three owner resource handles, clears the mapped Material/Mesh/"
+            "shadow-proxy runtime words, and zeroes both mask bytes. The shared "
+            "LoadingToUnloaded callback walks pending ranges only, releases the "
+            "owner handles, clears only pending byte +0x04, and preserves the "
+            "available byte and mapped runtime words. Type 9 alone performs its "
+            "additional merged-render-collider cleanup. The "
             "entity-type registration core now closes each 8-byte descriptor "
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
@@ -10276,6 +10419,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
                 "the complete 30-declaration/29-body UnityEngine.HyperGryph.ECS Int32 get_id census, codegen pointer slots, constant values, and absence of component id 67",
                 "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
+                "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -10332,6 +10476,7 @@ def main() -> int:
         "get_id census with no id 67, managed LOD-info id 6, "
         "component-67 separation, native Render/MergedRenderCollider ownership, "
         "ten-slot EntityTransition registry and exact transitions 1/3/6/8, "
+        "resource-capacity companions and transition-6/8 teardown semantics, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "

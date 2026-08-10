@@ -1285,6 +1285,31 @@ class LightCullCapAuditTests(unittest.TestCase):
             direct_initializer["terminalLodBranch"]["rangeEnd"],
             "cumulativeRange[lodIndex]",
         )
+        companion = ecs_state["resourceCompanion"]
+        self.assertEqual(companion["candidateComponentIds"], list(range(68, 75)))
+        self.assertEqual(companion["serializedComponentIds"], list(range(68, 74)))
+        self.assertEqual(
+            [row["rowCapacity"] for row in companion["serializedCapacityClasses"]],
+            [1, 2, 4, 8, 16, 32],
+        )
+        self.assertEqual(companion["recordLayout"]["rowStrideBytes"], 40)
+        unload = ecs_state["unloadStateMachine"]
+        self.assertEqual(
+            unload["unloadingToUnloaded"]["selectedLodMask"],
+            "pendingMask | availableMask",
+        )
+        self.assertIn(
+            "clearing pending and available masks together",
+            unload["unloadingToUnloaded"]["component67Effect"],
+        )
+        self.assertEqual(
+            unload["loadingToUnloaded"]["selectedLodMask"],
+            "pendingMask only",
+        )
+        self.assertIn(
+            "preserve available mask",
+            unload["loadingToUnloaded"]["component67Effect"],
+        )
         component_mask = ecs_state["componentIdMaskRegistration"]
         self.assertEqual(component_mask["internalCallIndex"], 712)
         self.assertEqual(
@@ -1965,6 +1990,45 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_component67_direct_caller_181000F10_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_component67_companion_mask_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181E22FC0 and size == 16:
+                data[8] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_component67_companion_component_mask; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_component67_unload_callback_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18115BC90 and size == 0x1EA:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_ecs_component_67_type9_"
+                r"unload_to_unloaded_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
