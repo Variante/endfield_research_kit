@@ -231,7 +231,12 @@ NPC archetypes are imported as labeled source kits.
   bit 16 (`0x10000`), proving that the component-67 LOD state is a separate,
   still unnamed native component rather than `HGTreeComponent`. The similarly
   named managed `RenderObjectLODInfoComponent.get_id` maps to
-  `0x184D9EC60` and returns 6, excluding that type as well. Raw 8-byte
+  `0x184D9EC60` and returns 6. A complete installed-metadata/codegen census now
+  pins all 30 `UnityEngine.HyperGryph.ECS` declarations returning `Int32` from
+  `get_id`, all 30 module pointer slots, and all 29 concrete constant-return
+  bodies. Their exposed ID set does not contain 67, so component 67 has no
+  managed name on this shipped surface rather than merely failing the two
+  likely-name checks. Raw 8-byte
   `global-metadata.dat` defaults now close the separate serialized
   `StreamingComponentType` enum: `HLODGroup = 1<<11`, `HGTree = 1<<41`, and
   `Count = 43`. HG internal call 677 binds script converters through
@@ -549,9 +554,10 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the exact native type-name link for component 67; its serialized
-   LOD-count/range producer and HGTree renderer-list filter callers are now
-   closed. Then recover the retail
+1. Resolve the exact native type-name link for component 67 from the remaining
+   pure-native registration surface; the complete managed `get_id` namespace,
+   serialized LOD-count/range producer, and HGTree renderer-list filter callers
+   are now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
