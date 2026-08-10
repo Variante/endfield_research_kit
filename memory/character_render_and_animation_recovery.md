@@ -139,7 +139,10 @@ NPC archetypes are imported as labeled source kits.
   is now bounded: all 53 calls to `0x180424C30` are pinned and partitioned into
   44 exact `0x7F00` calls across 41 entry CFGs plus nine other-family calls.
   Width-aware cross-hot/cold CFG taint finds no exact-path record `+0x14` read,
-  record-base pointer store, or record-base return. The six direct `blob+0x04` call escapes are
+  non-stack record-base pointer store, record-base return, or address-taken
+  stack spill. Its seven exact-result stack stores are local spills/reloads or
+  reused slots (four `blob+0x00`, three `blob+0x04`); none becomes a nested job
+  descriptor. The six direct `blob+0x04` call escapes are
   three zero initializers at `0x181CA0040` and three calls to classifier
   `0x181131FC0`, which reads only record `+0x00`. One additional `blob+0x00`
   tail path, `0x1810CE280 -> 0x181C9F9A0`, copies the full layout with byte
