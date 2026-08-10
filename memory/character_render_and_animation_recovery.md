@@ -107,8 +107,14 @@ NPC archetypes are imported as labeled source kits.
   history, `+0x04/+0x05` are pending/available LOD masks, `+0x08` is a 64-bit
   renderer-readiness set, and `+0x10..+0x17` are eight cumulative renderer
   range endpoints. Writer `0x1810842E0` closes the request, completion, and
-  unload bit transitions. Dispatch segment
-  `0x181079FB1` selects the recovered LOD job variants. The direct route uses
+  unload bit transitions. The indexed accessor `0x1811648A0` exposes the same
+  component per entity, and writer `0x181159010` closes its initial LOD0
+  completion/fallback transition: when only LOD0 is pending it zeroes the
+  desired/resolved/history indices, changes pending/available masks to `0/1`,
+  and fills readiness bits from the companion renderer/subresource count;
+  otherwise it writes sentinel 8 to all three indices and clears readiness.
+  It does not produce the LOD count or cumulative range endpoints. Dispatch
+  segment `0x181079FB1` selects the recovered LOD job variants. The direct route uses
   `minSquared < distanceSquared <= maxSquared`; the scaled route uses
   `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` and the same
   exclusive-lower/inclusive-upper interval after ArtTag scaling. Its upstream
@@ -125,8 +131,9 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The remaining
-  initially zero loader-record bytes, the ECS LOD-count producer and exact
-  component type-name link, the unrelated scheduled consumer of view `+0x18`,
+  initially zero loader-record bytes, the ECS LOD-count/range producer and
+  exact component type-name link, the unrelated scheduled consumer of view
+  `+0x18`,
   any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
@@ -361,7 +368,7 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 1. Recover the actual scheduled renderer/entity consumer of cull-view
    `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
    bounds. Resolve the remaining loader-record zero bytes plus the component-67
-   LOD-count producer and exact native type-name link. Then recover the retail
+   LOD-count/range producer and exact native type-name link. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom

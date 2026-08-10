@@ -379,6 +379,21 @@ UNITY_HGTREE_BODIES = {
         0x6C,
         "9fd401ef957830896aca114bc591187a39e5772b41b2300439ef3f8f8f4a1699",
     ),
+    "lod_ecs_component_67_indexed_accessor_hot": (
+        0x1811648A0,
+        0x31,
+        "7b39be54e8af8b957fbdba2495db8f6604a068f327a6cf503a233a3d1fdc77c2",
+    ),
+    "lod_ecs_component_67_indexed_accessor_tail": (
+        0x181164985,
+        0x84,
+        "956019335a64fb5538d947ba107a385515085c041a9923b1069f9caf9025c883",
+    ),
+    "lod_ecs_initial_completion_writer": (
+        0x181159010,
+        0x398,
+        "c1f42c8333a1f0daf613485ee1757e78bdf95899ddcdcde81b7e177027dd8247",
+    ),
     "lod_ecs_availability_writer": (
         0x1810842E0,
         0x835,
@@ -543,6 +558,13 @@ UNITY_HGTREE_SLICES = {
     "lod_ecs_availability_request_set": (
         0x181084A65,
         "4c8b442450400fb6c6410fb648040fabc18d45ff41884804",
+    ),
+    "lod_ecs_initial_completion_transition": (
+        0x18115907C,
+        "488bd3488bce488bf8e816b800004d8b561033ed4d8b6e184c899424c8000000"
+        "80780401751f410fb6cfba0100000048d3e24532c048ffca66c74004000132c9"
+        "4532c9eb10b1084532ff440fb6c1440fb6c9488bd54488480144884002884803"
+        "48895008",
     ),
     "lod_direct_interval_equation": (
         0x18106D8F0,
@@ -1802,6 +1824,7 @@ def validate_unity_hgtree_renderer_boundary(
             "ecsStateRecord": {
                 "archetypeComponentBitIndex": 67,
                 "accessorVirtualAddress": "0x181038D00",
+                "indexedAccessorVirtualAddress": "0x1811648A0",
                 "strideBytes": 24,
                 "sentinelLodIndex": 8,
                 "fields": [
@@ -1869,6 +1892,32 @@ def validate_unity_hgtree_renderer_boundary(
                     "unload": (
                         "clear the LOD range in record+0x08 and clear the "
                         "corresponding bits in record+0x04 and record+0x05"
+                    ),
+                },
+                "initialCompletionWriter": {
+                    "virtualAddress": "0x181159010",
+                    "normalEntryCondition": "record+0x04 == 1 (LOD0 pending)",
+                    "normalTransition": {
+                        "desiredLodAt0x01": 0,
+                        "resolvedLodAt0x02": 0,
+                        "historyLodAt0x03": 0,
+                        "pendingMaskAt0x04": 0,
+                        "availableMaskAt0x05": 1,
+                        "readinessBitsAt0x08": (
+                            "(1 << companion renderer/subresource count) - 1"
+                        ),
+                    },
+                    "fallbackTransition": {
+                        "desiredLodAt0x01": 8,
+                        "resolvedLodAt0x02": 8,
+                        "historyLodAt0x03": 8,
+                        "readinessBitsAt0x08": 0,
+                        "maskFieldsAt0x04And0x05": "left unchanged",
+                    },
+                    "closedBoundary": (
+                        "this closes the initial LOD0 completion/fallback state "
+                        "transition; it does not write record+0x00 or the "
+                        "cumulative ranges at record+0x10..+0x17"
                     ),
                 },
                 "structureBoundary": (
@@ -2255,7 +2304,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v8",
+        "schema": "endfield.recovered-light-cull-cap.v9",
         "status": "installed_cap_hgtree_lifecycle_lod_state_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
@@ -2288,11 +2337,14 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "path are now source-closed as well. A separate component-bit-67 "
             "24-byte ECS record closes the desired/resolved/history LOD bytes, "
             "pending and available LOD masks, 64-bit renderer-readiness mask, "
-            "and eight cumulative renderer-range endpoints. The old index "
+            "and eight cumulative renderer-range endpoints. Its indexed "
+            "accessor and initial LOD0 completion/fallback writer are pinned "
+            "as well. The old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The scheduled cull-view +0x18 consumer, remaining initially zero "
-            "loader-record bytes, the ECS LOD-count producer/type-name link, "
+            "loader-record bytes, the ECS LOD-count/range producer and exact "
+            "type-name link, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
