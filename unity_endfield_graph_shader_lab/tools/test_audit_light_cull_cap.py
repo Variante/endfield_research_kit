@@ -823,9 +823,16 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         hot_cold = pointer_boundary["hotColdCfgTraversal"]
         self.assertEqual(hot_cold["enabledLightModesReadSites"], [])
-        self.assertEqual(hot_cold["recordBaseMemoryStoreSites"], [])
+        self.assertEqual(
+            hot_cold["recordBaseNonStackMemoryStoreSites"], []
+        )
         self.assertEqual(hot_cold["recordBaseReturnSites"], [])
         self.assertTrue(hot_cold["memoryOperandWidthOverlapChecked"])
+        stack_boundary = pointer_boundary["stackPointerBoundary"]
+        self.assertEqual(stack_boundary["blobHeaderStoreCount"], 4)
+        self.assertEqual(stack_boundary["recordBaseStoreCount"], 3)
+        self.assertEqual(stack_boundary["addressTakenSites"], [])
+        self.assertEqual(len(stack_boundary["stores"]), 7)
         self.assertEqual(
             pointer_boundary["fullBlobCopy"]["byteCountEquation"],
             "4 + 32 * (familyMask >> 8)",
@@ -1151,6 +1158,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_runtime_record_full_blob_copy_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_runtime_blob_stack_spill_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1810CF36D and size == 0x1FD:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_runtime_record_blob_header_stack_spill_a_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

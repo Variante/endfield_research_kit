@@ -1155,6 +1155,16 @@ UNITY_HGTREE_BODIES = {
         0x5F,
         "79406081e2a52bc1cffaf23600ab6c734af8a0363a57cea61b1213f54b0a5abe",
     ),
+    "runtime_record_blob_header_stack_spill_a": (
+        0x1810CF36D,
+        0x1FD,
+        "eb9c311dada0796035df8d157335a699b79dc3f61c6ac7ac1bbcc5be87b46f4d",
+    ),
+    "runtime_record_blob_header_stack_spill_b": (
+        0x1810D0725,
+        0x1FF,
+        "c9457062254ed9f3047b3dd1d1a629554423fa0effc07b91f2f71d1d1a78199c",
+    ),
     "renderer_resource_slot_release": (
         0x180FBF6B0,
         0x119,
@@ -5920,7 +5930,7 @@ def validate_unity_hgtree_renderer_boundary(
                                     "directControlFlowFollowed": True,
                                     "stackSlotOverlapInvalidation": True,
                                     "memoryOperandWidthOverlapChecked": True,
-                                    "recordBaseMemoryStoreSites": [],
+                                    "recordBaseNonStackMemoryStoreSites": [],
                                     "recordBaseReturnSites": [],
                                     "enabledLightModesReadSites": [],
                                     "boundedControlFlowEscape": {
@@ -5931,6 +5941,89 @@ def validate_unity_hgtree_renderer_boundary(
                                             "family renderer blob into another"
                                         ),
                                     },
+                                },
+                                "stackPointerBoundary": {
+                                    "blobHeaderStoreCount": 4,
+                                    "recordBaseStoreCount": 3,
+                                    "addressTakenSites": [],
+                                    "stores": [
+                                        {
+                                            "storeVirtualAddress": (
+                                                "0x180BCBEE4"
+                                            ),
+                                            "pointerOffset": "blob+0x00",
+                                            "reloadVirtualAddresses": [
+                                                "0x180BCBF7F"
+                                            ],
+                                        },
+                                        {
+                                            "storeVirtualAddress": (
+                                                "0x1810CF426"
+                                            ),
+                                            "pointerOffset": "blob+0x00",
+                                            "reloadVirtualAddresses": [],
+                                        },
+                                        {
+                                            "storeVirtualAddress": (
+                                                "0x1810D07D8"
+                                            ),
+                                            "pointerOffset": "blob+0x00",
+                                            "reloadVirtualAddresses": [],
+                                        },
+                                        {
+                                            "storeVirtualAddress": (
+                                                "0x181129F0E"
+                                            ),
+                                            "pointerOffset": "blob+0x04",
+                                            "reloadVirtualAddresses": [
+                                                "0x18112A027",
+                                                "0x18112A10C",
+                                                "0x18112A243",
+                                            ],
+                                        },
+                                        {
+                                            "storeVirtualAddress": (
+                                                "0x18112A886"
+                                            ),
+                                            "pointerOffset": "blob+0x04",
+                                            "reloadVirtualAddresses": [
+                                                "0x18112AADB",
+                                                "0x18112AC65",
+                                            ],
+                                            "slotLaterPartiallyOverwritten": (
+                                                True
+                                            ),
+                                        },
+                                        {
+                                            "storeVirtualAddress": (
+                                                "0x18113788B"
+                                            ),
+                                            "pointerOffset": "blob+0x04",
+                                            "reloadVirtualAddresses": [
+                                                "0x181137913",
+                                                "0x1811379F7",
+                                                "0x181137B6A",
+                                                "0x181137C6D",
+                                            ],
+                                        },
+                                        {
+                                            "storeVirtualAddress": (
+                                                "0x1811577D6"
+                                            ),
+                                            "pointerOffset": "blob+0x00",
+                                            "reloadVirtualAddresses": [
+                                                "0x1811578F4",
+                                                "0x181157F2B",
+                                            ],
+                                        },
+                                    ],
+                                    "interpretation": (
+                                        "all exact-family result pointers "
+                                        "written to stack are local spills or "
+                                        "slot reuse; no stored pointer slot is "
+                                        "address-taken as a nested job or "
+                                        "descriptor payload"
+                                    ),
                                 },
                                 "fullBlobCopy": {
                                     "functionVirtualAddress": "0x1810CE280",
@@ -6108,7 +6201,9 @@ def validate_unity_hgtree_renderer_boundary(
                                     "consumer reads record+0x00/+0x04/+0x08/"
                                     "+0x10, while no exact-family path reads "
                                     "record+0x14, stores the record-base "
-                                    "pointer, or returns it. A same-offset, "
+                                    "pointer outside the stack, returns it, "
+                                    "or takes the address of one of its seven "
+                                    "local stack spill slots. A same-offset, "
                                     "same-stride callback-A candidate remains "
                                     "independently rejected by its ECS column "
                                     "accessor provenance"
@@ -6145,7 +6240,8 @@ def validate_unity_hgtree_renderer_boundary(
                             "open. All 53 direct blob-lookup calls are "
                             "partitioned; 44 exact 0x7F00 calls across 41 "
                             "hot/cold entry CFGs expose no record+0x14 read, "
-                            "record-base pointer store, or record-base return. "
+                            "non-stack record-base pointer store, record-base "
+                            "return, or address-taken stack spill. "
                             "Their six direct blob+0x04 call escapes are three "
                             "memset-style zero initializers and three calls to "
                             "a classifier that reads only record+0x00. The "
@@ -6899,8 +6995,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v29",
-        "status": "installed_cap_hgtree_renderer_variants_and_blob_copy_closed",
+        "schema": "endfield.recovered-light-cull-cap.v30",
+        "status": "installed_cap_hgtree_nested_stack_escape_surface_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -6959,8 +7055,10 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "renderer-blob lookup are now pinned and partitioned into 44 "
             "exact 0x7F00-family calls across 41 entry CFGs and nine "
             "other-family calls. Cross-hot/cold CFG taint finds no exact-path "
-            "record +0x14 read, record-base pointer store, or record-base "
-            "return. The six direct blob+0x04 call escapes are three zero "
+            "record +0x14 read, non-stack record-base pointer store, record-"
+            "base return, or address-taken stack spill. The seven exact-result "
+            "stack stores are local spills or reused slots. The six direct "
+            "blob+0x04 call escapes are three zero "
             "initializers and three calls to one classifier that reads only "
             "record +0x00 and renderer-entry flags. One additional blob+0x00 "
             "tail memcpy copies the complete count/runtime-record/LOD-pair "
@@ -7241,7 +7339,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
                 "the independent renderer-entry +0x1C shader-supported-pass mask, both native builders, and its exact 31-name pass table",
                 "all three HGTree CreateRendererList variants and their convergence on one shared scheduler/callback family",
-                "the bounded runtime-record lookup surface: all 53 direct lookup calls, the 44-call exact 0x7F00 partition across 41 width-aware hot/cold entry CFGs, all six direct blob+0x04 call escapes, both Factory CreateBatchedEntities routes into the full-blob copy path, the third component-grouping consumer, zero direct +0x14 reads/stores/returns, and rejection of callback A's ECS-column +0x14 lookalike",
+                "the bounded runtime-record lookup surface: all 53 direct lookup calls, the 44-call exact 0x7F00 partition across 41 width-aware hot/cold entry CFGs, all seven local stack pointer stores with no address-taken descriptor escape, all six direct blob+0x04 call escapes, both Factory CreateBatchedEntities routes into the full-blob copy path, the third component-grouping consumer, zero direct +0x14 reads/non-stack pointer stores/returns, and rejection of callback A's ECS-column +0x14 lookalike",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
                 "the HGTree LOD dispatch packet and payload layouts",
