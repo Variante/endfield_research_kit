@@ -937,6 +937,65 @@ UNITY_HGTREE_BODIES = {
     ),
 }
 
+UNITY_COMPONENT67_ACCESSOR_TARGETS = {
+    "archetype": 0x181038D00,
+    "indexed": 0x1811648A0,
+}
+UNITY_COMPONENT67_ACCESSOR_CALL_SITES = {
+    "archetype": [
+        0x181000F82,
+        0x181001C42,
+        0x181002D82,
+        0x18106D886,
+        0x18106DB26,
+        0x18106DD63,
+        0x18106DF43,
+        0x18106E175,
+        0x18106E495,
+        0x18107873F,
+        0x18107885A,
+        0x181078A6E,
+        0x181078B93,
+        0x181078DB1,
+        0x181078EFC,
+        0x181079132,
+        0x1810791FF,
+        0x181084377,
+    ],
+    "indexed": [
+        0x181153382,
+        0x1811542A5,
+        0x1811577EC,
+        0x181159085,
+        0x18115BD2E,
+        0x18115C04C,
+        0x18115C8F5,
+    ],
+}
+UNITY_COMPONENT67_DIRECT_CALLER_BODIES = [
+    (0x181000F10, 0xC70, "087217be9a67927ec8ec6931103bf140ced2b977869621c1af64257dd0730790"),
+    (0x181001B80, 0x1140, "23d94a20fff2046551da81c97ab46cf693fb50b74a08263c4d32a9122f506270"),
+    (0x181002CC0, 0xFC0, "31291eda4ed32ffa323564e97631849880347ab8542ca3bbe1249d98037bb46b"),
+    (0x18106D7F0, 0x295, "07812bfe77c8ad07f24945e15df36867949a23df4398058d3812b64f333bb2d5"),
+    (0x18106DA90, 0x290, "f820d2511082cd529db74501b375f87d11142ba0567807800e1adfeda909769d"),
+    (0x18106DD28, 0x62, "f749da526577127d3c65b0ecfbce90b1dd7dfb102026a67db9e84aaaf6049218"),
+    (0x18106DF08, 0x62, "cd685ce6a95e416cbe50580b2ea1f97139174e490480d6e6ef2c00ff31672780"),
+    (0x18106E0E0, 0x31B, "6df30b7cd628d99341223e6b6ff877b7cd0d4044b4ea88788c786e2aebfdf571"),
+    (0x18106E400, 0x316, "bb50e7feb0003b53e5478cbb99c1054f6bf1906b16b27ca925e3fc6df2602e8f"),
+    (0x1810786B0, 0x32F, "d2d161fbd3a0e2a9e098459be320ce678f78bacf271aa4550eda9d793f25d276"),
+    (0x1810789E0, 0x338, "fe20a855258edc7ce1f6f03b8707097f9f5f0bf5032a5dba555eda010237512f"),
+    (0x181078D20, 0x389, "e08ec2badf29afcb7495d6852101f01018a576e343d46fa370390eca08e2a7f3"),
+    (0x1810790B0, 0x26D, "b6a8c234cd19ae28af59b693462bc22508cb2c3de608e66a24e35c5eb490b7dc"),
+    (0x1810842E0, 0x835, "b40cfccfcea9e2c91b65fba6ac51fa681f27b7fb6cdc89ae9539a0924b500418"),
+    (0x181153310, 0x5DF, "4435143d7cce168aa670402d64f54cd6e813160dceab5e22b01ed28a05ad3d5c"),
+    (0x181154230, 0x6C4, "4ae50616400e412b8c30c649765b11ad1e4906b9f7bf3e5f64a584ddc5027789"),
+    (0x181157760, 0x7F9, "45633b35ac3c0bd27a71bb8464121584f185445ef18a7fe4a1e9b2808f074d63"),
+    (0x181159010, 0x398, "c1f42c8333a1f0daf613485ee1757e78bdf95899ddcdcde81b7e177027dd8247"),
+    (0x18115BC9B, 0x1DF, "677862bb3c6fd7276593230173875eb6469c8dcfbba30b91d10e23e3aefffa0a"),
+    (0x18115BFC0, 0x196, "4564e22adf8397fb1c98654a17f014f26b9e170273db05e835c0ca0b534cc31f"),
+    (0x18115C8A0, 0x13E, "c92e3ad737722d1bf874b259e5e871ae5365c61b20ae1dc1a51ae7a1a07ba723"),
+]
+
 UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
     "proxy_name": (
         0x181DA5EA0,
@@ -1345,6 +1404,22 @@ def count_legacy_movss_disp_loads(body: bytes, displacement: int) -> int:
             count += actual == displacement
         cursor += 1
     return count
+
+
+def find_relative_call_sites(image: PEImage, target: int) -> list[int]:
+    """Find every file-backed E8 rel32 byte sequence resolving to target."""
+
+    call_sites = []
+    for section_va, _span, raw_offset, raw_size in image.sections:
+        body = image.data[raw_offset : raw_offset + raw_size]
+        cursor = body.find(b"\xE8")
+        while cursor >= 0 and cursor + 5 <= len(body):
+            displacement = struct.unpack_from("<i", body, cursor + 1)[0]
+            virtual_address = image.image_base + section_va + cursor
+            if virtual_address + 5 + displacement == target:
+                call_sites.append(virtual_address)
+            cursor = body.find(b"\xE8", cursor + 1)
+    return sorted(call_sites)
 
 
 def read_native_method_bodies(game_assembly: Path = GAME_ASSEMBLY) -> dict[str, bytes]:
@@ -1996,6 +2071,8 @@ def validate_streaming_scene_v2_payload_census(
             },
             "stateBytes": [8, 8, 8, 0, 0],
             "stateByteEntityCount": 1305818,
+            "reservedWordAt0x06": 0,
+            "reservedWordEntityCount": 1305818,
             "readiness": 0,
             "readinessEntityCount": 1305818,
             "rangeEndpointPatternCount": 102,
@@ -2010,9 +2087,10 @@ def validate_streaming_scene_v2_payload_census(
             {"componentId": 73, "elementSize": 1288, "entityCount": 13257},
         ],
         "boundary": (
-            "component 67 lodCount and cumulative renderer ranges are exact "
-            "serialized game-binary initial data copied into native ECS "
-            "storage; the standalone native component type name remains open"
+            "component 67 lodCount, zero reserved word, and cumulative "
+            "renderer ranges are exact serialized game-binary initial data "
+            "copied into native ECS storage; the standalone native component "
+            "type name remains open"
         ),
     }
 
@@ -2070,7 +2148,7 @@ def validate_streaming_scene_v2_payload_census(
         (
             "schema",
             data.get("schema"),
-            "endfield.streaming-scene-v2-payload-census.v3",
+            "endfield.streaming-scene-v2-payload-census.v4",
         ),
         (
             "unity_player_hash",
@@ -3635,6 +3713,41 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
+    component67_caller_bodies = []
+    for virtual_address, size_bytes, expected_hash in (
+        UNITY_COMPONENT67_DIRECT_CALLER_BODIES
+    ):
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_component67_direct_caller_{virtual_address:X}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        component67_caller_bodies.append(
+            {
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    component67_call_sites = {}
+    for label, accessor_target in UNITY_COMPONENT67_ACCESSOR_TARGETS.items():
+        actual_sites = find_relative_call_sites(image, accessor_target)
+        expected_sites = UNITY_COMPONENT67_ACCESSOR_CALL_SITES[label]
+        require(
+            f"unity_component67_{label}_accessor_call_sites",
+            actual_sites,
+            expected_sites,
+            image.path,
+        )
+        component67_call_sites[label] = {
+            "targetVirtualAddress": f"0x{accessor_target:X}",
+            "callSites": [f"0x{site:X}" for site in actual_sites],
+        }
+
     slices = []
     for label, (virtual_address, expected_hex) in UNITY_HGTREE_SLICES.items():
         expected = bytes.fromhex(expected_hex)
@@ -3916,7 +4029,11 @@ def validate_unity_hgtree_renderer_boundary(
                     {
                         "offset": "0x06",
                         "sizeBytes": 2,
-                        "meaning": "not yet semantically closed",
+                        "meaning": (
+                            "reserved/alignment word: serialized as zero and "
+                            "not independently read or written on the complete "
+                            "direct accessor-derived runtime surface"
+                        ),
                     },
                     {
                         "offset": "0x08",
@@ -3932,6 +4049,35 @@ def validate_unity_hgtree_renderer_boundary(
                         ),
                     },
                 ],
+                "directAccessorClosure": {
+                    "targets": component67_call_sites,
+                    "directCallCount": sum(
+                        len(row["callSites"])
+                        for row in component67_call_sites.values()
+                    ),
+                    "logicalCallerCount": len(component67_caller_bodies),
+                    "callerBodies": component67_caller_bodies,
+                    "offlineControlFlowDataflow": {
+                        "recordStrideBytes": 24,
+                        "fieldOffsetsModuloStride": [0, 1, 2, 3, 4, 5, 8, 15, 16],
+                        "recordPointerRegisterArgumentEscapeCount": 0,
+                        "reservedWordStandaloneAccessCount": 0,
+                        "reservedWordWriteCount": 0,
+                        "note": (
+                            "32-bit reads rooted at +0x04 include +0x06/+0x07 "
+                            "physically, but runtime writers only update the "
+                            "lower pending/available bytes; the reserved high "
+                            "word remains the serialized zero value"
+                        ),
+                    },
+                    "boundary": (
+                        "all 25 direct rel32 calls to the two component-67 "
+                        "accessors are enumerated and their 21 logical caller "
+                        "bodies are hash-pinned; this closes the reserved word "
+                        "on that accessor-derived surface, not hypothetical "
+                        "inlined or unrelated component storage"
+                    ),
+                },
                 "availabilityWriter": {
                     "virtualAddress": "0x1810842E0",
                     "request": "set the corresponding bit in record+0x04",
@@ -4285,6 +4431,7 @@ def validate_unity_hgtree_renderer_boundary(
                 "the exact serialized-record to runtime-record and LOD float2 mapping",
                 "the 1/2/4/8/16/32 runtime capacity buckets and LOD-array offsets",
                 "the separate component-bit-67 24-byte ECS LOD state layout",
+                "component-67 +0x06/+0x07 as a zero reserved/alignment word on the complete direct accessor surface",
                 "StreamingSceneV2 tag 2 as the native ECS union variant",
                 "component 67 ownership by Render and MergedRenderCollider entity paths",
                 "the complete installed ECSEntityType/ProxyEntityType payload census",
@@ -4303,9 +4450,8 @@ def validate_unity_hgtree_renderer_boundary(
             ],
             "open": [
                 "semantic roles for the loader registration blob's remaining initially zero bytes",
-                "the loader registration record+0x06/+0x07 semantics",
                 "the standalone native component type name for archetype bit 67",
-                "the unrelated scheduled cull-view +0x18 consumer",
+                "any separate post-dispatch copy or consumer of cull-view +0x18",
             ],
         },
         "verifiedBodies": bodies,
@@ -4549,8 +4695,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v19",
-        "status": "installed_cap_component67_serialized_initial_data_closed",
+        "schema": "endfield.recovered-light-cull-cap.v20",
+        "status": "installed_cap_component67_reserved_word_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -4582,7 +4728,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "path are now source-closed as well. A separate component-bit-67 "
             "24-byte ECS record closes the desired/resolved/history LOD bytes, "
             "pending and available LOD masks, 64-bit renderer-readiness mask, "
-            "and eight cumulative renderer-range endpoints. Its indexed "
+            "the zero reserved/alignment word at +0x06, and eight cumulative "
+            "renderer-range endpoints. All 25 direct calls to its two "
+            "accessors and 21 logical caller bodies are pinned. Its indexed "
             "accessor and initial LOD0 completion/fallback writer are pinned "
             "as well. The installed native scripting registration now closes "
             "HGTreeComponentProxy to the HGTreeComponent type name, namespace, "
@@ -4639,8 +4787,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "ECS storage. Across all 83 map scopes, the 1,230,041 distinct "
             "component-67 entity ids exactly equal the distinct type-0/type-9 "
             "owner set. All 1,305,818 serialized occurrences initialize "
-            "lodCount in 1..6, state bytes 8/8/8/0/0, zero readiness, and one "
-            "of 102 cumulative renderer-range patterns. Duplicate map/entity "
+            "lodCount in 1..6, state bytes 8/8/8/0/0, a zero reserved word at "
+            "+0x06, zero readiness, and one of 102 cumulative renderer-range "
+            "patterns. Duplicate map/entity "
             "records are byte-identical. Thus the LOD count and range producer "
             "is the original game-binary initial-data blob, not a later "
             "ConvertFrom inference. All "
@@ -4655,8 +4804,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The scheduled cull-view +0x18 consumer, remaining initially zero "
-            "loader-record bytes, the component-67 standalone native type name, "
+            "Any separate post-dispatch cull-view +0x18 consumer, remaining "
+            "loader-registration record +0x0C..+0x17 zero-field roles, the "
+            "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -4847,6 +4997,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the hash-pinned generic native ECS archetype initial-data copy at 0x1801F95E0",
                 "the exact 83-map component-67/type-0-or-9 owner sets and byte-identical repeated initial records",
                 "all component-67 serialized lodCount values and 102 cumulative renderer-range patterns",
+                "all 1,305,818 component-67 +0x06 reserved words serialized as zero",
+                "all 25 direct component-67 accessor calls, 21 logical caller bodies, and the reserved-word access boundary",
                 "the 1,576-file DynamicStreaming init/stream census with only tag-2 records and no component entries",
                 "the separate DynamicStreaming gameplay-tree route with 2,828 TreeRootComp rows and enum identities Tree=11/TreeRootComp=64",
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
@@ -4859,9 +5011,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
+                "any separate post-dispatch copy or consumer of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
-                "the semantic names of the initially zero HGTree runtime-state bytes",
+                "the loader-registration runtime record +0x0C..+0x17 zero-field roles",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -4899,7 +5051,7 @@ def main() -> int:
         "type identity/id-80 registration lifecycle/runtime transform, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
-        "serialized LOD-count/range initial-data production and native copy, "
+        "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "

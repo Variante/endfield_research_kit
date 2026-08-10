@@ -334,6 +334,18 @@ class LightCullCapAuditTests(unittest.TestCase):
             1230041,
         )
         self.assertEqual(
+            result["component67InitialData"]["initialState"][
+                "reservedWordAt0x06"
+            ],
+            0,
+        )
+        self.assertEqual(
+            result["component67InitialData"]["initialState"][
+                "reservedWordEntityCount"
+            ],
+            1305818,
+        )
+        self.assertEqual(
             result["streamingPayloads"]["ecsEntityTypes"][7]["entityCount"],
             2576964,
         )
@@ -704,6 +716,22 @@ class LightCullCapAuditTests(unittest.TestCase):
                 "0x10",
             ],
         )
+        self.assertIn("reserved/alignment", ecs_state["fields"][6]["meaning"])
+        accessor_closure = ecs_state["directAccessorClosure"]
+        self.assertEqual(accessor_closure["directCallCount"], 25)
+        self.assertEqual(accessor_closure["logicalCallerCount"], 21)
+        self.assertEqual(
+            accessor_closure["offlineControlFlowDataflow"][
+                "fieldOffsetsModuloStride"
+            ],
+            [0, 1, 2, 3, 4, 5, 8, 15, 16],
+        )
+        self.assertEqual(
+            accessor_closure["offlineControlFlowDataflow"][
+                "reservedWordWriteCount"
+            ],
+            0,
+        )
         self.assertIn(
             "clear record+0x04 and set record+0x05",
             ecs_state["availabilityWriter"]["complete"],
@@ -1000,6 +1028,36 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_lod_ecs_direct_availability_initializer_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_component67_direct_caller_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181000F10 and size == 0xC70:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_component67_direct_caller_181000F10_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_component67_accessor_call_site_drift_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        with mock.patch.object(AUDIT, "find_relative_call_sites", return_value=[]):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_component67_archetype_accessor_call_sites; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=\[\]",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
 
