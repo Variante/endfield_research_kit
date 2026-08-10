@@ -1547,13 +1547,22 @@ pairs `HGTreeRender.CreateRendererList` index 564 with `0x1801D9D10` and
 `RegisterTreeBatchGroup` index 567 with `0x1801DA040`. The first reaches
 `0x18107EE40 -> 0x181080730` and selects runtime jobs
 `0x181067A70/0x181064190`; the second reaches registration core `0x181086050`.
-Those jobs consume transformed `0x18`-stride batch/SoA data rather than the
-serialized record. The former index-10320 and `0x180175A10 -> 0x180A5E320`
+Loader `0x1810C5F30` now closes that transform: `count` is followed by a
+`0x18`-stride runtime-record array with capacity 1/2/4/8/16/32, then an 8-byte
+LOD pair array at `4 + 0x18*capacity`. It passes each serialized record's
+`batchKey`, mesh/material PPtrs, and `subMeshIndex` to `0x181086050`, stores the
+returned 16-bit handle with `batchKey/renderFlags`, and copies the LOD max/min
+floats verbatim to the pair array. Dispatch segment `0x181079FB1` selects the
+LOD variants. The direct path selects
+`minSquared < distanceSquared <= maxSquared`; the scaled path tests
+`(viewFactor*instanceScale)/max(0.0001,distanceSquared)` against the same
+exclusive-lower/inclusive-upper interval after per-instance scaling. The
+former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The serialized-to-runtime mapping and
-HGTree LOD equation, the unrelated scheduled consumer of view `+0x18`, any
-separate `sceneCullingMask` consumer, and whether zero makes that later gate
-unconditional remain explicit boundaries.
+boundary into unrelated Animator code. The initially zero runtime-state byte
+semantics, scaled-route array meanings, unrelated scheduled consumer of view
+`+0x18`, any separate `sceneCullingMask` consumer, and whether zero makes that
+later gate remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that

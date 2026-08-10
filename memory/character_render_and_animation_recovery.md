@@ -90,13 +90,23 @@ NPC archetypes are imported as labeled source kits.
   index 564 with `0x1801D9D10` and `RegisterTreeBatchGroup` index 567 with
   `0x1801DA040`. The former reaches `0x18107EE40 -> 0x181080730` and selects
   runtime batch jobs `0x181067A70/0x181064190`; the latter reaches registration
-  core `0x181086050`. The jobs consume transformed `0x18`-stride batch/SoA
-  data, not the serialized 28-byte record. The former index-10320,
+  core `0x181086050`. Loader `0x1810C5F30` now closes that transform: it
+  writes `count`, a `0x18`-stride runtime-record array sized to capacity
+  buckets 1/2/4/8/16/32, then a separate 8-byte LOD pair array at
+  `4 + 0x18*capacity`. Each source record calls `0x181086050` with
+  `batchKey`, mesh/material PPtrs, and `subMeshIndex`; its returned 16-bit
+  handle plus `batchKey/renderFlags` enter the runtime record, while the two
+  serialized LOD floats copy verbatim to the pair array. Dispatch segment
+  `0x181079FB1` selects the recovered LOD job variants. The direct route uses
+  `minSquared < distanceSquared <= maxSquared`; the scaled route uses
+  `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` and the same
+  exclusive-lower/inclusive-upper interval after per-instance scaling. The
+  former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
-  crossed the HG table boundary into unrelated Animator code. The exact
-  serialized-to-runtime mapping and HGTree max/min LOD equation, the unrelated
-  scheduled consumer of view `+0x18`, any separate `sceneCullingMask`
-  consumer, and zero-threshold pass behavior remain open.
+  crossed the HG table boundary into unrelated Animator code. The meanings of
+  the initially zero runtime state bytes and scaled-route arrays,
+  the unrelated scheduled consumer of view `+0x18`, any separate
+  `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -328,9 +338,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 1. Recover the actual scheduled renderer/entity consumer of cull-view
    `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
-   bounds; trace `RegisterTreeBatchGroup` from the 28-byte serialized records
-   into the `0x18`-stride runtime batch/SoA jobs and close their max/min LOD
-   equation. Then recover the retail survivor
+   bounds, and resolve the upstream meanings of the HGTree scaled-route arrays
+   and initially zero runtime-state bytes. Then recover the retail survivor
    list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
