@@ -181,6 +181,17 @@ never promotes an edge.
   context for `radio_c13m2_10` and `radio_e1m8_1`, but no activation, ownership,
   branch, or order edge. Future candidates are discovered by the same typed
   event/filter scan, with no Story, mission, script, or filter allowlist.
+  Producer recovery is now equally general: the installed-binary value-carrier
+  audit derives a requested managed type's runtime layout, signature methods,
+  inherited container paths, direct callsites, focused accesses, and stack-local
+  initializers without content identities. For `TeleportParam` it finds nine
+  fields, 15 signature methods, ten container paths, 13 direct callsites, and 23
+  focused accesses. Each extended identity field has one exact zero-origin write
+  plus one carrier-copy write; six direct local arguments are zeroed, three are
+  forwarding/copy lanes, and the sole unknown local is a `PerformerFactory`
+  consumer copy. `LoadFinishStep` reads `levelScriptId` and `actionId` but not
+  `missionId`. No nonzero direct AOT originator is present; indirect/interface,
+  reflection, XLua, and live-server production remain outside this bound.
 - The active LevelScript overlay (`Persistent` over the matching
   `StreamingAssets` path) contains 230 validated `CheckTalkOptionFinish`
   consumers: 42 exact nonnegative finish ids and 188 any-finish checks. All 230
@@ -366,8 +377,11 @@ Reject as proof:
    not co-carry Story ownership. Do not repeat LevelScript UID/name searches for
    teleport-finish filters unless the original corpus changes: all 116 current
    filters are listener-owned only. The remaining useful boundary is the
-   runtime producer of `TeleportParam.actionId` (or another typed selector that
-   co-carries mission/quest identity).
+   runtime producer of `TeleportParam.actionId` is now closed across the direct
+   AOT carrier/callsite surface. Continue only through an exact indirect,
+   interface, reflection, XLua, live-server, or different typed selector path
+   that co-carries mission/quest identity; do not add object-specific producer
+   exceptions.
 4. Resolve source-bounded parent-dialog and Timeline placements only when a new
    exact producer/consumer or mission foreign key appears.
 5. Improve within-mission order through strong relations. Do not turn the

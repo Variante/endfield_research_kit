@@ -113,6 +113,11 @@ High-value entry points:
   `build_callserver_callback_audit.py`: exact local callback graphs.
 - `build_cinematic_queue_runtime_audit.py`: native cinematic handle and
   producer routes.
+- `build_native_value_carrier_audit.py`: type/field-driven installed-binary
+  producer, consumer, nested-container, direct-callsite, and local-initializer
+  census for any managed value carrier. Pass `--carrier-type` and repeat
+  `--focus-field`; the code never takes mission, Story, object, OCR, or override
+  identities.
 
 For the maintained Bilibili Story-order intake:
 

@@ -5886,18 +5886,29 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("separate native inbound handler", trigger_done["effect"])
 
     def test_teleport_param_contract_rejects_unused_mission_script_carrier(self):
-        contract = pipeline.RUNTIME_CONTRACT["teleportMissionScriptCarrier"]
+        contract = pipeline.load_native_teleport_param_carrier_contract()
         self.assertEqual(contract["type"], "Beyond.Gameplay.TeleportParam")
         self.assertEqual(contract["size"], "0x38")
         self.assertEqual(contract["layout"]["missionId"], "0x18")
         self.assertEqual(contract["layout"]["levelScriptId"], "0x20")
-        self.assertEqual(contract["directCallerCensus"]["GameLevelLoader.OpenLevel"], 2)
+        self.assertEqual(contract["metadataSignatureMethodCount"], 15)
+        self.assertEqual(contract["containerPathCount"], 10)
+        self.assertEqual(contract["focusFieldAccessCount"], 23)
         self.assertEqual(
-            contract["directCallerCensus"]["GameLevelLoader.LoadAtPosInCurrentMap"],
+            contract["directCallerCensus"][
+                "Beyond.Gameplay.Core.GameLevelLoader.OpenLevel"
+            ],
+            1,
+        )
+        self.assertEqual(
+            contract["directCallerCensus"][
+                "Beyond.Gameplay.Core.GameLevelLoader.LoadAtPosInCurrentMap"
+            ],
             2,
         )
-        self.assertIn("no audited producer co-populates", contract["producerFinding"])
-        self.assertIn("No audited current consumer reads missionId", contract["consumerFinding"])
+        self.assertIn("No nonzero direct AOT originator", contract["producerFinding"])
+        self.assertIn("does not read missionId", contract["consumerFinding"])
+        self.assertEqual(contract["validation"]["status"], "validated")
         self.assertEqual(contract["storyBindingsAdded"], 0)
         self.assertEqual(contract["confidence"], "native_proven_bounded")
         native = next(

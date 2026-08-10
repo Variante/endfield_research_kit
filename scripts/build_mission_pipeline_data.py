@@ -231,6 +231,10 @@ DEFAULT_NATIVE_CROSS_SYSTEM_CONSUMER_CENSUS = (
     ROOT / "reports" / "story" / "recovery"
     / "native_cross_system_consumer_census.json"
 )
+DEFAULT_NATIVE_TELEPORT_PARAM_CARRIER_AUDIT = (
+    ROOT / "reports" / "story" / "recovery"
+    / "native_teleport_param_carrier_audit.json"
+)
 DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
@@ -444,52 +448,10 @@ RUNTIME_CONTRACT = {
         "confidence": "native_proven",
     },
     "teleportMissionScriptCarrier": {
-        "type": "Beyond.Gameplay.TeleportParam",
-        "size": "0x38",
-        "layout": {
-            "source": "0x00",
-            "uiType": "0x04",
-            "options": "0x08",
-            "resetMap": "0x0c",
-            "callbackHandle": "0x10",
-            "missionId": "0x18",
-            "levelScriptId": "0x20",
-            "actionId": "0x28",
-            "performId": "0x30",
-        },
-        "metadataCandidateCount": 20,
-        "directCallerCensus": {
-            "GameLevelLoader.OpenLevel": 2,
-            "GameLevelLoader.LoadAtPos": 1,
-            "GameLevelLoader.LoadAtPosInCurrentMap": 2,
-            "SquadManager.ServerTeleportSquad": 1,
-            "LoadingPipeline.get_teleportParam": 2,
-        },
-        "producerFinding": (
-            "The current direct AOT producers either zero all 0x38 bytes or populate only "
-            "source/UI/options/reset/callback fields. The server pass-through decoder "
-            "explicitly leaves missionId, levelScriptId, actionId, and performId zero, so "
-            "no audited producer co-populates missionId and levelScriptId."
+        "status": "generated_report_required",
+        "auditReport": (
+            "reports/story/recovery/native_teleport_param_carrier_audit.json"
         ),
-        "consumerFinding": (
-            "LoadFinishStep consumes source with levelScriptId/actionId for the local "
-            "teleport-finish LevelScript event, or source with callbackHandle for the "
-            "callback lane. PerformerFactory consumes performId. No audited current "
-            "consumer reads missionId."
-        ),
-        "finding": (
-            "Although this was the sole new actionable type in a 20-type nominal "
-            "mission/script co-carrier census, its missionId field is unused on the "
-            "audited current loading paths and creates no mission ownership or order edge."
-        ),
-        "patchBoundary": (
-            "The current 30-target Gameplay.Beyond IFix payload does not target the "
-            "audited TeleportProcessor, GameLevelLoader, LoadingPipeline, or "
-            "PerformerFactory methods. Future patches and unresolved indirect, reflection, "
-            "or XLua construction remain outside this bounded result."
-        ),
-        "storyBindingsAdded": 0,
-        "confidence": "native_proven_bounded",
     },
     "levelScriptCtxTokenAudit": {
         "serverMessage": "SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT (57)",
@@ -3009,12 +2971,13 @@ RUNTIME_CONTRACT = {
             "symbol": "TeleportParam -> LoadingPipeline.LoadFinishStep",
             "address": "0x18315a6c0 -> 0x18315ade0 -> 0x183dd8c60",
             "finding": (
-                "A whole-metadata census found 20 nominal mission/script co-carrier "
-                "types; the sole new actionable carrier was TeleportParam. Current "
-                "producers zero missionId and levelScriptId or never set them together. "
-                "LoadFinishStep consumes source/levelScriptId/actionId or callbackHandle, "
-                "and PerformerFactory consumes performId; no audited consumer reads "
-                "missionId. This adds zero ownership or order edges."
+                "The generic native value-carrier audit derives TeleportParam's nine "
+                "fields, 15 signature methods, ten inherited container paths, 13 "
+                "direct callsites, and every focused native access without content-id "
+                "allowlists. Each extended field has one exact zero initializer and "
+                "one value-copy write; no nonzero direct AOT originator is present. "
+                "LoadFinishStep reads levelScriptId/actionId but not missionId. This "
+                "adds zero ownership or order edges."
             ),
             "confidence": "native_proven_bounded",
         },
@@ -6949,6 +6912,210 @@ def load_native_cross_system_consumer_contract(
         "storyBindingsAdded": 0,
         "missionOrderEdgesAdded": 0,
         "confidence": "hash_locked_direct_and_deferred_native_closure",
+    }
+
+
+def load_native_teleport_param_carrier_contract(
+    audit_path: Path = DEFAULT_NATIVE_TELEPORT_PARAM_CARRIER_AUDIT,
+) -> dict[str, Any]:
+    """Project the generic native value-carrier audit into the pipeline contract."""
+    if not audit_path.is_file():
+        raise RuntimeError(
+            "validator=nativeTeleportParamCarrier gate=auditPresent "
+            f"expected=true actual=false source={audit_path}"
+        )
+    audit = read_json(audit_path)
+    expected_hashes = {
+        "gameAssemblySha256": (
+            "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+        ),
+        "globalMetadataSha256": (
+            "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+        ),
+    }
+    expected_layout = {
+        "source": "0x0",
+        "uiType": "0x4",
+        "options": "0x8",
+        "resetMap": "0xc",
+        "callbackHandle": "0x10",
+        "missionId": "0x18",
+        "levelScriptId": "0x20",
+        "actionId": "0x28",
+        "performId": "0x30",
+    }
+    expected_counts = {
+        "carrierFields": 9,
+        "focusFields": 4,
+        "containerPaths": 10,
+        "signatureMethods": 15,
+        "mappedSignaturePointers": 14,
+        "focusFieldAccesses": 23,
+        "directCallsites": 13,
+        "directCarrierArguments": 10,
+    }
+    failures: list[dict[str, Any]] = []
+
+    def check(gate: str, expected: Any, actual: Any, source_file: str) -> None:
+        if actual != expected:
+            failures.append({
+                "validator": "nativeTeleportParamCarrier",
+                "gate": gate,
+                "sourceFile": source_file,
+                "expected": expected,
+                "actual": actual,
+                "sourceHashes": {
+                    key: (audit.get("source") or {}).get(key)
+                    for key in expected_hashes
+                },
+            })
+
+    check("auditSchema", "nativeValueCarrierAudit.v1", audit.get("schema"), str(audit_path))
+    check(
+        "upstreamValidation",
+        "validated",
+        (audit.get("validation") or {}).get("status"),
+        str(audit_path),
+    )
+    check(
+        "carrierType",
+        "Beyond.Gameplay.TeleportParam",
+        (audit.get("carrier") or {}).get("type"),
+        str(audit_path),
+    )
+    check("nativeSize", 0x38, (audit.get("carrier") or {}).get("nativeSize"), str(audit_path))
+    actual_layout = {
+        str(row.get("name") or ""): str(row.get("offset") or "")
+        for row in (audit.get("carrier") or {}).get("fields") or []
+    }
+    check("runtimeFieldLayout", expected_layout, actual_layout, str(audit_path))
+    for key, expected in expected_hashes.items():
+        check(key, expected, (audit.get("source") or {}).get(key), str(audit_path))
+    for key, expected in expected_counts.items():
+        check(
+            f"summary.{key}",
+            expected,
+            (audit.get("summary") or {}).get(key),
+            str(audit_path),
+        )
+
+    focus = audit.get("focusFieldSummary") or {}
+    for field_name in ("missionId", "levelScriptId", "actionId", "performId"):
+        row = focus.get(field_name) or {}
+        check(
+            f"focus.{field_name}.writeShape",
+            {"writes": 2, "zero": 1, "unknownCopy": 1},
+            {
+                "writes": row.get("writeAccesses"),
+                "zero": row.get("zeroWriteAccesses"),
+                "unknownCopy": row.get("unknownWriteAccesses"),
+            },
+            str(audit_path),
+        )
+        check(
+            f"focus.{field_name}.directInitializerStates",
+            {"forwarded_or_unresolved": 3, "unknown": 1, "zero": 6},
+            row.get("directCallInitializerStates"),
+            str(audit_path),
+        )
+
+    finish_accesses = [
+        row for row in audit.get("fieldAccesses") or []
+        if str(row.get("method") or "").endswith("LoadFinishStep.DoExecute")
+    ]
+    check(
+        "loadFinishConsumerFields",
+        [
+            ("actionId", "read", "0x183dd8e63"),
+            ("levelScriptId", "read", "0x183dd8e56"),
+        ],
+        sorted(
+            (
+                str(row.get("field") or ""),
+                str(row.get("kind") or ""),
+                str(row.get("instructionVa") or ""),
+            )
+            for row in finish_accesses
+        ),
+        str(audit_path),
+    )
+    if failures:
+        failure = failures[0]
+        raise RuntimeError(
+            "native TeleportParam carrier validation failed: "
+            f"validator={failure['validator']}; gate={failure['gate']}; "
+            f"source={failure['sourceFile']}; expected={failure['expected']!r}; "
+            f"actual={failure['actual']!r}; sourceHashes={failure['sourceHashes']!r}"
+        )
+
+    target_counts: Counter[str] = Counter()
+    for call in audit.get("directCallsites") or []:
+        targets = call.get("targets") or []
+        if not targets:
+            continue
+        target = targets[0]
+        target_counts[
+            f"{target.get('type', '')}.{target.get('method', '')}"
+        ] += 1
+    source = audit.get("source") or {}
+    return {
+        "type": "Beyond.Gameplay.TeleportParam",
+        "size": "0x38",
+        "layout": expected_layout,
+        "auditSchema": audit.get("schema"),
+        "auditReport": repo_path(audit_path),
+        "metadataSignatureMethodCount": (audit.get("summary") or {}).get(
+            "signatureMethods"
+        ),
+        "containerPathCount": (audit.get("summary") or {}).get("containerPaths"),
+        "focusFieldAccessCount": (audit.get("summary") or {}).get(
+            "focusFieldAccesses"
+        ),
+        "directCallerCensus": dict(sorted(target_counts.items())),
+        "focusFieldSummary": focus,
+        "loadFinishConsumerAccesses": finish_accesses,
+        "producerFinding": (
+            "The generic installed-binary carrier scan finds one zero initializer "
+            "and one value-copy write for each extended field. Six direct local "
+            "carrier arguments leave missionId, levelScriptId, actionId, and "
+            "performId exactly zero; three are forwarding/copy paths and the sole "
+            "unknown local is a PerformerFactory consumer copy. No nonzero direct "
+            "AOT originator is present."
+        ),
+        "consumerFinding": (
+            "The inherited container-path scan proves that LoadFinishStep reads "
+            "levelScriptId at 0x183dd8e56 and actionId at 0x183dd8e63. It does "
+            "not read missionId. PerformerFactory separately consumes performId."
+        ),
+        "finding": (
+            "The active client binary contains a typed teleport-finish correlation "
+            "carrier but no audited direct AOT producer for its nonzero actionId. "
+            "This creates no mission ownership, branch, or Story-order edge."
+        ),
+        "patchBoundary": (
+            "The generic audit covers installed direct AOT calls and exact field "
+            "accesses. The current Gameplay.Beyond IFix audit has no relevant "
+            "TeleportProcessor, GameLevelLoader, LoadingPipeline, or PerformerFactory "
+            "target; virtual/interface dispatch, reflection, XLua, and live server "
+            "values remain outside the bounded result."
+        ),
+        "storyBindingsAdded": 0,
+        "confidence": "native_proven_bounded",
+        "validation": {"status": "validated", "failures": []},
+        "relatedOriginalFiles": [
+            {
+                "kind": "original_game_binary",
+                "sourceFile": source.get("gameAssembly"),
+                "sha256": source.get("gameAssemblySha256"),
+                "relationship": "native_value_carrier_audit_authority",
+            },
+            {
+                "kind": "original_game_metadata",
+                "sourceFile": source.get("globalMetadata"),
+                "sha256": source.get("globalMetadataSha256"),
+                "relationship": "native_value_carrier_audit_authority",
+            },
+        ],
     }
 
 
@@ -12134,6 +12301,9 @@ def build_all(
     )
     runtime_contract = {
         **RUNTIME_CONTRACT,
+        "teleportMissionScriptCarrier": (
+            load_native_teleport_param_carrier_contract()
+        ),
         "nativeCrossSystemConsumerCensus": (
             load_native_cross_system_consumer_contract()
         ),
