@@ -283,12 +283,16 @@ NPC archetypes are imported as labeled source kits.
   acquire core already performs manager bookkeeping. Outer task
   `0x181172DD0` combines context `+0x50` deferred entries and `+0x58` direct
   descriptors into a request batch; poller `0x181172750` retains state 0,
-  publishes ready state 1, removes terminal non-ready state 2, and completes
-  when its pending map is empty. It then projects the batch through context
+  publishes ready state 1, and removes state 2 without publishing a resolvable
+  relation. The installed `Streaming load asset %lld failed` resolver path and
+  component fallback close state 2 semantically as load failure. Once pending
+  is empty, the task projects the batch through context
   `+0x60/+0x68/+0x70` and invokes `LoadingToLoaded`, connecting the requests
   to the pinned Material/Mesh/shadow-proxy runtime writers and LOD availability
-  updates. The state-2 native label, outer scheduling/thread semantics, and
-  standalone component names remain open.
+  updates. Its four direct calls are also closed: one in the grid-load state
+  driver and three entity-set branches in the Streaming gameplay batch update.
+  The stripped state-2 enum symbol, execution scheduling/thread identity above
+  those callers, and standalone component names remain open.
   The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
   converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
   binding, excluding that static constructor delegate route. A direct installed-VFS
