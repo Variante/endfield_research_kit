@@ -1556,6 +1556,14 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                     "animationOwnershipScope": event.get("animationOwnershipScope") or "",
                     "possibleMediaScope": event.get("possibleMediaScope") or "",
                     "clipReachability": event.get("clipReachability") or "unresolved",
+                    "animatorControllerCount": int(event.get("animatorControllerCount") or 0),
+                    "animatorControllerContexts": list(event.get("animatorControllerContexts") or [])[:12],
+                    "animatorControllerReachableClipCount": int(
+                        event.get("animatorControllerReachableClipCount") or 0
+                    ),
+                    "animatorControllerUnresolvedClipCount": int(
+                        event.get("animatorControllerUnresolvedClipCount") or 0
+                    ),
                     "authoredEventIds": list(event.get("authoredEventIds") or [])[:8],
                 }
                 _attach_custom_footstep_parameters(context, evidence)
@@ -1575,6 +1583,14 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
             "animationClips": list(event.get("sourceAnimationClips") or [])[:12],
             "animationOccurrenceCount": len(evidence),
             "clipReachability": event.get("clipReachability") or "unresolved",
+            "animatorControllerCount": int(event.get("animatorControllerCount") or 0),
+            "animatorControllerContexts": list(event.get("animatorControllerContexts") or [])[:12],
+            "animatorControllerReachableClipCount": int(
+                event.get("animatorControllerReachableClipCount") or 0
+            ),
+            "animatorControllerUnresolvedClipCount": int(
+                event.get("animatorControllerUnresolvedClipCount") or 0
+            ),
             "authoredEventIds": list(event.get("authoredEventIds") or [])[:8],
             "sourcePaths": sorted({
                 str(row.get("clipSource") or "")
