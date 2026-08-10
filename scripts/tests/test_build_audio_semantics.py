@@ -564,6 +564,8 @@ class AudioSemanticDataTests(unittest.TestCase):
         audio_manager = specs["Beyond.Gameplay.Audio.AudioManager"]
         audio_state_system = specs["Beyond.Gameplay.Audio.AudioStateSystem"]
         callback_manager = specs["AkCallbackManager"]
+        factory_bridge = specs["Beyond.Gameplay.Audio.AudioRemoteFactoryBridge"]
+        gamepad_manager = specs["Beyond.Gameplay.Audio.AudioGamePadManager"]
 
         adapter_chains = {row["id"]: row for row in adapter["nativeCallChains"]}
         post = adapter_chains["adapterPostEventToWwise"]
@@ -589,6 +591,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("s_waitingCallbacks", asset_helper["fields"])
         self.assertEqual(callback_manager["nativeCallChains"][0]["id"], post["id"])
         self.assertEqual(callback_manager["runtimeExecutionStatus"], "callbackCapabilityExactPayloadsNotObserved")
+        self.assertIn("UpdateNodeMode", factory_bridge["methods"])
+        self.assertEqual(factory_bridge["nativeAnchors"][0]["groupId"], 0x7ACDACAF)
+        self.assertEqual(gamepad_manager["nativeAnchors"][0]["valueId"], 0x1A9FC91F)
+        self.assertEqual(gamepad_manager["nativeAnchors"][1]["valueId"], 0x1B9ABDB1)
         callback_roles = {row["role"] for row in callback_manager["nativeAnchors"]}
         self.assertTrue({"eventId", "durationMediaId", "playlistSelection", "sourceChange"} <= callback_roles)
         external = adapter_chains["externalSourcePostToWwise"]
@@ -1048,6 +1054,23 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(payload["counts"]["spawnerPreWarnAudioEventsFoundInWwise"], 1)
             self.assertEqual(payload["counts"]["spawnerPreWarnAudioEventsUnresolved"], 1)
             self.assertEqual(payload["triggerCatalog"]["spawnerPreWarnAudio"]["decodedFiles"], 1)
+            selector_catalog = payload["controlCatalog"]
+            self.assertEqual(selector_catalog["counts"]["wwiseSelectorGroupsCensused"], 56)
+            self.assertEqual(selector_catalog["counts"]["wwiseSelectorGroupsWithRuntimeSetter"], 2)
+            selector_groups = {
+                row["groupId"]: row for row in selector_catalog["wwiseSelectorGroups"]
+            }
+            factory_mode = selector_groups[0x7ACDACAF]
+            self.assertEqual(factory_mode["runtimeScope"], "audioObject")
+            self.assertEqual(factory_mode["runtimeSetter"]["callerMethodIndex"], 39714)
+            self.assertEqual(
+                [row["valueId"] for row in factory_mode["values"]],
+                [1, 2, 4, 8, 16, 32, 64],
+            )
+            gamepad = selector_groups[0xF6699CF4]
+            self.assertEqual(gamepad["groupType"], "state")
+            self.assertEqual(gamepad["values"][0]["semanticName"], "XInput")
+            self.assertEqual(gamepad["values"][1]["semanticName"], "ScePad")
             event_summaries = json.loads(
                 (webui_root / "data/lang/CN/audio/events.json").read_text(encoding="utf-8")
             )["events"]
@@ -2182,6 +2205,9 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("container?.selectorGroupTypes", source)
         self.assertIn("selector.strictSubsetPackages", source)
         self.assertIn("Runtime selector value and audio-object state were not observed", source)
+        self.assertIn("catalog.wwiseSelectorGroups", source)
+        self.assertIn("controlCatalog?.wwiseSelectorGroups", source)
+        self.assertIn("runtimeGroup.semanticEvidence", source)
         self.assertIn("container?.randomSequenceModes", source)
         self.assertIn("randomSequence.orderDiffers", source)
         self.assertIn("Wwise Random/Sequence policy", source)

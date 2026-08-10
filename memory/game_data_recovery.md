@@ -212,6 +212,16 @@ value packages often map to strict subsets of reciprocal Children, so a known
 runtime group value could narrow the graph. Without that live value and target
 audio object, all mapped children remain possible rather than played choices.
 
+Two type-6 groups now have exact current-native setter joins. Group
+`0x7acdacaf` is the object-scoped factory remote node-mode Switch; its resolver
+maps Normal, Liquid, Gas, mixed, and transition modes to values 1 through 64.
+Group `0xf6699cf4` is the global gamepad motion-backend State, with exact XInput
+and ScePad setter constants while two other authored values remain unnamed.
+Voice-identity, surface/material, and local/remote groups have strong corpus
+correlations but no recovered setter, so they remain labeled semantic
+inferences rather than authored Wwise names. No live value or chosen child was
+observed for any group.
+
 Wwise v150 type-5 Random/Sequence containers now expose the full bounded
 policy block and trailing playlist: loop count and modifiers, transition time
 and mode, avoid-repeat count, Standard/Shuffle and Random/Sequence modes,
