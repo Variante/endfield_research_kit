@@ -1497,6 +1497,11 @@
         return (leftIndex < 0 ? 99 : leftIndex) - (rightIndex < 0 ? 99 : rightIndex)
           || gameplaySoundActionLabel(left).localeCompare(gameplaySoundActionLabel(right));
       });
+    if (options.flattenGroups) {
+      return orderedGroups
+        .map((group) => renderGameplaySoundEvents(group.events, { showActionLabel: true }))
+        .join("");
+    }
     return orderedGroups.map((group) => `<section class="gameplay-sfx-action"><header class="gameplay-sfx-action-summary"><strong>${escapeHtml(gameplaySoundActionLabel(group))}</strong><span>${escapeHtml(gameplaySoundCountText(group.events, options))}</span></header>${renderGameplaySoundEvents(group.events)}</section>`).join("");
   }
 
@@ -1540,7 +1545,7 @@
     const playable = playableEvents.reduce((total, event) => total + ((event.audio || []).filter((candidate) => candidate?.src).length || Number(event.possibleMediaCount || event.playableCandidates || 0)), 0);
     if (!playable) return "";
     const confidence = options.confidence ? integrationConfidence(options.confidence) : "";
-    return `<section class="gameplay-related-sfx"><header class="gameplay-related-sfx-summary"><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</header><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents, options)}</section>`;
+    return `<section class="gameplay-related-sfx"><header class="gameplay-related-sfx-summary"><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</header><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents, { ...options, flattenGroups: true })}</section>`;
   }
 
   function renderCharacterSkillSounds(entry) {
