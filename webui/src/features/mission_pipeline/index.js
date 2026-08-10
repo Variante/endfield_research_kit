@@ -35,6 +35,7 @@
       title: "Mission Pipeline",
       scope: "Authored quest structure with an explicit native client/server boundary.",
       warning: "Predecessor arrows are client-visible prerequisites. The server still decides which quest state to synchronize next.",
+      definitionRecoveryScope: "Definition files are discovered by pattern from the current DialogId registry and exact hashed DialogTree assets. Per-object filename, line, option, and branch declarations are not required; only typed consumers can attach or order a file.",
       missionSource: "MissionRuntime source",
       sourceCompletePersistent: "complete Persistent override",
       sourceStreamingFallback: "StreamingAssets fallback",
@@ -1018,7 +1019,7 @@
       offlineRecoveryEvidenceBinarySns: "SNS definition only - no consumer on current original-data surfaces",
       offlineRecoveryEvidenceBinaryReadingPopup: "Readable definition only - no activator on current original-data surfaces",
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "Unregistered dialog definition - no consumer on current original-data surfaces",
-      offlineRecoveryEvidenceBinaryRegisteredDialogTree: "Registered DialogTree definition - no activator on current original-data surfaces",
+      offlineRecoveryEvidenceBinaryRegisteredDialogTree: "Auto-discovered DialogTree definition - no activator on current original-data surfaces",
       offlineRecoveryEvidenceMissionlessNativePlayback: "Exact local playback - mission bridge and order unknown",
       runtimeRecoveryEvidenceSameMissionLevelDataPlayback: "Exact native playback in this mission shell - quest trigger and order unknown",
       runtimeRecoveryEvidenceLuaControllerPlayback: "Exact shipped-Lua playback - mission owner and order unknown",
@@ -2361,6 +2362,7 @@
           <div id="mp-corpus" class="mp-corpus" role="status" aria-live="polite"></div>
         </header>
         <div id="mp-warning" class="mp-boundary-warning" role="note"></div>
+        <div id="mp-definition-recovery" class="mp-boundary-warning" role="note"></div>
         <div id="mp-source-provenance" class="mp-source-provenance" role="note" hidden></div>
         <div id="mp-non-mission-overview" class="mp-non-mission-overview"></div>
         <div class="mp-layout">
@@ -2486,6 +2488,7 @@
       "mission-pipeline-tab": t("title"),
       "mp-eyebrow": t("eyebrow"), "mp-title": t("title"), "mp-scope": t("scope"),
       "mp-warning": t("warning"), "mp-search-label": t("search"), "mp-structure-label": t("structure"),
+      "mp-definition-recovery": t("definitionRecoveryScope"),
       "mp-show-hidden-label": t("showHidden"), "mp-show-dependencies-label": t("dependencies"),
       "mp-show-edge-labels-label": t("edgeLabels"), "mp-orientation-label": t("orientation"),
       "mp-fit": t("fit"), "mp-center": t("center"), "mp-graph-title": t("graph"), "mp-drag-hint": t("dragHint"),

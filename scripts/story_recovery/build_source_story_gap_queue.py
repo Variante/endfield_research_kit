@@ -11980,7 +11980,9 @@ def _core_isolated_target_missions(
     return dict(targets)
 
 
-def _audit_sources_match_current_indexes(report: dict[str, Any]) -> bool:
+def _audit_source_index_diagnostics(
+    report: dict[str, Any],
+) -> list[dict[str, Any]]:
     reported = {
         safe_key(row.get("source")): safe_key(
             row.get("stageSignatureSha256")
@@ -11988,6 +11990,7 @@ def _audit_sources_match_current_indexes(report: dict[str, Any]) -> bool:
         for row in report.get("sources") or []
         if isinstance(row, dict) and safe_key(row.get("source"))
     }
+    failures: list[dict[str, Any]] = []
     for source in ("StreamingAssets", "Persistent"):
         summary_path = (
             ROOT
@@ -11999,14 +12002,42 @@ def _audit_sources_match_current_indexes(report: dict[str, Any]) -> bool:
             / "summary.json"
         )
         summary = read_json(summary_path, {})
-        if not isinstance(summary, dict) or summary.get("complete") is not True:
-            return False
         signature = safe_key(
             (summary.get("stageSignature") or {}).get("sha256")
-        ).lower()
-        if not signature or reported.get(source) != signature:
-            return False
-    return True
+        ).lower() if isinstance(summary, dict) else ""
+        expected_signature = reported.get(source, "")
+        if (
+            not summary_path.is_file()
+            or not isinstance(summary, dict)
+            or summary.get("complete") is not True
+            or not signature
+            or expected_signature != signature
+        ):
+            failures.append({
+                "validator": "offlineAnimeStudioCarrierAudit",
+                "gate": "exactCurrentPublishedObjectIndex",
+                "source": source,
+                "sourcePath": str(summary_path),
+                "expected": {
+                    "exists": True,
+                    "complete": True,
+                    "stageSignatureSha256": expected_signature,
+                },
+                "actual": {
+                    "exists": summary_path.is_file(),
+                    "payloadType": type(summary).__name__,
+                    "complete": (
+                        summary.get("complete")
+                        if isinstance(summary, dict) else None
+                    ),
+                    "stageSignatureSha256": signature,
+                },
+            })
+    return failures
+
+
+def _audit_sources_match_current_indexes(report: dict[str, Any]) -> bool:
+    return not _audit_source_index_diagnostics(report)
 
 
 def _offline_text_definition_validation_failure(
@@ -12570,6 +12601,42 @@ def _dialog_tree_terminal_option_routes(
     return sorted(groups, key=lambda row: row["optionGroup"])
 
 
+def _declared_dialog_context_definitions() -> dict[str, dict[str, Any]]:
+    """Return only manual rows that encode a typed external relationship.
+
+    Plain registered DialogTree definitions are intentionally absent.  They
+    are discovered from the current core-isolated target set, DialogId index,
+    TextAsset corpus, Timeline index, action census, native playback census,
+    object-carrier audit, and installed binaries.  A declaration remains only
+    when it supplies an additional original-data relationship whose schema is
+    validated by a dedicated decoder below.
+    """
+    context_fields = {
+        "allowedNonOwningRoute",
+        "missionNpcProxyTracking",
+        "npcProxyConsumer",
+        "npcProxyConsumers",
+        "sharedTimeline",
+    }
+    context_keys = {
+        story_key
+        for story_key, definition in OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+        if context_fields & set(definition)
+    }
+    context_keys.update(OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS)
+    for context in OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS.values():
+        context_keys.update(
+            safe_key(story_key)
+            for story_key in (context.get("propertyDialogs") or {}).values()
+            if safe_key(story_key)
+        )
+    return {
+        story_key: OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
+        for story_key in sorted(context_keys, key=natural_key)
+        if story_key in OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS
+    }
+
+
 def build_offline_exhaustion_index(
     partial_report: dict[str, Any],
     table_root: Path,
@@ -12588,6 +12655,24 @@ def build_offline_exhaustion_index(
     playback, or chronology. Every source gate must match the audited build;
     otherwise the complete set reopens automatically.
     """
+    # Most registered DialogTree rows are now recovered by the corpus-wide
+    # registry/TextAsset/action/native-consumer scan below.  Keep the legacy
+    # declarations only for cases that add a separately typed relationship
+    # which cannot be reconstructed from the DialogTree definition alone.
+    # This deliberately makes a new plain DialogTree eligible without adding
+    # its id, filename, hash, lines, options, or branch groups to this module.
+    dialog_context_definitions = _declared_dialog_context_definitions()
+    pattern_dialog_keys = (
+        set(OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS)
+        - set(dialog_context_definitions)
+    )
+    declared_absent_binary_tokens = {
+        story_key: token
+        for story_key, token
+        in OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS.items()
+        if story_key not in pattern_dialog_keys
+    }
+
     carrier_audit_path = carrier_audit_path or (
         ROOT
         / "reports"
@@ -12750,7 +12835,7 @@ def build_offline_exhaustion_index(
     )
     source_paths["dialogTextAssetRoot"] = cutscene_definition_root
     for story_key, definition in (
-        OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+        dialog_context_definitions.items()
     ):
         source_paths[
             f"dialogDefinition:{story_key}"
@@ -12872,7 +12957,7 @@ def build_offline_exhaustion_index(
     for context in OFFLINE_EXHAUSTION_RADIO_CONTEXTS.values():
         expected_hashes[context["sourceKey"]] = context["sha256"]
     for story_key, definition in (
-        OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+        dialog_context_definitions.items()
     ):
         expected_hashes[
             f"dialogDefinition:{story_key}"
@@ -13046,7 +13131,7 @@ def build_offline_exhaustion_index(
             "utf16le": game_assembly_bytes.count(token.encode("utf-16le")),
         }
         for story_key, token
-        in OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS.items()
+        in declared_absent_binary_tokens.items()
     }
     present_binary_tokens = {
         story_key: counts
@@ -13104,7 +13189,7 @@ def build_offline_exhaustion_index(
             ),
         }
         for story_key, token
-        in OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS.items()
+        in declared_absent_binary_tokens.items()
     }
     present_metadata_tokens = {
         story_key: counts
@@ -14398,6 +14483,11 @@ def build_offline_exhaustion_index(
         if isinstance(carrier_audit, dict)
         else []
     ))
+    carrier_audit_target_digest = safe_key(
+        carrier_audit.get("targetSetSha256")
+        if isinstance(carrier_audit, dict)
+        else ""
+    ).lower()
     radio_mission_by_key = {
         story_key: mission
         for mission, story_keys in OFFLINE_EXHAUSTION_RADIOS_BY_MISSION.items()
@@ -14414,7 +14504,7 @@ def build_offline_exhaustion_index(
     dialog_mission_by_key = {
         story_key: safe_key(definition.get("missionId"))
         for story_key, definition
-        in OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+        in dialog_context_definitions.items()
         if story_key not in OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS
     }
     all_dialog_keys = set(dialog_mission_by_key)
@@ -14449,23 +14539,36 @@ def build_offline_exhaustion_index(
         **text_mission_by_key,
     }
     required_keys = set(required_key_missions)
+    carrier_audit_source_diagnostics = _audit_source_index_diagnostics(
+        carrier_audit if isinstance(carrier_audit, dict) else {}
+    )
+    # The carrier audit is reusable per Story key when its published source
+    # indexes still match.  Requiring equality with the whole gap-queue target
+    # digest made one unrelated target-set change invalidate thousands of
+    # independently negative rows.  Every candidate still fails closed unless
+    # it is explicitly present in noCandidateStoryKeys; newly introduced keys
+    # therefore remain actionable until a future carrier audit covers them.
     if (
         not isinstance(carrier_audit, dict)
         or carrier_audit.get("_schema") != "animestudioStoryCarrierAudit.v3"
         or safe_key(carrier_audit.get("targetField"))
         != "coreIsolatedSceneKeys"
-        or safe_key(carrier_audit.get("targetSetSha256")).lower()
-        != core_target_digest.lower()
         or not required_keys <= no_candidate_keys
         or any(
             core_targets.get(story_key) != {mission}
             for story_key, mission in required_key_missions.items()
         )
-        or not _audit_sources_match_current_indexes(carrier_audit)
+        or carrier_audit_source_diagnostics
     ):
         status.update({
             "status": "inactive_carrier_audit_stale_or_incomplete",
             "coreTargetSetSha256": core_target_digest,
+            "carrierAuditTargetSetSha256": carrier_audit_target_digest,
+            "missingRequiredCarrierAuditStoryKeys": sorted(
+                required_keys - no_candidate_keys,
+                key=natural_key,
+            ),
+            "validatorDiagnostics": carrier_audit_source_diagnostics,
         })
         return {}, status
 
@@ -15861,7 +15964,7 @@ def build_offline_exhaustion_index(
         and isinstance(npc_proxy_ex_table, dict)
     )
     for story_key, definition in (
-        OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+        dialog_context_definitions.items()
     ):
         if not dialog_definitions_valid:
             break
@@ -17381,6 +17484,9 @@ def build_offline_exhaustion_index(
                 "evidenceKind": (
                     "registered_dialog_tree_definition_binary_consumer_surface_exhausted"
                 ),
+                "definitionRecoveryMethod": (
+                    "pattern_discovered_current_original_data"
+                ),
                 **facts,
                 "sceneKey": story_key,
                 "definitionSourceFiles": [
@@ -17408,7 +17514,8 @@ def build_offline_exhaustion_index(
                 "levelScriptActionCensusStatus": "zero_typed_action_occurrences",
                 "nativePlaybackStatus": "zero_typed_native_playback_occurrences",
                 "carrierAuditStatus": "no_typed_story_owner_or_runtime_carrier",
-                "carrierAuditTargetSetSha256": core_target_digest,
+                "carrierAuditTargetSetSha256": carrier_audit_target_digest,
+                "currentCoreTargetSetSha256": core_target_digest,
                 "binaryRootTokenStatus": (
                     "absent_utf8_and_utf16le_in_current_game_binaries"
                 ),
@@ -18708,7 +18815,7 @@ def build_offline_exhaustion_index(
         ):
             index.setdefault(story_key, evidence)
     for story_key in sorted(all_dialog_keys, key=natural_key):
-        definition = OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
+        definition = dialog_context_definitions[story_key]
         validation = dialog_validation_by_key[story_key]
         allowed_non_owning_route = definition.get("allowedNonOwningRoute")
         index[story_key] = {
@@ -18738,14 +18845,14 @@ def build_offline_exhaustion_index(
                     ))
                 ),
             "definitionAsset":
-                OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]["filename"],
+                dialog_context_definitions[story_key]["filename"],
             "definitionAssets": [
                 filename
                 for filename in (
-                    OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key][
+                    dialog_context_definitions[story_key][
                         "filename"
                     ],
-                    OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key].get(
+                    dialog_context_definitions[story_key].get(
                         "extraConfigFilename"
                     ),
                 )
@@ -19401,6 +19508,36 @@ def build_offline_exhaustion_index(
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
         "deferredStoryKeys": len(index),
+        "dialogDefinitionRecovery": {
+            "pattern": (
+                "core isolated target -> mechanical misc_dlg alias -> exact "
+                "DialogId registration -> exact hashed DialogTree TextAsset -> "
+                "Timeline/action/native/object/binary consumer census"
+            ),
+            "declaredDefinitionRows": len(
+                OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS
+            ),
+            "declaredExternalContextRows": len(
+                dialog_context_definitions
+            ),
+            "patternDiscoveredDefinitionRows": len(
+                registered_tree_definition_facts
+            ),
+            "patternQualifiedDefinitionRows": len(
+                registered_tree_evidence_by_key
+            ),
+            "carrierAuditTargetSetSha256": carrier_audit_target_digest,
+            "currentCoreTargetSetSha256": core_target_digest,
+            "carrierAuditReuseMode": "per_story_key_exact_current_source",
+            "perObjectDefinitionDeclarationRequired": False,
+            "perObjectBinaryTokenDeclarationRequired": False,
+            "evidenceBoundary": (
+                "declarations are retained only for separately typed external "
+                "relationships; definition filenames, hashes, line ids, option "
+                "ids, and internal branches are recovered from current original "
+                "data and never create mission activation or cross-file order"
+            ),
+        },
         "missionRelatedOriginalData": (
             mission_related_original_data_by_mission
         ),
@@ -19690,7 +19827,9 @@ def build_offline_exhaustion_index(
                 "mappingId": "current-build-levelscript-action-story-occurrence-census-v1",
                 "qualifiedKeysHaveZeroOccurrences": True,
             },
-            "carrierAuditTargetSetSha256": core_target_digest,
+            "carrierAuditTargetSetSha256": carrier_audit_target_digest,
+            "currentCoreTargetSetSha256": core_target_digest,
+            "carrierAuditReuseMode": "per_story_key_exact_current_source",
             "graphEffect": "none",
         },
         "genericRegisteredDialogTreeTrunkGroupEvidence": {

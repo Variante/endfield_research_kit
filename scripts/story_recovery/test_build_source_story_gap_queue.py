@@ -658,6 +658,113 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(failure["gate"], "exactCurrentDialogTreeDefinition")
         self.assertFalse(failure["actual"]["sourceHashMatches"])
 
+    def test_plain_dialog_definitions_do_not_require_per_object_declarations(
+        self,
+    ) -> None:
+        definitions = {
+            "dlg_arbitrary_future_1": {
+                "missionId": "future_mission",
+                "filename": "must_not_drive_discovery.json",
+                "sha256": "must_not_drive_discovery",
+                "lineIds": ("must_not_drive_discovery_001",),
+                "optionIds": (),
+            },
+            "dlg_external_context": {
+                "missionId": "mission_context",
+                "filename": "context.json",
+                "sha256": "context-hash",
+                "lineIds": ("dlg_external_context_001",),
+                "optionIds": (),
+                "npcProxyConsumer": {"proxyId": "proxy_fixture"},
+            },
+            "dlg_task_context": {
+                "missionId": "mission_task",
+                "filename": "task.json",
+                "sha256": "task-hash",
+                "lineIds": ("dlg_task_context_001",),
+                "optionIds": (),
+            },
+            "dlg_leveldata_context": {
+                "missionId": "mission_leveldata",
+                "filename": "leveldata.json",
+                "sha256": "leveldata-hash",
+                "lineIds": ("dlg_leveldata_context_001",),
+                "optionIds": (),
+            },
+        }
+        with (
+            patch.object(
+                gap_queue,
+                "OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS",
+                definitions,
+            ),
+            patch.object(
+                gap_queue,
+                "OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS",
+                {"dlg_task_context": {}},
+            ),
+            patch.object(
+                gap_queue,
+                "OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS",
+                {
+                    "mission_leveldata": {
+                        "propertyDialogs": {
+                            "result_dialog": "dlg_leveldata_context",
+                        },
+                    },
+                },
+            ),
+        ):
+            contextual = gap_queue._declared_dialog_context_definitions()
+
+        self.assertEqual(
+            set(contextual),
+            {
+                "dlg_external_context",
+                "dlg_task_context",
+                "dlg_leveldata_context",
+            },
+        )
+        self.assertNotIn("dlg_arbitrary_future_1", contextual)
+
+    def test_carrier_audit_source_diagnostics_name_missing_index(self) -> None:
+        report = {
+            "sources": [
+                {
+                    "source": source,
+                    "stageSignatureSha256": f"{source}-signature",
+                }
+                for source in ("StreamingAssets", "Persistent")
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            persistent = (
+                root
+                / "export_full/recovered/AnimeStudio-cli/Persistent/"
+                  "object_index"
+            )
+            persistent.mkdir(parents=True)
+            (persistent / "summary.json").write_text(
+                json.dumps({
+                    "complete": True,
+                    "stageSignature": {
+                        "sha256": "Persistent-signature",
+                    },
+                }),
+                encoding="utf-8",
+            )
+            with patch.object(gap_queue, "ROOT", root):
+                failures = gap_queue._audit_source_index_diagnostics(report)
+
+        self.assertEqual(len(failures), 1)
+        failure = failures[0]
+        self.assertEqual(failure["validator"], "offlineAnimeStudioCarrierAudit")
+        self.assertEqual(failure["gate"], "exactCurrentPublishedObjectIndex")
+        self.assertEqual(failure["source"], "StreamingAssets")
+        self.assertFalse(failure["actual"]["exists"])
+        self.assertTrue(failure["expected"]["exists"])
+
     def test_generic_dialog_timeline_is_internal_definition_only(self) -> None:
         timeline_rows = gap_queue.read_json(
             gap_queue.ROOT

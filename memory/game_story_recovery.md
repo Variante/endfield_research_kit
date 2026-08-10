@@ -118,6 +118,15 @@ never promotes an edge.
   Duplicate Timeline clips must agree within their runtime option scope. These
   rows prove an objective dependency, not player selection, dialog activation,
   server successor choice, or total Story-file order.
+- Plain registered DialogTree recovery is corpus-driven: core isolated Story
+  targets join mechanically through `misc_dlg_` aliases, the current DialogId
+  registry, exact hash-validated TextAssets, Timeline definitions, typed
+  LevelScript/native/object carrier censuses, and the installed binaries. In
+  the current corpus this replaces per-object definition declarations for 43
+  rows; 59 legacy rows remain only because they carry separately typed
+  NpcProxy, MissionRuntime, LevelScript, shared-Timeline, or non-owning context.
+  The generic definition path never creates mission activation or cross-file
+  order, and malformed or ambiguous current sources fail closed.
 
 ## LevelScript and native conclusions
 

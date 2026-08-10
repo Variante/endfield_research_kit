@@ -152,6 +152,26 @@ for (const [key, category] of [
         self.assertIn("nativeCinematicProducerRouteAttachments", source)
         self.assertIn("route.sourceFiles", source)
 
+    def test_mission_pipeline_labels_pattern_discovered_dialog_definitions(
+        self,
+    ) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn(
+            "Auto-discovered DialogTree definition - no activator on "
+            "current original-data surfaces",
+            source,
+        )
+        self.assertIn(
+            "registered_dialog_tree_definition_binary_consumer_surface_exhausted",
+            source,
+        )
+        self.assertIn('id="mp-definition-recovery"', source)
+        self.assertIn(
+            "Per-object filename, line, option, and branch declarations are "
+            "not required",
+            source,
+        )
+
     def test_mission_pipeline_surfaces_hash_validated_story_connection_files(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("storyConnectionOriginalFilesHtml", source)
