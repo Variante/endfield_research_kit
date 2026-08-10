@@ -9029,6 +9029,71 @@ def parse_leveldata_levelscript_brief_dictionary(
     )
 
 
+def resolve_levelscript_dynamic_property_string(
+    brief: dict | None,
+    binding: dict | None,
+) -> dict | None:
+    """Resolve one exact LevelScript ``Param<string>`` property reference.
+
+    ``ParamSource`` 200 is the serialized LevelScript-property source in the
+    current build.  A dynamic audio field carries the property name in its
+    ``path``; the corresponding ``LevelScriptBriefData/8.properties`` entry
+    carries the value.  The join is deliberately narrow: it requires the
+    ordinary getter shape (``idRef=-1``), one uniquely named property, and the
+    proven string property formatter (value type 7 with one atom).  Any
+    duplicate, null, multi-atom, or non-string property remains unresolved.
+
+    This helper only resolves the authored value.  It does not claim that the
+    owning action executes, nor that a resolved Event/Radio value reaches a
+    Wwise playback root.
+    """
+    if not isinstance(brief, dict) or not isinstance(binding, dict):
+        return None
+    if (
+        binding.get("bindingKind") != "dynamic"
+        or binding.get("paramSource") != 200
+        or binding.get("idRef") != -1
+        or not isinstance(binding.get("path"), str)
+        or not binding["path"]
+    ):
+        return None
+    property_name = binding["path"]
+    matches = [
+        prop
+        for prop in brief.get("properties") or []
+        if isinstance(prop, dict) and prop.get("name") == property_name
+    ]
+    if len(matches) != 1:
+        return None
+    property_value = matches[0].get("value")
+    if not isinstance(property_value, dict):
+        return None
+    atoms = property_value.get("atoms")
+    if not (
+        property_value.get("valueType") == 7
+        and property_value.get("atomCount") == 1
+        and isinstance(atoms, list)
+        and len(atoms) == 1
+        and isinstance(atoms[0], dict)
+        and isinstance(atoms[0].get("text"), str)
+        and atoms[0]["text"]
+        and isinstance(atoms[0].get("valueBit64"), int)
+    ):
+        return None
+    return {
+        "value": atoms[0]["text"],
+        "propertyName": property_name,
+        "propertyValueType": 7,
+        "propertyAtomCount": 1,
+        "propertyAtomValueBit64": atoms[0]["valueBit64"],
+        "resolutionMode": "exact_levelscript_brief_property_string",
+        "evidence": (
+            "LevelData/43.member22:LevelScriptBriefData/8.properties "
+            "+ LevelScript ParamSource=200 path"
+        ),
+    }
+
+
 def _looks_like_npc_patrol_data_start(data: bytes, offset: int) -> bool:
     if offset < 0 or offset + 28 > len(data) or data[offset] != 0x09:
         return False
