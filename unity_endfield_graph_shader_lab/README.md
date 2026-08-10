@@ -1580,8 +1580,15 @@ Installed IL2CPP metadata closes the argument as `UInt32 lightModeMask` and
 `HGShaderLightMode` as 31 named pass bits spanning `0..30` plus `None=0`.
 Hash-pinned `Beyond.Gameplay.Factory.PerDrawPassConfig` code parses its narrower
 gameplay pass enum into that mask and `Apply` calls the managed wrapper at
-`0x1869F3904`. The exact later native render-stage consumer remains open. This
-loader blob is separate
+`0x1869F3904`. Native initialization is closed as well: the Renderer base
+constructor defaults field `+0x250` to `0xFFFFFFFF`; builders
+`0x18042A130/0x18042AB50` copy it directly to every record `+0x14`, while
+generic path `0x180BCCB60 -> 0x180BCB760` carries it through constructor input
+`+0x20`. The two inspected renderer-list callbacks store the requested mask at
+job `+0x44` and test it against a separate `0x60`-stride renderer-entry word at
+`+0x1C`. No source-closed projection from record `+0x14` to that word is known,
+so the exact later native render-stage consumer remains open. This loader blob
+is separate
 from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
 at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
 available masks at `+0x04/+0x05`, a reserved/alignment word at `+0x06`, a
@@ -1690,7 +1697,8 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The exact asset class of loader record
-`+0x0C`, the render-stage consumer of `enabledLightModes` at `+0x14`, and the
+`+0x0C`, the downstream `enabledLightModes` projection from record `+0x14` to
+renderer-entry `+0x1C`, and the
 component-67 standalone native type
 name, any separate post-dispatch
 copy or consumer of view `+0x18`, any separate

@@ -1065,6 +1065,16 @@ UNITY_HGTREE_BODIES = {
         0x92E,
         "bc9b51e5ec3b9f43cd26faf384f92658cf591ca119df1b173cf19912eadd016f",
     ),
+    "renderer_base_constructor": (
+        0x18042BF10,
+        0x1A9,
+        "aca47837fe54b12c2989c7803b5a52ad446350033342d40948294a0913b91929",
+    ),
+    "generic_renderer_runtime_record_input_builder": (
+        0x180BCCB60,
+        0x3ED,
+        "1c1bc9178df20b45ad8a09c41a06b60133c2285706310b097bb13cb1f2aa020d",
+    ),
     "factory_set_enabled_light_modes_binding": (
         0x1801EB940,
         0x2C,
@@ -1211,6 +1221,19 @@ UNITY_HGTREE_SLICES = {
         "7504498d6e080f104500488d058f71feff4d85ff4c8d05a548feff"
         "4c8bcb4c0f44c0488d4c24",
     ),
+    "renderer_list_light_mode_mask_job_store": (
+        0x1810807D0,
+        "433c8b8424e80000008943408b8424f000000089434448638424a8000000"
+        "488bc8894348",
+    ),
+    "renderer_list_callback_a_entry_light_mode_test": (
+        0x181067FFF,
+        "478b2426440b6718440ba5880100008b471c418bd481e20000060041854544",
+    ),
+    "renderer_list_callback_b_entry_light_mode_test": (
+        0x181064B66,
+        "418b451c854144",
+    ),
     "register_tree_batch_group_to_core": (
         0x1801DA12F,
         "e82cbdde00488b4c2430488bb8c0000000e8cba55800488b4c2448"
@@ -1249,6 +1272,34 @@ UNITY_HGTREE_SLICES = {
     "transform_owner_cleanup_handle_key_loop": (
         0x1810BD080,
         "440fb747fe498bce8b17e871adfcff488d7f184883ee0175e74533f6",
+    ),
+    "renderer_base_enabled_light_modes_default": (
+        0x18042C018,
+        "66c78748020000010089874c020000488b0572a2930148898768020000"
+        "c78750020000ffffffff89b7540200004889b7580200004889b760020000",
+    ),
+    "renderer_record_enabled_light_modes_copy_path_a": (
+        0x18042AA88,
+        "8b442440488bcf8946088b44244489460c8856020fb68744020000884603"
+        "488b07ff900801000066090641ffc68b461049ffc725fdfb01f0410bc48946"
+        "108b87500200008946144883c6184d3bfd",
+    ),
+    "renderer_record_enabled_light_modes_copy_path_b": (
+        0x18042B498,
+        "8b442440488bcf8946088b44244489460c8856020fb68744020000884603"
+        "488b07ff900801000066090641ffc68b461049ffc725fdfb01f0410bc48946"
+        "108b87500200008946144883c6184d3bfd",
+    ),
+    "generic_renderer_enabled_light_modes_input_handoff": (
+        0x180BCCD76,
+        "498b064889442448418b855002000089442450488b014889742430ff5018"
+        "8bc8b801000000d3e0498b4d30894583e8d73175ff48894587498b45304c"
+        "896da70fb64855410fb7854402000066894593488b457f48894597498b4708"
+        "4889459f498d4760894d8f488d4c2430488945afe876e9ffff",
+    ),
+    "generic_renderer_enabled_light_modes_record_copy": (
+        0x180BCBE79,
+        "8b431025fdfb01f00b85880000008943108b46208943144883c3184963c5483bc2",
     ),
     "lod_ecs_availability_unload_clear": (
         0x1810845E0,
@@ -4801,7 +4852,10 @@ def validate_unity_hgtree_renderer_boundary(
                     "enabledLightModesAt0x14": {
                         "roleClosed": True,
                         "passBitMeaningsClosed": True,
+                        "nativeInitializationProducerClosed": True,
                         "hgtreeInitialValue": 0,
+                        "rendererObjectFieldOffset": "0x250",
+                        "rendererObjectDefault": "0xFFFFFFFF",
                         "internalCallIndex": (
                             UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_INDEX
                         ),
@@ -4812,6 +4866,52 @@ def validate_unity_hgtree_renderer_boundary(
                         "recordStrideBytes": 24,
                         "genericConstructorVirtualAddress": "0x180BCB760",
                         "genericConstructorSource": "constructor input +0x20",
+                        "nativeInitializationPaths": [
+                            {
+                                "builderVirtualAddress": "0x18042A130",
+                                "readVirtualAddress": "0x18042AAC6",
+                                "writeVirtualAddress": "0x18042AACC",
+                                "equation": (
+                                    "record[+0x14] = renderer[+0x250]"
+                                ),
+                            },
+                            {
+                                "builderVirtualAddress": "0x18042AB50",
+                                "readVirtualAddress": "0x18042B4D6",
+                                "writeVirtualAddress": "0x18042B4DC",
+                                "equation": (
+                                    "record[+0x14] = renderer[+0x250]"
+                                ),
+                            },
+                            {
+                                "inputBuilderVirtualAddress": "0x180BCCB60",
+                                "sourceReadVirtualAddress": "0x180BCCD7E",
+                                "constructorVirtualAddress": "0x180BCB760",
+                                "recordWriteVirtualAddress": "0x180BCBE8A",
+                                "equation": (
+                                    "constructorInput[+0x20] = "
+                                    "renderer[+0x250]; "
+                                    "record[+0x14] = constructorInput[+0x20]"
+                                ),
+                            },
+                        ],
+                        "downstreamSearchBoundary": {
+                            "requestMaskJobOffset": "0x44",
+                            "callbackAddresses": [
+                                "0x181067A70",
+                                "0x181064190",
+                            ],
+                            "testedRendererEntryOffset": "0x1C",
+                            "recordToEntryProjectionClosed": False,
+                            "interpretation": (
+                                "both inspected renderer-list callbacks test "
+                                "the requested lightModeMask stored at job+0x44 "
+                                "against a separate 0x60-stride renderer-entry "
+                                "word at +0x1C; no source-closed copy from "
+                                "runtime record+0x14 to that entry word has "
+                                "been identified"
+                            ),
+                        },
                         "maskType": "System.UInt32",
                         "shaderLightModeLiteralCount": 32,
                         "shaderLightModeCombinedMask": "0x7FFFFFFF",
@@ -4829,11 +4929,19 @@ def validate_unity_hgtree_renderer_boundary(
                             "every record+0x14 at stride 0x18; IL2CPP metadata "
                             "defines HGShaderLightMode as bits 0..30, while "
                             "PerDrawPassConfig.Apply parses its gameplay pass "
-                            "enum and calls the managed wrapper directly"
+                            "enum and calls the managed wrapper directly. The "
+                            "Renderer base constructor initializes native field "
+                            "+0x250 to 0xFFFFFFFF; two direct record builders "
+                            "copy that field to record+0x14, and the generic "
+                            "builder passes the same field through constructor "
+                            "input+0x20 before the identical record write"
                         ),
                         "proofBoundary": (
                             "the exact downstream render-stage consumer of "
-                            "enabledLightModes remains open"
+                            "enabledLightModes remains open; the two inspected "
+                            "renderer-list callbacks instead test job+0x44 "
+                            "against separate rendererEntry+0x1C, whose "
+                            "projection from record+0x14 is not closed"
                         ),
                     },
                 },
@@ -5571,8 +5679,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v23",
-        "status": "installed_cap_hgtree_enabled_light_mode_bits_closed",
+        "schema": "endfield.recovered-light-cull-cap.v24",
+        "status": "installed_cap_hgtree_enabled_light_mode_initializers_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -5613,7 +5721,13 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "record. IL2CPP metadata closes HGShaderLightMode as 31 named "
             "render-pass bits spanning 0..30, and the hash-pinned gameplay "
             "PerDrawPassConfig parser and Apply method pass that mask through "
-            "the managed wrapper. Only the later native render-stage consumer "
+            "the managed wrapper. The Renderer base constructor also defaults "
+            "native field +0x250 to 0xFFFFFFFF; two direct record builders copy "
+            "it to record +0x14, while the generic path carries it through "
+            "constructor input +0x20 before the same write. The two inspected "
+            "renderer-list callbacks compare job+0x44 against a separate "
+            "renderer-entry +0x1C word; its projection from record +0x14 is "
+            "not closed. Only the later native render-stage consumer "
             "remains open. The dispatch packet/"
             "payload layouts, "
             "LODCrossFadeConfig enableDither/lodBias controls, parent and "
@@ -5698,8 +5812,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "Any separate post-dispatch cull-view +0x18 consumer, the exact "
-            "asset class of loader record +0x0C, the render-stage consumer "
-            "of enabledLightModes at +0x14, the "
+            "asset class of loader record +0x0C, the downstream projection/"
+            "consumer from enabledLightModes record +0x14 to renderer-entry "
+            "+0x1C, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -5876,6 +5991,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "loader runtime record +0x10 as Renderer property flags and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
+                "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
                 "the HGTree LOD dispatch packet and payload layouts",
@@ -5913,7 +6029,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "any separate post-dispatch copy or consumer of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the exact asset class represented by runtime record +0x0C",
-                "the exact render-stage consumer of enabledLightModes at runtime record +0x14",
+                "the exact projection/consumer from enabledLightModes runtime record +0x14 to renderer-entry +0x1C",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -5949,7 +6065,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime resource/property fields and enabledLightModes pass-bit producer, "
+        "runtime resource/property fields and enabledLightModes producer/default/initializers, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "

@@ -119,8 +119,15 @@ NPC archetypes are imported as labeled source kits.
   `HGShaderLightMode` as 31 named pass bits `0..30` (`None=0`). The hash-pinned
   `Beyond.Gameplay.Factory.PerDrawPassConfig._ParseToHGShaderLightMode` body
   maps its narrower gameplay enum into those sparse bits, and `Apply` calls
-  the managed wrapper directly at `0x1869F3904`. The exact later native
-  render-stage consumer remains open. This
+  the managed wrapper directly at `0x1869F3904`. Native initialization is now
+  closed too: the Renderer base constructor defaults field `+0x250` to
+  `0xFFFFFFFF`; builders `0x18042A130/0x18042AB50` copy it directly to every
+  record `+0x14`, while generic path `0x180BCCB60 -> 0x180BCB760` carries the
+  same value through constructor input `+0x20`. The two inspected renderer-list
+  callbacks store the requested mask at job `+0x44` and test it against a
+  separate `0x60`-stride renderer-entry word at `+0x1C`; no source-closed
+  projection from record `+0x14` to that word is known, so the exact later
+  native render-stage consumer remains open. This
   loader blob is not the other 24-byte structure used by LOD jobs. The latter
   is archetype component bit 67: `+0x00` is LOD count, `+0x01/+0x02` are the
   desired and availability-resolved indices, `+0x03` carries transition/output
@@ -240,8 +247,8 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The exact asset
-  class of loader record `+0x0C`, the render-stage consumer of
-  `enabledLightModes` at `+0x14`, the component-67
+  class of loader record `+0x0C`, the downstream projection/consumer from
+  `enabledLightModes` at record `+0x14` to renderer-entry `+0x1C`, the component-67
   standalone native type name, any separate post-dispatch copy or consumer of
   view `+0x18`,
   any separate
@@ -479,8 +486,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
    `screenSizeMinimumSquared`; the current scheduled batch core directly
    excludes it. Keep that value distinct from both squared `parentLODBias` and
    the HGTreeRenderer LOD bounds. Resolve the remaining loader-registration
-   record `+0x0C` asset class, the downstream render-stage consumer of
-   `enabledLightModes` at `+0x14`, and the
+   record `+0x0C` asset class, the downstream projection/consumer from
+   `enabledLightModes` at record `+0x14` to renderer-entry `+0x1C`, and the
    exact native type-name link for component 67; its serialized LOD-count/range producer is
    now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
