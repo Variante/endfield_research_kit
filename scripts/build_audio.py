@@ -1406,6 +1406,39 @@ def link_gameplay_audio(
             "rootStopActionCount": sum(int(row.get("rootStopActionCount") or 0) for row in evidence_rows),
             "containers": selector_containers,
         }
+        action_dispatch_evidence: list[dict[str, Any]] = []
+        for evidence_row in evidence_rows:
+            dispatch = evidence_row.get("actionDispatchEvidence") or {}
+            if not isinstance(dispatch, dict) or not dispatch:
+                continue
+            actions: list[dict[str, Any]] = []
+            for action in evidence_row.get("actionEvidence") or []:
+                if not isinstance(action, dict) or action.get("operation") not in {"play", "playEvent"}:
+                    continue
+                actions.append({
+                    "actionId": action.get("actionId"),
+                    "eventActionOrdinal": action.get("eventActionOrdinal"),
+                    "operation": action.get("operation"),
+                    "actionParserStatus": action.get("actionParserStatus"),
+                    "delay": action.get("delay") or {},
+                    "transition": action.get("transition") or {},
+                    "probability": action.get("probability") or {},
+                })
+            action_dispatch_evidence.append({
+                "bankId": evidence_row.get("bankId"),
+                "bankVersion": evidence_row.get("bankVersion"),
+                "timingClass": dispatch.get("timingClass"),
+                "playbackActionCount": int(dispatch.get("playbackActionCount") or 0),
+                "typedPlaybackActionCount": int(dispatch.get("typedPlaybackActionCount") or 0),
+                "failedPlaybackActionCount": int(dispatch.get("failedPlaybackActionCount") or 0),
+                "multiPlayback": bool(dispatch.get("multiPlayback")),
+                "simultaneityCandidate": bool(dispatch.get("simultaneityCandidate")),
+                "explicitDelayActionCount": int(dispatch.get("explicitDelayActionCount") or 0),
+                "explicitTransitionActionCount": int(dispatch.get("explicitTransitionActionCount") or 0),
+                "probabilityGatedActionCount": int(dispatch.get("probabilityGatedActionCount") or 0),
+                "evidenceBoundary": dispatch.get("evidenceBoundary"),
+                "actions": actions,
+            })
         root_action_ids = sorted({
             int(root_action_id)
             for item in media
@@ -1439,6 +1472,7 @@ def link_gameplay_audio(
             "traversalStatus": traversal_status,
             "unresolvedNodeCount": sum(len(row.get("unresolvedNodes") or []) for row in evidence_rows),
             "selectorEvidence": selector_evidence,
+            "actionDispatchEvidence": action_dispatch_evidence,
             "runtimeSelection": (
                 "eventNotFoundInWwise" if event_key not in found_events
                 else "noDecodedPossibleMedia" if not media
@@ -1611,6 +1645,7 @@ def link_gameplay_audio(
                 "playRootCount": linked.get("playRootCount"),
                 "mediaRelationTypes": linked.get("mediaRelationTypes") or [],
                 "selectorEvidence": linked.get("selectorEvidence") or {},
+                "actionDispatchEvidence": linked.get("actionDispatchEvidence") or [],
                 "traversalStatus": linked.get("traversalStatus"),
                 "runtimeSelection": linked.get("runtimeSelection"),
                 "evidence": evidence,
@@ -2000,7 +2035,7 @@ def link_gameplay_audio(
         **animation_evidence,
     })
     json_dump(path, {
-        "schemaVersion": 3,
+        "schemaVersion": 4,
         "language": language,
         "counts": stats,
         "animationEventCatalogPath": GAMEPLAY_SFX_ANIMATION_CATALOG_NAME,
@@ -2021,6 +2056,7 @@ def link_gameplay_audio(
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
             "referenceOnlyBoundary": "Exact SkillData/BuffData and owned AnimationClip trigger contexts remain serialized when the Event is absent from current Wwise banks or has no decoded possible media; Gameplay only renders records with playable files.",
             "runtimeSelection": "Possible media files come from typed Wwise v150 edges and are grouped by Play root and selector relation; the live branch selected by switches, states, random/sequence containers, and layers remains unresolved.",
+            "actionDispatchBoundary": "Typed v150 Event Action ordinals and serialized DelayTime, TransitionTime, and Probability properties are preserved. They prove authored dispatch membership and controls, not live action execution, evaluated probability, or sample-accurate audible simultaneity.",
         },
     })
     return stats

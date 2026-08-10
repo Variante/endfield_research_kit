@@ -1102,8 +1102,56 @@ AnimationClip:
                 [{
                     "eventId": "player_fol_fs_walk",
                     "bankId": 100,
+                    "bankVersion": 150,
                     "traversalStatus": "complete",
                     "rootStopActionCount": 1,
+                    "actionDispatchEvidence": {
+                        "timingClass": "coDispatchWithAuthoredDelayDifference",
+                        "playbackActionCount": 2,
+                        "typedPlaybackActionCount": 2,
+                        "failedPlaybackActionCount": 0,
+                        "multiPlayback": True,
+                        "simultaneityCandidate": False,
+                        "explicitDelayActionCount": 1,
+                        "explicitTransitionActionCount": 0,
+                        "probabilityGatedActionCount": 1,
+                        "evidenceBoundary": "serialized membership only",
+                    },
+                    "actionEvidence": [{
+                        "actionId": 101,
+                        "eventActionOrdinal": 0,
+                        "operation": "play",
+                        "actionParserStatus": "typedExactV150",
+                        "delay": {
+                            "serializationStatus": "implicitDefaultNotSerialized",
+                            "baseValuesMs": [],
+                            "modifierRangesMs": [],
+                        },
+                        "transition": {},
+                        "probability": {},
+                    }, {
+                        "actionId": 102,
+                        "eventActionOrdinal": 1,
+                        "operation": "play",
+                        "actionParserStatus": "typedExactV150",
+                        "delay": {
+                            "serializationStatus": "explicitBase",
+                            "baseValuesMs": [350],
+                            "modifierRangesMs": [],
+                        },
+                        "transition": {},
+                        "probability": {
+                            "serializationStatus": "explicitBase",
+                            "baseValuesPercent": [5.0],
+                            "modifierRangesPercent": [],
+                            "runtimeSelection": "actionGateNotEvaluated",
+                        },
+                    }, {
+                        "actionId": 103,
+                        "eventActionOrdinal": 2,
+                        "operation": "stop",
+                        "actionParserStatus": "unsupportedActionKind",
+                    }],
                     "containerEvidence": [{
                         "objectId": 10,
                         "objectType": 5,
@@ -1144,6 +1192,17 @@ AnimationClip:
                 "randomAlternative": {"nodeCount": 1, "childEdgeCount": 12},
                 "switchCandidate": {"nodeCount": 1, "childEdgeCount": 4},
             })
+            self.assertEqual(payload["schemaVersion"], 4)
+            dispatch = event_a["actionDispatchEvidence"][0]
+            self.assertEqual(dispatch["bankId"], 100)
+            self.assertEqual(dispatch["bankVersion"], 150)
+            self.assertEqual(dispatch["timingClass"], "coDispatchWithAuthoredDelayDifference")
+            self.assertEqual(dispatch["playbackActionCount"], 2)
+            self.assertEqual(dispatch["explicitDelayActionCount"], 1)
+            self.assertEqual(dispatch["probabilityGatedActionCount"], 1)
+            self.assertEqual([row["actionId"] for row in dispatch["actions"]], [101, 102])
+            self.assertEqual(dispatch["actions"][1]["delay"]["baseValuesMs"], [350])
+            self.assertEqual(dispatch["actions"][1]["probability"]["baseValuesPercent"], [5.0])
             self.assertEqual(payload["characters"]["chr_a"]["metrics"]["sharedAnimationEventCount"], 1)
             self.assertEqual(payload["characters"]["chr_a"]["metrics"]["uniqueEventMediaPairCount"], 2)
             self.assertEqual(stats["characterAnimationUniqueEvents"], 1)
@@ -1305,7 +1364,7 @@ AnimationClip:
             payload = json.loads(
                 (webui_root / "data/lang/CN/gameplay/sound_effects.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(payload["schemaVersion"], 3)
+            self.assertEqual(payload["schemaVersion"], 4)
             self.assertEqual(payload["authoredPlaySoundActions"][0]["startFrame"], 17)
             event = payload["characters"]["chr_test"]["groups"]["normal"]["events"][0]
             binding = event["triggerBindings"][0]
