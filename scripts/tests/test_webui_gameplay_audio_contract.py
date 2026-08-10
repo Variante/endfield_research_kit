@@ -126,6 +126,23 @@ assert.equal(merged[0].possibleMediaCount, 2);
         self.assertIn('text("soundPlayBranches")', source)
         self.assertIn("selectorEvidence.containers", source)
 
+    def test_related_audio_uses_flat_event_cards_and_keeps_action_labels(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        groups = source.split("  function renderGameplaySoundActionGroups", 1)[1].split(
+            "\n  function gameplayResolvedSoundEvents", 1
+        )[0]
+        related = source.split("  function renderGameplaySoundGroup", 1)[1].split(
+            "\n  function renderCharacterSkillSounds", 1
+        )[0]
+        self.assertIn(
+            'renderGameplaySoundEvents(group.events, { showActionLabel: true })',
+            groups,
+        )
+        self.assertNotIn('<section class="gameplay-sfx-action">', groups)
+        self.assertNotIn("flattenGroups: true", related)
+        self.assertIn("gameplay-sfx-inline", related)
+        self.assertIn(".filter(gameplaySoundHasExactSkillTrigger)", source)
+
 
 if __name__ == "__main__":
     unittest.main()

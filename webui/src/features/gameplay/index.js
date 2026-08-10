@@ -1497,12 +1497,12 @@
         return (leftIndex < 0 ? 99 : leftIndex) - (rightIndex < 0 ? 99 : rightIndex)
           || gameplaySoundActionLabel(left).localeCompare(gameplaySoundActionLabel(right));
       });
-    if (options.flattenGroups) {
-      return orderedGroups
-        .map((group) => renderGameplaySoundEvents(group.events, { showActionLabel: true }))
-        .join("");
-    }
-    return orderedGroups.map((group) => `<section class="gameplay-sfx-action"><header class="gameplay-sfx-action-summary"><strong>${escapeHtml(gameplaySoundActionLabel(group))}</strong><span>${escapeHtml(gameplaySoundCountText(group.events, options))}</span></header>${renderGameplaySoundEvents(group.events)}</section>`).join("");
+    // Keep one flat event stream. Action ownership remains visible on each
+    // event card, but nested action sections made a single skill/enemy page
+    // grow into several layers of collapsible-looking containers.
+    return orderedGroups
+      .map((group) => renderGameplaySoundEvents(group.events, { showActionLabel: true }))
+      .join("");
   }
 
   function gameplayResolvedSoundEvents(events) {
@@ -1545,7 +1545,8 @@
     const playable = playableEvents.reduce((total, event) => total + ((event.audio || []).filter((candidate) => candidate?.src).length || Number(event.possibleMediaCount || event.playableCandidates || 0)), 0);
     if (!playable) return "";
     const confidence = options.confidence ? integrationConfidence(options.confidence) : "";
-    return `<section class="gameplay-related-sfx"><header class="gameplay-related-sfx-summary"><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</header><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents, { ...options, flattenGroups: true })}</section>`;
+    const wrapper = options.inline ? "div" : "section";
+    return `<${wrapper} class="gameplay-related-sfx${options.inline ? " gameplay-sfx-inline" : ""}"><header class="gameplay-related-sfx-summary"><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</header><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents, options)}</${wrapper}>`;
   }
 
   function renderCharacterSkillSounds(entry) {
@@ -1569,6 +1570,7 @@
       label: text("exactSkillSoundEffects"),
       confidence: "direct",
       note: text("soundExactSkillTriggerNote"),
+      inline: true,
     });
   }
 
