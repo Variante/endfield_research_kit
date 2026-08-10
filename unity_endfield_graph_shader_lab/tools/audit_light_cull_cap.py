@@ -1158,10 +1158,25 @@ UNITY_HGTREE_BODIES = {
         0x55C,
         "8501dd4e046749d9aac8c90f9c9e790d1404441236fbca10655e7785e283b6f0",
     ),
+    "runtime_record_blob_consumer_component_grouping": (
+        0x18112A790,
+        0x67E,
+        "c18fa00a08895f70768e17736f7572cd66b79355a9715d9cdfd383894827c753",
+    ),
     "runtime_record_batch_flag_classifier": (
         0x181131FC0,
         0xDD,
         "9e10b56296296a7cc7f6fc0cc5cc68eb16d4e084a641576f1bc8eae9c954db59",
+    ),
+    "runtime_record_blob_zero_initializer": (
+        0x181CA0040,
+        0x388,
+        "ce960c33c8b79d15520559d78ace1a20770c9492363a9d2852578962e1ffa782",
+    ),
+    "runtime_record_full_blob_copy": (
+        0x1810CE280,
+        0x143,
+        "cf1d0755ae2c40041eefd389ac80cc1f3cf0c436c8bb5a9a26dbda1fdb7eafc6",
     ),
     "renderer_list_callback_a": (
         0x181067A70,
@@ -1204,6 +1219,163 @@ UNITY_HGTREE_BODIES = {
         "5a7dc27ff07a05134333e3443828a6ba4f64f807de74198dba4181a494cc499c",
     ),
 }
+
+UNITY_RENDERER_BLOB_LOOKUP_VA = 0x180424C30
+UNITY_RENDERER_BLOB_LOOKUP_CALL_SITES = [
+    0x18042A407,
+    0x18042AE1D,
+    0x18042FF4D,
+    0x1804300AA,
+    0x18043076D,
+    0x18043080D,
+    0x1804308ED,
+    0x180430D76,
+    0x180431B22,
+    0x180431C20,
+    0x180432795,
+    0x180432DB2,
+    0x180BCBA50,
+    0x180BCBEDC,
+    0x1810416D9,
+    0x18104189B,
+    0x18104194B,
+    0x1810419FB,
+    0x181077CF1,
+    0x181083941,
+    0x181083DB6,
+    0x181088E0D,
+    0x1810C60E0,
+    0x1810C7B3C,
+    0x1810CAE29,
+    0x1810CAE49,
+    0x1810CB3D4,
+    0x1810CE37D,
+    0x1810CE38E,
+    0x1810CF41D,
+    0x1810D07D0,
+    0x1810D8C9E,
+    0x1810D8D2A,
+    0x1810D8ED3,
+    0x1810D8EE4,
+    0x1810D9097,
+    0x1810D9142,
+    0x1810D9258,
+    0x181129EF8,
+    0x181129FAC,
+    0x18112A4CF,
+    0x18112A588,
+    0x18112A87A,
+    0x18112A92F,
+    0x1811372EE,
+    0x18113786B,
+    0x18113788F,
+    0x181153351,
+    0x181154273,
+    0x1811577B4,
+    0x181159051,
+    0x18115BCFB,
+    0x18115C01B,
+]
+UNITY_RENDERER_BLOB_EXACT_0X7F00_CALL_SITES = [
+    0x18042A407,
+    0x18042AE1D,
+    0x1804300AA,
+    0x18043076D,
+    0x18043080D,
+    0x1804308ED,
+    0x180430D76,
+    0x180431B22,
+    0x180431C20,
+    0x180432795,
+    0x180432DB2,
+    0x180BCBA50,
+    0x180BCBEDC,
+    0x1810416D9,
+    0x18104189B,
+    0x18104194B,
+    0x1810419FB,
+    0x181077CF1,
+    0x181088E0D,
+    0x1810C60E0,
+    0x1810C7B3C,
+    0x1810CAE29,
+    0x1810CB3D4,
+    0x1810CE37D,
+    0x1810CE38E,
+    0x1810CF41D,
+    0x1810D07D0,
+    0x1810D8C9E,
+    0x1810D8D2A,
+    0x1810D8ED3,
+    0x1810D8EE4,
+    0x1810D9097,
+    0x1810D9142,
+    0x1810D9258,
+    0x181129EF8,
+    0x18112A4CF,
+    0x18112A87A,
+    0x18113786B,
+    0x181153351,
+    0x181154273,
+    0x1811577B4,
+    0x181159051,
+    0x18115BCFB,
+    0x18115C01B,
+]
+UNITY_RENDERER_BLOB_NON_0X7F00_CALL_SITES = [
+    0x18042FF4D,
+    0x181083941,
+    0x181083DB6,
+    0x1810CAE49,
+    0x181129FAC,
+    0x18112A588,
+    0x18112A92F,
+    0x1811372EE,
+    0x18113788F,
+]
+UNITY_RENDERER_BLOB_EXACT_0X7F00_ENTRY_CFGS = [
+    0x18042A130,
+    0x18042AB50,
+    0x180430082,
+    0x18043073C,
+    0x1804307DC,
+    0x1804308BC,
+    0x180430D39,
+    0x180431AF1,
+    0x180431BDF,
+    0x180432750,
+    0x180432CF5,
+    0x180BCB760,
+    0x1810416A0,
+    0x181041870,
+    0x181041920,
+    0x1810419D0,
+    0x181077CC3,
+    0x181088DA5,
+    0x1810C5F30,
+    0x1810C7B0E,
+    0x1810CAD13,
+    0x1810CB2C0,
+    0x1810CE280,
+    0x1810CF36D,
+    0x1810D0725,
+    0x1810D8C60,
+    0x1810D8D00,
+    0x1810D8D40,
+    0x1810D9050,
+    0x1810D9110,
+    0x1810D9220,
+    0x181129E0D,
+    0x18112A3DD,
+    0x18112A790,
+    0x18113781A,
+    0x181153310,
+    0x181154230,
+    0x181157760,
+    0x181159010,
+    0x18115BC9B,
+    0x18115BFC0,
+]
 
 UNITY_COMPONENT67_ACCESSOR_TARGETS = {
     "archetype": 0x181038D00,
@@ -4960,6 +5132,37 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
+    renderer_blob_lookup_call_sites = find_relative_call_sites(
+        image, UNITY_RENDERER_BLOB_LOOKUP_VA
+    )
+    require(
+        "unity_hgtree_renderer_blob_lookup_call_sites",
+        renderer_blob_lookup_call_sites,
+        UNITY_RENDERER_BLOB_LOOKUP_CALL_SITES,
+        image.path,
+    )
+    require(
+        "unity_hgtree_renderer_blob_lookup_partition",
+        sorted(
+            UNITY_RENDERER_BLOB_EXACT_0X7F00_CALL_SITES
+            + UNITY_RENDERER_BLOB_NON_0X7F00_CALL_SITES
+        ),
+        renderer_blob_lookup_call_sites,
+        image.path,
+    )
+    require(
+        "unity_hgtree_renderer_blob_exact_cfg_count",
+        len(UNITY_RENDERER_BLOB_EXACT_0X7F00_ENTRY_CFGS),
+        41,
+        image.path,
+    )
+    require(
+        "unity_hgtree_renderer_blob_exact_lookup_call_count",
+        len(UNITY_RENDERER_BLOB_EXACT_0X7F00_CALL_SITES),
+        44,
+        image.path,
+    )
+
     component67_caller_bodies = []
     for virtual_address, size_bytes, expected_hash in (
         UNITY_COMPONENT67_DIRECT_CALLER_BODIES
@@ -5468,13 +5671,131 @@ def validate_unity_hgtree_renderer_boundary(
                                 "record+0x14"
                             ),
                             "runtimeRecordPointerBoundary": {
-                                "exactLookupVirtualAddress": "0x180424C30",
+                                "exactLookupVirtualAddress": (
+                                    f"0x{UNITY_RENDERER_BLOB_LOOKUP_VA:X}"
+                                ),
                                 "familyMask": "0x00007F00",
                                 "recordStrideBytes": 24,
+                                "allDirectLookupCallCount": len(
+                                    renderer_blob_lookup_call_sites
+                                ),
+                                "exactFamilyLookupCallCount": len(
+                                    UNITY_RENDERER_BLOB_EXACT_0X7F00_CALL_SITES
+                                ),
+                                "exactFamilyEntryCfgCount": len(
+                                    UNITY_RENDERER_BLOB_EXACT_0X7F00_ENTRY_CFGS
+                                ),
+                                "nonFamilyLookupCallCount": len(
+                                    UNITY_RENDERER_BLOB_NON_0X7F00_CALL_SITES
+                                ),
+                                "exactFamilyLookupCallSites": [
+                                    f"0x{site:X}"
+                                    for site in (
+                                        UNITY_RENDERER_BLOB_EXACT_0X7F00_CALL_SITES
+                                    )
+                                ],
+                                "exactFamilyEntryCfgs": [
+                                    f"0x{entry:X}"
+                                    for entry in (
+                                        UNITY_RENDERER_BLOB_EXACT_0X7F00_ENTRY_CFGS
+                                    )
+                                ],
+                                "hotColdCfgTraversal": {
+                                    "enabled": True,
+                                    "windowBytesPerEntry": 0x20000,
+                                    "directControlFlowFollowed": True,
+                                    "stackSlotOverlapInvalidation": True,
+                                    "recordBaseMemoryStoreSites": [],
+                                    "recordBaseReturnSites": [],
+                                    "enabledLightModesReadSites": [],
+                                    "boundedControlFlowEscape": {
+                                        "virtualAddress": "0x1810CE3BE",
+                                        "targetVirtualAddress": "0x181C9F9A0",
+                                        "role": (
+                                            "tail memcpy of one complete exact-"
+                                            "family renderer blob into another"
+                                        ),
+                                    },
+                                },
+                                "fullBlobCopy": {
+                                    "functionVirtualAddress": "0x1810CE280",
+                                    "sourceLookupCallVirtualAddress": (
+                                        "0x1810CE37D"
+                                    ),
+                                    "destinationLookupCallVirtualAddress": (
+                                        "0x1810CE38E"
+                                    ),
+                                    "tailMemcpyVirtualAddress": "0x1810CE3BE",
+                                    "memcpyVirtualAddress": "0x181C9F9A0",
+                                    "byteCountEquation": (
+                                        "4 + 32 * (familyMask >> 8)"
+                                    ),
+                                    "layoutEquation": (
+                                        "4-byte count + 24*capacity runtime "
+                                        "records + 8*capacity LOD float2 pairs"
+                                    ),
+                                    "enabledLightModesBehavior": (
+                                        "record+0x14 is copied verbatim but not "
+                                        "read or interpreted"
+                                    ),
+                                },
                                 "consumerFunctions": [
                                     "0x181129E0D",
+                                    "0x18112A790",
                                     "0x18113781A",
                                 ],
+                                "directConsumerRecordReads": [
+                                    {
+                                        "functionVirtualAddress": (
+                                            "0x181129E0D"
+                                        ),
+                                        "recordOffsets": [
+                                            "0x00",
+                                            "0x04",
+                                            "0x08",
+                                        ],
+                                    },
+                                    {
+                                        "functionVirtualAddress": (
+                                            "0x18112A790"
+                                        ),
+                                        "role": (
+                                            "component-K / ray-tracing-K "
+                                            "record grouping"
+                                        ),
+                                        "recordOffsets": [
+                                            "0x00",
+                                            "0x04",
+                                            "0x08",
+                                            "0x10",
+                                        ],
+                                        "assertionStrings": [
+                                            "componentMaskForK is one bit",
+                                            (
+                                                "componentMaskForRayTracingK "
+                                                "is one bit"
+                                            ),
+                                        ],
+                                    },
+                                    {
+                                        "functionVirtualAddress": (
+                                            "0x18113781A"
+                                        ),
+                                        "recordOffsets": [
+                                            "0x00",
+                                            "0x04",
+                                            "0x08",
+                                        ],
+                                    },
+                                ],
+                                "recordBaseZeroInitializationCallSites": [
+                                    "0x18042A497",
+                                    "0x18042AEAD",
+                                    "0x180BCBAEC",
+                                ],
+                                "zeroInitializerVirtualAddress": (
+                                    "0x181CA0040"
+                                ),
                                 "recordBaseEscapeCallSites": [
                                     "0x18112A25A",
                                     "0x181137B81",
@@ -5520,13 +5841,26 @@ def validate_unity_hgtree_renderer_boundary(
                                     ),
                                 },
                                 "interpretation": (
-                                    "both exact renderer-blob paths that pass "
-                                    "blob+0x04 across a call boundary reach one "
-                                    "hash-pinned classifier. It iterates 0x18-"
-                                    "byte records but reads only record+0x00 "
-                                    "before classifying rendererEntry+0x18; no "
-                                    "record+0x14 read occurs. A same-offset, "
-                                    "same-stride callback-A candidate is "
+                                    "all 53 direct calls to the blob lookup are "
+                                    "pinned and partitioned into 44 exact "
+                                    "0x7F00-family calls across 41 entry CFGs "
+                                    "plus nine other-family calls. Register/"
+                                    "stack taint follows direct hot/cold CFG "
+                                    "edges. The six direct blob+0x04 call "
+                                    "escapes are three zero-initializer calls "
+                                    "and three calls to one hash-pinned "
+                                    "classifier. The classifier reads only "
+                                    "record+0x00. One additional blob+0x00 "
+                                    "tail memcpy copies the complete count, "
+                                    "runtime-record, and LOD-pair layout between "
+                                    "two exact-family blobs, carrying +0x14 "
+                                    "verbatim without interpreting it. A third "
+                                    "direct grouping "
+                                    "consumer reads record+0x00/+0x04/+0x08/"
+                                    "+0x10, while no exact-family path reads "
+                                    "record+0x14, stores the record-base "
+                                    "pointer, or returns it. A same-offset, "
+                                    "same-stride callback-A candidate remains "
                                     "independently rejected by its ECS column "
                                     "accessor provenance"
                                 ),
@@ -5559,10 +5893,19 @@ def validate_unity_hgtree_renderer_boundary(
                         "proofBoundary": (
                             "the exact downstream render-stage consumer of "
                             "enabledLightModes at runtime record+0x14 remains "
-                            "open. Exact blob+0x04 escapes currently reach a "
-                            "classifier that reads only record+0x00, and the "
-                            "callback-A +0x14/0x18-stride lookalike is an ECS "
-                            "component-column float. The two inspected renderer-list callbacks "
+                            "open. All 53 direct blob-lookup calls are "
+                            "partitioned; 44 exact 0x7F00 calls across 41 "
+                            "hot/cold entry CFGs expose no record+0x14 read, "
+                            "record-base pointer store, or record-base return. "
+                            "Their six direct blob+0x04 call escapes are three "
+                            "memset-style zero initializers and three calls to "
+                            "a classifier that reads only record+0x00. The "
+                            "one blob+0x00 tail escape is a full-blob memcpy "
+                            "that copies +0x14 verbatim without interpreting "
+                            "it. The third direct grouping consumer reads only +0x00/"
+                            "+0x04/+0x08/+0x10, and the callback-A +0x14/"
+                            "0x18-stride lookalike is an ECS component-column "
+                            "float. The two inspected renderer-list callbacks "
                             "instead test job+0x44 against the independently "
                             "computed rendererEntry+0x1C shader-pass support "
                             "mask"
@@ -6303,8 +6646,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v27",
-        "status": "installed_cap_hgtree_runtime_record_mesh_resource_closed",
+        "schema": "endfield.recovered-light-cull-cap.v28",
+        "status": "installed_cap_hgtree_enabled_light_modes_lookup_surface_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -6359,12 +6702,22 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "that word, query all 31 installed HGShaderLightMode pass names "
             "against the renderer material/shader, and set the supported "
             "bits. The entry word is therefore a shader-supported-pass mask, "
-            "not a projection of record +0x14. The two exact renderer-blob "
-            "record-base escapes reach one classifier that reads only "
-            "record +0x00 and renderer-entry flags; the apparent callback-A "
-            "+0x14/0x18-stride read is separately proven to be an ECS "
-            "component-column float. The later native consumer of record "
-            "+0x14 remains open. The dispatch packet/"
+            "not a projection of record +0x14. All 53 direct calls to the "
+            "renderer-blob lookup are now pinned and partitioned into 44 "
+            "exact 0x7F00-family calls across 41 entry CFGs and nine "
+            "other-family calls. Cross-hot/cold CFG taint finds no exact-path "
+            "record +0x14 read, record-base pointer store, or record-base "
+            "return. The six direct blob+0x04 call escapes are three zero "
+            "initializers and three calls to one classifier that reads only "
+            "record +0x00 and renderer-entry flags. One additional blob+0x00 "
+            "tail memcpy copies the complete count/runtime-record/LOD-pair "
+            "layout between exact-family blobs, carrying +0x14 verbatim "
+            "without interpreting it. A third direct component-"
+            "grouping consumer reads only record +0x00/+0x04/+0x08/+0x10; "
+            "the apparent callback-A +0x14/0x18-stride read is separately "
+            "proven to be an ECS component-column float. The later native "
+            "consumer of record +0x14 remains open outside this direct lookup "
+            "surface. The dispatch packet/"
             "payload layouts, "
             "LODCrossFadeConfig enableDither/lodBias controls, parent and "
             "per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp "
@@ -6628,7 +6981,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
                 "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
                 "the independent renderer-entry +0x1C shader-supported-pass mask, both native builders, and its exact 31-name pass table",
-                "the bounded runtime-record consumer search: all exact blob+0x04 escapes, their record+0-only classifier, and rejection of callback A's ECS-column +0x14 lookalike",
+                "the bounded runtime-record lookup surface: all 53 direct lookup calls, the 44-call exact 0x7F00 partition across 41 hot/cold entry CFGs, all six direct blob+0x04 call escapes, the full-blob copy path, the third component-grouping consumer, zero direct +0x14 reads/stores/returns, and rejection of callback A's ECS-column +0x14 lookalike",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
                 "the HGTree LOD dispatch packet and payload layouts",
@@ -6702,7 +7055,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers, independent renderer-entry pass mask, and bounded downstream record-pointer search, "
+        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers, independent renderer-entry pass mask, and complete direct renderer-blob lookup/escape census, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
