@@ -1577,16 +1577,19 @@ render flags. The resource-to-record mapping is now corrected by accounting
 for the 4-byte blob header. Hash-pinned `HGMeshRendererData` serialization
 binds `m_Materials/m_Meshes/m_ShadowProxyMeshes` to native
 `+0x58/+0x78/+0x98`, and independent initializer `0x181088D80` resolves them
-through singleton Material/Mesh instance-ID maps at `+0x90/+0xA0`. Its blob
+through singleton Material/GeometryHandle maps at `+0x90/+0xA0`. Its blob
 writes `+0x08/+0x0C/+0x10` are therefore runtime record `+0x04/+0x08/+0x0C`,
 exactly matching availability writers `0x181157760/0x181159010` and cleanup.
-Thus record `+0x0C` is specifically the mapped `m_ShadowProxyMeshes` word:
+Thus record `+0x0C` is specifically the `m_ShadowProxyMeshes` GeometryHandle:
 owner handle `+0x18` supplies it at `0x181157AD1/0x1811592A0`, cleanup clears
-it at `0x18115C110`, and callback read `0x181064B73` consumes it as a masked
-supplemental filter. Record `+0x10` is not seeded by a Mesh map; common Renderer
+it at `0x18115C110`, and callback read `0x181064B73` consumes it in a combined
+masked filter. HG internal-call entries 300/301 name
+`HGGeometrySystem.GetGeometryHandle/GetMesh`; builder `0x18108B1C0` closes bits
+0..23 as the slot index and bits 24..31 as the 8-bit generation incremented at
+slot `+0x06`. Record `+0x10` is not seeded by a Mesh map; common Renderer
 state synchronizer `0x180432CD0` maintains that separate property-flag word at
-blob `+0x14` while preserving mask `0xFC07FBFD`. Only the mapped shadow-proxy
-word's standalone engine name and individual bit meanings remain open.
+blob `+0x14` while preserving mask `0xFC07FBFD`. Only higher-level job producers
+that deliberately constrain GeometryHandle bits remain open.
 Dedicated HG
 internal-call entry 204 is
 `HGFactoryRenderManager.SetEntityEnabledLightModes_Injected`; wrapper
@@ -1749,8 +1752,8 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The standalone engine name/bit meanings
-of loader record `+0x0C`'s mapped shadow-proxy Mesh word, the component-67 native
+boundary into unrelated Animator code. The higher-level mask/value producers
+for loader record `+0x0C`'s shadow-proxy GeometryHandle, the component-67 native
 type name, any separate `sceneCullingMask` consumer, and target-frame survivor
 rows remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
