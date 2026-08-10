@@ -546,6 +546,17 @@ resolves to both its SFX and music event keys through
 evidence retained. This is a strong authored cutscene-playback relation; it
 does not turn the timeline into a runtime profiler trace.
 
+Current controller and selector audits sharpen two boundaries. Unity
+`AnimatorController` state-machine membership now joins `m_AnimationClips`
+slots to authored state/state-machine paths (46,755 local state references in
+1,246 controllers), but PathID reuse across CABs and missing override joins
+mean this is authored membership, not current-controller execution. Native
+`AudioRemoteFactoryBridge.UpdateNodeMode` resolves the seven NodeMode inputs
+1/2/4/8/16/32/64 to Wwise values `normal`, `liquid`, `gas`, `gasliquid`,
+`gastrans`, `liquidtrans`, and `solidtrans` respectively; a zero resolver
+return skips `SetSwitch`. This is exact setter/value mapping, while the live
+NodeMode and selected Wwise branch remain unobserved.
+
 Next audio-recovery work should finish live-value/state capture for the now
 typed v150 switch-value mappings, Action delay/property bundles, and music
 types 10-13, then connect current music-table
