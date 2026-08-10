@@ -66,6 +66,7 @@ EXPECTED_HASHES = {
     "get_visible_lights_body": "f2d8a942ff09c2a07ee960760bf7e3a2c9bd878955fd7bb0d709c3e1fca3ab66",
     "setup_state_body": "76dcba4f0f93db50a7fdbf2f3fed3084229be907526ff6a33c9556496a81ceab",
     "hgtree_component_get_id_body": "6786c0e7be3bc2cc01074e814543729b15cd696fdace27b19cf9c499e8df556c",
+    "render_object_lod_info_component_get_id_body": "23334c82ef0133c65cc0394d318a2637276496cb9b99f6dd580d0ee4f6c9e7b5",
 }
 
 NATIVE_METHODS = {
@@ -117,6 +118,17 @@ NATIVE_METHODS = {
         "token": "0x06000279",
         "virtualAddress": 0x184DBCEC0,
         "fileOffset": 0x4DBB4C0,
+        "sizeBytes": 0x6,
+    },
+    "render_object_lod_info_component_get_id": {
+        "method": (
+            "UnityEngine.HyperGryph.ECS."
+            "RenderObjectLODInfoComponent.get_id"
+        ),
+        "methodIndex": 478390,
+        "token": "0x06000252",
+        "virtualAddress": 0x184D9EC60,
+        "fileOffset": 0x4D9D260,
         "sizeBytes": 0x6,
     },
 }
@@ -171,6 +183,12 @@ UNITY_HG_ICALL_NAME_TABLE_SHA256 = (
 UNITY_HG_ICALL_FUNCTION_TABLE_SHA256 = (
     "9ecec341ec864e050d5b31bc4f98bcdea23ad3b5e7c8dd36c7952612ef09a596"
 )
+UNITY_BIND_MONO_COMPONENT_CONVERT_ICALL_INDEX = 677
+UNITY_BIND_MONO_COMPONENT_CONVERT_ICALL_VA = 0x1801DFF50
+UNITY_BIND_MONO_COMPONENT_CONVERT_ICALL_NAME = (
+    "UnityEngine.HyperGryph.Streaming.HGStreamingSceneManager::"
+    "BindMonoComponentConvertFuncFromScript"
+)
 UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX = 712
 UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_VA = 0x1801E0D90
 UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_NAME = (
@@ -207,6 +225,76 @@ UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_VA = 0x1801EDED0
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGLODStreamingSystem::SetArtTagLODStreamingOffset"
 )
+
+UNITY_STREAMING_CONVERSION_BODIES = {
+    "bind_mono_component_convert": (
+        0x1801DFF50,
+        0x112,
+        "2fcc761e2fd68c04b5d42b5079571552a098613594fdedc0445a758f69bc527a",
+    ),
+    "register_mono_component_convert": (
+        0x181170720,
+        0x409,
+        "fa5bd423caf3c724663f7986cde799ab45492bd115502977950a2e7fe9a1aed1",
+    ),
+    "streaming_scene_manager_registry_constructor": (
+        0x18117B010,
+        0x1A5,
+        "22e3540899471c45c228b1a59d564cdf5b74439f8bc09342d3211e49d788aecd",
+    ),
+    "mono_component_convert_from": (
+        0x181150630,
+        0x19D,
+        "967d3e95128b73ab4de84dcaa30414731723629518e134b196b5930122c6c4b4",
+    ),
+    "mono_entity_component_list_convert_from": (
+        0x181161FD0,
+        0x2A6,
+        "6e0500b0f68e5745662de0e04513eff4ee84b12fe87776d41910cf4551d5947e",
+    ),
+}
+
+STREAMING_COMPONENT_ENUM_FIELDS = {
+    "None": (296626, 0x0400020C, 0),
+    "Transform": (296627, 0x0400020D, 1),
+    "HLODGroup": (296638, 0x04000218, 1 << 11),
+    "HGTree": (296668, 0x04000236, 1 << 41),
+    "Count": (296670, 0x04000238, 43),
+}
+
+IL2CPP_METADATA_SECTION_NAMES = [
+    "stringLiteral",
+    "stringLiteralData",
+    "string",
+    "events",
+    "properties",
+    "methods",
+    "parameterDefaultValues",
+    "fieldDefaultValues",
+    "fieldAndParameterDefaultValueData",
+    "fieldMarshaledSizes",
+    "parameters",
+    "fields",
+    "genericParameters",
+    "genericParameterConstraints",
+    "genericContainers",
+    "nestedTypes",
+    "interfaces",
+    "vtableMethods",
+    "interfaceOffsets",
+    "typeDefinitions",
+    "images",
+    "assemblies",
+    "fieldRefs",
+    "referencedAssemblies",
+    "attributeData",
+    "attributeDataRange",
+    "unresolvedVirtualCallParameterTypes",
+    "unresolvedVirtualCallParameterRanges",
+    "windowsRuntimeTypeNames",
+    "windowsRuntimeStrings",
+    "exportedTypeDefinitions",
+]
 
 UNITY_CULL_VIEW_BODIES = {
     "injected_binding": (
@@ -1059,6 +1147,30 @@ def validate_native_handoff(
         True,
         GAME_ASSEMBLY,
     )
+    render_object_lod_info_get_id = bodies[
+        "render_object_lod_info_component_get_id"
+    ]
+    require(
+        "render_object_lod_info_component_get_id_body",
+        render_object_lod_info_get_id,
+        bytes.fromhex("b806000000c3"),
+        GAME_ASSEMBLY,
+    )
+    render_object_lod_info_component_id = struct.unpack_from(
+        "<I", render_object_lod_info_get_id, 1
+    )[0]
+    require(
+        "render_object_lod_info_component_get_id_value",
+        render_object_lod_info_component_id,
+        6,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "render_object_lod_info_component_is_not_component_67",
+        render_object_lod_info_component_id != 67,
+        True,
+        GAME_ASSEMBLY,
+    )
 
     return {
         "resultAbi": {
@@ -1122,6 +1234,28 @@ def validate_native_handoff(
             "proof": (
                 "the hash-pinned six-byte IL2CPP body is mov eax, 0x50; "
                 "ret, so HGTreeComponent is component id 80 rather than 67"
+            ),
+        },
+        "managedRenderObjectLODInfoComponent": {
+            "type": (
+                "UnityEngine.HyperGryph.ECS.RenderObjectLODInfoComponent"
+            ),
+            "method": "get_id",
+            "metadataMethodIndex": NATIVE_METHODS[
+                "render_object_lod_info_component_get_id"
+            ]["methodIndex"],
+            "metadataToken": NATIVE_METHODS[
+                "render_object_lod_info_component_get_id"
+            ]["token"],
+            "virtualAddress": (
+                "0x"
+                f"{NATIVE_METHODS['render_object_lod_info_component_get_id']['virtualAddress']:X}"
+            ),
+            "componentId": render_object_lod_info_component_id,
+            "component67Match": False,
+            "proof": (
+                "the hash-pinned six-byte IL2CPP body is mov eax, 6; ret, "
+                "so this managed LOD-info component is not native component id 67"
             ),
         },
         "methodBodies": [
@@ -1191,6 +1325,325 @@ def validate_unity_native_producer(image: PEImage) -> dict[str, object]:
             "maxCount output cap",
         ],
         "verifiedInstructionSlices": slices,
+    }
+
+
+def validate_streaming_component_conversion(
+    image: PEImage,
+    metadata: bytes | None = None,
+    *,
+    metadata_source: Path = GLOBAL_METADATA,
+    managed_component_ids: dict[str, int] | None = None,
+) -> dict[str, object]:
+    """Close the hash-pinned StreamingComponentType-to-converter boundary."""
+
+    require("unity_player_image_base", image.image_base, 0x180000000, image.path)
+    require(
+        "unity_bind_mono_component_convert_icall_index_in_bounds",
+        UNITY_BIND_MONO_COMPONENT_CONVERT_ICALL_INDEX < UNITY_HG_ICALL_COUNT,
+        True,
+        image.path,
+    )
+    index = UNITY_BIND_MONO_COMPONENT_CONVERT_ICALL_INDEX
+    name_pointer = image.u64(UNITY_HG_ICALL_NAME_TABLE_VA + index * 8)
+    target = image.u64(UNITY_HG_ICALL_FUNCTION_TABLE_VA + index * 8)
+    name = image.cstring(name_pointer)
+    require(
+        "unity_bind_mono_component_convert_icall_name",
+        name,
+        UNITY_BIND_MONO_COMPONENT_CONVERT_ICALL_NAME,
+        image.path,
+    )
+    require(
+        "unity_bind_mono_component_convert_icall_target",
+        target,
+        UNITY_BIND_MONO_COMPONENT_CONVERT_ICALL_VA,
+        image.path,
+    )
+
+    bodies = []
+    body_bytes: dict[str, bytes] = {}
+    for label, (virtual_address, size_bytes, expected_hash) in (
+        UNITY_STREAMING_CONVERSION_BODIES.items()
+    ):
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_streaming_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        body_bytes[label] = body
+        bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    binding = body_bytes["bind_mono_component_convert"]
+    require(
+        "unity_streaming_bind_to_registry_call",
+        relative_call_target(binding, 0x1801DFF50, 0xFD),
+        0x181170720,
+        image.path,
+    )
+    slices = {
+        "register_mask_to_slot": (
+            0x181170AD6,
+            "480fbcc64981c630400000488d95700600004869c8080300004903cee8b97f08ff",
+        ),
+        "construct_43_converter_slots": (
+            0x18117B143,
+            "b92b000000498d82d83f0000904889104889504048899080000000488990c0000000"
+            "488990000100004889904001000048899080010000488990c001000048899000020000"
+            "4889904002000048899080020000488990c002000048899000030000488d8008030000"
+            "4883e901759f",
+        ),
+        "convert_type_mask_to_descriptor": (
+            0x181150673,
+            "480fbcc14869d8080300004881c3d83f00004803df4c",
+        ),
+        "require_nonempty_component_list": (
+            0x18116202A,
+            "488d3dc4fdb7004439380f85800000004c8bcfc7442420670000004c8d05f419",
+        ),
+        "require_transform_first": (
+            0x1811620E0,
+            "8b48044883c0044803c841bd04000000488bd1486301482bd066443b2a73140f"
+            "b742046685c0740b48833c08010f8480000000",
+        ),
+    }
+    validated_slices = []
+    for label, (virtual_address, expected_hex) in slices.items():
+        expected = bytes.fromhex(expected_hex)
+        actual = image.read(virtual_address, len(expected))
+        require(
+            f"unity_streaming_{label}",
+            actual,
+            expected,
+            image.path,
+        )
+        validated_slices.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": len(actual),
+                "sha256": hashlib.sha256(actual).hexdigest(),
+            }
+        )
+
+    diagnostic_strings = {
+        "componentListNotEmpty": (
+            0x181E23A68,
+            "!fbMonoEntityData->componentDataList()->empty()'",
+        ),
+        "transformFirst": (
+            0x181E23AC8,
+            "fbMonoEntityData->componentDataList()->Get(0)->type() == "
+            "kComponentTypeTransform'",
+        ),
+        "unsupportedType": (
+            0x181E23CB8,
+            "Unsupported component type %u to ConvertFrom",
+        ),
+    }
+    validated_strings = {}
+    for label, (virtual_address, expected) in diagnostic_strings.items():
+        actual = image.cstring(virtual_address)
+        require(
+            f"unity_streaming_{label}_string",
+            actual,
+            expected,
+            image.path,
+        )
+        validated_strings[label] = {
+            "virtualAddress": f"0x{virtual_address:X}",
+            "value": actual,
+        }
+
+    raw_metadata = metadata if metadata is not None else metadata_source.read_bytes()
+    require(
+        "streaming_component_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        metadata_source,
+    )
+    require(
+        "streaming_component_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        metadata_source,
+    )
+    sections = {}
+    for section_index, section_name in enumerate(IL2CPP_METADATA_SECTION_NAMES):
+        offset, size = struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+        sections[section_name] = (offset, size)
+    string_offset, string_size = sections["string"]
+    fields_offset, fields_size = sections["fields"]
+    defaults_offset, defaults_size = sections["fieldDefaultValues"]
+    values_offset, values_size = sections["fieldAndParameterDefaultValueData"]
+    require(
+        "streaming_component_field_record_alignment",
+        fields_size % 12,
+        0,
+        metadata_source,
+    )
+    require(
+        "streaming_component_default_record_alignment",
+        defaults_size % 12,
+        0,
+        metadata_source,
+    )
+    defaults = {}
+    for position in range(defaults_offset, defaults_offset + defaults_size, 12):
+        field_index, type_index, data_index = struct.unpack_from(
+            "<iii", raw_metadata, position
+        )
+        defaults[field_index] = (type_index, data_index)
+
+    enum_fields = {}
+    for expected_name, (field_index, expected_token, expected_value) in (
+        STREAMING_COMPONENT_ENUM_FIELDS.items()
+    ):
+        record_offset = fields_offset + field_index * 12
+        require(
+            f"streaming_component_{expected_name}_field_in_bounds",
+            record_offset + 12 <= fields_offset + fields_size,
+            True,
+            metadata_source,
+        )
+        name_index, field_type_index, token = struct.unpack_from(
+            "<iii", raw_metadata, record_offset
+        )
+        name_start = string_offset + name_index
+        require(
+            f"streaming_component_{expected_name}_name_in_bounds",
+            string_offset <= name_start < string_offset + string_size,
+            True,
+            metadata_source,
+        )
+        name_end = raw_metadata.index(0, name_start, string_offset + string_size)
+        actual_name = raw_metadata[name_start:name_end].decode("utf-8")
+        require(
+            f"streaming_component_{expected_name}_field_name",
+            actual_name,
+            expected_name,
+            metadata_source,
+        )
+        require(
+            f"streaming_component_{expected_name}_field_token",
+            token,
+            expected_token,
+            metadata_source,
+        )
+        require(
+            f"streaming_component_{expected_name}_field_type",
+            field_type_index,
+            165209,
+            metadata_source,
+        )
+        require(
+            f"streaming_component_{expected_name}_default_exists",
+            field_index in defaults,
+            True,
+            metadata_source,
+        )
+        default_type_index, data_index = defaults[field_index]
+        require(
+            f"streaming_component_{expected_name}_default_type",
+            default_type_index,
+            168269,
+            metadata_source,
+        )
+        require(
+            f"streaming_component_{expected_name}_default_in_bounds",
+            0 <= data_index <= values_size - 8,
+            True,
+            metadata_source,
+        )
+        value = struct.unpack_from(
+            "<Q", raw_metadata, values_offset + data_index
+        )[0]
+        require(
+            f"streaming_component_{expected_name}_value",
+            value,
+            expected_value,
+            metadata_source,
+        )
+        enum_fields[expected_name] = {
+            "fieldIndex": field_index,
+            "token": f"0x{token:08X}",
+            "underlyingDefaultTypeIndex": default_type_index,
+            "value": value,
+            "bitIndex": (
+                value.bit_length() - 1
+                if value and value & (value - 1) == 0
+                else None
+            ),
+        }
+
+    component_ids = managed_component_ids or {
+        "HGTreeComponent": 80,
+        "RenderObjectLODInfoComponent": 6,
+    }
+    require(
+        "streaming_component_hgtree_managed_id",
+        component_ids.get("HGTreeComponent"),
+        80,
+        metadata_source,
+    )
+    require(
+        "streaming_component_render_object_lod_info_managed_id",
+        component_ids.get("RenderObjectLODInfoComponent"),
+        6,
+        metadata_source,
+    )
+
+    return {
+        "internalCall": {
+            "index": index,
+            "name": name,
+            "targetVirtualAddress": f"0x{target:X}",
+        },
+        "streamingComponentType": {
+            "metadataType": (
+                "UnityEngine.HyperGryph.Streaming.StreamingComponentType"
+            ),
+            "underlyingStorage": "UInt64 field-default payloads",
+            "selectedFields": enum_fields,
+            "slotCount": enum_fields["Count"]["value"],
+            "hgtreeBitIndex": enum_fields["HGTree"]["bitIndex"],
+            "hlodGroupBitIndex": enum_fields["HLODGroup"]["bitIndex"],
+        },
+        "conversionContract": {
+            "typeToSlotEquation": "bsf(componentTypeMask)",
+            "slotStrideBytes": 0x308,
+            "slotArrayOffset": "manager + 0x3FD8",
+            "constructorSlotCount": 43,
+            "componentListMustBeNonEmpty": True,
+            "firstComponentType": "Transform (value 1 / bit 0)",
+        },
+        "managedComponentDisambiguation": {
+            "HGTreeComponentId": component_ids["HGTreeComponent"],
+            "RenderObjectLODInfoComponentId": component_ids[
+                "RenderObjectLODInfoComponent"
+            ],
+            "component67MatchesEither": False,
+            "boundary": (
+                "StreamingComponentType HGTree is a serialized converter bit, "
+                "not an ECS component id. Managed HGTreeComponent is id 80 and "
+                "RenderObjectLODInfoComponent is id 6; native ECS id 67 remains unnamed."
+            ),
+        },
+        "methodBodies": bodies,
+        "validatedSlices": validated_slices,
+        "diagnosticStrings": validated_strings,
     }
 
 
@@ -2531,6 +2984,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     unity_hgtree_renderer_boundary = validate_unity_hgtree_renderer_boundary(
         PEImage(UNITY_PLAYER), native_handoff["managedHGTreeComponent"]
     )
+    unity_streaming_component_conversion = validate_streaming_component_conversion(
+        PEImage(UNITY_PLAYER),
+        managed_component_ids={
+            "HGTreeComponent": native_handoff[
+                "managedHGTreeComponent"
+            ]["componentId"],
+            "RenderObjectLODInfoComponent": native_handoff[
+                "managedRenderObjectLODInfoComponent"
+            ]["componentId"],
+        },
+    )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
     require(
@@ -2547,8 +3011,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v12",
-        "status": "installed_cap_hgtree_id80_separated_from_component67_lod_state_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v13",
+        "status": "installed_cap_hgtree_streaming_bit41_and_managed_ids_80_6_separated_from_component67_lod_state",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -2592,8 +3056,14 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, "
             "mapping it to high-qword bit 16 and disproving the former "
             "candidate link between HGTreeComponent and the separate "
-            "component-67 LOD-state record. The native name/owner of id 67 "
-            "remains open. The "
+            "component-67 LOD-state record. Raw UInt64 metadata defaults now "
+            "close StreamingComponentType HLODGroup as bit 11 and HGTree as "
+            "bit 41, with Count=43. The registered conversion path maps each "
+            "single-bit type through bsf into a 0x308-byte descriptor slot, "
+            "requires a non-empty list, and requires Transform first. The "
+            "similarly named managed RenderObjectLODInfoComponent independently "
+            "returns id 6, so neither managed candidate names id 67. The native "
+            "name/owner of id 67 remains open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
@@ -2688,6 +3158,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 unity_scheduled_culling_boundary
             ),
             "unityPlayerHGTreeRendererBoundary": unity_hgtree_renderer_boundary,
+            "unityPlayerStreamingComponentConversion": (
+                unity_streaming_component_conversion
+            ),
             "desktopNoSecondTruncation": True,
         },
         "sourceFiles": {
@@ -2728,6 +3201,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
                 "the HGTreeComponentProxy-to-native-type name, namespace, and module identity",
                 "the IL2CPP HGTreeComponent.get_id return value 80 and its separation from component id 67",
+                "the UInt64 StreamingComponentType values HLODGroup=bit11, HGTree=bit41, and Count=43",
+                "the 43-slot Streaming converter registry, bsf(typeMask) lookup, and 0x308-byte slot stride",
+                "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -2775,6 +3251,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
+        "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation, ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "

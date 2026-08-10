@@ -125,8 +125,18 @@ NPC archetypes are imported as labeled source kits.
   maps `HGTreeComponent.get_id` to GameAssembly `0x184DBCEC0`; its exact body
   is `mov eax, 0x50; ret`. `HGTreeComponent` is therefore ID 80/high-qword
   bit 16 (`0x10000`), proving that the component-67 LOD state is a separate,
-  still unnamed native component rather than `HGTreeComponent`. Writer
-  `0x181157760` also closes a second direct-availability initialization path:
+  still unnamed native component rather than `HGTreeComponent`. The similarly
+  named managed `RenderObjectLODInfoComponent.get_id` maps to
+  `0x184D9EC60` and returns 6, excluding that type as well. Raw 8-byte
+  `global-metadata.dat` defaults now close the separate serialized
+  `StreamingComponentType` enum: `HLODGroup = 1<<11`, `HGTree = 1<<41`, and
+  `Count = 43`. HG internal call 677 binds script converters through
+  `0x1801DFF50 -> 0x181170720`; the native registry constructs exactly 43
+  `0x308`-byte slots, selects one with `bsf(componentTypeMask)`, and requires
+  a non-empty component list whose first entry is Transform. These values are
+  converter bits, not ECS component IDs, so they narrow the component-67
+  search to the native LOD-state producer rather than either managed name.
+  Writer `0x181157760` also closes a second direct-availability initialization path:
   it either marks every LOD and companion subresource available or marks only
   the terminal LOD and the exact readiness range selected through the
   cumulative endpoints. It consumes but still does not produce LOD count or
