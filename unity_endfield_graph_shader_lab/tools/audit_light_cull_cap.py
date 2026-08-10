@@ -507,6 +507,11 @@ UNITY_HGTREE_BODIES = {
         0x1A3,
         "790978a58b50cb40e3ee3b5378de0e1497a836627faaf0db2ced6f06ed886219",
     ),
+    "ecs_entity_type_registration_core": (
+        0x1801FAEC0,
+        0x425,
+        "feae1be83909416dd7f79384c1367aac1fc33e88dbda9c9fcb04dc5273b6fa24",
+    ),
     "component_proxy_registration": (
         0x1807EEEE0,
         0x2A,
@@ -2586,6 +2591,41 @@ def validate_unity_hgtree_renderer_boundary(
                         "component-67 record is not HGTreeComponent"
                     ),
                 },
+                "archetypeDescriptorRegistrationCore": {
+                    "virtualAddress": "0x1801FAEC0",
+                    "descriptorStrideBytes": 8,
+                    "descriptorFields": [
+                        {
+                            "offset": "0x00",
+                            "sizeBytes": 2,
+                            "meaning": "signed component id",
+                        },
+                        {
+                            "offset": "0x02",
+                            "sizeBytes": 2,
+                            "meaning": "component size in bytes",
+                        },
+                        {
+                            "offset": "0x04",
+                            "sizeBytes": 4,
+                            "meaning": "cumulative component byte offset",
+                        },
+                    ],
+                    "firstComponentDataOffsetBytes": 8,
+                    "archetypeSizeLookupOffset": "0x42 + 8 * rank",
+                    "archetypeDataOffsetLookupOffset": "0x44 + 8 * rank",
+                    "component67Implication": (
+                        "the 24-byte state must enter through a runtime "
+                        "descriptor row or copied descriptor source; the "
+                        "installed code contains no direct (id=67,size=24) "
+                        "descriptor immediate"
+                    ),
+                    "boundary": (
+                        "descriptor layout and cumulative storage placement "
+                        "are closed; the native producer supplying the id-67 "
+                        "row and its initial lodCount/ranges remains open"
+                    ),
+                },
                 "structureBoundary": (
                     "this pointer is resolved from archetype component bit 67; "
                     "it is not the loader-owned registration blob stored in "
@@ -3011,8 +3051,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v13",
-        "status": "installed_cap_hgtree_streaming_bit41_and_managed_ids_80_6_separated_from_component67_lod_state",
+        "schema": "endfield.recovered-light-cull-cap.v14",
+        "status": "installed_cap_hgtree_component67_archetype_descriptor_layout_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -3063,7 +3103,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "requires a non-empty list, and requires Transform first. The "
             "similarly named managed RenderObjectLODInfoComponent independently "
             "returns id 6, so neither managed candidate names id 67. The native "
-            "name/owner of id 67 remains open. The "
+            "entity-type registration core now closes each 8-byte descriptor "
+            "as component id, component size, and cumulative data offset, with "
+            "component storage starting at byte 8. No direct id-67/size-24 "
+            "descriptor immediate exists, narrowing the remaining producer "
+            "search to a runtime descriptor source. The native name/owner of "
+            "id 67 remains open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "

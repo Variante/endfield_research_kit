@@ -453,6 +453,15 @@ class LightCullCapAuditTests(unittest.TestCase):
             "is not HGTreeComponent",
             component_mask["boundary"],
         )
+        descriptor_core = ecs_state["archetypeDescriptorRegistrationCore"]
+        self.assertEqual(descriptor_core["virtualAddress"], "0x1801FAEC0")
+        self.assertEqual(descriptor_core["descriptorStrideBytes"], 8)
+        self.assertEqual(
+            [field["offset"] for field in descriptor_core["descriptorFields"]],
+            ["0x00", "0x02", "0x04"],
+        )
+        self.assertEqual(descriptor_core["firstComponentDataOffsetBytes"], 8)
+        self.assertIn("runtime descriptor", descriptor_core["component67Implication"])
         type_identity = ecs_state["nativeScriptingTypeIdentity"]
         self.assertTrue(type_identity["proxyToNativeTypeNameClosed"])
         self.assertEqual(
@@ -518,6 +527,27 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_art_tag_lod_bias_setter_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_ecs_entity_type_registration_core_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1801FAEC0 and size == 0x425:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_ecs_entity_type_registration_core_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

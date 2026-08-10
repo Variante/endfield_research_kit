@@ -1585,7 +1585,12 @@ entry 677 reaches the native converter registration path: it constructs 43
 slots at `0x308` bytes each, selects the slot with `bsf(componentTypeMask)`,
 requires a non-empty component list, and requires Transform first. Those are
 serialized converter bits rather than ECS component IDs, so component 67
-remains a native LOD-state identity/producer problem. Writer `0x181157760`
+remains a native LOD-state identity/producer problem. Native entity-type
+registration core `0x1801FAEC0` consumes 8-byte rows `(int16 id, uint16 size,
+uint32 cumulativeOffset)`, places component storage after byte 8, and exposes
+per-rank size/offsets at archetype `+0x42/+0x44 + 8*rank`. No installed-code
+immediate encodes `(67, 24)`, narrowing the missing row and initial LOD values
+to a runtime or copied descriptor source. Writer `0x181157760`
 also closes a second direct-availability initializer: it marks either every LOD/subresource
 available or only the terminal LOD and the exact readiness range selected by
 the cumulative endpoints. It consumes but does not produce the LOD count or
