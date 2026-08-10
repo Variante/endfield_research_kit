@@ -380,6 +380,9 @@ class AudioSemanticDataTests(unittest.TestCase):
                 "randomModeLabel": "shuffle",
                 "transitionModeLabel": "delay",
                 "playlistItemCount": 3,
+                "playlistMembershipStatus": "playlistWithRepeatedOwnedChildren",
+                "duplicatePlaylistItemCount": 1,
+                "ownedChildIdsNotInPlaylist": [99],
                 "childrenOrderMatchesPlaylist": False,
                 "nonDefaultWeightCount": 2,
                 "uniformWeights": False,
@@ -411,6 +414,12 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(policy["randomModes"], {"shuffle": 1})
         self.assertEqual(policy["randomTransitionModes"], {"delay": 1})
         self.assertEqual(policy["randomSequencePlaylistItemCount"], 3)
+        self.assertEqual(
+            policy["randomSequenceMembershipStatuses"],
+            {"playlistWithRepeatedOwnedChildren": 1},
+        )
+        self.assertEqual(policy["randomSequenceDuplicatePlaylistItemCount"], 1)
+        self.assertEqual(policy["randomSequenceOwnedChildNotInPlaylistCount"], 1)
         self.assertEqual(policy["playlistOrderDiffersFromChildrenCount"], 1)
         self.assertEqual(policy["nonDefaultWeightItemCount"], 2)
         self.assertEqual(policy["nonDefaultWeightNodeCount"], 1)
@@ -2257,6 +2266,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("runtimeGroup.semanticEvidence", source)
         self.assertIn("container?.randomSequenceModes", source)
         self.assertIn("randomSequence.orderDiffers", source)
+        self.assertIn("container?.randomSequenceMembershipStatuses", source)
+        self.assertIn("randomSequence.ownedNotInPlaylist", source)
+        self.assertIn("Reciprocal Children prove container ownership", source)
+        self.assertIn("node?.selectorValidation?.status", source)
         self.assertIn("Wwise Random/Sequence policy", source)
         self.assertIn("Runtime random seed, shuffle history", source)
         self.assertIn("container?.layerAssignmentStatuses", source)

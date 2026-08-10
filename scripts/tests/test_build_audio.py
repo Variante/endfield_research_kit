@@ -458,6 +458,9 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertEqual(policy["randomModeLabel"], "shuffle")
         self.assertEqual(policy["transitionModeLabel"], "delay")
         self.assertEqual(policy["playlistChildOrder"], [30, 10, 20])
+        self.assertEqual(policy["playlistMembershipStatus"], "playlistCoversOwnedChildren")
+        self.assertEqual(policy["duplicatePlaylistItemCount"], 0)
+        self.assertEqual(policy["ownedChildIdsNotInPlaylist"], [])
         self.assertFalse(policy["childrenOrderMatchesPlaylist"])
         self.assertEqual(policy["loopCount"], 2)
         self.assertEqual(policy["avoidRepeatCount"], 4)
@@ -474,6 +477,35 @@ class AudioCategoryTests(unittest.TestCase):
         )
         self.assertEqual(truncated["selectorParserFailureReason"], "unexpectedPlaylistTailLength")
         self.assertEqual(truncated["modeLabel"], "sequence")
+
+        repeated = bytearray(data[:children_offset + 4 + len(child_ids) * 4])
+        repeated.extend(pack("<H", 2))
+        repeated.extend(pack("<II", 10, 50000))
+        repeated.extend(pack("<II", 10, 25000))
+        repeated_policy = build_audio.hirc_v150_random_sequence_properties(
+            bytes(repeated), children_offset, child_ids, bank_version=150
+        )
+        self.assertEqual(
+            repeated_policy["selectorParserStatus"],
+            "typedExactV150PlaylistWeights",
+        )
+        self.assertEqual(
+            repeated_policy["playlistMembershipStatus"],
+            "playlistWithRepeatedOwnedChildren",
+        )
+        self.assertEqual(repeated_policy["duplicatePlaylistItemCount"], 1)
+        self.assertEqual(repeated_policy["ownedChildIdsNotInPlaylist"], [20, 30])
+
+        empty = bytearray(data[:children_offset + 4 + len(child_ids) * 4])
+        empty.extend(pack("<H", 0))
+        empty_policy = build_audio.hirc_v150_random_sequence_properties(
+            bytes(empty), children_offset, child_ids, bank_version=150
+        )
+        self.assertEqual(
+            empty_policy["playlistMembershipStatus"],
+            "emptyPlaylistOwnedChildrenPreserved",
+        )
+        self.assertEqual(empty_policy["ownedChildIdsNotInPlaylist"], child_ids)
 
     def test_v150_layer_tail_preserves_rtpc_child_curves(self) -> None:
         child_id = 0x11223344
@@ -797,6 +829,20 @@ class AudioCategoryTests(unittest.TestCase):
             mismatched_switch["selectorValidation"]["treeLeafIdsOutsideReciprocalChildren"],
             [ranseq_id],
         )
+        subset_switch = build_audio.hirc_v150_music_switch_structure(
+            switch_data,
+            1 + 12 + 7,
+            1,
+            [ranseq_id, ranseq_id + 1],
+        )
+        self.assertEqual(
+            subset_switch["selectorValidation"]["status"],
+            "decisionTreeSubsetOfReciprocalChildren",
+        )
+        self.assertEqual(
+            subset_switch["selectorValidation"]["reciprocalChildrenWithoutTreeLeaf"],
+            [ranseq_id + 1],
+        )
         ranseq = result["musicNodeEvidence"][1]
         self.assertEqual(ranseq["selectionTypeLabels"], ["continuousSequence", "none"])
         self.assertEqual(ranseq["selectorValidation"], {
@@ -816,7 +862,7 @@ class AudioCategoryTests(unittest.TestCase):
         )
         self.assertEqual(
             mismatched_ranseq["selectorValidation"]["status"],
-            "reciprocalChildNotInPlaylist",
+            "playlistSubsetOfReciprocalChildren",
         )
         self.assertEqual(
             mismatched_ranseq["selectorValidation"]["reciprocalChildrenWithoutPlaylistTerminal"],
