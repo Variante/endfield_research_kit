@@ -17,6 +17,207 @@ import build_native_receiver_activation_frontier as frontier  # noqa: E402
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):
+    @staticmethod
+    def teleport_runtime_contract_fixture() -> dict:
+        return {
+            "schema": "teleportFinishRuntimeContract.v1",
+            "validation": {"status": "validated", "failures": []},
+        }
+
+    @staticmethod
+    def activation_runtime_index_fixture(
+        *, metadata_sha256: str | None = None,
+    ) -> dict:
+        contract = frontier.TELEPORT_FINISH_RUNTIME_CONTRACT
+        return {
+            "runtimeContract": {
+                "teleportMissionScriptCarrier": {
+                    "type": "Beyond.Gameplay.TeleportParam",
+                    "layout": {"actionId": "0x28"},
+                    "storyBindingsAdded": 0,
+                },
+                "nativeEvidence": [{
+                    "symbol": "LevelEvent.OnTeleportFinish.Process",
+                    "address": frontier.TELEPORT_FINISH_RUNTIME_CONTRACT[
+                        "listenerProcessMethodVa"
+                    ],
+                    "finding": "exact string comparison",
+                }],
+                "levelScriptActivationControlAudit": {
+                    "source": "reports/story/recovery/protocol_registry_audit.json",
+                    "validation": {"status": "validated"},
+                    "relatedOriginalFiles": [
+                        {
+                            "sourceFile": "D:/game/GameAssembly.dll",
+                            "sha256": contract["gameAssemblySha256"],
+                        },
+                        {
+                            "sourceFile": "D:/game/global-metadata.dat",
+                            "sha256": metadata_sha256
+                            or contract["globalMetadataSha256"],
+                        },
+                    ],
+                }
+            }
+        }
+
+    def test_teleport_runtime_contract_is_hash_bound_and_identity_free(self) -> None:
+        contract = frontier.teleport_finish_runtime_contract(
+            self.activation_runtime_index_fixture()
+        )
+
+        self.assertEqual("validated", contract["validation"]["status"])
+        self.assertEqual(
+            [],
+            contract.get("serializedObjectInputs", []),
+        )
+        self.assertEqual(
+            "Beyond.Gameplay.Actions.LevelEvent.OnTeleportFinish",
+            contract["listenerType"],
+        )
+
+    def test_teleport_runtime_contract_reports_hash_drift(self) -> None:
+        contract = frontier.teleport_finish_runtime_contract(
+            self.activation_runtime_index_fixture(metadata_sha256="bad")
+        )
+
+        self.assertEqual(
+            "validation_failed", contract["validation"]["status"]
+        )
+        failure = contract["validation"]["failures"][0]
+        self.assertEqual("reviewedGlobalMetadata", failure["gate"])
+        self.assertEqual(
+            frontier.TELEPORT_FINISH_RUNTIME_CONTRACT["globalMetadataSha256"],
+            failure["expected"]["sha256"],
+        )
+        self.assertEqual(["bad"], failure["actual"]["sha256"])
+
+    def test_teleport_finish_census_is_corpus_driven_and_rejects_self_uid(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"61e1bd3e|61e1bd3e")
+
+            def decoder(_data: bytes) -> tuple[dict, None]:
+                return ({
+                    "status": "exact_complete_action_map",
+                    "physicalActionRecordCount": 1,
+                    "physicalHeaderRecordCount": 1,
+                    "actions": [{
+                        "localId": 2,
+                        "uid": "unrelated",
+                        "texts": [],
+                        "recordOffset": 32,
+                    }],
+                    "eventRoots": [{
+                        "localId": 1,
+                        "uid": "61e1bd3e",
+                        "headerName": "LevelEvent_OnTeleportFinish",
+                        "recordOffset": 0,
+                        "eventDetail": {"actionIdFilter": "61e1bd3e"},
+                    }],
+                }, None)
+
+            census = frontier.build_teleport_finish_correlation_census(
+                root,
+                self.teleport_runtime_contract_fixture(),
+                topology_decoder=decoder,
+            )
+
+        self.assertEqual("validated", census["validation"]["status"])
+        self.assertEqual(1, census["candidateFileCount"])
+        self.assertEqual(1, census["listenerCount"])
+        self.assertEqual(1, census["distinctFilterCount"])
+        self.assertEqual(1, census["selfHeaderUidOccurrenceCount"])
+        self.assertEqual(0, census["externalSerializedOccurrenceCount"])
+        self.assertEqual(1, census["runtimeOnlyFilterCount"])
+        self.assertEqual(
+            "runtime_only_no_serialized_levelscript_producer",
+            census["filters"][0]["classification"],
+        )
+
+    def test_teleport_finish_census_fails_closed_with_source_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"listener-without-filter")
+
+            def decoder(_data: bytes) -> tuple[dict, None]:
+                return ({
+                    "status": "exact_complete_action_map",
+                    "physicalActionRecordCount": 0,
+                    "physicalHeaderRecordCount": 1,
+                    "actions": [],
+                    "eventRoots": [{
+                        "localId": 7,
+                        "uid": "header07",
+                        "headerName": "LevelEvent_OnTeleportFinish",
+                        "recordOffset": 0,
+                        "eventDetail": {},
+                    }],
+                }, None)
+
+            census = frontier.build_teleport_finish_correlation_census(
+                root,
+                self.teleport_runtime_contract_fixture(),
+                topology_decoder=decoder,
+            )
+
+        validation = census["validation"]
+        self.assertEqual("validation_failed", validation["status"])
+        failure = validation["failures"][0]
+        self.assertEqual(
+            "typedListenerHasExactActionIdFilter", failure["gate"]
+        )
+        self.assertEqual("map_fixture/1001#7", failure["identity"])
+        self.assertRegex(failure["sourceHashes"]["sha256"], r"^[0-9a-f]{64}$")
+
+    def test_teleport_finish_census_surfaces_new_action_candidate_without_edge(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "map_fixture" / "2002.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"abcd1234|abcd1234")
+
+            def decoder(_data: bytes) -> tuple[dict, None]:
+                return ({
+                    "status": "exact_complete_action_map",
+                    "physicalActionRecordCount": 1,
+                    "physicalHeaderRecordCount": 1,
+                    "actions": [{
+                        "localId": 8,
+                        "uid": "abcd1234",
+                        "texts": [],
+                        "recordOffset": 9,
+                        "actionName": "FutureTeleportProducerCandidate",
+                    }],
+                    "eventRoots": [{
+                        "localId": 7,
+                        "uid": "header07",
+                        "headerName": "LevelEvent_OnTeleportFinish",
+                        "recordOffset": 0,
+                        "eventDetail": {"actionIdFilter": "abcd1234"},
+                    }],
+                }, None)
+
+            census = frontier.build_teleport_finish_correlation_census(
+                root,
+                self.teleport_runtime_contract_fixture(),
+                topology_decoder=decoder,
+            )
+
+        row = census["filters"][0]
+        self.assertEqual("validated", census["validation"]["status"])
+        self.assertEqual("serialized_action_identity_candidate", row["classification"])
+        self.assertEqual(1, row["externalSerializedOccurrenceCount"])
+        self.assertEqual(1, row["serializedActionCandidateCount"])
+        self.assertFalse(row["producerEdge"])
+        self.assertFalse(row["orderEvidence"])
+
     def test_mission_area_leveldata_shell_validator_is_shape_driven(self) -> None:
         pairs = {("map_fixture", "1001")}
         contexts = {

@@ -67,7 +67,35 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v27"
+SCHEMA = "nativeReceiverActivationFrontier.v28"
+
+TELEPORT_FINISH_CORRELATION_MAPPING_ID = (
+    "gameassembly-2026-08-02-teleport-finish-action-id-correlation-v1"
+)
+TELEPORT_FINISH_EVENT_TYPE = "LevelEvent_OnTeleportFinish"
+TELEPORT_FINISH_FILTER_RE = re.compile(r"[0-9a-f]{8}")
+TELEPORT_FINISH_FILTER_BYTES_RE = re.compile(
+    rb"(?<![0-9a-f])([0-9a-f]{8})(?![0-9a-f])"
+)
+TELEPORT_FINISH_RUNTIME_CONTRACT = {
+    "mappingId": TELEPORT_FINISH_CORRELATION_MAPPING_ID,
+    "listenerType": "Beyond.Gameplay.Actions.LevelEvent.OnTeleportFinish",
+    "listenerActionIdFieldToken": "0x04006dec",
+    "listenerProcessMethodToken": "0x060095f5",
+    "listenerProcessMethodVa": "0x186abe000",
+    "teleportParamType": "Beyond.Gameplay.TeleportParam",
+    "teleportParamActionIdFieldToken": "0x04004c72",
+    "teleportFinishPublisherMethod": (
+        "Beyond.Gameplay.TeleportProcessor._OnTeleportFinish"
+    ),
+    "teleportFinishPublisherMethodVa": "0x184970510",
+    "gameAssemblySha256": (
+        "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    ),
+    "globalMetadataSha256": (
+        "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    ),
+}
 
 # This is the binary-validated namespace rule shared by every LevelScript
 # module property.  LevelData writes the module's save-state fields as
@@ -215,6 +243,30 @@ def _receiver_native_evidence_context(row: dict[str, Any]) -> dict[str, Any]:
     active = row.get("activePhaseReceiverControl") or {}
     request = row.get("clientActiveRequestControl") or {}
     start_policy = row.get("startRuntimePolicy") or {}
+    teleport_rows = [
+        {
+            "schema": safe_text(item.get("schema")),
+            "mappingId": safe_text(item.get("mappingId")),
+            "listenerHeaderLocalId": item.get("listenerHeaderLocalId"),
+            "actionIdFilter": safe_text(item.get("actionIdFilter")),
+            "classification": safe_text(item.get("classification")),
+            "rawCorpusOccurrenceCount": item.get("rawCorpusOccurrenceCount"),
+            "externalSerializedOccurrenceCount": item.get(
+                "externalSerializedOccurrenceCount"
+            ),
+            "serializedActionCandidateCount": item.get(
+                "serializedActionCandidateCount"
+            ),
+            "corpusFileCount": item.get("corpusFileCount"),
+            "corpusListenerCount": item.get("corpusListenerCount"),
+            "corpusDistinctFilterCount": item.get("corpusDistinctFilterCount"),
+            "producerEdge": False,
+            "orderEvidence": False,
+            "evidenceBoundary": safe_text(item.get("evidenceBoundary")),
+        }
+        for item in row.get("teleportFinishCorrelations") or []
+        if isinstance(item, dict)
+    ]
     active_shape = levelscript.get("activeShapeList") or {}
     headers = [
         {
@@ -290,6 +342,7 @@ def _receiver_native_evidence_context(row: dict[str, Any]) -> dict[str, Any]:
             "classification": safe_text(start_policy.get("classification")),
             "validation": (start_policy.get("validation") or {}).get("status"),
         },
+        "teleportFinishCorrelations": teleport_rows,
         "binaryBoundary": safe_text(
             active.get("evidenceBoundary")
             or request.get("evidenceBoundary")
@@ -577,6 +630,458 @@ def collect_related_original_files(*values: Any) -> list[dict[str, str]]:
         }
         for path in sorted(paths)
     ]
+
+
+def teleport_finish_runtime_contract(
+    index_payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Bind the generic listener correlation rule to reviewed original binaries."""
+    runtime_contracts = index_payload.get("runtimeContract") or {}
+    activation = (
+        runtime_contracts.get(
+            "levelScriptActivationControlAudit"
+        )
+        or {}
+    )
+    teleport_param = runtime_contracts.get("teleportMissionScriptCarrier") or {}
+    native_rows = [
+        row
+        for row in runtime_contracts.get("nativeEvidence") or []
+        if isinstance(row, dict)
+        and safe_text(row.get("symbol"))
+        == "LevelEvent.OnTeleportFinish.Process"
+    ]
+    related = [
+        {
+            **item,
+            "relationship": "native_teleport_finish_correlation_authority",
+        }
+        for item in activation.get("relatedOriginalFiles") or []
+        if isinstance(item, dict)
+        and safe_text(item.get("sourceFile"))
+        and safe_text(item.get("sha256"))
+    ]
+    game_rows = [
+        row for row in related
+        if safe_text(row.get("sourceFile")).lower().endswith("gameassembly.dll")
+    ]
+    metadata_rows = [
+        row for row in related
+        if safe_text(row.get("sourceFile")).lower().endswith(
+            "global-metadata.dat"
+        )
+    ]
+    failures: list[dict[str, Any]] = []
+    checks = (
+        (
+            "reviewedGameAssembly",
+            game_rows,
+            TELEPORT_FINISH_RUNTIME_CONTRACT["gameAssemblySha256"],
+        ),
+        (
+            "reviewedGlobalMetadata",
+            metadata_rows,
+            TELEPORT_FINISH_RUNTIME_CONTRACT["globalMetadataSha256"],
+        ),
+    )
+    for gate, rows, expected_hash in checks:
+        hashes = sorted({safe_text(row.get("sha256")).lower() for row in rows})
+        if len(rows) != 1 or hashes != [expected_hash]:
+            failures.append({
+                "validator": "teleport_finish_runtime_contract",
+                "gate": gate,
+                "sourceFile": safe_text((rows or [{}])[0].get("sourceFile")),
+                "expected": {
+                    "sourceCount": 1,
+                    "sha256": expected_hash,
+                },
+                "actual": {
+                    "sourceCount": len(rows),
+                    "sha256": hashes,
+                },
+                "sourceHashes": hashes,
+            })
+    if (activation.get("validation") or {}).get("status") != "validated":
+        failures.append({
+            "validator": "teleport_finish_runtime_contract",
+            "gate": "sourceRuntimeAuditValidated",
+            "sourceFile": safe_text(activation.get("source")),
+            "expected": "validated",
+            "actual": (activation.get("validation") or {}).get("status"),
+            "sourceHashes": sorted({
+                safe_text(row.get("sha256")).lower() for row in related
+            }),
+        })
+    teleport_shape = {
+        "type": teleport_param.get("type"),
+        "actionIdOffset": (teleport_param.get("layout") or {}).get("actionId"),
+        "storyBindingsAdded": teleport_param.get("storyBindingsAdded"),
+    }
+    expected_teleport_shape = {
+        "type": "Beyond.Gameplay.TeleportParam",
+        "actionIdOffset": "0x28",
+        "storyBindingsAdded": 0,
+    }
+    if teleport_shape != expected_teleport_shape:
+        failures.append({
+            "validator": "teleport_finish_runtime_contract",
+            "gate": "typedTeleportParamActionIdCarrier",
+            "sourceFile": safe_text(activation.get("source")),
+            "expected": expected_teleport_shape,
+            "actual": teleport_shape,
+            "sourceHashes": sorted({
+                safe_text(row.get("sha256")).lower() for row in related
+            }),
+        })
+    expected_native_row = {
+        "symbol": "LevelEvent.OnTeleportFinish.Process",
+        "address": TELEPORT_FINISH_RUNTIME_CONTRACT[
+            "listenerProcessMethodVa"
+        ],
+    }
+    actual_native_rows = [
+        {
+            "symbol": safe_text(row.get("symbol")),
+            "address": safe_text(row.get("address")),
+        }
+        for row in native_rows
+    ]
+    if actual_native_rows != [expected_native_row]:
+        failures.append({
+            "validator": "teleport_finish_runtime_contract",
+            "gate": "typedListenerRuntimeComparison",
+            "sourceFile": safe_text(activation.get("source")),
+            "expected": [expected_native_row],
+            "actual": actual_native_rows,
+            "sourceHashes": sorted({
+                safe_text(row.get("sha256")).lower() for row in related
+            }),
+        })
+    return {
+        "schema": "teleportFinishRuntimeContract.v1",
+        **TELEPORT_FINISH_RUNTIME_CONTRACT,
+        "classification": "runtime_action_id_correlation",
+        "teleportParamCarrier": teleport_param,
+        "listenerNativeEvidence": native_rows[0] if len(native_rows) == 1 else {},
+        "relatedOriginalFiles": related,
+        "validation": {
+            "status": "validation_failed" if failures else "validated",
+            "failures": failures,
+        },
+        "evidenceBoundary": (
+            "The reviewed client binary proves that OnTeleportFinish compares "
+            "its serialized actionId filter with the TeleportParam actionId "
+            "published at runtime. It does not prove which system supplied that "
+            "runtime value, that the event fired, mission ownership, or order."
+        ),
+    }
+
+
+def build_teleport_finish_correlation_census(
+    levelscript_root: Path,
+    runtime_contract: dict[str, Any],
+    *,
+    topology_decoder: Any = decode_levelscript_native_action_topology,
+) -> dict[str, Any]:
+    """Correlate every typed teleport-finish filter across the complete corpus.
+
+    Discovery uses only typed event records and exact serialized bytes.  Known
+    Story keys, missions, scripts, filters, filenames, OCR, and overrides are
+    not inputs.  Exact action UID/text matches are surfaced as candidates but
+    never promoted to producer or order edges without a typed runtime relation.
+    """
+    files = sorted(levelscript_root.glob("*/*.json"))
+    raw_hex_counts: Counter[str] = Counter()
+    listeners: list[dict[str, Any]] = []
+    action_candidates: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = (
+        defaultdict(dict)
+    )
+    failures: list[dict[str, Any]] = []
+    decoded_files = 0
+    physical_record_count = 0
+
+    if not files:
+        failures.append({
+            "validator": "teleport_finish_levelscript_corpus",
+            "gate": "nonemptyOriginalLevelScriptCorpus",
+            "sourceFile": rel_path(levelscript_root),
+            "expected": {"candidateFileCountGreaterThan": 0},
+            "actual": {"candidateFileCount": 0},
+            "sourceHashes": {},
+        })
+
+    for path in files:
+        source_file = rel_path(path)
+        try:
+            data = read_bytes_cached(path)
+        except OSError as exc:
+            failures.append({
+                "validator": "teleport_finish_levelscript_corpus",
+                "gate": "readOriginalLevelScript",
+                "sourceFile": source_file,
+                "expected": "readable original LevelScript bytes",
+                "actual": type(exc).__name__,
+                "sourceHashes": {},
+            })
+            continue
+        raw_hex_counts.update(
+            match.group(1).decode("ascii")
+            for match in TELEPORT_FINISH_FILTER_BYTES_RE.finditer(data)
+        )
+        topology, diagnostic = topology_decoder(data)
+        status = safe_text((topology or {}).get("status"))
+        if diagnostic or not status.startswith("exact_"):
+            failures.append({
+                "validator": "teleport_finish_levelscript_corpus",
+                "gate": "completeTypedActionTopology",
+                "sourceFile": source_file,
+                "expected": "exact_* topology status with no diagnostic",
+                "actual": {
+                    "status": status,
+                    "diagnostic": diagnostic,
+                },
+                "sourceHashes": {"sha256": hashlib.sha256(data).hexdigest()},
+            })
+            continue
+        decoded_files += 1
+        physical_record_count += int(
+            (topology or {}).get("physicalActionRecordCount") or 0
+        ) + int((topology or {}).get("physicalHeaderRecordCount") or 0)
+
+        for action in (topology or {}).get("actions") or []:
+            if not isinstance(action, dict):
+                continue
+            identities = [("uid", safe_text(action.get("uid")))]
+            identities.extend(
+                ("literal", safe_text(value))
+                for value in action.get("texts") or []
+            )
+            for field, value in identities:
+                if not TELEPORT_FINISH_FILTER_RE.fullmatch(value):
+                    continue
+                candidate = {
+                    "sourceFile": source_file,
+                    "recordOffset": action.get("recordOffset"),
+                    "localId": action.get("localId"),
+                    "actionName": safe_text(action.get("actionName")),
+                    "matchField": field,
+                    "value": value,
+                }
+                key = (
+                    source_file,
+                    action.get("recordOffset"),
+                    field,
+                    value,
+                )
+                action_candidates[value][key] = candidate
+
+        level_id = path.parent.name
+        script_id = path.stem
+        for event in (topology or {}).get("eventRoots") or []:
+            if (
+                not isinstance(event, dict)
+                or safe_text(event.get("headerName"))
+                != TELEPORT_FINISH_EVENT_TYPE
+            ):
+                continue
+            event_detail = event.get("eventDetail") or {}
+            action_id_filter = safe_text(event_detail.get("actionIdFilter"))
+            if not TELEPORT_FINISH_FILTER_RE.fullmatch(action_id_filter):
+                failures.append({
+                    "validator": "teleport_finish_levelscript_corpus",
+                    "gate": "typedListenerHasExactActionIdFilter",
+                    "identity": f"{level_id}/{script_id}#{event.get('localId')}",
+                    "sourceFile": source_file,
+                    "expected": "one lowercase eight-hex actionId filter",
+                    "actual": action_id_filter,
+                    "sourceHashes": {
+                        "sha256": hashlib.sha256(data).hexdigest()
+                    },
+                })
+                continue
+            listeners.append({
+                "levelId": level_id,
+                "scriptId": script_id,
+                "listenerHeaderLocalId": event.get("localId"),
+                "recordOffset": event.get("recordOffset"),
+                "headerUid": safe_text(event.get("uid")),
+                "actionIdFilter": action_id_filter,
+                "sourceFile": source_file,
+                "sha256": hashlib.sha256(data).hexdigest(),
+            })
+
+    listeners_by_filter: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in listeners:
+        listeners_by_filter[row["actionIdFilter"]].append(row)
+
+    filter_rows: list[dict[str, Any]] = []
+    for value in sorted(listeners_by_filter):
+        filter_listeners = listeners_by_filter[value]
+        self_header_uid_count = sum(
+            row.get("headerUid") == value for row in filter_listeners
+        )
+        raw_count = raw_hex_counts[value]
+        expected_listener_owned = len(filter_listeners) + self_header_uid_count
+        external_count = raw_count - expected_listener_owned
+        candidates = list(action_candidates.get(value, {}).values())
+        if external_count < 0:
+            failures.append({
+                "validator": "teleport_finish_levelscript_corpus",
+                "gate": "listenerOwnedRawOccurrenceAccounting",
+                "identity": value,
+                "sourceFile": filter_listeners[0]["sourceFile"],
+                "expected": {
+                    "rawOccurrenceCountAtLeast": expected_listener_owned,
+                },
+                "actual": {"rawOccurrenceCount": raw_count},
+                "sourceHashes": {
+                    row["sourceFile"]: row["sha256"]
+                    for row in filter_listeners
+                },
+            })
+        if len(candidates) > max(0, external_count):
+            failures.append({
+                "validator": "teleport_finish_levelscript_corpus",
+                "gate": "actionCandidateRawOccurrenceAccounting",
+                "identity": value,
+                "sourceFile": candidates[0]["sourceFile"],
+                "expected": {
+                    "serializedActionCandidateCountAtMost": max(
+                        0, external_count
+                    ),
+                },
+                "actual": {
+                    "serializedActionCandidateCount": len(candidates),
+                },
+                "sourceHashes": {
+                    row["sourceFile"]: row["sha256"]
+                    for row in filter_listeners
+                },
+            })
+        if candidates:
+            classification = "serialized_action_identity_candidate"
+        elif external_count > 0:
+            classification = "serialized_non_action_occurrence_unclassified"
+        else:
+            classification = "runtime_only_no_serialized_levelscript_producer"
+        filter_rows.append({
+            "actionIdFilter": value,
+            "classification": classification,
+            "listenerCount": len(filter_listeners),
+            "selfHeaderUidOccurrenceCount": self_header_uid_count,
+            "rawCorpusOccurrenceCount": raw_count,
+            "externalSerializedOccurrenceCount": max(0, external_count),
+            "serializedActionCandidateCount": len(candidates),
+            "serializedActionCandidates": candidates,
+            "listeners": filter_listeners,
+            "producerEdge": False,
+            "orderEvidence": False,
+            "evidenceBoundary": (
+                "An exact serialized action UID/text match is only a candidate; "
+                "without a typed producer-to-TeleportParam relation it creates no "
+                "event, mission, branch, or order edge."
+                if candidates or external_count > 0
+                else "The filter occurs only in its typed listener field (plus "
+                "an explicitly accounted same-header UID where present). The "
+                "complete current LevelScript corpus contains no serialized "
+                "producer, so the runtime actionId carrier remains unresolved."
+            ),
+        })
+
+    runtime_validation = runtime_contract.get("validation") or {}
+    failures.extend(runtime_validation.get("failures") or [])
+    return {
+        "schema": "teleportFinishCorrelationCensus.v1",
+        "mappingId": TELEPORT_FINISH_CORRELATION_MAPPING_ID,
+        "runtimeContract": runtime_contract,
+        "candidateFileCount": len(files),
+        "decodedFileCount": decoded_files,
+        "physicalActionAndHeaderRecordCount": physical_record_count,
+        "listenerCount": len(listeners),
+        "distinctFilterCount": len(filter_rows),
+        "filtersWithSerializedActionCandidate": sum(
+            bool(row["serializedActionCandidateCount"]) for row in filter_rows
+        ),
+        "serializedActionCandidateCount": sum(
+            row["serializedActionCandidateCount"] for row in filter_rows
+        ),
+        "externalSerializedOccurrenceCount": sum(
+            row["externalSerializedOccurrenceCount"] for row in filter_rows
+        ),
+        "runtimeOnlyFilterCount": sum(
+            row["classification"]
+            == "runtime_only_no_serialized_levelscript_producer"
+            for row in filter_rows
+        ),
+        "selfHeaderUidOccurrenceCount": sum(
+            row["selfHeaderUidOccurrenceCount"] for row in filter_rows
+        ),
+        "filters": filter_rows,
+        "validation": {
+            "status": "validation_failed" if failures else "validated",
+            "failures": failures,
+            "checkedFileCount": len(files),
+            "decodedFileCount": decoded_files,
+        },
+        "discoveryPattern": {
+            "eventType": TELEPORT_FINISH_EVENT_TYPE,
+            "filterField": "eventDetail.actionIdFilter",
+            "correlationFields": ["action.uid", "action.texts", "exact raw bytes"],
+            "serializedObjectInputs": [],
+            "storyMissionOrObjectAllowlists": [],
+        },
+        "evidenceBoundary": (
+            "This corpus census can close serialized LevelScript producers for "
+            "an exact runtime correlation key. It never converts name proximity, "
+            "raw occurrence, action identity, OCR, or overrides into playback, "
+            "branch, mission ownership, or Story-order evidence."
+        ),
+    }
+
+
+def teleport_finish_receiver_contexts(
+    census: dict[str, Any],
+) -> dict[tuple[str, str, int], dict[str, Any]]:
+    """Index corpus results by the exact typed listener identity."""
+    contexts: dict[tuple[str, str, int], dict[str, Any]] = {}
+    for filter_row in census.get("filters") or []:
+        if not isinstance(filter_row, dict):
+            continue
+        for listener in filter_row.get("listeners") or []:
+            if not isinstance(listener, dict):
+                continue
+            header_id = listener.get("listenerHeaderLocalId")
+            if not isinstance(header_id, int):
+                continue
+            key = (
+                safe_text(listener.get("levelId")),
+                safe_text(listener.get("scriptId")),
+                header_id,
+            )
+            contexts[key] = {
+                "schema": safe_text(census.get("schema")),
+                "mappingId": safe_text(census.get("mappingId")),
+                "actionIdFilter": safe_text(filter_row.get("actionIdFilter")),
+                "classification": safe_text(filter_row.get("classification")),
+                "rawCorpusOccurrenceCount": filter_row.get(
+                    "rawCorpusOccurrenceCount"
+                ),
+                "externalSerializedOccurrenceCount": filter_row.get(
+                    "externalSerializedOccurrenceCount"
+                ),
+                "serializedActionCandidateCount": filter_row.get(
+                    "serializedActionCandidateCount"
+                ),
+                "corpusFileCount": census.get("candidateFileCount"),
+                "corpusListenerCount": census.get("listenerCount"),
+                "corpusDistinctFilterCount": census.get("distinctFilterCount"),
+                "producerEdge": False,
+                "orderEvidence": False,
+                "evidenceBoundary": safe_text(
+                    filter_row.get("evidenceBoundary")
+                ),
+            }
+    return contexts
 
 
 def validate_mission_area_leveldata_shell_contexts(
@@ -3162,6 +3667,14 @@ def build_report(
         receiver_sources,
         structured_json_root=structured_json_root,
     )
+    teleport_runtime_contract = teleport_finish_runtime_contract(index_payload)
+    teleport_finish_census = build_teleport_finish_correlation_census(
+        levelscript_root,
+        teleport_runtime_contract,
+    )
+    teleport_context_index = teleport_finish_receiver_contexts(
+        teleport_finish_census
+    )
     rows: list[dict[str, Any]] = []
     classes: Counter[str] = Counter()
     start_types: Counter[str] = Counter()
@@ -3298,6 +3811,18 @@ def build_report(
         active_phase_receiver_validated = (
             active_phase_receiver.get("status") == "validated"
         )
+        teleport_finish_correlations = []
+        for header_id in receiver.get("listenerHeaderLocalIds") or []:
+            if not isinstance(header_id, int):
+                continue
+            context = teleport_context_index.get(
+                (level_id, script_id, header_id)
+            )
+            if context:
+                teleport_finish_correlations.append({
+                    **context,
+                    "listenerHeaderLocalId": header_id,
+                })
         client_active_request = exact_client_active_request_contract(
             hosts,
             activation_control,
@@ -3545,6 +4070,7 @@ def build_report(
                 "publicStateControl": row_activation_control,
                 "clientStartRequestControl": row_client_start_request_control,
                 "activePhaseReceiverControl": active_phase_receiver,
+                "teleportFinishCorrelations": teleport_finish_correlations,
                 "clientActiveRequestControl": client_active_request,
                 "subGameStartControl": row_subgame_start_control,
                 "subGameBindings": subgames,
@@ -3787,6 +4313,14 @@ def build_report(
                 "Active producer, event occurrence, mission owner, branch, or "
                 "cross-Story chronology."
             ),
+            "teleportFinishCorrelationBoundary": (
+                "The current binary compares the typed listener actionId with "
+                "TeleportParam.actionId at runtime. A complete original "
+                "LevelScript corpus scan classifies exact serialized occurrences "
+                "without object allowlists. UID/text/raw-byte matches remain "
+                "candidates only and create no producer, mission, branch, or "
+                "Story-order edge."
+            ),
             "taskConditionBoundary": (
                 "A completely decoded task map proves authored task evaluation "
                 "requirements inside this LevelScript. Entity, spawner, dialog, "
@@ -3951,6 +4485,30 @@ def build_report(
                 for row in rows
                 if (row.get("activePhaseReceiverControl") or {}).get("status")
                 == "validated"
+                for story_key in row.get("storyKeys") or []
+            }),
+            "teleportFinishCorpusFiles": teleport_finish_census.get(
+                "candidateFileCount", 0
+            ),
+            "teleportFinishCorpusListeners": teleport_finish_census.get(
+                "listenerCount", 0
+            ),
+            "teleportFinishDistinctFilters": teleport_finish_census.get(
+                "distinctFilterCount", 0
+            ),
+            "teleportFinishRuntimeOnlyFilters": teleport_finish_census.get(
+                "runtimeOnlyFilterCount", 0
+            ),
+            "teleportFinishSerializedActionCandidates": (
+                teleport_finish_census.get("serializedActionCandidateCount", 0)
+            ),
+            "receiverScriptsWithTeleportFinishCorrelation": sum(
+                bool(row.get("teleportFinishCorrelations")) for row in rows
+            ),
+            "receiverStoryKeysWithTeleportFinishCorrelation": len({
+                story_key
+                for row in rows
+                if row.get("teleportFinishCorrelations")
                 for story_key in row.get("storyKeys") or []
             }),
             "scriptsWithRuntimeRequestButNoStaticCarrier": sum(
@@ -4294,6 +4852,7 @@ def build_report(
             ),
         },
         "structuredIdentityCarrierCensus": structured_identity_census,
+        "teleportFinishCorrelationCensus": teleport_finish_census,
         "missionAreaLevelDataShellCensus": {
             "receiverPairCount": len(receiver_pairs),
             "contextCount": len(mission_area_leveldata_shells),
@@ -5172,6 +5731,13 @@ def publish_to_pipeline_index(
             ).items()
             if key != "rows"
         },
+        "teleportFinishCorrelationCensus": {
+            key: value
+            for key, value in (
+                report.get("teleportFinishCorrelationCensus") or {}
+            ).items()
+            if key != "filters"
+        },
         "missionAreaLevelDataShellCensus": (
             report.get("missionAreaLevelDataShellCensus") or {}
         ),
@@ -5194,6 +5760,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
     counts = payload.get("counts") or {}
     identity_census = payload.get("structuredIdentityCarrierCensus") or {}
     mission_area_census = payload.get("missionAreaLevelDataShellCensus") or {}
+    teleport_census = payload.get("teleportFinishCorrelationCensus") or {}
     lines = [
         "# Native Receiver Activation Frontier",
         "",
@@ -5209,6 +5776,27 @@ def markdown_report(payload: dict[str, Any]) -> str:
         ),
         f"- Unique Story keys: `{counts.get('storyKeys')}`",
         f"- Start types: `{counts.get('startTypes')}`",
+        (
+            "- Teleport-finish corpus files / listeners / distinct filters: "
+            f"`{teleport_census.get('candidateFileCount')}` / "
+            f"`{teleport_census.get('listenerCount')}` / "
+            f"`{teleport_census.get('distinctFilterCount')}`"
+        ),
+        (
+            "- Runtime-only filters / serialized action candidates / "
+            "external serialized occurrences: "
+            f"`{teleport_census.get('runtimeOnlyFilterCount')}` / "
+            f"`{teleport_census.get('serializedActionCandidateCount')}` / "
+            f"`{teleport_census.get('externalSerializedOccurrenceCount')}`; "
+            "validation "
+            f"`{(teleport_census.get('validation') or {}).get('status')}`"
+        ),
+        (
+            "- Receiver scripts / Story keys with exact teleport-finish "
+            "correlation context: "
+            f"`{counts.get('receiverScriptsWithTeleportFinishCorrelation')}` / "
+            f"`{counts.get('receiverStoryKeysWithTeleportFinishCorrelation')}`"
+        ),
         (
             "- Structured JSON candidate files / records / direct carriers: "
             f"`{identity_census.get('candidateFileCount')}` / "
@@ -5609,6 +6197,21 @@ def main() -> None:
         failure = (shell_validation.get("failures") or [{}])[0]
         raise SystemExit(
             "mission-area LevelData shell validation failed: "
+            f"validator={failure.get('validator')}; "
+            f"gate={failure.get('gate')}; "
+            f"identity={failure.get('identity')}; "
+            f"source={failure.get('sourceFile')}; "
+            f"expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}; "
+            f"sourceHashes={failure.get('sourceHashes')!r}"
+        )
+    teleport_validation = (
+        payload.get("teleportFinishCorrelationCensus") or {}
+    ).get("validation") or {}
+    if teleport_validation.get("status") != "validated":
+        failure = (teleport_validation.get("failures") or [{}])[0]
+        raise SystemExit(
+            "teleport-finish correlation validation failed: "
             f"validator={failure.get('validator')}; "
             f"gate={failure.get('gate')}; "
             f"identity={failure.get('identity')}; "

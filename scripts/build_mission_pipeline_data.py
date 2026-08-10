@@ -15099,6 +15099,21 @@ def main() -> int:
                 f"actual={failure.get('actual')!r}; "
                 f"sourceHashes={failure.get('sourceHashes')!r}"
             )
+        teleport_validation = (
+            activation_frontier.get("teleportFinishCorrelationCensus") or {}
+        ).get("validation") or {}
+        if teleport_validation.get("status") != "validated":
+            failure = (teleport_validation.get("failures") or [{}])[0]
+            raise RuntimeError(
+                "teleport-finish correlation validation failed: "
+                f"validator={failure.get('validator')}; "
+                f"gate={failure.get('gate')}; "
+                f"identity={failure.get('identity')}; "
+                f"source={failure.get('sourceFile')}; "
+                f"expected={failure.get('expected')!r}; "
+                f"actual={failure.get('actual')!r}; "
+                f"sourceHashes={failure.get('sourceHashes')!r}"
+            )
         # Fixture/test builds use temporary output roots and must not overwrite
         # the canonical recovery report with their reduced corpus.
         if output_root == DEFAULT_OUTPUT_ROOT.resolve():

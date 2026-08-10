@@ -526,6 +526,13 @@
       nativeReceiverStoryContextsHint: "These rows are exact LevelScript receiver-to-Story paths whose Story keys intersect this mission's published nodes. The original binary-backed activation contract and related files are attached for inspection; this is not mission ownership, activation selection, branch choice, or Story order evidence.",
       nativeReceiverStoryMissionKeys: "mission Story keys",
       nativeReceiverStoryExternalKeys: "external Story keys",
+      teleportFinishCorrelation: "Teleport-finish runtime correlation",
+      teleportFinishRuntimeOnly: "no serialized LevelScript producer",
+      teleportFinishExternalOccurrences: "external serialized occurrences",
+      teleportFinishActionCandidates: "action candidates",
+      teleportFinishCorpusFiles: "corpus files",
+      teleportFinishCorpusListeners: "typed listeners",
+      teleportFinishCorpusFilters: "distinct filters",
       missionAreaLevelDataReceiverContexts: "Typed MissionArea LevelData receiver shells",
       missionAreaLevelDataReceiverContextsHint: "A typed MissionRuntime (sceneId, area id) selects LevelBasicInfoTable.idNum, then the exact level-specific MissionAreaTable parent in the same validated LevelData dictionary as this receiver. Unique and shared mission unions are shown exactly; these rows are shell context, not activation, Story ownership, branch selection, or order evidence.",
       missionAreaLevelDataReceiverScope: "complete shell union",
@@ -2033,6 +2040,13 @@
       nativeReceiverStoryContextsHint: "\u8fd9\u4e9b\u884c\u662f\u7cbe\u786e LevelScript \u63a5\u6536\u5668\u5230 Story \u8def\u5f84\uff0c\u4e14 Story \u952e\u4e0e\u8be5\u4efb\u52a1\u5df2\u53d1\u5e03\u8282\u70b9\u76f8\u4ea4\u3002\u5df2\u9644\u52a0\u539f\u59cb\u4e8c\u8fdb\u5236\u6fc0\u6d3b\u5408\u7ea6\u4e0e\u76f8\u5173\u6587\u4ef6\u4f9b\u590d\u6838\uff1b\u8fd9\u4e0d\u662f\u4efb\u52a1\u5f52\u5c5e\u3001\u6fc0\u6d3b\u9009\u62e9\u3001\u5206\u652f\u9009\u62e9\u6216 Story \u987a\u5e8f\u8bc1\u636e\u3002",
       nativeReceiverStoryMissionKeys: "\u4efb\u52a1 Story \u952e",
       nativeReceiverStoryExternalKeys: "\u5916\u90e8 Story \u952e",
+      teleportFinishCorrelation: "\u4f20\u9001\u5b8c\u6210\u8fd0\u884c\u65f6\u5173\u8054",
+      teleportFinishRuntimeOnly: "LevelScript \u4e2d\u65e0\u5e8f\u5217\u5316\u751f\u4ea7\u8005",
+      teleportFinishExternalOccurrences: "\u5916\u90e8\u5e8f\u5217\u5316\u51fa\u73b0",
+      teleportFinishActionCandidates: "\u52a8\u4f5c\u5019\u9009",
+      teleportFinishCorpusFiles: "\u5168\u8bed\u6599\u6587\u4ef6",
+      teleportFinishCorpusListeners: "\u7c7b\u578b\u5316\u76d1\u542c\u5668",
+      teleportFinishCorpusFilters: "\u4e0d\u540c\u8fc7\u6ee4\u503c",
       missionAreaLevelDataReceiverContexts: "\u7c7b\u578b\u5316 MissionArea LevelData \u63a5\u6536\u5668\u4efb\u52a1\u58f3",
       missionAreaLevelDataReceiverContextsHint: "\u7c7b\u578b\u5316 MissionRuntime (sceneId, \u533a\u57df id) \u5148\u9009\u4e2d LevelBasicInfoTable.idNum\uff0c\u518d\u5230\u8fbe\u4e0e\u8be5\u63a5\u6536\u5668\u540c\u4e00\u5df2\u9a8c\u8bc1 LevelData \u5b57\u5178\u7684\u7cbe\u786e\u5206\u5c42 MissionAreaTable \u7236 id\u3002\u552f\u4e00\u548c\u5171\u4eab\u4efb\u52a1\u96c6\u90fd\u6309\u539f\u6837\u663e\u793a\uff1b\u8fd9\u53ea\u662f\u4efb\u52a1\u58f3\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u6fc0\u6d3b\u3001Story \u5f52\u5c5e\u3001\u5206\u652f\u9009\u62e9\u6216\u987a\u5e8f\u8bc1\u636e\u3002",
       missionAreaLevelDataReceiverScope: "\u5b8c\u6574\u4efb\u52a1\u58f3\u96c6",
@@ -4551,11 +4565,13 @@
       const levelscript = receiver.levelScript || {};
       const active = receiver.activePhaseReceiver || {};
       const request = receiver.clientActiveRequest || {};
+      const teleportRows = receiver.teleportFinishCorrelations || [];
       const missionStories = (row.missionStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
       const externalStories = (row.externalStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
       const headers = (active.receiverHeaders || []).map((header) => `<code>#${esc(header.listenerHeaderLocalId ?? "?")} ${esc(header.headerName || "?")}</code>`).join(" ");
+      const teleport = teleportRows.map((item) => `<small><strong>${esc(t("teleportFinishCorrelation"))}:</strong> <code>#${esc(item.listenerHeaderLocalId ?? "?")}</code> <code>${esc(item.actionIdFilter || "?")}</code> <code>${esc(item.classification || "?")}</code> / ${Number(item.externalSerializedOccurrenceCount || 0).toLocaleString()} ${esc(t("teleportFinishExternalOccurrences"))} / ${Number(item.serializedActionCandidateCount || 0).toLocaleString()} ${esc(t("teleportFinishActionCandidates"))}${item.classification === "runtime_only_no_serialized_levelscript_producer" ? ` / <b>${esc(t("teleportFinishRuntimeOnly"))}</b>` : ""}</small><small>${Number(item.corpusFileCount || 0).toLocaleString()} ${esc(t("teleportFinishCorpusFiles"))} / ${Number(item.corpusListenerCount || 0).toLocaleString()} ${esc(t("teleportFinishCorpusListeners"))} / ${Number(item.corpusDistinctFilterCount || 0).toLocaleString()} ${esc(t("teleportFinishCorpusFilters"))}</small><small>${esc(item.evidenceBoundary || "")}</small>`).join("");
       const files = relatedOriginalFilesHtml(row);
-      return `<article class="mp-order-branch is-boundary mp-native-receiver-story-context"><header><b>${esc(t("nativeReceiverStoryContexts"))}</b> <code>${esc(row.levelId || "?")} / ${esc(row.scriptId || "?")}</code><i>&harr;</i>${missionStories}</header>${externalStories ? `<p><strong>${esc(t("nativeReceiverStoryExternalKeys"))}:</strong> ${externalStories}</p>` : ""}<p><strong>${esc(t("nativeReceiverStoryMissionKeys"))}:</strong> ${missionStories || `<code>?</code>`}</p><small><code>${esc(row.activationClass || "?")}</code> / ${esc(levelscript.startTypeName || "?")} / ${esc(levelscript.activeShapeListStatus || "?")} (${Number(levelscript.activeShapeListCount || 0).toLocaleString()} active shapes)</small><small><strong>${esc(t("binaryActivePhaseReceiver"))}:</strong> <code>${esc(active.status || "?")}</code> <code>${esc(active.classification || "?")}</code>${headers ? ` ${headers}` : ""}</small><small><strong>${esc(t("nativeReceiverStoryContexts"))}:</strong> <code>${esc(request.status || "?")}</code> <code>${esc(request.classification || "?")}</code>${request.runtimePath?.length ? ` ${request.runtimePath.map((step) => `<code>${esc(step)}</code>`).join(" ")}` : ""}</small><small>${esc(row.evidenceBoundary || "")}</small>${files}</article>`;
+      return `<article class="mp-order-branch is-boundary mp-native-receiver-story-context"><header><b>${esc(t("nativeReceiverStoryContexts"))}</b> <code>${esc(row.levelId || "?")} / ${esc(row.scriptId || "?")}</code><i>&harr;</i>${missionStories}</header>${externalStories ? `<p><strong>${esc(t("nativeReceiverStoryExternalKeys"))}:</strong> ${externalStories}</p>` : ""}<p><strong>${esc(t("nativeReceiverStoryMissionKeys"))}:</strong> ${missionStories || `<code>?</code>`}</p><small><code>${esc(row.activationClass || "?")}</code> / ${esc(levelscript.startTypeName || "?")} / ${esc(levelscript.activeShapeListStatus || "?")} (${Number(levelscript.activeShapeListCount || 0).toLocaleString()} active shapes)</small><small><strong>${esc(t("binaryActivePhaseReceiver"))}:</strong> <code>${esc(active.status || "?")}</code> <code>${esc(active.classification || "?")}</code>${headers ? ` ${headers}` : ""}</small>${teleport}<small><strong>${esc(t("nativeReceiverStoryContexts"))}:</strong> <code>${esc(request.status || "?")}</code> <code>${esc(request.classification || "?")}</code>${request.runtimePath?.length ? ` ${request.runtimePath.map((step) => `<code>${esc(step)}</code>`).join(" ")}` : ""}</small><small>${esc(row.evidenceBoundary || "")}</small>${files}</article>`;
     }).join("");
     const orderCrossReference = order.crossReference || null;
     const orderCrossReferenceStatus = (reference) => {

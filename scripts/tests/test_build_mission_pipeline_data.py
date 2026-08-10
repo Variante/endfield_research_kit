@@ -4344,9 +4344,30 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "missionlessNativeRuntimeNodes": [receiver],
         }
         writes = []
+        frontier_report = {
+            "structuredIdentityCarrierCensus": {
+                "validation": {"status": "validated"}
+            },
+            "missionAreaLevelDataShellCensus": {
+                "validation": {"status": "validated"}
+            },
+            "teleportFinishCorrelationCensus": {
+                "validation": {"status": "validated"}
+            },
+        }
         with patch.object(pipeline, "parse_args", return_value=args), \
              patch.object(pipeline, "build_all", return_value=index), \
              patch.object(pipeline, "build_story_binding_coverage", return_value=coverage), \
+             patch.object(
+                 pipeline,
+                 "build_native_receiver_activation_frontier_report",
+                 return_value=frontier_report,
+             ), \
+             patch.object(
+                 pipeline,
+                 "publish_native_receiver_activation_frontier",
+                 return_value=0,
+             ), \
              patch.object(pipeline, "write_json", side_effect=lambda path, data: writes.append((path, data))):
             self.assertEqual(pipeline.main(), 0)
         self.assertEqual(writes[-1][1]["storyCoverage"]["missionlessNativeRuntimeNodes"], [receiver])
