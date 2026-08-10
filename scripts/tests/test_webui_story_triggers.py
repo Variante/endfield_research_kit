@@ -313,6 +313,15 @@ for (const [key, category] of [
         self.assertIn("Setup → ActiveBegin → Active(", source)
         self.assertIn("not who selected public Active", source)
 
+    def test_mission_pipeline_surfaces_teleport_finish_correlation_boundary(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("receiver.teleportFinishCorrelations", source)
+        self.assertIn('t("teleportFinishCorrelation")', source)
+        self.assertIn("item.actionIdFilter", source)
+        self.assertIn("item.externalSerializedOccurrenceCount", source)
+        self.assertIn("runtime_only_no_serialized_levelscript_producer", source)
+        self.assertIn('t("teleportFinishCorpusFiles")', source)
+
     def test_mission_pipeline_surfaces_exact_client_active_request_selector(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("activation.clientActiveRequestControl", source)

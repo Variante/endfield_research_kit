@@ -170,6 +170,17 @@ never promotes an edge.
 - Exact native playback actions, event headers, predicates, and local control
   graphs are decoded from original LevelScript data with hash-pinned binary
   contracts.
+- Teleport-completion correlation is now a corpus rule rather than a
+  receiver-specific guess. Across all 4,512 current original StreamingAssets
+  LevelScripts, 117 typed `LevelEvent_OnTeleportFinish` listeners carry 116
+  distinct `actionId` filters. Exact action UID/text and raw-byte correlation
+  finds no serialized producer for any filter; the one filter that also equals
+  its own header UID is explicitly accounted as listener-owned, not a producer.
+  The installed binary proves `OnTeleportFinish.Process` compares the authored
+  filter with `TeleportParam.actionId` at runtime. This adds exact unresolved
+  context for `radio_c13m2_10` and `radio_e1m8_1`, but no activation, ownership,
+  branch, or order edge. Future candidates are discovered by the same typed
+  event/filter scan, with no Story, mission, script, or filter allowlist.
 - The active LevelScript overlay (`Persistent` over the matching
   `StreamingAssets` path) contains 230 validated `CheckTalkOptionFinish`
   consumers: 42 exact nonnegative finish ids and 188 any-finish checks. All 230
@@ -352,7 +363,11 @@ Reject as proof:
    DialogTree endpoints, and original LevelData carrier files are recovered.
 3. Find any client-visible carrier for server-side mission/quest successor
    selection or LevelScript activation policy. Current state/update packets do
-   not co-carry Story ownership.
+   not co-carry Story ownership. Do not repeat LevelScript UID/name searches for
+   teleport-finish filters unless the original corpus changes: all 116 current
+   filters are listener-owned only. The remaining useful boundary is the
+   runtime producer of `TeleportParam.actionId` (or another typed selector that
+   co-carries mission/quest identity).
 4. Resolve source-bounded parent-dialog and Timeline placements only when a new
    exact producer/consumer or mission foreign key appears.
 5. Improve within-mission order through strong relations. Do not turn the

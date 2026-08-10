@@ -13,6 +13,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             {
                 "start": 10,
                 "localId": 1,
+                "uid": "header01",
                 "code": 0x12BA,
                 "kind": 0,
                 "unionTag": 0x00BA,
@@ -24,6 +25,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             {
                 "start": 100,
                 "localId": 10,
+                "uid": "action10",
                 "code": 0x002D,
                 "kind": 0x09,
                 "unionTag": 0x002D,
@@ -35,6 +37,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             {
                 "start": 200,
                 "localId": 20,
+                "uid": "action20",
                 "code": 0x0303,
                 "kind": 0x09,
                 "unionTag": 0x0303,
@@ -46,6 +49,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             {
                 "start": 300,
                 "localId": 30,
+                "uid": "action30",
                 "code": 0x048D,
                 "kind": 0x0A,
                 "unionTag": 0x048D,
@@ -180,6 +184,11 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         self.assertEqual(topology["eventPriorityCounts"], {"-2": 1})
         self.assertEqual(topology["eventRoots"][0]["priority"], -2)
         self.assertEqual(topology["eventRoots"][0]["filterMask"], 3)
+        self.assertEqual(topology["eventRoots"][0]["uid"], "header01")
+        self.assertEqual(
+            [row["uid"] for row in topology["actions"]],
+            ["action10", "action20", "action30"],
+        )
 
     def test_zero_branch_arm_is_an_exact_terminal_not_a_missing_target(self) -> None:
         topology, diagnostic = self.run_topology(branch_targets=[20, 0])

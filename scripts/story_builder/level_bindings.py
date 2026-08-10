@@ -2248,6 +2248,7 @@ def decode_levelscript_native_action_topology(
             key: value
             for key, value in {
                 "localId": header.get("localId"),
+                "uid": str(header.get("uid") or ""),
                 "recordOffset": int(header.get("start") or 0),
                 "recordOffsetHex": f"0x{int(header.get('start') or 0):x}",
                 "headerName": header_name,
@@ -2364,6 +2365,7 @@ def decode_levelscript_native_action_topology(
             key: value
             for key, value in {
                 "localId": local_id,
+                "uid": str(record.get("uid") or ""),
                 "recordOffset": int(record.get("start") or 0),
                 "recordOffsetHex": f"0x{int(record.get('start') or 0):x}",
                 "actionMapRole": membership.get(int(record.get("start") or 0)),
