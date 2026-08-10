@@ -308,6 +308,36 @@ UNITY_HGTREE_BODIES = {
         0x273,
         "1bafbffc56bfaa42445fea8f10bac1047ab44712ee7361456efc281e07196dc3",
     ),
+    "serialized_to_runtime_transform": (
+        0x1810C5F30,
+        0x6BC,
+        "0c9b3d4fe4a444b49e4dd0b161f35e72de8244546639fac61d98bd2974ee4332",
+    ),
+    "lod_direct_origin_0": (
+        0x18106D7F0,
+        0x295,
+        "07812bfe77c8ad07f24945e15df36867949a23df4398058d3812b64f333bb2d5",
+    ),
+    "lod_direct_origin_0x18": (
+        0x18106DA90,
+        0x290,
+        "f820d2511082cd529db74501b375f87d11142ba0567807800e1adfeda909769d",
+    ),
+    "lod_scaled_origin_0": (
+        0x18106E0E0,
+        0x31B,
+        "6df30b7cd628d99341223e6b6ff877b7cd0d4044b4ea88788c786e2aebfdf571",
+    ),
+    "lod_scaled_origin_0x18": (
+        0x18106E400,
+        0x316,
+        "bb50e7feb0003b53e5478cbb99c1054f6bf1906b16b27ca925e3fc6df2602e8f",
+    ),
+    "lod_job_dispatch_segment": (
+        0x181079FB1,
+        0x1B3,
+        "5a7dc27ff07a05134333e3443828a6ba4f64f807de74198dba4181a494cc499c",
+    ),
 }
 
 UNITY_HGTREE_SLICES = {
@@ -354,6 +384,68 @@ UNITY_HGTREE_SLICES = {
         "83c2144c895424584883c7604c897424384889550848897c2460483b"
         "c8",
     ),
+    "transform_capacity_buckets": (
+        0x1810C60E5,
+        "486395c000000089104c8d600483fa017f07b91c000000eb36"
+        "83fa027f07b934000000eb2a83fa047f07b964000000eb1e83fa"
+        "087f07b9c4000000eb1283fa10b90403000041b884010000410f"
+        "4ec84803c1",
+    ),
+    "transform_record_and_lod_mapping": (
+        0x1810C6160,
+        "498b7f2066894c2460488b8d980000000fb7443e10448b4c3e08"
+        "448b443e0c8b143e6689442420e8c4fefbff668944246233c98b"
+        "043e488d761c894424644d8d6424188b443ee88944246848894c"
+        "246c0f10442460894c2474f20f104c2470410f114424e8f2410f"
+        "114c24f8f30f10443ef8f30f104c3efcf30f1185b0000000f30f"
+        "118db4000000488b85b00000004a8904f349ffc64d3bf5",
+    ),
+    "transform_direct_caller": (
+        0x1810C9663,
+        "4c8bc744897c2430498bcc48896c242848895c2420488b9c24b0"
+        "0000004c8bcbe8a8c8ffff",
+    ),
+    "lod_direct_interval_equation": (
+        0x18106D8F0,
+        "f30f104bf832c9f30f1053fcf3410f5c542404f3410f5c0c24"
+        "f30f1003f3410f5c442408438b44280ef30f59d2f30f59c9448b"
+        "1c86f30f59c0f30f58d1f30f58d0413848fe7645450fb648fe0f"
+        "1f400084c9750432d2eb090fb6c1420fb654000d0fb6c1423a54"
+        "000e741a0fb6c2f3410f1004c20f2fc2720c410f2f54c2040f87"
+        "9c000000fec1413ac972c4",
+    ),
+    "lod_scaled_interval_equation": (
+        0x18106E210,
+        "41807e3500418b4c000ef3410f105e28f3410f10648d00f3410f"
+        "102c8c448b148f74050f28d7eb34f30f104df8f30f1055fcf341"
+        "0f5c5604f3410f5c0ef30f104500f3410f5c4608f30f59d2f30f"
+        "59c9f30f59c0f30f58d1f30f58d0f30f595d04410f28c032c9"
+        "f30f5fc2f30f5ed8413848fe765b450fb648fe660f1f44000084c9"
+        "750432d2eb090fb6c1420fb654000d0fb6c1423a54000e742e0fb6"
+        "c20f28cc0f2f74c304f30f590cc376050f28c5eb030f28c40f2f"
+        "cbf30f5944c30472090f2fd80f87ae000000fec1413ac972b0",
+    ),
+    "lod_job_variant_dispatch": (
+        0x181079FCC,
+        "40387b3c0f84b300000085c90f8e56010000448bf70f1f400066"
+        "66660f1f840000000000488b034c8bce4c8b50084d03d6498b02"
+        "8b501848c1ea0bf6c201488b137428488b034883c2184889542428"
+        "48052c080000488d530848894424204c8bc5498bcae8cb3effffeb"
+        "3b4c8b034883c218488b48104981c02c08000048c1e93a48895424"
+        "28f6c1014c89442420488d53084c8bc5498bca7407e8253affffeb"
+        "05e88e43ffff488b03ffc74983c6103b78100f8c6cffffffe9ab00"
+        "000085c90f8ea30000004c8bf70f1f40000f1f840000000000488b"
+        "034c8bce4c8b50084d03d6498b028b501848c1ea0bf6c201488b13"
+        "7428488b034883c218488954242848052c080000488d530848894424"
+        "204c8bc5498bcae83b3cffffeb3b4c8b034883c218488b48104981"
+        "c02c08000048c1e93a4889542428f6c1014c89442420488d53084c"
+        "8bc5498bca7407e8d536ffffeb05e8be3fffff",
+    ),
+}
+
+UNITY_HGTREE_FLOAT_CONSTANTS = {
+    "scaled_lod_forced_distance_squared": (0x181CF22E4, 0x3F800000),
+    "scaled_lod_distance_squared_floor": (0x181D18140, 0x38D1B717),
 }
 
 UNITY_HGTREE_FIELD_NAMES = {
@@ -1224,6 +1316,25 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
+    float_constants = []
+    for label, (virtual_address, expected_bits) in (
+        UNITY_HGTREE_FLOAT_CONSTANTS.items()
+    ):
+        actual_bits = struct.unpack("<I", image.read(virtual_address, 4))[0]
+        require(
+            f"unity_hgtree_{label}",
+            actual_bits,
+            expected_bits,
+            image.path,
+        )
+        float_constants.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "ieee754Bits": f"0x{actual_bits:08X}",
+            }
+        )
+
     field_names = []
     for virtual_address, expected_name in UNITY_HGTREE_FIELD_NAMES.items():
         actual_name = image.cstring(virtual_address)
@@ -1288,6 +1399,94 @@ def validate_unity_hgtree_renderer_boundary(
                 "data; their 0x18 record stride and positional offsets are not "
                 "the serialized HGTreeRenderer +0x18 LOD field"
             ),
+        },
+        "runtimeTransform": {
+            "functionVirtualAddress": "0x1810C5F30",
+            "directCallerVirtualAddress": "0x1810C9610",
+            "directCallSiteVirtualAddress": "0x1810C9683",
+            "sourceRecord": {
+                "strideBytes": 28,
+                "fieldsConsumed": [
+                    {
+                        "source": "batchKey@+0x00",
+                        "destination": "runtimeRecord@+0x04",
+                        "registrationArgument": True,
+                    },
+                    {
+                        "source": "renderFlags@+0x04",
+                        "destination": "runtimeRecord@+0x08",
+                    },
+                    {
+                        "source": "mesh PPtr@+0x08",
+                        "destination": "RegisterTreeBatchGroup argument r9d",
+                    },
+                    {
+                        "source": "material PPtr@+0x0C",
+                        "destination": "RegisterTreeBatchGroup argument r8d",
+                    },
+                    {
+                        "source": "subMeshIndex word@+0x10",
+                        "destination": "RegisterTreeBatchGroup stack argument",
+                    },
+                    {
+                        "source": "lodScreenSizeMaxSquared@+0x14",
+                        "destination": "lodFloat2[index].x",
+                    },
+                    {
+                        "source": "lodScreenSizeMinSquared@+0x18",
+                        "destination": "lodFloat2[index].y",
+                    },
+                ],
+            },
+            "outputLayout": {
+                "countOffset": "0x00",
+                "runtimeRecordBaseOffset": "0x04",
+                "runtimeRecordStrideBytes": 24,
+                "capacityBuckets": [1, 2, 4, 8, 16, 32],
+                "lodArrayOffsetEquation": "4 + 24 * capacity",
+                "lodArrayOffsets": [
+                    "0x1C",
+                    "0x34",
+                    "0x64",
+                    "0xC4",
+                    "0x184",
+                    "0x304",
+                ],
+                "lodFloat2StrideBytes": 8,
+                "runtimeRecordInitialFields": [
+                    {"offset": "0x00", "sizeBytes": 2, "initialValue": 0},
+                    {
+                        "offset": "0x02",
+                        "sizeBytes": 2,
+                        "value": "RegisterTreeBatchGroup 16-bit return handle",
+                    },
+                    {"offset": "0x04", "sizeBytes": 4, "source": "batchKey"},
+                    {"offset": "0x08", "sizeBytes": 4, "source": "renderFlags"},
+                    {"offset": "0x0C", "sizeBytes": 12, "initialValue": 0},
+                ],
+            },
+        },
+        "lodSelection": {
+            "dispatcherSegmentVirtualAddress": "0x181079FB1",
+            "directDistanceJobs": ["0x18106D7F0", "0x18106DA90"],
+            "scaledMetricJobs": ["0x18106E0E0", "0x18106E400"],
+            "positionOrigins": ["view +0x00", "view +0x18"],
+            "directDistanceEquation": (
+                "distanceSquared = dx*dx + dy*dy + dz*dz; select when "
+                "lodFloat2.y < distanceSquared <= lodFloat2.x"
+            ),
+            "scaledMetricEquation": (
+                "metric = (viewFactor * instanceScale) / "
+                "max(0.0001, distanceSquared); select when "
+                "lodFloat2.y * lowerScale < metric <= "
+                "lodFloat2.x * upperScale"
+            ),
+            "scaledLowerScaleSelection": (
+                "lowerScale is the secondary per-instance scale when "
+                "lodFloat2.y > 0, otherwise upperScale"
+            ),
+            "selectionBoundary": "lower bound exclusive; upper bound inclusive",
+            "verifiedFloatConstants": float_constants,
         },
         "treeInstance": {
             "nativeTypeName": "HGTreeInstance",
@@ -1355,12 +1554,17 @@ def validate_unity_hgtree_renderer_boundary(
                 "HGTreeRender::CreateRendererList binding, core, and job scheduler",
                 "HGTreeRender::RegisterTreeBatchGroup binding and registration core",
                 "the two selected runtime batch-job callback addresses",
+                "the exact serialized-record to runtime-record and LOD float2 mapping",
+                "the 1/2/4/8/16/32 runtime capacity buckets and LOD-array offsets",
+                "the direct squared-distance LOD interval equation",
+                "the scaled-metric LOD interval equation and its 0.0001 floor",
+                "the six-way LOD job dispatch segment",
                 "the correction that the old 10320/Animator binding was invalid",
                 "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
             "open": [
-                "the serialization-to-runtime batch/SoA field mapping",
-                "the HGTreeRenderer LOD max/min comparison equation",
+                "semantic names for initially zero runtime-record state bytes",
+                "the upstream meanings of the scaled path's per-instance scale arrays",
                 "the unrelated scheduled cull-view +0x18 consumer",
             ],
         },
@@ -1575,7 +1779,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
 
     return {
         "schema": "endfield.recovered-light-cull-cap.v6",
-        "status": "installed_cap_dispatch_predicates_hgtree_registration_and_capture_abi_source_closed",
+        "status": "installed_cap_dispatch_predicates_hgtree_runtime_lod_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -1594,13 +1798,16 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "is paired at local index 564 in the dedicated 729-entry HyperGryph "
             "internal-call tables. The binding reaches the renderer-list core, "
             "job scheduler, and two runtime batch-job callbacks; batch-group "
-            "registration is independently paired at index 567. The old index "
+            "registration is independently paired at index 567. The loader's "
+            "exact 28-byte serialized input, 24-byte runtime records, bucketed "
+            "LOD float2 array, registration argument mapping, six-way LOD job "
+            "dispatch, direct squared-distance interval, and scaled metric "
+            "interval are now closed. The old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The callbacks consume transformed runtime batch data rather than "
-            "the serialized 28-byte record, so the HGTree LOD equation, the "
-            "scheduled cull-view +0x18 consumer, target-frame pointer/count, "
-            "and unrelated live native lights remain open."
+            "The scaled-path array semantics, scheduled cull-view +0x18 "
+            "consumer, target-frame pointer/count, and unrelated live native "
+            "lights remain open."
         ),
         "installedInputs": {
             "gameAssembly": {
@@ -1719,6 +1926,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the dedicated 729-entry HyperGryph internal-call name/function table pair",
                 "the HGTreeRender CreateRendererList binding, core, scheduler, and selected runtime callbacks",
                 "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
+                "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
+                "the direct-distance and scaled-metric HGTree LOD interval equations",
+                "the six-way HGTree LOD job dispatch segment",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
                 "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
@@ -1728,7 +1938,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "arbitrary/asymmetric final selected-view planes",
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
-                "the serialized HGTreeRenderer-to-runtime batch/SoA mapping and LOD comparison equation",
+                "the semantic names of the HGTree scaled-route arrays and initially zero runtime-state bytes",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -1762,8 +1972,8 @@ def main() -> int:
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
-        "registration/scheduling chain, mask order, 16-byte result, and "
-        "148-byte capture-row ABI closed."
+        "registration/runtime transform/LOD equations, mask order, 16-byte "
+        "result, and 148-byte capture-row ABI closed."
     )
     return 0
 

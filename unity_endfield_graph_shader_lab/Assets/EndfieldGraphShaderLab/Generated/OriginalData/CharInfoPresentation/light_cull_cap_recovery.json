@@ -1,7 +1,7 @@
 {
   "schema": "endfield.recovered-light-cull-cap.v6",
-  "status": "installed_cap_dispatch_predicates_hgtree_registration_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The callbacks consume transformed runtime batch data rather than the serialized 28-byte record, so the HGTree LOD equation, the scheduled cull-view +0x18 consumer, target-frame pointer/count, and unrelated live native lights remain open.",
+  "status": "installed_cap_dispatch_predicates_hgtree_runtime_lod_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scaled-path array semantics, scheduled cull-view +0x18 consumer, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -682,6 +682,126 @@
         "runtimeRecordStrideObserved": "0x18",
         "boundary": "the scheduled callbacks consume transformed runtime batch/SoA data; their 0x18 record stride and positional offsets are not the serialized HGTreeRenderer +0x18 LOD field"
       },
+      "runtimeTransform": {
+        "functionVirtualAddress": "0x1810C5F30",
+        "directCallerVirtualAddress": "0x1810C9610",
+        "directCallSiteVirtualAddress": "0x1810C9683",
+        "sourceRecord": {
+          "strideBytes": 28,
+          "fieldsConsumed": [
+            {
+              "source": "batchKey@+0x00",
+              "destination": "runtimeRecord@+0x04",
+              "registrationArgument": true
+            },
+            {
+              "source": "renderFlags@+0x04",
+              "destination": "runtimeRecord@+0x08"
+            },
+            {
+              "source": "mesh PPtr@+0x08",
+              "destination": "RegisterTreeBatchGroup argument r9d"
+            },
+            {
+              "source": "material PPtr@+0x0C",
+              "destination": "RegisterTreeBatchGroup argument r8d"
+            },
+            {
+              "source": "subMeshIndex word@+0x10",
+              "destination": "RegisterTreeBatchGroup stack argument"
+            },
+            {
+              "source": "lodScreenSizeMaxSquared@+0x14",
+              "destination": "lodFloat2[index].x"
+            },
+            {
+              "source": "lodScreenSizeMinSquared@+0x18",
+              "destination": "lodFloat2[index].y"
+            }
+          ]
+        },
+        "outputLayout": {
+          "countOffset": "0x00",
+          "runtimeRecordBaseOffset": "0x04",
+          "runtimeRecordStrideBytes": 24,
+          "capacityBuckets": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32
+          ],
+          "lodArrayOffsetEquation": "4 + 24 * capacity",
+          "lodArrayOffsets": [
+            "0x1C",
+            "0x34",
+            "0x64",
+            "0xC4",
+            "0x184",
+            "0x304"
+          ],
+          "lodFloat2StrideBytes": 8,
+          "runtimeRecordInitialFields": [
+            {
+              "offset": "0x00",
+              "sizeBytes": 2,
+              "initialValue": 0
+            },
+            {
+              "offset": "0x02",
+              "sizeBytes": 2,
+              "value": "RegisterTreeBatchGroup 16-bit return handle"
+            },
+            {
+              "offset": "0x04",
+              "sizeBytes": 4,
+              "source": "batchKey"
+            },
+            {
+              "offset": "0x08",
+              "sizeBytes": 4,
+              "source": "renderFlags"
+            },
+            {
+              "offset": "0x0C",
+              "sizeBytes": 12,
+              "initialValue": 0
+            }
+          ]
+        }
+      },
+      "lodSelection": {
+        "dispatcherSegmentVirtualAddress": "0x181079FB1",
+        "directDistanceJobs": [
+          "0x18106D7F0",
+          "0x18106DA90"
+        ],
+        "scaledMetricJobs": [
+          "0x18106E0E0",
+          "0x18106E400"
+        ],
+        "positionOrigins": [
+          "view +0x00",
+          "view +0x18"
+        ],
+        "directDistanceEquation": "distanceSquared = dx*dx + dy*dy + dz*dz; select when lodFloat2.y < distanceSquared <= lodFloat2.x",
+        "scaledMetricEquation": "metric = (viewFactor * instanceScale) / max(0.0001, distanceSquared); select when lodFloat2.y * lowerScale < metric <= lodFloat2.x * upperScale",
+        "scaledLowerScaleSelection": "lowerScale is the secondary per-instance scale when lodFloat2.y > 0, otherwise upperScale",
+        "selectionBoundary": "lower bound exclusive; upper bound inclusive",
+        "verifiedFloatConstants": [
+          {
+            "label": "scaled_lod_forced_distance_squared",
+            "virtualAddress": "0x181CF22E4",
+            "ieee754Bits": "0x3F800000"
+          },
+          {
+            "label": "scaled_lod_distance_squared_floor",
+            "virtualAddress": "0x181D18140",
+            "ieee754Bits": "0x38D1B717"
+          }
+        ]
+      },
       "treeInstance": {
         "nativeTypeName": "HGTreeInstance",
         "rendererArrayField": "renderers",
@@ -836,12 +956,17 @@
           "HGTreeRender::CreateRendererList binding, core, and job scheduler",
           "HGTreeRender::RegisterTreeBatchGroup binding and registration core",
           "the two selected runtime batch-job callback addresses",
+          "the exact serialized-record to runtime-record and LOD float2 mapping",
+          "the 1/2/4/8/16/32 runtime capacity buckets and LOD-array offsets",
+          "the direct squared-distance LOD interval equation",
+          "the scaled-metric LOD interval equation and its 0.0001 floor",
+          "the six-way LOD job dispatch segment",
           "the correction that the old 10320/Animator binding was invalid",
           "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
         ],
         "open": [
-          "the serialization-to-runtime batch/SoA field mapping",
-          "the HGTreeRenderer LOD max/min comparison equation",
+          "semantic names for initially zero runtime-record state bytes",
+          "the upstream meanings of the scaled path's per-instance scale arrays",
           "the unrelated scheduled cull-view +0x18 consumer"
         ]
       },
@@ -893,6 +1018,42 @@
           "virtualAddress": "0x181086050",
           "sizeBytes": 627,
           "sha256": "1bafbffc56bfaa42445fea8f10bac1047ab44712ee7361456efc281e07196dc3"
+        },
+        {
+          "label": "serialized_to_runtime_transform",
+          "virtualAddress": "0x1810C5F30",
+          "sizeBytes": 1724,
+          "sha256": "0c9b3d4fe4a444b49e4dd0b161f35e72de8244546639fac61d98bd2974ee4332"
+        },
+        {
+          "label": "lod_direct_origin_0",
+          "virtualAddress": "0x18106D7F0",
+          "sizeBytes": 661,
+          "sha256": "07812bfe77c8ad07f24945e15df36867949a23df4398058d3812b64f333bb2d5"
+        },
+        {
+          "label": "lod_direct_origin_0x18",
+          "virtualAddress": "0x18106DA90",
+          "sizeBytes": 656,
+          "sha256": "f820d2511082cd529db74501b375f87d11142ba0567807800e1adfeda909769d"
+        },
+        {
+          "label": "lod_scaled_origin_0",
+          "virtualAddress": "0x18106E0E0",
+          "sizeBytes": 795,
+          "sha256": "6df30b7cd628d99341223e6b6ff877b7cd0d4044b4ea88788c786e2aebfdf571"
+        },
+        {
+          "label": "lod_scaled_origin_0x18",
+          "virtualAddress": "0x18106E400",
+          "sizeBytes": 790,
+          "sha256": "bb50e7feb0003b53e5478cbb99c1054f6bf1906b16b27ca925e3fc6df2602e8f"
+        },
+        {
+          "label": "lod_job_dispatch_segment",
+          "virtualAddress": "0x181079FB1",
+          "sizeBytes": 435,
+          "sha256": "5a7dc27ff07a05134333e3443828a6ba4f64f807de74198dba4181a494cc499c"
         }
       ],
       "verifiedInstructionSlices": [
@@ -937,6 +1098,42 @@
           "virtualAddress": "0x181068345",
           "sizeBytes": 137,
           "sha256": "354add7d4f9536ac6b8b66425e8b89fbd5a61a08fa580cb695dcfb6921a5cbd3"
+        },
+        {
+          "label": "transform_capacity_buckets",
+          "virtualAddress": "0x1810C60E5",
+          "sizeBytes": 82,
+          "sha256": "3ce886fad0af0234316d2d14da5c9ac8d4479700e91be5d1bdb74e2afd0d0b3b"
+        },
+        {
+          "label": "transform_record_and_lod_mapping",
+          "virtualAddress": "0x1810C6160",
+          "sizeBytes": 153,
+          "sha256": "2d9331e6266d3a07c039d2f6ff89b6ee40c1e32bbbe52dd9f2ca642262016cc8"
+        },
+        {
+          "label": "transform_direct_caller",
+          "virtualAddress": "0x1810C9663",
+          "sizeBytes": 37,
+          "sha256": "da45c0186612f9e3ebf6a0537523fe984773fe7f1fef10555862bd21033f4db9"
+        },
+        {
+          "label": "lod_direct_interval_equation",
+          "virtualAddress": "0x18106D8F0",
+          "sizeBytes": 140,
+          "sha256": "c7533df25a1016a7752afd2456e62ee7f344ec58b7ab9f07be69026c4d992607"
+        },
+        {
+          "label": "lod_scaled_interval_equation",
+          "virtualAddress": "0x18106E210",
+          "sizeBytes": 208,
+          "sha256": "1d8ee0766e67c31db6844455cb601c9d90644e0efa4e275f4d30df79a7875a1a"
+        },
+        {
+          "label": "lod_job_variant_dispatch",
+          "virtualAddress": "0x181079FCC",
+          "sizeBytes": 342,
+          "sha256": "7d2f4badc9d54c9eeaf726816d4c1131bd40af52e924ecc6bcd294d7084dbab8"
         }
       ]
     },
@@ -981,6 +1178,9 @@
       "the dedicated 729-entry HyperGryph internal-call name/function table pair",
       "the HGTreeRender CreateRendererList binding, core, scheduler, and selected runtime callbacks",
       "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
+      "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
+      "the direct-distance and scaled-metric HGTree LOD interval equations",
+      "the six-way HGTree LOD job dispatch segment",
       "the retraction of the out-of-range index 10320 Animator misbinding",
       "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
     ],
@@ -990,7 +1190,7 @@
       "arbitrary/asymmetric final selected-view planes",
       "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
-      "the serialized HGTreeRenderer-to-runtime batch/SoA mapping and LOD comparison equation",
+      "the semantic names of the HGTree scaled-route arrays and initially zero runtime-state bytes",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

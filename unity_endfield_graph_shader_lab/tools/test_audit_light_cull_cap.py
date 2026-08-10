@@ -246,6 +246,24 @@ class LightCullCapAuditTests(unittest.TestCase):
                 "serializedRecordStrideObservedInPinnedJobSlices"
             ]
         )
+        self.assertEqual(
+            result["runtimeTransform"]["outputLayout"]["capacityBuckets"],
+            [1, 2, 4, 8, 16, 32],
+        )
+        self.assertEqual(
+            result["runtimeTransform"]["outputLayout"][
+                "lodArrayOffsetEquation"
+            ],
+            "4 + 24 * capacity",
+        )
+        self.assertEqual(
+            result["lodSelection"]["selectionBoundary"],
+            "lower bound exclusive; upper bound inclusive",
+        )
+        self.assertIn(
+            "lodFloat2.y < distanceSquared <= lodFloat2.x",
+            result["lodSelection"]["directDistanceEquation"],
+        )
         self.assertNotIn("virtual slot", " ".join(result["callChain"]))
 
     def test_changed_hgtree_renderer_binding_fails_closed(self) -> None:
@@ -263,6 +281,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_create_renderer_list_binding_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_runtime_transform_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1810C5F30 and size == 0x6BC:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_serialized_to_runtime_transform_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
