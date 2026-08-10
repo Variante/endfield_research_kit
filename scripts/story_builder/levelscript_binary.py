@@ -6574,6 +6574,40 @@ def _decode_audio_action(
                 ("targetProxy", _decode_audio_string_param),
             ),
         ),
+        (0x034A, 0x14): (
+            "Play3DRadio",
+            (
+                ("attenuationType", _decode_audio_i32_param),
+                ("enableAdvancedOptions", _decode_audio_bool_param),
+                ("entityPtr", _decode_audio_entity_param),
+                ("fromBegin", _decode_audio_bool_param),
+                ("index", _decode_audio_i32_param),
+                ("noFlushAfterLoading", _decode_audio_bool_param),
+                ("npcProxyId", _decode_audio_string_param),
+                ("onlyOnce", _decode_audio_bool_param),
+                ("radioId", _decode_audio_string_param),
+                ("reverbOffset", _decode_audio_float_param),
+                ("useNpcProxy", _decode_audio_bool_param),
+                ("voOffset", _decode_audio_float_param),
+            ),
+        ),
+        (0x034B, 0x14): (
+            "Play3DRadioAndWait",
+            (
+                ("attenuationType", _decode_audio_i32_param),
+                ("enableAdvancedOptions", _decode_audio_bool_param),
+                ("entityPtr", _decode_audio_entity_param),
+                ("fromBegin", _decode_audio_bool_param),
+                ("index", _decode_audio_i32_param),
+                ("noFlushAfterLoading", _decode_audio_bool_param),
+                ("npcProxyId", _decode_audio_string_param),
+                ("onlyOnce", _decode_audio_bool_param),
+                ("radioId", _decode_audio_string_param),
+                ("reverbOffset", _decode_audio_float_param),
+                ("useNpcProxy", _decode_audio_bool_param),
+                ("voOffset", _decode_audio_float_param),
+            ),
+        ),
         (0x0352, 0x0C): (
             "PlayAudioOnTarget",
             (
@@ -6595,6 +6629,26 @@ def _decode_audio_action(
                 ("startEvent", _decode_audio_string_param),
                 ("stopEvent", _decode_audio_string_param),
                 ("stopOnRelease", _decode_audio_bool_param),
+            ),
+        ),
+        (0x0363, 0x0D): (
+            "PlayRadio",
+            (
+                ("fromBegin", _decode_audio_bool_param),
+                ("index", _decode_audio_i32_param),
+                ("noFlushAfterLoading", _decode_audio_bool_param),
+                ("onlyOnce", _decode_audio_bool_param),
+                ("radioId", _decode_audio_string_param),
+            ),
+        ),
+        (0x0364, 0x0D): (
+            "PlayRadioAndWait",
+            (
+                ("fromBegin", _decode_audio_bool_param),
+                ("index", _decode_audio_i32_param),
+                ("noFlushAfterLoading", _decode_audio_bool_param),
+                ("onlyOnce", _decode_audio_bool_param),
+                ("radioId", _decode_audio_string_param),
             ),
         ),
         (0x036B, 0x13): (
@@ -6668,6 +6722,12 @@ def _decode_audio_action(
                 ("stopSpecificMusic", _decode_audio_bool_param),
             ),
         ),
+        (0x04B5, 0x09): (
+            "StopRadio",
+            (
+                ("radioId", _decode_audio_string_param),
+            ),
+        ),
         (0x04B7, 0x0A): (
             "StopVoice",
             (
@@ -6687,6 +6747,12 @@ def _decode_audio_action(
                 ("modelLevel", _decode_audio_i32_param),
                 ("target", _decode_audio_entity_param),
                 ("value", _decode_audio_i32_param),
+            ),
+        ),
+        (0x04CA, 0x09): (
+            "ToggleClearScreenButRadio",
+            (
+                ("isShow", _decode_audio_bool_param),
             ),
         ),
     }
@@ -6728,7 +6794,11 @@ def _decode_audio_action(
     for field_name, role in event_roles.get(action_name, ()):
         field = fields[field_name]
         value = field.get("value")
-        if field.get("bindingKind") == "constant" and isinstance(value, str) and value:
+        if (
+            field.get("bindingKind") == "constant"
+            and isinstance(value, str)
+            and value
+        ):
             event_bindings.append({
                 "eventName": value,
                 "role": role,
@@ -6744,12 +6814,31 @@ def _decode_audio_action(
                 "role": "invoke",
                 "sourceField": field["sourceField"],
             })
+    radio_bindings = []
+    radio_roles = {
+        "Play3DRadio": "play3D",
+        "Play3DRadioAndWait": "play3DAndWait",
+        "PlayRadio": "play",
+        "PlayRadioAndWait": "playAndWait",
+        "StopRadio": "stop",
+    }
+    radio_role = radio_roles.get(action_name)
+    if radio_role:
+        field = fields["radioId"]
+        value = field.get("value")
+        if field.get("bindingKind") == "constant" and isinstance(value, str) and value:
+            radio_bindings.append({
+                "radioId": value,
+                "role": radio_role,
+                "sourceField": field["sourceField"],
+            })
 
     return _finish_audio_action_fields(payload, cursor, _drop_empty({
         "action": action_name,
         "fields": fields,
         "eventBindings": event_bindings,
         "cueBindings": cue_bindings,
+        "radioBindings": radio_bindings,
     }))
 
 
@@ -7026,8 +7115,12 @@ def decode_levelscript_record_payload(
         (0x034C, 0x0C),
         (0x034E, 0x0B),
         (0x034F, 0x10),
+        (0x034A, 0x14),
+        (0x034B, 0x14),
         (0x0352, 0x0C),
         (0x0367, 0x11),
+        (0x0363, 0x0D),
+        (0x0364, 0x0D),
         (0x036B, 0x13),
         (0x0371, 0x0B),
         (0x0373, 0x0C),
@@ -7035,9 +7128,11 @@ def decode_levelscript_record_payload(
         (0x04A7, 0x0E),
         (0x04AC, 0x0A),
         (0x04B4, 0x0B),
+        (0x04B5, 0x09),
         (0x04B7, 0x0A),
         (0x04BA, 0x09),
         (0x04BC, 0x0B),
+        (0x04CA, 0x09),
     }:
         audio_action = _decode_audio_action(payload, semantic_key)
         if audio_action:

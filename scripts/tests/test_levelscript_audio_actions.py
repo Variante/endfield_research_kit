@@ -171,6 +171,97 @@ class LevelScriptAudioActionTests(unittest.TestCase):
             entity_param(0, 0, False), string_param("npc_proxy_test"),
         ))), play_wait["consumedBytes"])
 
+    def test_radio_play_wait_stop_and_toggle_layouts_preserve_roles(self) -> None:
+        play_payload = b"".join((
+            bool_param(True),
+            i32_param(-1),
+            bool_param(False),
+            bool_param(False),
+            string_param("radio_e0m2_1"),
+            struct.pack("<I", 2),
+        ))
+        play = decode_audio(play_payload, 0x0363, 0x0D)
+        self.assertEqual("PlayRadio", play["action"])
+        self.assertEqual(
+            [{"radioId": "radio_e0m2_1", "role": "play", "sourceField": "_radioId"}],
+            play["radioBindings"],
+        )
+        self.assertTrue(play["fields"]["fromBegin"]["value"])
+        self.assertEqual(-1, play["fields"]["index"]["value"])
+        self.assertEqual([2], play["trailingActionMapFramingU32s"])
+
+        wait = decode_audio(b"".join((
+            bool_param(True),
+            i32_param(-1),
+            bool_param(False),
+            bool_param(False),
+            string_param("radio_c16m4_16"),
+        )), 0x0364, 0x0D)
+        self.assertEqual("PlayRadioAndWait", wait["action"])
+        self.assertEqual("playAndWait", wait["radioBindings"][0]["role"])
+
+        stop = decode_audio(string_param("radio_sm1l1m1_5"), 0x04B5, 0x09)
+        self.assertEqual("StopRadio", stop["action"])
+        self.assertEqual("stop", stop["radioBindings"][0]["role"])
+
+        toggle = decode_audio(
+            bool_param(False) + struct.pack("<II", 0, 1),
+            0x04CA,
+            0x09,
+        )
+        self.assertEqual("ToggleClearScreenButRadio", toggle["action"])
+        self.assertFalse(toggle["fields"]["isShow"]["value"])
+        self.assertNotIn("radioBindings", toggle)
+
+    def test_3d_radio_and_wait_share_the_exact_inherited_twelve_fields(self) -> None:
+        def payload(radio_id: str) -> bytes:
+            return b"".join((
+                i32_param(36),
+                bool_param(False),
+                entity_param(24300010036, 0, False),
+                bool_param(True),
+                i32_param(-1),
+                bool_param(False),
+                b"\xff",
+                bool_param(False),
+                string_param(radio_id),
+                float_param(1.0),
+                bool_param(False),
+                float_param(1.0),
+            ))
+
+        play = decode_audio(payload("radio_c17m3_39"), 0x034A, 0x14)
+        self.assertEqual("Play3DRadio", play["action"])
+        self.assertEqual("play3D", play["radioBindings"][0]["role"])
+        self.assertEqual(24300010036, play["fields"]["entityPtr"]["logicId"])
+        self.assertFalse(play["fields"]["npcProxyId"]["present"])
+
+        wait = decode_audio(
+            payload("radio_e9m2_42") + struct.pack("<II", 0, 2),
+            0x034B,
+            0x14,
+        )
+        self.assertEqual("Play3DRadioAndWait", wait["action"])
+        self.assertEqual("play3DAndWait", wait["radioBindings"][0]["role"])
+        self.assertEqual([0, 2], wait["trailingActionMapFramingU32s"])
+
+        # The same union tag with member count 9 is a getter-list record in
+        # the current corpus, not the 20-member Play3DRadio formatter.
+        self.assertFalse(decode_audio(payload("radio_false_positive"), 0x034A, 0x09))
+
+    def test_dynamic_radio_ids_remain_evidence_without_literal_bindings(self) -> None:
+        dynamic = decode_audio(b"".join((
+            bool_param(True),
+            i32_param(-1),
+            bool_param(False),
+            bool_param(False),
+            string_param(None, id_ref=1, source=-1),
+        )), 0x0363, 0x0D)
+        self.assertEqual("dynamic", dynamic["fields"]["radioId"]["bindingKind"])
+        self.assertEqual(1, dynamic["fields"]["radioId"]["idRef"])
+        self.assertNotIn("radioBindings", dynamic)
+        self.assertFalse(decode_audio(b"\x04", 0x04B5, 0x09))
+
     def test_status_music_and_cue_bindings_keep_lifecycle_roles_separate(self) -> None:
         status = decode_audio(b"".join((
             bool_param(True),
@@ -333,6 +424,12 @@ class LevelScriptAudioActionTests(unittest.TestCase):
         for tag, count, name in (
             (0x034F, 0x10, "PlayAudioAndWait"),
             (0x0371, 0x0B, "PostAudioStatusEvent"),
+            (0x034A, 0x14, "Play3DRadio"),
+            (0x034B, 0x14, "Play3DRadioAndWait"),
+            (0x0363, 0x0D, "PlayRadio"),
+            (0x0364, 0x0D, "PlayRadioAndWait"),
+            (0x04B5, 0x09, "StopRadio"),
+            (0x04CA, 0x09, "ToggleClearScreenButRadio"),
         ):
             record = {
                 "code": tag,
