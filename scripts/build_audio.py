@@ -58,9 +58,11 @@ GAMEPLAY_INDEX_REL = Path("data/lang/{language}/gameplay/index.json")
 GAMEPLAY_SFX_REL = Path("data/lang/{language}/gameplay/sound_effects.json")
 GAMEPLAY_SFX_ANIMATION_CATALOG_NAME = "sound_effects_animation_catalog.json"
 GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME = "sound_effects_animation_evidence.json"
+GAMEPLAY_SFX_ANIMATION_EVIDENCE_SCHEMA_VERSION = 2
 GAMEPLAY_AUDIO_EVENT_BYTES_RE = re.compile(rb"\b(?:au|bark|radio)_[A-Za-z0-9_]{2,160}\b")
 GAMEPLAY_BUFF_BYTES_RE = re.compile(rb"\bbuff_[A-Za-z0-9_]{2,160}\b")
 ANIMATION_CLIP_HASH_SUFFIX_RE = re.compile(r"_p[0-9a-f]{16}$", re.IGNORECASE)
+ANIMATION_CLIP_PATH_ID_SUFFIX_RE = re.compile(r"_p(?P<path_id>[0-9a-f]{16})$", re.IGNORECASE)
 ANIMATION_ACTOR_RE = re.compile(r"^A_(actor|monster)_([^_]+)_", re.IGNORECASE)
 ENEMY_ID_TOKEN_RE = re.compile(r"^eny_\d+_([^_]+)", re.IGNORECASE)
 CHARACTER_ID_TOKEN_RE = re.compile(r"^chr_\d+_([^_]+)", re.IGNORECASE)
@@ -71,6 +73,9 @@ ANIMATION_AUDIO_FUNCTIONS = frozenset({
     "PostAudioEventAtPosition",
     "OnCustomFootStep",
 })
+ANIMATOR_CONTROLLER_REL = Path(
+    "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController"
+)
 GAMEPLAY_PROFILE_VOICE_RE = re.compile(r"(?:_combat_|_mono_(?:attack|skill))", re.IGNORECASE)
 GAMEPLAY_AUDIO_LINK_FIELDS = (
     "src", "mediaId", "format", "bytes", "audioScope", "audioCategory",
@@ -643,6 +648,167 @@ def animation_clip_audio_events(data: bytes) -> tuple[str, list[dict[str, Any]]]
     return clip_name, events
 
 
+def animation_clip_path_id(path: Path) -> int | None:
+    """Recover the signed Unity PathID encoded in an exported clip filename."""
+
+    match = ANIMATION_CLIP_PATH_ID_SUFFIX_RE.search(path.stem)
+    if not match:
+        return None
+    try:
+        value = int(match.group("path_id"), 16)
+    except (TypeError, ValueError):
+        return None
+    return value - (1 << 64) if value >= (1 << 63) else value
+
+
+def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
+    """Index resolved AnimatorController->AnimationClip PPtrs fail-closed.
+
+    The exported ``$animestudio.pptrReferences`` records are the only accepted
+    evidence here.  Name matching, raw controller payload guesses, and
+    AnimatorOverrideController pairs are deliberately excluded until their
+    serialized-file context can be resolved without ambiguity.
+    """
+
+    root = export_root / ANIMATOR_CONTROLLER_REL
+    by_clip_path_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    counts = {
+        "status": "unavailable" if not root.is_dir() else "complete",
+        "sourceRoot": normalize_posix(ANIMATOR_CONTROLLER_REL),
+        "filesScanned": 0,
+        "filesWithDirectReferences": 0,
+        "malformedFiles": 0,
+        "directReferenceCount": 0,
+        "uniqueReferencedClipPathIds": 0,
+        "controllerCount": 0,
+        "overrideControllersExcluded": True,
+    }
+    if not root.is_dir():
+        return {"byClipPathId": {}, "summary": counts}
+
+    seen_controllers: set[tuple[str, str, str]] = set()
+    seen_references: set[tuple[int, str, str, str]] = set()
+    for path in sorted(root.glob("*.json"), key=lambda value: value.name.lower()):
+        counts["filesScanned"] += 1
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, ValueError):
+            counts["malformedFiles"] += 1
+            continue
+        if not isinstance(payload, dict):
+            counts["malformedFiles"] += 1
+            continue
+        metadata = payload.get("$animestudio")
+        if not isinstance(metadata, dict) or metadata.get("type") != "AnimatorController":
+            # A valid JSON file without the exporter identity envelope is not
+            # safe to use as a direct-reference source.
+            counts["malformedFiles"] += 1
+            continue
+        references = metadata.get("pptrReferences")
+        if not isinstance(references, list):
+            counts["malformedFiles"] += 1
+            continue
+        controller_name = str(
+            payload.get("m_Name") or metadata.get("name") or path.stem
+        ).strip()
+        controller_source_file = str(metadata.get("sourceFile") or "").strip()
+        controller_path_id = metadata.get("pathId")
+        controller_key = (
+            controller_source_file,
+            str(controller_path_id) if isinstance(controller_path_id, int) else "",
+            normalize_posix(path.relative_to(export_root)),
+        )
+        direct_file_reference_count = 0
+        for reference in references:
+            if not isinstance(reference, dict):
+                continue
+            target = reference.get("target")
+            target = target if isinstance(target, dict) else {}
+            target_type = str(
+                reference.get("targetType") or target.get("type") or ""
+            )
+            resolution_status = str(reference.get("resolutionStatus") or "")
+            if target_type != "AnimationClip" or not resolution_status.startswith("resolved"):
+                continue
+            target_path_id = reference.get("targetPathId")
+            if not isinstance(target_path_id, int) or isinstance(target_path_id, bool):
+                target_path_id = target.get("pathId")
+            target_source_file = str(
+                reference.get("targetSourceFile") or target.get("serializedFile") or ""
+            ).strip()
+            if (
+                not isinstance(target_path_id, int)
+                or isinstance(target_path_id, bool)
+                or not target_source_file
+            ):
+                continue
+            reference_key = (
+                target_path_id,
+                target_source_file,
+                controller_key[2],
+                controller_key[0],
+            )
+            if reference_key in seen_references:
+                continue
+            seen_references.add(reference_key)
+            if controller_key not in seen_controllers:
+                seen_controllers.add(controller_key)
+                counts["controllerCount"] += 1
+            context = {
+                "name": controller_name,
+                "sourcePath": controller_key[2],
+                "sourceFile": controller_source_file,
+                "pathId": controller_path_id,
+                "targetSourceFile": target_source_file,
+                "resolutionStatus": resolution_status,
+            }
+            by_clip_path_id[target_path_id].append(context)
+            direct_file_reference_count += 1
+            counts["directReferenceCount"] += 1
+        if direct_file_reference_count:
+            counts["filesWithDirectReferences"] += 1
+
+    for path_id, contexts in by_clip_path_id.items():
+        by_clip_path_id[path_id] = sorted(
+            contexts,
+            key=lambda row: (
+                str(row.get("name") or ""),
+                str(row.get("sourcePath") or ""),
+                str(row.get("targetSourceFile") or ""),
+            ),
+        )
+    counts["uniqueReferencedClipPathIds"] = len(by_clip_path_id)
+    if counts["malformedFiles"] and counts["filesWithDirectReferences"]:
+        counts["status"] = "partial"
+    return {"byClipPathId": dict(by_clip_path_id), "summary": counts}
+
+
+def animation_controller_contexts(
+    controller_index: dict[str, Any], path: Path
+) -> list[dict[str, Any]]:
+    """Return direct controller contexts for one exported AnimationClip."""
+
+    path_id = animation_clip_path_id(path)
+    if path_id is None:
+        return []
+    contexts = controller_index.get(path_id) or {}
+    return [dict(row) for row in contexts if isinstance(row, dict)]
+
+
+def animation_clip_reachability_status(
+    evidence: Iterable[dict[str, Any]],
+) -> str:
+    """Classify one Event's clip rows without promoting unresolved evidence."""
+
+    rows = [row for row in evidence if isinstance(row, dict)]
+    direct = sum(bool(row.get("animatorControllerCount")) for row in rows)
+    if not direct:
+        return "unresolved"
+    if direct == len(rows):
+        return "directAnimatorController"
+    return "mixedAnimatorControllerReachability"
+
+
 def collect_gameplay_animation_audio(
     export_root: Path,
     entries: list[dict[str, Any]],
@@ -675,6 +841,12 @@ def collect_gameplay_animation_audio(
     )
     owners: dict[tuple[str, str], dict[str, Any]] = {}
     unowned_events: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    controller_index_data = collect_animation_controller_index(export_root)
+    controller_index = controller_index_data.get("byClipPathId") or {}
+    controller_reachable_clips = 0
+    controller_unresolved_clips = 0
+    controller_reachable_callback_rows = 0
+    controller_unresolved_callback_rows = 0
     scanned_clips = 0
     matched_clips = 0
     unowned_clips = 0
@@ -707,6 +879,16 @@ def collect_gameplay_animation_audio(
                 continue
             clip_kind = animation_clip_action_kind(clip_name)
             clip_context = animation_clip_context(clip_name)
+            controller_contexts = animation_controller_contexts(controller_index, path)
+            clip_reachability = (
+                "directAnimatorController" if controller_contexts else "unresolved"
+            )
+            if controller_contexts:
+                controller_reachable_clips += 1
+                controller_reachable_callback_rows += len(clip_events)
+            else:
+                controller_unresolved_clips += 1
+                controller_unresolved_callback_rows += len(clip_events)
             try:
                 clip_source = normalize_posix(path.relative_to(export_root))
             except ValueError:
@@ -717,7 +899,9 @@ def collect_gameplay_animation_audio(
                 "clipSource": clip_source,
                 "actionKind": clip_kind,
                 "clipContext": clip_context,
-                "clipReachability": "unresolved",
+                "clipReachability": clip_reachability,
+                "animatorControllerCount": len(controller_contexts),
+                "animatorControllerContexts": controller_contexts,
             }
             if matched_owners:
                 matched_clips += 1
@@ -804,7 +988,15 @@ def collect_gameplay_animation_audio(
             "animationAudioEventNames": len(event_names),
             "animationAudioOwnerEventRefs": sum(len(owner["events"]) for owner in owners.values()),
             "animationAudioOwnerUnresolvedEventRefs": len(unowned_events),
+            "animationAudioControllerReachableClips": controller_reachable_clips,
+            "animationAudioControllerUnresolvedClips": controller_unresolved_clips,
+            "animationAudioControllerReachableCallbackRows": controller_reachable_callback_rows,
+            "animationAudioControllerUnresolvedCallbackRows": controller_unresolved_callback_rows,
+            "animationAudioControllerReferences": int(
+                (controller_index_data.get("summary") or {}).get("directReferenceCount") or 0
+            ),
         },
+        "animationControllerIndex": controller_index_data.get("summary") or {},
     }
 
 
@@ -1322,6 +1514,7 @@ def collect_gameplay_audio_references(
             **(animation_audio.get("counts") or {}),
             **(profile_voices.get("counts") or {}),
         },
+        "animationControllerIndex": animation_audio.get("animationControllerIndex") or {},
     }
 
 
@@ -1711,6 +1904,34 @@ def link_gameplay_audio(
             clips = sorted({str(row.get("clip") or "") for row in evidence if row.get("clip")})
             functions = sorted({str(row.get("function") or "") for row in evidence if row.get("function")})
             clip_contexts = sorted({str(row.get("clipContext") or "other") for row in evidence})
+            animator_controller_contexts: list[dict[str, Any]] = []
+            animator_controller_seen: set[str] = set()
+            for row in evidence:
+                for context in row.get("animatorControllerContexts") or []:
+                    if not isinstance(context, dict):
+                        continue
+                    marker = json.dumps(context, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                    if marker in animator_controller_seen:
+                        continue
+                    animator_controller_seen.add(marker)
+                    animator_controller_contexts.append(dict(context))
+            animator_controller_contexts.sort(
+                key=lambda row: (
+                    str(row.get("name") or ""),
+                    str(row.get("sourcePath") or ""),
+                    str(row.get("targetSourceFile") or ""),
+                )
+            )
+            animator_controller_reachable_clip_count = len({
+                str(row.get("clip") or "")
+                for row in evidence
+                if row.get("clip") and row.get("animatorControllerCount")
+            })
+            animator_controller_unresolved_clip_count = len({
+                str(row.get("clip") or "")
+                for row in evidence
+                if row.get("clip") and not row.get("animatorControllerCount")
+            })
             authored_event_ids = sorted({
                 str(row.get("authoredEventId") or event_id)
                 for row in evidence
@@ -1738,7 +1959,11 @@ def link_gameplay_audio(
                 "actionKinds": action_kinds,
                 "animationFunctions": functions,
                 "animationClipContexts": clip_contexts,
-                "clipReachability": "unresolved",
+                "clipReachability": animation_clip_reachability_status(evidence),
+                "animatorControllerCount": len(animator_controller_contexts),
+                "animatorControllerContexts": animator_controller_contexts,
+                "animatorControllerReachableClipCount": animator_controller_reachable_clip_count,
+                "animatorControllerUnresolvedClipCount": animator_controller_unresolved_clip_count,
                 "authoredEventIds": authored_event_ids,
                 "eventAliases": [value for value in authored_event_ids if value != event_id],
                 "sourceAnimationClips": clips,
@@ -2075,6 +2300,14 @@ def link_gameplay_audio(
                     "animationFunctions": event.get("animationFunctions") or [],
                     "animationClipContexts": event.get("animationClipContexts") or [],
                     "clipReachability": event.get("clipReachability") or "unresolved",
+                    "animatorControllerCount": int(event.get("animatorControllerCount") or 0),
+                    "animatorControllerContexts": event.get("animatorControllerContexts") or [],
+                    "animatorControllerReachableClipCount": int(
+                        event.get("animatorControllerReachableClipCount") or 0
+                    ),
+                    "animatorControllerUnresolvedClipCount": int(
+                        event.get("animatorControllerUnresolvedClipCount") or 0
+                    ),
                     "sourceAnimationClips": event.get("sourceAnimationClips") or [],
                     "animationOwnerCount": event.get("animationOwnerCount"),
                     "animationOwnershipScope": event.get("animationOwnershipScope"),
@@ -2093,12 +2326,44 @@ def link_gameplay_audio(
     unresolved_animation_events: list[dict[str, Any]] = []
     for event_id, evidence in sorted((references.get("unownedAnimationEvents") or {}).items()):
         rows = [row for row in evidence or [] if isinstance(row, dict)]
+        controller_contexts: list[dict[str, Any]] = []
+        controller_context_seen: set[str] = set()
+        for row in rows:
+            for context in row.get("animatorControllerContexts") or []:
+                if not isinstance(context, dict):
+                    continue
+                marker = json.dumps(context, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                if marker in controller_context_seen:
+                    continue
+                controller_context_seen.add(marker)
+                controller_contexts.append(dict(context))
+        controller_contexts.sort(
+            key=lambda row: (
+                str(row.get("name") or ""),
+                str(row.get("sourcePath") or ""),
+                str(row.get("targetSourceFile") or ""),
+            )
+        )
+        controller_reachable_clips = len({
+            str(row.get("clip") or "")
+            for row in rows
+            if row.get("clip") and row.get("animatorControllerCount")
+        })
+        controller_unresolved_clips = len({
+            str(row.get("clip") or "")
+            for row in rows
+            if row.get("clip") and not row.get("animatorControllerCount")
+        })
         unresolved_animation_events.append({
             "id": event_id,
             "actionKinds": sorted({str(row.get("actionKind") or "action") for row in rows}),
             "animationFunctions": sorted({str(row.get("function") or "") for row in rows if row.get("function")}),
             "animationClipContexts": sorted({str(row.get("clipContext") or "other") for row in rows}),
-            "clipReachability": "unresolved",
+            "clipReachability": animation_clip_reachability_status(rows),
+            "animatorControllerCount": len(controller_contexts),
+            "animatorControllerContexts": controller_contexts,
+            "animatorControllerReachableClipCount": controller_reachable_clips,
+            "animatorControllerUnresolvedClipCount": controller_unresolved_clips,
             "sourceAnimationClips": sorted({str(row.get("clip") or "") for row in rows if row.get("clip")}),
             "authoredEventIds": sorted({
                 str(row.get("authoredEventId") or event_id)
@@ -2116,8 +2381,9 @@ def link_gameplay_audio(
         "events": animation_event_catalog,
     })
     json_dump(path.with_name(GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME), {
-        "schemaVersion": 1,
+        "schemaVersion": GAMEPLAY_SFX_ANIMATION_EVIDENCE_SCHEMA_VERSION,
         "language": language,
+        "animationControllerIndex": references.get("animationControllerIndex") or {},
         **animation_evidence,
     })
     json_dump(path, {
@@ -2136,7 +2402,8 @@ def link_gameplay_audio(
             "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
             "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",
             "enemyTemplateBoundary": "AbilitySystemData containment is exact, while identifiers preserved only in partially decoded string-hint tails remain ownership-inferred.",
-            "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse; current-controller clip reachability remains unresolved",
+            "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse; direct resolved AnimatorController PPtrs now annotate clip reachability, while override-controller pairs and runtime state reachability remain unresolved",
+            "animationControllerBoundary": "A direct resolved AnimationClip PPtr in an exported AnimatorController proves authored controller membership only. AnimatorOverrideController pairs, Timeline/Playable bindings, controller state selection, and live Animator execution remain unresolved; no animation callback is promoted into a skill trigger by this evidence.",
             "unownedAnimationBoundary": "Every actor/monster AnimationClip callback with a supported audio function is retained. Clips without a bounded playable-character or enemy-template token stay owner-unresolved and appear only in the debug Audio evidence surface; generic non-actor clip indexing remains a separate exporter gap.",
             "animationMediaBoundary": "An owned clip proves that its callback requests the Event. Shared playable-character Events expose a shared Wwise selector graph; its reachable leaves are not attributed to one character until switch/state values are decoded.",
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",

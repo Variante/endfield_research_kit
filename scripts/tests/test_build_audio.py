@@ -913,6 +913,103 @@ AnimationClip:
             self.assertEqual(result["counts"]["animationAudioClipsScanned"], 2)
             self.assertEqual(result["counts"]["animationAudioClipsOwnerUnresolved"], 1)
 
+    def test_animation_controller_index_is_fail_closed_and_annotates_direct_clip_refs(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            clip_root = export_root / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
+            controller_root = export_root / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController"
+            clip_root.mkdir(parents=True)
+            controller_root.mkdir(parents=True)
+            clip_template = """%YAML 1.1
+AnimationClip:
+  m_Name: {clip_name}
+  m_Events:
+  - time: 0.25
+    functionName: PostAudioEvent
+    data: {event_id}
+"""
+            (clip_root / "A_actor_test_battle_direct_p0000000000000001.anim").write_text(
+                clip_template.format(
+                    clip_name="A_actor_test_battle_direct",
+                    event_id="au_direct_controller",
+                ),
+                encoding="utf-8",
+            )
+            (clip_root / "A_actor_test_battle_unresolved_p0000000000000002.anim").write_text(
+                clip_template.format(
+                    clip_name="A_actor_test_battle_unresolved",
+                    event_id="au_unresolved_controller",
+                ),
+                encoding="utf-8",
+            )
+            (controller_root / "AnimatorController#fixture_p0000000000000003.json").write_text(
+                json.dumps({
+                    "$animestudio": {
+                        "type": "AnimatorController",
+                        "pathId": 3,
+                        "sourceFile": "CAB-controller-fixture",
+                        "pptrReferences": [
+                            {
+                                "targetType": "AnimationClip",
+                                "targetPathId": 1,
+                                "targetSourceFile": "CAB-clip-fixture",
+                                "resolutionStatus": "resolved",
+                            },
+                            {
+                                # An unresolved PPtr must not become a name/path guess.
+                                "targetType": "AnimationClip",
+                                "targetPathId": 2,
+                                "targetSourceFile": "CAB-clip-fixture",
+                                "resolutionStatus": "unresolved",
+                            },
+                            {
+                                "targetType": "AnimatorController",
+                                "targetPathId": 2,
+                                "targetSourceFile": "CAB-clip-fixture",
+                                "resolutionStatus": "resolved",
+                            },
+                        ],
+                    },
+                    "m_Name": "AC_fixture_direct",
+                }),
+                encoding="utf-8",
+            )
+            # Missing exporter identity is fail-closed and cannot contribute an index row.
+            (controller_root / "malformed.json").write_text(
+                json.dumps({"m_Name": "AC_should_not_match"}),
+                encoding="utf-8",
+            )
+
+            result = build_audio.collect_gameplay_animation_audio(
+                export_root,
+                [{"kind": "character", "id": "chr_0001_test", "skillGroups": []}],
+                [],
+            )
+
+            owner = result["owners"][0]
+            direct = owner["events"]["au_direct_controller"][0]
+            unresolved = owner["events"]["au_unresolved_controller"][0]
+            self.assertEqual(direct["clipReachability"], "directAnimatorController")
+            self.assertEqual(direct["animatorControllerCount"], 1)
+            self.assertEqual(
+                direct["animatorControllerContexts"][0]["name"],
+                "AC_fixture_direct",
+            )
+            self.assertEqual(unresolved["clipReachability"], "unresolved")
+            self.assertEqual(unresolved["animatorControllerCount"], 0)
+            self.assertEqual(unresolved["animatorControllerContexts"], [])
+            self.assertEqual(result["counts"]["animationAudioControllerReachableClips"], 1)
+            self.assertEqual(result["counts"]["animationAudioControllerUnresolvedClips"], 1)
+            self.assertEqual(
+                result["counts"]["animationAudioControllerReachableCallbackRows"],
+                1,
+            )
+            self.assertEqual(
+                result["animationControllerIndex"]["directReferenceCount"],
+                1,
+            )
+            self.assertEqual(result["animationControllerIndex"]["status"], "partial")
+
     def test_collects_direct_character_and_bounded_enemy_audio(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
