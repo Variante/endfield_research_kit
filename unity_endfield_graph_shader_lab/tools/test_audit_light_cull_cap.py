@@ -304,6 +304,9 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         ecs_state = result["lodSelection"]["ecsStateRecord"]
         self.assertEqual(ecs_state["archetypeComponentBitIndex"], 67)
+        self.assertEqual(
+            ecs_state["indexedAccessorVirtualAddress"], "0x1811648A0"
+        )
         self.assertEqual(ecs_state["strideBytes"], 24)
         self.assertEqual(ecs_state["sentinelLodIndex"], 8)
         self.assertEqual(
@@ -323,6 +326,19 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertIn(
             "clear record+0x04 and set record+0x05",
             ecs_state["availabilityWriter"]["complete"],
+        )
+        initial_completion = ecs_state["initialCompletionWriter"]
+        self.assertEqual(
+            initial_completion["normalTransition"]["availableMaskAt0x05"],
+            1,
+        )
+        self.assertEqual(
+            initial_completion["fallbackTransition"]["desiredLodAt0x01"],
+            8,
+        )
+        self.assertIn(
+            "does not write record+0x00",
+            initial_completion["closedBoundary"],
         )
         self.assertFalse(ecs_state["nativeTypeNameMappingClosed"])
         self.assertEqual(
@@ -430,6 +446,27 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_lod_ecs_availability_writer_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_lod_ecs_initial_completion_writer_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181159010 and size == 0x398:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_ecs_initial_completion_writer_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

@@ -1560,8 +1560,13 @@ from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
 at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
 available masks at `+0x04/+0x05`, a 64-bit renderer-readiness set at `+0x08`,
 and eight cumulative renderer-range endpoints at `+0x10..+0x17`. Writer
-`0x1810842E0` closes its request, completion, and unload transitions. Dispatch
-segment `0x181079FB1` selects the
+`0x1810842E0` closes its request, completion, and unload transitions. Indexed
+accessor `0x1811648A0` reaches the same state per entity; writer `0x181159010`
+closes the initial LOD0 completion/fallback transition. With only LOD0 pending,
+it writes indices `0/0/0`, masks `0/1`, and a readiness mask derived from the
+companion renderer/subresource count; otherwise it writes sentinel `8/8/8`
+and clears readiness. It does not write the LOD count or cumulative ranges.
+Dispatch segment `0x181079FB1` selects the
 LOD variants. The direct path selects
 `minSquared < distanceSquared <= maxSquared`; the scaled path tests
 `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` against the same
@@ -1578,7 +1583,7 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 LOD-count producer and exact type-name link, unrelated
+bytes, component-67 LOD-count/range producer and exact type-name link, unrelated
 scheduled consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.
