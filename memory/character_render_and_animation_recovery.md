@@ -143,13 +143,21 @@ NPC archetypes are imported as labeled source kits.
   `7064D8E2/B428...chk`: their 1,449 valid descriptors cover IDs
   `0..11,18,29,44,46,47,48`, with no ID 67 and no layout failures. This
   excludes the generic serialized renderer-data blob family without naming
-  the remaining native producer.
+  the remaining native producer. The installed UnityPlayer native descriptor
+  table now closes the top-level serialized class IDs as `HGTree=0x2C9CB981`
+  and `HGTreeData=0x59383C91` (with the two HGMesh IDs as positive controls).
+  AnimeStudio now recognizes those exact IDs and admits explicitly selected
+  generic TypeTree objects into an otherwise minimal AssetMap. One controlled
+  full-StreamingAssets scan produced and re-exported the same 117 unique
+  `HGMeshRendererData` identities but zero `HGTree`/`HGTreeData` objects. The
+  static top-level Unity object surface is therefore excluded; nested payloads,
+  proprietary streaming `.bytes`, and runtime construction remain open.
   Native entity-type registration core `0x1801FAEC0` now closes each input as
   an 8-byte row `(int16 id, uint16 size, uint32 cumulativeOffset)`, with
   component storage beginning at byte 8 and archetype size/offset lookups at
   `+0x42/+0x44 + 8*rank`. No installed-code immediate encodes `(67, 24)`, so
   the remaining ID-67 row and its initial LOD values come from a runtime or
-  copied descriptor source outside those two excluded routes rather than a
+  copied descriptor source outside those excluded static routes rather than a
   static descriptor constant.
   Writer `0x181157760` also closes a second direct-availability initialization path:
   it either marks every LOD and companion subresource available or marks only

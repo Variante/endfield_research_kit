@@ -245,6 +245,58 @@ class LightCullCapAuditTests(unittest.TestCase):
                 inventory, verify_source_hash=False
             )
 
+    def test_hgtree_native_serialized_type_census(self) -> None:
+        result = AUDIT.validate_hgtree_native_serialized_type_census(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        )
+        rows = {
+            row["name"]: row["classId"]
+            for row in result["nativeDescriptorRows"]
+        }
+        self.assertEqual(rows["HGTree"], 0x2C9CB981)
+        self.assertEqual(rows["HGTreeData"], 0x59383C91)
+        self.assertEqual(rows["HGMeshRendererData"], 0x50F4EE0C)
+        self.assertEqual(result["controlledFullScan"]["mapEntryCount"], 117)
+        self.assertEqual(result["hgtreeTopLevelObjectCount"], 0)
+        self.assertEqual(result["hgtreeDataTopLevelObjectCount"], 0)
+
+    def test_changed_hgtree_native_class_id_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1821252F8 and size == 8:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=hgtree_native_serialized_type_HGTree_descriptor_raw; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_hgtree_native_serialized_type_census(image)
+
+    def test_hgtree_top_level_object_count_drift_fails_closed(self) -> None:
+        census = json.loads(
+            AUDIT.HGTREE_NATIVE_SERIALIZED_TYPE_CENSUS.read_text(
+                encoding="utf-8"
+            )
+        )
+        census["controlledFullScan"]["typeCounts"]["HGTree"] = 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=hgtree_native_serialized_census_map_type_counts; "
+            r"source=.*hgtree_native_serialized_type_census.json; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_hgtree_native_serialized_type_census(
+                AUDIT.PEImage(AUDIT.UNITY_PLAYER), census
+            )
+
     def test_changed_streaming_hgtree_enum_value_fails_closed(self) -> None:
         metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
         values_offset = 36_439_024
