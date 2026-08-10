@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v6",
-  "status": "installed_cap_dispatch_predicates_hgtree_runtime_lod_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scaled-path array semantics, scheduled cull-view +0x18 consumer, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v7",
+  "status": "installed_cap_dispatch_predicates_hgtree_lod_controls_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, initially zero HGTree runtime-state bytes, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -662,6 +662,48 @@
         "name": "UnityEngine.HyperGryph.HGTreeRender::RegisterTreeBatchGroup",
         "targetVirtualAddress": "0x1801DA040"
       },
+      "lodControlInternalCalls": {
+        "cullingSystem": [
+          {
+            "label": "parentLODBias.get",
+            "index": 3300,
+            "name": "UnityEngine.HyperGryph.HGCullingSystem::get_parentLODBias",
+            "targetVirtualAddress": "0x1800F8E00"
+          },
+          {
+            "label": "parentLODBias.set",
+            "index": 3301,
+            "name": "UnityEngine.HyperGryph.HGCullingSystem::set_parentLODBias",
+            "targetVirtualAddress": "0x1800F8E40"
+          },
+          {
+            "label": "artTagLODBias.get",
+            "index": 3302,
+            "name": "UnityEngine.HyperGryph.HGCullingSystem::GetArtTagLODBias",
+            "targetVirtualAddress": "0x1800F9110"
+          },
+          {
+            "label": "artTagLODBias.set",
+            "index": 3303,
+            "name": "UnityEngine.HyperGryph.HGCullingSystem::SetArtTagLODBias",
+            "targetVirtualAddress": "0x1800F9230"
+          }
+        ],
+        "lodStreamingSystem": [
+          {
+            "label": "artTagLODStreamingOffset.get",
+            "index": 279,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::GetArtTagLODStreamingOffset",
+            "targetVirtualAddress": "0x1801EDEB0"
+          },
+          {
+            "label": "artTagLODStreamingOffset.set",
+            "index": 280,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::SetArtTagLODStreamingOffset",
+            "targetVirtualAddress": "0x1801EDED0"
+          }
+        ]
+      },
       "callChain": [
         "0x1801D9D10 HGTreeRender::CreateRendererList binding",
         "0x18107EE40 renderer-list core",
@@ -772,7 +814,10 @@
         }
       },
       "lodSelection": {
+        "dispatcherVirtualAddress": "0x181079C10",
         "dispatcherSegmentVirtualAddress": "0x181079FB1",
+        "callbackWrapperVirtualAddress": "0x181060E60",
+        "payloadBuilderVirtualAddress": "0x18106EAD0",
         "directDistanceJobs": [
           "0x18106D7F0",
           "0x18106DA90"
@@ -785,9 +830,56 @@
           "view +0x00",
           "view +0x18"
         ],
+        "dispatchPacket": {
+          "sizeBytes": 64,
+          "payloadPointerOffset": "0x00",
+          "lodCrossFadeConfigOffset": "0x08",
+          "lodCrossFadeConfigSizeBytes": 56,
+          "metadataFieldOrder": [
+            "cameraPosition",
+            "c0",
+            "c1",
+            "fraction",
+            "currMaxProjFactorSquared",
+            "maxProjFactorSquared0",
+            "maxProjFactorSquared1",
+            "enableDither",
+            "isOrtho",
+            "lodBias"
+          ],
+          "enableDitherPacketOffset": "0x3C",
+          "lodBiasPacketOffset": "0x3E"
+        },
+        "payload": {
+          "sizeBytes": 3120,
+          "parentLODBiasSquaredOffset": "0x28",
+          "artTagLODBiasSquaredOffset": "0x2C",
+          "artTagLODBiasSecondaryEncodingOffset": "0x42C",
+          "artTagLODStreamingOffsetOffset": "0x82C",
+          "artTagEntryCount": 256,
+          "sourceCopies": [
+            "payload+0x28 <- HGCullingSystem state+0x180",
+            "payload+0x2C <- HGCullingSystem state+0x184 (0x400 bytes)",
+            "payload+0x42C <- HGCullingSystem state+0x584 (0x400 bytes)",
+            "payload+0x82C <- HGLODStreamingSystem state+0x74 (0x400 bytes)"
+          ]
+        },
+        "lodBiasEncoding": {
+          "parentSetter": "state+0x180 = parentLODBias^2",
+          "parentGetter": "sqrt(state+0x180)",
+          "artTagPrimarySetter": "state+0x184+4*i = artTagLODBias[i]^2",
+          "artTagPrimaryGetter": "sqrt(state+0x184+4*i)",
+          "artTagSecondarySetter": "state+0x584+4*i = -artTagLODBias[i]^2 when artTagLODBias[i]^2 < 1; otherwise 255",
+          "viewLodBiasMultiplier": "when LODCrossFadeConfig.lodBias != 0, both 256-float ArtTag tables are copied and multiplied by (1 + lodBias / 255)^2"
+        },
+        "artTagLODStreamingOffset": {
+          "getter": "HGLODStreamingSystem state+0x74+4*i",
+          "setter": "HGLODStreamingSystem state+0x74+4*i",
+          "selectionUse": "add the signed per-ArtTag offset to the selected LOD index, then clamp to [0, lodCount-1]"
+        },
         "directDistanceEquation": "distanceSquared = dx*dx + dy*dy + dz*dz; select when lodFloat2.y < distanceSquared <= lodFloat2.x",
         "scaledMetricEquation": "metric = (viewFactor * instanceScale) / max(0.0001, distanceSquared); select when lodFloat2.y * lowerScale < metric <= lodFloat2.x * upperScale",
-        "scaledLowerScaleSelection": "lowerScale is the secondary per-instance scale when lodFloat2.y > 0, otherwise upperScale",
+        "scaledLowerScaleSelection": "the lower bound uses the secondary ArtTag encoding when lodFloat2.y > 0, otherwise the primary squared-bias table",
         "selectionBoundary": "lower bound exclusive; upper bound inclusive",
         "verifiedFloatConstants": [
           {
@@ -961,12 +1053,16 @@
           "the direct squared-distance LOD interval equation",
           "the scaled-metric LOD interval equation and its 0.0001 floor",
           "the six-way LOD job dispatch segment",
+          "the 64-byte dispatch packet and 0xC30-byte payload layouts",
+          "LODCrossFadeConfig enableDither/lodBias packet offsets",
+          "parent and per-ArtTag LOD-bias squared runtime encodings",
+          "the exact per-view lodBias threshold multiplier",
+          "ArtTag LODStreamingOffset production, payload copy, add, and clamp",
           "the correction that the old 10320/Animator binding was invalid",
           "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
         ],
         "open": [
           "semantic names for initially zero runtime-record state bytes",
-          "the upstream meanings of the scaled path's per-instance scale arrays",
           "the unrelated scheduled cull-view +0x18 consumer"
         ]
       },
@@ -1018,6 +1114,60 @@
           "virtualAddress": "0x181086050",
           "sizeBytes": 627,
           "sha256": "1bafbffc56bfaa42445fea8f10bac1047ab44712ee7361456efc281e07196dc3"
+        },
+        {
+          "label": "parent_lod_bias_getter",
+          "virtualAddress": "0x1800F8E00",
+          "sizeBytes": 56,
+          "sha256": "73b6639e35051f978ff90c95633128fb4d2f546587aa9fd3b5d50442991520cb"
+        },
+        {
+          "label": "parent_lod_bias_setter",
+          "virtualAddress": "0x1800F8E40",
+          "sizeBytes": 46,
+          "sha256": "32acbd119ef72da1c87a12550fa6540bea21fa32f85d546a135f4530c5f93120"
+        },
+        {
+          "label": "art_tag_lod_bias_getter",
+          "virtualAddress": "0x1800F9110",
+          "sizeBytes": 282,
+          "sha256": "82d7c9c109821cb8fc2d6b94e67a026d8943a8b0373458f4bd849865ea91ef48"
+        },
+        {
+          "label": "art_tag_lod_bias_setter",
+          "virtualAddress": "0x1800F9230",
+          "sizeBytes": 332,
+          "sha256": "b9e6d0ecdea960846b74895c3b96c756a369faeabde473e38a536bca1907e77c"
+        },
+        {
+          "label": "art_tag_lod_streaming_offset_getter",
+          "virtualAddress": "0x1801EDEB0",
+          "sizeBytes": 32,
+          "sha256": "a2d4580b70a05dbe4b0745a131a9efd0c6656bbd9e4f9f783d1163dfe76e8916"
+        },
+        {
+          "label": "art_tag_lod_streaming_offset_setter",
+          "virtualAddress": "0x1801EDED0",
+          "sizeBytes": 105,
+          "sha256": "623e351a79c9f7a6d3073e3c583ab3d4a1c160c34d5c8629477e1668da8c0186"
+        },
+        {
+          "label": "lod_dispatch_payload_builder",
+          "virtualAddress": "0x18106EAD0",
+          "sizeBytes": 2208,
+          "sha256": "ff7781d15ccf49a3a904fc22a61b6a21a70288776d9b9daca1896b2c7855470c"
+        },
+        {
+          "label": "lod_dispatch_callback_wrapper",
+          "virtualAddress": "0x181060E60",
+          "sizeBytes": 47,
+          "sha256": "10c4bc6310d3b34d29874f0f08ca7641bd52a18013b29e31dc0fab4b752cde58"
+        },
+        {
+          "label": "lod_dispatcher",
+          "virtualAddress": "0x181079C10",
+          "sizeBytes": 1424,
+          "sha256": "78c1178d47a48db4ee56a95f643f54b90be0a7e13ac357f3ec83afbbf5bef5b0"
         },
         {
           "label": "serialized_to_runtime_transform",
@@ -1181,6 +1331,9 @@
       "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
       "the direct-distance and scaled-metric HGTree LOD interval equations",
       "the six-way HGTree LOD job dispatch segment",
+      "the HGTree LOD dispatch packet and payload layouts",
+      "the parent/per-ArtTag LOD-bias encodings and per-view lodBias multiplier",
+      "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
       "the retraction of the out-of-range index 10320 Animator misbinding",
       "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
     ],
@@ -1190,7 +1343,7 @@
       "arbitrary/asymmetric final selected-view planes",
       "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
-      "the semantic names of the HGTree scaled-route arrays and initially zero runtime-state bytes",
+      "the semantic names of the initially zero HGTree runtime-state bytes",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

@@ -100,12 +100,22 @@ NPC archetypes are imported as labeled source kits.
   `0x181079FB1` selects the recovered LOD job variants. The direct route uses
   `minSquared < distanceSquared <= maxSquared`; the scaled route uses
   `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` and the same
-  exclusive-lower/inclusive-upper interval after per-instance scaling. The
+  exclusive-lower/inclusive-upper interval after ArtTag scaling. Its upstream
+  controls are now closed: builder `0x18106EAD0` emits a `0xC30` payload and a
+  64-byte packet containing its pointer plus the 56-byte
+  `LODCrossFadeConfig`; packet `+0x3C/+0x3E` are `enableDither/lodBias`.
+  `HGCullingSystem` stores squared `parentLODBias` at state `+0x180` and the
+  two 256-entry ArtTag encodings at `+0x184/+0x584`. Nonzero view `lodBias`
+  multiplies both copied tables by `(1 + lodBias/255)^2`.
+  `HGLODStreamingSystem.Get/SetArtTagLODStreamingOffset` directly owns the
+  256-int table at state `+0x74`; payload `+0x82C` copies it, and every LOD job
+  adds its signed entry to the selected index before clamping to
+  `[0,lodCount-1]`. The
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The meanings of
-  the initially zero runtime state bytes and scaled-route arrays,
-  the unrelated scheduled consumer of view `+0x18`, any separate
+  the initially zero runtime state bytes, the unrelated scheduled consumer of
+  view `+0x18`, any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
@@ -338,8 +348,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 1. Recover the actual scheduled renderer/entity consumer of cull-view
    `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
-   bounds, and resolve the upstream meanings of the HGTree scaled-route arrays
-   and initially zero runtime-state bytes. Then recover the retail survivor
+   bounds, and resolve the write chain and meanings of the initially zero
+   HGTree runtime-state bytes. Then recover the retail survivor
    list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom

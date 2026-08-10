@@ -1556,13 +1556,22 @@ floats verbatim to the pair array. Dispatch segment `0x181079FB1` selects the
 LOD variants. The direct path selects
 `minSquared < distanceSquared <= maxSquared`; the scaled path tests
 `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` against the same
-exclusive-lower/inclusive-upper interval after per-instance scaling. The
+exclusive-lower/inclusive-upper interval after ArtTag scaling. Builder
+`0x18106EAD0` creates the exact `0xC30` payload; its 64-byte dispatch packet is
+a payload pointer followed by the 56-byte `LODCrossFadeConfig`, so packet
+`+0x3C/+0x3E` are `enableDither/lodBias`. Installed
+`HGCullingSystem.get/set_parentLODBias` and `Get/SetArtTagLODBias` close the
+squared parent bias and both 256-entry ArtTag encodings. Nonzero view
+`lodBias` multiplies both copied tables by `(1 + lodBias/255)^2`.
+`HGLODStreamingSystem.Get/SetArtTagLODStreamingOffset` owns the separate
+256-int table copied to payload `+0x82C`; every LOD job adds that signed ArtTag
+offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The initially zero runtime-state byte
-semantics, scaled-route array meanings, unrelated scheduled consumer of view
-`+0x18`, any separate `sceneCullingMask` consumer, and whether zero makes that
-later gate remain explicit boundaries.
+semantics, unrelated scheduled consumer of view `+0x18`, any separate
+`sceneCullingMask` consumer, and whether zero makes that later gate remain
+explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that

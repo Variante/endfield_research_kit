@@ -264,6 +264,38 @@ class LightCullCapAuditTests(unittest.TestCase):
             "lodFloat2.y < distanceSquared <= lodFloat2.x",
             result["lodSelection"]["directDistanceEquation"],
         )
+        self.assertEqual(
+            result["lodSelection"]["dispatchPacket"]["lodBiasPacketOffset"],
+            "0x3E",
+        )
+        self.assertEqual(
+            result["lodSelection"]["payload"][
+                "artTagLODStreamingOffsetOffset"
+            ],
+            "0x82C",
+        )
+        self.assertIn(
+            "(1 + lodBias / 255)^2",
+            result["lodSelection"]["lodBiasEncoding"][
+                "viewLodBiasMultiplier"
+            ],
+        )
+        self.assertIn(
+            "clamp to [0, lodCount-1]",
+            result["lodSelection"]["artTagLODStreamingOffset"][
+                "selectionUse"
+            ],
+        )
+        self.assertEqual(
+            result["lodControlInternalCalls"]["cullingSystem"][-1]["index"],
+            3303,
+        )
+        self.assertEqual(
+            result["lodControlInternalCalls"]["lodStreamingSystem"][-1][
+                "index"
+            ],
+            280,
+        )
         self.assertNotIn("virtual slot", " ".join(result["callChain"]))
 
     def test_changed_hgtree_renderer_binding_fails_closed(self) -> None:
@@ -281,6 +313,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_create_renderer_list_binding_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_lod_control_body_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1800F9230 and size == 0x14C:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_art_tag_lod_bias_setter_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
