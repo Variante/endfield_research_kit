@@ -239,9 +239,9 @@ def normalize_posix(value: str | Path) -> str:
 
 def audio_output_format(args: argparse.Namespace) -> str:
     """Return the browser-facing format while preserving legacy WEM calls."""
-    source_format = str(getattr(args, "format", "wav") or "wav").lower()
+    source_format = str(getattr(args, "format", "flac") or "flac").lower()
     requested = str(getattr(args, "audio_format", "") or "").lower()
-    output_format = requested or ("flac" if source_format == "wav" else source_format)
+    output_format = requested or ("flac" if source_format in {"flac", "wav"} else source_format)
     if output_format not in {"flac", "wav", "wem"}:
         raise SystemExit(f"Unsupported browser audio format: {output_format}")
     if source_format == "wem" and output_format != "wem":
@@ -253,6 +253,11 @@ def audio_output_format(args: argparse.Namespace) -> str:
         raise SystemExit(
             "WEM output requires --format wem; use the default FLAC output for "
             "browser-playable audio."
+        )
+    if source_format == "flac" and output_format != "flac":
+        raise SystemExit(
+            "Direct FLAC decoding can only keep FLAC output; pass --format wav "
+            "when WAV output is required."
         )
     return output_format
 
@@ -6690,7 +6695,7 @@ def convert_audio_for_webui(
     output_format: str,
 ) -> dict[str, int]:
     """Convert the selected decoded storage roots to the browser format."""
-    if output_format != "flac":
+    if args.format != "wav" or output_format != "flac":
         return {"scanned": 0, "converted": 0, "skipped": 0, "planned": 0, "failed": 0}
 
     storage_names = (
@@ -7222,7 +7227,7 @@ def build_audio(args: argparse.Namespace) -> int:
     prior_source_by_rel = prior_source_metadata_by_rel(language_root, language, output_format)
     decoded_source_by_rel = run_audio_dumper(args, language, language_info)
     convert_audio_for_webui(args, language, output_format)
-    if output_format == "flac":
+    if output_format != args.format:
         decoded_source_by_rel = remap_audio_metadata_extension(
             decoded_source_by_rel,
             output_format,
@@ -7465,17 +7470,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--language", choices=sorted(LANGUAGES), default="CN")
     parser.add_argument(
         "--format",
-        choices=("wav", "wem"),
-        default="wav",
-        help="AnimeStudio decode format before WebUI conversion (default: wav).",
+        choices=("flac", "wav", "wem"),
+        default="flac",
+        help="AnimeStudio decode format (default: flac; no intermediate WAV file).",
     )
     parser.add_argument(
         "--audio-format",
         choices=("flac", "wav", "wem"),
         default=None,
         help=(
-            "Browser-facing output format. WAV decodes default to lossless FLAC; "
-            "explicit --format wem keeps legacy WEM output."
+            "Browser-facing output format. Direct FLAC is the default; explicit "
+            "--format wav or --format wem keeps those legacy outputs."
         ),
     )
     parser.add_argument(
@@ -7494,7 +7499,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)
-    parser.add_argument("--ffmpeg", type=Path, default=None, help="Path to ffmpeg for WAV-to-FLAC conversion.")
+    parser.add_argument("--ffmpeg", type=Path, default=None, help="Path to ffmpeg for legacy WAV-to-FLAC conversion.")
     parser.add_argument(
         "--audio-conversion-jobs",
         type=int,
