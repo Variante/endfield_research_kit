@@ -1717,7 +1717,18 @@ handles, clears the mapped Material/main-Mesh/shadow-proxy runtime words, and
 zeros both state-mask bytes; type 9 adds merged-render-collider cleanup.
 Shared `LoadingToUnloaded` walks pending ranges only, releases owner handles,
 clears pending byte `+0x04`, and preserves available byte `+0x05` and mapped
-runtime words. Native component names remain open. The
+runtime words. Transition-1 loading is now exact too. Dedicated
+`HGLODStreamingSystem` calls bind `enableLODStreaming` to state `+0x38`,
+keep-last-resource to `+0x39`, `LODCrossFadeConfig` to `+0x3C`, and squared
+HLOD unload distances to `+0x474`. Installed IL2CPP field-offset rows close
+embedded config `c1` at `+0x18` and
+`RenderObjectLODInfoComponent.lodCenter` at `+0x00`. Type 9 requests the
+terminal LOD when streaming is enabled and all LODs otherwise. Type 0 requests
+its single row directly when streaming is disabled; its enabled branch gates
+on squared `lodCenter`-to-`c1` distance and an unnamed component-75 HLOD-level
+byte. Both callbacks acquire Material/Mesh/shadow-proxy-Mesh and append exact
+24-byte source/AssetType/handle descriptors at transition context `+0x58`.
+The later submission continuation and native component names remain open. The
 complete hash-pinned `StreamingSceneManagerScript..ctor` binds only bits
 12/14/15/19/25/29/32/33/40 through the managed Mono-converter path; HGTree
 bit 41 is absent. The complete installed-VFS corpus of 117

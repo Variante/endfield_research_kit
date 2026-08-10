@@ -268,6 +268,19 @@ NPC archetypes are imported as labeled source kits.
   clears only pending byte `+0x04`, and preserves the available byte and
   mapped runtime words. Code admits selector bit 74, but no serialized ID-74
   companion or native name is claimed.
+  The paired transition-1 load path is now exact. HG internal calls 273..282
+  name `enableLODStreaming` at state `+0x38`, keep-last-resource at `+0x39`,
+  embedded `LODCrossFadeConfig` at `+0x3C`, and the squared HLOD unload-
+  distance table at `+0x474`. Installed IL2CPP field offsets place config
+  `c1` at embedded `+0x18` and managed component-6
+  `RenderObjectLODInfoComponent.lodCenter` at `+0x00`. Type 9 requests either
+  the terminal LOD or every LOD from the streaming switch. Type 0 requests
+  its single row directly when streaming is disabled; when enabled it gates
+  the request by squared `lodCenter`-to-`c1` distance and an unnamed
+  component-75 HLOD-level byte. Both callbacks acquire the exact
+  Material/Mesh/shadow-proxy-Mesh triplet and append 24-byte
+  source/AssetType/handle descriptors at transition context `+0x58`. The
+  later submission continuation and standalone component names remain open.
   The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
   converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
   binding, excluding that static constructor delegate route. A direct installed-VFS
@@ -577,12 +590,12 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the exact native type names for component 67 and its 68..74
-   companion-capacity family from the remaining native descriptor/RTTI
-   registries; lifecycle slots, transition-6/8 teardown, managed `get_id`
-   namespace, serialized LOD-count/range producer, and HGTree renderer-list
-   filter callers are closed. Then recover the retail
-   survivor list at the exact `HGCamera.DoECSCulling` return boundary,
+1. Resolve the exact native type names for component 67, its 68..74
+   companion-capacity family, and component 75 from remaining pure-native
+   descriptor/RTTI registries; lifecycle slots, transition-1 load requests,
+   transition-6/8 teardown, managed layouts, serialized LOD-count/range
+   producer, and HGTree renderer-list filter callers are closed. Then recover
+   the retail survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
    carry-in and other display aspects; populate exact shadow, depth, GBuffer,

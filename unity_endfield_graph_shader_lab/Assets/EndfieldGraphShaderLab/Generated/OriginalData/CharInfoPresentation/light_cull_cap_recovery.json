@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v40",
-  "status": "component67_unload_state_machine_resolved",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The complete installed CullView-named internal-call surface is now closed as well. AddCullViewByPlanes shares the same scheduled constructor; DispatchBatchCullingJobs passes the manager+0x38 view-pointer array directly into the batch core; the complete per-view loop, both selected predicates, GetCullingViewFence, and ResetCullViews do not read +0x18. AddCullChildViewByPlanes writes a separate manager+0x58 array of 0xE8-byte records. The installed screenSizeMinimumSquared field is therefore write-only on this closed native surface, with no post-dispatch packet copy or gate. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. Runtime record +0x08 has a mutable renderFlags lifecycle: four particle setup variants replace it with bit 20 and a scheduled callback ORs it into render flags. The prior resource-to-record offsets were four bytes high because writer targets were measured from the blob header while runtime records begin at blob+0x04. A newly hash-pinned independent HGMeshRendererData initializer closes the correction: native m_Materials/m_Meshes/m_ShadowProxyMeshes at +0x58/+0x78/+0x98 resolve through singleton Material and Mesh GeometryHandle maps at +0x90/+0xA0 and write record +0x04/+0x08/+0x0C. The availability writers and cleanup use the same three destinations. Record +0x0C is therefore the m_ShadowProxyMeshes GeometryHandle, not the main Mesh word or a property-flag seed. Both owner transitions acquire that third resource handle with kind 2. HyperGryph internal-call entry 437 names the forwarding wrapper HGResourceManager::LoadAsync_Injected, and its IL2CPP signature plus AssetType literals close kind 2 as Mesh. Entries 440/441 close the handle-slot +0x18 word as a Unity asset instance ID: UpdateAssetHandle writes it and GetAsset uses it to recover the Unity object. The availability writers gate on slot+0x10 ready==1, map that instance ID through a separate 12-byte table, and copy entry+0x08 to record+0x0C. Cleanup releases the third handle and clears the same field; the scheduled callback consumes it in a combined masked filter overlay. HyperGryph internal-call entries 300/301 name the value exactly through HGGeometrySystem::GetGeometryHandle/GetMesh. The hash-pinned slot builder closes bits 0..23 as the slot index and bits 24..31 as an 8-bit generation incremented at slot +0x06. The engine identity and bit packing are therefore closed. Installed metadata then names the upstream CreateRendererList UInt32 arguments renderFlagsMask, renderFlagsValue, and lightModeMask. The binding, core, and scheduler preserve them into descriptor +0x40/+0x44/+0x48; the callback's +0x04 descriptor bias exposes them at +0x3C/+0x40/+0x44. Thus the GeometryHandle is intentionally folded into the HGTree renderFlags mask/value ABI rather than being a standalone filter bitfield. The current GameAssembly direct-call census closes seven managed callers: punctual static/dynamic shadows, Deferred PreZ GBuffer, ASM static shadows, and both directional CSM builders. HGRenderFlags metadata, the punctual GetECSRenderFlags truth table, and the four-entry CSM initializer close every direct caller's mask/value and light-mode contract. Record +0x10 is not seeded by any of the three resource maps; it remains Renderer property flags maintained at blob+0x14 by the common state synchronizer. Dedicated HyperGryph internal-call entry 204 names record +0x14 exactly as enabledLightModes; its hash-pinned core writes the supplied UInt32 value to every record. IL2CPP metadata closes HGShaderLightMode as 31 named render-pass bits spanning 0..30, and the hash-pinned gameplay PerDrawPassConfig parser and Apply method pass that mask through the managed wrapper. The Renderer base constructor also defaults native field +0x250 to 0xFFFFFFFF; two direct record builders copy it to record +0x14, while the generic path carries it through constructor input +0x20 before the same write. The two HGTree renderer-list callbacks compare job+0x44 against a separate renderer-entry +0x1C word. Two hash-pinned entry builders clear that word, query all 31 installed HGShaderLightMode pass names against the renderer material/shader, and set the supported bits. The entry word is therefore a shader-supported-pass mask, not a projection of record +0x14. Separately, HyperGryph internal-call entries 151/152 and 164/165 close GPUDrivenRenderer V1/V2 default/PreZ renderer-list routes. Their four job callbacks carry the request mask in descriptor +0x54, select the 0x7F00 ECS renderer column, and their representative V1/V2 default/PreZ consumers read record +0x14 at stride 0x18. That enabledLightModes word is ORed with candidate-pass and callback-derived flags before job+0x48/+0x4C mask/value filtering; the requested mask is independently intersected with candidate-pass +0x1C. All 53 direct calls to the renderer-blob lookup are now pinned and partitioned into 44 exact 0x7F00-family calls across 41 entry CFGs and nine other-family calls. Cross-hot/cold CFG taint finds no exact-path record +0x14 read, non-stack record-base pointer store, record-base return, or address-taken stack spill. The seven exact-result stack stores are local spills or reused slots. The six direct blob+0x04 call escapes are three zero initializers and three calls to one classifier that reads only record +0x00 and renderer-entry flags. One additional blob+0x00 tail memcpy copies the complete count/runtime-record/LOD-pair layout between exact-family blobs, carrying +0x14 verbatim without interpreting it. The current and obsolete Factory CreateBatchedEntities internal calls both reach that helper through parallel hash-pinned copy cores. The three HGTree CreateRendererList internal calls (default, child-view, and PreZ) independently converge on the same scheduler and selected callback family, excluding an alternate variant-specific +0x14 consumer. A third direct component-grouping consumer reads only record +0x00/+0x04/+0x08/+0x10; the apparent callback-A +0x14/0x18-stride read is separately proven to be an unrelated ECS component-column float. The exact downstream GPU-driven render-stage consumer of record +0x14 is therefore closed outside the direct blob-lookup surface. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, the zero reserved/alignment word at +0x06, and eight cumulative renderer-range endpoints. All 25 direct calls to its two accessors and 21 logical caller bodies are pinned. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6. The complete installed UnityEngine.HyperGryph.ECS Int32 get_id census now pins all 30 metadata declarations, all 30 codegen pointer slots, and all 29 concrete constant-return bodies. Its exposed ID set contains no 67, proving that component 67 has no managed name on this shipped surface rather than merely excluding two likely candidates. The native ECS transition registry is now closed as a 0x288-byte entity-type record with ten 0x40-byte EntityTransition callback slots at +0x08. Installed metadata names all ten transitions, and all 105 callback-installer calls are partitioned between two hash-pinned StreamingGameplayManager construction paths (52 and 53 calls). Both paths install identical component-67 callbacks for Render/type 0 and MergedRenderCollider/type 9 at UnloadedToLoading, LoadingToLoaded, UnloadingToUnloaded, and LoadingToUnloaded. The managed StreamingSceneManagerScript replaces only Water/type 1 and WaterDecal/type 13 registries, so it does not displace either native component-67 owner path. The transition teardown is now closed as well. A high-qword 0x7F0 intersection admits capacity-class companion ids 68..74; every component-67 archetype in the complete serialized corpus yields exactly one of ids 68..73, whose 8-byte header plus 40-byte rows provide capacities 1/2/4/8/16/32. UnloadingToUnloaded walks pending|available LOD ranges, releases all three owner resource handles, clears the mapped Material/Mesh/shadow-proxy runtime words, and zeroes both mask bytes. The shared LoadingToUnloaded callback walks pending ranges only, releases the owner handles, clears only pending byte +0x04, and preserves the available byte and mapped runtime words. Type 9 alone performs its additional merged-render-collider cleanup. The entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, which narrowed the producer search to copied StreamingSceneV2 data. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. StreamingSceneV2 root fields 6/7 now close the paired native entity groups and archetype descriptions. Each 8-byte descriptor contains an Int16 component id, Int16 element size, and UInt32 auxiliary value; component 67 is serialized with size 24. The hash-pinned native copier at 0x1801F95E0 copies each entityCount*elementSize initial-data slice directly into native ECS storage. Across all 83 map scopes, the 1,230,041 distinct component-67 entity ids exactly equal the distinct type-0/type-9 owner set. All 1,305,818 serialized occurrences initialize lodCount in 1..6, state bytes 8/8/8/0/0, a zero reserved word at +0x06, zero readiness, and one of 102 cumulative renderer-range patterns. Duplicate map/entity records are byte-identical. Thus the LOD count and range producer is the original game-binary initial-data blob, not a later ConvertFrom inference. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The component-67 standalone native type name, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v41",
+  "status": "component67_load_request_state_machine_resolved",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The complete installed CullView-named internal-call surface is now closed as well. AddCullViewByPlanes shares the same scheduled constructor; DispatchBatchCullingJobs passes the manager+0x38 view-pointer array directly into the batch core; the complete per-view loop, both selected predicates, GetCullingViewFence, and ResetCullViews do not read +0x18. AddCullChildViewByPlanes writes a separate manager+0x58 array of 0xE8-byte records. The installed screenSizeMinimumSquared field is therefore write-only on this closed native surface, with no post-dispatch packet copy or gate. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. Runtime record +0x08 has a mutable renderFlags lifecycle: four particle setup variants replace it with bit 20 and a scheduled callback ORs it into render flags. The prior resource-to-record offsets were four bytes high because writer targets were measured from the blob header while runtime records begin at blob+0x04. A newly hash-pinned independent HGMeshRendererData initializer closes the correction: native m_Materials/m_Meshes/m_ShadowProxyMeshes at +0x58/+0x78/+0x98 resolve through singleton Material and Mesh GeometryHandle maps at +0x90/+0xA0 and write record +0x04/+0x08/+0x0C. The availability writers and cleanup use the same three destinations. Record +0x0C is therefore the m_ShadowProxyMeshes GeometryHandle, not the main Mesh word or a property-flag seed. Both owner transitions acquire that third resource handle with kind 2. HyperGryph internal-call entry 437 names the forwarding wrapper HGResourceManager::LoadAsync_Injected, and its IL2CPP signature plus AssetType literals close kind 2 as Mesh. Entries 440/441 close the handle-slot +0x18 word as a Unity asset instance ID: UpdateAssetHandle writes it and GetAsset uses it to recover the Unity object. The availability writers gate on slot+0x10 ready==1, map that instance ID through a separate 12-byte table, and copy entry+0x08 to record+0x0C. Cleanup releases the third handle and clears the same field; the scheduled callback consumes it in a combined masked filter overlay. HyperGryph internal-call entries 300/301 name the value exactly through HGGeometrySystem::GetGeometryHandle/GetMesh. The hash-pinned slot builder closes bits 0..23 as the slot index and bits 24..31 as an 8-bit generation incremented at slot +0x06. The engine identity and bit packing are therefore closed. Installed metadata then names the upstream CreateRendererList UInt32 arguments renderFlagsMask, renderFlagsValue, and lightModeMask. The binding, core, and scheduler preserve them into descriptor +0x40/+0x44/+0x48; the callback's +0x04 descriptor bias exposes them at +0x3C/+0x40/+0x44. Thus the GeometryHandle is intentionally folded into the HGTree renderFlags mask/value ABI rather than being a standalone filter bitfield. The current GameAssembly direct-call census closes seven managed callers: punctual static/dynamic shadows, Deferred PreZ GBuffer, ASM static shadows, and both directional CSM builders. HGRenderFlags metadata, the punctual GetECSRenderFlags truth table, and the four-entry CSM initializer close every direct caller's mask/value and light-mode contract. Record +0x10 is not seeded by any of the three resource maps; it remains Renderer property flags maintained at blob+0x14 by the common state synchronizer. Dedicated HyperGryph internal-call entry 204 names record +0x14 exactly as enabledLightModes; its hash-pinned core writes the supplied UInt32 value to every record. IL2CPP metadata closes HGShaderLightMode as 31 named render-pass bits spanning 0..30, and the hash-pinned gameplay PerDrawPassConfig parser and Apply method pass that mask through the managed wrapper. The Renderer base constructor also defaults native field +0x250 to 0xFFFFFFFF; two direct record builders copy it to record +0x14, while the generic path carries it through constructor input +0x20 before the same write. The two HGTree renderer-list callbacks compare job+0x44 against a separate renderer-entry +0x1C word. Two hash-pinned entry builders clear that word, query all 31 installed HGShaderLightMode pass names against the renderer material/shader, and set the supported bits. The entry word is therefore a shader-supported-pass mask, not a projection of record +0x14. Separately, HyperGryph internal-call entries 151/152 and 164/165 close GPUDrivenRenderer V1/V2 default/PreZ renderer-list routes. Their four job callbacks carry the request mask in descriptor +0x54, select the 0x7F00 ECS renderer column, and their representative V1/V2 default/PreZ consumers read record +0x14 at stride 0x18. That enabledLightModes word is ORed with candidate-pass and callback-derived flags before job+0x48/+0x4C mask/value filtering; the requested mask is independently intersected with candidate-pass +0x1C. All 53 direct calls to the renderer-blob lookup are now pinned and partitioned into 44 exact 0x7F00-family calls across 41 entry CFGs and nine other-family calls. Cross-hot/cold CFG taint finds no exact-path record +0x14 read, non-stack record-base pointer store, record-base return, or address-taken stack spill. The seven exact-result stack stores are local spills or reused slots. The six direct blob+0x04 call escapes are three zero initializers and three calls to one classifier that reads only record +0x00 and renderer-entry flags. One additional blob+0x00 tail memcpy copies the complete count/runtime-record/LOD-pair layout between exact-family blobs, carrying +0x14 verbatim without interpreting it. The current and obsolete Factory CreateBatchedEntities internal calls both reach that helper through parallel hash-pinned copy cores. The three HGTree CreateRendererList internal calls (default, child-view, and PreZ) independently converge on the same scheduler and selected callback family, excluding an alternate variant-specific +0x14 consumer. A third direct component-grouping consumer reads only record +0x00/+0x04/+0x08/+0x10; the apparent callback-A +0x14/0x18-stride read is separately proven to be an unrelated ECS component-column float. The exact downstream GPU-driven render-stage consumer of record +0x14 is therefore closed outside the direct blob-lookup surface. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, the zero reserved/alignment word at +0x06, and eight cumulative renderer-range endpoints. All 25 direct calls to its two accessors and 21 logical caller bodies are pinned. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6. The complete installed UnityEngine.HyperGryph.ECS Int32 get_id census now pins all 30 metadata declarations, all 30 codegen pointer slots, and all 29 concrete constant-return bodies. Its exposed ID set contains no 67, proving that component 67 has no managed name on this shipped surface rather than merely excluding two likely candidates. The native ECS transition registry is now closed as a 0x288-byte entity-type record with ten 0x40-byte EntityTransition callback slots at +0x08. Installed metadata names all ten transitions, and all 105 callback-installer calls are partitioned between two hash-pinned StreamingGameplayManager construction paths (52 and 53 calls). Both paths install identical component-67 callbacks for Render/type 0 and MergedRenderCollider/type 9 at UnloadedToLoading, LoadingToLoaded, UnloadingToUnloaded, and LoadingToUnloaded. The managed StreamingSceneManagerScript replaces only Water/type 1 and WaterDecal/type 13 registries, so it does not displace either native component-67 owner path. The transition teardown is now closed as well. A high-qword 0x7F0 intersection admits capacity-class companion ids 68..74; every component-67 archetype in the complete serialized corpus yields exactly one of ids 68..73, whose 8-byte header plus 40-byte rows provide capacities 1/2/4/8/16/32. UnloadingToUnloaded walks pending|available LOD ranges, releases all three owner resource handles, clears the mapped Material/Mesh/shadow-proxy runtime words, and zeroes both mask bytes. The shared LoadingToUnloaded callback walks pending ranges only, releases the owner handles, clears only pending byte +0x04, and preserves the available byte and mapped runtime words. Type 9 alone performs its additional merged-render-collider cleanup. The paired load request path is now closed too. Named HGLODStreamingSystem entries bind enableLODStreaming to state+0x38, keep-last-resource to +0x39, LODCrossFadeConfig to +0x3C, and the squared HLOD unload-distance table to +0x474. Installed IL2CPP fieldOffsets prove config c1 at +0x18 and RenderObjectLODInfoComponent.lodCenter at +0x00 in their embedded value layouts. MergedRenderCollider requests either the terminal LOD or all LODs; Render requests its one row directly when streaming is disabled, while the streaming branch gates it by squared lodCenter-to-config-c1 distance and the unnamed component-75 HLOD-level byte. Both callbacks acquire the exact Material/Mesh/shadow-proxy-Mesh triplet and append 24-byte source/AssetType/handle descriptors at transition context+0x58. The entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, which narrowed the producer search to copied StreamingSceneV2 data. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. StreamingSceneV2 root fields 6/7 now close the paired native entity groups and archetype descriptions. Each 8-byte descriptor contains an Int16 component id, Int16 element size, and UInt32 auxiliary value; component 67 is serialized with size 24. The hash-pinned native copier at 0x1801F95E0 copies each entityCount*elementSize initial-data slice directly into native ECS storage. Across all 83 map scopes, the 1,230,041 distinct component-67 entity ids exactly equal the distinct type-0/type-9 owner set. All 1,305,818 serialized occurrences initialize lodCount in 1..6, state bytes 8/8/8/0/0, a zero reserved word at +0x06, zero readiness, and one of 102 cumulative renderer-range patterns. Duplicate map/entity records are byte-identical. Thus the LOD count and range producer is the original game-binary initial-data blob, not a later ConvertFrom inference. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The standalone native type names for components 67 through 75, the post-descriptor request-submission continuation, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -3122,6 +3122,42 @@
         ],
         "lodStreamingSystem": [
           {
+            "label": "enableLODStreaming.get",
+            "index": 273,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::get_enableLODStreaming",
+            "targetVirtualAddress": "0x1801EDCE0"
+          },
+          {
+            "label": "enableLODStreaming.set",
+            "index": 274,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::set_enableLODStreaming",
+            "targetVirtualAddress": "0x1801EDD00"
+          },
+          {
+            "label": "enableLODStreamingKeepLastLODResource.get",
+            "index": 275,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::get_enableLODStreamingKeepLastLODResource",
+            "targetVirtualAddress": "0x1801EDD60"
+          },
+          {
+            "label": "enableLODStreamingKeepLastLODResource.set",
+            "index": 276,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::set_enableLODStreamingKeepLastLODResource",
+            "targetVirtualAddress": "0x1801EDD80"
+          },
+          {
+            "label": "lodConfig.get",
+            "index": 277,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::get_lodConfig_Injected",
+            "targetVirtualAddress": "0x1801EDDE0"
+          },
+          {
+            "label": "lodConfig.set",
+            "index": 278,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::set_lodConfig_Injected",
+            "targetVirtualAddress": "0x1801EDE20"
+          },
+          {
             "label": "artTagLODStreamingOffset.get",
             "index": 279,
             "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::GetArtTagLODStreamingOffset",
@@ -3132,8 +3168,172 @@
             "index": 280,
             "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::SetArtTagLODStreamingOffset",
             "targetVirtualAddress": "0x1801EDED0"
+          },
+          {
+            "label": "hlodUnloadDistance.get",
+            "index": 281,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::GetHLODUnloadDistance",
+            "targetVirtualAddress": "0x1801EDF40"
+          },
+          {
+            "label": "hlodUnloadDistance.set",
+            "index": 282,
+            "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::SetHLODUnloadDistance",
+            "targetVirtualAddress": "0x1801EDF80"
           }
-        ]
+        ],
+        "managedFieldContract": {
+          "metadataRegistrationVirtualAddress": "0x18B921C30",
+          "fieldOffsetsTableVirtualAddress": "0x18E7B5840",
+          "managedValueTypes": [
+            {
+              "typeIndex": 51364,
+              "token": "0x020002EE",
+              "fullName": "UnityEngine.HyperGryph.LODCrossFadeConfig",
+              "fieldOffsetsVirtualAddress": "0x18B9F1B58",
+              "fields": [
+                {
+                  "name": "cameraPosition",
+                  "fieldIndex": 248548,
+                  "token": "0x040007C4",
+                  "metadataTypeIndex": 169600,
+                  "boxedOffset": "0x10",
+                  "unboxedOffset": "0x0"
+                },
+                {
+                  "name": "c0",
+                  "fieldIndex": 248549,
+                  "token": "0x040007C5",
+                  "metadataTypeIndex": 169600,
+                  "boxedOffset": "0x1C",
+                  "unboxedOffset": "0xC"
+                },
+                {
+                  "name": "c1",
+                  "fieldIndex": 248550,
+                  "token": "0x040007C6",
+                  "metadataTypeIndex": 169600,
+                  "boxedOffset": "0x28",
+                  "unboxedOffset": "0x18"
+                },
+                {
+                  "name": "fraction",
+                  "fieldIndex": 248551,
+                  "token": "0x040007C7",
+                  "metadataTypeIndex": 163868,
+                  "boxedOffset": "0x34",
+                  "unboxedOffset": "0x24"
+                },
+                {
+                  "name": "currMaxProjFactorSquared",
+                  "fieldIndex": 248552,
+                  "token": "0x040007C8",
+                  "metadataTypeIndex": 163868,
+                  "boxedOffset": "0x38",
+                  "unboxedOffset": "0x28"
+                },
+                {
+                  "name": "maxProjFactorSquared0",
+                  "fieldIndex": 248553,
+                  "token": "0x040007C9",
+                  "metadataTypeIndex": 163868,
+                  "boxedOffset": "0x3C",
+                  "unboxedOffset": "0x2C"
+                },
+                {
+                  "name": "maxProjFactorSquared1",
+                  "fieldIndex": 248554,
+                  "token": "0x040007CA",
+                  "metadataTypeIndex": 163868,
+                  "boxedOffset": "0x40",
+                  "unboxedOffset": "0x30"
+                },
+                {
+                  "name": "enableDither",
+                  "fieldIndex": 248555,
+                  "token": "0x040007CB",
+                  "metadataTypeIndex": 130824,
+                  "boxedOffset": "0x44",
+                  "unboxedOffset": "0x34"
+                },
+                {
+                  "name": "isOrtho",
+                  "fieldIndex": 248556,
+                  "token": "0x040007CC",
+                  "metadataTypeIndex": 130824,
+                  "boxedOffset": "0x45",
+                  "unboxedOffset": "0x35"
+                },
+                {
+                  "name": "lodBias",
+                  "fieldIndex": 248557,
+                  "token": "0x040007CD",
+                  "metadataTypeIndex": 131232,
+                  "boxedOffset": "0x46",
+                  "unboxedOffset": "0x36"
+                }
+              ]
+            },
+            {
+              "typeIndex": 61072,
+              "token": "0x020000C3",
+              "fullName": "UnityEngine.HyperGryph.ECS.RenderObjectLODInfoComponent",
+              "fieldOffsetsVirtualAddress": "0x18BA2DAC0",
+              "fields": [
+                {
+                  "name": "lodCenter",
+                  "fieldIndex": 296804,
+                  "token": "0x040002BE",
+                  "metadataTypeIndex": 169600,
+                  "boxedOffset": "0x10",
+                  "unboxedOffset": "0x0"
+                },
+                {
+                  "name": "lodObjectHalfSizeSquared",
+                  "fieldIndex": 296805,
+                  "token": "0x040002BF",
+                  "metadataTypeIndex": 163868,
+                  "boxedOffset": "0x1C",
+                  "unboxedOffset": "0xC"
+                },
+                {
+                  "name": "enableDither",
+                  "fieldIndex": 296806,
+                  "token": "0x040002C0",
+                  "metadataTypeIndex": 130824,
+                  "boxedOffset": "0x20",
+                  "unboxedOffset": "0x10"
+                },
+                {
+                  "name": "lodCullingOptions",
+                  "fieldIndex": 296807,
+                  "token": "0x040002C1",
+                  "metadataTypeIndex": 131232,
+                  "boxedOffset": "0x21",
+                  "unboxedOffset": "0x11"
+                },
+                {
+                  "name": "padding0",
+                  "fieldIndex": 296808,
+                  "token": "0x040002C2",
+                  "metadataTypeIndex": 131232,
+                  "boxedOffset": "0x22",
+                  "unboxedOffset": "0x12"
+                },
+                {
+                  "name": "padding1",
+                  "fieldIndex": 296809,
+                  "token": "0x040002C3",
+                  "metadataTypeIndex": 131232,
+                  "boxedOffset": "0x23",
+                  "unboxedOffset": "0x13"
+                }
+              ]
+            }
+          ],
+          "boxedHeaderBytes": 16,
+          "boundary": "boxed offsets come from the installed IL2CPP fieldOffsets table; the embedded ECS/config offsets subtract the 16-byte object header"
+        }
       },
       "callChain": [
         "HGTreeRender CreateRendererList variants at indices 564/565/566",
@@ -4230,6 +4430,183 @@
             ],
             "boundary": "the installed callbacks support selector bit 74, but the complete serialized corpus contains only ids 68..73; no native type names are claimed for this capacity-class family"
           },
+          "lodStreamingControl": {
+            "internalCalls": [
+              {
+                "label": "enableLODStreaming.get",
+                "index": 273,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::get_enableLODStreaming",
+                "targetVirtualAddress": "0x1801EDCE0"
+              },
+              {
+                "label": "enableLODStreaming.set",
+                "index": 274,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::set_enableLODStreaming",
+                "targetVirtualAddress": "0x1801EDD00"
+              },
+              {
+                "label": "enableLODStreamingKeepLastLODResource.get",
+                "index": 275,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::get_enableLODStreamingKeepLastLODResource",
+                "targetVirtualAddress": "0x1801EDD60"
+              },
+              {
+                "label": "enableLODStreamingKeepLastLODResource.set",
+                "index": 276,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::set_enableLODStreamingKeepLastLODResource",
+                "targetVirtualAddress": "0x1801EDD80"
+              },
+              {
+                "label": "lodConfig.get",
+                "index": 277,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::get_lodConfig_Injected",
+                "targetVirtualAddress": "0x1801EDDE0"
+              },
+              {
+                "label": "lodConfig.set",
+                "index": 278,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::set_lodConfig_Injected",
+                "targetVirtualAddress": "0x1801EDE20"
+              },
+              {
+                "label": "artTagLODStreamingOffset.get",
+                "index": 279,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::GetArtTagLODStreamingOffset",
+                "targetVirtualAddress": "0x1801EDEB0"
+              },
+              {
+                "label": "artTagLODStreamingOffset.set",
+                "index": 280,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::SetArtTagLODStreamingOffset",
+                "targetVirtualAddress": "0x1801EDED0"
+              },
+              {
+                "label": "hlodUnloadDistance.get",
+                "index": 281,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::GetHLODUnloadDistance",
+                "targetVirtualAddress": "0x1801EDF40"
+              },
+              {
+                "label": "hlodUnloadDistance.set",
+                "index": 282,
+                "name": "UnityEngine.HyperGryph.HGLODStreamingSystem::SetHLODUnloadDistance",
+                "targetVirtualAddress": "0x1801EDF80"
+              }
+            ],
+            "singletonAccessorVirtualAddress": "0x180FC5E60",
+            "statePointerOffset": "0x100",
+            "stateFields": {
+              "enableLODStreaming": "0x38",
+              "enableLODStreamingKeepLastLODResource": "0x39",
+              "lodConfig": "0x3C",
+              "hlodUnloadDistanceTable": "0x474 + 4 * hlodLevel"
+            },
+            "managedFieldContractRef": "lodControlInternalCalls.managedFieldContract",
+            "embeddedManagedOffsets": {
+              "LODCrossFadeConfig.c1": "0x18",
+              "RenderObjectLODInfoComponent.lodCenter": "0x00"
+            },
+            "hlodUnloadDistanceApi": {
+              "storedValue": "distance squared",
+              "getter": "square root of the stored value",
+              "setter": "stores the square of the input distance"
+            },
+            "loadCallbackInputs": {
+              "enableLODStreaming": "state+0x38",
+              "lodCrossFadeConfigC1": [
+                "state+0x54",
+                "state+0x58",
+                "state+0x5C"
+              ],
+              "hlodUnloadDistanceSquared": "state+0x474+4*component75.byte0"
+            },
+            "boundary": "the installed internal-call names and bodies close the state offsets used by the two load callbacks; keep-last-resource is named at +0x39 but is not claimed as an input of those two callbacks"
+          },
+          "loadRequestStateMachine": {
+            "transition": {
+              "name": "UnloadedToLoading",
+              "value": 1
+            },
+            "acquireCoreVirtualAddress": "0x180FBFC60",
+            "requestFlags": "0xF",
+            "resourceTriplet": [
+              {
+                "sourcePointerOffset": "0x00",
+                "ownerHandleOffset": "0x18",
+                "assetType": 1,
+                "assetTypeName": "Material"
+              },
+              {
+                "sourcePointerOffset": "0x08",
+                "ownerHandleOffset": "0x1C",
+                "assetType": 2,
+                "assetTypeName": "Mesh"
+              },
+              {
+                "sourcePointerOffset": "0x10",
+                "ownerHandleOffset": "0x20",
+                "assetType": 2,
+                "assetTypeName": "Mesh (shadow proxy)"
+              }
+            ],
+            "requestDescriptor": {
+              "ownerVectorOffset": "transitionContext+0x58",
+              "strideBytes": 24,
+              "fields": [
+                {
+                  "offset": "0x00",
+                  "meaning": "source pointer"
+                },
+                {
+                  "offset": "0x08",
+                  "meaning": "AssetType value"
+                },
+                {
+                  "offset": "0x10",
+                  "meaning": "resource handle"
+                }
+              ]
+            },
+            "mergedRenderCollider": {
+              "entityType": 9,
+              "callbackVirtualAddress": "0x181153310",
+              "streamingEnabled": {
+                "selectedLod": "lodCount - 1",
+                "pendingMask": "1 << (lodCount - 1)",
+                "rangeStart": "0 for LOD0, otherwise cumulativeRange[lodCount - 2]",
+                "rangeEnd": "cumulativeRange[lodCount - 1]"
+              },
+              "streamingDisabled": {
+                "selectedLods": "all logical LODs",
+                "pendingMask": "(1 << lodCount) - 1",
+                "rangeStart": 0,
+                "rangeEnd": "companion renderer row count"
+              }
+            },
+            "render": {
+              "entityType": 0,
+              "callbackVirtualAddress": "0x181154230",
+              "streamingDisabled": {
+                "pendingMask": 1,
+                "selectedRows": [
+                  0
+                ]
+              },
+              "streamingEnabled": {
+                "lodCenter": "component 6 RenderObjectLODInfoComponent+0x00",
+                "lodConfigPoint": "LODCrossFadeConfig.c1",
+                "hlodLevel": "unnamed native component 75 byte +0x00",
+                "distanceEquation": "squared_distance(lodCenter, lodConfig.c1)",
+                "requestCondition": "distanceSquared >= GetHLODUnloadDistance(hlodLevel)^2",
+                "skipCondition": "distanceSquared < GetHLODUnloadDistance(hlodLevel)^2",
+                "requestedRows": [
+                  0
+                ],
+                "pendingMaskWhenRequested": 1
+              }
+            },
+            "closedBoundary": "LOD selection, pending-mask writes, source/handle triplets, AssetType values, and 24-byte request descriptor emission are closed for both callbacks; the later request-submission continuation and native names for components 67/68..74/75 remain open"
+          },
           "unloadStateMachine": {
             "releaseCoreVirtualAddress": "0x180FBF6B0",
             "lodRangeEquation": {
@@ -4675,6 +5052,66 @@
         ]
       },
       "verifiedBodies": [
+        {
+          "label": "lod_streaming_get_enable",
+          "virtualAddress": "0x1801EDCE0",
+          "sizeBytes": 25,
+          "sha256": "14152dd46b040930f11dd9413b469d0198c7946ce12a37997d9d8a51bfa84a85"
+        },
+        {
+          "label": "lod_streaming_set_enable",
+          "virtualAddress": "0x1801EDD00",
+          "sizeBytes": 92,
+          "sha256": "50cf4ef97f1f09f9a91f2154b3ac0a14645e0e69cfb32b318159bfc55a80440e"
+        },
+        {
+          "label": "lod_streaming_get_keep_last_resource",
+          "virtualAddress": "0x1801EDD60",
+          "sizeBytes": 25,
+          "sha256": "5d147175fd5ad9d715b737d0a2208b810ddcafd351f867b5429b2784ca7afa22"
+        },
+        {
+          "label": "lod_streaming_set_keep_last_resource",
+          "virtualAddress": "0x1801EDD80",
+          "sizeBytes": 92,
+          "sha256": "be5b67e49adebd8c2dec936047b022527c5a6bac6e091dc227aa54ea6e1d8a68"
+        },
+        {
+          "label": "lod_streaming_get_config",
+          "virtualAddress": "0x1801EDDE0",
+          "sizeBytes": 60,
+          "sha256": "3e4ef4ec53d444c81205922d0cff838e45d531702951c49a2b7a58da92e5d336"
+        },
+        {
+          "label": "lod_streaming_set_config",
+          "virtualAddress": "0x1801EDE20",
+          "sizeBytes": 144,
+          "sha256": "7b861457963fc64cb0c324e25a8e9afaadb0f9c1e9251a03a8a7e8c8abe9c6f8"
+        },
+        {
+          "label": "lod_streaming_get_hlod_unload_distance",
+          "virtualAddress": "0x1801EDF40",
+          "sizeBytes": 60,
+          "sha256": "780d6f355c235e4522491333849782792589705f1fcd28e0b68058e3ea08b525"
+        },
+        {
+          "label": "lod_streaming_set_hlod_unload_distance",
+          "virtualAddress": "0x1801EDF80",
+          "sizeBytes": 145,
+          "sha256": "8b1515c0c2c7165931de1c40ef8008332ba072e025ac466b7635f922e32115ca"
+        },
+        {
+          "label": "lod_ecs_component_67_type9_unloaded_to_loading",
+          "virtualAddress": "0x181153310",
+          "sizeBytes": 1503,
+          "sha256": "4435143d7cce168aa670402d64f54cd6e813160dceab5e22b01ed28a05ad3d5c"
+        },
+        {
+          "label": "lod_ecs_component_67_type0_unloaded_to_loading",
+          "virtualAddress": "0x181154230",
+          "sizeBytes": 1732,
+          "sha256": "4ae50616400e412b8c30c649765b11ad1e4906b9f7bf3e5f64a584ddc5027789"
+        },
         {
           "label": "hg_geometry_get_handle_binding",
           "virtualAddress": "0x1801EE550",
@@ -7550,6 +7987,7 @@
       "the complete 30-declaration/29-body UnityEngine.HyperGryph.ECS Int32 get_id census, codegen pointer slots, constant values, and absence of component id 67",
       "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
       "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
+      "HGLODStreamingSystem internal calls 273..282, state+0x38/+0x39/+0x3C/+0x474 controls, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
       "the ECS numeric-component-id to two-qword archetype-mask equation",
       "the direct all-LOD or terminal-LOD HGTree availability initializer",
       "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -7559,7 +7997,8 @@
       "target-frame LightCullResult pointer, count, and 148-byte rows",
       "unrelated active native lights",
       "arbitrary/asymmetric final selected-view planes",
-      "the standalone native component type name for component 67",
+      "the standalone native component type names for components 67 through 75",
+      "the post-descriptor resource request-submission continuation",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]
