@@ -831,6 +831,83 @@ def gameplay_buff_audio(
     return events
 
 
+def play_sound_action_marker(row: dict[str, Any]) -> tuple[Any, ...]:
+    """Stable identity for one decoded BuffData PlaySound timeline action."""
+
+    return tuple(
+        row.get(key)
+        for key in (
+            "buffId", "eventId", "timelineActionIndex", "actionDataIndex",
+            "startFrame", "endFrame", "serverActionIndex",
+        )
+    )
+
+
+def seed_buff_play_sound_events(
+    buff_records: dict[str, dict[str, Any]],
+    by_buff_event: dict[str, dict[str, list[dict[str, Any]]]],
+) -> int:
+    """Add exact typed PlaySound Events to their owning BuffData records.
+
+    PlaySoundActionData uses a typed MemoryPack string slot that is not always
+    visible to the generic length-prefixed string inventory.  Seeding only the
+    exact decoder rows lets the existing BuffData dependency traversal carry
+    those requests to gameplay owners without inventing an owner for an
+    otherwise unreachable BuffData record.
+    """
+
+    seeded = 0
+    for buff_id, events in sorted((by_buff_event or {}).items()):
+        record = buff_records.get(str(buff_id))
+        if not isinstance(record, dict):
+            continue
+        record_events = record.setdefault("events", set())
+        for event_key, actions in sorted((events or {}).items()):
+            authored_ids = {
+                str(action.get("eventId") or "").strip()
+                for action in actions or []
+                if isinstance(action, dict) and str(action.get("eventId") or "").strip()
+            }
+            if not authored_ids and str(event_key or "").strip():
+                authored_ids.add(str(event_key).strip())
+            for event_id in sorted(authored_ids):
+                if event_id in record_events:
+                    continue
+                record_events.add(event_id)
+                seeded += 1
+    return seeded
+
+
+def annotate_play_sound_action_owner_links(
+    actions: list[dict[str, Any]],
+    owners: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Keep every decoded action while explicitly marking unresolved owners."""
+
+    linked_markers: set[tuple[Any, ...]] = set()
+    for owner in owners:
+        for evidence_rows in (owner.get("events") or {}).values():
+            for evidence in evidence_rows or []:
+                if not isinstance(evidence, dict):
+                    continue
+                for action in evidence.get("playSoundActions") or []:
+                    if isinstance(action, dict):
+                        linked_markers.add(play_sound_action_marker(action))
+    annotated = []
+    linked = 0
+    for action in actions:
+        has_link = play_sound_action_marker(action) in linked_markers
+        linked += int(has_link)
+        annotated.append({
+            **action,
+            "ownerLinkStatus": "linkedThroughBuffDependency" if has_link else "unresolved",
+        })
+    return annotated, {
+        "buffPlaySoundActionsLinkedToGameplayOwner": linked,
+        "buffPlaySoundActionsOwnerUnresolved": len(annotated) - linked,
+    }
+
+
 def collect_buff_play_sound_actions(
     export_root: Path,
     buff_records: dict[str, dict[str, Any]],
@@ -1058,6 +1135,10 @@ def collect_gameplay_audio_references(
     buff_records = gameplay_config_records(export_root, "BuffData")
     buff_play_sound = collect_buff_play_sound_actions(export_root, buff_records)
     buff_play_sound_by_id = buff_play_sound.get("byBuffEvent") or {}
+    seeded_play_sound_events = seed_buff_play_sound_events(
+        buff_records,
+        buff_play_sound_by_id,
+    )
 
     def play_sound_rows(event_id: str, buff_ids: set[str]) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
@@ -1218,6 +1299,9 @@ def collect_gameplay_audio_references(
     )
     profile_voices = collect_gameplay_profile_voices(export_root, entries)
     event_names.update(animation_audio.get("eventNames") or set())
+    authored_play_sound_actions, play_sound_owner_counts = (
+        annotate_play_sound_action_owner_links(authored_play_sound_actions, owners)
+    )
     return {
         "eventNames": event_names,
         "owners": owners,
@@ -1233,6 +1317,8 @@ def collect_gameplay_audio_references(
             "enemyTemplatesWithSkillReferences": len(enemy_template_skills),
             "enemyTemplateSkillReferences": sum(len(skills) for skills in enemy_template_skills.values()),
             **(buff_play_sound.get("counts") or {}),
+            "buffPlaySoundSeededEventRefs": seeded_play_sound_events,
+            **play_sound_owner_counts,
             **(animation_audio.get("counts") or {}),
             **(profile_voices.get("counts") or {}),
         },

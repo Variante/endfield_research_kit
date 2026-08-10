@@ -819,6 +819,97 @@ AnimationClip:
             self.assertEqual(enemy_spawn["confidence"], "direct")
             self.assertEqual(set(enemy_spawn["events"]), {"au_enemy_spawn"})
 
+    def test_exact_play_sound_event_seeds_buff_traversal_and_keeps_owner_gap(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            webui_root = root / "webui"
+            export_root = root / "export_full"
+            gameplay_path = webui_root / "data/lang/CN/gameplay/index.json"
+            gameplay_path.parent.mkdir(parents=True)
+            gameplay_path.write_text(json.dumps({"entries": [{
+                "kind": "character",
+                "id": "chr_test",
+                "skillGroups": [{"id": "normal", "skills": [{"id": "chr_test_normal"}]}],
+            }]}), encoding="utf-8")
+            skill_root = export_root / "structured/StreamingAssets/Data/Json/SkillData"
+            buff_root = export_root / "structured/StreamingAssets/Data/Json/BuffData"
+            skill_root.mkdir(parents=True)
+            buff_root.mkdir(parents=True)
+            # The generic inventory sees the BuffData dependency, but not the
+            # typed PlaySoundActionData Event string supplied by the decoder.
+            (skill_root / "chr_test_normal.json").write_bytes(
+                self.memorypack_strings(47, "buff_test_timed")
+            )
+            (buff_root / "buff_test_timed.json").write_bytes(
+                self.memorypack_strings(30, "buff_test_timed")
+            )
+            (buff_root / "buff_orphan.json").write_bytes(
+                self.memorypack_strings(30, "buff_orphan")
+            )
+            linked_action = {
+                "buffId": "buff_test_timed",
+                "eventId": "au_test_timed",
+                "timelineActionIndex": 0,
+                "actionDataIndex": 0,
+                "startFrame": 17,
+                "endFrame": 34,
+                "serverActionIndex": 9,
+                "runtimeConditionStatus": "unresolved",
+            }
+            orphan_action = {
+                "buffId": "buff_orphan",
+                "eventId": "au_test_orphan",
+                "timelineActionIndex": 0,
+                "actionDataIndex": 0,
+                "startFrame": 2,
+                "endFrame": 8,
+                "serverActionIndex": 10,
+                "runtimeConditionStatus": "unresolved",
+            }
+            decoded = {
+                "byBuffEvent": {
+                    "buff_test_timed": {"au_test_timed": [linked_action]},
+                    "buff_orphan": {"au_test_orphan": [orphan_action]},
+                },
+                "counts": {
+                    "buffPlaySoundActionOccurrences": 2,
+                    "buffPlaySoundUniqueEvents": 2,
+                },
+            }
+
+            with mock.patch.object(
+                build_audio,
+                "collect_buff_play_sound_actions",
+                return_value=decoded,
+            ):
+                result = build_audio.collect_gameplay_audio_references(
+                    webui_root,
+                    export_root,
+                    "CN",
+                )
+
+            owner = next(row for row in result["owners"] if row["ownerKind"] == "character")
+            self.assertEqual(set(owner["events"]), {"au_test_timed"})
+            evidence = owner["events"]["au_test_timed"][0]
+            self.assertEqual(evidence["buffIds"], ["buff_test_timed"])
+            self.assertEqual(evidence["playSoundActions"][0]["startFrame"], 17)
+            self.assertEqual(
+                evidence["playSoundActions"][0]["runtimeConditionStatus"],
+                "unresolved",
+            )
+            catalog = {row["eventId"]: row for row in result["authoredPlaySoundActions"]}
+            self.assertEqual(
+                catalog["au_test_timed"]["ownerLinkStatus"],
+                "linkedThroughBuffDependency",
+            )
+            self.assertEqual(catalog["au_test_orphan"]["ownerLinkStatus"], "unresolved")
+            self.assertEqual(result["counts"]["buffPlaySoundSeededEventRefs"], 2)
+            self.assertEqual(
+                result["counts"]["buffPlaySoundActionsLinkedToGameplayOwner"],
+                1,
+            )
+            self.assertEqual(result["counts"]["buffPlaySoundActionsOwnerUnresolved"], 1)
+
     def test_collects_enemy_template_skill_authored_under_another_enemy(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
