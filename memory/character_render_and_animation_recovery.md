@@ -118,16 +118,20 @@ NPC archetypes are imported as labeled source kits.
   hash-pinned route corrects the resource mapping by accounting for the
   4-byte blob header: `HGMeshRendererData` fields
   `m_Materials/m_Meshes/m_ShadowProxyMeshes` at native `+0x58/+0x78/+0x98`
-  resolve through singleton Material/Mesh instance-ID maps at `+0x90/+0xA0`
+  resolve through singleton Material/GeometryHandle maps at `+0x90/+0xA0`
   and write runtime record `+0x04/+0x08/+0x0C`. Availability writers
   `0x181157760/0x181159010` and cleanup use the same three destinations.
-  Consequently record `+0x0C` is specifically the mapped shadow-proxy Mesh
-  word: owner handle `+0x18` supplies it at `0x181157AD1/0x1811592A0`, cleanup
-  clears it at `0x18115C110`, and callback `0x181064B73` consumes it as a
-  masked supplemental filter. Record `+0x10` is not resource-seeded; common
+  Consequently record `+0x0C` is specifically the shadow-proxy
+  `GeometryHandle`: owner handle `+0x18` supplies it at
+  `0x181157AD1/0x1811592A0`, cleanup clears it at `0x18115C110`, and callback
+  `0x181064B73` consumes it in a combined masked filter. HG internal-call
+  entries 300/301 name `HGGeometrySystem.GetGeometryHandle/GetMesh`; the
+  hash-pinned slot builder closes bits 0..23 as the slot index and bits 24..31
+  as the 8-bit generation incremented at slot `+0x06`. Record `+0x10` is not
+  resource-seeded; common
   Renderer state sync `0x180432CD0` alone maintains that property-flag word at
-  blob `+0x14`. Only the mapped shadow-proxy word's standalone engine name and
-  individual bit meanings remain open. Dedicated HG
+  blob `+0x14`. Only the higher-level job producers that intentionally
+  constrain GeometryHandle bits remain open. Dedicated HG
   internal-call entry 204 names `+0x14` as `enabledLightModes`; wrapper
   `0x1801EB940` reaches the all-record writer at `0x1810D9110`. Installed
   IL2CPP metadata closes its argument as `UInt32 lightModeMask` and
@@ -300,7 +304,8 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The standalone
-  name/bit meanings of loader record `+0x0C`'s mapped shadow-proxy Mesh word, the
+  higher-level mask/value producers for loader record `+0x0C`'s shadow-proxy
+  GeometryHandle, the
   component-67 standalone native type name, any separate `sceneCullingMask`
   consumer, and target-frame survivor rows remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
@@ -532,8 +537,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the standalone engine name/bit meanings of loader record `+0x0C`'s
-   mapped shadow-proxy Mesh word and the exact native type-name link for
+1. Resolve the higher-level mask/value producers that deliberately constrain
+   loader record `+0x0C`'s shadow-proxy GeometryHandle and the exact native
+   type-name link for
    component 67; its serialized LOD-count/range producer is now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact

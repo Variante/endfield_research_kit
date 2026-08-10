@@ -298,6 +298,16 @@ UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_VA = 0x1801F2C10
 UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGResourceManager::UpdateAssetHandle_Injected"
 )
+UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_INDEX = 300
+UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_VA = 0x1801EE550
+UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGGeometrySystem::GetGeometryHandle"
+)
+UNITY_HG_GEOMETRY_GET_MESH_ICALL_INDEX = 301
+UNITY_HG_GEOMETRY_GET_MESH_ICALL_VA = 0x1801EE5D0
+UNITY_HG_GEOMETRY_GET_MESH_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGGeometrySystem::GetMesh"
+)
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX = 567
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_VA = 0x1801DA040
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_NAME = (
@@ -1083,6 +1093,41 @@ UNITY_CULL_VIEW_CONSUMER_SLICES = {
 }
 
 UNITY_HGTREE_BODIES = {
+    "hg_geometry_get_handle_binding": (
+        0x1801EE550,
+        0x7E,
+        "bfdbb4dbb93d629ad18b25f75fe3f602686f82de66010d64425b7abfd5dcfb70",
+    ),
+    "hg_geometry_get_mesh_binding": (
+        0x1801EE5D0,
+        0x85,
+        "b4af1acfe29b1d2021c372940fa737e40a90ac0ae7b7f0fd2b6d61878cb85f72",
+    ),
+    "hg_geometry_instance_map_insert": (
+        0x1810941F0,
+        0x278,
+        "3ebda9f858ab8adb9d8122784663a8ca3833c6793ebae7e18e1dfe6f1190023c",
+    ),
+    "hg_geometry_slot_populate_and_handle_build": (
+        0x18108B1C0,
+        0x396,
+        "5e602aefe660993deb394eab88c3a175ff610ba604a2c51851e3a94bb8098e1e",
+    ),
+    "hg_geometry_instance_map_remove": (
+        0x181099980,
+        0x16C,
+        "ab1d3695b2e0b6540fae244f600930de4f2d7e93eecc93cc90cbc7b4288ce3de",
+    ),
+    "mesh_geometry_registration_site": (
+        0x1813727B0,
+        0xA5,
+        "ca1af751d26340d67069a6fe864ecbac8a0ce615231e8c17720bb295f30bcce1",
+    ),
+    "mesh_geometry_unregistration_site": (
+        0x1813773B0,
+        0x1D5,
+        "8c5d5a5cdc033247aaf5a4c5d7bcde76acb698b61fd60ba996f8ccdfeb447d39",
+    ),
     "hgmesh_renderer_data_serialized_fields": (
         0x1810A9120,
         0x23A,
@@ -1808,6 +1853,34 @@ UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
 }
 
 UNITY_HGTREE_SLICES = {
+    "hg_geometry_handle_encoding": (
+        0x18108B51E,
+        "0fb747064c8d9c24d0000000498b5b3866ffc0498b7340b9ff0000006623c10f"
+        "b7c066894706c1e018410bc5",
+    ),
+    "hg_geometry_get_mesh_handle_decode": (
+        0x1801EE5E5,
+        "488b80a000000081e3ffffff00448bc3448bcb8b4840488b502849d3e88b4844"
+        "ffc94923c94a8b04c2486bc9388b0401488d4c24",
+    ),
+    "hg_geometry_map_insert_handoff": (
+        0x181094416,
+        "4d8bc78bd5488bcfe89d6dffff488d4f08898424c00000004c8d8c24c0000000"
+        "4c8d8424b0000000488d542430e8782b16ff4c8bbc248000",
+    ),
+    "hg_geometry_map_remove_handle_decode": (
+        0x1810999DC,
+        "8b4e40488dbec80000008b4308488b562825ffffff00448bc049d3e88b4e4444"
+        "8bc8ffc94923c948896c24504a8b04c2486bc938",
+    ),
+    "mesh_geometry_registration_call": (
+        0x181372830,
+        "807b7c007519e82536c5ff8b5308488b88a00000004883c4205be9a119d2ff",
+    ),
+    "mesh_geometry_unregistration_call": (
+        0x1813773C4,
+        "488bf1e894eac4ff8b5608488b88a0000000e8a525d2ff33ed4839ae",
+    ),
     "hgmesh_runtime_resource_fields_and_maps": (
         0x181088DB2,
         "e8a9d0f3ff488b583848895c2430e89bd0f3ff4c8bb0a0000000e88fd0f3ff"
@@ -5559,6 +5632,12 @@ def validate_unity_hgtree_renderer_boundary(
     resource_update_handle_name, resource_update_handle_target = resolve_hg_icall(
         UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_INDEX
     )
+    geometry_get_handle_name, geometry_get_handle_target = resolve_hg_icall(
+        UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_INDEX
+    )
+    geometry_get_mesh_name, geometry_get_mesh_target = resolve_hg_icall(
+        UNITY_HG_GEOMETRY_GET_MESH_ICALL_INDEX
+    )
     entity_type_name, entity_type_target = resolve_hg_icall(
         UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX
     )
@@ -5807,6 +5886,30 @@ def validate_unity_hgtree_renderer_boundary(
         "unity_hg_resource_update_handle_icall_name",
         resource_update_handle_name,
         UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_NAME,
+        image.path,
+    )
+    require(
+        "unity_hg_geometry_get_handle_icall_target",
+        geometry_get_handle_target,
+        UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hg_geometry_get_handle_icall_name",
+        geometry_get_handle_name,
+        UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_NAME,
+        image.path,
+    )
+    require(
+        "unity_hg_geometry_get_mesh_icall_target",
+        geometry_get_mesh_target,
+        UNITY_HG_GEOMETRY_GET_MESH_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hg_geometry_get_mesh_icall_name",
+        geometry_get_mesh_name,
+        UNITY_HG_GEOMETRY_GET_MESH_ICALL_NAME,
         image.path,
     )
     register_name, register_target = resolve_hg_icall(
@@ -6316,6 +6419,45 @@ def validate_unity_hgtree_renderer_boundary(
                 "assetInstanceIdSlotOffset": "0x18",
             },
         },
+        "geometrySystemInternalCalls": {
+            "getGeometryHandle": {
+                "index": UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_INDEX,
+                "name": geometry_get_handle_name,
+                "targetVirtualAddress": f"0x{geometry_get_handle_target:X}",
+                "input": "Mesh Unity instance ID",
+                "output": "UInt32 GeometryHandle",
+            },
+            "getMesh": {
+                "index": UNITY_HG_GEOMETRY_GET_MESH_ICALL_INDEX,
+                "name": geometry_get_mesh_name,
+                "targetVirtualAddress": f"0x{geometry_get_mesh_target:X}",
+                "input": "UInt32 GeometryHandle",
+                "output": "Mesh Unity object",
+            },
+            "handleEncoding": {
+                "indexBits": "0..23",
+                "generationBits": "24..31",
+                "indexMask": "0x00FFFFFF",
+                "slotGenerationOffset": "0x06",
+                "slotStrideBytes": 56,
+                "equation": (
+                    "GeometryHandle = ((slotGeneration + 1) & 0xFF) << 24 "
+                    "| slotIndex"
+                ),
+                "builderVirtualAddress": "0x18108B1C0",
+                "encodingVirtualAddress": "0x18108B51E",
+            },
+            "lifecycle": {
+                "instanceMapOffset": "singleton+0xA0",
+                "instanceMapEntryStrideBytes": 12,
+                "instanceMapKey": "Mesh Unity instance ID",
+                "instanceMapValue": "UInt32 GeometryHandle",
+                "insertVirtualAddress": "0x1810941F0",
+                "removeVirtualAddress": "0x181099980",
+                "meshRegistrationCallVirtualAddress": "0x181372836",
+                "meshUnregistrationCallVirtualAddress": "0x1813773D6",
+            },
+        },
         "unregistrationInternalCalls": [
             {
                 "index": UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_INDEX,
@@ -6463,8 +6605,7 @@ def validate_unity_hgtree_renderer_boundary(
                         "sizeBytes": 4,
                         "initialValue": 0,
                         "meaning": (
-                            "mapped m_ShadowProxyMeshes instance-derived "
-                            "supplemental filter word"
+                            "m_ShadowProxyMeshes UInt32 GeometryHandle"
                         ),
                     },
                     {
@@ -6489,7 +6630,7 @@ def validate_unity_hgtree_renderer_boundary(
                     "singletonVirtualAddress": "0x180FC5E60",
                     "maps": {
                         "materialInstanceIdToWord": "singleton+0x90",
-                        "meshInstanceIdToWord": "singleton+0xA0",
+                        "meshInstanceIdToGeometryHandle": "singleton+0xA0",
                     },
                     "serializedFields": [
                         {
@@ -6508,7 +6649,7 @@ def validate_unity_hgtree_renderer_boundary(
                         {
                             "name": "m_Meshes",
                             "nativeOffset": "0x78",
-                            "map": "meshInstanceIdToWord",
+                            "map": "meshInstanceIdToGeometryHandle",
                             "blobWriteOffset": "0x0C",
                             "recordWriteOffset": "0x08",
                             "directWriteVirtualAddress": "0x181088FEF",
@@ -6521,7 +6662,7 @@ def validate_unity_hgtree_renderer_boundary(
                         {
                             "name": "m_ShadowProxyMeshes",
                             "nativeOffset": "0x98",
-                            "map": "meshInstanceIdToWord",
+                            "map": "meshInstanceIdToGeometryHandle",
                             "blobWriteOffset": "0x10",
                             "recordWriteOffset": "0x0C",
                             "directWriteVirtualAddress": "0x18108906A",
@@ -6542,7 +6683,8 @@ def validate_unity_hgtree_renderer_boundary(
                         "m_Materials/m_Meshes/m_ShadowProxyMeshes to native "
                         "+0x58/+0x78/+0x98. The independent resource "
                         "initializer resolves those arrays through singleton "
-                        "Material/Mesh instance-ID maps at +0x90/+0xA0 and "
+                        "Material and Mesh-instance-ID-to-GeometryHandle maps "
+                        "at +0x90/+0xA0 and "
                         "writes blob+0x08/+0x0C/+0x10. Because runtime records "
                         "begin at blob+0x04, the true record destinations are "
                         "+0x04/+0x08/+0x0C. The availability writers and "
@@ -6564,7 +6706,7 @@ def validate_unity_hgtree_renderer_boundary(
                     "mutableRenderFlagsAt0x08": {
                         "roleClosed": True,
                         "initialSource": "serialized HGTreeRenderer.renderFlags",
-                        "hgmeshResourceSource": "mapped m_Meshes instance ID",
+                        "hgmeshResourceSource": "m_Meshes GeometryHandle",
                         "hgmeshResourceFieldNativeOffset": "0x78",
                         "hgmeshDirectWriterVirtualAddress": "0x181088FEF",
                         "hgmeshAvailabilityWriterVirtualAddresses": [
@@ -6593,9 +6735,11 @@ def validate_unity_hgtree_renderer_boundary(
                             "ORs record+0x08 into its render flags"
                         ),
                     },
-                    "shadowProxyMeshFilterWordAt0x0C": {
+                    "shadowProxyGeometryHandleAt0x0C": {
                         "consumerRoleClosed": True,
                         "producerClosed": True,
+                        "engineIdentityClosed": True,
+                        "handleEncodingClosed": True,
                         "assetClassClosed": True,
                         "assetHandleContractClosed": True,
                         "assetType": "UnityEngine.HyperGryph.AssetType.Mesh",
@@ -6603,6 +6747,22 @@ def validate_unity_hgtree_renderer_boundary(
                         "resourceField": "m_ShadowProxyMeshes",
                         "resourceFieldNativeOffset": "0x98",
                         "directResourceWriterVirtualAddress": "0x18108906A",
+                        "engineType": "UInt32 GeometryHandle",
+                        "getGeometryHandleInternalCallIndex": (
+                            UNITY_HG_GEOMETRY_GET_HANDLE_ICALL_INDEX
+                        ),
+                        "getGeometryHandleInternalCallName": (
+                            geometry_get_handle_name
+                        ),
+                        "getMeshInternalCallIndex": (
+                            UNITY_HG_GEOMETRY_GET_MESH_ICALL_INDEX
+                        ),
+                        "getMeshInternalCallName": geometry_get_mesh_name,
+                        "handleIndexMask": "0x00FFFFFF",
+                        "handleIndexBits": "0..23",
+                        "handleGenerationBits": "24..31",
+                        "handleSlotGenerationOffset": "0x06",
+                        "handleSlotStrideBytes": 56,
                         "initialValue": 0,
                         "acquisitionPaths": [
                             {
@@ -6680,7 +6840,12 @@ def validate_unity_hgtree_renderer_boundary(
                             "initializers gate on ready==1, resolve the third "
                             "Mesh slot's instance ID through a separate 12-byte "
                             "entry map, and write entry+0x08 to record+0x0C. "
-                            "The independent HGMeshRendererData initializer "
+                            "HGGeometrySystem internal-call entries 300/301 "
+                            "name the map value GeometryHandle and provide the "
+                            "forward instance-ID lookup and reverse GetMesh "
+                            "route. Its builder packs the low 24-bit slot index "
+                            "with the incremented 8-bit slot generation in bits "
+                            "24..31. The independent HGMeshRendererData initializer "
                             "names the source field m_ShadowProxyMeshes and "
                             "writes the same mapped word to record+0x0C. "
                             "Cleanup releases owner handle +0x18 and clears "
@@ -6690,10 +6855,11 @@ def validate_unity_hgtree_renderer_boundary(
                         ),
                         "proofBoundary": (
                             "asset class, handle/index separation, instance-ID "
-                            "production, mapped-value resolution, release, and "
-                            "supplemental-filter consumption are closed; the "
-                            "standalone engine name and individual bit meanings "
-                            "of the instance-ID map value remain open"
+                            "production, GeometryHandle identity and packing, "
+                            "mapped-value resolution, release, and masked "
+                            "consumption are closed; which higher-level job "
+                            "producers intentionally constrain GeometryHandle "
+                            "bits through the combined mask/value test remains open"
                         ),
                     },
                     "rendererPropertyFlagsAt0x10": {
@@ -7950,8 +8116,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v34",
-        "status": "hgtree_shadow_proxy_filter_source_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v35",
+        "status": "hgtree_shadow_proxy_geometry_handle_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -7995,10 +8161,10 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "records begin at blob+0x04. A newly hash-pinned independent "
             "HGMeshRendererData initializer closes the correction: native "
             "m_Materials/m_Meshes/m_ShadowProxyMeshes at +0x58/+0x78/+0x98 "
-            "resolve through singleton Material/Mesh instance-ID maps at "
+            "resolve through singleton Material and Mesh GeometryHandle maps at "
             "+0x90/+0xA0 and write record +0x04/+0x08/+0x0C. The availability "
             "writers and cleanup use the same three destinations. Record "
-            "+0x0C is therefore the mapped m_ShadowProxyMeshes word, not the "
+            "+0x0C is therefore the m_ShadowProxyMeshes GeometryHandle, not the "
             "main Mesh word or a property-flag seed. Both owner transitions "
             "acquire that third resource handle with kind 2. "
             "HyperGryph internal-call entry 437 names "
@@ -8010,9 +8176,14 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "slot+0x10 ready==1, map that instance ID through a separate "
             "12-byte table, and copy entry+0x08 to record+0x0C. Cleanup releases "
             "the third handle and clears the same field; the scheduled callback "
-            "consumes it as a masked supplemental filter overlay. Only the "
-            "mapped shadow-proxy word's engine name and individual bits remain "
-            "open. Record +0x10 is not seeded by any of the three resource maps; "
+            "consumes it in a combined masked filter overlay. HyperGryph "
+            "internal-call entries 300/301 name the value exactly through "
+            "HGGeometrySystem::GetGeometryHandle/GetMesh. The hash-pinned slot "
+            "builder closes bits 0..23 as the slot index and bits 24..31 as an "
+            "8-bit generation incremented at slot +0x06. The engine identity and "
+            "bit packing are therefore closed; only higher-level job producers "
+            "that deliberately constrain handle bits remain open. Record +0x10 "
+            "is not seeded by any of the three resource maps; "
             "it remains Renderer property flags maintained at blob+0x14 by the "
             "common state synchronizer. Dedicated HyperGryph internal-"
             "call entry 204 names record +0x14 exactly as enabledLightModes; "
@@ -8145,8 +8316,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The standalone engine name and bit meanings for loader record "
-            "+0x0C's mapped m_ShadowProxyMeshes filter word, the "
+            "The higher-level job producers that deliberately constrain loader "
+            "record +0x0C's shadow-proxy GeometryHandle bits, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -8323,8 +8494,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
                 "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
                 "loader runtime record +0x08 mutable renderFlags lifecycle, including particle bit-20 writers and scheduled consumption",
-                "the hash-pinned HGMeshRendererData m_Materials/m_Meshes/m_ShadowProxyMeshes native field layout and independent Material/Mesh map initializer into runtime record +0x04/+0x08/+0x0C",
-                "loader runtime record +0x0C as the mapped m_ShadowProxyMeshes supplemental filter word, including LoadAsync/GetAsset/UpdateAssetHandle internal-call bindings, ready/instance-ID handle-slot layout, direct and availability map-resolution writers, cleanup, and masked consumption",
+                "the hash-pinned HGMeshRendererData m_Materials/m_Meshes/m_ShadowProxyMeshes native field layout and independent Material/GeometryHandle map initializer into runtime record +0x04/+0x08/+0x0C",
+                "HGGeometrySystem GetGeometryHandle/GetMesh internal-call entries 300/301, Mesh instance-ID map insertion/removal, 24-bit slot-index plus 8-bit generation handle packing, and reverse lookup",
+                "loader runtime record +0x0C as the m_ShadowProxyMeshes GeometryHandle, including LoadAsync/GetAsset/UpdateAssetHandle internal-call bindings, ready/instance-ID handle-slot layout, direct and availability map-resolution writers, cleanup, and masked consumption",
                 "loader runtime record +0x10 as Renderer property flags with no resource-map seed and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
@@ -8368,7 +8540,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the standalone engine name and individual bit meanings of runtime record +0x0C's mapped m_ShadowProxyMeshes supplemental filter word",
+                "the higher-level job producers that deliberately constrain runtime record +0x0C shadow-proxy GeometryHandle bits through the combined mask/value test",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -8406,7 +8578,8 @@ def main() -> int:
         "write-only screen threshold, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
         "HGMeshRendererData Material/main-Mesh/shadow-proxy map fields, "
-        "shadow-proxy supplemental filter, and separate property flags, "
+        "shadow-proxy GeometryHandle packing/lookup/consumer, and separate "
+        "property flags, "
         "enabledLightModes producer/default/initializers and GPUDrivenRenderer "
         "V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, "
         "Factory blob-copy routes, independent renderer-entry pass mask, and "

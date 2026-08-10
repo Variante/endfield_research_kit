@@ -763,7 +763,7 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertTrue(runtime_tail["mutableRenderFlagsAt0x08"]["roleClosed"])
         self.assertEqual(
             runtime_tail["mutableRenderFlagsAt0x08"]["hgmeshResourceSource"],
-            "mapped m_Meshes instance ID",
+            "m_Meshes GeometryHandle",
         )
         self.assertEqual(
             runtime_tail["mutableRenderFlagsAt0x08"]["writtenValue"],
@@ -773,17 +773,22 @@ class LightCullCapAuditTests(unittest.TestCase):
             runtime_tail["mutableRenderFlagsAt0x08"]["particleModes"],
             [2, 3, 4, 5],
         )
-        mesh_filter = runtime_tail["shadowProxyMeshFilterWordAt0x0C"]
+        mesh_filter = runtime_tail["shadowProxyGeometryHandleAt0x0C"]
         self.assertTrue(mesh_filter["consumerRoleClosed"])
         self.assertTrue(mesh_filter["producerClosed"])
         self.assertTrue(mesh_filter["assetClassClosed"])
         self.assertTrue(mesh_filter["assetHandleContractClosed"])
+        self.assertTrue(mesh_filter["engineIdentityClosed"])
+        self.assertTrue(mesh_filter["handleEncodingClosed"])
         self.assertEqual(
             mesh_filter["assetType"],
             "UnityEngine.HyperGryph.AssetType.Mesh",
         )
         self.assertEqual(mesh_filter["assetTypeValue"], 2)
         self.assertEqual(mesh_filter["resourceField"], "m_ShadowProxyMeshes")
+        self.assertEqual(mesh_filter["engineType"], "UInt32 GeometryHandle")
+        self.assertEqual(mesh_filter["handleIndexMask"], "0x00FFFFFF")
+        self.assertEqual(mesh_filter["handleGenerationBits"], "24..31")
         self.assertEqual(
             mesh_filter["directResourceWriterVirtualAddress"],
             "0x18108906A",
@@ -802,6 +807,19 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         self.assertEqual(
             mesh_filter["mappingKey"], "Unity asset instance ID"
+        )
+        geometry_system = result["geometrySystemInternalCalls"]
+        self.assertEqual(
+            geometry_system["getGeometryHandle"]["index"], 300
+        )
+        self.assertIn(
+            "HGGeometrySystem::GetGeometryHandle",
+            geometry_system["getGeometryHandle"]["name"],
+        )
+        self.assertEqual(geometry_system["getMesh"]["index"], 301)
+        self.assertEqual(
+            geometry_system["handleEncoding"]["equation"],
+            "GeometryHandle = ((slotGeneration + 1) & 0xFF) << 24 | slotIndex",
         )
         resource_load = result["resourceLoadInternalCall"]
         self.assertEqual(resource_load["index"], 437)
@@ -1411,6 +1429,26 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_hgmesh_renderer_data_runtime_record_"
                 r"initializer_sha256; source=.*UnityPlayer.dll; "
+                r"expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_geometry_handle_builder_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18108B1C0 and size == 0x396:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_hg_geometry_slot_populate_and_handle_"
+                r"build_sha256; source=.*UnityPlayer.dll; "
                 r"expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
