@@ -256,6 +256,12 @@ UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_VA = 0x1801DA330
 UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGTreeRender::UnregisterTreeBatchGroupWithHandle"
 )
+UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_INDEX = 204
+UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_VA = 0x1801EB940
+UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGFactoryRenderManager::"
+    "SetEntityEnabledLightModes_Injected"
+)
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_INDEX = 279
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_VA = 0x1801EDEB0
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_NAME = (
@@ -939,6 +945,21 @@ UNITY_HGTREE_BODIES = {
         0x180BCB760,
         0x92E,
         "bc9b51e5ec3b9f43cd26faf384f92658cf591ca119df1b173cf19912eadd016f",
+    ),
+    "factory_set_enabled_light_modes_binding": (
+        0x1801EB940,
+        0x2C,
+        "0314610b9e94875c57bdd8fd1dfababbce7a805827dc9526940b6d26b1aa7e9f",
+    ),
+    "factory_set_enabled_light_modes_core": (
+        0x1810D9110,
+        0x5F,
+        "79406081e2a52bc1cffaf23600ab6c734af8a0363a57cea61b1213f54b0a5abe",
+    ),
+    "renderer_resource_slot_release": (
+        0x180FBF6B0,
+        0x119,
+        "2afaddb9131b06e00ce20914992c37e1dcef0eb21a40feadfbef57786b95d1e0",
     ),
     "runtime_record_scheduled_flag_consumer": (
         0x181064100,
@@ -3524,6 +3545,12 @@ def validate_unity_hgtree_renderer_boundary(
         True,
         image.path,
     )
+    require(
+        "unity_hg_icall_set_enabled_light_modes_index_in_bounds",
+        UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_INDEX < UNITY_HG_ICALL_COUNT,
+        True,
+        image.path,
+    )
     table_size = UNITY_HG_ICALL_COUNT * 8
     name_table = image.read(UNITY_HG_ICALL_NAME_TABLE_VA, table_size)
     function_table = image.read(UNITY_HG_ICALL_FUNCTION_TABLE_VA, table_size)
@@ -3633,6 +3660,22 @@ def validate_unity_hgtree_renderer_boundary(
         "unity_hgtree_unregister_batch_group_with_handle_icall_name",
         unregister_with_handle_name,
         UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_NAME,
+        image.path,
+    )
+    (
+        enabled_light_modes_name,
+        enabled_light_modes_target,
+    ) = resolve_hg_icall(UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_INDEX)
+    require(
+        "unity_hgtree_set_enabled_light_modes_icall_target",
+        enabled_light_modes_target,
+        UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hgtree_set_enabled_light_modes_icall_name",
+        enabled_light_modes_name,
+        UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_NAME,
         image.path,
     )
 
@@ -3895,6 +3938,12 @@ def validate_unity_hgtree_renderer_boundary(
                 "coreVirtualAddress": "0x181087E00",
             },
         ],
+        "enabledLightModesInternalCall": {
+            "index": UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_INDEX,
+            "name": enabled_light_modes_name,
+            "targetVirtualAddress": f"0x{enabled_light_modes_target:X}",
+            "writerCoreVirtualAddress": "0x1810D9110",
+        },
         "lodControlInternalCalls": {
             "cullingSystem": lod_bias_icalls,
             "lodStreamingSystem": lod_streaming_offset_icalls,
@@ -3998,7 +4047,10 @@ def validate_unity_hgtree_renderer_boundary(
                         "offset": "0x0C",
                         "sizeBytes": 4,
                         "initialValue": 0,
-                        "meaning": "supplemental runtime filter flags",
+                        "meaning": (
+                            "third resolved renderer resource index and "
+                            "supplemental filter overlay"
+                        ),
                     },
                     {
                         "offset": "0x10",
@@ -4010,7 +4062,7 @@ def validate_unity_hgtree_renderer_boundary(
                         "offset": "0x14",
                         "sizeBytes": 4,
                         "initialValue": 0,
-                        "meaning": "generic renderer payload; exact HGTree role open",
+                        "meaning": "enabledLightModes",
                     },
                 ],
                 "runtimeRecordFieldLifecycle": {
@@ -4038,21 +4090,40 @@ def validate_unity_hgtree_renderer_boundary(
                             "ORs record+0x08 into its render flags"
                         ),
                     },
-                    "supplementalFilterFlagsAt0x0C": {
+                    "thirdResolvedResourceAt0x0C": {
                         "consumerRoleClosed": True,
-                        "producerClosed": False,
+                        "producerClosed": True,
                         "initialValue": 0,
+                        "writerPaths": [
+                            {
+                                "functionVirtualAddress": "0x181157760",
+                                "writeVirtualAddress": "0x181157AD1",
+                            },
+                            {
+                                "functionVirtualAddress": "0x181159010",
+                                "writeVirtualAddress": "0x1811592A0",
+                            },
+                        ],
+                        "cleanupVirtualAddress": "0x18115BFC0",
+                        "cleanupWriteVirtualAddress": "0x18115C110",
+                        "releaseCoreVirtualAddress": "0x180FBF6B0",
+                        "recordStrideBytes": 24,
                         "consumerVirtualAddress": "0x181064B73",
                         "consumerEquation": (
                             "(record[+0x0C] | rendererEntry[+0x18]) "
                             "& filterMask == filterValue"
                         ),
+                        "proof": (
+                            "both LOD availability initializers resolve a third "
+                            "reference-counted renderer resource slot into "
+                            "blob+0x10 (record+0x0C); cleanup releases and "
+                            "clears the matching slot, while the scheduled "
+                            "callback also consumes the word as an independent "
+                            "masked filter overlay"
+                        ),
                         "proofBoundary": (
-                            "the scheduled callback reads blob+0x10 "
-                            "(record+0x0C) as an independent filter overlay; "
-                            "the HGTree transform and generic constructor both "
-                            "initialize it to zero, while no later installed "
-                            "writer has been source-closed"
+                            "the exact asset class represented by the third "
+                            "resolved renderer resource index remains open"
                         ),
                     },
                     "rendererPropertyFlagsAt0x10": {
@@ -4069,17 +4140,29 @@ def validate_unity_hgtree_renderer_boundary(
                             "property-derived flags into every record"
                         ),
                     },
-                    "genericRendererPayloadAt0x14": {
-                        "exactHGTreeRoleClosed": False,
+                    "enabledLightModesAt0x14": {
+                        "roleClosed": True,
                         "hgtreeInitialValue": 0,
+                        "internalCallIndex": (
+                            UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_INDEX
+                        ),
+                        "internalCallName": enabled_light_modes_name,
+                        "bindingVirtualAddress": "0x1801EB940",
+                        "writerCoreVirtualAddress": "0x1810D9110",
+                        "writerLoopVirtualAddress": "0x1810D9153",
+                        "recordStrideBytes": 24,
                         "genericConstructorVirtualAddress": "0x180BCB760",
                         "genericConstructorSource": "constructor input +0x20",
+                        "proof": (
+                            "dedicated HyperGryph internal-call entry 204 names "
+                            "SetEntityEnabledLightModes_Injected; its wrapper "
+                            "reaches a core that selects the 0x7F00 renderer "
+                            "family and writes the supplied value to every "
+                            "record+0x14 at stride 0x18"
+                        ),
                         "proofBoundary": (
-                            "the generic Renderer constructor populates the same "
-                            "count-plus-0x18-stride family through record+0x14, "
-                            "so the word is meaningful payload rather than "
-                            "padding; no HGTree-loader-specific consumer has "
-                            "been source-closed"
+                            "the downstream bit meanings and render-stage "
+                            "consumer of enabledLightModes remain open"
                         ),
                     },
                 },
@@ -4817,8 +4900,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v21",
-        "status": "installed_cap_hgtree_runtime_record_flags_closed",
+        "schema": "endfield.recovered-light-cull-cap.v22",
+        "status": "installed_cap_hgtree_runtime_record_producers_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -4847,12 +4930,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "interval are now closed. Runtime record +0x08 has a mutable "
             "renderFlags lifecycle: four particle setup variants replace it "
             "with bit 20 and a scheduled callback ORs it into render flags. "
-            "Record +0x0C is independently consumed as a supplemental filter "
-            "overlay, but no post-initialization writer is closed. Record +0x10 "
+            "Record +0x0C is the third resolved, reference-counted renderer "
+            "resource index written by the LOD availability initializers, "
+            "released by their cleanup, and independently consumed as a "
+            "supplemental filter overlay. Its exact asset class remains open. "
+            "Record +0x10 "
             "is closed as Renderer property flags updated "
-            "by the common state synchronizer. Record +0x14 is meaningful in "
-            "the generic Renderer constructor but remains zero with no closed "
-            "HGTree-specific consumer. The dispatch packet/payload layouts, "
+            "by the common state synchronizer. Dedicated HyperGryph internal-"
+            "call entry 204 names record +0x14 exactly as enabledLightModes; "
+            "its hash-pinned core writes the supplied value to every record. "
+            "The downstream bit meanings remain open. The dispatch packet/"
+            "payload layouts, "
             "LODCrossFadeConfig enableDither/lodBias controls, parent and "
             "per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp "
             "path are now source-closed as well. A separate component-bit-67 "
@@ -4934,9 +5022,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "Any separate post-dispatch cull-view +0x18 consumer, a later "
-            "writer for loader record +0x0C, the exact HGTree-specific "
-            "role/consumer of loader record +0x14, the "
+            "Any separate post-dispatch cull-view +0x18 consumer, the exact "
+            "asset class of loader record +0x0C, the downstream bit meanings "
+            "and render-stage consumer of enabledLightModes at +0x14, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -5109,9 +5197,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
                 "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
                 "loader runtime record +0x08 mutable renderFlags lifecycle, including particle bit-20 writers and scheduled consumption",
-                "loader runtime record +0x0C as an independently consumed supplemental filter overlay initialized to zero",
+                "loader runtime record +0x0C as the third resolved reference-counted renderer resource index, its two writers and cleanup, and its independent filter-overlay consumption",
                 "loader runtime record +0x10 as Renderer property flags and its common state-synchronization writer",
-                "loader runtime record +0x14 as meaningful generic Renderer payload while preserving its HGTree-specific role as open",
+                "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
                 "the HGTree LOD dispatch packet and payload layouts",
@@ -5148,8 +5236,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "arbitrary/asymmetric final selected-view planes",
                 "any separate post-dispatch copy or consumer of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
-                "any post-initialization writer for runtime record +0x0C",
-                "the exact HGTree-loader-specific role and consumer of runtime record +0x14",
+                "the exact asset class represented by runtime record +0x0C",
+                "the downstream bit meanings and render-stage consumer of enabledLightModes at runtime record +0x14",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -5185,7 +5273,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime supplemental/property flag words and generic tail boundary, "
+        "runtime resource/property fields and enabledLightModes writer, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "

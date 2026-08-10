@@ -681,26 +681,39 @@ class LightCullCapAuditTests(unittest.TestCase):
             [2, 3, 4, 5],
         )
         self.assertTrue(
-            runtime_tail["supplementalFilterFlagsAt0x0C"][
+            runtime_tail["thirdResolvedResourceAt0x0C"][
                 "consumerRoleClosed"
             ]
         )
-        self.assertFalse(
-            runtime_tail["supplementalFilterFlagsAt0x0C"]["producerClosed"]
+        self.assertTrue(
+            runtime_tail["thirdResolvedResourceAt0x0C"]["producerClosed"]
+        )
+        self.assertEqual(
+            runtime_tail["thirdResolvedResourceAt0x0C"]["writerPaths"][0][
+                "writeVirtualAddress"
+            ],
+            "0x181157AD1",
         )
         self.assertTrue(runtime_tail["rendererPropertyFlagsAt0x10"]["roleClosed"])
         self.assertEqual(
             runtime_tail["rendererPropertyFlagsAt0x10"]["preserveMask"],
             "0xFC07FBFD",
         )
-        self.assertFalse(
-            runtime_tail["genericRendererPayloadAt0x14"][
-                "exactHGTreeRoleClosed"
-            ]
+        self.assertTrue(
+            runtime_tail["enabledLightModesAt0x14"]["roleClosed"]
+        )
+        self.assertEqual(
+            runtime_tail["enabledLightModesAt0x14"]["internalCallIndex"],
+            204,
         )
         self.assertIn(
-            "rather than padding",
-            runtime_tail["genericRendererPayloadAt0x14"]["proofBoundary"],
+            "SetEntityEnabledLightModes_Injected",
+            runtime_tail["enabledLightModesAt0x14"]["internalCallName"],
+        )
+        self.assertEqual(result["enabledLightModesInternalCall"]["index"], 204)
+        self.assertEqual(
+            result["enabledLightModesInternalCall"]["writerCoreVirtualAddress"],
+            "0x1810D9110",
         )
         self.assertEqual(
             result["lodSelection"]["selectionBoundary"],
@@ -944,6 +957,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_renderer_runtime_property_flag_sync_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_set_enabled_light_modes_core_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1810D9110 and size == 0x5F:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_factory_set_enabled_light_modes_core_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
