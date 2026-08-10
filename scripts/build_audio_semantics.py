@@ -124,7 +124,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 26
+AUDIO_SEMANTIC_SCHEMA_VERSION = 27
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
@@ -4887,20 +4887,36 @@ def collect_timeline_audio_ownership(
     export_root: Path,
     *,
     event_ids: Iterable[str] | None = None,
+    cue_names: Iterable[str] | None = None,
     mono_path: Path | None = None,
     director_path: Path | None = None,
 ) -> dict[str, Any]:
-    """Recover AudioEventPlayable -> Track -> Timeline -> Director PPtr joins."""
+    """Recover serialized Timeline audio ownership joins.
+
+    AudioEventPlayable carries a Wwise Event name directly.  AudioCuePlayable
+    carries a cue name instead; keeping that namespace separate is important:
+    a cue is resolved by AudioCueSystem/AudioCueTable and is not itself a
+    Wwise Event.  Both playable types share the same exact Track/Timeline and
+    PlayableDirector PPtr chain.
+    """
 
     wanted = {
         str(value or "").strip().lower()
         for value in (event_ids or [])
         if str(value or "").strip()
     }
+    scan_all_cues = cue_names is None
+    wanted_cues = {
+        str(value or "").strip().casefold()
+        for value in (cue_names or [])
+        if str(value or "").strip()
+    }
     mono_file = _object_index_path(export_root, "MonoBehaviour", mono_path)
     directors_file = _object_index_path(export_root, "PlayableDirector", director_path)
     playable_events: dict[tuple[str, int], str] = {}
+    playable_cues: dict[tuple[str, int], dict[str, str]] = {}
     carriers: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    cue_carriers: dict[str, list[dict[str, Any]]] = defaultdict(list)
     stats = Counter()
     if mono_file.is_file():
         with mono_file.open("r", encoding="utf-8") as handle:
@@ -4927,6 +4943,23 @@ def collect_timeline_audio_ownership(
                     if event_id and key and (not wanted or event_id in wanted):
                         playable_events[key] = event_id
                         stats["audioEventPlayableRecords"] += 1
+                cue_start = str(_scalar_value(record, "$._startCueName") or "").strip()
+                cue_end = str(_scalar_value(record, "$._endCueName") or "").strip()
+                if (cue_start or cue_end) and (
+                    "AudioCuePlayable" in name
+                    or _scalar_value(record, "$.m_Name") == "AudioCuePlayable"
+                ):
+                    cue_values = {
+                        value.casefold() for value in (cue_start, cue_end) if value
+                    }
+                    identity = _object_identity(record)
+                    key = _object_identity_key(identity)
+                    if key and (not wanted_cues or cue_values & wanted_cues):
+                        playable_cues[key] = {
+                            "startCueName": cue_start,
+                            "endCueName": cue_end,
+                        }
+                        stats["audioCuePlayableRecords"] += 1
                 clip_displays = []
                 for scalar in record.get("scalars") or []:
                     if not isinstance(scalar, (list, tuple)) or len(scalar) < 3:
@@ -4941,7 +4974,7 @@ def collect_timeline_audio_ownership(
                     if value:
                         clip_displays.append((int(match.group(1)), value))
                 for clip_index, display_name in clip_displays:
-                    if wanted and display_name not in wanted:
+                    if wanted and not scan_all_cues and not wanted_cues and display_name not in wanted:
                         continue
                     parent = _resolved_pptr(record, "$.m_Parent")
                     asset = _resolved_pptr(
@@ -4955,22 +4988,30 @@ def collect_timeline_audio_ownership(
                         stats["timelineCarrierMissingIdentity"] += 1
                         continue
                     playable_event_id = playable_events.get(asset_key)
+                    playable_cue = playable_cues.get(asset_key)
                     asset_name = str(asset.get("name") or asset.get("type") or "")
                     asset_is_audio_playable = (
                         "AudioEventPlayable" in asset_name
                         or "AudioDlgEventPlayable" in asset_name
                     )
+                    asset_is_audio_cue = "AudioCuePlayable" in asset_name
+                    if (
+                        wanted
+                        and (playable_event_id or asset_is_audio_playable)
+                        and display_name not in wanted
+                    ):
+                        continue
                     if playable_event_id and playable_event_id != display_name:
                         stats["timelineCarrierPlayableMismatch"] += 1
                         continue
-                    if not playable_event_id and not asset_is_audio_playable:
+                    if not playable_event_id and not playable_cue and not asset_is_audio_playable and not asset_is_audio_cue:
                         stats["timelineCarrierPlayableTypeUnresolved"] += 1
                         continue
                     parent_name = str(parent.get("name") or "")
                     base_id = normalize_levelsequence_audio_id(parent_name)
                     if not base_id:
                         stats["timelineCarrierNonLevelSequenceParent"] += 1
-                    carriers[display_name].append({
+                    occurrence = {
                         "eventId": display_name,
                         "timelineAssetName": parent_name,
                         "timelineAssetNameBase": base_id,
@@ -5001,15 +5042,49 @@ def collect_timeline_audio_ownership(
                             if playable_event_id
                             else "exactTimelineTrackDisplayNameAudioPlayableParentAssetPPtrs"
                         ),
-                    })
-                    stats["exactTimelineCarriers"] += 1
+                    }
+                    if playable_event_id or asset_is_audio_playable:
+                        carriers[display_name].append(occurrence)
+                        stats["exactTimelineCarriers"] += 1
+                    elif playable_cue or asset_is_audio_cue:
+                        cue_values = playable_cue or {
+                            "startCueName": display_name,
+                            "endCueName": "",
+                        }
+                        if wanted_cues and not any(
+                            str(cue_values.get(key) or "").strip().casefold() in wanted_cues
+                            for key in ("startCueName", "endCueName")
+                        ):
+                            continue
+                        for cue_role in ("startCueName", "endCueName"):
+                            cue_name = str(cue_values.get(cue_role) or "").strip()
+                            if not cue_name:
+                                continue
+                            cue_occurrence = dict(occurrence)
+                            cue_occurrence.update({
+                                "cueName": cue_name,
+                                "cueRole": "start" if cue_role == "startCueName" else "end",
+                                "audioPlayableType": asset_name or "AudioCuePlayable",
+                                "audioPlayableKeyStatus": (
+                                    "exactAudioCuePlayableScalars"
+                                    if playable_cue else "trackDisplayNameOnlyAudioCuePlayable"
+                                ),
+                                "evidence": (
+                                    "exactAudioCuePlayableScalarsTrackParentAssetPPtrs"
+                                    if playable_cue else
+                                    "exactTimelineTrackDisplayNameAudioCuePlayableParentAssetPPtrs"
+                                ),
+                            })
+                            cue_carriers[cue_name.casefold()].append(cue_occurrence)
+                            stats["exactTimelineCueCarriers"] += 1
     stats["timelineCarrierEvents"] = len(carriers)
+    stats["timelineCarrierCues"] = len(cue_carriers)
     parent_keys = {
         _object_identity_key({
             "serializedFile": row.get("timelineAssetSerializedFile"),
             "pathId": row.get("timelineAssetPathId"),
         })
-        for rows in carriers.values()
+        for rows in list(carriers.values()) + list(cue_carriers.values())
         for row in rows
     }
     parent_keys.discard(None)
@@ -5040,7 +5115,7 @@ def collect_timeline_audio_ownership(
                     "evidence": "exactPlayableDirectorPlayableAssetPPtr",
                 })
                 stats["exactPlayableDirectorLinks"] += 1
-    for rows in carriers.values():
+    for rows in list(carriers.values()) + list(cue_carriers.values()):
         for row in rows:
             parent_key = _object_identity_key({
                 "serializedFile": row.get("timelineAssetSerializedFile"),
@@ -5058,6 +5133,7 @@ def collect_timeline_audio_ownership(
     )
     return {
         "occurrencesByEvent": dict(carriers),
+        "occurrencesByCue": dict(cue_carriers),
         "stats": dict(stats),
         "evidenceBoundary": (
             "AudioEventPlayable scalar keys, Track m_Asset/m_Parent PPtrs, and PlayableDirector "
@@ -5254,6 +5330,147 @@ def build_levelsequence_audio_contexts(
             "Exact serialized Timeline ownership is separated from exact static LevelScript id joins. "
             "Rows without a carrier remain an explicit gap; inferred rows never claim runtime execution "
             "or selected Wwise media."
+        ),
+    }
+
+
+def build_timeline_audio_cue_contexts(
+    ownership: dict[str, Any],
+    cue_semantics: dict[str, Any],
+) -> dict[str, Any]:
+    """Join AudioCuePlayable carriers to cue definitions and behavior Events.
+
+    The Timeline asset requests a cue, not a Wwise Event.  A behavior Event is
+    emitted only when the native-compatible cue hash resolves to an
+    AudioCueTable definition with an exact ``behaviourExpr`` type-3 value.
+    Unknown cues remain invocation records so the authored trigger is visible
+    without fabricating an Event or media relation.
+    """
+
+    occurrences_by_cue = ownership.get("occurrencesByCue") or {}
+    definitions = cue_semantics.get("cueDefinitions") or {}
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    invocations: list[dict[str, Any]] = []
+    stats = Counter()
+    event_ids: set[str] = set()
+
+    for cue_key, occurrences in sorted(occurrences_by_cue.items()):
+        for occurrence in occurrences:
+            if not isinstance(occurrence, dict):
+                continue
+            cue_name = str(occurrence.get("cueName") or "").strip()
+            if not cue_name:
+                continue
+            cue_id = audio_hash_generator_compute(cue_name)
+            cue_signed_id = cue_id if cue_id < 0x80000000 else cue_id - 0x100000000
+            definition = definitions.get(cue_id)
+            lookup = {
+                "cueName": cue_name,
+                "cueId": cue_id,
+                "cueSignedId": cue_signed_id,
+                "cueHex": f"0x{cue_id:08x}",
+                "cueHashAlgorithm": "fnv1AsciiLowerUtf16CodeUnits",
+                "cueHashEvidence": "nativeAudioHashGeneratorCompute",
+                "definitionStatus": "resolved" if isinstance(definition, dict) else "missing",
+            }
+            if isinstance(definition, dict):
+                lookup.update({
+                    "handlerCount": int(definition.get("handlerCount") or 0),
+                    "directHandlerCount": int(definition.get("directHandlerCount") or 0),
+                    "levelHandlerCount": int(definition.get("levelHandlerCount") or 0),
+                    "behaviorEventCount": len(definition.get("behaviorEvents") or []),
+                    "expressionOperandCount": len(definition.get("expressionOperands") or []),
+                })
+            invocation = {
+                "kind": "timelineAudioCueInvocation",
+                "semanticRole": "authoredTimelineAudioCue",
+                "confidence": "exact",
+                "ownershipEvidenceLevel": "exactSerializedTimelineCarrier",
+                "triggerEvidenceLevel": "exact",
+                "triggerRole": str(occurrence.get("cueRole") or "start"),
+                "runtimeActivationStatus": "playableDirectorRuntimeExecutionNotObserved",
+                "triggerRuntimeActivationStatuses": [
+                    "timelineCueInvocationExecutionNotObserved",
+                    "cueConditionAndHandlerEvaluationRequired",
+                    "audioEventRuntimePlaybackUnobserved",
+                ],
+                "triggerRequestEvidence": [
+                    "exactAudioCuePlayableScalars",
+                    "exactTimelineTrackPPtr",
+                    "exactTimelineParentPPtr",
+                ],
+                "triggerEvidenceKinds": [
+                    "AudioCuePlayable",
+                    "TimelineTrack",
+                    "PlayableDirector" if occurrence.get("playableDirectors") else "PlayableDirectorUnresolved",
+                ],
+                "evidence": occurrence.get("evidence") or "exactAudioCuePlayableScalarsTrackParentAssetPPtrs",
+                "timelineOwnershipStatus": (
+                    "exactTimelineDirectorOwner"
+                    if occurrence.get("playableDirectors")
+                    else "exactTimelineOwnerDirectorUnresolved"
+                ),
+                "playableDirectorCount": len(occurrence.get("playableDirectors") or []),
+                **lookup,
+                **{
+                    key: occurrence.get(key)
+                    for key in (
+                        "cueRole", "timelineAssetName", "timelineAssetNameBase",
+                        "timelineAssetSerializedFile", "timelineAssetPathId",
+                        "timelineAssetSource", "timelineAssetSourceOffset",
+                        "timelineTrackName", "timelineTrackPathId", "timelineClipIndex",
+                        "timelineTrackSource", "timelineTrackSourceOffset",
+                        "audioPlayableType", "audioPlayableKeyStatus",
+                        "audioPlayableSerializedFile", "audioPlayablePathId",
+                        "playableDirectors",
+                    )
+                },
+            }
+            invocations.append(invocation)
+            stats["timelineCueInvocations"] += 1
+            if isinstance(definition, dict):
+                stats["timelineCueInvocationsResolved"] += 1
+                for behavior in definition.get("behaviorEvents") or []:
+                    if not isinstance(behavior, dict):
+                        continue
+                    event_id = str(behavior.get("eventId") or "").strip().lower()
+                    if not event_id:
+                        continue
+                    context = {
+                        **invocation,
+                        "kind": "timelineAudioCueBehaviorEvent",
+                        "semanticRole": "authoredTimelineAudioCueBehaviorEvent",
+                        "eventName": event_id,
+                        "handlerScope": behavior.get("handlerScope"),
+                        "handlerIndex": behavior.get("handlerIndex"),
+                        "levelId": behavior.get("levelId"),
+                        "expressionSide": behavior.get("expressionSide"),
+                        "expressionPath": behavior.get("expressionPath"),
+                        "exprType": behavior.get("exprType"),
+                        "evidence": "exactTimelineAudioCueToAudioCueBehaviorExpression",
+                        "triggerRequestEvidence": [
+                            "exactAudioCuePlayableScalars",
+                            "nativeAudioHashGeneratorCompute",
+                            "audioCueBehaviorExprType3",
+                        ],
+                    }
+                    _append_context(contexts, seen, event_id, context)
+                    event_ids.add(event_id)
+                    stats["timelineCueBehaviorContexts"] += 1
+            else:
+                stats["timelineCueInvocationsMissing"] += 1
+
+    stats["timelineCueBehaviorEvents"] = len(event_ids)
+    return {
+        "eventContexts": dict(contexts),
+        "invocations": invocations,
+        "stats": dict(stats),
+        "evidenceBoundary": (
+            "AudioCuePlayable start/end cue names and Timeline/Director PPtrs are exact authored "
+            "trigger evidence. Cue hash resolution and behavior Event edges are exact table joins; "
+            "Timeline activation, cue conditions/handlers, AudioCueSystem execution, Wwise branch "
+            "selection, and media playback remain unobserved."
         ),
     }
 
@@ -7508,7 +7725,7 @@ def semantic_context_group(kind: Any) -> str:
         return "cutscene"
     if value in {"characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"}:
         return "animation"
-    if value == "levelSequenceAudio":
+    if value in {"levelSequenceAudio", "timelineAudioCueBehaviorEvent"}:
         return "timeline"
     if value in {"levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"}:
         return "scripted"
@@ -7808,6 +8025,10 @@ def build_audio_semantic_data(
         export_root,
         event_ids=timeline_target_event_ids,
     )
+    timeline_cue_semantics = build_timeline_audio_cue_contexts(
+        timeline_ownership,
+        cue_semantics,
+    )
     levelsequence_semantics = build_levelsequence_audio_contexts(
         timeline_target_event_ids,
         timeline_ownership,
@@ -7816,6 +8037,7 @@ def build_audio_semantic_data(
     contexts = merge_contexts(
         base_contexts,
         levelsequence_semantics.get("eventContexts") or {},
+        timeline_cue_semantics.get("eventContexts") or {},
     )
     context_kind_counts = Counter(
         str(context.get("kind") or "unknown")
@@ -8151,6 +8373,21 @@ def build_audio_semantic_data(
             "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
             "levelSequenceAudioEvents": context_kind_event_counts.get("levelSequenceAudio", 0),
             "levelSequenceAudioContexts": context_kind_counts.get("levelSequenceAudio", 0),
+            "timelineAudioCueBehaviorEvents": context_kind_event_counts.get(
+                "timelineAudioCueBehaviorEvent", 0
+            ),
+            "timelineAudioCueBehaviorContexts": context_kind_counts.get(
+                "timelineAudioCueBehaviorEvent", 0
+            ),
+            "timelineAudioCueInvocations": (
+                (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocations", 0)
+            ),
+            "timelineAudioCueInvocationsResolved": (
+                (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocationsResolved", 0)
+            ),
+            "timelineAudioCueInvocationsMissing": (
+                (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocationsMissing", 0)
+            ),
             "levelSequenceExactContextEvents": sum(
                 any(
                     isinstance(context, dict)
@@ -8249,6 +8486,8 @@ def build_audio_semantic_data(
                 "evidenceBoundary": levelsequence_semantics.get("evidenceBoundary") or "",
                 "playActionEvidenceBoundary": levelsequence_play_actions.get("evidenceBoundary") or "",
                 "timelineOwnershipEvidenceBoundary": timeline_ownership.get("evidenceBoundary") or "",
+                "timelineCueStats": timeline_cue_semantics.get("stats") or {},
+                "timelineCueEvidenceBoundary": timeline_cue_semantics.get("evidenceBoundary") or "",
             },
             "levelScriptRadio": radio_catalog,
         },
@@ -8286,6 +8525,13 @@ def build_audio_semantic_data(
                 ),
                 "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
                 "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
+                "timelineAudioCueInvocations": len(timeline_cue_semantics.get("invocations") or []),
+                "timelineAudioCueInvocationsResolved": (
+                    (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocationsResolved", 0)
+                ),
+                "timelineAudioCueInvocationsMissing": (
+                    (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocationsMissing", 0)
+                ),
                 "levelEventAudioConditionDefinitions": len(LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS),
                 "levelEventAudioConditionAuthoredOccurrences": sum(
                     int(row.get("authoredOccurrenceCount") or 0)
@@ -8320,6 +8566,7 @@ def build_audio_semantic_data(
             ),
             "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
             "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
+            "timelineAudioCueInvocations": timeline_cue_semantics.get("invocations") or [],
             "levelEventAudioConditions": [
                 dict(row) for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
             ],
@@ -8349,6 +8596,8 @@ def build_audio_semantic_data(
                 + (levelsequence_play_actions.get("evidenceBoundary") or "")
                 + " "
                 + (timeline_ownership.get("evidenceBoundary") or "")
+                + " "
+                + (timeline_cue_semantics.get("evidenceBoundary") or "")
             ).strip(),
             "levelScriptRadio": radio_catalog.get("evidenceBoundary") or "",
             "levelEventAudioConditions": "OnAudioStateChanged and OnMusicBeatEvent are exact current-build LevelEvent condition definitions. The active Persistent-over-Streaming LevelScript overlay contains zero authored occurrences, and neither condition is a Wwise playback request.",

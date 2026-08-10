@@ -481,6 +481,7 @@
     if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (kind === "levelSequenceAudio") return "timeline";
+    if (kind === "timelineAudioCueBehaviorEvent") return "timeline";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
     if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent"].includes(kind)) return "authoredConfig";
@@ -493,12 +494,13 @@
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
       if (contextKind === "levelSequenceAudio") tags.add("timeline");
+      if (contextKind === "timelineAudioCueBehaviorEvent") tags.add("timeline");
       if (contextKind === "spawnerPreWarnAudio") tags.add("spawnerPreWarnTrigger");
       if (contextKind === "patrolSubActionPlayAudio") tags.add("npcPatrolTrigger");
       if (contextKind === "charInteractAudioEvent") tags.add("characterInteraction");
       if (contextKind === "physicsAudioComponentEvent") tags.add("physicsEnvironment");
       if (["modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"].includes(contextKind)) tags.add("modelViewState");
-      if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
+      if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent", "timelineAudioCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
       if (contextKind === "animationCallbackOwnerUnresolved") tags.add("ownerUnresolvedAnimation");
@@ -1922,7 +1924,7 @@
     if (context?.sourceOffset !== undefined) parts.push(`source offset 0x${Number(context.sourceOffset).toString(16)}`);
     if (context?.stateDirection) parts.push(`${context.stateDirection} state mask ${context.audioStateMask ?? "?"}`);
     if (context?.description) parts.push(context.description);
-    if (kind === "levelSequenceAudio") {
+    if (kind === "levelSequenceAudio" || kind === "timelineAudioCueBehaviorEvent") {
       if (context?.levelSequenceId) parts.push(`LevelSequence ${context.levelSequenceId}`);
       if (context?.timelineAssetName) parts.push(`Timeline ${context.timelineAssetName}`);
       if (context?.timelineParentNameStatus) parts.push(humanize(context.timelineParentNameStatus));
