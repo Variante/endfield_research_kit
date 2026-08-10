@@ -105,6 +105,192 @@ def char_interact_fixture(event_id: int) -> bytes:
 
 
 class AudioSemanticDataTests(unittest.TestCase):
+    def test_levelsequence_id_normalization_requires_exact_audio_suffix(self) -> None:
+        self.assertEqual(
+            audio_semantics.normalize_levelsequence_audio_id("levelseq_fixture_Audio"),
+            "levelseq_fixture",
+        )
+        self.assertEqual(
+            audio_semantics.normalize_levelsequence_audio_id("levelseq_fixture_audio"),
+            "",
+        )
+        self.assertEqual(
+            audio_semantics.normalize_levelsequence_audio_id("f_levelseq_fixture_Audio"),
+            "",
+        )
+
+    def test_levelsequence_contexts_separate_exact_inferred_and_gap(self) -> None:
+        ownership = {
+            "occurrencesByEvent": {
+                "au_exact": [{
+                    "timelineAssetName": "levelseq_exact_Audio",
+                    "timelineAssetNameBase": "levelseq_exact",
+                    "timelineAssetSerializedFile": "CAB-a",
+                    "timelineAssetPathId": 20,
+                    "timelineTrackName": "Audio Track",
+                    "audioPlayableType": "AudioEventPlayable",
+                    "playableDirectors": [{"playableDirectorName": "PlayableDirector"}],
+                    "evidence": "fixtureCarrier",
+                }],
+                "au_inferred": [{
+                    "timelineAssetName": "levelseq_inferred_Audio",
+                    "timelineAssetNameBase": "levelseq_inferred",
+                    "timelineAssetSerializedFile": "CAB-b",
+                    "timelineAssetPathId": 21,
+                    "timelineTrackName": "Audio Track",
+                    "audioPlayableType": "AudioEventPlayable",
+                    "playableDirectors": [],
+                    "evidence": "fixtureCarrier",
+                }],
+            }
+        }
+        actions = {
+            "actionsByLevelSequenceId": {
+                "levelseq_exact": [{
+                    "action": "PlayLevelSequence",
+                    "levelSequenceId": "levelseq_exact",
+                    "levelScriptId": "map/1",
+                }]
+            }
+        }
+        result = audio_semantics.build_levelsequence_audio_contexts(
+            ["au_exact", "au_inferred", "au_gap"], ownership, actions
+        )
+        exact = result["eventContexts"]["au_exact"][0]
+        inferred = result["eventContexts"]["au_inferred"][0]
+        gap = result["eventContexts"]["au_gap"][0]
+        self.assertEqual(exact["confidence"], "exact")
+        self.assertEqual(exact["triggerBindingStatus"], "exactLevelSequenceIdJoin")
+        self.assertEqual(inferred["confidence"], "inferred")
+        self.assertEqual(inferred["triggerEvidenceLevel"], "inferred")
+        self.assertEqual(gap["confidence"], "gap")
+        self.assertEqual(
+            gap["triggerBindingStatus"],
+            "timelineCarrierMissingFromCurrentObjectIndex",
+        )
+        self.assertEqual(result["stats"]["eventsWithoutTimelineCarrier"], 1)
+
+    def test_timeline_object_index_joins_playable_track_parent_and_director(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            export_root.mkdir()
+            mono_path = export_root / "mono.jsonl"
+            director_path = export_root / "director.jsonl"
+            def object_row(path_id, name, scalars=None, pptrs=None):
+                return {
+                    "recordType": "object",
+                    "object": {
+                        "serializedFile": "CAB-fixture",
+                        "source": "fixture.chk",
+                        "sourceOffset": path_id * 10,
+                        "pathId": path_id,
+                    },
+                    "type": "MonoBehaviour",
+                    "name": name,
+                    "scalars": scalars or [],
+                    "pptrs": pptrs or [],
+                }
+            playable = object_row(
+                101,
+                "AudioEventPlayable",
+                [["$._audioEventKey", "s", "au_fixture"]],
+            )
+            track = object_row(
+                102,
+                "Audio Track",
+                [["$.m_Clips[2].m_DisplayName", "s", "au_fixture"]],
+                [
+                    {
+                        "path": "$.m_Parent",
+                        "target": {
+                            "serializedFile": "CAB-fixture",
+                            "pathId": 201,
+                            "source": "fixture.chk",
+                            "sourceOffset": 2010,
+                            "type": "MonoBehaviour",
+                            "name": "levelseq_fixture_Audio",
+                        },
+                    },
+                    {
+                        "path": "$.m_Clips[2].m_Asset",
+                        "target": {
+                            "serializedFile": "CAB-fixture",
+                            "pathId": 101,
+                            "name": "AudioEventPlayable",
+                        },
+                    },
+                ],
+            )
+            director = {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-fixture", "pathId": 301},
+                "type": "PlayableDirector",
+                "name": "fixture director",
+                "pptrs": [{
+                    "path": "$.m_PlayableAsset",
+                    "target": {
+                        "serializedFile": "CAB-fixture",
+                        "pathId": 201,
+                        "name": "levelseq_fixture_Audio",
+                    },
+                }],
+            }
+            mono_path.write_text(
+                "".join(json.dumps(row) + "\n" for row in [playable, track]),
+                encoding="utf-8",
+            )
+            director_path.write_text(json.dumps(director) + "\n", encoding="utf-8")
+            result = audio_semantics.collect_timeline_audio_ownership(
+                export_root,
+                event_ids=["au_fixture"],
+                mono_path=mono_path,
+                director_path=director_path,
+            )
+            occurrence = result["occurrencesByEvent"]["au_fixture"][0]
+            self.assertEqual(occurrence["timelineAssetNameBase"], "levelseq_fixture")
+            self.assertEqual(occurrence["timelineTrackPathId"], 102)
+            self.assertEqual(occurrence["timelineClipIndex"], 2)
+            self.assertEqual(occurrence["audioPlayablePathId"], 101)
+            self.assertEqual(occurrence["playableDirectors"][0]["playableDirectorPathId"], 301)
+            self.assertEqual(result["stats"]["exactTimelineCarriers"], 1)
+            self.assertEqual(result["stats"]["exactPlayableDirectorLinks"], 1)
+
+    def test_levelsequence_play_action_helper_keeps_active_overlay_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            path = (
+                export_root / "structured/StreamingAssets/Data/Json/LevelScriptData"
+                / "fixture/1.json"
+            )
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"fixture")
+
+            def decode_file(_path, _data):
+                return {
+                    "targetCount": 1,
+                    "rows": [{
+                        "record": {
+                            "start": 12,
+                            "uid": "uid",
+                            "localId": 4,
+                            "unionTag": 0x0360,
+                            "serializedMemberCount": 15,
+                        },
+                        "recordIndex": 2,
+                        "definition": audio_semantics.LEVELSEQUENCE_PLAY_ACTION_DEFINITIONS[(0x0360, 0x0F)],
+                        "levelSequenceId": "levelseq_fixture",
+                    }],
+                }
+
+            result = audio_semantics.collect_levelsequence_play_actions(
+                export_root, decode_file=decode_file
+            )
+            row = result["actionsByLevelSequenceId"]["levelseq_fixture"][0]
+            self.assertEqual(row["action"], "PlayLevelSequence")
+            self.assertEqual(row["levelScriptId"], "fixture/1")
+            self.assertEqual(row["serializedMemberCount"], 15)
+            self.assertEqual(row["runtimeActivationStatus"], "playLevelSequenceActionExecutionNotObserved")
+
     def test_event_summary_preserves_non_media_source_taxonomy(self) -> None:
         row = {
             "id": "au_music_placeholder_fixture",
@@ -2232,6 +2418,27 @@ class AudioSemanticDataTests(unittest.TestCase):
             relation_body.index("record?.eventIds"),
         )
 
+    def test_audio_frontend_exposes_levelsequence_timeline_director_evidence(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        context_tags_body = source.split("function recordContextTags", 1)[1].split(
+            "function recordRelationTags", 1
+        )[0]
+        evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
+            "function radioTableLineLabel", 1
+        )[0]
+        self.assertIn('timeline: "contextTimeline"', source)
+        self.assertIn('contextKind === "levelSequenceAudio"', context_tags_body)
+        self.assertIn('context?.timelineAssetName', evidence_body)
+        self.assertIn('context?.playableDirectorCount', evidence_body)
+        self.assertIn('context?.levelScriptActionCount', evidence_body)
+        self.assertIn('context?.audioPlayableKeyStatus', evidence_body)
+        self.assertIn("function levelSequenceAudioCatalogSection", source)
+        self.assertIn("state.index?.triggerCatalog?.levelSequenceAudio", source)
+        self.assertIn("catalog.eventsWithExactLevelSequenceAction", source)
+        self.assertIn("catalog.eventsWithoutTimelineCarrier", source)
+
     def test_audio_frontend_renders_native_playback_call_chain_stages(self) -> None:
         source = (
             Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
@@ -2270,6 +2477,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("randomSequence.ownedNotInPlaylist", source)
         self.assertIn("Reciprocal Children prove container ownership", source)
         self.assertIn("node?.selectorValidation?.status", source)
+        self.assertIn("recursiveOwnedDescendantIds", source)
+        self.assertIn("zeroUnboundLeafIds", source)
+        self.assertIn("sameBankMissingLeafIds", source)
+        self.assertIn("recursiveOwned", source)
         self.assertIn("Wwise Random/Sequence policy", source)
         self.assertIn("Runtime random seed, shuffle history", source)
         self.assertIn("container?.layerAssignmentStatuses", source)

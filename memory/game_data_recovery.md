@@ -144,6 +144,17 @@ uses the same object/weapon/position paths and retains returned ids for seek,
 time-dilation, fade, and stop-on-end behavior. This is exact static call-chain
 evidence for the current GameAssembly, not a live execution trace or proof of
 the switch/state/RTPC values and media leaf selected by Wwise.
+The trigger-specific binary paths are now separated as well. Animation
+`AudioAnimationEventReceiver.PostAudioEvent` resolves the target
+`AudioObjectMono.audioObjectId`, hashes the authored key, and enters the same
+`AudioAdapter._PostEvent` path. `AnimatorBehaviourPlayAudio.OnStateEnter` calls
+`GameAction.PlayAudio`, stores returned ids in its playing-id list, and
+`OnStateExit` calls `StopAudio` with a 100 ms fade. Ability `PlaySoundAction`
+posts its authored `_soundEvent` (or the position/mixing overload) and
+`OnEnd` stops its tracked sound instances. These are one authored request per
+action; runtime playing-id lists are instances, not thousands of static
+options. The internal id, native Wwise id, actual callback order, and active
+container leaf remain runtime-only.
 
 Event resource preparation is now bounded more precisely. `_DoLoadEventAsync`
 first calls `AudioAssetCache.ActivateAsset(eventId)`. Its false branch calls
@@ -284,6 +295,12 @@ The strongest current authored playback joins are SkillData/BuffData audio
 references, Timeline/cutscene audio fields, and AudioDialog-to-lipsync
 `pathStem` associations. We do not yet have a complete runtime receiver,
 activation chronology, or proof of which branch was selected in a live game.
+In the current CN rebuild this conservative join yields 236 target Events,
+228 Timeline-carrier Events, 327 stored contexts, and 8 carrier gaps; the
+serialized LevelScript scan finds 348 PlayLevelSequence records, but zero of
+the current carrier names pass the exact `levelseq_*_Audio` identity join.
+Those action records remain useful authored inventory, not proof of a trigger
+for these Event rows.
 Playable skill linkage is recorded per Event instead of inheriting a whole
 group's confidence. An exact Gameplay action id joined to the same SkillData
 file proves an authored dependency; a complete length-prefixed Event reference
