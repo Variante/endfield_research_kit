@@ -138,18 +138,24 @@ NPC archetypes are imported as labeled source kits.
   mask, not a projection of runtime record `+0x14`. The direct lookup surface
   is now bounded: all 53 calls to `0x180424C30` are pinned and partitioned into
   44 exact `0x7F00` calls across 41 entry CFGs plus nine other-family calls.
-  Cross-hot/cold CFG taint finds no exact-path record `+0x14` read, record-base
-  pointer store, or record-base return. The six direct `blob+0x04` call escapes are
+  Width-aware cross-hot/cold CFG taint finds no exact-path record `+0x14` read,
+  record-base pointer store, or record-base return. The six direct `blob+0x04` call escapes are
   three zero initializers at `0x181CA0040` and three calls to classifier
   `0x181131FC0`, which reads only record `+0x00`. One additional `blob+0x00`
   tail path, `0x1810CE280 -> 0x181C9F9A0`, copies the full layout with byte
   count `4 + 32*(familyMask>>8)`: count, `24*capacity` runtime records, and
   `8*capacity` LOD pairs. It carries `+0x14` verbatim between exact-family
-  blobs but does not interpret it. A third exact component-K /
+  blobs but does not interpret it. HG Factory internal-call entries 198/215
+  name the current/obsolete `CreateBatchedEntities` routes; their hash-pinned
+  copy cores `0x1810CE510/0x1810CEBC0` both call this helper. A third exact component-K /
   ray-tracing-K grouping consumer at `0x18112A790` reads only record
   `+0x00/+0x04/+0x08/+0x10`. The apparent callback-A `+0x14` read at the same
   stride is not this blob: `0x181038D70/0x181038DE0` derive its base from ECS
   archetype component columns 127/126, and the value is consumed as a float.
+  The other HGTree renderer-list variants do not reveal another route:
+  internal-call entries 564/565/566 (default, child-view, and PreZ) reach cores
+  `0x18107EE40/0x18107FCF0/0x181080190`, which all converge on scheduler
+  `0x181080730` and the same two already inspected callbacks.
   The exact later native consumer of record `+0x14` remains open outside this
   direct lookup/escape surface. This
   loader blob is not the other 24-byte structure used by LOD jobs. The latter
