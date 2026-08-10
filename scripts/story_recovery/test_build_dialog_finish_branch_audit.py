@@ -1118,6 +1118,36 @@ class LevelScriptTaskConsumerTests(unittest.TestCase):
                 diagnostic["actual"]["dictionaryScriptIds"],
             )
 
+    def test_leveldata_progress_census_forwards_all_typed_script_references(self) -> None:
+        references = {
+            ("map_fixture", "4242"): [{
+                "missionId": "mission_fixture",
+                "questId": "quest_fixture",
+                "conditionType": "CheckScriptMonsterKilled",
+                "scopeKind": "exact_mission_runtime_levelscript_condition",
+                "sourceFile": "MissionRuntimeAsset/mission_fixture.json",
+            }],
+        }
+        with patch.object(
+            audit,
+            "build_leveldata_authoritative_scope_script_host_index",
+            return_value={},
+        ) as build_shell_index:
+            audit._scan_leveldata_task_progress_carriers(
+                [{
+                    "levelId": "map_fixture",
+                    "scriptId": "4242",
+                    "taskId": "deadbeef",
+                    "conditionId": "condition",
+                }],
+                (),
+                (),
+                (),
+                script_scope_references=references,
+            )
+
+        self.assertEqual(references, build_shell_index.call_args.args[2])
+
 
 class NativeContractTests(unittest.TestCase):
     class FakePe:

@@ -1942,6 +1942,9 @@ def _scan_leveldata_task_progress_carriers(
     levelscript_roots: tuple[Path, ...] = DEFAULT_LEVELSCRIPT_ROOTS,
     mission_runtime_roots: tuple[Path, ...] = DEFAULT_MISSION_RUNTIME_ROOTS,
     *,
+    script_scope_references: dict[
+        tuple[str, str], list[dict[str, Any]]
+    ] | None = None,
     authoritative_shell_index: dict[tuple[str, str], dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Recover exact task-condition carriers inside serialized LevelData.
@@ -2017,7 +2020,7 @@ def _scan_leveldata_task_progress_carriers(
             build_leveldata_authoritative_scope_script_host_index(
                 script_pairs,
                 mission_runtime_ids,
-                {},
+                script_scope_references or {},
             )
         )
     shell_hosts: dict[tuple[str, str, str], dict[str, Any]] = {}
@@ -2782,8 +2785,23 @@ def build_report(
     task_identity_carrier_census = _scan_exact_task_identity_carriers(
         exact_levelscript_consumers
     )
+    levelscript_scope_references: dict[
+        tuple[str, str], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for context in mission_levelscript_contexts:
+        levelscript_scope_references[
+            (context["levelId"], context["scriptId"])
+        ].append({
+            "missionId": context["missionId"],
+            "questId": context["questId"],
+            "conditionId": context["missionConditionId"],
+            "conditionType": context["missionConditionType"],
+            "scopeKind": "exact_mission_runtime_levelscript_condition",
+            "sourceFile": context["missionSource"],
+        })
     leveldata_task_progress_census = _scan_leveldata_task_progress_carriers(
-        exact_levelscript_consumers
+        exact_levelscript_consumers,
+        script_scope_references=levelscript_scope_references,
     )
     task_identity_carriers = defaultdict(list)
     for carrier in task_identity_carrier_census.get("carriers") or []:

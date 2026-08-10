@@ -160,8 +160,8 @@ never promotes an edge.
   (42 finish-condition rows) across 27 LevelData files: the complete member-22
   dictionary must place paired `lt:p`/`lt:mp` properties inside the exact
   script's `LevelScriptBriefData` entry. Independent whole-shell references
-  resolve 21 task identities to one mission shell, retain six as shared, and
-  leave 13 shell identities unresolved. This attaches 22 authored consumer
+  resolve 20 task identities to one mission shell, retain 11 as shared, and
+  leave nine shell identities unresolved. This attaches 21 authored consumer
   rows through LevelData plus the existing SubGame-owned row to 17 Mission
   Pipeline missions. The LevelData carrier proves persistent task-condition
   placement and shell context, not activation, quest ownership, or Story order.
@@ -266,7 +266,7 @@ Reject as proof:
 1. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families.
-2. Resolve the six shared and 13 unresolved LevelData mission shells with an
+2. Resolve the 11 shared and nine unresolved LevelData mission shells with an
    independent typed server-selection or mission-owner carrier. The exact
    member-22 task-progress boundary is complete for all 40 task identities, but
    28 authored endpoint-to-task dependencies still lack an exact
