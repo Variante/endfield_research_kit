@@ -689,12 +689,40 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertTrue(
             runtime_tail["thirdResolvedResourceAt0x0C"]["producerClosed"]
         )
+        third_resource = runtime_tail["thirdResolvedResourceAt0x0C"]
+        self.assertTrue(third_resource["assetClassClosed"])
+        self.assertEqual(
+            third_resource["assetType"],
+            "UnityEngine.HyperGryph.AssetType.Mesh",
+        )
+        self.assertEqual(third_resource["assetTypeValue"], 2)
+        self.assertEqual(
+            [row["assetTypeImmediate"] for row in third_resource["acquisitionPaths"]],
+            [2, 2],
+        )
         self.assertEqual(
             runtime_tail["thirdResolvedResourceAt0x0C"]["writerPaths"][0][
                 "writeVirtualAddress"
             ],
             "0x181157AD1",
         )
+        resource_load = result["resourceLoadInternalCall"]
+        self.assertEqual(resource_load["index"], 437)
+        self.assertIn("LoadAsync_Injected", resource_load["name"])
+        self.assertEqual(
+            resource_load["targetVirtualAddress"], "0x1801F2AB0"
+        )
+        asset_literals = {
+            row["name"]: row["value"]
+            for row in resource_load["managedContract"]["assetType"]["literals"]
+        }
+        self.assertEqual(asset_literals["Material"], 1)
+        self.assertEqual(asset_literals["Mesh"], 2)
+        load_parameters = resource_load["managedContract"][
+            "loadAsyncInjected"
+        ]["parameters"]
+        self.assertEqual(load_parameters[1]["name"], "type")
+        self.assertEqual(load_parameters[1]["metadataTypeIndex"], 122373)
         self.assertTrue(runtime_tail["rendererPropertyFlagsAt0x10"]["roleClosed"])
         self.assertEqual(
             runtime_tail["rendererPropertyFlagsAt0x10"]["preserveMask"],
@@ -1162,6 +1190,59 @@ class LightCullCapAuditTests(unittest.TestCase):
             AUDIT.validate_unity_hgtree_renderer_boundary(
                 AUDIT.PEImage(AUDIT.UNITY_PLAYER), metadata=bytes(metadata)
             )
+
+    def test_changed_hg_asset_type_mesh_value_fails_closed(self) -> None:
+        metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
+        sections = {}
+        for section_index, section_name in enumerate(
+            AUDIT.IL2CPP_METADATA_SECTION_NAMES
+        ):
+            sections[section_name] = struct.unpack_from(
+                "<Ii", metadata, 8 + section_index * 8
+            )
+        defaults_offset, defaults_size = sections["fieldDefaultValues"]
+        values_offset, _values_size = sections[
+            "fieldAndParameterDefaultValueData"
+        ]
+        mesh_field = AUDIT.HG_ASSET_TYPE_FIELDS["Mesh"][0]
+        mesh_data_index = None
+        for position in range(
+            defaults_offset, defaults_offset + defaults_size, 12
+        ):
+            field_index, _type_index, data_index = struct.unpack_from(
+                "<iii", metadata, position
+            )
+            if field_index == mesh_field:
+                mesh_data_index = data_index
+                break
+        self.assertIsNotNone(mesh_data_index)
+        metadata[values_offset + mesh_data_index] ^= 2
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=hg_resource_asset_type_Mesh_value; "
+            r"source=.*global-metadata.dat; expected=2; actual=3",
+        ):
+            AUDIT.validate_hg_resource_asset_type_metadata(bytes(metadata))
+
+    def test_changed_hg_resource_acquire_core_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x180FBFC60 and size == 0x224:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_renderer_resource_slot_acquire_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
 
     def test_changed_hgtree_owner_cleanup_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)

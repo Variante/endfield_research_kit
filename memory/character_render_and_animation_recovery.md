@@ -108,10 +108,16 @@ NPC archetypes are imported as labeled source kits.
   former tail is now split by binary behavior: serialized `renderFlags` at
   `+0x08` is mutable, with four particle mode-2/3/4/5 setup variants replacing
   it with bit 20 and a scheduled callback consuming it. `+0x0C` is the third
-  resolved, reference-counted renderer resource index: LOD availability paths
-  `0x181157760/0x181159010` populate it, cleanup `0x18115BFC0` releases and
-  clears it through `0x180FBF6B0`, and a callback also consumes the word as a
-  filter overlay. The exact asset class remains open. Common Renderer state sync
+  resolved, reference-counted `Mesh` resource index: both Render and
+  MergedRenderCollider transition paths acquire their third slot with native
+  kind `2`. Dedicated HG internal-call entry 437 maps the forwarding wrapper
+  `0x1801F2AB0` to `HGResourceManager.LoadAsync_Injected`; its IL2CPP `type`
+  parameter is `UnityEngine.HyperGryph.AssetType`, whose installed literals
+  close `1=Material` and `2=Mesh`. LOD availability paths
+  `0x181157760/0x181159010` populate record `+0x0C`, cleanup `0x18115BFC0`
+  releases and clears it through `0x180FBF6B0`, and a callback also consumes
+  the word as a filter overlay. Why the resolved Mesh-derived index doubles as
+  that overlay remains open. Common Renderer state sync
   `0x180432CD0` updates `+0x10` with property-derived flags. Dedicated HG
   internal-call entry 204 names `+0x14` as `enabledLightModes`; wrapper
   `0x1801EB940` reaches the all-record writer at `0x1810D9110`. Installed
@@ -255,8 +261,8 @@ NPC archetypes are imported as labeled source kits.
   `[0,lodCount-1]`. The
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
-  crossed the HG table boundary into unrelated Animator code. The exact asset
-  class of loader record `+0x0C`, the downstream native consumer of
+  crossed the HG table boundary into unrelated Animator code. The semantic
+  reason for loader record `+0x0C`'s Mesh/filter dual use, the downstream native consumer of
   `enabledLightModes` at record `+0x14` beyond the now-excluded record-base
   classifier and callback-A ECS-column lookalike, the component-67
   standalone native type name, any separate post-dispatch copy or consumer of
@@ -495,8 +501,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 1. Search for a separate post-dispatch copy or consumer of cull-view
    `screenSizeMinimumSquared`; the current scheduled batch core directly
    excludes it. Keep that value distinct from both squared `parentLODBias` and
-   the HGTreeRenderer LOD bounds. Resolve the remaining loader-registration
-   record `+0x0C` asset class, the downstream native consumer of
+   the HGTreeRenderer LOD bounds. Resolve the semantic reason for loader record
+   `+0x0C`'s Mesh/filter dual use, the downstream native consumer of
    `enabledLightModes` at record `+0x14` beyond the now-excluded record-base
    classifier and callback-A ECS-column lookalike, and the
    exact native type-name link for component 67; its serialized LOD-count/range producer is
