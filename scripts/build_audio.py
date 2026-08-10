@@ -666,6 +666,119 @@ def animation_clip_path_id(path: Path) -> int | None:
     return value - (1 << 64) if value >= (1 << 63) else value
 
 
+def _animator_data_node(value: Any) -> dict[str, Any] | None:
+    """Unwrap one serialized Unity ``OffsetPtr.data`` value safely."""
+
+    if not isinstance(value, dict):
+        return None
+    nested = value.get("data")
+    return nested if isinstance(nested, dict) else value
+
+
+def animator_controller_state_clip_refs(
+    payload: dict[str, Any],
+) -> dict[int, list[dict[str, Any]]]:
+    """Return authored state/blend-tree references keyed by clip slot.
+
+    Unity's serialized ``m_AnimationClips`` array is the only stable bridge
+    from an AnimatorController state to an AnimationClip in the exported
+    JSON.  This parser deliberately reports authored membership only: it does
+    not follow transitions, parameters, entry selectors, or runtime layer
+    activation.  Malformed nodes are skipped rather than guessed.
+    """
+
+    clips = payload.get("m_AnimationClips")
+    controller = _animator_data_node(payload.get("m_Controller"))
+    if not isinstance(clips, list) or not isinstance(controller, dict):
+        return {}
+    valid_slots = {
+        index
+        for index, clip in enumerate(clips)
+        if isinstance(clip, dict)
+        and isinstance(clip.get("m_PathID"), int)
+        and not isinstance(clip.get("m_PathID"), bool)
+        and int(clip.get("m_PathID") or 0) != 0
+    }
+    if not valid_slots:
+        return {}
+
+    layers = controller.get("m_LayerArray")
+    layer_roots: dict[int, list[int]] = defaultdict(list)
+    if isinstance(layers, list):
+        for layer_index, layer_value in enumerate(layers):
+            layer = _animator_data_node(layer_value)
+            if not isinstance(layer, dict):
+                continue
+            state_machine_index = layer.get("m_StateMachineIndex")
+            if isinstance(state_machine_index, int) and not isinstance(state_machine_index, bool):
+                layer_roots.setdefault(int(state_machine_index), []).append(layer_index)
+
+    state_machines = controller.get("m_StateMachineArray")
+    if not isinstance(state_machines, list):
+        return {}
+    result: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    seen: set[tuple[int, int, int, int]] = set()
+    for state_machine_index, state_machine_value in enumerate(state_machines):
+        state_machine = _animator_data_node(state_machine_value)
+        if not isinstance(state_machine, dict):
+            continue
+        states = state_machine.get("m_StateConstantArray")
+        if not isinstance(states, list):
+            continue
+        for state_index, state_value in enumerate(states):
+            state = _animator_data_node(state_value)
+            if not isinstance(state, dict):
+                continue
+            blend_trees = state.get("m_BlendTreeConstantArray")
+            if not isinstance(blend_trees, list):
+                continue
+            for tree_index, tree_value in enumerate(blend_trees):
+                tree = _animator_data_node(tree_value)
+                if not isinstance(tree, dict):
+                    continue
+                nodes = tree.get("m_NodeArray")
+                if not isinstance(nodes, list):
+                    continue
+                for node_index, node_value in enumerate(nodes):
+                    node = _animator_data_node(node_value)
+                    if not isinstance(node, dict):
+                        continue
+                    clip_slot = node.get("m_ClipID")
+                    if (
+                        not isinstance(clip_slot, int)
+                        or isinstance(clip_slot, bool)
+                        or clip_slot not in valid_slots
+                    ):
+                        continue
+                    key = (state_machine_index, state_index, tree_index, node_index)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    result[int(clip_slot)].append({
+                        "stateMachineIndex": state_machine_index,
+                        "stateIndex": state_index,
+                        "stateNameHash": state.get("m_NameID"),
+                        "statePathHash": state.get("m_FullPathID"),
+                        "stateTagHash": state.get("m_TagID"),
+                        "stateMachineLayerIndices": list(layer_roots.get(state_machine_index) or []),
+                        "stateMachineReferencedByLayer": state_machine_index in layer_roots,
+                        "blendTreeIndex": tree_index,
+                        "blendTreeNodeIndex": node_index,
+                        "blendType": node.get("m_BlendType"),
+                        "clipSlot": int(clip_slot),
+                        "reachability": "authoredStateMembership",
+                        "runtimeExecution": "unobserved",
+                    })
+    for rows in result.values():
+        rows.sort(key=lambda row: (
+            int(row.get("stateMachineIndex") or 0),
+            int(row.get("stateIndex") or 0),
+            int(row.get("blendTreeIndex") or 0),
+            int(row.get("blendTreeNodeIndex") or 0),
+        ))
+    return dict(result)
+
+
 def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
     """Index resolved AnimatorController->AnimationClip PPtrs fail-closed.
 
@@ -686,6 +799,8 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
         "directReferenceCount": 0,
         "uniqueReferencedClipPathIds": 0,
         "controllerCount": 0,
+        "controllersWithAuthoredStateRefs": 0,
+        "authoredStateClipReferenceCount": 0,
         "overrideControllersExcluded": True,
     }
     if not root.is_dir():
@@ -723,6 +838,12 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
             str(controller_path_id) if isinstance(controller_path_id, int) else "",
             normalize_posix(path.relative_to(export_root)),
         )
+        state_refs_by_slot = animator_controller_state_clip_refs(payload)
+        file_contexts: dict[tuple[int, str], dict[str, Any]] = {}
+        file_state_ref_count = sum(len(rows) for rows in state_refs_by_slot.values())
+        if file_state_ref_count:
+            counts["controllersWithAuthoredStateRefs"] += 1
+            counts["authoredStateClipReferenceCount"] += file_state_ref_count
         direct_file_reference_count = 0
         for reference in references:
             if not isinstance(reference, dict):
@@ -759,17 +880,44 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
             if controller_key not in seen_controllers:
                 seen_controllers.add(controller_key)
                 counts["controllerCount"] += 1
-            context = {
-                "name": controller_name,
-                "sourcePath": controller_key[2],
-                "sourceFile": controller_source_file,
-                "pathId": controller_path_id,
-                "targetSourceFile": target_source_file,
-                "resolutionStatus": resolution_status,
-            }
-            by_clip_path_id[target_path_id].append(context)
+            context_key = (target_path_id, target_source_file)
+            context = file_contexts.get(context_key)
+            if context is None:
+                context = {
+                    "name": controller_name,
+                    "sourcePath": controller_key[2],
+                    "sourceFile": controller_source_file,
+                    "pathId": controller_path_id,
+                    "targetSourceFile": target_source_file,
+                    "resolutionStatus": resolution_status,
+                    "clipSlots": [],
+                    "authoredStateReferences": [],
+                }
+                file_contexts[context_key] = context
+            reference_path = str(reference.get("path") or "")
+            slot_match = re.search(r"m_AnimationClips\[(\d+)\]", reference_path)
+            if slot_match:
+                clip_slot = int(slot_match.group(1))
+                if clip_slot not in context["clipSlots"]:
+                    context["clipSlots"].append(clip_slot)
+                for state_ref in state_refs_by_slot.get(clip_slot) or []:
+                    if state_ref not in context["authoredStateReferences"]:
+                        context["authoredStateReferences"].append(dict(state_ref))
             direct_file_reference_count += 1
             counts["directReferenceCount"] += 1
+        for context_key, context in file_contexts.items():
+            context["clipSlots"] = sorted(context.get("clipSlots") or [])
+            context["authoredStateReferences"] = sorted(
+                context.get("authoredStateReferences") or [],
+                key=lambda row: (
+                    int(row.get("stateMachineIndex") or 0),
+                    int(row.get("stateIndex") or 0),
+                    int(row.get("blendTreeIndex") or 0),
+                    int(row.get("blendTreeNodeIndex") or 0),
+                ),
+            )
+            context["authoredStateReferenceCount"] = len(context["authoredStateReferences"])
+            by_clip_path_id[context_key[0]].append(context)
         if direct_file_reference_count:
             counts["filesWithDirectReferences"] += 1
 
@@ -2407,8 +2555,8 @@ def link_gameplay_audio(
             "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
             "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",
             "enemyTemplateBoundary": "AbilitySystemData containment is exact, while identifiers preserved only in partially decoded string-hint tails remain ownership-inferred.",
-            "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse; direct resolved AnimatorController PPtrs now annotate clip reachability, while override-controller pairs and runtime state reachability remain unresolved",
-            "animationControllerBoundary": "A direct resolved AnimationClip PPtr in an exported AnimatorController proves authored controller membership only. AnimatorOverrideController pairs, Timeline/Playable bindings, controller state selection, and live Animator execution remain unresolved; no animation callback is promoted into a skill trigger by this evidence.",
+            "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse; direct resolved AnimatorController PPtrs now annotate authored state/blend-tree membership when serialized state data is valid, while override-controller pairs and live state selection remain unresolved",
+            "animationControllerBoundary": "A direct resolved AnimationClip PPtr in an exported AnimatorController proves authored controller membership. authoredStateReferences additionally prove the controller-local m_AnimationClips slot -> StateConstant -> BlendTree node path and whether that state machine is referenced by a layer; they do not prove transition selection or live Animator execution. AnimatorOverrideController pairs and Timeline/Playable bindings remain unresolved; no animation callback is promoted into a skill trigger by this evidence.",
             "unownedAnimationBoundary": "Every actor/monster AnimationClip callback with a supported audio function is retained. Clips without a bounded playable-character or enemy-template token stay owner-unresolved and appear only in the debug Audio evidence surface; generic non-actor clip indexing remains a separate exporter gap.",
             "animationMediaBoundary": "An owned clip proves that its callback requests the Event. Shared playable-character Events expose a shared Wwise selector graph; its reachable leaves are not attributed to one character until switch/state values are decoded.",
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
