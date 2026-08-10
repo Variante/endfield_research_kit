@@ -123,7 +123,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 10
+AUDIO_SEMANTIC_SCHEMA_VERSION = 11
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 6
 MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
     "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
@@ -1310,6 +1310,167 @@ def collect_spawner_pre_warn_semantics(
             "pre-warning Event request, timing value, effect key, enemy/template, and source row. "
             "It does not prove that the spawner ran or that a Wwise branch played. Non-null "
             "bornBehaviorData is rejected because no current authored fixture exercises it."
+        ),
+    }
+    return {"eventContexts": dict(contexts), "stats": stats}
+
+
+def collect_patrol_sub_action_audio_semantics(
+    export_root: Path,
+    *,
+    decoder: Any | None = None,
+) -> dict[str, Any]:
+    """Recover exact authored ``PatrolSubPlayAudioData`` Event requests."""
+    if decoder is None:
+        try:
+            from story_builder.level_bindings import decode_leveldata_npc_patrol_list
+        except ImportError:
+            from scripts.story_builder.level_bindings import decode_leveldata_npc_patrol_list
+        decoder = decode_leveldata_npc_patrol_list
+
+    leveldata_root: Path | None = None
+    source_root = ""
+    for candidate_root in ("Persistent", "StreamingAssets"):
+        candidate = export_root / "structured" / candidate_root / "Data/Json/LevelData"
+        if candidate.is_dir():
+            leveldata_root = candidate
+            source_root = candidate_root
+            break
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    failures: list[dict[str, str]] = []
+    source_files = 0
+    decoded_files = 0
+    no_nonempty_patrol_files = 0
+    patrol_rows = 0
+    patrol_points = 0
+    patrol_actions = 0
+    play_audio_contexts = 0
+    if leveldata_root is not None:
+        for path in sorted(leveldata_root.rglob("*.json"), key=lambda item: item.as_posix().lower()):
+            if not path.is_file():
+                continue
+            source_files += 1
+            source = normalize_posix(path.relative_to(export_root))
+            try:
+                data = path.read_bytes()
+                decoded = decoder(data)
+            except (OSError, ValueError) as exc:
+                if len(failures) < 16:
+                    failures.append({"source": source, "error": str(exc)})
+                continue
+            if not isinstance(decoded, dict) or not isinstance(decoded.get("patrols"), list):
+                if len(failures) < 16:
+                    failures.append({"source": source, "error": "decoder returned no patrols list"})
+                continue
+            if decoded.get("status") == "noNonemptyTypedPatrolList":
+                no_nonempty_patrol_files += 1
+                continue
+            if decoded.get("status") != "exactNonemptyTypedPatrolList":
+                if len(failures) < 16:
+                    failures.append({"source": source, "error": "decoder returned an unsupported status"})
+                continue
+            decoded_files += 1
+            fingerprint = hashlib.sha256(data).hexdigest()
+            schema_mapping_id = str(decoded.get("schemaMappingId") or "")
+            for patrol in decoded["patrols"]:
+                if not isinstance(patrol, dict):
+                    continue
+                patrol_rows += 1
+                patrol_id = int(patrol.get("patrolId") or 0)
+                patrol_index = int(patrol.get("patrolIndex") or 0)
+                for point in patrol.get("points") or []:
+                    if not isinstance(point, dict):
+                        continue
+                    patrol_points += 1
+                    point_index = int(point.get("pointIndex") or 0)
+                    for action_index, action in enumerate(point.get("actions") or []):
+                        if not isinstance(action, dict):
+                            continue
+                        patrol_actions += 1
+                        sub_action = action.get("subActionData")
+                        if not (
+                            action.get("type") == 11
+                            and action.get("subActionDataUnionTag") == 1
+                            and isinstance(sub_action, dict)
+                            and sub_action.get("kind") == "PatrolSubPlayAudioData"
+                        ):
+                            continue
+                        event_hash = int(sub_action.get("audioEventHash") or 0) & 0xFFFFFFFF
+                        if not event_hash:
+                            continue
+                        signed_value = int(sub_action.get("audioEventId") or 0)
+                        event_hex = f"0x{event_hash:08x}"
+                        context = {
+                            "kind": "patrolSubActionPlayAudio",
+                            "ownerId": f"patrol:{patrol_id}",
+                            "confidence": "direct",
+                            "semanticRole": "authoredNpcPatrolPointAudio",
+                            "eventHash": event_hash,
+                            "eventHex": event_hex,
+                            "signedValue": signed_value,
+                            "patrolId": patrol_id,
+                            "patrolIndex": patrol_index,
+                            "pointIndex": point_index,
+                            "actionIndex": action_index,
+                            "patrolSubActionType": 11,
+                            "subActionUnionTag": 1,
+                            "subActionUnionTagHex": "0x01",
+                            "waitTime": action.get("waitTime"),
+                            "source": source,
+                            "sourceRoot": source_root,
+                            "sourcePaths": [source],
+                            "sourceFingerprint": fingerprint,
+                            "sourceOffset": action.get("recordOffset"),
+                            "path": (
+                                f"npcPatrolData[{patrol_index}].points[{point_index}]"
+                                f".actions[{action_index}].subActionData.audioEventId"
+                            ),
+                            "semanticPath": "LevelData.npcPatrolData.points.actions.PatrolSubPlayAudioData.audioEventId",
+                            "schemaMappingId": schema_mapping_id,
+                            "schemaStatus": "exactCurrentMemoryPackCursor",
+                            "triggerRequestEvidence": ["serializedPatrolSubPlayAudioDataAudioId"],
+                            "triggerRuntimeActivationStatuses": ["runtimePatrolPointActionExecutionRequired"],
+                            "runtimeActivationStatus": "patrolPointActionExecutionNotObserved",
+                            "nativeConsumer": (
+                                "NewNpcAIPatrolController._PlayAudioSubAction "
+                                "(token 0x0600aedb)"
+                            ),
+                        }
+                        _append_context(
+                            contexts,
+                            seen,
+                            event_hash_context_key(event_hash),
+                            context,
+                        )
+                        play_audio_contexts += 1
+
+    failed_files = source_files - decoded_files - no_nonempty_patrol_files
+    stats = {
+        "status": (
+            "unavailable" if leveldata_root is None
+            else "complete" if failed_files == 0
+            else "partial"
+        ),
+        "sourceRoot": source_root,
+        "sourceFiles": source_files,
+        "decodedFiles": decoded_files,
+        "noNonemptyTypedPatrolListFiles": no_nonempty_patrol_files,
+        "failedFiles": failed_files,
+        "patrolRows": patrol_rows,
+        "patrolPoints": patrol_points,
+        "patrolActions": patrol_actions,
+        "playAudioContexts": play_audio_contexts,
+        "distinctPlayAudioEvents": len(contexts),
+        "failureSamples": failures,
+        "evidenceBoundary": (
+            "A fully consumed current LevelData/43 member-31 NpcPatrolData/9 -> point/3 -> "
+            "PatrolSubAction/26 tag-1 PatrolSubPlayAudioData/1 row proves an authored "
+            "patrol-point Event request and exact patrol/point/action source. It does not prove "
+            "that the patrol reached the point, the action executed, or any Wwise media branch played. "
+            "Files without a unique non-empty typed patrol frame remain explicitly empty; drift and "
+            "ambiguous frames fail closed."
         ),
     }
     return {"eventContexts": dict(contexts), "stats": stats}
@@ -3511,6 +3672,13 @@ def build_event_rows(
             category = "sfx"
             category_evidence = "exactSpawnerPreWarnAudioField"
         if category == "unknown" and any(
+            context.get("kind") == "patrolSubActionPlayAudio"
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "sfx"
+            category_evidence = "exactPatrolSubPlayAudioData"
+        if category == "unknown" and any(
             context.get("kind") == "charInteractAudioEvent"
             for context in event_contexts
             if isinstance(context, dict)
@@ -3621,7 +3789,7 @@ def semantic_context_group(kind: Any) -> str:
         "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
         "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
-        "spawnerPreWarnAudio", "charInteractAudioEvent", "physicsAudioComponentEvent",
+        "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "physicsAudioComponentEvent",
         "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent",
     }:
         return "authoredConfig"
@@ -3660,6 +3828,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "authoredEventId", "spawnerConfigId", "enemyLibraryIndex", "enemyId",
             "bornTemplateId", "enemyLevel", "spawnerEnemyKey", "preWarnTime",
             "preWarnEffectKey", "schemaMappingId", "schemaStatus",
+            "patrolId", "patrolIndex", "pointIndex", "patrolSubActionType",
+            "subActionUnionTag", "subActionUnionTagHex", "nativeConsumer",
             "charInteractPerformId", "actionPhase", "actionIndex", "logicId",
             "delay", "duration", "devOnly", "useEvent", "attachedActorType",
             "charIndex", "endStop", "is2D", "runtimeOwnerStatus",
@@ -3768,6 +3938,7 @@ def build_audio_semantic_data(
     cue_semantics = collect_audio_cue_semantics(export_root)
     global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
     spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
+    patrol_semantics = collect_patrol_sub_action_audio_semantics(export_root)
     char_interact_semantics = collect_char_interact_audio_semantics(export_root)
     physics_audio_semantics = collect_physics_audio_semantics(export_root)
     model_view_semantics = collect_model_view_state_audio_semantics(export_root)
@@ -3786,6 +3957,7 @@ def build_audio_semantic_data(
         collect_gameplay_contexts(webui_root, language),
         collect_projectile_contexts(webui_root),
         spawner_semantics.get("eventContexts") or {},
+        patrol_semantics.get("eventContexts") or {},
         char_interact_semantics.get("eventContexts") or {},
         physics_audio_semantics.get("eventContexts") or {},
         model_view_semantics.get("eventContexts") or {},
@@ -3820,6 +3992,13 @@ def build_audio_semantic_data(
         row for row in events
         if any(
             isinstance(context, dict) and context.get("kind") == "spawnerPreWarnAudio"
+            for context in row.get("contexts") or []
+        )
+    ]
+    patrol_event_rows = [
+        row for row in events
+        if any(
+            isinstance(context, dict) and context.get("kind") == "patrolSubActionPlayAudio"
             for context in row.get("contexts") or []
         )
     ]
@@ -4004,6 +4183,14 @@ def build_audio_semantic_data(
             "spawnerPreWarnAudioEventsUnresolved": sum(
                 not row.get("foundInWwise") for row in spawner_event_rows
             ),
+            "patrolSubActionPlayAudioEvents": context_kind_event_counts.get("patrolSubActionPlayAudio", 0),
+            "patrolSubActionPlayAudioContexts": context_kind_counts.get("patrolSubActionPlayAudio", 0),
+            "patrolSubActionPlayAudioEventsFoundInWwise": sum(
+                bool(row.get("foundInWwise")) for row in patrol_event_rows
+            ),
+            "patrolSubActionPlayAudioEventsUnresolved": sum(
+                not row.get("foundInWwise") for row in patrol_event_rows
+            ),
             "charInteractAudioEvents": context_kind_event_counts.get("charInteractAudioEvent", 0),
             "charInteractAudioContexts": context_kind_counts.get("charInteractAudioEvent", 0),
             "charInteractAudioEventsFoundInWwise": sum(
@@ -4081,6 +4268,7 @@ def build_audio_semantic_data(
         "hircSummary": audio_index.get("hircSummary") or {},
         "triggerCatalog": {
             "spawnerPreWarnAudio": spawner_semantics.get("stats") or {},
+            "patrolSubActionPlayAudio": patrol_semantics.get("stats") or {},
             "charInteractAudio": char_interact_semantics.get("stats") or {},
             "physicsAudio": {
                 **(physics_audio_semantics.get("stats") or {}),
@@ -4151,6 +4339,7 @@ def build_audio_semantic_data(
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
             "spawnerPreWarnAudio": "The current mc13 SpawnerEnemyLibraryItem preWarnAudioEventKey proves an authored enemy-spawn pre-warning request and its row-local timing/effect/enemy/template source. It does not prove that the spawner executed or that a Wwise branch played; unresolved authored names remain visible.",
+            "patrolSubActionPlayAudio": (patrol_semantics.get("stats") or {}).get("evidenceBoundary") or "",
             "charInteractAudio": (char_interact_semantics.get("stats") or {}).get("evidenceBoundary") or "",
             "physicsAudio": physics_audio_semantics.get("evidenceBoundary") or "",
             "modelViewStateAudio": model_view_semantics.get("evidenceBoundary") or "",
