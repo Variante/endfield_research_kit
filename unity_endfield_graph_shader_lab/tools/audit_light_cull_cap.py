@@ -1545,6 +1545,26 @@ UNITY_HGTREE_BODIES = {
         0x614,
         "419af56171b4fb28e2010a4ee7688d18f794297008a470914d681a34b44b7f86",
     ),
+    "lod_ecs_resource_relation_resolver": (
+        0x181164B80,
+        0x200,
+        "b944ac7eede924bb73dae677bf5b5ec4183d56549ed940694ff27bf5520e2b97",
+    ),
+    "lod_ecs_typed_resource_relation_resolver": (
+        0x181164D80,
+        0x1C9,
+        "9776729857b432d6ee55f45bcb9e4af03ea7a8ea47559f561861d8775ab943aa",
+    ),
+    "lod_ecs_grid_load_state_driver": (
+        0x1811733F0,
+        0x4E9,
+        "2201c36725e7ac584e84d33df0ec0fe4e3e5d335f12401256a6edff3bdac5d5c",
+    ),
+    "lod_ecs_streaming_batch_update": (
+        0x181180870,
+        0x863,
+        "189f4b2c732dcbef595ce2d8f747a6ff67a4e29cb06a57c61ac5ea8776d71073",
+    ),
     "hg_geometry_get_handle_binding": (
         0x1801EE550,
         0x7E,
@@ -2322,6 +2342,15 @@ UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
     "native_type_name": (0x181DA5338, "HGTreeComponent"),
     "managed_namespace": (0x181D25758, "UnityEngine.HyperGryph.ECS"),
     "module_name": (0x181D25730, "UnityEngine.HGGraphicsModule.dll"),
+}
+
+UNITY_HGTREE_RESOURCE_LIFECYCLE_STRINGS = {
+    "load_failure": (0x181D25868, "Streaming load asset %lld failed"),
+    "get_failure": (0x181D25890, "Streaming get asset %lld failed"),
+    "unexpected_grid_status": (
+        0x181E23998,
+        "Unexpected grid status %u when load",
+    ),
 }
 
 UNITY_HGTREE_SLICES = {
@@ -8125,6 +8154,41 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
+    resource_lifecycle_strings = {}
+    for label, (
+        virtual_address,
+        expected_value,
+    ) in UNITY_HGTREE_RESOURCE_LIFECYCLE_STRINGS.items():
+        actual_value = image.cstring(virtual_address)
+        require(
+            f"unity_hgtree_resource_lifecycle_{label}",
+            actual_value,
+            expected_value,
+            image.path,
+        )
+        resource_lifecycle_strings[label] = {
+            "virtualAddress": f"0x{virtual_address:X}",
+            "value": actual_value,
+        }
+
+    resource_lifecycle_call_sites = find_relative_call_sites_many(
+        image, {0x181172DD0, 0x181172750}
+    )
+    transition_task_call_sites = resource_lifecycle_call_sites[0x181172DD0]
+    require(
+        "unity_hgtree_lod_ecs_transition_task_call_sites",
+        transition_task_call_sites,
+        [0x181173854, 0x181180A25, 0x181180EB4, 0x181181095],
+        image.path,
+    )
+    request_poller_call_sites = resource_lifecycle_call_sites[0x181172750]
+    require(
+        "unity_hgtree_lod_ecs_resource_request_poller_call_sites",
+        request_poller_call_sites,
+        [0x181173268],
+        image.path,
+    )
+
     gpu_driven_bodies = []
     for label, (virtual_address, size_bytes, expected_hash) in (
         UNITY_GPU_DRIVEN_RENDERER_BODIES.items()
@@ -9803,6 +9867,10 @@ def validate_unity_hgtree_renderer_boundary(
                     },
                     "requestBatchLifecycle": {
                         "transitionTaskVirtualAddress": "0x181172DD0",
+                        "transitionTaskDirectCallSites": [
+                            f"0x{virtual_address:X}"
+                            for virtual_address in transition_task_call_sites
+                        ],
                         "taskStateByteOffset": "0x01",
                         "taskRequestCountOffset": "0x0A",
                         "taskBatchPointerOffset": "0x18",
@@ -9839,6 +9907,10 @@ def validate_unity_hgtree_renderer_boundary(
                         ),
                         "poller": {
                             "virtualAddress": "0x181172750",
+                            "directCallSites": [
+                                f"0x{virtual_address:X}"
+                                for virtual_address in request_poller_call_sites
+                            ],
                             "stateField": "resource handle slot+0x10 byte",
                             "states": [
                                 {
@@ -9855,8 +9927,8 @@ def validate_unity_hgtree_renderer_boundary(
                                 {
                                     "value": 2,
                                     "meaning": (
-                                        "terminal non-ready state; remove it from "
-                                        "the pending map"
+                                        "load failure; remove it from the pending "
+                                        "map without publishing a resolvable relation"
                                     ),
                                 },
                             ],
@@ -9865,6 +9937,57 @@ def validate_unity_hgtree_renderer_boundary(
                                 "HG_ALWAYS_ASSERT path"
                             ),
                             "completionCondition": "pendingRelationMap.count == 0",
+                        },
+                        "directCallerSurface": {
+                            "gridLoadStateDriver": {
+                                "virtualAddress": "0x1811733F0",
+                                "callSite": "0x181173854",
+                                "diagnostic": resource_lifecycle_strings[
+                                    "unexpected_grid_status"
+                                ],
+                            },
+                            "streamingBatchUpdate": {
+                                "virtualAddress": "0x181180870",
+                                "callSites": [
+                                    "0x181180A25",
+                                    "0x181180EB4",
+                                    "0x181181095",
+                                ],
+                                "meaning": (
+                                    "three entity-set branches synchronously invoke "
+                                    "the same per-record transition task"
+                                ),
+                            },
+                            "closedBoundary": (
+                                "all four direct rel32 callers are enumerated and "
+                                "their two owner bodies are hash-pinned; this closes "
+                                "the grid/batch update call surface, not the "
+                                "scheduler or thread identity that invokes those owners"
+                            ),
+                        },
+                        "failureEvidence": {
+                            "relationResolvers": [
+                                {
+                                    "virtualAddress": "0x181164B80",
+                                    "meaning": "instance-id/object resolver",
+                                },
+                                {
+                                    "virtualAddress": "0x181164D80",
+                                    "meaning": "typed asset resolver",
+                                    "type9CallbackCallSite": "0x181157E00",
+                                },
+                            ],
+                            "diagnostics": {
+                                "load": resource_lifecycle_strings["load_failure"],
+                                "get": resource_lifecycle_strings["get_failure"],
+                            },
+                            "stateEquation": (
+                                "state 1 publishes the relation consumed by "
+                                "LoadingToLoaded; state 2 removes the pending key "
+                                "without publishing it, reaching the installed "
+                                "Streaming load asset ... failed path or the "
+                                "component-specific fallback"
+                            ),
                         },
                         "readyHandoff": {
                             "projections": [
@@ -9916,10 +10039,11 @@ def validate_unity_hgtree_renderer_boundary(
                         "descriptor emission are closed for both callbacks. "
                         "The acquire core performs manager bookkeeping; the "
                         "outer task then materializes both descriptor sources, "
-                        "polls states 0/1/2, and invokes transition 3 with the "
+                        "polls pending/ready/load-failed states 0/1/2, and "
+                        "invokes transition 3 with the "
                         "resource views consumed by the runtime writers. Exact "
-                        "scheduler/thread semantics, the native label for "
-                        "terminal state 2, and native names for components "
+                        "execution scheduling/thread identity, the stripped enum symbol for "
+                        "state 2, and native names for components "
                         "67/68..74/75 remain open"
                     ),
                 },
@@ -10551,8 +10675,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v42",
-        "status": "component67_resource_request_batch_lifecycle_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v43",
+        "status": "component67_resource_failure_and_update_surface_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -10750,14 +10874,20 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "acquire core already performs resource-manager bookkeeping; a "
             "hash-pinned outer transition task then combines the callback "
             "context+0x50 unique set and +0x58 direct descriptors into one "
-            "request batch. Its poller retains state 0, publishes and removes "
-            "ready state 1, removes terminal non-ready state 2, and asserts on "
-            "other nonzero states. Once the pending map is empty, the task "
+            "request batch. Its poller retains pending state 0, publishes and "
+            "removes ready state 1, and removes state 2 without publishing a "
+            "resolvable relation. The installed resolver diagnostic "
+            "`Streaming load asset %lld failed` and the downstream fallback "
+            "close state 2 semantically as load failure. Other nonzero states "
+            "assert. Once the pending map is empty, the task "
             "projects the descriptor/resource views into callback context "
             "+0x60/+0x68/+0x70 and invokes transition 3 LoadingToLoaded. The "
             "already pinned type-0/type-9 callbacks then resolve ready "
             "Material/Mesh/shadow-proxy handles into runtime records and "
-            "complete the corresponding LOD availability state. The "
+            "complete the corresponding LOD availability state. All four "
+            "direct transition-task calls are now closed: one belongs to the "
+            "grid-load state driver and three to the Streaming gameplay batch "
+            "update's entity-set branches. The "
             "entity-type registration core now closes each 8-byte descriptor "
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
@@ -10814,8 +10944,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The standalone native type names for components 67 through 75, "
-            "the exact native label for terminal resource state 2, outer "
-            "transition-task scheduling/thread semantics, "
+            "the stripped enum symbol for resource load-failure state 2, the "
+            "execution scheduling/thread identity above the closed grid/batch "
+            "update calls, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -11035,6 +11166,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
                 "HGLODStreamingSystem internal calls 273..282, state+0x38/+0x39/+0x3C/+0x474 controls, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
                 "the component-67 outer request-batch lifecycle: callback-context +0x50/+0x58 descriptor materialization, task+0x18 batch and +0x0A count, resource states 0/1/2, completion polling, callback-context +0x60/+0x68/+0x70 projection, and transition-3 runtime Material/Mesh/shadow-proxy writeback",
+                "resource state 2 as load failure through its no-publish relation path, installed Streaming load/get asset failure diagnostics, and component-specific fallback",
+                "all four direct transition-task calls across the hash-pinned grid-load state driver and three Streaming gameplay batch-update entity-set branches",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -11045,8 +11178,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
                 "the standalone native component type names for components 67 through 75",
-                "the exact native label for terminal resource state 2",
-                "outer transition-task scheduling and thread semantics",
+                "the stripped enum symbol for resource load-failure state 2",
+                "execution scheduling/thread identity above the closed grid/batch update call surface",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -11094,7 +11227,8 @@ def main() -> int:
         "component-67 separation, native Render/MergedRenderCollider ownership, "
         "ten-slot EntityTransition registry and exact transitions 1/3/6/8, "
         "resource-capacity companions, named LOD-streaming controls and "
-        "transition-1 request-batch/poll/transition-3 writeback plus "
+        "transition-1 request-batch/poll/load-failure and grid/batch update "
+        "surface/transition-3 writeback plus "
         "transition-6/8 teardown semantics, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "

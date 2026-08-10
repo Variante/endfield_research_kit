@@ -1377,11 +1377,36 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         poller = batch["poller"]
         self.assertEqual(poller["virtualAddress"], "0x181172750")
+        self.assertEqual(poller["directCallSites"], ["0x181173268"])
         self.assertEqual(
             [row["value"] for row in poller["states"]],
             [0, 1, 2],
         )
-        self.assertIn("terminal non-ready", poller["states"][2]["meaning"])
+        self.assertIn("load failure", poller["states"][2]["meaning"])
+        self.assertEqual(
+            batch["transitionTaskDirectCallSites"],
+            [
+                "0x181173854",
+                "0x181180A25",
+                "0x181180EB4",
+                "0x181181095",
+            ],
+        )
+        caller_surface = batch["directCallerSurface"]
+        self.assertEqual(
+            caller_surface["gridLoadStateDriver"]["virtualAddress"],
+            "0x1811733F0",
+        )
+        self.assertEqual(
+            caller_surface["streamingBatchUpdate"]["callSites"],
+            ["0x181180A25", "0x181180EB4", "0x181181095"],
+        )
+        failure = batch["failureEvidence"]
+        self.assertEqual(
+            failure["diagnostics"]["load"]["value"],
+            "Streaming load asset %lld failed",
+        )
+        self.assertIn("state 2 removes", failure["stateEquation"])
         handoff = batch["readyHandoff"]
         self.assertEqual(handoff["transition"]["value"], 3)
         self.assertEqual(
@@ -2000,6 +2025,49 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_lod_ecs_transition_task_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_lod_ecs_grid_load_state_driver_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1811733F0 and size == 0x4E9:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_ecs_grid_load_state_driver_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_resource_load_failure_string_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_cstring = image.cstring
+
+        def changed_cstring(virtual_address: int) -> str:
+            if virtual_address == 0x181D25868:
+                return "Changed resource failure"
+            return original_cstring(virtual_address)
+
+        with mock.patch.object(image, "cstring", changed_cstring):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_resource_lifecycle_load_failure; "
+                r"source=.*UnityPlayer.dll; "
+                r"expected='Streaming load asset %lld failed'; "
+                r"actual='Changed resource failure'",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
 
