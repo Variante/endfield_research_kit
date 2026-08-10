@@ -1542,13 +1542,18 @@ view `+0x18`. Independent retail serializer/deserializer code fixes the
 formerly generic 28-byte record as `HGTreeRenderer`, nested under
 `HGTreeInstance.renderers`: `batchKey`, `renderFlags`, `mesh`, `material`,
 `subMeshIndex`, `lodScreenSizeMaxSquared`, and `lodScreenSizeMinSquared`, with
-the LOD pair at `+0x14/+0x18`. Internal call 10320 closes its separate
-`HGTreeRender.CreateRendererList` entry through the renderer-list manager and
-registered batch-group virtual slots `+0x158/+0x160`. It is therefore not
-evidence for the scheduled cull-view threshold. The concrete HGTree virtual
-targets and LOD equation, the unrelated scheduled consumer of view `+0x18`,
-any separate `sceneCullingMask` consumer, and whether zero makes that later
-gate unconditional remain explicit boundaries.
+the LOD pair at `+0x14/+0x18`. A dedicated 729-entry HG internal-call table
+pairs `HGTreeRender.CreateRendererList` index 564 with `0x1801D9D10` and
+`RegisterTreeBatchGroup` index 567 with `0x1801DA040`. The first reaches
+`0x18107EE40 -> 0x181080730` and selects runtime jobs
+`0x181067A70/0x181064190`; the second reaches registration core `0x181086050`.
+Those jobs consume transformed `0x18`-stride batch/SoA data rather than the
+serialized record. The former index-10320 and `0x180175A10 -> 0x180A5E320`
+virtual-slot interpretation is retracted because it crossed the HG table
+boundary into unrelated Animator code. The serialized-to-runtime mapping and
+HGTree LOD equation, the unrelated scheduled consumer of view `+0x18`, any
+separate `sceneCullingMask` consumer, and whether zero makes that later gate
+unconditional remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that

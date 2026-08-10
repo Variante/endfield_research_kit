@@ -214,7 +214,16 @@ class LightCullCapAuditTests(unittest.TestCase):
         result = AUDIT.validate_unity_hgtree_renderer_boundary(
             AUDIT.PEImage(AUDIT.UNITY_PLAYER)
         )
-        self.assertEqual(result["internalCall"]["index"], 10320)
+        self.assertEqual(result["internalCall"]["index"], 564)
+        self.assertEqual(result["internalCall"]["entryCount"], 729)
+        self.assertEqual(
+            result["internalCall"]["targetVirtualAddress"], "0x1801D9D10"
+        )
+        self.assertEqual(result["registrationInternalCall"]["index"], 567)
+        self.assertEqual(
+            result["registrationInternalCall"]["targetVirtualAddress"],
+            "0x1801DA040",
+        )
         self.assertEqual(
             result["treeInstance"]["rendererElementType"], "HGTreeRenderer"
         )
@@ -232,6 +241,12 @@ class LightCullCapAuditTests(unittest.TestCase):
                 "separateEntryAndOwnershipProven"
             ]
         )
+        self.assertFalse(
+            result["runtimeJobs"][
+                "serializedRecordStrideObservedInPinnedJobSlices"
+            ]
+        )
+        self.assertNotIn("virtual slot", " ".join(result["callChain"]))
 
     def test_changed_hgtree_renderer_binding_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
@@ -239,7 +254,7 @@ class LightCullCapAuditTests(unittest.TestCase):
 
         def changed_read(virtual_address: int, size: int) -> bytes:
             data = bytearray(original_read(virtual_address, size))
-            if virtual_address == 0x180175A10 and size == 0x23B:
+            if virtual_address == 0x1801D9D10 and size == 0x82:
                 data[0] ^= 1
             return bytes(data)
 
@@ -249,6 +264,17 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_create_renderer_list_binding_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_hgtree_icall_index_out_of_bounds_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        with mock.patch.object(AUDIT, "UNITY_HG_ICALL_COUNT", 564):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hg_icall_create_renderer_list_index_in_bounds; "
+                r"source=.*UnityPlayer.dll; expected=True; actual=False",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
 

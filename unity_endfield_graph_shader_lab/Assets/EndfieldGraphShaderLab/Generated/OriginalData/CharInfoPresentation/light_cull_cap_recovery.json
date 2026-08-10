@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v5",
-  "status": "installed_cap_dispatch_predicates_hgtree_ownership_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry uses a separate HGTreeRender manager/virtual-dispatch path. It is therefore not evidence for the scheduled cull-view threshold. The scheduled +0x18 consumer, HGTree LOD equation, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v6",
+  "status": "installed_cap_dispatch_predicates_hgtree_registration_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The callbacks consume transformed runtime batch data rather than the serialized 28-byte record, so the HGTree LOD equation, the scheduled cull-view +0x18 consumer, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -638,9 +638,15 @@
     },
     "unityPlayerHGTreeRendererBoundary": {
       "internalCall": {
-        "index": 10320,
+        "table": "dedicated HyperGryph native internal calls",
+        "entryCount": 729,
+        "nameTableVirtualAddress": "0x1820E6E90",
+        "functionTableVirtualAddress": "0x1820E8560",
+        "nameTableSha256": "a4eb4b58a62abdc78570e3d7b0f7f75c77fca5927f0d5f24fe75f4d98b36c93e",
+        "functionTableSha256": "9ecec341ec864e050d5b31bc4f98bcdea23ad3b5e7c8dd36c7952612ef09a596",
+        "index": 564,
         "name": "UnityEngine.HyperGryph.HGTreeRender::CreateRendererList",
-        "targetVirtualAddress": "0x180175A10",
+        "targetVirtualAddress": "0x1801D9D10",
         "managedParameters": [
           "viewHandle",
           "renderFlagsMask",
@@ -651,12 +657,31 @@
           "noAlphaTest"
         ]
       },
+      "registrationInternalCall": {
+        "index": 567,
+        "name": "UnityEngine.HyperGryph.HGTreeRender::RegisterTreeBatchGroup",
+        "targetVirtualAddress": "0x1801DA040"
+      },
       "callChain": [
-        "0x180175A10 HGTreeRender::CreateRendererList binding",
-        "0x180A5E320 renderer-list manager dispatch",
-        "registered batch-group virtual slot +0x158",
-        "registered batch-group virtual slot +0x160"
+        "0x1801D9D10 HGTreeRender::CreateRendererList binding",
+        "0x18107EE40 renderer-list core",
+        "0x181080730 runtime job descriptor/scheduler",
+        "0x181067A70 or 0x181064190 scheduled batch job"
       ],
+      "registrationChain": [
+        "0x1801DA040 HGTreeRender::RegisterTreeBatchGroup binding",
+        "managed object-handle extraction",
+        "0x181086050 runtime batch-group registration core"
+      ],
+      "runtimeJobs": {
+        "callbacks": [
+          "0x181067A70",
+          "0x181064190"
+        ],
+        "serializedRecordStrideObservedInPinnedJobSlices": false,
+        "runtimeRecordStrideObserved": "0x18",
+        "boundary": "the scheduled callbacks consume transformed runtime batch/SoA data; their 0x18 record stride and positional offsets are not the serialized HGTreeRenderer +0x18 LOD field"
+      },
       "treeInstance": {
         "nativeTypeName": "HGTreeInstance",
         "rendererArrayField": "renderers",
@@ -797,16 +822,25 @@
         "reason": "the record is nested under HGTreeInstance.renderers and its renderer-list entry is a separate HGTreeRender internal call; the pinned DispatchBatchCullingJobs predicates do not reference this serializer lineage",
         "doesNotCloseCullViewScreenThresholdEquation": true
       },
+      "correctedPreviousBinding": {
+        "retractedIndex": 10320,
+        "retractedTargetVirtualAddress": "0x180175A10",
+        "retractedManagerVirtualAddress": "0x180A5E320",
+        "reason": "index 10320 exceeded the dedicated 729-entry HyperGryph internal-call table; the resulting addresses belong to an unrelated Animator path and provide no HGTree evidence"
+      },
       "evidenceBoundary": {
         "closed": [
           "HGTreeInstance owns a renderers array of HGTreeRenderer",
           "the exact 28-byte HGTreeRenderer serialized layout",
-          "HGTreeRender::CreateRendererList binding and manager dispatch",
-          "manager dispatch through registered batch-group virtual slots +0x158/+0x160",
+          "the dedicated 729-entry HyperGryph internal-call table pair",
+          "HGTreeRender::CreateRendererList binding, core, and job scheduler",
+          "HGTreeRender::RegisterTreeBatchGroup binding and registration core",
+          "the two selected runtime batch-job callback addresses",
+          "the correction that the old 10320/Animator binding was invalid",
           "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
         ],
         "open": [
-          "concrete registered batch-group virtual targets",
+          "the serialization-to-runtime batch/SoA field mapping",
           "the HGTreeRenderer LOD max/min comparison equation",
           "the unrelated scheduled cull-view +0x18 consumer"
         ]
@@ -832,15 +866,33 @@
         },
         {
           "label": "create_renderer_list_binding",
-          "virtualAddress": "0x180175A10",
-          "sizeBytes": 571,
-          "sha256": "2afe0023cdadb52d43ea6601fa38a555276b189da8cb2389fc0a0bcf43cad47e"
+          "virtualAddress": "0x1801D9D10",
+          "sizeBytes": 130,
+          "sha256": "078046e5e67d9dba899cbc152434a3e00be20ac993d14d834098c056a300067b"
         },
         {
-          "label": "renderer_list_manager_dispatch",
-          "virtualAddress": "0x180A5E320",
-          "sizeBytes": 318,
-          "sha256": "1e962452aa30d8f735f5ecf1f0323b139eac72f9276d193d032cef33bf77d03c"
+          "label": "create_renderer_list_core",
+          "virtualAddress": "0x18107EE40",
+          "sizeBytes": 1122,
+          "sha256": "d7877c2aa90cc5eea0c2801515128b8fec5216ec3dc0a260e63da762769ae2dd"
+        },
+        {
+          "label": "renderer_list_job_scheduler",
+          "virtualAddress": "0x181080730",
+          "sizeBytes": 549,
+          "sha256": "f040106075938864fdea07782309fd910c853db82e739a19738ce0cdbe5d2beb"
+        },
+        {
+          "label": "register_tree_batch_group_binding",
+          "virtualAddress": "0x1801DA040",
+          "sizeBytes": 315,
+          "sha256": "03e9b1da96000390744e123ad2c35b8feed1e17f4618b9ae092b375338c5ee4d"
+        },
+        {
+          "label": "register_tree_batch_group_core",
+          "virtualAddress": "0x181086050",
+          "sizeBytes": 627,
+          "sha256": "1bafbffc56bfaa42445fea8f10bac1047ab44712ee7361456efc281e07196dc3"
         }
       ],
       "verifiedInstructionSlices": [
@@ -863,22 +915,28 @@
           "sha256": "d21aad86fe8306dc75ca9f521de6f21d0f02d8238bd22915b1b2d8c539f47ca1"
         },
         {
-          "label": "create_renderer_list_to_manager",
-          "virtualAddress": "0x180175B6A",
-          "sizeBytes": 36,
-          "sha256": "685862769b2b489791a0ed6a18beb2c3259d88ee1600de6f2a601f3925264f37"
+          "label": "create_renderer_list_to_core",
+          "virtualAddress": "0x1801D9D2E",
+          "sizeBytes": 84,
+          "sha256": "dced7103226f6be3c08eab317b39ef10a2dcb459a51817c2fd67a92982f00c1f"
         },
         {
-          "label": "manager_virtual_slot_158",
-          "virtualAddress": "0x180A5E380",
-          "sizeBytes": 23,
-          "sha256": "6bf218d6dc0ba9a75ef28f96b8fbd03e78a32b0d3b1aad721a944b71d89cdb33"
+          "label": "renderer_list_job_callback_selection",
+          "virtualAddress": "0x1810808D0",
+          "sizeBytes": 38,
+          "sha256": "04aefeaff7bbc0e181155846c199024e700952a7bb8bc2c7f1e6fb1205a4ab93"
         },
         {
-          "label": "manager_virtual_slot_160",
-          "virtualAddress": "0x180A5E402",
-          "sizeBytes": 26,
-          "sha256": "565f705930ffddc93a319177ced5a425135025872d26b68dd7f205e1b6a114e1"
+          "label": "register_tree_batch_group_to_core",
+          "virtualAddress": "0x1801DA12F",
+          "sizeBytes": 55,
+          "sha256": "5f2d2292a671a8de6273ace03fc0a1bf9d1a4d57b3a284eee8538e57be6947e9"
+        },
+        {
+          "label": "compact_job_runtime_record_steps",
+          "virtualAddress": "0x181068345",
+          "sizeBytes": 137,
+          "sha256": "354add7d4f9536ac6b8b66425e8b89fbd5a61a08fa580cb695dcfb6921a5cbd3"
         }
       ]
     },
@@ -920,7 +978,10 @@
       "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order",
       "the DispatchBatchCullingJobs binding, camera-type predicate split, and exact selected predicates",
       "HGTreeInstance ownership and the exact 28-byte HGTreeRenderer LOD record",
-      "the separate HGTreeRender CreateRendererList manager/virtual-dispatch path",
+      "the dedicated 729-entry HyperGryph internal-call name/function table pair",
+      "the HGTreeRender CreateRendererList binding, core, scheduler, and selected runtime callbacks",
+      "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
+      "the retraction of the out-of-range index 10320 Animator misbinding",
       "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
     ],
     "captureOnly": [
@@ -929,7 +990,7 @@
       "arbitrary/asymmetric final selected-view planes",
       "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
-      "the concrete HGTree batch-group virtual targets and LOD comparison equation",
+      "the serialized HGTreeRenderer-to-runtime batch/SoA mapping and LOD comparison equation",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

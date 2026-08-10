@@ -85,12 +85,18 @@ NPC archetypes are imported as labeled source kits.
   `+0x18`. Retail serializer/deserializer evidence now identifies the formerly
   generic 28-byte record exactly as `HGTreeRenderer`, nested under
   `HGTreeInstance.renderers`, with `lodScreenSizeMaxSquared` and
-  `lodScreenSizeMinSquared` at `+0x14/+0x18`. Its separate
-  `HGTreeRender.CreateRendererList` binding dispatches through registered tree
-  batch groups, so it is not evidence for the scheduled cull-view threshold.
-  The concrete HGTree LOD equation, the unrelated scheduled consumer of view
-  `+0x18`, any separate `sceneCullingMask` consumer, and zero-threshold pass
-  behavior remain open.
+  `lodScreenSizeMinSquared` at `+0x14/+0x18`. The dedicated 729-entry HG
+  internal-call name/function tables pair `HGTreeRender.CreateRendererList`
+  index 564 with `0x1801D9D10` and `RegisterTreeBatchGroup` index 567 with
+  `0x1801DA040`. The former reaches `0x18107EE40 -> 0x181080730` and selects
+  runtime batch jobs `0x181067A70/0x181064190`; the latter reaches registration
+  core `0x181086050`. The jobs consume transformed `0x18`-stride batch/SoA
+  data, not the serialized 28-byte record. The former index-10320,
+  `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
+  crossed the HG table boundary into unrelated Animator code. The exact
+  serialized-to-runtime mapping and HGTree max/min LOD equation, the unrelated
+  scheduled consumer of view `+0x18`, any separate `sceneCullingMask`
+  consumer, and zero-threshold pass behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -322,8 +328,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 1. Recover the actual scheduled renderer/entity consumer of cull-view
    `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
-   bounds; independently resolve the registered HGTree batch-group virtual
-   targets and their max/min LOD equation. Then recover the retail survivor
+   bounds; trace `RegisterTreeBatchGroup` from the 28-byte serialized records
+   into the `0x18`-stride runtime batch/SoA jobs and close their max/min LOD
+   equation. Then recover the retail survivor
    list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
