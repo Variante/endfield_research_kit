@@ -2514,6 +2514,17 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("catalog.eventsWithExactLevelSequenceAction", source)
         self.assertIn("catalog.eventsWithoutTimelineCarrier", source)
 
+    def test_audio_frontend_exposes_authored_animator_state_membership_boundary(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
+            "function radioTableLineLabel", 1
+        )[0]
+        self.assertIn("context?.animatorControllerContexts", evidence_body)
+        self.assertIn("authoredStateReferences", evidence_body)
+        self.assertIn("runtime execution unobserved", evidence_body)
+
     def test_audio_frontend_renders_native_playback_call_chain_stages(self) -> None:
         source = (
             Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"

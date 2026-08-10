@@ -1990,6 +1990,13 @@
     if (context?.propertySourceOffset !== undefined) parts.push(`property offset 0x${Number(context.propertySourceOffset).toString(16)}`);
     if (context?.interactiveTableSha256) parts.push(`InteractiveTable SHA-256 ${context.interactiveTableSha256}`);
     if (context?.controllerId) parts.push(`ModelView controller ${context.controllerId}`);
+    const animatorControllers = asArray(context?.animatorControllerContexts).filter((row) => row && typeof row === "object");
+    for (const controller of animatorControllers.slice(0, 8)) {
+      const stateRefs = asArray(controller.authoredStateReferences).filter((row) => row && typeof row === "object");
+      const stateSummary = stateRefs.slice(0, 4).map((row) => `SM${row.stateMachineIndex ?? "?"}/S${row.stateIndex ?? "?"}/clip${row.clipSlot ?? "?"}`).join(", ");
+      parts.push(`AnimatorController ${controller.name || "?"} / ${humanize(controller.resolutionStatus || "unresolved")} / clips ${(asArray(controller.clipSlots)).join(", ") || "?"} / authored states ${stateSummary || controller.authoredStateReferenceCount || 0} / runtime execution unobserved`);
+    }
+    if (animatorControllers.length > 8) parts.push(`+${animatorControllers.length - 8} AnimatorControllers`);
     if (context?.modelAnimatorName) parts.push(`model animator ${context.modelAnimatorName}`);
     if (context?.layerName || context?.layerFsmIndex !== undefined) parts.push(`layer ${context.layerName || "?"} / FSM ${context.layerFsmIndex ?? "?"}`);
     if (context?.stateName || context?.stateIndex !== undefined) parts.push(`state ${context.stateName || "?"} / index ${context.stateIndex ?? "?"} / type ${context.stateType ?? "?"}`);
