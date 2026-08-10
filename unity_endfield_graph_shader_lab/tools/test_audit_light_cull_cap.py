@@ -604,6 +604,43 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         self.assertNotIn("rendererCandidateRecord", result)
 
+    def test_unity_cull_view_consumer_surface(self) -> None:
+        result = AUDIT.validate_unity_cull_view_consumer_surface(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        )
+        self.assertEqual(
+            [row["index"] for row in result["internalCallSurface"]["entries"]],
+            [3304, 3306, 3307, 3313, 3314, 3315, 3316, 3317],
+        )
+        census = result["consumerCensus"]
+        self.assertFalse(census["consumerFound"])
+        self.assertFalse(census["postDispatchPacketCopy"])
+        self.assertEqual(
+            census["scheduledViewLoopReadOffsets"],
+            ["0x20", "0x28", "0x2C", "0x54"],
+        )
+        self.assertIn("manager+0x58", census["childViewSeparation"])
+        self.assertIn("manager+0x158", census["uniqueIdRegistry"])
+
+    def test_changed_cull_view_consumer_loop_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181053A10 and size == 0x267:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_cull_view_consumer_scheduled_view_loop_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_cull_view_consumer_surface(image)
+
     def test_unity_hgtree_renderer_boundary(self) -> None:
         result = AUDIT.validate_unity_hgtree_renderer_boundary(
             AUDIT.PEImage(AUDIT.UNITY_PLAYER)
