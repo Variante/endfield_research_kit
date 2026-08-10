@@ -1565,16 +1565,19 @@ record `+0x08` is mutable: particle setup variants
 `0x1810416A0/0x181041870/0x181041920/0x1810419D0` advance from blob `+0x0C`
 (record `+0x08`), replace the word with bit 20 at the exact `0x18` stride while
 selecting modes 2/3/4/5, and scheduled callback `0x181067A70` ORs it into its
-render flags. Record `+0x0C` is a separate supplemental filter overlay;
-callback `0x181064100` ORs it with renderer-entry flags before comparison. The
-transform and generic constructor initialize it to zero, while no later writer
-is yet source-closed.
+render flags. Record `+0x0C` is the third resolved, reference-counted renderer
+resource index: LOD availability paths `0x181157760/0x181159010` write it,
+cleanup `0x18115BFC0` releases and clears it through `0x180FBF6B0`, and callback
+`0x181064100` also ORs the word with renderer-entry flags before comparison.
+The exact asset class represented by this third slot remains open.
 Common Renderer state synchronizer `0x180432CD0` updates record `+0x10` with
-property-derived flags after preserving mask `0xFC07FBFD`. A generic Renderer
-constructor at `0x180BCB760` also populates the same 24-byte family through
-`+0x14`, proving that final word is meaningful payload rather than padding;
-the HGTree transform initializes it to zero, and its exact HGTree-specific
-consumer remains open. This loader blob is separate
+property-derived flags after preserving mask `0xFC07FBFD`. Dedicated HG
+internal-call entry 204 is
+`HGFactoryRenderManager.SetEntityEnabledLightModes_Injected`; wrapper
+`0x1801EB940` reaches `0x1810D9110`, which writes the supplied
+`enabledLightModes` value to record `+0x14` for the entire `0x18`-stride family.
+Its downstream bit meanings and render-stage consumer remain open. This loader
+blob is separate
 from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
 at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
 available masks at `+0x04/+0x05`, a reserved/alignment word at `+0x06`, a
@@ -1682,9 +1685,9 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. A later writer for loader record
-`+0x0C`, the exact HGTree-specific role and consumer of `+0x14`, and the
-component-67 standalone native type
+boundary into unrelated Animator code. The exact asset class of loader record
+`+0x0C`, the downstream bit meanings and render-stage consumer of
+`enabledLightModes` at `+0x14`, and the component-67 standalone native type
 name, any separate post-dispatch
 copy or consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
