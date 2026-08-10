@@ -496,6 +496,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         asset_helper = specs["Beyond.Audio.AudioAssetHelper"]
         audio_manager = specs["Beyond.Gameplay.Audio.AudioManager"]
         audio_state_system = specs["Beyond.Gameplay.Audio.AudioStateSystem"]
+        callback_manager = specs["AkCallbackManager"]
 
         adapter_chains = {row["id"]: row for row in adapter["nativeCallChains"]}
         post = adapter_chains["adapterPostEventToWwise"]
@@ -503,7 +504,8 @@ class AudioSemanticDataTests(unittest.TestCase):
             [row["methodIndex"] for row in post["stages"]],
             [
                 479923, 480010, 480201, 480175, 446458, 480211,
-                446489, 480212, 480213, 480007, 446377, 480008, 480176,
+                446489, 480212, 480213, 480007, 446377, 446952,
+                446954, 480008, 480176,
             ],
         )
         wwise_post = next(row for row in post["stages"] if row["role"] == "wwise")
@@ -513,11 +515,21 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(post["stages"][-1]["method"], "DeactivateAsset")
         self.assertEqual(
             [row["id"] for row in post["branches"]],
-            ["activatedCache", "eventBankMiss"],
+            ["activatedCache", "eventBankMiss", "callbackPayloadCapabilities"],
         )
         self.assertEqual(asset_cache["nativeCallChains"][0]["id"], post["id"])
         self.assertEqual(asset_helper["nativeCallChains"][0]["id"], post["id"])
         self.assertIn("s_waitingCallbacks", asset_helper["fields"])
+        self.assertEqual(callback_manager["nativeCallChains"][0]["id"], post["id"])
+        self.assertEqual(callback_manager["runtimeExecutionStatus"], "callbackCapabilityExactPayloadsNotObserved")
+        callback_roles = {row["role"] for row in callback_manager["nativeAnchors"]}
+        self.assertTrue({"eventId", "durationMediaId", "playlistSelection", "sourceChange"} <= callback_roles)
+        external = adapter_chains["externalSourcePostToWwise"]
+        self.assertEqual(
+            [row["methodIndex"] for row in external["stages"]],
+            [479931, 480011, 444124, 444128, 444126, 446376, 480009, 39041, 39052],
+        )
+        self.assertIn("0x18f361150", external["stages"][5]["relation"])
         action = adapter_chains["playingIdActionQueueToWwise"]
         self.assertEqual(
             [row["methodIndex"] for row in action["stages"]],
@@ -526,7 +538,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(len(animator["nativeCallChains"]), 2)
         self.assertEqual(skill["nativeCallChains"][0]["id"], "skillPlaySoundActionRouting")
         self.assertEqual(levelscript["nativeCallChains"][0]["id"], "levelScriptAudioActionRouting")
-        self.assertEqual(len(wwise["nativeCallChains"]), 6)
+        self.assertEqual(len(wwise["nativeCallChains"]), 7)
         switch_chain = next(
             row for row in audio_manager["nativeCallChains"]
             if row["id"] == "audioObjectSwitchToWwise"

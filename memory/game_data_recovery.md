@@ -148,13 +148,24 @@ id, a null cookie, and bank type `0x1e`; the bank callback then submits one
 Event id to `PrepareEvent` with raw preparation type `0`. The completion path
 returns through `AudioAssetHelper`'s waiting callback queue before
 `AudioAdapter._OnEventPreparedDoPostEvent` enters Wwise. The activated-cache
-branch can bypass that load/prepare miss path. The Wwise Event callback
-forwards the original callback/cookie, and its raw callback-type-1 path calls
-`AudioAssetCache.DeactivateAsset`: the Event refcount drops, while pinned
-Events stay out of ordinary LRU release. Named `AudioBankManager`
-`BankHandle` reference counting is a separate bank-lifetime surface. This
-proves the static cache/miss topology, not which branch a live request took or
-which streamed media Wwise later selected.
+branch can bypass that load/prepare miss path. `AkCallbackManager` pumps and
+dispatches Event, Marker, Duration, playlist, music-sync, MIDI, and source-change
+payloads; callback-info accessors can expose the playing/event/media/audio-node
+ids and playlist selection. `AudioAdapter._OnEventCallback`'s exact raw
+type-1/EndOfEvent branch calls `AudioAssetCache.DeactivateAsset`: the Event
+refcount drops, while pinned Events stay out of ordinary LRU release. Named
+`AudioBankManager` `BankHandle` reference counting is a separate bank-lifetime
+surface. This proves the static cache/miss and callback topology, not which
+optional callbacks a live request registered or which streamed media Wwise
+selected.
+
+External-source playback is a separate exact path. `PostEventExternal` builds
+an `AkExternalSourceInfo` cookie, filename, and codec id, then crosses native
+PostEvent slot `0x18f361150`; ordinary Event posting uses `0x18f361158`.
+Its EndOfEvent callback removes the external mapping, disposes the temporary
+audio object, and releases its Wwise game-object id. This proves the external
+file lifecycle but does not identify a live request, filename, decoded file,
+or selected playing id.
 
 Music selection is now split into ten exact Wwise State Groups rather than one
 generic music label. Current native setters expose the group uint32, state enum

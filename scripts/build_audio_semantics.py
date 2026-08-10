@@ -124,8 +124,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 20
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 12
+AUDIO_SEMANTIC_SCHEMA_VERSION = 21
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 13
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
 RADIO_CATALOG_ITEM_LIMIT = 64
@@ -842,13 +842,31 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "Uses the same 0x18f361158 native PostEvent slot and returns the real Wwise playing id.",
             ),
             native_playback_stage(
+                "callbackPump",
+                "AkCallbackManager",
+                "PostCallbacks",
+                446952,
+                "0x06000c62",
+                "0x18328b440",
+                "Pumps queued native Wwise callbacks into the managed callback dispatcher.",
+            ),
+            native_playback_stage(
+                "callbackDispatch",
+                "AkCallbackManager",
+                "_ProcessEventCallback",
+                446954,
+                "0x06000c64",
+                "0x18328cd90",
+                "Dispatches callback payload classes by the exact AkCallbackType bit before invoking the adapter callback.",
+            ),
+            native_playback_stage(
                 "callback",
                 "Beyond.Audio.AudioAdapter",
                 "_OnEventCallback",
                 480008,
                 "0x0600005d",
                 "0x18328d3e0",
-                "Forwards the original callback and cookie through an unresolved delegate thunk.",
+                "Handles the dispatched callback; raw callback type 1 is the exact EndOfEvent branch.",
             ),
             native_playback_stage(
                 "release",
@@ -877,11 +895,116 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                     "either prepares the one Event id or releases the cache entry and forwards completion."
                 ),
             },
+            {
+                "id": "callbackPayloadCapabilities",
+                "label": "Managed Wwise callback payloads",
+                "relation": (
+                    "The current bridge dispatches EndOfEvent, DynamicSequenceItem, Marker, Duration, "
+                    "MusicPlaylistSelect, MusicPlayStarted, MusicSync Beat/Bar/Entry/Exit/Grid/UserCue/Point, "
+                    "and MIDIEvent. Callback-info accessors can expose playingID/eventID, duration mediaID/"
+                    "audioNodeID, playlist selection, and music-sync type; no live callback sample is captured."
+                ),
+            },
         ),
         "boundary": (
             "The binary proves the cache/miss branch, Event-id bank load, one-Event PrepareEvent call, "
-            "completion callback, Wwise Event post, playing-id mapping, and conditional cache deactivation. It does not prove which branch "
-            "ran for a captured request, live switch/state/RTPC values, or the selected Wwise media leaf."
+            "completion callback, Wwise Event post, callback dispatch, playing-id mapping, and EndOfEvent-gated cache deactivation. "
+            "It does not prove which branch ran for a captured request, which optional callback types were requested, live switch/state/"
+            "RTPC values, or the selected Wwise media leaf."
+        ),
+    },
+    "externalSource": {
+        "id": "externalSourcePostToWwise",
+        "label": "External file Event request -> Wwise external-source post -> EndOfEvent cleanup",
+        "evidence": "exactCurrentGameAssemblyDirectCallsAndDistinctNativeFunctionPointer",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticNativeCallChainNotLivePlaybackTrace",
+        "stages": (
+            native_playback_stage(
+                "request",
+                "Beyond.Audio.AudioAdapter",
+                "PostEventExternal",
+                479931,
+                "0x06000010",
+                "0x183abf0a0",
+                "Accepts an Event plus an external file source and enters the dedicated external-source path.",
+            ),
+            native_playback_stage(
+                "prepareExternal",
+                "Beyond.Audio.AudioAdapter",
+                "_PostEventWithExternalSource",
+                480011,
+                "0x06000060",
+                "0x183abea70",
+                "Builds AkExternalSourceInfo and keeps an external playing/object cleanup mapping.",
+            ),
+            native_playback_stage(
+                "externalCookie",
+                "AkExternalSourceInfo",
+                "set_iExternalSrcCookie",
+                444124,
+                "0x06000156",
+                "0x183abe910",
+                "Sets the authored external-source cookie separately from the Event id.",
+            ),
+            native_playback_stage(
+                "externalFile",
+                "AkExternalSourceInfo",
+                "set_szFile",
+                444128,
+                "0x0600015a",
+                "0x183abe850",
+                "Sets the external audio file path.",
+            ),
+            native_playback_stage(
+                "externalCodec",
+                "AkExternalSourceInfo",
+                "set_idCodec",
+                444126,
+                "0x06000158",
+                "0x183abe9c0",
+                "Sets the codec id used by the external source.",
+            ),
+            native_playback_stage(
+                "wwise",
+                "AkSoundEngine",
+                "PostEvent external-source overload",
+                446376,
+                "0x06000a22",
+                "0x183abed90",
+                "Crosses dedicated native slot 0x18f361150; ordinary Event posting uses 0x18f361158.",
+            ),
+            native_playback_stage(
+                "callback",
+                "Beyond.Audio.AudioAdapter",
+                "_OnExternalSourceEventCallback",
+                480009,
+                "0x0600005e",
+                "0x1843c7930",
+                "Reads gameObjID and cookie; raw callback type 1 removes the external mapping and starts cleanup.",
+            ),
+            native_playback_stage(
+                "dispose",
+                "Beyond.Gameplay.Audio.AudioObject",
+                "Dispose",
+                39041,
+                "0x06009882",
+                "0x183765ef0",
+                "Disposes the temporary external audio object on the recovered cleanup path.",
+            ),
+            native_playback_stage(
+                "releaseObject",
+                "Beyond.Gameplay.Audio.AudioObjectIdDispatcher",
+                "ReleaseAudioGameObject",
+                39052,
+                "0x0600988d",
+                "0x183ce31d0",
+                "Releases the temporary Wwise game-object identity.",
+            ),
+        ),
+        "boundary": (
+            "The external file/cookie/codec route and EndOfEvent cleanup are exact and use a different native PostEvent slot from ordinary "
+            "Event media. No current live request, external filename, returned playing id, or decoded external-file content was observed."
         ),
     },
     "playingIdAction": {
@@ -1461,18 +1584,46 @@ RUNTIME_SYSTEM_SPECS = (
             "prepared, then maps it to the real Wwise playing id."
         ),
         methods=(
-            "PostEvent", "StopByPlayingId", "PauseByPlayingId", "ResumeByPlayingId",
+            "PostEvent", "PostEventExternal", "StopByPlayingId", "PauseByPlayingId", "ResumeByPlayingId",
             "SetState", "SetSwitch", "SetRtpc", "SeekOnEvent", "RegisterGameObject",
             "UnregisterGameObject", "SetListener", "SetDefaultListener", "SetAudioLanguage",
-            "_OnEventPreparedDoPostEvent", "_OnEventCallback", "_PostEvent",
+            "_OnEventPreparedDoPostEvent", "_OnEventCallback", "_OnExternalSourceEventCallback",
+            "_PostEvent", "_PostEventWithExternalSource",
             "_ExecuteActionOnPlayingId",
         ),
         native_call_chains=(
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["externalSource"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["switchSelector"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["rtpcSelector"],
         ),
+    ),
+    runtime_spec(
+        "AkCallbackManager",
+        "wwise_bridge",
+        (
+            "Dispatches native Wwise Event, Duration, Marker, playlist, music-sync, MIDI, and source-change "
+            "callbacks into managed callback payloads. Callback-info types expose ids and selections, but no live "
+            "callback payload was captured."
+        ),
+        fields=("ms_sourceChangeCallbackPkg",),
+        methods=("PostCallbacks", "_ProcessEventCallback", "SetBGMCallback"),
+        native_anchors=(
+            {"role": "PostCallbacks", "methodIndex": 446952, "token": "0x06000c62", "virtualAddress": "0x18328b440"},
+            {"role": "ProcessEventCallback", "methodIndex": 446954, "token": "0x06000c64", "virtualAddress": "0x18328cd90"},
+            {"role": "SetBGMCallback", "methodIndex": 446950, "token": "0x06000c60", "virtualAddress": "0x1853cd518"},
+            {"role": "eventPlayingId", "type": "AkEventCallbackInfo", "method": "get_playingID", "methodIndex": 444094, "virtualAddress": "0x1853a1688"},
+            {"role": "eventId", "type": "AkEventCallbackInfo", "method": "get_eventID", "methodIndex": 444095, "virtualAddress": "0x18328dbf0"},
+            {"role": "durationMediaId", "type": "AkDurationCallbackInfo", "method": "get_mediaID", "methodIndex": 444079, "virtualAddress": "0x1853a12a8"},
+            {"role": "durationAudioNodeId", "type": "AkDurationCallbackInfo", "method": "get_audioNodeID", "methodIndex": 444078, "virtualAddress": "0x1853a1168"},
+            {"role": "playlistSelection", "type": "AkMusicPlaylistCallbackInfo", "method": "get_uPlaylistSelection", "methodIndex": 444488, "virtualAddress": "0x1853a7800"},
+            {"role": "musicSyncType", "type": "AkMusicSyncCallbackInfo", "method": "get_musicSyncType", "methodIndex": 444513, "virtualAddress": "0x1853a7af8"},
+            {"role": "sourceChange", "type": "AkCallbackSerializer", "method": "AudioSourceChangeCallbackFunc", "methodIndex": 443954, "token": "0x060000ac", "virtualAddress": "0x18539e60c"},
+            {"role": "otherAudioPlaying", "type": "AkAudioSourceChangeCallbackInfo", "method": "get_bOtherAudioPlaying", "methodIndex": 443882, "virtualAddress": "0x18539d68c"},
+        ),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],),
+        runtime_execution_status="callbackCapabilityExactPayloadsNotObserved",
     ),
     runtime_spec(
         "AkSoundEngine",
@@ -1487,6 +1638,7 @@ RUNTIME_SYSTEM_SPECS = (
         ),
         native_call_chains=(
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["externalSource"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["switchSelector"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["rtpcSelector"],
