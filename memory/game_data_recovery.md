@@ -308,6 +308,20 @@ does not prove that a current controller can reach the clip or which Wwise
 container branch wins at runtime. Canonical Wwise events therefore retain
 per-clip owner contexts rather than one global owner.
 
+`OnCustomFootStep` parameters now retain their exact stock-client meaning:
+`intParameter` masks select Left/Right foot (`0x03`), None/Step/Jump/Land VFX
+(`0x1c`), and max-weight/compose-max/custom-weight/force-play filtering
+(`0xe0`). Only CustomWeight uses `floatParameter` as its playback threshold;
+all 13,303 current callbacks use IsMaxWeight or ForcePlay, so their 11,443
+authored `0.5` and 1,860 authored `0.0` floats are inactive for playback.
+VFX has a separate exact runtime clip-weight threshold of `0.5`. The current
+4,213-clip corpus covers 35 authored spellings (32 canonical Events), with
+6,831 character, 67 enemy, and 6,405 owner-unresolved occurrences. Native
+`FootStepHandler` evidence proves left/right ground queries, material/custom-tag
+AudioId posting, and water-depth RTPC updates; it does not map a material or
+water value to a Wwise switch child, prove which callback receiver executed,
+or provide a live playback trace.
+
 Playable-character callback ownership must not be extended to every leaf of a
 shared Event. The apparent 10,000-plus per-character totals were sums of
 Event-to-possible-media associations: 375 animation Events are used by multiple

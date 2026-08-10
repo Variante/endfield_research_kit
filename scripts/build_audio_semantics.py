@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import re
 import struct
 import sys
@@ -123,11 +124,177 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 11
+AUDIO_SEMANTIC_SCHEMA_VERSION = 12
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 6
 MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
     "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 )
+
+CUSTOM_FOOTSTEP_RUNTIME_VFX_WEIGHT_THRESHOLD = 0.5
+CUSTOM_FOOTSTEP_SIDE_VALUES = {0x00: "Left", 0x01: "Right", 0x03: "Invalid"}
+CUSTOM_FOOTSTEP_VFX_VALUES = {0x00: "None", 0x04: "Step", 0x08: "Jump", 0x0C: "Land"}
+CUSTOM_FOOTSTEP_FILTER_VALUES = {
+    0x00: "IsMaxWeight",
+    0x20: "IsComposeMaxWeight",
+    0x40: "CustomWeight",
+    0xE0: "ForcePlay",
+}
+CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256 = (
+    "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+)
+CUSTOM_FOOTSTEP_NATIVE_ANCHORS = (
+    {
+        "type": "CustomFootStepEvent",
+        "method": "ParseIntParameter",
+        "token": "0x0600cf1f",
+        "virtualAddress": "0x18378d410",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_OnCustomFootStepWithStringSpan",
+        "token": "0x0600cf33",
+        "virtualAddress": "0x18378c4a0",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_EnqueueFootStep",
+        "token": "0x0600cf34",
+        "virtualAddress": "0x18378d480",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_GetGroundInfo",
+        "token": "0x0600cf36",
+        "virtualAddress": "0x1832894e0",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_SyncGroundInfo",
+        "token": "0x0600cf38",
+        "virtualAddress": "0x183289390",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_ProcessFootStep",
+        "token": "0x0600cf3a",
+        "virtualAddress": "0x183289920",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_SetAudioMaterialType",
+        "token": "0x0600cf3b",
+        "virtualAddress": "0x183287770",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_SetAudioWaterDepth",
+        "token": "0x0600cf3c",
+        "virtualAddress": "0x183289190",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "FootStepHandler",
+        "method": "_SetAudioMatSwitch",
+        "token": "0x0600cf3d",
+        "virtualAddress": "0x1832878f0",
+        "evidence": "exactCurrentGameAssembly",
+    },
+    {
+        "type": "NPCAnimatorMono",
+        "method": "OnCustomFootStep",
+        "token": "0x0600d0e2",
+        "virtualAddress": "0x1832881e0",
+        "evidence": "exactCurrentGameAssemblyLegacyReceiver",
+    },
+)
+
+
+def decode_custom_footstep_parameters(raw_int: Any, raw_float: Any) -> dict[str, Any] | None:
+    """Decode the exact current-build OnCustomFootStep packed parameters."""
+
+    if isinstance(raw_int, bool) or not isinstance(raw_int, int):
+        return None
+    if isinstance(raw_float, bool) or not isinstance(raw_float, (int, float)):
+        return None
+    float_value = float(raw_float)
+    if not math.isfinite(float_value):
+        return None
+    side_bits = raw_int & 0x03
+    vfx_bits = raw_int & 0x1C
+    filter_bits = raw_int & 0xE0
+    foot_side = CUSTOM_FOOTSTEP_SIDE_VALUES.get(side_bits)
+    vfx_type = CUSTOM_FOOTSTEP_VFX_VALUES.get(vfx_bits)
+    playback_filter = CUSTOM_FOOTSTEP_FILTER_VALUES.get(filter_bits)
+    exact = all(value is not None for value in (foot_side, vfx_type, playback_filter))
+    is_custom_weight = playback_filter == "CustomWeight"
+    return {
+        "rawInt": raw_int,
+        "rawFloat": float_value,
+        "footSide": foot_side or f"Unknown(0x{side_bits:02x})",
+        "vfxType": vfx_type or f"Unknown(0x{vfx_bits:02x})",
+        "playbackFilter": playback_filter or f"Unknown(0x{filter_bits:02x})",
+        "customWeightThreshold": float_value if is_custom_weight else None,
+        "runtimeVfxWeightThreshold": CUSTOM_FOOTSTEP_RUNTIME_VFX_WEIGHT_THRESHOLD,
+        "inactiveFloat": not is_custom_weight,
+        "floatParameterStatus": (
+            "customWeightThreshold" if is_custom_weight else "inactiveForPlaybackFilter"
+        ),
+        "decodeStatus": "exactCurrentBuild" if exact else "unsupportedMaskedValue",
+    }
+
+
+def aggregate_custom_footstep_parameter_variants(
+    evidence_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Count exact callback parameter variants without retaining every clip row."""
+
+    counts: Counter[tuple[int, float]] = Counter()
+    for evidence in evidence_rows:
+        if not isinstance(evidence, dict) or evidence.get("function") != "OnCustomFootStep":
+            continue
+        decoded = decode_custom_footstep_parameters(
+            evidence.get("intParameter"), evidence.get("floatParameter")
+        )
+        if decoded is None:
+            continue
+        counts[(decoded["rawInt"], decoded["rawFloat"])] += 1
+    variants = []
+    for (raw_int, raw_float), occurrence_count in sorted(counts.items()):
+        decoded = decode_custom_footstep_parameters(raw_int, raw_float)
+        assert decoded is not None
+        variants.append({**decoded, "occurrenceCount": occurrence_count})
+    return variants
+
+
+def aggregate_custom_footstep_context_variants(
+    contexts: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    counts: Counter[tuple[int, float]] = Counter()
+    for context in contexts:
+        if not isinstance(context, dict):
+            continue
+        for variant in context.get("customFootstepParameterVariants") or []:
+            decoded = decode_custom_footstep_parameters(
+                variant.get("rawInt"), variant.get("rawFloat")
+            )
+            if decoded is None:
+                continue
+            counts[(decoded["rawInt"], decoded["rawFloat"])] += int(
+                variant.get("occurrenceCount") or 0
+            )
+    variants = []
+    for (raw_int, raw_float), occurrence_count in sorted(counts.items()):
+        decoded = decode_custom_footstep_parameters(raw_int, raw_float)
+        assert decoded is not None
+        variants.append({**decoded, "occurrenceCount": occurrence_count})
+    return variants
 
 
 def runtime_spec(
@@ -976,6 +1143,166 @@ def _append_context(
     contexts[key].append(context)
 
 
+def _attach_custom_footstep_parameters(
+    context: dict[str, Any], evidence_rows: Iterable[dict[str, Any]]
+) -> None:
+    variants = aggregate_custom_footstep_parameter_variants(evidence_rows)
+    if not variants:
+        return
+    context["customFootstepOccurrenceCount"] = sum(
+        int(variant["occurrenceCount"]) for variant in variants
+    )
+    context["customFootstepParameterVariants"] = variants
+
+
+def build_custom_footstep_model(
+    events: Iterable[dict[str, Any]], webui_root: Path, language: str
+) -> dict[str, Any]:
+    event_rows = [
+        event for event in events
+        if isinstance(event, dict) and event.get("customFootstepParameterVariants")
+    ]
+    variants = aggregate_custom_footstep_context_variants(
+        context
+        for event in event_rows
+        for context in event.get("contexts") or []
+        if isinstance(context, dict)
+    )
+    side_counts: Counter[str] = Counter()
+    vfx_counts: Counter[str] = Counter()
+    filter_counts: Counter[str] = Counter()
+    float_counts: Counter[str] = Counter()
+    for variant in variants:
+        count = int(variant.get("occurrenceCount") or 0)
+        side_counts[str(variant.get("footSide") or "Unknown")] += count
+        vfx_counts[str(variant.get("vfxType") or "Unknown")] += count
+        filter_counts[str(variant.get("playbackFilter") or "Unknown")] += count
+        float_counts[str(variant.get("rawFloat"))] += count
+
+    gameplay_path = webui_root / f"data/lang/{language}/gameplay/sound_effects.json"
+    gameplay_payload = load_json(gameplay_path, {})
+    evidence_name = str(gameplay_payload.get("animationEvidencePath") or "")
+    evidence_path = gameplay_path.with_name(evidence_name) if evidence_name else None
+    fingerprint: dict[str, Any] = {}
+    source_callback_count = 0
+    source_clip_ids: set[str] = set()
+    source_authored_event_ids: set[str] = set()
+    if evidence_path and evidence_path.is_file():
+        data = evidence_path.read_bytes()
+        fingerprint = {
+            "path": normalize_posix(evidence_path.relative_to(webui_root)),
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "size": len(data),
+        }
+        source_payload = json.loads(data)
+        source_event_groups: list[list[Any]] = []
+        for bucket_name in ("characters", "enemies"):
+            bucket = source_payload.get(bucket_name) if isinstance(source_payload, dict) else None
+            if isinstance(bucket, dict):
+                source_event_groups.extend(
+                    events for events in bucket.values() if isinstance(events, list)
+                )
+        if isinstance(source_payload, dict) and isinstance(source_payload.get("ownerUnresolved"), list):
+            source_event_groups.append(source_payload["ownerUnresolved"])
+        for source_events in source_event_groups:
+            for source_event in source_events:
+                if not isinstance(source_event, dict):
+                    continue
+                for evidence in source_event.get("evidence") or []:
+                    if not isinstance(evidence, dict) or evidence.get("function") != "OnCustomFootStep":
+                        continue
+                    source_callback_count += 1
+                    clip_id = str(evidence.get("clipSource") or evidence.get("clip") or "")
+                    if clip_id:
+                        source_clip_ids.add(clip_id)
+                    authored_event_id = str(evidence.get("authoredEventId") or source_event.get("id") or "")
+                    if authored_event_id:
+                        source_authored_event_ids.add(authored_event_id)
+
+    context_rows = [
+        context
+        for event in event_rows
+        for context in event.get("contexts") or []
+        if isinstance(context, dict) and context.get("customFootstepParameterVariants")
+    ]
+    owner_kind_counts = Counter(
+        "character" if context.get("kind") == "characterAnimation"
+        else "enemy" if context.get("kind") == "enemyAnimation"
+        else "ownerUnresolved"
+        for context in context_rows
+    )
+    occurrence_owner_kind_counts = Counter()
+    for context in context_rows:
+        kind = (
+            "character" if context.get("kind") == "characterAnimation"
+            else "enemy" if context.get("kind") == "enemyAnimation"
+            else "ownerUnresolved"
+        )
+        occurrence_owner_kind_counts[kind] += int(context.get("customFootstepOccurrenceCount") or 0)
+    return {
+        "status": "exactCurrentBuildStaticEvidence",
+        "callback": "OnCustomFootStep",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "metadataSha256": MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256,
+        "sourceFingerprint": fingerprint,
+        "parameterMasks": {"footSide": "0x03", "vfxType": "0x1c", "playbackFilter": "0xe0"},
+        "runtimeVfxWeightThreshold": CUSTOM_FOOTSTEP_RUNTIME_VFX_WEIGHT_THRESHOLD,
+        "nativeAnchors": [dict(anchor) for anchor in CUSTOM_FOOTSTEP_NATIVE_ANCHORS],
+        "runtimeFieldAnchors": [
+            {
+                "type": "FootStepConfig",
+                "field": "footstepAudioSwitch",
+                "token": "0x04001386",
+                "offset": "0x20",
+                "meaning": "surface enum to AudioId",
+            },
+            {
+                "type": "FootStepConfig",
+                "field": "footstepAudioCustomTypeSwitch",
+                "token": "0x04001387",
+                "offset": "0x28",
+                "meaning": "GameplayTag to AudioId",
+            },
+            {
+                "type": "WaterInteractSettings",
+                "field": "waterDepthRtpc",
+                "token": "0x040053b5",
+                "offset": "0x74",
+                "meaning": "water-depth RTPC AudioId",
+            },
+        ],
+        "corpus": {
+            "eventCount": len(event_rows),
+            "authoredEventIdCount": len(source_authored_event_ids) or len(event_rows),
+            "animationClipCount": len(source_clip_ids),
+            "contextCount": len(context_rows),
+            "occurrenceCount": sum(int(row.get("occurrenceCount") or 0) for row in variants),
+            "sourceOccurrenceCount": source_callback_count,
+            "parameterVariantCount": len(variants),
+            "contextOwnerKinds": dict(sorted(owner_kind_counts.items())),
+            "occurrenceOwnerKinds": dict(sorted(occurrence_owner_kind_counts.items())),
+            "footSides": dict(sorted(side_counts.items())),
+            "vfxTypes": dict(sorted(vfx_counts.items())),
+            "playbackFilters": dict(sorted(filter_counts.items())),
+            "rawFloats": dict(sorted(float_counts.items())),
+        },
+        "runtimeSelectorBoundary": (
+            "FootStepHandler selects the packed left/right foot and raycasts ground. Surface type "
+            "selects FootStepConfig.footstepAudioSwitch, a custom tag selects "
+            "footstepAudioCustomTypeSwitch, and _SetAudioMatSwitch posts the chosen AudioId through "
+            "AudioAdapter._PostEvent (it is not a direct SetSwitch call). Water writes 1.0 for decal "
+            "water, 0.0 when leaving water, or bounded sensor-relative height through "
+            "WaterInteractSettings.waterDepthRtpc. Static evidence does not map any of those values "
+            "to a particular Wwise switch child; legacy NPCAnimatorMono ignores packed int/float."
+        ),
+        "evidenceBoundary": (
+            "The packed callback fields and stock-client filter/VFX thresholds are exact native "
+            "semantics. AnimationClip rows prove authored requests, not which receiver ran, the "
+            "sampled ground material or water depth, callback execution, or a selected Wwise leaf."
+        ),
+    }
+
+
 def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list[dict[str, Any]]]:
     gameplay_path = webui_root / f"data/lang/{language}/gameplay/sound_effects.json"
     payload = load_json(gameplay_path, {})
@@ -1108,6 +1435,7 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                     "clipReachability": event.get("clipReachability") or "unresolved",
                     "authoredEventIds": list(event.get("authoredEventIds") or [])[:8],
                 }
+                _attach_custom_footstep_parameters(context, evidence)
                 _append_context(contexts, seen, event.get("id"), context)
     for event in animation_evidence.get("ownerUnresolved") or []:
         if not isinstance(event, dict):
@@ -1131,6 +1459,7 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                 if str(row.get("clipSource") or "")
             })[:12],
         }
+        _attach_custom_footstep_parameters(context, evidence)
         _append_context(contexts, seen, event.get("id"), context)
     return dict(contexts)
 
@@ -3614,6 +3943,7 @@ def build_event_rows(
             for value in context.get("animationFunctions") or []
             if str(value)
         })
+        custom_footstep_variants = aggregate_custom_footstep_context_variants(event_contexts)
         animation_context_scope = (
             "sharedPlayableCharacters" if len(character_animation_owner_ids) > 1
             else "singlePlayableCharacter" if character_animation_owner_ids
@@ -3729,6 +4059,11 @@ def build_event_rows(
             "enemyAnimationOwnerCount": len(enemy_animation_owner_ids),
             "animationContextScope": animation_context_scope,
             "animationFunctions": animation_functions,
+            "customFootstepOccurrenceCount": sum(
+                int(variant.get("occurrenceCount") or 0)
+                for variant in custom_footstep_variants
+            ),
+            "customFootstepParameterVariants": custom_footstep_variants,
             "contexts": event_contexts,
             "evidence": evidence_rows,
             "media": event_candidates,
@@ -3844,6 +4179,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "authoredProperty", "runtimeField", "propertySourceOffset",
             "propertyValueSourceOffset", "valueType", "valueTypeName",
             "runtimeMappingId", "interactiveTableSha256",
+            "customFootstepOccurrenceCount",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -3862,6 +4198,12 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "bornBuffIds", "preWarnEffectFixedRotation",
         ):
             context_search.update(str(value) for value in context.get(key) or [] if str(value))
+        for variant in context.get("customFootstepParameterVariants") or []:
+            if not isinstance(variant, dict):
+                continue
+            for value in variant.values():
+                if isinstance(value, (str, int, float, bool)):
+                    context_search.add(str(value))
         for action in context.get("triggerPlaySoundActions") or []:
             if not isinstance(action, dict):
                 continue
@@ -3888,7 +4230,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "traversalStatus", "unresolvedNodeCount", "contextCount",
         "contextStoredCount", "contextsTruncated",
         "playableCharacterAnimationOwnerCount", "enemyAnimationOwnerCount",
-        "animationContextScope", "animationFunctions",
+        "animationContextScope", "animationFunctions", "customFootstepOccurrenceCount",
+        "customFootstepParameterVariants",
     )
     summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
     summary.update({
@@ -3988,6 +4331,7 @@ def build_audio_semantic_data(
     )
     events, media_to_events, banks = build_event_rows(audio_index, contexts)
     media = build_media_rows(audio_index, media_to_events)
+    custom_footstep_model = build_custom_footstep_model(events, webui_root, language)
     spawner_event_rows = [
         row for row in events
         if any(
@@ -4156,6 +4500,12 @@ def build_audio_semantic_data(
                 "OnCustomFootStep" in (row.get("animationFunctions") or [])
                 for row in events
             ),
+            "customFootstepCallbackOccurrences": (
+                custom_footstep_model.get("corpus") or {}
+            ).get("occurrenceCount", 0),
+            "customFootstepParameterVariants": (
+                custom_footstep_model.get("corpus") or {}
+            ).get("parameterVariantCount", 0),
             "binaryManagedAudioLiterals": len(managed_literal_names),
             "binaryManagedLiteralWwiseEvents": managed_literal_hirc_matches,
             "authoredTableEventHashes": len(table_event_hashes),
@@ -4266,6 +4616,7 @@ def build_audio_semantic_data(
         ],
         "banks": banks,
         "hircSummary": audio_index.get("hircSummary") or {},
+        "customFootstepModel": custom_footstep_model,
         "triggerCatalog": {
             "spawnerPreWarnAudio": spawner_semantics.get("stats") or {},
             "patrolSubActionPlayAudio": patrol_semantics.get("stats") or {},
@@ -4336,6 +4687,7 @@ def build_audio_semantic_data(
             "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound source edges. Play roots and random/sequence/switch/layer relations are preserved; runtime selection is not evaluated. Unsupported music nodes and unparsed child structures fail closed.",
             "authoredContext": "Table, Timeline, SkillData, and BuffData references prove authored consumers, not a live playback trace.",
             "animationOwnership": "An AnimationClip callback proves that the owned clip requests the Event. If the same Event is used by multiple playable characters, its complete Wwise leaf graph is a shared selector surface and is not character-specific media ownership.",
+            "customFootstepCallbacks": custom_footstep_model.get("evidenceBoundary") or "",
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
             "spawnerPreWarnAudio": "The current mc13 SpawnerEnemyLibraryItem preWarnAudioEventKey proves an authored enemy-spawn pre-warning request and its row-local timing/effect/enemy/template source. It does not prove that the spawner executed or that a Wwise branch played; unresolved authored names remain visible.",
