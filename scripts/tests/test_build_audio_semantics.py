@@ -1173,6 +1173,9 @@ class AudioSemanticDataTests(unittest.TestCase):
             component_root = root / "structured/StreamingAssets/Data/Json/Interactive/InteractiveData"
             component_root.mkdir(parents=True)
             (component_root / "data_int_fixture.json").write_bytes(b"fixture")
+            table_path = root / "structured/StreamingAssets/Data/Json/Interactive/InteractiveTable.json"
+            table_path.parent.mkdir(parents=True, exist_ok=True)
+            table_path.write_bytes(b"table-fixture")
 
             def decode_fixture(_path: Path, _data: bytes, _size: int) -> dict:
                 return {"decoded": {"componentAudioComponents": [{
@@ -1189,16 +1192,74 @@ class AudioSemanticDataTests(unittest.TestCase):
                     }],
                 }]}}
 
+            def decode_table_fixture(data: bytes) -> dict:
+                self.assertEqual(data, b"table-fixture")
+                return {
+                    "coreTemplatePaths": {
+                        "int_fixture": "Data/Json/Interactive/InteractiveData/data_int_fixture.json",
+                    },
+                    "objectToTemplate": {
+                        "int_fixture": "int_fixture",
+                        "int_fixture_alias": "int_fixture",
+                    },
+                }
+
             component_contexts = audio_semantics.collect_interactive_component_contexts(
                 root,
                 decoder=decode_fixture,
+                table_decoder=decode_table_fixture,
             )
             lifecycle = component_contexts["au_int_fixture_break"][0]
             self.assertEqual(lifecycle["triggerStateName"], "Destroy")
             self.assertEqual(lifecycle["ownerId"], "data_int_fixture")
+            self.assertEqual(lifecycle["interactiveTemplateIds"], ["int_fixture"])
+            self.assertEqual(
+                lifecycle["interactiveTemplatePath"],
+                "Data/Json/Interactive/InteractiveData/data_int_fixture.json",
+            )
+            self.assertEqual(
+                lifecycle["interactiveConsumerIds"],
+                ["int_fixture", "int_fixture_alias"],
+            )
+            self.assertEqual(
+                lifecycle["templateAssociationStatus"],
+                "exactInteractiveTableTemplatePath",
+            )
             custom_component = component_contexts["au_int_fixture_open"][0]
             self.assertEqual(custom_component["triggerCustomState"], "panel_open")
             self.assertEqual(custom_component["componentIndex"], 2)
+
+    def test_interactive_table_mirror_conflict_keeps_component_owner_unresolved(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            component_rel = "Data/Json/Interactive/InteractiveData/data_int_fixture.json"
+            for source_root in ("Persistent", "StreamingAssets"):
+                component_path = root / "structured" / source_root / component_rel
+                component_path.parent.mkdir(parents=True, exist_ok=True)
+                component_path.write_bytes(b"fixture")
+                table_path = root / "structured" / source_root / "Data/Json/Interactive/InteractiveTable.json"
+                table_path.parent.mkdir(parents=True, exist_ok=True)
+                table_path.write_bytes(source_root.encode("ascii"))
+
+            def decode_fixture(_path: Path, _data: bytes, _size: int) -> dict:
+                return {"decoded": {"componentAudioComponents": [{
+                    "index": 0,
+                    "audioRows": [{"state": 13, "stateName": "Destroy", "events": ["au_int_fixture_break"]}],
+                    "customRows": [],
+                }]}}
+
+            def unexpected_table_decode(_data: bytes) -> dict:
+                raise AssertionError("conflicting mirrors must fail closed before table decode")
+
+            contexts = audio_semantics.collect_interactive_component_contexts(
+                root,
+                decoder=decode_fixture,
+                table_decoder=unexpected_table_decode,
+            )
+            row = contexts["au_int_fixture_break"][0]
+            self.assertEqual(row["templateAssociationStatus"], "interactiveTableTemplatePathUnresolved")
+            self.assertEqual(row["interactiveTemplateIds"], [])
+            self.assertEqual(row["interactiveConsumerIds"], [])
 
     def test_collects_exact_projectile_lifecycle_sound_fields(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

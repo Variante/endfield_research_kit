@@ -5599,6 +5599,69 @@ def collect_interactive_component_contexts(
                     **parsed,
                 })
             return {"decoded": {"componentAudioComponents": components}}
+
+    # InteractiveTable is an exact serialized ownership index.  Keep this
+    # optional so focused callers/tests that only provide an InteractiveData
+    # fixture retain their bounded component evidence without needing a table.
+    template_ids_by_file_name: dict[str, list[str]] = defaultdict(list)
+    template_paths_by_id: dict[str, str] = {}
+    consumers_by_template: dict[str, list[str]] = defaultdict(list)
+    table_source_paths: list[str] = []
+    table_source_fingerprint = ""
+    table: dict[str, Any] | None = None
+    if table_decoder is None:
+        try:
+            from story_builder.interactive_binary import decode_interactive_table
+        except ImportError:
+            from scripts.story_builder.interactive_binary import decode_interactive_table
+        table_decoder = decode_interactive_table
+    table_versions: list[tuple[str, Path, bytes, str]] = []
+    for source_root in ("Persistent", "StreamingAssets"):
+        table_path = (
+            export_root / "structured" / source_root
+            / "Data/Json/Interactive/InteractiveTable.json"
+        )
+        if not table_path.is_file():
+            continue
+        try:
+            table_data = table_path.read_bytes()
+        except OSError:
+            continue
+        table_versions.append((
+            source_root,
+            table_path,
+            table_data,
+            hashlib.sha256(table_data).hexdigest(),
+        ))
+    if table_versions and len({row[3] for row in table_versions}) == 1:
+        try:
+            table = table_decoder(table_versions[0][2])
+        except (UnicodeDecodeError, struct.error, ValueError):
+            table = None
+        if isinstance(table, dict):
+            table_source_paths = [
+                normalize_posix(path.relative_to(export_root))
+                for _root, path, _data, _digest in table_versions
+            ]
+            table_source_fingerprint = table_versions[0][3]
+            for template_id, template_path in (table.get("coreTemplatePaths") or {}).items():
+                normalized_template_path = normalize_posix(str(template_path or ""))
+                pure_template_path = PurePosixPath(normalized_template_path)
+                if (
+                    pure_template_path.is_absolute()
+                    or ".." in pure_template_path.parts
+                    or not normalized_template_path.startswith(
+                        "Data/Json/Interactive/InteractiveData/"
+                    )
+                ):
+                    continue
+                template_id = str(template_id)
+                template_paths_by_id[template_id] = normalized_template_path
+                file_name = pure_template_path.name
+                if file_name:
+                    template_ids_by_file_name[file_name].append(template_id)
+            for consumer_id, template_id in (table.get("objectToTemplate") or {}).items():
+                consumers_by_template[str(template_id)].append(str(consumer_id))
     paths_by_identity: dict[str, list[Path]] = defaultdict(list)
     for source_root in ("Persistent", "StreamingAssets"):
         root = export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveData"
@@ -5628,6 +5691,26 @@ def collect_interactive_component_contexts(
             if not isinstance(components, list):
                 continue
             source_paths = [normalize_posix(path.relative_to(export_root)) for path in version_paths]
+            template_file_name = f"{owner_id}.json"
+            template_ids = sorted(set(template_ids_by_file_name.get(template_file_name, [])))
+            template_path = ""
+            if len(template_ids) == 1:
+                # The current table has one path per template id.  Keep the
+                # path exact and do not collapse a future ambiguous match.
+                template_path = template_paths_by_id.get(template_ids[0], "")
+            consumer_ids = sorted({
+                consumer
+                for template_id in template_ids
+                for consumer in consumers_by_template.get(template_id, [])
+            })
+            if len(template_ids) == 1:
+                association_status = "exactInteractiveTableTemplatePath"
+            elif len(template_ids) > 1:
+                association_status = "ambiguousInteractiveTableTemplatePath"
+            elif table_versions:
+                association_status = "interactiveTableTemplatePathUnresolved"
+            else:
+                association_status = "interactiveTableIndexUnavailable"
             for component in components:
                 if not isinstance(component, dict):
                     continue
@@ -5645,6 +5728,12 @@ def collect_interactive_component_contexts(
                             "semanticRole": "entityInteractiveLifecycleEvent",
                             "ownerKind": "interactiveEntityConfig",
                             "ownerId": owner_id,
+                            "interactiveTemplateIds": template_ids,
+                            "interactiveTemplatePath": template_path,
+                            "interactiveConsumerIds": consumer_ids,
+                            "templateAssociationStatus": association_status,
+                            "interactiveTableSourcePaths": table_source_paths,
+                            "interactiveTableSha256": table_source_fingerprint,
                             "componentIndex": component_index,
                             "sourceOffset": component.get("sourceOffset"),
                             "triggerStateId": row.get("state"),
@@ -5668,6 +5757,12 @@ def collect_interactive_component_contexts(
                         "semanticRole": "entityInteractiveCustomStateEvent",
                         "ownerKind": "interactiveEntityConfig",
                         "ownerId": owner_id,
+                        "interactiveTemplateIds": template_ids,
+                        "interactiveTemplatePath": template_path,
+                        "interactiveConsumerIds": consumer_ids,
+                        "templateAssociationStatus": association_status,
+                        "interactiveTableSourcePaths": table_source_paths,
+                        "interactiveTableSha256": table_source_fingerprint,
                         "componentIndex": component_index,
                         "sourceOffset": component.get("sourceOffset"),
                         "triggerCustomState": str(row.get("name") or ""),

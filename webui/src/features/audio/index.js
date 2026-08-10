@@ -628,6 +628,8 @@
         context.componentOccurrenceIndex,
         context.propertyCount, context.authoredProperty, context.runtimeField,
         ...asArray(context.consumerIds), ...asArray(context.consumerAliasIds),
+        ...asArray(context.interactiveTemplateIds), context.interactiveTemplatePath,
+        ...asArray(context.interactiveConsumerIds), context.templateAssociationStatus,
         ...asArray(context.interactiveTableSourcePaths), context.interactiveTableSha256,
         context.action, context.levelScriptId, context.sourcePath, context.sourceSha256,
         context.recordUid, context.recordLocalId, context.actionMapRole, context.eventName,
@@ -1971,6 +1973,7 @@
     if (preWarnRotation.length) parts.push(`effect rotation ${preWarnRotation.join(", ")}`);
     if (context?.definitionOwnerId) parts.push(`physics definition ${context.definitionOwnerId}`);
     if (context?.templatePath) parts.push(context.templatePath);
+    if (context?.interactiveTemplatePath) parts.push(`InteractiveData ${context.interactiveTemplatePath}`);
     const physicsConsumers = asArray(context?.consumerIds).filter(Boolean);
     if (physicsConsumers.length) parts.push(`configured consumers ${physicsConsumers.join(", ")}`);
     if (context?.componentTagHex || context?.componentTag !== undefined) {
