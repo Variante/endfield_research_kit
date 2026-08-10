@@ -144,7 +144,10 @@ never promotes an edge.
   selection separate from server-supplied quest-state identity, so the
   classifier exposes candidate chains, antichains, partial orders, forks, and
   merges without assigning a configured dialog to a quest or adding a branch
-  selection/Story-order edge. This family retains 312 authored lines, 90
+  selection/Story-order edge. Twenty registered configured dialog ids lack an
+  exported Story definition; the mission-scope topology inventory retains them
+  explicitly rather than dropping them from the Story manifest. This family
+  retains 312 authored lines, 90
   validated option routes, and 68 prime-reachable
   finish endpoints; three unresolved option-node identities remain visibly fail
   closed. One transient row without a current

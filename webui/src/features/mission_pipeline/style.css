@@ -2138,6 +2138,23 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
 .mp-tracked-proxy-arm { margin-left: 6px; }
 .mp-tracked-proxy-files small { overflow-wrap: anywhere; }
 
+.mp-tracked-proxy-contexts > p { margin: 5px 0; color: var(--muted); }
+.mp-tracked-proxy-context {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 6px;
+  border: 1px solid rgba(130, 146, 151, 0.28);
+  border-radius: 6px;
+}
+.mp-tracked-proxy-context > header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.mp-tracked-proxy-context > p { margin: 0; }
+
 .mp-playback-rejection {
   grid-column: 1 / -1;
   display: grid;

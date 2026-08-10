@@ -349,8 +349,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # authored quest partial order.  The classifier is identity-agnostic: it
 # validates the complete quest graph, then derives candidate chains,
 # antichains, sibling-exclusive fork corridors, and merges without assigning
-# any configured dialog to a quest arm.
-SCHEMA_VERSION = 47
+# any configured dialog to a quest arm. v48 publishes the complete context
+# inventory at mission scope so registered dialog rows without an exported
+# Story definition remain visible instead of falling out of the manifest.
+SCHEMA_VERSION = 48
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -8470,16 +8472,12 @@ def build_story_binding_coverage(
                 if topology:
                     row = {**row, "candidateQuestTopology": topology}
                     tracked_proxy_topology_route_count += 1
-                    topology_signature = json.dumps({
-                        "missionId": mission_id,
-                        "npcProxyId": row.get("npcProxyId"),
-                        "candidateQuestIds": topology["candidateQuestIds"],
-                    }, sort_keys=True, separators=(",", ":"))
-                    tracked_proxy_topologies[topology_signature] = {
-                        "missionId": mission_id,
-                        "npcProxyId": str(row.get("npcProxyId") or ""),
-                        **copy.deepcopy(topology),
-                    }
+                    record_tracked_proxy_candidate_topology(
+                        tracked_proxy_topologies,
+                        topology,
+                        row,
+                        mission_id=mission_id,
+                    )
             key = str(row.get("key") or "")
             if (
                 str(row.get("relation") or "") in {
@@ -9201,7 +9199,7 @@ def build_story_binding_coverage(
         for row in tracked_proxy_topology_rows
     )
     report = {
-        "schemaVersion": 18,
+        "schemaVersion": 19,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -11022,6 +11020,34 @@ def build_tracked_proxy_candidate_quest_topology(
             "relative Story-order edge."
         ),
     }, []
+
+
+def record_tracked_proxy_candidate_topology(
+    contexts: dict[str, dict[str, Any]],
+    topology: dict[str, Any],
+    row: dict[str, Any],
+    *,
+    mission_id: str,
+) -> None:
+    """Merge every configured dialog into one identity-agnostic proxy context."""
+    signature = json.dumps({
+        "missionId": mission_id,
+        "npcProxyId": row.get("npcProxyId"),
+        "candidateQuestIds": topology.get("candidateQuestIds") or [],
+    }, sort_keys=True, separators=(",", ":"))
+    context = contexts.setdefault(signature, {
+        "missionId": mission_id,
+        "npcProxyId": str(row.get("npcProxyId") or ""),
+        "storyKeys": [],
+        "configuredDialogIds": _unique_route_strings(
+            row.get("configuredDialogIds")
+        ),
+        **copy.deepcopy(topology),
+    })
+    context["storyKeys"] = _unique_route_strings(
+        context.get("storyKeys"),
+        row.get("key"),
+    )
 
 
 def objective_row(
@@ -14769,6 +14795,9 @@ def main() -> int:
             "counts": coverage["counts"],
             "nativePlaybackEventFamilies": coverage["nativePlaybackEventFamilies"],
             "storyTriggerManifest": coverage["storyTriggerManifest"],
+            "trackedProxyCandidateTopology": (
+                coverage.get("trackedProxyCandidateTopology") or {}
+            ),
             "luaStoryPlaybackEvidence":
                 coverage.get("luaStoryPlaybackEvidence") or {},
             "offlineRecoveryEvidence": offline_recovery,

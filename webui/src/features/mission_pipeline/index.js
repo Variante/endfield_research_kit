@@ -914,6 +914,9 @@
       trackedProxyMerge: "authored merge",
       trackedProxyBinaryBoundary: "Binary selector boundary",
       trackedProxyNoAssignment: "No configured dialog is assigned to a quest or fork arm.",
+      trackedProxyMissionContexts: "Tracked NPC proxy branch contexts",
+      trackedProxyMissionHint: "All configured rows remain visible, including registered dialog identities without an exported Story definition.",
+      trackedProxyDialogs: "configured dialogs",
       offlineRecoveryBoundary: "Offline recovery boundary",
       projectAuthoredBoundary: "Project-authored WebUI content",
       projectAuthoredEvidence: "Excluded from original-game recovery",
@@ -1774,6 +1777,9 @@
       trackedProxyMerge: "\u539f\u59cb\u6c47\u5408",
       trackedProxyBinaryBoundary: "\u4e8c\u8fdb\u5236\u9009\u62e9\u5668\u8fb9\u754c",
       trackedProxyNoAssignment: "\u672a\u5c06\u4efb\u4f55\u5df2\u914d\u7f6e\u5bf9\u8bdd\u5206\u914d\u7ed9\u67d0\u4e2a\u4efb\u52a1\u6216\u5206\u652f\u3002",
+      trackedProxyMissionContexts: "\u8ddf\u8e2a NPC \u4ee3\u7406\u7684\u5206\u652f\u4e0a\u4e0b\u6587",
+      trackedProxyMissionHint: "\u4fdd\u7559\u6240\u6709\u5df2\u914d\u7f6e\u884c\uff0c\u5305\u62ec\u5df2\u6ce8\u518c\u4f46\u6ca1\u6709\u5bfc\u51fa Story \u5b9a\u4e49\u7684\u5bf9\u8bdd\u6807\u8bc6\u3002",
+      trackedProxyDialogs: "\u5df2\u914d\u7f6e\u5bf9\u8bdd",
       offlineRecoveryBoundary: "\u79bb\u7ebf\u6062\u590d\u8fb9\u754c",
       projectAuthoredBoundary: "WebUI \u9879\u76ee\u81ea\u5efa\u5185\u5bb9",
       projectAuthoredEvidence: "\u5df2\u4ece\u539f\u59cb\u6e38\u620f\u6062\u590d\u4e2d\u6392\u9664",
@@ -3942,6 +3948,22 @@
     return timelineConfigurationContextsHtml(contexts, { missionSummary: true });
   }
 
+  function missionTrackedProxyCandidateTopologyHtml() {
+    const missionId = String(state.missionId || state.mission?.mission?.id || "");
+    const audit = state.index?.storyCoverage?.trackedProxyCandidateTopology || {};
+    const contexts = (audit.rows || []).filter((row) => (
+      row?.status === "validated" && String(row.missionId || "") === missionId
+    ));
+    if (!contexts.length) return "";
+    const cards = contexts.map((context) => {
+      const dialogs = (context.configuredDialogIds || context.storyKeys || [])
+        .map((key) => `<code>${esc(key)}</code>`)
+        .join(" ");
+      return `<article class="mp-tracked-proxy-context"><header><code>${esc(context.npcProxyId || "?")}</code><b>${esc(context.topologyClass || "candidate topology")}</b></header>${dialogs ? `<p><strong>${esc(t("trackedProxyDialogs"))}:</strong> ${dialogs}</p>` : ""}${trackedProxyCandidateTopologyHtml(context)}</article>`;
+    }).join("");
+    return `<details class="mp-mission-story mp-tracked-proxy-contexts" data-weight="context" open><summary>${esc(t("trackedProxyMissionContexts"))} <span>${contexts.length}</span></summary><p>${esc(t("trackedProxyMissionHint"))}</p>${cards}</details>`;
+  }
+
   function missionStateDependenciesHtml() {
     const rows = (state.localized?.flow?.missionStateStoryDependencies || [])
       .filter((row) => row && row.key);
@@ -5567,6 +5589,7 @@
       dialogFinishAuthoredTaskShellDependenciesHtml(),
       missionTimelineActivationHtml(),
       missionTimelineConfigurationHtml(),
+      missionTrackedProxyCandidateTopologyHtml(),
       missionStateDependenciesHtml(),
       envTalkContextHtml(),
     ]],

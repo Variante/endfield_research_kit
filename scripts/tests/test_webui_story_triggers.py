@@ -336,6 +336,9 @@ for (const [key, category] of [
         self.assertIn("topology.relatedOriginalFiles", source)
         self.assertIn("activeCondIndex", source)
         self.assertIn('t("trackedProxyNoAssignment")', source)
+        self.assertIn("missionTrackedProxyCandidateTopologyHtml", source)
+        self.assertIn("context.configuredDialogIds", source)
+        self.assertIn("storyCoverage?.trackedProxyCandidateTopology", source)
 
     def test_mission_pipeline_surfaces_exact_empty_levelscript_boundaries(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
