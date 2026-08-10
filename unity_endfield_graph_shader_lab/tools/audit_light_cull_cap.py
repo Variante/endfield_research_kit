@@ -910,6 +910,41 @@ UNITY_HGTREE_BODIES = {
         0x6BC,
         "0c9b3d4fe4a444b49e4dd0b161f35e72de8244546639fac61d98bd2974ee4332",
     ),
+    "particle_renderer_record_0x08_flags_mode_2": (
+        0x1810416A0,
+        0x1CE,
+        "86ec5e76acda8b910c87262bf7b6e79449b25ec958908965e9d904a322b18943",
+    ),
+    "particle_renderer_record_0x08_flags_mode_3": (
+        0x181041870,
+        0xA5,
+        "24e11d4a25438887b99d22c6d202c0689c023b789f52b56ce0ca84b79d462dde",
+    ),
+    "particle_renderer_record_0x08_flags_mode_4": (
+        0x181041920,
+        0xA5,
+        "ad13ada20c1382a9697c6423f40b898a76934d22932c80eae4e76c0225d3fe31",
+    ),
+    "particle_renderer_record_0x08_flags_mode_5": (
+        0x1810419D0,
+        0xA5,
+        "c7b18e76b010f26a0f8ce7d9f09f38e1b2a759097a41de17ec86d8081a5c1163",
+    ),
+    "renderer_runtime_property_flag_sync": (
+        0x180432CD0,
+        0x1ED,
+        "b265d127f02af8b6f7995ed24b5d29cffe3b36d0e6fd2cfcce2b429ca4490f8a",
+    ),
+    "generic_renderer_runtime_record_constructor": (
+        0x180BCB760,
+        0x92E,
+        "bc9b51e5ec3b9f43cd26faf384f92658cf591ca119df1b173cf19912eadd016f",
+    ),
+    "runtime_record_scheduled_flag_consumer": (
+        0x181064100,
+        0x108D,
+        "212141070fd1bb2189fe1ded35316a29f7805e4dd5b8f455fb34b213698f17dc",
+    ),
     "lod_direct_origin_0": (
         0x18106D7F0,
         0x295,
@@ -3959,8 +3994,95 @@ def validate_unity_hgtree_renderer_boundary(
                     },
                     {"offset": "0x04", "sizeBytes": 4, "source": "batchKey"},
                     {"offset": "0x08", "sizeBytes": 4, "source": "renderFlags"},
-                    {"offset": "0x0C", "sizeBytes": 12, "initialValue": 0},
+                    {
+                        "offset": "0x0C",
+                        "sizeBytes": 4,
+                        "initialValue": 0,
+                        "meaning": "supplemental runtime filter flags",
+                    },
+                    {
+                        "offset": "0x10",
+                        "sizeBytes": 4,
+                        "initialValue": 0,
+                        "meaning": "renderer property flags",
+                    },
+                    {
+                        "offset": "0x14",
+                        "sizeBytes": 4,
+                        "initialValue": 0,
+                        "meaning": "generic renderer payload; exact HGTree role open",
+                    },
                 ],
+                "runtimeRecordFieldLifecycle": {
+                    "mutableRenderFlagsAt0x08": {
+                        "roleClosed": True,
+                        "initialSource": "serialized HGTreeRenderer.renderFlags",
+                        "particleWriterVirtualAddresses": [
+                            "0x1810416A0",
+                            "0x181041870",
+                            "0x181041920",
+                            "0x1810419D0",
+                        ],
+                        "particleModes": [2, 3, 4, 5],
+                        "writtenValue": "0x00100000",
+                        "consumerVirtualAddress": "0x181067FFF",
+                        "consumerEquation": (
+                            "record[+0x08] | rendererEntry[+0x18] "
+                            "| callbackDerivedFlags"
+                        ),
+                        "proof": (
+                            "all four particle setup variants select the same "
+                            "0x7F00 renderer-component family, advance from "
+                            "blob+0x0C (record+0x08), write bit 20 at stride "
+                            "0x18, and select modes 2..5; a scheduled callback "
+                            "ORs record+0x08 into its render flags"
+                        ),
+                    },
+                    "supplementalFilterFlagsAt0x0C": {
+                        "consumerRoleClosed": True,
+                        "producerClosed": False,
+                        "initialValue": 0,
+                        "consumerVirtualAddress": "0x181064B73",
+                        "consumerEquation": (
+                            "(record[+0x0C] | rendererEntry[+0x18]) "
+                            "& filterMask == filterValue"
+                        ),
+                        "proofBoundary": (
+                            "the scheduled callback reads blob+0x10 "
+                            "(record+0x0C) as an independent filter overlay; "
+                            "the HGTree transform and generic constructor both "
+                            "initialize it to zero, while no later installed "
+                            "writer has been source-closed"
+                        ),
+                    },
+                    "rendererPropertyFlagsAt0x10": {
+                        "roleClosed": True,
+                        "initialValue": 0,
+                        "writerVirtualAddress": "0x180432CD0",
+                        "writerLoopVirtualAddress": "0x180432DD0",
+                        "preserveMask": "0xFC07FBFD",
+                        "recordStrideBytes": 24,
+                        "proof": (
+                            "the Renderer state synchronizer selects the same "
+                            "0x7F00 family, advances from blob+0x14 "
+                            "(record+0x10), preserves the masked bits, and ORs "
+                            "property-derived flags into every record"
+                        ),
+                    },
+                    "genericRendererPayloadAt0x14": {
+                        "exactHGTreeRoleClosed": False,
+                        "hgtreeInitialValue": 0,
+                        "genericConstructorVirtualAddress": "0x180BCB760",
+                        "genericConstructorSource": "constructor input +0x20",
+                        "proofBoundary": (
+                            "the generic Renderer constructor populates the same "
+                            "count-plus-0x18-stride family through record+0x14, "
+                            "so the word is meaningful payload rather than "
+                            "padding; no HGTree-loader-specific consumer has "
+                            "been source-closed"
+                        ),
+                    },
+                },
             },
             "ownerCleanup": {
                 "functionVirtualAddress": "0x1810BCE00",
@@ -4695,8 +4817,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v20",
-        "status": "installed_cap_component67_reserved_word_closed",
+        "schema": "endfield.recovered-light-cull-cap.v21",
+        "status": "installed_cap_hgtree_runtime_record_flags_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -4722,7 +4844,15 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "exact 28-byte serialized input, 24-byte runtime records, bucketed "
             "LOD float2 array, registration argument mapping, six-way LOD job "
             "dispatch, direct squared-distance interval, and scaled metric "
-            "interval are now closed. The dispatch packet/payload layouts, "
+            "interval are now closed. Runtime record +0x08 has a mutable "
+            "renderFlags lifecycle: four particle setup variants replace it "
+            "with bit 20 and a scheduled callback ORs it into render flags. "
+            "Record +0x0C is independently consumed as a supplemental filter "
+            "overlay, but no post-initialization writer is closed. Record +0x10 "
+            "is closed as Renderer property flags updated "
+            "by the common state synchronizer. Record +0x14 is meaningful in "
+            "the generic Renderer constructor but remains zero with no closed "
+            "HGTree-specific consumer. The dispatch packet/payload layouts, "
             "LODCrossFadeConfig enableDither/lodBias controls, parent and "
             "per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp "
             "path are now source-closed as well. A separate component-bit-67 "
@@ -4804,8 +4934,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "Any separate post-dispatch cull-view +0x18 consumer, remaining "
-            "loader-registration record +0x0C..+0x17 zero-field roles, the "
+            "Any separate post-dispatch cull-view +0x18 consumer, a later "
+            "writer for loader record +0x0C, the exact HGTree-specific "
+            "role/consumer of loader record +0x14, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -4977,6 +5108,10 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTreeRender CreateRendererList binding, core, scheduler, and selected runtime callbacks",
                 "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
                 "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
+                "loader runtime record +0x08 mutable renderFlags lifecycle, including particle bit-20 writers and scheduled consumption",
+                "loader runtime record +0x0C as an independently consumed supplemental filter overlay initialized to zero",
+                "loader runtime record +0x10 as Renderer property flags and its common state-synchronization writer",
+                "loader runtime record +0x14 as meaningful generic Renderer payload while preserving its HGTree-specific role as open",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
                 "the HGTree LOD dispatch packet and payload layouts",
@@ -5013,7 +5148,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "arbitrary/asymmetric final selected-view planes",
                 "any separate post-dispatch copy or consumer of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
-                "the loader-registration runtime record +0x0C..+0x17 zero-field roles",
+                "any post-initialization writer for runtime record +0x0C",
+                "the exact HGTree-loader-specific role and consumer of runtime record +0x14",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -5049,6 +5185,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
+        "runtime supplemental/property flag words and generic tail boundary, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
