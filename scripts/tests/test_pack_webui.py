@@ -77,9 +77,11 @@ class PackWebuiAudioTests(unittest.TestCase):
         self.assertIn('event?.actionDispatchEvidence || []', source)
         self.assertIn('soundDispatchNoExplicitDelay', source)
         self.assertIn('soundActionProbability', source)
-        self.assertIn('[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])', source)
-        self.assertIn('data-gameplay-sfx-player', source)
-        self.assertNotIn('<audio controls preload="none" src="${escapeHtml(candidate.src)}"', source)
+        # All recovered candidates are listed together; there is no hidden
+        # candidate selector/player layer on the Gameplay page.
+        self.assertIn('<audio controls preload="none" src="${escapeHtml(candidate.src)}"', source)
+        self.assertNotIn('[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])', source)
+        self.assertNotIn('data-gameplay-sfx-player', source)
         self.assertIn("[1, 2, 3, 4].includes(payload.schemaVersion)", source)
         self.assertNotIn('section(text("characterActionAudio")', character_detail)
         self.assertIn('entry.kind === "character"', detail_renderer)
@@ -98,6 +100,14 @@ class PackWebuiAudioTests(unittest.TestCase):
         self.assertIn('evidence?.actionDispatchEvidence', source)
         self.assertIn('coDispatchWithAuthoredDelayDifference', (project_root / "scripts" / "build_audio.py").read_text(encoding="utf-8"))
         self.assertIn('action?.probability?.baseValuesPercent', source)
+
+    def test_audio_page_labels_single_complete_topology_leaf(self) -> None:
+        project_root = SCRIPT.parents[1]
+        source = (project_root / "webui" / "src" / "features" / "audio" / "index.js").read_text(encoding="utf-8")
+        self.assertIn('relationSingleTopology:', source)
+        self.assertIn('singleTopology: "relationSingleTopology"', source)
+        self.assertIn('record?.traversalStatus === "complete"', source)
+        self.assertIn('Number(record?.unresolvedNodeCount || 0) === 0', source)
 
 
 if __name__ == "__main__":

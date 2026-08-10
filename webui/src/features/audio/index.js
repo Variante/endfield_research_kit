@@ -117,6 +117,7 @@
       relationRuntimeSelected: "Typed runtime-selected branches",
       relationMultipleUnknown: "Multiple possible files; relation unresolved",
       relationSingle: "Single possible file",
+      relationSingleTopology: "Single decoded leaf by complete topology (runtime branch unobserved)",
       relationNoDecodedMedia: "Wwise event; no decoded media leaf",
       relationUnresolvedEvent: "Event unresolved in Wwise",
       relationEventCandidate: "Wwise event media leaf",
@@ -272,6 +273,7 @@
       relationRuntimeSelected: "\u7c7b\u578b\u5316\u8fd0\u884c\u65f6\u5206\u652f",
       relationMultipleUnknown: "\u591a\u4e2a\u53ef\u80fd\u6587\u4ef6\uff0c\u5173\u7cfb\u672a\u89e3\u6790",
       relationSingle: "\u5355\u4e00\u53ef\u80fd\u6587\u4ef6",
+      relationSingleTopology: "\u5b8c\u6574\u62d3\u6251\u4e2d\u4ec5\u6709\u4e00\u4e2a\u89e3\u7801\u53f6\uff08\u8fd0\u884c\u65f6\u5206\u652f\u4ecd\u672a\u89c2\u6d4b\uff09",
       relationNoDecodedMedia: "Wwise \u4e8b\u4ef6\uff0c\u65e0\u5df2\u89e3\u7801\u5a92\u4f53\u53f6",
       relationUnresolvedEvent: "\u4e8b\u4ef6\u672a\u5728 Wwise \u4e2d\u89e3\u6790",
       relationEventCandidate: "Wwise \u4e8b\u4ef6\u5a92\u4f53\u53f6",
@@ -447,6 +449,7 @@
     runtimeSelected: "relationRuntimeSelected",
     multipleUnknown: "relationMultipleUnknown",
     single: "relationSingle",
+    singleTopology: "relationSingleTopology",
     noDecodedMedia: "relationNoDecodedMedia",
     unresolvedEvent: "relationUnresolvedEvent",
     eventCandidate: "relationEventCandidate",
@@ -577,6 +580,12 @@
     }
     if (record?.traversalStatus === "partial") tags.push("partialGraph");
     if (Number(record?.playRootCount) > 1) tags.push("multipleRoots");
+    const hasTypedSelector = asArray(record?.selectionContainerTypes).length > 0;
+    const hasOneCompleteTopologyLeaf = hasTypedSelector
+      && candidates === 1
+      && record?.traversalStatus === "complete"
+      && Number(record?.unresolvedNodeCount || 0) === 0;
+    if (hasOneCompleteTopologyLeaf) tags.push("singleTopology");
     for (const relation of asArray(record?.mediaRelationTypes)) {
       if (RELATION_LABEL_KEYS[relation]) tags.push(relation);
     }
