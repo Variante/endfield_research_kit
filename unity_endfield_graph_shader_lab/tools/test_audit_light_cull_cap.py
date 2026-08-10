@@ -1310,6 +1310,56 @@ class LightCullCapAuditTests(unittest.TestCase):
             "preserve available mask",
             unload["loadingToUnloaded"]["component67Effect"],
         )
+        controls = ecs_state["lodStreamingControl"]
+        self.assertEqual(
+            controls["stateFields"]["enableLODStreaming"],
+            "0x38",
+        )
+        self.assertEqual(
+            controls["stateFields"]["enableLODStreamingKeepLastLODResource"],
+            "0x39",
+        )
+        managed_types = result["lodControlInternalCalls"][
+            "managedFieldContract"
+        ]["managedValueTypes"]
+        self.assertEqual(
+            managed_types[0]["fields"][2]["name"],
+            "c1",
+        )
+        self.assertEqual(
+            managed_types[0]["fields"][2]["unboxedOffset"],
+            "0x18",
+        )
+        self.assertEqual(
+            managed_types[1]["fields"][0]["name"],
+            "lodCenter",
+        )
+        self.assertEqual(
+            managed_types[1]["fields"][0]["unboxedOffset"],
+            "0x0",
+        )
+        load = ecs_state["loadRequestStateMachine"]
+        self.assertEqual(
+            [row["assetType"] for row in load["resourceTriplet"]],
+            [1, 2, 2],
+        )
+        self.assertEqual(load["requestDescriptor"]["strideBytes"], 24)
+        self.assertEqual(
+            load["mergedRenderCollider"]["streamingEnabled"]["pendingMask"],
+            "1 << (lodCount - 1)",
+        )
+        self.assertEqual(
+            load["mergedRenderCollider"]["streamingDisabled"]["pendingMask"],
+            "(1 << lodCount) - 1",
+        )
+        self.assertIn(
+            "distanceSquared >=",
+            load["render"]["streamingEnabled"]["requestCondition"],
+        )
+        self.assertIn(
+            "component 75",
+            load["render"]["streamingEnabled"]["hlodLevel"],
+        )
         component_mask = ecs_state["componentIdMaskRegistration"]
         self.assertEqual(component_mask["internalCallIndex"], 712)
         self.assertEqual(
@@ -1360,7 +1410,7 @@ class LightCullCapAuditTests(unittest.TestCase):
             result["lodControlInternalCalls"]["lodStreamingSystem"][-1][
                 "index"
             ],
-            280,
+            282,
         )
         self.assertNotIn("virtual slot", " ".join(result["callChain"]))
 
@@ -2032,6 +2082,46 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_lod_streaming_enable_binding_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1801EDCE0 and size == 0x19:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_streaming_get_enable_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_lod_cross_fade_field_offset_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.GAME_ASSEMBLY)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18B9F1B60 and size == 4:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=lod_streaming_lod_cross_fade_config_c1_boxed_offset; "
+                r"source=.*GameAssembly.dll; expected=40; actual=41",
+            ):
+                AUDIT.validate_lod_streaming_metadata(
+                    AUDIT.GLOBAL_METADATA.read_bytes(), image
+                )
 
     def test_component67_accessor_call_site_drift_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)

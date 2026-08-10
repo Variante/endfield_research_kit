@@ -569,6 +569,119 @@ UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGLODStreamingSystem::SetArtTagLODStreamingOffset"
 )
 
+UNITY_LOD_STREAMING_CONTROL_ICALLS = [
+    (
+        "enableLODStreaming.get",
+        273,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::get_enableLODStreaming",
+        0x1801EDCE0,
+    ),
+    (
+        "enableLODStreaming.set",
+        274,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::set_enableLODStreaming",
+        0x1801EDD00,
+    ),
+    (
+        "enableLODStreamingKeepLastLODResource.get",
+        275,
+        (
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::"
+            "get_enableLODStreamingKeepLastLODResource"
+        ),
+        0x1801EDD60,
+    ),
+    (
+        "enableLODStreamingKeepLastLODResource.set",
+        276,
+        (
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::"
+            "set_enableLODStreamingKeepLastLODResource"
+        ),
+        0x1801EDD80,
+    ),
+    (
+        "lodConfig.get",
+        277,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::get_lodConfig_Injected",
+        0x1801EDDE0,
+    ),
+    (
+        "lodConfig.set",
+        278,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::set_lodConfig_Injected",
+        0x1801EDE20,
+    ),
+    (
+        "artTagLODStreamingOffset.get",
+        UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_INDEX,
+        UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_NAME,
+        UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_VA,
+    ),
+    (
+        "artTagLODStreamingOffset.set",
+        UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_INDEX,
+        UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_NAME,
+        UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_VA,
+    ),
+    (
+        "hlodUnloadDistance.get",
+        281,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::GetHLODUnloadDistance",
+        0x1801EDF40,
+    ),
+    (
+        "hlodUnloadDistance.set",
+        282,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::SetHLODUnloadDistance",
+        0x1801EDF80,
+    ),
+]
+
+LOD_STREAMING_METADATA_REGISTRATION_VA = 0x18B921C30
+LOD_STREAMING_FIELD_OFFSETS_COUNT = 63987
+LOD_STREAMING_FIELD_OFFSETS_TABLE_VA = 0x18E7B5840
+LOD_STREAMING_MANAGED_TYPES = [
+    {
+        "label": "lod_cross_fade_config",
+        "typeIndex": 51364,
+        "token": 0x020002EE,
+        "name": "LODCrossFadeConfig",
+        "namespace": "UnityEngine.HyperGryph",
+        "fieldStart": 248548,
+        "fieldOffsetsVirtualAddress": 0x18B9F1B58,
+        "fields": [
+            ("cameraPosition", 169600, 0x040007C4, 0x10),
+            ("c0", 169600, 0x040007C5, 0x1C),
+            ("c1", 169600, 0x040007C6, 0x28),
+            ("fraction", 163868, 0x040007C7, 0x34),
+            ("currMaxProjFactorSquared", 163868, 0x040007C8, 0x38),
+            ("maxProjFactorSquared0", 163868, 0x040007C9, 0x3C),
+            ("maxProjFactorSquared1", 163868, 0x040007CA, 0x40),
+            ("enableDither", 130824, 0x040007CB, 0x44),
+            ("isOrtho", 130824, 0x040007CC, 0x45),
+            ("lodBias", 131232, 0x040007CD, 0x46),
+        ],
+    },
+    {
+        "label": "render_object_lod_info",
+        "typeIndex": 61072,
+        "token": 0x020000C3,
+        "name": "RenderObjectLODInfoComponent",
+        "namespace": "UnityEngine.HyperGryph.ECS",
+        "fieldStart": 296804,
+        "fieldOffsetsVirtualAddress": 0x18BA2DAC0,
+        "fields": [
+            ("lodCenter", 169600, 0x040002BE, 0x10),
+            ("lodObjectHalfSizeSquared", 163868, 0x040002BF, 0x1C),
+            ("enableDither", 130824, 0x040002C0, 0x20),
+            ("lodCullingOptions", 131232, 0x040002C1, 0x21),
+            ("padding0", 131232, 0x040002C2, 0x22),
+            ("padding1", 131232, 0x040002C3, 0x23),
+        ],
+    },
+]
+
 UNITY_STREAMING_CONVERSION_BODIES = {
     "bind_mono_component_convert": (
         0x1801DFF50,
@@ -1372,6 +1485,56 @@ UNITY_CULL_VIEW_CONSUMER_SLICES = {
 }
 
 UNITY_HGTREE_BODIES = {
+    "lod_streaming_get_enable": (
+        0x1801EDCE0,
+        0x19,
+        "14152dd46b040930f11dd9413b469d0198c7946ce12a37997d9d8a51bfa84a85",
+    ),
+    "lod_streaming_set_enable": (
+        0x1801EDD00,
+        0x5C,
+        "50cf4ef97f1f09f9a91f2154b3ac0a14645e0e69cfb32b318159bfc55a80440e",
+    ),
+    "lod_streaming_get_keep_last_resource": (
+        0x1801EDD60,
+        0x19,
+        "5d147175fd5ad9d715b737d0a2208b810ddcafd351f867b5429b2784ca7afa22",
+    ),
+    "lod_streaming_set_keep_last_resource": (
+        0x1801EDD80,
+        0x5C,
+        "be5b67e49adebd8c2dec936047b022527c5a6bac6e091dc227aa54ea6e1d8a68",
+    ),
+    "lod_streaming_get_config": (
+        0x1801EDDE0,
+        0x3C,
+        "3e4ef4ec53d444c81205922d0cff838e45d531702951c49a2b7a58da92e5d336",
+    ),
+    "lod_streaming_set_config": (
+        0x1801EDE20,
+        0x90,
+        "7b861457963fc64cb0c324e25a8e9afaadb0f9c1e9251a03a8a7e8c8abe9c6f8",
+    ),
+    "lod_streaming_get_hlod_unload_distance": (
+        0x1801EDF40,
+        0x3C,
+        "780d6f355c235e4522491333849782792589705f1fcd28e0b68058e3ea08b525",
+    ),
+    "lod_streaming_set_hlod_unload_distance": (
+        0x1801EDF80,
+        0x91,
+        "8b1515c0c2c7165931de1c40ef8008332ba072e025ac466b7635f922e32115ca",
+    ),
+    "lod_ecs_component_67_type9_unloaded_to_loading": (
+        0x181153310,
+        0x5DF,
+        "4435143d7cce168aa670402d64f54cd6e813160dceab5e22b01ed28a05ad3d5c",
+    ),
+    "lod_ecs_component_67_type0_unloaded_to_loading": (
+        0x181154230,
+        0x6C4,
+        "4ae50616400e412b8c30c649765b11ad1e4906b9f7bf3e5f64a584ddc5027789",
+    ),
     "hg_geometry_get_handle_binding": (
         0x1801EE550,
         0x7E,
@@ -4036,6 +4199,182 @@ def validate_hg_resource_asset_type_metadata(
             "token": f"0x{method_token:08X}",
             "parameters": parameters,
         },
+    }
+
+
+def validate_lod_streaming_metadata(
+    raw_metadata: bytes,
+    game_assembly: PEImage,
+    source: Path = GLOBAL_METADATA,
+) -> dict[str, object]:
+    """Pin the managed LOD inputs and their generated native field offsets."""
+
+    require(
+        "lod_streaming_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    require(
+        "lod_streaming_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        source,
+    )
+    sections = {
+        section_name: struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+        for section_index, section_name in enumerate(
+            IL2CPP_METADATA_SECTION_NAMES
+        )
+    }
+    string_offset, string_size = sections["string"]
+    field_offset, field_size = sections["fields"]
+    type_offset, type_size = sections["typeDefinitions"]
+
+    def metadata_string(index: int, check: str) -> str:
+        start = string_offset + index
+        require(
+            f"lod_streaming_{check}_string_start_in_bounds",
+            string_offset <= start < string_offset + string_size,
+            True,
+            source,
+        )
+        end = raw_metadata.find(b"\0", start, string_offset + string_size)
+        require(
+            f"lod_streaming_{check}_string_end_in_bounds",
+            end >= start,
+            True,
+            source,
+        )
+        return raw_metadata[start:end].decode("utf-8")
+
+    registration_field_offsets = LOD_STREAMING_METADATA_REGISTRATION_VA + 0x50
+    require(
+        "lod_streaming_field_offsets_registration_count",
+        game_assembly.u64(registration_field_offsets),
+        LOD_STREAMING_FIELD_OFFSETS_COUNT,
+        game_assembly.path,
+    )
+    require(
+        "lod_streaming_field_offsets_registration_pointer",
+        game_assembly.u64(registration_field_offsets + 8),
+        LOD_STREAMING_FIELD_OFFSETS_TABLE_VA,
+        game_assembly.path,
+    )
+
+    managed_types = []
+    for expected_type in LOD_STREAMING_MANAGED_TYPES:
+        label = expected_type["label"]
+        type_index = expected_type["typeIndex"]
+        position = type_offset + type_index * 92
+        require(
+            f"lod_streaming_{label}_type_in_bounds",
+            position + 92 <= type_offset + type_size,
+            True,
+            source,
+        )
+        name_index, namespace_index = struct.unpack_from(
+            "<ii", raw_metadata, position
+        )
+        field_start = struct.unpack_from("<i", raw_metadata, position + 32)[0]
+        field_count = struct.unpack_from("<H", raw_metadata, position + 72)[0]
+        token = struct.unpack_from("<I", raw_metadata, position + 88)[0]
+        for check, actual, expected in (
+            ("name", metadata_string(name_index, f"{label}_name"), expected_type["name"]),
+            (
+                "namespace",
+                metadata_string(namespace_index, f"{label}_namespace"),
+                expected_type["namespace"],
+            ),
+            ("token", token, expected_type["token"]),
+            ("field_start", field_start, expected_type["fieldStart"]),
+            ("field_count", field_count, len(expected_type["fields"])),
+        ):
+            require(f"lod_streaming_{label}_{check}", actual, expected, source)
+
+        field_offsets_va = game_assembly.u64(
+            LOD_STREAMING_FIELD_OFFSETS_TABLE_VA + type_index * 8
+        )
+        require(
+            f"lod_streaming_{label}_field_offsets_pointer",
+            field_offsets_va,
+            expected_type["fieldOffsetsVirtualAddress"],
+            game_assembly.path,
+        )
+        fields = []
+        for relative_index, (
+            expected_name,
+            expected_metadata_type,
+            expected_token,
+            expected_boxed_offset,
+        ) in enumerate(expected_type["fields"]):
+            field_index = field_start + relative_index
+            field_position = field_offset + field_index * 12
+            require(
+                f"lod_streaming_{label}_{expected_name}_field_in_bounds",
+                field_position + 12 <= field_offset + field_size,
+                True,
+                source,
+            )
+            field_name_index, metadata_type, field_token = struct.unpack_from(
+                "<iiI", raw_metadata, field_position
+            )
+            boxed_offset = struct.unpack(
+                "<I", game_assembly.read(field_offsets_va + relative_index * 4, 4)
+            )[0]
+            for check, actual, expected in (
+                (
+                    "name",
+                    metadata_string(
+                        field_name_index, f"{label}_{expected_name}_field_name"
+                    ),
+                    expected_name,
+                ),
+                ("metadata_type", metadata_type, expected_metadata_type),
+                ("token", field_token, expected_token),
+                ("boxed_offset", boxed_offset, expected_boxed_offset),
+            ):
+                require(
+                    f"lod_streaming_{label}_{expected_name}_{check}",
+                    actual,
+                    expected,
+                    game_assembly.path if check == "boxed_offset" else source,
+                )
+            fields.append(
+                {
+                    "name": expected_name,
+                    "fieldIndex": field_index,
+                    "token": f"0x{field_token:08X}",
+                    "metadataTypeIndex": metadata_type,
+                    "boxedOffset": f"0x{boxed_offset:X}",
+                    "unboxedOffset": f"0x{boxed_offset - 0x10:X}",
+                }
+            )
+        managed_types.append(
+            {
+                "typeIndex": type_index,
+                "token": f"0x{token:08X}",
+                "fullName": f"{expected_type['namespace']}.{expected_type['name']}",
+                "fieldOffsetsVirtualAddress": f"0x{field_offsets_va:X}",
+                "fields": fields,
+            }
+        )
+
+    return {
+        "metadataRegistrationVirtualAddress": (
+            f"0x{LOD_STREAMING_METADATA_REGISTRATION_VA:X}"
+        ),
+        "fieldOffsetsTableVirtualAddress": (
+            f"0x{LOD_STREAMING_FIELD_OFFSETS_TABLE_VA:X}"
+        ),
+        "managedValueTypes": managed_types,
+        "boxedHeaderBytes": 16,
+        "boundary": (
+            "boxed offsets come from the installed IL2CPP fieldOffsets table; "
+            "the embedded ECS/config offsets subtract the 16-byte object header"
+        ),
     }
 
 
@@ -7729,20 +8068,9 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
-    lod_streaming_offset_icalls = []
+    lod_streaming_control_icalls = []
     for label, index, expected_name, expected_target in (
-        (
-            "artTagLODStreamingOffset.get",
-            UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_INDEX,
-            UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_NAME,
-            UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_VA,
-        ),
-        (
-            "artTagLODStreamingOffset.set",
-            UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_INDEX,
-            UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_NAME,
-            UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_VA,
-        ),
+        UNITY_LOD_STREAMING_CONTROL_ICALLS
     ):
         actual_name, actual_target = resolve_hg_icall(index)
         require(
@@ -7757,7 +8085,7 @@ def validate_unity_hgtree_renderer_boundary(
             expected_target,
             image.path,
         )
-        lod_streaming_offset_icalls.append(
+        lod_streaming_control_icalls.append(
             {
                 "label": label,
                 "index": index,
@@ -7978,6 +8306,10 @@ def validate_unity_hgtree_renderer_boundary(
     )
     resource_asset_type_metadata = validate_hg_resource_asset_type_metadata(
         metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
+    )
+    lod_streaming_metadata = validate_lod_streaming_metadata(
+        metadata_bytes,
+        PEImage(GAME_ASSEMBLY),
     )
     expected_renderer_entry_pass_names = [
         name
@@ -8229,7 +8561,8 @@ def validate_unity_hgtree_renderer_boundary(
         },
         "lodControlInternalCalls": {
             "cullingSystem": lod_bias_icalls,
-            "lodStreamingSystem": lod_streaming_offset_icalls,
+            "lodStreamingSystem": lod_streaming_control_icalls,
+            "managedFieldContract": lod_streaming_metadata,
         },
         "callChain": [
             "HGTreeRender CreateRendererList variants at indices 564/565/566",
@@ -9335,6 +9668,137 @@ def validate_unity_hgtree_renderer_boundary(
                         "capacity-class family"
                     ),
                 },
+                "lodStreamingControl": {
+                    "internalCalls": lod_streaming_control_icalls,
+                    "singletonAccessorVirtualAddress": "0x180FC5E60",
+                    "statePointerOffset": "0x100",
+                    "stateFields": {
+                        "enableLODStreaming": "0x38",
+                        "enableLODStreamingKeepLastLODResource": "0x39",
+                        "lodConfig": "0x3C",
+                        "hlodUnloadDistanceTable": "0x474 + 4 * hlodLevel",
+                    },
+                    "managedFieldContractRef": (
+                        "lodControlInternalCalls.managedFieldContract"
+                    ),
+                    "embeddedManagedOffsets": {
+                        "LODCrossFadeConfig.c1": "0x18",
+                        "RenderObjectLODInfoComponent.lodCenter": "0x00",
+                    },
+                    "hlodUnloadDistanceApi": {
+                        "storedValue": "distance squared",
+                        "getter": "square root of the stored value",
+                        "setter": "stores the square of the input distance",
+                    },
+                    "loadCallbackInputs": {
+                        "enableLODStreaming": "state+0x38",
+                        "lodCrossFadeConfigC1": [
+                            "state+0x54",
+                            "state+0x58",
+                            "state+0x5C",
+                        ],
+                        "hlodUnloadDistanceSquared": (
+                            "state+0x474+4*component75.byte0"
+                        ),
+                    },
+                    "boundary": (
+                        "the installed internal-call names and bodies close "
+                        "the state offsets used by the two load callbacks; "
+                        "keep-last-resource is named at +0x39 but is not "
+                        "claimed as an input of those two callbacks"
+                    ),
+                },
+                "loadRequestStateMachine": {
+                    "transition": {
+                        "name": "UnloadedToLoading",
+                        "value": 1,
+                    },
+                    "acquireCoreVirtualAddress": "0x180FBFC60",
+                    "requestFlags": "0xF",
+                    "resourceTriplet": [
+                        {
+                            "sourcePointerOffset": "0x00",
+                            "ownerHandleOffset": "0x18",
+                            "assetType": 1,
+                            "assetTypeName": "Material",
+                        },
+                        {
+                            "sourcePointerOffset": "0x08",
+                            "ownerHandleOffset": "0x1C",
+                            "assetType": 2,
+                            "assetTypeName": "Mesh",
+                        },
+                        {
+                            "sourcePointerOffset": "0x10",
+                            "ownerHandleOffset": "0x20",
+                            "assetType": 2,
+                            "assetTypeName": "Mesh (shadow proxy)",
+                        },
+                    ],
+                    "requestDescriptor": {
+                        "ownerVectorOffset": "transitionContext+0x58",
+                        "strideBytes": 24,
+                        "fields": [
+                            {"offset": "0x00", "meaning": "source pointer"},
+                            {"offset": "0x08", "meaning": "AssetType value"},
+                            {"offset": "0x10", "meaning": "resource handle"},
+                        ],
+                    },
+                    "mergedRenderCollider": {
+                        "entityType": 9,
+                        "callbackVirtualAddress": "0x181153310",
+                        "streamingEnabled": {
+                            "selectedLod": "lodCount - 1",
+                            "pendingMask": "1 << (lodCount - 1)",
+                            "rangeStart": (
+                                "0 for LOD0, otherwise "
+                                "cumulativeRange[lodCount - 2]"
+                            ),
+                            "rangeEnd": "cumulativeRange[lodCount - 1]",
+                        },
+                        "streamingDisabled": {
+                            "selectedLods": "all logical LODs",
+                            "pendingMask": "(1 << lodCount) - 1",
+                            "rangeStart": 0,
+                            "rangeEnd": "companion renderer row count",
+                        },
+                    },
+                    "render": {
+                        "entityType": 0,
+                        "callbackVirtualAddress": "0x181154230",
+                        "streamingDisabled": {
+                            "pendingMask": 1,
+                            "selectedRows": [0],
+                        },
+                        "streamingEnabled": {
+                            "lodCenter": (
+                                "component 6 RenderObjectLODInfoComponent+0x00"
+                            ),
+                            "lodConfigPoint": "LODCrossFadeConfig.c1",
+                            "hlodLevel": "unnamed native component 75 byte +0x00",
+                            "distanceEquation": (
+                                "squared_distance(lodCenter, lodConfig.c1)"
+                            ),
+                            "requestCondition": (
+                                "distanceSquared >= "
+                                "GetHLODUnloadDistance(hlodLevel)^2"
+                            ),
+                            "skipCondition": (
+                                "distanceSquared < "
+                                "GetHLODUnloadDistance(hlodLevel)^2"
+                            ),
+                            "requestedRows": [0],
+                            "pendingMaskWhenRequested": 1,
+                        },
+                    },
+                    "closedBoundary": (
+                        "LOD selection, pending-mask writes, source/handle "
+                        "triplets, AssetType values, and 24-byte request "
+                        "descriptor emission are closed for both callbacks; "
+                        "the later request-submission continuation and native "
+                        "names for components 67/68..74/75 remain open"
+                    ),
+                },
                 "unloadStateMachine": {
                     "releaseCoreVirtualAddress": "0x180FBF6B0",
                     "lodRangeEquation": {
@@ -9963,8 +10427,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v40",
-        "status": "component67_unload_state_machine_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v41",
+        "status": "component67_load_request_state_machine_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -10146,7 +10610,19 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "LoadingToUnloaded callback walks pending ranges only, releases the "
             "owner handles, clears only pending byte +0x04, and preserves the "
             "available byte and mapped runtime words. Type 9 alone performs its "
-            "additional merged-render-collider cleanup. The "
+            "additional merged-render-collider cleanup. The paired load request "
+            "path is now closed too. Named HGLODStreamingSystem entries bind "
+            "enableLODStreaming to state+0x38, keep-last-resource to +0x39, "
+            "LODCrossFadeConfig to +0x3C, and the squared HLOD unload-distance "
+            "table to +0x474. Installed IL2CPP fieldOffsets prove config c1 at "
+            "+0x18 and RenderObjectLODInfoComponent.lodCenter at +0x00 in their "
+            "embedded value layouts. MergedRenderCollider requests either the "
+            "terminal LOD or all LODs; Render requests its one row directly "
+            "when streaming is disabled, while the streaming branch gates it "
+            "by squared lodCenter-to-config-c1 distance and the unnamed "
+            "component-75 HLOD-level byte. Both callbacks acquire the exact "
+            "Material/Mesh/shadow-proxy-Mesh triplet and append 24-byte source/"
+            "AssetType/handle descriptors at transition context+0x58. The "
             "entity-type registration core now closes each 8-byte descriptor "
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
@@ -10202,7 +10678,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The component-67 standalone native type name, "
+            "The standalone native type names for components 67 through 75, "
+            "the post-descriptor request-submission continuation, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -10420,6 +10897,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the complete 30-declaration/29-body UnityEngine.HyperGryph.ECS Int32 get_id census, codegen pointer slots, constant values, and absence of component id 67",
                 "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
                 "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
+                "HGLODStreamingSystem internal calls 273..282, state+0x38/+0x39/+0x3C/+0x474 controls, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -10429,7 +10907,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the standalone native component type name for component 67",
+                "the standalone native component type names for components 67 through 75",
+                "the post-descriptor resource request-submission continuation",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -10476,7 +10955,8 @@ def main() -> int:
         "get_id census with no id 67, managed LOD-info id 6, "
         "component-67 separation, native Render/MergedRenderCollider ownership, "
         "ten-slot EntityTransition registry and exact transitions 1/3/6/8, "
-        "resource-capacity companions and transition-6/8 teardown semantics, "
+        "resource-capacity companions, named LOD-streaming controls and "
+        "transition-1 load-request plus transition-6/8 teardown semantics, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "
