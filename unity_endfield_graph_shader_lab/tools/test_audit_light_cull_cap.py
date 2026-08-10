@@ -718,6 +718,24 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         enabled_modes = runtime_tail["enabledLightModesAt0x14"]
         self.assertTrue(enabled_modes["passBitMeaningsClosed"])
+        self.assertTrue(enabled_modes["nativeInitializationProducerClosed"])
+        self.assertEqual(enabled_modes["rendererObjectFieldOffset"], "0x250")
+        self.assertEqual(enabled_modes["rendererObjectDefault"], "0xFFFFFFFF")
+        self.assertEqual(len(enabled_modes["nativeInitializationPaths"]), 3)
+        self.assertEqual(
+            enabled_modes["nativeInitializationPaths"][0][
+                "writeVirtualAddress"
+            ],
+            "0x18042AACC",
+        )
+        self.assertIn(
+            "constructorInput[+0x20] = renderer[+0x250]",
+            enabled_modes["nativeInitializationPaths"][2]["equation"],
+        )
+        downstream = enabled_modes["downstreamSearchBoundary"]
+        self.assertEqual(downstream["requestMaskJobOffset"], "0x44")
+        self.assertEqual(downstream["testedRendererEntryOffset"], "0x1C")
+        self.assertFalse(downstream["recordToEntryProjectionClosed"])
         self.assertEqual(enabled_modes["maskType"], "System.UInt32")
         self.assertEqual(enabled_modes["shaderLightModeLiteralCount"], 32)
         self.assertEqual(
@@ -1009,6 +1027,27 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_factory_set_enabled_light_modes_core_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_renderer_enabled_light_modes_default_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18042BF10 and size == 0x1A9:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_renderer_base_constructor_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
