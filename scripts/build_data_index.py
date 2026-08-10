@@ -3747,7 +3747,7 @@ def consume_buff_play_sound_action(
         max_length=256,
     )
 
-    target_settings, offset = read_buff_target_settings_envelope_partial(
+    target_settings, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -4970,6 +4970,47 @@ def read_buff_target_settings_full(
         data, offset, limit, f"{field_name}.targetSource",
     )
     return out, offset
+
+
+def read_buff_target_settings_full_or_partial(
+    data: bytes,
+    offset: int,
+    max_limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    """Decode a TargetSettings object when its typed body lands exactly.
+
+    The envelope length is independently derived from the current bounded
+    MemoryPack bytes.  The typed reader is accepted only when it consumes that
+    exact envelope; otherwise the pre-existing opaque representation is
+    returned.  This keeps future/unknown selector subtypes fail-closed while
+    exposing the proven TargetSettings fields for the current build.
+    """
+    envelope_end = buff_target_settings_envelope_limit(
+        data, offset, max_limit, field_name,
+    )
+    partial, _ = read_buff_target_settings_partial(
+        data, offset, envelope_end, field_name,
+    )
+    try:
+        decoded, decoded_end = read_buff_target_settings_full(
+            data, offset, envelope_end, field_name, 0,
+        )
+    except (IndexError, UnicodeDecodeError, ValueError, struct.error):
+        return partial, envelope_end
+    if decoded_end != envelope_end or decoded is None:
+        return partial, envelope_end
+
+    # Preserve the bounded raw evidence and the string/tail diagnostics from
+    # the partial reader alongside the typed fields.  Consumers can therefore
+    # distinguish exact field recovery from a merely recognized envelope.
+    return {
+        **partial,
+        **decoded,
+        "status": "exact",
+        "semanticStatus": "exact-target-settings-selector-data",
+        "schemaSource": BUFF_SELECTOR_SCHEMA_SOURCE_NOTE,
+    }, envelope_end
 
 
 def read_buff_direction_settings_full(

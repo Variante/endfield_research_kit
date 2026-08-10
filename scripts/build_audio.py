@@ -1264,8 +1264,10 @@ def collect_buff_play_sound_actions(
     The generic string scan proves only that a BuffData dependency contains an
     event id.  The MemoryPack action decoder additionally recovers the authored
     timeline frame window and the PlaySoundActionData lifetime/routing controls.
-    TargetSettings remains a bounded opaque envelope, so these rows deliberately
-    stop short of claiming that the runtime condition or target was selected.
+    TargetSettings is decoded through the typed MemoryPack reader when its
+    self-derived envelope boundary is consumed exactly.  Unknown selector
+    subtypes retain the bounded opaque fallback; neither representation claims
+    that a runtime target or branch was actually selected.
     """
 
     if decoder is None:
@@ -1384,6 +1386,7 @@ def collect_buff_play_sound_actions(
                     "targetSettingsStatus": str(target.get("semanticStatus") or "unresolved"),
                     "targetSettingsShape": str(target.get("shape") or ""),
                     "targetSelector": str(target.get("stringSlotValue") or ""),
+                    "targetSettings": target,
                     "timeDilationFadeInDurationMs": action.get("timeDilationFadeInDurationMs"),
                     "timeDilationFadeOutDurationMs": action.get("timeDilationFadeOutDurationMs"),
                     "timeDilationPauseThreshold": action.get("timeDilationPauseThreshold"),
@@ -2550,7 +2553,7 @@ def link_gameplay_audio(
         "enemies": enemies,
         "scope": {
             "source": "SkillData/BuffData event references, decoded BuffData PlaySound actions, EnemyData ability bundles, AnimationClip audio callbacks, CharacterTable profile voices, and Wwise HIRC traversal",
-            "playSoundActionBoundary": "Current MemoryPack PlaySoundActionData yields exact event, frame window, stop/fade, routing, and time-dilation controls. TargetSettings semantics and runtime activation conditions remain unresolved.",
+            "playSoundActionBoundary": "Current MemoryPack PlaySoundActionData yields exact event, frame window, stop/fade, routing, time-dilation controls, and typed TargetSettings when the nested reader lands exactly; runtime activation conditions and selected targets remain unresolved.",
             "characterOwnership": "direct gameplay skill id",
             "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
             "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",

@@ -77,6 +77,57 @@ class AudioCategoryTests(unittest.TestCase):
         )
         self.assertEqual(build_data_index.BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS[0x010D], 22)
 
+    def test_play_sound_target_settings_uses_typed_memorypack_reader_when_exact(self) -> None:
+        from scripts import build_data_index
+
+        # Real CN BuffData PlaySoundActionData payloads: the 67-byte default
+        # TargetSettings and the 79-byte smart_target variant.  The latter
+        # proves the variable string slot and exact nested SelectorData end.
+        base = b"".join((
+            bytes((13, 8, 1, 0)), pack("<i", 0), bytes((0, 0xFF)), pack("<i", 0),
+            bytes((0xFF,)), pack("<i", 0),
+            pack("<I", 0), bytes((0,)), pack("<i", 0), bytes((0,)),
+            pack("<I", 0),
+            bytes((3, 0xFF)), pack("<II", 0, 0),
+            pack("<iiii", 0, 1, 0, 0), pack("<I", 0), pack("<i", 4),
+        ))
+        self.assertEqual(len(base), 67)
+        raw = base[:59] + pack("<I", 12) + b"smart_target" + base[63:]
+        decoded, end = build_data_index.read_buff_target_settings_full_or_partial(
+            raw, 0, len(raw), "fixture.targetSettings"
+        )
+
+        self.assertEqual(end, len(raw))
+        self.assertEqual(decoded["status"], "exact")
+        self.assertEqual(decoded["semanticStatus"], "exact-target-settings-selector-data")
+        self.assertEqual(decoded["targetGroupKey"], "smart_target")
+        self.assertEqual(decoded["targetSource"], 4)
+        self.assertEqual(decoded["selectorOwner"], 1)
+        self.assertEqual(decoded["selectorData"], {
+            "finderData": None,
+            "postProcessorData": [],
+            "validatorData": [],
+        })
+
+    def test_play_sound_target_settings_rejects_unknown_tail_fail_closed(self) -> None:
+        from scripts import build_data_index
+
+        raw = bytearray(b"".join((
+            bytes((13, 8, 1, 0)), pack("<i", 0), bytes((0, 0xFF)), pack("<i", 0),
+            bytes((0xFF,)), pack("<i", 0),
+            pack("<I", 0), bytes((0,)), pack("<i", 0), bytes((0,)),
+            pack("<I", 0),
+            bytes((3, 0xFF)), pack("<II", 0, 0),
+            pack("<iiii", 0, 1, 0, 0), pack("<I", 0), pack("<i", 4),
+        )))
+        self.assertEqual(len(raw), 67)
+        # Keep the byte layout valid but use an unrecognized candidate tail.
+        raw[-4:] = (99).to_bytes(4, "little")
+        with self.assertRaises(ValueError):
+            build_data_index.read_buff_target_settings_full_or_partial(
+                bytes(raw), 0, len(raw), "fixture.targetSettings"
+            )
+
     def test_collects_and_merges_decoded_buff_play_sound_actions(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root)
