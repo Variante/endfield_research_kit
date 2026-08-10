@@ -382,6 +382,73 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(policy["resetPlaylistNodeCount"], 1)
         self.assertNotIn("playlistItems", policy)
 
+    def test_compact_container_evidence_distinguishes_layer_curves_and_proof(self) -> None:
+        rows = [
+            {
+                "objectType": 9,
+                "edgeKind": "layerChild",
+                "childCount": 3,
+                "parserConfidence": "reciprocalParentExact",
+                "layerTailEvidence": {
+                    "layerTailParserStatus": "typedExactV150LayerTail",
+                    "layerAssignmentStatus": "nonEmptyCurves",
+                    "layerCount": 1,
+                    "initialRtpcCurveCount": 1,
+                    "associationCount": 3,
+                    "curvePointCount": 9,
+                    "continuousValidation": True,
+                    "associationChildIdsOutsideChildren": [],
+                    "layers": [{
+                        "rtpcId": 0x12345678,
+                        "rtpcTypeLabel": "gameParameter",
+                    }],
+                },
+            },
+            {
+                "objectType": 9,
+                "edgeKind": "layerChild",
+                "childCount": 2,
+                "parserConfidence": "typedExactV150CandidateWithoutParentProof",
+                "layerTailEvidence": {
+                    "layerTailParserStatus": "typedExactV150LayerTail",
+                    "layerAssignmentStatus": "zeroLayerAssignments",
+                    "layerCount": 0,
+                    "initialRtpcCurveCount": 0,
+                    "associationCount": 0,
+                    "curvePointCount": 0,
+                    "continuousValidation": False,
+                    "associationChildIdsOutsideChildren": [],
+                    "layers": [],
+                },
+            },
+        ]
+
+        compact = audio_semantics.compact_container_evidence(rows)
+
+        self.assertEqual(len(compact), 1)
+        layer = compact[0]
+        self.assertEqual(layer["layerNodeCount"], 2)
+        self.assertEqual(layer["typedLayerNodeCount"], 2)
+        self.assertEqual(layer["layerDefinitionCount"], 1)
+        self.assertEqual(layer["layerInitialRtpcCurveCount"], 1)
+        self.assertEqual(layer["layerAssociationCount"], 3)
+        self.assertEqual(layer["layerCurvePointCount"], 9)
+        self.assertEqual(layer["continuousLayerNodeCount"], 1)
+        self.assertEqual(layer["layerRtpcIdsHex"], ["0x12345678"])
+        self.assertEqual(layer["layerRtpcTypes"], {"gameParameter": 1})
+        self.assertEqual(
+            layer["layerAssignmentStatuses"],
+            {"nonEmptyCurves": 1, "zeroLayerAssignments": 1},
+        )
+        self.assertEqual(
+            layer["layerProofStatuses"],
+            {
+                "reciprocalParentExact": 1,
+                "typedExactV150CandidateWithoutParentProof": 1,
+            },
+        )
+        self.assertNotIn("layers", layer)
+
     def test_event_categories_preserve_unknowns(self) -> None:
         self.assertEqual(audio_semantics.event_category("au_sfx_test"), "sfx")
         self.assertEqual(audio_semantics.event_category("au_chr_test_attack"), "sfx")
@@ -2119,6 +2186,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("randomSequence.orderDiffers", source)
         self.assertIn("Wwise Random/Sequence policy", source)
         self.assertIn("Runtime random seed, shuffle history", source)
+        self.assertIn("container?.layerAssignmentStatuses", source)
+        self.assertIn("layerBlend.associations", source)
+        self.assertIn("Wwise Layer/Blend structure", source)
+        self.assertIn("zero-layer assignments remain structural child relations only", source)
 
 
 if __name__ == "__main__":

@@ -124,7 +124,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 21
+AUDIO_SEMANTIC_SCHEMA_VERSION = 22
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 13
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
@@ -2476,6 +2476,54 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
                 target["unresolvedRandomSequenceNodeCount"] = int(
                     target.get("unresolvedRandomSequenceNodeCount") or 0
                 ) + 1
+        if object_type == 9 and isinstance(row.get("layerTailEvidence"), dict):
+            layer = row["layerTailEvidence"]
+            target["layerNodeCount"] = int(target.get("layerNodeCount") or 0) + 1
+            layer_status = str(layer.get("layerTailParserStatus") or "unknown")
+            target.setdefault("_layerParserStatuses", Counter())[layer_status] += 1
+            if layer_status == "typedExactV150LayerTail":
+                target["typedLayerNodeCount"] = int(
+                    target.get("typedLayerNodeCount") or 0
+                ) + 1
+                confidence = str(row.get("parserConfidence") or "unknown")
+                target.setdefault("_layerProofStatuses", Counter())[confidence] += 1
+                assignment = str(layer.get("layerAssignmentStatus") or "unknown")
+                target.setdefault("_layerAssignmentStatuses", Counter())[assignment] += 1
+                target["layerDefinitionCount"] = int(
+                    target.get("layerDefinitionCount") or 0
+                ) + int(layer.get("layerCount") or 0)
+                target["layerInitialRtpcCurveCount"] = int(
+                    target.get("layerInitialRtpcCurveCount") or 0
+                ) + int(layer.get("initialRtpcCurveCount") or 0)
+                target["layerAssociationCount"] = int(
+                    target.get("layerAssociationCount") or 0
+                ) + int(layer.get("associationCount") or 0)
+                target["layerCurvePointCount"] = int(
+                    target.get("layerCurvePointCount") or 0
+                ) + int(layer.get("curvePointCount") or 0)
+                if layer.get("continuousValidation"):
+                    target["continuousLayerNodeCount"] = int(
+                        target.get("continuousLayerNodeCount") or 0
+                    ) + 1
+                target["layerAssociationOutsideChildrenCount"] = int(
+                    target.get("layerAssociationOutsideChildrenCount") or 0
+                ) + len(layer.get("associationChildIdsOutsideChildren") or [])
+                for layer_row in layer.get("layers") or []:
+                    if not isinstance(layer_row, dict):
+                        continue
+                    try:
+                        target.setdefault("_layerRtpcIds", set()).add(
+                            int(layer_row.get("rtpcId")) & 0xFFFFFFFF
+                        )
+                    except (TypeError, ValueError):
+                        pass
+                    target.setdefault("_layerRtpcTypes", Counter())[
+                        str(layer_row.get("rtpcTypeLabel") or "unknown")
+                    ] += 1
+            else:
+                target["unresolvedLayerNodeCount"] = int(
+                    target.get("unresolvedLayerNodeCount") or 0
+                ) + 1
         selector = row.get("switchMappingEvidence")
         if not isinstance(selector, dict):
             continue
@@ -2585,6 +2633,11 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
         random_sequence_modes = row.pop("_randomSequenceModes", None)
         random_modes = row.pop("_randomModes", None)
         random_transition_modes = row.pop("_randomTransitionModes", None)
+        layer_parser_statuses = row.pop("_layerParserStatuses", None)
+        layer_proof_statuses = row.pop("_layerProofStatuses", None)
+        layer_assignment_statuses = row.pop("_layerAssignmentStatuses", None)
+        layer_rtpc_types = row.pop("_layerRtpcTypes", None)
+        layer_rtpc_ids = sorted(row.pop("_layerRtpcIds", set()))
         parser_counts = row.pop("_selectorParserStatuses", None)
         group_type_counts = row.pop("_selectorGroupTypes", None)
         switch_mode_counts = row.pop("_selectorSwitchModes", None)
@@ -2601,6 +2654,20 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
             row["randomTransitionModes"] = dict(
                 sorted(random_transition_modes.items())
             )
+        if layer_parser_statuses:
+            row["layerParserStatuses"] = dict(sorted(layer_parser_statuses.items()))
+        if layer_proof_statuses:
+            row["layerProofStatuses"] = dict(sorted(layer_proof_statuses.items()))
+        if layer_assignment_statuses:
+            row["layerAssignmentStatuses"] = dict(
+                sorted(layer_assignment_statuses.items())
+            )
+        if layer_rtpc_types:
+            row["layerRtpcTypes"] = dict(sorted(layer_rtpc_types.items()))
+        if layer_rtpc_ids:
+            row["layerRtpcIdCount"] = len(layer_rtpc_ids)
+            row["layerRtpcIdsHex"] = [f"0x{value:08x}" for value in layer_rtpc_ids[:24]]
+            row["layerRtpcIdsTruncated"] = len(layer_rtpc_ids) > 24
         if parser_counts:
             row["selectorParserStatuses"] = dict(sorted(parser_counts.items()))
         if group_type_counts:

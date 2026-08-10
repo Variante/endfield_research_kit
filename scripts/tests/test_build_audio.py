@@ -459,6 +459,101 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertEqual(truncated["selectorParserFailureReason"], "unexpectedPlaylistTailLength")
         self.assertEqual(truncated["modeLabel"], "sequence")
 
+    def test_v150_layer_tail_preserves_rtpc_child_curves(self) -> None:
+        child_id = 0x11223344
+        tail = bytes.fromhex(
+            "01000000"
+            "ddccbbaa"
+            "0000"
+            "78563412"
+            "00"
+            "01000000"
+            "44332211"
+            "01000000"
+            "00000000"
+            "0000803f"
+            "09000000"
+            "00"
+        )
+
+        result = build_audio.hirc_v150_layer_tail(
+            tail, 0, [child_id], bank_version=150
+        )
+
+        self.assertEqual(result["layerTailParserStatus"], "typedExactV150LayerTail")
+        self.assertEqual(result["layerAssignmentStatus"], "nonEmptyCurves")
+        self.assertEqual(result["layerCount"], 1)
+        self.assertEqual(result["associationCount"], 1)
+        self.assertEqual(result["curvePointCount"], 1)
+        layer = result["layers"][0]
+        self.assertEqual(layer["layerId"], 0xAABBCCDD)
+        self.assertEqual(layer["rtpcId"], 0x12345678)
+        self.assertEqual(layer["rtpcTypeLabel"], "gameParameter")
+        self.assertEqual(layer["associations"][0]["childId"], child_id)
+        self.assertEqual(
+            layer["associations"][0]["curvePoints"][0]["interpolationLabel"],
+            "Constant",
+        )
+        self.assertFalse(result["continuousValidation"])
+
+        trailing = build_audio.hirc_v150_layer_tail(
+            tail + b"\x00", 0, [child_id], bank_version=150
+        )
+        self.assertEqual(trailing["layerTailParserStatus"], "unresolvedV150LayerTail")
+        self.assertEqual(trailing["layerTailFailureReason"], "unexpectedTrailingBytes")
+
+    def test_v150_layer_candidate_without_parent_proof_remains_partial(self) -> None:
+        event_id = 100
+        action_id = 101
+        layer_id = 200
+        sound_id = 0x11223344
+        media_id = 401
+        children_offset = 20
+        tail = bytes.fromhex(
+            "01000000ddccbbaa00007856341200010000004433221101000000"
+            "000000000000803f0900000000"
+        )
+        layer_data = bytes(children_offset) + pack("<II", 1, sound_id) + tail
+
+        sound_data = bytearray(30)
+        sound_data[5:9] = pack("<I", media_id)
+        sound_data[22:26] = pack("<I", 999)  # Deliberately not reciprocal.
+        objects = {
+            event_id: {"type": 4, "data": bytes([1]) + pack("<I", action_id)},
+            action_id: {"type": 3, "data": pack("<HI", 0x0403, layer_id)},
+            layer_id: {"type": 9, "data": layer_data},
+            sound_id: {"type": 2, "data": bytes(sound_data)},
+        }
+
+        result = build_audio.traverse_hirc_event(
+            event_id, objects, {media_id}, bank_version=150
+        )
+
+        self.assertEqual(result["mediaIds"], [media_id])
+        self.assertEqual(result["traversalStatus"], "partial")
+        layer = result["containerEvidence"][0]
+        self.assertEqual(
+            layer["parserConfidence"],
+            "typedExactV150CandidateWithoutParentProof",
+        )
+        self.assertEqual(
+            layer["layerTailEvidence"]["layerAssignmentStatus"],
+            "nonEmptyCurves",
+        )
+        self.assertEqual(
+            result["unresolvedNodes"][0]["reason"],
+            "layerChildrenCandidateWithoutParentProof",
+        )
+
+        canonical_empty = bytes(31) + bytes.fromhex("000000000000000000")
+        candidate = build_audio.hirc_v150_layer_child_candidate(
+            canonical_empty, {}, bank_version=150
+        )
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate[0], [])
+        self.assertEqual(candidate[1], 31)
+        self.assertEqual(candidate[3], "typedExactV150CanonicalEmpty")
+
     def test_v150_switch_mapping_preserves_flat_value_packages_without_pruning(self) -> None:
         event_id = 100
         action_id = 101

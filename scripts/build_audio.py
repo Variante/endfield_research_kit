@@ -158,7 +158,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 11
+EVENT_EVIDENCE_SCHEMA_VERSION = 12
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -4040,6 +4040,285 @@ def hirc_v150_random_sequence_properties(
     }
 
 
+def hirc_v150_layer_tail(
+    data: bytes,
+    tail_offset: int,
+    child_ids: list[int],
+    *,
+    bank_version: int | None,
+) -> dict[str, Any]:
+    """Decode the bounded v150 CAkLayerCntr tail after Children.
+
+    A Layer container is a blend surface, not a one-child selector. Each Layer
+    binds an RTPC to child-specific curves. Static bank data therefore proves
+    possible blends/crossfades, while the live RTPC value and audible child
+    gains remain unknown.
+    """
+
+    def unresolved(reason: str, offset: int) -> dict[str, Any]:
+        bounded = max(0, min(offset, len(data)))
+        return {
+            "layerTailParserStatus": "unresolvedV150LayerTail",
+            "layerTailFailureReason": reason,
+            "layerTailUnresolvedOffset": bounded,
+            "layerTailUnresolvedByteLength": len(data) - bounded,
+            "runtimeSelection": "layerRtpcValueUnobservedAllChildrenRemainPossible",
+        }
+
+    if bank_version != 150:
+        return {
+            "layerTailParserStatus": "unsupportedBankVersion",
+            "bankVersion": bank_version,
+            "layerTailUnresolvedOffset": max(0, min(tail_offset, len(data))),
+            "layerTailUnresolvedByteLength": max(0, len(data) - tail_offset),
+            "runtimeSelection": "layerRtpcValueUnobservedAllChildrenRemainPossible",
+        }
+
+    offset = tail_offset
+
+    def take_u8(label: str) -> int:
+        nonlocal offset
+        if offset + 1 > len(data):
+            raise ValueError(f"truncated{label}")
+        value = data[offset]
+        offset += 1
+        return value
+
+    def take_u16(label: str) -> int:
+        nonlocal offset
+        if offset + 2 > len(data):
+            raise ValueError(f"truncated{label}")
+        value = unpack_from("<H", data, offset)[0]
+        offset += 2
+        return value
+
+    def take_u32(label: str) -> int:
+        nonlocal offset
+        if offset + 4 > len(data):
+            raise ValueError(f"truncated{label}")
+        value = unpack_from("<I", data, offset)[0]
+        offset += 4
+        return value
+
+    def take_f32(label: str) -> float:
+        nonlocal offset
+        if offset + 4 > len(data):
+            raise ValueError(f"truncated{label}")
+        value = unpack_from("<f", data, offset)[0]
+        offset += 4
+        return value
+
+    def take_varuint(label: str) -> int:
+        nonlocal offset
+        value = 0
+        for index in range(10):
+            byte = take_u8(label)
+            value |= (byte & 0x7F) << (index * 7)
+            if not byte & 0x80:
+                return value
+        raise ValueError(f"invalid{label}Varint")
+
+    def take_curve_points(count: int, label: str) -> list[dict[str, Any]]:
+        if count > (len(data) - offset) // 12:
+            raise ValueError(f"{label}PointCountTooLarge")
+        points: list[dict[str, Any]] = []
+        for point_index in range(count):
+            from_value = take_f32(f"{label}PointFrom")
+            to_value = take_f32(f"{label}PointTo")
+            interpolation = take_u32(f"{label}PointInterpolation")
+            points.append({
+                "pointIndex": point_index,
+                "from": from_value,
+                "to": to_value,
+                "interpolation": interpolation,
+                "interpolationLabel": HIRC_FADE_CURVE_LABELS.get(
+                    interpolation, f"curve{interpolation}"
+                ),
+            })
+        return points
+
+    rtpc_type_labels = {
+        0: "gameParameter",
+        1: "midiParameter",
+        2: "switch",
+        3: "state",
+        4: "modulator",
+    }
+    rtpc_accum_labels = {
+        0: "none",
+        1: "exclusive",
+        2: "additive",
+        3: "multiply",
+        4: "boolean",
+        5: "maximum",
+        6: "filter",
+    }
+    scaling_labels = {0: "none", 2: "decibel", 3: "log", 4: "decibelToLinear"}
+
+    try:
+        layer_count = take_u32("LayerCount")
+        if layer_count > max(0, (len(data) - offset - 1) // 15):
+            raise ValueError("layerCountTooLarge")
+        layers: list[dict[str, Any]] = []
+        association_child_ids: set[int] = set()
+        initial_curve_total = 0
+        association_total = 0
+        point_total = 0
+        for layer_index in range(layer_count):
+            layer_id = take_u32("LayerId")
+            initial_curve_count = take_u16("InitialRtpcCurveCount")
+            initial_curves: list[dict[str, Any]] = []
+            for curve_index in range(initial_curve_count):
+                rtpc_id = take_u32("InitialRtpcId")
+                rtpc_type = take_u8("InitialRtpcType")
+                rtpc_accum = take_u8("InitialRtpcAccum")
+                param_id = take_varuint("InitialParamId")
+                curve_id = take_u32("InitialRtpcCurveId")
+                scaling = take_u8("InitialRtpcScaling")
+                point_count = take_u16("InitialRtpcPointCount")
+                points = take_curve_points(point_count, "InitialRtpc")
+                initial_curves.append({
+                    "curveIndex": curve_index,
+                    "rtpcId": rtpc_id,
+                    "rtpcType": rtpc_type,
+                    "rtpcTypeLabel": rtpc_type_labels.get(rtpc_type, f"type{rtpc_type}"),
+                    "rtpcAccum": rtpc_accum,
+                    "rtpcAccumLabel": rtpc_accum_labels.get(rtpc_accum, f"mode{rtpc_accum}"),
+                    "paramId": param_id,
+                    "curveId": curve_id,
+                    "scaling": scaling,
+                    "scalingLabel": scaling_labels.get(scaling, f"scaling{scaling}"),
+                    "pointCount": point_count,
+                    "points": points,
+                })
+                point_total += point_count
+            layer_rtpc_id = take_u32("LayerRtpcId")
+            layer_rtpc_type = take_u8("LayerRtpcType")
+            association_count = take_u32("LayerAssociationCount")
+            if association_count > (len(data) - offset) // 8:
+                raise ValueError("layerAssociationCountTooLarge")
+            associations: list[dict[str, Any]] = []
+            for association_index in range(association_count):
+                child_id = take_u32("LayerAssociationChildId")
+                curve_point_count = take_u32("LayerAssociationCurvePointCount")
+                points = take_curve_points(curve_point_count, "LayerAssociation")
+                association_child_ids.add(child_id)
+                associations.append({
+                    "associationIndex": association_index,
+                    "childId": child_id,
+                    "curvePointCount": curve_point_count,
+                    "curvePoints": points,
+                })
+                point_total += curve_point_count
+            layers.append({
+                "layerIndex": layer_index,
+                "layerId": layer_id,
+                "initialRtpcCurveCount": initial_curve_count,
+                "initialRtpcCurves": initial_curves,
+                "rtpcId": layer_rtpc_id,
+                "rtpcType": layer_rtpc_type,
+                "rtpcTypeLabel": rtpc_type_labels.get(
+                    layer_rtpc_type, f"type{layer_rtpc_type}"
+                ),
+                "associationCount": association_count,
+                "associations": associations,
+            })
+            initial_curve_total += initial_curve_count
+            association_total += association_count
+        continuous_raw = take_u8("ContinuousValidation")
+        if continuous_raw not in (0, 1):
+            raise ValueError("invalidContinuousValidation")
+        if offset != len(data):
+            raise ValueError("unexpectedTrailingBytes")
+    except (ValueError, OverflowError) as exc:
+        return unresolved(str(exc), offset)
+
+    child_set = set(child_ids)
+    outside_children = sorted(association_child_ids - child_set)
+    return {
+        "layerTailParserStatus": "typedExactV150LayerTail",
+        "layerAssignmentStatus": (
+            "nonEmptyCurves" if layer_count else "zeroLayerAssignments"
+        ),
+        "layerCount": layer_count,
+        "layers": layers,
+        "initialRtpcCurveCount": initial_curve_total,
+        "associationCount": association_total,
+        "curvePointCount": point_total,
+        "associationChildIdsOutsideChildren": outside_children,
+        "continuousValidation": bool(continuous_raw),
+        "continuousValidationRaw": continuous_raw,
+        "runtimeSelection": "layerRtpcValueUnobservedAllChildrenRemainPossible",
+    }
+
+
+def hirc_v150_layer_child_candidate(
+    data: bytes,
+    objects: dict[int, dict[str, Any]],
+    *,
+    bank_version: int | None,
+) -> tuple[list[int], int, dict[str, Any], str] | None:
+    """Find one structurally exact type-9 Children+tail candidate.
+
+    This is deliberately weaker than reciprocal-parent proof. Non-empty
+    candidates require same-bank audio-node children, an exact Layer-tail
+    parse, association children within the candidate Children set, and a
+    unique matching byte offset. Canonical empty objects are accepted only at
+    the current v150 offset/length fingerprint.
+    """
+
+    if bank_version != 150:
+        return None
+    matches: list[tuple[list[int], int, dict[str, Any], str]] = []
+    for children_offset in range(0, max(0, len(data) - 7)):
+        child_count = unpack_from("<I", data, children_offset)[0]
+        if child_count <= 0 or child_count > (len(data) - children_offset - 4) // 4:
+            continue
+        child_ids = [
+            unpack_from("<I", data, children_offset + 4 + index * 4)[0]
+            for index in range(child_count)
+        ]
+        if any(child_id not in objects for child_id in child_ids):
+            continue
+        if any(
+            int(objects[child_id].get("type") or 0) not in HIRC_AUDIO_NODE_TYPES
+            for child_id in child_ids
+        ):
+            continue
+        tail_offset = children_offset + 4 + child_count * 4
+        tail = hirc_v150_layer_tail(
+            data, tail_offset, child_ids, bank_version=bank_version
+        )
+        if tail.get("layerTailParserStatus") != "typedExactV150LayerTail":
+            continue
+        if tail.get("associationChildIdsOutsideChildren"):
+            continue
+        matches.append((
+            child_ids,
+            children_offset,
+            tail,
+            "typedExactV150CandidateWithoutParentProof",
+        ))
+    if len(matches) == 1:
+        return matches[0]
+    if matches:
+        return None
+
+    canonical_offset = 31
+    if len(data) == 40 and unpack_from("<I", data, canonical_offset)[0] == 0:
+        tail = hirc_v150_layer_tail(
+            data, canonical_offset + 4, [], bank_version=bank_version
+        )
+        if tail.get("layerTailParserStatus") == "typedExactV150LayerTail":
+            return (
+                [],
+                canonical_offset,
+                tail,
+                "typedExactV150CanonicalEmpty",
+            )
+    return None
+
+
 def summarize_hirc_action_dispatch(
     event_id: int,
     root_action_ids: list[int],
@@ -4305,6 +4584,20 @@ def traverse_hirc_event(
             parsed = hirc_reciprocal_child_list(object_id, object_type, data, objects)
             structure = None
             parser_confidence = "reciprocalParentExact"
+            layer_tail = None
+            layer_candidate_without_parent = False
+            if not parsed and object_type == 9:
+                layer_candidate = hirc_v150_layer_child_candidate(
+                    data,
+                    objects,
+                    bank_version=bank_version,
+                )
+                if layer_candidate:
+                    child_ids, offset, layer_tail, parser_confidence = layer_candidate
+                    parsed = (child_ids, offset)
+                    layer_candidate_without_parent = (
+                        parser_confidence == "typedExactV150CandidateWithoutParentProof"
+                    )
             if not parsed and object_type in HIRC_MUSIC_PARENT_NODE_TYPES:
                 empty_music = hirc_v150_empty_music_children(object_type, data)
                 if empty_music:
@@ -4346,6 +4639,32 @@ def traverse_hirc_event(
                 relation = "switchCandidate"
             elif object_type == 9:
                 relation = "layerChild"
+                if layer_tail is None:
+                    layer_tail = hirc_v150_layer_tail(
+                        data,
+                        offset + 4 + len(child_ids) * 4,
+                        child_ids,
+                        bank_version=bank_version,
+                    )
+                container_row["layerTailEvidence"] = layer_tail
+                if layer_tail.get("layerTailParserStatus") != "typedExactV150LayerTail":
+                    unresolved_nodes.append({
+                        "objectId": object_id,
+                        "objectType": object_type,
+                        "rootActionId": root_action_id,
+                        "reason": "layerTailUnresolved",
+                        "detail": layer_tail.get("layerTailFailureReason")
+                        or layer_tail.get("layerTailParserStatus"),
+                    })
+                elif layer_candidate_without_parent:
+                    unresolved_nodes.append({
+                        "objectId": object_id,
+                        "objectType": object_type,
+                        "rootActionId": root_action_id,
+                        "reason": "layerChildrenCandidateWithoutParentProof",
+                        "childrenOffset": offset,
+                        "childCount": len(child_ids),
+                    })
             elif object_type == 10:
                 relation = "musicTrack"
                 structure = structure or hirc_v150_music_structure(
