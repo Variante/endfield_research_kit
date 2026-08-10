@@ -291,6 +291,20 @@ for (const [key, category] of [
         self.assertIn("row.levelDataHost", source)
         self.assertIn("mp-leveldata-receiver-context", source)
 
+    def test_mission_pipeline_surfaces_typed_mission_area_leveldata_shells(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("order.missionAreaLevelDataReceiverContexts", source)
+        self.assertIn(
+            't("missionAreaLevelDataReceiverContexts")',
+            source,
+        )
+        self.assertIn("row.scopeStatus", source)
+        self.assertIn("row.hostMissionIds", source)
+        self.assertIn(
+            "activation.missionAreaLevelDataShellContext",
+            source,
+        )
+
     def test_mission_pipeline_surfaces_exact_active_phase_receivers(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("activation.activePhaseReceiverControl", source)

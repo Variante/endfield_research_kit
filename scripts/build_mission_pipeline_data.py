@@ -15082,6 +15082,23 @@ def main() -> int:
                 f"expected={failure.get('expected')!r}; "
                 f"actual={failure.get('actual')!r}"
             )
+        mission_area_shell_validation = (
+            activation_frontier.get("missionAreaLevelDataShellCensus") or {}
+        ).get("validation") or {}
+        if mission_area_shell_validation.get("status") != "validated":
+            failure = (
+                mission_area_shell_validation.get("failures") or [{}]
+            )[0]
+            raise RuntimeError(
+                "mission-area LevelData shell validation failed: "
+                f"validator={failure.get('validator')}; "
+                f"gate={failure.get('gate')}; "
+                f"identity={failure.get('identity')}; "
+                f"source={failure.get('sourceFile')}; "
+                f"expected={failure.get('expected')!r}; "
+                f"actual={failure.get('actual')!r}; "
+                f"sourceHashes={failure.get('sourceHashes')!r}"
+            )
         # Fixture/test builds use temporary output roots and must not overwrite
         # the canonical recovery report with their reduced corpus.
         if output_root == DEFAULT_OUTPUT_ROOT.resolve():

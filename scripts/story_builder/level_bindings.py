@@ -11177,14 +11177,27 @@ def build_npc_proxy_segment_script_host_index(
     return out
 
 
-def _collect_typed_mission_area_parent_references() -> dict[str, list[dict]]:
+def _collect_typed_mission_area_parent_references(
+    *,
+    mission_area_table_path: Path | None = None,
+    mission_runtime_root: Path | None = None,
+) -> dict[str, list[dict]]:
     """Return exact MissionRuntime references grouped by sub-data parent id.
 
     Only typed ``MissionAreaTrackingInfo`` rows participate. A duplicated
     MissionAreaTable id with conflicting parent ids contributes a conservative
     reference to every authored parent instead of selecting one row.
     """
-    table_path = GAMEPLAY_CONFIG_DIR / "MissionAreaTable.json"
+    table_path = (
+        mission_area_table_path
+        if mission_area_table_path is not None
+        else GAMEPLAY_CONFIG_DIR / "MissionAreaTable.json"
+    )
+    mission_runtime_root = (
+        mission_runtime_root
+        if mission_runtime_root is not None
+        else MRA_DIR
+    )
     try:
         table_raw = json.loads(table_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -11205,12 +11218,12 @@ def _collect_typed_mission_area_parent_references() -> dict[str, list[dict]]:
                 collect_area_rows(child)
 
     collect_area_rows(table_raw)
-    if not parent_ids_by_area or not MRA_DIR.is_dir():
+    if not parent_ids_by_area or not mission_runtime_root.is_dir():
         return {}
 
     references_by_parent: dict[str, list[dict]] = defaultdict(list)
     seen: set[tuple[str, str, str, str, str]] = set()
-    for path in sorted(MRA_DIR.glob("*.json")):
+    for path in sorted(mission_runtime_root.glob("*.json")):
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -11277,6 +11290,11 @@ def _collect_typed_mission_area_parent_references() -> dict[str, list[dict]]:
 
 def build_leveldata_mission_area_script_host_index(
     script_pairs: set[tuple[str, str]],
+    *,
+    leveldata_root: Path | None = None,
+    levelscript_root: Path | None = None,
+    mission_area_table_path: Path | None = None,
+    mission_runtime_root: Path | None = None,
 ) -> dict[tuple[str, str], dict]:
     """Resolve LevelScripts through exact typed MissionArea parent roots.
 
@@ -11302,14 +11320,21 @@ def build_leveldata_mission_area_script_host_index(
     if not targets_by_level:
         return {}
 
-    references_by_parent = _collect_typed_mission_area_parent_references()
+    leveldata_root = leveldata_root if leveldata_root is not None else LEVELDATA_DIR
+    levelscript_root = (
+        levelscript_root if levelscript_root is not None else LEVELSCRIPT_DIR
+    )
+    references_by_parent = _collect_typed_mission_area_parent_references(
+        mission_area_table_path=mission_area_table_path,
+        mission_runtime_root=mission_runtime_root,
+    )
     if not references_by_parent:
         return {}
 
     matches: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for level_id, target_script_ids in sorted(targets_by_level.items()):
-        leveldata_dir = LEVELDATA_DIR / level_id
-        levelscript_dir = LEVELSCRIPT_DIR / level_id
+        leveldata_dir = leveldata_root / level_id
+        levelscript_dir = levelscript_root / level_id
         if not leveldata_dir.is_dir() or not levelscript_dir.is_dir():
             continue
         all_level_script_ids = {

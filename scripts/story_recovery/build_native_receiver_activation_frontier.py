@@ -53,6 +53,7 @@ from story_builder.context import (  # noqa: E402
 from story_builder.level_bindings import (  # noqa: E402
     _native_vector_close,
     _parse_leveldata_mission_host_name,
+    build_leveldata_mission_area_script_host_index,
     decode_levelscript_native_action_topology,
     parse_leveldata_levelscript_brief_dictionary,
 )
@@ -66,7 +67,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v25"
+SCHEMA = "nativeReceiverActivationFrontier.v26"
 
 # This is the binary-validated namespace rule shared by every LevelScript
 # module property.  LevelData writes the module's save-state fields as
@@ -576,6 +577,182 @@ def collect_related_original_files(*values: Any) -> list[dict[str, str]]:
         }
         for path in sorted(paths)
     ]
+
+
+def validate_mission_area_leveldata_shell_contexts(
+    receiver_pairs: set[tuple[str, str]],
+    contexts: dict[tuple[str, str], dict[str, Any]],
+    authored_mission_ids: set[str],
+) -> dict[str, Any]:
+    """Fail closed on malformed typed MissionArea/LevelData shell joins.
+
+    The shared level-binding helper discovers candidates by field shape.  This
+    validator independently checks every emitted identity, complete mission
+    union, source row, and unique/shared classification before the contexts
+    can be published beside Mission Pipeline Story rows.
+    """
+    validator = "native_receiver_mission_area_leveldata_shell"
+    failures: list[dict[str, Any]] = []
+
+    def fail(
+        gate: str,
+        identity: str,
+        expected: Any,
+        actual: Any,
+        source_file: str = "",
+        source_hashes: dict[str, str] | None = None,
+    ) -> None:
+        failures.append({
+            "validator": validator,
+            "gate": gate,
+            "identity": identity,
+            "sourceFile": source_file,
+            "expected": expected,
+            "actual": actual,
+            "sourceHashes": source_hashes or {},
+        })
+
+    for pair, context in sorted(contexts.items()):
+        level_id, script_id = pair
+        identity = f"{level_id}/{script_id}"
+        if pair not in receiver_pairs:
+            fail(
+                "receiverIdentity",
+                identity,
+                "exact unresolved native receiver pair",
+                pair,
+            )
+        if (
+            safe_text(context.get("levelId")) != level_id
+            or safe_text(context.get("scriptId")) != script_id
+        ):
+            fail(
+                "contextIdentity",
+                identity,
+                {"levelId": level_id, "scriptId": script_id},
+                {
+                    "levelId": context.get("levelId"),
+                    "scriptId": context.get("scriptId"),
+                },
+            )
+
+        mission_ids = sorted({
+            safe_text(value)
+            for value in context.get("hostMissionIds") or []
+            if safe_text(value)
+        })
+        unknown_missions = sorted(set(mission_ids) - authored_mission_ids)
+        if not mission_ids or unknown_missions:
+            fail(
+                "authoredMissionSet",
+                identity,
+                "one or more current MissionRuntime ids",
+                {
+                    "hostMissionIds": mission_ids,
+                    "unknownMissionIds": unknown_missions,
+                },
+            )
+        expected_status = "unique" if len(mission_ids) == 1 else "shared"
+        if safe_text(context.get("status")) != expected_status:
+            fail(
+                "scopeClassification",
+                identity,
+                expected_status,
+                context.get("status"),
+            )
+
+        hosts = [
+            host for host in context.get("hosts") or []
+            if isinstance(host, dict)
+        ]
+        if not hosts:
+            fail("hostRows", identity, "at least one exact LevelData host", 0)
+            continue
+        host_mission_union: set[str] = set()
+        for host_index, host in enumerate(hosts):
+            source_file = safe_text(host.get("levelDataFile"))
+            host_identity = f"{identity}#host[{host_index}]"
+            source_hash = _source_file_sha256(source_file)
+            if not source_file or not source_hash:
+                fail(
+                    "levelDataSourceHash",
+                    host_identity,
+                    "existing exported original LevelData with SHA-256",
+                    source_file or "[missing]",
+                    source_file,
+                )
+            if (
+                safe_text(host.get("levelId")) != level_id
+                or safe_text(host.get("scriptId")) != script_id
+            ):
+                fail(
+                    "hostIdentity",
+                    host_identity,
+                    {"levelId": level_id, "scriptId": script_id},
+                    {
+                        "levelId": host.get("levelId"),
+                        "scriptId": host.get("scriptId"),
+                    },
+                    source_file,
+                    {source_file: source_hash} if source_hash else {},
+                )
+            host_missions = {
+                safe_text(value)
+                for value in host.get("hostMissionIds") or []
+                if safe_text(value)
+            }
+            host_mission_union.update(host_missions)
+            references = [
+                reference
+                for reference in host.get("missionAreaReferences") or []
+                if isinstance(reference, dict)
+            ]
+            roots = [
+                safe_text(value)
+                for value in host.get("rootScriptIds") or []
+                if safe_text(value)
+            ]
+            if not references or not roots:
+                fail(
+                    "typedMissionAreaRootEvidence",
+                    host_identity,
+                    "nonempty MissionRuntime references and subDataParent roots",
+                    {
+                        "missionAreaReferenceCount": len(references),
+                        "rootScriptIds": roots,
+                    },
+                    source_file,
+                    {source_file: source_hash} if source_hash else {},
+                )
+            reference_missions = {
+                safe_text(reference.get("missionId"))
+                for reference in references
+                if safe_text(reference.get("missionId"))
+            }
+            if reference_missions != host_missions:
+                fail(
+                    "hostMissionUnion",
+                    host_identity,
+                    sorted(reference_missions),
+                    sorted(host_missions),
+                    source_file,
+                    {source_file: source_hash} if source_hash else {},
+                )
+        if host_mission_union != set(mission_ids):
+            fail(
+                "completeMissionUnion",
+                identity,
+                sorted(host_mission_union),
+                mission_ids,
+            )
+
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "validator": validator,
+        "checkedReceiverPairCount": len(receiver_pairs),
+        "checkedContextCount": len(contexts),
+        "failures": failures,
+    }
 
 
 def structured_identity_cocarrier_census(
@@ -2886,6 +3063,27 @@ def build_report(
         condition_source=rel_path(game_mechanic_condition_table_path),
     )
     receiver_sources = receiver_script_rows(index_payload)
+    receiver_pairs = {
+        (safe_text(row.get("levelId")), safe_text(row.get("scriptId")))
+        for row in receiver_sources
+        if safe_text(row.get("levelId")) and safe_text(row.get("scriptId"))
+    }
+    mission_area_leveldata_shells = (
+        build_leveldata_mission_area_script_host_index(
+            receiver_pairs,
+            leveldata_root=leveldata_root,
+            levelscript_root=levelscript_root,
+            mission_area_table_path=DEFAULT_MISSION_AREA_TABLE,
+            mission_runtime_root=mission_runtime_root,
+        )
+    )
+    mission_area_shell_validation = (
+        validate_mission_area_leveldata_shell_contexts(
+            receiver_pairs,
+            mission_area_leveldata_shells,
+            authored_mission_ids,
+        )
+    )
     structured_identity_census = structured_identity_cocarrier_census(
         receiver_sources,
         structured_json_root=structured_json_root,
@@ -2951,6 +3149,9 @@ def build_report(
             for context in dungeon_contexts_by_scene.get(level_id, [])
         ]
         consumers = consumers_by_script.get((level_id, script_id), [])
+        mission_area_leveldata_shell = (
+            mission_area_leveldata_shells.get((level_id, script_id)) or {}
+        )
         property_contract = authored_property_contract(hosts, consumers)
         authored_property_scripts.update(
             set(property_contract["authoredNames"])
@@ -3057,6 +3258,12 @@ def build_report(
             subgames,
             dungeon_contexts,
             consumers,
+            mission_area_leveldata_shell,
+            {
+                "sourceFile": rel_path(DEFAULT_MISSION_AREA_TABLE),
+            }
+            if mission_area_leveldata_shell
+            else {},
             decoded_task_map,
         )
         row_task_authority = task_authority if decoded_task_map else {}
@@ -3264,6 +3471,9 @@ def build_report(
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
                 "missionRuntimeScriptConsumers": consumers,
+                "missionAreaLevelDataShellContext": (
+                    mission_area_leveldata_shell
+                ),
                 "authoredPropertyContract": property_contract,
                 "startShapeMissionAreaMatches": start_shape_area_matches,
                 "serializedMissionRuntimeIdTokens": serialized_mission_ids,
@@ -3294,6 +3504,7 @@ def build_report(
             "missionPipelineMissionRoot": rel_path(mission_root),
             "missionRuntimeRoot": rel_path(mission_runtime_root),
             "missionRuntimeIdCount": len(authored_mission_ids),
+            "missionAreaTable": rel_path(DEFAULT_MISSION_AREA_TABLE),
             "taskRuntimeAuthority": {
                 "schema": safe_text(task_authority.get("schema")),
                 "source": safe_text(task_authority.get("source")),
@@ -3387,6 +3598,13 @@ def build_report(
                 "A validated LevelData member-22 host proves loading/registration "
                 "scope only. Even a mission-named host is context, not playback "
                 "ownership."
+            ),
+            "missionAreaShellBoundary": (
+                "A typed MissionRuntime MissionAreaTrackingInfo id joined through "
+                "MissionAreaTable.subDataParentId to a root in the same validated "
+                "LevelData member-22 dictionary proves only an authored mission "
+                "shell. Shared mission unions stay shared; neither form proves "
+                "activation, Story ownership, branch selection, or order."
             ),
             "encounterBoundary": (
                 "The exact LevelScriptModule LsmPtr-prefixed "
@@ -3670,6 +3888,33 @@ def build_report(
             "levelDataHostShapes": dict(sorted(host_shapes.items())),
             "scriptsWithMissionNamedHost": sum(
                 any(host.get("missionNamedHost") for host in row["levelDataHosts"])
+                for row in rows
+            ),
+            "scriptsWithMissionAreaLevelDataShellContext": sum(
+                bool(row.get("missionAreaLevelDataShellContext"))
+                for row in rows
+            ),
+            "scriptsWithUniqueMissionAreaLevelDataShellContext": sum(
+                (row.get("missionAreaLevelDataShellContext") or {}).get(
+                    "status"
+                )
+                == "unique"
+                for row in rows
+            ),
+            "scriptsWithSharedMissionAreaLevelDataShellContext": sum(
+                (row.get("missionAreaLevelDataShellContext") or {}).get(
+                    "status"
+                )
+                == "shared"
+                for row in rows
+            ),
+            "missionAreaLevelDataShellMissionPlacements": sum(
+                len(
+                    (row.get("missionAreaLevelDataShellContext") or {}).get(
+                        "hostMissionIds"
+                    )
+                    or []
+                )
                 for row in rows
             ),
             "modulePropertyFamilyCount": sum(
@@ -3967,6 +4212,23 @@ def build_report(
             ),
         },
         "structuredIdentityCarrierCensus": structured_identity_census,
+        "missionAreaLevelDataShellCensus": {
+            "receiverPairCount": len(receiver_pairs),
+            "contextCount": len(mission_area_leveldata_shells),
+            "uniqueContextCount": sum(
+                context.get("status") == "unique"
+                for context in mission_area_leveldata_shells.values()
+            ),
+            "sharedContextCount": sum(
+                context.get("status") == "shared"
+                for context in mission_area_leveldata_shells.values()
+            ),
+            "missionPlacementCount": sum(
+                len(context.get("hostMissionIds") or [])
+                for context in mission_area_leveldata_shells.values()
+            ),
+            "validation": mission_area_shell_validation,
+        },
         "manualControlAuditSummary": manual_control_payload.get("summary") or {},
         "rows": rows,
     }
@@ -3988,6 +4250,24 @@ def publish_to_pipeline_index(
     coverage = index_payload.get("storyCoverage")
     if not isinstance(coverage, dict):
         return 0
+    shell_validation = (
+        report.get("missionAreaLevelDataShellCensus") or {}
+    ).get("validation") or {}
+    if (
+        shell_validation
+        and shell_validation.get("status") != "validated"
+    ):
+        failure = (shell_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "mission-area LevelData shell validation failed: "
+            f"validator={failure.get('validator')}; "
+            f"gate={failure.get('gate')}; "
+            f"identity={failure.get('identity')}; "
+            f"source={failure.get('sourceFile')}; "
+            f"expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}; "
+            f"sourceHashes={failure.get('sourceHashes')!r}"
+        )
     # Keep a compact Story-key lookup beside the full receiver nodes.  The
     # WebUI uses this to show exact native receiver files on unassigned Story
     # cards without copying the entire activation contract into every card.
@@ -4036,6 +4316,32 @@ def publish_to_pipeline_index(
                 for host in row.get("levelDataHosts") or []
                 if isinstance(host, dict)
             ],
+            "missionAreaLevelDataShellContext": {
+                "status": safe_text(
+                    (row.get("missionAreaLevelDataShellContext") or {}).get(
+                        "status"
+                    )
+                ),
+                "hostMissionIds": [
+                    safe_text(value)
+                    for value in (
+                        row.get("missionAreaLevelDataShellContext") or {}
+                    ).get("hostMissionIds")
+                    or []
+                    if safe_text(value)
+                ],
+                "hostCount": len(
+                    (row.get("missionAreaLevelDataShellContext") or {}).get(
+                        "hosts"
+                    )
+                    or []
+                ),
+                "ownership": False,
+                "activation": False,
+                "orderEvidence": False,
+            }
+            if row.get("missionAreaLevelDataShellContext")
+            else {},
             "modulePropertyFamilies": [
                 {
                     "classification": safe_text(
@@ -4384,6 +4690,7 @@ def publish_to_pipeline_index(
 
     published_contexts = 0
     published_mission_named_contexts = 0
+    published_mission_area_contexts = 0
     published_receiver_story_contexts = 0
     if mission_root is not None:
         mission_summaries = {
@@ -4392,6 +4699,7 @@ def publish_to_pipeline_index(
             if isinstance(row, dict) and safe_text(row.get("id"))
         }
         mission_named_contexts_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        mission_area_contexts_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for row in report.get("rows") or []:
             if not isinstance(row, dict):
                 continue
@@ -4416,11 +4724,123 @@ def publish_to_pipeline_index(
                 and safe_text(related.get("sourceFile"))
             ]
             levelscript = row.get("levelScript") or {}
+            mission_area_shell = (
+                row.get("missionAreaLevelDataShellContext") or {}
+            )
+            shell_status = safe_text(mission_area_shell.get("status"))
+            shell_mission_ids = sorted({
+                safe_text(value)
+                for value in mission_area_shell.get("hostMissionIds") or []
+                if safe_text(value)
+            })
+            shell_hosts = [
+                host
+                for host in mission_area_shell.get("hosts") or []
+                if isinstance(host, dict)
+            ]
+            if shell_status in {"unique", "shared"} and shell_mission_ids:
+                shell_related = list(related_files)
+                for source_file in sorted({
+                    safe_text(host.get("levelDataFile"))
+                    for host in shell_hosts
+                    if safe_text(host.get("levelDataFile"))
+                }):
+                    if not any(
+                        safe_text(item.get("sourceFile")) == source_file
+                        for item in shell_related
+                    ):
+                        shell_related.append({
+                            "kind": "leveldata",
+                            "sourceFile": source_file,
+                            "relationship": (
+                                "typed_mission_area_leveldata_shell_context"
+                            ),
+                            "sha256": _source_file_sha256(source_file),
+                        })
+                for mission_id in shell_mission_ids:
+                    if mission_id not in mission_summaries:
+                        continue
+                    mission_area_contexts_by_mission[mission_id].append({
+                        "relation": (
+                            "mission_area_leveldata_receiver_shell_context"
+                        ),
+                        "missionId": mission_id,
+                        "scopeStatus": shell_status,
+                        "hostMissionIds": shell_mission_ids,
+                        "levelId": level_id,
+                        "scriptId": script_id,
+                        "storyKeys": story_keys,
+                        "eventNames": [
+                            safe_text(name)
+                            for name in row.get("eventNames") or []
+                            if safe_text(name)
+                        ],
+                        "listenerHeaderLocalIds": [
+                            value
+                            for value in row.get("listenerHeaderLocalIds") or []
+                            if isinstance(value, int)
+                        ],
+                        "activationClass": safe_text(
+                            row.get("activationClass")
+                        ),
+                        "missionAreaIds": sorted({
+                            safe_text(reference.get("missionAreaId"))
+                            for host in shell_hosts
+                            for reference in host.get(
+                                "missionAreaReferences"
+                            )
+                            or []
+                            if isinstance(reference, dict)
+                            and safe_text(reference.get("missionAreaId"))
+                        }),
+                        "subDataParentIds": sorted({
+                            safe_text(root_id)
+                            for host in shell_hosts
+                            for root_id in host.get("rootScriptIds") or []
+                            if safe_text(root_id)
+                        }),
+                        "levelDataFiles": sorted({
+                            safe_text(host.get("levelDataFile"))
+                            for host in shell_hosts
+                            if safe_text(host.get("levelDataFile"))
+                        }),
+                        "missionRuntimeFiles": sorted({
+                            safe_text(reference.get("sourceFile"))
+                            for host in shell_hosts
+                            for reference in host.get(
+                                "missionAreaReferences"
+                            )
+                            or []
+                            if isinstance(reference, dict)
+                            and safe_text(reference.get("sourceFile"))
+                        }),
+                        "ownership": False,
+                        "activation": False,
+                        "storyPlayback": False,
+                        "orderEvidence": False,
+                        "relatedOriginalFiles": shell_related,
+                        "evidenceBoundary": (
+                            "A typed MissionRuntime MissionAreaTrackingInfo id "
+                            "resolves through MissionAreaTable.subDataParentId "
+                            "to a root in the same validated LevelData dictionary "
+                            "as this receiver. The complete mission union is "
+                            f"{shell_status}; this is authored shell context only, "
+                            "not activation, Story ownership, branch selection, "
+                            "completion, or order."
+                        ),
+                    })
             for host in row.get("levelDataHosts") or []:
                 if not isinstance(host, dict) or not host.get("missionNamedHost"):
                     continue
                 mission_id = safe_text(host.get("hostMissionId"))
                 if not mission_id or mission_id not in mission_summaries:
+                    continue
+                if (
+                    shell_status == "unique"
+                    and shell_mission_ids == [mission_id]
+                ):
+                    # The typed MissionArea root join independently proves the
+                    # same shell and supersedes filename-only presentation.
                     continue
                 host_source = safe_text(host.get("sourceFile"))
                 host_file = safe_text(host.get("fileName"))
@@ -4535,6 +4955,44 @@ def publish_to_pipeline_index(
                 mission_summary[
                     "storyOrderMissionNamedLevelDataReceiverContextCount"
                 ] = len(ordered)
+        for mission_id, contexts in sorted(mission_area_contexts_by_mission.items()):
+            path = mission_root / f"{mission_id}.json"
+            payload = read_json(path)
+            if not isinstance(payload, dict):
+                continue
+            unique = {
+                (
+                    safe_text(context.get("scopeStatus")),
+                    safe_text(context.get("levelId")),
+                    safe_text(context.get("scriptId")),
+                    tuple(context.get("hostMissionIds") or []),
+                    tuple(context.get("storyKeys") or []),
+                ): context
+                for context in contexts
+            }
+            ordered = [unique[key] for key in sorted(unique, key=str)]
+            story_order = payload.setdefault("storyOrder", {})
+            story_order["missionAreaLevelDataReceiverContexts"] = ordered
+            summary = story_order.setdefault("summary", {})
+            summary["missionAreaLevelDataReceiverContextCount"] = len(ordered)
+            summary["missionAreaLevelDataReceiverUniqueContextCount"] = sum(
+                context.get("scopeStatus") == "unique"
+                for context in ordered
+            )
+            summary["missionAreaLevelDataReceiverSharedContextCount"] = sum(
+                context.get("scopeStatus") == "shared"
+                for context in ordered
+            )
+            summary["missionAreaLevelDataReceiverContextStoryCount"] = len({
+                key for context in ordered for key in context["storyKeys"]
+            })
+            write_json(path, payload)
+            published_mission_area_contexts += len(ordered)
+            mission_summary = mission_summaries.get(mission_id)
+            if mission_summary is not None:
+                mission_summary[
+                    "storyOrderMissionAreaLevelDataReceiverContextCount"
+                ] = len(ordered)
         receiver_contexts_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for mission_id, mission_summary in sorted(mission_summaries.items()):
             path = mission_root / f"{mission_id}.json"
@@ -4620,12 +5078,18 @@ def publish_to_pipeline_index(
             ).items()
             if key != "rows"
         },
+        "missionAreaLevelDataShellCensus": (
+            report.get("missionAreaLevelDataShellCensus") or {}
+        ),
         "reportJson": rel_path(DEFAULT_JSON),
         "reportMarkdown": rel_path(DEFAULT_MARKDOWN),
         "annotatedReceiverNodes": annotated,
         "publishedMissionObservedLevelScriptContexts": published_contexts,
         "publishedMissionNamedLevelDataReceiverContexts": (
             published_mission_named_contexts
+        ),
+        "publishedMissionAreaLevelDataReceiverContexts": (
+            published_mission_area_contexts
         ),
         "publishedNativeReceiverStoryContexts": published_receiver_story_contexts,
     }
@@ -4635,6 +5099,7 @@ def publish_to_pipeline_index(
 def markdown_report(payload: dict[str, Any]) -> str:
     counts = payload.get("counts") or {}
     identity_census = payload.get("structuredIdentityCarrierCensus") or {}
+    mission_area_census = payload.get("missionAreaLevelDataShellCensus") or {}
     lines = [
         "# Native Receiver Activation Frontier",
         "",
@@ -4708,6 +5173,16 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Scripts in a validated mission-named LevelData host: "
             f"`{counts.get('scriptsWithMissionNamedHost')}`"
+        ),
+        (
+            "- Typed MissionArea-to-LevelData shell contexts (unique / shared "
+            "/ mission placements): "
+            f"`{mission_area_census.get('contextCount')}` "
+            f"(`{mission_area_census.get('uniqueContextCount')}` / "
+            f"`{mission_area_census.get('sharedContextCount')}` / "
+            f"`{mission_area_census.get('missionPlacementCount')}`); "
+            "validation "
+            f"`{(mission_area_census.get('validation') or {}).get('status')}`"
         ),
         (
             "- Generic serialized module property families / scripts / "
@@ -5032,6 +5507,21 @@ def main() -> None:
             f"source={failure.get('sourceFile')}; "
             f"expected={failure.get('expected')!r}; "
             f"actual={failure.get('actual')!r}"
+        )
+    shell_validation = (
+        payload.get("missionAreaLevelDataShellCensus") or {}
+    ).get("validation") or {}
+    if shell_validation.get("status") != "validated":
+        failure = (shell_validation.get("failures") or [{}])[0]
+        raise SystemExit(
+            "mission-area LevelData shell validation failed: "
+            f"validator={failure.get('validator')}; "
+            f"gate={failure.get('gate')}; "
+            f"identity={failure.get('identity')}; "
+            f"source={failure.get('sourceFile')}; "
+            f"expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}; "
+            f"sourceHashes={failure.get('sourceHashes')!r}"
         )
 
 
