@@ -126,7 +126,12 @@ class AudioCategoryTests(unittest.TestCase):
             self.assertEqual(rows[0]["sourcePaths"], sources[::-1])
             self.assertEqual(result["counts"]["buffPlaySoundActionOccurrences"], 1)
 
-    def test_wav_decode_defaults_to_lossless_flac_output(self) -> None:
+    def test_direct_flac_is_default_and_legacy_wav_still_converts(self) -> None:
+        self.assertEqual(build_audio.parse_args([]).format, "flac")
+        self.assertEqual(
+            build_audio.audio_output_format(argparse.Namespace(format="flac", audio_format=None)),
+            "flac",
+        )
         self.assertEqual(
             build_audio.audio_output_format(argparse.Namespace(format="wav", audio_format=None)),
             "flac",
