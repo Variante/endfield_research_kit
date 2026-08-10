@@ -595,8 +595,13 @@
       dialogTreeStaticPortCount: "native static-port controls",
       dialogTreeStaticPortNamed: "installed named ports",
       dialogTreeStaticPortUnlabeled: "ordinal-only external results",
-      dialogTreeStaticPortExternal: "UI result not observed",
-      dialogTreeStaticPortBoundary: "The original binary and metadata prove the authored result-port order. They do not show which UI result occurred, assign mission ownership, or order sibling Story files.",
+      dialogTreeStaticPortProduced: "current shipped producer",
+      dialogTreeStaticPortDynamicProducer: "dynamic producer; arm index not statically bounded",
+      dialogTreeStaticPortNoProducer: "no current shipped producer found",
+      dialogTreeStaticPortRouter: "complete shipped Lua result router validated",
+      dialogTreeStaticPortProducerEvidence: "producer source",
+      dialogTreeStaticPortExternal: "Actual UI result not observed",
+      dialogTreeStaticPortBoundary: "The original binary, metadata, and complete shipped Lua corpus prove the authored result-port order and current producer paths. They do not show which UI result occurred, assign mission ownership, prove activation, or order sibling Story files. A missing current producer is not a claim of permanent unreachability.",
       dialogTreeDetachedControl: "Detached serialized control",
       dialogTreeDetachedBoundary: "This source definition has no serialized identity or outgoing connection, so it is not a live branch and contributes no selection or order edge.",
       dialogTimelineBinaryContract: "Original-binary Timeline option contract",
@@ -2123,8 +2128,13 @@
       dialogTreeStaticPortCount: "\u539f\u751f\u9759\u6001\u7aef\u53e3\u63a7\u5236\u8282\u70b9",
       dialogTreeStaticPortNamed: "\u539f\u59cb\u5ba2\u6237\u7aef\u547d\u540d\u7aef\u53e3",
       dialogTreeStaticPortUnlabeled: "\u4ec5\u5e8f\u53f7\u7684\u5916\u90e8\u7ed3\u679c",
-      dialogTreeStaticPortExternal: "\u672a\u89c2\u6d4b UI \u7ed3\u679c",
-      dialogTreeStaticPortBoundary: "\u539f\u59cb\u4e8c\u8fdb\u5236\u548c\u5143\u6570\u636e\u8bc1\u660e\u5df2\u521b\u4f5c\u7684\u7ed3\u679c\u7aef\u53e3\u987a\u5e8f\uff1b\u4e0d\u8bc1\u660e\u5b9e\u9645 UI \u7ed3\u679c\u3001\u4efb\u52a1\u5f52\u5c5e\u6216\u540c\u7ea7 Story \u6587\u4ef6\u987a\u5e8f\u3002",
+      dialogTreeStaticPortProduced: "\u5f53\u524d\u5ba2\u6237\u7aef\u5df2\u6709\u751f\u6210\u8def\u5f84",
+      dialogTreeStaticPortDynamicProducer: "\u5b58\u5728\u52a8\u6001\u751f\u6210\u8def\u5f84\uff0c\u65e0\u6cd5\u9759\u6001\u9650\u5b9a\u5206\u652f\u5e8f\u53f7",
+      dialogTreeStaticPortNoProducer: "\u5f53\u524d\u5ba2\u6237\u7aef\u672a\u627e\u5230\u751f\u6210\u8def\u5f84",
+      dialogTreeStaticPortRouter: "\u5df2\u9a8c\u8bc1\u5b8c\u6574\u5ba2\u6237\u7aef Lua \u7ed3\u679c\u8def\u7531",
+      dialogTreeStaticPortProducerEvidence: "\u751f\u6210\u8def\u5f84\u6e90\u6587\u4ef6",
+      dialogTreeStaticPortExternal: "\u5b9e\u9645 UI \u7ed3\u679c\u4ecd\u672a\u89c2\u6d4b",
+      dialogTreeStaticPortBoundary: "\u539f\u59cb\u4e8c\u8fdb\u5236\u3001\u5143\u6570\u636e\u4e0e\u5b8c\u6574\u5ba2\u6237\u7aef Lua \u8bed\u6599\u8bc1\u660e\u5df2\u521b\u4f5c\u7684\u7ed3\u679c\u7aef\u53e3\u987a\u5e8f\u548c\u5f53\u524d\u751f\u6210\u8def\u5f84\uff1b\u4e0d\u8bc1\u660e\u5b9e\u9645 UI \u7ed3\u679c\u3001\u4efb\u52a1\u5f52\u5c5e\u3001\u6fc0\u6d3b\u6216\u540c\u7ea7 Story \u6587\u4ef6\u987a\u5e8f\u3002\u5f53\u524d\u672a\u627e\u5230\u751f\u6210\u8def\u5f84\u4e0d\u7b49\u4e8e\u6c38\u4e45\u4e0d\u53ef\u8fbe\u3002",
       dialogTreeDetachedControl: "\u8131\u79bb\u5e8f\u5217\u5316\u63a7\u5236\u8282\u70b9",
       dialogTreeDetachedBoundary: "\u8be5\u6e90\u5b9a\u4e49\u6ca1\u6709\u5e8f\u5217\u5316\u8eab\u4efd\u6216\u8f93\u51fa\u8fde\u63a5\uff0c\u56e0\u6b64\u4e0d\u662f\u5b9e\u65f6\u5206\u652f\uff0c\u4e5f\u4e0d\u4ea7\u751f\u9009\u62e9\u6216\u987a\u5e8f\u8fb9\u3002",
       dialogTimelineBinaryContract: "\u539f\u59cb\u4e8c\u8fdb\u5236 Timeline \u9009\u9879\u5408\u7ea6",
@@ -5065,13 +5075,28 @@
         const outcome = arm.outcomeLabel
           ? `<b>${esc(arm.outcomeLabel)}</b>`
           : `<i>${esc(t("dialogTreeStaticPortUnlabeled"))}</i>`;
-        return `<div><b>${esc(t("dialogTreeStaticPortArm"))} ${esc(arm.connectionOrdinal ?? "?")}</b>${outcome}<code>raw ${esc(arm.connectionIndex ?? "?")}</code><span>&rarr; ${target}</span></div>`;
+        const producerLabel = arm.runtimeProducerStatus === "shipped_lua_producer"
+          ? t("dialogTreeStaticPortProduced")
+          : arm.runtimeProducerStatus === "shipped_lua_dynamic_index_unbounded"
+            ? t("dialogTreeStaticPortDynamicProducer")
+            : arm.runtimeProducerStatus === "no_shipped_lua_producer_found"
+              ? t("dialogTreeStaticPortNoProducer")
+              : "";
+        const allProducerEvidence = [
+          ...(arm.runtimeProducerEvidence || []),
+          ...(arm.runtimeDynamicProducerEvidence || []),
+        ];
+        const producerEvidence = allProducerEvidence.map((producer) => `<small><code>${esc(producer.kind || "producer")}</code> <code>${esc(producer.indexExpression || "?")}</code>${producer.sourceFile ? ` <code>${esc(producer.sourceFile)}</code>` : ""}${producer.line ? `:${esc(producer.line)}` : ""}${producer.sha256 ? ` / SHA-256 <code>${esc(producer.sha256)}</code>` : ""}${producer.excerpt ? `<br><code>${esc(producer.excerpt)}</code>` : ""}</small>`).join("");
+        return `<div><b>${esc(t("dialogTreeStaticPortArm"))} ${esc(arm.connectionOrdinal ?? "?")}</b>${outcome}<code>raw ${esc(arm.connectionIndex ?? "?")}</code>${producerLabel ? `<span><b>${esc(producerLabel)}</b></span>` : ""}<span>&rarr; ${target}</span>${producerEvidence ? `<details><summary>${esc(t("dialogTreeStaticPortProducerEvidence"))} <span>${allProducerEvidence.length}</span></summary>${producerEvidence}</details>` : ""}</div>`;
       }).join("");
       const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
       const portStatus = row.portContractStatus === "native_named_ports"
         ? t("dialogTreeStaticPortNamed")
         : t("dialogTreeStaticPortUnlabeled");
-      return `<details><summary><b>${esc(t("dialogTreeStaticPortControl"))}</b> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#${esc(row.nodeId || "?")}</i><span><code>${esc(row.selectorName || "?")} (${esc(row.selectorValue ?? "?")})</code></span><span>${esc(portStatus)}</span></summary><p class="mp-native-predicate"><b>${esc(t("dialogConditionalNativeProof"))}</b> <code>${esc(row.selectionRule || "")}</code></p>${arms}<small>${esc(t("dialogTreeStaticPortExternal"))}</small><small>${nativeProof}</small><small>${esc(t("dialogTreeStaticPortBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
+      const routerStatus = row.runtimeRouterStatus === "shipped_lua_router_validated"
+        ? `<small><b>${esc(t("dialogTreeStaticPortRouter"))}</b> / ${Number(row.runtimeProducedArmCount || 0).toLocaleString()} ${esc(t("dialogTreeStaticPortProduced"))} / ${Number(row.runtimeDynamicProducerArmCount || 0).toLocaleString()} ${esc(t("dialogTreeStaticPortDynamicProducer"))} / ${Number(row.runtimeUnproducedArmCount || 0).toLocaleString()} ${esc(t("dialogTreeStaticPortNoProducer"))}</small>`
+        : "";
+      return `<details><summary><b>${esc(t("dialogTreeStaticPortControl"))}</b> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#${esc(row.nodeId || "?")}</i><span><code>${esc(row.selectorName || "?")} (${esc(row.selectorValue ?? "?")})</code></span><span>${esc(portStatus)}</span></summary><p class="mp-native-predicate"><b>${esc(t("dialogConditionalNativeProof"))}</b> <code>${esc(row.selectionRule || "")}</code></p>${routerStatus}${arms}<small>${esc(t("dialogTreeStaticPortExternal"))}</small><small>${nativeProof}</small><small>${esc(t("dialogTreeStaticPortBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
     }).join("");
     const offlineRows = offlineRecoveryRowsForMission();
     const offlineGaps = offlineRows.map((row) => {

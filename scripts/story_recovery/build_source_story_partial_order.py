@@ -3634,6 +3634,31 @@ def _dialog_tree_local_static_port_controls(
                         "relationship": "managed_enum_field_and_method_identity",
                     },
                 ]
+                result_router = native_contract.get("externalResultRouter") or {}
+                lua_sources: dict[tuple[str, str], dict[str, Any]] = {}
+                for source in (
+                    result_router.get("routerSource"),
+                    result_router.get("defaultsSource"),
+                ):
+                    if isinstance(source, dict) and source.get("sourceFile"):
+                        lua_sources[(
+                            safe_key(source.get("sourceFile")),
+                            safe_key(source.get("relationship")),
+                        )] = dict(source)
+                selector_name = safe_key(projection.get("selectorName"))
+                for producer in (
+                    (result_router.get("producersByPhase") or {}).get(selector_name)
+                    or []
+                ):
+                    source = producer.get("source") if isinstance(producer, dict) else None
+                    if isinstance(source, dict) and source.get("sourceFile"):
+                        lua_sources[(
+                            safe_key(source.get("sourceFile")),
+                            safe_key(source.get("relationship")),
+                        )] = dict(source)
+                related_original_files.extend(
+                    lua_sources[key] for key in sorted(lua_sources)
+                )
                 rows.append({
                     "kind": "dialogTreeStaticPortControl",
                     "family": family_spec.family,
@@ -3651,7 +3676,11 @@ def _dialog_tree_local_static_port_controls(
                     "staticPortMapField": native_contract.get("staticPortMapField"),
                     "currentIFix": current_ifix,
                     "selectionRule": native_contract.get("selectionRule"),
-                    "runtimeSelectionStatus": "external_ui_result_unobserved",
+                    "runtimeSelectionStatus": (
+                        "shipped_lua_producer_paths_recovered_result_unobserved"
+                        if result_router
+                        else "external_ui_result_unobserved"
+                    ),
                     "orderEvidence": False,
                     "evidenceBoundary": native_contract.get("evidenceBoundary"),
                 })
@@ -8015,6 +8044,21 @@ def build_mission_partial_order(
                 row.get("portContractStatus") == "external_index_unlabeled"
                 for row in dialog_tree_static_port_controls
             ),
+            "dialogTreeStaticPortProducedArmCount": sum(
+                arm.get("runtimeProducerStatus") == "shipped_lua_producer"
+                for row in dialog_tree_static_port_controls
+                for arm in row.get("arms") or []
+            ),
+            "dialogTreeStaticPortNoShippedProducerArmCount": sum(
+                arm.get("runtimeProducerStatus") == "no_shipped_lua_producer_found"
+                for row in dialog_tree_static_port_controls
+                for arm in row.get("arms") or []
+            ),
+            "dialogTreeStaticPortDynamicProducerArmCount": sum(
+                arm.get("runtimeProducerStatus") == "shipped_lua_dynamic_index_unbounded"
+                for row in dialog_tree_static_port_controls
+                for arm in row.get("arms") or []
+            ),
             "dialogTreeStaticPortValidationFailureCount": len(
                 dialog_tree_static_port_control_warnings
             ),
@@ -8497,6 +8541,15 @@ def build_report(
         totals["dialogTreeStaticPortUnlabeledControls"] += summary[
             "dialogTreeStaticPortUnlabeledControlCount"
         ]
+        totals["dialogTreeStaticPortProducedArms"] += summary[
+            "dialogTreeStaticPortProducedArmCount"
+        ]
+        totals["dialogTreeStaticPortNoShippedProducerArms"] += summary[
+            "dialogTreeStaticPortNoShippedProducerArmCount"
+        ]
+        totals["dialogTreeStaticPortDynamicProducerArms"] += summary[
+            "dialogTreeStaticPortDynamicProducerArmCount"
+        ]
         totals["dialogTreeStaticPortValidationFailures"] += summary[
             "dialogTreeStaticPortValidationFailureCount"
         ]
@@ -8715,9 +8768,15 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"`{summary.get('dialogTreeStaticPortControlArms', 0)}` arms; "
         f"`{summary.get('dialogTreeStaticPortNamedControls', 0)}` have installed "
         f"named result ports, `{summary.get('dialogTreeStaticPortUnlabeledControls', 0)}` "
-        "retain ordinal-only external results, and "
+        "retain ordinal-only external results; the complete shipped Lua router supplies "
+        f"current producers for `{summary.get('dialogTreeStaticPortProducedArms', 0)}` arms, "
+        f"`{summary.get('dialogTreeStaticPortDynamicProducerArms', 0)}` arms have a dynamic "
+        "producer whose exact index is not statically bounded, and "
+        f"`{summary.get('dialogTreeStaticPortNoShippedProducerArms', 0)}` arms have no "
+        "current shipped producer found; "
         f"`{summary.get('dialogTreeStaticPortValidationFailures', 0)}` validation failures "
-        "(authored alternatives only, never an observed choice or file-order edge)",
+        "(producer presence is not an observed choice or file-order edge; absence is not a "
+        "claim of permanent unreachability)",
         f"- mission-level branches: `{summary.get('questForks', 0)}` quest forks, "
         f"`{summary.get('questMerges', 0)}` quest merges, and "
         f"`{summary.get('sceneGraphOptionGroups', 0)}` authored cross-scene option groups",

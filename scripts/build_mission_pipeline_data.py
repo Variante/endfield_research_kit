@@ -12959,6 +12959,16 @@ def _source_order_shell_related_files(
         source = str(raw.get("sourceFile") or "")
         if not source:
             return
+        normalized_source = source.replace("\\", "/").casefold()
+        if normalized_source.startswith((
+            "installed persistent vfs/",
+            "installed streamingassets vfs/",
+        )):
+            # Exact logical payloads inspected by targeted VFS dumps carry
+            # their own content hash but are not standalone filesystem files.
+            # Keep them on the branch record; do not misrepresent the VFS
+            # label as a materialized source-order attachment.
+            return
         path = _resolve_report_source_path(source)
         if not path.is_file():
             raise RuntimeError(
@@ -13096,6 +13106,15 @@ def _story_branch_related_original_files(
             "scratch/",
             "tmp/",
         )) or "/webui/data/" in normalized:
+            return
+        # The Story branch report may cite bytes that were inspected directly
+        # in the installed VFS. Production WebUI dumps intentionally omit
+        # patch-byte payloads, so this label is provenance rather than a local
+        # filesystem path. Keep real missing paths fail-closed below.
+        if normalized.startswith((
+            "installed persistent vfs/",
+            "installed streamingassets vfs/",
+        )):
             return
         path = _resolve_report_source_path(source)
         if not path.is_file():

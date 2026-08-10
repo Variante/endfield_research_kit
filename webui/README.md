@@ -235,10 +235,13 @@ sns_topic_map02_lv005_12002
   never route evidence.
 - Multi-output external-result controls show every serialized arm. Installed
   static port names are displayed when the original binary supplies them;
-  other panels remain ordinal-only, and all cards attach the original
-  TextAsset, GameAssembly, metadata, and current IFix boundary. Detached
-  zero-edge controls are labeled as definitions, not live branches. None of
-  these rows claims an observed UI result or sibling Story-file order.
+  other panels remain ordinal-only. A complete installed-Lua router audit marks
+  each arm as bounded-produced, dynamic-index, or lacking a current shipped
+  producer and exposes exact source lines and hashes. Cards attach the original
+  TextAsset, GameAssembly, metadata, relevant logical Lua payloads, and current
+  IFix boundary. Detached zero-edge controls are definitions, not live
+  branches. None of these rows claims an observed UI result, activation,
+  permanent unreachability, or sibling Story-file order.
 - Manual Story order and OCR proposals are cross-reference material, not graph
   evidence.
 

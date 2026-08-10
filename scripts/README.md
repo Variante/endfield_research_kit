@@ -34,6 +34,10 @@ path flags override them for one run.
   material, shader, texture, and FMV edges.
 - Use `--mission-pipeline-data-only` only when generated Story bundles and
   evidence are current.
+- Mission Pipeline external-result recovery is family/schema-driven: it derives
+  the native enum/static-port contract from the installed binary and performs
+  one complete targeted installed-VFS Lua dump to validate shared result
+  defaults and producers. Do not add mission, panel, or object allowlists.
 - Reuse Timeline order and localized reference outputs only when their source
   inputs did not change; reference reuse is rejected with `--export-from-game`.
 - The default AnimeStudio type-job mode is `auto`: broad Story JSON families
