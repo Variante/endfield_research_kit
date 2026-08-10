@@ -1573,17 +1573,22 @@ record `+0x08` is mutable: particle setup variants
 `0x1810416A0/0x181041870/0x181041920/0x1810419D0` advance from blob `+0x0C`
 (record `+0x08`), replace the word with bit 20 at the exact `0x18` stride while
 selecting modes 2/3/4/5, and scheduled callback `0x181067A70` ORs it into its
-render flags. Record `+0x0C` is the third resolved, reference-counted renderer
-`Mesh` resource index. Both owner transition paths acquire their third slot
-with native kind `2`; dedicated HG internal-call entry 437 maps wrapper
-`0x1801F2AB0` to `HGResourceManager.LoadAsync_Injected`, whose installed
-IL2CPP `AssetType` parameter closes `1=Material` and `2=Mesh`. LOD availability
-paths `0x181157760/0x181159010` write record `+0x0C`,
-cleanup `0x18115BFC0` releases and clears it through `0x180FBF6B0`, and callback
-`0x181064100` also ORs the word with renderer-entry flags before comparison.
-The semantic reason this Mesh-derived index doubles as a filter overlay remains open.
-Common Renderer state synchronizer `0x180432CD0` updates record `+0x10` with
-property-derived flags after preserving mask `0xFC07FBFD`. Dedicated HG
+render flags. The prior record `+0x0C` “third Mesh resource index” conclusion
+was four bytes off. Both owner transitions acquire their second Mesh handle
+into owner `+0x14`; HG internal-call entry 437 names
+`HGResourceManager.LoadAsync_Injected`, and installed `AssetType` closes kind
+`2=Mesh`. Entries 440/441 show that `UpdateAssetHandle_Injected` writes the
+Unity asset instance ID to the 32-byte handle slot at `+0x18`, while
+`GetAsset_Injected` uses it to recover the Unity object. Availability writers
+`0x181157760/0x181159010` require slot `+0x10==1`, resolve that instance ID
+through a 12-byte map, and write entry `+0x08` to record `+0x0C` at
+`0x181157A42/0x181159218`; cleanup clears it at `0x18115C0F3`. Callback
+`0x181064100` consumes this mapped word directly as a masked supplemental
+filter, eliminating the apparent slot-index/filter dual use. The third Mesh
+handle instead seeds record `+0x10` at `0x181157AD1/0x1811592A0`; common
+Renderer state synchronizer `0x180432CD0` then updates that property-flag word
+while preserving mask `0xFC07FBFD`. Only the mapped filter word's standalone
+engine name and individual bit meanings remain open. Dedicated HG
 internal-call entry 204 is
 `HGFactoryRenderManager.SetEntityEnabledLightModes_Injected`; wrapper
 `0x1801EB940` reaches `0x1810D9110`, which writes the supplied
@@ -1745,10 +1750,10 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The semantic reason for loader record
-`+0x0C`'s Mesh/filter dual use, the component-67 standalone native type name,
-any separate `sceneCullingMask` consumer, and target-frame survivor rows remain
-explicit boundaries.
+boundary into unrelated Animator code. The standalone engine name/bit meanings
+of loader record `+0x0C`'s Mesh-instance filter word, the component-67 native
+type name, any separate `sceneCullingMask` consumer, and target-frame survivor
+rows remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that

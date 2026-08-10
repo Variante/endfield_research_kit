@@ -745,30 +745,30 @@ class LightCullCapAuditTests(unittest.TestCase):
             runtime_tail["mutableRenderFlagsAt0x08"]["particleModes"],
             [2, 3, 4, 5],
         )
-        self.assertTrue(
-            runtime_tail["thirdResolvedResourceAt0x0C"][
-                "consumerRoleClosed"
-            ]
-        )
-        self.assertTrue(
-            runtime_tail["thirdResolvedResourceAt0x0C"]["producerClosed"]
-        )
-        third_resource = runtime_tail["thirdResolvedResourceAt0x0C"]
-        self.assertTrue(third_resource["assetClassClosed"])
+        mesh_filter = runtime_tail["meshInstanceFilterWordAt0x0C"]
+        self.assertTrue(mesh_filter["consumerRoleClosed"])
+        self.assertTrue(mesh_filter["producerClosed"])
+        self.assertTrue(mesh_filter["assetClassClosed"])
+        self.assertTrue(mesh_filter["assetHandleContractClosed"])
         self.assertEqual(
-            third_resource["assetType"],
+            mesh_filter["assetType"],
             "UnityEngine.HyperGryph.AssetType.Mesh",
         )
-        self.assertEqual(third_resource["assetTypeValue"], 2)
+        self.assertEqual(mesh_filter["assetTypeValue"], 2)
         self.assertEqual(
-            [row["assetTypeImmediate"] for row in third_resource["acquisitionPaths"]],
+            [row["assetTypeImmediate"] for row in mesh_filter["acquisitionPaths"]],
             [2, 2],
         )
         self.assertEqual(
-            runtime_tail["thirdResolvedResourceAt0x0C"]["writerPaths"][0][
-                "writeVirtualAddress"
-            ],
-            "0x181157AD1",
+            [row["ownerHandleOffset"] for row in mesh_filter["acquisitionPaths"]],
+            ["0x14", "0x14"],
+        )
+        self.assertEqual(
+            mesh_filter["writerPaths"][0]["writeVirtualAddress"],
+            "0x181157A42",
+        )
+        self.assertEqual(
+            mesh_filter["mappingKey"], "Unity asset instance ID"
         )
         resource_load = result["resourceLoadInternalCall"]
         self.assertEqual(resource_load["index"], 437)
@@ -787,7 +787,20 @@ class LightCullCapAuditTests(unittest.TestCase):
         ]["parameters"]
         self.assertEqual(load_parameters[1]["name"], "type")
         self.assertEqual(load_parameters[1]["metadataTypeIndex"], 122373)
+        resource_handles = result["resourceHandleInternalCalls"]
+        self.assertEqual(resource_handles["getAsset"]["index"], 440)
+        self.assertIn("GetAsset_Injected", resource_handles["getAsset"]["name"])
+        self.assertEqual(resource_handles["updateAssetHandle"]["index"], 441)
+        self.assertEqual(
+            resource_handles["updateAssetHandle"]["assetInstanceIdSlotOffset"],
+            "0x18",
+        )
         self.assertTrue(runtime_tail["rendererPropertyFlagsAt0x10"]["roleClosed"])
+        self.assertTrue(
+            runtime_tail["rendererPropertyFlagsAt0x10"][
+                "meshInstanceSeedClosed"
+            ]
+        )
         self.assertEqual(
             runtime_tail["rendererPropertyFlagsAt0x10"]["preserveMask"],
             "0xFC07FBFD",
@@ -1615,6 +1628,27 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_lod_ecs_direct_availability_initializer_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hg_resource_update_handle_binding_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1801F2C10 and size == 0x97:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_hg_resource_update_handle_binding_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

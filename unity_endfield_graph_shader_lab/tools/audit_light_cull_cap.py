@@ -288,6 +288,16 @@ UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_VA = 0x1801F2AB0
 UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGResourceManager::LoadAsync_Injected"
 )
+UNITY_HG_RESOURCE_GET_ASSET_ICALL_INDEX = 440
+UNITY_HG_RESOURCE_GET_ASSET_ICALL_VA = 0x1801F2B60
+UNITY_HG_RESOURCE_GET_ASSET_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGResourceManager::GetAsset_Injected"
+)
+UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_INDEX = 441
+UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_VA = 0x1801F2C10
+UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGResourceManager::UpdateAssetHandle_Injected"
+)
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX = 567
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_VA = 0x1801DA040
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_NAME = (
@@ -1328,6 +1338,16 @@ UNITY_HGTREE_BODIES = {
         0x5A,
         "25b1324b6a8c25e3b51fd709a20825199f94afc08b31beff9d0e9909edd90792",
     ),
+    "hg_resource_get_asset_binding": (
+        0x1801F2B60,
+        0xA8,
+        "06af25eb0373cedee0f92863a57f400cb82fc3747333320a74c0a6ec1341be7e",
+    ),
+    "hg_resource_update_handle_binding": (
+        0x1801F2C10,
+        0x97,
+        "91413130ea3650e6ed9592f585cdd605dd0ad271729550814ebefcbe6857e250",
+    ),
     "renderer_resource_slot_acquire": (
         0x180FBFC60,
         0x224,
@@ -1778,6 +1798,30 @@ UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
 }
 
 UNITY_HGTREE_SLICES = {
+    "merged_renderer_second_mesh_slot_acquire": (
+        0x1811534FE,
+        "4c392f0f84ed000000488b1f488d55504c8bc3668944242041b902000000498bcc"
+        "e83cc7e6ff8b455089471448895d",
+    ),
+    "renderer_second_mesh_slot_acquire": (
+        0x1811546C6,
+        "48833f000f84f3000000488b1f488d556f4c8bc3668944242041b902000000498bcf"
+        "e873b5e6ff8b456f894714",
+    ),
+    "merged_renderer_mesh_filter_word_resolve": (
+        0x1811579C1,
+        "498b45288b0e48c1e1050f1004010f104c01100f114560660f7ec83c017567418b"
+        "4710498d4f084883c004660f73d9084c8d4111660f7e8d70010000488d95700100"
+        "00488d1c40480319e800fa09ff488bd0483bc3730e833afe72094883c20c483bd372"
+        "f2418b47104883c004488d0c4049034f08483bca750433c0eb038b42084189443e0c",
+    ),
+    "renderer_mesh_filter_word_resolve": (
+        0x18115919F,
+        "488b43288b0e48c1e1050f104c0110660f7ec83c017567418b4510498d4d084883"
+        "c004660f73d9084c8d4111660f7e8c24c0000000488d9424c0000000488d3c4048"
+        "0339e828e209ff488bd0483bc7730e833afe72094883c20c483bd772f2418b451048"
+        "83c004488d0c408bc549034d08483bca74038b4208438944260c",
+    ),
     "gpu_driven_callbacks_request_mask_0x54": (
         0x1810E69C9,
         "8b4954488985a00000000fb6c20fa3c17308ffc741881049ffc0fec280fa1f72e9",
@@ -5458,6 +5502,12 @@ def validate_unity_hgtree_renderer_boundary(
     resource_load_name, resource_load_target = resolve_hg_icall(
         UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX
     )
+    resource_get_asset_name, resource_get_asset_target = resolve_hg_icall(
+        UNITY_HG_RESOURCE_GET_ASSET_ICALL_INDEX
+    )
+    resource_update_handle_name, resource_update_handle_target = resolve_hg_icall(
+        UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_INDEX
+    )
     entity_type_name, entity_type_target = resolve_hg_icall(
         UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX
     )
@@ -5682,6 +5732,30 @@ def validate_unity_hgtree_renderer_boundary(
         "unity_hg_resource_load_async_icall_name",
         resource_load_name,
         UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_NAME,
+        image.path,
+    )
+    require(
+        "unity_hg_resource_get_asset_icall_target",
+        resource_get_asset_target,
+        UNITY_HG_RESOURCE_GET_ASSET_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hg_resource_get_asset_icall_name",
+        resource_get_asset_name,
+        UNITY_HG_RESOURCE_GET_ASSET_ICALL_NAME,
+        image.path,
+    )
+    require(
+        "unity_hg_resource_update_handle_icall_target",
+        resource_update_handle_target,
+        UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hg_resource_update_handle_icall_name",
+        resource_update_handle_name,
+        UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_NAME,
         image.path,
     )
     register_name, register_target = resolve_hg_icall(
@@ -6176,6 +6250,21 @@ def validate_unity_hgtree_renderer_boundary(
             "lookupVirtualAddress": "0x1801F7410",
             "managedContract": resource_asset_type_metadata,
         },
+        "resourceHandleInternalCalls": {
+            "getAsset": {
+                "index": UNITY_HG_RESOURCE_GET_ASSET_ICALL_INDEX,
+                "name": resource_get_asset_name,
+                "targetVirtualAddress": f"0x{resource_get_asset_target:X}",
+                "assetInstanceIdSlotOffset": "0x18",
+            },
+            "updateAssetHandle": {
+                "index": UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_INDEX,
+                "name": resource_update_handle_name,
+                "targetVirtualAddress": f"0x{resource_update_handle_target:X}",
+                "stateSlotOffset": "0x10",
+                "assetInstanceIdSlotOffset": "0x18",
+            },
+        },
         "unregistrationInternalCalls": [
             {
                 "index": UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_INDEX,
@@ -6315,8 +6404,8 @@ def validate_unity_hgtree_renderer_boundary(
                         "sizeBytes": 4,
                         "initialValue": 0,
                         "meaning": (
-                            "third resolved Mesh resource index and "
-                            "supplemental filter overlay"
+                            "second Mesh asset instance-derived supplemental "
+                            "filter word"
                         ),
                     },
                     {
@@ -6357,10 +6446,11 @@ def validate_unity_hgtree_renderer_boundary(
                             "ORs record+0x08 into its render flags"
                         ),
                     },
-                    "thirdResolvedResourceAt0x0C": {
+                    "meshInstanceFilterWordAt0x0C": {
                         "consumerRoleClosed": True,
                         "producerClosed": True,
                         "assetClassClosed": True,
+                        "assetHandleContractClosed": True,
                         "assetType": "UnityEngine.HyperGryph.AssetType.Mesh",
                         "assetTypeValue": 2,
                         "initialValue": 0,
@@ -6368,30 +6458,34 @@ def validate_unity_hgtree_renderer_boundary(
                             {
                                 "ownerType": "MergedRenderCollider",
                                 "transitionFunctionVirtualAddress": "0x181153310",
-                                "sourcePointerReadVirtualAddress": "0x1811535F4",
-                                "acquireCallVirtualAddress": "0x181153619",
+                                "sourcePointerReadVirtualAddress": "0x181153507",
+                                "acquireCallVirtualAddress": "0x18115351F",
+                                "ownerHandleWriteVirtualAddress": "0x181153527",
+                                "ownerHandleOffset": "0x14",
                                 "assetTypeImmediate": 2,
                             },
                             {
                                 "ownerType": "Render",
                                 "transitionFunctionVirtualAddress": "0x181154230",
-                                "sourcePointerReadVirtualAddress": "0x1811547C3",
-                                "acquireCallVirtualAddress": "0x1811547E9",
+                                "sourcePointerReadVirtualAddress": "0x1811546D0",
+                                "acquireCallVirtualAddress": "0x1811546E8",
+                                "ownerHandleWriteVirtualAddress": "0x1811546F0",
+                                "ownerHandleOffset": "0x14",
                                 "assetTypeImmediate": 2,
                             },
                         ],
                         "writerPaths": [
                             {
                                 "functionVirtualAddress": "0x181157760",
-                                "writeVirtualAddress": "0x181157AD1",
+                                "writeVirtualAddress": "0x181157A42",
                             },
                             {
                                 "functionVirtualAddress": "0x181159010",
-                                "writeVirtualAddress": "0x1811592A0",
+                                "writeVirtualAddress": "0x181159218",
                             },
                         ],
                         "cleanupVirtualAddress": "0x18115BFC0",
-                        "cleanupWriteVirtualAddress": "0x18115C110",
+                        "cleanupWriteVirtualAddress": "0x18115C0F3",
                         "releaseCoreVirtualAddress": "0x180FBF6B0",
                         "loadAsyncInternalCallIndex": (
                             UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX
@@ -6402,6 +6496,20 @@ def validate_unity_hgtree_renderer_boundary(
                         ),
                         "acquireCoreVirtualAddress": "0x180FBFC60",
                         "lookupVirtualAddress": "0x1801F7410",
+                        "updateHandleInternalCallIndex": (
+                            UNITY_HG_RESOURCE_UPDATE_HANDLE_ICALL_INDEX
+                        ),
+                        "updateHandleInternalCallName": resource_update_handle_name,
+                        "getAssetInternalCallIndex": (
+                            UNITY_HG_RESOURCE_GET_ASSET_ICALL_INDEX
+                        ),
+                        "getAssetInternalCallName": resource_get_asset_name,
+                        "handleSlotStrideBytes": 32,
+                        "handleStateOffset": "0x10",
+                        "handleAssetInstanceIdOffset": "0x18",
+                        "mappingEntryStrideBytes": 12,
+                        "mappingKey": "Unity asset instance ID",
+                        "mappingValueOffset": "0x08",
                         "recordStrideBytes": 24,
                         "consumerVirtualAddress": "0x181064B73",
                         "consumerEquation": (
@@ -6410,27 +6518,59 @@ def validate_unity_hgtree_renderer_boundary(
                         ),
                         "proof": (
                             "both owner transition callbacks acquire their "
-                            "third renderer resource with native kind 2; the "
+                            "second renderer resource with native kind 2; the "
                             "dedicated HyperGryph internal-call table maps the "
                             "same acquire wrapper to HGResourceManager::"
                             "LoadAsync_Injected, whose IL2CPP type parameter is "
                             "the installed AssetType enum with value 2=Mesh. "
-                            "Both LOD availability initializers then resolve "
-                            "that third slot into blob+0x10 (record+0x0C); "
-                            "cleanup releases and clears it, while the "
-                            "scheduled callback also consumes the word as an "
-                            "independent masked filter overlay"
+                            "UpdateAssetHandle writes readiness to each 32-byte "
+                            "handle slot at +0x10 and a Unity asset instance ID "
+                            "at +0x18; GetAsset consumes that same +0x18 word as "
+                            "an object-registry key. Both LOD availability "
+                            "initializers gate on ready==1, resolve the second "
+                            "Mesh slot's instance ID through a separate 12-byte "
+                            "entry map, and write entry+0x08 to record+0x0C. "
+                            "Cleanup releases owner handle +0x14 and clears "
+                            "record+0x0C; the scheduled callback consumes the "
+                            "resolved word directly as its masked supplemental "
+                            "filter overlay"
                         ),
                         "proofBoundary": (
-                            "asset class, acquisition, resolution, release, "
-                            "and supplemental-filter consumption are closed; "
-                            "the semantic reason this Mesh-derived index is "
-                            "also used as a filter overlay remains open"
+                            "asset class, handle/index separation, instance-ID "
+                            "production, mapped-value resolution, release, and "
+                            "supplemental-filter consumption are closed; the "
+                            "standalone engine name and individual bit meanings "
+                            "of the instance-ID map value remain open"
                         ),
                     },
                     "rendererPropertyFlagsAt0x10": {
                         "roleClosed": True,
                         "initialValue": 0,
+                        "meshInstanceSeedClosed": True,
+                        "meshInstanceSeedOwnerHandleOffset": "0x18",
+                        "meshInstanceSeedAcquisitionPaths": [
+                            {
+                                "ownerType": "MergedRenderCollider",
+                                "sourcePointerReadVirtualAddress": "0x1811535FE",
+                                "acquireCallVirtualAddress": "0x181153619",
+                                "ownerHandleWriteVirtualAddress": "0x181153621",
+                                "assetTypeImmediate": 2,
+                            },
+                            {
+                                "ownerType": "Render",
+                                "sourcePointerReadVirtualAddress": "0x1811547CE",
+                                "acquireCallVirtualAddress": "0x1811547E9",
+                                "ownerHandleWriteVirtualAddress": "0x1811547F1",
+                                "assetTypeImmediate": 2,
+                            },
+                        ],
+                        "meshInstanceSeedWriterVirtualAddresses": [
+                            "0x181157AD1",
+                            "0x1811592A0",
+                        ],
+                        "meshInstanceSeedCleanupWriteVirtualAddress": (
+                            "0x18115C110"
+                        ),
                         "writerVirtualAddress": "0x180432CD0",
                         "writerLoopVirtualAddress": "0x180432DD0",
                         "preserveMask": "0xFC07FBFD",
@@ -7679,8 +7819,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v32",
-        "status": "installed_cull_view_screen_threshold_consumer_absent",
+        "schema": "endfield.recovered-light-cull-cap.v33",
+        "status": "hgtree_mesh_instance_filter_word_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -7719,17 +7859,22 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "interval are now closed. Runtime record +0x08 has a mutable "
             "renderFlags lifecycle: four particle setup variants replace it "
             "with bit 20 and a scheduled callback ORs it into render flags. "
-            "Record +0x0C is the third resolved, reference-counted renderer "
-            "resource index written by the LOD availability initializers, "
-            "released by their cleanup, and independently consumed as a "
-            "supplemental filter overlay. Both owner transitions acquire that "
-            "third slot with kind 2. HyperGryph internal-call entry 437 names "
+            "Record +0x0C is a supplemental filter word resolved by the LOD "
+            "availability initializers from their second Mesh asset handle. "
+            "Both owner transitions acquire that handle with kind 2. "
+            "HyperGryph internal-call entry 437 names "
             "the forwarding wrapper HGResourceManager::LoadAsync_Injected, "
             "and its IL2CPP signature plus AssetType literals close kind 2 as "
-            "Mesh. The reason the resolved Mesh-derived index doubles as a "
-            "filter overlay remains open. "
-            "Record +0x10 "
-            "is closed as Renderer property flags updated "
+            "Mesh. Entries 440/441 close the handle-slot +0x18 word as a Unity "
+            "asset instance ID: UpdateAssetHandle writes it and GetAsset uses "
+            "it to recover the Unity object. The availability writers gate on "
+            "slot+0x10 ready==1, map that instance ID through a separate "
+            "12-byte table, and copy entry+0x08 to record+0x0C. This retracts "
+            "the prior slot-index interpretation and removes the apparent "
+            "Mesh-index/filter dual use; only the map value's engine name and "
+            "individual bits remain open. Record +0x10 is seeded by the same "
+            "process from the third Mesh handle, then closed as Renderer "
+            "property flags updated "
             "by the common state synchronizer. Dedicated HyperGryph internal-"
             "call entry 204 names record +0x14 exactly as enabledLightModes; "
             "its hash-pinned core writes the supplied UInt32 value to every "
@@ -7861,8 +8006,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The semantic reason for loader record +0x0C's Mesh/filter dual "
-            "use, the "
+            "The standalone engine name and bit meanings for loader record "
+            "+0x0C's Mesh-instance-derived filter word, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -8039,8 +8184,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
                 "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
                 "loader runtime record +0x08 mutable renderFlags lifecycle, including particle bit-20 writers and scheduled consumption",
-                "loader runtime record +0x0C as the third resolved reference-counted Mesh resource index, including both kind-2 acquisition paths, HGResourceManager::LoadAsync_Injected internal-call binding, installed AssetType enum, two writers, cleanup, and independent filter-overlay consumption",
-                "loader runtime record +0x10 as Renderer property flags and its common state-synchronization writer",
+                "loader runtime record +0x0C as a second-Mesh-handle instance-ID-derived supplemental filter word, including LoadAsync/GetAsset/UpdateAssetHandle internal-call bindings, ready/instance-ID handle-slot layout, two map-resolution writers, cleanup, and masked consumption",
+                "loader runtime record +0x10 as a third-Mesh-handle instance-ID-derived seed plus Renderer property flags and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
                 "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
@@ -8083,7 +8228,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the semantic reason runtime record +0x0C's resolved Mesh-derived index is also consumed as a supplemental filter overlay",
+                "the standalone engine name and individual bit meanings of runtime record +0x0C's Mesh-instance-derived supplemental filter word",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -8120,7 +8265,11 @@ def main() -> int:
         "scheduled cull-view layout, complete CullView consumer surface with "
         "write-only screen threshold, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers and GPUDrivenRenderer V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, Factory blob-copy routes, independent renderer-entry pass mask, and complete direct renderer-blob lookup/escape census, "
+        "runtime Mesh handle/instance-ID filter and property fields, "
+        "enabledLightModes producer/default/initializers and GPUDrivenRenderer "
+        "V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, "
+        "Factory blob-copy routes, independent renderer-entry pass mask, and "
+        "complete direct renderer-blob lookup/escape census, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
