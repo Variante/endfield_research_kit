@@ -20,17 +20,17 @@ class PackWebuiAudioTests(unittest.TestCase):
         router = (project_root / "webui" / "assets.js").read_text(encoding="utf-8")
         html = (project_root / "webui" / "index.html").read_text(encoding="utf-8")
 
-        self.assertIn('const DEBUG_ONLY_VIEWS = new Set(["audio", "mission-pipeline"]);', router)
+        self.assertIn('const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);', router)
         self.assertIn('audio: "gameplay"', router)
         self.assertIn('id="audio-tab"', html)
-        self.assertIn('data-view="audio" data-debug-view', html)
+        self.assertIn('data-view="audio" data-i18n="audioTab"', html)
         self.assertIn('id="audio-view"', html)
 
     def test_packaged_router_keeps_debug_audio_and_mission_views(self) -> None:
         shim = pack_webui.ASSET_SHIM_JS
 
         self.assertIn('"audio"', shim)
-        self.assertIn('const DEBUG_ONLY_VIEWS = new Set(["audio", "mission-pipeline"]);', shim)
+        self.assertIn('const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);', shim)
         self.assertIn('audio: "gameplay"', shim)
         self.assertIn('"mission-pipeline": "gameplay"', shim)
 
@@ -77,7 +77,7 @@ class PackWebuiAudioTests(unittest.TestCase):
         self.assertIn('event?.actionDispatchEvidence || []', source)
         self.assertIn('soundDispatchNoExplicitDelay', source)
         self.assertIn('soundActionProbability', source)
-        self.assertIn('details[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])', source)
+        self.assertIn('[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])', source)
         self.assertIn('data-gameplay-sfx-player', source)
         self.assertNotIn('<audio controls preload="none" src="${escapeHtml(candidate.src)}"', source)
         self.assertIn("[1, 2, 3, 4].includes(payload.schemaVersion)", source)
