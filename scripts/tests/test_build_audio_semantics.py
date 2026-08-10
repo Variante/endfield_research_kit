@@ -105,6 +105,81 @@ def char_interact_fixture(event_id: int) -> bytes:
 
 
 class AudioSemanticDataTests(unittest.TestCase):
+    def test_levelscript_dynamic_property_resolution_becomes_authored_event_context(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            path = (
+                export_root
+                / "structured/StreamingAssets/Data/Json/LevelScriptData"
+                / "map01_lv001/2100210004.json"
+            )
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"fixture")
+
+            def decode_file(_path, _data):
+                return {
+                    "targetCount": 1,
+                    "rows": [{
+                        "record": {
+                            "start": 0,
+                            "uid": "fixture-uid",
+                            "localId": 7,
+                            "unionTag": 0x034E,
+                            "serializedMemberCount": 0x0B,
+                        },
+                        "actionMapRole": "fixture",
+                        "audioAction": {
+                            "action": "PlayAudio",
+                            "nativeMappingId": "fixture",
+                            "payloadShape": "fixture",
+                            "fields": {
+                                "key": {
+                                    "sourceField": "_key",
+                                    "bindingKind": "dynamic",
+                                    "paramSource": 200,
+                                    "idRef": -1,
+                                    "path": "Start_music",
+                                },
+                            },
+                            "eventBindings": [],
+                            "cueBindings": [],
+                        },
+                    }],
+                }
+
+            brief = {
+                "properties": [{
+                    "name": "Start_music",
+                    "value": {
+                        "valueType": 7,
+                        "atomCount": 1,
+                        "atoms": [{
+                            "valueBit64": 0,
+                            "text": "au_music_tundra_001_race_mode",
+                        }],
+                    },
+                }],
+            }
+            with patch.object(
+                audio_semantics,
+                "_load_levelscript_brief_property_sources",
+                return_value=(brief, "structured/StreamingAssets/Data/Json/LevelData/map01_lv001/fixture.json"),
+            ):
+                semantics = audio_semantics.collect_levelscript_audio_semantics(
+                    export_root,
+                    decode_file=decode_file,
+                    cue_semantics={"cueDefinitions": {}},
+                )
+
+            self.assertEqual(1, len(semantics["resolvedDynamicEventBindings"]))
+            binding = semantics["resolvedDynamicEventBindings"][0]
+            self.assertEqual("resolvedLevelScriptBriefProperty", binding["resolutionStatus"])
+            self.assertEqual("au_music_tundra_001_race_mode", binding["resolvedEventName"])
+            context = semantics["eventContexts"]["au_music_tundra_001_race_mode"][0]
+            self.assertEqual("levelScriptAudioActionDynamicProperty", context["kind"])
+            self.assertEqual("Start_music", context["resolution"]["propertyName"])
+            self.assertEqual(1, semantics["stats"]["resolvedDynamicEventBindings"])
+
     def test_audio_hash_generator_matches_native_utf16_fnv1_without_trimming(self) -> None:
         self.assertEqual(
             audio_semantics.audio_hash_generator_compute("au_cue_music_combat_boss_state1"),

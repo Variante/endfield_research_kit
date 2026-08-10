@@ -124,7 +124,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 14
+AUDIO_SEMANTIC_SCHEMA_VERSION = 15
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 7
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
@@ -2154,6 +2154,86 @@ LEVELSCRIPT_RADIO_ACTION_NAMES = frozenset({
 })
 
 
+def _load_levelscript_brief_property_sources(
+    export_root: Path,
+    levelscript_id: str,
+    preferred_source_root: str,
+    cache: dict[tuple[str, str], tuple[dict[str, Any] | None, str]],
+) -> tuple[dict[str, Any] | None, str]:
+    """Find one validated LevelScriptBriefData row for a script id.
+
+    LevelScriptData is overlaid by source-root-relative path, while LevelData
+    may remain in StreamingAssets when the winning script bytes are from
+    Persistent.  Search the winning source first and the other source second;
+    only a validated member-22 BriefData dictionary entry is accepted.
+    """
+    normalized_id = str(levelscript_id or "").replace("\\", "/").strip("/")
+    parts = PurePosixPath(normalized_id).parts
+    if len(parts) < 2 or not parts[-1].isdigit():
+        return None, ""
+    level_id = str(parts[-2])
+    script_id = int(parts[-1])
+    cache_key = (level_id, str(script_id))
+    if cache_key in cache:
+        return cache[cache_key]
+
+    try:
+        from story_builder.level_bindings import (
+            parse_leveldata_levelscript_brief_dictionary,
+        )
+    except ImportError:
+        from scripts.story_builder.level_bindings import (
+            parse_leveldata_levelscript_brief_dictionary,
+        )
+
+    source_roots = [str(preferred_source_root)]
+    source_roots.extend(
+        source for source in ("StreamingAssets", "Persistent")
+        if source not in source_roots
+    )
+    for source_root in source_roots:
+        script_dir = (
+            export_root / "structured" / source_root / "Data" / "Json"
+            / "LevelScriptData" / level_id
+        )
+        leveldata_dir = (
+            export_root / "structured" / source_root / "Data" / "Json"
+            / "LevelData" / level_id
+        )
+        if not script_dir.is_dir() or not leveldata_dir.is_dir():
+            continue
+        candidate_script_ids = {
+            int(path.stem)
+            for path in script_dir.glob("*.json")
+            if path.stem.isdigit()
+        }
+        if script_id not in candidate_script_ids:
+            continue
+        script_needle = script_id.to_bytes(8, "little", signed=False)
+        for leveldata_path in sorted(leveldata_dir.glob("*.json")):
+            try:
+                data = leveldata_path.read_bytes()
+            except OSError:
+                continue
+            if script_needle not in data:
+                continue
+            brief_dictionary = parse_leveldata_levelscript_brief_dictionary(
+                data,
+                candidate_script_ids,
+            )
+            brief = brief_dictionary.get(script_id)
+            if not isinstance(brief, dict):
+                continue
+            source_path = normalize_posix(leveldata_path.relative_to(export_root))
+            result = (brief, source_path)
+            cache[cache_key] = result
+            return result
+
+    result = (None, "")
+    cache[cache_key] = result
+    return result
+
+
 def collect_levelscript_audio_semantics(
     export_root: Path,
     *,
@@ -2164,6 +2244,14 @@ def collect_levelscript_audio_semantics(
 
     cue_semantics = cue_semantics or collect_audio_cue_semantics(export_root)
     cue_definitions = cue_semantics.get("cueDefinitions") or {}
+    try:
+        from story_builder.level_bindings import (
+            resolve_levelscript_dynamic_property_string,
+        )
+    except ImportError:
+        from scripts.story_builder.level_bindings import (
+            resolve_levelscript_dynamic_property_string,
+        )
 
     if decode_file is None:
         try:
@@ -2233,6 +2321,7 @@ def collect_levelscript_audio_semantics(
     seen: dict[str, set[str]] = defaultdict(set)
     cue_invocations: list[dict[str, Any]] = []
     dynamic_event_bindings: list[dict[str, Any]] = []
+    resolved_dynamic_event_bindings: list[dict[str, Any]] = []
     radio_invocations: list[dict[str, Any]] = []
     dynamic_radio_bindings: list[dict[str, Any]] = []
     control_actions: list[dict[str, Any]] = []
@@ -2242,6 +2331,9 @@ def collect_levelscript_audio_semantics(
     target_records = 0
     decoded_records = 0
     decode_failures = 0
+    levelscript_brief_cache: dict[
+        tuple[str, str], tuple[dict[str, Any] | None, str]
+    ] = {}
 
     def compact_fields(fields: Any) -> dict[str, dict[str, Any]]:
         if not isinstance(fields, dict):
@@ -2439,14 +2531,66 @@ def collect_levelscript_audio_semantics(
                 field = fields.get(field_name) or {}
                 if field.get("bindingKind") != "dynamic":
                     continue
-                dynamic_event_bindings.append({
+                dynamic_binding = {
                     **common,
                     "kind": "levelScriptDynamicAudioBinding",
                     "triggerRole": role,
                     "sourceField": str(field.get("sourceField") or f"_{field_name}"),
                     "binding": field,
                     "resolutionStatus": "runtimeParamValueUnresolved",
-                })
+                }
+                if (
+                    field.get("paramSource") == 200
+                    and field.get("idRef") == -1
+                    and isinstance(field.get("path"), str)
+                    and field.get("path")
+                ):
+                    brief, brief_source_path = _load_levelscript_brief_property_sources(
+                        export_root,
+                        levelscript_id,
+                        source_root,
+                        levelscript_brief_cache,
+                    )
+                    resolution = resolve_levelscript_dynamic_property_string(
+                        brief,
+                        field,
+                    )
+                    if resolution:
+                        resolved_event_name = str(resolution.get("value") or "").strip()
+                        if resolved_event_name:
+                            dynamic_binding.update({
+                                "resolutionStatus": "resolvedLevelScriptBriefProperty",
+                                "resolvedEventName": resolved_event_name,
+                                "resolution": resolution,
+                                "resolutionSourcePath": brief_source_path,
+                            })
+                            resolved_dynamic_event_bindings.append(dynamic_binding)
+                            _append_context(contexts, seen, resolved_event_name, {
+                                **common,
+                                "kind": "levelScriptAudioActionDynamicProperty",
+                                "semanticRole": (
+                                    "authoredLevelScriptAudioActionPropertyEvent"
+                                ),
+                                "eventName": resolved_event_name,
+                                "triggerRole": role,
+                                "sourceField": dynamic_binding["sourceField"],
+                                "dynamicBinding": field,
+                                "resolutionStatus": (
+                                    "resolvedLevelScriptBriefProperty"
+                                ),
+                                "resolution": resolution,
+                                "resolutionSourcePath": brief_source_path,
+                                "triggerRequestEvidence": [
+                                    "exactLevelScriptAudioActionUnionAndFields",
+                                    "exactLevelScriptParamSource200PropertyPath",
+                                    "exactLevelScriptBriefDataStringProperty",
+                                ],
+                                "triggerRuntimeActivationStatuses": [
+                                    "levelScriptActionExecutionNotObserved",
+                                    "resolvedEventRuntimePlaybackUnobserved",
+                                ],
+                            })
+                dynamic_event_bindings.append(dynamic_binding)
 
     event_context_count = sum(len(rows) for rows in contexts.values())
     direct_event_context_count = sum(
@@ -2478,6 +2622,7 @@ def collect_levelscript_audio_semantics(
         "eventContexts": dict(contexts),
         "cueInvocations": cue_invocations,
         "dynamicEventBindings": dynamic_event_bindings,
+        "resolvedDynamicEventBindings": resolved_dynamic_event_bindings,
         "radioInvocations": radio_invocations,
         "dynamicRadioBindings": dynamic_radio_bindings,
         "controlActions": control_actions,
@@ -2495,6 +2640,7 @@ def collect_levelscript_audio_semantics(
             "cueBehaviorEventContexts": cue_behavior_context_count,
             "cueDefinitionStatusCounts": dict(sorted(cue_definition_statuses.items())),
             "dynamicEventBindings": len(dynamic_event_bindings),
+            "resolvedDynamicEventBindings": len(resolved_dynamic_event_bindings),
             "radioActionRecords": sum(radio_action_counts.values()),
             "constantRadioBindings": len(radio_invocations),
             "dynamicRadioBindings": len(dynamic_radio_bindings),
@@ -2516,8 +2662,9 @@ def collect_levelscript_audio_semantics(
             "Exact union/member-count fields prove authored LevelScript requests and routing. "
             "Constant Event parameters and cue names joined through the native AudioHashGenerator and exact "
             "AudioCue behavior expressions become Event contexts. Cue handler/condition evaluation, action "
-            "execution, dynamic Param values, state/variable writes, playback handles, and placeholder-music "
-            "ids are not observed."
+            "execution, unresolved dynamic Param values, state/variable writes, playback handles, and "
+            "placeholder-music ids are not observed. A resolved ParamSource=200 property still proves only "
+            "the authored property-to-action string join, not action execution or Wwise playback."
         ),
     }
 
@@ -5142,6 +5289,9 @@ def build_audio_semantic_data(
             "levelScriptAudioCueBehaviorEvents": context_kind_event_counts.get("levelScriptAudioCueBehaviorEvent", 0),
             "levelScriptAudioCueBehaviorContexts": context_kind_counts.get("levelScriptAudioCueBehaviorEvent", 0),
             "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
+            "levelScriptResolvedDynamicAudioBindings": len(
+                levelscript_semantics.get("resolvedDynamicEventBindings") or []
+            ),
             "levelScriptRadioActions": (
                 (radio_catalog.get("counts") or {}).get(
                     "levelScriptRadioActionRecords", 0
@@ -5235,6 +5385,9 @@ def build_audio_semantic_data(
                     (levelscript_semantics.get("stats") or {}).get("cueBehaviorEventContexts") or 0
                 ),
                 "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
+                "levelScriptResolvedDynamicAudioBindings": len(
+                    levelscript_semantics.get("resolvedDynamicEventBindings") or []
+                ),
                 "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
                 "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
                 "levelEventAudioConditionDefinitions": len(LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS),
@@ -5260,6 +5413,9 @@ def build_audio_semantic_data(
             "modelViewStateCustomAudioControls": model_view_semantics.get("customAudioControls") or [],
             "levelScriptAudioCueInvocations": levelscript_semantics.get("cueInvocations") or [],
             "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
+            "levelScriptResolvedDynamicAudioBindings": (
+                levelscript_semantics.get("resolvedDynamicEventBindings") or []
+            ),
             "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
             "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
             "levelEventAudioConditions": [
