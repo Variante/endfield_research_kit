@@ -326,6 +326,62 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["definitionStatus"], "resolved")
             self.assertEqual(result["stats"]["timelineCueInvocations"], 2)
 
+    def test_timeline_music_playable_joins_when_asset_record_follows_track(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            export_root.mkdir()
+            mono_path = export_root / "mono.jsonl"
+            director_path = export_root / "director.jsonl"
+
+            def object_row(path_id, name, scalars=None, pptrs=None):
+                return {
+                    "recordType": "object",
+                    "object": {"serializedFile": "CAB-music", "pathId": path_id},
+                    "type": "MonoBehaviour",
+                    "name": name,
+                    "scalars": scalars or [],
+                    "pptrs": pptrs or [],
+                }
+
+            # The production object-index order can put a Track before the
+            # referenced playable asset.  The clip display name is the class
+            # label, while _audioEventKey is the actual Wwise Event identity.
+            track = object_row(
+                102,
+                "Audio Track",
+                [["$.m_Clips[0].m_DisplayName", "s", "AudioMusicPlayable"]],
+                [
+                    {"path": "$.m_Parent", "target": {"serializedFile": "CAB-music", "pathId": 201, "name": "levelseq_music_Audio"}},
+                    {"path": "$.m_Clips[0].m_Asset", "target": {"serializedFile": "CAB-music", "pathId": 101, "name": "AudioMusicPlayable"}},
+                ],
+            )
+            playable = object_row(
+                101,
+                "AudioMusicPlayable",
+                [["$._audioEventKey", "s", "au_music_fixture"]],
+            )
+            mono_path.write_text(
+                "".join(json.dumps(row) + "\n" for row in [track, playable]),
+                encoding="utf-8",
+            )
+            director_path.write_text("", encoding="utf-8")
+
+            result = audio_semantics.collect_timeline_audio_ownership(
+                export_root,
+                event_ids=["au_music_fixture"],
+                mono_path=mono_path,
+                director_path=director_path,
+            )
+            occurrence = result["occurrencesByEvent"]["au_music_fixture"][0]
+            self.assertEqual(occurrence["timelineClipDisplayName"], "audiomusicplayable")
+            self.assertEqual(occurrence["eventId"], "au_music_fixture")
+            self.assertEqual(occurrence["audioPlayableType"], "AudioMusicPlayable")
+            self.assertEqual(result["stats"]["exactTimelineMusicCarriers"], 1)
+            self.assertEqual(
+                result["stats"]["timelineCarrierMusicDisplayNameMismatchAccepted"],
+                1,
+            )
+
     def test_levelsequence_play_action_helper_keeps_active_overlay_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root) / "export_full"
