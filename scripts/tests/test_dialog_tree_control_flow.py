@@ -10,13 +10,80 @@ from scripts import build_mission_pipeline_data as mission_pipeline
 from scripts.story_recovery import build_source_story_partial_order as partial_order
 from scripts.story_recovery.dialog_tree_control_flow import (
     ContractError,
+    ExternalResultRouterSpec,
     StaticPortFamilySpec,
+    parse_lua_external_result_router,
     parse_static_enum_string_list_initializer,
     project_serialized_family_node,
 )
 
 
 class DialogTreeControlFlowTests(unittest.TestCase):
+    @staticmethod
+    def router_spec() -> ExternalResultRouterSpec:
+        return ExternalResultRouterSpec(
+            source_root_marker="LuaRoot",
+            router_path="Router.lua",
+            defaults_path="Defaults.lua",
+            open_message="OPEN_RESULT_UI",
+            override_message="CHANGE_RESULT_INDEX",
+            defaults_table="PHASE_DEFAULTS",
+            native_next_expression="Native.Manager:Next",
+        )
+
+    @staticmethod
+    def lua_router_sources() -> dict[str, bytes]:
+        return {
+            "Router.lua": b"""
+                local PHASE_ID = PhaseId.Dialog
+                messages = {
+                    [MessageConst.OPEN_RESULT_UI] = { 'OpenUI', true },
+                    [MessageConst.CHANGE_RESULT_INDEX] = { 'ChangeNextIndex', true },
+                }
+                function OpenUI(arg)
+                    local panelIdStr = arg[1]
+                    local phaseId = PhaseId[panelIdStr]
+                end
+                function ChangeNextIndex(args)
+                    self.m_tempNextIndex = args.nextIndex
+                end
+                function GetNextIndex(phaseId)
+                    if self.m_tempNextIndex >= 0 then return self.m_tempNextIndex end
+                    return self.s_nextIndexConfig[phaseId] or 0
+                end
+                function BackToTop()
+                    self:Next(nextIndex)
+                end
+                function Next(num)
+                    Native.Manager:Next(num)
+                end
+            """,
+            "Defaults.lua": b"""
+                PHASE_DEFAULTS = {
+                    ConfiguredPanel = 1,
+                }
+            """,
+            "Messages.lua": b'"CHANGE_RESULT_INDEX",\n',
+            "ConfiguredPanel.lua": b"""
+                local PHASE_ID = PhaseId.ConfiguredPanel
+                function Close()
+                    Notify(MessageConst.CHANGE_RESULT_INDEX, {
+                        phaseId = PHASE_ID,
+                        nextIndex = 0,
+                    })
+                end
+            """,
+            "ConditionalPanel.lua": b"""
+                local PANEL_ID = PanelId.ConditionalPanel
+                function Close()
+                    local result = 0
+                    if accepted then result = 1 end
+                    Notify(MessageConst.CHANGE_RESULT_INDEX, { phaseId = PANEL_ID, nextIndex = result })
+                    Native.Manager:Next(1)
+                end
+            """,
+        }
+
     @staticmethod
     def family() -> StaticPortFamilySpec:
         return StaticPortFamilySpec(
@@ -37,6 +104,14 @@ class DialogTreeControlFlowTests(unittest.TestCase):
 
     @staticmethod
     def native_contract(labels: list[str]) -> dict:
+        def lua_source(name: str, relationship: str) -> dict:
+            return {
+                "kind": "original_game_lua",
+                "sourceFile": f"installed StreamingAssets VFS/Lua/Data/LuaScripts/{name}",
+                "sha256": "AA" * 32,
+                "relationship": relationship,
+                "materialized": False,
+            }
         return {
             "schema": "fixture.v1",
             "family": "arbitrary_family",
@@ -63,6 +138,24 @@ class DialogTreeControlFlowTests(unittest.TestCase):
             "staticPortMapField": {"name": "s_ports"},
             "selectionRule": "explicit nonnegative index selects serialized ordinal",
             "evidenceBoundary": "selection only",
+            "externalResultRouter": {
+                "defaultIndex": 0,
+                "phaseDefaults": {},
+                "routerSource": lua_source("Router.lua", "router"),
+                "defaultsSource": lua_source("Defaults.lua", "defaults"),
+                "producersByPhase": {
+                    "ArbitraryPanel": [{
+                        "kind": "override_message",
+                        "phaseName": "ArbitraryPanel",
+                        "indexExpression": "1",
+                        "possibleIndexes": [1],
+                        "indexStatus": "bounded_literals",
+                        "line": 12,
+                        "excerpt": "Notify(... nextIndex = 1)",
+                        "source": lua_source("ArbitraryPanel.lua", "producer"),
+                    }],
+                },
+            },
         }
 
     @staticmethod
@@ -130,6 +223,122 @@ class DialogTreeControlFlowTests(unittest.TestCase):
             [[label["value"] for label in row["labels"]] for row in rows],
             [["first", "second"], ["only"]],
         )
+
+    def test_lua_external_result_router_recovers_general_defaults_and_producers(self) -> None:
+        result = parse_lua_external_result_router(
+            self.lua_router_sources(),
+            self.router_spec(),
+        )
+
+        self.assertEqual(result["phaseDefaults"], {"ConfiguredPanel": 1})
+        self.assertEqual(result["sourceCorpus"]["fileCount"], 5)
+        self.assertEqual(result["sourceCorpus"]["overrideProducerCount"], 2)
+        conditional = result["producersByPhase"]["ConditionalPanel"]
+        self.assertEqual(
+            [(row["kind"], row["possibleIndexes"]) for row in conditional],
+            [("override_message", [0, 1]), ("direct_native_next", [1])],
+        )
+        self.assertTrue(all(row["source"]["sha256"] for row in conditional))
+
+    def test_lua_external_result_router_fails_closed_on_unparsed_occurrence(self) -> None:
+        sources = self.lua_router_sources()
+        sources["Unknown.lua"] = b"dispatch(MessageConst.CHANGE_RESULT_INDEX, value)\n"
+        with self.assertRaisesRegex(
+            ContractError,
+            r"gate=override_occurrence_census.*source=Unknown.lua",
+        ):
+            parse_lua_external_result_router(sources, self.router_spec())
+
+    def test_serialized_projection_marks_current_shipped_producer_coverage(self) -> None:
+        router = parse_lua_external_result_router(
+            self.lua_router_sources(),
+            self.router_spec(),
+        )
+        contract = {
+            "serializedSelectorPath": ["selector"],
+            "enumMembers": [{"value": 7, "name": "ConfiguredPanel"}],
+            "portMaps": [],
+            "externalResultRouter": router,
+        }
+        projected = project_serialized_family_node(
+            {"selector": 7},
+            [(0, "a"), (1, "b")],
+            target_types={"a": "A", "b": "B"},
+            contract=contract,
+        )
+
+        self.assertEqual(projected["runtimeDefaultIndex"], 1)
+        self.assertEqual(projected["runtimeProducedArmCount"], 2)
+        self.assertEqual(
+            [arm["runtimeProducerStatus"] for arm in projected["arms"]],
+            ["shipped_lua_producer", "shipped_lua_producer"],
+        )
+        self.assertEqual(
+            projected["arms"][0]["runtimeProducerKinds"],
+            ["override_message"],
+        )
+        self.assertIn("configured_phase_default", projected["arms"][1]["runtimeProducerKinds"])
+
+    def test_serialized_projection_keeps_dynamic_index_producer_unbounded(self) -> None:
+        router = parse_lua_external_result_router(
+            self.lua_router_sources(),
+            self.router_spec(),
+        )
+        dynamic_source = {
+            "kind": "original_game_lua",
+            "sourceFile": "installed StreamingAssets VFS/Lua/Data/LuaScripts/Dynamic.lua",
+            "sha256": "BB" * 32,
+        }
+        router["producersByPhase"]["DynamicPanel"] = [{
+            "kind": "override_message",
+            "phaseName": "DynamicPanel",
+            "indexExpression": "result.index",
+            "possibleIndexes": [],
+            "indexStatus": "dynamic_expression",
+            "line": 20,
+            "excerpt": "nextIndex = result.index",
+            "source": dynamic_source,
+        }]
+        projected = project_serialized_family_node(
+            {"selector": 9},
+            [(0, "a"), (1, "b")],
+            target_types={"a": "A", "b": "B"},
+            contract={
+                "serializedSelectorPath": ["selector"],
+                "enumMembers": [{"value": 9, "name": "DynamicPanel"}],
+                "portMaps": [],
+                "externalResultRouter": router,
+            },
+        )
+
+        self.assertEqual(projected["runtimeProducedArmCount"], 1)
+        self.assertEqual(projected["runtimeDynamicProducerArmCount"], 1)
+        self.assertEqual(projected["runtimeUnproducedArmCount"], 0)
+        self.assertEqual(
+            projected["arms"][1]["runtimeProducerStatus"],
+            "shipped_lua_dynamic_index_unbounded",
+        )
+
+    def test_serialized_projection_fails_closed_on_default_outside_arms(self) -> None:
+        with self.assertRaisesRegex(
+            ContractError,
+            r"gate=runtime_default_index_in_outgoing_range.*actual=2",
+        ):
+            project_serialized_family_node(
+                {"selector": 2},
+                [(0, "a"), (1, "b")],
+                target_types={"a": "A", "b": "B"},
+                contract={
+                    "serializedSelectorPath": ["selector"],
+                    "enumMembers": [{"value": 2, "name": "BadDefault"}],
+                    "portMaps": [],
+                    "externalResultRouter": {
+                        "defaultIndex": 0,
+                        "phaseDefaults": {"BadDefault": 2},
+                        "producersByPhase": {},
+                    },
+                },
+            )
 
     def test_serialized_projection_uses_installed_named_port_order(self) -> None:
         contract = {
@@ -245,8 +454,10 @@ class DialogTreeControlFlowTests(unittest.TestCase):
                 "dialog_tree_source",
                 "original_game_binary",
                 "original_game_metadata",
+                "original_game_lua",
             },
         )
+        self.assertEqual(rows[0]["runtimeProducedArmCount"], 2)
         self.assertEqual(len(strict_files), 3)
         self.assertEqual(len(branch_files), 3)
         self.assertEqual(

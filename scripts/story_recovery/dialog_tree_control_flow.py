@@ -22,7 +22,9 @@ import json
 import os
 import re
 import struct
+import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -38,6 +40,10 @@ DEFAULT_GAME_ROOT = Path(os.environ.get(
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 DEFAULT_IFIX_AUDIT = ROOT / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
+DEFAULT_ANIMESTUDIO_CLI = (
+    ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release"
+    / "net9.0-windows" / "AnimeStudio.CLI.exe"
+)
 MAX_METHOD_BYTES = 0x10000
 
 RUNTIME_PRIMITIVES = {
@@ -51,6 +57,24 @@ RUNTIME_PRIMITIVES = {
 
 class ContractError(RuntimeError):
     """Raised when original inputs cannot satisfy a bounded native contract."""
+
+
+@dataclass(frozen=True)
+class ExternalResultRouterSpec:
+    """Schema for a shipped-script result router consumed by a native family.
+
+    The spec names protocol symbols and source locations, never content ids or
+    mission instances.  The same parser can therefore audit a different
+    phase/result protocol without adding per-panel recovery rules.
+    """
+
+    source_root_marker: str
+    router_path: str
+    defaults_path: str
+    open_message: str
+    override_message: str
+    defaults_table: str
+    native_next_expression: str
 
 
 @dataclass(frozen=True)
@@ -68,6 +92,20 @@ class StaticPortFamilySpec:
     manager_next_method: str
     controller_type: str
     controller_next_method: str
+    selector_action_type: str = ""
+    selector_string_method: str = ""
+    external_result_router: ExternalResultRouterSpec | None = None
+
+
+OPEN_UI_RESULT_ROUTER = ExternalResultRouterSpec(
+    source_root_marker="Lua/Data/LuaScripts",
+    router_path="Phase/Dialog/PhaseDialog.lua",
+    defaults_path="Const/DialogConst.lua",
+    open_message="DIALOG_OPEN_UI",
+    override_message="DIALOG_CHANGE_NEXT_INDEX",
+    defaults_table="DIALOG_PHASE_2_NEXT_INDEX",
+    native_next_expression="GameWorld.dialogManager:Next",
+)
 
 
 OPEN_UI_FAMILY = StaticPortFamilySpec(
@@ -84,6 +122,9 @@ OPEN_UI_FAMILY = StaticPortFamilySpec(
     manager_next_method="Next",
     controller_type="Beyond.Gameplay.DialogTreeController",
     controller_next_method="Next",
+    selector_action_type="Beyond.Gameplay.DialogOpenUIAction",
+    selector_string_method="get_panelId",
+    external_result_router=OPEN_UI_RESULT_ROUTER,
 )
 
 
@@ -477,6 +518,372 @@ def _fixed_ifix_signatures(path: Path) -> tuple[list[str], dict[str, Any]]:
     }
 
 
+def _lua_source_record(
+    path: str,
+    raw: bytes,
+    *,
+    source_root_marker: str,
+    relationship: str,
+) -> dict[str, Any]:
+    logical_path = "/".join((source_root_marker.strip("/"), path.strip("/")))
+    return {
+        "kind": "original_game_lua",
+        "sourceFile": f"installed StreamingAssets VFS/{logical_path}",
+        "logicalPath": logical_path,
+        "sha256": hashlib.sha256(raw).hexdigest().upper(),
+        "relationship": relationship,
+        "materialized": False,
+    }
+
+
+def _lua_line(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
+
+
+def _lua_excerpt(text: str, offset: int, *, radius: int = 1) -> str:
+    lines = text.splitlines()
+    line = _lua_line(text, offset)
+    start = max(line - radius - 1, 0)
+    end = min(line + radius, len(lines))
+    return "\n".join(lines[start:end]).strip()
+
+
+def _lua_symbol_aliases(text: str) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for match in re.finditer(
+        r"\blocal\s+([A-Za-z_]\w*)\s*=\s*(?:PhaseId|PanelId)\.([A-Za-z_]\w*)",
+        text,
+    ):
+        aliases[match.group(1)] = match.group(2)
+    return aliases
+
+
+def _resolve_lua_phase(expression: str, aliases: dict[str, str]) -> str:
+    value = expression.strip()
+    direct = re.fullmatch(r"(?:PhaseId|PanelId)\.([A-Za-z_]\w*)", value)
+    if direct:
+        return direct.group(1)
+    return aliases.get(value, "")
+
+
+def _simple_lua_integer_values(text: str, expression: str, offset: int) -> list[int]:
+    value = expression.strip()
+    if re.fullmatch(r"-?\d+", value):
+        return [int(value)]
+    if not re.fullmatch(r"[A-Za-z_]\w*", value):
+        return []
+    # Bounded, deliberately conservative local data flow.  Only literal
+    # assignments in the current function body are promoted.  Argument/table
+    # values remain dynamic instead of being guessed.
+    prefix = text[:offset]
+    function_start = max(prefix.rfind("function("), prefix.rfind("function "))
+    scope = prefix[max(function_start, 0):]
+    values = {
+        int(match.group(1))
+        for match in re.finditer(
+            rf"(?:\blocal\s+)?{re.escape(value)}\s*=\s*(-?\d+)\b",
+            scope,
+        )
+    }
+    return sorted(values)
+
+
+def parse_lua_external_result_router(
+    lua_sources: dict[str, bytes],
+    spec: ExternalResultRouterSpec,
+) -> dict[str, Any]:
+    """Recover defaults and producers from a complete shipped Lua corpus.
+
+    Every occurrence of the override protocol must parse as its declaration,
+    receiver registration, or a producer call.  Unknown occurrences fail the
+    audit closed so a client update cannot silently invalidate reachability.
+    """
+    validator = "dialog_tree_external_result_router"
+    normalized = {path.replace("\\", "/"): raw for path, raw in lua_sources.items()}
+    missing = [path for path in (spec.router_path, spec.defaults_path) if path not in normalized]
+    if missing:
+        raise ContractError(
+            f"validator={validator} gate=required_sources expected="
+            f"{[spec.router_path, spec.defaults_path]!r} actual_missing={missing!r}"
+        )
+    decoded = {
+        path: raw.decode("utf-8-sig")
+        for path, raw in normalized.items()
+    }
+    router_text = decoded[spec.router_path]
+    router_checks = {
+        "open_message_receiver": rf"\[MessageConst\.{re.escape(spec.open_message)}\]",
+        "selector_string_to_phase": r"PhaseId\s*\[\s*panelIdStr\s*\]",
+        "temporary_result_write": r"m_tempNextIndex\s*=\s*args\.nextIndex",
+        "temporary_result_read": r"m_tempNextIndex\s*>=\s*0",
+        "configured_default_read": r"s_nextIndexConfig\s*\[\s*phaseId\s*\]\s*or\s*0",
+        "transition_calls_next": r"self:Next\s*\(\s*nextIndex\s*\)",
+        "native_next_bridge": rf"{re.escape(spec.native_next_expression)}\s*\(\s*num\s*\)",
+    }
+    checks: list[dict[str, Any]] = []
+    for gate, pattern in router_checks.items():
+        count = len(re.findall(pattern, router_text))
+        checks.append({"gate": gate, "expected": 1, "actual": count, "passed": count == 1})
+    failed = next((row for row in checks if not row["passed"]), None)
+    if failed:
+        raise ContractError(
+            f"validator={validator} gate={failed['gate']} expected=1 actual={failed['actual']} "
+            f"source={spec.router_path} sha256={hashlib.sha256(normalized[spec.router_path]).hexdigest().upper()}"
+        )
+
+    defaults_text = decoded[spec.defaults_path]
+    table_match = re.search(
+        rf"\b{re.escape(spec.defaults_table)}\s*=\s*\{{(?P<body>.*?)\}}",
+        defaults_text,
+        re.S,
+    )
+    if not table_match:
+        raise ContractError(
+            f"validator={validator} gate=defaults_table expected={spec.defaults_table!r} "
+            f"actual=missing source={spec.defaults_path}"
+        )
+    defaults: dict[str, int] = {}
+    body = table_match.group("body")
+    consumed = []
+    for match in re.finditer(r"\b([A-Za-z_]\w*)\s*=\s*(-?\d+)\s*,?", body):
+        phase, raw_index = match.groups()
+        if phase in defaults:
+            raise ContractError(
+                f"validator={validator} gate=unique_phase_default expected=unique "
+                f"actual={phase!r} source={spec.defaults_path}"
+            )
+        defaults[phase] = int(raw_index)
+        consumed.append(match.span())
+    residue = list(body)
+    for start, end in consumed:
+        residue[start:end] = " " * (end - start)
+    residue_text = re.sub(r"--[^\n]*", "", "".join(residue)).strip()
+    if residue_text:
+        raise ContractError(
+            f"validator={validator} gate=defaults_table_entries expected=name_integer_pairs "
+            f"actual={residue_text[:120]!r} source={spec.defaults_path}"
+        )
+
+    producers: list[dict[str, Any]] = []
+    occurrence_diagnostics: list[dict[str, Any]] = []
+    override_pattern = re.compile(
+        rf"(?:Notify|MessageNotify)\s*\(\s*MessageConst\.{re.escape(spec.override_message)}"
+        r"\s*,\s*\{(?P<table>.*?)\}\s*\)",
+        re.S,
+    )
+    direct_pattern = re.compile(
+        rf"{re.escape(spec.native_next_expression)}\s*\(\s*(?P<index>[^)]*)\)",
+        re.S,
+    )
+    for path, text in sorted(decoded.items()):
+        aliases = _lua_symbol_aliases(text)
+        parsed_override_offsets: set[int] = set()
+        for match in override_pattern.finditer(text):
+            table = match.group("table")
+            phase_match = re.search(r"\bphaseId\s*=\s*([^,}]+)", table)
+            index_match = re.search(r"\bnextIndex\s*=\s*([^,}]+)", table)
+            if not phase_match or not index_match:
+                raise ContractError(
+                    f"validator={validator} gate=override_fields expected=phaseId,nextIndex "
+                    f"actual={table[:160]!r} source={path} line={_lua_line(text, match.start())}"
+                )
+            phase_expression = phase_match.group(1).strip()
+            index_expression = index_match.group(1).strip()
+            phase = _resolve_lua_phase(phase_expression, aliases)
+            if not phase:
+                raise ContractError(
+                    f"validator={validator} gate=override_phase_resolution expected=PhaseId_symbol "
+                    f"actual={phase_expression!r} source={path} line={_lua_line(text, match.start())}"
+                )
+            values = _simple_lua_integer_values(text, index_expression, match.start())
+            producers.append({
+                "kind": "override_message",
+                "phaseName": phase,
+                "indexExpression": index_expression,
+                "possibleIndexes": values,
+                "indexStatus": "bounded_literals" if values else "dynamic_expression",
+                "line": _lua_line(text, match.start()),
+                "excerpt": _lua_excerpt(text, match.start()),
+                "source": _lua_source_record(
+                    path,
+                    normalized[path],
+                    source_root_marker=spec.source_root_marker,
+                    relationship="dialog_ui_result_override_producer",
+                ),
+            })
+            parsed_override_offsets.add(text.find(spec.override_message, match.start(), match.end()))
+
+        occurrence_offsets = [m.start() for m in re.finditer(re.escape(spec.override_message), text)]
+        for offset in occurrence_offsets:
+            if offset in parsed_override_offsets:
+                occurrence_diagnostics.append({"source": path, "line": _lua_line(text, offset), "kind": "producer"})
+                continue
+            line_text = text.splitlines()[_lua_line(text, offset) - 1]
+            declaration = bool(re.search(
+                rf"^\s*(?:{re.escape(spec.override_message)}\s*=|"
+                rf"[\"']{re.escape(spec.override_message)}[\"']\s*,?)",
+                line_text,
+            ))
+            receiver = bool(re.search(rf"\[\s*MessageConst\.{re.escape(spec.override_message)}\s*\]", line_text))
+            if declaration or receiver:
+                occurrence_diagnostics.append({
+                    "source": path,
+                    "line": _lua_line(text, offset),
+                    "kind": "declaration" if declaration else "receiver",
+                })
+                continue
+            raise ContractError(
+                f"validator={validator} gate=override_occurrence_census expected=declaration|receiver|producer "
+                f"actual={line_text.strip()[:160]!r} source={path} line={_lua_line(text, offset)}"
+            )
+
+        # The router's own Next wrapper is the bridge under validation, not a
+        # phase-specific result producer.
+        if path == spec.router_path:
+            continue
+        phase_candidates = sorted(set(aliases.values()))
+        for match in direct_pattern.finditer(text):
+            expression = match.group("index").strip()
+            values = _simple_lua_integer_values(text, expression, match.start())
+            if len(phase_candidates) != 1:
+                raise ContractError(
+                    f"validator={validator} gate=direct_next_phase_resolution expected=one_local_phase_or_panel "
+                    f"actual={phase_candidates!r} source={path} line={_lua_line(text, match.start())}"
+                )
+            producers.append({
+                "kind": "direct_native_next",
+                "phaseName": phase_candidates[0],
+                "indexExpression": expression,
+                "possibleIndexes": values,
+                "indexStatus": "bounded_literals" if values else "dynamic_expression",
+                "line": _lua_line(text, match.start()),
+                "excerpt": _lua_excerpt(text, match.start()),
+                "source": _lua_source_record(
+                    path,
+                    normalized[path],
+                    source_root_marker=spec.source_root_marker,
+                    relationship="dialog_ui_direct_result_producer",
+                ),
+            })
+
+    producers.sort(key=lambda row: (
+        row["phaseName"], row["source"]["logicalPath"], row["line"], row["kind"]
+    ))
+    by_phase: dict[str, list[dict[str, Any]]] = {}
+    for producer in producers:
+        by_phase.setdefault(producer["phaseName"], []).append(producer)
+    return {
+        "schema": "dialogExternalResultRouter.v1",
+        "status": "validated",
+        "defaultIndex": 0,
+        "phaseDefaults": defaults,
+        "producers": producers,
+        "producersByPhase": by_phase,
+        "sourceCorpus": {
+            "fileCount": len(normalized),
+            "completeOverrideOccurrenceCount": len(occurrence_diagnostics),
+            "overrideProducerCount": sum(row["kind"] == "override_message" for row in producers),
+            "directProducerCount": sum(row["kind"] == "direct_native_next" for row in producers),
+        },
+        "routerSource": _lua_source_record(
+            spec.router_path,
+            normalized[spec.router_path],
+            source_root_marker=spec.source_root_marker,
+            relationship="dialog_ui_result_router",
+        ),
+        "defaultsSource": _lua_source_record(
+            spec.defaults_path,
+            normalized[spec.defaults_path],
+            source_root_marker=spec.source_root_marker,
+            relationship="dialog_ui_result_defaults",
+        ),
+        "validation": {"validator": validator, "status": "validated", "checks": checks},
+        "evidenceBoundary": (
+            "The complete shipped Lua corpus proves default and explicit producer paths into "
+            "DialogManager.Next(index). Producer presence does not observe a player result, prove "
+            "mission activation, or make a missing current producer permanently unreachable."
+        ),
+    }
+
+
+def recover_installed_lua_external_result_router(
+    spec: ExternalResultRouterSpec,
+    *,
+    game_root: Path = DEFAULT_GAME_ROOT,
+    animestudio_cli: Path = DEFAULT_ANIMESTUDIO_CLI,
+) -> dict[str, Any]:
+    """Target-dump and validate the complete installed Lua corpus."""
+    validator = "dialog_tree_external_result_router"
+    if not animestudio_cli.is_file():
+        raise ContractError(
+            f"validator={validator} gate=animestudio_cli expected=file actual=missing "
+            f"source={animestudio_cli}"
+        )
+    streaming_assets = game_root / "StreamingAssets"
+    if not streaming_assets.is_dir():
+        raise ContractError(
+            f"validator={validator} gate=streaming_assets expected=directory actual=missing "
+            f"source={streaming_assets}"
+        )
+    with tempfile.TemporaryDirectory(prefix="endfield-dialog-result-router-") as temporary:
+        output = Path(temporary)
+        command = [
+            str(animestudio_cli), "dump",
+            "--streaming-assets", str(streaming_assets),
+            "--fallback-assets", str(game_root),
+            "--output", str(output),
+            "--block-type", "lua",
+            "--file-regex", r"\.lua$",
+        ]
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        summary = f"{completed.stdout}\n{completed.stderr}"
+        if completed.returncode:
+            raise ContractError(
+                f"validator={validator} gate=complete_lua_dump expected=returncode_0 "
+                f"actual={completed.returncode} diagnostic={summary[-1000:]!r}"
+            )
+        completion = re.findall(r"Extracted\s+(\d+)\s*/\s*(\d+)\s+files", summary)
+        if len(completion) != 1 or completion[0][0] != completion[0][1]:
+            raise ContractError(
+                f"validator={validator} gate=complete_lua_dump expected=one_complete_count "
+                f"actual={completion!r} diagnostic={summary[-1000:]!r}"
+            )
+        root_matches = [path for path in output.rglob("LuaScripts") if path.is_dir()]
+        if len(root_matches) != 1:
+            raise ContractError(
+                f"validator={validator} gate=lua_source_root expected=1 actual={len(root_matches)} "
+                f"source={output}"
+            )
+        source_root = root_matches[0]
+        lua_paths = sorted(source_root.rglob("*.lua"))
+        expected_count = int(completion[0][1])
+        if len(lua_paths) != expected_count:
+            raise ContractError(
+                f"validator={validator} gate=materialized_lua_count expected={expected_count} "
+                f"actual={len(lua_paths)} source={source_root}"
+            )
+        sources = {
+            path.relative_to(source_root).as_posix(): path.read_bytes()
+            for path in lua_paths
+        }
+        result = parse_lua_external_result_router(sources, spec)
+    result["sourceCorpus"].update({
+        "dumpedFileCount": expected_count,
+        "animeStudioCli": str(animestudio_cli.resolve()),
+        "animeStudioCliSha256": sha256_file(animestudio_cli),
+        "streamingAssets": str(streaming_assets.resolve()),
+        "mode": "complete_targeted_installed_vfs_lua_dump",
+    })
+    return result
+
+
 def recover_static_port_family_contract(
     spec: StaticPortFamilySpec,
     *,
@@ -608,13 +1015,20 @@ def recover_static_port_family_contract(
             )
         row["selectorName"] = enum_row["name"]
 
-    method_specs = (
+    method_specs = [
         ("nodeAction", spec.node_type, spec.node_action_method, 0),
         ("managerAction", spec.manager_type, spec.manager_action_method, 1),
         ("globalAction", spec.global_action_type, spec.global_action_method, 1),
         ("managerNext", spec.manager_type, spec.manager_next_method, 1),
         ("controllerNext", spec.controller_type, spec.controller_next_method, 1),
-    )
+    ]
+    if spec.selector_action_type and spec.selector_string_method:
+        method_specs.append((
+            "selectorString",
+            spec.selector_action_type,
+            spec.selector_string_method,
+            0,
+        ))
     native_methods: dict[str, dict[str, Any]] = {}
     decoded_methods: dict[str, list[dict[str, Any]]] = {}
     for key, type_name, method_name, parameter_count in method_specs:
@@ -650,6 +1064,13 @@ def recover_static_port_family_contract(
             ),
         },
     ]
+    if "selectorString" in native_methods:
+        validations.append({
+            "gate": "global_action_calls_selector_string",
+            "expected": native_methods["selectorString"]["address"],
+            "actual": [f"0x{x:x}" for x in _call_targets(decoded_methods["globalAction"])],
+            "passed": address("selectorString") in _call_targets(decoded_methods["globalAction"]),
+        })
     failed = [row for row in validations if not row["passed"]]
     if failed:
         first = failed[0]
@@ -674,10 +1095,24 @@ def recover_static_port_family_contract(
             f"expected=[] actual={relevant_ifix!r} source={ifix_audit_path}"
         )
 
+    external_result_router = None
+    if spec.external_result_router is not None:
+        try:
+            installed_game_root = metadata_path.resolve().parents[2]
+        except IndexError as exc:
+            raise ContractError(
+                "validator=dialog_tree_external_result_router gate=game_root_derivation "
+                f"expected=Endfield_Data_layout actual={metadata_path}"
+            ) from exc
+        external_result_router = recover_installed_lua_external_result_router(
+            spec.external_result_router,
+            game_root=installed_game_root,
+        )
+
     game_hash = sha256_file(game_assembly_path)
     metadata_hash = sha256_file(metadata_path)
     contract = {
-        "schema": "dialogTreeStaticPortFamilyContract.v1",
+        "schema": "dialogTreeStaticPortFamilyContract.v2",
         "status": "validated",
         "family": spec.family,
         "nodeType": spec.node_type,
@@ -715,16 +1150,20 @@ def recover_static_port_family_contract(
             **ifix_source,
             "relevantFixedMethods": relevant_ifix,
         },
+        "externalResultRouter": external_result_router,
         "selectionRule": (
             "A nonnegative DialogManager.Next(index) reaches DialogTreeController.Next(index), "
             "which uses that explicit serialized outgoing ordinal. Negative indexes use the "
-            "node's GetNextIndex fallback. Named static port-list order labels the matching "
-            "serialized outgoing ordinal; the UI result occurrence itself remains external."
+            "node's GetNextIndex fallback. The shipped Lua phase router supplies a phase default "
+            "and accepts explicit result-index overrides before calling that native continuation. "
+            "Named static port-list order labels the matching serialized outgoing ordinal."
         ),
         "evidenceBoundary": (
-            "This recovers authored multi-output alternatives and exact names where the "
-            "installed static port map supplies them. It does not observe which UI result "
-            "occurred, assign mission ownership, or prove cross-file chronology."
+            "This recovers authored multi-output alternatives, exact native port names, and "
+            "current shipped Lua producers. It does not observe which UI result occurred, "
+            "assign mission ownership, prove activation, or prove cross-file chronology. A "
+            "missing producer means none was found in this complete shipped Lua corpus, not "
+            "that the authored arm is permanently unreachable."
         ),
         "sources": {
             "gameAssembly": str(game_assembly_path.resolve()),
@@ -780,20 +1219,106 @@ def project_serialized_family_node(
             "gate=named_port_count_matches_outgoing "
             f"expected={len(labels)} actual={len(outgoing)} selector={selector}"
         )
+    router = contract.get("externalResultRouter") or {}
+    phase_defaults = router.get("phaseDefaults") or {}
+    default_index = int(phase_defaults.get(
+        enum_by_value[selector],
+        router.get("defaultIndex", 0),
+    )) if router else None
+    if default_index is not None and not 0 <= default_index < len(outgoing):
+        raise ContractError(
+            "validator=dialog_tree_serialized_multi_output "
+            "gate=runtime_default_index_in_outgoing_range "
+            f"expected=0..{len(outgoing) - 1} actual={default_index} "
+            f"selector={selector} phase={enum_by_value[selector]}"
+        )
+    phase_producers = list(
+        (router.get("producersByPhase") or {}).get(enum_by_value[selector]) or []
+    )
+    dynamic_producers = [
+        producer for producer in phase_producers
+        if producer.get("indexStatus") == "dynamic_expression"
+    ]
+
+    def compact_producer(producer: dict[str, Any]) -> dict[str, Any]:
+        source = producer.get("source") or {}
+        return {
+            "kind": producer.get("kind") or "",
+            "indexExpression": producer.get("indexExpression") or "",
+            "possibleIndexes": producer.get("possibleIndexes") or [],
+            "line": producer.get("line"),
+            "excerpt": producer.get("excerpt") or "",
+            "sourceFile": source.get("sourceFile") or "",
+            "sha256": source.get("sha256") or "",
+        }
+
     arms = []
     for ordinal, (connection_index, target_id) in enumerate(outgoing):
+        producer_evidence: list[dict[str, Any]] = []
+        if default_index == ordinal:
+            configured_default = enum_by_value[selector] in phase_defaults
+            default_source = (
+                router.get("defaultsSource") if configured_default
+                else router.get("routerSource")
+            ) or {}
+            producer_evidence.append({
+                "kind": "configured_phase_default" if configured_default else "implicit_phase_default",
+                "indexExpression": str(default_index),
+                "possibleIndexes": [default_index],
+                "line": None,
+                "excerpt": "",
+                "sourceFile": default_source.get("sourceFile") or "",
+                "sha256": default_source.get("sha256") or "",
+            })
+        producer_evidence.extend(
+            compact_producer(producer)
+            for producer in phase_producers
+            if ordinal in (producer.get("possibleIndexes") or [])
+        )
+        dynamic_evidence = [compact_producer(producer) for producer in dynamic_producers]
         arms.append({
             "connectionOrdinal": ordinal,
             "connectionIndex": connection_index,
             "outcomeLabel": labels[ordinal] if ordinal < len(labels) else "",
             "outcomeStatus": "native_named_port" if ordinal < len(labels) else "external_index_unlabeled",
+            "runtimeProducerStatus": (
+                "shipped_lua_producer"
+                if producer_evidence
+                else (
+                    "shipped_lua_dynamic_index_unbounded"
+                    if dynamic_evidence
+                    else "no_shipped_lua_producer_found"
+                )
+            ) if router else "external_router_not_recovered",
+            "runtimeProducerKinds": sorted({
+                str(producer.get("kind") or "") for producer in producer_evidence
+            }),
+            "runtimeProducerEvidence": producer_evidence,
+            "runtimeDynamicProducerEvidence": dynamic_evidence,
             "targetNodeId": target_id,
             "targetNodeType": target_types.get(target_id, ""),
         })
-    return {
+    projected = {
         "selectorValue": selector,
         "selectorName": enum_by_value[selector],
         "selectorDefaulted": defaulted,
         "portContractStatus": "native_named_ports" if labels else "external_index_unlabeled",
         "arms": arms,
     }
+    if router:
+        projected.update({
+            "runtimeRouterStatus": "shipped_lua_router_validated",
+            "runtimeDefaultIndex": default_index,
+            "runtimeProducedArmCount": sum(
+                arm["runtimeProducerStatus"] == "shipped_lua_producer" for arm in arms
+            ),
+            "runtimeUnproducedArmCount": sum(
+                arm["runtimeProducerStatus"] == "no_shipped_lua_producer_found" for arm in arms
+            ),
+            "runtimeDynamicProducerArmCount": sum(
+                arm["runtimeProducerStatus"] == "shipped_lua_dynamic_index_unbounded"
+                for arm in arms
+            ),
+            "runtimeDynamicProducers": [compact_producer(row) for row in dynamic_producers],
+        })
+    return projected

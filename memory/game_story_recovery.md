@@ -58,12 +58,18 @@ never promotes an edge.
   the latter with OCR output.
 - Multi-output DialogTree controls use one schema-driven native decoder for
   managed enum/static-port families. For OpenUI nodes it derives the installed
-  `Dictionary<DialogOpenUIType,List<string>>`, method identities, explicit
-  continuation-index path, and current IFix exclusion from original binary
-  inputs. Named ports are exact authored alternatives; panels absent from the
-  map retain ordinal-only arms, and neither class records an observed UI choice
-  or cross-file order. Anonymous zero-edge controls are retained explicitly as
-  detached serialized definitions instead of validation failures or branches.
+  `Dictionary<DialogOpenUIType,List<string>>`, selector-to-string getter,
+  explicit continuation-index path, and current IFix exclusion from original
+  binary inputs. A second schema-driven pass target-dumps all 1,290 installed
+  Lua files and fails closed over the shared phase router, default table, every
+  override-message occurrence, and every direct native `Next` call. The current
+  86 controls / 172 arms divide into 123 arms with a bounded shipped producer,
+  35 with a dynamic producer whose exact index is not statically bounded, and
+  14 with no producer in the current shipped Lua corpus; validation failures
+  are zero. Named ports remain exact authored alternatives and absent map rows
+  remain ordinal-only. Producer presence is not an observed choice, activation,
+  mission owner, or cross-file order; producer absence is not permanent
+  unreachability. Anonymous zero-edge controls remain detached definitions.
 
 ## Mission and quest conclusions
 
@@ -390,10 +396,13 @@ Reject as proof:
    interface, reflection, XLua, live-server, or different typed selector path
    that co-carries mission/quest identity; do not add object-specific producer
    exceptions.
-4. Resolve source-bounded parent-dialog and Timeline placements only when a new
-   exact producer/consumer or mission foreign key appears. For external-result
-   DialogTree controls, seek the original UI result-to-index producer; do not
-   guess unlabeled panel outcomes from target shapes or authoring proximity.
+4. Continue external-result recovery only through exact typed producer data.
+   The shared phase router, defaults, nine override sites, nine direct native
+   calls, and current arm coverage are complete for all 1,290 shipped Lua
+   files. The next useful evidence is a bounded value source for the 35 dynamic
+   indexes or an exact indirect/interface/reflection/XLua/native producer for
+   the 14 arms with no current shipped producer. Do not infer those arm values
+   from target shapes, authoring proximity, OCR, or per-panel exceptions.
 5. Improve within-mission order through strong relations. Do not turn the
    current sparse partial order into a total order by heuristic sorting.
 6. Revisit option gaps only when new runtime route evidence appears; most
