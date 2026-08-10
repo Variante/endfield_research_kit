@@ -104,7 +104,15 @@ NPC archetypes are imported as labeled source kits.
   568/569 are `UnregisterTreeBatchGroup` and
   `UnregisterTreeBatchGroupWithHandle`; owner cleanup `0x1810BCE00` iterates
   the same blob and passes record `+0x04` as `batchKey` and `+0x02` as the
-  16-bit handle to `0x181087E00`, closing that registration lifecycle. This
+  16-bit handle to `0x181087E00`, closing that registration lifecycle. The
+  former tail is now split by binary behavior: serialized `renderFlags` at
+  `+0x08` is mutable, with four particle mode-2/3/4/5 setup variants replacing
+  it with bit 20 and a scheduled callback consuming it. `+0x0C` is a separate
+  filter overlay initialized to zero and ORed with renderer-entry flags; its
+  later writer remains open. Common Renderer state sync `0x180432CD0` updates
+  `+0x10` with property-derived flags. Generic Renderer construction also fills
+  `+0x14`, proving it is payload rather than padding, but the HGTree transform
+  leaves it zero and its exact HGTree-specific consumer remains open. This
   loader blob is not the other 24-byte structure used by LOD jobs. The latter
   is archetype component bit 67: `+0x00` is LOD count, `+0x01/+0x02` are the
   desired and availability-resolved indices, `+0x03` carries transition/output
@@ -223,8 +231,9 @@ NPC archetypes are imported as labeled source kits.
   `[0,lodCount-1]`. The
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
-  crossed the HG table boundary into unrelated Animator code. The remaining
-  loader-registration record `+0x0C..+0x17` zero-field roles, the component-67
+  crossed the HG table boundary into unrelated Animator code. A later writer
+  for loader record `+0x0C`, its exact `+0x14` HGTree-specific role/consumer,
+  the component-67
   standalone native type name, any separate post-dispatch copy or consumer of
   view `+0x18`,
   any separate
@@ -462,8 +471,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
    `screenSizeMinimumSquared`; the current scheduled batch core directly
    excludes it. Keep that value distinct from both squared `parentLODBias` and
    the HGTreeRenderer LOD bounds. Resolve the remaining loader-registration
-   record `+0x0C..+0x17` zero-field roles and the exact native
-   type-name link for component 67; its serialized LOD-count/range producer is
+   record `+0x0C` writer, its `+0x14` HGTree-specific role/consumer, and the
+   exact native type-name link for component 67; its serialized LOD-count/range producer is
    now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact

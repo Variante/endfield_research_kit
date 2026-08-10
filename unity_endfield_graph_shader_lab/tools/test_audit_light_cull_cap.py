@@ -665,6 +665,43 @@ class LightCullCapAuditTests(unittest.TestCase):
             ],
             "4 + 24 * capacity",
         )
+        runtime_layout = result["runtimeTransform"]["outputLayout"]
+        self.assertEqual(
+            [row["offset"] for row in runtime_layout["runtimeRecordInitialFields"]],
+            ["0x00", "0x02", "0x04", "0x08", "0x0C", "0x10", "0x14"],
+        )
+        runtime_tail = runtime_layout["runtimeRecordFieldLifecycle"]
+        self.assertTrue(runtime_tail["mutableRenderFlagsAt0x08"]["roleClosed"])
+        self.assertEqual(
+            runtime_tail["mutableRenderFlagsAt0x08"]["writtenValue"],
+            "0x00100000",
+        )
+        self.assertEqual(
+            runtime_tail["mutableRenderFlagsAt0x08"]["particleModes"],
+            [2, 3, 4, 5],
+        )
+        self.assertTrue(
+            runtime_tail["supplementalFilterFlagsAt0x0C"][
+                "consumerRoleClosed"
+            ]
+        )
+        self.assertFalse(
+            runtime_tail["supplementalFilterFlagsAt0x0C"]["producerClosed"]
+        )
+        self.assertTrue(runtime_tail["rendererPropertyFlagsAt0x10"]["roleClosed"])
+        self.assertEqual(
+            runtime_tail["rendererPropertyFlagsAt0x10"]["preserveMask"],
+            "0xFC07FBFD",
+        )
+        self.assertFalse(
+            runtime_tail["genericRendererPayloadAt0x14"][
+                "exactHGTreeRoleClosed"
+            ]
+        )
+        self.assertIn(
+            "rather than padding",
+            runtime_tail["genericRendererPayloadAt0x14"]["proofBoundary"],
+        )
         self.assertEqual(
             result["lodSelection"]["selectionBoundary"],
             "lower bound exclusive; upper bound inclusive",
@@ -886,6 +923,27 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_serialized_to_runtime_transform_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_renderer_runtime_property_flag_sync_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x180432CD0 and size == 0x1ED:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_renderer_runtime_property_flag_sync_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
