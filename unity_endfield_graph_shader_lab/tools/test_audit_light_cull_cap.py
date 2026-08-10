@@ -831,6 +831,31 @@ class LightCullCapAuditTests(unittest.TestCase):
             render_flags_abi["callbackRenderFlagsMaskOffset"], "0x3C"
         )
         self.assertEqual(render_flags_abi["callbackDescriptorBiasBytes"], 4)
+        managed_callers = renderer_variants["managedCallers"]
+        self.assertEqual(managed_callers["directCallerCount"], 7)
+        self.assertEqual(
+            managed_callers["directionalCascadeMasksAndValues"],
+            ["0x02180100", "0x02280100", "0x02480100", "0x02880100"],
+        )
+        deferred_route = next(
+            row
+            for row in managed_callers["callerRoutes"]
+            if row["owner"] == "HGRenderPathDeferred.OnPreRendering"
+        )
+        self.assertEqual(deferred_route["renderFlagsMask"], "0x00000500 (Opaque|ShadowOnly)")
+        self.assertEqual(deferred_route["renderFlagsValue"], "0x00000100 (Opaque)")
+        caller_contract = renderer_variants["managedCallerContract"]
+        self.assertEqual(
+            caller_contract["cascadeRenderFlags"]["values"],
+            ["0x00100000", "0x00200000", "0x00400000", "0x00800000"],
+        )
+        self.assertEqual(
+            [
+                row["name"]
+                for row in caller_contract["punctualFlagHelper"]["parameters"][-2:]
+            ],
+            ["renderFlags", "renderFlagsMask"],
+        )
         renderer_list_method = result["rendererListVariants"][
             "managedContract"
         ]["method"]
@@ -1220,6 +1245,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_managed_asm_caller_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.GAME_ASSEMBLY)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x189D18418 and size == 0x121A:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=hgtree_renderer_list_callers_asm_render_sha256; "
+                r"source=.*GameAssembly.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_hgtree_renderer_list_game_assembly(image)
 
     def test_changed_renderer_entry_pass_mask_builder_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)

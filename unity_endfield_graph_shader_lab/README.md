@@ -1592,11 +1592,18 @@ Binding `0x1801D9D10`, core `0x18107EE40`, and scheduler `0x181080730` preserve
 them into descriptor `+0x40/+0x44/+0x48`; callback `0x181064190` receives
 descriptor `+0x04`, so its `+0x3C/+0x40/+0x44` reads are those exact fields.
 GeometryHandle is intentionally folded into the HGTree renderFlags comparison,
-not a standalone filter bitfield. Record `+0x10` is not seeded by a Mesh map;
+not a standalone filter bitfield. The current `GameAssembly.dll` direct-call
+census closes all seven managed callers: three punctual-shadow paths, Deferred
+PreZ/GBuffer, ASM static shadows, and both directional CSM builders. Deferred
+uses mask/value/light-mode `0x500/0x100/0x1`; ASM uses
+`0x01080100/0x01080100/0x400`. Punctual paths add Opaque to the hash-pinned
+`GetECSRenderFlags` static/dynamic truth table. Both directional builders use
+identical mask/value `m_cascadeRenderFlags[i] | 0x02080100`; the metadata-backed
+four-entry initializer yields
+`0x02180100/0x02280100/0x02480100/0x02880100`. Record `+0x10` is not seeded by a Mesh map;
 common Renderer
 state synchronizer `0x180432CD0` maintains that separate property-flag word at
-blob `+0x14` while preserving mask `0xFC07FBFD`. Concrete per-pass
-CreateRendererList callers and supplied mask/value pairs remain open.
+blob `+0x14` while preserving mask `0xFC07FBFD`.
 Dedicated HG
 internal-call entry 204 is
 `HGFactoryRenderManager.SetEntityEnabledLightModes_Injected`; wrapper
@@ -1759,9 +1766,8 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. Concrete per-pass callers and values for
-HGTree CreateRendererList's renderFlags mask/value ABI, the component-67 native
-type name, any separate `sceneCullingMask` consumer, and target-frame survivor
+boundary into unrelated Animator code. The component-67 native type name, any
+separate `sceneCullingMask` consumer, and target-frame survivor
 rows remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
