@@ -58,9 +58,15 @@ from story_builder.spawner_binary import (  # noqa: E402
     SpawnerWaveDecodeError,
     decode_spawner_wave_map,
 )
+from story_recovery.dialog_tree_control_flow import (  # noqa: E402
+    ContractError as DialogTreeControlContractError,
+    OPEN_UI_FAMILY,
+    project_serialized_family_node,
+    recover_static_port_family_contract,
+)
 
 
-SCHEMA = "sourceStoryPartialOrder.v44"
+SCHEMA = "sourceStoryPartialOrder.v45"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -3302,6 +3308,56 @@ def _dialog_tree_local_if_nodes(
                     ],
                     "allTargetsNamed": bool(targets) and all(targets),
                 }
+                detached_serialized_control = (
+                    not node_id
+                    and len(outgoing) == 0
+                    and isinstance(raw_condition, dict)
+                )
+                if detached_serialized_control:
+                    rows.append({
+                        "kind": "dialogTreeDetachedControl",
+                        "storyKey": story_key,
+                        "conversationFile": conversation_file,
+                        "branchNodeId": "",
+                        "serializedNodeOrdinal": serialized_ordinal,
+                        "nodeType": node_type,
+                        "condition": condition,
+                        "conditionType": safe_key(raw_condition.get("$type")),
+                        "arms": [],
+                        "executionStatus": "detached_serialized_control",
+                        "sourceFiles": [source_file],
+                        "sourceSha256": {source_file: source_sha256},
+                        "relatedOriginalFiles": [
+                            {
+                                "kind": "dialog_tree_source",
+                                "sourceFile": source_file,
+                                "sha256": source_sha256,
+                                "relationship": "detached_serialized_control_definition",
+                            },
+                            {
+                                "kind": "original_game_binary",
+                                "sourceFile": str(game_assembly_path.resolve()),
+                                "sha256": game_assembly_sha256,
+                                "relationship": "native_selection_contract_not_reachable_without_serialized_identity",
+                            },
+                        ],
+                        "binaryMappingId": contract["mappingId"],
+                        "gameAssemblySha256": game_assembly_sha256,
+                        "nativeConsumers": list(contract["nativeConsumers"]),
+                        "selectionRule": contract["selectionRule"],
+                        "selectionEvidence": (
+                            "serialized control definition has no $id and no "
+                            "outgoing connection, so it cannot participate in "
+                            "the serialized connection graph"
+                        ),
+                        "orderEvidence": False,
+                        "evidenceBoundary": (
+                            "This is a source-present detached control definition, "
+                            "not a live branch. It contributes no selection, "
+                            "ownership, or order edge."
+                        ),
+                    })
+                    continue
                 valid = (
                     source_path.is_file()
                     and source_payload is not None
@@ -3426,6 +3482,187 @@ def _dialog_tree_local_if_nodes(
         natural_key(safe_key(row.get("branchNodeId"))),
         row.get("serializedNodeOrdinal", -1),
     ))
+    return rows, warnings
+
+
+def _dialog_tree_local_static_port_controls(
+    dialog_payloads: list[tuple[str, dict[str, Any]]] | None,
+    *,
+    family_spec: Any = OPEN_UI_FAMILY,
+    native_contract: dict[str, Any] | None = None,
+    minimum_outgoing: int = 2,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Project a native static-port family over every serialized instance.
+
+    The family spec contains managed schema names only.  Native method
+    addresses, enum values, port labels, and hashes are recovered from the
+    installed binary/metadata; Story keys and object ids never select a rule.
+    Multi-output rows expose authored alternatives but remain non-ordering
+    because the external UI result occurrence is not observed here.
+    """
+    rows: list[dict[str, Any]] = []
+    warnings: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    contract_error = ""
+    if native_contract is None:
+        try:
+            native_contract = recover_static_port_family_contract(family_spec)
+        except (OSError, ValueError, DialogTreeControlContractError) as exc:
+            native_contract = None
+            contract_error = str(exc)
+
+    for conversation_file, conv in dialog_payloads or []:
+        if not isinstance(conv, dict):
+            continue
+        story_key = safe_key(conv.get("key"))
+        if not story_key:
+            continue
+        for source_file in _dialog_tree_source_files(conv):
+            source_path = _dialog_tree_resolve_source(source_file)
+            source_payload = _dialog_tree_decode_source(source_path)
+            source_sha256 = (
+                hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
+                if source_path.is_file()
+                else ""
+            )
+            if not isinstance(source_payload, dict):
+                continue
+            target_types = _dialog_tree_target_type_map(source_payload)
+            for serialized_ordinal, node in enumerate(source_payload.get("nodes") or []):
+                if (
+                    not isinstance(node, dict)
+                    or safe_key(node.get("$type")) != family_spec.node_type
+                ):
+                    continue
+                node_id = safe_key(node.get("$id"))
+                _serialized_node, outgoing = _dialog_tree_branch_info(
+                    source_payload,
+                    node_id,
+                )
+                if len(outgoing) < minimum_outgoing:
+                    continue
+                record_key = node_id or f"@serialized:{serialized_ordinal}"
+                signature = (story_key, source_file, record_key)
+                if signature in seen:
+                    continue
+                seen.add(signature)
+                actual = {
+                    "family": family_spec.family,
+                    "storyKey": story_key,
+                    "conversationFile": conversation_file,
+                    "sourceFile": source_file,
+                    "sourceSha256": source_sha256,
+                    "nodeType": safe_key(node.get("$type")),
+                    "nodeId": node_id,
+                    "serializedNodeOrdinal": serialized_ordinal,
+                    "outgoingConnectionCount": len(outgoing),
+                    "outgoingConnectionIndexes": [index for index, _target in outgoing],
+                    "outgoingTargetNodeIds": [target for _index, target in outgoing],
+                }
+                if native_contract is None:
+                    warnings.append({
+                        "validator": "dialogTreeStaticPortControl",
+                        "gate": "installedNativeFamilyContract",
+                        "storyKey": story_key,
+                        "conversationFile": conversation_file,
+                        "nodeId": node_id,
+                        "sourcePaths": [str(source_path)],
+                        "sourceSha256": {source_file: source_sha256},
+                        "expected": {
+                            "family": family_spec.family,
+                            "nativeContractStatus": "validated",
+                        },
+                        "actual": {**actual, "contractError": contract_error},
+                    })
+                    continue
+                try:
+                    projection = project_serialized_family_node(
+                        node,
+                        outgoing,
+                        target_types=target_types,
+                        contract=native_contract,
+                    )
+                except (ValueError, DialogTreeControlContractError) as exc:
+                    warnings.append({
+                        "validator": "dialogTreeStaticPortControl",
+                        "gate": "serializedSelectorAndPortProjection",
+                        "storyKey": story_key,
+                        "conversationFile": conversation_file,
+                        "nodeId": node_id,
+                        "sourcePaths": [
+                            str(source_path),
+                            safe_key((native_contract.get("sources") or {}).get("gameAssembly")),
+                            safe_key((native_contract.get("sources") or {}).get("globalMetadata")),
+                        ],
+                        "sourceSha256": {
+                            source_file: source_sha256,
+                            "GameAssembly.dll": safe_key(
+                                (native_contract.get("sources") or {}).get("gameAssemblySha256")
+                            ),
+                            "global-metadata.dat": safe_key(
+                                (native_contract.get("sources") or {}).get("globalMetadataSha256")
+                            ),
+                        },
+                        "expected": {
+                            "family": family_spec.family,
+                            "installedEnumSelector": True,
+                            "namedPortCountMatchesOutgoing": True,
+                        },
+                        "actual": {**actual, "projectionError": str(exc)},
+                    })
+                    continue
+
+                sources = native_contract.get("sources") or {}
+                current_ifix = native_contract.get("currentIFix") or {}
+                related_original_files = [
+                    {
+                        "kind": "dialog_tree_source",
+                        "sourceFile": source_file,
+                        "sha256": source_sha256,
+                        "relationship": "exact_serialized_multi_output_control",
+                    },
+                    {
+                        "kind": "original_game_binary",
+                        "sourceFile": sources.get("gameAssembly") or "",
+                        "sha256": sources.get("gameAssemblySha256") or "",
+                        "relationship": "native_static_port_and_explicit_index_contract",
+                    },
+                    {
+                        "kind": "original_game_metadata",
+                        "sourceFile": sources.get("globalMetadata") or "",
+                        "sha256": sources.get("globalMetadataSha256") or "",
+                        "relationship": "managed_enum_field_and_method_identity",
+                    },
+                ]
+                rows.append({
+                    "kind": "dialogTreeStaticPortControl",
+                    "family": family_spec.family,
+                    "storyKey": story_key,
+                    "conversationFile": conversation_file,
+                    "nodeId": node_id,
+                    "serializedNodeOrdinal": serialized_ordinal,
+                    "nodeType": family_spec.node_type,
+                    **projection,
+                    "sourceFiles": [source_file],
+                    "sourceSha256": {source_file: source_sha256},
+                    "relatedOriginalFiles": related_original_files,
+                    "nativeContractSchema": native_contract.get("schema"),
+                    "nativeMethods": list((native_contract.get("nativeMethods") or {}).values()),
+                    "staticPortMapField": native_contract.get("staticPortMapField"),
+                    "currentIFix": current_ifix,
+                    "selectionRule": native_contract.get("selectionRule"),
+                    "runtimeSelectionStatus": "external_ui_result_unobserved",
+                    "orderEvidence": False,
+                    "evidenceBoundary": native_contract.get("evidenceBoundary"),
+                })
+    sort_key = lambda row: (  # noqa: E731
+        natural_key(safe_key(row.get("storyKey"))),
+        natural_key(safe_key(row.get("conversationFile"))),
+        natural_key(safe_key(row.get("nodeId"))),
+        int(row.get("serializedNodeOrdinal") or 0),
+    )
+    rows.sort(key=sort_key)
+    warnings.sort(key=sort_key)
     return rows, warnings
 
 
@@ -7194,6 +7431,10 @@ def build_mission_partial_order(
         dialog_tree_if_nodes,
         dialog_tree_if_node_warnings,
     ) = _dialog_tree_local_if_nodes(dialog_payloads)
+    (
+        dialog_tree_static_port_controls,
+        dialog_tree_static_port_control_warnings,
+    ) = _dialog_tree_local_static_port_controls(dialog_payloads)
     direct_edges.extend(dialog_tree_conditional_edges)
     mission_source = safe_key(
         (((timeline.get("metadata") or {}).get("source") or {}).get("file"))
@@ -7744,13 +7985,38 @@ def build_mission_partial_order(
             "dialogTreeBranchNodeValidationFailureCount": len(
                 dialog_tree_branch_node_warnings
             ),
-            "dialogTreeIfNodeCount": len(dialog_tree_if_nodes),
+            "dialogTreeIfNodeCount": sum(
+                row.get("kind") == "dialogTreeIfNode"
+                for row in dialog_tree_if_nodes
+            ),
+            "dialogTreeDetachedControlCount": sum(
+                row.get("executionStatus") == "detached_serialized_control"
+                for row in dialog_tree_if_nodes
+            ),
             "dialogTreeIfNodeArmCount": sum(
                 len(row.get("arms") or [])
                 for row in dialog_tree_if_nodes
             ),
             "dialogTreeIfNodeValidationFailureCount": len(
                 dialog_tree_if_node_warnings
+            ),
+            "dialogTreeStaticPortControlCount": len(
+                dialog_tree_static_port_controls
+            ),
+            "dialogTreeStaticPortControlArmCount": sum(
+                len(row.get("arms") or [])
+                for row in dialog_tree_static_port_controls
+            ),
+            "dialogTreeStaticPortNamedControlCount": sum(
+                row.get("portContractStatus") == "native_named_ports"
+                for row in dialog_tree_static_port_controls
+            ),
+            "dialogTreeStaticPortUnlabeledControlCount": sum(
+                row.get("portContractStatus") == "external_index_unlabeled"
+                for row in dialog_tree_static_port_controls
+            ),
+            "dialogTreeStaticPortValidationFailureCount": len(
+                dialog_tree_static_port_control_warnings
             ),
             "edgeKinds": dict(sorted(kind_counts.items())),
         },
@@ -7774,6 +8040,7 @@ def build_mission_partial_order(
             "dialogConditionalBranches": dialog_local_conditional_branches,
             "dialogTreeBranchNodes": dialog_tree_branch_nodes,
             "dialogTreeIfNodes": dialog_tree_if_nodes,
+            "dialogTreeStaticPortControls": dialog_tree_static_port_controls,
             "excludedDialogLineOptions": excluded_dialog_line_options,
             "actionableExcludedDialogLineOptions":
                 actionable_excluded_dialog_line_options,
@@ -7825,6 +8092,7 @@ def build_mission_partial_order(
             *dialog_local_conditional_warnings,
             *dialog_tree_branch_node_warnings,
             *dialog_tree_if_node_warnings,
+            *dialog_tree_static_port_control_warnings,
             *narrative_containment_warnings,
             *open_ui_containment_warnings,
             *lifecycle_warnings,
@@ -8211,8 +8479,26 @@ def build_report(
         ]
         totals["dialogTreeIfNodes"] += summary["dialogTreeIfNodeCount"]
         totals["dialogTreeIfNodeArms"] += summary["dialogTreeIfNodeArmCount"]
+        totals["dialogTreeDetachedControls"] += summary[
+            "dialogTreeDetachedControlCount"
+        ]
         totals["dialogTreeIfNodeValidationFailures"] += summary[
             "dialogTreeIfNodeValidationFailureCount"
+        ]
+        totals["dialogTreeStaticPortControls"] += summary[
+            "dialogTreeStaticPortControlCount"
+        ]
+        totals["dialogTreeStaticPortControlArms"] += summary[
+            "dialogTreeStaticPortControlArmCount"
+        ]
+        totals["dialogTreeStaticPortNamedControls"] += summary[
+            "dialogTreeStaticPortNamedControlCount"
+        ]
+        totals["dialogTreeStaticPortUnlabeledControls"] += summary[
+            "dialogTreeStaticPortUnlabeledControlCount"
+        ]
+        totals["dialogTreeStaticPortValidationFailures"] += summary[
+            "dialogTreeStaticPortValidationFailureCount"
         ]
         totals["missingMissionBundles"] += int("missingMissionBundle" in row["warnings"])
         totals["missionsWithStrongEdges"] += int(summary["strongEdgeCount"] > 0)
@@ -8420,6 +8706,18 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"`{summary.get('dialogTreeIfNodeArms', 0)}` arms; "
         f"`{summary.get('dialogTreeIfNodeValidationFailures', 0)}` validation failures "
         "(native selection evidence only, never a file-order edge)",
+        f"- detached serialized DialogTree controls: "
+        f"`{summary.get('dialogTreeDetachedControls', 0)}` definitions with no "
+        "serialized identity or outgoing edge; retained as source structure, "
+        "never a live branch or order edge",
+        f"- native static-port DialogTree controls: "
+        f"`{summary.get('dialogTreeStaticPortControls', 0)}` multi-output controls / "
+        f"`{summary.get('dialogTreeStaticPortControlArms', 0)}` arms; "
+        f"`{summary.get('dialogTreeStaticPortNamedControls', 0)}` have installed "
+        f"named result ports, `{summary.get('dialogTreeStaticPortUnlabeledControls', 0)}` "
+        "retain ordinal-only external results, and "
+        f"`{summary.get('dialogTreeStaticPortValidationFailures', 0)}` validation failures "
+        "(authored alternatives only, never an observed choice or file-order edge)",
         f"- mission-level branches: `{summary.get('questForks', 0)}` quest forks, "
         f"`{summary.get('questMerges', 0)}` quest merges, and "
         f"`{summary.get('sceneGraphOptionGroups', 0)}` authored cross-scene option groups",

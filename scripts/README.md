@@ -107,6 +107,10 @@ High-value entry points:
   action, and control evidence.
 - `mission_recovery.py`: mission/quest relationships.
 - `build_source_story_gap_queue.py`: source-only recovery queue.
+- `dialog_tree_control_flow.py`: reusable installed-metadata/GameAssembly
+  decoder for enum-selected static port maps and serialized multi-output
+  control projection; it has no mission, Story, object, OCR, or override
+  allowlist.
 - `build_levelscript_actionbase_tag_audit.py`: hash-pinned native ActionBase
   names.
 - `build_callserver_callback_contract.py` and

@@ -9,14 +9,14 @@ complete canonical playthrough.
 
 Current CN headline coverage from the maintained reports:
 
-- 490 pipeline missions and 5,563 unique Story files;
+- 487 source-order missions and 5,563 unique Story files;
 - 4,236 connected files (76.1%);
 - 4,457 files with at least one normalized trigger/context route (80.1%);
 - 1,327 unlinked files, including 156 with exact native playback but no
   mission/quest activation bridge;
-- 1,524 strong source-only edges across 8,877 candidate scene placements;
+- 1,529 strong source-only edges across 8,877 candidate scene placements;
 - 0 cyclic components;
-- 3,845 of 249,695 possible within-mission pairs proven comparable (1.54%).
+- 3,850 of 249,695 possible within-mission pairs proven comparable (1.54%).
 
 Counts are volatile. Use the generated coverage, partial-order, and gap-queue
 reports for the current inventory rather than copying detailed counts here.
@@ -56,6 +56,14 @@ never promotes an edge.
 - Manual option fixes live in `webui/overrides/options.json`; manual mission
   order lives in `webui/overrides/story_order.json`. Builders do not replace
   the latter with OCR output.
+- Multi-output DialogTree controls use one schema-driven native decoder for
+  managed enum/static-port families. For OpenUI nodes it derives the installed
+  `Dictionary<DialogOpenUIType,List<string>>`, method identities, explicit
+  continuation-index path, and current IFix exclusion from original binary
+  inputs. Named ports are exact authored alternatives; panels absent from the
+  map retain ordinal-only arms, and neither class records an observed UI choice
+  or cross-file order. Anonymous zero-edge controls are retained explicitly as
+  detached serialized definitions instead of validation failures or branches.
 
 ## Mission and quest conclusions
 
@@ -383,7 +391,9 @@ Reject as proof:
    that co-carries mission/quest identity; do not add object-specific producer
    exceptions.
 4. Resolve source-bounded parent-dialog and Timeline placements only when a new
-   exact producer/consumer or mission foreign key appears.
+   exact producer/consumer or mission foreign key appears. For external-result
+   DialogTree controls, seek the original UI result-to-index producer; do not
+   guess unlabeled panel outcomes from target shapes or authoring proximity.
 5. Improve within-mission order through strong relations. Do not turn the
    current sparse partial order into a total order by heuristic sorting.
 6. Revisit option gaps only when new runtime route evidence appears; most
