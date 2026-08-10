@@ -335,6 +335,20 @@ HG_FACTORY_SET_ENABLED_LIGHT_MODES_METHOD_INDEX = 477909
 HG_FACTORY_SET_ENABLED_LIGHT_MODES_METHOD_TOKEN = 0x06000071
 HG_FACTORY_SET_ENABLED_LIGHT_MODES_INJECTED_METHOD_INDEX = 477923
 HG_FACTORY_SET_ENABLED_LIGHT_MODES_INJECTED_METHOD_TOKEN = 0x0600007F
+HG_TREE_RENDER_TYPE_INDEX = 61017
+HG_TREE_RENDER_TYPE_TOKEN = 0x0200008C
+HG_TREE_CREATE_RENDERER_LIST_INJECTED_METHOD_INDEX = 478192
+HG_TREE_CREATE_RENDERER_LIST_INJECTED_METHOD_TOKEN = 0x0600018C
+HG_TREE_CREATE_RENDERER_LIST_INJECTED_PARAMETER_START = 534045
+HG_TREE_CREATE_RENDERER_LIST_INJECTED_PARAMETERS = [
+    ("viewHandle", 0x08000388, 168243),
+    ("renderFlagsMask", 0x08000389, 168243),
+    ("renderFlagsValue", 0x0800038A, 168243),
+    ("lightModeMask", 0x0800038B, 168243),
+    ("context", 0x0800038C, 148461),
+    ("drawableFeedbackPtr", 0x0800038D, 117409),
+    ("noAlphaTest", 0x0800038E, 130818),
+]
 HG_SHADER_LIGHT_MODE_TYPE_INDEX = 60993
 HG_SHADER_LIGHT_MODE_TYPE_TOKEN = 0x02000074
 HG_SHADER_LIGHT_MODE_FIELDS = {
@@ -1853,6 +1867,28 @@ UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
 }
 
 UNITY_HGTREE_SLICES = {
+    "create_renderer_list_render_flag_parameter_handoff": (
+        0x1801D9D24,
+        "418bd9418bf88bf28be9e82dc1de0080bc249000000000448bcf48c744244000"
+        "000000448bc68bd5488b88c00000000f95c088442438488b842488000000488944"
+        "2430488b8424800000004889442428895c2420",
+    ),
+    "create_renderer_list_core_render_flag_stack_handoff": (
+        0x18107F1F7,
+        "488b85c800000048898424880000008b85c0000000898424800000008b85b800"
+        "0000894424788b85b00000008944247044896424684c8964246044895424584489"
+        "5c245048895c244848897c2440897424384c897424304c896424284c897c2420e8"
+        "d3140000",
+    ),
+    "renderer_list_scheduler_render_flag_descriptor_copy": (
+        0x1810807BE,
+        "8b8424d80000008943388b8424e000000089433c8b8424e80000008943408b84"
+        "24f0000000894344486384",
+    ),
+    "shadow_proxy_geometry_handle_render_flag_filter": (
+        0x181064B66,
+        "418b451c8541440f84720300008b443204410b451823413c3b41400f855e030000",
+    ),
     "hg_geometry_handle_encoding": (
         0x18108B51E,
         "0fb747064c8d9c24d0000000498b5b3866ffc0498b7340b9ff0000006623c10f"
@@ -3350,6 +3386,168 @@ def validate_hg_resource_asset_type_metadata(
         "loadAsyncInjected": {
             "methodIndex": HG_RESOURCE_LOAD_ASYNC_INJECTED_METHOD_INDEX,
             "token": f"0x{method_token:08X}",
+            "parameters": parameters,
+        },
+    }
+
+
+def validate_hgtree_renderer_list_metadata(
+    raw_metadata: bytes,
+    source: Path = GLOBAL_METADATA,
+) -> dict[str, object]:
+    """Pin the UInt32 renderFlags mask/value ABI used by HGTree jobs."""
+
+    require(
+        "hgtree_renderer_list_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    require(
+        "hgtree_renderer_list_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        source,
+    )
+    sections = {
+        section_name: struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+        for section_index, section_name in enumerate(
+            IL2CPP_METADATA_SECTION_NAMES
+        )
+    }
+    string_offset, string_size = sections["string"]
+    method_offset, method_size = sections["methods"]
+    parameter_offset, parameter_size = sections["parameters"]
+    type_offset, type_size = sections["typeDefinitions"]
+
+    def metadata_string(index: int, check: str) -> str:
+        start = string_offset + index
+        require(
+            f"hgtree_renderer_list_{check}_string_start_in_bounds",
+            string_offset <= start < string_offset + string_size,
+            True,
+            source,
+        )
+        end = raw_metadata.find(b"\0", start, string_offset + string_size)
+        require(
+            f"hgtree_renderer_list_{check}_string_end_in_bounds",
+            end >= start,
+            True,
+            source,
+        )
+        return raw_metadata[start:end].decode("utf-8")
+
+    type_position = type_offset + HG_TREE_RENDER_TYPE_INDEX * 92
+    require(
+        "hgtree_renderer_list_type_in_bounds",
+        type_position + 92 <= type_offset + type_size,
+        True,
+        source,
+    )
+    type_name_index, namespace_index = struct.unpack_from(
+        "<ii", raw_metadata, type_position
+    )
+    type_token = struct.unpack_from("<I", raw_metadata, type_position + 88)[0]
+    type_name = metadata_string(type_name_index, "type_name")
+    namespace = metadata_string(namespace_index, "type_namespace")
+    for check, actual, expected in (
+        ("type_name", type_name, "HGTreeRender"),
+        ("type_namespace", namespace, "UnityEngine.HyperGryph"),
+        ("type_token", type_token, HG_TREE_RENDER_TYPE_TOKEN),
+    ):
+        require(f"hgtree_renderer_list_{check}", actual, expected, source)
+
+    method_position = (
+        method_offset + HG_TREE_CREATE_RENDERER_LIST_INJECTED_METHOD_INDEX * 32
+    )
+    require(
+        "hgtree_renderer_list_method_in_bounds",
+        method_position + 32 <= method_offset + method_size,
+        True,
+        source,
+    )
+    (
+        method_name_index,
+        declaring_type,
+        return_type,
+        parameter_start,
+        _generic_container,
+        method_token,
+        _flags,
+        _iflags,
+        _slot,
+        parameter_count,
+    ) = struct.unpack_from("<iiiiiIHHHH", raw_metadata, method_position)
+    method_name = metadata_string(method_name_index, "method_name")
+    for check, actual, expected in (
+        ("method_name", method_name, "CreateRendererList"),
+        ("method_declaring_type", declaring_type, HG_TREE_RENDER_TYPE_INDEX),
+        ("method_return_type", return_type, 168243),
+        (
+            "method_parameter_start",
+            parameter_start,
+            HG_TREE_CREATE_RENDERER_LIST_INJECTED_PARAMETER_START,
+        ),
+        (
+            "method_token",
+            method_token,
+            HG_TREE_CREATE_RENDERER_LIST_INJECTED_METHOD_TOKEN,
+        ),
+        (
+            "method_parameter_count",
+            parameter_count,
+            len(HG_TREE_CREATE_RENDERER_LIST_INJECTED_PARAMETERS),
+        ),
+    ):
+        require(f"hgtree_renderer_list_{check}", actual, expected, source)
+
+    parameters = []
+    for relative_index, (expected_name, expected_token, expected_type) in enumerate(
+        HG_TREE_CREATE_RENDERER_LIST_INJECTED_PARAMETERS
+    ):
+        position = parameter_offset + (parameter_start + relative_index) * 12
+        require(
+            f"hgtree_renderer_list_{expected_name}_parameter_in_bounds",
+            position + 12 <= parameter_offset + parameter_size,
+            True,
+            source,
+        )
+        name_index, token, metadata_type = struct.unpack_from(
+            "<iIi", raw_metadata, position
+        )
+        name = metadata_string(name_index, f"{expected_name}_parameter_name")
+        for check, actual, expected in (
+            ("name", name, expected_name),
+            ("token", token, expected_token),
+            ("type", metadata_type, expected_type),
+        ):
+            require(
+                f"hgtree_renderer_list_{expected_name}_{check}",
+                actual,
+                expected,
+                source,
+            )
+        parameters.append(
+            {
+                "name": name,
+                "token": f"0x{token:08X}",
+                "metadataTypeIndex": metadata_type,
+            }
+        )
+
+    return {
+        "declaringType": {
+            "typeIndex": HG_TREE_RENDER_TYPE_INDEX,
+            "fullName": f"{namespace}.{type_name}",
+            "token": f"0x{type_token:08X}",
+        },
+        "method": {
+            "methodIndex": HG_TREE_CREATE_RENDERER_LIST_INJECTED_METHOD_INDEX,
+            "name": method_name,
+            "token": f"0x{method_token:08X}",
+            "returnMetadataTypeIndex": return_type,
             "parameters": parameters,
         },
     }
@@ -6265,8 +6463,12 @@ def validate_unity_hgtree_renderer_boundary(
             "value": actual_value,
         }
 
+    metadata_bytes = metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
+    renderer_list_metadata = validate_hgtree_renderer_list_metadata(
+        metadata_bytes
+    )
     enabled_light_modes_metadata = validate_enabled_light_modes_metadata(
-        metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
+        metadata_bytes
     )
     resource_asset_type_metadata = validate_hg_resource_asset_type_metadata(
         metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
@@ -6319,6 +6521,7 @@ def validate_unity_hgtree_renderer_boundary(
         },
         "rendererListVariants": {
             "entries": renderer_list_variants,
+            "managedContract": renderer_list_metadata,
             "sharedSchedulerVirtualAddress": (
                 f"0x{UNITY_RENDERER_LIST_SCHEDULER_VA:X}"
             ),
@@ -6332,6 +6535,29 @@ def validate_unity_hgtree_renderer_boundary(
                 "same scheduler and therefore do not expose a separate "
                 "uninspected callback family for runtime record+0x14"
             ),
+            "renderFlagsFilterAbi": {
+                "bindingVirtualAddress": "0x1801D9D10",
+                "coreVirtualAddress": "0x18107EE40",
+                "schedulerVirtualAddress": "0x181080730",
+                "callbackDescriptorBiasBytes": 4,
+                "descriptorRenderFlagsMaskOffset": "0x40",
+                "descriptorRenderFlagsValueOffset": "0x44",
+                "descriptorLightModeMaskOffset": "0x48",
+                "callbackRenderFlagsMaskOffset": "0x3C",
+                "callbackRenderFlagsValueOffset": "0x40",
+                "callbackLightModeMaskOffset": "0x44",
+                "consumerVirtualAddress": "0x181064B73",
+                "equation": (
+                    "((shadowProxyGeometryHandle | rendererEntryFlags) & "
+                    "renderFlagsMask) == renderFlagsValue"
+                ),
+                "interpretation": (
+                    "record+0x0C is not a standalone filter bitfield: the "
+                    "CreateRendererList ABI intentionally folds the shadow-"
+                    "proxy GeometryHandle into the HGTree renderFlags "
+                    "mask/value comparison"
+                ),
+            },
         },
         "gpuDrivenRendererList": {
             "entries": gpu_driven_renderer_list_variants,
@@ -6857,9 +7083,9 @@ def validate_unity_hgtree_renderer_boundary(
                             "asset class, handle/index separation, instance-ID "
                             "production, GeometryHandle identity and packing, "
                             "mapped-value resolution, release, and masked "
-                            "consumption are closed; which higher-level job "
-                            "producers intentionally constrain GeometryHandle "
-                            "bits through the combined mask/value test remains open"
+                            "consumption and the CreateRendererList renderFlags "
+                            "mask/value ABI are closed; the concrete per-pass "
+                            "callers and values supplied to that ABI remain open"
                         ),
                     },
                     "rendererPropertyFlagsAt0x10": {
@@ -8116,8 +8342,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v35",
-        "status": "hgtree_shadow_proxy_geometry_handle_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v36",
+        "status": "hgtree_shadow_proxy_render_flags_abi_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -8181,8 +8407,15 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "HGGeometrySystem::GetGeometryHandle/GetMesh. The hash-pinned slot "
             "builder closes bits 0..23 as the slot index and bits 24..31 as an "
             "8-bit generation incremented at slot +0x06. The engine identity and "
-            "bit packing are therefore closed; only higher-level job producers "
-            "that deliberately constrain handle bits remain open. Record +0x10 "
+            "bit packing are therefore closed. Installed metadata then names "
+            "the upstream CreateRendererList UInt32 arguments renderFlagsMask, "
+            "renderFlagsValue, and lightModeMask. The binding, core, and "
+            "scheduler preserve them into descriptor +0x40/+0x44/+0x48; the "
+            "callback's +0x04 descriptor bias exposes them at +0x3C/+0x40/+0x44. "
+            "Thus the GeometryHandle is intentionally folded into the HGTree "
+            "renderFlags mask/value ABI rather than being a standalone filter "
+            "bitfield. Concrete per-pass callers and supplied values remain open. "
+            "Record +0x10 "
             "is not seeded by any of the three resource maps; "
             "it remains Renderer property flags maintained at blob+0x14 by the "
             "common state synchronizer. Dedicated HyperGryph internal-"
@@ -8316,8 +8549,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The higher-level job producers that deliberately constrain loader "
-            "record +0x0C's shadow-proxy GeometryHandle bits, the "
+            "The concrete per-pass callers and values supplied to HGTree "
+            "CreateRendererList's renderFlagsMask/renderFlagsValue ABI, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -8497,6 +8730,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the hash-pinned HGMeshRendererData m_Materials/m_Meshes/m_ShadowProxyMeshes native field layout and independent Material/GeometryHandle map initializer into runtime record +0x04/+0x08/+0x0C",
                 "HGGeometrySystem GetGeometryHandle/GetMesh internal-call entries 300/301, Mesh instance-ID map insertion/removal, 24-bit slot-index plus 8-bit generation handle packing, and reverse lookup",
                 "loader runtime record +0x0C as the m_ShadowProxyMeshes GeometryHandle, including LoadAsync/GetAsset/UpdateAssetHandle internal-call bindings, ready/instance-ID handle-slot layout, direct and availability map-resolution writers, cleanup, and masked consumption",
+                "the HGTree CreateRendererList UInt32 renderFlagsMask/renderFlagsValue/lightModeMask metadata contract and its binding/core/scheduler/callback descriptor-offset propagation",
                 "loader runtime record +0x10 as Renderer property flags with no resource-map seed and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
@@ -8540,7 +8774,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the higher-level job producers that deliberately constrain runtime record +0x0C shadow-proxy GeometryHandle bits through the combined mask/value test",
+                "the concrete per-pass callers and values supplied to HGTree CreateRendererList's renderFlagsMask/renderFlagsValue ABI",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -8578,8 +8812,8 @@ def main() -> int:
         "write-only screen threshold, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
         "HGMeshRendererData Material/main-Mesh/shadow-proxy map fields, "
-        "shadow-proxy GeometryHandle packing/lookup/consumer, and separate "
-        "property flags, "
+        "shadow-proxy GeometryHandle packing/lookup and CreateRendererList "
+        "renderFlags ABI, and separate property flags, "
         "enabledLightModes producer/default/initializers and GPUDrivenRenderer "
         "V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, "
         "Factory blob-copy routes, independent renderer-entry pass mask, and "
