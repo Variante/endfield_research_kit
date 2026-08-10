@@ -87,23 +87,44 @@ def output_param(path: str, *, source: int = 0) -> bytes:
 
 
 def decode_audio(payload: bytes, tag: int, member_count: int) -> dict:
+    source = payload if payload else b"\x00"
+    payload_start = len(source) if not payload else 0
     record = {
         "start": 0,
-        "payloadStart": 0,
+        "payloadStart": payload_start,
         "code": tag,
         "kind": member_count,
         "unionTag": tag,
         "serializedMemberCount": member_count,
     }
     return decode_levelscript_record_payload(
-        payload,
+        source,
         record,
-        next_start=len(payload),
+        next_start=len(source),
         action_map_role="actionList#1 root",
     ).get("audioAction") or {}
 
 
 class LevelScriptAudioActionTests(unittest.TestCase):
+    def test_zero_field_audio_controls_decode_with_bounded_list_framing(self) -> None:
+        for tag, name in (
+            (0x00B7, "ExitCustomMusicMode"),
+            (0x00E9, "FlushRadio"),
+            (0x0372, "PostAudioStopAllEnemyVoice"),
+        ):
+            action = decode_audio(b"", tag, 0x08)
+            self.assertEqual(name, action["action"])
+            self.assertEqual({}, action.get("fields", {}))
+            self.assertEqual([], action.get("eventBindings", []))
+            self.assertEqual([], action.get("cueBindings", []))
+            self.assertEqual([], action.get("radioBindings", []))
+
+            framed = decode_audio(struct.pack("<II", 0, 2), tag, 0x08)
+            self.assertEqual([0, 2], framed["trailingActionMapFramingU32s"])
+
+    def test_zero_field_audio_controls_reject_non_framing_payload(self) -> None:
+        self.assertEqual({}, decode_audio(b"\x01\x00\x00\x00\x02", 0x00B7, 0x08))
+
     def test_current_binary_voice_and_music_control_layouts_decode_exactly(self) -> None:
         announce = decode_audio(
             bytes.fromhex("ff ff 00 00 00 00 ff ff ff ff")

@@ -6562,6 +6562,10 @@ def _decode_audio_action(
         tuple[int, int],
         tuple[str, tuple[tuple[str, Any], ...]],
     ] = {
+        # These actions have no derived serialized fields in the current
+        # MemoryPack payload.  The record can still carry the bounded
+        # ActionMap list framing accepted by _finish_audio_action_fields.
+        (0x00B7, 0x08): ("ExitCustomMusicMode", ()),
         (0x0016, 0x09): (
             "AnnounceAudioOnTarget",
             (
@@ -6787,6 +6791,7 @@ def _decode_audio_action(
                 ("varType", _decode_audio_i32_param),
             ),
         ),
+        (0x0372, 0x08): ("PostAudioStopAllEnemyVoice", ()),
         (0x04A7, 0x0E): (
             "StartPlaceholderMusic_DevOnly",
             (
@@ -6846,6 +6851,7 @@ def _decode_audio_action(
                 ("isShow", _decode_audio_bool_param),
             ),
         ),
+        (0x00E9, 0x08): ("FlushRadio", ()),
     }
     layout = layouts.get(semantic_key)
     if layout is None:
@@ -7024,8 +7030,27 @@ def decode_levelscript_record_payload(
         return {}
     key = (code, kind)
     semantic_key = levelscript_record_semantic_key(record)
-    payload_start, payload = _record_payload_window(data, record, next_start)
-    if not payload:
+    empty_audio_action_keys = {
+        (0x00B7, 0x08),  # ExitCustomMusicMode
+        (0x00E9, 0x08),  # FlushRadio
+        (0x0372, 0x08),  # PostAudioStopAllEnemyVoice
+    }
+    record_payload_start = int(
+        record.get("payloadStart", record.get("start", 0)) or 0
+    )
+    # An empty derived-field payload is represented by the next UID record
+    # beginning exactly at payloadStart.  The general window helper expands
+    # malformed/non-forward windows for diagnostic scans, so preserve this
+    # exact zero-width shape before calling it.
+    if (
+        semantic_key in empty_audio_action_keys
+        and next_start is not None
+        and int(next_start) == record_payload_start
+    ):
+        payload_start, payload = record_payload_start, b""
+    else:
+        payload_start, payload = _record_payload_window(data, record, next_start)
+    if not payload and semantic_key not in empty_audio_action_keys:
         return {}
 
     hint = dict(
@@ -7225,6 +7250,7 @@ def decode_levelscript_record_payload(
         (0x0364, 0x0D),
         (0x036B, 0x13),
         (0x036E, 0x14),
+        (0x0372, 0x08),
         (0x0371, 0x0B),
         (0x0373, 0x0C),
         (0x03D5, 0x0F),
@@ -7236,6 +7262,8 @@ def decode_levelscript_record_payload(
         (0x04BA, 0x09),
         (0x04BC, 0x0B),
         (0x04CA, 0x09),
+        (0x00B7, 0x08),
+        (0x00E9, 0x08),
     }:
         audio_action = _decode_audio_action(payload, semantic_key)
         if audio_action:
