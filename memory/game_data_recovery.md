@@ -180,8 +180,11 @@ places only exact skill-config Event references back on their skill rows, leaves
 inferred links in the final audio section, and never duplicates one Event
 between those placements. The Audio view exposes exact/inferred trigger
 filters, a separate authored-PlaySound-action filter, and the recovered action
-lifetime/routing evidence. Ownerless PlaySound actions remain canonical Audio
-contexts rather than being guessed onto a skill.
+lifetime/routing evidence. Fourteen of the 15 actions now reach gameplay owners
+through exact authored Buff dependencies; the remaining
+`buff_chr_0030_zhuangfy_combo_skill_target_mark` action has no current
+SkillData/born-buff chain and remains an explicit owner gap rather than being
+guessed onto a skill.
 
 Interactive audio now has both of its serialized request layers. The global
 `InteractiveAudioSetting` maps 285 model/sub-template state occurrences to 105
