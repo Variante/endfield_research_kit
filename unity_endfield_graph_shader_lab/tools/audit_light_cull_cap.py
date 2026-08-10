@@ -52,6 +52,11 @@ HGTREE_NATIVE_SERIALIZED_TYPE_CENSUS = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
     "CharInfoPresentation/hgtree_native_serialized_type_census.json"
 )
+STREAMING_SCENE_V2_PAYLOAD_CENSUS = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
+    "CharInfoPresentation/streaming_scene_v2_payload_census.json"
+)
 ANIMESTUDIO_CLASS_ID_SOURCE = (
     REPO_ROOT / "tools/AnimeStudio/AnimeStudio/ClassIDType.cs"
 )
@@ -336,6 +341,86 @@ HGTREE_NATIVE_SERIALIZED_TYPE_ROWS = {
         "descriptorRaw": 0x000000F850F4EE0C,
     },
 }
+
+STREAMING_SCENE_V2_CREATE_ICALL_INDEX = 621
+STREAMING_SCENE_V2_CREATE_ICALL_VA = 0x1801DE220
+STREAMING_SCENE_V2_CREATE_ICALL_NAME = (
+    "UnityEngine.HyperGryph.Streaming.StreamingSceneV2::Create_Injected"
+)
+STREAMING_SCENE_V2_BINARY_BODIES = [
+    (
+        "UnityPlayer.dll",
+        "StreamingSceneV2.Create_Injected icall wrapper",
+        0x1801DE220,
+        0xF6,
+        "cbb1c6b2db31de3a31ea15715f48321031c667a5ce8d3b78fd96780102f3d355",
+    ),
+    (
+        "UnityPlayer.dll",
+        "StreamingSceneV2 bytes loader",
+        0x18117B200,
+        0x1060,
+        "5b89a0f553ba1047979d0294123c351c3fdd0997fcdc70606ad3623eb71cbd8f",
+    ),
+    (
+        "UnityPlayer.dll",
+        "StreamingSceneV2 chunk path builder",
+        0x181177230,
+        0x107,
+        "b191cd86ed35be83b1636c734593a75958fc0484b932af27931d8828bae8a4dd",
+    ),
+    (
+        "UnityPlayer.dll",
+        "StreamingSceneV2 request callback",
+        0x18111ADF0,
+        0x109,
+        "05293c4ea0d19c88ec586a623da4370b3e1ef661f62d9132cb075a81b0f32d2a",
+    ),
+    (
+        "UnityPlayer.dll",
+        "interleaved-token LZ4 decoder",
+        0x18160EAE0,
+        0x382,
+        "f36ef38fc92e3c21dcaed9e0ad249b5783e1ce2ca4db6fc4ba80a31842884327",
+    ),
+    (
+        "GameAssembly.dll",
+        "StreamingSceneV2.Create",
+        0x1853965E0,
+        0x14,
+        "fdd328cd688c14626484e4cdf4eee8ef5aa30df259dfe0f0c6cd1fa4425411e8",
+    ),
+    (
+        "GameAssembly.dll",
+        "StreamingSceneV2.Create_Injected",
+        0x183F01530,
+        0x50,
+        "0ff632a05af8380aca49643eb1dee5e6d704ca5b5844f0701c3b946b23f6b0f8",
+    ),
+    (
+        "GameAssembly.dll",
+        "BaseGameScene.CreateStreamingScene",
+        0x183F01190,
+        0x3A0,
+        "1391e46affd12e415010bba0224ee91fc72676d15e5a5bed1ed9d3f5a29cc2fb",
+    ),
+]
+STREAMING_SCENE_V2_COMPONENT_BITS = [
+    {"bit": 0, "name": "Transform", "componentCount": 66514, "fileCount": 38452},
+    {"bit": 1, "name": "MeshFilter", "componentCount": 28, "fileCount": 26},
+    {"bit": 2, "name": "MeshRenderer", "componentCount": 28, "fileCount": 26},
+    {"bit": 4, "name": "BoxCollider", "componentCount": 136, "fileCount": 134},
+    {"bit": 14, "name": "HGEnvironmentVolume", "componentCount": 40660, "fileCount": 36890},
+    {"bit": 15, "name": "Volume", "componentCount": 330, "fileCount": 300},
+    {"bit": 16, "name": "ReflectionProbe", "componentCount": 9924, "fileCount": 3468},
+    {"bit": 17, "name": "Light", "componentCount": 15240, "fileCount": 1720},
+    {"bit": 19, "name": "HGTerrain", "componentCount": 70, "fileCount": 70},
+    {"bit": 25, "name": "HGAdditionalLightData", "componentCount": 15240, "fileCount": 1720},
+    {"bit": 29, "name": "LensFlareComponentSRP", "componentCount": 166, "fileCount": 166},
+    {"bit": 32, "name": "HGWaterGlobalConfig", "componentCount": 138, "fileCount": 110},
+    {"bit": 33, "name": "HGWindMotor", "componentCount": 102, "fileCount": 56},
+    {"bit": 40, "name": "HGVolumetricCloud", "componentCount": 22, "fileCount": 6},
+]
 
 IL2CPP_METADATA_SECTION_NAMES = [
     "stringLiteral",
@@ -1403,6 +1488,381 @@ def validate_hgtree_native_serialized_type_census(
         "mapLoadExportGate": gate,
         "hgtreeTopLevelObjectCount": 0,
         "hgtreeDataTopLevelObjectCount": 0,
+        "boundary": data.get("boundary"),
+    }
+
+
+def validate_streaming_scene_v2_payload_census(
+    unity_image: PEImage,
+    game_image: PEImage,
+    census: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Pin the retail StreamingSceneV2 route and its scanned payload surfaces."""
+
+    source = STREAMING_SCENE_V2_PAYLOAD_CENSUS
+    require(
+        "streaming_scene_v2_unity_image_base",
+        unity_image.image_base,
+        0x180000000,
+        unity_image.path,
+    )
+    require(
+        "streaming_scene_v2_game_image_base",
+        game_image.image_base,
+        0x180000000,
+        game_image.path,
+    )
+    name_pointer = unity_image.u64(
+        UNITY_HG_ICALL_NAME_TABLE_VA + STREAMING_SCENE_V2_CREATE_ICALL_INDEX * 8
+    )
+    require(
+        "streaming_scene_v2_create_icall_name",
+        unity_image.cstring(name_pointer),
+        STREAMING_SCENE_V2_CREATE_ICALL_NAME,
+        unity_image.path,
+    )
+    require(
+        "streaming_scene_v2_create_icall_function",
+        unity_image.u64(
+            UNITY_HG_ICALL_FUNCTION_TABLE_VA
+            + STREAMING_SCENE_V2_CREATE_ICALL_INDEX * 8
+        ),
+        STREAMING_SCENE_V2_CREATE_ICALL_VA,
+        unity_image.path,
+    )
+
+    binary_rows = []
+    for image_name, name, virtual_address, size, expected_hash in (
+        STREAMING_SCENE_V2_BINARY_BODIES
+    ):
+        image = unity_image if image_name == "UnityPlayer.dll" else game_image
+        actual_hash = hashlib.sha256(image.read(virtual_address, size)).hexdigest()
+        require(
+            f"streaming_scene_v2_{name.lower().replace(' ', '_').replace('.', '_')}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        binary_rows.append(
+            {
+                "image": image_name,
+                "name": name,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size,
+                "sha256": actual_hash,
+            }
+        )
+
+    data = (
+        census
+        if census is not None
+        else json.loads(source.read_text(encoding="utf-8"))
+    )
+    inputs = data.get("installedInputs") or {}
+    managed = data.get("managedBridge") or {}
+    native = data.get("nativeLoader") or {}
+    configs = data.get("serializedMapConfigs") or {}
+    vfs = data.get("installedVfs") or {}
+    blocks = vfs.get("blocks") or {}
+    families = vfs.get("families") or {}
+    payloads = data.get("streamingPayloads") or {}
+    dynamic = data.get("dynamicStreaming") or {}
+    dynamic_union = dynamic.get("initAndStreaming") or {}
+    dynamic_main = dynamic.get("fbMain") or {}
+    expected_parameter = {
+        "sizeBytes": 40,
+        "fields": {
+            "mapName": 0,
+            "regionHandle": 8,
+            "streamingRootObject": 16,
+            "streamingDataPathRoot": 24,
+            "isDev": 32,
+        },
+    }
+    expected_native_paths = [
+        "{0}/[dev]{1}.bytes",
+        "{0}/{1}.bytes",
+        "{0}/{1}{2}ChunkData_Global_{3}_{4}.bytes",
+        "{0}/{1}{2}ChunkData_{3}_{4}_{5}_{6}.bytes",
+    ]
+    expected_base_scene_offsets = {
+        "streamingSceneV2": 72,
+        "layerEnabledInDefaultArea": 88,
+        "streamingRootObject": 112,
+        "streamingMapConfig": 192,
+    }
+    expected_map_config_offsets = {
+        "mapName": 24,
+        "exportScenePathRoot": 32,
+        "streamingDataPathRoot": 40,
+        "isDev": 48,
+        "mapSceneName": 56,
+        "lowMemory": 64,
+    }
+    checks = (
+        (
+            "schema",
+            data.get("schema"),
+            "endfield.streaming-scene-v2-payload-census.v1",
+        ),
+        (
+            "unity_player_hash",
+            inputs.get("unityPlayerSha256"),
+            EXPECTED_HASHES["unity_player"],
+        ),
+        (
+            "game_assembly_hash",
+            inputs.get("gameAssemblySha256"),
+            EXPECTED_HASHES["game_assembly"],
+        ),
+        (
+            "global_metadata_hash",
+            inputs.get("globalMetadataSha256"),
+            EXPECTED_HASHES["global_metadata"],
+        ),
+        (
+            "managed_type_index",
+            managed.get("streamingSceneV2TypeDefinitionIndex"),
+            61041,
+        ),
+        ("managed_type_token", managed.get("streamingSceneV2TypeToken"), "0x020000A4"),
+        ("managed_create_index", managed.get("createMethodIndex"), 478285),
+        ("managed_create_token", managed.get("createMethodToken"), "0x060001E9"),
+        (
+            "managed_create_injected_index",
+            managed.get("createInjectedMethodIndex"),
+            478303,
+        ),
+        (
+            "managed_create_injected_token",
+            managed.get("createInjectedMethodToken"),
+            "0x060001FB",
+        ),
+        (
+            "managed_base_scene_create_index",
+            managed.get("baseGameSceneCreateStreamingSceneMethodIndex"),
+            49416,
+        ),
+        (
+            "managed_base_scene_create_token",
+            managed.get("baseGameSceneCreateStreamingSceneMethodToken"),
+            "0x0600C109",
+        ),
+        (
+            "managed_parameter_layout",
+            managed.get("streamingSceneParameter"),
+            expected_parameter,
+        ),
+        (
+            "managed_base_scene_offsets",
+            managed.get("baseGameSceneFieldOffsets"),
+            expected_base_scene_offsets,
+        ),
+        (
+            "managed_map_config_offsets",
+            managed.get("streamingMapConfigFieldOffsets"),
+            expected_map_config_offsets,
+        ),
+        ("native_icall_index", native.get("createInjectedIcallIndex"), 621),
+        (
+            "native_icall_name",
+            native.get("createInjectedIcallName"),
+            STREAMING_SCENE_V2_CREATE_ICALL_NAME,
+        ),
+        (
+            "native_icall_function",
+            native.get("createInjectedIcallFunction"),
+            "0x1801DE220",
+        ),
+        ("native_path_formats", native.get("pathFormats"), expected_native_paths),
+        (
+            "native_compression",
+            native.get("compression"),
+            "uint32 little-endian decompressed size followed by Unity "
+            "interleaved-token LZ4 with big-endian match offsets",
+        ),
+        ("native_binary_bodies", native.get("binaryBodies"), binary_rows),
+        (
+            "map_object_index_hash",
+            configs.get("objectIndexObjectsGzipSha256"),
+            "6f59db82177cd1abd027bfed385145337403a5b0791bcb628287b53e1ad341cd",
+        ),
+        (
+            "map_schema_index_hash",
+            configs.get("objectIndexSchemasGzipSha256"),
+            "52b320d7e9933c64d6ab95a3572802f2f1bec96038b6bacfcae3b61780de407d",
+        ),
+        ("map_config_count", configs.get("configCount"), 83),
+        ("map_unique_identity_count", configs.get("uniqueIdentityCount"), 83),
+        (
+            "map_normalized_digest",
+            configs.get("normalizedConfigSha256"),
+            "0ddc044ba3cf18e417f0c265ff1db74a84267cfbf753a39d72ca9fd64eb1a19e",
+        ),
+        ("map_chunk_info_root_count", configs.get("chunkInfoRootCount"), 83),
+        ("map_missing_roots", configs.get("missingChunkInfoRoots"), 0),
+        ("map_extra_roots", configs.get("extraChunkInfoRoots"), 0),
+        ("vfs_file_count", vfs.get("fileCount"), 53206),
+        ("vfs_chunk_count", vfs.get("chunkCount"), 89),
+        ("vfs_total_bytes", vfs.get("totalBytes"), 752851287),
+        (
+            "vfs_file_digest",
+            vfs.get("normalizedFileRecordsSha256"),
+            "9ce5d487f7eee9b46a2af6b5995e1fa0d499db30a9bb8146501d1bf68d10dc0e",
+        ),
+        (
+            "vfs_chunk_digest",
+            vfs.get("normalizedChunksSha256"),
+            "76a03a03b5bc32a083a373bd0d2959731ddf81b7dd0268608d7240f5883a9653",
+        ),
+        (
+            "vfs_block_digest",
+            vfs.get("normalizedBlocksSha256"),
+            "7e9cdd8b5b9e4c0bf96977f278dec7dbc89a7353b304cde2b891fac3b17edcd8",
+        ),
+        (
+            "vfs_streaming_block",
+            blocks.get("Streaming"),
+            {"fileCount": 51095, "chunkCount": 65, "totalBytes": 700205610},
+        ),
+        (
+            "vfs_dynamic_block",
+            blocks.get("DynamicStreaming"),
+            {"fileCount": 2111, "chunkCount": 24, "totalBytes": 52645677},
+        ),
+        (
+            "vfs_chunk_info_count",
+            (families.get("StreamingChunkInfo") or {}).get("fileCount"),
+            83,
+        ),
+        (
+            "vfs_init_chunk_count",
+            (families.get("InitChunkData") or {}).get("fileCount"),
+            25506,
+        ),
+        (
+            "vfs_streaming_chunk_count",
+            (families.get("StreamingChunkData") or {}).get("fileCount"),
+            25506,
+        ),
+        ("payload_file_count", payloads.get("fileCount"), 51012),
+        ("payload_compressed_bytes", payloads.get("compressedBytes"), 699441638),
+        (
+            "payload_decompressed_bytes",
+            payloads.get("decompressedBytes"),
+            3088714060,
+        ),
+        (
+            "payload_union_record_count",
+            payloads.get("unionRecordCount"),
+            3084834,
+        ),
+        (
+            "payload_tag_counts",
+            payloads.get("recordTagCounts"),
+            {"1": 66514, "2": 2933422, "3": 84898},
+        ),
+        (
+            "payload_source_digest",
+            payloads.get("normalizedSourceSha256"),
+            "6911a86a785c84334b98b7226e915a320f83989f203da641dd207d1f5637ae5b",
+        ),
+        (
+            "payload_component_bits",
+            payloads.get("componentBits"),
+            STREAMING_SCENE_V2_COMPONENT_BITS,
+        ),
+        (
+            "payload_hlod_bit11_count",
+            payloads.get("hlodGroupBit11ComponentCount"),
+            0,
+        ),
+        (
+            "payload_hgtree_bit41_count",
+            payloads.get("hgtreeBit41ComponentCount"),
+            0,
+        ),
+        ("dynamic_union_file_count", dynamic_union.get("fileCount"), 1576),
+        (
+            "dynamic_union_compressed_bytes",
+            dynamic_union.get("compressedBytes"),
+            42598293,
+        ),
+        (
+            "dynamic_union_decompressed_bytes",
+            dynamic_union.get("decompressedBytes"),
+            239185352,
+        ),
+        ("dynamic_union_record_count", dynamic_union.get("unionRecordCount"), 289786),
+        (
+            "dynamic_union_tag_counts",
+            dynamic_union.get("recordTagCounts"),
+            {"2": 289786},
+        ),
+        (
+            "dynamic_union_component_count",
+            dynamic_union.get("componentEntryCount"),
+            0,
+        ),
+        (
+            "dynamic_union_source_digest",
+            dynamic_union.get("normalizedSourceSha256"),
+            "7db9adf49d748ecf68cfe87f063c90d9d184b5f41c6968783b5f4ee8e292f33b",
+        ),
+        ("dynamic_main_file_count", dynamic_main.get("fileCount"), 457),
+        ("dynamic_main_source_bytes", dynamic_main.get("sourceBytes"), 10035624),
+        ("dynamic_main_grid_count", dynamic_main.get("gridCount"), 4710),
+        (
+            "dynamic_main_source_digest",
+            dynamic_main.get("normalizedSourceSha256"),
+            "e78970ca470d8ad42ee2c1c254ec76b0d25f812dcca2be3bd7a8f90e7fce23f7",
+        ),
+        (
+            "dynamic_main_tree_root_count",
+            dynamic_main.get("treeRootCompCount"),
+            2828,
+        ),
+        (
+            "dynamic_main_tree_root_file_count",
+            dynamic_main.get("treeRootCompFileCount"),
+            84,
+        ),
+        (
+            "dynamic_main_nature_resource_count",
+            dynamic_main.get("natureResourceCompCount"),
+            2828,
+        ),
+        (
+            "dynamic_main_lod_grid_count",
+            dynamic_main.get("lodGridResourceCount"),
+            2771,
+        ),
+        (
+            "dynamic_main_tree_system_value",
+            dynamic_main.get("dynamicSystemTreeValue"),
+            11,
+        ),
+        (
+            "dynamic_main_tree_data_value",
+            dynamic_main.get("dynamicSceneDataTreeRootCompValue"),
+            64,
+        ),
+        (
+            "dynamic_main_tree_fields",
+            dynamic_main.get("treeRootCompFields"),
+            {"tid": "Int32", "normalModel": "Int64"},
+        ),
+    )
+    for check, actual, expected in checks:
+        require(f"streaming_scene_v2_census_{check}", actual, expected, source)
+
+    return {
+        "managedBridge": managed,
+        "nativeLoader": native,
+        "serializedMapConfigs": configs,
+        "installedVfs": vfs,
+        "streamingPayloads": payloads,
+        "dynamicStreaming": dynamic,
         "boundary": data.get("boundary"),
     }
 
@@ -3510,6 +3970,11 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     hgtree_native_serialized_type_census = (
         validate_hgtree_native_serialized_type_census(PEImage(UNITY_PLAYER))
     )
+    streaming_scene_v2_payload_census = (
+        validate_streaming_scene_v2_payload_census(
+            PEImage(UNITY_PLAYER), PEImage(GAME_ASSEMBLY)
+        )
+    )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
     require(
@@ -3526,8 +3991,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v16",
-        "status": "installed_cap_hgtree_component67_top_level_serialized_surface_excluded",
+        "schema": "endfield.recovered-light-cull-cap.v17",
+        "status": "installed_cap_hgtree_component67_streaming_payload_surfaces_excluded",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -3594,8 +4059,19 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "StreamingAssets scan uses the 117 HGMeshRendererData objects as a "
             "positive map-and-export gate but finds zero top-level HGTree or "
             "HGTreeData objects. Their static Unity-serialized object surface "
-            "is therefore excluded; proprietary streaming bytes, nested data, "
-            "and runtime construction remain open. The native name/owner of "
+            "is therefore excluded. The exact StreamingSceneV2 managed/native "
+            "Create route, 83 serialized map roots, path construction, request "
+            "callback, and interleaved-token LZ4 decoder are now pinned. A full "
+            "scan of 51,012 main Streaming payloads (3,088,714,060 decoded "
+            "bytes and 3,084,834 union records) finds no HGTree bit-41 or "
+            "HLODGroup bit-11 component entry. All 1,576 DynamicStreaming "
+            "init/stream payloads contain only union tag 2 and no component "
+            "entry. Its 457 fb_main files do contain 2,828 gameplay "
+            "FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 "
+            "and TreeRootComp=64 prove that this destructible-tree normal-model "
+            "route is separate from both StreamingComponentType HGTree bit 41 "
+            "and ECS component id 67. Nested/procedural data and runtime "
+            "construction remain open. The native name/owner of "
             "id 67 remains open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
@@ -3653,6 +4129,18 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "controlledPositiveCount": 117,
                 "hgtreeCount": 0,
                 "hgtreeDataCount": 0,
+            },
+            "streamingSceneV2PayloadCensus": {
+                "path": STREAMING_SCENE_V2_PAYLOAD_CENSUS.relative_to(
+                    LAB_ROOT
+                ).as_posix(),
+                "serializedMapConfigCount": 83,
+                "installedVfsFileCount": 53_206,
+                "mainPayloadFileCount": 51_012,
+                "mainPayloadDecompressedBytes": 3_088_714_060,
+                "hgtreeBit41ComponentCount": 0,
+                "dynamicUnionComponentCount": 0,
+                "dynamicGameplayTreeRootCompCount": 2_828,
             },
         },
         "settingTextAssets": asset_records,
@@ -3720,6 +4208,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "hgtreeNativeSerializedTypeCensus": (
                 hgtree_native_serialized_type_census
             ),
+            "streamingSceneV2PayloadCensus": (
+                streaming_scene_v2_payload_census
+            ),
             "desktopNoSecondTruncation": True,
         },
         "sourceFiles": {
@@ -3768,6 +4259,11 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the 117-object installed HGMeshRendererData corpus, its 1,449 descriptors, and the absence of component id 67",
                 "the UnityPlayer native serialized class IDs for HGTree, HGTreeData, HGMeshRenderer, and HGMeshRendererData",
                 "the controlled full-VFS 117-object positive gate and zero top-level HGTree/HGTreeData object census",
+                "the StreamingSceneV2 managed/native Create route, icall 621, path builder, request callback, and interleaved-token LZ4 decoder",
+                "all 83 StreamingMapConfig roots and their one-to-one StreamingChunkInfo coverage",
+                "the full 51,012-file main Streaming payload census and absence of HGTree bit 41 and HLODGroup bit 11",
+                "the 1,576-file DynamicStreaming init/stream census with only tag-2 records and no component entries",
+                "the separate DynamicStreaming gameplay-tree route with 2,828 TreeRootComp rows and enum identities Tree=11/TreeRootComp=64",
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
@@ -3781,7 +4277,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic names of the initially zero HGTree runtime-state bytes",
-                "the component-bit-67 LOD-count/range producer and native component name/owner in proprietary streaming bytes, nested data, or another runtime source outside the excluded static routes",
+                "the component-bit-67 LOD-count/range producer and native component name/owner in nested/procedural data or another runtime source outside the excluded static and Streaming component-vector routes",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -3818,7 +4314,7 @@ def main() -> int:
         "type identity/id-80 registration lifecycle/runtime transform, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation plus managed-converter, HGMeshRendererData, and "
-        "top-level HGTree/HGTreeData exclusions, "
+        "top-level HGTree/HGTreeData and Streaming payload-vector exclusions, "
         "ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "

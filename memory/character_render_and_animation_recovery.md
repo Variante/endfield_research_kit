@@ -150,8 +150,22 @@ NPC archetypes are imported as labeled source kits.
   generic TypeTree objects into an otherwise minimal AssetMap. One controlled
   full-StreamingAssets scan produced and re-exported the same 117 unique
   `HGMeshRendererData` identities but zero `HGTree`/`HGTreeData` objects. The
-  static top-level Unity object surface is therefore excluded; nested payloads,
-  proprietary streaming `.bytes`, and runtime construction remain open.
+  static top-level Unity object surface is therefore excluded. The proprietary
+  `.bytes` route is now substantially narrower too: managed
+  `StreamingSceneV2.Create` reaches dedicated HG icall 621 and native loader
+  `0x18117B200`, with the exact path builder, request callback, and custom
+  interleaved-token LZ4 decoder pinned. All 83 serialized `StreamingMapConfig`
+  roots have matching `StreamingChunkInfo` files. A complete scan of 51,012
+  main Streaming payloads (3,088,714,060 decoded bytes; 3,084,834 union
+  records) finds neither HGTree bit 41 nor HLODGroup bit 11. All 1,576
+  DynamicStreaming init/stream payloads contain only tag-2 records and no
+  component entry. The 457 dynamic `fb_main` files do contain 2,828
+  `FBDynamicSceneTreeRootComp` rows, but their gameplay identities
+  `EDynamicSystem.Tree=11` and `EDynamicSceneData.TreeRootComp=64` are separate
+  from both serialized HGTree bit 41 and ECS component 67. The compact
+  hash/count evidence is
+  `Generated/OriginalData/CharInfoPresentation/streaming_scene_v2_payload_census.json`.
+  Nested/procedural data and runtime construction remain open.
   Native entity-type registration core `0x1801FAEC0` now closes each input as
   an 8-byte row `(int16 id, uint16 size, uint32 cumulativeOffset)`, with
   component storage beginning at byte 8 and archetype size/offset lookups at
@@ -418,7 +432,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 1. Recover the actual scheduled renderer/entity consumer of cull-view
    `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
    bounds. Resolve the remaining loader-record zero bytes plus the component-67
-   LOD-count/range producer and exact native type-name link. Then recover the retail
+   LOD-count/range producer and exact native type-name link, searching nested or
+   procedural/runtime sources outside the now-excluded Streaming component
+   vectors. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
