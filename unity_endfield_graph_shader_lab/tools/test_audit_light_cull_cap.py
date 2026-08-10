@@ -789,6 +789,36 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         downstream = enabled_modes["downstreamSearchBoundary"]
         self.assertEqual(downstream["requestMaskJobOffset"], "0x44")
+        self.assertTrue(enabled_modes["downstreamConsumerClosed"])
+        self.assertEqual(downstream["gpuDrivenRequestMaskJobOffset"], "0x54")
+        gpu_consumer = downstream["gpuDrivenRendererConsumer"]
+        self.assertTrue(gpu_consumer["closed"])
+        self.assertEqual(gpu_consumer["generations"], ["V1", "V2"])
+        self.assertEqual(gpu_consumer["variants"], ["default", "pre_z"])
+        self.assertEqual(gpu_consumer["recordOffset"], "0x14")
+        self.assertEqual(
+            gpu_consumer["representativeReadSites"],
+            [
+                "0x1810E8E73",
+                "0x1810EA245",
+                "0x1810F5F7F",
+                "0x1810F7356",
+            ],
+        )
+        gpu_routes = result["gpuDrivenRendererList"]
+        self.assertTrue(gpu_routes["enabledLightModesReadObserved"])
+        self.assertEqual(gpu_routes["descriptorSizeBytes"], 0xA0)
+        self.assertEqual(gpu_routes["requestLightModeMaskOffset"], "0x54")
+        self.assertEqual(
+            [(row["generation"], row["variant"]) for row in gpu_routes["entries"]],
+            [
+                ("V1", "default"),
+                ("V1", "pre_z"),
+                ("V2", "default"),
+                ("V2", "pre_z"),
+            ],
+        )
+        self.assertEqual(len(gpu_routes["verifiedBodies"]), 20)
         self.assertEqual(downstream["testedRendererEntryOffset"], "0x1C")
         self.assertTrue(downstream["projectionHypothesisRetracted"])
         self.assertTrue(downstream["distinctMaskRoleClosed"])
@@ -1139,6 +1169,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_create_renderer_list_child_core_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_gpu_driven_v2_record_consumer_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1810F58F0 and size == 0xA20:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_gpu_driven_renderer_v2_record_consumer_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

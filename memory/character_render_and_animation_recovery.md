@@ -129,7 +129,7 @@ NPC archetypes are imported as labeled source kits.
   closed too: the Renderer base constructor defaults field `+0x250` to
   `0xFFFFFFFF`; builders `0x18042A130/0x18042AB50` copy it directly to every
   record `+0x14`, while generic path `0x180BCCB60 -> 0x180BCB760` carries the
-  same value through constructor input `+0x20`. The two inspected renderer-list
+  same value through constructor input `+0x20`. The two HGTree renderer-list
   callbacks store the requested mask at job `+0x44` and test it against a
   separate `0x60`-stride renderer-entry word at `+0x1C`. That word is now
   independently closed: builders `0x18109BE90/0x18109C9D0` clear it, query the
@@ -158,10 +158,21 @@ NPC archetypes are imported as labeled source kits.
   The other HGTree renderer-list variants do not reveal another route:
   internal-call entries 564/565/566 (default, child-view, and PreZ) reach cores
   `0x18107EE40/0x18107FCF0/0x181080190`, which all converge on scheduler
-  `0x181080730` and the same two already inspected callbacks.
-  The exact later native consumer of record `+0x14` remains open outside this
-  direct lookup/escape surface. This
-  loader blob is not the other 24-byte structure used by LOD jobs. The latter
+  `0x181080730` and the same two already inspected callbacks. The actual
+  downstream consumer is instead in the separate GPU-driven renderer path.
+  HG internal-call entries 151/152 and 164/165 identify
+  `GPUDrivenRendererV1/V2` default/PreZ routes; their four cores build
+  `0xA0`-byte jobs, whose callbacks read requested light modes from `+0x54`,
+  select the `0x7F00` ECS renderer column, and reach V1/V2 default/PreZ
+  consumers. Representative consumers `0x1810E87E0/0x1810E9AD0/`
+  `0x1810F58F0/0x1810F6BC0` form a record cursor at base `+0x0C` or `+0x10`,
+  read dword `+0x14`, and advance by `0x18`. They OR this
+  `enabledLightModes` word with candidate-pass `+0x18` and callback-derived
+  flags, then apply `(combinedFlags & job[+0x48]) == job[+0x4C]`; requested
+  light modes are independently tested against candidate-pass `+0x1C` with
+  the request mask at job `+0x54`. The downstream native consumption and its separation from
+  the shader-supported-pass mask are therefore closed for all four routes.
+  This loader blob is not the other 24-byte structure used by LOD jobs. The latter
   is archetype component bit 67: `+0x00` is LOD count, `+0x01/+0x02` are the
   desired and availability-resolved indices, `+0x03` carries transition/output
   history, `+0x04/+0x05` are pending/available LOD masks, `+0x08` is a 64-bit
@@ -280,9 +291,7 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The semantic
-  reason for loader record `+0x0C`'s Mesh/filter dual use, the downstream native consumer of
-  `enabledLightModes` at record `+0x14` beyond the now-excluded direct
-  lookup/escape surface and callback-A ECS-column lookalike, the component-67
+  reason for loader record `+0x0C`'s Mesh/filter dual use, the component-67
   standalone native type name, any separate post-dispatch copy or consumer of
   view `+0x18`,
   any separate
@@ -520,11 +529,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
    `screenSizeMinimumSquared`; the current scheduled batch core directly
    excludes it. Keep that value distinct from both squared `parentLODBias` and
    the HGTreeRenderer LOD bounds. Resolve the semantic reason for loader record
-   `+0x0C`'s Mesh/filter dual use, the downstream native consumer of
-   `enabledLightModes` at record `+0x14` beyond the now-excluded direct
-   lookup/escape surface and callback-A ECS-column lookalike, and the
-   exact native type-name link for component 67; its serialized LOD-count/range producer is
-   now closed. Then recover the retail
+   `+0x0C`'s Mesh/filter dual use and the exact native type-name link for
+   component 67; its serialized LOD-count/range producer is now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom

@@ -263,6 +263,26 @@ UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGFactoryRenderManager::"
     "CreateBatchedEntitiesObsolete_Injected"
 )
+UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_ICALL_INDEX = 151
+UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_ICALL_VA = 0x1801E8F50
+UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_ICALL_NAME = (
+    "UnityEngine.HyperGryph.GPUDrivenRendererV1::CreateRendererList"
+)
+UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX = 152
+UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_PREZ_ICALL_VA = 0x1801E9060
+UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_PREZ_ICALL_NAME = (
+    "UnityEngine.HyperGryph.GPUDrivenRendererV1::CreateRendererListWithPreZ"
+)
+UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_ICALL_INDEX = 164
+UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_ICALL_VA = 0x1801E9680
+UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_ICALL_NAME = (
+    "UnityEngine.HyperGryph.GPUDrivenRendererV2::CreateRendererList"
+)
+UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX = 165
+UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_PREZ_ICALL_VA = 0x1801E9770
+UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_PREZ_ICALL_NAME = (
+    "UnityEngine.HyperGryph.GPUDrivenRendererV2::CreateRendererListWithPreZ"
+)
 UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX = 437
 UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_VA = 0x1801F2AB0
 UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_NAME = (
@@ -1282,6 +1302,109 @@ UNITY_HGTREE_BODIES = {
     ),
 }
 
+UNITY_GPU_DRIVEN_RENDERER_BODIES = {
+    "v1_create_renderer_list_binding": (
+        0x1801E8F50,
+        0x104,
+        "8f653840882c9756001ac93d29dcd065523823f2848fc2499b59ae5415554458",
+    ),
+    "v1_create_renderer_list_prez_binding": (
+        0x1801E9060,
+        0x116,
+        "6df01bd3ee5e675b0e1ee35e44963448ceab49308826a47ac4fc1d04b45486dc",
+    ),
+    "v2_create_renderer_list_binding": (
+        0x1801E9680,
+        0xE3,
+        "cf5891e6f6091f3a83596385d73f89e555ddc49f9479d0f1c772f0457742926b",
+    ),
+    "v2_create_renderer_list_prez_binding": (
+        0x1801E9770,
+        0xF5,
+        "9056d3206f70a5113f1dd23e5005c9f79b8ca5beb2da3d348e211a51cb7a0996",
+    ),
+    "v1_create_renderer_list_core": (
+        0x1810F0A80,
+        0x650,
+        "9d920cd0013b365aace2e42228906eedcabb5bbe67570f31d9cd56441858f552",
+    ),
+    "v1_create_renderer_list_prez_core": (
+        0x1810F10D0,
+        0x8B0,
+        "b17a07bc42692440c890fcf84fc9e3ed383847fe775829388c464755565af5d9",
+    ),
+    "v2_create_renderer_list_core": (
+        0x1810FD1B0,
+        0x620,
+        "f03ea39b9579a5986994c7b4fd3fdd95d67cfffc4b346b8eceb1e8b7a2082920",
+    ),
+    "v2_create_renderer_list_prez_core": (
+        0x1810FD7D0,
+        0x950,
+        "6d5d6d96174ba1d37e00738ebb202f808e001797a3c06774d86b16200e7a7ff0",
+    ),
+    "v1_create_renderer_list_job_builder": (
+        0x1810F0E70,
+        0x25C,
+        "2995b540f8d19c9c351719a7f02149889e08f35dc67e590c809eaf346cc0e429",
+    ),
+    "v1_create_renderer_list_prez_job_builder": (
+        0x1810F1580,
+        0x24A,
+        "6cded6f20f818caf39282ec79a0de60ff73c4f55136bcfc5b494fbec44a6eccb",
+    ),
+    "v2_create_renderer_list_job_builder": (
+        0x1810FD580,
+        0x24C,
+        "6195d27aca98386541cbf3b0c07fe141c30c679feff9582e3d956064209a42f7",
+    ),
+    "v2_create_renderer_list_prez_job_builder": (
+        0x1810FDD40,
+        0x246,
+        "db075b6a31cef92704386f7d2b510db9e9d913010b258932a16d19480ab5b4cb",
+    ),
+    "v1_renderer_list_callback": (
+        0x1810E6980,
+        0x38C,
+        "15da76527454166cffc89948c965d21913730d1224eee9411e223fbd3b63c37b",
+    ),
+    "v1_renderer_list_prez_callback": (
+        0x1810E65F0,
+        0x38C,
+        "4c413f0f04cbb13dd7f990d9ee6ada5bcecb1123e0542580673f4aaca205e08d",
+    ),
+    "v2_renderer_list_callback": (
+        0x1810F3970,
+        0x38C,
+        "ee36748b687e4e00102b5227b99158406b9fda5f9d32ebba55dd0b1249d8de2f",
+    ),
+    "v2_renderer_list_prez_callback": (
+        0x1810F3560,
+        0x40E,
+        "f02fb9a0fe31c7331ed0815ddac7c2a11bb420314f79d5b8d31fb6bb844e56fa",
+    ),
+    "v1_record_consumer": (
+        0x1810E87E0,
+        0xA30,
+        "3dd76e34c8ea1ae3cf3568472d98bcddb99d1f83202b90e736aef04ef2b7b7ed",
+    ),
+    "v1_prez_record_consumer": (
+        0x1810E9AD0,
+        0xDC0,
+        "f00c103b05016298943c30bdd5f982a9340c5e5318f2c5f48c59d2efe4129310",
+    ),
+    "v2_record_consumer": (
+        0x1810F58F0,
+        0xA20,
+        "eed2040a15f41aab2b236daed6b6f1495cad8de5f5c568798d00989f5ffdfd90",
+    ),
+    "v2_prez_record_consumer": (
+        0x1810F6BC0,
+        0xDA0,
+        "883b74e0921779332e377abe17bae779ba9189fea4dc96bcf7c2c4f5469d22e5",
+    ),
+}
+
 UNITY_RENDERER_BLOB_LOOKUP_VA = 0x180424C30
 UNITY_RENDERER_BLOB_LOOKUP_CALL_SITES = [
     0x18042A407,
@@ -1522,6 +1645,74 @@ UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
 }
 
 UNITY_HGTREE_SLICES = {
+    "gpu_driven_callbacks_request_mask_0x54": (
+        0x1810E69C9,
+        "8b4954488985a00000000fb6c20fa3c17308ffc741881049ffc0fec280fa1f72e9",
+    ),
+    "gpu_driven_v1_prez_callback_request_mask_0x54": (
+        0x1810E6639,
+        "8b4954488985a00000000fb6c20fa3c17308ffc741881049ffc0fec280fa1f72e9",
+    ),
+    "gpu_driven_v2_callback_request_mask_0x54": (
+        0x1810F39B9,
+        "8b4954488985a00000000fb6c20fa3c17308ffc741881049ffc0fec280fa1f72e9",
+    ),
+    "gpu_driven_v2_prez_callback_request_mask_0x54": (
+        0x1810F35A8,
+        "8b4954488985a00000000fb6c20fa3c17308ffc741881049ffc0fec280fa1f72e9",
+    ),
+    "gpu_driven_v1_record_base": (
+        0x1810E8C2F,
+        "4c8b742448498bc2488945284983c60c90",
+    ),
+    "gpu_driven_v1_enabled_light_modes_filter": (
+        0x1810E8E63,
+        "48837f28004c8b4424400f84c0020000458b6608440b6718418b4054440be685471c"
+        "0f84a1020000418b40484123c4413b404c0f8590",
+    ),
+    "gpu_driven_v1_record_stride": (
+        0x1810E9133,
+        "488b7c2438488b45284983c61848ffc04883eb014889452848895d30",
+    ),
+    "gpu_driven_v1_prez_record_base": (
+        0x1810E9FCA,
+        "4c8d59104c895c24",
+    ),
+    "gpu_driven_v1_prez_enabled_light_modes_filter": (
+        0x1810EA245,
+        "418b7304410b76180b75608b4754897424444185461c0f844b0500008b474823c6"
+        "3b474c0f853d",
+    ),
+    "gpu_driven_v1_prez_record_stride": (
+        0x1810EA7B5,
+        "488b85900000004983c31848ffc04c895c24484883ad980000000148898590000000",
+    ),
+    "gpu_driven_v2_record_base": (
+        0x1810F5D46,
+        "4c8d7a0c48894538",
+    ),
+    "gpu_driven_v2_enabled_light_modes_filter": (
+        0x1810F5F6F,
+        "48837f28004c8b4424400f84c3020000458b6708440b6718418b4054440be68547"
+        "1c0f84a4020000418b40484123c4413b40",
+    ),
+    "gpu_driven_v2_record_stride": (
+        0x1810F6242,
+        "488b7c2438488b45384983c71848ffc048836d400148894538",
+    ),
+    "gpu_driven_v2_prez_record_base": (
+        0x1810F70D9,
+        "4c8d51104c895424",
+    ),
+    "gpu_driven_v2_prez_enabled_light_modes_filter": (
+        0x1810F7337,
+        "448bcb410fbae90f4885f6440f44cb49837d280044894c24340f842b050000418b72"
+        "04410b75180b75588b4754897424444185451c0f840b0500008b474823c63b474c0f85",
+    ),
+    "gpu_driven_v2_prez_record_stride": (
+        0x1810F7881,
+        "4c8b5c2438488b45704983c21848ffc04c8954244848836d780148894570",
+    ),
     "instance_renderer_array_to_nested_serializer": (
         0x18106FAE2,
         "896c24204c8d050b59cb00488bce488d15658ace00e884b976ff"
@@ -4952,6 +5143,18 @@ def validate_unity_hgtree_renderer_boundary(
         True,
         image.path,
     )
+    require(
+        "unity_gpu_driven_renderer_icall_indices_in_bounds",
+        max(
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_ICALL_INDEX,
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX,
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_ICALL_INDEX,
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX,
+        )
+        < UNITY_HG_ICALL_COUNT,
+        True,
+        image.path,
+    )
     table_size = UNITY_HG_ICALL_COUNT * 8
     name_table = image.read(UNITY_HG_ICALL_NAME_TABLE_VA, table_size)
     function_table = image.read(UNITY_HG_ICALL_FUNCTION_TABLE_VA, table_size)
@@ -5074,6 +5277,92 @@ def validate_unity_hgtree_renderer_boundary(
                 "targetVirtualAddress": f"0x{actual_target:X}",
                 "coreVirtualAddress": f"0x{core:X}",
                 "schedulerCallVirtualAddress": f"0x{scheduler_call:X}",
+            }
+        )
+
+    gpu_driven_renderer_list_variants = []
+    for (
+        generation,
+        variant,
+        index,
+        expected_name,
+        expected_target,
+        core,
+        job_builder,
+        callback,
+        record_consumer,
+    ) in (
+        (
+            "V1",
+            "default",
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_ICALL_INDEX,
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_ICALL_NAME,
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_ICALL_VA,
+            0x1810F0A80,
+            0x1810F0E70,
+            0x1810E6980,
+            0x1810E87E0,
+        ),
+        (
+            "V1",
+            "pre_z",
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX,
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_PREZ_ICALL_NAME,
+            UNITY_GPU_DRIVEN_V1_CREATE_RENDERER_LIST_PREZ_ICALL_VA,
+            0x1810F10D0,
+            0x1810F1580,
+            0x1810E65F0,
+            0x1810E9AD0,
+        ),
+        (
+            "V2",
+            "default",
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_ICALL_INDEX,
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_ICALL_NAME,
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_ICALL_VA,
+            0x1810FD1B0,
+            0x1810FD580,
+            0x1810F3970,
+            0x1810F58F0,
+        ),
+        (
+            "V2",
+            "pre_z",
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX,
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_PREZ_ICALL_NAME,
+            UNITY_GPU_DRIVEN_V2_CREATE_RENDERER_LIST_PREZ_ICALL_VA,
+            0x1810FD7D0,
+            0x1810FDD40,
+            0x1810F3560,
+            0x1810F6BC0,
+        ),
+    ):
+        actual_name, actual_target = resolve_hg_icall(index)
+        require(
+            f"unity_gpu_driven_renderer_{generation}_{variant}_icall_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        require(
+            f"unity_gpu_driven_renderer_{generation}_{variant}_icall_target",
+            actual_target,
+            expected_target,
+            image.path,
+        )
+        gpu_driven_renderer_list_variants.append(
+            {
+                "generation": generation,
+                "variant": variant,
+                "index": index,
+                "name": actual_name,
+                "targetVirtualAddress": f"0x{actual_target:X}",
+                "coreVirtualAddress": f"0x{core:X}",
+                "jobBuilderVirtualAddress": f"0x{job_builder:X}",
+                "callbackVirtualAddress": f"0x{callback:X}",
+                "representativeRecordConsumerVirtualAddress": (
+                    f"0x{record_consumer:X}"
+                ),
             }
         )
 
@@ -5308,6 +5597,27 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
+    gpu_driven_bodies = []
+    for label, (virtual_address, size_bytes, expected_hash) in (
+        UNITY_GPU_DRIVEN_RENDERER_BODIES.items()
+    ):
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_gpu_driven_renderer_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        gpu_driven_bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
     renderer_blob_lookup_call_sites = find_relative_call_sites(
         image, UNITY_RENDERER_BLOB_LOOKUP_VA
     )
@@ -5530,6 +5840,64 @@ def validate_unity_hgtree_renderer_boundary(
                 "same scheduler and therefore do not expose a separate "
                 "uninspected callback family for runtime record+0x14"
             ),
+        },
+        "gpuDrivenRendererList": {
+            "entries": gpu_driven_renderer_list_variants,
+            "descriptorSizeBytes": 0xA0,
+            "requestLightModeMaskOffset": "0x54",
+            "rendererFamilyMask": "0x7F00",
+            "rendererPassMask": "0x60000",
+            "recordStrideBytes": 24,
+            "enabledLightModesRecordOffset": "0x14",
+            "enabledLightModesReadObserved": True,
+            "representativeReadSites": [
+                {
+                    "generation": "V1",
+                    "variant": "default",
+                    "recordBaseVirtualAddress": "0x1810E8C2F",
+                    "readVirtualAddress": "0x1810E8E73",
+                    "strideVirtualAddress": "0x1810E913C",
+                },
+                {
+                    "generation": "V1",
+                    "variant": "pre_z",
+                    "recordBaseVirtualAddress": "0x1810E9FCA",
+                    "readVirtualAddress": "0x1810EA245",
+                    "strideVirtualAddress": "0x1810EA7BC",
+                },
+                {
+                    "generation": "V2",
+                    "variant": "default",
+                    "recordBaseVirtualAddress": "0x1810F5D46",
+                    "readVirtualAddress": "0x1810F5F7F",
+                    "strideVirtualAddress": "0x1810F624B",
+                },
+                {
+                    "generation": "V2",
+                    "variant": "pre_z",
+                    "recordBaseVirtualAddress": "0x1810F70D9",
+                    "readVirtualAddress": "0x1810F7356",
+                    "strideVirtualAddress": "0x1810F788A",
+                },
+            ],
+            "filterEquation": (
+                "combinedFlags = record[+0x14] | candidatePass[+0x18] | "
+                "callbackDerivedFlags; "
+                "(combinedFlags & job[+0x48]) == job[+0x4C]"
+            ),
+            "requestEquation": (
+                "candidatePass[+0x1C] & job[+0x54] != 0"
+            ),
+            "interpretation": (
+                "all four GPUDrivenRenderer V1/V2 default/PreZ routes "
+                "carry the requested light-mode mask into job+0x54, select "
+                "the 0x7F00 renderer ECS column, and read each 0x18-byte "
+                "record's enabledLightModes word at +0x14. The record word "
+                "participates in the combined render-feature filter at "
+                "job+0x48/+0x4C, while the requested light-mode mask is "
+                "tested separately against candidatePass+0x1C."
+            ),
+            "verifiedBodies": gpu_driven_bodies,
         },
         "registrationInternalCall": {
             "index": UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX,
@@ -5812,6 +6180,7 @@ def validate_unity_hgtree_renderer_boundary(
                     },
                     "enabledLightModesAt0x14": {
                         "roleClosed": True,
+                        "downstreamConsumerClosed": True,
                         "passBitMeaningsClosed": True,
                         "nativeInitializationProducerClosed": True,
                         "hgtreeInitialValue": 0,
@@ -5858,6 +6227,8 @@ def validate_unity_hgtree_renderer_boundary(
                         ],
                         "downstreamSearchBoundary": {
                             "requestMaskJobOffset": "0x44",
+                            "hgtreeRequestMaskJobOffset": "0x44",
+                            "gpuDrivenRequestMaskJobOffset": "0x54",
                             "callbackAddresses": [
                                 "0x181067A70",
                                 "0x181064190",
@@ -6146,6 +6517,12 @@ def validate_unity_hgtree_renderer_boundary(
                                     "0x26",
                                 ],
                                 "enabledLightModesReadObserved": False,
+                                "scope": (
+                                    "direct renderer-blob lookup CFGs only; "
+                                    "GPU-driven renderer-list jobs receive the "
+                                    "same 0x7F00 component column through "
+                                    "their ECS query context"
+                                ),
                                 "callbackAFalsePositive": {
                                     "candidateReadVirtualAddress": (
                                         "0x181067F4B"
@@ -6209,6 +6586,39 @@ def validate_unity_hgtree_renderer_boundary(
                                     "accessor provenance"
                                 ),
                             },
+                            "gpuDrivenRendererConsumer": {
+                                "closed": True,
+                                "generations": ["V1", "V2"],
+                                "variants": ["default", "pre_z"],
+                                "rendererFamilyMask": "0x7F00",
+                                "recordStrideBytes": 24,
+                                "recordOffset": "0x14",
+                                "requestMaskJobOffset": "0x54",
+                                "combinedFilterMaskJobOffset": "0x48",
+                                "combinedFilterValueJobOffset": "0x4C",
+                                "candidatePassLightModeOffset": "0x1C",
+                                "representativeReadSites": [
+                                    "0x1810E8E73",
+                                    "0x1810EA245",
+                                    "0x1810F5F7F",
+                                    "0x1810F7356",
+                                ],
+                                "equations": [
+                                    (
+                                        "combinedFlags = record[+0x14] | "
+                                        "candidatePass[+0x18] | "
+                                        "callbackDerivedFlags"
+                                    ),
+                                    (
+                                        "(combinedFlags & job[+0x48]) == "
+                                        "job[+0x4C]"
+                                    ),
+                                    (
+                                        "candidatePass[+0x1C] & "
+                                        "job[+0x54] != 0"
+                                    ),
+                                ],
+                            },
                         },
                         "maskType": "System.UInt32",
                         "shaderLightModeLiteralCount": 32,
@@ -6232,12 +6642,17 @@ def validate_unity_hgtree_renderer_boundary(
                             "+0x250 to 0xFFFFFFFF; two direct record builders "
                             "copy that field to record+0x14, and the generic "
                             "builder passes the same field through constructor "
-                            "input+0x20 before the identical record write"
+                            "input+0x20 before the identical record write. "
+                            "GPUDrivenRenderer V1/V2 default and PreZ jobs "
+                            "then read record+0x14 from the selected 0x7F00 "
+                            "ECS column and feed it into their combined "
+                            "render-feature filter"
                         ),
                         "proofBoundary": (
-                            "the exact downstream render-stage consumer of "
-                            "enabledLightModes at runtime record+0x14 remains "
-                            "open. All 53 direct blob-lookup calls are "
+                            "the exact downstream native consumer is closed "
+                            "for GPUDrivenRenderer V1/V2 default and PreZ "
+                            "renderer-list routes. All 53 direct blob-lookup "
+                            "calls are "
                             "partitioned; 44 exact 0x7F00 calls across 41 "
                             "hot/cold entry CFGs expose no record+0x14 read, "
                             "non-stack record-base pointer store, record-base "
@@ -6253,11 +6668,14 @@ def validate_unity_hgtree_renderer_boundary(
                             "scheduler/callback family. The third direct "
                             "grouping consumer reads only +0x00/"
                             "+0x04/+0x08/+0x10, and the callback-A +0x14/"
-                            "0x18-stride lookalike is an ECS component-column "
-                            "float. The two inspected renderer-list callbacks "
-                            "instead test job+0x44 against the independently "
-                            "computed rendererEntry+0x1C shader-pass support "
-                            "mask"
+                            "0x18-stride lookalike is an unrelated ECS "
+                            "component-column float. Separately, four "
+                            "GPU-driven renderer-list callbacks select the "
+                            "0x7F00 ECS column and their V1/V2 default/PreZ "
+                            "consumers read record+0x14. That word feeds the "
+                            "job+0x48/+0x4C combined-flags filter, while "
+                            "job+0x54 is tested independently against "
+                            "candidatePass+0x1C"
                         ),
                     },
                 },
@@ -6995,8 +7413,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v30",
-        "status": "installed_cap_hgtree_nested_stack_escape_surface_closed",
+        "schema": "endfield.recovered-light-cull-cap.v31",
+        "status": "installed_cap_gpu_driven_enabled_light_modes_consumer_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -7045,13 +7463,22 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "the managed wrapper. The Renderer base constructor also defaults "
             "native field +0x250 to 0xFFFFFFFF; two direct record builders copy "
             "it to record +0x14, while the generic path carries it through "
-            "constructor input +0x20 before the same write. The two inspected "
+            "constructor input +0x20 before the same write. The two HGTree "
             "renderer-list callbacks compare job+0x44 against a separate "
             "renderer-entry +0x1C word. Two hash-pinned entry builders clear "
             "that word, query all 31 installed HGShaderLightMode pass names "
             "against the renderer material/shader, and set the supported "
             "bits. The entry word is therefore a shader-supported-pass mask, "
-            "not a projection of record +0x14. All 53 direct calls to the "
+            "not a projection of record +0x14. Separately, HyperGryph "
+            "internal-call entries 151/152 and 164/165 close "
+            "GPUDrivenRenderer V1/V2 default/PreZ renderer-list routes. Their "
+            "four job callbacks carry the request mask in descriptor +0x54, "
+            "select the 0x7F00 ECS renderer column, and their representative "
+            "V1/V2 default/PreZ consumers read record +0x14 at stride 0x18. "
+            "That enabledLightModes word is ORed with candidate-pass and "
+            "callback-derived flags before job+0x48/+0x4C mask/value "
+            "filtering; the requested mask is independently intersected with "
+            "candidate-pass +0x1C. All 53 direct calls to the "
             "renderer-blob lookup are now pinned and partitioned into 44 "
             "exact 0x7F00-family calls across 41 entry CFGs and nine "
             "other-family calls. Cross-hot/cold CFG taint finds no exact-path "
@@ -7072,9 +7499,10 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "consumer. A third direct component-"
             "grouping consumer reads only record +0x00/+0x04/+0x08/+0x10; "
             "the apparent callback-A +0x14/0x18-stride read is separately "
-            "proven to be an ECS component-column float. The later native "
-            "consumer of record +0x14 remains open outside this direct lookup "
-            "surface. The dispatch packet/"
+            "proven to be an unrelated ECS component-column float. The exact "
+            "downstream GPU-driven render-stage consumer of record +0x14 is "
+            "therefore closed outside the direct blob-lookup surface. The "
+            "dispatch packet/"
             "payload layouts, "
             "LODCrossFadeConfig enableDither/lodBias controls, parent and "
             "per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp "
@@ -7158,8 +7586,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "Any separate post-dispatch cull-view +0x18 consumer, the semantic "
-            "reason for loader record +0x0C's Mesh/filter dual use, the downstream native "
-            "consumer of enabledLightModes record +0x14, the "
+            "reason for loader record +0x0C's Mesh/filter dual use, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -7337,6 +7764,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
                 "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
+                "GPUDrivenRenderer V1/V2 default and PreZ internal-call bindings, cores, 0xA0-byte job builders, callbacks, and representative consumers that read 0x7F00 record+0x14 at stride 0x18",
+                "the split GPU-driven filtering contract: record+0x14 joins candidate-pass/callback flags for job+0x48/+0x4C mask-value filtering, while job+0x54 independently intersects candidate-pass+0x1C light-mode support",
                 "the independent renderer-entry +0x1C shader-supported-pass mask, both native builders, and its exact 31-name pass table",
                 "all three HGTree CreateRendererList variants and their convergence on one shared scheduler/callback family",
                 "the bounded runtime-record lookup surface: all 53 direct lookup calls, the 44-call exact 0x7F00 partition across 41 width-aware hot/cold entry CFGs, all seven local stack pointer stores with no address-taken descriptor escape, all six direct blob+0x04 call escapes, both Factory CreateBatchedEntities routes into the full-blob copy path, the third component-grouping consumer, zero direct +0x14 reads/non-stack pointer stores/returns, and rejection of callback A's ECS-column +0x14 lookalike",
@@ -7377,7 +7806,6 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "any separate post-dispatch copy or consumer of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic reason runtime record +0x0C's resolved Mesh-derived index is also consumed as a supplemental filter overlay",
-                "the exact downstream native consumer of enabledLightModes runtime record +0x14",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -7413,7 +7841,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers, all renderer-list variants, Factory blob-copy routes, independent renderer-entry pass mask, and complete direct renderer-blob lookup/escape census, "
+        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers and GPUDrivenRenderer V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, Factory blob-copy routes, independent renderer-entry pass mask, and complete direct renderer-blob lookup/escape census, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
