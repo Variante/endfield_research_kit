@@ -6399,6 +6399,31 @@ def _decode_audio_entity_param(payload: bytes, cursor: int) -> tuple[dict[str, A
     return detail, end
 
 
+def _decode_announce_audio_target_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the installed ``AnnounceAudioOnTarget._target`` null shape.
+
+    ``AnnounceAudioOnTarget`` uses the same managed ``Param<ScriptEntityPtr>``
+    generic as the other target actions, but the current formatter writes its
+    unset target as a compact ten-byte reference prefix rather than the
+    27-byte ``0x04 0x03`` constant pointer used by ``PlayAudioOnTarget``.
+    Every current authored row has this exact shape.  Keep the bytes opaque:
+    the prefix proves an unset/indirect target representation, not a concrete
+    entity owner or runtime target selection.
+    """
+    compact_null = b"\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
+    if payload[cursor : cursor + len(compact_null)] != compact_null:
+        return None
+    return {
+        "serializedShape": "announce-target-compact-null-reference",
+        "serializedHex": compact_null.hex(" "),
+        "bindingKind": "opaque",
+        "targetResolutionStatus": "targetRuntimeResolutionUnresolved",
+    }, cursor + len(compact_null)
+
+
 def _decode_vector3_param(
     payload: bytes,
     cursor: int,
@@ -6459,7 +6484,14 @@ def _decode_nullable_audio_field(
     blobs serialize an absent member as one ``0xff`` byte and a present member
     with its ordinary typed formatter.
     """
-    if cursor < len(payload) and payload[cursor] == 0xFF:
+    # AnnounceAudioOnTarget's target formatter has an exact ten-byte null
+    # representation beginning with 0xff; let its dedicated decoder consume
+    # that shape instead of truncating it to the generic one-byte null marker.
+    if (
+        decoder is not _decode_announce_audio_target_param
+        and cursor < len(payload)
+        and payload[cursor] == 0xFF
+    ):
         return {"present": False, "bindingKind": "null"}, cursor + 1
     decoded = decoder(payload, cursor)
     if decoded is None:
@@ -6474,7 +6506,7 @@ def _decode_nullable_audio_field(
             and detail.get("path") is None
             else "dynamic"
         )
-    else:
+    elif "bindingKind" not in detail:
         detail["bindingKind"] = "output"
     return detail, end
 
@@ -6530,6 +6562,33 @@ def _decode_audio_action(
         tuple[int, int],
         tuple[str, tuple[tuple[str, Any], ...]],
     ] = {
+        (0x0016, 0x09): (
+            "AnnounceAudioOnTarget",
+            (
+                ("target", _decode_announce_audio_target_param),
+                ("audioKey", _decode_audio_string_param),
+            ),
+        ),
+        (0x0028, 0x09): (
+            "BlockAutoMusicChange",
+            (("blockHandle", _decode_param_output),),
+        ),
+        (0x0029, 0x09): (
+            "BlockAutoMusicChangeCancel",
+            (("blockHandle", _decode_audio_i32_param),),
+        ),
+        (0x002A, 0x09): (
+            "BlockBattleMusic",
+            (("block", _decode_audio_bool_param),),
+        ),
+        (0x0089, 0x0B): (
+            "EnterCustomMusicMode",
+            (
+                ("allowCombatMusic", _decode_audio_bool_param),
+                ("audioEvent", _decode_audio_string_param),
+                ("autoExitOnRelease", _decode_audio_bool_param),
+            ),
+        ),
         (0x0306, 0x09): (
             "ManualRestoreMusicState",
             (
@@ -6631,6 +6690,21 @@ def _decode_audio_action(
                 ("stopOnRelease", _decode_audio_bool_param),
             ),
         ),
+        (0x0368, 0x0B): (
+            "PlayVoice",
+            (
+                ("target", _decode_audio_entity_param),
+                ("voiceHandle", _decode_param_output),
+                ("voId", _decode_audio_string_param),
+            ),
+        ),
+        (0x0369, 0x0A): (
+            "PlayVoiceNarrative",
+            (
+                ("voiceHandle", _decode_param_output),
+                ("voId", _decode_audio_string_param),
+            ),
+        ),
         (0x0363, 0x0D): (
             "PlayRadio",
             (
@@ -6665,6 +6739,23 @@ def _decode_audio_action(
                 ("placeholderMusicFadeInType", _decode_audio_i32_param),
                 ("stringParam", _decode_audio_string_param),
                 ("volume0To10", _decode_audio_float_param),
+            ),
+        ),
+        (0x036E, 0x14): (
+            "PostAudioCueOnRelease",
+            (
+                ("behaviourType", _decode_audio_i32_param),
+                ("boolParam", _decode_audio_bool_param),
+                ("boolParam1", _decode_audio_bool_param),
+                ("boolParam2", _decode_audio_bool_param),
+                ("cueHandlerId", _decode_param_output),
+                ("floatParam", _decode_audio_float_param),
+                ("intParam", _decode_audio_i32_param),
+                ("name", _decode_audio_string_param),
+                ("placeholderMusicFadeInType", _decode_audio_i32_param),
+                ("stringParam", _decode_audio_string_param),
+                ("volume0To10", _decode_audio_float_param),
+                ("onlyIfExecuted", _decode_audio_bool_param),
             ),
         ),
         (0x0371, 0x0B): (
@@ -6773,6 +6864,8 @@ def _decode_audio_action(
         }
 
     event_roles = {
+        "AnnounceAudioOnTarget": (("audioKey", "announceTarget"),),
+        "EnterCustomMusicMode": (("audioEvent", "customMusic"),),
         "PlayAudiAtPosition": (("key", "play"),),
         "PlayAudio": (("key", "play"),),
         "PlayAudioAndWait": (("eventName", "play"),),
@@ -6781,6 +6874,8 @@ def _decode_audio_action(
             ("startEvent", "standaloneStart"),
             ("stopEvent", "standaloneStop"),
         ),
+        "PlayVoice": (("voId", "voice"),),
+        "PlayVoiceNarrative": (("voId", "voiceNarrative"),),
         "PostAudioStatusEvent": (
             ("statusEnterEvent", "statusEnter"),
             ("statusExitEvent", "statusExit"),
@@ -6805,7 +6900,7 @@ def _decode_audio_action(
                 "sourceField": field["sourceField"],
             })
     cue_bindings = []
-    if action_name == "PostAudioCue":
+    if action_name.startswith("PostAudioCue"):
         field = fields["name"]
         value = field.get("value")
         if field.get("bindingKind") == "constant" and isinstance(value, str) and value:
@@ -7110,6 +7205,11 @@ def decode_levelscript_record_payload(
         if fmv_action:
             out["fmvAction"] = fmv_action
     if semantic_key in {
+        (0x0016, 0x09),
+        (0x0028, 0x09),
+        (0x0029, 0x09),
+        (0x002A, 0x09),
+        (0x0089, 0x0B),
         (0x0306, 0x09),
         (0x0307, 0x0B),
         (0x034C, 0x0C),
@@ -7119,9 +7219,12 @@ def decode_levelscript_record_payload(
         (0x034B, 0x14),
         (0x0352, 0x0C),
         (0x0367, 0x11),
+        (0x0368, 0x0B),
+        (0x0369, 0x0A),
         (0x0363, 0x0D),
         (0x0364, 0x0D),
         (0x036B, 0x13),
+        (0x036E, 0x14),
         (0x0371, 0x0B),
         (0x0373, 0x0C),
         (0x03D5, 0x0F),
