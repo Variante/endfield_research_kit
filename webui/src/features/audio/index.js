@@ -1520,7 +1520,13 @@
       ["levelScriptDynamicControls", asArray(catalog.levelScriptDynamicControlBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
       ["levelEventConditions", asArray(catalog.levelEventAudioConditions), (row) => `${row.type || row.id || t("unknown")} / union ${row.unionTagHex || "?"} / event key ${row.eventKey ?? "?"} / ${humanize(row.relationType || "")} / ${row.predicate || "?"} / authored occurrences ${formatNumber(row.authoredOccurrenceCount || 0)} / ${humanize(row.playbackRequestStatus || "")}`],
       ["wwiseSelectorGroups", asArray(catalog.wwiseSelectorGroups), (row) => {
-        const values = asArray(row.values).map((value) => `${value.valueIdHex || value.valueId || "?"}=${value.semanticName || humanize(value.semanticNameStatus || "unresolved")}`);
+        const values = asArray(row.values).map((value) => {
+          const input = `${value.valueIdHex || value.valueId || "?"}=${value.semanticName || humanize(value.semanticNameStatus || "unresolved")}`;
+          const resolved = value.resolvedValueIdHex
+            ? ` -> ${value.resolvedValueIdHex}${value.resolvedValueName ? `=${value.resolvedValueName}` : ""}`
+            : "";
+          return `${input}${resolved}`;
+        });
         return `${row.groupIdHex || "?"} / ${row.semanticLabel || humanize(row.semanticRole || "unknown")} / ${humanize(row.semanticEvidence || "unknown")} / ${humanize(row.groupType || "unknown")} / ${humanize(row.runtimeScope || "scope unresolved")}${values.length ? ` / values ${values.join(", ")}` : ""} / ${humanize(row.runtimeObservationStatus || "")}`;
       }],
     ];

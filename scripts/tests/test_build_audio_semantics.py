@@ -1370,6 +1370,20 @@ class AudioSemanticDataTests(unittest.TestCase):
                 [row["valueId"] for row in factory_mode["values"]],
                 [1, 2, 4, 8, 16, 32, 64],
             )
+            self.assertEqual(
+                [row["resolvedValueId"] for row in factory_mode["values"]],
+                [0x4527C498, 0xF3A9ACD5, 0x228CF0D8, 0xFB9CA5C8,
+                 0x59A68236, 0x2F715D31, 0x8353CA3C],
+            )
+            self.assertEqual(
+                [row["resolvedValueName"] for row in factory_mode["values"]],
+                ["normal", "liquid", "gas", "gasliquid", "gastrans",
+                 "liquidtrans", "solidtrans"],
+            )
+            self.assertEqual(
+                factory_mode["valueResolverStatus"],
+                "exactAllSevenInputsMapToWwiseValueHashes",
+            )
             gamepad = selector_groups[0xF6699CF4]
             self.assertEqual(gamepad["groupType"], "state")
             self.assertEqual(gamepad["values"][0]["semanticName"], "XInput")
@@ -2532,6 +2546,8 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("catalog.wwiseSelectorGroups", source)
         self.assertIn("controlCatalog?.wwiseSelectorGroups", source)
         self.assertIn("runtimeGroup.semanticEvidence", source)
+        self.assertIn("value.resolvedValueIdHex", source)
+        self.assertIn("value.resolvedValueName", source)
         self.assertIn("container?.randomSequenceModes", source)
         self.assertIn("randomSequence.orderDiffers", source)
         self.assertIn("container?.randomSequenceMembershipStatuses", source)
