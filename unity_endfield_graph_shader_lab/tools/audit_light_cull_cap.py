@@ -349,6 +349,102 @@ HG_TREE_CREATE_RENDERER_LIST_INJECTED_PARAMETERS = [
     ("drawableFeedbackPtr", 0x0800038D, 117409),
     ("noAlphaTest", 0x0800038E, 130818),
 ]
+HG_RENDER_FLAGS_TYPE_INDEX = 60991
+HG_RENDER_FLAGS_TYPE_TOKEN = 0x02000072
+HG_RENDER_FLAGS_RELEVANT_FIELDS = {
+    "Opaque": (296416, 0x0400013A, 0x00000100),
+    "ShadowOnly": (296418, 0x0400013C, 0x00000400),
+    "CastShadow": (296426, 0x04000144, 0x00080000),
+    "CSMShadowCascade0": (296427, 0x04000145, 0x00100000),
+    "CSMShadowCascade1": (296428, 0x04000146, 0x00200000),
+    "CSMShadowCascade2": (296429, 0x04000147, 0x00400000),
+    "CSMShadowCascade3": (296430, 0x04000148, 0x00800000),
+    "StaticShadowCaster": (296432, 0x0400014A, 0x01000000),
+    "RealtimeShadowCaster": (296433, 0x0400014B, 0x02000000),
+}
+HG_PUNCTUAL_SHADOW_MANAGER_TYPE_INDEX = 37859
+HG_PUNCTUAL_SHADOW_MANAGER_TYPE_TOKEN = 0x020001F4
+HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_METHOD_INDEX = 285597
+HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_METHOD_TOKEN = 0x06000A19
+HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_PARAMETER_START = 320223
+HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_PARAMETERS = [
+    ("light", 0x08000B73, 145207),
+    ("isDynamicRequest", 0x08000B74, 130818),
+    ("objectFlags", 0x08000B75, 110943),
+    ("objectFlagsMask", 0x08000B76, 110943),
+    ("renderFlags", 0x08000B77, 110948),
+    ("renderFlagsMask", 0x08000B78, 110948),
+]
+HGTREE_RENDERER_LIST_MANAGED_METHOD_POINTERS = {
+    478191: (0x0EF009F0, 0x18B3FBF14, "HGTreeRender.CreateRendererList"),
+    478192: (0x0EF009F8, 0x18B3FBF44, "HGTreeRender.CreateRendererList_Injected"),
+    478193: (0x0EF00A00, 0x18B3FBE50, "HGTreeRender.CreateRendererListWithPreZ_Injected"),
+    478194: (0x0EF00A08, 0x18B3FBEB0, "HGTreeRender.CreateRendererListWithPreZ"),
+    285597: (0x0EABC390, 0x189B48344, "HGPunctualLightShadowManagerV2.GetECSRenderFlags"),
+    285599: (0x0EABC3A0, 0x189B48D50, "HGPunctualLightShadowManagerV2.PrepareECSRendererList"),
+    285601: (0x0EABC3B0, 0x189B4B2DC, "HGPunctualLightShadowManagerV2.RenderPunctualLightShadows"),
+    287999: (0x0EAC0EA0, 0x189BF6CBC, "HGRenderPathDeferred.OnPreRendering"),
+    285459: (0x0EABBF40, 0x189D18418, "HGASMManager.Render"),
+    285520: (0x0EABC128, 0x189D1CA38, "HGShadowManager.CalculateDirectionalShadowParametersManualOverride"),
+    285518: (0x0EABC118, 0x189D1DBAC, "HGShadowManager.CalculateDirectionalShadowParameters"),
+    285526: (0x0EABC158, 0x184723A70, "HGShadowManager..cctor"),
+}
+HGTREE_RENDERER_LIST_GAME_ASSEMBLY_BODIES = {
+    "create_renderer_list_with_prez_injected": (0x18B3FBE50, 0x5E, "2b84cc4c1bf39aa8115788a73c6f70bb4393e7e5124d5d2af53a6442cda8ed62"),
+    "create_renderer_list_with_prez": (0x18B3FBEB0, 0x61, "9eba44f770383fd2f5aebfe7c31e1d243c89242d6bcc24ca4a4daa632b76dc30"),
+    "create_renderer_list": (0x18B3FBF14, 0x2E, "a4bc24dc86561f8780d217aee621d8cb686c6b098ded43bd0bd992a892afbf7b"),
+    "create_renderer_list_injected": (0x18B3FBF44, 0x5E, "c854ce1d640c116d9ac82aef52a0b1cda9dd65ff3cafbc000648ac41a75ad3a8"),
+    "punctual_get_ecs_render_flags": (0x189B48344, 0x176, "5a097dd657c5c3842c8e6b497ce991de424cdc7c10867c0c56fc3783de8ee651"),
+    "punctual_prepare_ecs_renderer_list": (0x189B48D50, 0xC40, "3a5152857f19970d556f519bb080489285b85d8dc81036aad0ac7fb096094ebb"),
+    "punctual_render_shadows": (0x189B4B2DC, 0x4304, "48d292e2d5cab304cc2686556e3249f72b30ab5d5a082d2e011560f7f95b8f36"),
+    "deferred_on_pre_rendering": (0x189BF6CBC, 0xDE1, "e1e497bad2f5aa44b25f7e6d0f7eca208cd81f4c49ae8d64070a4fb1d0e6187a"),
+    "asm_render": (0x189D18418, 0x121A, "a29321f9d130ea9ab40f505be4621618589495bb77334def4068a8c43b6f12f7"),
+    "directional_manual_override": (0x189D1CA38, 0x1172, "5b1819a5f1f4bd1e05c9d7d9ee7b57f865e63b092ff493c7a4cf599ce19b4f22"),
+    "directional": (0x189D1DBAC, 0x163D, "eb47d9a1be0e17022573b8f5a7f8960cbb9b5d510e32032c80386791e7095591"),
+    "shadow_manager_cctor": (0x184723A70, 0x6DE, "48bedcc344644a7d6b276c5b6c474b5e1ccb98105212bc12e11e73040203dd7c"),
+}
+HGTREE_RENDERER_LIST_DIRECT_CALLS = {
+    0x18B3FBF14: [0x189B49858, 0x189B4CF07, 0x189B4EB97, 0x189D18FA1, 0x189D1D970, 0x189D1EF0D],
+    0x18B3FBEB0: [0x189BF75AF],
+    0x18B3FBF44: [0x18B3FBF38],
+    0x18B3FBE50: [0x18B3FBF06],
+}
+HGTREE_RENDERER_LIST_CALL_SLICES = {
+    "punctual_prepare": (0x189B49828, bytes.fromhex("8bcce851018b018bf8b800010000458bcd440bf8440bf033c0458bc74889442430418bd688442428418bcc48895c2420e8b7268b01")),
+    "punctual_static": (0x189B4CED7, bytes.fromhex("448b842498000000410fbae8088b9424c00000000fbaea084c896c243044886c242848897c242041b900040000418bcfe808f08a01")),
+    "punctual_dynamic": (0x189B4EB67, bytes.fromhex("018bd8448b8424c0000000450bc48b94249c000000410bd44c896c243044886c242848897c242041b900040000418bcfe878d38a01")),
+    "deferred_prez": (0x189BF757F, bytes.fromhex("44244041b800010000488d45d0418bcc4889442438488d45b84889442430488d45b44889442428488b43104889442420e8fc488001")),
+    "asm_static_shadow": (0x189D18F71, bytes.fromhex("898424d0000000488b8c24400c000048897c243040887c242848894c2420b80001080141b900040000448bc08bd08bcbe86e2f6e01")),
+    "directional_manual": (0x189D1D940, bytes.fromhex("c6458b448020418b0c1cb800010802440bc048897c24300bd040887c2428488b85a00b000041b9000400004889442420e89fe56d01")),
+    "directional": (0x189D1EEDD, bytes.fromhex("c6458b448020428b0c23b800010802440bc048897c24300bd040887c2428488b85a00d000041b9000400004889442420e802d06d01")),
+}
+HGTREE_RENDERER_LIST_SEMANTIC_SLICES = {
+    "punctual_flag_helper_initializers": (
+        0x189B48395,
+        bytes.fromhex(
+            "b802000008488b5d60458ac7488364242800498bcc488b553889068907"
+            "b8000008024189068903"
+        ),
+    ),
+    "punctual_flag_helper_truth_table": (
+        0x189B483CA,
+        bytes.fromhex(
+            "8a55f141b8000000048a4df041b90000000184d2741284c9750c440906"
+            "44090745090e44090b84d20f94c084c8740644090744090b"
+        ),
+    ),
+    "shadow_manager_cascade_render_flags_initializer": (
+        0x184723D88,
+        bytes.fromhex(
+            "488b0de967c309ba04000000e8f78390fb488b15d067c3094533c0488bc8"
+            "488bd8e832740bff488b0d4becb309488b91b800000048899a8800000048"
+            "8b0536ecb309488b88b80000004881c188000000e8d39390fb"
+        ),
+    ),
+}
+HGTREE_CASCADE_RENDER_FLAGS_INITIALIZER = bytes.fromhex(
+    "00001000000020000000400000008000"
+)
 HG_SHADER_LIGHT_MODE_TYPE_INDEX = 60993
 HG_SHADER_LIGHT_MODE_TYPE_TOKEN = 0x02000074
 HG_SHADER_LIGHT_MODE_FIELDS = {
@@ -2611,6 +2707,25 @@ def find_relative_call_sites(image: PEImage, target: int) -> list[int]:
     return sorted(call_sites)
 
 
+def find_relative_call_sites_many(
+    image: PEImage, targets: set[int]
+) -> dict[int, list[int]]:
+    """Find E8 rel32 sites for several targets in one image pass."""
+
+    call_sites = {target: [] for target in targets}
+    for section_va, _span, raw_offset, raw_size in image.sections:
+        body = image.data[raw_offset : raw_offset + raw_size]
+        cursor = body.find(b"\xE8")
+        while cursor >= 0 and cursor + 5 <= len(body):
+            displacement = struct.unpack_from("<i", body, cursor + 1)[0]
+            virtual_address = image.image_base + section_va + cursor
+            target = virtual_address + 5 + displacement
+            if target in call_sites:
+                call_sites[target].append(virtual_address)
+            cursor = body.find(b"\xE8", cursor + 1)
+    return {target: sorted(sites) for target, sites in call_sites.items()}
+
+
 def read_native_method_bodies(game_assembly: Path = GAME_ASSEMBLY) -> dict[str, bytes]:
     bodies: dict[str, bytes] = {}
     with game_assembly.open("rb") as stream:
@@ -3553,6 +3668,397 @@ def validate_hgtree_renderer_list_metadata(
     }
 
 
+def validate_hgtree_renderer_list_caller_metadata(
+    raw_metadata: bytes,
+    source: Path = GLOBAL_METADATA,
+) -> dict[str, object]:
+    """Pin managed caller identities, HGRenderFlags, and CSM flag data."""
+
+    require(
+        "hgtree_renderer_list_callers_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    require(
+        "hgtree_renderer_list_callers_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        source,
+    )
+    sections = {
+        section_name: struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+        for section_index, section_name in enumerate(IL2CPP_METADATA_SECTION_NAMES)
+    }
+    string_offset, string_size = sections["string"]
+    method_offset, method_size = sections["methods"]
+    parameter_offset, parameter_size = sections["parameters"]
+    field_offset, field_size = sections["fields"]
+    default_offset, default_size = sections["fieldDefaultValues"]
+    values_offset, values_size = sections["fieldAndParameterDefaultValueData"]
+    type_offset, type_size = sections["typeDefinitions"]
+
+    def metadata_string(index: int, check: str) -> str:
+        start = string_offset + index
+        require(
+            f"hgtree_renderer_list_callers_{check}_string_start_in_bounds",
+            string_offset <= start < string_offset + string_size,
+            True,
+            source,
+        )
+        end = raw_metadata.find(b"\0", start, string_offset + string_size)
+        require(
+            f"hgtree_renderer_list_callers_{check}_string_end_in_bounds",
+            end >= start,
+            True,
+            source,
+        )
+        return raw_metadata[start:end].decode("utf-8")
+
+    def validate_type(
+        check: str,
+        index: int,
+        expected_name: str,
+        expected_namespace: str,
+        expected_token: int,
+    ) -> dict[str, object]:
+        position = type_offset + index * 92
+        require(
+            f"hgtree_renderer_list_callers_{check}_type_in_bounds",
+            position + 92 <= type_offset + type_size,
+            True,
+            source,
+        )
+        name_index, namespace_index = struct.unpack_from(
+            "<ii", raw_metadata, position
+        )
+        token = struct.unpack_from("<I", raw_metadata, position + 88)[0]
+        name = metadata_string(name_index, f"{check}_type_name")
+        namespace = metadata_string(namespace_index, f"{check}_type_namespace")
+        for field_name, actual, expected in (
+            ("name", name, expected_name),
+            ("namespace", namespace, expected_namespace),
+            ("token", token, expected_token),
+        ):
+            require(
+                f"hgtree_renderer_list_callers_{check}_type_{field_name}",
+                actual,
+                expected,
+                source,
+            )
+        return {
+            "typeIndex": index,
+            "fullName": f"{namespace}.{name}" if namespace else name,
+            "token": f"0x{token:08X}",
+        }
+
+    caller_types = {
+        37859: ("HGPunctualLightShadowManagerV2", "HG.Rendering.Runtime", 0x020001F4),
+        38522: ("HGRenderPathDeferred", "HG.Rendering.Runtime", 0x02000491),
+        37822: ("HGASMManager", "HG.Rendering.Runtime", 0x020001D2),
+        37839: ("HGShadowManager", "HG.Rendering.Runtime", 0x020001E1),
+        HG_TREE_RENDER_TYPE_INDEX: (
+            "HGTreeRender",
+            "UnityEngine.HyperGryph",
+            HG_TREE_RENDER_TYPE_TOKEN,
+        ),
+    }
+    validated_types = {
+        index: validate_type(f"type_{index}", index, *spec)
+        for index, spec in caller_types.items()
+    }
+    render_flags_type = validate_type(
+        "render_flags",
+        HG_RENDER_FLAGS_TYPE_INDEX,
+        "HGRenderFlags",
+        "UnityEngine.HyperGryph",
+        HG_RENDER_FLAGS_TYPE_TOKEN,
+    )
+
+    defaults = {}
+    for position in range(default_offset, default_offset + default_size, 12):
+        field_index, default_type, data_index = struct.unpack_from(
+            "<iii", raw_metadata, position
+        )
+        defaults[field_index] = (default_type, data_index)
+
+    render_flag_literals = []
+    for expected_name, (field_index, expected_token, expected_value) in (
+        HG_RENDER_FLAGS_RELEVANT_FIELDS.items()
+    ):
+        position = field_offset + field_index * 12
+        require(
+            f"hgtree_renderer_list_callers_render_flag_{expected_name}_field_in_bounds",
+            position + 12 <= field_offset + field_size,
+            True,
+            source,
+        )
+        name_index, literal_type, token = struct.unpack_from(
+            "<iiI", raw_metadata, position
+        )
+        name = metadata_string(name_index, f"render_flag_{expected_name}_name")
+        for check, actual, expected in (
+            ("name", name, expected_name),
+            ("literal_type", literal_type, 145029),
+            ("token", token, expected_token),
+            ("default_exists", field_index in defaults, True),
+        ):
+            require(
+                f"hgtree_renderer_list_callers_render_flag_{expected_name}_{check}",
+                actual,
+                expected,
+                source,
+            )
+        default_type, data_index = defaults[field_index]
+        require(
+            f"hgtree_renderer_list_callers_render_flag_{expected_name}_default_type",
+            default_type,
+            168243,
+            source,
+        )
+        value, _encoded_size = decode_il2cpp_compressed_uint32(
+            raw_metadata,
+            values_offset + data_index,
+            values_offset + values_size,
+        )
+        require(
+            f"hgtree_renderer_list_callers_render_flag_{expected_name}_value",
+            value,
+            expected_value,
+            source,
+        )
+        render_flag_literals.append(
+            {
+                "name": name,
+                "fieldIndex": field_index,
+                "token": f"0x{token:08X}",
+                "value": f"0x{value:08X}",
+            }
+        )
+
+    caller_method_specs = {
+        478191: ("CreateRendererList", HG_TREE_RENDER_TYPE_INDEX, 0x0600018B),
+        478192: ("CreateRendererList", HG_TREE_RENDER_TYPE_INDEX, 0x0600018C),
+        478193: ("CreateRendererListWithPreZ", HG_TREE_RENDER_TYPE_INDEX, 0x0600018D),
+        478194: ("CreateRendererListWithPreZ", HG_TREE_RENDER_TYPE_INDEX, 0x0600018E),
+        285597: ("GetECSRenderFlags", 37859, 0x06000A19),
+        285599: ("PrepareECSRendererList", 37859, 0x06000A1B),
+        285601: ("RenderPunctualLightShadows", 37859, 0x06000A1D),
+        287999: ("OnPreRendering", 38522, 0x0600137B),
+        285459: ("Render", 37822, 0x0600098F),
+        285520: (
+            "CalculateDirectionalShadowParametersManualOverride",
+            37839,
+            0x060009CC,
+        ),
+        285518: ("CalculateDirectionalShadowParameters", 37839, 0x060009CA),
+        285526: (".cctor", 37839, 0x060009D2),
+    }
+    methods = []
+    helper_method = None
+    for method_index, (expected_name, expected_type, expected_token) in (
+        caller_method_specs.items()
+    ):
+        position = method_offset + method_index * 32
+        require(
+            f"hgtree_renderer_list_callers_method_{method_index}_in_bounds",
+            position + 32 <= method_offset + method_size,
+            True,
+            source,
+        )
+        (
+            name_index,
+            declaring_type,
+            return_type,
+            parameter_start,
+            _generic_container,
+            token,
+            _flags,
+            _iflags,
+            _slot,
+            parameter_count,
+        ) = struct.unpack_from("<iiiiiIHHHH", raw_metadata, position)
+        name = metadata_string(name_index, f"method_{method_index}_name")
+        for check, actual, expected in (
+            ("name", name, expected_name),
+            ("declaring_type", declaring_type, expected_type),
+            ("token", token, expected_token),
+        ):
+            require(
+                f"hgtree_renderer_list_callers_method_{method_index}_{check}",
+                actual,
+                expected,
+                source,
+            )
+        row = {
+            "methodIndex": method_index,
+            "declaringType": validated_types[declaring_type]["fullName"],
+            "name": name,
+            "token": f"0x{token:08X}",
+        }
+        methods.append(row)
+        if method_index == HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_METHOD_INDEX:
+            for check, actual, expected in (
+                (
+                    "parameter_start",
+                    parameter_start,
+                    HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_PARAMETER_START,
+                ),
+                (
+                    "parameter_count",
+                    parameter_count,
+                    len(HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_PARAMETERS),
+                ),
+                ("return_type", return_type, 170022),
+            ):
+                require(
+                    f"hgtree_renderer_list_callers_get_ecs_render_flags_{check}",
+                    actual,
+                    expected,
+                    source,
+                )
+            parameters = []
+            for relative_index, (
+                expected_param_name,
+                expected_param_token,
+                expected_param_type,
+            ) in enumerate(HG_PUNCTUAL_GET_ECS_RENDER_FLAGS_PARAMETERS):
+                param_position = parameter_offset + (
+                    parameter_start + relative_index
+                ) * 12
+                require(
+                    "hgtree_renderer_list_callers_get_ecs_render_flags_parameter_in_bounds",
+                    param_position + 12 <= parameter_offset + parameter_size,
+                    True,
+                    source,
+                )
+                param_name_index, param_token, param_type = struct.unpack_from(
+                    "<iIi", raw_metadata, param_position
+                )
+                param_name = metadata_string(
+                    param_name_index,
+                    f"get_ecs_render_flags_{expected_param_name}_name",
+                )
+                for check, actual, expected in (
+                    ("name", param_name, expected_param_name),
+                    ("token", param_token, expected_param_token),
+                    ("type", param_type, expected_param_type),
+                ):
+                    require(
+                        f"hgtree_renderer_list_callers_get_ecs_render_flags_{expected_param_name}_{check}",
+                        actual,
+                        expected,
+                        source,
+                    )
+                parameters.append(
+                    {
+                        "name": param_name,
+                        "token": f"0x{param_token:08X}",
+                        "metadataTypeIndex": param_type,
+                    }
+                )
+            helper_method = {**row, "parameters": parameters}
+
+    shadow_manager_position = type_offset + 37839 * 92
+    shadow_manager_field_start = struct.unpack_from(
+        "<i", raw_metadata, shadow_manager_position + 32
+    )[0]
+    shadow_manager_field_count = struct.unpack_from(
+        "<H", raw_metadata, shadow_manager_position + 72
+    )[0]
+    require(
+        "hgtree_renderer_list_callers_cascade_render_flags_field_owned",
+        shadow_manager_field_start <= 170572 < shadow_manager_field_start + shadow_manager_field_count,
+        True,
+        source,
+    )
+    cascade_name_index, cascade_type, cascade_token = struct.unpack_from(
+        "<iiI", raw_metadata, field_offset + 170572 * 12
+    )
+    cascade_name = metadata_string(cascade_name_index, "cascade_render_flags_name")
+    for check, actual, expected in (
+        ("name", cascade_name, "m_cascadeRenderFlags"),
+        ("type", cascade_type, 118767),
+        ("token", cascade_token, 0x04000C7B),
+    ):
+        require(
+            f"hgtree_renderer_list_callers_cascade_render_flags_{check}",
+            actual,
+            expected,
+            source,
+        )
+
+    initializer_field_index = 179575
+    initializer_name_index, initializer_type, initializer_token = struct.unpack_from(
+        "<iiI", raw_metadata, field_offset + initializer_field_index * 12
+    )
+    initializer_name = metadata_string(initializer_name_index, "cascade_initializer_name")
+    expected_initializer_name = hashlib.sha256(
+        HGTREE_CASCADE_RENDER_FLAGS_INITIALIZER
+    ).hexdigest().upper()
+    for check, actual, expected in (
+        ("name", initializer_name, expected_initializer_name),
+        ("type", initializer_type, 172342),
+        ("token", initializer_token, 0x04002FA6),
+        ("default_exists", initializer_field_index in defaults, True),
+    ):
+        require(
+            f"hgtree_renderer_list_callers_cascade_initializer_{check}",
+            actual,
+            expected,
+            source,
+        )
+    initializer_default_type, initializer_data_index = defaults[
+        initializer_field_index
+    ]
+    require(
+        "hgtree_renderer_list_callers_cascade_initializer_default_type",
+        initializer_default_type,
+        172341,
+        source,
+    )
+    require(
+        "hgtree_renderer_list_callers_cascade_initializer_data_index",
+        initializer_data_index,
+        0x44190,
+        source,
+    )
+    initializer = raw_metadata[
+        values_offset + initializer_data_index :
+        values_offset + initializer_data_index + len(HGTREE_CASCADE_RENDER_FLAGS_INITIALIZER)
+    ]
+    require(
+        "hgtree_renderer_list_callers_cascade_initializer_data",
+        initializer,
+        HGTREE_CASCADE_RENDER_FLAGS_INITIALIZER,
+        source,
+    )
+
+    return {
+        "callerTypes": list(validated_types.values()),
+        "callerMethods": methods,
+        "punctualFlagHelper": helper_method,
+        "renderFlags": {
+            **render_flags_type,
+            "relevantLiterals": render_flag_literals,
+        },
+        "cascadeRenderFlags": {
+            "ownerFieldIndex": 170572,
+            "ownerFieldName": cascade_name,
+            "ownerFieldToken": f"0x{cascade_token:08X}",
+            "initializerFieldIndex": initializer_field_index,
+            "initializerFieldName": initializer_name,
+            "initializerDataIndex": f"0x{initializer_data_index:X}",
+            "values": [
+                f"0x{value:08X}"
+                for value in struct.unpack("<IIII", initializer)
+            ],
+        },
+    }
+
+
 def validate_enabled_light_modes_metadata(
     raw_metadata: bytes,
     source: Path = GLOBAL_METADATA,
@@ -4025,6 +4531,224 @@ def validate_enabled_light_modes_game_assembly(
                 "rendererEntity to SetEntityEnabledLightModes"
             ),
         },
+    }
+
+
+def validate_hgtree_renderer_list_game_assembly(
+    image: PEImage,
+    caller_metadata: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Pin every direct managed HGTree renderer-list caller and its flags."""
+
+    require(
+        "hgtree_renderer_list_callers_game_image_base",
+        image.image_base,
+        0x180000000,
+        image.path,
+    )
+    verified_bodies = []
+    for label, (virtual_address, size_bytes, expected_hash) in (
+        HGTREE_RENDERER_LIST_GAME_ASSEMBLY_BODIES.items()
+    ):
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"hgtree_renderer_list_callers_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        verified_bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    method_pointers = []
+    for method_index, (file_offset, expected_pointer, label) in (
+        HGTREE_RENDERER_LIST_MANAGED_METHOD_POINTERS.items()
+    ):
+        require(
+            f"hgtree_renderer_list_callers_method_{method_index}_pointer_in_bounds",
+            file_offset + 8 <= len(image.data),
+            True,
+            image.path,
+        )
+        actual_pointer = struct.unpack_from("<Q", image.data, file_offset)[0]
+        require(
+            f"hgtree_renderer_list_callers_method_{method_index}_pointer",
+            actual_pointer,
+            expected_pointer,
+            image.path,
+        )
+        method_pointers.append(
+            {
+                "methodIndex": method_index,
+                "label": label,
+                "pointerFileOffset": f"0x{file_offset:X}",
+                "bodyVirtualAddress": f"0x{actual_pointer:X}",
+            }
+        )
+
+    direct_call_census = []
+    all_direct_call_sites = find_relative_call_sites_many(
+        image, set(HGTREE_RENDERER_LIST_DIRECT_CALLS)
+    )
+    for target, expected_call_sites in HGTREE_RENDERER_LIST_DIRECT_CALLS.items():
+        actual_call_sites = all_direct_call_sites[target]
+        require(
+            f"hgtree_renderer_list_callers_target_{target:X}_direct_calls",
+            actual_call_sites,
+            expected_call_sites,
+            image.path,
+        )
+        direct_call_census.append(
+            {
+                "targetVirtualAddress": f"0x{target:X}",
+                "callSites": [f"0x{site:X}" for site in actual_call_sites],
+            }
+        )
+
+    verified_slices = []
+    for label, (virtual_address, expected_bytes) in {
+        **HGTREE_RENDERER_LIST_CALL_SLICES,
+        **HGTREE_RENDERER_LIST_SEMANTIC_SLICES,
+    }.items():
+        actual_bytes = image.read(virtual_address, len(expected_bytes))
+        require(
+            f"hgtree_renderer_list_callers_{label}_slice",
+            actual_bytes,
+            expected_bytes,
+            image.path,
+        )
+        verified_slices.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": len(expected_bytes),
+                "sha256": hashlib.sha256(actual_bytes).hexdigest(),
+            }
+        )
+
+    if caller_metadata is None:
+        caller_metadata = validate_hgtree_renderer_list_caller_metadata(
+            GLOBAL_METADATA.read_bytes()
+        )
+    cascade_values = caller_metadata["cascadeRenderFlags"]["values"]
+    require(
+        "hgtree_renderer_list_callers_cascade_values",
+        cascade_values,
+        ["0x00100000", "0x00200000", "0x00400000", "0x00800000"],
+        GLOBAL_METADATA,
+    )
+
+    punctual_truth_table = [
+        {
+            "castStaticObjects": False,
+            "castDynamicObjects": False,
+            "renderFlagsMask": "0x02080100",
+            "renderFlagsValue": "0x02080100",
+        },
+        {
+            "castStaticObjects": True,
+            "castDynamicObjects": False,
+            "renderFlagsMask": "0x03080100",
+            "renderFlagsValue": "0x03080100",
+        },
+        {
+            "castStaticObjects": False,
+            "castDynamicObjects": True,
+            "renderFlagsMask": "0x03080100",
+            "renderFlagsValue": "0x02080100",
+        },
+        {
+            "castStaticObjects": True,
+            "castDynamicObjects": True,
+            "renderFlagsMask": "0x02080100",
+            "renderFlagsValue": "0x02080100",
+        },
+    ]
+    caller_routes = [
+        {
+            "owner": "HGPunctualLightShadowManagerV2.PrepareECSRendererList",
+            "callVirtualAddress": "0x189B49858",
+            "variant": "default",
+            "renderFlags": (
+                "GetECSRenderFlags(isDynamicRequest) then OR Opaque 0x00000100"
+            ),
+            "lightModeMask": "0x00000400 (ShadowCaster)",
+        },
+        {
+            "owner": "HGPunctualLightShadowManagerV2.RenderPunctualLightShadows",
+            "callVirtualAddress": "0x189B4CF07",
+            "variant": "default/static request",
+            "renderFlagsMask": "0x03080100",
+            "renderFlagsValue": "0x03080100",
+            "lightModeMask": "0x00000400 (ShadowCaster)",
+        },
+        {
+            "owner": "HGPunctualLightShadowManagerV2.RenderPunctualLightShadows",
+            "callVirtualAddress": "0x189B4EB97",
+            "variant": "default/dynamic request",
+            "renderFlags": "GetECSRenderFlags(true) truth-table result",
+            "lightModeMask": "0x00000400 (ShadowCaster)",
+        },
+        {
+            "owner": "HGRenderPathDeferred.OnPreRendering",
+            "callVirtualAddress": "0x189BF75AF",
+            "variant": "PreZ",
+            "renderFlagsMask": "0x00000500 (Opaque|ShadowOnly)",
+            "renderFlagsValue": "0x00000100 (Opaque)",
+            "lightModeMask": "0x00000001 (GBuffer)",
+        },
+        {
+            "owner": "HGASMManager.Render",
+            "callVirtualAddress": "0x189D18FA1",
+            "variant": "default/ASM static shadow",
+            "renderFlagsMask": "0x01080100 (Opaque|CastShadow|StaticShadowCaster)",
+            "renderFlagsValue": "0x01080100 (Opaque|CastShadow|StaticShadowCaster)",
+            "lightModeMask": "0x00000400 (ShadowCaster)",
+        },
+        {
+            "owner": "HGShadowManager.CalculateDirectionalShadowParametersManualOverride",
+            "callVirtualAddress": "0x189D1D970",
+            "variant": "default/CSM",
+            "renderFlags": "m_cascadeRenderFlags[i] | 0x02080100",
+            "lightModeMask": "0x00000400 (ShadowCaster)",
+        },
+        {
+            "owner": "HGShadowManager.CalculateDirectionalShadowParameters",
+            "callVirtualAddress": "0x189D1EF0D",
+            "variant": "default/CSM",
+            "renderFlags": "m_cascadeRenderFlags[i] | 0x02080100",
+            "lightModeMask": "0x00000400 (ShadowCaster)",
+        },
+    ]
+    cascade_masks = [
+        f"0x{(value | 0x02080100):08X}"
+        for value in struct.unpack("<IIII", HGTREE_CASCADE_RENDER_FLAGS_INITIALIZER)
+    ]
+    return {
+        "directCallerCount": len(caller_routes),
+        "callerRoutes": caller_routes,
+        "methodPointers": method_pointers,
+        "directCallCensus": direct_call_census,
+        "punctualGetECSRenderFlags": {
+            "baseRenderFlags": "0x02080000 (CastShadow|RealtimeShadowCaster)",
+            "opaqueBitAddedByCallers": "0x00000100",
+            "truthTableAfterOpaque": punctual_truth_table,
+        },
+        "directionalCascadeMasksAndValues": cascade_masks,
+        "verifiedBodies": verified_bodies,
+        "verifiedInstructionSlices": verified_slices,
+        "boundary": (
+            "all seven direct managed HGTree renderer-list call sites are "
+            "enumerated; delegate/reflection-only future callers remain outside "
+            "the direct E8 census"
+        ),
     }
 
 
@@ -6467,6 +7191,12 @@ def validate_unity_hgtree_renderer_boundary(
     renderer_list_metadata = validate_hgtree_renderer_list_metadata(
         metadata_bytes
     )
+    renderer_list_caller_metadata = (
+        validate_hgtree_renderer_list_caller_metadata(metadata_bytes)
+    )
+    renderer_list_managed_callers = validate_hgtree_renderer_list_game_assembly(
+        PEImage(GAME_ASSEMBLY), renderer_list_caller_metadata
+    )
     enabled_light_modes_metadata = validate_enabled_light_modes_metadata(
         metadata_bytes
     )
@@ -6522,6 +7252,8 @@ def validate_unity_hgtree_renderer_boundary(
         "rendererListVariants": {
             "entries": renderer_list_variants,
             "managedContract": renderer_list_metadata,
+            "managedCallerContract": renderer_list_caller_metadata,
+            "managedCallers": renderer_list_managed_callers,
             "sharedSchedulerVirtualAddress": (
                 f"0x{UNITY_RENDERER_LIST_SCHEDULER_VA:X}"
             ),
@@ -7084,8 +7816,8 @@ def validate_unity_hgtree_renderer_boundary(
                             "production, GeometryHandle identity and packing, "
                             "mapped-value resolution, release, and masked "
                             "consumption and the CreateRendererList renderFlags "
-                            "mask/value ABI are closed; the concrete per-pass "
-                            "callers and values supplied to that ABI remain open"
+                            "mask/value ABI plus all seven direct managed per-pass "
+                            "callers and their supplied values are closed"
                         ),
                     },
                     "rendererPropertyFlagsAt0x10": {
@@ -8342,8 +9074,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v36",
-        "status": "hgtree_shadow_proxy_render_flags_abi_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v37",
+        "status": "hgtree_renderer_list_direct_callers_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -8414,7 +9146,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "callback's +0x04 descriptor bias exposes them at +0x3C/+0x40/+0x44. "
             "Thus the GeometryHandle is intentionally folded into the HGTree "
             "renderFlags mask/value ABI rather than being a standalone filter "
-            "bitfield. Concrete per-pass callers and supplied values remain open. "
+            "bitfield. The current GameAssembly direct-call census closes seven "
+            "managed callers: punctual static/dynamic shadows, Deferred PreZ "
+            "GBuffer, ASM static shadows, and both directional CSM builders. "
+            "HGRenderFlags metadata, the punctual GetECSRenderFlags truth table, "
+            "and the four-entry CSM initializer close every direct caller's "
+            "mask/value and light-mode contract. "
             "Record +0x10 "
             "is not seeded by any of the three resource maps; "
             "it remains Renderer property flags maintained at blob+0x14 by the "
@@ -8549,9 +9286,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The concrete per-pass callers and values supplied to HGTree "
-            "CreateRendererList's renderFlagsMask/renderFlagsValue ABI, the "
-            "component-67 standalone native type name, "
+            "The component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -8731,6 +9466,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "HGGeometrySystem GetGeometryHandle/GetMesh internal-call entries 300/301, Mesh instance-ID map insertion/removal, 24-bit slot-index plus 8-bit generation handle packing, and reverse lookup",
                 "loader runtime record +0x0C as the m_ShadowProxyMeshes GeometryHandle, including LoadAsync/GetAsset/UpdateAssetHandle internal-call bindings, ready/instance-ID handle-slot layout, direct and availability map-resolution writers, cleanup, and masked consumption",
                 "the HGTree CreateRendererList UInt32 renderFlagsMask/renderFlagsValue/lightModeMask metadata contract and its binding/core/scheduler/callback descriptor-offset propagation",
+                "all seven direct managed HGTree renderer-list call sites, their method-pointer identities, exact punctual/deferred/ASM/directional flag construction, the punctual GetECSRenderFlags truth table, and the four CSM cascade flag values",
                 "loader runtime record +0x10 as Renderer property flags with no resource-map seed and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
@@ -8774,7 +9510,6 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the concrete per-pass callers and values supplied to HGTree CreateRendererList's renderFlagsMask/renderFlagsValue ABI",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -8813,7 +9548,7 @@ def main() -> int:
         "type identity/id-80 registration lifecycle/runtime transform, "
         "HGMeshRendererData Material/main-Mesh/shadow-proxy map fields, "
         "shadow-proxy GeometryHandle packing/lookup and CreateRendererList "
-        "renderFlags ABI, and separate property flags, "
+        "renderFlags ABI/direct managed caller census, and separate property flags, "
         "enabledLightModes producer/default/initializers and GPUDrivenRenderer "
         "V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, "
         "Factory blob-copy routes, independent renderer-entry pass mask, and "

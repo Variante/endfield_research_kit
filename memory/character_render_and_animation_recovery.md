@@ -134,11 +134,18 @@ NPC archetypes are imported as labeled source kits.
   `+0x40/+0x44/+0x48`. Callback `0x181064190` receives descriptor `+0x04`, so
   its `+0x3C/+0x40/+0x44` reads are those exact fields. GeometryHandle is thus
   intentionally folded into the HGTree renderFlags comparison, not a separate
-  bitfield. Record `+0x10` is not
+  bitfield. The current `GameAssembly.dll` direct-call census closes all seven
+  managed callers: three punctual-shadow paths, Deferred PreZ/GBuffer, ASM
+  static shadows, and both directional CSM builders. Deferred uses
+  mask/value/light-mode `0x500/0x100/0x1`; ASM uses
+  `0x01080100/0x01080100/0x400`. Punctual paths add Opaque to the exact
+  `GetECSRenderFlags` static/dynamic truth table. Directional paths use identical
+  mask/value `m_cascadeRenderFlags[i] | 0x02080100`; the hash-named metadata
+  initializer closes the four results as
+  `0x02180100/0x02280100/0x02480100/0x02880100`. Record `+0x10` is not
   resource-seeded; common
   Renderer state sync `0x180432CD0` alone maintains that property-flag word at
-  blob `+0x14`. Concrete per-pass CreateRendererList callers and supplied
-  mask/value pairs remain open. Dedicated HG
+  blob `+0x14`. Dedicated HG
   internal-call entry 204 names `+0x14` as `enabledLightModes`; wrapper
   `0x1801EB940` reaches the all-record writer at `0x1810D9110`. Installed
   IL2CPP metadata closes its argument as `UInt32 lightModeMask` and
@@ -311,9 +318,7 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The standalone
-  concrete per-pass callers and values for HGTree CreateRendererList's
-  renderFlags mask/value ABI, the
-  component-67 standalone native type name, any separate `sceneCullingMask`
+  component-67 native type name, any separate `sceneCullingMask`
   consumer, and target-frame survivor rows remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
@@ -544,9 +549,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the concrete per-pass callers and values supplied to HGTree
-   CreateRendererList's renderFlags mask/value ABI and the exact native type-name link for
-   component 67; its serialized LOD-count/range producer is now closed. Then recover the retail
+1. Resolve the exact native type-name link for component 67; its serialized
+   LOD-count/range producer and HGTree renderer-list filter callers are now
+   closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
