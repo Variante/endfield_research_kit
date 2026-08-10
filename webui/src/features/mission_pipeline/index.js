@@ -599,6 +599,8 @@
       structuredIdentityReceiverMatches: "receiver matches / unreviewed shapes",
       questForkArmCorridor: "sibling-exclusive quest corridor",
       questForkArmStoryEvidence: "exact related Story evidence",
+      questForkArmSourceEvidence: "exact authored arm source",
+      questForkArmSourceFiles: "validated files",
       questForkArmOriginalFiles: "arm-related original files",
       questForkArmEvidenceBoundary: "These files and Story relations occur on quests reachable only from this sibling arm. They do not prove that the server selected the arm or that sibling arms are mutually exclusive.",
       questForkServerPolicy: "server activation unresolved",
@@ -2098,6 +2100,8 @@
       structuredIdentityReceiverMatches: "\u63a5\u6536\u811a\u672c\u5339\u914d / \u672a\u5ba1\u6838\u5f62\u72b6",
       questForkArmCorridor: "\u540c\u7ea7\u5206\u652f\u72ec\u6709\u4efb\u52a1\u8d70\u5eca",
       questForkArmStoryEvidence: "\u7cbe\u786e\u76f8\u5173 Story \u8bc1\u636e",
+      questForkArmSourceEvidence: "\u7cbe\u786e\u5206\u652f\u81c2\u539f\u59cb\u6765\u6e90",
+      questForkArmSourceFiles: "\u5df2\u9a8c\u8bc1\u6587\u4ef6",
       questForkArmOriginalFiles: "\u5206\u652f\u76f8\u5173\u539f\u59cb\u6587\u4ef6",
       questForkArmEvidenceBoundary: "\u8fd9\u4e9b\u6587\u4ef6\u4e0e Story \u5173\u7cfb\u4f4d\u4e8e\u4ec5\u80fd\u4ece\u8be5\u540c\u7ea7\u5206\u652f\u5230\u8fbe\u7684\u4efb\u52a1\u4e0a\uff1b\u5b83\u4eec\u4e0d\u8bc1\u660e\u670d\u52a1\u7aef\u9009\u4e2d\u4e86\u8be5\u5206\u652f\uff0c\u4e5f\u4e0d\u8bc1\u660e\u540c\u7ea7\u5206\u652f\u4e92\u65a5\u3002",
       questForkServerPolicy: "\u670d\u52a1\u7aef\u542f\u52a8\u7b56\u7565\u672a\u89e3",
@@ -4406,6 +4410,7 @@
       const guard = arm.failedCondition || null;
       const corridor = arm.siblingExclusiveQuestIds || [];
       const storyEvidence = arm.storyEvidence || [];
+      const branchSourceEvidence = arm.authoredSourceEvidence || [];
       const relatedOriginalFiles = arm.relatedOriginalFiles || [];
       const questTypeName = questTypeNames.get(Number(arm.questType));
       const showModeName = showModeNames.get(Number(arm.showMode));
@@ -4416,8 +4421,16 @@
         ${conditions.length ? `<p><strong>${esc(t("questForkObjectiveConditions"))}:</strong>${conditions.map((name) => `<code>${esc(name)}</code>`).join(" ")}</p>` : ""}
         ${guard ? `<div class="mp-quest-fork-guard"><strong>${esc(t("questForkGuardedArm"))}:</strong>${renderConditionTree(guard)}</div>` : ""}
         ${storyEvidence.length ? `<details class="mp-quest-fork-story"><summary>${esc(t("questForkArmStoryEvidence"))} <span>${storyEvidence.length}</span></summary>${storyEvidence.map((row) => `<div><a href="${esc(storyHref(row.key || ""))}"><code>${esc(row.key || "?")}</code></a><code>${esc(row.questId || "?")}</code><b>${esc(row.relation || row.confidence || "typed relation")}</b><small>${esc([row.confidence, row.actionType, row.conditionType, row.direction].filter(Boolean).join(" · "))}</small></div>`).join("")}</details>` : ""}
+        ${branchSourceEvidence.length ? `<details class="mp-quest-fork-sources" open><summary>${esc(t("questForkArmSourceEvidence"))} <span>${branchSourceEvidence.length}</span></summary>${branchSourceEvidence.map((row) => {
+          const facts = [
+            ...(row.conditionTypes || []),
+            ...(row.clientActionTypes || []),
+            ...(row.trackingTypes || []),
+          ];
+          return `<div><header><code>${esc(row.questId || "?")}</code><b>${esc(row.armMembership || "?")} / ${Number((row.relatedOriginalFiles || []).length).toLocaleString()} ${esc(t("questForkArmSourceFiles"))}</b></header>${facts.length ? `<p>${facts.map((fact) => `<code>${esc(fact)}</code>`).join(" ")}</p>` : ""}<small>${esc((row.evidenceKinds || []).join(" / "))}</small></div>`;
+        }).join("")}</details>` : ""}
         ${relatedOriginalFiles.length ? `<details class="mp-quest-fork-files"><summary>${esc(t("questForkArmOriginalFiles"))} <span>${relatedOriginalFiles.length}</span></summary>${relatedOriginalFiles.map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}</details>` : ""}
-        ${(corridor.length || storyEvidence.length) ? `<small class="mp-quest-fork-arm-boundary">${esc(arm.storyEvidenceBoundary || arm.corridorEvidenceBoundary || t("questForkArmEvidenceBoundary"))}</small>` : ""}
+        ${(corridor.length || storyEvidence.length || branchSourceEvidence.length) ? `<small class="mp-quest-fork-arm-boundary">${esc(arm.storyEvidenceBoundary || arm.corridorEvidenceBoundary || t("questForkArmEvidenceBoundary"))}</small>` : ""}
       </section>`;
     };
     const serverApplicationHtml = (fork) => {

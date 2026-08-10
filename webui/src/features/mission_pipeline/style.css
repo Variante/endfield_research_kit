@@ -2480,8 +2480,10 @@ body:not(.show-debug) .mp-playback-rejection {
   background: color-mix(in srgb, var(--panel) 88%, var(--accent) 12%);
 }
 .mp-quest-fork-story,
+.mp-quest-fork-sources,
 .mp-quest-fork-files { margin-top: .5rem; }
 .mp-quest-fork-story > summary,
+.mp-quest-fork-sources > summary,
 .mp-quest-fork-files > summary {
   display: flex;
   justify-content: space-between;
@@ -2503,6 +2505,23 @@ body:not(.show-debug) .mp-playback-rejection {
   grid-column: 1 / -1;
   color: var(--muted);
 }
+.mp-quest-fork-sources > div {
+  margin-top: .35rem;
+  padding: .4rem .45rem;
+  border: 1px solid var(--border);
+  border-radius: .35rem;
+  background: color-mix(in srgb, var(--panel) 94%, var(--accent) 6%);
+}
+.mp-quest-fork-sources > div header,
+.mp-quest-fork-sources > div p {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .3rem;
+  margin: 0;
+}
+.mp-quest-fork-sources > div p { justify-content: flex-start; margin-top: .3rem; }
+.mp-quest-fork-sources > div small { display: block; margin-top: .3rem; color: var(--muted); }
 .mp-quest-fork-files > small,
 .mp-quest-fork-arm-boundary {
   display: block;

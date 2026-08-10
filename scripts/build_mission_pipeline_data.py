@@ -352,7 +352,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # any configured dialog to a quest arm. v48 publishes the complete context
 # inventory at mission scope so registered dialog rows without an exported
 # Story definition remain visible instead of falling out of the manifest.
-SCHEMA_VERSION = 48
+# v49 validates every authored fork-arm source identity against the original
+# questDic and publishes generalized, hash-bearing source evidence per arm.
+SCHEMA_VERSION = 49
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -14142,6 +14144,49 @@ def publish_quest_dialog_tree_definitions(
     return result
 
 
+def iter_hashed_source_references(
+    value: Any,
+    path: tuple[str, ...] = (),
+) -> Iterable[dict[str, Any]]:
+    """Yield source references that carry their own byte-identity proof.
+
+    Recovery publishers use several evidence schemas, but their durable source
+    boundary is uniform: an object names ``sourceFile`` and carries either
+    ``sha256``, ``sourceSha256``, or ``rawDataSha256``.  Walking that shape keeps
+    branch attachment independent of particular action, condition, dialog, or
+    mission ids while excluding unverified path-like diagnostic strings.
+    """
+    if isinstance(value, dict):
+        source_file = value.get("sourceFile")
+        source_hash = (
+            value.get("sha256")
+            or value.get("sourceSha256")
+            or value.get("rawDataSha256")
+        )
+        if isinstance(source_file, str) and source_file and source_hash:
+            yield {
+                "sourceFile": source_file,
+                "sha256": str(source_hash),
+                "kind": str(
+                    value.get("kind")
+                    or value.get("evidenceKind")
+                    or value.get("sourceType")
+                    or "hashed_source_reference"
+                ),
+                "relationship": str(
+                    value.get("relationship")
+                    or value.get("evidenceKind")
+                    or "arm_hashed_source_reference"
+                ),
+                "evidencePath": ".".join(path),
+            }
+        for key, child in value.items():
+            yield from iter_hashed_source_references(child, (*path, str(key)))
+    elif isinstance(value, list):
+        for child in value:
+            yield from iter_hashed_source_references(child, path)
+
+
 def publish_quest_fork_arm_evidence(
     index: dict[str, Any],
     output_root: Path,
@@ -14152,33 +14197,72 @@ def publish_quest_fork_arm_evidence(
 
     The corridor membership comes only from MissionRuntime predecessor topology.
     Story rows come from the generated typed mission sidecar, whose action names
-    are backed by the complete installed-binary ActionBase formatter audit. Any
-    original file named by a row is resolved, bounded to the repository, and
-    hashed before publication. OCR and manual order are deliberately absent.
+    are backed by the complete installed-binary ActionBase formatter audit. The
+    exact MissionRuntime questDic and every nested, hash-bearing source reference
+    on a corridor quest are validated and attached by their shared data shape.
+    OCR and manual order are deliberately absent.
     """
     validator = "quest_fork_arm_evidence"
+    validation_scope = {"missionId": "", "questId": ""}
+
+    def validation_failure(
+        gate: str,
+        expected: Any,
+        actual: Any,
+        source: str,
+        source_hashes: dict[str, str] | None = None,
+    ) -> RuntimeError:
+        failure = compact_dict({
+            "validator": validator,
+            "gate": gate,
+            **validation_scope,
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": str(source),
+            "sourceHashes": source_hashes or {},
+        })
+        index["questForkArmEvidence"] = {
+            "schema": "missionQuestForkArmEvidence.v2",
+            "validation": {
+                "status": "validation_failed",
+                "failures": [failure],
+            },
+        }
+        write_json(output_root / "index.json", index)
+        return RuntimeError(
+            f"validator={validator} gate={gate} "
+            f"mission={validation_scope['missionId'] or '-'} "
+            f"quest={validation_scope['questId'] or '-'} "
+            f"expected={expected!r} actual={actual!r} source={source} "
+            f"sourceHashes={source_hashes or {}}"
+        )
+
     audit = ACTIONBASE_FORMATTER_NAME_AUDIT
     audit_source = str(audit.get("sourceFile") or "")
     if audit.get("status") != "validated" or not audit_source:
-        raise RuntimeError(
-            f"validator={validator} gate=binaryActionNameAudit "
-            "expected={'status':'validated','sourceFile':'nonempty'} "
-            f"actual={{'status':{audit.get('status')!r},'sourceFile':{audit_source!r}}} "
-            "source=scripts/story_builder/level_bindings.py"
+        raise validation_failure(
+            "binaryActionNameAudit",
+            {"status": "validated", "sourceFile": "nonempty"},
+            {"status": audit.get("status"), "sourceFile": audit_source},
+            "scripts/story_builder/level_bindings.py",
         )
     audit_path = (ROOT / audit_source).resolve()
     expected_audit_hash = str(audit.get("sourceSha256") or "").upper()
     if not audit_path.is_relative_to(ROOT) or not audit_path.is_file():
-        raise RuntimeError(
-            f"validator={validator} gate=binaryActionNameAuditSource "
-            f"expected=fileWithinRepo actual={audit_path} source={audit_source}"
+        raise validation_failure(
+            "binaryActionNameAuditSource",
+            "fileWithinRepo",
+            str(audit_path),
+            audit_source,
         )
     actual_audit_hash = sha256_path(audit_path).upper()
     if actual_audit_hash != expected_audit_hash:
-        raise RuntimeError(
-            f"validator={validator} gate=binaryActionNameAuditHash "
-            f"expected={expected_audit_hash!r} actual={actual_audit_hash!r} "
-            f"source={audit_source}"
+        raise validation_failure(
+            "binaryActionNameAuditHash",
+            expected_audit_hash,
+            actual_audit_hash,
+            audit_source,
+            {"actualSha256": actual_audit_hash},
         )
     audit_payload = read_json(audit_path)
     audit_metadata = (
@@ -14195,9 +14279,10 @@ def publish_quest_fork_arm_evidence(
         source_file: str,
         relationship: str,
         expected_hash: str = "",
+        kind: str = "original_authored_source",
     ) -> dict[str, Any]:
         normalized = str(source_file or "").replace("\\", "/")
-        cache_key = f"{normalized}\0{relationship}"
+        cache_key = f"{normalized}\0{relationship}\0{kind}"
         cached = file_cache.get(cache_key)
         if cached is not None:
             return cached
@@ -14205,21 +14290,31 @@ def publish_quest_fork_arm_evidence(
         if not source_path.is_absolute():
             source_path = ROOT / source_path
         source_path = source_path.resolve()
-        if not source_path.is_relative_to(ROOT) or not source_path.is_file():
-            raise RuntimeError(
-                f"validator={validator} gate=relatedOriginalFile "
-                f"expected=fileWithinRepo actual={source_path} "
-                f"source={normalized}"
+        if not source_path.is_relative_to(ROOT) and not expected_hash:
+            raise validation_failure(
+                "relatedOriginalFileBoundary",
+                "fileWithinRepoOrPrehashedAbsolute",
+                str(source_path),
+                normalized,
+            )
+        if not source_path.is_file():
+            raise validation_failure(
+                "relatedOriginalFile",
+                "file",
+                str(source_path),
+                normalized,
             )
         actual_hash = sha256_path(source_path)
         if expected_hash and actual_hash.upper() != expected_hash.upper():
-            raise RuntimeError(
-                f"validator={validator} gate=relatedOriginalFileHash "
-                f"expected={expected_hash.upper()!r} "
-                f"actual={actual_hash.upper()!r} source={normalized}"
+            raise validation_failure(
+                "relatedOriginalFileHash",
+                expected_hash.upper(),
+                actual_hash.upper(),
+                normalized,
+                {"actualSha256": actual_hash},
             )
         row = {
-            "kind": "original_authored_source",
+            "kind": kind,
             "sourceFile": repo_path(source_path),
             "relationship": relationship,
             "sha256": actual_hash,
@@ -14233,12 +14328,17 @@ def publish_quest_fork_arm_evidence(
     arms_with_story = 0
     story_placements = 0
     binary_named_action_placements = 0
+    authored_source_placements = 0
+    arms_with_related_files = 0
+    non_story_arms_with_related_files = 0
     story_keys: set[str] = set()
     distinct_original_files: set[str] = set()
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
         mission_id = str(summary.get("id") or "")
+        validation_scope["missionId"] = mission_id
+        validation_scope["questId"] = ""
         mission_path = output_root / str(summary.get("file") or "")
         if not mission_path.is_file():
             continue
@@ -14249,10 +14349,8 @@ def publish_quest_fork_arm_evidence(
             continue
         sidecar_path = sidecar_root / f"{mission_id}.json"
         if not sidecar_path.is_file():
-            raise RuntimeError(
-                f"validator={validator} gate=missionSidecar "
-                f"mission={mission_id} expected=file actual=missing "
-                f"source={sidecar_path}"
+            raise validation_failure(
+                "missionSidecar", "file", "missing", str(sidecar_path)
             )
         sidecar = read_json(sidecar_path)
         flow = sidecar.get("flow") if isinstance(sidecar, dict) else None
@@ -14260,10 +14358,11 @@ def publish_quest_fork_arm_evidence(
         if isinstance(quest_rows, dict):
             quest_rows = list(quest_rows.values())
         if not isinstance(quest_rows, list):
-            raise RuntimeError(
-                f"validator={validator} gate=missionSidecarQuests "
-                f"mission={mission_id} expected=list actual={type(quest_rows).__name__} "
-                f"source={sidecar_path}"
+            raise validation_failure(
+                "missionSidecarQuests",
+                "list",
+                type(quest_rows).__name__,
+                str(sidecar_path),
             )
         sidecar_quests = {
             str(row.get("id") or row.get("questId") or ""): row
@@ -14275,6 +14374,47 @@ def publish_quest_fork_arm_evidence(
             for row in payload.get("nodes") or []
             if isinstance(row, dict) and row.get("id")
         }
+        mission = payload.get("mission") if isinstance(payload, dict) else None
+        mission_source = str(mission.get("source") or "") if isinstance(mission, dict) else ""
+        if not mission_source:
+            raise validation_failure(
+                "missionRuntimeSource", "nonempty", mission_source, str(mission_path)
+            )
+        mission_source_path = Path(mission_source)
+        if not mission_source_path.is_absolute():
+            mission_source_path = ROOT / mission_source_path
+        mission_source_path = mission_source_path.resolve()
+        if not mission_source_path.is_file():
+            raise validation_failure(
+                "missionRuntimeSourceFile",
+                "file",
+                str(mission_source_path),
+                mission_source,
+            )
+        mission_source_hash = sha256_path(mission_source_path)
+        mission_runtime = read_json(mission_source_path)
+        authored_quest_dic = (
+            mission_runtime.get("questDic")
+            if isinstance(mission_runtime, dict)
+            else None
+        )
+        if (
+            not isinstance(authored_quest_dic, dict)
+            or str(mission_runtime.get("missionId") or "") != mission_id
+        ):
+            raise validation_failure(
+                "missionRuntimeQuestDictionary",
+                {"missionId": mission_id, "questDic": "dict"},
+                {
+                    "missionId": (
+                        mission_runtime.get("missionId")
+                        if isinstance(mission_runtime, dict) else None
+                    ),
+                    "questDic": type(authored_quest_dic).__name__,
+                },
+                mission_source,
+                {"missionRuntimeSha256": mission_source_hash},
+            )
         mission_story_placements = 0
         for fork in mission_forks:
             if not isinstance(fork, dict):
@@ -14284,38 +14424,80 @@ def publish_quest_fork_arm_evidence(
                 if not isinstance(arm, dict):
                     continue
                 arms += 1
+                validation_scope["questId"] = str(fork.get("questId") or "")
                 corridor = arm.get("siblingExclusiveQuestIds")
                 if not isinstance(corridor, list):
-                    raise RuntimeError(
-                        f"validator={validator} gate=siblingExclusiveCorridor "
-                        f"mission={mission_id} quest={fork.get('questId') or '-'} "
-                        "expected=list actual=missing "
-                        f"source={mission_path}"
+                    raise validation_failure(
+                        "siblingExclusiveCorridor",
+                        "list",
+                        "missing",
+                        str(mission_path),
                     )
+                arm_quest_id = str(arm.get("questId") or "")
+                source_quest_ids = corridor or ([arm_quest_id] if arm_quest_id else [])
                 missing_quests = [
-                    quest_id for quest_id in corridor
+                    quest_id for quest_id in source_quest_ids
                     if quest_id not in sidecar_quests or quest_id not in nodes
                 ]
                 if missing_quests:
-                    raise RuntimeError(
-                        f"validator={validator} gate=corridorQuestsResolve "
-                        f"mission={mission_id} quest={fork.get('questId') or '-'} "
-                        f"expected=[] actual={missing_quests[:16]!r} "
-                        f"source={sidecar_path}"
+                    raise validation_failure(
+                        "corridorQuestsResolve",
+                        [],
+                        missing_quests[:16],
+                        str(sidecar_path),
+                    )
+                missing_authored_quests = [
+                    quest_id for quest_id in source_quest_ids
+                    if quest_id not in authored_quest_dic
+                ]
+                if missing_authored_quests:
+                    raise validation_failure(
+                        "corridorQuestsInOriginalQuestDic",
+                        [],
+                        missing_authored_quests[:16],
+                        mission_source,
+                        {"missionRuntimeSha256": mission_source_hash},
                     )
                 evidence_by_signature: dict[tuple[str, ...], dict[str, Any]] = {}
                 related_by_file: dict[str, dict[str, Any]] = {}
-                for quest_id in corridor:
+                authored_source_evidence: list[dict[str, Any]] = []
+                for quest_id in source_quest_ids:
                     sidecar_quest = sidecar_quests[quest_id]
                     node = nodes[quest_id]
-                    raw_rows = [
-                        row for row in sidecar_quest.get("storyConnections") or []
-                        if isinstance(row, dict) and row.get("key")
-                    ]
-                    raw_rows.extend(
-                        row for row in node.get("storyScopeContexts") or []
-                        if isinstance(row, dict) and row.get("key")
+                    quest_related_by_file: dict[str, dict[str, Any]] = {}
+                    authored_mission_file = related_original_file(
+                        mission_source,
+                        "exact_fork_arm_quest_definition",
+                        mission_source_hash,
+                        "mission_runtime",
                     )
+                    quest_related_by_file[authored_mission_file["sourceFile"]] = (
+                        authored_mission_file
+                    )
+                    related_by_file[authored_mission_file["sourceFile"]] = (
+                        authored_mission_file
+                    )
+                    evidence_kinds = {"mission_runtime_quest_definition"}
+                    for source_reference in iter_hashed_source_references(node):
+                        related = related_original_file(
+                            str(source_reference["sourceFile"]),
+                            str(source_reference["relationship"]),
+                            str(source_reference["sha256"]),
+                            str(source_reference["kind"]),
+                        )
+                        quest_related_by_file[related["sourceFile"]] = related
+                        related_by_file[related["sourceFile"]] = related
+                        evidence_kinds.add(str(source_reference["relationship"]))
+                    raw_rows: list[dict[str, Any]] = []
+                    if quest_id in corridor:
+                        raw_rows = [
+                            row for row in sidecar_quest.get("storyConnections") or []
+                            if isinstance(row, dict) and row.get("key")
+                        ]
+                        raw_rows.extend(
+                            row for row in node.get("storyScopeContexts") or []
+                            if isinstance(row, dict) and row.get("key")
+                        )
                     for raw in raw_rows:
                         raw_source_files = raw.get("sourceFiles")
                         if not isinstance(raw_source_files, list):
@@ -14358,6 +14540,8 @@ def publish_quest_fork_arm_evidence(
                                 "fork_arm_typed_story_relation",
                             )
                             related_by_file[related["sourceFile"]] = related
+                            quest_related_by_file[related["sourceFile"]] = related
+                            evidence_kinds.add("fork_arm_typed_story_relation")
                     evidence_keys = {
                         str(row.get("key") or "")
                         for row in raw_rows
@@ -14377,6 +14561,37 @@ def publish_quest_fork_arm_evidence(
                             str(definition.get("sourceSha256") or ""),
                         )
                         related_by_file[related["sourceFile"]] = related
+                        quest_related_by_file[related["sourceFile"]] = related
+                    tracking_types = sorted({
+                        str(tracking.get("type") or "")
+                        for objective in node.get("objectives") or []
+                        if isinstance(objective, dict)
+                        for tracking in objective.get("tracking") or []
+                        if isinstance(tracking, dict) and tracking.get("type")
+                    })
+                    authored_source_evidence.append(compact_dict({
+                        "questId": quest_id,
+                        "armMembership": (
+                            "sibling_exclusive_corridor"
+                            if quest_id in corridor
+                            else "direct_successor_boundary"
+                        ),
+                        "evidenceKinds": sorted(evidence_kinds),
+                        "conditionTypes": sorted({
+                            str(value) for value in node.get("conditionTypes") or []
+                            if value
+                        }),
+                        "clientActionTypes": sorted({
+                            str(action.get("type") or "")
+                            for action in node.get("clientActions") or []
+                            if isinstance(action, dict) and action.get("type")
+                        }),
+                        "trackingTypes": tracking_types,
+                        "relatedOriginalFiles": sorted(
+                            quest_related_by_file.values(),
+                            key=lambda row: (row["sourceFile"], row["relationship"]),
+                        ),
+                    }))
                 evidence_rows = sorted(
                     evidence_by_signature.values(),
                     key=lambda row: (
@@ -14387,15 +14602,19 @@ def publish_quest_fork_arm_evidence(
                     ),
                 )
                 arm["storyEvidence"] = evidence_rows
+                arm["authoredSourceEvidence"] = authored_source_evidence
                 arm["relatedOriginalFiles"] = sorted(
                     related_by_file.values(),
                     key=lambda row: (row["sourceFile"], row["relationship"]),
                 )
                 arm["storyEvidenceBoundary"] = (
-                    "Rows are exact typed relations on quests in this sibling-relative "
-                    "corridor. Context rows remain non-owning; even direct playback or "
-                    "completion rows do not prove server arm selection or exclusivity."
+                    "Every corridor quest is validated against the exact original "
+                    "MissionRuntime questDic. Additional files are admitted only from "
+                    "nested hash-bearing source records. Story context remains non-owning; "
+                    "even direct playback or completion does not prove server arm "
+                    "selection, exclusivity, or a total order."
                 )
+                authored_source_placements += len(authored_source_evidence)
                 story_placements += len(evidence_rows)
                 binary_named_action_placements += sum(
                     bool(row.get("actionType")) for row in evidence_rows
@@ -14404,6 +14623,10 @@ def publish_quest_fork_arm_evidence(
                 if evidence_rows:
                     arms_with_story += 1
                     story_keys.update(str(row.get("key") or "") for row in evidence_rows)
+                if related_by_file:
+                    arms_with_related_files += 1
+                    if not evidence_rows:
+                        non_story_arms_with_related_files += 1
                 distinct_original_files.update(related_by_file)
         order_branches = (
             (payload.get("storyOrder") or {}).get("branches")
@@ -14427,7 +14650,8 @@ def publish_quest_fork_arm_evidence(
         missions += 1
 
     result = {
-        "schema": "missionQuestForkArmEvidence.v1",
+        "schema": "missionQuestForkArmEvidence.v2",
+        "validation": {"status": "validated", "failures": []},
         "language": language.upper(),
         "binaryActionTypeAuthority": {
             **audit,
@@ -14439,6 +14663,9 @@ def publish_quest_fork_arm_evidence(
             "forks": forks,
             "arms": arms,
             "armsWithStoryEvidence": arms_with_story,
+            "armsWithRelatedOriginalFiles": arms_with_related_files,
+            "nonStoryArmsWithRelatedOriginalFiles": non_story_arms_with_related_files,
+            "authoredQuestSourcePlacements": authored_source_placements,
             "storyEvidencePlacements": story_placements,
             "uniqueStoryKeys": len(story_keys),
             "binaryNamedActionPlacements": binary_named_action_placements,
@@ -14451,8 +14678,12 @@ def publish_quest_fork_arm_evidence(
             "usesOcrOrManualOrder": False,
             "boundary": (
                 "MissionRuntime predecessor reachability defines each corridor. "
-                "Typed quest Story relations and their original files are attached "
-                "without claiming server selection, exclusivity, or a total order."
+                "Every corridor identity must also exist in the exact original questDic. "
+                "The MissionRuntime file and nested hash-bearing source records are "
+                "attached generically. Empty exclusive corridors retain only their direct "
+                "successor boundary identity. Arms with no Story placement remain visible "
+                "without "
+                "claiming server selection, exclusivity, or a total order."
             ),
         },
     }
@@ -14926,7 +15157,11 @@ def main() -> int:
                 "Quest fork arm evidence: "
                 f"{published['storyEvidencePlacements']} Story placements across "
                 f"{published['armsWithStoryEvidence']}/{published['arms']} arms; "
-                f"{published['distinctRelatedOriginalFiles']} original files"
+                f"{published['authoredQuestSourcePlacements']} exact quest-source "
+                f"placements and {published['armsWithRelatedOriginalFiles']}/"
+                f"{published['arms']} arms with original files "
+                f"({published['nonStoryArmsWithRelatedOriginalFiles']} without Story); "
+                f"{published['distinctRelatedOriginalFiles']} distinct original files"
             )
     else:
         print(f"Story binding coverage skipped: no {args.story_language.upper()} Story bundle")

@@ -64,6 +64,15 @@ never promotes an edge.
 - Quest forks are authored topology. Main/auxiliary labels, guards,
   `questType`, `showMode`, and reconvergence describe configuration and
   presentation; they do not prove which successor the server selected.
+- Fork-arm source attachment is corpus-driven. Each sibling-exclusive corridor
+  identity must exist in the exact original MissionRuntime `questDic`; a shared
+  recursive walker then admits only records carrying both `sourceFile` and a
+  byte hash. The current corpus publishes 3,337 authored quest-source placements
+  and at least one original file on all 740 arms, including 395 arms with no
+  Story placement. Twenty-three arms immediately enter a shared merge and are
+  labeled direct-successor boundaries instead of being called exclusive. The
+  walker has no mission, quest, action, or object allowlist and never reads OCR
+  or manual order.
 - The installed client applies server-supplied mission/quest identities and
   states one at a time. Current validated handlers do not expose a client-side
   successor selector.
