@@ -300,6 +300,7 @@ for (const [key, category] of [
         )
         self.assertIn("row.scopeStatus", source)
         self.assertIn("row.hostMissionIds", source)
+        self.assertIn("row.levelNums", source)
         self.assertIn(
             "activation.missionAreaLevelDataShellContext",
             source,
