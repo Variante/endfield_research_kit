@@ -136,7 +136,16 @@ never promotes an edge.
   covering 210 configured dialogs in 82 missions. Each context carries its
   exact original source file and hash; 13 former per-dialog tracking blocks and
   the former one-proxy publication allowlist have been removed. This family
-  retains 312 authored lines, 90 validated option routes, and 68 prime-reachable
+  is now classified by one general quest-graph rule rather than mission/proxy
+  cases. Across the current 146 contexts it validates every candidate identity,
+  predecessor, cycle boundary, MissionRuntime hash, and installed
+  `GameAssembly.dll` hash; 13 contexts span sibling-exclusive fork arms or
+  touch/feed an authored merge. The binary keeps `activeCondIndex` proxy-row
+  selection separate from server-supplied quest-state identity, so the
+  classifier exposes candidate chains, antichains, partial orders, forks, and
+  merges without assigning a configured dialog to a quest or adding a branch
+  selection/Story-order edge. This family retains 312 authored lines, 90
+  validated option routes, and 68 prime-reachable
   finish endpoints; three unresolved option-node identities remain visibly fail
   closed. One transient row without a current
   `NpcProxyTable` identity fails closed with a bounded diagnostic. Internal

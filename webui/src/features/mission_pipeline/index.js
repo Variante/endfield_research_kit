@@ -902,6 +902,18 @@
       triggerPlaybackAlias: "root playback alias · owner unresolved",
       triggerPlaybackAliasConnected: "root playback alias · owner connected",
       triggerDefinition: "definition only · no consumer",
+      trackedProxyTopology: "Authored candidate-quest topology",
+      trackedProxyTopologySingle: "single candidate",
+      trackedProxyTopologyChain: "candidate chain",
+      trackedProxyTopologyAntichain: "candidate antichain",
+      trackedProxyTopologyPartial: "candidate partial order",
+      trackedProxyCandidates: "candidate quests",
+      trackedProxyFork: "authored fork corridor",
+      trackedProxyArm: "sibling arm",
+      trackedProxyShared: "shared downstream candidates",
+      trackedProxyMerge: "authored merge",
+      trackedProxyBinaryBoundary: "Binary selector boundary",
+      trackedProxyNoAssignment: "No configured dialog is assigned to a quest or fork arm.",
       offlineRecoveryBoundary: "Offline recovery boundary",
       projectAuthoredBoundary: "Project-authored WebUI content",
       projectAuthoredEvidence: "Excluded from original-game recovery",
@@ -1750,6 +1762,18 @@
       triggerPlaybackAlias: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
       triggerPlaybackAliasConnected: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u5df2\u8fde\u63a5",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
+      trackedProxyTopology: "\u5019\u9009\u4efb\u52a1\u7684\u539f\u59cb\u62d3\u6251",
+      trackedProxyTopologySingle: "\u5355\u4e00\u5019\u9009\u4efb\u52a1",
+      trackedProxyTopologyChain: "\u5019\u9009\u4efb\u52a1\u94fe",
+      trackedProxyTopologyAntichain: "\u5019\u9009\u4efb\u52a1\u53cd\u94fe",
+      trackedProxyTopologyPartial: "\u5019\u9009\u4efb\u52a1\u504f\u5e8f",
+      trackedProxyCandidates: "\u5019\u9009\u4efb\u52a1",
+      trackedProxyFork: "\u539f\u59cb\u5206\u652f\u8d70\u5eca",
+      trackedProxyArm: "\u540c\u7ea7\u5206\u652f",
+      trackedProxyShared: "\u5206\u652f\u5171\u4eab\u7684\u4e0b\u6e38\u5019\u9009\u4efb\u52a1",
+      trackedProxyMerge: "\u539f\u59cb\u6c47\u5408",
+      trackedProxyBinaryBoundary: "\u4e8c\u8fdb\u5236\u9009\u62e9\u5668\u8fb9\u754c",
+      trackedProxyNoAssignment: "\u672a\u5c06\u4efb\u4f55\u5df2\u914d\u7f6e\u5bf9\u8bdd\u5206\u914d\u7ed9\u67d0\u4e2a\u4efb\u52a1\u6216\u5206\u652f\u3002",
       offlineRecoveryBoundary: "\u79bb\u7ebf\u6062\u590d\u8fb9\u754c",
       projectAuthoredBoundary: "WebUI \u9879\u76ee\u81ea\u5efa\u5185\u5bb9",
       projectAuthoredEvidence: "\u5df2\u4ece\u539f\u59cb\u6e38\u620f\u6062\u590d\u4e2d\u6392\u9664",
@@ -3663,16 +3687,63 @@
     </div>`;
   }
 
+  function trackedProxyCandidateTopologyHtml(topology) {
+    if (!topology || topology.status !== "validated") return "";
+    const classLabel = t(({
+      single_candidate: "trackedProxyTopologySingle",
+      candidate_chain: "trackedProxyTopologyChain",
+      candidate_antichain: "trackedProxyTopologyAntichain",
+      candidate_partial_order: "trackedProxyTopologyPartial",
+    })[topology.topologyClass] || "trackedProxyTopology");
+    const candidates = (topology.candidateQuestIds || [])
+      .map((questId) => `<code>${esc(questId)}</code>`)
+      .join(" ");
+    const forks = (topology.forks || []).map((fork) => {
+      const arms = (fork.arms || []).map((arm) => {
+        const armCandidates = (arm.candidateQuestIds || [])
+          .map((questId) => `<code>${esc(questId)}</code>`)
+          .join(" ");
+        return `<span class="mp-tracked-proxy-arm"><b>${esc(t("trackedProxyArm"))}</b><code>${esc(arm.questId || "?")}</code>${armCandidates ? `<small>${armCandidates}</small>` : ""}</span>`;
+      }).join("");
+      const shared = (fork.sharedDownstreamCandidateQuestIds || [])
+        .map((questId) => `<code>${esc(questId)}</code>`)
+        .join(" ");
+      return `<article class="mp-tracked-proxy-fork${fork.spansMultipleArms ? " is-spanning" : ""}"><header><b>${esc(t("trackedProxyFork"))}</b><code>${esc(fork.questId || "?")}</code></header><div>${arms}</div>${shared ? `<small><strong>${esc(t("trackedProxyShared"))}:</strong> ${shared}</small>` : ""}</article>`;
+    }).join("");
+    const merges = (topology.merges || []).map((merge) => (
+      `<span class="mp-tracked-proxy-merge"><b>${esc(t("trackedProxyMerge"))}</b><code>${esc(merge.questId || "?")}</code><small>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</small></span>`
+    )).join("");
+    const selector = topology.binarySelector || {};
+    const originalFiles = (topology.relatedOriginalFiles || []).map((file) => (
+      `<small><code>${esc(file.kind || "original file")}</code> <code>${esc(file.sourceFile || "?")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`
+    )).join("");
+    return `<section class="mp-tracked-proxy-topology">
+      <header><strong>${esc(t("trackedProxyTopology"))}</strong><span>${esc(classLabel)}</span></header>
+      <p><b>${esc(t("trackedProxyCandidates"))}:</b> ${candidates}</p>
+      ${forks ? `<div class="mp-tracked-proxy-forks">${forks}</div>` : ""}
+      ${merges ? `<div class="mp-tracked-proxy-merges">${merges}</div>` : ""}
+      <p><b>${esc(t("trackedProxyBinaryBoundary"))}:</b> <code>activeCondIndex</code> &rarr; <code>NpcProxyEx.dialogId</code> · <code>questId</code> &rarr; quest state</p>
+      <p>${(selector.serverStateMessages || []).map((message) => `<code>${esc(message)}</code>`).join(" ")} ${(selector.selectorFields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>
+      ${selector.mappingId || selector.gameAssemblySha256 ? `<small><code>${esc(selector.mappingId || "binary mapping")}</code>${selector.gameAssemblySha256 ? ` / GameAssembly SHA-256 <code>${esc(selector.gameAssemblySha256)}</code>` : ""}</small>` : ""}
+      <small>${esc(topology.evidenceBoundary || t("trackedProxyNoAssignment"))}</small>
+      ${originalFiles ? `<div class="mp-tracked-proxy-files">${originalFiles}</div>` : ""}
+    </section>`;
+  }
+
   function triggerRouteHtml(route) {
     const steps = (route.steps || []).filter((step) => step && step.kind);
     const paths = (route.nativePaths || []).filter(Boolean);
     const producers = (route.nativeCinematicProducerRoutes || []).filter(Boolean);
     const sources = (route.sourceFiles || []).filter(Boolean);
+    const candidateTopology = trackedProxyCandidateTopologyHtml(
+      route.candidateQuestTopology,
+    );
     if (!steps.length) return "";
     return `<div class="mp-trigger-route is-${esc(route.causality || "context")}">
       <header><strong>${esc(t("triggerRoute"))}</strong><span>${esc(triggerCausalityLabel(route.causality))}</span>${route.controlPathCount ? `<b>${esc(route.controlPathCount)} ${esc(t("triggerExactPaths"))}</b>` : ""}</header>
       <div class="mp-trigger-chain">${steps.map((step, index) => `${index ? '<i aria-hidden="true">&rarr;</i>' : ""}${triggerStepHtml(step)}`).join("")}</div>
       ${paths.length ? `<section class="mp-trigger-events"><header><strong>${esc(t("triggerEvents"))}</strong><small>${esc(t("triggerEventsHint"))}</small></header><div>${paths.map(nativePathHtml).join("")}</div></section>` : ""}
+      ${candidateTopology}
       ${producers.length ? `<small><strong>${esc(t("cinematicProducer"))}:</strong> ${producers.map((row) => `<code>${esc(`${row.actionType || "action"}::${row.actionMethod || "?"} -> ${row.producerType || "producer"}::${row.producerMethod || "?"}`)}</code>`).join(" ")}</small>` : ""}
       ${sources.length ? `<small><strong>${esc(t("source"))}:</strong> ${sources.map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}
     </div>`;

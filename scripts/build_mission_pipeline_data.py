@@ -14,6 +14,7 @@ import base64
 import copy
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -169,6 +170,11 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_GAME_ROOT = Path(os.environ.get(
+    "ENDFIELD_GAME_ROOT",
+    r"D:\Program Files\Endfield Game\Endfield_Data",
+))
+DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 STREAMING_MISSION_ROOT = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
 )
@@ -339,7 +345,12 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # fail-closed joins it to the original task table and LevelScript source. v46
 # attaches the generic binary-decoded typed-control topology observed by each
 # authored LevelScript condition, without promoting it to Story ownership/order.
-SCHEMA_VERSION = 46
+# v47 classifies every uniquely mission-scoped tracked NPC proxy against its
+# authored quest partial order.  The classifier is identity-agnostic: it
+# validates the complete quest graph, then derives candidate chains,
+# antichains, sibling-exclusive fork corridors, and merges without assigning
+# any configured dialog to a quest arm.
+SCHEMA_VERSION = 47
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -5231,6 +5242,11 @@ def build_story_trigger_route(
             row.get("selectionOrderStatus") or ""
         ),
         "questTriggerStatus": str(row.get("questTriggerStatus") or ""),
+        "candidateQuestTopology": (
+            copy.deepcopy(row.get("candidateQuestTopology"))
+            if isinstance(row.get("candidateQuestTopology"), dict)
+            else None
+        ),
         "steps": steps,
     }
 
@@ -8210,6 +8226,9 @@ def build_story_binding_coverage(
     missionless_native_runtime_nodes: dict[str, dict[str, Any]] = {}
     native_receiver_gate_cache: dict[tuple[str, int], dict[str, Any]] = {}
     story_trigger_routes: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    tracked_proxy_topologies: dict[str, dict[str, Any]] = {}
+    tracked_proxy_topology_route_count = 0
+    tracked_proxy_topology_failures: list[dict[str, Any]] = []
     context_only_trigger_route_keys: set[str] = set()
     definition_only_interactive_config_keys: set[str] = set()
     sidecars_read = 0
@@ -8439,6 +8458,28 @@ def build_story_binding_coverage(
                 scope="mission",
             ))
         for row, quest_id, scope in _scoped_connection_rows(flow):
+            if str(row.get("relation") or "") == (
+                "unique_mission_tracked_npc_proxy_dialog_context"
+            ):
+                topology, failures = build_tracked_proxy_candidate_quest_topology(
+                    row,
+                    flow,
+                    mission_id=mission_id,
+                )
+                tracked_proxy_topology_failures.extend(failures)
+                if topology:
+                    row = {**row, "candidateQuestTopology": topology}
+                    tracked_proxy_topology_route_count += 1
+                    topology_signature = json.dumps({
+                        "missionId": mission_id,
+                        "npcProxyId": row.get("npcProxyId"),
+                        "candidateQuestIds": topology["candidateQuestIds"],
+                    }, sort_keys=True, separators=(",", ":"))
+                    tracked_proxy_topologies[topology_signature] = {
+                        "missionId": mission_id,
+                        "npcProxyId": str(row.get("npcProxyId") or ""),
+                        **copy.deepcopy(topology),
+                    }
             key = str(row.get("key") or "")
             if (
                 str(row.get("relation") or "") in {
@@ -9143,8 +9184,24 @@ def build_story_binding_coverage(
         post_playback_variable_bridge_audit.get("summary") or {}
     )
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
+    tracked_proxy_topology_rows = sorted(
+        tracked_proxy_topologies.values(),
+        key=lambda row: (
+            natural_quest_key(str(row.get("missionId") or "")),
+            str(row.get("npcProxyId") or ""),
+        ),
+    )
+    tracked_proxy_topology_class_counts = Counter(
+        str(row.get("topologyClass") or "unknown")
+        for row in tracked_proxy_topology_rows
+    )
+    tracked_proxy_branch_context_count = sum(
+        bool(row.get("spansAuthoredForkArms"))
+        or bool(row.get("intersectsAuthoredMerge"))
+        for row in tracked_proxy_topology_rows
+    )
     report = {
-        "schemaVersion": 17,
+        "schemaVersion": 18,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -9182,6 +9239,26 @@ def build_story_binding_coverage(
             "connectionEvidenceRows": evidence_row_count,
             "storyTriggerRoutes": trigger_route_count,
             "storyFilesWithTriggerRoutes": story_files_with_trigger_routes,
+            "trackedProxyCandidateTopologyContexts": len(
+                tracked_proxy_topology_rows
+            ),
+            "trackedProxyCandidateTopologyRoutes": (
+                tracked_proxy_topology_route_count
+            ),
+            "trackedProxyCandidateTopologyBranchContexts": (
+                tracked_proxy_branch_context_count
+            ),
+            "trackedProxyCandidateTopologyForkSpanningContexts": sum(
+                bool(row.get("spansAuthoredForkArms"))
+                for row in tracked_proxy_topology_rows
+            ),
+            "trackedProxyCandidateTopologyMergeContexts": sum(
+                bool(row.get("intersectsAuthoredMerge"))
+                for row in tracked_proxy_topology_rows
+            ),
+            "trackedProxyCandidateTopologyFailures": len(
+                tracked_proxy_topology_failures
+            ),
             "nativeCinematicProducerStoryFiles": sum(
                 any(route.get("nativeCinematicProducerRoutes") for route in row.get("routes") or [])
                 for row in story_trigger_manifest.values()
@@ -9392,6 +9469,42 @@ def build_story_binding_coverage(
             ),
         ),
         "storyTriggerManifest": story_trigger_manifest,
+        "trackedProxyCandidateTopology": {
+            "schema": "trackedProxyCandidateQuestTopologyAudit.v1",
+            "status": (
+                "validation_failed"
+                if tracked_proxy_topology_failures
+                else "validated"
+            ),
+            "counts": {
+                "contexts": len(tracked_proxy_topology_rows),
+                "routes": tracked_proxy_topology_route_count,
+                "branchContexts": tracked_proxy_branch_context_count,
+                "forkSpanningContexts": sum(
+                    bool(row.get("spansAuthoredForkArms"))
+                    for row in tracked_proxy_topology_rows
+                ),
+                "mergeContexts": sum(
+                    bool(row.get("intersectsAuthoredMerge"))
+                    for row in tracked_proxy_topology_rows
+                ),
+                "topologyClasses": dict(sorted(
+                    tracked_proxy_topology_class_counts.items()
+                )),
+                "validationFailures": len(
+                    tracked_proxy_topology_failures
+                ),
+            },
+            "rows": tracked_proxy_topology_rows,
+            "validationFailures": tracked_proxy_topology_failures[:100],
+            "evidenceBoundary": (
+                "This audit classifies candidate quests in original "
+                "MissionRuntime topology. The original binary keeps proxy "
+                "active-row selection and quest state application separate, "
+                "so no dialog is assigned to a quest arm and no Story order "
+                "edge is added."
+            ),
+        },
         "postPlaybackActionNameAudit": post_playback_action_name_audit,
         "callServerCallbackAudit": compact_callback_audit,
         "postPlaybackLevelSequenceAssetAudit": (
@@ -9483,6 +9596,9 @@ def build_story_binding_coverage(
         f"- Connected mission placements: `{counts['connectedMissionPlacements']}`",
         f"- Connection evidence rows: `{counts['connectionEvidenceRows']}`",
         f"- Normalized Story trigger/context routes: `{counts['storyTriggerRoutes']}`",
+        f"- Validated tracked-proxy candidate topology contexts: `{counts['trackedProxyCandidateTopologyContexts']}` across `{counts['trackedProxyCandidateTopologyRoutes']}` dialog routes",
+        f"- Those intersecting authored fork/merge structure: `{counts['trackedProxyCandidateTopologyBranchContexts']}` (fork-spanning `{counts['trackedProxyCandidateTopologyForkSpanningContexts']}`, merge `{counts['trackedProxyCandidateTopologyMergeContexts']}`)",
+        f"- Tracked-proxy topology validation failures: `{counts['trackedProxyCandidateTopologyFailures']}`",
         f"- Story files with at least one normalized route: `{counts['storyFilesWithTriggerRoutes']}`",
         f"- Unlinked Story files with a known trigger/context route: `{counts['unlinkedStoryFilesWithTriggerRoutes']}`",
         f"- Shipped-Lua Story playback calls scanned: `{counts['scannedLuaStoryPlaybackCalls']}`",
@@ -9645,6 +9761,16 @@ def build_story_binding_coverage(
         "",
     ])
     (report_root / f"{stem}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    if tracked_proxy_topology_failures:
+        first = tracked_proxy_topology_failures[0]
+        raise RuntimeError(
+            f"validator={first['validator']} gate={first['gate']} "
+            f"mission={first['mission']} story={first['storyKey']} "
+            f"expected={first['expected']!r} actual={first['actual']!r} "
+            f"source={first['sourceFile']} "
+            f"sourceHashes={first['sourceHashes']!r} "
+            f"failures={len(tracked_proxy_topology_failures)}"
+        )
     return report
 
 
@@ -10587,6 +10713,315 @@ def validate_level_script_task_dependency(
         "validation": {"status": "validated", "validator": validator},
     })
     return result
+
+
+def build_tracked_proxy_candidate_quest_topology(
+    row: dict[str, Any],
+    flow: dict[str, Any],
+    *,
+    mission_id: str,
+    game_assembly_path: Path = DEFAULT_GAME_ASSEMBLY,
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    """Classify a shared tracked-proxy context in the authored quest graph.
+
+    The rule is deliberately corpus-shaped rather than identity-shaped.  It
+    accepts only the generalized tracked-proxy relation, validates the entire
+    sidecar quest graph, and reports where the candidate quests sit relative
+    to authored forks and merges.  It never maps an ``activeCondIndex`` row to
+    a quest: the installed binary exposes those as independent server-selected
+    identities.
+    """
+    relation = str(row.get("relation") or "")
+    if relation != "unique_mission_tracked_npc_proxy_dialog_context":
+        return None, []
+
+    validator = "tracked_proxy_candidate_quest_topology"
+    story_key = str(row.get("key") or "")
+    proxy_id = str(row.get("npcProxyId") or "")
+    source_files = _unique_route_strings(row.get("sourceFiles"))
+    mission_runtime_sources = [
+        source
+        for source in source_files
+        if "missionruntimeasset/" in source.replace("\\", "/").casefold()
+    ]
+    source_file = mission_runtime_sources[0] if len(mission_runtime_sources) == 1 else ""
+    source_path = _resolve_report_source_path(source_file) if source_file else None
+    source_hash = sha256_path(source_path) if source_path and source_path.is_file() else ""
+    expected_game_assembly_hash = str(
+        row.get("gameAssemblySha256") or ""
+    ).lower()
+    actual_game_assembly_hash = (
+        sha256_path(game_assembly_path)
+        if game_assembly_path.is_file()
+        else ""
+    )
+    source_hashes = {
+        "missionRuntimeSha256": source_hash,
+        "expectedGameAssemblySha256": expected_game_assembly_hash,
+        "actualGameAssemblySha256": actual_game_assembly_hash,
+    }
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any, quest_id: str = "") -> None:
+        failures.append({
+            "validator": validator,
+            "gate": gate,
+            "mission": mission_id,
+            "storyKey": story_key,
+            "npcProxyId": proxy_id,
+            "questId": quest_id,
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    if len(mission_runtime_sources) != 1:
+        fail("singleMissionRuntimeSource", 1, mission_runtime_sources)
+    elif not source_path or not source_path.is_file():
+        fail("missionRuntimeSourceExists", True, source_file)
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", source_hash):
+        fail("missionRuntimeSourceHash", "sha256", source_hash or "missing")
+    if not game_assembly_path.is_file():
+        fail("gameAssemblySourceExists", True, str(game_assembly_path))
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_game_assembly_hash):
+        fail(
+            "gameAssemblyExpectedHash",
+            "sha256",
+            expected_game_assembly_hash or "missing",
+        )
+    if not re.fullmatch(r"[0-9a-f]{64}", actual_game_assembly_hash):
+        fail(
+            "gameAssemblyActualHash",
+            "sha256",
+            actual_game_assembly_hash or "missing",
+        )
+    if (
+        expected_game_assembly_hash
+        and actual_game_assembly_hash
+        and expected_game_assembly_hash != actual_game_assembly_hash
+    ):
+        fail(
+            "gameAssemblySourceHashMatches",
+            expected_game_assembly_hash,
+            actual_game_assembly_hash,
+        )
+
+    raw_quests = flow.get("quests") or []
+    if isinstance(raw_quests, dict):
+        raw_quests = list(raw_quests.values())
+    if not isinstance(raw_quests, list):
+        fail("questCollectionShape", "list_or_dict", type(raw_quests).__name__)
+        raw_quests = []
+    nodes_by_id: dict[str, dict[str, Any]] = {}
+    duplicates: list[str] = []
+    for node in raw_quests:
+        if not isinstance(node, dict):
+            continue
+        quest_id = str(node.get("id") or node.get("questId") or "")
+        if not quest_id:
+            fail("questIdentity", "non_empty", node)
+            continue
+        if quest_id in nodes_by_id:
+            duplicates.append(quest_id)
+            continue
+        nodes_by_id[quest_id] = node
+    if duplicates:
+        fail("uniqueQuestIdentities", [], sorted(set(duplicates), key=natural_quest_key))
+
+    predecessors = {
+        quest_id: _unique_route_strings(node.get("prev"), node.get("prevQuestIdList"))
+        for quest_id, node in nodes_by_id.items()
+    }
+    dangling = sorted({
+        parent
+        for rows in predecessors.values()
+        for parent in rows
+        if parent not in nodes_by_id
+    }, key=natural_quest_key)
+    if dangling:
+        fail("allPredecessorsResolve", [], dangling)
+    successors: dict[str, list[str]] = {quest_id: [] for quest_id in nodes_by_id}
+    for quest_id, parents in predecessors.items():
+        for parent in parents:
+            if parent in successors:
+                successors[parent].append(quest_id)
+    for rows in successors.values():
+        rows.sort(key=natural_quest_key)
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+    cycle_path: list[str] = []
+
+    def visit(quest_id: str, path: list[str]) -> bool:
+        if quest_id in visiting:
+            cycle_path.extend([*path, quest_id])
+            return True
+        if quest_id in visited:
+            return False
+        visiting.add(quest_id)
+        for child in successors.get(quest_id, []):
+            if visit(child, [*path, quest_id]):
+                return True
+        visiting.remove(quest_id)
+        visited.add(quest_id)
+        return False
+
+    for quest_id in sorted(nodes_by_id, key=natural_quest_key):
+        if visit(quest_id, []):
+            break
+    if cycle_path:
+        fail("acyclicQuestGraph", [], cycle_path)
+
+    candidate_ids = _unique_route_strings(row.get("candidateQuestIds"))
+    if not candidate_ids:
+        fail("candidateQuestIdentities", "non_empty", [])
+    missing_candidates = [
+        quest_id for quest_id in candidate_ids if quest_id not in nodes_by_id
+    ]
+    if missing_candidates:
+        fail("allCandidateQuestsResolve", [], missing_candidates)
+    if failures:
+        return None, failures
+
+    distances = {
+        quest_id: _quest_reachability_distances(quest_id, successors)
+        for quest_id in nodes_by_id
+    }
+    comparable_pairs: list[list[str]] = []
+    incomparable_pairs: list[list[str]] = []
+    for index, left in enumerate(candidate_ids):
+        for right in candidate_ids[index + 1:]:
+            pair = [left, right]
+            if right in distances[left] or left in distances[right]:
+                comparable_pairs.append(pair)
+            else:
+                incomparable_pairs.append(pair)
+    pair_count = len(comparable_pairs) + len(incomparable_pairs)
+    if len(candidate_ids) == 1:
+        topology_class = "single_candidate"
+    elif len(comparable_pairs) == pair_count:
+        topology_class = "candidate_chain"
+    elif not comparable_pairs:
+        topology_class = "candidate_antichain"
+    else:
+        topology_class = "candidate_partial_order"
+
+    forks: list[dict[str, Any]] = []
+    for fork_id in sorted(nodes_by_id, key=natural_quest_key):
+        arm_ids = successors.get(fork_id, [])
+        if len(arm_ids) < 2:
+            continue
+        arm_reach = {
+            arm_id: set(distances[arm_id])
+            for arm_id in arm_ids
+        }
+        arms: list[dict[str, Any]] = []
+        shared_candidates: set[str] = set()
+        for arm_id in arm_ids:
+            other_reach = set().union(*(
+                reachable
+                for other_id, reachable in arm_reach.items()
+                if other_id != arm_id
+            ))
+            exclusive_corridor = arm_reach[arm_id] - other_reach
+            exclusive_candidates = [
+                quest_id for quest_id in candidate_ids
+                if quest_id in exclusive_corridor
+            ]
+            shared_candidates.update(
+                quest_id for quest_id in candidate_ids
+                if quest_id in arm_reach[arm_id] and quest_id in other_reach
+            )
+            arms.append({
+                "questId": arm_id,
+                "candidateQuestIds": exclusive_candidates,
+                "siblingExclusiveQuestIds": sorted(
+                    exclusive_corridor,
+                    key=lambda quest_id: (
+                        distances[arm_id][quest_id],
+                        natural_quest_key(quest_id),
+                    ),
+                ),
+            })
+        relevant = any(arm["candidateQuestIds"] for arm in arms) or shared_candidates
+        if not relevant:
+            continue
+        populated_arms = sum(bool(arm["candidateQuestIds"]) for arm in arms)
+        forks.append({
+            "questId": fork_id,
+            "successorQuestIds": arm_ids,
+            "arms": arms,
+            "sharedDownstreamCandidateQuestIds": sorted(
+                shared_candidates,
+                key=natural_quest_key,
+            ),
+            "spansMultipleArms": populated_arms > 1,
+            "activationPolicy": "server_selected_unresolved",
+        })
+
+    merges = []
+    candidate_set = set(candidate_ids)
+    for merge_id in sorted(nodes_by_id, key=natural_quest_key):
+        parent_ids = predecessors.get(merge_id, [])
+        candidate_parents = [parent for parent in parent_ids if parent in candidate_set]
+        if len(parent_ids) > 1 and (merge_id in candidate_set or candidate_parents):
+            merges.append({
+                "questId": merge_id,
+                "predecessorQuestIds": parent_ids,
+                "candidatePredecessorQuestIds": candidate_parents,
+                "mergeQuestIsCandidate": merge_id in candidate_set,
+            })
+
+    related_original_files = [{
+        "kind": "original_mission_runtime",
+        "sourceFile": repo_path(source_path),
+        "relationship": "tracked_proxy_candidate_quest_topology",
+        "sha256": source_hash,
+    }, {
+        "kind": "original_game_binary",
+        "relationship": "npc_proxy_active_row_and_quest_state_selector_boundary",
+        "sourceFile": game_assembly_path.as_posix(),
+        "sha256": actual_game_assembly_hash,
+    }]
+    selector = RUNTIME_CONTRACT["npcProxyDialogSelection"]
+    return {
+        "schema": "trackedProxyCandidateQuestTopology.v1",
+        "status": "validated",
+        "topologyClass": topology_class,
+        "candidateQuestIds": candidate_ids,
+        "comparablePairs": comparable_pairs,
+        "incomparablePairs": incomparable_pairs,
+        "comparablePairCount": len(comparable_pairs),
+        "incomparablePairCount": len(incomparable_pairs),
+        "forks": forks,
+        "merges": merges,
+        "spansAuthoredForkArms": any(
+            fork["spansMultipleArms"] for fork in forks
+        ),
+        "intersectsAuthoredMerge": bool(merges),
+        "dialogAssignmentStatus": "unresolved_shared_proxy_state",
+        "questTopologyEvidence": True,
+        "branchSelectionEvidence": False,
+        "storyOrderEvidence": False,
+        "binarySelector": {
+            "mappingId": str(row.get("nativeMappingId") or ""),
+            "selectorFields": selector.get("selectorFields") or [],
+            "serverStateMessages": selector.get("serverStateMessages") or [],
+            "clientExecution": selector.get("clientExecution") or "",
+            "bindingBoundary": selector.get("bindingBoundary") or "",
+            "gameAssemblySha256": actual_game_assembly_hash,
+        },
+        "relatedOriginalFiles": related_original_files,
+        "evidenceBoundary": (
+            "The candidate quest partial order and fork/merge corridors come from "
+            "the exact MissionRuntime graph. The installed binary independently "
+            "uses activeCondIndex to select one NpcProxyEx row and questId to apply "
+            "quest state. No recovered field maps a configured dialog row to one "
+            "candidate quest or fork arm, so this adds no branch selection or "
+            "relative Story-order edge."
+        ),
+    }, []
 
 
 def objective_row(
