@@ -686,6 +686,11 @@ UNITY_SCHEDULED_CULL_BODIES = {
         0x2CFE,
         "e98d6f1048d417b86a65a9a8328e6edf7fbc9f2d91e3c94464e4586e1bb5eb45",
     ),
+    "parallel_batch_thunk": (
+        0x181045F80,
+        0xDE,
+        "c3cdc2ccc3b96eaa31ce470f0f3a1313c795da8bef5e4b4cc3645e71b68fce0c",
+    ),
     "standard_predicate_wrapper": (
         0x180FEAEB0,
         0x21,
@@ -721,6 +726,21 @@ UNITY_SCHEDULED_CULL_SLICES = {
         "f3420f5c5c901cf3410f5f4804f3420f5c549018f30f104208"
         "f3420f5c449020f30f59dbf3410f5f4808f30f59d2f30f59c0"
         "f30f584934f30f58daf30f59c9f30f58d80f2fcb0f93c0c3",
+    ),
+    "parent_lod_bias_to_batch_core": (
+        0x181053351,
+        "4d8d8e84010000f3410f1086800100004d8d8684050000458b5e48452b9e78"
+        "0100004c8d14c84c89bc2420010000410fb64604488bcf88442460488d842420"
+        "0100004889542458418bd54c894424504d8b86d80000004c894c2448458b8ee8"
+        "000000f30f11442440895c2438488944243044895c24284c89542420e85f030000",
+    ),
+    "batch_core_parent_lod_bias_ingress": (
+        0x1810537F0,
+        "f30f10bd201200008d7e0148c1e704488d35efe5c800f30f11bd9c020000",
+    ),
+    "parallel_batch_parent_lod_bias_projection": (
+        0x181054665,
+        "8888ac010000488b8530010000488b8d28120000f30f11b8b0010000",
     ),
 }
 
@@ -1284,6 +1304,47 @@ def relative_call_target(body: bytes, method_va: int, offset: int) -> int:
     )
     displacement = struct.unpack_from("<i", body, offset + 1)[0]
     return method_va + offset + 5 + displacement
+
+
+def count_legacy_movss_disp_loads(body: bytes, displacement: int) -> int:
+    """Count legacy MOVSS scalar loads using an exact memory displacement.
+
+    This intentionally covers the legacy F3 0F 10 encoding emitted throughout
+    the pinned UnityPlayer culling bodies.  It is used only as a transparent
+    negative boundary inside an already hash-pinned function body.
+    """
+
+    count = 0
+    cursor = 0
+    while cursor < len(body):
+        if body[cursor] != 0xF3:
+            cursor += 1
+            continue
+        opcode_offset = cursor + 1
+        if opcode_offset < len(body) and 0x40 <= body[opcode_offset] <= 0x4F:
+            opcode_offset += 1
+        if (
+            opcode_offset + 2 >= len(body)
+            or body[opcode_offset : opcode_offset + 2] != b"\x0F\x10"
+        ):
+            cursor += 1
+            continue
+        modrm_offset = opcode_offset + 2
+        modrm = body[modrm_offset]
+        mode = modrm >> 6
+        memory_form = mode != 3
+        rm = modrm & 7
+        displacement_offset = modrm_offset + 1
+        if memory_form and rm == 4:
+            displacement_offset += 1
+        if mode == 1 and displacement_offset < len(body):
+            actual = struct.unpack_from("<b", body, displacement_offset)[0]
+            count += actual == displacement
+        elif mode == 2 and displacement_offset + 4 <= len(body):
+            actual = struct.unpack_from("<i", body, displacement_offset)[0]
+            count += actual == displacement
+        cursor += 1
+    return count
 
 
 def read_native_method_bodies(game_assembly: Path = GAME_ASSEMBLY) -> dict[str, bytes]:
@@ -3161,12 +3222,14 @@ def validate_unity_scheduled_culling_boundary(
     )
 
     bodies = []
+    body_bytes: dict[str, bytes] = {}
     for label, (
         virtual_address,
         size_bytes,
         expected_hash,
     ) in UNITY_SCHEDULED_CULL_BODIES.items():
         body = image.read(virtual_address, size_bytes)
+        body_bytes[label] = body
         actual_hash = hashlib.sha256(body).hexdigest()
         require(
             f"unity_scheduled_cull_{label}_sha256",
@@ -3182,6 +3245,16 @@ def validate_unity_scheduled_culling_boundary(
                 "sha256": actual_hash,
             }
         )
+
+    scheduled_core_disp18_movss_loads = count_legacy_movss_disp_loads(
+        body_bytes["scheduled_batch_core"], 0x18
+    )
+    require(
+        "unity_scheduled_cull_batch_core_direct_movss_disp18_load_count",
+        scheduled_core_disp18_movss_loads,
+        0,
+        image.path,
+    )
 
     slices = []
     for label, (
@@ -3232,6 +3305,32 @@ def validate_unity_scheduled_culling_boundary(
                 "prove that later renderer/entity jobs omit the threshold"
             ),
         },
+        "screenSizeMinimumSquaredDataflow": {
+            "viewRecordOffset": "0x18",
+            "scheduledBatchCoreDirectMovssDisplacement0x18Loads": (
+                scheduled_core_disp18_movss_loads
+            ),
+            "dispatchStageConclusion": (
+                "the complete hash-pinned scheduled batch core has no legacy "
+                "scalar-float load at displacement +0x18; its selected view "
+                "predicates also omit the view field"
+            ),
+            "independentParentLODBiasSquaredFlow": [
+                "0x181053358 reads HGCullingSystem state+0x180",
+                "0x1810533B3 projects it to the batch-core stack argument",
+                "0x1810537F0 reloads it at core entry",
+                "0x181054679 forwards it to child-job payload+0x1B0",
+                "0x181045F8E reloads the callback-visible payload+0x3C",
+            ],
+            "nonEquivalence": (
+                "parentLODBiasSquared is an independent HGCullingSystem state "
+                "value and is not evidence of a cull-view +0x18 read"
+            ),
+            "openBoundary": (
+                "a separate later system may still copy or consume the view "
+                "threshold outside this dispatch stage"
+            ),
+        },
         "evidenceBoundary": {
             "closed": [
                 "DispatchBatchCullingJobs internal-call binding and native call chain",
@@ -3239,6 +3338,8 @@ def validate_unity_scheduled_culling_boundary(
                 "standard six-plane AABB predicate",
                 "cameraType 0x80 sphere/distance predicate",
                 "absence of cull-view +0x18 from those two selected predicates",
+                "absence of any direct legacy MOVSS +0x18 load from the complete scheduled batch core",
+                "the independent parentLODBiasSquared batch/child-job forwarding chain",
             ],
             "open": [
                 "the later renderer/entity consumer, if any, of cull-view +0x18",
