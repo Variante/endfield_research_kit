@@ -417,6 +417,14 @@
       dialogFinishTaskCarrierJsonFiles: "typed JSON files",
       dialogFinishTaskCarrierJsonCandidates: "typed-JSON exact-task candidates",
       dialogFinishTaskCarrierNonJsonFiles: "serialized files excluded",
+      dialogFinishLevelDataCarrier: "exact LevelData task-progress carriers",
+      dialogFinishLevelDataCarrierFiles: "raw-candidate LevelData files",
+      dialogFinishLevelDataUniqueShells: "unique mission shells",
+      dialogFinishLevelDataSharedShells: "shared mission shells",
+      dialogFinishLevelDataUnresolvedShells: "unresolved mission shells",
+      dialogFinishLevelDataUncarried: "task conditions without a LevelData carrier",
+      dialogFinishAuthoredTaskShellDependencies: "authored finish→task mission-shell links",
+      dialogFinishAuthoredTaskShellHint: "The exact task condition is persisted inside the decoded LevelScript entry of this original LevelData shell. The shell link does not prove task activation, quest ownership, player choice, or Story order.",
       dialogFinishAuthoredTaskStat: "authored finish→task dependencies",
       dialogFinishUnresolvedEndpointStat: "task consumers without an authored endpoint",
       dialogFinishAnyContextStat: "mission any-finish contexts",
@@ -1490,6 +1498,14 @@
       dialogFinishTaskCarrierJsonFiles: "类型化 JSON 文件",
       dialogFinishTaskCarrierJsonCandidates: "类型化 JSON 精确任务候选",
       dialogFinishTaskCarrierNonJsonFiles: "已排除的序列化文件",
+      dialogFinishLevelDataCarrier: "精确 LevelData 任务进度载体",
+      dialogFinishLevelDataCarrierFiles: "LevelData 原始候选文件",
+      dialogFinishLevelDataUniqueShells: "唯一使命外壳",
+      dialogFinishLevelDataSharedShells: "共享使命外壳",
+      dialogFinishLevelDataUnresolvedShells: "未解析使命外壳",
+      dialogFinishLevelDataUncarried: "无 LevelData 载体的任务条件",
+      dialogFinishAuthoredTaskShellDependencies: "原始完成→任务使命外壳链接",
+      dialogFinishAuthoredTaskShellHint: "精确任务条件持久化在该原始 LevelData 外壳中已解码的 LevelScript 条目内。外壳链接不证明任务激活、Quest 所有权、玩家选择或 Story 顺序。",
       dialogFinishAuthoredTaskStat: "原始完成端点→任务依赖",
       dialogFinishUnresolvedEndpointStat: "缺少原始结束端点的任务消费端",
       dialogFinishAnyContextStat: "使命任意完成上下文",
@@ -2630,6 +2646,7 @@
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskAuthoredFinishDependencies || 0).toLocaleString()} ${esc(t("dialogFinishAuthoredTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskUnresolvedAuthoredFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogFinishUnresolvedEndpointStat"))} · ${Number(recoveryCounts.levelScriptTaskAnyFinishMissionContexts || 0).toLocaleString()} ${esc(t("dialogFinishAnyContextStat"))} · ${Number(recoveryCounts.levelScriptTaskMissionScriptContexts || 0).toLocaleString()} ${esc(t("dialogFinishScriptContextStat"))}</span>`);
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskExternalIdentityCarriers || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrier"))} / ${Number(recoveryCounts.levelScriptTaskExternalUncarriedIdentities || 0).toLocaleString()} ${esc(t("dialogFinishTaskUncarried"))}</span>`);
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskCarrierActiveLogicalFiles || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierScope"))} · ${Number(recoveryCounts.levelScriptTaskCarrierTypedJsonFiles || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierJsonFiles"))} / ${Number(recoveryCounts.levelScriptTaskCarrierNonJsonFiles || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierNonJsonFiles"))} · ${Number(recoveryCounts.levelScriptTaskCarrierTypedJsonCandidates || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierJsonCandidates"))}</span>`);
+      sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskLevelDataProgressCarriers || 0).toLocaleString()} ${esc(t("dialogFinishLevelDataCarrier"))} / ${Number(recoveryCounts.levelScriptTaskLevelDataRawCandidateFiles || 0).toLocaleString()} ${esc(t("dialogFinishLevelDataCarrierFiles"))} · ${Number(recoveryCounts.levelScriptTaskLevelDataUniqueMissionShellIdentities || 0).toLocaleString()} ${esc(t("dialogFinishLevelDataUniqueShells"))} / ${Number(recoveryCounts.levelScriptTaskLevelDataSharedMissionShellIdentities || 0).toLocaleString()} ${esc(t("dialogFinishLevelDataSharedShells"))} / ${Number(recoveryCounts.levelScriptTaskLevelDataUnresolvedMissionShellIdentities || 0).toLocaleString()} ${esc(t("dialogFinishLevelDataUnresolvedShells"))} · ${Number(recoveryCounts.levelScriptTaskLevelDataUncarriedConditions || 0).toLocaleString()} ${esc(t("dialogFinishLevelDataUncarried"))}</span>`);
       const lifecycle = state.index?.runtimeContract?.levelScriptTaskLifecycleAudit || {};
       if (lifecycle.validation?.status === "validated") {
         const chain = (lifecycle.serverStateApplicationChain || []).map((symbol) => `<code>${esc(symbol)}</code>`).join(" &rarr; ");
@@ -4225,7 +4242,11 @@
       .join(" ");
     const tracking = definition.canBeTracked ? t("dialogFinishTaskTracked") : t("dialogFinishTaskUntracked");
     const checking = definition.needManualCheck ? t("dialogFinishTaskManual") : t("dialogFinishTaskAutomatic");
-    const carriers = row.externalTaskIdentityCarriers || [];
+    const levelDataCarriers = row.levelDataTaskProgressCarriers || [];
+    const carriers = [
+      ...(row.externalTaskIdentityCarriers || []),
+      ...levelDataCarriers,
+    ];
     return `<p class="mp-dialog-finish-task-shape"><strong>${esc(t("dialogFinishTaskDefinition"))}:</strong> ${esc(t("dialogFinishTaskType"))} <code>${esc(definition.taskTypeName || (definition.taskType ?? "?"))}</code> · ${esc(t("dialogFinishTaskFlags"))} <code>${esc(tracking)}</code> <code>${esc(checking)}</code> · ${Number(definition.conditionCount || 0).toLocaleString()} ${esc(t("dialogFinishTaskConditions"))} ${conditionTypes}</p><small><strong>${esc(t("dialogFinishTaskCarrier"))}:</strong> ${Number(carriers.length).toLocaleString()}</small>`;
   }
 
@@ -4335,6 +4356,30 @@
         ${(fork.relatedOriginalFiles || []).map((related) => `<small><strong>${esc(t("relatedOriginalFile"))}:</strong> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}
         <small>${esc(fork.evidenceBoundary || topology.evidenceBoundary || "")}</small>
       </details>`).join("")}</div>
+    </details>`;
+  }
+
+  function dialogFinishAuthoredTaskShellDependenciesHtml() {
+    const rows = state.mission?.dialogFinishAuthoredTaskShellDependencies || [];
+    if (!rows.length) return "";
+    const body = rows.map((row) => {
+      const owner = row.missionShellOwner || {};
+      const carrier = owner.ownerKind === "leveldata_task_progress_mission_shell"
+        ? "LevelData member-22 + lt:p/lt:mp"
+        : "SubGame exact script/task carrier";
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      return `<article class="mp-dialog-finish-unmatched-row">
+        <header><a href="${esc(storyHref(row.dialogId || ""))}"><code>${esc(row.dialogId || "?")}</code></a><b>${esc(t("finish"))} ${esc(row.finishId ?? "?")}</b><i>&rarr;</i><code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}/${esc(row.taskId || "?")}</code></header>
+        <p><strong>${esc(t("dialogFinishTaskMissionShell"))}:</strong> <code>${esc(owner.missionId || "?")}</code> / <code>${esc(carrier)}</code></p>
+        ${dialogFinishTaskDefinitionHtml(row)}
+        <small>${esc(row.evidenceBoundary || t("dialogFinishAuthoredTaskShellHint"))}</small>
+        ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
+      </article>`;
+    }).join("");
+    return `<details class="mp-mission-story mp-dialog-finish-unmatched" data-weight="context" open>
+      <summary>${esc(t("dialogFinishAuthoredTaskShellDependencies"))} <span>${rows.length.toLocaleString()}</span></summary>
+      <small>${esc(t("dialogFinishAuthoredTaskShellHint"))}</small>
+      <div class="mp-dialog-finish-unmatched-list">${body}</div>
     </details>`;
   }
 
@@ -5414,6 +5459,7 @@
     ["runtime", "summarySectionRuntime", () => [nativeRuntimeBindingsHtml(), runtimeTraceHtml()]],
     ["story", "summarySectionStory", () => [
       missionStoryConnectionsHtml(),
+      dialogFinishAuthoredTaskShellDependenciesHtml(),
       missionTimelineActivationHtml(),
       missionTimelineConfigurationHtml(),
       missionStateDependenciesHtml(),
@@ -6413,7 +6459,9 @@
       const options = (row.optionIds || []).map((optionId) => `<code>${esc(optionId)}</code>`).join(" ");
       const owner = row.missionShellOwner || null;
       const ownerHtml = owner
-        ? `<small><strong>${esc(t("dialogFinishTaskMissionShell"))}:</strong> <code>${esc(owner.missionId || "?")}</code> / <code>${esc(owner.subGameId || "?")}</code> / <code>${esc(owner.taskLane || "?")}</code></small>`
+        ? owner.ownerKind === "leveldata_task_progress_mission_shell"
+          ? `<small><strong>${esc(t("dialogFinishTaskMissionShell"))}:</strong> <code>${esc(owner.missionId || "?")}</code> / <code>LevelData member-22 + lt:p/lt:mp</code></small>`
+          : `<small><strong>${esc(t("dialogFinishTaskMissionShell"))}:</strong> <code>${esc(owner.missionId || "?")}</code> / <code>${esc(owner.subGameId || "?")}</code> / <code>${esc(owner.taskLane || "?")}</code></small>`
         : `<small><strong>${esc(t("dialogFinishTaskOwnershipGap"))}</strong></small>`;
       const taskId = row.taskId
         ? `<code>${esc(row.taskId)}</code>`

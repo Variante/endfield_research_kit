@@ -156,9 +156,15 @@ never promotes an edge.
   families independently finds that same `c28m3` script/task/mission carrier
   and no typed-JSON carrier for the other 39 exact-finish task identities. The
   maintained prefix gate counts serialized files without reading them as JSON.
-  A separate exhaustive raw-token probe found 27 serialized LevelData candidate
-  hosts; these are not promoted because an exact task string in a LevelData
-  file does not identify a minimal mission/script/task owner.
+  A generic serialized-object pass now validates all 40 exact task identities
+  (42 finish-condition rows) across 27 LevelData files: the complete member-22
+  dictionary must place paired `lt:p`/`lt:mp` properties inside the exact
+  script's `LevelScriptBriefData` entry. Independent whole-shell references
+  resolve 21 task identities to one mission shell, retain six as shared, and
+  leave 13 shell identities unresolved. This attaches 22 authored consumer
+  rows through LevelData plus the existing SubGame-owned row to 17 Mission
+  Pipeline missions. The LevelData carrier proves persistent task-condition
+  placement and shell context, not activation, quest ownership, or Story order.
   The other 28 endpoint-to-task
   dependencies lack an exact MissionRuntime finish match; this is no longer an
   endpoint gap, but server selection and mission/task ownership remain
@@ -260,13 +266,12 @@ Reject as proof:
 1. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families.
-2. For the 39 exact-finish task identities without a typed-JSON carrier and the
-   28 dependencies without an exact MissionRuntime finish match, recover a
-   minimal object boundary inside the 27 serialized LevelData candidate hosts
-   or find a typed server-selection/mission-owner carrier elsewhere. A raw task
-   token in the same LevelData file remains progress context, not ownership.
-   Complete task maps, client lifecycle, and authored DialogTree endpoints are
-   already recovered.
+2. Resolve the six shared and 13 unresolved LevelData mission shells with an
+   independent typed server-selection or mission-owner carrier. The exact
+   member-22 task-progress boundary is complete for all 40 task identities, but
+   28 authored endpoint-to-task dependencies still lack an exact
+   MissionRuntime finish match. Complete task maps, client lifecycle, authored
+   DialogTree endpoints, and original LevelData carrier files are recovered.
 3. Find any client-visible carrier for server-side mission/quest successor
    selection or LevelScript activation policy. Current state/update packets do
    not co-carry Story ownership.
