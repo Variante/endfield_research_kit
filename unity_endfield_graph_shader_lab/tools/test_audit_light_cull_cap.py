@@ -305,6 +305,18 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertEqual(result["serializedMapConfigs"]["configCount"], 83)
         self.assertEqual(result["streamingPayloads"]["fileCount"], 51012)
         self.assertEqual(
+            result["nativeEntityDispatch"]["tags"][1],
+            {"tag": 2, "name": "NativeECS"},
+        )
+        self.assertEqual(
+            result["component67Owners"]["entityTypes"][1]["name"],
+            "MergedRenderCollider",
+        )
+        self.assertEqual(
+            result["streamingPayloads"]["ecsEntityTypes"][7]["entityCount"],
+            2576964,
+        )
+        self.assertEqual(
             result["streamingPayloads"]["hgtreeBit41ComponentCount"], 0
         )
         self.assertEqual(
@@ -336,6 +348,64 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AUDIT.PEImage(AUDIT.UNITY_PLAYER),
                 AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
                 census,
+            )
+
+    def test_streaming_scene_v2_merged_render_count_drift_fails_closed(self) -> None:
+        census = json.loads(
+            AUDIT.STREAMING_SCENE_V2_PAYLOAD_CENSUS.read_text(
+                encoding="utf-8"
+            )
+        )
+        census["streamingPayloads"]["ecsEntityTypes"][7]["entityCount"] += 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=streaming_scene_v2_census_payload_ecs_entity_types; "
+            r"source=.*streaming_scene_v2_payload_census.json; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_streaming_scene_v2_payload_census(
+                AUDIT.PEImage(AUDIT.UNITY_PLAYER),
+                AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+                census,
+            )
+
+    def test_changed_merged_render_registration_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18116B6AB and size == 0x2F6:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=streaming_scene_v2_mergedrendercollider_type-9_callback_registration_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_streaming_scene_v2_payload_census(
+                    image, AUDIT.PEImage(AUDIT.GAME_ASSEMBLY)
+                )
+
+    def test_changed_merged_render_enum_value_fails_closed(self) -> None:
+        metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
+        values_offset = 36_439_024
+        merged_render_data_index = 585_181
+        metadata[values_offset + merged_render_data_index] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=streaming_ecs_entity_type_MergedRenderCollider_value; "
+            r"source=.*global-metadata.dat; expected=9; actual=8",
+        ):
+            AUDIT.validate_streaming_scene_v2_payload_census(
+                AUDIT.PEImage(AUDIT.UNITY_PLAYER),
+                AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+                metadata=bytes(metadata),
             )
 
     def test_changed_streaming_hgtree_enum_value_fails_closed(self) -> None:

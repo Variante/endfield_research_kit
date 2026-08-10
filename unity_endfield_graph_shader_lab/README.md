@@ -1606,16 +1606,22 @@ dedicated HG icall 621, native loader `0x18117B200`, path builder, request
 callback, and custom interleaved-token LZ4 decoder. The 83 serialized
 `StreamingMapConfig` roots match 83 `StreamingChunkInfo` files with no gap. A
 complete scan of 51,012 main Streaming payloads decodes 3,088,714,060 bytes and
-3,084,834 union records; none contains HGTree bit 41 or HLODGroup bit 11. All
+3,084,834 union records; no tag-1 component vector contains HGTree bit 41 or
+HLODGroup bit 11. Native tables close tag 1 as MonoEntity, tag 2 as native
+ECS, and tag 3 as Proxy. Installed metadata closes all `ECSEntityType` and
+`ProxyEntityType` byte values. Native callback-slot registration proves
+component 67 is shared by type 0 `Render` (`0x181154230/0x181159010`) and type
+9 `MergedRenderCollider` (`0x181153310/0x181157760`). The full payload census
+contains 34,672 Render records in 1,384 files and 2,576,964
+MergedRenderCollider records in 4,720 files, closing native entity ownership
+without inventing a standalone component name. All
 1,576 DynamicStreaming init/stream payloads contain only tag-2 records and no
 component entry. Dynamic `fb_main` is a separate managed gameplay schema: its
 457 files contain 2,828 `FBDynamicSceneTreeRootComp` rows, while
 `EDynamicSystem.Tree=11` and `EDynamicSceneData.TreeRootComp=64` keep that
 destructible-tree normal-model path distinct from both serialized HGTree bit 41
 and ECS component 67. The compact evidence is
-`Generated/OriginalData/CharInfoPresentation/streaming_scene_v2_payload_census.json`;
-nested/procedural data and runtime construction remain explicit search
-surfaces.
+`Generated/OriginalData/CharInfoPresentation/streaming_scene_v2_payload_census.json`.
 Native entity-type
 registration core `0x1801FAEC0` consumes 8-byte rows `(int16 id, uint16 size,
 uint32 cumulativeOffset)`, places component storage after byte 8, and exposes
@@ -1643,7 +1649,7 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 native identity and LOD-count/range producer, unrelated
+bytes, component-67 standalone native type name and LOD-count/range producer, unrelated
 scheduled consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.

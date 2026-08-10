@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v17",
-  "status": "installed_cap_hgtree_component67_streaming_payload_surfaces_excluded",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, narrowing the remaining producer search to a runtime descriptor source. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 component entry. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. Nested/procedural data and runtime construction remain open. The native name/owner of id 67 remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the component-67 ECS LOD-count/range producer and native component identity, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v18",
+  "status": "installed_cap_component67_native_ecs_entity_owners_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, narrowing the remaining producer search to a runtime descriptor source. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name and the earlier lodCount/cumulative-range producer remain open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the component-67 ECS LOD-count/range producer and standalone native component type name, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -1198,7 +1198,7 @@
               "HGTreeCount": 0,
               "HGTreeDataCount": 0
             },
-            "boundary": "these hash-pinned source families and the controlled top-level Unity-serialized HGTree/HGTreeData surface are excluded; the id-67 descriptor and lodCount/range producer remain in proprietary streaming bytes, nested data, or another native runtime source"
+            "boundary": "these hash-pinned source families and the controlled top-level Unity-serialized HGTree/HGTreeData surface are excluded. Streaming tag 1 component vectors are also excluded, but tag 2 is now positively identified as native ECS and contains the active Render and MergedRenderCollider owner paths"
           },
           "structureBoundary": "this pointer is resolved from archetype component bit 67; it is not the loader-owned registration blob stored in the runtime-transform owner's +0x78 vector, and it is not the managed/native scripting HGTreeComponent at id 80",
           "nativeScriptingTypeIdentity": {
@@ -1248,6 +1248,11 @@
           "managedHGTreeComponentIdMappingClosed": true,
           "managedHGTreeComponentId": 80,
           "component67MatchesHGTreeComponent": false,
+          "nativeEntityOwnershipClosed": true,
+          "nativeEntityOwners": [
+            "Render",
+            "MergedRenderCollider"
+          ],
           "component67NativeIdentityClosed": false
         },
         "dispatchPacket": {
@@ -1473,6 +1478,9 @@
           "the exact serialized-record to runtime-record and LOD float2 mapping",
           "the 1/2/4/8/16/32 runtime capacity buckets and LOD-array offsets",
           "the separate component-bit-67 24-byte ECS LOD state layout",
+          "StreamingSceneV2 tag 2 as the native ECS union variant",
+          "component 67 ownership by Render and MergedRenderCollider entity paths",
+          "the complete installed ECSEntityType/ProxyEntityType payload census",
           "pending, available, and per-renderer readiness mask transitions",
           "the separation between the loader registration blob and ECS LOD state",
           "the direct squared-distance LOD interval equation",
@@ -1489,7 +1497,7 @@
         "open": [
           "semantic roles for the loader registration blob's remaining initially zero bytes",
           "the ECS LOD-count producer and record+0x06/+0x07 semantics",
-          "a direct registration link from archetype component bit 67 to a native type name",
+          "the standalone native component type name for archetype bit 67",
           "the unrelated scheduled cull-view +0x18 consumer"
         ]
       },
@@ -2272,8 +2280,353 @@
             "virtualAddress": "0x183F01190",
             "sizeBytes": 928,
             "sha256": "1391e46affd12e415010bba0224ee91fc72676d15e5a5bed1ed9d3f5a29cc2fb"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "StreamingSceneV2 union dispatch",
+            "virtualAddress": "0x18117DC50",
+            "sizeBytes": 2897,
+            "sha256": "391f2531f5a880430e9f8ae5c84e69936298d02edfcf1851eaceedd1fa50f70e"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "MonoEntity tag-1 create callback",
+            "virtualAddress": "0x18114F380",
+            "sizeBytes": 839,
+            "sha256": "3c053a3579625ba22806b224eb91ad4fd52dc89a16502c6963388af04c04c2fd"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "MonoEntity tag-1 destroy callback",
+            "virtualAddress": "0x18114F6D0",
+            "sizeBytes": 154,
+            "sha256": "d50fcb89d0b62b6de48a0e9ee94d6b7a2b34e0395158f085e72181e0e03a3ec4"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "native-ECS tag-2 create callback",
+            "virtualAddress": "0x18114F880",
+            "sizeBytes": 593,
+            "sha256": "ef8a361f6122810670bbb5683de199faf85cacacd4cbd5eb17edbf8f414dd5e6"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "native-ECS tag-2 destroy callback",
+            "virtualAddress": "0x18114FAE0",
+            "sizeBytes": 411,
+            "sha256": "07e666c12dba8832556115f214d8edaa8c06206f029b5ad1b001e8a667bcbe69"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "Proxy tag-3 create callback",
+            "virtualAddress": "0x18114FEB0",
+            "sizeBytes": 373,
+            "sha256": "9234d6a8a44f27bd7da4bb2bb548cfc11f663ab966844c4da07d13454bd123f6"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "Proxy tag-3 destroy callback",
+            "virtualAddress": "0x181150030",
+            "sizeBytes": 159,
+            "sha256": "0b2622da3ae6636116f68a0d5ab9763edecf3ec65c38e336328cc9da2b146f9b"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "native ECS ConvertFrom dispatcher",
+            "virtualAddress": "0x181152810",
+            "sizeBytes": 558,
+            "sha256": "83f4aaec73d0843431805404e3ec832d6c3fcae29fff1085842fe92b5b14269a"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "MergedRenderCollider type-9 callback registration",
+            "virtualAddress": "0x18116B6AB",
+            "sizeBytes": 758,
+            "sha256": "162f141c1c1dca0fc908a44994b0396100724baa90647db52f0fb561376fe084"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "Render type-0 callback registration",
+            "virtualAddress": "0x18116B9A1",
+            "sizeBytes": 576,
+            "sha256": "c7f5509630888694f23799662326f637f6dd20954e1daffe11938aae79a08cf9"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "MergedRenderCollider type-9 transition-1 callback",
+            "virtualAddress": "0x181153310",
+            "sizeBytes": 1503,
+            "sha256": "4435143d7cce168aa670402d64f54cd6e813160dceab5e22b01ed28a05ad3d5c"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "MergedRenderCollider type-9 ConvertFrom callback",
+            "virtualAddress": "0x181157760",
+            "sizeBytes": 2041,
+            "sha256": "45633b35ac3c0bd27a71bb8464121584f185445ef18a7fe4a1e9b2808f074d63"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "Render type-0 transition-1 callback",
+            "virtualAddress": "0x181154230",
+            "sizeBytes": 1732,
+            "sha256": "4ae50616400e412b8c30c649765b11ad1e4906b9f7bf3e5f64a584ddc5027789"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "Render type-0 ConvertFrom callback",
+            "virtualAddress": "0x181159010",
+            "sizeBytes": 920,
+            "sha256": "c1f42c8333a1f0daf613485ee1757e78bdf95899ddcdcde81b7e177027dd8247"
+          },
+          {
+            "image": "UnityPlayer.dll",
+            "name": "native ECS callback-slot installer",
+            "virtualAddress": "0x1811701B0",
+            "sizeBytes": 254,
+            "sha256": "044cba2341778c80103264855a41dd1b6e5a361641e9d5f36ef67a70f5839e6e"
           }
         ]
+      },
+      "nativeEntityDispatch": {
+        "runtimeRecordStrideBytes": 56,
+        "tables": {
+          "create": {
+            "virtualAddress": "0x181E226E8",
+            "entries": [
+              "0x0",
+              "0x18114F380",
+              "0x18114F880",
+              "0x18114FEB0",
+              "0x1811501E0"
+            ]
+          },
+          "destroy": {
+            "virtualAddress": "0x181E228A0",
+            "entries": [
+              "0x0",
+              "0x18114F6D0",
+              "0x18114FAE0",
+              "0x181150030",
+              "0x180076890"
+            ]
+          }
+        },
+        "tags": [
+          {
+            "tag": 1,
+            "name": "MonoEntity"
+          },
+          {
+            "tag": 2,
+            "name": "NativeECS"
+          },
+          {
+            "tag": 3,
+            "name": "Proxy"
+          }
+        ],
+        "nativeEcsConvertFromVirtualAddress": "0x181152810",
+        "nativeEcsRegistry": {
+          "slotCount": 14,
+          "slotStrideBytes": 648,
+          "callbackSlotInstallerVirtualAddress": "0x1811701B0"
+        }
+      },
+      "entityTypeEnums": {
+        "ecs": [
+          {
+            "name": "Render",
+            "fieldIndex": 296729,
+            "token": "0x04000273",
+            "value": 0
+          },
+          {
+            "name": "Water",
+            "fieldIndex": 296730,
+            "token": "0x04000274",
+            "value": 1
+          },
+          {
+            "name": "ConvexCollider",
+            "fieldIndex": 296731,
+            "token": "0x04000275",
+            "value": 2
+          },
+          {
+            "name": "CapsuleCollider",
+            "fieldIndex": 296732,
+            "token": "0x04000276",
+            "value": 3
+          },
+          {
+            "name": "SphereCollider",
+            "fieldIndex": 296733,
+            "token": "0x04000277",
+            "value": 4
+          },
+          {
+            "name": "MeshCollider",
+            "fieldIndex": 296734,
+            "token": "0x04000278",
+            "value": 5
+          },
+          {
+            "name": "MultiCollider",
+            "fieldIndex": 296735,
+            "token": "0x04000279",
+            "value": 6
+          },
+          {
+            "name": "TerrainCollider",
+            "fieldIndex": 296736,
+            "token": "0x0400027A",
+            "value": 7
+          },
+          {
+            "name": "TerrainDecal",
+            "fieldIndex": 296737,
+            "token": "0x0400027B",
+            "value": 8
+          },
+          {
+            "name": "MergedRenderCollider",
+            "fieldIndex": 296738,
+            "token": "0x0400027C",
+            "value": 9
+          },
+          {
+            "name": "HGDecalProjector",
+            "fieldIndex": 296739,
+            "token": "0x0400027D",
+            "value": 10
+          },
+          {
+            "name": "TerrainSplineDecal",
+            "fieldIndex": 296740,
+            "token": "0x0400027E",
+            "value": 11
+          },
+          {
+            "name": "HGStreamingVolume",
+            "fieldIndex": 296741,
+            "token": "0x0400027F",
+            "value": 12
+          },
+          {
+            "name": "WaterDecal",
+            "fieldIndex": 296742,
+            "token": "0x04000280",
+            "value": 13
+          },
+          {
+            "name": "TypeCount",
+            "fieldIndex": 296743,
+            "token": "0x04000281",
+            "value": 14
+          }
+        ],
+        "proxy": [
+          {
+            "name": "IrradianceVolume",
+            "fieldIndex": 296745,
+            "token": "0x04000283",
+            "value": 0
+          },
+          {
+            "name": "AudioVolume",
+            "fieldIndex": 296746,
+            "token": "0x04000284",
+            "value": 1
+          },
+          {
+            "name": "AudioEmitter",
+            "fieldIndex": 296747,
+            "token": "0x04000285",
+            "value": 2
+          },
+          {
+            "name": "AudioRoom",
+            "fieldIndex": 296748,
+            "token": "0x04000286",
+            "value": 3
+          },
+          {
+            "name": "TerrainSurfaceTypeData",
+            "fieldIndex": 296749,
+            "token": "0x04000287",
+            "value": 4
+          },
+          {
+            "name": "AudioPortal",
+            "fieldIndex": 296750,
+            "token": "0x04000288",
+            "value": 5
+          },
+          {
+            "name": "SOCChunk",
+            "fieldIndex": 296751,
+            "token": "0x04000289",
+            "value": 6
+          },
+          {
+            "name": "GrassGrid",
+            "fieldIndex": 296752,
+            "token": "0x0400028A",
+            "value": 7
+          },
+          {
+            "name": "GpuClothGroup",
+            "fieldIndex": 296753,
+            "token": "0x0400028B",
+            "value": 8
+          },
+          {
+            "name": "TreeGrid",
+            "fieldIndex": 296754,
+            "token": "0x0400028C",
+            "value": 9
+          },
+          {
+            "name": "GPUParticleSystem",
+            "fieldIndex": 296755,
+            "token": "0x0400028D",
+            "value": 10
+          },
+          {
+            "name": "TypeCount",
+            "fieldIndex": 296756,
+            "token": "0x0400028E",
+            "value": 11
+          }
+        ]
+      },
+      "component67Owners": {
+        "componentId": 67,
+        "recordStrideBytes": 24,
+        "entityTypes": [
+          {
+            "value": 0,
+            "name": "Render",
+            "registrationRange": [
+              "0x18116B9A1",
+              "0x18116BBE1"
+            ],
+            "transition1": "0x181154230",
+            "convertFrom": "0x181159010"
+          },
+          {
+            "value": 9,
+            "name": "MergedRenderCollider",
+            "registrationRange": [
+              "0x18116B6AB",
+              "0x18116B9A1"
+            ],
+            "transition1": "0x181153310",
+            "convertFrom": "0x181157760"
+          }
+        ],
+        "boundary": "native ECS entity ownership is closed for Render and MergedRenderCollider; the standalone native component type name and the earlier lodCount/cumulative-range producer remain open"
       },
       "serializedMapConfigs": {
         "objectIndexObjectsGzipSha256": "6f59db82177cd1abd027bfed385145337403a5b0791bcb628287b53e1ad341cd",
@@ -2417,6 +2770,136 @@
             "fileCount": 6
           }
         ],
+        "ecsEntityTypes": [
+          {
+            "value": 0,
+            "name": "Render",
+            "entityCount": 34672,
+            "fileCount": 1384
+          },
+          {
+            "value": 1,
+            "name": "Water",
+            "entityCount": 3976,
+            "fileCount": 118
+          },
+          {
+            "value": 2,
+            "name": "ConvexCollider",
+            "entityCount": 4002,
+            "fileCount": 1238
+          },
+          {
+            "value": 5,
+            "name": "MeshCollider",
+            "entityCount": 5110,
+            "fileCount": 3098
+          },
+          {
+            "value": 6,
+            "name": "MultiCollider",
+            "entityCount": 205656,
+            "fileCount": 7878
+          },
+          {
+            "value": 7,
+            "name": "TerrainCollider",
+            "entityCount": 13600,
+            "fileCount": 3646
+          },
+          {
+            "value": 8,
+            "name": "TerrainDecal",
+            "entityCount": 4488,
+            "fileCount": 428
+          },
+          {
+            "value": 9,
+            "name": "MergedRenderCollider",
+            "entityCount": 2576964,
+            "fileCount": 4720
+          },
+          {
+            "value": 10,
+            "name": "HGDecalProjector",
+            "entityCount": 83976,
+            "fileCount": 1338
+          },
+          {
+            "value": 12,
+            "name": "HGStreamingVolume",
+            "entityCount": 326,
+            "fileCount": 172
+          },
+          {
+            "value": 13,
+            "name": "WaterDecal",
+            "entityCount": 652,
+            "fileCount": 22
+          }
+        ],
+        "proxyEntityTypes": [
+          {
+            "value": 0,
+            "name": "IrradianceVolume",
+            "entityCount": 166,
+            "fileCount": 166
+          },
+          {
+            "value": 1,
+            "name": "AudioVolume",
+            "entityCount": 17238,
+            "fileCount": 2750
+          },
+          {
+            "value": 2,
+            "name": "AudioEmitter",
+            "entityCount": 24020,
+            "fileCount": 2362
+          },
+          {
+            "value": 3,
+            "name": "AudioRoom",
+            "entityCount": 8560,
+            "fileCount": 2852
+          },
+          {
+            "value": 4,
+            "name": "TerrainSurfaceTypeData",
+            "entityCount": 9856,
+            "fileCount": 9856
+          },
+          {
+            "value": 5,
+            "name": "AudioPortal",
+            "entityCount": 3560,
+            "fileCount": 956
+          },
+          {
+            "value": 6,
+            "name": "SOCChunk",
+            "entityCount": 6864,
+            "fileCount": 2348
+          },
+          {
+            "value": 7,
+            "name": "GrassGrid",
+            "entityCount": 8968,
+            "fileCount": 1256
+          },
+          {
+            "value": 8,
+            "name": "GpuClothGroup",
+            "entityCount": 4278,
+            "fileCount": 652
+          },
+          {
+            "value": 9,
+            "name": "TreeGrid",
+            "entityCount": 1388,
+            "fileCount": 94
+          }
+        ],
         "hlodGroupBit11ComponentCount": 0,
         "hgtreeBit41ComponentCount": 0
       },
@@ -2450,7 +2933,7 @@
         },
         "boundary": "FBDynamicSceneTreeRootComp is a managed gameplay/destructible-tree normal-model route. EDynamicSystem.Tree=11 and EDynamicSceneData.TreeRootComp=64 are separate from StreamingComponentType.HGTree bit 41 and native ECS component id 67."
       },
-      "boundary": "The exact StreamingSceneV2 managed/native loader route, all 83 serialized map roots, and the installed main and DynamicStreaming component-vector surfaces are closed. No scanned component entry uses HGTree bit 41. Dynamic fb_main contains a distinct gameplay tree route. The native ECS component-67 LOD-count/range producer remains open in nested, procedural, or runtime data outside these excluded surfaces."
+      "boundary": "The exact StreamingSceneV2 managed/native loader and tag dispatch are closed. Tag 2 is native ECS, not an excluded opaque surface: installed enum metadata and native slot registration close component 67 to shared Render and MergedRenderCollider entity paths. The full payload scan counts 34,672 Render and 2,576,964 MergedRenderCollider records. The standalone native component name and earlier lodCount/cumulative-range producer remain open."
     },
     "desktopNoSecondTruncation": true
   },
