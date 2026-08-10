@@ -340,6 +340,20 @@ class LightCullCapAuditTests(unittest.TestCase):
             "does not write record+0x00",
             initial_completion["closedBoundary"],
         )
+        type_identity = ecs_state["nativeScriptingTypeIdentity"]
+        self.assertTrue(type_identity["proxyToNativeTypeNameClosed"])
+        self.assertEqual(
+            type_identity["strings"]["native_type_name"]["value"],
+            "HGTreeComponent",
+        )
+        self.assertEqual(
+            type_identity["strings"]["managed_namespace"]["value"],
+            "UnityEngine.HyperGryph.ECS",
+        )
+        self.assertIn(
+            "assigning that type to archetype component bit 67",
+            type_identity["boundary"],
+        )
         self.assertFalse(ecs_state["nativeTypeNameMappingClosed"])
         self.assertEqual(
             result["lodControlInternalCalls"]["cullingSystem"][-1]["index"],
@@ -468,6 +482,46 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_lod_ecs_initial_completion_writer_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_component_proxy_registration_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1807EEEE0 and size == 0x2A:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_component_proxy_registration_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_component_type_name_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_cstring = image.cstring
+
+        def changed_cstring(virtual_address: int) -> str:
+            if virtual_address == 0x181DA5338:
+                return "ChangedHGTreeComponent"
+            return original_cstring(virtual_address)
+
+        with mock.patch.object(image, "cstring", changed_cstring):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_component_native_type_name; "
+                r"source=.*UnityPlayer.dll; expected='HGTreeComponent'; "
+                r"actual='ChangedHGTreeComponent'",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
 

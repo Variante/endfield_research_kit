@@ -113,7 +113,12 @@ NPC archetypes are imported as labeled source kits.
   desired/resolved/history indices, changes pending/available masks to `0/1`,
   and fills readiness bits from the companion renderer/subresource count;
   otherwise it writes sentinel 8 to all three indices and clears readiness.
-  It does not produce the LOD count or cumulative range endpoints. Dispatch
+  It does not produce the LOD count or cumulative range endpoints. Installed
+  scripting registration `0x1807EEEE0 -> 0x1807EC5E0` now directly closes
+  `::Scripting::UnityEngine::HyperGryph::ECS::HGTreeComponentProxy` to native
+  type `HGTreeComponent` in namespace `UnityEngine.HyperGryph.ECS`, module
+  `UnityEngine.HGGraphicsModule.dll`. This is the proxy/type identity, not yet
+  the missing assignment of that native type to archetype bit 67. Dispatch
   segment `0x181079FB1` selects the recovered LOD job variants. The direct route uses
   `minSquared < distanceSquared <= maxSquared`; the scaled route uses
   `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` and the same
@@ -132,7 +137,7 @@ NPC archetypes are imported as labeled source kits.
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The remaining
   initially zero loader-record bytes, the ECS LOD-count/range producer and
-  exact component type-name link, the unrelated scheduled consumer of view
+  native-type-to-archetype-bit link, the unrelated scheduled consumer of view
   `+0x18`,
   any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
