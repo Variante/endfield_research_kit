@@ -123,8 +123,11 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 8
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 4
+AUDIO_SEMANTIC_SCHEMA_VERSION = 10
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 6
+MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
+    "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+)
 
 
 def runtime_spec(
@@ -135,8 +138,11 @@ def runtime_spec(
     fields: Iterable[str] = (),
     methods: Iterable[str] = (),
     enum_values: bool = False,
+    serialized_layout: dict[str, Any] | None = None,
+    native_anchors: Iterable[dict[str, Any]] = (),
+    runtime_execution_status: str = "",
 ) -> dict[str, Any]:
-    return {
+    row = {
         "type": type_name,
         "layer": layer,
         "meaning": meaning,
@@ -144,6 +150,13 @@ def runtime_spec(
         "methods": tuple(methods),
         "enumValues": enum_values,
     }
+    if serialized_layout:
+        row["serializedLayout"] = dict(serialized_layout)
+    if native_anchors:
+        row["nativeAnchors"] = tuple(dict(value) for value in native_anchors)
+    if runtime_execution_status:
+        row["runtimeExecutionStatus"] = runtime_execution_status
+    return row
 
 
 RUNTIME_SYSTEM_SPECS = (
@@ -230,6 +243,35 @@ RUNTIME_SYSTEM_SPECS = (
         methods=("get_actionType", "get_isNonLoopEvent", "get_showTempEmitterWarning"),
     ),
     runtime_spec(
+        "Beyond.Gameplay.Core.CharInteractPerform.AudioEventActData",
+        "character_interaction_audio",
+        (
+            "Authored character-interaction audio action data. The current subtype adds "
+            "stop/2D routing, attached-actor type/index, and a numeric AudioId to the "
+            "common interaction-action timing fields."
+        ),
+        fields=("endStop", "is2D", "attachedActorType", "charIndex", "audioEvent"),
+        methods=("get_actionType",),
+        serialized_layout={
+            "ownerType": "Beyond.Gameplay.Core.CharInteractPerform.CharInteractPerformRuntimeCfg",
+            "ownerMemberCount": 27,
+            "unionTag": 2,
+            "memberCount": 15,
+            "actionPhases": ("bodyTypeActions", "endActions", "loopActions", "preStartActions", "startActions"),
+        },
+        runtime_execution_status="runtimeNotObserved",
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.CharInteractPerform.AudioEventAction",
+        "character_interaction_audio",
+        (
+            "Runtime action class for AudioEventActData. Metadata proves the shipped OnPlay "
+            "entry point but not that a recovered perform or Event posted in a live session."
+        ),
+        methods=("get_audioEventActData", "OnPlay"),
+        runtime_execution_status="runtimeNotObserved",
+    ),
+    runtime_spec(
         "Beyond.Gameplay.InteractiveAudioSetting",
         "interactive_audio",
         "Maps interactive model/sub-template identities and lifecycle states to named audio Events.",
@@ -291,6 +333,159 @@ RUNTIME_SYSTEM_SPECS = (
         ),
         fields=("m_audioPhysicsMono",),
         methods=("GetAudioPhysicsMono", "InitSelf", "OnRelease"),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.ModelViewStateController.AudioBehavior",
+        "model_view_state_audio",
+        (
+            "Executes the tag-0x0001 state behavior for a normal or custom audio request. "
+            "Static metadata and authored data do not prove that Execute ran."
+        ),
+        fields=(
+            "<TriggerTime>k__BackingField", "<CanLoopActive>k__BackingField",
+            "m_data", "m_context", "m_audioHandle",
+        ),
+        methods=("Reset", "Init", "Execute"),
+        serialized_layout={
+            "dataType": "Beyond.Gameplay.Core.ModelViewStateController.MVSCAudioBehaviorData",
+            "unionTag": 1,
+            "unionTagHex": "0x0001",
+            "memberCount": 14,
+            "behaviorType": 1,
+            "fields": (
+                "audioNodeName", "customAudioId", "eAudioTriggerState", "isCustom",
+                "isDirectlyPlay", "normalAudioId", "stopOnEnd", "transitionTime",
+            ),
+        },
+        native_anchors=(
+            {
+                "role": "Deserialize",
+                "type": "Beyond_Gameplay_Core_ModelViewStateController_MVSCAudioBehaviorDataForMemoryPack",
+                "methodIndex": 230856,
+                "token": "0x06013a24",
+                "virtualAddress": "0x183cb08e0",
+            },
+            {
+                "role": "Execute", "methodIndex": 81734,
+                "token": "0x06013f47", "virtualAddress": "0x183281ff0",
+            },
+        ),
+        runtime_execution_status="notObserved",
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.ModelViewStateController.AudioPositionBehavior",
+        "model_view_state_audio",
+        (
+            "Executes the tag-0x0002 positioned audio behavior. Authored placement and "
+            "timing are exact; runtime posting remains unobserved."
+        ),
+        fields=(
+            "<TriggerTime>k__BackingField", "<CanLoopActive>k__BackingField",
+            "<CanContinusTrigger>k__BackingField", "m_data", "m_context", "m_audioHandle",
+        ),
+        methods=("Reset", "Init", "Execute"),
+        serialized_layout={
+            "dataType": "Beyond.Gameplay.Core.ModelViewStateController.MVSCAudioPositionBehaviourData",
+            "unionTag": 2,
+            "unionTagHex": "0x0002",
+            "memberCount": 14,
+            "behaviorType": 8,
+            "fields": (
+                "audioNodeName", "customAudioId", "eAudioTriggerState", "isCustom",
+                "isDirectlyPlay", "normalAudioId", "stopOnEnd", "transitionTime",
+            ),
+        },
+        native_anchors=(
+            {
+                "role": "Deserialize",
+                "type": "Beyond_Gameplay_Core_ModelViewStateController_MVSCAudioPositionBehaviourDataForMemoryPack",
+                "methodIndex": 230879,
+                "token": "0x06013a3b",
+                "virtualAddress": "0x18a061968",
+            },
+            {
+                "role": "Execute", "methodIndex": 81745,
+                "token": "0x06013f52", "virtualAddress": "0x1870c7c3c",
+            },
+        ),
+        runtime_execution_status="notObserved",
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.ModelViewStateController.AudioRtpcBehavior",
+        "model_view_state_audio",
+        (
+            "Executes the tag-0x0003 RTPC behavior, optionally from continuous/blackboard "
+            "state. Runtime RTPC application remains unobserved."
+        ),
+        fields=(
+            "<TriggerTime>k__BackingField", "<CanLoopActive>k__BackingField",
+            "m_data", "m_context", "m_prevValue", "m_hasPrevValue",
+        ),
+        methods=("Reset", "Init", "Execute", "_TrySetRTPC"),
+        serialized_layout={
+            "dataType": "Beyond.Gameplay.Core.ModelViewStateController.MVSCAudioRTPCBehaviourData",
+            "unionTag": 3,
+            "unionTagHex": "0x0003",
+            "memberCount": 13,
+            "behaviorType": 9,
+            "fields": (
+                "audioNodeName", "audioRTPCSetValue", "audioRTPCValue", "behaviourType",
+                "continuousTick", "dependBlackBoard", "dependFloatKey",
+            ),
+        },
+        native_anchors=(
+            {
+                "role": "Deserialize",
+                "type": "Beyond_Gameplay_Core_ModelViewStateController_MVSCAudioRTPCBehaviourDataForMemoryPack",
+                "methodIndex": 230901,
+                "token": "0x06013a51",
+                "virtualAddress": "0x183caf110",
+            },
+            {
+                "role": "Execute", "methodIndex": 81754,
+                "token": "0x06013f5b", "virtualAddress": "0x1870c816c",
+            },
+        ),
+        runtime_execution_status="notObserved",
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.ModelViewStateController.AudioSpatialAudioBehavior",
+        "model_view_state_audio",
+        (
+            "Executes the tag-0x0004 spatial/portal-audio control. The shipped serialized "
+            "type spells SpatialAuido; runtime application remains unobserved."
+        ),
+        fields=(
+            "<TriggerTime>k__BackingField", "<CanLoopActive>k__BackingField",
+            "m_data", "m_context", "m_totalTime", "m_directSet",
+            "m_targetClosePercentage",
+        ),
+        methods=("Reset", "Init", "Execute"),
+        serialized_layout={
+            "dataType": "Beyond.Gameplay.Core.ModelViewStateController.MVSCAudioSpatialAuidoBehaviourData",
+            "unionTag": 4,
+            "unionTagHex": "0x0004",
+            "memberCount": 12,
+            "behaviorType": 13,
+            "fields": (
+                "continuous", "dependBlackBoard", "dependFloatKey", "directSet",
+                "targetClosePercentage", "totalTime",
+            ),
+        },
+        native_anchors=(
+            {
+                "role": "Deserialize",
+                "type": "Beyond_Gameplay_Core_ModelViewStateController_MVSCAudioSpatialAuidoBehaviourDataForMemoryPack",
+                "methodIndex": 230922,
+                "token": "0x06013a66",
+                "virtualAddress": "0x183cb1750",
+            },
+            {
+                "role": "Execute", "methodIndex": 81764,
+                "token": "0x06013f65", "virtualAddress": "0x1870c8584",
+            },
+        ),
+        runtime_execution_status="notObserved",
     ),
     runtime_spec(
         "Beyond.Gameplay.Core.InteractiveAudioComponent+EAudioTriggerState",
@@ -719,6 +914,15 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
             "missingMethods": [name for name in expected_methods if name not in method_set],
             "evidence": "installedIl2cppMetadata",
         }
+        for key in ("serializedLayout", "runtimeExecutionStatus"):
+            if spec.get(key):
+                system[key] = spec[key]
+        if spec.get("nativeAnchors"):
+            if sha256 == MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256:
+                system["nativeAnchors"] = spec["nativeAnchors"]
+                system["nativeAnchorStatus"] = "exactCurrentBuild"
+            else:
+                system["nativeAnchorStatus"] = "omittedMetadataFingerprintMismatch"
         if spec["enumValues"]:
             enum_values = _metadata_enum_values(module, md, type_def)
             if enum_values:
@@ -740,6 +944,8 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
         },
         "evidenceBoundary": (
             "Type, field, method, and enum names are exact current-build IL2CPP metadata. "
+            "Selected ModelView Deserialize/Execute method index, token, and virtual-address "
+            "anchors are emitted only for the matching current metadata fingerprint. "
             "They prove shipped runtime structure, not live call order, the active game state, "
             "or which Wwise branch a player heard."
         ),
@@ -1104,6 +1310,177 @@ def collect_spawner_pre_warn_semantics(
             "pre-warning Event request, timing value, effect key, enemy/template, and source row. "
             "It does not prove that the spawner ran or that a Wwise branch played. Non-null "
             "bornBehaviorData is rejected because no current authored fixture exercises it."
+        ),
+    }
+    return {"eventContexts": dict(contexts), "stats": stats}
+
+
+def collect_char_interact_audio_semantics(
+    export_root: Path,
+    *,
+    decoder: Any | None = None,
+) -> dict[str, Any]:
+    """Recover exact numeric AudioEvent actions from current interaction performs."""
+    if decoder is None:
+        try:
+            from story_builder.char_interact_perform_binary import (
+                decode_char_interact_audio_actions,
+            )
+        except ImportError:
+            from scripts.story_builder.char_interact_perform_binary import (
+                decode_char_interact_audio_actions,
+            )
+        decoder = decode_char_interact_audio_actions
+
+    roots = ("StreamingAssets", "Persistent")
+    relative_versions: dict[str, list[tuple[str, Path, str]]] = defaultdict(list)
+    for source_root in roots:
+        root = (
+            export_root / "structured" / source_root
+            / "Data/Json/CharInteractPerformCfgs"
+        )
+        if not root.is_dir():
+            continue
+        for path in sorted(root.glob("*.json"), key=lambda item: item.name.lower()):
+            try:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError:
+                continue
+            relative_versions[path.name].append((source_root, path, digest))
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    failures: list[dict[str, Any]] = []
+    candidate_owners = 0
+    decoded_owners = 0
+    action_count = 0
+    phase_counts: Counter[str] = Counter()
+    audio_ids: set[int] = set()
+    mirror_mismatches = 0
+    for relative_name, versions in sorted(relative_versions.items()):
+        roots_present = {row[0] for row in versions}
+        digests = {row[2] for row in versions}
+        if roots_present != set(roots) or len(digests) != 1:
+            mirror_mismatches += 1
+            if len(failures) < 16:
+                failures.append({
+                    "source": relative_name,
+                    "error": "StreamingAssets/Persistent mirror missing or changed",
+                    "sourceRoots": sorted(roots_present),
+                    "sourceSha256": sorted(digests),
+                })
+            continue
+        source_root, path, digest = versions[0]
+        data = path.read_bytes()
+        if bytes((0x02, 0x0F)) not in data:
+            continue
+        candidate_owners += 1
+        try:
+            rows = decoder(data)
+        except (OSError, ValueError) as exc:
+            if len(failures) < 16:
+                failures.append({"source": relative_name, "error": str(exc)})
+            continue
+        if not isinstance(rows, list) or not rows:
+            if len(failures) < 16:
+                failures.append({
+                    "source": relative_name,
+                    "error": "candidate owner returned no bounded AudioEvent actions",
+                })
+            continue
+        decoded_owners += 1
+        source_paths = [
+            normalize_posix(version_path.relative_to(export_root))
+            for _root, version_path, _digest in versions
+        ]
+        owner_id = path.stem
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            event_hash = int(row.get("audioEvent") or 0) & 0xFFFFFFFF
+            if not event_hash:
+                continue
+            placement = str(row.get("placement") or "")
+            action_index = int(row.get("actionIndex") or 0)
+            action_count += 1
+            phase_counts[placement] += 1
+            audio_ids.add(event_hash)
+            context = {
+                "kind": "charInteractAudioEvent",
+                "ownerId": owner_id,
+                "confidence": "direct",
+                "semanticRole": "authoredCharacterInteractionAudioEvent",
+                "charInteractPerformId": owner_id,
+                "actionPhase": placement,
+                "actionIndex": action_index,
+                "logicId": row.get("logicId"),
+                "delay": row.get("delay"),
+                "duration": row.get("duration"),
+                "devOnly": bool(row.get("devOnly")),
+                "useEvent": bool(row.get("useEvent")),
+                "eventId": str(row.get("eventId") or ""),
+                "attachedActorType": row.get("attachedActorType"),
+                "charIndex": row.get("charIndex"),
+                "endStop": bool(row.get("endStop")),
+                "is2D": bool(row.get("is2D")),
+                "eventHash": event_hash,
+                "eventHex": f"0x{event_hash:08x}",
+                "source": source_paths[0],
+                "sourceRoot": source_root,
+                "sourcePaths": source_paths,
+                "sourceFingerprint": digest,
+                "sourceSha256": digest,
+                "sourceOffset": row.get("sourceOffset"),
+                "endOffset": row.get("endOffset"),
+                "path": f"{placement}[{action_index}].audioEvent",
+                "semanticPath": (
+                    f"CharInteractPerformRuntimeCfg.{placement}[{action_index}]"
+                    ".AudioEventActData.audioEvent"
+                ),
+                "unionTag": row.get("unionTag"),
+                "unionTagHex": row.get("unionTagHex"),
+                "serializedMemberCount": row.get("memberCount"),
+                "schemaMappingId": row.get("schemaMappingId"),
+                "unionMappingId": row.get("unionMappingId"),
+                "schemaStatus": row.get("schemaStatus"),
+                "triggerBindingStatus": "exactCharInteractPerformConfig",
+                "triggerRequestEvidence": [
+                    "serializedCharInteractPerformAudioEventActDataAudioEvent"
+                ],
+                "triggerRuntimeActivationStatuses": [
+                    "charInteractPerformRuntimeExecutionNotObserved"
+                ],
+                "runtimeActivationStatus": (
+                    "charInteractPerformRuntimeExecutionNotObserved"
+                ),
+                "runtimeOwnerStatus": "authoredPerformConfigOwnerOnly",
+                "attachedActorResolutionStatus": "runtimeActorResolutionNotObserved",
+            }
+            _append_context(
+                contexts, seen, event_hash_context_key(event_hash), context
+            )
+
+    stats = {
+        "status": (
+            "unavailable" if not relative_versions
+            else "complete" if not failures and decoded_owners == candidate_owners
+            else "partial"
+        ),
+        "physicalFiles": sum(len(rows) for rows in relative_versions.values()),
+        "ownerFiles": len(relative_versions),
+        "mirrorMismatches": mirror_mismatches,
+        "candidateOwners": candidate_owners,
+        "decodedOwners": decoded_owners,
+        "audioEventActions": action_count,
+        "distinctAudioIds": len(audio_ids),
+        "actionPhaseCounts": dict(sorted(phase_counts.items())),
+        "failureSamples": failures,
+        "evidenceBoundary": (
+            "The exact current 27-member CharInteractPerformRuntimeCfg, counted action-list "
+            "phase, tag-0x02/member-15 AudioEventActData, and numeric AudioId prove an "
+            "authored request owned by the perform config. They do not prove that the "
+            "perform executed, which runtime actor was attached, that AudioId resolved to "
+            "a loaded Wwise Event, or that a Wwise media branch played."
         ),
     }
     return {"eventContexts": dict(contexts), "stats": stats}
@@ -1914,6 +2291,428 @@ def collect_physics_audio_semantics(
     }
 
 
+def collect_model_view_state_audio_semantics(
+    export_root: Path,
+    *,
+    controller_decoder: Any | None = None,
+    table_decoder: Any | None = None,
+) -> dict[str, Any]:
+    """Recover exact ModelView state Event, position, RTPC, and spatial rows.
+
+    The controller decoder must consume the complete MemoryPack object before
+    any audio member is accepted. InteractiveData joins are exact serialized
+    controller-id references, but their property slot is not yet decoded; they
+    therefore remain authored template associations rather than runtime owners.
+    """
+    if controller_decoder is None or table_decoder is None:
+        try:
+            from story_builder.interactive_binary import (
+                decode_interactive_table,
+                decode_model_view_state_controller,
+            )
+        except ImportError:
+            from scripts.story_builder.interactive_binary import (
+                decode_interactive_table,
+                decode_model_view_state_controller,
+            )
+        controller_decoder = controller_decoder or decode_model_view_state_controller
+        table_decoder = table_decoder or decode_interactive_table
+
+    source_roots = ("StreamingAssets", "Persistent")
+    controller_rel = PurePosixPath(
+        "Data/Json/Interactive/ModelViewStateControllerData"
+    )
+    failures: list[dict[str, Any]] = []
+    physical_files = 0
+    files_by_name: dict[str, list[tuple[str, Path, bytes, str]]] = defaultdict(list)
+    for source_root in source_roots:
+        directory = export_root / "structured" / source_root / Path(*controller_rel.parts)
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.glob("*.json")):
+            try:
+                data = path.read_bytes()
+            except OSError as exc:
+                failures.append({"source": normalize_posix(path.relative_to(export_root)), "error": str(exc)})
+                continue
+            physical_files += 1
+            files_by_name[path.name].append(
+                (source_root, path, data, hashlib.sha256(data).hexdigest())
+            )
+
+    boundary = (
+        "Exact complete ModelViewStateControllerData decoding proves authored state-bound "
+        "Event/position requests and RTPC/spatial controls, including behavior time and the "
+        "model/layer/state/behavior owner chain. InteractiveData matches prove only an exact "
+        "serialized controller-id association because the containing property slot is unresolved. "
+        "State entry, behavior execution, Event posting, RTPC/spatial application, and Wwise "
+        "branch playback were not observed. CustomAudioId strings remain unresolved controls, "
+        "not Wwise Events."
+    )
+    empty = {
+        "status": "unavailable" if not files_by_name else "failed",
+        "controllerPhysicalFiles": physical_files,
+        "controllerLogicalFiles": len(files_by_name),
+        "controllersDecoded": 0,
+        "controllersWithAudio": 0,
+        "audioBehaviorCount": 0,
+        "eventBehaviorCount": 0,
+        "positionEventBehaviorCount": 0,
+        "rtpcBehaviorCount": 0,
+        "spatialBehaviorCount": 0,
+        "customAudioControlCount": 0,
+        "controllersWithTemplateAssociations": 0,
+        "templateAssociationCount": 0,
+        "interactiveConsumerIdentityCount": 0,
+        "failureSamples": failures[:16],
+        "evidenceBoundary": boundary,
+    }
+    if not files_by_name:
+        return {
+            "eventContexts": {}, "rtpcParameters": [], "spatialControls": [],
+            "customAudioControls": [], "stats": empty, "evidenceBoundary": boundary,
+        }
+
+    decoded_controllers: list[dict[str, Any]] = []
+    for file_name, versions in sorted(files_by_name.items()):
+        decoded_versions: list[tuple[str, Path, str, dict[str, Any]]] = []
+        for source_root, path, data, digest in versions:
+            try:
+                decoded = controller_decoder(data)
+            except (UnicodeDecodeError, struct.error, ValueError) as exc:
+                if len(failures) < 16:
+                    failures.append({
+                        "source": normalize_posix(path.relative_to(export_root)),
+                        "error": str(exc),
+                        "sha256": digest,
+                    })
+                continue
+            if not isinstance(decoded, dict):
+                if len(failures) < 16:
+                    failures.append({
+                        "source": normalize_posix(path.relative_to(export_root)),
+                        "error": "ModelView decoder returned no object",
+                    })
+                continue
+            decoded_versions.append((source_root, path, digest, decoded))
+        if len(decoded_versions) != len(versions):
+            continue
+
+        def audio_projection(decoded: dict[str, Any]) -> str:
+            rows = []
+            for raw in decoded.get("audioBehaviors") or []:
+                if not isinstance(raw, dict):
+                    continue
+                rows.append({
+                    key: value for key, value in raw.items()
+                    if key not in {"sourceOffset", "endOffset", "byteLength"}
+                })
+            return json.dumps(rows, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+
+        projections = {audio_projection(row[3]) for row in decoded_versions}
+        if len(projections) != 1:
+            if len(failures) < 16:
+                failures.append({
+                    "source": normalize_posix(controller_rel / file_name),
+                    "error": "StreamingAssets/Persistent decoded audio projections differ",
+                    "sha256": sorted(row[2] for row in decoded_versions),
+                })
+            continue
+        preferred = next(
+            (row for row in decoded_versions if row[0] == "Persistent"),
+            decoded_versions[0],
+        )
+        decoded = preferred[3]
+        decoded_controllers.append({
+            "fileName": file_name,
+            "controllerId": str(decoded.get("modelId") or Path(file_name).stem),
+            "decoded": decoded,
+            "sourcePaths": [
+                normalize_posix(path.relative_to(export_root))
+                for _root, path, _digest, _decoded in decoded_versions
+            ],
+            "sourceRoots": [row[0] for row in decoded_versions],
+            "sourceFingerprints": sorted(set(row[2] for row in decoded_versions)),
+        })
+
+    # Recover the bounded external association without pretending the still
+    # unresolved InteractiveData property slot is a runtime activation edge.
+    references_by_controller: dict[str, set[str]] = defaultdict(set)
+    template_paths_by_id: dict[str, str] = {}
+    consumers_by_template: dict[str, list[str]] = defaultdict(list)
+    table_source_paths: list[str] = []
+    table_sha256 = ""
+    table_versions: list[tuple[str, Path, bytes, str]] = []
+    for source_root in source_roots:
+        table_path = export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveTable.json"
+        if not table_path.is_file():
+            continue
+        try:
+            data = table_path.read_bytes()
+        except OSError as exc:
+            if len(failures) < 16:
+                failures.append({"source": normalize_posix(table_path.relative_to(export_root)), "error": str(exc)})
+            continue
+        table_versions.append((source_root, table_path, data, hashlib.sha256(data).hexdigest()))
+    if table_versions and len({row[3] for row in table_versions}) == 1:
+        try:
+            table = table_decoder(table_versions[0][2])
+        except (UnicodeDecodeError, struct.error, ValueError) as exc:
+            table = None
+            if len(failures) < 16:
+                failures.append({
+                    "source": normalize_posix(table_versions[0][1].relative_to(export_root)),
+                    "error": str(exc),
+                })
+        if isinstance(table, dict):
+            table_source_paths = [
+                normalize_posix(path.relative_to(export_root))
+                for _root, path, _data, _digest in table_versions
+            ]
+            table_sha256 = table_versions[0][3]
+            template_paths_by_id = {
+                str(key): normalize_posix(str(value or ""))
+                for key, value in (table.get("coreTemplatePaths") or {}).items()
+            }
+            for consumer_id, template_id in (table.get("objectToTemplate") or {}).items():
+                consumers_by_template[str(template_id)].append(str(consumer_id))
+            anchors = {
+                row["controllerId"]: struct.pack("<I", len(row["controllerId"].encode("utf-8")))
+                + row["controllerId"].encode("utf-8")
+                for row in decoded_controllers
+                if row.get("controllerId")
+            }
+            for template_id, template_path in sorted(template_paths_by_id.items()):
+                pure_path = PurePosixPath(template_path)
+                if (
+                    pure_path.is_absolute()
+                    or ".." in pure_path.parts
+                    or not template_path.startswith("Data/Json/Interactive/InteractiveData/")
+                ):
+                    continue
+                candidates: list[bytes] = []
+                for source_root in reversed(source_roots):
+                    path = export_root / "structured" / source_root / Path(*pure_path.parts)
+                    if path.is_file():
+                        try:
+                            candidates.append(path.read_bytes())
+                        except OSError:
+                            pass
+                if not candidates:
+                    continue
+                # Associations must agree semantically across available mirrors.
+                matches = [
+                    {controller_id for controller_id, anchor in anchors.items() if data.find(anchor) >= 0}
+                    for data in candidates
+                ]
+                if len({tuple(sorted(row)) for row in matches}) != 1:
+                    if len(failures) < 16:
+                        failures.append({
+                            "source": template_path,
+                            "error": "StreamingAssets/Persistent controller-id reference sets differ",
+                        })
+                    continue
+                for controller_id in matches[0]:
+                    references_by_controller[controller_id].add(template_id)
+    elif table_versions:
+        if len(failures) < 16:
+            failures.append({
+                "source": "Data/Json/Interactive/InteractiveTable.json",
+                "error": "StreamingAssets/Persistent content hashes differ",
+                "sha256": sorted(row[3] for row in table_versions),
+            })
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    rtpc_parameters: list[dict[str, Any]] = []
+    spatial_controls: list[dict[str, Any]] = []
+    custom_controls: list[dict[str, Any]] = []
+    tag_counts: Counter[int] = Counter()
+    controllers_with_audio = 0
+    associated_controllers: set[str] = set()
+    associated_templates: set[str] = set()
+    associated_consumers: set[str] = set()
+    for controller in decoded_controllers:
+        decoded = controller["decoded"]
+        audio_rows = [row for row in decoded.get("audioBehaviors") or [] if isinstance(row, dict)]
+        if audio_rows:
+            controllers_with_audio += 1
+        controller_id = str(controller.get("controllerId") or "")
+        template_ids = sorted(references_by_controller.get(controller_id, set()))
+        consumer_ids = sorted({
+            consumer
+            for template_id in template_ids
+            for consumer in consumers_by_template.get(template_id, [])
+        })
+        if audio_rows and template_ids:
+            associated_controllers.add(controller_id)
+            associated_templates.update(template_ids)
+            associated_consumers.update(consumer_ids)
+        common = {
+            "ownerId": controller_id,
+            "controllerId": controller_id,
+            "ownerKind": "modelViewStateController",
+            "sourceFile": str(controller.get("fileName") or ""),
+            "sourcePaths": controller.get("sourcePaths") or [],
+            "sourceRoots": controller.get("sourceRoots") or [],
+            "sourceFingerprints": controller.get("sourceFingerprints") or [],
+            "schemaMappingId": str(decoded.get("schemaMappingId") or ""),
+            "runtimeMappingId": str(decoded.get("runtimeMappingId") or ""),
+            "schemaStatus": str(decoded.get("schemaStatus") or ""),
+            "interactiveTemplateIds": template_ids,
+            "interactiveTemplatePaths": [template_paths_by_id.get(value, "") for value in template_ids],
+            "interactiveConsumerIds": consumer_ids,
+            "interactiveTableSourcePaths": table_source_paths,
+            "interactiveTableSha256": table_sha256,
+            "templateAssociationStatus": (
+                "exactSerializedControllerIdReferencePropertyUnresolved"
+                if template_ids else "unlinked"
+            ),
+            "runtimeActivationStatus": "modelViewStateBehaviorExecutionNotObserved",
+        }
+        for row in audio_rows:
+            tag = int(row.get("unionTag") or 0)
+            tag_counts[tag] += 1
+            row_common = {
+                **common,
+                "modelAnimatorIndex": row.get("modelAnimatorIndex"),
+                "modelAnimatorName": str(row.get("modelAnimatorName") or ""),
+                "layerIndex": row.get("layerIndex"),
+                "layerFsmIndex": row.get("layerFsmIndex"),
+                "layerName": str(row.get("layerName") or ""),
+                "stateIndex": row.get("stateIndex"),
+                "stateName": str(row.get("stateName") or ""),
+                "stateType": row.get("stateType"),
+                "behaviorIndex": row.get("behaviorIndex"),
+                "behaviorTag": tag,
+                "behaviorTagHex": str(row.get("unionTagHex") or f"0x{tag:04x}"),
+                "serializedMemberCount": row.get("memberCount"),
+                "behaviorType": row.get("behaviorType"),
+                "behaviorKind": str(row.get("behaviorKind") or ""),
+                "behaviorTime": row.get("time"),
+                "timeFlowSwitch": row.get("timeFlowSwitch"),
+                "canLoopActive": row.get("canLoopActive"),
+                "needForceExecute": row.get("needForceExecute"),
+                "normalizedTimeFlowBasedActive": row.get("normalizedTimeFlowBasedActive"),
+                "sourceOffset": row.get("sourceOffset"),
+                "behaviorEndOffset": row.get("endOffset"),
+                "semanticPath": (
+                    f"modelAnimatorDatas[{row.get('modelAnimatorIndex')}].layerFsmDatas"
+                    f"[{row.get('layerIndex')}].stateDatas[{row.get('stateIndex')}]"
+                    f".behaviors[{row.get('behaviorIndex')}]"
+                ),
+            }
+            if tag in (1, 2):
+                event_fields = {
+                    **row_common,
+                    "audioNodeName": str(row.get("audioNodeName") or ""),
+                    "customAudioId": str(row.get("customAudioId") or ""),
+                    "eAudioTriggerState": row.get("eAudioTriggerState"),
+                    "isCustom": bool(row.get("isCustom")),
+                    "isDirectlyPlay": bool(row.get("isDirectlyPlay")),
+                    "normalAudioId": row.get("normalAudioId"),
+                    "stopOnEnd": bool(row.get("stopOnEnd")),
+                    "transitionTime": row.get("transitionTime"),
+                }
+                if row.get("isCustom"):
+                    custom_controls.append({
+                        **event_fields,
+                        "kind": "modelViewStateCustomAudioControl",
+                        "controlValue": str(row.get("customAudioId") or ""),
+                        "semanticRole": "unresolvedModelViewCustomAudioId",
+                        "wwiseEventStatus": "notPromotedToEvent",
+                        "evidence": "exactDecodedModelViewStateCustomAudioBranch",
+                    })
+                    continue
+                signed_id = row.get("normalAudioId")
+                if not isinstance(signed_id, int) or isinstance(signed_id, bool) or signed_id == 0:
+                    continue
+                event_hash = signed_id & 0xFFFFFFFF
+                _append_context(contexts, seen, event_hash_context_key(event_hash), {
+                    **event_fields,
+                    "kind": (
+                        "modelViewStateAudioEvent" if tag == 1
+                        else "modelViewStatePositionAudioEvent"
+                    ),
+                    "semanticRole": (
+                        "authoredModelViewStateEventRequest" if tag == 1
+                        else "authoredModelViewStatePositionedEventRequest"
+                    ),
+                    "signedValue": signed_id,
+                    "eventHash": event_hash,
+                    "eventHex": f"0x{event_hash:08x}",
+                    "confidence": "direct",
+                    "evidence": "exactDecodedModelViewStateAudioBehavior",
+                    "triggerRequestEvidence": [
+                        "exactModelViewStateBehaviorUnion",
+                        "exactModelLayerStateBehaviorOwnerChain",
+                    ],
+                    "triggerRuntimeActivationStatuses": [
+                        "modelViewStateEntryAndBehaviorTimeRequired",
+                        "modelViewStateBehaviorExecutionNotObserved",
+                    ],
+                })
+            elif tag == 3:
+                rtpc_parameters.append({
+                    **row_common,
+                    "kind": "modelViewStateRtpcParameter",
+                    "parameterName": str(row.get("audioRTPCValue") or ""),
+                    "audioNodeName": str(row.get("audioNodeName") or ""),
+                    "setValue": row.get("audioRTPCSetValue"),
+                    "rtpcBehaviourType": row.get("rtpcBehaviourType"),
+                    "continuousTick": row.get("continuousTick"),
+                    "dependBlackBoard": row.get("dependBlackBoard"),
+                    "dependFloatKey": str(row.get("dependFloatKey") or ""),
+                    "semanticRole": "authoredModelViewStateRtpcControl",
+                    "wwiseEventStatus": "notApplicable",
+                    "evidence": "exactDecodedModelViewStateRtpcBehavior",
+                })
+            elif tag == 4:
+                spatial_controls.append({
+                    **row_common,
+                    "kind": "modelViewStateSpatialAudioControl",
+                    "continuous": row.get("continuous"),
+                    "dependBlackBoard": row.get("dependBlackBoard"),
+                    "dependFloatKey": str(row.get("dependFloatKey") or ""),
+                    "directSet": row.get("directSet"),
+                    "targetClosePercentage": row.get("targetClosePercentage"),
+                    "totalTime": row.get("totalTime"),
+                    "semanticRole": "authoredModelViewStateSpatialControl",
+                    "wwiseEventStatus": "notApplicable",
+                    "evidence": "exactDecodedModelViewStateSpatialAudioBehavior",
+                })
+
+    event_context_count = sum(len(rows) for rows in contexts.values())
+    stats = {
+        "status": "complete" if not failures else "partial",
+        "controllerPhysicalFiles": physical_files,
+        "controllerLogicalFiles": len(files_by_name),
+        "controllersDecoded": len(decoded_controllers),
+        "controllersWithAudio": controllers_with_audio,
+        "audioBehaviorCount": sum(tag_counts.values()),
+        "eventBehaviorCount": tag_counts.get(1, 0),
+        "positionEventBehaviorCount": tag_counts.get(2, 0),
+        "rtpcBehaviorCount": tag_counts.get(3, 0),
+        "spatialBehaviorCount": tag_counts.get(4, 0),
+        "normalEventContextCount": event_context_count,
+        "distinctNormalEventHashes": len(contexts),
+        "customAudioControlCount": len(custom_controls),
+        "controllersWithTemplateAssociations": len(associated_controllers),
+        "templateAssociationCount": len(associated_templates),
+        "interactiveConsumerIdentityCount": len(associated_consumers),
+        "failureSamples": failures[:16],
+        "evidenceBoundary": boundary,
+    }
+    return {
+        "eventContexts": dict(contexts),
+        "rtpcParameters": rtpc_parameters,
+        "spatialControls": spatial_controls,
+        "customAudioControls": custom_controls,
+        "stats": stats,
+        "evidenceBoundary": boundary,
+    }
+
+
 def collect_authored_runtime_config_contexts(
     export_root: Path,
     runtime_model: dict[str, Any] | None = None,
@@ -2712,12 +3511,28 @@ def build_event_rows(
             category = "sfx"
             category_evidence = "exactSpawnerPreWarnAudioField"
         if category == "unknown" and any(
+            context.get("kind") == "charInteractAudioEvent"
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "sfx"
+            category_evidence = "exactCharInteractAudioEventField"
+        if category == "unknown" and any(
             context.get("kind") == "physicsAudioComponentEvent"
             for context in event_contexts
             if isinstance(context, dict)
         ):
             category = "sfx"
             category_evidence = "exactPhysicsAudioComponentEventField"
+        if category == "unknown" and any(
+            context.get("kind") in {
+                "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"
+            }
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "sfx"
+            category_evidence = "exactModelViewStateAudioBehavior"
         rows.append({
             "id": key,
             "name": display_names.get(key, key),
@@ -2806,7 +3621,8 @@ def semantic_context_group(kind: Any) -> str:
         "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
         "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
-        "spawnerPreWarnAudio", "physicsAudioComponentEvent",
+        "spawnerPreWarnAudio", "charInteractAudioEvent", "physicsAudioComponentEvent",
+        "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent",
     }:
         return "authoredConfig"
     if value == "binaryManagedLiteral":
@@ -2834,10 +3650,20 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "cueName", "cueSignedId", "cueId", "cueHex", "cueHashEvidence",
             "definitionStatus", "handlerScope", "levelId",
             "handlerIndex", "expressionSide", "expressionPath", "exprType",
+            "controllerId", "modelAnimatorIndex", "modelAnimatorName",
+            "layerIndex", "layerFsmIndex", "layerName", "stateIndex", "stateName",
+            "stateType", "behaviorIndex", "behaviorTag", "behaviorTagHex",
+            "behaviorType", "behaviorKind", "behaviorTime", "timeFlowSwitch",
+            "normalAudioId", "audioNodeName", "eAudioTriggerState",
+            "templateAssociationStatus",
             "globalMusicCueField",
             "authoredEventId", "spawnerConfigId", "enemyLibraryIndex", "enemyId",
             "bornTemplateId", "enemyLevel", "spawnerEnemyKey", "preWarnTime",
             "preWarnEffectKey", "schemaMappingId", "schemaStatus",
+            "charInteractPerformId", "actionPhase", "actionIndex", "logicId",
+            "delay", "duration", "devOnly", "useEvent", "attachedActorType",
+            "charIndex", "endStop", "is2D", "runtimeOwnerStatus",
+            "attachedActorResolutionStatus", "unionMappingId", "endOffset",
             "action", "levelScriptId", "sourcePath", "sourceSha256",
             "recordIndex", "recordStart", "recordUid", "recordLocalId",
             "actionMapRole", "unionTag", "serializedMemberCount",
@@ -2859,8 +3685,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "triggerOwnershipMethods", "triggerEvidenceKinds", "triggerBuffIds",
             "triggerSourcePaths",
             "sourcePaths",
-            "sourceRoots", "consumerIds", "consumerAliasIds",
+            "sourceRoots", "sourceFingerprints", "consumerIds", "consumerAliasIds",
             "interactiveTableSourcePaths",
+            "interactiveTemplateIds", "interactiveTemplatePaths", "interactiveConsumerIds",
             "authoredSkillIds",
             "bornBuffIds", "preWarnEffectFixedRotation",
         ):
@@ -2941,7 +3768,9 @@ def build_audio_semantic_data(
     cue_semantics = collect_audio_cue_semantics(export_root)
     global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
     spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
+    char_interact_semantics = collect_char_interact_audio_semantics(export_root)
     physics_audio_semantics = collect_physics_audio_semantics(export_root)
+    model_view_semantics = collect_model_view_state_audio_semantics(export_root)
     levelscript_semantics = collect_levelscript_audio_semantics(
         export_root,
         cue_semantics=cue_semantics,
@@ -2957,7 +3786,9 @@ def build_audio_semantic_data(
         collect_gameplay_contexts(webui_root, language),
         collect_projectile_contexts(webui_root),
         spawner_semantics.get("eventContexts") or {},
+        char_interact_semantics.get("eventContexts") or {},
         physics_audio_semantics.get("eventContexts") or {},
+        model_view_semantics.get("eventContexts") or {},
         levelscript_semantics.get("eventContexts") or {},
         collect_table_contexts(
             export_root,
@@ -2992,10 +3823,27 @@ def build_audio_semantic_data(
             for context in row.get("contexts") or []
         )
     ]
+    char_interact_event_rows = [
+        row for row in events
+        if any(
+            isinstance(context, dict) and context.get("kind") == "charInteractAudioEvent"
+            for context in row.get("contexts") or []
+        )
+    ]
     physics_audio_event_rows = [
         row for row in events
         if any(
             isinstance(context, dict) and context.get("kind") == "physicsAudioComponentEvent"
+            for context in row.get("contexts") or []
+        )
+    ]
+    model_view_event_rows = [
+        row for row in events
+        if any(
+            isinstance(context, dict)
+            and context.get("kind") in {
+                "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"
+            }
             for context in row.get("contexts") or []
         )
     ]
@@ -3156,6 +4004,14 @@ def build_audio_semantic_data(
             "spawnerPreWarnAudioEventsUnresolved": sum(
                 not row.get("foundInWwise") for row in spawner_event_rows
             ),
+            "charInteractAudioEvents": context_kind_event_counts.get("charInteractAudioEvent", 0),
+            "charInteractAudioContexts": context_kind_counts.get("charInteractAudioEvent", 0),
+            "charInteractAudioEventsFoundInWwise": sum(
+                bool(row.get("foundInWwise")) for row in char_interact_event_rows
+            ),
+            "charInteractAudioEventsUnresolved": sum(
+                not row.get("foundInWwise") for row in char_interact_event_rows
+            ),
             "physicsAudioEvents": context_kind_event_counts.get("physicsAudioComponentEvent", 0),
             "physicsAudioEventContexts": context_kind_counts.get("physicsAudioComponentEvent", 0),
             "physicsAudioEventsFoundInWwise": sum(
@@ -3168,6 +4024,23 @@ def build_audio_semantic_data(
             "physicsAudioConsumerIdentities": (
                 (physics_audio_semantics.get("stats") or {}).get("physicsAudioConsumerIdentities") or 0
             ),
+            "modelViewStateAudioEvents": (
+                context_kind_event_counts.get("modelViewStateAudioEvent", 0)
+                + context_kind_event_counts.get("modelViewStatePositionAudioEvent", 0)
+            ),
+            "modelViewStateAudioEventContexts": (
+                context_kind_counts.get("modelViewStateAudioEvent", 0)
+                + context_kind_counts.get("modelViewStatePositionAudioEvent", 0)
+            ),
+            "modelViewStateAudioEventsFoundInWwise": sum(
+                bool(row.get("foundInWwise")) for row in model_view_event_rows
+            ),
+            "modelViewStateAudioEventsUnresolved": sum(
+                not row.get("foundInWwise") for row in model_view_event_rows
+            ),
+            "modelViewStateRtpcControls": len(model_view_semantics.get("rtpcParameters") or []),
+            "modelViewStateSpatialControls": len(model_view_semantics.get("spatialControls") or []),
+            "modelViewStateCustomAudioControls": len(model_view_semantics.get("customAudioControls") or []),
             "levelScriptAudioActionEvents": context_kind_event_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioActionContexts": context_kind_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
@@ -3208,10 +4081,12 @@ def build_audio_semantic_data(
         "hircSummary": audio_index.get("hircSummary") or {},
         "triggerCatalog": {
             "spawnerPreWarnAudio": spawner_semantics.get("stats") or {},
+            "charInteractAudio": char_interact_semantics.get("stats") or {},
             "physicsAudio": {
                 **(physics_audio_semantics.get("stats") or {}),
                 "definitions": physics_audio_semantics.get("definitions") or [],
             },
+            "modelViewStateAudio": model_view_semantics.get("stats") or {},
             "levelScriptAudio": levelscript_semantics.get("stats") or {},
         },
         "controlCatalog": {
@@ -3229,6 +4104,9 @@ def build_audio_semantic_data(
                 ),
                 "rtpcParameters": len(global_controls.get("rtpcParameters") or []) + len(managed_rtpc_parameters),
                 "physicsAudioRtpcParameters": len(physics_audio_semantics.get("rtpcParameters") or []),
+                "modelViewStateRtpcParameters": len(model_view_semantics.get("rtpcParameters") or []),
+                "modelViewStateSpatialControls": len(model_view_semantics.get("spatialControls") or []),
+                "modelViewStateCustomAudioControls": len(model_view_semantics.get("customAudioControls") or []),
                 "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
                 "levelScriptAudioCueInvocationsResolved": (
                     (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
@@ -3255,11 +4133,14 @@ def build_audio_semantic_data(
             "audioGlobalMusicCueRefs": global_controls.get("audioGlobalMusicCueRefs") or [],
             "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
             "physicsAudioRtpcParameters": physics_audio_semantics.get("rtpcParameters") or [],
+            "modelViewStateRtpcParameters": model_view_semantics.get("rtpcParameters") or [],
+            "modelViewStateSpatialControls": model_view_semantics.get("spatialControls") or [],
+            "modelViewStateCustomAudioControls": model_view_semantics.get("customAudioControls") or [],
             "levelScriptAudioCueInvocations": levelscript_semantics.get("cueInvocations") or [],
             "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
             "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
             "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
-            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, and non-empty PhysicsAudio Event properties are authored requests. PhysicsAudio RTPC names, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state.",
+            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
@@ -3270,7 +4151,9 @@ def build_audio_semantic_data(
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
             "spawnerPreWarnAudio": "The current mc13 SpawnerEnemyLibraryItem preWarnAudioEventKey proves an authored enemy-spawn pre-warning request and its row-local timing/effect/enemy/template source. It does not prove that the spawner executed or that a Wwise branch played; unresolved authored names remain visible.",
+            "charInteractAudio": (char_interact_semantics.get("stats") or {}).get("evidenceBoundary") or "",
             "physicsAudio": physics_audio_semantics.get("evidenceBoundary") or "",
+            "modelViewStateAudio": model_view_semantics.get("evidenceBoundary") or "",
             "levelScriptAudio": levelscript_semantics.get("evidenceBoundary") or "",
             "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
