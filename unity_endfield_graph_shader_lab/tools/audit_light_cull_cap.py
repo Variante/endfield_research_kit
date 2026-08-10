@@ -262,6 +262,125 @@ UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGFactoryRenderManager::"
     "SetEntityEnabledLightModes_Injected"
 )
+HG_FACTORY_RENDER_MANAGER_TYPE_INDEX = 60910
+HG_FACTORY_RENDER_MANAGER_TYPE_TOKEN = 0x02000021
+HG_FACTORY_SET_ENABLED_LIGHT_MODES_METHOD_INDEX = 477909
+HG_FACTORY_SET_ENABLED_LIGHT_MODES_METHOD_TOKEN = 0x06000071
+HG_FACTORY_SET_ENABLED_LIGHT_MODES_INJECTED_METHOD_INDEX = 477923
+HG_FACTORY_SET_ENABLED_LIGHT_MODES_INJECTED_METHOD_TOKEN = 0x0600007F
+HG_SHADER_LIGHT_MODE_TYPE_INDEX = 60993
+HG_SHADER_LIGHT_MODE_TYPE_TOKEN = 0x02000074
+HG_SHADER_LIGHT_MODE_FIELDS = {
+    "None": (296443, 0x04000155, 0x00000000),
+    "GBuffer": (296444, 0x04000156, 0x00000001),
+    "GBufferMobile": (296445, 0x04000157, 0x00000002),
+    "Erosion": (296446, 0x04000158, 0x00000004),
+    "ErosionMobile": (296447, 0x04000159, 0x00000008),
+    "ErosionClear": (296448, 0x0400015A, 0x00000010),
+    "ForwardOnly": (296449, 0x0400015B, 0x00000020),
+    "Forward": (296450, 0x0400015C, 0x00000040),
+    "ForwardCharacterOnly": (296451, 0x0400015D, 0x00000080),
+    "ForwardReflection": (296452, 0x0400015E, 0x00000100),
+    "CharacterOutline": (296453, 0x0400015F, 0x00000200),
+    "ShadowCaster": (296454, 0x04000160, 0x00000400),
+    "DepthOnly": (296455, 0x04000161, 0x00000800),
+    "DepthCharacterOnly": (296456, 0x04000162, 0x00001000),
+    "SRPDefaultUnlit": (296457, 0x04000163, 0x00002000),
+    "ForwardDecal": (296458, 0x04000164, 0x00004000),
+    "VFXDecal": (296459, 0x04000165, 0x00008000),
+    "WetnessDecal": (296460, 0x04000166, 0x00010000),
+    "Distortion": (296461, 0x04000167, 0x00020000),
+    "FullScreenDebug": (296462, 0x04000168, 0x00040000),
+    "OccludedDisplay": (296463, 0x04000169, 0x00080000),
+    "TerrainVTDecal": (296464, 0x0400016A, 0x00100000),
+    "TerrainVTDecalMobile": (296465, 0x0400016B, 0x00200000),
+    "RayTracingReflection": (296466, 0x0400016C, 0x00400000),
+    "RayTracingReflectionCompute": (296467, 0x0400016D, 0x00800000),
+    "RayTracingGI": (296468, 0x0400016E, 0x01000000),
+    "StencilAlphaBlend": (296469, 0x0400016F, 0x02000000),
+    "WaterMarkUI": (296470, 0x04000170, 0x04000000),
+    "ForwardAfterUI": (296471, 0x04000171, 0x08000000),
+    "TextureStreamingFeedback": (296472, 0x04000172, 0x10000000),
+    "GPUParticleSpawn": (296473, 0x04000173, 0x20000000),
+    "GPUParticleSimulate": (296474, 0x04000174, 0x40000000),
+}
+PER_DRAW_PASS_CONFIG_TYPE_INDEX = 50112
+PER_DRAW_PASS_CONFIG_TYPE_TOKEN = 0x0200023B
+PER_DRAW_PASS_APPLY_METHOD_INDEX = 396344
+PER_DRAW_PASS_APPLY_METHOD_TOKEN = 0x06000CB0
+PER_DRAW_PASS_PARSE_METHOD_INDEX = 396346
+PER_DRAW_PASS_PARSE_METHOD_TOKEN = 0x06000CB2
+PER_DRAW_LIGHT_MODE_TYPE_INDEX = 50118
+PER_DRAW_LIGHT_MODE_TYPE_TOKEN = 0x02000241
+PER_DRAW_LIGHT_MODE_FIELDS = {
+    "None": (239168, 0x04000912, 0x00000000),
+    "GBuffer": (239169, 0x04000913, 0x00000001),
+    "GBufferMobile": (239170, 0x04000914, 0x00000002),
+    "Erosion": (239171, 0x04000915, 0x00000004),
+    "ErosionMobile": (239172, 0x04000916, 0x00000008),
+    "ErosionClear": (239173, 0x04000917, 0x00000010),
+    "ForwardOnly": (239174, 0x04000918, 0x00000020),
+    "Forward": (239175, 0x04000919, 0x00000040),
+    "ForwardCharacterOnly": (239176, 0x0400091A, 0x00000080),
+    "ForwardReflection": (239177, 0x0400091B, 0x00000100),
+    "CharacterOutline": (239178, 0x0400091C, 0x00000200),
+    "ShadowCaster": (239179, 0x0400091D, 0x00000400),
+    "DepthOnly": (239180, 0x0400091E, 0x00000800),
+    "DepthCharacterOnly": (239181, 0x0400091F, 0x00001000),
+    "SRPDefaultUnlit": (239182, 0x04000920, 0x00002000),
+    "ForwardDecal": (239183, 0x04000921, 0x00004000),
+    "VFXDecal": (239184, 0x04000922, 0x00008000),
+    "Distortion": (239185, 0x04000923, 0x00010000),
+    "FullScreenDebug": (239186, 0x04000924, 0x00020000),
+    "OccludedDisplay": (239187, 0x04000925, 0x00040000),
+    "TerrainVTDecal": (239188, 0x04000926, 0x00080000),
+    "TerrainVTDecalMobile": (239189, 0x04000927, 0x00100000),
+    "RayTracingReflection": (239190, 0x04000928, 0x00200000),
+    "StencilAlphaBlend": (239191, 0x04000929, 0x00400000),
+    "WaterMarkUI": (239192, 0x0400092A, 0x00800000),
+}
+ENABLED_LIGHT_MODE_GAME_ASSEMBLY_BODIES = {
+    "per_draw_pass_apply": (
+        0x1869F3894,
+        0x069F1E94,
+        0xB8,
+        "6edbf189c4933e093ec0dc5b342bd0dc9fdb45f7ef65b91767cb4b584a86a981",
+    ),
+    "per_draw_to_hg_shader_light_mode": (
+        0x1869F3A20,
+        0x069F2020,
+        0x1C8,
+        "86eff49d965112301e8c3321a2646b8259fa34920f73fbb682bc533464d14fb6",
+    ),
+    "set_entity_enabled_light_modes": (
+        0x18B3F9118,
+        0x0B3F7718,
+        0x1C,
+        "9910ce5d8b4c4571068000ffe95ba0dc052fa201f835c4167d9c24fcd0550a36",
+    ),
+    "set_entity_enabled_light_modes_injected": (
+        0x18B3F90D8,
+        0x0B3F76D8,
+        0x40,
+        "02078f35c7e7dad3a0f7dff28e5a62190ba87328f881b74f3cb2bf6257f5d76e",
+    ),
+}
+ENABLED_LIGHT_MODE_METHOD_POINTERS = {
+    PER_DRAW_PASS_APPLY_METHOD_INDEX: (0x0E9DD018, 0x1869F3894),
+    PER_DRAW_PASS_PARSE_METHOD_INDEX: (0x0E9DD028, 0x1869F3A20),
+    HG_FACTORY_SET_ENABLED_LIGHT_MODES_METHOD_INDEX: (
+        0x0EF00120,
+        0x18B3F9118,
+    ),
+    HG_FACTORY_SET_ENABLED_LIGHT_MODES_INJECTED_METHOD_INDEX: (
+        0x0EF00190,
+        0x18B3F90D8,
+    ),
+}
+PER_DRAW_APPLY_TO_SET_ENABLED_LIGHT_MODES_SLICE = (
+    0x069F1EFA,
+    bytes.fromhex("4533c089078bd0488bcbe80f58a004eb298bcde8"),
+)
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_INDEX = 279
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_VA = 0x1801EDEB0
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_NAME = (
@@ -1938,6 +2057,535 @@ def validate_streaming_byte_enum_fields(
     return rows
 
 
+def decode_il2cpp_compressed_uint32(
+    data: bytes, offset: int, end: int
+) -> tuple[int, int]:
+    """Decode the unsigned integer form used by IL2CPP metadata defaults."""
+
+    require(
+        "il2cpp_compressed_uint32_start_in_bounds",
+        offset < end,
+        True,
+        GLOBAL_METADATA,
+    )
+    first = data[offset]
+    if first & 0x80 == 0:
+        return first, 1
+    if first & 0xC0 == 0x80:
+        require(
+            "il2cpp_compressed_uint32_two_byte_in_bounds",
+            offset + 2 <= end,
+            True,
+            GLOBAL_METADATA,
+        )
+        return ((first & 0x3F) << 8) | data[offset + 1], 2
+    if first & 0xE0 == 0xC0:
+        require(
+            "il2cpp_compressed_uint32_four_byte_in_bounds",
+            offset + 4 <= end,
+            True,
+            GLOBAL_METADATA,
+        )
+        return (
+            ((first & 0x1F) << 24)
+            | (data[offset + 1] << 16)
+            | (data[offset + 2] << 8)
+            | data[offset + 3],
+            4,
+        )
+    if first == 0xF0:
+        require(
+            "il2cpp_compressed_uint32_five_byte_in_bounds",
+            offset + 5 <= end,
+            True,
+            GLOBAL_METADATA,
+        )
+        return int.from_bytes(data[offset + 1 : offset + 5], "little"), 5
+    if first == 0xFF:
+        return 0xFFFFFFFF, 1
+    raise AssertionError(
+        "Light-cull cap audit failed: validator=light_cull_cap; "
+        "check=il2cpp_compressed_uint32_prefix; "
+        f"source={GLOBAL_METADATA}; expected='supported prefix'; "
+        f"actual=0x{first:02X}"
+    )
+
+
+def validate_enabled_light_modes_metadata(
+    raw_metadata: bytes,
+    source: Path = GLOBAL_METADATA,
+) -> dict[str, object]:
+    """Close enabledLightModes signatures and pass bits from IL2CPP metadata."""
+
+    require(
+        "enabled_light_modes_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    require(
+        "enabled_light_modes_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        source,
+    )
+    sections = {}
+    for section_index, section_name in enumerate(IL2CPP_METADATA_SECTION_NAMES):
+        sections[section_name] = struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+    string_offset, string_size = sections["string"]
+    method_offset, method_size = sections["methods"]
+    parameter_offset, parameter_size = sections["parameters"]
+    field_offset, field_size = sections["fields"]
+    default_offset, default_size = sections["fieldDefaultValues"]
+    values_offset, values_size = sections["fieldAndParameterDefaultValueData"]
+    type_offset, type_size = sections["typeDefinitions"]
+    for label, actual_size, stride in (
+        ("method", method_size, 32),
+        ("parameter", parameter_size, 12),
+        ("field", field_size, 12),
+        ("field_default", default_size, 12),
+        ("type", type_size, 92),
+    ):
+        require(
+            f"enabled_light_modes_{label}_record_alignment",
+            actual_size % stride,
+            0,
+            source,
+        )
+
+    def metadata_string(index: int, check: str) -> str:
+        start = string_offset + index
+        require(
+            f"enabled_light_modes_{check}_string_start_in_bounds",
+            string_offset <= start < string_offset + string_size,
+            True,
+            source,
+        )
+        end = raw_metadata.find(b"\0", start, string_offset + string_size)
+        require(
+            f"enabled_light_modes_{check}_string_end_in_bounds",
+            end >= start,
+            True,
+            source,
+        )
+        return raw_metadata[start:end].decode("utf-8")
+
+    def validate_type(
+        check: str,
+        index: int,
+        expected_name: str,
+        expected_namespace: str,
+        expected_token: int,
+    ) -> dict[str, object]:
+        position = type_offset + index * 92
+        require(
+            f"enabled_light_modes_{check}_type_in_bounds",
+            position + 92 <= type_offset + type_size,
+            True,
+            source,
+        )
+        name_index, namespace_index = struct.unpack_from(
+            "<ii", raw_metadata, position
+        )
+        token = struct.unpack_from("<I", raw_metadata, position + 88)[0]
+        name = metadata_string(name_index, f"{check}_type_name")
+        namespace = metadata_string(
+            namespace_index, f"{check}_type_namespace"
+        )
+        require(f"enabled_light_modes_{check}_type_name", name, expected_name, source)
+        require(
+            f"enabled_light_modes_{check}_type_namespace",
+            namespace,
+            expected_namespace,
+            source,
+        )
+        require(
+            f"enabled_light_modes_{check}_type_token",
+            token,
+            expected_token,
+            source,
+        )
+        return {
+            "typeIndex": index,
+            "token": f"0x{token:08X}",
+            "fullName": f"{namespace}.{name}",
+        }
+
+    def validate_method(
+        check: str,
+        index: int,
+        expected_name: str,
+        expected_declaring_type: int,
+        expected_return_type: int,
+        expected_parameter_start: int,
+        expected_token: int,
+        expected_parameters: list[tuple[str, int, int]],
+    ) -> dict[str, object]:
+        position = method_offset + index * 32
+        require(
+            f"enabled_light_modes_{check}_method_in_bounds",
+            position + 32 <= method_offset + method_size,
+            True,
+            source,
+        )
+        (
+            name_index,
+            declaring_type,
+            return_type,
+            parameter_start,
+            _generic_container,
+            token,
+            _flags,
+            _iflags,
+            _slot,
+            parameter_count,
+        ) = struct.unpack_from("<iiiiiIHHHH", raw_metadata, position)
+        name = metadata_string(name_index, f"{check}_method_name")
+        for field_name, actual, expected in (
+            ("name", name, expected_name),
+            ("declaring_type", declaring_type, expected_declaring_type),
+            ("return_type", return_type, expected_return_type),
+            ("parameter_start", parameter_start, expected_parameter_start),
+            ("token", token, expected_token),
+            ("parameter_count", parameter_count, len(expected_parameters)),
+        ):
+            require(
+                f"enabled_light_modes_{check}_method_{field_name}",
+                actual,
+                expected,
+                source,
+            )
+        parameters = []
+        for relative_index, (
+            expected_param_name,
+            expected_param_token,
+            expected_type,
+        ) in enumerate(expected_parameters):
+            param_index = parameter_start + relative_index
+            param_position = parameter_offset + param_index * 12
+            require(
+                f"enabled_light_modes_{check}_{expected_param_name}_parameter_in_bounds",
+                param_position + 12 <= parameter_offset + parameter_size,
+                True,
+                source,
+            )
+            param_name_index, param_token, param_type = struct.unpack_from(
+                "<iIi", raw_metadata, param_position
+            )
+            param_name = metadata_string(
+                param_name_index, f"{check}_{expected_param_name}_parameter_name"
+            )
+            for field_name, actual, expected in (
+                ("name", param_name, expected_param_name),
+                ("token", param_token, expected_param_token),
+                ("type", param_type, expected_type),
+            ):
+                require(
+                    f"enabled_light_modes_{check}_{expected_param_name}_{field_name}",
+                    actual,
+                    expected,
+                    source,
+                )
+            parameters.append(
+                {
+                    "name": param_name,
+                    "token": f"0x{param_token:08X}",
+                    "metadataTypeIndex": param_type,
+                }
+            )
+        return {
+            "methodIndex": index,
+            "token": f"0x{token:08X}",
+            "name": name,
+            "returnMetadataTypeIndex": return_type,
+            "parameters": parameters,
+        }
+
+    defaults = {}
+    for position in range(default_offset, default_offset + default_size, 12):
+        field_index, type_index, data_index = struct.unpack_from(
+            "<iii", raw_metadata, position
+        )
+        defaults[field_index] = (type_index, data_index)
+
+    def validate_enum(
+        check: str,
+        expected_fields: dict[str, tuple[int, int, int]],
+        expected_literal_type: int,
+    ) -> list[dict[str, object]]:
+        rows = []
+        for expected_name, (field_index, expected_token, expected_value) in (
+            expected_fields.items()
+        ):
+            position = field_offset + field_index * 12
+            require(
+                f"enabled_light_modes_{check}_{expected_name}_field_in_bounds",
+                position + 12 <= field_offset + field_size,
+                True,
+                source,
+            )
+            name_index, literal_type, token = struct.unpack_from(
+                "<iiI", raw_metadata, position
+            )
+            name = metadata_string(name_index, f"{check}_{expected_name}_field_name")
+            for field_name, actual, expected in (
+                ("name", name, expected_name),
+                ("token", token, expected_token),
+                ("literal_type", literal_type, expected_literal_type),
+                ("default_exists", field_index in defaults, True),
+            ):
+                require(
+                    f"enabled_light_modes_{check}_{expected_name}_{field_name}",
+                    actual,
+                    expected,
+                    source,
+                )
+            default_type, data_index = defaults[field_index]
+            require(
+                f"enabled_light_modes_{check}_{expected_name}_default_type",
+                default_type,
+                168243,
+                source,
+            )
+            require(
+                f"enabled_light_modes_{check}_{expected_name}_default_in_bounds",
+                0 <= data_index < values_size,
+                True,
+                source,
+            )
+            value, encoded_size = decode_il2cpp_compressed_uint32(
+                raw_metadata,
+                values_offset + data_index,
+                values_offset + values_size,
+            )
+            require(
+                f"enabled_light_modes_{check}_{expected_name}_value",
+                value,
+                expected_value,
+                source,
+            )
+            rows.append(
+                {
+                    "name": name,
+                    "fieldIndex": field_index,
+                    "token": f"0x{token:08X}",
+                    "value": f"0x{value:08X}",
+                    "bit": value.bit_length() - 1 if value else None,
+                    "encodedSizeBytes": encoded_size,
+                }
+            )
+        return rows
+
+    types = {
+        "factoryRenderManager": validate_type(
+            "factory_render_manager",
+            HG_FACTORY_RENDER_MANAGER_TYPE_INDEX,
+            "HGFactoryRenderManager",
+            "UnityEngine.HyperGryph",
+            HG_FACTORY_RENDER_MANAGER_TYPE_TOKEN,
+        ),
+        "shaderLightMode": validate_type(
+            "shader_light_mode",
+            HG_SHADER_LIGHT_MODE_TYPE_INDEX,
+            "HGShaderLightMode",
+            "UnityEngine.HyperGryph",
+            HG_SHADER_LIGHT_MODE_TYPE_TOKEN,
+        ),
+        "perDrawPassConfig": validate_type(
+            "per_draw_pass_config",
+            PER_DRAW_PASS_CONFIG_TYPE_INDEX,
+            "PerDrawPassConfig",
+            "Beyond.Gameplay.Factory",
+            PER_DRAW_PASS_CONFIG_TYPE_TOKEN,
+        ),
+        "perDrawLightMode": validate_type(
+            "per_draw_light_mode",
+            PER_DRAW_LIGHT_MODE_TYPE_INDEX,
+            "PerDrawLightMode",
+            "Beyond.Gameplay.Factory",
+            PER_DRAW_LIGHT_MODE_TYPE_TOKEN,
+        ),
+    }
+    methods = {
+        "setEntityEnabledLightModes": validate_method(
+            "set_entity_enabled_light_modes",
+            HG_FACTORY_SET_ENABLED_LIGHT_MODES_METHOD_INDEX,
+            "SetEntityEnabledLightModes",
+            HG_FACTORY_RENDER_MANAGER_TYPE_INDEX,
+            170022,
+            533364,
+            HG_FACTORY_SET_ENABLED_LIGHT_MODES_METHOD_TOKEN,
+            [
+                ("rendererEntity", 0x080000DF, 139403),
+                ("lightModeMask", 0x080000E0, 168243),
+            ],
+        ),
+        "setEntityEnabledLightModesInjected": validate_method(
+            "set_entity_enabled_light_modes_injected",
+            HG_FACTORY_SET_ENABLED_LIGHT_MODES_INJECTED_METHOD_INDEX,
+            "SetEntityEnabledLightModes_Injected",
+            HG_FACTORY_RENDER_MANAGER_TYPE_INDEX,
+            170022,
+            533398,
+            HG_FACTORY_SET_ENABLED_LIGHT_MODES_INJECTED_METHOD_TOKEN,
+            [
+                ("rendererEntity", 0x08000101, 109842),
+                ("lightModeMask", 0x08000102, 168243),
+            ],
+        ),
+        "perDrawApply": validate_method(
+            "per_draw_apply",
+            PER_DRAW_PASS_APPLY_METHOD_INDEX,
+            "Apply",
+            PER_DRAW_PASS_CONFIG_TYPE_INDEX,
+            170022,
+            442637,
+            PER_DRAW_PASS_APPLY_METHOD_TOKEN,
+            [
+                ("rendererEntity", 0x08000C86, 139403),
+                ("currentLightMode", 0x08000C87, 114269),
+            ],
+        ),
+        "perDrawParser": validate_method(
+            "per_draw_parser",
+            PER_DRAW_PASS_PARSE_METHOD_INDEX,
+            "_ParseToHGShaderLightMode",
+            PER_DRAW_PASS_CONFIG_TYPE_INDEX,
+            145179,
+            442641,
+            PER_DRAW_PASS_PARSE_METHOD_TOKEN,
+            [("value", 0x08000C8A, 157254)],
+        ),
+    }
+    shader_rows = validate_enum(
+        "shader_light_mode", HG_SHADER_LIGHT_MODE_FIELDS, 145180
+    )
+    per_draw_rows = validate_enum(
+        "per_draw_light_mode", PER_DRAW_LIGHT_MODE_FIELDS, 157255
+    )
+    shader_values = {row["name"]: row["value"] for row in shader_rows}
+    crosswalk = [
+        {
+            "name": row["name"],
+            "perDrawValue": row["value"],
+            "shaderLightModeValue": shader_values[row["name"]],
+        }
+        for row in per_draw_rows
+    ]
+    return {
+        "metadataVersion": 29,
+        "types": types,
+        "methods": methods,
+        "shaderLightMode": {
+            "underlyingMaskType": "System.UInt32",
+            "literalCount": len(shader_rows),
+            "nonzeroBitRange": [0, 30],
+            "combinedMask": "0x7FFFFFFF",
+            "literals": shader_rows,
+        },
+        "perDrawLightMode": {
+            "literalCount": len(per_draw_rows),
+            "crosswalk": crosswalk,
+            "unavailableInPerDrawConfig": [
+                name
+                for name in HG_SHADER_LIGHT_MODE_FIELDS
+                if name not in PER_DRAW_LIGHT_MODE_FIELDS
+            ],
+        },
+    }
+
+
+def validate_enabled_light_modes_game_assembly(
+    source: Path = GAME_ASSEMBLY,
+) -> dict[str, object]:
+    """Pin the managed pass-mask producer, parser, wrapper, and icall stub."""
+
+    bodies = []
+    with source.open("rb") as stream:
+        for label, (virtual_address, file_offset, size_bytes, expected_hash) in (
+            ENABLED_LIGHT_MODE_GAME_ASSEMBLY_BODIES.items()
+        ):
+            stream.seek(file_offset)
+            body = stream.read(size_bytes)
+            require(
+                f"enabled_light_modes_{label}_size",
+                len(body),
+                size_bytes,
+                source,
+            )
+            actual_hash = hashlib.sha256(body).hexdigest()
+            require(
+                f"enabled_light_modes_{label}_sha256",
+                actual_hash,
+                expected_hash,
+                source,
+            )
+            bodies.append(
+                {
+                    "label": label,
+                    "virtualAddress": f"0x{virtual_address:X}",
+                    "fileOffset": f"0x{file_offset:X}",
+                    "sizeBytes": size_bytes,
+                    "sha256": actual_hash,
+                }
+            )
+        method_pointers = []
+        for method_index, (file_offset, expected_pointer) in (
+            ENABLED_LIGHT_MODE_METHOD_POINTERS.items()
+        ):
+            stream.seek(file_offset)
+            actual_pointer = struct.unpack("<Q", stream.read(8))[0]
+            require(
+                f"enabled_light_modes_method_{method_index}_pointer",
+                actual_pointer,
+                expected_pointer,
+                source,
+            )
+            method_pointers.append(
+                {
+                    "methodIndex": method_index,
+                    "pointerFileOffset": f"0x{file_offset:X}",
+                    "bodyVirtualAddress": f"0x{actual_pointer:X}",
+                }
+            )
+        slice_offset, expected_slice = PER_DRAW_APPLY_TO_SET_ENABLED_LIGHT_MODES_SLICE
+        stream.seek(slice_offset)
+        actual_slice = stream.read(len(expected_slice))
+    require(
+        "enabled_light_modes_per_draw_apply_call_slice",
+        actual_slice,
+        expected_slice,
+        source,
+    )
+    call_instruction_offset = 10
+    call_site = 0x1869F38FA + call_instruction_offset
+    displacement = struct.unpack_from(
+        "<i", actual_slice, call_instruction_offset + 1
+    )[0]
+    call_target = call_site + 5 + displacement
+    require(
+        "enabled_light_modes_per_draw_apply_call_target",
+        call_target,
+        0x18B3F9118,
+        source,
+    )
+    return {
+        "verifiedBodies": bodies,
+        "methodPointers": method_pointers,
+        "perDrawApplyCall": {
+            "virtualAddress": f"0x{call_site:X}",
+            "targetVirtualAddress": f"0x{call_target:X}",
+            "dataflow": (
+                "parsed HGShaderLightMode mask in eax is stored into "
+                "currentLightMode, copied to edx, then passed with "
+                "rendererEntity to SetEntityEnabledLightModes"
+            ),
+        },
+    }
+
+
 def validate_streaming_scene_v2_payload_census(
     unity_image: PEImage,
     game_image: PEImage,
@@ -3489,6 +4137,7 @@ def validate_unity_scheduled_culling_boundary(
 def validate_unity_hgtree_renderer_boundary(
     image: PEImage,
     managed_hgtree_component: dict[str, object] | None = None,
+    metadata: bytes | None = None,
 ) -> dict[str, object]:
     """Pin HGTreeRenderer ownership without merging it into scheduled culling."""
 
@@ -3892,6 +4541,13 @@ def validate_unity_hgtree_renderer_boundary(
             "value": actual_value,
         }
 
+    enabled_light_modes_metadata = validate_enabled_light_modes_metadata(
+        metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
+    )
+    enabled_light_modes_game_assembly = (
+        validate_enabled_light_modes_game_assembly()
+    )
+
     return {
         "internalCall": {
             "table": "dedicated HyperGryph native internal calls",
@@ -3943,6 +4599,8 @@ def validate_unity_hgtree_renderer_boundary(
             "name": enabled_light_modes_name,
             "targetVirtualAddress": f"0x{enabled_light_modes_target:X}",
             "writerCoreVirtualAddress": "0x1810D9110",
+            "managedContract": enabled_light_modes_metadata,
+            "gameAssemblyContract": enabled_light_modes_game_assembly,
         },
         "lodControlInternalCalls": {
             "cullingSystem": lod_bias_icalls,
@@ -4142,6 +4800,7 @@ def validate_unity_hgtree_renderer_boundary(
                     },
                     "enabledLightModesAt0x14": {
                         "roleClosed": True,
+                        "passBitMeaningsClosed": True,
                         "hgtreeInitialValue": 0,
                         "internalCallIndex": (
                             UNITY_FACTORY_SET_ENABLED_LIGHT_MODES_ICALL_INDEX
@@ -4153,16 +4812,28 @@ def validate_unity_hgtree_renderer_boundary(
                         "recordStrideBytes": 24,
                         "genericConstructorVirtualAddress": "0x180BCB760",
                         "genericConstructorSource": "constructor input +0x20",
+                        "maskType": "System.UInt32",
+                        "shaderLightModeLiteralCount": 32,
+                        "shaderLightModeCombinedMask": "0x7FFFFFFF",
+                        "businessProducer": {
+                            "type": "Beyond.Gameplay.Factory.PerDrawPassConfig",
+                            "method": "Apply",
+                            "parser": "_ParseToHGShaderLightMode",
+                            "callVirtualAddress": "0x1869F3904",
+                        },
                         "proof": (
                             "dedicated HyperGryph internal-call entry 204 names "
                             "SetEntityEnabledLightModes_Injected; its wrapper "
                             "reaches a core that selects the 0x7F00 renderer "
-                            "family and writes the supplied value to every "
-                            "record+0x14 at stride 0x18"
+                            "family and writes the supplied UInt32 mask to "
+                            "every record+0x14 at stride 0x18; IL2CPP metadata "
+                            "defines HGShaderLightMode as bits 0..30, while "
+                            "PerDrawPassConfig.Apply parses its gameplay pass "
+                            "enum and calls the managed wrapper directly"
                         ),
                         "proofBoundary": (
-                            "the downstream bit meanings and render-stage "
-                            "consumer of enabledLightModes remain open"
+                            "the exact downstream render-stage consumer of "
+                            "enabledLightModes remains open"
                         ),
                     },
                 },
@@ -4900,8 +5571,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v22",
-        "status": "installed_cap_hgtree_runtime_record_producers_closed",
+        "schema": "endfield.recovered-light-cull-cap.v23",
+        "status": "installed_cap_hgtree_enabled_light_mode_bits_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -4938,8 +5609,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "is closed as Renderer property flags updated "
             "by the common state synchronizer. Dedicated HyperGryph internal-"
             "call entry 204 names record +0x14 exactly as enabledLightModes; "
-            "its hash-pinned core writes the supplied value to every record. "
-            "The downstream bit meanings remain open. The dispatch packet/"
+            "its hash-pinned core writes the supplied UInt32 value to every "
+            "record. IL2CPP metadata closes HGShaderLightMode as 31 named "
+            "render-pass bits spanning 0..30, and the hash-pinned gameplay "
+            "PerDrawPassConfig parser and Apply method pass that mask through "
+            "the managed wrapper. Only the later native render-stage consumer "
+            "remains open. The dispatch packet/"
             "payload layouts, "
             "LODCrossFadeConfig enableDither/lodBias controls, parent and "
             "per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp "
@@ -5023,8 +5698,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "Any separate post-dispatch cull-view +0x18 consumer, the exact "
-            "asset class of loader record +0x0C, the downstream bit meanings "
-            "and render-stage consumer of enabledLightModes at +0x14, the "
+            "asset class of loader record +0x0C, the render-stage consumer "
+            "of enabledLightModes at +0x14, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -5200,6 +5875,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "loader runtime record +0x0C as the third resolved reference-counted renderer resource index, its two writers and cleanup, and its independent filter-overlay consumption",
                 "loader runtime record +0x10 as Renderer property flags and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
+                "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
                 "the HGTree LOD dispatch packet and payload layouts",
@@ -5237,7 +5913,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "any separate post-dispatch copy or consumer of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the exact asset class represented by runtime record +0x0C",
-                "the downstream bit meanings and render-stage consumer of enabledLightModes at runtime record +0x14",
+                "the exact render-stage consumer of enabledLightModes at runtime record +0x14",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -5273,7 +5949,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime resource/property fields and enabledLightModes writer, "
+        "runtime resource/property fields and enabledLightModes pass-bit producer, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
