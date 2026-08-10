@@ -15,7 +15,7 @@ SPEC.loader.exec_module(pack_webui)
 
 
 class PackWebuiAudioTests(unittest.TestCase):
-    def test_live_router_marks_audio_debug_only_with_gameplay_fallback(self) -> None:
+    def test_live_router_keeps_audio_normal_and_debug_mission_views(self) -> None:
         project_root = SCRIPT.parents[1]
         router = (project_root / "webui" / "assets.js").read_text(encoding="utf-8")
         html = (project_root / "webui" / "index.html").read_text(encoding="utf-8")
