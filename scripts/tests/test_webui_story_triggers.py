@@ -326,6 +326,17 @@ for (const [key, category] of [
         self.assertIn('t("questForkArmStoryEvidence")', source)
         self.assertIn("They do not prove that the server selected the arm", source)
 
+    def test_mission_pipeline_surfaces_shared_proxy_candidate_topology(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("route.candidateQuestTopology", source)
+        self.assertIn("trackedProxyCandidateTopologyHtml", source)
+        self.assertIn("topology.topologyClass", source)
+        self.assertIn("fork.sharedDownstreamCandidateQuestIds", source)
+        self.assertIn("merge.predecessorQuestIds", source)
+        self.assertIn("topology.relatedOriginalFiles", source)
+        self.assertIn("activeCondIndex", source)
+        self.assertIn('t("trackedProxyNoAssignment")', source)
+
     def test_mission_pipeline_surfaces_exact_empty_levelscript_boundaries(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("objective.levelScriptSources", source)
