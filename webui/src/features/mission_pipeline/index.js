@@ -590,6 +590,15 @@
       dialogTreeIfArm: "If arm",
       dialogTreeIfCount: "binary DialogTree IfNodes",
       dialogTreeIfBoundary: "This is internal condition-selection evidence with original files; it does not prove mission trigger, ownership, cross-file order, or chronology.",
+      dialogTreeStaticPortControl: "DialogTree external-result control",
+      dialogTreeStaticPortArm: "result arm",
+      dialogTreeStaticPortCount: "native static-port controls",
+      dialogTreeStaticPortNamed: "installed named ports",
+      dialogTreeStaticPortUnlabeled: "ordinal-only external results",
+      dialogTreeStaticPortExternal: "UI result not observed",
+      dialogTreeStaticPortBoundary: "The original binary and metadata prove the authored result-port order. They do not show which UI result occurred, assign mission ownership, or order sibling Story files.",
+      dialogTreeDetachedControl: "Detached serialized control",
+      dialogTreeDetachedBoundary: "This source definition has no serialized identity or outgoing connection, so it is not a live branch and contributes no selection or order edge.",
       dialogTimelineBinaryContract: "Original-binary Timeline option contract",
       dialogTimelineValidation: "binary validation",
       dialogTimelineBinaryCount: "binary Timeline option groups",
@@ -2109,6 +2118,15 @@
       dialogTreeIfArm: "If \u5206\u652f\u81c2",
       dialogTreeIfCount: "\u4e8c\u8fdb\u5236\u9a8c\u8bc1\u7684 DialogTree If \u8282\u70b9",
       dialogTreeIfBoundary: "\u8fd9\u662f\u5e26\u539f\u59cb\u6587\u4ef6\u7684\u5185\u90e8\u6761\u4ef6\u9009\u62e9\u8bc1\u636e\uff1b\u4e0d\u8bc1\u660e\u4efb\u52a1\u89e6\u53d1\u3001\u5f52\u5c5e\u3001\u8de8\u6587\u4ef6\u987a\u5e8f\u6216\u65f6\u5e8f\u3002",
+      dialogTreeStaticPortControl: "DialogTree \u5916\u90e8\u7ed3\u679c\u63a7\u5236\u8282\u70b9",
+      dialogTreeStaticPortArm: "\u7ed3\u679c\u5206\u652f\u81c2",
+      dialogTreeStaticPortCount: "\u539f\u751f\u9759\u6001\u7aef\u53e3\u63a7\u5236\u8282\u70b9",
+      dialogTreeStaticPortNamed: "\u539f\u59cb\u5ba2\u6237\u7aef\u547d\u540d\u7aef\u53e3",
+      dialogTreeStaticPortUnlabeled: "\u4ec5\u5e8f\u53f7\u7684\u5916\u90e8\u7ed3\u679c",
+      dialogTreeStaticPortExternal: "\u672a\u89c2\u6d4b UI \u7ed3\u679c",
+      dialogTreeStaticPortBoundary: "\u539f\u59cb\u4e8c\u8fdb\u5236\u548c\u5143\u6570\u636e\u8bc1\u660e\u5df2\u521b\u4f5c\u7684\u7ed3\u679c\u7aef\u53e3\u987a\u5e8f\uff1b\u4e0d\u8bc1\u660e\u5b9e\u9645 UI \u7ed3\u679c\u3001\u4efb\u52a1\u5f52\u5c5e\u6216\u540c\u7ea7 Story \u6587\u4ef6\u987a\u5e8f\u3002",
+      dialogTreeDetachedControl: "\u8131\u79bb\u5e8f\u5217\u5316\u63a7\u5236\u8282\u70b9",
+      dialogTreeDetachedBoundary: "\u8be5\u6e90\u5b9a\u4e49\u6ca1\u6709\u5e8f\u5217\u5316\u8eab\u4efd\u6216\u8f93\u51fa\u8fde\u63a5\uff0c\u56e0\u6b64\u4e0d\u662f\u5b9e\u65f6\u5206\u652f\uff0c\u4e5f\u4e0d\u4ea7\u751f\u9009\u62e9\u6216\u987a\u5e8f\u8fb9\u3002",
       dialogTimelineBinaryContract: "\u539f\u59cb\u4e8c\u8fdb\u5236 Timeline \u9009\u9879\u5408\u7ea6",
       dialogTimelineValidation: "\u4e8c\u8fdb\u5236\u9a8c\u8bc1",
       dialogTimelineBinaryCount: "\u4e8c\u8fdb\u5236 Timeline \u9009\u9879\u5206\u652f\u7ec4",
@@ -5019,6 +5037,10 @@
       }).join("")}${binaryEvidence}${sources ? `<small>${sources}</small>` : ""}${row.evidenceBoundary ? `<small>${esc(row.evidenceBoundary)}</small>` : ""}${relatedOriginalFiles ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${relatedOriginalFiles}</details>` : ""}</details>`;
     }).join("");
     const dialogTreeIfNodes = (branches.dialogTreeIfNodes || []).map((row) => {
+      const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
+      if (row.executionStatus === "detached_serialized_control") {
+        return `<details><summary><b>${esc(t("dialogTreeDetachedControl"))}</b> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#serialized:${esc(row.serializedNodeOrdinal ?? "?")}</i><span>${esc(row.conditionType || "")}</span></summary><small>${esc(t("dialogTreeDetachedBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
+      }
       const condition = row.condition && Object.keys(row.condition).length
         ? `<code>${esc(JSON.stringify(row.condition))}</code>`
         : `<span>${esc(t("nativePredicateOpaque"))}</span>`;
@@ -5032,8 +5054,24 @@
           : `<code>result != 1</code>`;
         return `<div><b>${esc(t("dialogTreeIfArm"))}</b> ${result}<code>connection ${esc(arm.connectionOrdinal ?? "?")} / raw ${esc(arm.connectionIndex ?? "?")}</code><span>&rarr; ${target}</span>${arm.defaultArm ? `<small>${esc(t("dialogTreeBranchSelection"))}</small>` : ""}</div>`;
       }).join("");
-      const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
       return `<details><summary><b>${esc(t("dialogTreeIfNode"))}</b> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#${esc(row.branchNodeId || "?")}</i><span>${esc(row.conditionType || "")}</span></summary><p class="mp-native-predicate"><b>${esc(t("nativePredicate"))}</b>${condition}</p>${arms}<small><strong>${esc(t("dialogConditionalNativeProof"))}:</strong> ${nativeProof}</small><small>${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small><small>${esc(t("dialogTreeIfBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
+    }).join("");
+    const dialogTreeStaticPortControls = (branches.dialogTreeStaticPortControls || []).map((row) => {
+      const nativeProof = (row.nativeMethods || []).map((method) => `<code>${esc(method.type || "?")}.${esc(method.method || "?")} ${esc(method.token || "")} @ ${esc(method.address || "?")}</code>`).join(" ");
+      const arms = (row.arms || []).map((arm) => {
+        const target = arm.targetNodeId
+          ? `<code>#${esc(arm.targetNodeId)}</code>${arm.targetNodeType ? ` <small>${esc(arm.targetNodeType)}</small>` : ""}`
+          : "";
+        const outcome = arm.outcomeLabel
+          ? `<b>${esc(arm.outcomeLabel)}</b>`
+          : `<i>${esc(t("dialogTreeStaticPortUnlabeled"))}</i>`;
+        return `<div><b>${esc(t("dialogTreeStaticPortArm"))} ${esc(arm.connectionOrdinal ?? "?")}</b>${outcome}<code>raw ${esc(arm.connectionIndex ?? "?")}</code><span>&rarr; ${target}</span></div>`;
+      }).join("");
+      const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
+      const portStatus = row.portContractStatus === "native_named_ports"
+        ? t("dialogTreeStaticPortNamed")
+        : t("dialogTreeStaticPortUnlabeled");
+      return `<details><summary><b>${esc(t("dialogTreeStaticPortControl"))}</b> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#${esc(row.nodeId || "?")}</i><span><code>${esc(row.selectorName || "?")} (${esc(row.selectorValue ?? "?")})</code></span><span>${esc(portStatus)}</span></summary><p class="mp-native-predicate"><b>${esc(t("dialogConditionalNativeProof"))}</b> <code>${esc(row.selectionRule || "")}</code></p>${arms}<small>${esc(t("dialogTreeStaticPortExternal"))}</small><small>${nativeProof}</small><small>${esc(t("dialogTreeStaticPortBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
     }).join("");
     const offlineRows = offlineRecoveryRowsForMission();
     const offlineGaps = offlineRows.map((row) => {
@@ -5500,7 +5538,7 @@
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
       ${orderCrossReferenceHtml}
-      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.dialogConditionalBranchCount ? `<span><b>${Number(summary.dialogConditionalBranchCount).toLocaleString()}</b>${esc(t("dialogConditionalCount"))}</span>` : ""}${summary.dialogTreeBranchNodeCount ? `<span><b>${Number(summary.dialogTreeBranchNodeCount).toLocaleString()}</b>${esc(t("dialogTreeBranchCount"))}</span>` : ""}${summary.dialogTreeIfNodeCount ? `<span><b>${Number(summary.dialogTreeIfNodeCount).toLocaleString()}</b>${esc(t("dialogTreeIfCount"))}</span>` : ""}${summary.dialogLineOptionBinaryValidatedGroupCount ? `<span><b>${Number(summary.dialogLineOptionBinaryValidatedGroupCount).toLocaleString()}</b>${esc(t("dialogTimelineBinaryCount"))}</span>` : ""}${summary.nativeSerializedBranchContextCount ? `<span><b>${Number(summary.nativeSerializedBranchContextCount).toLocaleString()}</b>${esc(t("nativeSerializedBranchMissionContext"))}</span>` : ""}${summary.nativeReceiverStoryContextCount ? `<span><b>${Number(summary.nativeReceiverStoryContextCount).toLocaleString()}</b>${esc(t("nativeReceiverStoryContexts"))}</span>` : ""}${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.dialogConditionalBranchCount ? `<span><b>${Number(summary.dialogConditionalBranchCount).toLocaleString()}</b>${esc(t("dialogConditionalCount"))}</span>` : ""}${summary.dialogTreeBranchNodeCount ? `<span><b>${Number(summary.dialogTreeBranchNodeCount).toLocaleString()}</b>${esc(t("dialogTreeBranchCount"))}</span>` : ""}${summary.dialogTreeIfNodeCount ? `<span><b>${Number(summary.dialogTreeIfNodeCount).toLocaleString()}</b>${esc(t("dialogTreeIfCount"))}</span>` : ""}${summary.dialogTreeStaticPortControlCount ? `<span><b>${Number(summary.dialogTreeStaticPortControlCount).toLocaleString()}</b>${esc(t("dialogTreeStaticPortCount"))}</span>` : ""}${summary.dialogLineOptionBinaryValidatedGroupCount ? `<span><b>${Number(summary.dialogLineOptionBinaryValidatedGroupCount).toLocaleString()}</b>${esc(t("dialogTimelineBinaryCount"))}</span>` : ""}${summary.nativeSerializedBranchContextCount ? `<span><b>${Number(summary.nativeSerializedBranchContextCount).toLocaleString()}</b>${esc(t("nativeSerializedBranchMissionContext"))}</span>` : ""}${summary.nativeReceiverStoryContextCount ? `<span><b>${Number(summary.nativeReceiverStoryContextCount).toLocaleString()}</b>${esc(t("nativeReceiverStoryContexts"))}</span>` : ""}${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${nativeReceiverStoryContexts ? `<section><h4>${esc(t("nativeReceiverStoryContexts"))} <span>${(order.nativeReceiverStoryContexts || []).length}</span></h4><p>${esc(t("nativeReceiverStoryContextsHint"))}</p><div class="mp-order-branches">${nativeReceiverStoryContexts}</div></section>` : ""}
       ${missionAreaLevelDataContexts ? `<section><h4>${esc(t("missionAreaLevelDataReceiverContexts"))} <span>${(order.missionAreaLevelDataReceiverContexts || []).length}</span></h4><p>${esc(t("missionAreaLevelDataReceiverContextsHint"))}</p><div class="mp-order-branches">${missionAreaLevelDataContexts}</div></section>` : ""}
       ${missionNamedLevelDataContexts ? `<section><h4>${esc(t("missionNamedLevelDataReceiverContexts"))} <span>${(order.missionNamedLevelDataReceiverContexts || []).length}</span></h4><p>${esc(t("missionNamedLevelDataReceiverContextsHint"))}</p><div class="mp-order-branches">${missionNamedLevelDataContexts}</div></section>` : ""}
@@ -5513,7 +5551,7 @@
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
-      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || dialogLocalConditionalBranches || dialogTreeBranchNodes || dialogTreeIfNodes || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${dialogLocalConditionalBranches}${dialogTreeBranchNodes}${dialogTreeIfNodes}${typedSelectors}</div></section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || dialogLocalConditionalBranches || dialogTreeBranchNodes || dialogTreeIfNodes || dialogTreeStaticPortControls || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${dialogLocalConditionalBranches}${dialogTreeBranchNodes}${dialogTreeIfNodes}${dialogTreeStaticPortControls}${typedSelectors}</div></section>` : ""}
       ${serializedBranchInventoryHtml}
       ${typedControlFamilyHtml}
       ${relatedActionTopologies ? `<section><h4>${esc(t("nativeRelatedActionGraphs"))}</h4><p>${esc(t("nativeRelatedActionGraphsHint"))}</p><div class="mp-order-branches">${relatedActionTopologies}</div></section>` : ""}

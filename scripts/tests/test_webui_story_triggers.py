@@ -361,6 +361,18 @@ for (const [key, category] of [
         self.assertIn("row.trackingTypes", source)
         self.assertIn("They do not prove that the server selected the arm", source)
 
+    def test_mission_pipeline_surfaces_static_port_and_detached_controls(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("branches.dialogTreeStaticPortControls", source)
+        self.assertIn("row.portContractStatus", source)
+        self.assertIn("arm.outcomeLabel", source)
+        self.assertIn("row.nativeMethods", source)
+        self.assertIn('t("dialogTreeStaticPortExternal")', source)
+        self.assertIn("external-result control", source)
+        self.assertIn('row.executionStatus === "detached_serialized_control"', source)
+        self.assertIn('t("dialogTreeDetachedBoundary")', source)
+        self.assertIn("which UI result occurred", source)
+
     def test_mission_pipeline_surfaces_shared_proxy_candidate_topology(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("route.candidateQuestTopology", source)
