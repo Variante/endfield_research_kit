@@ -297,6 +297,47 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AUDIT.PEImage(AUDIT.UNITY_PLAYER), census
             )
 
+    def test_streaming_scene_v2_payload_census(self) -> None:
+        result = AUDIT.validate_streaming_scene_v2_payload_census(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER),
+            AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+        )
+        self.assertEqual(result["serializedMapConfigs"]["configCount"], 83)
+        self.assertEqual(result["streamingPayloads"]["fileCount"], 51012)
+        self.assertEqual(
+            result["streamingPayloads"]["hgtreeBit41ComponentCount"], 0
+        )
+        self.assertEqual(
+            result["dynamicStreaming"]["initAndStreaming"][
+                "componentEntryCount"
+            ],
+            0,
+        )
+        self.assertEqual(
+            result["dynamicStreaming"]["fbMain"]["treeRootCompCount"],
+            2828,
+        )
+
+    def test_streaming_scene_v2_hgtree_count_drift_fails_closed(self) -> None:
+        census = json.loads(
+            AUDIT.STREAMING_SCENE_V2_PAYLOAD_CENSUS.read_text(
+                encoding="utf-8"
+            )
+        )
+        census["streamingPayloads"]["hgtreeBit41ComponentCount"] = 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=streaming_scene_v2_census_payload_hgtree_bit41_count; "
+            r"source=.*streaming_scene_v2_payload_census.json; "
+            r"expected=0; actual=1",
+        ):
+            AUDIT.validate_streaming_scene_v2_payload_census(
+                AUDIT.PEImage(AUDIT.UNITY_PLAYER),
+                AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+                census,
+            )
+
     def test_changed_streaming_hgtree_enum_value_fails_closed(self) -> None:
         metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
         values_offset = 36_439_024

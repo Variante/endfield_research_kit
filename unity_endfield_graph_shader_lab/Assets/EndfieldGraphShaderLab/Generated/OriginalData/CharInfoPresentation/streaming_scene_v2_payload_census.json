@@ -1,0 +1,218 @@
+{
+  "schema": "endfield.streaming-scene-v2-payload-census.v1",
+  "installedInputs": {
+    "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+  },
+  "managedBridge": {
+    "streamingSceneV2TypeDefinitionIndex": 61041,
+    "streamingSceneV2TypeToken": "0x020000A4",
+    "createMethodIndex": 478285,
+    "createMethodToken": "0x060001E9",
+    "createInjectedMethodIndex": 478303,
+    "createInjectedMethodToken": "0x060001FB",
+    "baseGameSceneCreateStreamingSceneMethodIndex": 49416,
+    "baseGameSceneCreateStreamingSceneMethodToken": "0x0600C109",
+    "streamingSceneParameter": {
+      "sizeBytes": 40,
+      "fields": {
+        "mapName": 0,
+        "regionHandle": 8,
+        "streamingRootObject": 16,
+        "streamingDataPathRoot": 24,
+        "isDev": 32
+      }
+    },
+    "baseGameSceneFieldOffsets": {
+      "streamingSceneV2": 72,
+      "layerEnabledInDefaultArea": 88,
+      "streamingRootObject": 112,
+      "streamingMapConfig": 192
+    },
+    "streamingMapConfigFieldOffsets": {
+      "mapName": 24,
+      "exportScenePathRoot": 32,
+      "streamingDataPathRoot": 40,
+      "isDev": 48,
+      "mapSceneName": 56,
+      "lowMemory": 64
+    }
+  },
+  "nativeLoader": {
+    "createInjectedIcallIndex": 621,
+    "createInjectedIcallName": "UnityEngine.HyperGryph.Streaming.StreamingSceneV2::Create_Injected",
+    "createInjectedIcallFunction": "0x1801DE220",
+    "pathFormats": [
+      "{0}/[dev]{1}.bytes",
+      "{0}/{1}.bytes",
+      "{0}/{1}{2}ChunkData_Global_{3}_{4}.bytes",
+      "{0}/{1}{2}ChunkData_{3}_{4}_{5}_{6}.bytes"
+    ],
+    "compression": "uint32 little-endian decompressed size followed by Unity interleaved-token LZ4 with big-endian match offsets",
+    "binaryBodies": [
+      {
+        "image": "UnityPlayer.dll",
+        "name": "StreamingSceneV2.Create_Injected icall wrapper",
+        "virtualAddress": "0x1801DE220",
+        "sizeBytes": 246,
+        "sha256": "cbb1c6b2db31de3a31ea15715f48321031c667a5ce8d3b78fd96780102f3d355"
+      },
+      {
+        "image": "UnityPlayer.dll",
+        "name": "StreamingSceneV2 bytes loader",
+        "virtualAddress": "0x18117B200",
+        "sizeBytes": 4192,
+        "sha256": "5b89a0f553ba1047979d0294123c351c3fdd0997fcdc70606ad3623eb71cbd8f"
+      },
+      {
+        "image": "UnityPlayer.dll",
+        "name": "StreamingSceneV2 chunk path builder",
+        "virtualAddress": "0x181177230",
+        "sizeBytes": 263,
+        "sha256": "b191cd86ed35be83b1636c734593a75958fc0484b932af27931d8828bae8a4dd"
+      },
+      {
+        "image": "UnityPlayer.dll",
+        "name": "StreamingSceneV2 request callback",
+        "virtualAddress": "0x18111ADF0",
+        "sizeBytes": 265,
+        "sha256": "05293c4ea0d19c88ec586a623da4370b3e1ef661f62d9132cb075a81b0f32d2a"
+      },
+      {
+        "image": "UnityPlayer.dll",
+        "name": "interleaved-token LZ4 decoder",
+        "virtualAddress": "0x18160EAE0",
+        "sizeBytes": 898,
+        "sha256": "f36ef38fc92e3c21dcaed9e0ad249b5783e1ce2ca4db6fc4ba80a31842884327"
+      },
+      {
+        "image": "GameAssembly.dll",
+        "name": "StreamingSceneV2.Create",
+        "virtualAddress": "0x1853965E0",
+        "sizeBytes": 20,
+        "sha256": "fdd328cd688c14626484e4cdf4eee8ef5aa30df259dfe0f0c6cd1fa4425411e8"
+      },
+      {
+        "image": "GameAssembly.dll",
+        "name": "StreamingSceneV2.Create_Injected",
+        "virtualAddress": "0x183F01530",
+        "sizeBytes": 80,
+        "sha256": "0ff632a05af8380aca49643eb1dee5e6d704ca5b5844f0701c3b946b23f6b0f8"
+      },
+      {
+        "image": "GameAssembly.dll",
+        "name": "BaseGameScene.CreateStreamingScene",
+        "virtualAddress": "0x183F01190",
+        "sizeBytes": 928,
+        "sha256": "1391e46affd12e415010bba0224ee91fc72676d15e5a5bed1ed9d3f5a29cc2fb"
+      }
+    ]
+  },
+  "serializedMapConfigs": {
+    "objectIndexObjectsGzipSha256": "6f59db82177cd1abd027bfed385145337403a5b0791bcb628287b53e1ad341cd",
+    "objectIndexSchemasGzipSha256": "52b320d7e9933c64d6ab95a3572802f2f1bec96038b6bacfcae3b61780de407d",
+    "configCount": 83,
+    "uniqueIdentityCount": 83,
+    "normalizedConfigSha256": "0ddc044ba3cf18e417f0c265ff1db74a84267cfbf753a39d72ca9fd64eb1a19e",
+    "chunkInfoRootCount": 83,
+    "missingChunkInfoRoots": 0,
+    "extraChunkInfoRoots": 0
+  },
+  "installedVfs": {
+    "fileCount": 53206,
+    "chunkCount": 89,
+    "totalBytes": 752851287,
+    "normalizedFileRecordsSha256": "9ce5d487f7eee9b46a2af6b5995e1fa0d499db30a9bb8146501d1bf68d10dc0e",
+    "normalizedChunksSha256": "76a03a03b5bc32a083a373bd0d2959731ddf81b7dd0268608d7240f5883a9653",
+    "normalizedBlocksSha256": "7e9cdd8b5b9e4c0bf96977f278dec7dbc89a7353b304cde2b891fac3b17edcd8",
+    "blocks": {
+      "Streaming": {
+        "fileCount": 51095,
+        "chunkCount": 65,
+        "totalBytes": 700205610
+      },
+      "DynamicStreaming": {
+        "fileCount": 2111,
+        "chunkCount": 24,
+        "totalBytes": 52645677
+      }
+    },
+    "families": {
+      "StreamingChunkInfo": {
+        "fileCount": 83,
+        "totalBytes": 763972,
+        "normalizedSha256": "81c8b231ba8178abbc5961a4494418686e9c900f2d61c6aaa2e0bf434023bdef"
+      },
+      "InitChunkData": {
+        "fileCount": 25506,
+        "totalBytes": 609103033
+      },
+      "StreamingChunkData": {
+        "fileCount": 25506,
+        "totalBytes": 90338605
+      }
+    }
+  },
+  "streamingPayloads": {
+    "fileCount": 51012,
+    "compressedBytes": 699441638,
+    "decompressedBytes": 3088714060,
+    "unionRecordCount": 3084834,
+    "recordTagCounts": {
+      "1": 66514,
+      "2": 2933422,
+      "3": 84898
+    },
+    "normalizedSourceSha256": "6911a86a785c84334b98b7226e915a320f83989f203da641dd207d1f5637ae5b",
+    "componentBits": [
+      { "bit": 0, "name": "Transform", "componentCount": 66514, "fileCount": 38452 },
+      { "bit": 1, "name": "MeshFilter", "componentCount": 28, "fileCount": 26 },
+      { "bit": 2, "name": "MeshRenderer", "componentCount": 28, "fileCount": 26 },
+      { "bit": 4, "name": "BoxCollider", "componentCount": 136, "fileCount": 134 },
+      { "bit": 14, "name": "HGEnvironmentVolume", "componentCount": 40660, "fileCount": 36890 },
+      { "bit": 15, "name": "Volume", "componentCount": 330, "fileCount": 300 },
+      { "bit": 16, "name": "ReflectionProbe", "componentCount": 9924, "fileCount": 3468 },
+      { "bit": 17, "name": "Light", "componentCount": 15240, "fileCount": 1720 },
+      { "bit": 19, "name": "HGTerrain", "componentCount": 70, "fileCount": 70 },
+      { "bit": 25, "name": "HGAdditionalLightData", "componentCount": 15240, "fileCount": 1720 },
+      { "bit": 29, "name": "LensFlareComponentSRP", "componentCount": 166, "fileCount": 166 },
+      { "bit": 32, "name": "HGWaterGlobalConfig", "componentCount": 138, "fileCount": 110 },
+      { "bit": 33, "name": "HGWindMotor", "componentCount": 102, "fileCount": 56 },
+      { "bit": 40, "name": "HGVolumetricCloud", "componentCount": 22, "fileCount": 6 }
+    ],
+    "hlodGroupBit11ComponentCount": 0,
+    "hgtreeBit41ComponentCount": 0
+  },
+  "dynamicStreaming": {
+    "initAndStreaming": {
+      "fileCount": 1576,
+      "compressedBytes": 42598293,
+      "decompressedBytes": 239185352,
+      "unionRecordCount": 289786,
+      "recordTagCounts": {
+        "2": 289786
+      },
+      "componentEntryCount": 0,
+      "normalizedSourceSha256": "7db9adf49d748ecf68cfe87f063c90d9d184b5f41c6968783b5f4ee8e292f33b"
+    },
+    "fbMain": {
+      "fileCount": 457,
+      "sourceBytes": 10035624,
+      "gridCount": 4710,
+      "normalizedSourceSha256": "e78970ca470d8ad42ee2c1c254ec76b0d25f812dcca2be3bd7a8f90e7fce23f7",
+      "treeRootCompCount": 2828,
+      "treeRootCompFileCount": 84,
+      "natureResourceCompCount": 2828,
+      "lodGridResourceCount": 2771,
+      "dynamicSystemTreeValue": 11,
+      "dynamicSceneDataTreeRootCompValue": 64,
+      "treeRootCompFields": {
+        "tid": "Int32",
+        "normalModel": "Int64"
+      }
+    },
+    "boundary": "FBDynamicSceneTreeRootComp is a managed gameplay/destructible-tree normal-model route. EDynamicSystem.Tree=11 and EDynamicSceneData.TreeRootComp=64 are separate from StreamingComponentType.HGTree bit 41 and native ECS component id 67."
+  },
+  "boundary": "The exact StreamingSceneV2 managed/native loader route, all 83 serialized map roots, and the installed main and DynamicStreaming component-vector surfaces are closed. No scanned component entry uses HGTree bit 41. Dynamic fb_main contains a distinct gameplay tree route. The native ECS component-67 LOD-count/range producer remains open in nested, procedural, or runtime data outside these excluded surfaces."
+}

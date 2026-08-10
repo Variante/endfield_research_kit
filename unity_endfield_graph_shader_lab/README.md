@@ -1600,8 +1600,22 @@ StreamingAssets map/export scan uses all 117 `HGMeshRendererData` identities
 as its positive gate but finds zero top-level objects of either HGTree type.
 The compact census is
 `Generated/OriginalData/CharInfoPresentation/hgtree_native_serialized_type_census.json`;
-nested data, proprietary streaming `.bytes`, and runtime construction remain
-explicit search surfaces.
+the static top-level object surface is excluded. The proprietary `.bytes`
+surface is now bounded by the exact managed `StreamingSceneV2.Create` bridge,
+dedicated HG icall 621, native loader `0x18117B200`, path builder, request
+callback, and custom interleaved-token LZ4 decoder. The 83 serialized
+`StreamingMapConfig` roots match 83 `StreamingChunkInfo` files with no gap. A
+complete scan of 51,012 main Streaming payloads decodes 3,088,714,060 bytes and
+3,084,834 union records; none contains HGTree bit 41 or HLODGroup bit 11. All
+1,576 DynamicStreaming init/stream payloads contain only tag-2 records and no
+component entry. Dynamic `fb_main` is a separate managed gameplay schema: its
+457 files contain 2,828 `FBDynamicSceneTreeRootComp` rows, while
+`EDynamicSystem.Tree=11` and `EDynamicSceneData.TreeRootComp=64` keep that
+destructible-tree normal-model path distinct from both serialized HGTree bit 41
+and ECS component 67. The compact evidence is
+`Generated/OriginalData/CharInfoPresentation/streaming_scene_v2_payload_census.json`;
+nested/procedural data and runtime construction remain explicit search
+surfaces.
 Native entity-type
 registration core `0x1801FAEC0` consumes 8-byte rows `(int16 id, uint16 size,
 uint32 cumulativeOffset)`, places component storage after byte 8, and exposes
