@@ -1624,7 +1624,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             media = media_payload["media"][0]
 
             self.assertEqual(payload["shards"], {"events": "events.json", "media": "media.json"})
-            self.assertTrue(payload["debugOnly"])
+            self.assertFalse(payload["debugOnly"])
             self.assertEqual(payload["runtimeModel"]["status"], "degraded")
             self.assertEqual(event["runtimeSelection"], "runtimeBranchUnresolved")
             self.assertEqual(event["selectionContainerTypes"], ["switchContainer"])

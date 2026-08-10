@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build compact debug-only WebUI data for Endfield audio semantics.
+"""Build compact WebUI data for Endfield audio semantics.
 
 The normal audio index under ``export_full/structured/Audio/<LANG>`` is the
 lossless recovery surface and can be tens of megabytes.  This builder keeps
 that file authoritative, then publishes a compact overview plus lazy event and
-media shards for the debug Audio page.  Installed IL2CPP metadata is optional:
+media shards for the Audio page.  Installed IL2CPP metadata is optional:
 when present, selected runtime-system types and members are validated against
 the current binary metadata instead of being asserted from a stale snapshot.
 """
@@ -5023,7 +5023,7 @@ def build_audio_semantic_data(
         "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
         "generated": audio_index.get("generated") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "language": language,
-        "debugOnly": True,
+        "debugOnly": False,
         "sourceIndex": f"export_full/structured/Audio/{language}/index.json",
         "sourceIndexFingerprint": {
             "generated": audio_index.get("generated"),
