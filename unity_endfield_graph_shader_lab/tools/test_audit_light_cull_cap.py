@@ -735,7 +735,42 @@ class LightCullCapAuditTests(unittest.TestCase):
         downstream = enabled_modes["downstreamSearchBoundary"]
         self.assertEqual(downstream["requestMaskJobOffset"], "0x44")
         self.assertEqual(downstream["testedRendererEntryOffset"], "0x1C")
-        self.assertFalse(downstream["recordToEntryProjectionClosed"])
+        self.assertTrue(downstream["projectionHypothesisRetracted"])
+        self.assertTrue(downstream["distinctMaskRoleClosed"])
+        entry_mask = downstream["rendererEntryMask"]
+        self.assertEqual(entry_mask["meaning"], "shader-supported light modes")
+        self.assertEqual(entry_mask["entryStrideBytes"], 96)
+        self.assertEqual(
+            entry_mask["builderVirtualAddresses"],
+            ["0x18109BE90", "0x18109C9D0"],
+        )
+        self.assertEqual(len(entry_mask["passNames"]), 31)
+        self.assertEqual(entry_mask["passNames"][0], "GBuffer")
+        self.assertEqual(entry_mask["passNames"][-1], "GPUParticleSimulate")
+        pointer_boundary = downstream["runtimeRecordPointerBoundary"]
+        self.assertEqual(
+            pointer_boundary["consumerFunctions"],
+            ["0x181129E0D", "0x18113781A"],
+        )
+        self.assertEqual(
+            pointer_boundary["recordBaseEscapeCallSites"],
+            ["0x18112A25A", "0x181137B81", "0x181137C84"],
+        )
+        self.assertEqual(
+            pointer_boundary["escapeTargetRecordReads"], ["0x00"]
+        )
+        self.assertFalse(pointer_boundary["enabledLightModesReadObserved"])
+        callback_false_positive = pointer_boundary["callbackAFalsePositive"]
+        self.assertTrue(
+            callback_false_positive["rejectedAsRuntimeRecord"]
+        )
+        self.assertEqual(
+            [
+                row["archetypeBit"]
+                for row in callback_false_positive["componentColumnAccessors"]
+            ],
+            [127, 126],
+        )
         self.assertEqual(enabled_modes["maskType"], "System.UInt32")
         self.assertEqual(enabled_modes["shaderLightModeLiteralCount"], 32)
         self.assertEqual(
@@ -928,6 +963,44 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_create_renderer_list_binding_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_renderer_entry_pass_mask_builder_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18109BE90 and size == 0xB33:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_renderer_entry_pass_mask_builder_a_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_runtime_record_classifier_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181131FC0 and size == 0xDD:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_runtime_record_batch_flag_classifier_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

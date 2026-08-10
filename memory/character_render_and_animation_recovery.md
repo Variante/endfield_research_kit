@@ -125,9 +125,18 @@ NPC archetypes are imported as labeled source kits.
   record `+0x14`, while generic path `0x180BCCB60 -> 0x180BCB760` carries the
   same value through constructor input `+0x20`. The two inspected renderer-list
   callbacks store the requested mask at job `+0x44` and test it against a
-  separate `0x60`-stride renderer-entry word at `+0x1C`; no source-closed
-  projection from record `+0x14` to that word is known, so the exact later
-  native render-stage consumer remains open. This
+  separate `0x60`-stride renderer-entry word at `+0x1C`. That word is now
+  independently closed: builders `0x18109BE90/0x18109C9D0` clear it, query the
+  renderer material/shader against the exact 31-name `HGShaderLightMode` pass
+  table, and set each supported bit. It is therefore a shader-supported-pass
+  mask, not a projection of runtime record `+0x14`. The downstream search is
+  now bounded further: exact renderer-blob consumers `0x181129E0D/0x18113781A`
+  pass `blob+0x04` across three call sites only to classifier `0x181131FC0`,
+  which advances by `0x18` but reads only record `+0x00` before testing
+  renderer-entry `+0x18/+0x26`. The apparent callback-A read at `+0x14` with
+  the same stride is not this blob: `0x181038D70/0x181038DE0` derive its base
+  from ECS archetype component columns 127/126, and the value is consumed as a
+  float. The exact later native consumer of record `+0x14` remains open. This
   loader blob is not the other 24-byte structure used by LOD jobs. The latter
   is archetype component bit 67: `+0x00` is LOD count, `+0x01/+0x02` are the
   desired and availability-resolved indices, `+0x03` carries transition/output
@@ -247,8 +256,9 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The exact asset
-  class of loader record `+0x0C`, the downstream projection/consumer from
-  `enabledLightModes` at record `+0x14` to renderer-entry `+0x1C`, the component-67
+  class of loader record `+0x0C`, the downstream native consumer of
+  `enabledLightModes` at record `+0x14` beyond the now-excluded record-base
+  classifier and callback-A ECS-column lookalike, the component-67
   standalone native type name, any separate post-dispatch copy or consumer of
   view `+0x18`,
   any separate
@@ -486,8 +496,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
    `screenSizeMinimumSquared`; the current scheduled batch core directly
    excludes it. Keep that value distinct from both squared `parentLODBias` and
    the HGTreeRenderer LOD bounds. Resolve the remaining loader-registration
-   record `+0x0C` asset class, the downstream projection/consumer from
-   `enabledLightModes` at record `+0x14` to renderer-entry `+0x1C`, and the
+   record `+0x0C` asset class, the downstream native consumer of
+   `enabledLightModes` at record `+0x14` beyond the now-excluded record-base
+   classifier and callback-A ECS-column lookalike, and the
    exact native type-name link for component 67; its serialized LOD-count/range producer is
    now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,

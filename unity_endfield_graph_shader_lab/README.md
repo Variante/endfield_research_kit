@@ -1586,8 +1586,17 @@ constructor defaults field `+0x250` to `0xFFFFFFFF`; builders
 generic path `0x180BCCB60 -> 0x180BCB760` carries it through constructor input
 `+0x20`. The two inspected renderer-list callbacks store the requested mask at
 job `+0x44` and test it against a separate `0x60`-stride renderer-entry word at
-`+0x1C`. No source-closed projection from record `+0x14` to that word is known,
-so the exact later native render-stage consumer remains open. This loader blob
+`+0x1C`. Builders `0x18109BE90/0x18109C9D0` now close that word independently:
+they clear it, query the renderer material/shader against the exact 31-name
+`HGShaderLightMode` pass table, and set every supported bit. It is therefore a
+shader-supported-pass mask, not a projection of runtime record `+0x14`.
+Exact renderer-blob consumers `0x181129E0D/0x18113781A` pass `blob+0x04` across
+three call sites only to classifier `0x181131FC0`; it advances by `0x18`, reads
+only record `+0x00`, and tests renderer-entry `+0x18/+0x26`. Callback A's
+apparent `+0x14` read at the same stride is also excluded: accessors
+`0x181038D70/0x181038DE0` derive its base from ECS archetype component columns
+127/126, and the value is consumed as a float. The exact later native consumer
+of record `+0x14` remains open. This loader blob
 is separate
 from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
 at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
@@ -1697,8 +1706,9 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The exact asset class of loader record
-`+0x0C`, the downstream `enabledLightModes` projection from record `+0x14` to
-renderer-entry `+0x1C`, and the
+`+0x0C`, the downstream native consumer of `enabledLightModes` record `+0x14`
+beyond the now-excluded record-base classifier and callback-A ECS-column lookalike,
+and the
 component-67 standalone native type
 name, any separate post-dispatch
 copy or consumer of view `+0x18`, any separate
