@@ -814,6 +814,12 @@ class AudioCategoryTests(unittest.TestCase):
             "reciprocalChildIds": [ranseq_id],
             "treeLeafIdsOutsideReciprocalChildren": [],
             "reciprocalChildrenWithoutTreeLeaf": [],
+            "recursiveOwnedDescendantIds": [],
+            "zeroUnboundLeafIds": [],
+            "sameBankMissingLeafIds": [],
+            "localOtherParentLeafIds": [],
+            "ownedDirectChildIdsNotInTreeLeaves": [],
+            "runtimeBranchStatus": "groupValuesAndActiveLeafNotObserved",
         })
         mismatched_switch = build_audio.hirc_v150_music_switch_structure(
             switch_data,
@@ -900,6 +906,88 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertEqual(result["mediaIds"], [])
         self.assertEqual(result["containerEvidence"][0]["childCount"], 0)
         self.assertEqual(result["containerEvidence"][0]["parserConfidence"], "typedTailExactEmpty")
+
+    def test_music_switch_leaf_ownership_distinguishes_recursive_unbound_and_missing(self) -> None:
+        def music_node(parent_id: int) -> dict[str, object]:
+            return {
+                "type": 10,
+                "data": bytes([0]) + bytes(4) + pack("<II", 0, parent_id),
+            }
+
+        switch_id = 10
+        direct_child = 20
+        recursive_leaf = 21
+        other_parent_leaf = 22
+        missing_leaf = 99
+        objects = {
+            direct_child: music_node(switch_id),
+            recursive_leaf: music_node(direct_child),
+            other_parent_leaf: music_node(777),
+        }
+        structure = {
+            "treeLeaves": [
+                {"audioNodeId": direct_child},
+                {"audioNodeId": recursive_leaf},
+                {"audioNodeId": 0},
+                {"audioNodeId": missing_leaf},
+                {"audioNodeId": other_parent_leaf},
+            ],
+            "transitionRules": [{
+                "sourceIds": [recursive_leaf],
+                "destinationIds": [0, missing_leaf],
+            }],
+            "selectorValidation": {
+                "status": "treeLeafOutsideReciprocalChildren",
+                "treeLeafIds": [0, direct_child, recursive_leaf, other_parent_leaf, missing_leaf],
+                "reciprocalChildIds": [direct_child],
+                "treeLeafIdsOutsideReciprocalChildren": [
+                    0, recursive_leaf, other_parent_leaf, missing_leaf,
+                ],
+                "reciprocalChildrenWithoutTreeLeaf": [],
+            },
+        }
+
+        refined = build_audio.refine_hirc_v150_music_switch_selector_ownership(
+            structure, switch_id, objects
+        )
+        validation = refined["selectorValidation"]
+        self.assertEqual(validation["status"], "decisionTreeLeafOwnershipUnresolved")
+        self.assertEqual(validation["recursiveOwnedDescendantIds"], [recursive_leaf])
+        self.assertEqual(validation["zeroUnboundLeafIds"], [0])
+        self.assertEqual(validation["sameBankMissingLeafIds"], [missing_leaf])
+        self.assertEqual(validation["localOtherParentLeafIds"], [other_parent_leaf])
+        by_id = {row["audioNodeId"]: row for row in refined["treeLeaves"]}
+        self.assertEqual(by_id[recursive_leaf]["ownershipParentChain"], [direct_child, switch_id])
+        self.assertEqual(
+            by_id[recursive_leaf]["transitionReferenceRoles"],
+            ["transitionSource"],
+        )
+        self.assertEqual(
+            by_id[0]["transitionReferenceRoles"],
+            ["transitionDestination"],
+        )
+
+        resolved = build_audio.refine_hirc_v150_music_switch_selector_ownership(
+            {
+                "treeLeaves": [
+                    {"audioNodeId": direct_child},
+                    {"audioNodeId": recursive_leaf},
+                    {"audioNodeId": 0},
+                ],
+                "transitionRules": [],
+                "selectorValidation": {
+                    "status": "treeLeafOutsideReciprocalChildren",
+                    "reciprocalChildIds": [direct_child],
+                    "reciprocalChildrenWithoutTreeLeaf": [],
+                },
+            },
+            switch_id,
+            objects,
+        )
+        self.assertEqual(
+            resolved["selectorValidation"]["status"],
+            "decisionTreeIndirectAndUnboundLeavesResolved",
+        )
 
     def test_typed_hirc_traversal_fails_closed_on_truncated_music_track(self) -> None:
         objects = {

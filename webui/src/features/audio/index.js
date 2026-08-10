@@ -81,6 +81,13 @@
       contextEvidence: "Context evidence",
       contextGameplay: "Gameplay",
       contextCutscene: "Cutscene / story",
+      contextTimeline: "Timeline / LevelSequence",
+      levelSequenceAudioCatalog: "LevelSequence audio ownership",
+      levelSequenceTimelineContexts: "Timeline contexts",
+      levelSequenceExactContexts: "Exact Timeline + LevelScript joins",
+      levelSequenceInferredContexts: "Inferred trigger contexts",
+      levelSequenceGapContexts: "Ownership gaps",
+      levelSequenceRuntimeBoundary: "Timeline runtime boundary",
       contextAnimation: "Animation",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
@@ -229,6 +236,13 @@
       contextEvidence: "\u4e0a\u4e0b\u6587\u8bc1\u636e",
       contextGameplay: "\u73a9\u6cd5",
       contextCutscene: "\u8fc7\u573a / \u5267\u60c5",
+      contextTimeline: "Timeline / LevelSequence",
+      levelSequenceAudioCatalog: "LevelSequence \u97f3\u9891\u5f52\u5c5e",
+      levelSequenceTimelineContexts: "Timeline \u4e0a\u4e0b\u6587",
+      levelSequenceExactContexts: "\u7cbe\u786e Timeline + LevelScript \u8fde接",
+      levelSequenceInferredContexts: "\u63a8断触发\u4e0a\u4e0b\u6587",
+      levelSequenceGapContexts: "\u5f52属缺口",
+      levelSequenceRuntimeBoundary: "Timeline \u8fd0行时证据边界",
       contextAnimation: "\u52a8\u753b",
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
@@ -403,6 +417,7 @@
   const CONTEXT_LABEL_KEYS = {
     gameplay: "contextGameplay",
     cutscene: "contextCutscene",
+    timeline: "contextTimeline",
     animation: "contextAnimation",
     sharedPlayableAnimation: "contextSharedPlayableAnimation",
     footstepSystem: "contextFootstepSystem",
@@ -465,6 +480,7 @@
   function contextGroup(kind) {
     if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
+    if (kind === "levelSequenceAudio") return "timeline";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
     if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent"].includes(kind)) return "authoredConfig";
@@ -476,6 +492,7 @@
     const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
+      if (contextKind === "levelSequenceAudio") tags.add("timeline");
       if (contextKind === "spawnerPreWarnAudio") tags.add("spawnerPreWarnTrigger");
       if (contextKind === "patrolSubActionPlayAudio") tags.add("npcPatrolTrigger");
       if (contextKind === "charInteractAudioEvent") tags.add("characterInteraction");
@@ -521,7 +538,7 @@
     if (kind === "media") {
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
-        "gameplay", "cutscene", "animation", "scripted", "authoredConfig", "managedRuntime",
+        "gameplay", "cutscene", "timeline", "animation", "scripted", "authoredConfig", "managedRuntime",
         "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
@@ -1418,6 +1435,8 @@
     if (modelViewStateCatalog && typeof modelViewStateCatalog === "object") panel.appendChild(modelViewStateAudioCatalogSection(modelViewStateCatalog));
     const levelScriptRadioCatalog = state.index?.triggerCatalog?.levelScriptRadio;
     if (levelScriptRadioCatalog && typeof levelScriptRadioCatalog === "object") panel.appendChild(levelScriptRadioCatalogSection(levelScriptRadioCatalog));
+    const levelSequenceAudioCatalog = state.index?.triggerCatalog?.levelSequenceAudio;
+    if (levelSequenceAudioCatalog && typeof levelSequenceAudioCatalog === "object") panel.appendChild(levelSequenceAudioCatalogSection(levelSequenceAudioCatalog));
     const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
     if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
     const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
@@ -1598,6 +1617,37 @@
       section.appendChild(grid);
     }
     if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
+    return section;
+  }
+
+  function levelSequenceAudioCatalogSection(catalog) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("levelSequenceAudioCatalog");
+    section.appendChild(heading);
+    const facts = [
+      [t("levelSequenceTimelineContexts"), catalog.timelineContexts],
+      [t("levelSequenceExactContexts"), catalog.eventsWithExactLevelSequenceAction],
+      [t("levelSequenceInferredContexts"), catalog.eventsWithInferredTimelineTrigger],
+      [t("levelSequenceGapContexts"), catalog.eventsWithoutTimelineCarrier],
+      ["Timeline parents", catalog.timelineParents],
+      ["PlayableDirector links", catalog.exactPlayableDirectorLinks],
+      ["LevelScript ids", catalog.uniquePlayLevelSequenceIds],
+    ].filter(([, value]) => value !== undefined && value !== null);
+    if (facts.length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
+      section.appendChild(grid);
+    }
+    const boundary = [
+      catalog.evidenceBoundary,
+      catalog.playActionEvidenceBoundary,
+      catalog.timelineOwnershipEvidenceBoundary,
+    ].filter(Boolean).join(" ");
+    if (boundary) section.appendChild(noteSection(t("levelSequenceRuntimeBoundary"), boundary));
     return section;
   }
 
@@ -1864,6 +1914,36 @@
     if (context?.sourceOffset !== undefined) parts.push(`source offset 0x${Number(context.sourceOffset).toString(16)}`);
     if (context?.stateDirection) parts.push(`${context.stateDirection} state mask ${context.audioStateMask ?? "?"}`);
     if (context?.description) parts.push(context.description);
+    if (kind === "levelSequenceAudio") {
+      if (context?.levelSequenceId) parts.push(`LevelSequence ${context.levelSequenceId}`);
+      if (context?.timelineAssetName) parts.push(`Timeline ${context.timelineAssetName}`);
+      if (context?.timelineParentNameStatus) parts.push(humanize(context.timelineParentNameStatus));
+      if (context?.timelineTrackName || context?.timelineClipIndex !== undefined) {
+        parts.push(`track ${context.timelineTrackName || "?"} / clip ${context.timelineClipIndex ?? "?"}`);
+      }
+      if (context?.audioPlayableType) parts.push(`playable ${context.audioPlayableType}`);
+      if (context?.audioPlayableKeyStatus) parts.push(humanize(context.audioPlayableKeyStatus));
+      if (context?.playableDirectorCount !== undefined) {
+        parts.push(`${formatNumber(context.playableDirectorCount)} PlayableDirector${Number(context.playableDirectorCount) === 1 ? "" : "s"}`);
+      }
+      const directorNames = asArray(context?.playableDirectorNames).filter(Boolean);
+      if (directorNames.length) parts.push(`Director ${directorNames.join(" / ")}`);
+      const directorIds = asArray(context?.playableDirectorPathIds).filter((value) => value !== undefined && value !== null);
+      if (directorIds.length) parts.push(`Director PathIDs ${directorIds.join(" / ")}`);
+      if (context?.levelScriptActionCount !== undefined) {
+        parts.push(`${formatNumber(context.levelScriptActionCount)} LevelScript PlayLevelSequence record${Number(context.levelScriptActionCount) === 1 ? "" : "s"}`);
+      }
+      const levelScriptIds = asArray(context?.levelScriptIds).filter(Boolean);
+      if (levelScriptIds.length) parts.push(`LevelScript ${levelScriptIds.join(" / ")}`);
+      const levelScriptSources = asArray(context?.levelScriptSourcePaths).filter(Boolean);
+      if (levelScriptSources.length) parts.push(levelScriptSources.join(" / "));
+      const levelSequenceOffsets = asArray(context?.levelSequenceFieldOffsets).filter(Boolean);
+      if (levelSequenceOffsets.length) parts.push(`_levelSeqId offset ${levelSequenceOffsets.join(" / ")}`);
+      if (context?.ownershipEvidenceLevel) parts.push(humanize(context.ownershipEvidenceLevel));
+      if (context?.triggerEvidenceLevel) parts.push(humanize(context.triggerEvidenceLevel));
+      if (context?.timelineOwnershipStatus) parts.push(humanize(context.timelineOwnershipStatus));
+      if (context?.evidenceBoundary) parts.push(context.evidenceBoundary);
+    }
     if (context?.cueHex || context?.cueId !== undefined) parts.push(`cue ${context.cueHex || context.cueId}`);
     if (context?.globalMusicCueField) parts.push(`global cue ${context.globalMusicCueField}`);
     if (context?.handlerScope) parts.push(`${context.handlerScope} handler${context.levelId ? ` / level ${context.levelId}` : ""}`);
@@ -2192,7 +2272,8 @@
         const current = musicNodes.get(kind) || {
           count: 0, children: 0, sources: 0, selectionTypes: new Set(),
           structureStatuses: new Map(), selectorStatuses: new Map(),
-          ownedNotSelected: 0, outsideOwnedChildren: 0,
+          ownedNotSelected: 0, recursiveOwned: 0, unboundLeaves: 0,
+          unresolvedLeafObjects: 0,
         };
         current.count += 1;
         current.children += Number(node?.childCount || 0);
@@ -2203,8 +2284,11 @@
         if (selectorStatus) current.selectorStatuses.set(selectorStatus, (current.selectorStatuses.get(selectorStatus) || 0) + 1);
         current.ownedNotSelected += asArray(node?.selectorValidation?.reciprocalChildrenWithoutTreeLeaf).length;
         current.ownedNotSelected += asArray(node?.selectorValidation?.reciprocalChildrenWithoutPlaylistTerminal).length;
-        current.outsideOwnedChildren += asArray(node?.selectorValidation?.treeLeafIdsOutsideReciprocalChildren).length;
-        current.outsideOwnedChildren += asArray(node?.selectorValidation?.playlistTerminalSegmentIdsOutsideReciprocalChildren).length;
+        current.recursiveOwned += asArray(node?.selectorValidation?.recursiveOwnedDescendantIds).length;
+        current.unboundLeaves += asArray(node?.selectorValidation?.zeroUnboundLeafIds).length;
+        current.unresolvedLeafObjects += asArray(node?.selectorValidation?.sameBankMissingLeafIds).length;
+        current.unresolvedLeafObjects += asArray(node?.selectorValidation?.localOtherParentLeafIds).length;
+        current.unresolvedLeafObjects += asArray(node?.selectorValidation?.playlistTerminalSegmentIdsOutsideReciprocalChildren).length;
         for (const label of asArray(node?.selectionTypeLabels).filter(Boolean)) current.selectionTypes.add(humanize(label));
         musicNodes.set(kind, current);
       }
@@ -2327,7 +2411,9 @@
         [...value.structureStatuses].map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`).join(" / "),
         [...value.selectorStatuses].map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`).join(" / "),
         value.ownedNotSelected ? `${formatNumber(value.ownedNotSelected)} owned Children outside selector membership` : "",
-        value.outsideOwnedChildren ? `${formatNumber(value.outsideOwnedChildren)} selector leaves outside reciprocal Children (unresolved)` : "",
+        value.recursiveOwned ? `${formatNumber(value.recursiveOwned)} selector leaves are recursively owned descendants` : "",
+        value.unboundLeaves ? `${formatNumber(value.unboundLeaves)} explicit zero/unbound leaves` : "",
+        value.unresolvedLeafObjects ? `${formatNumber(value.unresolvedLeafObjects)} selector leaves have unresolved object ownership` : "",
       ].filter(Boolean).join(" / ");
       values.push(`${taxonomyLabel(kind)}: ${detail}`);
     }

@@ -158,7 +158,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 14
+EVENT_EVIDENCE_SCHEMA_VERSION = 15
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -3840,6 +3840,121 @@ def hirc_v150_music_switch_structure(
         return None
 
 
+def refine_hirc_v150_music_switch_selector_ownership(
+    structure: dict[str, Any],
+    object_id: int,
+    objects: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    """Classify decision-tree leaves without equating them to direct Children.
+
+    MusicSwitch trees may target a recursively owned descendant or an explicit
+    zero/unbound branch.  Neither case is a direct reciprocal Child, but both
+    are structurally bounded.  A nonzero object missing from this embedded bank
+    or owned by another parent remains unresolved and is never traversed here.
+    """
+
+    validation = dict(structure.get("selectorValidation") or {})
+    direct_child_ids = {
+        int(value) for value in validation.get("reciprocalChildIds") or []
+    }
+    recursive_ids: set[int] = set()
+    zero_ids: set[int] = set()
+    same_bank_missing_ids: set[int] = set()
+    local_other_parent_ids: set[int] = set()
+
+    transition_sources = {
+        int(value)
+        for rule in structure.get("transitionRules") or []
+        if isinstance(rule, dict)
+        for value in rule.get("sourceIds") or []
+    }
+    transition_destinations = {
+        int(value)
+        for rule in structure.get("transitionRules") or []
+        if isinstance(rule, dict)
+        for value in rule.get("destinationIds") or []
+    }
+
+    def parent_id(node_id: int) -> int | None:
+        node = objects.get(node_id)
+        if not isinstance(node, dict):
+            return None
+        if node.get("_typedParentIdParsed"):
+            value = node.get("_typedParentId")
+            return int(value) if value is not None else None
+        value = hirc_object_parent_id(
+            int(node.get("type") or 0), node.get("data") or b""
+        )
+        node["_typedParentIdParsed"] = True
+        node["_typedParentId"] = value
+        return value
+
+    for leaf in structure.get("treeLeaves") or []:
+        if not isinstance(leaf, dict):
+            continue
+        leaf_id = int(leaf.get("audioNodeId") or 0)
+        roles: list[str] = []
+        if leaf_id in transition_sources:
+            roles.append("transitionSource")
+        if leaf_id in transition_destinations:
+            roles.append("transitionDestination")
+        leaf["transitionReferenceRoles"] = roles
+        if leaf_id in direct_child_ids:
+            leaf["ownershipStatus"] = "directReciprocalChild"
+            leaf["ownershipParentChain"] = [object_id]
+            continue
+        if leaf_id == 0:
+            zero_ids.add(leaf_id)
+            leaf["ownershipStatus"] = "explicitUnboundLeaf"
+            leaf["ownershipParentChain"] = []
+            continue
+        if leaf_id not in objects:
+            same_bank_missing_ids.add(leaf_id)
+            leaf["ownershipStatus"] = "sameBankObjectMissing"
+            leaf["ownershipParentChain"] = []
+            continue
+
+        chain: list[int] = []
+        seen = {leaf_id}
+        cursor = leaf_id
+        recursive = False
+        for _ in range(64):
+            parent = parent_id(cursor)
+            if parent is None or parent == 0 or parent in seen:
+                break
+            chain.append(parent)
+            if parent == object_id:
+                recursive = True
+                break
+            seen.add(parent)
+            cursor = parent
+        leaf["ownershipParentChain"] = chain
+        if recursive:
+            recursive_ids.add(leaf_id)
+            leaf["ownershipStatus"] = "recursiveOwnedDescendant"
+        else:
+            local_other_parent_ids.add(leaf_id)
+            leaf["ownershipStatus"] = "sameBankOtherParent"
+
+    validation.update({
+        "recursiveOwnedDescendantIds": sorted(recursive_ids),
+        "zeroUnboundLeafIds": sorted(zero_ids),
+        "sameBankMissingLeafIds": sorted(same_bank_missing_ids),
+        "localOtherParentLeafIds": sorted(local_other_parent_ids),
+        "ownedDirectChildIdsNotInTreeLeaves": list(
+            validation.get("reciprocalChildrenWithoutTreeLeaf") or []
+        ),
+        "runtimeBranchStatus": "groupValuesAndActiveLeafNotObserved",
+    })
+    unresolved_ids = same_bank_missing_ids | local_other_parent_ids
+    if unresolved_ids:
+        validation["status"] = "decisionTreeLeafOwnershipUnresolved"
+    elif recursive_ids or zero_ids:
+        validation["status"] = "decisionTreeIndirectAndUnboundLeavesResolved"
+    structure["selectorValidation"] = validation
+    return structure
+
+
 def hirc_v150_music_random_sequence_structure(
     data: bytes,
     children_offset: int,
@@ -4841,6 +4956,10 @@ def traverse_hirc_event(
                 structure = structure or hirc_v150_music_structure(
                     object_type, data, offset, len(child_ids), child_ids
                 )
+                if structure:
+                    structure = refine_hirc_v150_music_switch_selector_ownership(
+                        structure, object_id, objects
+                    )
                 node_kind = "musicSwitchContainer"
             elif object_type == 13:
                 relation = "musicPlaylistCandidate"
@@ -4866,12 +4985,14 @@ def traverse_hirc_event(
                         "reciprocalChildrenCovered",
                         "decisionTreeSubsetOfReciprocalChildren",
                         "playlistSubsetOfReciprocalChildren",
+                        "decisionTreeIndirectAndUnboundLeavesResolved",
                     }
                     music_row["structureStatus"] = (
                         "typedExactV150SelectorSubset"
                         if selector_status in {
                             "decisionTreeSubsetOfReciprocalChildren",
                             "playlistSubsetOfReciprocalChildren",
+                            "decisionTreeIndirectAndUnboundLeavesResolved",
                         }
                         else "typedExactV150"
                         if selector_status in exact_selector_statuses
