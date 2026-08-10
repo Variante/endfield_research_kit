@@ -736,7 +736,35 @@ class LightCullCapAuditTests(unittest.TestCase):
             ["0x00", "0x02", "0x04", "0x08", "0x0C", "0x10", "0x14"],
         )
         runtime_tail = runtime_layout["runtimeRecordFieldLifecycle"]
+        resource_mapping = runtime_layout["hgmeshRendererDataResourceMapping"]
+        self.assertTrue(resource_mapping["producerClosed"])
+        self.assertEqual(
+            [row["name"] for row in resource_mapping["serializedFields"]],
+            ["m_Materials", "m_Meshes", "m_ShadowProxyMeshes"],
+        )
+        self.assertEqual(
+            [
+                row["recordWriteOffset"]
+                for row in resource_mapping["serializedFields"]
+            ],
+            ["0x04", "0x08", "0x0C"],
+        )
+        self.assertEqual(
+            resource_mapping["excludedField"],
+            {
+                "name": "m_ColliderMeshes",
+                "nativeOffset": "0xD8",
+                "rendererBlobWriteObserved": False,
+            },
+        )
+        self.assertTrue(
+            runtime_tail["materialMapWordAt0x04"]["resourceSourceClosed"]
+        )
         self.assertTrue(runtime_tail["mutableRenderFlagsAt0x08"]["roleClosed"])
+        self.assertEqual(
+            runtime_tail["mutableRenderFlagsAt0x08"]["hgmeshResourceSource"],
+            "mapped m_Meshes instance ID",
+        )
         self.assertEqual(
             runtime_tail["mutableRenderFlagsAt0x08"]["writtenValue"],
             "0x00100000",
@@ -745,7 +773,7 @@ class LightCullCapAuditTests(unittest.TestCase):
             runtime_tail["mutableRenderFlagsAt0x08"]["particleModes"],
             [2, 3, 4, 5],
         )
-        mesh_filter = runtime_tail["meshInstanceFilterWordAt0x0C"]
+        mesh_filter = runtime_tail["shadowProxyMeshFilterWordAt0x0C"]
         self.assertTrue(mesh_filter["consumerRoleClosed"])
         self.assertTrue(mesh_filter["producerClosed"])
         self.assertTrue(mesh_filter["assetClassClosed"])
@@ -755,17 +783,22 @@ class LightCullCapAuditTests(unittest.TestCase):
             "UnityEngine.HyperGryph.AssetType.Mesh",
         )
         self.assertEqual(mesh_filter["assetTypeValue"], 2)
+        self.assertEqual(mesh_filter["resourceField"], "m_ShadowProxyMeshes")
+        self.assertEqual(
+            mesh_filter["directResourceWriterVirtualAddress"],
+            "0x18108906A",
+        )
         self.assertEqual(
             [row["assetTypeImmediate"] for row in mesh_filter["acquisitionPaths"]],
             [2, 2],
         )
         self.assertEqual(
             [row["ownerHandleOffset"] for row in mesh_filter["acquisitionPaths"]],
-            ["0x14", "0x14"],
+            ["0x18", "0x18"],
         )
         self.assertEqual(
             mesh_filter["writerPaths"][0]["writeVirtualAddress"],
-            "0x181157A42",
+            "0x181157AD1",
         )
         self.assertEqual(
             mesh_filter["mappingKey"], "Unity asset instance ID"
@@ -796,9 +829,9 @@ class LightCullCapAuditTests(unittest.TestCase):
             "0x18",
         )
         self.assertTrue(runtime_tail["rendererPropertyFlagsAt0x10"]["roleClosed"])
-        self.assertTrue(
+        self.assertFalse(
             runtime_tail["rendererPropertyFlagsAt0x10"][
-                "meshInstanceSeedClosed"
+                "resourceInitializerSeedObserved"
             ]
         )
         self.assertEqual(
@@ -1357,6 +1390,28 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_renderer_runtime_property_flag_sync_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgmesh_runtime_record_initializer_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181088D80 and size == 0x35E:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_hgmesh_renderer_data_runtime_record_"
+                r"initializer_sha256; source=.*UnityPlayer.dll; "
+                r"expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
 

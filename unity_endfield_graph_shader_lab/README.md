@@ -1573,22 +1573,21 @@ record `+0x08` is mutable: particle setup variants
 `0x1810416A0/0x181041870/0x181041920/0x1810419D0` advance from blob `+0x0C`
 (record `+0x08`), replace the word with bit 20 at the exact `0x18` stride while
 selecting modes 2/3/4/5, and scheduled callback `0x181067A70` ORs it into its
-render flags. The prior record `+0x0C` “third Mesh resource index” conclusion
-was four bytes off. Both owner transitions acquire their second Mesh handle
-into owner `+0x14`; HG internal-call entry 437 names
-`HGResourceManager.LoadAsync_Injected`, and installed `AssetType` closes kind
-`2=Mesh`. Entries 440/441 show that `UpdateAssetHandle_Injected` writes the
-Unity asset instance ID to the 32-byte handle slot at `+0x18`, while
-`GetAsset_Injected` uses it to recover the Unity object. Availability writers
-`0x181157760/0x181159010` require slot `+0x10==1`, resolve that instance ID
-through a 12-byte map, and write entry `+0x08` to record `+0x0C` at
-`0x181157A42/0x181159218`; cleanup clears it at `0x18115C0F3`. Callback
-`0x181064100` consumes this mapped word directly as a masked supplemental
-filter, eliminating the apparent slot-index/filter dual use. The third Mesh
-handle instead seeds record `+0x10` at `0x181157AD1/0x1811592A0`; common
-Renderer state synchronizer `0x180432CD0` then updates that property-flag word
-while preserving mask `0xFC07FBFD`. Only the mapped filter word's standalone
-engine name and individual bit meanings remain open. Dedicated HG
+render flags. The resource-to-record mapping is now corrected by accounting
+for the 4-byte blob header. Hash-pinned `HGMeshRendererData` serialization
+binds `m_Materials/m_Meshes/m_ShadowProxyMeshes` to native
+`+0x58/+0x78/+0x98`, and independent initializer `0x181088D80` resolves them
+through singleton Material/Mesh instance-ID maps at `+0x90/+0xA0`. Its blob
+writes `+0x08/+0x0C/+0x10` are therefore runtime record `+0x04/+0x08/+0x0C`,
+exactly matching availability writers `0x181157760/0x181159010` and cleanup.
+Thus record `+0x0C` is specifically the mapped `m_ShadowProxyMeshes` word:
+owner handle `+0x18` supplies it at `0x181157AD1/0x1811592A0`, cleanup clears
+it at `0x18115C110`, and callback read `0x181064B73` consumes it as a masked
+supplemental filter. Record `+0x10` is not seeded by a Mesh map; common Renderer
+state synchronizer `0x180432CD0` maintains that separate property-flag word at
+blob `+0x14` while preserving mask `0xFC07FBFD`. Only the mapped shadow-proxy
+word's standalone engine name and individual bit meanings remain open.
+Dedicated HG
 internal-call entry 204 is
 `HGFactoryRenderManager.SetEntityEnabledLightModes_Injected`; wrapper
 `0x1801EB940` reaches `0x1810D9110`, which writes the supplied
@@ -1751,7 +1750,7 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The standalone engine name/bit meanings
-of loader record `+0x0C`'s Mesh-instance filter word, the component-67 native
+of loader record `+0x0C`'s mapped shadow-proxy Mesh word, the component-67 native
 type name, any separate `sceneCullingMask` consumer, and target-frame survivor
 rows remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
