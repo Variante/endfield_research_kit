@@ -340,6 +340,25 @@ class LightCullCapAuditTests(unittest.TestCase):
             "does not write record+0x00",
             initial_completion["closedBoundary"],
         )
+        direct_initializer = ecs_state["directAvailabilityInitializer"]
+        self.assertEqual(
+            direct_initializer["allLodsBranch"]["pendingMaskAt0x04"],
+            0,
+        )
+        self.assertEqual(
+            direct_initializer["terminalLodBranch"]["rangeEnd"],
+            "cumulativeRange[lodIndex]",
+        )
+        component_mask = ecs_state["componentIdMaskRegistration"]
+        self.assertEqual(component_mask["internalCallIndex"], 712)
+        self.assertEqual(
+            component_mask["component67Result"]["highQwordMask"],
+            "0x0000000000000008",
+        )
+        self.assertIn(
+            "does not yet prove",
+            component_mask["boundary"],
+        )
         type_identity = ecs_state["nativeScriptingTypeIdentity"]
         self.assertTrue(type_identity["proxyToNativeTypeNameClosed"])
         self.assertEqual(
@@ -522,6 +541,46 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"check=unity_hgtree_component_native_type_name; "
                 r"source=.*UnityPlayer.dll; expected='HGTreeComponent'; "
                 r"actual='ChangedHGTreeComponent'",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_ecs_component_mask_binding_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1801E0D90 and size == 0x1A3:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_ecs_entity_type_component_mask_binding_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_direct_availability_initializer_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181157760 and size == 0x7F9:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_ecs_direct_availability_initializer_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
 
