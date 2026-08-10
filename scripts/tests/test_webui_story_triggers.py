@@ -321,6 +321,12 @@ for (const [key, category] of [
         self.assertIn("item.externalSerializedOccurrenceCount", source)
         self.assertIn("runtime_only_no_serialized_levelscript_producer", source)
         self.assertIn('t("teleportFinishCorpusFiles")', source)
+        self.assertIn("item.carrierAudit", source)
+        self.assertIn('t("teleportCarrierAudit")', source)
+        self.assertIn("carrier.signatureMethodCount", source)
+        self.assertIn("carrier.containerPathCount", source)
+        self.assertIn("carrier.directCallsiteCount", source)
+        self.assertIn("initializerStates.zero", source)
 
     def test_mission_pipeline_surfaces_exact_client_active_request_selector(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")

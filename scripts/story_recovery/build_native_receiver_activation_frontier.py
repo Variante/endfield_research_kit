@@ -260,6 +260,7 @@ def _receiver_native_evidence_context(row: dict[str, Any]) -> dict[str, Any]:
             "corpusFileCount": item.get("corpusFileCount"),
             "corpusListenerCount": item.get("corpusListenerCount"),
             "corpusDistinctFilterCount": item.get("corpusDistinctFilterCount"),
+            "carrierAudit": item.get("carrierAudit") or {},
             "producerEdge": False,
             "orderEvidence": False,
             "evidenceBoundary": safe_text(item.get("evidenceBoundary")),
@@ -651,12 +652,20 @@ def teleport_finish_runtime_contract(
         and safe_text(row.get("symbol"))
         == "LevelEvent.OnTeleportFinish.Process"
     ]
+    carrier_related = [
+        item for item in teleport_param.get("relatedOriginalFiles") or []
+        if isinstance(item, dict)
+        and safe_text(item.get("sourceFile"))
+        and safe_text(item.get("sha256"))
+    ]
     related = [
         {
             **item,
             "relationship": "native_teleport_finish_correlation_authority",
         }
-        for item in activation.get("relatedOriginalFiles") or []
+        for item in (
+            carrier_related or activation.get("relatedOriginalFiles") or []
+        )
         if isinstance(item, dict)
         and safe_text(item.get("sourceFile"))
         and safe_text(item.get("sha256"))
@@ -715,11 +724,23 @@ def teleport_finish_runtime_contract(
     teleport_shape = {
         "type": teleport_param.get("type"),
         "actionIdOffset": (teleport_param.get("layout") or {}).get("actionId"),
+        "auditSchema": teleport_param.get("auditSchema"),
+        "auditValidation": (teleport_param.get("validation") or {}).get("status"),
+        "metadataSignatureMethodCount": teleport_param.get(
+            "metadataSignatureMethodCount"
+        ),
+        "containerPathCount": teleport_param.get("containerPathCount"),
+        "focusFieldAccessCount": teleport_param.get("focusFieldAccessCount"),
         "storyBindingsAdded": teleport_param.get("storyBindingsAdded"),
     }
     expected_teleport_shape = {
         "type": "Beyond.Gameplay.TeleportParam",
         "actionIdOffset": "0x28",
+        "auditSchema": "nativeValueCarrierAudit.v1",
+        "auditValidation": "validated",
+        "metadataSignatureMethodCount": 15,
+        "containerPathCount": 10,
+        "focusFieldAccessCount": 23,
         "storyBindingsAdded": 0,
     }
     if teleport_shape != expected_teleport_shape:
@@ -771,8 +792,10 @@ def teleport_finish_runtime_contract(
         "evidenceBoundary": (
             "The reviewed client binary proves that OnTeleportFinish compares "
             "its serialized actionId filter with the TeleportParam actionId "
-            "published at runtime. It does not prove which system supplied that "
-            "runtime value, that the event fired, mission ownership, or order."
+            "published at runtime. The generic carrier audit finds no nonzero direct "
+            "AOT originator for that field. It does not prove that an indirect, "
+            "reflected, XLua, or live-server path supplied the value, that the event "
+            "fired, mission ownership, or order."
         ),
     }
 
@@ -1044,6 +1067,10 @@ def teleport_finish_receiver_contexts(
 ) -> dict[tuple[str, str, int], dict[str, Any]]:
     """Index corpus results by the exact typed listener identity."""
     contexts: dict[tuple[str, str, int], dict[str, Any]] = {}
+    carrier = (census.get("runtimeContract") or {}).get(
+        "teleportParamCarrier"
+    ) or {}
+    action_field = (carrier.get("focusFieldSummary") or {}).get("actionId") or {}
     for filter_row in census.get("filters") or []:
         if not isinstance(filter_row, dict):
             continue
@@ -1075,6 +1102,35 @@ def teleport_finish_receiver_contexts(
                 "corpusFileCount": census.get("candidateFileCount"),
                 "corpusListenerCount": census.get("listenerCount"),
                 "corpusDistinctFilterCount": census.get("distinctFilterCount"),
+                "carrierAudit": {
+                    "schema": safe_text(carrier.get("auditSchema")),
+                    "reportJson": safe_text(carrier.get("auditReport")),
+                    "signatureMethodCount": carrier.get(
+                        "metadataSignatureMethodCount"
+                    ),
+                    "containerPathCount": carrier.get("containerPathCount"),
+                    "focusFieldAccessCount": carrier.get(
+                        "focusFieldAccessCount"
+                    ),
+                    "directCallsiteCount": sum(
+                        int(value or 0)
+                        for value in (carrier.get("directCallerCensus") or {}).values()
+                    ),
+                    "actionIdZeroWriteAccesses": action_field.get(
+                        "zeroWriteAccesses"
+                    ),
+                    "actionIdUnknownCopyAccesses": action_field.get(
+                        "unknownWriteAccesses"
+                    ),
+                    "actionIdInitializerStates": action_field.get(
+                        "directCallInitializerStates"
+                    ) or {},
+                    "producerFinding": safe_text(carrier.get("producerFinding")),
+                    "consumerFinding": safe_text(carrier.get("consumerFinding")),
+                    "validationStatus": safe_text(
+                        (carrier.get("validation") or {}).get("status")
+                    ),
+                },
                 "producerEdge": False,
                 "orderEvidence": False,
                 "evidenceBoundary": safe_text(

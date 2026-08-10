@@ -34,6 +34,11 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 "teleportMissionScriptCarrier": {
                     "type": "Beyond.Gameplay.TeleportParam",
                     "layout": {"actionId": "0x28"},
+                    "auditSchema": "nativeValueCarrierAudit.v1",
+                    "validation": {"status": "validated", "failures": []},
+                    "metadataSignatureMethodCount": 15,
+                    "containerPathCount": 10,
+                    "focusFieldAccessCount": 23,
                     "storyBindingsAdded": 0,
                 },
                 "nativeEvidence": [{
@@ -74,6 +79,27 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertEqual(
             "Beyond.Gameplay.Actions.LevelEvent.OnTeleportFinish",
             contract["listenerType"],
+        )
+
+    def test_compact_receiver_context_keeps_generic_carrier_audit(self) -> None:
+        carrier_audit = {
+            "schema": "nativeValueCarrierAudit.v1",
+            "signatureMethodCount": 15,
+            "containerPathCount": 10,
+            "directCallsiteCount": 13,
+            "validationStatus": "validated",
+        }
+        compact = frontier._receiver_native_evidence_context({
+            "teleportFinishCorrelations": [{
+                "schema": "teleportFinishCorrelationCensus.v1",
+                "listenerHeaderLocalId": 16,
+                "actionIdFilter": "fixture",
+                "carrierAudit": carrier_audit,
+            }],
+        })
+        self.assertEqual(
+            carrier_audit,
+            compact["teleportFinishCorrelations"][0]["carrierAudit"],
         )
 
     def test_teleport_runtime_contract_reports_hash_drift(self) -> None:
