@@ -5398,15 +5398,14 @@ body.is-resizing-filter * {
   background: rgba(var(--accent-2-rgb), 0.045);
 }
 
-.gameplay-related-sfx > summary {
+.gameplay-related-sfx-summary {
   display: flex;
   align-items: center;
   gap: 7px;
-  cursor: pointer;
   font-size: 10px;
 }
 
-.gameplay-related-sfx > summary > span:not(.gameplay-integration-confidence) {
+.gameplay-related-sfx-summary > span:not(.gameplay-integration-confidence) {
   margin-left: auto;
   color: var(--muted);
   font-size: 9px;
@@ -5440,18 +5439,36 @@ body.is-resizing-filter * {
   border-top: 1px solid rgba(var(--fg-rgb), 0.08);
 }
 
-.gameplay-sfx-action > summary {
+.gameplay-sfx-action-summary,
+.gameplay-sfx-event-summary {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
   font-size: 10px;
 }
 
-.gameplay-sfx-action > summary span {
+.gameplay-sfx-action-summary span,
+.gameplay-sfx-event-summary span {
   margin-left: auto;
   color: var(--muted);
   font-size: 9px;
+}
+
+.gameplay-sfx-event {
+  margin-top: 6px;
+  padding: 6px 7px;
+  border: 1px solid rgba(var(--fg-rgb), 0.1);
+  border-radius: 5px;
+  background: rgba(var(--fg-rgb), 0.018);
+}
+
+.gameplay-sfx-event-summary {
+  min-width: 0;
+}
+
+.gameplay-sfx-event-summary strong,
+.gameplay-sfx-event-summary span {
+  overflow-wrap: anywhere;
 }
 
 .gameplay-sfx-evidence {
@@ -5483,6 +5500,35 @@ body.is-resizing-filter * {
 
 .gameplay-sfx-possible-file {
   min-width: 0;
+}
+
+.gameplay-sfx-candidate-toggle,
+.gameplay-sfx-list-toggle {
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid rgba(var(--fg-rgb), 0.12);
+  border-radius: 4px;
+  color: var(--fg);
+  background: rgba(var(--fg-rgb), 0.025);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gameplay-sfx-candidate-toggle:hover,
+.gameplay-sfx-list-toggle:hover {
+  border-color: rgba(var(--accent-2-rgb), 0.44);
+  background: rgba(var(--accent-2-rgb), 0.08);
+}
+
+.gameplay-sfx-candidate-toggle:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.gameplay-sfx-list-toggle {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 9px;
 }
 
 .gameplay-sfx-possible-file small,

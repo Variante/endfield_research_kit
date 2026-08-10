@@ -20,7 +20,7 @@
     "reference",
     "updates",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set(["audio", "mission-pipeline"]);
+  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({
     audio: "gameplay",
     "mission-pipeline": "gameplay",

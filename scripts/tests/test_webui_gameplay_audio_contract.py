@@ -110,6 +110,13 @@ assert.equal(merged[0].possibleMediaCount, 2);
             'gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}${trailingAudio}`;',
             source,
         )
+        self.assertIn('data-gameplay-sfx-list-toggle="${escapeHtml(key)}"', source)
+        self.assertIn('data-gameplay-sfx-play', source)
+        self.assertIn('<article class="gameplay-sfx-event">', source)
+        self.assertNotIn('<details class="gameplay-sfx-action">', source)
+        self.assertNotIn('<details class="gameplay-projectile-audio-phase"><summary><strong>${escapeHtml(gameplaySoundEventName(event.id)', source)
+        self.assertNotIn('details[data-gameplay-sfx-src]', source)
+        self.assertNotIn('<details class="gameplay-related-sfx">', source)
         self.assertIn('<template data-gameplay-sfx-list="${escapeHtml(key)}"></template>', source)
         self.assertIn('details.addEventListener("toggle"', source)
         self.assertIn("renderGameplaySoundEvidence(event, audio)", source)

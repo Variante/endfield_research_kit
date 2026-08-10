@@ -68,7 +68,7 @@ ASSET_SHIM_JS = """(() => {
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const AVAILABLE_VIEWS = new Set(["story", "characters", "gameplay", "audio", "mission-pipeline", "reference", "updates"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
-  const DEBUG_ONLY_VIEWS = new Set(["audio", "mission-pipeline"]);
+  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", "mission-pipeline": "gameplay" });
   let activeView = "story";
 

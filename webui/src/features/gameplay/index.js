@@ -1448,7 +1448,7 @@
       const debugMeta = STATE.showDebug
         ? `<code>${escapeHtml([candidate.mediaId ? `media ${candidate.mediaId}` : "", evidence.soundObjects ? `${evidence.soundObjects} Sound objects` : ""].filter(Boolean).join(" · "))}</code>`
         : "";
-      return `<details class="gameplay-projectile-audio-candidate gameplay-sfx-possible-file" data-gameplay-sfx-src="${escapeHtml(candidate.src)}"><summary><small>${escapeHtml(visibleMeta)}</small>${debugMeta}</summary><div class="gameplay-sfx-possible-file-player" data-gameplay-sfx-player></div></details>`;
+      return `<div class="gameplay-projectile-audio-candidate gameplay-sfx-possible-file" data-gameplay-sfx-src="${escapeHtml(candidate.src)}"><button type="button" class="gameplay-sfx-candidate-toggle" data-gameplay-sfx-play><small>${escapeHtml(visibleMeta)}</small>${debugMeta}</button><div class="gameplay-sfx-possible-file-player" data-gameplay-sfx-player></div></div>`;
     }).join("");
     return `<div class="gameplay-sfx-possible-files">${cards}</div>`;
   }
@@ -1457,7 +1457,7 @@
     if (!audio.length) return "";
     const key = `sound-${++gameplaySoundCandidateListSequence}`;
     gameplaySoundCandidateLists.set(key, { event, audio });
-    return `<template data-gameplay-sfx-list="${escapeHtml(key)}"></template><p class="gameplay-sfx-list-placeholder">${escapeHtml(text("soundOpenToList"))}</p>`;
+    return `<button type="button" class="gameplay-sfx-list-toggle" data-gameplay-sfx-list-toggle="${escapeHtml(key)}">${escapeHtml(text("soundOpenToList"))}</button><template data-gameplay-sfx-list="${escapeHtml(key)}"></template>`;
   }
 
   function renderGameplaySoundEvents(events, options = {}) {
@@ -1478,7 +1478,7 @@
       const actionLabel = options.showActionLabel ? gameplaySoundActionLabel(gameplaySoundActionGroup(event)) : "";
       const scope = [actionLabel, eventScope].filter(Boolean).join(" · ");
       const boundary = sharedAnimation ? `<p class="gameplay-enemy-sfx-note">${escapeHtml(text("soundSharedRuntimeGraphNote"))}</p>` : "";
-      return `<details class="gameplay-projectile-audio-phase"><summary><strong>${escapeHtml(gameplaySoundEventName(event.id) || text("soundEvent"))}</strong><span>${escapeHtml(scope)}</span></summary>${boundary}${renderGameplaySoundEvidence(event, audio)}${technical}${renderGameplaySoundCandidates(event, audio)}</details>`;
+      return `<article class="gameplay-sfx-event"><header class="gameplay-sfx-event-summary"><strong>${escapeHtml(gameplaySoundEventName(event.id) || text("soundEvent"))}</strong><span>${escapeHtml(scope)}</span></header>${boundary}${renderGameplaySoundEvidence(event, audio)}${technical}${renderGameplaySoundCandidates(event, audio)}</article>`;
     }).join("");
   }
 
@@ -1497,10 +1497,7 @@
         return (leftIndex < 0 ? 99 : leftIndex) - (rightIndex < 0 ? 99 : rightIndex)
           || gameplaySoundActionLabel(left).localeCompare(gameplaySoundActionLabel(right));
       });
-    if (options.flattenGroups) {
-      return orderedGroups.map((group) => renderGameplaySoundEvents(group.events, { showActionLabel: true })).join("");
-    }
-    return orderedGroups.map((group) => `<details class="gameplay-sfx-action"><summary><strong>${escapeHtml(gameplaySoundActionLabel(group))}</strong><span>${escapeHtml(gameplaySoundCountText(group.events, options))}</span></summary>${renderGameplaySoundEvents(group.events)}</details>`).join("");
+    return orderedGroups.map((group) => `<section class="gameplay-sfx-action"><header class="gameplay-sfx-action-summary"><strong>${escapeHtml(gameplaySoundActionLabel(group))}</strong><span>${escapeHtml(gameplaySoundCountText(group.events, options))}</span></header>${renderGameplaySoundEvents(group.events)}</section>`).join("");
   }
 
   function gameplayResolvedSoundEvents(events) {
@@ -1543,7 +1540,7 @@
     const playable = playableEvents.reduce((total, event) => total + ((event.audio || []).filter((candidate) => candidate?.src).length || Number(event.possibleMediaCount || event.playableCandidates || 0)), 0);
     if (!playable) return "";
     const confidence = options.confidence ? integrationConfidence(options.confidence) : "";
-    return `<details class="gameplay-related-sfx"><summary><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</summary><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents, options)}</details>`;
+    return `<section class="gameplay-related-sfx"><header class="gameplay-related-sfx-summary"><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</header><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents, options)}</section>`;
   }
 
   function renderCharacterSkillSounds(entry) {
@@ -2942,33 +2939,39 @@
       });
     });
     const bindCandidatePlayers = (container) => {
-      container.querySelectorAll("details[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])").forEach((details) => {
-        details.dataset.gameplaySfxBound = "1";
-        details.addEventListener("toggle", () => {
-          if (!details.open) return;
-          const host = details.querySelector("[data-gameplay-sfx-player]");
-          const src = details.dataset.gameplaySfxSrc || "";
+      container.querySelectorAll("[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])").forEach((row) => {
+        row.dataset.gameplaySfxBound = "1";
+        const button = row.querySelector("[data-gameplay-sfx-play]");
+        if (!button) return;
+        button.addEventListener("click", () => {
+          const host = row.querySelector("[data-gameplay-sfx-player]");
+          const src = row.dataset.gameplaySfxSrc || "";
           if (!host || !src || host.querySelector("audio")) return;
           host.innerHTML = `<audio controls preload="none" src="${escapeHtml(src)}"></audio>`;
+          button.disabled = true;
           if (window.WebUI.enhanceMediaPlayers) window.WebUI.enhanceMediaPlayers(host);
         });
       });
     };
-    const materializeSoundLists = (container) => {
-      container.querySelectorAll("template[data-gameplay-sfx-list]").forEach((template) => {
-        if (template.parentElement?.closest("details") !== container) return;
-        const key = template.dataset.gameplaySfxList || "";
-        const candidateList = gameplaySoundCandidateLists.get(key);
-        if (candidateList) {
-          template.innerHTML = renderGameplaySoundCandidateList(candidateList.event, candidateList.audio);
-          gameplaySoundCandidateLists.delete(key);
-        }
-        const placeholder = template.nextElementSibling;
-        template.replaceWith(template.content.cloneNode(true));
-        if (placeholder?.classList.contains("gameplay-sfx-list-placeholder")) placeholder.remove();
-      });
+    const materializeSoundList = (template, toggle) => {
+      if (!template) return;
+      const key = template.dataset.gameplaySfxList || "";
+      const candidateList = gameplaySoundCandidateLists.get(key);
+      if (!candidateList) return;
+      template.innerHTML = renderGameplaySoundCandidateList(candidateList.event, candidateList.audio);
+      gameplaySoundCandidateLists.delete(key);
+      template.replaceWith(template.content.cloneNode(true));
+      if (toggle) toggle.remove();
       bindCandidatePlayers(container);
     };
+    container.querySelectorAll("[data-gameplay-sfx-list-toggle]").forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        const key = toggle.dataset.gameplaySfxListToggle || "";
+        const template = [...container.querySelectorAll("template[data-gameplay-sfx-list]")]
+          .find((candidate) => candidate.dataset.gameplaySfxList === key);
+        materializeSoundList(template, toggle);
+      });
+    });
     bindCandidatePlayers(root);
     const isRevealed = (media) => {
       for (let node = media.parentElement; node && node !== root; node = node.parentElement) {
@@ -2986,10 +2989,7 @@
     enhanceVisible();
     root.querySelectorAll("details").forEach((details) => {
       details.addEventListener("toggle", () => {
-        if (details.open) {
-          materializeSoundLists(details);
-          enhanceVisible();
-        }
+        if (details.open) enhanceVisible();
       });
     });
   }
