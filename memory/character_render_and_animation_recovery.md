@@ -85,8 +85,15 @@ NPC archetypes are imported as labeled source kits.
   `+0x18`. The complete hash-pinned scheduled batch core also has no direct
   scalar load from that offset. Its separate `state +0x180` input is squared
   `parentLODBias` and is only forwarded through the core and child-job thunk,
-  not consumed as the view threshold. Retail serializer/deserializer evidence
-  now identifies the formerly
+  not consumed as the view threshold. The complete installed CullView-named
+  internal-call surface is now closed: matrix/planes additions share the same
+  scheduled constructor; dispatch passes the `manager+0x38` view-pointer array
+  directly to the batch loop; that loop, both predicates, fence lookup, and
+  reset do not read `+0x18`. Child views instead use a separate
+  `manager+0x58` array of `0xE8`-byte records. Thus the installed
+  `screenSizeMinimumSquared` field is write-only on this pinned native surface,
+  with no later packet copy or threshold gate. Retail serializer/deserializer
+  evidence now identifies the formerly
   generic 28-byte record exactly as `HGTreeRenderer`, nested under
   `HGTreeInstance.renderers`, with `lodScreenSizeMaxSquared` and
   `lodScreenSizeMinSquared` at `+0x14/+0x18`. The dedicated 729-entry HG
@@ -292,10 +299,8 @@ NPC archetypes are imported as labeled source kits.
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The semantic
   reason for loader record `+0x0C`'s Mesh/filter dual use, the component-67
-  standalone native type name, any separate post-dispatch copy or consumer of
-  view `+0x18`,
-  any separate
-  `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
+  standalone native type name, any separate `sceneCullingMask` consumer, and
+  target-frame survivor rows remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -525,11 +530,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Search for a separate post-dispatch copy or consumer of cull-view
-   `screenSizeMinimumSquared`; the current scheduled batch core directly
-   excludes it. Keep that value distinct from both squared `parentLODBias` and
-   the HGTreeRenderer LOD bounds. Resolve the semantic reason for loader record
-   `+0x0C`'s Mesh/filter dual use and the exact native type-name link for
+1. Resolve the semantic reason for loader record `+0x0C`'s Mesh/filter dual
+   use and the exact native type-name link for
    component 67; its serialized LOD-count/range producer is now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact

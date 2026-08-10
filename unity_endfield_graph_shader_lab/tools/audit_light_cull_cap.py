@@ -939,6 +939,139 @@ UNITY_SCHEDULED_CULL_SLICES = {
     ),
 }
 
+UNITY_CULL_VIEW_SURFACE_ICALLS = {
+    "add_by_matrix": (
+        3304,
+        0x1800F9790,
+        "UnityEngine.HyperGryph.HGCullingSystem::AddCullViewByMatrix",
+    ),
+    "register_unique_id": (
+        3306,
+        0x1800F9A00,
+        "UnityEngine.HyperGryph.HGCullingSystem::RegisterCullViewUniqueId",
+    ),
+    "unregister_unique_id": (
+        3307,
+        0x1800F9D80,
+        "UnityEngine.HyperGryph.HGCullingSystem::UnregisterCullViewUniqueId",
+    ),
+    "add_by_planes": (
+        3313,
+        0x1800FA6D0,
+        "UnityEngine.HyperGryph.HGCullingSystem::AddCullViewByPlanes",
+    ),
+    "add_child_by_planes": (
+        3314,
+        0x1800FAB60,
+        "UnityEngine.HyperGryph.HGCullingSystem::AddCullChildViewByPlanes",
+    ),
+    "dispatch": (
+        3315,
+        0x1800FAFC0,
+        "UnityEngine.HyperGryph.HGCullingSystem::DispatchBatchCullingJobs",
+    ),
+    "reset": (
+        3316,
+        0x1800FB050,
+        "UnityEngine.HyperGryph.HGCullingSystem::ResetCullViews",
+    ),
+    "get_fence": (
+        3317,
+        0x1800FB080,
+        "UnityEngine.HyperGryph.HGCullingSystem::GetCullingViewFence_Injected",
+    ),
+}
+
+UNITY_CULL_VIEW_CONSUMER_BODIES = {
+    "register_unique_id": (
+        0x1800F9A00,
+        0x37F,
+        "2d2e10aa276ab4ad8691241ef4316280ac9f05168800152e81e74d392bd07d91",
+    ),
+    "unregister_unique_id": (
+        0x1800F9D80,
+        0x38,
+        "6f865394d930552af24a12a4cf66bcf1110a4c5f26d6ad6dc00f12dea7eaf7ff",
+    ),
+    "add_by_planes_binding": (
+        0x1800FA6D0,
+        0x111,
+        "bc8a821533e2f1f84f955113ff5bc2bdc2e91f57052033c33c97a990ac418ceb",
+    ),
+    "add_by_planes_core": (
+        0x18104A670,
+        0x12C,
+        "99d4566263996bd9685db4eebbcd47c3d90244633d7314eec37a60203304563e",
+    ),
+    "add_child_by_planes_binding": (
+        0x1800FAB60,
+        0x5A,
+        "9ca7af1e05bd12d5db6513505ddd44a53b441fed5064a95945823683b43bca29",
+    ),
+    "add_child_by_planes_core": (
+        0x181049F30,
+        0x257,
+        "7893975401f4269467d6d9585b35ca65af3d06db6fab5462367bc010c41b9e8c",
+    ),
+    "scheduled_view_loop": (
+        0x181053A10,
+        0x267,
+        "a92c993243184d53636a9cf06d93aa538095b433332cbe648d9030b2879743be",
+    ),
+    "reset_binding": (
+        0x1800FB050,
+        0x24,
+        "e64dff0c1216346e1ffe5298d493bba40e855c11b0eb5704715c44d601d1c89d",
+    ),
+    "reset_core": (
+        0x18105EE10,
+        0xEBC,
+        "b1ecb2e9a5c80fb5e7a29beb758f70a59448070a2a6745f71ce97866d9d9462e",
+    ),
+    "get_fence_binding": (
+        0x1800FB080,
+        0x39,
+        "12896d9eb77f48059166b67700482135cbb451dff6f8dc04055a2ed4163e3716",
+    ),
+    "get_fence_leaf": (
+        0x181057740,
+        0x3E,
+        "eee8e419bf97b8e45e8bab130050662479869fc0fc97ac62ad0a7484f2d95879",
+    ),
+}
+
+UNITY_CULL_VIEW_CONSUMER_SLICES = {
+    "batch_view_pointer_ingress_and_predicate_selection": (
+        0x1810539DD,
+        "4c8b85001200008b188bcbb801000000895d1048d3e0ffc8488945688bc7"
+        "498b0cc04c8b69204c896d7885db0f84ab02000090418d043c4d8b34c0"
+        "4c8d3d9174f9ff488d05ca74f9ff41817e2c800000004c0f44f8",
+    ),
+    "batch_view_fields_and_predicate_call": (
+        0x181053BBD,
+        "418b46540fa3c87217498b4538418b4e28f7d18b140623d1891406e99a"
+        "000000418b4654ba0100000048d3e248ffca4823d0488b07f34c0fb8caf6"
+        "00017505498bd4eb3bf34c0fb800f3490fb8c485c0750d488b07428d1485"
+        "00000000eb1c8d1485fcffffff488b07488b48088b140a428d0c85000000"
+        "004803d1480350084885d27436418b4e28498b4538f7d1448b04064423c1"
+        "498bce448904064c8d420c41ffd784c07406418b4e28eb03418bcc498b45"
+        "380b0c30890c06",
+    ),
+    "reset_view_pointer_vector": (
+        0x18105F0D9,
+        "488b4638488b4e48488bd84c8d34c8493bc6744a0f1f00488b3b41b9fc"
+        "1300008b1501dcdb004d8bc7488b4f38488b09e8624d2aff488b4f384885"
+        "c9741341b9fd1300004d8bc7bab4000000e8464d2aff4883c3084c896738"
+        "493bde75b948837e3800740e0fb64650f6d0a80174044c896648",
+    ),
+    "child_view_separate_vector": (
+        0x18104A099,
+        "498b7f68498d5f58488b431848ffc74c8bbc2430010000488bac24580100"
+        "0048d1e8483bf87608488bcbe8586a0100488b134869cfe800000048897b"
+        "1048",
+    ),
+}
+
 UNITY_HGTREE_BODIES = {
     "instance_serializer": (
         0x18106F9A0,
@@ -5052,8 +5185,8 @@ def validate_unity_scheduled_culling_boundary(
                 "value and is not evidence of a cull-view +0x18 read"
             ),
             "openBoundary": (
-                "a separate later system may still copy or consume the view "
-                "threshold outside this dispatch stage"
+                "this dispatch-only validator is paired with the separate "
+                "CullView consumer-surface validator"
             ),
         },
         "evidenceBoundary": {
@@ -5067,9 +5200,140 @@ def validate_unity_scheduled_culling_boundary(
                 "the independent parentLODBiasSquared batch/child-job forwarding chain",
             ],
             "open": [
-                "the later renderer/entity consumer, if any, of cull-view +0x18",
-                "whether the installed zero view threshold makes that later gate unconditional",
                 "target-frame runtime overrides and final survivor rows",
+            ],
+        },
+        "verifiedBodies": bodies,
+        "verifiedInstructionSlices": slices,
+    }
+
+
+def validate_unity_cull_view_consumer_surface(
+    image: PEImage,
+) -> dict[str, object]:
+    """Close the installed CullView pointer-container consumer surface."""
+
+    require("unity_player_image_base", image.image_base, 0x180000000, image.path)
+    internal_calls = []
+    for label, (index, expected_target, expected_name) in (
+        UNITY_CULL_VIEW_SURFACE_ICALLS.items()
+    ):
+        target = image.u64(UNITY_ICALL_FUNCTION_TABLE_VA + index * 8)
+        name_pointer = image.u64(UNITY_ICALL_NAME_TABLE_VA + index * 8)
+        name = image.cstring(name_pointer)
+        require(
+            f"unity_cull_view_surface_{label}_target",
+            target,
+            expected_target,
+            image.path,
+        )
+        require(
+            f"unity_cull_view_surface_{label}_name",
+            name,
+            expected_name,
+            image.path,
+        )
+        internal_calls.append(
+            {
+                "label": label,
+                "index": index,
+                "name": name,
+                "targetVirtualAddress": f"0x{target:X}",
+            }
+        )
+
+    bodies = []
+    for label, (
+        virtual_address,
+        size_bytes,
+        expected_hash,
+    ) in UNITY_CULL_VIEW_CONSUMER_BODIES.items():
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_cull_view_consumer_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    slices = []
+    for label, (
+        virtual_address,
+        expected_hex,
+    ) in UNITY_CULL_VIEW_CONSUMER_SLICES.items():
+        expected = bytes.fromhex(expected_hex)
+        actual = image.read(virtual_address, len(expected))
+        require(f"unity_cull_view_consumer_{label}", actual, expected, image.path)
+        slices.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": len(actual),
+                "sha256": hashlib.sha256(actual).hexdigest(),
+            }
+        )
+
+    return {
+        "internalCallSurface": {
+            "entries": internal_calls,
+            "boundedToCullViewNamedOperations": True,
+        },
+        "pointerContainerFlow": [
+            "0x18104B814 appends the scheduled view pointer to manager+0x38",
+            "0x181053373 passes manager+0x38+start*8 directly as batch-core argument 5",
+            "0x1810539DD reloads that pointer array and 0x181053A14 selects one view pointer",
+            "the 0x181053A10..0x181053C76 view loop reads +0x20/+0x28/+0x2C/+0x54 and calls the selected predicate with the original pointer",
+        ],
+        "consumerCensus": {
+            "screenSizeMinimumSquaredOffset": "0x18",
+            "consumerFound": False,
+            "scheduledViewLoopReadOffsets": ["0x20", "0x28", "0x2C", "0x54"],
+            "selectedPredicateReadOffsets": {
+                "standardSixPlane": ["0x58", "0x5C"],
+                "cameraType0x80": ["0x10", "0x34"],
+            },
+            "getFence": "reads only view+0x20 before returning its 16-byte fence payload",
+            "reset": "iterates manager+0x38 and frees only the nested allocation at view+0x38",
+            "uniqueIdRegistry": (
+                "Register/UnregisterCullViewUniqueId operate on the separate "
+                "manager+0x158 integer free-list/registry and never receive a "
+                "scheduled-view pointer"
+            ),
+            "childViewSeparation": (
+                "AddCullChildViewByPlanes appends a separate 0xE8-byte record "
+                "to manager+0x58; it does not copy the scheduled view+0x18 word"
+            ),
+            "postDispatchPacketCopy": False,
+        },
+        "installedConclusion": (
+            "screenSizeMinimumSquared at scheduled view+0x18 is written by the "
+            "installed constructors but is not consumed by the complete "
+            "CullView-named API surface, batch view loop, selected predicates, "
+            "fence lookup, or reset lifecycle"
+        ),
+        "evidenceBoundary": {
+            "closed": [
+                "all installed CullView-named internal-call entries from add through fence lookup",
+                "the manager+0x38 scheduled-view pointer container and direct batch-core handoff",
+                "the complete per-view batch loop and its direct view-field reads",
+                "the two selected predicate field sets",
+                "the reset and fence consumers of the same pointer container",
+                "the separate CullView unique-id free-list/registry",
+                "the separate manager+0x58 child-view record path",
+                "absence of a post-dispatch packet copy or installed consumer of scheduled view+0x18 on this surface",
+            ],
+            "open": [
+                "future or separately delivered native patches that change the pinned installed bodies",
+                "target-frame survivor rows and unrelated runtime/custom culling inputs",
             ],
         },
         "verifiedBodies": bodies,
@@ -7169,7 +7433,6 @@ def validate_unity_hgtree_renderer_boundary(
             "open": [
                 "semantic roles for the loader registration blob's remaining initially zero bytes",
                 "the standalone native component type name for archetype bit 67",
-                "any separate post-dispatch copy or consumer of cull-view +0x18",
             ],
         },
         "verifiedBodies": bodies,
@@ -7372,6 +7635,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     unity_scheduled_culling_boundary = (
         validate_unity_scheduled_culling_boundary(PEImage(UNITY_PLAYER))
     )
+    unity_cull_view_consumer_surface = (
+        validate_unity_cull_view_consumer_surface(PEImage(UNITY_PLAYER))
+    )
     unity_hgtree_renderer_boundary = validate_unity_hgtree_renderer_boundary(
         PEImage(UNITY_PLAYER), native_handoff["managedHGTreeComponent"]
     )
@@ -7413,8 +7679,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v31",
-        "status": "installed_cap_gpu_driven_enabled_light_modes_consumer_closed",
+        "schema": "endfield.recovered-light-cull-cap.v32",
+        "status": "installed_cull_view_screen_threshold_consumer_absent",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -7427,7 +7693,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "also closes the scheduled view layout and visibility-then-camera-mask "
             "gate. DispatchBatchCullingJobs selects an exact six-plane AABB "
             "predicate, except cameraType 0x80 selects an exact sphere/distance "
-            "predicate; neither reads cull-view +0x18. The previously separate "
+            "predicate; neither reads cull-view +0x18. "
+            "The complete installed CullView-named internal-call surface is now "
+            "closed as well. AddCullViewByPlanes shares the same scheduled "
+            "constructor; DispatchBatchCullingJobs passes the manager+0x38 "
+            "view-pointer array directly into the batch core; the complete "
+            "per-view loop, both selected predicates, GetCullingViewFence, and "
+            "ResetCullViews do not read +0x18. AddCullChildViewByPlanes writes a "
+            "separate manager+0x58 array of 0xE8-byte records. The installed "
+            "screenSizeMinimumSquared field is therefore write-only on this "
+            "closed native surface, with no post-dispatch packet copy or gate. "
+            "The previously separate "
             "28-byte record is now identified exactly as HGTreeRenderer nested "
             "under HGTreeInstance.renderers, and its CreateRendererList entry "
             "is paired at local index 564 in the dedicated 729-entry HyperGryph "
@@ -7585,8 +7861,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "Any separate post-dispatch cull-view +0x18 consumer, the semantic "
-            "reason for loader record +0x0C's Mesh/filter dual use, the "
+            "The semantic reason for loader record +0x0C's Mesh/filter dual "
+            "use, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -7710,6 +7986,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "unityPlayerScheduledCullingBoundary": (
                 unity_scheduled_culling_boundary
             ),
+            "unityPlayerCullViewConsumerSurface": (
+                unity_cull_view_consumer_surface
+            ),
             "unityPlayerHGTreeRendererBoundary": unity_hgtree_renderer_boundary,
             "unityPlayerStreamingComponentConversion": (
                 unity_streaming_component_conversion
@@ -7753,6 +8032,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
                 "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order",
                 "the DispatchBatchCullingJobs binding, camera-type predicate split, and exact selected predicates",
+                "the complete installed CullView-named internal-call surface, manager+0x38 pointer-container handoff, per-view batch loop, fence/reset lifecycle, separate child-view array, and absence of a screenSizeMinimumSquared +0x18 consumer or post-dispatch packet copy",
                 "HGTreeInstance ownership and the exact 28-byte HGTreeRenderer LOD record",
                 "the dedicated 729-entry HyperGryph internal-call name/function table pair",
                 "the HGTreeRender CreateRendererList binding, core, scheduler, and selected runtime callbacks",
@@ -7803,8 +8083,6 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "any separate post-dispatch copy or consumer of cull-view +0x18",
-                "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic reason runtime record +0x0C's resolved Mesh-derived index is also consumed as a supplemental filter overlay",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
@@ -7839,7 +8117,8 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
-        "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
+        "scheduled cull-view layout, complete CullView consumer surface with "
+        "write-only screen threshold, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
         "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers and GPUDrivenRenderer V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, Factory blob-copy routes, independent renderer-entry pass mask, and complete direct renderer-blob lookup/escape census, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "

@@ -1541,8 +1541,16 @@ normal views select the exact six-plane AABB predicate, while
 view `+0x18`. The complete hash-pinned scheduled batch core likewise contains
 no direct scalar load from view `+0x18`. Its separate `state +0x180` input is
 proven to be squared `parentLODBias` and is only forwarded through the batch
-core and child-job thunk, so it is not this view threshold. Independent retail
-serializer/deserializer code fixes the
+core and child-job thunk, so it is not this view threshold. The installed
+CullView-named internal-call surface is now closed end to end:
+`AddCullViewByPlanes` shares the same scheduled constructor, dispatch passes
+the `manager+0x38` view-pointer array directly into the complete per-view loop,
+and that loop, both selected predicates, `GetCullingViewFence`, and
+`ResetCullViews` never read `+0x18`. `AddCullChildViewByPlanes` appends a
+separate `0xE8`-byte record under `manager+0x58`. The installed
+`screenSizeMinimumSquared` word is therefore write-only on this hash-pinned
+surface; there is no post-dispatch packet copy or threshold gate. Independent
+retail serializer/deserializer code fixes the
 formerly generic 28-byte record as `HGTreeRenderer`, nested under
 `HGTreeInstance.renderers`: `batchKey`, `renderFlags`, `mesh`, `material`,
 `subMeshIndex`, `lodScreenSizeMaxSquared`, and `lodScreenSizeMinSquared`, with
@@ -1739,9 +1747,7 @@ former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The semantic reason for loader record
 `+0x0C`'s Mesh/filter dual use, the component-67 standalone native type name,
-any separate post-dispatch
-copy or consumer of view `+0x18`, any separate
-`sceneCullingMask` consumer, and whether zero makes that later gate remain
+any separate `sceneCullingMask` consumer, and target-frame survivor rows remain
 explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
