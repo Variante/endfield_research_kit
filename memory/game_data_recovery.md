@@ -386,8 +386,9 @@ resolves to both its SFX and music event keys through
 evidence retained. This is a strong authored cutscene-playback relation; it
 does not turn the timeline into a runtime profiler trace.
 
-Next audio-recovery work should decode v150 switch-value mappings, Action
-delay/property bundles, and music types 10-13, then connect current music-table
+Next audio-recovery work should finish live-value/state capture for the now
+typed v150 switch-value mappings, Action delay/property bundles, and music
+types 10-13, then connect current music-table
 state/control rows to MusicTrack source media. Also fingerprint PCK inputs for
 cache invalidation, identify Timeline/native audio receivers and activation
 paths, finish PlaySound `TargetSettings` and action-condition semantics, recover
