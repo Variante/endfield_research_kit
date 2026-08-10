@@ -2784,55 +2784,20 @@ class SourceStoryGapQueueTests(unittest.TestCase):
     def test_unique_mission_tracked_proxy_bundle_closes_without_order(
         self,
     ) -> None:
-        declaration = gap_queue.UNIQUE_MISSION_TRACKED_PROXY_CONTEXTS[
-            "gm01m14"
-        ]
         story_key = "dlg_gm01m14_2"
-        connection = {
-            "key": story_key,
-            "relation":
-                "unique_mission_tracked_npc_proxy_dialog_context",
-            "direction": "context",
-            "phase": "server_selected_proxy_state",
-            "confidence": "native_exact_mission_context",
-            "evidenceTier": "derived_exact_mission",
-            "storyOwnerMission": "gm01m14",
-            "npcProxyId": declaration["npcProxyId"],
-            "levelIds": [declaration["levelId"]],
-            "candidateQuestIds": list(declaration["questIds"]),
-            "activeRowIndex": 2,
-            "configuredDialogIds": list(declaration["dialogIds"]),
-            "questTriggerStatus": (
-                "shared_tracked_proxy_state_context_not_quest_selection_"
-                "or_playback"
-            ),
-            "selectionOrderStatus": (
-                "one_based_active_row_selection_only_no_cross_row_chronology"
-            ),
-            "storyBinding": True,
-            "ownership": False,
-            "questActivation": False,
-            "questPlayback": False,
-            "questCompletion": False,
-            "serverExchange": True,
-            "clientRequest": False,
-            "expectedClientReply": False,
-            "sourceFiles": list(declaration["sourceHashes"]),
-            "npcProxyTableRow": {
-                "proxyId": declaration["npcProxyId"],
-                "levelId": declaration["levelId"],
-                "subDataParentId": declaration["subDataParentId"],
-            },
-            "npcProxyExRows": [
-                {"missionId": "", "dialogId": dialog_id}
-                for dialog_id in declaration["exDialogIds"]
-            ],
-            "nativeMappingId": "npc-proxy-dialog-selection-native-v1",
-            "gameAssemblySha256": (
-                "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2"
-                "B983FB9D45677D80FFCE"
-            ),
-        }
+        mission = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/gm01m14.json",
+            {},
+        )
+        connection = next(
+            row
+            for row in (
+                mission.get("flow", {}).get("missionStoryConnections") or []
+            )
+            if row.get("key") == story_key
+            and row.get("relation")
+            == "unique_mission_tracked_npc_proxy_dialog_context"
+        )
         partial = partial_mission(
             "gm01m14",
             scenes=[story_key],
@@ -2851,9 +2816,15 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             closure["relation"],
             "unique_mission_tracked_npc_proxy_dialog_context",
         )
-        self.assertEqual(closure["candidateQuestIds"], list(
-            declaration["questIds"]
-        ))
+        self.assertEqual(
+            closure["candidateQuestIds"],
+            connection["candidateQuestIds"],
+        )
+        self.assertEqual(
+            closure["recoveryMethod"],
+            "complete_mission_runtime_proxy_census",
+        )
+        self.assertTrue(closure["sourceSha256"])
         self.assertIn("do not order", closure["orderBoundary"])
 
         invalid = dict(connection)
@@ -7797,29 +7768,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_gm01m6_1d5"
             ],
         )
-        self.assertEqual(
-            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
-                "misc_dlg_gm01m6_3d7"
-            ]["missionNpcProxyTracking"]["rows"],
-            (
-                {
-                    "questId": "gm01m6_q#3",
-                    "objectiveIndex": 0,
-                    "trackingIndex": 0,
-                },
-                {
-                    "questId": "gm01m6_q#10",
-                    "objectiveIndex": 0,
-                    "trackingIndex": 0,
-                },
-            ),
-        )
-        self.assertEqual(
-            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
-                "dlg_gm01m6_6"
-            ]["missionNpcProxyTracking"]["rows"][0]["questId"],
-            "gm01m6_q#12",
-        )
+        for definition in (
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.values()
+        ):
+            self.assertNotIn("missionNpcProxyTracking", definition)
 
     def test_gm01m6_mission_npc_tracking_is_visible_and_fails_closed(
         self,
@@ -7851,44 +7803,160 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertFalse(tracking["questPlaybackOwnership"])
         self.assertFalse(tracking["orderEvidence"])
 
-        story_key = "misc_dlg_gm01m6_3d7"
-        definition = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
-            story_key
-        ]
-        broken_tracking = {
-            **definition["missionNpcProxyTracking"],
-            "rows": ({
-                "questId": "gm01m6_q#missing",
-                "objectiveIndex": 0,
-                "trackingIndex": 0,
-            },),
-        }
-        with patch.dict(
-            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS,
-            {story_key: {
-                **definition,
-                "missionNpcProxyTracking": broken_tracking,
-            }},
-        ):
-            failed_index, failed_status = (
-                gap_queue.build_offline_exhaustion_index(
-                    partial,
-                    table_root,
+        with tempfile.TemporaryDirectory() as temp_dir:
+            streaming_root = Path(temp_dir) / "Streaming"
+            persistent_root = Path(temp_dir) / "Persistent"
+            streaming_root.mkdir()
+            persistent_root.mkdir()
+            tracking = {
+                "$type": gap_queue.NPC_PROXY_TRACKING_INFO_TYPE,
+                "useFilterCondition": False,
+                "sceneId": "future_level",
+                "guidingArea": 0.0,
+                "npcProxyId": "proxy_future",
+            }
+            payload = {
+                "missionId": "future_mission",
+                "questDic": {
+                    quest_id: {
+                        "objectiveList": [{
+                            "trackingInfoList": [
+                                {
+                                    **tracking,
+                                    **(
+                                        {
+                                            "useFilterCondition": True,
+                                            "filterCondition": {"$type": "fixture"},
+                                        }
+                                        if quest_id == "future_mission_q#12"
+                                        else {}
+                                    ),
+                                },
+                            ],
+                        }],
+                    }
+                    for quest_id in (
+                        "future_mission_q#12",
+                        "future_mission_q#2",
+                    )
+                },
+            }
+            for root in (streaming_root, persistent_root):
+                (root / "future_mission.json").write_text(
+                    json.dumps(payload),
+                    encoding="utf-8",
+                )
+            corpus = gap_queue._build_mission_npc_proxy_tracking_index(
+                streaming_root,
+                persistent_root,
+            )
+            contexts, failures = (
+                gap_queue._generic_mission_npc_proxy_tracking_contexts(
+                    "dlg_future_1",
+                    "future_mission",
+                    {"npcProxyConsumers": [{
+                        "npcProxyId": "proxy_future",
+                        "levelId": "future_level",
+                    }]},
+                    corpus,
                 )
             )
-        self.assertEqual(failed_index, {})
-        failure = next(
-            row
-            for row in failed_status["validatorDiagnostics"]
-            if row.get("storyKey") == story_key
+        self.assertEqual(contexts, [])
+        self.assertEqual(len(failures), 1)
+        failure = failures[0]
+        self.assertEqual(
+            failure["validator"],
+            "genericMissionNpcProxyTrackingContext",
         )
-        self.assertEqual(failure["validator"], "offlineDialogDefinition")
         self.assertEqual(
             failure["gate"],
-            "exactMissionNpcProxyTrackingContext",
+            "exactUnfilteredSingleMissionProxyTracking",
         )
-        self.assertEqual(failure["mission"], "gm01m6")
+        self.assertEqual(failure["storyKey"], "dlg_future_1")
         self.assertIn("sourceSha256", failure)
+
+    def test_general_mission_tracking_census_has_no_per_dialog_declarations(
+        self,
+    ) -> None:
+        for definition in (
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.values()
+        ):
+            self.assertNotIn("missionNpcProxyTracking", definition)
+        streaming_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Data/Json/"
+            "MissionRuntimeAsset"
+        )
+        persistent_root = (
+            gap_queue.ROOT
+            / "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset"
+        )
+        corpus = gap_queue._build_mission_npc_proxy_tracking_index(
+            streaming_root,
+            persistent_root,
+        )
+        self.assertEqual(corpus["status"], "active")
+        self.assertEqual(corpus["selection"], "complete_persistent_override")
+        self.assertEqual(corpus["scannedMissionFileCount"], 490)
+        self.assertEqual(corpus["typedRowCount"], 839)
+        self.assertEqual(corpus["qualifiedRowCount"], 781)
+        npc_proxy_ex = gap_queue.read_json(
+            gap_queue.ROOT
+            / "export_full/structured/Persistent/Data/Json/GameplayConfig/"
+            "NpcProxyExDataTable.json",
+            {},
+        )
+        npc_proxy = gap_queue.read_json(
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Data/Json/GameplayConfig/"
+            "NpcProxyTable.json",
+            {},
+        )
+        dialog_index = gap_queue.read_json(
+            gap_queue.ROOT
+            / "export_full/recovered/dialog_id_table_index.json",
+            {},
+        )
+        qualified_story_keys = []
+        consumer_failures = []
+        for story_key, definition in (
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+        ):
+            facts, failure = (
+                gap_queue._generic_missionless_npc_proxy_dialog_facts(
+                    story_key,
+                    npc_proxy_ex,
+                    npc_proxy,
+                    dialog_index,
+                )
+            )
+            if failure is not None:
+                consumer_failures.append(failure)
+                continue
+            contexts, failures = (
+                gap_queue._generic_mission_npc_proxy_tracking_contexts(
+                    story_key,
+                    definition["missionId"],
+                    facts,
+                    corpus,
+                )
+            )
+            self.assertEqual(failures, [])
+            if contexts:
+                qualified_story_keys.append(story_key)
+                self.assertEqual(len(contexts), 1)
+                self.assertEqual(
+                    contexts[0]["questIds"],
+                    sorted(contexts[0]["questIds"], key=gap_queue.natural_key),
+                )
+                self.assertTrue(contexts[0]["sourceSha256"])
+        self.assertEqual(len(qualified_story_keys), 26)
+        self.assertEqual(len(consumer_failures), 1)
+        self.assertEqual(
+            consumer_failures[0]["gate"],
+            "exactNpcProxyConsumerIdentity",
+        )
 
     def test_gm01m13_proxy_context_and_definition_frontier_is_exact(
         self,
@@ -8250,11 +8318,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "dlg_gm01m7_5",
             "dlg_gm01m7_7",
         ):
-            self.assertEqual(
-                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
-                    story_key
-                ]["missionNpcProxyTracking"]["runtimeMissionId"],
-                "gm01m12",
+            self.assertNotIn(
+                "missionNpcProxyTracking",
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key],
             )
         self.assertEqual(
             len(

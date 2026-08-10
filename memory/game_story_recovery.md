@@ -127,11 +127,18 @@ never promotes an edge.
   72 of 102 maintained rows. The NpcProxy pattern independently validates 54
   DialogTrees and 60 selected rows, including aliases and multi-proxy cases;
   all 44 formerly copied consumer declarations (48 rows) match it exactly and
-  have been removed. Fifteen retained mission-tracking/LevelScript contexts now
-  consume the same general result. This family retains 312 authored lines, 90
-  validated option routes, and 68 prime-reachable finish endpoints; three
-  unresolved option-node identities remain visibly fail closed. One transient
-  row without a current
+  have been removed. Mission tracking is also corpus-driven: the complete
+  active MissionRuntime root currently has 490 mission payloads and 839 typed
+  `NpcProxyTrackingInfo` rows; 781 exact unfiltered rows qualify, while 58
+  filtered rows stay outside this relation. The same proxy/level join recovers
+  tracking context for 26 maintained dialog definitions without any copied
+  tracking declaration. The broader Story builder qualifies 146 proxy contexts
+  covering 210 configured dialogs in 82 missions. Each context carries its
+  exact original source file and hash; 13 former per-dialog tracking blocks and
+  the former one-proxy publication allowlist have been removed. This family
+  retains 312 authored lines, 90 validated option routes, and 68 prime-reachable
+  finish endpoints; three unresolved option-node identities remain visibly fail
+  closed. One transient row without a current
   `NpcProxyTable` identity fails closed with a bounded diagnostic. Internal
   DialogTree routes remain local structure and NpcProxy active-row selection
   remains a consumer relation; neither creates mission activation or

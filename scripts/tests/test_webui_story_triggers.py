@@ -427,6 +427,9 @@ for (const [key, category] of [
     def test_mission_pipeline_shows_composed_npc_proxy_dialog_branches(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("Auto-discovered DialogTree + native NPC-proxy consumer", source)
+        self.assertIn("Auto-discovered from complete active MissionRuntime corpus", source)
+        self.assertIn("row.missionNpcProxyTrackingContexts", source)
+        self.assertIn("missionTracking.sourceSha256?.[sourceFile]", source)
         self.assertIn("row.optionRouteRecovery?.nodes", source)
         self.assertIn("route.connectionIndexSource", source)
         self.assertIn("...(row.consumerSourceFiles || [])", source)

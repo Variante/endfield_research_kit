@@ -684,7 +684,6 @@ def build_unique_mission_tracked_npc_proxy_dialog_contexts(
     npc_proxy_rows: dict,
     npc_proxy_ex: dict,
     dialog_id_registry: dict[str, dict],
-    allowed_proxy_missions: dict[str, str] | None = None,
 ) -> list[dict]:
     """Recover a mission shell for a shared missionless proxy dialog set.
 
@@ -701,13 +700,16 @@ def build_unique_mission_tracked_npc_proxy_dialog_contexts(
     ex_rows_by_proxy = (npc_proxy_ex or {}).get("data") or {}
     out: list[dict] = []
     for proxy_id, raw_consumers in sorted((npc_tracking_consumers or {}).items()):
-        if (
-            allowed_proxy_missions is not None
-            and proxy_id not in allowed_proxy_missions
-        ):
-            continue
         consumers = [row for row in raw_consumers if isinstance(row, dict)]
-        if not consumers or len(consumers) != len(raw_consumers):
+        if (
+            not consumers
+            or len(consumers) != len(raw_consumers)
+            or any(
+                row.get("useFilterCondition") is not False
+                or row.get("trackingVisibilityFilter") is not None
+                for row in consumers
+            )
+        ):
             continue
         mission_ids = {
             str(row.get("missionId") or "").strip() for row in consumers
@@ -733,12 +735,6 @@ def build_unique_mission_tracked_npc_proxy_dialog_contexts(
             or not ex_rows
             or not all(isinstance(row, dict) for row in ex_rows)
             or any(str(row.get("missionId") or "").strip() for row in ex_rows)
-        ):
-            continue
-        if (
-            allowed_proxy_missions is not None
-            and next(iter(mission_ids))
-            != allowed_proxy_missions[proxy_id]
         ):
             continue
         dialog_selections = [
@@ -782,6 +778,7 @@ def build_unique_mission_tracked_npc_proxy_dialog_contexts(
             },
             "npcProxyExRows": ex_rows,
             "relation": "unique_mission_tracked_npc_proxy_dialog_context",
+            "recoveryMethod": "complete_mission_runtime_proxy_census",
             "storyBinding": True,
             "ownership": False,
             "questActivation": False,
@@ -17287,9 +17284,6 @@ def build_language_bundle(
             npc_proxy_rows,
             npc_proxy_ex,
             dialog_id_registry,
-            {
-                "sesidun04_map01_001": "gm01m14",
-            },
         )
     )
     for context in shared_proxy_dialog_contexts:
