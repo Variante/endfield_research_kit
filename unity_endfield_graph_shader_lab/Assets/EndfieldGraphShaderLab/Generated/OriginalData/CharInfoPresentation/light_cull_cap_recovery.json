@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v11",
-  "status": "installed_cap_hgtree_component_mask_type_identity_lifecycle_lod_state_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The HGTreeComponent assignment to numeric id 67 remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the ECS LOD-count/range producer and exact HGTreeComponent-to-id-67 assignment, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v12",
+  "status": "installed_cap_hgtree_id80_separated_from_component67_lod_state_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. The native name/owner of id 67 remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the component-67 ECS LOD-count/range producer and native component identity, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -216,6 +216,21 @@
           2
         ]
       },
+      "managedHGTreeComponent": {
+        "type": "UnityEngine.HyperGryph.ECS.HGTreeComponent",
+        "method": "get_id",
+        "metadataMethodIndex": 478429,
+        "metadataToken": "0x06000279",
+        "virtualAddress": "0x184DBCEC0",
+        "componentId": 80,
+        "archetypeMask": {
+          "bank": 1,
+          "bit": 16,
+          "highQwordMask": "0x0000000000010000"
+        },
+        "component67Match": false,
+        "proof": "the hash-pinned six-byte IL2CPP body is mov eax, 0x50; ret, so HGTreeComponent is component id 80 rather than 67"
+      },
       "methodBodies": [
         {
           "name": "do_ecs_culling",
@@ -270,6 +285,15 @@
           "fileOffset": "0x9D08550",
           "sizeBytes": 988,
           "sha256": "76dcba4f0f93db50a7fdbf2f3fed3084229be907526ff6a33c9556496a81ceab"
+        },
+        {
+          "name": "hgtree_component_get_id",
+          "method": "UnityEngine.HyperGryph.ECS.HGTreeComponent.get_id",
+          "methodIndex": 478429,
+          "virtualAddress": "0x184DBCEC0",
+          "fileOffset": "0x4DBB4C0",
+          "sizeBytes": 6,
+          "sha256": "6786c0e7be3bc2cc01074e814543729b15cd696fdace27b19cf9c499e8df556c"
         }
       ]
     },
@@ -985,9 +1009,14 @@
               "bit": 3,
               "highQwordMask": "0x0000000000000008"
             },
-            "boundary": "this closes how numeric component ids become archetype bits; it does not yet prove that the HGTreeComponent native type is assigned id 67"
+            "hgtreeComponent80Result": {
+              "bank": 1,
+              "bit": 16,
+              "highQwordMask": "0x0000000000010000"
+            },
+            "boundary": "this closes how numeric component ids become archetype bits; the installed HGTreeComponent get_id body independently returns 80, so this component-67 record is not HGTreeComponent"
           },
-          "structureBoundary": "this pointer is resolved from archetype component bit 67; it is not the loader-owned registration blob stored in the runtime-transform owner's +0x78 vector",
+          "structureBoundary": "this pointer is resolved from archetype component bit 67; it is not the loader-owned registration blob stored in the runtime-transform owner's +0x78 vector, and it is not the managed/native scripting HGTreeComponent at id 80",
           "nativeScriptingTypeIdentity": {
             "proxyToNativeTypeNameClosed": true,
             "proxyRegistrationVirtualAddress": "0x1807EEEE0",
@@ -1015,9 +1044,27 @@
               "0x1807EEEE0 registers the decorated proxy name with initializer 0x1807EC5E0 and unregister thunk 0x1807EAF70",
               "0x1807EC5E0 resolves HGTreeComponent in UnityEngine.HyperGryph.ECS from UnityEngine.HGGraphicsModule.dll"
             ],
-            "boundary": "this closes the native scripting proxy-to-type-name identity only; the installed code path assigning that type to archetype component bit 67 is not yet closed"
+            "managedGetId": {
+              "type": "UnityEngine.HyperGryph.ECS.HGTreeComponent",
+              "method": "get_id",
+              "metadataMethodIndex": 478429,
+              "metadataToken": "0x06000279",
+              "virtualAddress": "0x184DBCEC0",
+              "componentId": 80,
+              "archetypeMask": {
+                "bank": 1,
+                "bit": 16,
+                "highQwordMask": "0x0000000000010000"
+              },
+              "component67Match": false,
+              "proof": "the hash-pinned six-byte IL2CPP body is mov eax, 0x50; ret, so HGTreeComponent is component id 80 rather than 67"
+            },
+            "boundary": "the scripting proxy/type identity and IL2CPP get_id body are both closed: HGTreeComponent is id 80 (high-qword bit 16), which disproves the former candidate link to the separate id-67 LOD-state record"
           },
-          "nativeTypeNameMappingClosed": false
+          "managedHGTreeComponentIdMappingClosed": true,
+          "managedHGTreeComponentId": 80,
+          "component67MatchesHGTreeComponent": false,
+          "component67NativeIdentityClosed": false
         },
         "dispatchPacket": {
           "sizeBytes": 64,
@@ -1645,6 +1692,7 @@
       "the parent/per-ArtTag LOD-bias encodings and per-view lodBias multiplier",
       "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
       "the HGTreeComponentProxy-to-native-type name, namespace, and module identity",
+      "the IL2CPP HGTreeComponent.get_id return value 80 and its separation from component id 67",
       "the ECS numeric-component-id to two-qword archetype-mask equation",
       "the direct all-LOD or terminal-LOD HGTree availability initializer",
       "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -1657,7 +1705,7 @@
       "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
       "the semantic names of the initially zero HGTree runtime-state bytes",
-      "the component-bit-67 LOD-count/range producer and HGTreeComponent-to-id-67 assignment",
+      "the component-bit-67 LOD-count/range producer and native component name/owner",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

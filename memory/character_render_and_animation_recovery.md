@@ -121,8 +121,11 @@ NPC archetypes are imported as labeled source kits.
   `EntityManager.GetOrRegisterEntityTypeImpl_Injected` at `0x1801E0D90`, now
   closes the next step: each stride-8 input contributes its signed 16-bit
   component ID to `mask[id >> 6]` at bit `id & 63`, so ID 67 is exactly high
-  qword bit 3 (`0x8`). The remaining identity gap is specifically the
-  assignment `HGTreeComponent -> ID 67`, not the mask equation. Writer
+  qword bit 3 (`0x8`). Current metadata method 478429/token `0x06000279`
+  maps `HGTreeComponent.get_id` to GameAssembly `0x184DBCEC0`; its exact body
+  is `mov eax, 0x50; ret`. `HGTreeComponent` is therefore ID 80/high-qword
+  bit 16 (`0x10000`), proving that the component-67 LOD state is a separate,
+  still unnamed native component rather than `HGTreeComponent`. Writer
   `0x181157760` also closes a second direct-availability initialization path:
   it either marks every LOD and companion subresource available or marks only
   the terminal LOD and the exact readiness range selected through the
@@ -145,8 +148,8 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The remaining
-  initially zero loader-record bytes, the ECS LOD-count/range producer and
-  `HGTreeComponent`-to-ID-67 link, the unrelated scheduled consumer of view
+  initially zero loader-record bytes, the component-67 native identity and
+  LOD-count/range producer, the unrelated scheduled consumer of view
   `+0x18`,
   any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
