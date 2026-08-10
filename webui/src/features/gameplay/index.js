@@ -130,8 +130,6 @@
 
   const gp$ = $;
   let gameplayPanel = null;
-  const gameplaySoundCandidateLists = new Map();
-  let gameplaySoundCandidateListSequence = 0;
 
   function isMobileLayout() {
     return !!(window.matchMedia && window.matchMedia(MOBILE_LAYOUT_QUERY).matches);
@@ -1457,16 +1455,13 @@
       const debugMeta = STATE.showDebug
         ? `<code>${escapeHtml([candidate.mediaId ? `media ${candidate.mediaId}` : "", evidence.soundObjects ? `${evidence.soundObjects} Sound objects` : ""].filter(Boolean).join(" · "))}</code>`
         : "";
-      return `<div class="gameplay-projectile-audio-candidate gameplay-sfx-possible-file" data-gameplay-sfx-src="${escapeHtml(candidate.src)}"><button type="button" class="gameplay-sfx-candidate-toggle" data-gameplay-sfx-play><small>${escapeHtml(visibleMeta)}</small>${debugMeta}</button><div class="gameplay-sfx-possible-file-player" data-gameplay-sfx-player></div></div>`;
+      return `<div class="gameplay-projectile-audio-candidate gameplay-sfx-possible-file"><audio controls preload="none" src="${escapeHtml(candidate.src)}"></audio><small>${escapeHtml(visibleMeta)}</small>${debugMeta}</div>`;
     }).join("");
     return `<div class="gameplay-sfx-possible-files">${cards}</div>`;
   }
 
   function renderGameplaySoundCandidates(event, audio) {
-    if (!audio.length) return "";
-    const key = `sound-${++gameplaySoundCandidateListSequence}`;
-    gameplaySoundCandidateLists.set(key, { event, audio });
-    return `<button type="button" class="gameplay-sfx-list-toggle" data-gameplay-sfx-list-toggle="${escapeHtml(key)}">${escapeHtml(text("soundOpenToList"))}</button><template data-gameplay-sfx-list="${escapeHtml(key)}"></template>`;
+    return audio.length ? renderGameplaySoundCandidateList(event, audio) : "";
   }
 
   function renderGameplaySoundEvents(events, options = {}) {
@@ -1565,7 +1560,8 @@
     const groups = STATE.integration.soundEffects?.characters?.[entry?.id]?.groups || {};
     const events = (entry?.skillGroups || []).flatMap((group) => {
       const soundGroup = groups[group?.id] || {};
-      return (soundGroup.events || []).filter((event) => !gameplaySoundHasExactSkillTrigger(event));
+      return filterEndministratorVariant(soundGroup.events, entry, (event) => event?.id)
+        .filter((event) => !gameplaySoundHasExactSkillTrigger(event));
     });
     return renderGameplaySoundGroup(mergeGameplaySoundEvents(events), {
       label: text("inferredSkillSoundEffects"),
