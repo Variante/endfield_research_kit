@@ -1576,8 +1576,12 @@ internal-call entry 204 is
 `HGFactoryRenderManager.SetEntityEnabledLightModes_Injected`; wrapper
 `0x1801EB940` reaches `0x1810D9110`, which writes the supplied
 `enabledLightModes` value to record `+0x14` for the entire `0x18`-stride family.
-Its downstream bit meanings and render-stage consumer remain open. This loader
-blob is separate
+Installed IL2CPP metadata closes the argument as `UInt32 lightModeMask` and
+`HGShaderLightMode` as 31 named pass bits spanning `0..30` plus `None=0`.
+Hash-pinned `Beyond.Gameplay.Factory.PerDrawPassConfig` code parses its narrower
+gameplay pass enum into that mask and `Apply` calls the managed wrapper at
+`0x1869F3904`. The exact later native render-stage consumer remains open. This
+loader blob is separate
 from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
 at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
 available masks at `+0x04/+0x05`, a reserved/alignment word at `+0x06`, a
@@ -1686,8 +1690,8 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The exact asset class of loader record
-`+0x0C`, the downstream bit meanings and render-stage consumer of
-`enabledLightModes` at `+0x14`, and the component-67 standalone native type
+`+0x0C`, the render-stage consumer of `enabledLightModes` at `+0x14`, and the
+component-67 standalone native type
 name, any separate post-dispatch
 copy or consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain

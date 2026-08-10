@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -715,6 +716,38 @@ class LightCullCapAuditTests(unittest.TestCase):
             result["enabledLightModesInternalCall"]["writerCoreVirtualAddress"],
             "0x1810D9110",
         )
+        enabled_modes = runtime_tail["enabledLightModesAt0x14"]
+        self.assertTrue(enabled_modes["passBitMeaningsClosed"])
+        self.assertEqual(enabled_modes["maskType"], "System.UInt32")
+        self.assertEqual(enabled_modes["shaderLightModeLiteralCount"], 32)
+        self.assertEqual(
+            enabled_modes["shaderLightModeCombinedMask"], "0x7FFFFFFF"
+        )
+        managed_contract = result["enabledLightModesInternalCall"][
+            "managedContract"
+        ]
+        literals = {
+            row["name"]: row["value"]
+            for row in managed_contract["shaderLightMode"]["literals"]
+        }
+        self.assertEqual(literals["GBuffer"], "0x00000001")
+        self.assertEqual(literals["ShadowCaster"], "0x00000400")
+        self.assertEqual(literals["DepthOnly"], "0x00000800")
+        self.assertEqual(literals["GPUParticleSimulate"], "0x40000000")
+        set_enabled_parameters = managed_contract["methods"][
+            "setEntityEnabledLightModes"
+        ]["parameters"]
+        self.assertEqual(
+            set_enabled_parameters[-1]["name"],
+            "lightModeMask",
+        )
+        game_assembly_contract = result["enabledLightModesInternalCall"][
+            "gameAssemblyContract"
+        ]
+        self.assertEqual(
+            game_assembly_contract["perDrawApplyCall"]["targetVirtualAddress"],
+            "0x18B3F9118",
+        )
         self.assertEqual(
             result["lodSelection"]["selectionBoundary"],
             "lower bound exclusive; upper bound inclusive",
@@ -979,6 +1012,44 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_shader_light_mode_bit_fails_closed(self) -> None:
+        metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
+        sections = {}
+        for section_index, section_name in enumerate(
+            AUDIT.IL2CPP_METADATA_SECTION_NAMES
+        ):
+            sections[section_name] = struct.unpack_from(
+                "<Ii", metadata, 8 + section_index * 8
+            )
+        defaults_offset, defaults_size = sections["fieldDefaultValues"]
+        values_offset, _values_size = sections[
+            "fieldAndParameterDefaultValueData"
+        ]
+        shadow_caster_field = AUDIT.HG_SHADER_LIGHT_MODE_FIELDS[
+            "ShadowCaster"
+        ][0]
+        shadow_caster_data_index = None
+        for position in range(
+            defaults_offset, defaults_offset + defaults_size, 12
+        ):
+            field_index, _type_index, data_index = struct.unpack_from(
+                "<iii", metadata, position
+            )
+            if field_index == shadow_caster_field:
+                shadow_caster_data_index = data_index
+                break
+        self.assertIsNotNone(shadow_caster_data_index)
+        metadata[values_offset + shadow_caster_data_index] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=enabled_light_modes_shader_light_mode_ShadowCaster_value; "
+            r"source=.*global-metadata.dat; expected=1024; actual=1280",
+        ):
+            AUDIT.validate_unity_hgtree_renderer_boundary(
+                AUDIT.PEImage(AUDIT.UNITY_PLAYER), metadata=bytes(metadata)
+            )
 
     def test_changed_hgtree_owner_cleanup_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)

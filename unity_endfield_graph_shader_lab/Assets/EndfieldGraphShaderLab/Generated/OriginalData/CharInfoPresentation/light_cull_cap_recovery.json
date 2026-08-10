@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v22",
-  "status": "installed_cap_hgtree_runtime_record_producers_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. Runtime record +0x08 has a mutable renderFlags lifecycle: four particle setup variants replace it with bit 20 and a scheduled callback ORs it into render flags. Record +0x0C is the third resolved, reference-counted renderer resource index written by the LOD availability initializers, released by their cleanup, and independently consumed as a supplemental filter overlay. Its exact asset class remains open. Record +0x10 is closed as Renderer property flags updated by the common state synchronizer. Dedicated HyperGryph internal-call entry 204 names record +0x14 exactly as enabledLightModes; its hash-pinned core writes the supplied value to every record. The downstream bit meanings remain open. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, the zero reserved/alignment word at +0x06, and eight cumulative renderer-range endpoints. All 25 direct calls to its two accessors and 21 logical caller bodies are pinned. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, which narrowed the producer search to copied StreamingSceneV2 data. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. StreamingSceneV2 root fields 6/7 now close the paired native entity groups and archetype descriptions. Each 8-byte descriptor contains an Int16 component id, Int16 element size, and UInt32 auxiliary value; component 67 is serialized with size 24. The hash-pinned native copier at 0x1801F95E0 copies each entityCount*elementSize initial-data slice directly into native ECS storage. Across all 83 map scopes, the 1,230,041 distinct component-67 entity ids exactly equal the distinct type-0/type-9 owner set. All 1,305,818 serialized occurrences initialize lodCount in 1..6, state bytes 8/8/8/0/0, a zero reserved word at +0x06, zero readiness, and one of 102 cumulative renderer-range patterns. Duplicate map/entity records are byte-identical. Thus the LOD count and range producer is the original game-binary initial-data blob, not a later ConvertFrom inference. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. Any separate post-dispatch cull-view +0x18 consumer, the exact asset class of loader record +0x0C, the downstream bit meanings and render-stage consumer of enabledLightModes at +0x14, the component-67 standalone native type name, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v23",
+  "status": "installed_cap_hgtree_enabled_light_mode_bits_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. Runtime record +0x08 has a mutable renderFlags lifecycle: four particle setup variants replace it with bit 20 and a scheduled callback ORs it into render flags. Record +0x0C is the third resolved, reference-counted renderer resource index written by the LOD availability initializers, released by their cleanup, and independently consumed as a supplemental filter overlay. Its exact asset class remains open. Record +0x10 is closed as Renderer property flags updated by the common state synchronizer. Dedicated HyperGryph internal-call entry 204 names record +0x14 exactly as enabledLightModes; its hash-pinned core writes the supplied UInt32 value to every record. IL2CPP metadata closes HGShaderLightMode as 31 named render-pass bits spanning 0..30, and the hash-pinned gameplay PerDrawPassConfig parser and Apply method pass that mask through the managed wrapper. Only the later native render-stage consumer remains open. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, the zero reserved/alignment word at +0x06, and eight cumulative renderer-range endpoints. All 25 direct calls to its two accessors and 21 logical caller bodies are pinned. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, which narrowed the producer search to copied StreamingSceneV2 data. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. StreamingSceneV2 root fields 6/7 now close the paired native entity groups and archetype descriptions. Each 8-byte descriptor contains an Int16 component id, Int16 element size, and UInt32 auxiliary value; component 67 is serialized with size 24. The hash-pinned native copier at 0x1801F95E0 copies each entityCount*elementSize initial-data slice directly into native ECS storage. Across all 83 map scopes, the 1,230,041 distinct component-67 entity ids exactly equal the distinct type-0/type-9 owner set. All 1,305,818 serialized occurrences initialize lodCount in 1..6, state bytes 8/8/8/0/0, a zero reserved word at +0x06, zero readiness, and one of 102 cumulative renderer-range patterns. Duplicate map/entity records are byte-identical. Thus the LOD count and range producer is the original game-binary initial-data blob, not a later ConvertFrom inference. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. Any separate post-dispatch cull-view +0x18 consumer, the exact asset class of loader record +0x0C, the render-stage consumer of enabledLightModes at +0x14, the component-67 standalone native type name, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -883,7 +883,566 @@
         "index": 204,
         "name": "UnityEngine.HyperGryph.HGFactoryRenderManager::SetEntityEnabledLightModes_Injected",
         "targetVirtualAddress": "0x1801EB940",
-        "writerCoreVirtualAddress": "0x1810D9110"
+        "writerCoreVirtualAddress": "0x1810D9110",
+        "managedContract": {
+          "metadataVersion": 29,
+          "types": {
+            "factoryRenderManager": {
+              "typeIndex": 60910,
+              "token": "0x02000021",
+              "fullName": "UnityEngine.HyperGryph.HGFactoryRenderManager"
+            },
+            "shaderLightMode": {
+              "typeIndex": 60993,
+              "token": "0x02000074",
+              "fullName": "UnityEngine.HyperGryph.HGShaderLightMode"
+            },
+            "perDrawPassConfig": {
+              "typeIndex": 50112,
+              "token": "0x0200023B",
+              "fullName": "Beyond.Gameplay.Factory.PerDrawPassConfig"
+            },
+            "perDrawLightMode": {
+              "typeIndex": 50118,
+              "token": "0x02000241",
+              "fullName": "Beyond.Gameplay.Factory.PerDrawLightMode"
+            }
+          },
+          "methods": {
+            "setEntityEnabledLightModes": {
+              "methodIndex": 477909,
+              "token": "0x06000071",
+              "name": "SetEntityEnabledLightModes",
+              "returnMetadataTypeIndex": 170022,
+              "parameters": [
+                {
+                  "name": "rendererEntity",
+                  "token": "0x080000DF",
+                  "metadataTypeIndex": 139403
+                },
+                {
+                  "name": "lightModeMask",
+                  "token": "0x080000E0",
+                  "metadataTypeIndex": 168243
+                }
+              ]
+            },
+            "setEntityEnabledLightModesInjected": {
+              "methodIndex": 477923,
+              "token": "0x0600007F",
+              "name": "SetEntityEnabledLightModes_Injected",
+              "returnMetadataTypeIndex": 170022,
+              "parameters": [
+                {
+                  "name": "rendererEntity",
+                  "token": "0x08000101",
+                  "metadataTypeIndex": 109842
+                },
+                {
+                  "name": "lightModeMask",
+                  "token": "0x08000102",
+                  "metadataTypeIndex": 168243
+                }
+              ]
+            },
+            "perDrawApply": {
+              "methodIndex": 396344,
+              "token": "0x06000CB0",
+              "name": "Apply",
+              "returnMetadataTypeIndex": 170022,
+              "parameters": [
+                {
+                  "name": "rendererEntity",
+                  "token": "0x08000C86",
+                  "metadataTypeIndex": 139403
+                },
+                {
+                  "name": "currentLightMode",
+                  "token": "0x08000C87",
+                  "metadataTypeIndex": 114269
+                }
+              ]
+            },
+            "perDrawParser": {
+              "methodIndex": 396346,
+              "token": "0x06000CB2",
+              "name": "_ParseToHGShaderLightMode",
+              "returnMetadataTypeIndex": 145179,
+              "parameters": [
+                {
+                  "name": "value",
+                  "token": "0x08000C8A",
+                  "metadataTypeIndex": 157254
+                }
+              ]
+            }
+          },
+          "shaderLightMode": {
+            "underlyingMaskType": "System.UInt32",
+            "literalCount": 32,
+            "nonzeroBitRange": [
+              0,
+              30
+            ],
+            "combinedMask": "0x7FFFFFFF",
+            "literals": [
+              {
+                "name": "None",
+                "fieldIndex": 296443,
+                "token": "0x04000155",
+                "value": "0x00000000",
+                "bit": null,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "GBuffer",
+                "fieldIndex": 296444,
+                "token": "0x04000156",
+                "value": "0x00000001",
+                "bit": 0,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "GBufferMobile",
+                "fieldIndex": 296445,
+                "token": "0x04000157",
+                "value": "0x00000002",
+                "bit": 1,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "Erosion",
+                "fieldIndex": 296446,
+                "token": "0x04000158",
+                "value": "0x00000004",
+                "bit": 2,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "ErosionMobile",
+                "fieldIndex": 296447,
+                "token": "0x04000159",
+                "value": "0x00000008",
+                "bit": 3,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "ErosionClear",
+                "fieldIndex": 296448,
+                "token": "0x0400015A",
+                "value": "0x00000010",
+                "bit": 4,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "ForwardOnly",
+                "fieldIndex": 296449,
+                "token": "0x0400015B",
+                "value": "0x00000020",
+                "bit": 5,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "Forward",
+                "fieldIndex": 296450,
+                "token": "0x0400015C",
+                "value": "0x00000040",
+                "bit": 6,
+                "encodedSizeBytes": 1
+              },
+              {
+                "name": "ForwardCharacterOnly",
+                "fieldIndex": 296451,
+                "token": "0x0400015D",
+                "value": "0x00000080",
+                "bit": 7,
+                "encodedSizeBytes": 2
+              },
+              {
+                "name": "ForwardReflection",
+                "fieldIndex": 296452,
+                "token": "0x0400015E",
+                "value": "0x00000100",
+                "bit": 8,
+                "encodedSizeBytes": 2
+              },
+              {
+                "name": "CharacterOutline",
+                "fieldIndex": 296453,
+                "token": "0x0400015F",
+                "value": "0x00000200",
+                "bit": 9,
+                "encodedSizeBytes": 2
+              },
+              {
+                "name": "ShadowCaster",
+                "fieldIndex": 296454,
+                "token": "0x04000160",
+                "value": "0x00000400",
+                "bit": 10,
+                "encodedSizeBytes": 2
+              },
+              {
+                "name": "DepthOnly",
+                "fieldIndex": 296455,
+                "token": "0x04000161",
+                "value": "0x00000800",
+                "bit": 11,
+                "encodedSizeBytes": 2
+              },
+              {
+                "name": "DepthCharacterOnly",
+                "fieldIndex": 296456,
+                "token": "0x04000162",
+                "value": "0x00001000",
+                "bit": 12,
+                "encodedSizeBytes": 2
+              },
+              {
+                "name": "SRPDefaultUnlit",
+                "fieldIndex": 296457,
+                "token": "0x04000163",
+                "value": "0x00002000",
+                "bit": 13,
+                "encodedSizeBytes": 2
+              },
+              {
+                "name": "ForwardDecal",
+                "fieldIndex": 296458,
+                "token": "0x04000164",
+                "value": "0x00004000",
+                "bit": 14,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "VFXDecal",
+                "fieldIndex": 296459,
+                "token": "0x04000165",
+                "value": "0x00008000",
+                "bit": 15,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "WetnessDecal",
+                "fieldIndex": 296460,
+                "token": "0x04000166",
+                "value": "0x00010000",
+                "bit": 16,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "Distortion",
+                "fieldIndex": 296461,
+                "token": "0x04000167",
+                "value": "0x00020000",
+                "bit": 17,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "FullScreenDebug",
+                "fieldIndex": 296462,
+                "token": "0x04000168",
+                "value": "0x00040000",
+                "bit": 18,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "OccludedDisplay",
+                "fieldIndex": 296463,
+                "token": "0x04000169",
+                "value": "0x00080000",
+                "bit": 19,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "TerrainVTDecal",
+                "fieldIndex": 296464,
+                "token": "0x0400016A",
+                "value": "0x00100000",
+                "bit": 20,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "TerrainVTDecalMobile",
+                "fieldIndex": 296465,
+                "token": "0x0400016B",
+                "value": "0x00200000",
+                "bit": 21,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "RayTracingReflection",
+                "fieldIndex": 296466,
+                "token": "0x0400016C",
+                "value": "0x00400000",
+                "bit": 22,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "RayTracingReflectionCompute",
+                "fieldIndex": 296467,
+                "token": "0x0400016D",
+                "value": "0x00800000",
+                "bit": 23,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "RayTracingGI",
+                "fieldIndex": 296468,
+                "token": "0x0400016E",
+                "value": "0x01000000",
+                "bit": 24,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "StencilAlphaBlend",
+                "fieldIndex": 296469,
+                "token": "0x0400016F",
+                "value": "0x02000000",
+                "bit": 25,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "WaterMarkUI",
+                "fieldIndex": 296470,
+                "token": "0x04000170",
+                "value": "0x04000000",
+                "bit": 26,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "ForwardAfterUI",
+                "fieldIndex": 296471,
+                "token": "0x04000171",
+                "value": "0x08000000",
+                "bit": 27,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "TextureStreamingFeedback",
+                "fieldIndex": 296472,
+                "token": "0x04000172",
+                "value": "0x10000000",
+                "bit": 28,
+                "encodedSizeBytes": 4
+              },
+              {
+                "name": "GPUParticleSpawn",
+                "fieldIndex": 296473,
+                "token": "0x04000173",
+                "value": "0x20000000",
+                "bit": 29,
+                "encodedSizeBytes": 5
+              },
+              {
+                "name": "GPUParticleSimulate",
+                "fieldIndex": 296474,
+                "token": "0x04000174",
+                "value": "0x40000000",
+                "bit": 30,
+                "encodedSizeBytes": 5
+              }
+            ]
+          },
+          "perDrawLightMode": {
+            "literalCount": 25,
+            "crosswalk": [
+              {
+                "name": "None",
+                "perDrawValue": "0x00000000",
+                "shaderLightModeValue": "0x00000000"
+              },
+              {
+                "name": "GBuffer",
+                "perDrawValue": "0x00000001",
+                "shaderLightModeValue": "0x00000001"
+              },
+              {
+                "name": "GBufferMobile",
+                "perDrawValue": "0x00000002",
+                "shaderLightModeValue": "0x00000002"
+              },
+              {
+                "name": "Erosion",
+                "perDrawValue": "0x00000004",
+                "shaderLightModeValue": "0x00000004"
+              },
+              {
+                "name": "ErosionMobile",
+                "perDrawValue": "0x00000008",
+                "shaderLightModeValue": "0x00000008"
+              },
+              {
+                "name": "ErosionClear",
+                "perDrawValue": "0x00000010",
+                "shaderLightModeValue": "0x00000010"
+              },
+              {
+                "name": "ForwardOnly",
+                "perDrawValue": "0x00000020",
+                "shaderLightModeValue": "0x00000020"
+              },
+              {
+                "name": "Forward",
+                "perDrawValue": "0x00000040",
+                "shaderLightModeValue": "0x00000040"
+              },
+              {
+                "name": "ForwardCharacterOnly",
+                "perDrawValue": "0x00000080",
+                "shaderLightModeValue": "0x00000080"
+              },
+              {
+                "name": "ForwardReflection",
+                "perDrawValue": "0x00000100",
+                "shaderLightModeValue": "0x00000100"
+              },
+              {
+                "name": "CharacterOutline",
+                "perDrawValue": "0x00000200",
+                "shaderLightModeValue": "0x00000200"
+              },
+              {
+                "name": "ShadowCaster",
+                "perDrawValue": "0x00000400",
+                "shaderLightModeValue": "0x00000400"
+              },
+              {
+                "name": "DepthOnly",
+                "perDrawValue": "0x00000800",
+                "shaderLightModeValue": "0x00000800"
+              },
+              {
+                "name": "DepthCharacterOnly",
+                "perDrawValue": "0x00001000",
+                "shaderLightModeValue": "0x00001000"
+              },
+              {
+                "name": "SRPDefaultUnlit",
+                "perDrawValue": "0x00002000",
+                "shaderLightModeValue": "0x00002000"
+              },
+              {
+                "name": "ForwardDecal",
+                "perDrawValue": "0x00004000",
+                "shaderLightModeValue": "0x00004000"
+              },
+              {
+                "name": "VFXDecal",
+                "perDrawValue": "0x00008000",
+                "shaderLightModeValue": "0x00008000"
+              },
+              {
+                "name": "Distortion",
+                "perDrawValue": "0x00010000",
+                "shaderLightModeValue": "0x00020000"
+              },
+              {
+                "name": "FullScreenDebug",
+                "perDrawValue": "0x00020000",
+                "shaderLightModeValue": "0x00040000"
+              },
+              {
+                "name": "OccludedDisplay",
+                "perDrawValue": "0x00040000",
+                "shaderLightModeValue": "0x00080000"
+              },
+              {
+                "name": "TerrainVTDecal",
+                "perDrawValue": "0x00080000",
+                "shaderLightModeValue": "0x00100000"
+              },
+              {
+                "name": "TerrainVTDecalMobile",
+                "perDrawValue": "0x00100000",
+                "shaderLightModeValue": "0x00200000"
+              },
+              {
+                "name": "RayTracingReflection",
+                "perDrawValue": "0x00200000",
+                "shaderLightModeValue": "0x00400000"
+              },
+              {
+                "name": "StencilAlphaBlend",
+                "perDrawValue": "0x00400000",
+                "shaderLightModeValue": "0x02000000"
+              },
+              {
+                "name": "WaterMarkUI",
+                "perDrawValue": "0x00800000",
+                "shaderLightModeValue": "0x04000000"
+              }
+            ],
+            "unavailableInPerDrawConfig": [
+              "WetnessDecal",
+              "RayTracingReflectionCompute",
+              "RayTracingGI",
+              "ForwardAfterUI",
+              "TextureStreamingFeedback",
+              "GPUParticleSpawn",
+              "GPUParticleSimulate"
+            ]
+          }
+        },
+        "gameAssemblyContract": {
+          "verifiedBodies": [
+            {
+              "label": "per_draw_pass_apply",
+              "virtualAddress": "0x1869F3894",
+              "fileOffset": "0x69F1E94",
+              "sizeBytes": 184,
+              "sha256": "6edbf189c4933e093ec0dc5b342bd0dc9fdb45f7ef65b91767cb4b584a86a981"
+            },
+            {
+              "label": "per_draw_to_hg_shader_light_mode",
+              "virtualAddress": "0x1869F3A20",
+              "fileOffset": "0x69F2020",
+              "sizeBytes": 456,
+              "sha256": "86eff49d965112301e8c3321a2646b8259fa34920f73fbb682bc533464d14fb6"
+            },
+            {
+              "label": "set_entity_enabled_light_modes",
+              "virtualAddress": "0x18B3F9118",
+              "fileOffset": "0xB3F7718",
+              "sizeBytes": 28,
+              "sha256": "9910ce5d8b4c4571068000ffe95ba0dc052fa201f835c4167d9c24fcd0550a36"
+            },
+            {
+              "label": "set_entity_enabled_light_modes_injected",
+              "virtualAddress": "0x18B3F90D8",
+              "fileOffset": "0xB3F76D8",
+              "sizeBytes": 64,
+              "sha256": "02078f35c7e7dad3a0f7dff28e5a62190ba87328f881b74f3cb2bf6257f5d76e"
+            }
+          ],
+          "methodPointers": [
+            {
+              "methodIndex": 396344,
+              "pointerFileOffset": "0xE9DD018",
+              "bodyVirtualAddress": "0x1869F3894"
+            },
+            {
+              "methodIndex": 396346,
+              "pointerFileOffset": "0xE9DD028",
+              "bodyVirtualAddress": "0x1869F3A20"
+            },
+            {
+              "methodIndex": 477909,
+              "pointerFileOffset": "0xEF00120",
+              "bodyVirtualAddress": "0x18B3F9118"
+            },
+            {
+              "methodIndex": 477923,
+              "pointerFileOffset": "0xEF00190",
+              "bodyVirtualAddress": "0x18B3F90D8"
+            }
+          ],
+          "perDrawApplyCall": {
+            "virtualAddress": "0x1869F3904",
+            "targetVirtualAddress": "0x18B3F9118",
+            "dataflow": "parsed HGShaderLightMode mask in eax is stored into currentLightMode, copied to edx, then passed with rendererEntity to SetEntityEnabledLightModes"
+          }
+        }
       },
       "lodControlInternalCalls": {
         "cullingSystem": [
@@ -1111,6 +1670,7 @@
             },
             "enabledLightModesAt0x14": {
               "roleClosed": true,
+              "passBitMeaningsClosed": true,
               "hgtreeInitialValue": 0,
               "internalCallIndex": 204,
               "internalCallName": "UnityEngine.HyperGryph.HGFactoryRenderManager::SetEntityEnabledLightModes_Injected",
@@ -1120,8 +1680,17 @@
               "recordStrideBytes": 24,
               "genericConstructorVirtualAddress": "0x180BCB760",
               "genericConstructorSource": "constructor input +0x20",
-              "proof": "dedicated HyperGryph internal-call entry 204 names SetEntityEnabledLightModes_Injected; its wrapper reaches a core that selects the 0x7F00 renderer family and writes the supplied value to every record+0x14 at stride 0x18",
-              "proofBoundary": "the downstream bit meanings and render-stage consumer of enabledLightModes remain open"
+              "maskType": "System.UInt32",
+              "shaderLightModeLiteralCount": 32,
+              "shaderLightModeCombinedMask": "0x7FFFFFFF",
+              "businessProducer": {
+                "type": "Beyond.Gameplay.Factory.PerDrawPassConfig",
+                "method": "Apply",
+                "parser": "_ParseToHGShaderLightMode",
+                "callVirtualAddress": "0x1869F3904"
+              },
+              "proof": "dedicated HyperGryph internal-call entry 204 names SetEntityEnabledLightModes_Injected; its wrapper reaches a core that selects the 0x7F00 renderer family and writes the supplied UInt32 mask to every record+0x14 at stride 0x18; IL2CPP metadata defines HGShaderLightMode as bits 0..30, while PerDrawPassConfig.Apply parses its gameplay pass enum and calls the managed wrapper directly",
+              "proofBoundary": "the exact downstream render-stage consumer of enabledLightModes remains open"
             }
           }
         },
@@ -3462,6 +4031,7 @@
       "loader runtime record +0x0C as the third resolved reference-counted renderer resource index, its two writers and cleanup, and its independent filter-overlay consumption",
       "loader runtime record +0x10 as Renderer property flags and its common state-synchronization writer",
       "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
+      "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
       "the direct-distance and scaled-metric HGTree LOD interval equations",
       "the six-way HGTree LOD job dispatch segment",
       "the HGTree LOD dispatch packet and payload layouts",
@@ -3499,7 +4069,7 @@
       "any separate post-dispatch copy or consumer of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
       "the exact asset class represented by runtime record +0x0C",
-      "the downstream bit meanings and render-stage consumer of enabledLightModes at runtime record +0x14",
+      "the exact render-stage consumer of enabledLightModes at runtime record +0x14",
       "the standalone native component type name for component 67",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
