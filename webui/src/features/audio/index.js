@@ -2035,6 +2035,13 @@
       nonDefaultLoop: 0, globalScope: 0, continuous: 0, resetPlaylist: 0,
       modes: new Map(), randomModes: new Map(), transitions: new Map(), statuses: new Map(),
     };
+    const layerBlend = {
+      nodes: 0, exact: 0, unresolved: 0, definitions: 0,
+      initialCurves: 0, associations: 0, points: 0, continuous: 0,
+      outsideChildren: 0, statuses: new Map(), proof: new Map(),
+      assignments: new Map(), rtpcTypes: new Map(), rtpcIds: new Set(),
+      rtpcIdsTruncated: false,
+    };
     let unresolved = 0;
     for (const evidence of asArray(record?.evidence)) {
       const dispatch = evidence?.actionDispatchEvidence;
@@ -2124,6 +2131,29 @@
         for (const [key, count] of Object.entries(container?.randomSequenceParserStatuses || {})) {
           randomSequence.statuses.set(key, (randomSequence.statuses.get(key) || 0) + Number(count || 0));
         }
+        layerBlend.nodes += Number(container?.layerNodeCount || 0);
+        layerBlend.exact += Number(container?.typedLayerNodeCount || 0);
+        layerBlend.unresolved += Number(container?.unresolvedLayerNodeCount || 0);
+        layerBlend.definitions += Number(container?.layerDefinitionCount || 0);
+        layerBlend.initialCurves += Number(container?.layerInitialRtpcCurveCount || 0);
+        layerBlend.associations += Number(container?.layerAssociationCount || 0);
+        layerBlend.points += Number(container?.layerCurvePointCount || 0);
+        layerBlend.continuous += Number(container?.continuousLayerNodeCount || 0);
+        layerBlend.outsideChildren += Number(container?.layerAssociationOutsideChildrenCount || 0);
+        for (const [key, count] of Object.entries(container?.layerParserStatuses || {})) {
+          layerBlend.statuses.set(key, (layerBlend.statuses.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.layerProofStatuses || {})) {
+          layerBlend.proof.set(key, (layerBlend.proof.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.layerAssignmentStatuses || {})) {
+          layerBlend.assignments.set(key, (layerBlend.assignments.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.layerRtpcTypes || {})) {
+          layerBlend.rtpcTypes.set(key, (layerBlend.rtpcTypes.get(key) || 0) + Number(count || 0));
+        }
+        for (const rtpcId of asArray(container?.layerRtpcIdsHex)) layerBlend.rtpcIds.add(rtpcId);
+        layerBlend.rtpcIdsTruncated ||= !!container?.layerRtpcIdsTruncated;
       }
       for (const node of asArray(evidence?.musicNodeEvidence)) {
         const kind = normalize(node?.nodeKind) || `musicType${node?.objectType ?? "?"}`;
@@ -2205,6 +2235,33 @@
         randomSequence.resetPlaylist ? `${formatNumber(randomSequence.resetPlaylist)} reset-on-play nodes` : "",
       ].filter(Boolean).join(" / "));
       values.push("Runtime random seed, shuffle history, avoid-repeat history, Sequence cursor, and reset timing were not observed; playlist rows describe policy, not a selected leaf.");
+    }
+    if (layerBlend.nodes) {
+      const summarizeCounts = (counts) => [...counts]
+        .map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`)
+        .join(" / ");
+      const rtpcIds = [...layerBlend.rtpcIds];
+      values.push([
+        `Wwise Layer/Blend structure: ${formatNumber(layerBlend.nodes)} nodes`,
+        `${formatNumber(layerBlend.exact)} typed exact`,
+        layerBlend.unresolved ? `${formatNumber(layerBlend.unresolved)} unresolved` : "",
+        summarizeCounts(layerBlend.assignments),
+        summarizeCounts(layerBlend.proof),
+        summarizeCounts(layerBlend.statuses),
+      ].filter(Boolean).join(" / "));
+      values.push([
+        `Layer curves: ${formatNumber(layerBlend.definitions)} layers`,
+        `${formatNumber(layerBlend.associations)} child associations`,
+        `${formatNumber(layerBlend.points)} curve points`,
+        layerBlend.initialCurves ? `${formatNumber(layerBlend.initialCurves)} initial RTPC curves` : "",
+        layerBlend.continuous ? `${formatNumber(layerBlend.continuous)} continuous-validation nodes` : "",
+        summarizeCounts(layerBlend.rtpcTypes),
+        layerBlend.outsideChildren ? `${formatNumber(layerBlend.outsideChildren)} associations outside Children` : "",
+      ].filter(Boolean).join(" / "));
+      if (rtpcIds.length) {
+        values.push(`Layer RTPC ids: ${rtpcIds.slice(0, 12).join(" / ")}${layerBlend.rtpcIdsTruncated || rtpcIds.length > 12 ? " / more omitted" : ""}`);
+      }
+      values.push("Layer curves prove authored RTPC-driven blend/crossfade policy. The live RTPC value, per-child gain, audible layers, and selected media were not observed; zero-layer assignments remain structural child relations only.");
     }
     for (const detail of actionDetails) values.push(detail);
     for (const [kind, value] of musicNodes) {

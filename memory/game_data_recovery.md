@@ -223,6 +223,16 @@ weights even when that bit is clear. These fields prove the authored selection
 policy, while the random seed, shuffle and avoid-repeat history, Sequence
 cursor, reset timing, and chosen runtime leaf remain unobserved.
 
+Wwise v150 type-9 objects are Layer/Blend containers. Their bounded tail now
+preserves Layer ids, initial RTPC curves, Layer RTPC id/type, child-associated
+curve points and interpolation, and continuous validation. A non-empty Layer
+proves an authored RTPC-driven blend/crossfade policy, not one randomly chosen
+child or unconditional simultaneous playback. Zero-Layer assignments remain
+structural Children relations. Children without reciprocal parent pointers are
+traversed only when one same-bank audio-node candidate consumes the full typed
+tail uniquely, and remain visibly partial; the live RTPC value, child gains,
+audible layers, and selected media are not observed.
+
 Current IL2CPP managed string literals provide a second exact name source.
 Lowercased Wwise FNV-1 joins recover previously missing `au_*`, `bark_*`, and
 `radio_*` names only when their hash is a HIRC type-4 Event. A string literal
