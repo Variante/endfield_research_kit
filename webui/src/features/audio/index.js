@@ -1750,6 +1750,26 @@
             humanize(transition.conditionInterpretationStatus || ""),
           ].filter(Boolean).join(" / ");
           transitionCard.append(title, detail);
+          const registrations = asArray(transition.registrations).filter((row) => row && typeof row === "object");
+          if (registrations.length) {
+            const callbackList = document.createElement("div");
+            callbackList.className = "audio-chip-list";
+            for (const registration of registrations) {
+              const chip = document.createElement("span");
+              chip.textContent = [
+                humanize(registration.conditionType || `condition ${registration.conditionTypeRaw ?? "?"}`),
+                `order ${registration.actionOrder ?? "?"}`,
+                normalize(registration.callbackMethod),
+                registration.callbackMethodIndex !== undefined ? `method ${registration.callbackMethodIndex}` : "",
+                normalize(registration.callbackVirtualAddress) ? `VA ${registration.callbackVirtualAddress}` : "",
+                asArray(registration.directStateSetters).length
+                  ? `direct setters ${asArray(registration.directStateSetters).join(" / ")}`
+                  : "",
+              ].filter(Boolean).join(" / ");
+              callbackList.appendChild(chip);
+            }
+            transitionCard.appendChild(callbackList);
+          }
           card.appendChild(transitionCard);
         }
         for (const chain of callChains) {
@@ -1999,6 +2019,22 @@
     const containers = new Map();
     const musicNodes = new Map();
     const actionDetails = [];
+    const selector = {
+      nodes: 0, exact: 0, unresolved: 0, continuous: 0,
+      packages: 0, nonEmptyPackages: 0, strictSubsetPackages: 0,
+      packageChildRefs: 0, associations: 0, continuePlayback: 0,
+      isFirstOnly: 0, nonzeroFadeOut: 0, nonzeroFadeIn: 0,
+      defaultMissing: 0, outsideChildren: 0, unmappedChildren: 0,
+      groupTypes: new Map(), switchModes: new Map(), parserStatuses: new Map(),
+      groupIds: new Set(), groupIdsTruncated: false,
+    };
+    const randomSequence = {
+      nodes: 0, exact: 0, unresolved: 0, playlistItems: 0,
+      orderDiffers: 0, nonDefaultWeightItems: 0, nonDefaultWeightNodes: 0,
+      nonUniformWeightNodes: 0, nonDefaultAvoid: 0, maxAvoid: 0,
+      nonDefaultLoop: 0, globalScope: 0, continuous: 0, resetPlaylist: 0,
+      modes: new Map(), randomModes: new Map(), transitions: new Map(), statuses: new Map(),
+    };
     let unresolved = 0;
     for (const evidence of asArray(record?.evidence)) {
       const dispatch = evidence?.actionDispatchEvidence;
@@ -2034,6 +2070,60 @@
         current.count += Number(container?.nodeCount || 1);
         current.children += Number(container?.childCount || 0);
         containers.set(relation, current);
+        selector.nodes += Number(container?.selectorNodeCount || 0);
+        selector.exact += Number(container?.typedSelectorNodeCount || 0);
+        selector.unresolved += Number(container?.unresolvedSelectorNodeCount || 0);
+        selector.continuous += Number(container?.continuousValidationNodeCount || 0);
+        selector.packages += Number(container?.selectorPackageCount || 0);
+        selector.nonEmptyPackages += Number(container?.nonEmptySelectorPackageCount || 0);
+        selector.strictSubsetPackages += Number(container?.strictSubsetSelectorPackageCount || 0);
+        selector.packageChildRefs += Number(container?.selectorPackageChildReferenceCount || 0);
+        selector.associations += Number(container?.selectorAssociationCount || 0);
+        selector.continuePlayback += Number(container?.continuePlaybackAssociationCount || 0);
+        selector.isFirstOnly += Number(container?.isFirstOnlyAssociationCount || 0);
+        selector.nonzeroFadeOut += Number(container?.nonzeroFadeOutAssociationCount || 0);
+        selector.nonzeroFadeIn += Number(container?.nonzeroFadeInAssociationCount || 0);
+        selector.defaultMissing += Number(container?.defaultValueMissingPackageCount || 0);
+        selector.outsideChildren += Number(container?.mappedChildOutsideChildrenCount || 0)
+          + Number(container?.associationChildOutsideChildrenCount || 0);
+        selector.unmappedChildren += Number(container?.unmappedSelectorChildCount || 0);
+        for (const [key, count] of Object.entries(container?.selectorGroupTypes || {})) {
+          selector.groupTypes.set(key, (selector.groupTypes.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.selectorSwitchModes || {})) {
+          selector.switchModes.set(key, (selector.switchModes.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.selectorParserStatuses || {})) {
+          selector.parserStatuses.set(key, (selector.parserStatuses.get(key) || 0) + Number(count || 0));
+        }
+        for (const groupId of asArray(container?.selectorGroupIdsHex)) selector.groupIds.add(groupId);
+        selector.groupIdsTruncated ||= !!container?.selectorGroupIdsTruncated;
+        randomSequence.nodes += Number(container?.randomSequenceNodeCount || 0);
+        randomSequence.exact += Number(container?.typedRandomSequenceNodeCount || 0);
+        randomSequence.unresolved += Number(container?.unresolvedRandomSequenceNodeCount || 0);
+        randomSequence.playlistItems += Number(container?.randomSequencePlaylistItemCount || 0);
+        randomSequence.orderDiffers += Number(container?.playlistOrderDiffersFromChildrenCount || 0);
+        randomSequence.nonDefaultWeightItems += Number(container?.nonDefaultWeightItemCount || 0);
+        randomSequence.nonDefaultWeightNodes += Number(container?.nonDefaultWeightNodeCount || 0);
+        randomSequence.nonUniformWeightNodes += Number(container?.nonUniformWeightNodeCount || 0);
+        randomSequence.nonDefaultAvoid += Number(container?.nonDefaultAvoidRepeatNodeCount || 0);
+        randomSequence.maxAvoid = Math.max(randomSequence.maxAvoid, Number(container?.maxAvoidRepeatCount || 0));
+        randomSequence.nonDefaultLoop += Number(container?.nonDefaultLoopNodeCount || 0);
+        randomSequence.globalScope += Number(container?.globalScopeRandomSequenceNodeCount || 0);
+        randomSequence.continuous += Number(container?.continuousRandomSequenceNodeCount || 0);
+        randomSequence.resetPlaylist += Number(container?.resetPlaylistNodeCount || 0);
+        for (const [key, count] of Object.entries(container?.randomSequenceModes || {})) {
+          randomSequence.modes.set(key, (randomSequence.modes.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.randomModes || {})) {
+          randomSequence.randomModes.set(key, (randomSequence.randomModes.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.randomTransitionModes || {})) {
+          randomSequence.transitions.set(key, (randomSequence.transitions.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.randomSequenceParserStatuses || {})) {
+          randomSequence.statuses.set(key, (randomSequence.statuses.get(key) || 0) + Number(count || 0));
+        }
       }
       for (const node of asArray(evidence?.musicNodeEvidence)) {
         const kind = normalize(node?.nodeKind) || `musicType${node?.objectType ?? "?"}`;
@@ -2051,6 +2141,70 @@
     const values = [...actions].map(([operation, count]) => `${operation} × ${formatNumber(count)}`);
     for (const [relation, value] of containers) {
       values.push(`${taxonomyLabel(relation)}: ${formatNumber(value.count)} nodes / ${formatNumber(value.children)} child edges`);
+    }
+    if (selector.nodes) {
+      const groupTypes = [...selector.groupTypes]
+        .map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`)
+        .join(" / ");
+      const statuses = [...selector.parserStatuses]
+        .map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`)
+        .join(" / ");
+      const groupIds = [...selector.groupIds];
+      values.push([
+        `Wwise Switch/State selectors: ${formatNumber(selector.nodes)} nodes`,
+        `${formatNumber(selector.exact)} typed exact`,
+        selector.unresolved ? `${formatNumber(selector.unresolved)} unresolved` : "",
+        groupTypes,
+        selector.continuous ? `${formatNumber(selector.continuous)} continuous-validation` : "",
+        statuses,
+      ].filter(Boolean).join(" / "));
+      values.push([
+        `Selector packages: ${formatNumber(selector.packages)}`,
+        `${formatNumber(selector.nonEmptyPackages)} non-empty`,
+        `${formatNumber(selector.strictSubsetPackages)} strict child subsets`,
+        `${formatNumber(selector.packageChildRefs)} mapped child references`,
+        selector.defaultMissing ? `${formatNumber(selector.defaultMissing)} defaults absent from packages` : "",
+        selector.outsideChildren ? `${formatNumber(selector.outsideChildren)} references outside reciprocal Children` : "",
+        selector.unmappedChildren ? `${formatNumber(selector.unmappedChildren)} reciprocal Children unmapped` : "",
+      ].filter(Boolean).join(" / "));
+      values.push([
+        `Selector associations: ${formatNumber(selector.associations)}`,
+        [...selector.switchModes].map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`).join(" / "),
+        selector.continuePlayback ? `${formatNumber(selector.continuePlayback)} continue playback` : "",
+        selector.isFirstOnly ? `${formatNumber(selector.isFirstOnly)} first-only` : "",
+        selector.nonzeroFadeOut ? `${formatNumber(selector.nonzeroFadeOut)} nonzero fade-out` : "",
+        selector.nonzeroFadeIn ? `${formatNumber(selector.nonzeroFadeIn)} nonzero fade-in` : "",
+      ].filter(Boolean).join(" / "));
+      if (groupIds.length) {
+        values.push(`Selector group ids: ${groupIds.slice(0, 12).join(" / ")}${selector.groupIdsTruncated || groupIds.length > 12 ? " / more omitted" : ""}`);
+      }
+      values.push("Runtime selector value and audio-object state were not observed; every mapped child remains only a possible branch.");
+    }
+    if (randomSequence.nodes) {
+      const summarizeCounts = (counts) => [...counts]
+        .map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`)
+        .join(" / ");
+      values.push([
+        `Wwise Random/Sequence policy: ${formatNumber(randomSequence.nodes)} nodes`,
+        `${formatNumber(randomSequence.exact)} typed exact`,
+        randomSequence.unresolved ? `${formatNumber(randomSequence.unresolved)} unresolved` : "",
+        summarizeCounts(randomSequence.modes),
+        summarizeCounts(randomSequence.randomModes),
+        summarizeCounts(randomSequence.transitions),
+        summarizeCounts(randomSequence.statuses),
+      ].filter(Boolean).join(" / "));
+      values.push([
+        `Playlists: ${formatNumber(randomSequence.playlistItems)} weighted items`,
+        randomSequence.orderDiffers ? `${formatNumber(randomSequence.orderDiffers)} playlist orders differ from Children` : "",
+        randomSequence.nonDefaultWeightItems ? `${formatNumber(randomSequence.nonDefaultWeightItems)} non-default weights across ${formatNumber(randomSequence.nonDefaultWeightNodes)} nodes` : "",
+        randomSequence.nonUniformWeightNodes ? `${formatNumber(randomSequence.nonUniformWeightNodes)} non-uniform pools` : "",
+        randomSequence.nonDefaultAvoid ? `${formatNumber(randomSequence.nonDefaultAvoid)} non-default avoid-repeat nodes (max ${formatNumber(randomSequence.maxAvoid)})` : "",
+        randomSequence.nonDefaultLoop ? `${formatNumber(randomSequence.nonDefaultLoop)} non-default loop nodes` : "",
+        randomSequence.globalScope ? `${formatNumber(randomSequence.globalScope)} global-scope nodes` : "",
+        randomSequence.continuous ? `${formatNumber(randomSequence.continuous)} continuous nodes` : "",
+        randomSequence.resetPlaylist ? `${formatNumber(randomSequence.resetPlaylist)} reset-on-play nodes` : "",
+      ].filter(Boolean).join(" / "));
+      values.push("Runtime random seed, shuffle history, avoid-repeat history, Sequence cursor, and reset timing were not observed; playlist rows describe policy, not a selected leaf.");
     }
     for (const detail of actionDetails) values.push(detail);
     for (const [kind, value] of musicNodes) {

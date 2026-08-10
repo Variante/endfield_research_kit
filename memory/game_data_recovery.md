@@ -172,11 +172,14 @@ registers eighteen persistent `StateChangeAction` callbacks as nine paired
 masks with action orders 5 and 1: FMV, cutscene, transition cutscene, dialog,
 remote communication, loading, teleport loading, fight, and the combined
 factory-area/blackbox mask. `AudioStateSystem._OnAudioStateChanged` dispatches
-through `HandleStateChange` and `MaskCondition.IsMet`; separately, recovered
-music setters reach Wwise `SetState`. The eighteen `System.Action` delegate
-targets that would connect those two surfaces, plus the raw paired-condition
-byte, remain unresolved. Registration rows are therefore not promoted to
-observed transitions, particular setters, or specific music branches.
+through `HandleStateChange` and `MaskCondition.IsMet`. Metadata-usage delegate
+resolution now names all eighteen callback targets, and the current
+`SimpleCondition.IsMet` body proves raw condition type 0 is enter and 1 is
+leave. `SwitchToDialogMusic` directly writes dialog/top-level Wwise state, and
+`_StartBattleMusic` directly writes battle intensity, battle phase, and
+top-level state; other callbacks route through recovered cue, timer, loading,
+or factory controls. This proves the static registration-to-callback route,
+not that a transition executed, its live order, or its selected Wwise branch.
 
 Object selectors and continuous parameters use separate native routes.
 `SetSwitch` always carries an explicit entity/GameObject audio-object id plus
@@ -187,6 +190,27 @@ overload remains distinct. RTPC setters support global target
 stock-binary paths cross distinct Wwise native function-pointer slots and may
 still be replaced by IFix. They prove setter shape, not the live object,
 group/value, RTPC value, timing, interpolation, or selected HIRC child.
+
+Wwise v150 type-6 selector tails are now typed through their full bounded
+layout: group kind (`Switch=0`, `State=1`), group/default ids, continuous
+validation, value-to-child packages, and 14-byte child associations. Each
+association carries `isFirstOnly`, `continuePlayback`, `PlayToEnd/Stop`, and
+signed fade-out/fade-in milliseconds; the earlier cross-field
+`parameterA/B/C` interpretation was incorrect and has been removed. Clean
+value packages often map to strict subsets of reciprocal Children, so a known
+runtime group value could narrow the graph. Without that live value and target
+audio object, all mapped children remain possible rather than played choices.
+
+Wwise v150 type-5 Random/Sequence containers now expose the full bounded
+policy block and trailing playlist: loop count and modifiers, transition time
+and mode, avoid-repeat count, Standard/Shuffle and Random/Sequence modes,
+scope/reset/continuous flags, authored playlist order, and per-child weights.
+Playlist order can differ from the reciprocal `Children` array and is the
+authoritative static order for Sequence containers. Weight rows are preserved
+independently of the raw flag bit because current banks contain non-default
+weights even when that bit is clear. These fields prove the authored selection
+policy, while the random seed, shuffle and avoid-repeat history, Sequence
+cursor, reset timing, and chosen runtime leaf remain unobserved.
 
 Current IL2CPP managed string literals provide a second exact name source.
 Lowercased Wwise FNV-1 joins recover previously missing `au_*`, `bark_*`, and

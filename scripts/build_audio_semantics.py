@@ -124,8 +124,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 19
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 11
+AUDIO_SEMANTIC_SCHEMA_VERSION = 20
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 12
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
 RADIO_CATALOG_ITEM_LIMIT = 64
@@ -584,7 +584,137 @@ AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS = (
     },
 )
 
+def _native_transition_callback(
+    call_offset: str,
+    action_order: int,
+    condition_type_raw: int,
+    metadata_usage_raw: str,
+    method: str,
+    method_index: int,
+    token: str,
+    virtual_address: str,
+    *,
+    direct_state_setters: Iterable[str] = (),
+) -> dict[str, Any]:
+    row = {
+        "registrationCallOffset": call_offset,
+        "actionOrder": action_order,
+        "conditionTypeRaw": condition_type_raw,
+        "conditionType": "enter" if condition_type_raw == 0 else "leave",
+        "metadataUsageRaw": metadata_usage_raw,
+        "callbackMethod": method,
+        "callbackMethodIndex": method_index,
+        "callbackToken": token,
+        "callbackVirtualAddress": virtual_address,
+        "callbackEvidence": "exactMetadataUsageDelegateTarget",
+    }
+    if direct_state_setters:
+        row["directStateSetters"] = tuple(direct_state_setters)
+    return row
+
+
+_AUDIO_MUSIC_TRANSITION_CALLBACKS = {
+    0x00000040: (
+        _native_transition_callback(
+            "0x1d3", 5, 0, "0x6001354f", "SwitchToDialogMusic", 39590,
+            "0x06009aa7", "0x186ad9e74",
+            direct_state_setters=("_SetWwiseDialogMusicState", "_SetWwiseMusicState"),
+        ),
+        _native_transition_callback(
+            "0x28f", 1, 1, "0x60013551", "_OnEnterFMV", 39591,
+            "0x06009aa8", "0x186adb2e4",
+        ),
+    ),
+    0x00000080: (
+        _native_transition_callback(
+            "0x345", 5, 0, "0x60013553", "_OnLeaveFMV", 39592,
+            "0x06009aa9", "0x186adb5ac",
+        ),
+        _native_transition_callback(
+            "0x401", 1, 1, "0x60013555", "_OnEnterCutscene", 39593,
+            "0x06009aaa", "0x186adb204",
+        ),
+    ),
+    0x00000100: (
+        _native_transition_callback(
+            "0x4b7", 5, 0, "0x60013553", "_OnLeaveFMV", 39592,
+            "0x06009aa9", "0x186adb5ac",
+        ),
+        _native_transition_callback(
+            "0x573", 1, 1, "0x60013555", "_OnEnterCutscene", 39593,
+            "0x06009aaa", "0x186adb204",
+        ),
+    ),
+    0x00000200: (
+        _native_transition_callback(
+            "0x629", 5, 0, "0x60013557", "_OnLeaveCutscene", 39594,
+            "0x06009aab", "0x186adb4e4",
+        ),
+        _native_transition_callback(
+            "0x6e5", 1, 1, "0x60013559", "_OnEnterDialog", 39595,
+            "0x06009aac", "0x186adb274",
+        ),
+    ),
+    0x00000400: (
+        _native_transition_callback(
+            "0x79b", 5, 0, "0x6001355b", "_OnLeaveDialog", 39596,
+            "0x06009aad", "0x186adb548",
+        ),
+        _native_transition_callback(
+            "0x857", 1, 1, "0x6001355d", "_OnEnterRemoteComm", 39597,
+            "0x06009aae", "0x186adb354",
+        ),
+    ),
+    0x02000000: (
+        _native_transition_callback(
+            "0x90d", 5, 0, "0x60013533", "_CancelScheduledAutoRestoreMusicState", 39576,
+            "0x06009a99", "0x183a0ced0",
+        ),
+        _native_transition_callback(
+            "0x9c9", 1, 1, "0x60013535", "_OnEnterLoading", 39577,
+            "0x06009a9a", "0x183a0c910",
+        ),
+    ),
+    0x04000000: (
+        _native_transition_callback(
+            "0xa7f", 5, 0, "0x60013537", "_OnLeaveLoading", 39578,
+            "0x06009a9b", "0x183a0c800",
+        ),
+        _native_transition_callback(
+            "0xb3b", 1, 1, "0x60013539", "_OnEnterTeleportLoading", 39579,
+            "0x06009a9c", "0x184ca4f60",
+        ),
+    ),
+    0x000C0000: (
+        _native_transition_callback(
+            "0xbf1", 5, 0, "0x6001351b", "_CleanMusicEventDebugHUD", 39564,
+            "0x06009a8d", "0x186ada6c8",
+        ),
+        _native_transition_callback(
+            "0xcad", 1, 1, "0x6001351f", "_SwitchToFactoryMusic", 39566,
+            "0x06009a8f", "0x184d27690",
+        ),
+    ),
+    0x00000002: (
+        _native_transition_callback(
+            "0xd63", 5, 0, "0x60013471", "_ClearBattleMusicTimers", 39479,
+            "0x06009a38", "0x183a0cc70",
+        ),
+        _native_transition_callback(
+            "0xe1f", 1, 1, "0x60013479", "_StartBattleMusic", 39483,
+            "0x06009a3c", "0x1846aafc0",
+            direct_state_setters=(
+                "_SetWwiseBattleMusicIntensityState", "_SetWwiseBattleMusicState",
+                "_SetWwiseMusicState",
+            ),
+        ),
+    ),
+}
+
 for _transition_registration in AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS:
+    _registrations = _AUDIO_MUSIC_TRANSITION_CALLBACKS[
+        _transition_registration["stateMask"]
+    ]
     _transition_registration.update({
         "registrationMethod": "_RegisterStateTransitionActions",
         "registrationMethodIndex": 39571,
@@ -593,14 +723,14 @@ for _transition_registration in AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS:
         "registerMethodIndex": 39810,
         "registerToken": "0x06009b83",
         "registerVirtualAddress": "0x183a0e800",
-        "registrationCount": 2,
-        "actionOrders": (5, 1),
+        "registrationCount": len(_registrations),
+        "actionOrders": tuple(row["actionOrder"] for row in _registrations),
         "isOneShot": False,
-        "secondConditionRaw": 1,
-        "conditionInterpretationStatus": "rawEnterLeaveByteUnresolved",
+        "conditionInterpretationStatus": "exactSimpleConditionNativeBody",
         "stateNameEvidence": "exactEAudioStateEnumValueMatch",
-        "callbackTargetStatus": "delegateTargetUnresolved",
+        "callbackTargetStatus": "exactMetadataUsageDelegateTargets",
         "runtimeObservationStatus": "staticRegistrationNotLiveStateTrace",
+        "registrations": _registrations,
     })
 
 
@@ -1181,8 +1311,8 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
     },
     "musicStateTransition": {
         "id": "audioStateTransitionToMusicSetter",
-        "label": "Audio lifecycle state registration / dispatch -> unresolved delegate -> music setter boundary",
-        "evidence": "exactCurrentGameAssemblyRegistrationAndDispatchFrameworkWithUnresolvedDelegateTargets",
+        "label": "Audio lifecycle state registration -> exact callback -> music control / setter",
+        "evidence": "exactCurrentGameAssemblyRegistrationDispatchAndMetadataUsageDelegateTargets",
         "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
         "runtimeObservationStatus": "staticRegistrationAndDispatchNotLiveStateTrace",
         "stages": (
@@ -1202,7 +1332,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 39810,
                 "0x06009b83",
                 "0x183a0e800",
-                "Stores each condition and System.Action callback; the 18 delegate targets remain unresolved.",
+                "Stores each condition and System.Action callback; all 18 metadata-usage delegate targets are resolved below.",
             ),
             native_playback_stage(
                 "stateChange",
@@ -1229,7 +1359,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 39861,
                 "0x06009bb6",
                 "0x186aeaacc",
-                "Evaluates exact from/to masks; the paired raw condition byte is retained without naming enter/leave.",
+                "Condition type 0 is exact enter and type 1 exact leave from the current SimpleCondition.IsMet body.",
             ),
             native_playback_stage(
                 "select",
@@ -1238,7 +1368,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 None,
                 "",
                 "",
-                "Direct callers prove several setters, but the 18 registered System.Action delegate targets are not statically named.",
+                "Every registered callback is named; SwitchToDialogMusic and _StartBattleMusic have direct Wwise State setter edges, while the others route through cue/timer/factory control helpers.",
             ),
             native_playback_stage(
                 "wwise",
@@ -1252,8 +1382,8 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
         ),
         "boundary": (
             "The registration masks, action order, persistence, dispatch types, setters, and SetState boundary "
-            "are exact. The 18 delegate targets, raw paired-condition value meaning, actual state transitions, "
-            "setter order, and selected Wwise music branch remain unresolved."
+            "are exact, including all 18 delegate targets and enter/leave condition types. Actual state "
+            "transitions, live callback order, indirect cue/timer outcomes, and the selected Wwise music branch remain unobserved."
         ),
     },
 }
@@ -2128,10 +2258,212 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
         })
         target["nodeCount"] += 1
         target["childCount"] += int(row.get("childCount") or 0)
-    return [
-        {key: value for key, value in row.items() if value not in (None, "", [])}
-        for row in summary.values()
-    ]
+        if object_type == 5 and row.get("selectorParserStatus"):
+            target["randomSequenceNodeCount"] = int(
+                target.get("randomSequenceNodeCount") or 0
+            ) + 1
+            random_status = str(row.get("selectorParserStatus") or "unknown")
+            target.setdefault("_randomSequenceParserStatuses", Counter())[random_status] += 1
+            if random_status == "typedExactV150PlaylistWeights":
+                target["typedRandomSequenceNodeCount"] = int(
+                    target.get("typedRandomSequenceNodeCount") or 0
+                ) + 1
+                target.setdefault("_randomSequenceModes", Counter())[
+                    str(row.get("modeLabel") or "unknown")
+                ] += 1
+                target.setdefault("_randomModes", Counter())[
+                    str(row.get("randomModeLabel") or "unknown")
+                ] += 1
+                target.setdefault("_randomTransitionModes", Counter())[
+                    str(row.get("transitionModeLabel") or "unknown")
+                ] += 1
+                target["randomSequencePlaylistItemCount"] = int(
+                    target.get("randomSequencePlaylistItemCount") or 0
+                ) + int(row.get("playlistItemCount") or 0)
+                if not row.get("childrenOrderMatchesPlaylist", True):
+                    target["playlistOrderDiffersFromChildrenCount"] = int(
+                        target.get("playlistOrderDiffersFromChildrenCount") or 0
+                    ) + 1
+                non_default_weights = int(row.get("nonDefaultWeightCount") or 0)
+                target["nonDefaultWeightItemCount"] = int(
+                    target.get("nonDefaultWeightItemCount") or 0
+                ) + non_default_weights
+                if non_default_weights:
+                    target["nonDefaultWeightNodeCount"] = int(
+                        target.get("nonDefaultWeightNodeCount") or 0
+                    ) + 1
+                if not row.get("uniformWeights", True):
+                    target["nonUniformWeightNodeCount"] = int(
+                        target.get("nonUniformWeightNodeCount") or 0
+                    ) + 1
+                avoid_repeat = int(row.get("avoidRepeatCount") or 0)
+                target["maxAvoidRepeatCount"] = max(
+                    int(target.get("maxAvoidRepeatCount") or 0), avoid_repeat
+                )
+                if avoid_repeat != 1:
+                    target["nonDefaultAvoidRepeatNodeCount"] = int(
+                        target.get("nonDefaultAvoidRepeatNodeCount") or 0
+                    ) + 1
+                if int(row.get("loopCount") or 0) != 1:
+                    target["nonDefaultLoopNodeCount"] = int(
+                        target.get("nonDefaultLoopNodeCount") or 0
+                    ) + 1
+                if row.get("globalScope"):
+                    target["globalScopeRandomSequenceNodeCount"] = int(
+                        target.get("globalScopeRandomSequenceNodeCount") or 0
+                    ) + 1
+                if row.get("continuous"):
+                    target["continuousRandomSequenceNodeCount"] = int(
+                        target.get("continuousRandomSequenceNodeCount") or 0
+                    ) + 1
+                if row.get("resetPlaylistAtEachPlay"):
+                    target["resetPlaylistNodeCount"] = int(
+                        target.get("resetPlaylistNodeCount") or 0
+                    ) + 1
+            else:
+                target["unresolvedRandomSequenceNodeCount"] = int(
+                    target.get("unresolvedRandomSequenceNodeCount") or 0
+                ) + 1
+        selector = row.get("switchMappingEvidence")
+        if not isinstance(selector, dict):
+            continue
+        target["selectorNodeCount"] = int(target.get("selectorNodeCount") or 0) + 1
+        parser_status = str(selector.get("parserStatus") or "unknown")
+        parser_counts = target.setdefault("_selectorParserStatuses", Counter())
+        parser_counts[parser_status] += 1
+        if parser_status != "typedExactV150FlatPackages":
+            target["unresolvedSelectorNodeCount"] = int(
+                target.get("unresolvedSelectorNodeCount") or 0
+            ) + 1
+            continue
+
+        target["typedSelectorNodeCount"] = int(
+            target.get("typedSelectorNodeCount") or 0
+        ) + 1
+        group_type = str(selector.get("groupType") or "unknown")
+        group_type_counts = target.setdefault("_selectorGroupTypes", Counter())
+        group_type_counts[group_type] += 1
+        try:
+            group_id = int(selector.get("groupId")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            group_id = None
+        if group_id is not None:
+            target.setdefault("_selectorGroupIds", set()).add(group_id)
+        if selector.get("continuousValidation"):
+            target["continuousValidationNodeCount"] = int(
+                target.get("continuousValidationNodeCount") or 0
+            ) + 1
+
+        packages = [
+            package for package in selector.get("packages") or []
+            if isinstance(package, dict)
+        ]
+        target["selectorPackageCount"] = int(
+            target.get("selectorPackageCount") or 0
+        ) + len(packages)
+        authored_child_count = int(row.get("childCount") or 0)
+        package_value_ids: set[int] = set()
+        for package in packages:
+            child_ids = [
+                value for value in package.get("childIds") or []
+                if isinstance(value, int)
+            ]
+            try:
+                package_value_ids.add(int(package.get("valueId")) & 0xFFFFFFFF)
+            except (TypeError, ValueError):
+                pass
+            if child_ids:
+                target["nonEmptySelectorPackageCount"] = int(
+                    target.get("nonEmptySelectorPackageCount") or 0
+                ) + 1
+                target["selectorPackageChildReferenceCount"] = int(
+                    target.get("selectorPackageChildReferenceCount") or 0
+                ) + len(child_ids)
+                if authored_child_count and len(set(child_ids)) < authored_child_count:
+                    target["strictSubsetSelectorPackageCount"] = int(
+                        target.get("strictSubsetSelectorPackageCount") or 0
+                    ) + 1
+        try:
+            default_value_id = int(selector.get("defaultValueId")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            default_value_id = None
+        if default_value_id is not None and default_value_id not in package_value_ids:
+            target["defaultValueMissingPackageCount"] = int(
+                target.get("defaultValueMissingPackageCount") or 0
+            ) + 1
+
+        associations = [
+            association for association in selector.get("associations") or []
+            if isinstance(association, dict)
+        ]
+        target["selectorAssociationCount"] = int(
+            target.get("selectorAssociationCount") or 0
+        ) + len(associations)
+        switch_mode_counts = target.setdefault("_selectorSwitchModes", Counter())
+        for association in associations:
+            switch_mode_counts[str(association.get("onSwitchMode") or "unknown")] += 1
+            if association.get("isFirstOnly"):
+                target["isFirstOnlyAssociationCount"] = int(
+                    target.get("isFirstOnlyAssociationCount") or 0
+                ) + 1
+            if association.get("continuePlayback"):
+                target["continuePlaybackAssociationCount"] = int(
+                    target.get("continuePlaybackAssociationCount") or 0
+                ) + 1
+            if int(association.get("fadeOutTimeMs") or 0):
+                target["nonzeroFadeOutAssociationCount"] = int(
+                    target.get("nonzeroFadeOutAssociationCount") or 0
+                ) + 1
+            if int(association.get("fadeInTimeMs") or 0):
+                target["nonzeroFadeInAssociationCount"] = int(
+                    target.get("nonzeroFadeInAssociationCount") or 0
+                ) + 1
+        for source_key, target_key in (
+            ("mappedChildIdsOutsideChildren", "mappedChildOutsideChildrenCount"),
+            ("unmappedChildIds", "unmappedSelectorChildCount"),
+            ("associationChildIdsOutsideChildren", "associationChildOutsideChildrenCount"),
+        ):
+            target[target_key] = int(target.get(target_key) or 0) + len(
+                selector.get(source_key) or []
+            )
+
+    compact_rows: list[dict[str, Any]] = []
+    for row in summary.values():
+        random_status_counts = row.pop("_randomSequenceParserStatuses", None)
+        random_sequence_modes = row.pop("_randomSequenceModes", None)
+        random_modes = row.pop("_randomModes", None)
+        random_transition_modes = row.pop("_randomTransitionModes", None)
+        parser_counts = row.pop("_selectorParserStatuses", None)
+        group_type_counts = row.pop("_selectorGroupTypes", None)
+        switch_mode_counts = row.pop("_selectorSwitchModes", None)
+        group_ids = sorted(row.pop("_selectorGroupIds", set()))
+        if random_status_counts:
+            row["randomSequenceParserStatuses"] = dict(
+                sorted(random_status_counts.items())
+            )
+        if random_sequence_modes:
+            row["randomSequenceModes"] = dict(sorted(random_sequence_modes.items()))
+        if random_modes:
+            row["randomModes"] = dict(sorted(random_modes.items()))
+        if random_transition_modes:
+            row["randomTransitionModes"] = dict(
+                sorted(random_transition_modes.items())
+            )
+        if parser_counts:
+            row["selectorParserStatuses"] = dict(sorted(parser_counts.items()))
+        if group_type_counts:
+            row["selectorGroupTypes"] = dict(sorted(group_type_counts.items()))
+        if switch_mode_counts:
+            row["selectorSwitchModes"] = dict(sorted(switch_mode_counts.items()))
+        if group_ids:
+            row["selectorGroupIdCount"] = len(group_ids)
+            row["selectorGroupIdsHex"] = [f"0x{value:08x}" for value in group_ids[:24]]
+            row["selectorGroupIdsTruncated"] = len(group_ids) > 24
+        compact_rows.append({
+            key: value for key, value in row.items()
+            if value not in (None, "", [], {})
+        })
+    return compact_rows
 
 
 def _metadata_module() -> Any:

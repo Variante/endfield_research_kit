@@ -158,7 +158,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 9
+EVENT_EVIDENCE_SCHEMA_VERSION = 11
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -3361,12 +3361,13 @@ def hirc_v150_switch_mapping(
 ) -> dict[str, Any]:
     """Decode the bounded flat mapping tail of a v150 type-6 container.
 
-    The current flat layout places ``groupId``, ``defaultValueId``, and the
-    continuous-validation byte immediately before the already-proven Children
-    array.  Children are followed by variable value packages and a fixed-size
-    14-byte association row for each serialized association.  Some current
-    type-6 objects use a distinct tail; those fail closed with offsets while
-    normal child traversal remains unchanged.
+    The current flat layout places ``groupType``, ``groupId``,
+    ``defaultValueId``, and the continuous-validation byte immediately before
+    the already-proven Children array. Children are followed by variable value
+    packages and fixed-size 14-byte association rows containing child id,
+    flags, switch mode, fade-out time, and fade-in time. Some current type-6
+    objects use a distinct tail; those fail closed with offsets while normal
+    child traversal remains unchanged.
     """
 
     tail_start = children_offset + 4 + child_count * 4
@@ -3389,11 +3390,14 @@ def hirc_v150_switch_mapping(
             "unresolvedTailByteLength": max(0, len(data) - tail_start),
             "runtimeSelection": "groupValueUnobservedAllChildrenRemainPossible",
         }
-    if children_offset < 9:
+    if children_offset < 10:
         return unresolved("selectorHeaderBeforeObjectStart", children_offset)
     if tail_start + 4 > len(data):
         return unresolved("truncatedPackageCount", tail_start)
 
+    group_type_raw = data[children_offset - 10]
+    if group_type_raw not in (0, 1):
+        return unresolved("invalidGroupType", children_offset - 10)
     group_id = unpack_from("<I", data, children_offset - 9)[0]
     default_value_id = unpack_from("<I", data, children_offset - 5)[0]
     continuous_raw = data[children_offset - 1]
@@ -3442,16 +3446,25 @@ def hirc_v150_switch_mapping(
     for association_index in range(association_count):
         child_id = unpack_from("<I", data, offset)[0]
         flags_raw = data[offset + 4]
-        parameter_a = unpack_from("<i", data, offset + 5)[0]
-        parameter_b = unpack_from("<i", data, offset + 9)[0]
-        parameter_c = data[offset + 13]
+        switch_mode_byte = data[offset + 5]
+        switch_mode_raw = switch_mode_byte & 0x07
+        fade_out_time = unpack_from("<i", data, offset + 6)[0]
+        fade_in_time = unpack_from("<i", data, offset + 10)[0]
         associations.append({
             "associationIndex": association_index,
             "childId": child_id,
             "flagsRaw": flags_raw,
-            "parameterARaw": parameter_a,
-            "parameterBRaw": parameter_b,
-            "parameterCRaw": parameter_c,
+            "isFirstOnly": bool(flags_raw & 0x01),
+            "continuePlayback": bool(flags_raw & 0x02),
+            "flagsUnknownMask": flags_raw & 0xFC,
+            "onSwitchMode": {0: "playToEnd", 1: "stop"}.get(
+                switch_mode_raw, "unknown"
+            ),
+            "onSwitchModeRaw": switch_mode_raw,
+            "onSwitchModeRawByte": switch_mode_byte,
+            "onSwitchModeUnknownMask": switch_mode_byte & 0xF8,
+            "fadeOutTimeMs": fade_out_time,
+            "fadeInTimeMs": fade_in_time,
         })
         offset += 14
 
@@ -3463,6 +3476,8 @@ def hirc_v150_switch_mapping(
     return {
         "parserStatus": "typedExactV150FlatPackages",
         "selectionStructure": "flatValuePackages",
+        "groupType": "switch" if group_type_raw == 0 else "state",
+        "groupTypeRaw": group_type_raw,
         "groupId": group_id,
         "defaultValueId": default_value_id,
         "continuousValidation": bool(continuous_raw),
@@ -3890,26 +3905,96 @@ def hirc_media_relation_types(path_object_types: list[int]) -> list[str]:
     return relations or ["directSound"]
 
 
-def hirc_random_sequence_properties(data: bytes, children_offset: int) -> dict[str, Any]:
-    """Decode the fixed v150 RanSeq tail immediately before Children."""
+def hirc_v150_random_sequence_properties(
+    data: bytes,
+    children_offset: int,
+    child_ids: list[int],
+    *,
+    bank_version: int | None,
+) -> dict[str, Any]:
+    """Decode a bounded v150 Random/Sequence container policy and playlist.
 
+    The fixed 24-byte policy block precedes the reciprocal Children array. A
+    U16 playlist count and ``childId, weight`` rows follow Children. Playlist
+    order is authored selection order and may differ from Children order, so
+    Sequence semantics must never be reconstructed from Children alone.
+    """
+
+    tail_start = children_offset + 4 + len(child_ids) * 4
+    policy: dict[str, Any] = {}
+
+    def unresolved(reason: str, offset: int) -> dict[str, Any]:
+        bounded_offset = max(0, min(offset, len(data)))
+        return {
+            **policy,
+            "selectorParserStatus": "unresolvedV150RandomSequenceTail",
+            "selectorParserFailureReason": reason,
+            "selectorUnresolvedOffset": bounded_offset,
+            "selectorUnresolvedByteLength": len(data) - bounded_offset,
+            "runtimeSelection": "randomHistoryOrSequenceCursorUnobservedAllChildrenRemainPossible",
+        }
+
+    if bank_version != 150:
+        return {
+            "selectorParserStatus": "unsupportedBankVersion",
+            "bankVersion": bank_version,
+            "selectorUnresolvedOffset": max(0, tail_start),
+            "selectorUnresolvedByteLength": max(0, len(data) - tail_start),
+            "runtimeSelection": "randomHistoryOrSequenceCursorUnobservedAllChildrenRemainPossible",
+        }
     if children_offset < 24:
-        return {}
-    mode = data[children_offset - 2]
-    random_mode = data[children_offset - 3]
-    flags = data[children_offset - 1]
+        return unresolved("selectorHeaderBeforeObjectStart", children_offset)
+    if tail_start + 2 > len(data):
+        return unresolved("truncatedPlaylistCount", tail_start)
+
+    loop_count, loop_min, loop_max = unpack_from("<HHH", data, children_offset - 24)
+    transition_time, transition_min, transition_max = unpack_from(
+        "<fff", data, children_offset - 18
+    )
+    avoid_repeat_count = unpack_from("<H", data, children_offset - 6)[0]
     transition_mode = data[children_offset - 4]
-    return {
+    random_mode = data[children_offset - 3]
+    mode = data[children_offset - 2]
+    flags = data[children_offset - 1]
+    if mode not in (0, 1):
+        return unresolved("invalidRandomSequenceMode", children_offset - 2)
+    if random_mode not in (0, 1):
+        return unresolved("invalidRandomMode", children_offset - 3)
+    if transition_mode not in range(6):
+        return unresolved("invalidTransitionMode", children_offset - 4)
+    transition_labels = {
+        0: "disabled",
+        1: "crossFadeAmplitude",
+        2: "crossFadePower",
+        3: "delay",
+        4: "sampleAccurate",
+        5: "triggerRate",
+    }
+    policy.update({
         "mode": mode,
-        "modeLabel": {0: "random", 1: "sequence"}.get(mode, f"mode{mode}"),
+        "modeLabel": "random" if mode == 0 else "sequence",
         "randomMode": random_mode,
-        "randomModeLabel": {0: "normal", 1: "shuffle"}.get(random_mode, f"mode{random_mode}"),
+        "randomModeLabel": "standard" if random_mode == 0 else "shuffle",
+        "loopCount": loop_count,
+        "loopModifierMin": loop_min,
+        "loopModifierMax": loop_max,
+        "transitionTime": transition_time,
+        "transitionModifierMin": transition_min,
+        "transitionModifierMax": transition_max,
+        "avoidRepeatCount": avoid_repeat_count,
         "transitionMode": transition_mode,
+        "transitionModeLabel": transition_labels[transition_mode],
         "flags": flags,
+        "weightFlagRaw": bool(flags & 0x01),
+        "resetPlaylistAtEachPlay": bool(flags & 0x02),
+        "restartBackward": bool(flags & 0x04),
+        "continuous": bool(flags & 0x08),
+        "globalScope": bool(flags & 0x10),
+        "flagsUnknownMask": flags & 0xE0,
         "flagLabels": [
             label
             for bit, label in (
-                (0, "usesWeight"),
+                (0, "weightFlagSet"),
                 (1, "resetPlaylistAtEachPlay"),
                 (2, "restartBackward"),
                 (3, "continuous"),
@@ -3917,6 +4002,41 @@ def hirc_random_sequence_properties(data: bytes, children_offset: int) -> dict[s
             )
             if flags & (1 << bit)
         ],
+    })
+
+    playlist_count = unpack_from("<H", data, tail_start)[0]
+    playlist_offset = tail_start + 2
+    playlist_bytes = playlist_count * 8
+    if playlist_offset + playlist_bytes != len(data):
+        return unresolved("unexpectedPlaylistTailLength", playlist_offset + playlist_bytes)
+    if playlist_count != len(child_ids):
+        return unresolved("playlistChildCountMismatch", tail_start)
+
+    playlist_items = [
+        {
+            "playlistOrdinal": index,
+            "childId": unpack_from("<I", data, playlist_offset + index * 8)[0],
+            "weight": unpack_from("<I", data, playlist_offset + index * 8 + 4)[0],
+        }
+        for index in range(playlist_count)
+    ]
+    playlist_child_ids = [row["childId"] for row in playlist_items]
+    if len(set(playlist_child_ids)) != len(playlist_child_ids):
+        return unresolved("duplicatePlaylistChild", playlist_offset)
+    if set(playlist_child_ids) != set(child_ids):
+        return unresolved("playlistChildrenMismatch", playlist_offset)
+    weights = [row["weight"] for row in playlist_items]
+    return {
+        **policy,
+        "selectorParserStatus": "typedExactV150PlaylistWeights",
+        "playlistItemCount": playlist_count,
+        "playlistItems": playlist_items,
+        "playlistChildOrder": playlist_child_ids,
+        "childrenOrderMatchesPlaylist": playlist_child_ids == child_ids,
+        "nonDefaultWeightCount": sum(weight != 50000 for weight in weights),
+        "uniformWeights": len(set(weights)) <= 1,
+        "weightUsageStatus": "playlistWeightsPreservedWeightFlagNotUsedAsGate",
+        "runtimeSelection": "randomHistoryOrSequenceCursorUnobservedAllChildrenRemainPossible",
     }
 
 
@@ -4209,7 +4329,12 @@ def traverse_hirc_event(
                 "parserConfidence": parser_confidence,
             }
             if object_type == 5:
-                container_row.update(hirc_random_sequence_properties(data, offset))
+                container_row.update(hirc_v150_random_sequence_properties(
+                    data,
+                    offset,
+                    child_ids,
+                    bank_version=bank_version,
+                ))
                 relation = "sequenceItem" if container_row.get("mode") == 1 else "randomAlternative"
             elif object_type == 6:
                 container_row["switchMappingEvidence"] = hirc_v150_switch_mapping(
