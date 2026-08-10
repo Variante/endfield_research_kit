@@ -3787,6 +3787,36 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual("d" * 64, failure["expected"])
         self.assertRegex(failure["actual"], r"^[0-9a-f]{64}$")
 
+    def test_tracked_proxy_topology_keeps_definitionless_dialog_ids(self):
+        contexts = {}
+        topology = {
+            "status": "validated",
+            "candidateQuestIds": ["future_q#1"],
+            "topologyClass": "single_candidate",
+        }
+        common = {
+            "npcProxyId": "future_proxy",
+            "configuredDialogIds": [
+                "dlg_future_exported",
+                "dlg_future_definitionless",
+            ],
+        }
+        for key in common["configuredDialogIds"]:
+            pipeline.record_tracked_proxy_candidate_topology(
+                contexts,
+                topology,
+                {**common, "key": key},
+                mission_id="future",
+            )
+
+        self.assertEqual(1, len(contexts))
+        context = next(iter(contexts.values()))
+        self.assertEqual(
+            common["configuredDialogIds"],
+            context["configuredDialogIds"],
+        )
+        self.assertEqual(common["configuredDialogIds"], context["storyKeys"])
+
     def test_trigger_route_preserves_definition_only_horn_context(self):
         row = {
             "key": "dlg_testm1_11",
