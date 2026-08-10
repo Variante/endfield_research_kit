@@ -1491,6 +1491,81 @@ AnimationClip:
         malformed["m_Controller"] = {"m_LayerArray": "not-a-list"}
         self.assertEqual(build_audio.animator_controller_state_clip_refs(malformed), {})
 
+    def test_animator_override_index_keeps_corpus_unique_mapping_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            clip_root = export_root / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
+            controller_root = export_root / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController"
+            override_root = export_root / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorOverrideController"
+            clip_root.mkdir(parents=True)
+            controller_root.mkdir(parents=True)
+            override_root.mkdir(parents=True)
+            clip_text = """%YAML 1.1
+AnimationClip:
+  m_Name: A_actor_test_battle_override
+  m_Events:
+  - time: 0.25
+    functionName: PostAudioEvent
+    data: au_override_fixture
+"""
+            (clip_root / "A_actor_test_battle_override_p0000000000000002.anim").write_text(
+                clip_text,
+                encoding="utf-8",
+            )
+            (controller_root / "AnimatorController#fixture_p0000000000000003.json").write_text(
+                json.dumps({
+                    "$animestudio": {
+                        "type": "AnimatorController",
+                        "pathId": 3,
+                        "sourceFile": "CAB-controller-fixture",
+                    },
+                    "m_Name": "AC_fixture_override",
+                }),
+                encoding="utf-8",
+            )
+            (override_root / "AC_eny_0001_fixture_p0000000000000004.json").write_text(
+                json.dumps({
+                    "m_Controller": {"m_FileID": 0, "m_PathID": 3, "IsNull": False},
+                    "m_Clips": [{
+                        "m_OriginalClip": {"m_FileID": 0, "m_PathID": 1, "IsNull": False},
+                        "m_OverrideClip": {"m_FileID": 0, "m_PathID": 2, "IsNull": False},
+                    }],
+                }),
+                encoding="utf-8",
+            )
+
+            result = build_audio.collect_animation_override_index(export_root)
+            self.assertEqual(result["summary"]["overrideControllerCount"], 1)
+            self.assertEqual(result["summary"]["replacementReferenceCount"], 1)
+            self.assertEqual(result["summary"]["controllerPathIdCorpusUnique"], 1)
+            self.assertEqual(result["summary"]["effectiveClipCorpusUniqueReferences"], 1)
+            context = result["byClipPathId"][2][0]
+            self.assertEqual(context["mappingKind"], "replacement")
+            self.assertEqual(context["controllerJoinStatus"], "corpusUniqueControllerPathId")
+            self.assertEqual(context["clipJoinStatus"], "corpusUniqueAnimationClipPathId")
+            self.assertEqual(context["assetIdentityToken"], "eny_0001_fixture")
+            self.assertEqual(context["runtimeActivation"], "unobserved")
+
+            # A missing base controller must remain partial rather than being
+            # guessed from the override filename.
+            payload = json.loads(
+                (override_root / "AC_eny_0001_fixture_p0000000000000004.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            payload["m_Controller"]["m_PathID"] = 99
+            (override_root / "AC_eny_0001_fixture_p0000000000000004.json").write_text(
+                json.dumps(payload),
+                encoding="utf-8",
+            )
+            partial = build_audio.collect_animation_override_index(export_root)
+            self.assertEqual(partial["summary"]["status"], "partial")
+            self.assertEqual(partial["summary"]["controllerPathIdUnresolved"], 1)
+            self.assertEqual(
+                partial["byClipPathId"][2][0]["controllerJoinStatus"],
+                "missingControllerPathId",
+            )
+
     def test_collects_direct_character_and_bounded_enemy_audio(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
