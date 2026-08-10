@@ -1083,6 +1083,16 @@ UNITY_CULL_VIEW_CONSUMER_SLICES = {
 }
 
 UNITY_HGTREE_BODIES = {
+    "hgmesh_renderer_data_serialized_fields": (
+        0x1810A9120,
+        0x23A,
+        "6fb27222e41b8456d54b4708eccd476c46e90f623a117a563cabd3c600b4c383",
+    ),
+    "hgmesh_renderer_data_runtime_record_initializer": (
+        0x181088D80,
+        0x35E,
+        "e97ae32dba96720c667983b53657782f599cb1fab260922aae04b57d0c9d153f",
+    ),
     "instance_serializer": (
         0x18106F9A0,
         0x3C9,
@@ -1798,6 +1808,41 @@ UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
 }
 
 UNITY_HGTREE_SLICES = {
+    "hgmesh_runtime_resource_fields_and_maps": (
+        0x181088DB2,
+        "e8a9d0f3ff488b583848895c2430e89bd0f3ff4c8bb0a0000000e88fd0f3ff"
+        "498b5550488b889000000048898c24b8000000488bcbe8844c3aff448b004181"
+        "e0007f00000f84cb020000498b5550488bcb48897c24704c897c2458e81ebe39"
+        "ff498b4d484533ff498b7d484883c15848898c24a80000004883c778498b4d48"
+        "4881c1980000004889bc24b000000048894c2420",
+    ),
+    "hgmesh_runtime_material_map_write": (
+        0x181088F75,
+        "8946fc488b074963cf488d0c88",
+    ),
+    "hgmesh_runtime_main_mesh_map_write": (
+        0x181088FEF,
+        "488b5c242089064963cf488b03488d0c88",
+    ),
+    "hgmesh_runtime_shadow_proxy_map_write_and_stride": (
+        0x181089063,
+        "8b4008eb0233c089460441ffc74883c61848ffc54983c404",
+    ),
+    "hgmesh_serialized_materials_field": (
+        0x1810A919B,
+        "488d1516decb00c644242001488bcbe8d12473ff85c0743183f8017c114533c0"
+        "488d5758488bcbe8790d38ffeb",
+    ),
+    "hgmesh_serialized_meshes_field": (
+        0x1810A91F0,
+        "488d158965d700c644242001488bcbe87c2473ff85c0743183f8017c114533c0"
+        "488d5778488bcbe84480fcffeb",
+    ),
+    "hgmesh_serialized_shadow_proxy_meshes_field": (
+        0x1810A9245,
+        "488d154465d700c644242001488bcbe8272473ff85c0743783f8017c144533c0"
+        "488d9798000000488bcbe8ec7ffcffeb1648",
+    ),
     "merged_renderer_second_mesh_slot_acquire": (
         0x1811534FE,
         "4c392f0f84ed000000488b1f488d55504c8bc3668944242041b902000000498bcc"
@@ -2169,6 +2214,12 @@ UNITY_HGTREE_FLOAT_CONSTANTS = {
 }
 
 UNITY_HGTREE_FIELD_NAMES = {
+    0x181E1F768: "m_EntityComponentData",
+    0x181D66FB8: "m_Materials",
+    0x181E1F780: "m_Meshes",
+    0x181E1F790: "m_ShadowProxyMeshes",
+    0x181E1F7A8: "m_ColliderData",
+    0x181E1F7B8: "m_ColliderMeshes",
     0x181D253F8: "HGTreeRenderer",
     0x181D25408: "HGTreeInstance",
     0x181E1E4F4: "bounds",
@@ -6397,15 +6448,23 @@ def validate_unity_hgtree_renderer_boundary(
                         "sizeBytes": 2,
                         "value": "RegisterTreeBatchGroup 16-bit return handle",
                     },
-                    {"offset": "0x04", "sizeBytes": 4, "source": "batchKey"},
-                    {"offset": "0x08", "sizeBytes": 4, "source": "renderFlags"},
+                    {
+                        "offset": "0x04",
+                        "sizeBytes": 4,
+                        "source": "batchKey or mapped m_Materials instance ID",
+                    },
+                    {
+                        "offset": "0x08",
+                        "sizeBytes": 4,
+                        "source": "renderFlags or mapped m_Meshes instance ID",
+                    },
                     {
                         "offset": "0x0C",
                         "sizeBytes": 4,
                         "initialValue": 0,
                         "meaning": (
-                            "second Mesh asset instance-derived supplemental "
-                            "filter word"
+                            "mapped m_ShadowProxyMeshes instance-derived "
+                            "supplemental filter word"
                         ),
                     },
                     {
@@ -6421,10 +6480,98 @@ def validate_unity_hgtree_renderer_boundary(
                         "meaning": "enabledLightModes",
                     },
                 ],
+                "hgmeshRendererDataResourceMapping": {
+                    "producerClosed": True,
+                    "serializedFieldFunctionVirtualAddress": "0x1810A9120",
+                    "runtimeInitializerVirtualAddress": "0x181088D80",
+                    "runtimeBlobHeaderBytes": 4,
+                    "runtimeRecordStrideBytes": 24,
+                    "singletonVirtualAddress": "0x180FC5E60",
+                    "maps": {
+                        "materialInstanceIdToWord": "singleton+0x90",
+                        "meshInstanceIdToWord": "singleton+0xA0",
+                    },
+                    "serializedFields": [
+                        {
+                            "name": "m_Materials",
+                            "nativeOffset": "0x58",
+                            "map": "materialInstanceIdToWord",
+                            "blobWriteOffset": "0x08",
+                            "recordWriteOffset": "0x04",
+                            "directWriteVirtualAddress": "0x181088F75",
+                            "availabilityWriteVirtualAddresses": [
+                                "0x1811579B1",
+                                "0x181159190",
+                            ],
+                            "cleanupWriteVirtualAddress": "0x18115C0D7",
+                        },
+                        {
+                            "name": "m_Meshes",
+                            "nativeOffset": "0x78",
+                            "map": "meshInstanceIdToWord",
+                            "blobWriteOffset": "0x0C",
+                            "recordWriteOffset": "0x08",
+                            "directWriteVirtualAddress": "0x181088FEF",
+                            "availabilityWriteVirtualAddresses": [
+                                "0x181157A42",
+                                "0x181159218",
+                            ],
+                            "cleanupWriteVirtualAddress": "0x18115C0F3",
+                        },
+                        {
+                            "name": "m_ShadowProxyMeshes",
+                            "nativeOffset": "0x98",
+                            "map": "meshInstanceIdToWord",
+                            "blobWriteOffset": "0x10",
+                            "recordWriteOffset": "0x0C",
+                            "directWriteVirtualAddress": "0x18108906A",
+                            "availabilityWriteVirtualAddresses": [
+                                "0x181157AD1",
+                                "0x1811592A0",
+                            ],
+                            "cleanupWriteVirtualAddress": "0x18115C110",
+                        },
+                    ],
+                    "excludedField": {
+                        "name": "m_ColliderMeshes",
+                        "nativeOffset": "0xD8",
+                        "rendererBlobWriteObserved": False,
+                    },
+                    "proof": (
+                        "the hash-pinned HGMeshRendererData serializer binds "
+                        "m_Materials/m_Meshes/m_ShadowProxyMeshes to native "
+                        "+0x58/+0x78/+0x98. The independent resource "
+                        "initializer resolves those arrays through singleton "
+                        "Material/Mesh instance-ID maps at +0x90/+0xA0 and "
+                        "writes blob+0x08/+0x0C/+0x10. Because runtime records "
+                        "begin at blob+0x04, the true record destinations are "
+                        "+0x04/+0x08/+0x0C. The availability writers and "
+                        "cleanup use the same three blob offsets and order."
+                    ),
+                },
                 "runtimeRecordFieldLifecycle": {
+                    "materialMapWordAt0x04": {
+                        "resourceSourceClosed": True,
+                        "resourceField": "m_Materials",
+                        "resourceFieldNativeOffset": "0x58",
+                        "directWriterVirtualAddress": "0x181088F75",
+                        "availabilityWriterVirtualAddresses": [
+                            "0x1811579B1",
+                            "0x181159190",
+                        ],
+                        "cleanupWriteVirtualAddress": "0x18115C0D7",
+                    },
                     "mutableRenderFlagsAt0x08": {
                         "roleClosed": True,
                         "initialSource": "serialized HGTreeRenderer.renderFlags",
+                        "hgmeshResourceSource": "mapped m_Meshes instance ID",
+                        "hgmeshResourceFieldNativeOffset": "0x78",
+                        "hgmeshDirectWriterVirtualAddress": "0x181088FEF",
+                        "hgmeshAvailabilityWriterVirtualAddresses": [
+                            "0x181157A42",
+                            "0x181159218",
+                        ],
+                        "hgmeshCleanupWriteVirtualAddress": "0x18115C0F3",
                         "particleWriterVirtualAddresses": [
                             "0x1810416A0",
                             "0x181041870",
@@ -6446,46 +6593,49 @@ def validate_unity_hgtree_renderer_boundary(
                             "ORs record+0x08 into its render flags"
                         ),
                     },
-                    "meshInstanceFilterWordAt0x0C": {
+                    "shadowProxyMeshFilterWordAt0x0C": {
                         "consumerRoleClosed": True,
                         "producerClosed": True,
                         "assetClassClosed": True,
                         "assetHandleContractClosed": True,
                         "assetType": "UnityEngine.HyperGryph.AssetType.Mesh",
                         "assetTypeValue": 2,
+                        "resourceField": "m_ShadowProxyMeshes",
+                        "resourceFieldNativeOffset": "0x98",
+                        "directResourceWriterVirtualAddress": "0x18108906A",
                         "initialValue": 0,
                         "acquisitionPaths": [
                             {
                                 "ownerType": "MergedRenderCollider",
                                 "transitionFunctionVirtualAddress": "0x181153310",
-                                "sourcePointerReadVirtualAddress": "0x181153507",
-                                "acquireCallVirtualAddress": "0x18115351F",
-                                "ownerHandleWriteVirtualAddress": "0x181153527",
-                                "ownerHandleOffset": "0x14",
+                                "sourcePointerReadVirtualAddress": "0x1811535FE",
+                                "acquireCallVirtualAddress": "0x181153619",
+                                "ownerHandleWriteVirtualAddress": "0x181153621",
+                                "ownerHandleOffset": "0x18",
                                 "assetTypeImmediate": 2,
                             },
                             {
                                 "ownerType": "Render",
                                 "transitionFunctionVirtualAddress": "0x181154230",
-                                "sourcePointerReadVirtualAddress": "0x1811546D0",
-                                "acquireCallVirtualAddress": "0x1811546E8",
-                                "ownerHandleWriteVirtualAddress": "0x1811546F0",
-                                "ownerHandleOffset": "0x14",
+                                "sourcePointerReadVirtualAddress": "0x1811547CE",
+                                "acquireCallVirtualAddress": "0x1811547E9",
+                                "ownerHandleWriteVirtualAddress": "0x1811547F1",
+                                "ownerHandleOffset": "0x18",
                                 "assetTypeImmediate": 2,
                             },
                         ],
                         "writerPaths": [
                             {
                                 "functionVirtualAddress": "0x181157760",
-                                "writeVirtualAddress": "0x181157A42",
+                                "writeVirtualAddress": "0x181157AD1",
                             },
                             {
                                 "functionVirtualAddress": "0x181159010",
-                                "writeVirtualAddress": "0x181159218",
+                                "writeVirtualAddress": "0x1811592A0",
                             },
                         ],
                         "cleanupVirtualAddress": "0x18115BFC0",
-                        "cleanupWriteVirtualAddress": "0x18115C0F3",
+                        "cleanupWriteVirtualAddress": "0x18115C110",
                         "releaseCoreVirtualAddress": "0x180FBF6B0",
                         "loadAsyncInternalCallIndex": (
                             UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX
@@ -6518,7 +6668,7 @@ def validate_unity_hgtree_renderer_boundary(
                         ),
                         "proof": (
                             "both owner transition callbacks acquire their "
-                            "second renderer resource with native kind 2; the "
+                            "third renderer resource with native kind 2; the "
                             "dedicated HyperGryph internal-call table maps the "
                             "same acquire wrapper to HGResourceManager::"
                             "LoadAsync_Injected, whose IL2CPP type parameter is "
@@ -6527,10 +6677,13 @@ def validate_unity_hgtree_renderer_boundary(
                             "handle slot at +0x10 and a Unity asset instance ID "
                             "at +0x18; GetAsset consumes that same +0x18 word as "
                             "an object-registry key. Both LOD availability "
-                            "initializers gate on ready==1, resolve the second "
+                            "initializers gate on ready==1, resolve the third "
                             "Mesh slot's instance ID through a separate 12-byte "
                             "entry map, and write entry+0x08 to record+0x0C. "
-                            "Cleanup releases owner handle +0x14 and clears "
+                            "The independent HGMeshRendererData initializer "
+                            "names the source field m_ShadowProxyMeshes and "
+                            "writes the same mapped word to record+0x0C. "
+                            "Cleanup releases owner handle +0x18 and clears "
                             "record+0x0C; the scheduled callback consumes the "
                             "resolved word directly as its masked supplemental "
                             "filter overlay"
@@ -6546,37 +6699,15 @@ def validate_unity_hgtree_renderer_boundary(
                     "rendererPropertyFlagsAt0x10": {
                         "roleClosed": True,
                         "initialValue": 0,
-                        "meshInstanceSeedClosed": True,
-                        "meshInstanceSeedOwnerHandleOffset": "0x18",
-                        "meshInstanceSeedAcquisitionPaths": [
-                            {
-                                "ownerType": "MergedRenderCollider",
-                                "sourcePointerReadVirtualAddress": "0x1811535FE",
-                                "acquireCallVirtualAddress": "0x181153619",
-                                "ownerHandleWriteVirtualAddress": "0x181153621",
-                                "assetTypeImmediate": 2,
-                            },
-                            {
-                                "ownerType": "Render",
-                                "sourcePointerReadVirtualAddress": "0x1811547CE",
-                                "acquireCallVirtualAddress": "0x1811547E9",
-                                "ownerHandleWriteVirtualAddress": "0x1811547F1",
-                                "assetTypeImmediate": 2,
-                            },
-                        ],
-                        "meshInstanceSeedWriterVirtualAddresses": [
-                            "0x181157AD1",
-                            "0x1811592A0",
-                        ],
-                        "meshInstanceSeedCleanupWriteVirtualAddress": (
-                            "0x18115C110"
-                        ),
+                        "resourceInitializerSeedObserved": False,
                         "writerVirtualAddress": "0x180432CD0",
                         "writerLoopVirtualAddress": "0x180432DD0",
                         "preserveMask": "0xFC07FBFD",
                         "recordStrideBytes": 24,
                         "proof": (
-                            "the Renderer state synchronizer selects the same "
+                            "record+0x10 is blob+0x14, beyond all three "
+                            "resource-map writes. The Renderer state "
+                            "synchronizer selects the same "
                             "0x7F00 family, advances from blob+0x14 "
                             "(record+0x10), preserves the masked bits, and ORs "
                             "property-derived flags into every record"
@@ -7819,8 +7950,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v33",
-        "status": "hgtree_mesh_instance_filter_word_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v34",
+        "status": "hgtree_shadow_proxy_filter_source_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -7859,9 +7990,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "interval are now closed. Runtime record +0x08 has a mutable "
             "renderFlags lifecycle: four particle setup variants replace it "
             "with bit 20 and a scheduled callback ORs it into render flags. "
-            "Record +0x0C is a supplemental filter word resolved by the LOD "
-            "availability initializers from their second Mesh asset handle. "
-            "Both owner transitions acquire that handle with kind 2. "
+            "The prior resource-to-record offsets were four bytes high because "
+            "writer targets were measured from the blob header while runtime "
+            "records begin at blob+0x04. A newly hash-pinned independent "
+            "HGMeshRendererData initializer closes the correction: native "
+            "m_Materials/m_Meshes/m_ShadowProxyMeshes at +0x58/+0x78/+0x98 "
+            "resolve through singleton Material/Mesh instance-ID maps at "
+            "+0x90/+0xA0 and write record +0x04/+0x08/+0x0C. The availability "
+            "writers and cleanup use the same three destinations. Record "
+            "+0x0C is therefore the mapped m_ShadowProxyMeshes word, not the "
+            "main Mesh word or a property-flag seed. Both owner transitions "
+            "acquire that third resource handle with kind 2. "
             "HyperGryph internal-call entry 437 names "
             "the forwarding wrapper HGResourceManager::LoadAsync_Injected, "
             "and its IL2CPP signature plus AssetType literals close kind 2 as "
@@ -7869,13 +8008,13 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "asset instance ID: UpdateAssetHandle writes it and GetAsset uses "
             "it to recover the Unity object. The availability writers gate on "
             "slot+0x10 ready==1, map that instance ID through a separate "
-            "12-byte table, and copy entry+0x08 to record+0x0C. This retracts "
-            "the prior slot-index interpretation and removes the apparent "
-            "Mesh-index/filter dual use; only the map value's engine name and "
-            "individual bits remain open. Record +0x10 is seeded by the same "
-            "process from the third Mesh handle, then closed as Renderer "
-            "property flags updated "
-            "by the common state synchronizer. Dedicated HyperGryph internal-"
+            "12-byte table, and copy entry+0x08 to record+0x0C. Cleanup releases "
+            "the third handle and clears the same field; the scheduled callback "
+            "consumes it as a masked supplemental filter overlay. Only the "
+            "mapped shadow-proxy word's engine name and individual bits remain "
+            "open. Record +0x10 is not seeded by any of the three resource maps; "
+            "it remains Renderer property flags maintained at blob+0x14 by the "
+            "common state synchronizer. Dedicated HyperGryph internal-"
             "call entry 204 names record +0x14 exactly as enabledLightModes; "
             "its hash-pinned core writes the supplied UInt32 value to every "
             "record. IL2CPP metadata closes HGShaderLightMode as 31 named "
@@ -8007,7 +8146,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The standalone engine name and bit meanings for loader record "
-            "+0x0C's Mesh-instance-derived filter word, the "
+            "+0x0C's mapped m_ShadowProxyMeshes filter word, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
@@ -8184,8 +8323,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
                 "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
                 "loader runtime record +0x08 mutable renderFlags lifecycle, including particle bit-20 writers and scheduled consumption",
-                "loader runtime record +0x0C as a second-Mesh-handle instance-ID-derived supplemental filter word, including LoadAsync/GetAsset/UpdateAssetHandle internal-call bindings, ready/instance-ID handle-slot layout, two map-resolution writers, cleanup, and masked consumption",
-                "loader runtime record +0x10 as a third-Mesh-handle instance-ID-derived seed plus Renderer property flags and its common state-synchronization writer",
+                "the hash-pinned HGMeshRendererData m_Materials/m_Meshes/m_ShadowProxyMeshes native field layout and independent Material/Mesh map initializer into runtime record +0x04/+0x08/+0x0C",
+                "loader runtime record +0x0C as the mapped m_ShadowProxyMeshes supplemental filter word, including LoadAsync/GetAsset/UpdateAssetHandle internal-call bindings, ready/instance-ID handle-slot layout, direct and availability map-resolution writers, cleanup, and masked consumption",
+                "loader runtime record +0x10 as Renderer property flags with no resource-map seed and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
                 "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
@@ -8228,7 +8368,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the standalone engine name and individual bit meanings of runtime record +0x0C's Mesh-instance-derived supplemental filter word",
+                "the standalone engine name and individual bit meanings of runtime record +0x0C's mapped m_ShadowProxyMeshes supplemental filter word",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
@@ -8265,7 +8405,8 @@ def main() -> int:
         "scheduled cull-view layout, complete CullView consumer surface with "
         "write-only screen threshold, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime Mesh handle/instance-ID filter and property fields, "
+        "HGMeshRendererData Material/main-Mesh/shadow-proxy map fields, "
+        "shadow-proxy supplemental filter, and separate property flags, "
         "enabledLightModes producer/default/initializers and GPUDrivenRenderer "
         "V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, "
         "Factory blob-copy routes, independent renderer-entry pass mask, and "
