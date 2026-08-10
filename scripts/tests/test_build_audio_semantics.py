@@ -375,16 +375,34 @@ class AudioSemanticDataTests(unittest.TestCase):
         animator = specs["Beyond.Gameplay.View.Animation.AnimatorMono"]
         skill = specs["Beyond.Gameplay.Core.PlaySoundAction"]
         levelscript = specs["Beyond.Gameplay.Actions.GameAction"]
+        music = specs["Beyond.Gameplay.Audio.AudioMusicSystem"]
         wwise = specs["AkSoundEngine"]
+        asset_cache = specs["Beyond.Audio.AudioAssetCache"]
+        asset_helper = specs["Beyond.Audio.AudioAssetHelper"]
+        audio_manager = specs["Beyond.Gameplay.Audio.AudioManager"]
+        audio_state_system = specs["Beyond.Gameplay.Audio.AudioStateSystem"]
 
         adapter_chains = {row["id"]: row for row in adapter["nativeCallChains"]}
         post = adapter_chains["adapterPostEventToWwise"]
         self.assertEqual(
             [row["methodIndex"] for row in post["stages"]],
-            [479923, 480010, 480201, 480007, 446377],
+            [
+                479923, 480010, 480201, 480175, 446458, 480211,
+                446489, 480212, 480213, 480007, 446377, 480008, 480176,
+            ],
         )
-        self.assertEqual(post["stages"][-1]["type"], "AkSoundEngine")
-        self.assertIn("0x18f361158", post["stages"][-2]["relation"])
+        wwise_post = next(row for row in post["stages"] if row["role"] == "wwise")
+        adapter_post = next(row for row in post["stages"] if row["role"] == "post")
+        self.assertEqual(wwise_post["type"], "AkSoundEngine")
+        self.assertIn("0x18f361158", adapter_post["relation"])
+        self.assertEqual(post["stages"][-1]["method"], "DeactivateAsset")
+        self.assertEqual(
+            [row["id"] for row in post["branches"]],
+            ["activatedCache", "eventBankMiss"],
+        )
+        self.assertEqual(asset_cache["nativeCallChains"][0]["id"], post["id"])
+        self.assertEqual(asset_helper["nativeCallChains"][0]["id"], post["id"])
+        self.assertIn("s_waitingCallbacks", asset_helper["fields"])
         action = adapter_chains["playingIdActionQueueToWwise"]
         self.assertEqual(
             [row["methodIndex"] for row in action["stages"]],
@@ -393,7 +411,70 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(len(animator["nativeCallChains"]), 2)
         self.assertEqual(skill["nativeCallChains"][0]["id"], "skillPlaySoundActionRouting")
         self.assertEqual(levelscript["nativeCallChains"][0]["id"], "levelScriptAudioActionRouting")
-        self.assertEqual(len(wwise["nativeCallChains"]), 2)
+        self.assertEqual(len(wwise["nativeCallChains"]), 6)
+        switch_chain = next(
+            row for row in audio_manager["nativeCallChains"]
+            if row["id"] == "audioObjectSwitchToWwise"
+        )
+        self.assertEqual(
+            [row["methodIndex"] for row in switch_chain["stages"]],
+            [38949, 479949, 446539],
+        )
+        self.assertIn("0x18f373598", switch_chain["stages"][-1]["relation"])
+        rtpc_chain = next(
+            row for row in audio_manager["nativeCallChains"]
+            if row["id"] == "rtpcParameterToWwise"
+        )
+        self.assertEqual(
+            [row["methodIndex"] for row in rtpc_chain["stages"]],
+            [38865, 480228, 479952, 446505],
+        )
+        self.assertIn("0x00000000ffffffff", rtpc_chain["stages"][-2]["relation"])
+        self.assertEqual(
+            audio_state_system["nativeCallChains"][0]["id"],
+            "audioStateTransitionToMusicSetter",
+        )
+        music_groups = {row["role"]: row for row in music["nativeStateGroups"]}
+        self.assertEqual(len(music_groups), 10)
+        self.assertEqual(music_groups["topLevelMusicMode"]["groupId"], 0xE414D158)
+        self.assertEqual(music_groups["topLevelMusicMode"]["recoveredName"], "music_state")
+        self.assertEqual(music_groups["worldMap"]["recoveredName"], "music_map")
+        self.assertEqual(music_groups["mission"]["recoveredName"], "music_mission")
+        self.assertEqual(music_groups["cutscene"]["recoveredName"], "music_cutscene")
+        self.assertNotIn("recoveredName", music_groups["dialog"])
+        self.assertEqual(music_groups["remoteCommunication"]["methodIndex"], 39650)
+        self.assertTrue(all(
+            audio_semantics.audio_hash_generator_compute(row["recoveredName"])
+            == row["groupId"]
+            for row in music_groups.values()
+            if row.get("recoveredName")
+        ))
+        self.assertEqual(
+            music["nativeCallChains"][0]["stages"][-1]["methodIndex"],
+            446543,
+        )
+        transition_rows = {row["stateMask"]: row for row in music["nativeStateTransitions"]}
+        self.assertEqual(len(transition_rows), 9)
+        self.assertEqual(transition_rows[0x2]["stateNames"], ("FIGHT",))
+        self.assertEqual(
+            transition_rows[0xC0000]["stateNames"],
+            ("IN_FACTORY_AREA", "IN_BLACKBOX"),
+        )
+        self.assertTrue(all(row["actionOrders"] == (5, 1) for row in transition_rows.values()))
+        self.assertTrue(all(row["isOneShot"] is False for row in transition_rows.values()))
+        self.assertTrue(all(
+            row["callbackTargetStatus"] == "delegateTargetUnresolved"
+            for row in transition_rows.values()
+        ))
+        for enum_type in (
+            "EWwiseMusicMapState", "EWwiseMissionMusicState", "EWwiseDialogMusicState",
+            "EWwiseCutsceneMusicState", "EWwiseLoginMusicState", "EWwiseMetaMusicState",
+            "EWwiseRemoteCommMusicState",
+        ):
+            self.assertIn(
+                f"Beyond.Gameplay.Audio.AudioMusicSystem+{enum_type}",
+                specs,
+            )
         self.assertTrue(all(
             row["gameAssemblySha256"] == audio_semantics.CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256
             for row in audio_semantics.AUDIO_PLAYBACK_NATIVE_CALL_CHAINS.values()
@@ -1876,10 +1957,19 @@ class AudioSemanticDataTests(unittest.TestCase):
 
         self.assertIn("system.nativeCallChains", body)
         self.assertIn('chainCard.className = "audio-runtime-call-chain"', body)
+        self.assertIn("system.nativeStateGroups", body)
+        self.assertIn("system.nativeStateTransitions", body)
+        self.assertIn('groupCard.className = "audio-runtime-state-group"', body)
+        self.assertIn("Object.entries(system.enumValues)", body)
+        self.assertIn("group.groupIdHex", body)
+        self.assertIn("transition.stateMaskHex", body)
+        self.assertIn("transition.callbackTargetStatus", body)
         self.assertNotIn("systems.slice(0, 40)", body)
         self.assertIn("stage.methodIndex", body)
         self.assertIn("stage.virtualAddress", body)
         self.assertIn("stage.relation", body)
+        self.assertIn("chain.branches", body)
+        self.assertIn("branch.relation", body)
         self.assertIn("chain.boundary", body)
 
 
