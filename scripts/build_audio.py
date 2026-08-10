@@ -153,7 +153,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 8
+EVENT_EVIDENCE_SCHEMA_VERSION = 9
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -3085,6 +3085,135 @@ def hirc_reciprocal_child_list(
     return None
 
 
+def hirc_v150_switch_mapping(
+    data: bytes,
+    children_offset: int,
+    child_count: int,
+    *,
+    bank_version: int | None,
+) -> dict[str, Any]:
+    """Decode the bounded flat mapping tail of a v150 type-6 container.
+
+    The current flat layout places ``groupId``, ``defaultValueId``, and the
+    continuous-validation byte immediately before the already-proven Children
+    array.  Children are followed by variable value packages and a fixed-size
+    14-byte association row for each serialized association.  Some current
+    type-6 objects use a distinct tail; those fail closed with offsets while
+    normal child traversal remains unchanged.
+    """
+
+    tail_start = children_offset + 4 + child_count * 4
+
+    def unresolved(reason: str, offset: int) -> dict[str, Any]:
+        bounded_offset = max(0, min(offset, len(data)))
+        return {
+            "parserStatus": "unresolvedV150SwitchTail",
+            "failureReason": reason,
+            "unresolvedTailOffset": bounded_offset,
+            "unresolvedTailByteLength": len(data) - bounded_offset,
+            "runtimeSelection": "groupValueUnobservedAllChildrenRemainPossible",
+        }
+
+    if bank_version != 150:
+        return {
+            "parserStatus": "unsupportedBankVersion",
+            "bankVersion": bank_version,
+            "unresolvedTailOffset": tail_start,
+            "unresolvedTailByteLength": max(0, len(data) - tail_start),
+            "runtimeSelection": "groupValueUnobservedAllChildrenRemainPossible",
+        }
+    if children_offset < 9:
+        return unresolved("selectorHeaderBeforeObjectStart", children_offset)
+    if tail_start + 4 > len(data):
+        return unresolved("truncatedPackageCount", tail_start)
+
+    group_id = unpack_from("<I", data, children_offset - 9)[0]
+    default_value_id = unpack_from("<I", data, children_offset - 5)[0]
+    continuous_raw = data[children_offset - 1]
+    if continuous_raw not in (0, 1):
+        return unresolved("invalidContinuousValidation", children_offset - 1)
+
+    package_count = unpack_from("<I", data, tail_start)[0]
+    if package_count == 0:
+        return unresolved("noValuePackages", tail_start)
+    offset = tail_start + 4
+    if package_count > (len(data) - offset) // 8:
+        return unresolved("invalidPackageCount", tail_start)
+    packages: list[dict[str, Any]] = []
+    mapped_child_ids: set[int] = set()
+    for package_index in range(package_count):
+        if offset + 8 > len(data):
+            return unresolved("truncatedPackageHeader", offset)
+        value_id, mapped_child_count = unpack_from("<II", data, offset)
+        offset += 8
+        if mapped_child_count > (len(data) - offset) // 4:
+            return unresolved("invalidMappedChildCount", offset - 4)
+        child_ids = [
+            unpack_from("<I", data, offset + index * 4)[0]
+            for index in range(mapped_child_count)
+        ]
+        offset += mapped_child_count * 4
+        mapped_child_ids.update(child_ids)
+        packages.append({
+            "packageIndex": package_index,
+            "valueId": value_id,
+            "isDefaultValue": value_id == default_value_id,
+            "mappedChildCount": mapped_child_count,
+            "childIds": child_ids,
+        })
+
+    if offset + 4 > len(data):
+        return unresolved("truncatedAssociationCount", offset)
+    association_count = unpack_from("<I", data, offset)[0]
+    offset += 4
+    association_bytes = association_count * 14
+    if association_count > (len(data) - offset) // 14:
+        return unresolved("invalidAssociationCount", offset - 4)
+    if offset + association_bytes != len(data):
+        return unresolved("unexpectedAssociationTrailingBytes", offset + association_bytes)
+    associations: list[dict[str, Any]] = []
+    for association_index in range(association_count):
+        child_id = unpack_from("<I", data, offset)[0]
+        flags_raw = data[offset + 4]
+        parameter_a = unpack_from("<i", data, offset + 5)[0]
+        parameter_b = unpack_from("<i", data, offset + 9)[0]
+        parameter_c = data[offset + 13]
+        associations.append({
+            "associationIndex": association_index,
+            "childId": child_id,
+            "flagsRaw": flags_raw,
+            "parameterARaw": parameter_a,
+            "parameterBRaw": parameter_b,
+            "parameterCRaw": parameter_c,
+        })
+        offset += 14
+
+    authored_children = {
+        unpack_from("<I", data, children_offset + 4 + index * 4)[0]
+        for index in range(child_count)
+    }
+    association_child_ids = {row["childId"] for row in associations}
+    return {
+        "parserStatus": "typedExactV150FlatPackages",
+        "selectionStructure": "flatValuePackages",
+        "groupId": group_id,
+        "defaultValueId": default_value_id,
+        "continuousValidation": bool(continuous_raw),
+        "continuousValidationRaw": continuous_raw,
+        "packageCount": package_count,
+        "packages": packages,
+        "associationCount": association_count,
+        "associations": associations,
+        "mappedChildIdsOutsideChildren": sorted(mapped_child_ids - authored_children),
+        "unmappedChildIds": sorted(authored_children - mapped_child_ids),
+        "associationChildIdsOutsideChildren": sorted(
+            association_child_ids - authored_children
+        ),
+        "decisionTreeStatus": "noSeparateBytesAfterTypedFlatPackagesAndAssociations",
+        "runtimeSelection": "groupValueUnobservedAllChildrenRemainPossible",
+    }
+
+
 def _hirc_v150_music_common_tail(
     data: bytes,
     children_offset: int,
@@ -3741,6 +3870,12 @@ def traverse_hirc_event(
                 container_row.update(hirc_random_sequence_properties(data, offset))
                 relation = "sequenceItem" if container_row.get("mode") == 1 else "randomAlternative"
             elif object_type == 6:
+                container_row["switchMappingEvidence"] = hirc_v150_switch_mapping(
+                    data,
+                    offset,
+                    len(child_ids),
+                    bank_version=bank_version,
+                )
                 relation = "switchCandidate"
             elif object_type == 9:
                 relation = "layerChild"
@@ -5010,7 +5145,7 @@ def collect_event_audio_index(
                     "resolvedMediaCount": len(media_ids),
                     "unresolvedNodes": traversal["unresolvedNodes"],
                     "traversalStatus": traversal["traversalStatus"],
-                    "edgeParser": "wwise150TypedReciprocalChildrenAndMusic",
+                    "edgeParser": "wwise150TypedReciprocalChildrenSwitchMappingAndMusic",
                     "source": "wwiseHirc",
                     "nestedReferenceConfidence": "typedExact" if not traversal["unresolvedNodes"] else "typedPartial",
                 }
@@ -5078,11 +5213,14 @@ def collect_event_audio_index(
             },
             "evidenceBoundary": (
                 "Exact serialized HIRC object-family counts. Event, Action, Sound, and "
-                "types 5/6/7/9 use typed downward edges with reciprocal parent proof. "
+                "types 5/6/7/9 use typed downward edges with reciprocal parent proof; "
+                "type-6 flat value packages are emitted only when their complete v150 "
+                "mapping and association tail consumes exactly, while distinct tails stay unresolved. "
                 "Version-150 MusicSegment/Track/Switch/RanSeq nodes use bounded typed "
                 "prefixes, exact track sources, and reciprocal music children; truncated, "
                 "non-v150, and unresolved structures fail closed. Runtime switch, random, "
-                "sequence, transition, and layer selection is not evaluated."
+                "sequence, transition, and layer selection is not evaluated, and switch "
+                "mapping evidence never prunes possible children without a runtime group value."
             ),
         })
 

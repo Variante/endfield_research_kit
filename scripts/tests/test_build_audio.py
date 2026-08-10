@@ -406,6 +406,128 @@ class AudioCategoryTests(unittest.TestCase):
         )
         self.assertNotIn(unrelated_sound, result["visitedObjectIds"])
 
+    def test_v150_switch_mapping_preserves_flat_value_packages_without_pruning(self) -> None:
+        event_id = 100
+        action_id = 101
+        switch_id = 200
+        sound_a = 301
+        sound_b = 302
+        group_id = 0x3C9C2C56
+        default_value_id = 0x8D36849F
+        value_id = 0xF44F784A
+        children_offset = 40
+
+        switch_data = bytearray(children_offset - 9)
+        switch_data.extend(pack("<II", group_id, default_value_id))
+        switch_data.append(1)
+        switch_data.extend(pack("<III", 2, sound_a, sound_b))
+        switch_data.extend(pack("<I", 2))
+        switch_data.extend(pack("<III", value_id, 1, sound_a))
+        switch_data.extend(pack("<II", default_value_id, 0))
+        switch_data.extend(pack("<I", 2))
+        switch_data.extend(pack("<IBiiB", sound_a, 3, 500, -250, 7))
+        switch_data.extend(pack("<IBiiB", sound_b, 0, 1, 0, 0))
+
+        def sound_data(media_id: int) -> bytes:
+            data = bytearray(30)
+            data[5:9] = pack("<I", media_id)
+            data[22:26] = pack("<I", switch_id)
+            return bytes(data)
+
+        objects = {
+            event_id: {"type": 4, "data": bytes([1]) + pack("<I", action_id)},
+            action_id: {"type": 3, "data": pack("<HI", 0x0403, switch_id)},
+            switch_id: {"type": 6, "data": bytes(switch_data)},
+            sound_a: {"type": 2, "data": sound_data(401)},
+            sound_b: {"type": 2, "data": sound_data(402)},
+        }
+
+        result = build_audio.traverse_hirc_event(
+            event_id, objects, {401, 402}, bank_version=150
+        )
+
+        self.assertEqual(result["mediaIds"], [401, 402])
+        self.assertEqual(result["traversalStatus"], "complete")
+        switch = result["containerEvidence"][0]["switchMappingEvidence"]
+        self.assertEqual(switch["parserStatus"], "typedExactV150FlatPackages")
+        self.assertEqual(switch["selectionStructure"], "flatValuePackages")
+        self.assertEqual(switch["groupId"], group_id)
+        self.assertEqual(switch["defaultValueId"], default_value_id)
+        self.assertTrue(switch["continuousValidation"])
+        self.assertEqual(switch["packages"][0], {
+            "packageIndex": 0,
+            "valueId": value_id,
+            "isDefaultValue": False,
+            "mappedChildCount": 1,
+            "childIds": [sound_a],
+        })
+        self.assertTrue(switch["packages"][1]["isDefaultValue"])
+        self.assertEqual(switch["unmappedChildIds"], [sound_b])
+        self.assertEqual(switch["associations"][0]["parameterARaw"], 500)
+        self.assertEqual(switch["associations"][0]["parameterBRaw"], -250)
+        self.assertEqual(
+            switch["runtimeSelection"],
+            "groupValueUnobservedAllChildrenRemainPossible",
+        )
+
+        no_package_data = bytearray(children_offset - 9)
+        no_package_data.extend(pack("<II", 0x3C9C2C56, 0x8D36849F))
+        no_package_data.append(0)
+        no_package_data.extend(pack("<III", 2, sound_a, sound_b))
+        no_package_data.extend(pack("<I", 0))
+        no_package = build_audio.hirc_v150_switch_mapping(
+            bytes(no_package_data),
+            children_offset,
+            2,
+            bank_version=150,
+        )
+        self.assertEqual(no_package["parserStatus"], "unresolvedV150SwitchTail")
+        self.assertEqual(no_package["failureReason"], "noValuePackages")
+
+    def test_v150_switch_mapping_marks_distinct_layout_unresolved_without_pruning(self) -> None:
+        switch_id = 200
+        sound_a = 301
+        sound_b = 302
+        children_offset = 40
+        switch_data = bytearray(children_offset - 9)
+        # Current distinct-layout objects do not have the flat selector header
+        # at C-9; interpreting their final header byte as continuous-validation
+        # yields a non-boolean value and must fail before package claims.
+        switch_data.extend(bytes.fromhex("00949cee04bb233163"))
+        switch_data.extend(pack("<III", 2, sound_a, sound_b))
+        switch_data.extend(pack("<I", 2))
+        switch_data.extend(pack("<IBiiB", sound_a, 0, 1, 0, 0))
+        switch_data.extend(pack("<IBiiB", sound_b, 0, 1, 0, 0))
+
+        def sound_data(media_id: int) -> bytes:
+            data = bytearray(30)
+            data[5:9] = pack("<I", media_id)
+            data[22:26] = pack("<I", switch_id)
+            return bytes(data)
+
+        objects = {
+            100: {"type": 4, "data": bytes([1]) + pack("<I", 101)},
+            101: {"type": 3, "data": pack("<HI", 0x0403, switch_id)},
+            switch_id: {"type": 6, "data": bytes(switch_data)},
+            sound_a: {"type": 2, "data": sound_data(401)},
+            sound_b: {"type": 2, "data": sound_data(402)},
+        }
+
+        result = build_audio.traverse_hirc_event(
+            100, objects, {401, 402}, bank_version=150
+        )
+
+        self.assertEqual(result["mediaIds"], [401, 402])
+        self.assertEqual(result["traversalStatus"], "complete")
+        switch = result["containerEvidence"][0]["switchMappingEvidence"]
+        self.assertEqual(switch["parserStatus"], "unresolvedV150SwitchTail")
+        self.assertEqual(switch["failureReason"], "invalidContinuousValidation")
+        self.assertGreater(switch["unresolvedTailByteLength"], 0)
+        self.assertEqual(
+            switch["runtimeSelection"],
+            "groupValueUnobservedAllChildrenRemainPossible",
+        )
+
     def test_typed_hirc_traversal_resolves_v150_music_graph_and_track_media(self) -> None:
         def node_base(parent_id: int) -> bytes:
             return bytes(4) + pack("<II", 0, parent_id)
