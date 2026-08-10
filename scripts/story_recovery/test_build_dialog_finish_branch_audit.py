@@ -728,6 +728,155 @@ class MissionContextCollectionTests(unittest.TestCase):
         ):
             audit._collect_mission_levelscript_contexts(payloads)
 
+    def test_collects_only_complete_typed_npc_proxy_tracking_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            streaming = Path(tmp) / "StreamingAssets" / "MissionRuntimeAsset"
+            persistent = Path(tmp) / "Persistent" / "MissionRuntimeAsset"
+            streaming.mkdir(parents=True)
+            persistent.mkdir(parents=True)
+            (streaming / "mission_fixture.json").write_text(
+                json.dumps({
+                    "missionId": "mission_fixture",
+                    "nested": [
+                            {
+                                "$type": "Beyond.Gameplay.NpcProxyTrackingInfo, Gameplay.Beyond",
+                                "npcProxyId": "proxy_fixture",
+                                "sceneId": "level_fixture",
+                            },
+                            {
+                                "$type": "Beyond.Gameplay.MissionAreaTrackingInfo, Gameplay.Beyond",
+                                "npcProxyId": "wrong_type",
+                                "sceneId": "level_fixture",
+                            },
+                            {
+                                "$type": "Beyond.Gameplay.NpcProxyTrackingInfo, Gameplay.Beyond",
+                                "npcProxyId": "missing_scene",
+                            },
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            rows = audit._collect_mission_npc_proxy_tracking_consumers(
+                (streaming, persistent)
+            )
+        self.assertEqual(["proxy_fixture"], list(rows))
+        self.assertEqual("mission_fixture", rows["proxy_fixture"][0]["missionId"])
+        self.assertEqual("level_fixture", rows["proxy_fixture"][0]["scene"])
+        self.assertIn("StreamingAssets", rows["proxy_fixture"][0]["sourceFile"])
+
+    def test_npc_proxy_tracking_uses_persistent_active_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            streaming = Path(tmp) / "StreamingAssets" / "MissionRuntimeAsset"
+            persistent = Path(tmp) / "Persistent" / "MissionRuntimeAsset"
+            streaming.mkdir(parents=True)
+            persistent.mkdir(parents=True)
+            for root, proxy_id in (
+                (streaming, "streaming_proxy"),
+                (persistent, "persistent_proxy"),
+            ):
+                (root / "mission_fixture.json").write_text(
+                    json.dumps({
+                        "missionId": "mission_fixture",
+                        "tracking": {
+                            "$type": "Beyond.Gameplay.NpcProxyTrackingInfo, Gameplay.Beyond",
+                            "npcProxyId": proxy_id,
+                            "sceneId": "level_fixture",
+                        },
+                    }),
+                    encoding="utf-8",
+                )
+            rows = audit._collect_mission_npc_proxy_tracking_consumers(
+                (streaming, persistent)
+            )
+        self.assertEqual(["persistent_proxy"], list(rows))
+        self.assertIn("Persistent", rows["persistent_proxy"][0]["sourceFile"])
+
+    def test_npc_proxy_tracking_reports_invalid_original_json(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            streaming = Path(tmp) / "StreamingAssets" / "MissionRuntimeAsset"
+            persistent = Path(tmp) / "Persistent" / "MissionRuntimeAsset"
+            streaming.mkdir(parents=True)
+            persistent.mkdir(parents=True)
+            (streaming / "broken.json").write_text("{", encoding="utf-8")
+            with self.assertRaisesRegex(
+                audit.AuditValidationError,
+                "validator=dialog_finish_npc_proxy_tracking_census.*"
+                "gate=typedMissionRuntimeJson.*identity=broken.json",
+            ):
+                audit._collect_mission_npc_proxy_tracking_consumers(
+                    (streaming, persistent)
+                )
+
+
+class NpcProxySegmentMissionShellTests(unittest.TestCase):
+    @staticmethod
+    def _row() -> dict:
+        return {
+            "levelId": "level_fixture",
+            "scriptId": "4242",
+            "taskId": "deadbeef",
+            "conditionId": "cafefeed",
+        }
+
+    @staticmethod
+    def _context(status: str, mission_ids: list[str]) -> dict:
+        return {
+            "status": status,
+            "hostMissionIds": mission_ids,
+            "hosts": [{
+                "proxyId": "proxy_fixture",
+                "registryRow": {
+                    "sourceFile": "GameplayConfig/WorldEntityRegistry.json",
+                },
+                "npcProxyExRows": [{
+                    "sourceFile": "GameplayConfig/NpcProxyExDataTable.json",
+                }],
+                "trackingConsumers": [{
+                    "sourceFile": "MissionRuntime/mission_fixture.json",
+                }],
+            }],
+        }
+
+    def test_unique_segment_promotes_a_script_local_shell(self) -> None:
+        row = self._row()
+        audit._apply_npc_proxy_segment_mission_shell(
+            row,
+            self._context("unique", ["mission_fixture"]),
+        )
+        self.assertEqual(
+            "npc_proxy_segment_script_mission_shell",
+            row["missionShellOwner"]["ownerKind"],
+        )
+        self.assertEqual("mission_fixture", row["missionShellOwner"]["missionId"])
+        self.assertEqual(["proxy_fixture"], row["missionShellOwner"]["proxyIds"])
+
+    def test_shared_segment_remains_context_only(self) -> None:
+        row = self._row()
+        audit._apply_npc_proxy_segment_mission_shell(
+            row,
+            self._context("shared", ["mission_a", "mission_b"]),
+        )
+        self.assertNotIn("missionShellOwner", row)
+        self.assertEqual(
+            "shared",
+            row["npcProxySegmentMissionShellContext"]["status"],
+        )
+
+    def test_disagreement_with_independent_owner_fails_closed(self) -> None:
+        row = self._row()
+        row["missionShellOwner"] = {
+            "ownerKind": "subgame_exact_script_task_carrier",
+            "missionId": "mission_a",
+        }
+        with self.assertRaisesRegex(
+            audit.AuditValidationError,
+            "gate=independentOwnerAgreement.*expected='mission_a'.*actual='mission_b'",
+        ):
+            audit._apply_npc_proxy_segment_mission_shell(
+                row,
+                self._context("unique", ["mission_b"]),
+            )
+
 
 class LevelScriptTaskConsumerTests(unittest.TestCase):
     @staticmethod
