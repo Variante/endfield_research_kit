@@ -1442,6 +1442,50 @@ class LightCullCapAuditTests(unittest.TestCase):
             ],
         )
         self.assertIn("remain unproved", native_update["boundary"])
+        managed_chain = AUDIT.validate_streaming_gameplay_managed_update_chain(
+            AUDIT.GLOBAL_METADATA.read_bytes(),
+            AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+        )
+        self.assertEqual(
+            [row["method"] for row in managed_chain["chain"]],
+            [
+                "Beyond.Gameplay.View.GameSceneManager.Tick",
+                "Beyond.Gameplay.View.BaseGameScene.Update",
+                (
+                    "Beyond.Gameplay.Core.DynamicScene."
+                    "DynamicStreamingScene.Update"
+                ),
+                (
+                    "Beyond.Gameplay.Core.DynamicScene."
+                    "DynamicStreamingScene.TickSystem"
+                ),
+                (
+                    "Beyond.Gameplay.Core.DynamicScene."
+                    "DynamicSceneEcsSystem.Tick"
+                ),
+            ],
+        )
+        self.assertEqual(
+            managed_chain["chain"][3]["resourceTickCallSite"],
+            "0x1830AD7B3",
+        )
+        self.assertEqual(
+            managed_chain["chain"][4]["batchLimitEquation"],
+            "system+0x54 == 2 ? 0x800 : 0x100",
+        )
+        self.assertEqual(
+            managed_chain["dynamicStreamingSceneFields"]["m_systems"][
+                "boxedOffset"
+            ],
+            "0x170",
+        )
+        self.assertEqual(
+            managed_chain["dynamicStreamingSceneFields"]["m_validSystems"][
+                "boxedOffset"
+            ],
+            "0x180",
+        )
+        self.assertIn("virtual caller", managed_chain["boundary"])
         failure = batch["failureEvidence"]
         self.assertEqual(
             failure["diagnostics"]["load"]["value"],
@@ -2127,6 +2171,50 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_managed_streaming_tick_system_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.GAME_ASSEMBLY)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1830AD740 and size == 0x948:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=streaming_managed_update_"
+                r"dynamic_streaming_scene_tick_system_sha256; "
+                r"source=.*GameAssembly.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_streaming_gameplay_managed_update_chain(
+                    AUDIT.GLOBAL_METADATA.read_bytes(), image
+                )
+
+    def test_changed_managed_streaming_tick_resolver_string_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.GAME_ASSEMBLY)
+        original_cstring = image.cstring
+
+        def changed_cstring(virtual_address: int) -> str:
+            if virtual_address == 0x18B8CE930:
+                return "Changed Tick resolver"
+            return original_cstring(virtual_address)
+
+        with mock.patch.object(image, "cstring", changed_cstring):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=streaming_managed_update_tick_resolver_string; "
+                r"source=.*GameAssembly.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_streaming_gameplay_managed_update_chain(
+                    AUDIT.GLOBAL_METADATA.read_bytes(), image
+                )
 
     def test_changed_hgtree_resource_load_failure_string_fails_closed(
         self,
