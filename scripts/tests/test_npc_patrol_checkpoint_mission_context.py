@@ -7,10 +7,13 @@ import unittest
 
 from scripts.story_builder.context import ROOT
 from scripts.story_builder.level_bindings import (
+    LevelDataNpcPatrolDecodeError,
     build_leveldata_npc_patrol_radio_story_contexts,
     build_levelscript_native_story_playback_index,
     build_npc_patrol_checkpoint_mission_contexts,
+    decode_leveldata_npc_patrol_list,
     parse_leveldata_npc_patrol_data_entry,
+    parse_leveldata_patrol_sub_action,
 )
 from scripts.story_builder.levelscript_binary import decode_levelscript_record_payload
 
@@ -58,6 +61,21 @@ def patrol_row(patrol_id: int, points: int) -> bytes:
         + struct.pack("<fff", 1.0, 2.0, 3.0)
     )
     return fixed + point * points
+
+
+PLAY_AUDIO_ACTION = bytes.fromhex(
+    "1a0000000000000000000000000000000000000000000000000000ffffffff"
+    "0000000000000000000000000000000080400000000000000000000000000001"
+    "0000000000000000000000000101e079120b0b00000000000000"
+)
+
+VARIABLE_PREFIX_ACTION = bytes.fromhex(
+    "1a0000000000000000000000000000000000000000000002000000040009000000"
+    "5761697452616e67650000000000001440000000000400070000004d617854696d"
+    "6500000000f069f84000000000ffffffff114a0f00000000000000000000000000"
+    "80400000000000000000000000000001000000000000000000000000ff07000000"
+    "00000000"
+)
 
 
 class NpcPatrolCheckpointMissionContextTests(unittest.TestCase):
@@ -118,6 +136,63 @@ class NpcPatrolCheckpointMissionContextTests(unittest.TestCase):
                 expected_patrol_id=10030,
             )
         )
+
+    def test_patrol_play_audio_union_is_an_exact_typed_audio_id(self) -> None:
+        decoded = parse_leveldata_patrol_sub_action(PLAY_AUDIO_ACTION, 0)
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(PLAY_AUDIO_ACTION), decoded["recordEndOffset"])
+        self.assertEqual(11, decoded["type"])
+        self.assertEqual("playAudio", decoded["subActionDataStatus"])
+        self.assertEqual(1, decoded["subActionDataUnionTag"])
+        self.assertEqual(185760224, decoded["subActionData"]["audioEventId"])
+        self.assertEqual("0x0b1279e0", decoded["subActionData"]["audioEventHex"])
+
+        patrol = (
+            patrol_row(280007, 0)[:-4]
+            + struct.pack("<i", 1)
+            + b"\x03"
+            + struct.pack("<i", 1)
+            + PLAY_AUDIO_ACTION
+            + struct.pack("<i", 0)
+            + struct.pack("<fff", 1.0, 2.0, 3.0)
+        )
+        level_data = b"\x2bfixture" + struct.pack("<i", 1) + patrol
+        framed = decode_leveldata_npc_patrol_list(level_data)
+        self.assertEqual("exactNonemptyTypedPatrolList", framed["status"])
+        self.assertEqual(1, framed["patrolCount"])
+        action = framed["patrols"][0]["points"][0]["actions"][0]
+        self.assertEqual(185760224, action["subActionData"]["audioEventHash"])
+
+        drifted_level_data = bytearray(level_data)
+        action_offset = level_data.find(PLAY_AUDIO_ACTION)
+        drifted_level_data[action_offset + decoded["subActionDataOffset"]] = 0x02
+        with self.assertRaisesRegex(LevelDataNpcPatrolDecodeError, "collection drift"):
+            decode_leveldata_npc_patrol_list(bytes(drifted_level_data))
+
+    def test_patrol_action_cursor_handles_variable_event_pairs_and_fails_closed(self) -> None:
+        decoded = parse_leveldata_patrol_sub_action(VARIABLE_PREFIX_ACTION, 0)
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(VARIABLE_PREFIX_ACTION), decoded["recordEndOffset"])
+        self.assertEqual(2, decoded["eventBBDataPairCount"])
+        self.assertEqual(
+            [("WaitRange", 5.0), ("MaxTime", 99999.0)],
+            [
+                (row["key"], row["valueDouble"])
+                for row in decoded["eventBBDataPairs"]
+            ],
+        )
+        self.assertEqual(1002001, decoded["eventToLevelType"])
+        self.assertEqual(7, decoded["type"])
+        self.assertEqual("null", decoded["subActionDataStatus"])
+
+        self.assertIsNone(parse_leveldata_patrol_sub_action(VARIABLE_PREFIX_ACTION[:-1], 0))
+        drifted = bytearray(PLAY_AUDIO_ACTION)
+        play_audio = parse_leveldata_patrol_sub_action(PLAY_AUDIO_ACTION, 0)
+        self.assertIsNotNone(play_audio)
+        drifted[play_audio["subActionDataOffset"]] = 0x02
+        self.assertIsNone(parse_leveldata_patrol_sub_action(bytes(drifted), 0))
 
     def test_current_original_data_recovers_only_the_six_patrol_story_files(self) -> None:
         flows: dict[str, dict] = {}
@@ -182,7 +257,7 @@ class NpcPatrolCheckpointMissionContextTests(unittest.TestCase):
         )
         self.assertEqual(20001, by_key["radio_gm01m16_15"]["patrolId"])
         self.assertEqual(
-            "exact_typed_neighbor_boundaries_partial_point_decode",
+            "exact_full_patrol_list_consume",
             by_key["radio_gm01m16_15"]["patrolEnvelopeStatus"],
         )
         self.assertEqual(9, by_key["radio_gm01m16_15"]["type"])

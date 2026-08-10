@@ -248,6 +248,16 @@ This proves authored spawn-warning requests, not that a spawner executed.
 Every current `bornBehaviorData` value is null, so a future non-null member-18
 payload fails closed until an authored fixture proves its serialized layout.
 
+NPC patrol-point audio now uses one fail-closed current MemoryPack cursor from
+`LevelData/43` member 31 through `NpcPatrolData/9`, point/3, and the complete
+`PatrolSubAction/26` variable prefix and typed sub-action union. Across 958
+Persistent LevelData files, 147 non-empty frames decode without failure (701
+patrols, 5,160 points, and 1,520 actions); 34 tag-1
+`PatrolSubPlayAudioData/1` actions reference the single Event hash `0x0b1279e0`,
+which is absent from the current CN HIRC Event inventory. Patrol, point, action,
+offset, and source identity are exact authored context; reaching the point,
+executing the action, and posting or selecting Wwise media remain unobserved.
+
 Character-interaction perform audio now has a separate fail-closed current-
 build decoder. The 181 StreamingAssets configs and identical Persistent mirrors
 contain five `AudioEventActData` records (action-union tag `0x02`, mc15) in four

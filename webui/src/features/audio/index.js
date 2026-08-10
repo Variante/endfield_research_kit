@@ -83,6 +83,7 @@
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
       contextProjectileTrigger: "Projectile lifecycle sound",
       contextSpawnerPreWarn: "Enemy-spawner pre-warning",
+      contextNpcPatrolTrigger: "NPC patrol-point audio",
       contextCharacterInteraction: "Character interaction perform",
       contextPhysicsEnvironment: "Physics / environment",
       contextModelViewState: "ModelView state behavior",
@@ -214,6 +215,7 @@
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
       contextProjectileTrigger: "\u6295\u5c04\u7269\u751f\u547d\u5468\u671f\u97f3\u6548",
       contextSpawnerPreWarn: "\u654c\u4eba\u751f\u6210\u5668\u9884\u8b66\u97f3\u6548",
+      contextNpcPatrolTrigger: "NPC \u5de1\u903b\u70b9\u97f3\u9891",
       contextCharacterInteraction: "\u89d2\u8272\u4ea4\u4e92\u8868\u6f14",
       contextPhysicsEnvironment: "\u7269\u7406 / \u73af\u5883",
       contextModelViewState: "ModelView \u72b6\u6001\u884c\u4e3a",
@@ -380,6 +382,7 @@
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
     projectileTrigger: "contextProjectileTrigger",
     spawnerPreWarnTrigger: "contextSpawnerPreWarn",
+    npcPatrolTrigger: "contextNpcPatrolTrigger",
     characterInteraction: "contextCharacterInteraction",
     physicsEnvironment: "contextPhysicsEnvironment",
     modelViewState: "contextModelViewState",
@@ -429,7 +432,7 @@
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"].includes(kind)) return "scripted";
-    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "charInteractAudioEvent"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
   }
@@ -439,6 +442,7 @@
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
       if (contextKind === "spawnerPreWarnAudio") tags.add("spawnerPreWarnTrigger");
+      if (contextKind === "patrolSubActionPlayAudio") tags.add("npcPatrolTrigger");
       if (contextKind === "charInteractAudioEvent") tags.add("characterInteraction");
       if (contextKind === "physicsAudioComponentEvent") tags.add("physicsEnvironment");
       if (["modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"].includes(contextKind)) tags.add("modelViewState");
@@ -471,7 +475,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "animation", "scripted", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -1628,6 +1632,10 @@
     if (context?.spawnerEnemyKey) parts.push(`spawn key ${context.spawnerEnemyKey}`);
     if (context?.preWarnTime !== undefined) parts.push(`pre-warning time ${context.preWarnTime}`);
     if (context?.preWarnEffectKey) parts.push(`effect ${context.preWarnEffectKey}`);
+    if (context?.patrolId !== undefined) parts.push(`NPC patrol ${context.patrolId}`);
+    if (context?.pointIndex !== undefined) parts.push(`point ${context.pointIndex} / action ${context.actionIndex ?? "?"}`);
+    if (context?.patrolSubActionType !== undefined) parts.push(`patrol action type ${context.patrolSubActionType} / union ${context.subActionUnionTagHex || context.subActionUnionTag || "?"}`);
+    if (context?.nativeConsumer) parts.push(context.nativeConsumer);
     if (context?.charInteractPerformId) parts.push(`perform ${context.charInteractPerformId}`);
     if (context?.actionPhase) parts.push(`${humanize(context.actionPhase)} action ${context.actionIndex ?? "?"}`);
     if (context?.logicId !== undefined) parts.push(`logic ${context.logicId}`);

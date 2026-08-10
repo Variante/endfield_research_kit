@@ -59,6 +59,30 @@ def spawner_config_fixture() -> bytes:
     return b"\x05" + mp_string("sc_fixture") + pack("<I", len(rows)) + b"".join(rows) + b"unused-tail"
 
 
+PATROL_PLAY_AUDIO_ACTION = bytes.fromhex(
+    "1a0000000000000000000000000000000000000000000000000000ffffffff"
+    "0000000000000000000000000000000080400000000000000000000000000001"
+    "0000000000000000000000000101e079120b0b00000000000000"
+)
+
+
+def patrol_leveldata_fixture() -> bytes:
+    patrol = b"".join((
+        b"\x09",
+        pack("<i", 0),
+        pack("<f", 4.0),
+        b"\x00\x00\x01",
+        mp_string(""),
+        pack("<iii", 0, 280007, 1),
+        b"\x03",
+        pack("<i", 1),
+        PATROL_PLAY_AUDIO_ACTION,
+        pack("<i", 0),
+        pack("<fff", 1.0, 2.0, 3.0),
+    ))
+    return b"\x2bfixture" + pack("<i", 1) + patrol
+
+
 def char_interact_audio_action(event_id: int) -> bytes:
     return b"".join((
         b"\x02\x0f\x03\x00",
@@ -616,6 +640,62 @@ class AudioSemanticDataTests(unittest.TestCase):
             )
             self.assertIn("spawnerPreWarnAudio", unresolved_summary["contextKinds"])
             self.assertIn("sc_fixture", unresolved_summary["contextSearch"])
+
+    def test_patrol_sub_action_audio_context_preserves_exact_owner_and_unresolved_event(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            export_root = root / "export_full"
+            webui_root = root / "webui"
+            path = (
+                export_root
+                / "structured/Persistent/Data/Json/LevelData/map02_lv002/fixture.json"
+            )
+            path.parent.mkdir(parents=True)
+            path.write_bytes(patrol_leveldata_fixture())
+
+            semantics = audio_semantics.collect_patrol_sub_action_audio_semantics(export_root)
+            stats = semantics["stats"]
+            self.assertEqual("complete", stats["status"])
+            self.assertEqual(1, stats["sourceFiles"])
+            self.assertEqual(1, stats["decodedFiles"])
+            self.assertEqual(1, stats["patrolRows"])
+            self.assertEqual(1, stats["patrolPoints"])
+            self.assertEqual(1, stats["patrolActions"])
+            self.assertEqual(1, stats["playAudioContexts"])
+            context = semantics["eventContexts"]["#0x0b1279e0"][0]
+            self.assertEqual("patrolSubActionPlayAudio", context["kind"])
+            self.assertEqual(280007, context["patrolId"])
+            self.assertEqual(0, context["pointIndex"])
+            self.assertEqual(0, context["actionIndex"])
+            self.assertEqual("patrolPointActionExecutionNotObserved", context["runtimeActivationStatus"])
+
+            payload = audio_semantics.build_audio_semantic_data(
+                {"eventNames": [], "events": [], "eventEvidence": [], "entries": []},
+                language="CN",
+                export_root=export_root,
+                webui_root=webui_root,
+                metadata_path=None,
+            )
+            self.assertEqual(11, payload["schemaVersion"])
+            self.assertEqual(1, payload["counts"]["patrolSubActionPlayAudioEvents"])
+            self.assertEqual(1, payload["counts"]["patrolSubActionPlayAudioContexts"])
+            self.assertEqual(0, payload["counts"]["patrolSubActionPlayAudioEventsFoundInWwise"])
+            self.assertEqual(1, payload["counts"]["patrolSubActionPlayAudioEventsUnresolved"])
+            self.assertEqual(
+                1,
+                payload["triggerCatalog"]["patrolSubActionPlayAudio"]["decodedFiles"],
+            )
+            event_summaries = json.loads(
+                (webui_root / "data/lang/CN/audio/events.json").read_text(encoding="utf-8")
+            )["events"]
+            summary = next(
+                row for row in event_summaries
+                if row["id"] == "hashed-event:0x0b1279e0"
+            )
+            self.assertEqual("sfx", summary["category"])
+            self.assertEqual("exactPatrolSubPlayAudioData", summary["categoryEvidence"])
+            self.assertIn("patrolSubActionPlayAudio", summary["contextKinds"])
+            self.assertIn("280007", summary["contextSearch"])
 
     def test_char_interact_audio_context_preserves_phase_owner_and_numeric_join(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -1358,6 +1438,9 @@ class AudioSemanticDataTests(unittest.TestCase):
             render_body.index('card.addEventListener("toggle"'),
         )
         self.assertNotIn("players.length <= 200", render_body)
+        self.assertIn('contextNpcPatrolTrigger: "NPC patrol-point audio"', source)
+        self.assertIn('contextKind === "patrolSubActionPlayAudio"', source)
+        self.assertIn('`NPC patrol ${context.patrolId}`', source)
 
 
 if __name__ == "__main__":
