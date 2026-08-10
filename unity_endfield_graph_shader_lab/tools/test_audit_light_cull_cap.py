@@ -778,7 +778,35 @@ class LightCullCapAuditTests(unittest.TestCase):
         pointer_boundary = downstream["runtimeRecordPointerBoundary"]
         self.assertEqual(
             pointer_boundary["consumerFunctions"],
-            ["0x181129E0D", "0x18113781A"],
+            ["0x181129E0D", "0x18112A790", "0x18113781A"],
+        )
+        self.assertEqual(pointer_boundary["allDirectLookupCallCount"], 53)
+        self.assertEqual(pointer_boundary["exactFamilyLookupCallCount"], 44)
+        self.assertEqual(pointer_boundary["exactFamilyEntryCfgCount"], 41)
+        self.assertEqual(pointer_boundary["nonFamilyLookupCallCount"], 9)
+        self.assertEqual(
+            pointer_boundary["directConsumerRecordReads"][1][
+                "recordOffsets"
+            ],
+            ["0x00", "0x04", "0x08", "0x10"],
+        )
+        self.assertEqual(
+            pointer_boundary["recordBaseZeroInitializationCallSites"],
+            ["0x18042A497", "0x18042AEAD", "0x180BCBAEC"],
+        )
+        hot_cold = pointer_boundary["hotColdCfgTraversal"]
+        self.assertEqual(hot_cold["enabledLightModesReadSites"], [])
+        self.assertEqual(hot_cold["recordBaseMemoryStoreSites"], [])
+        self.assertEqual(hot_cold["recordBaseReturnSites"], [])
+        self.assertEqual(
+            pointer_boundary["fullBlobCopy"]["byteCountEquation"],
+            "4 + 32 * (familyMask >> 8)",
+        )
+        self.assertIn(
+            "copied verbatim",
+            pointer_boundary["fullBlobCopy"][
+                "enabledLightModesBehavior"
+            ],
         )
         self.assertEqual(
             pointer_boundary["recordBaseEscapeCallSites"],
@@ -1029,6 +1057,44 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_runtime_record_batch_flag_classifier_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_runtime_record_grouping_consumer_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18112A790 and size == 0x67E:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_runtime_record_blob_consumer_component_grouping_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_runtime_record_full_blob_copy_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1810CE280 and size == 0x143:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_runtime_record_full_blob_copy_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
@@ -1406,11 +1472,30 @@ class LightCullCapAuditTests(unittest.TestCase):
 
     def test_component67_accessor_call_site_drift_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
-        with mock.patch.object(AUDIT, "find_relative_call_sites", return_value=[]):
+
+        def changed_sites(_image: object, target: int) -> list[int]:
+            if target == AUDIT.UNITY_RENDERER_BLOB_LOOKUP_VA:
+                return AUDIT.UNITY_RENDERER_BLOB_LOOKUP_CALL_SITES
+            return []
+
+        with mock.patch.object(
+            AUDIT, "find_relative_call_sites", side_effect=changed_sites
+        ):
             with self.assertRaisesRegex(
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_component67_archetype_accessor_call_sites; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=\[\]",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_renderer_blob_lookup_call_site_drift_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        with mock.patch.object(AUDIT, "find_relative_call_sites", return_value=[]):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_renderer_blob_lookup_call_sites; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=\[\]",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

@@ -135,14 +135,23 @@ NPC archetypes are imported as labeled source kits.
   independently closed: builders `0x18109BE90/0x18109C9D0` clear it, query the
   renderer material/shader against the exact 31-name `HGShaderLightMode` pass
   table, and set each supported bit. It is therefore a shader-supported-pass
-  mask, not a projection of runtime record `+0x14`. The downstream search is
-  now bounded further: exact renderer-blob consumers `0x181129E0D/0x18113781A`
-  pass `blob+0x04` across three call sites only to classifier `0x181131FC0`,
-  which advances by `0x18` but reads only record `+0x00` before testing
-  renderer-entry `+0x18/+0x26`. The apparent callback-A read at `+0x14` with
-  the same stride is not this blob: `0x181038D70/0x181038DE0` derive its base
-  from ECS archetype component columns 127/126, and the value is consumed as a
-  float. The exact later native consumer of record `+0x14` remains open. This
+  mask, not a projection of runtime record `+0x14`. The direct lookup surface
+  is now bounded: all 53 calls to `0x180424C30` are pinned and partitioned into
+  44 exact `0x7F00` calls across 41 entry CFGs plus nine other-family calls.
+  Cross-hot/cold CFG taint finds no exact-path record `+0x14` read, record-base
+  pointer store, or record-base return. The six direct `blob+0x04` call escapes are
+  three zero initializers at `0x181CA0040` and three calls to classifier
+  `0x181131FC0`, which reads only record `+0x00`. One additional `blob+0x00`
+  tail path, `0x1810CE280 -> 0x181C9F9A0`, copies the full layout with byte
+  count `4 + 32*(familyMask>>8)`: count, `24*capacity` runtime records, and
+  `8*capacity` LOD pairs. It carries `+0x14` verbatim between exact-family
+  blobs but does not interpret it. A third exact component-K /
+  ray-tracing-K grouping consumer at `0x18112A790` reads only record
+  `+0x00/+0x04/+0x08/+0x10`. The apparent callback-A `+0x14` read at the same
+  stride is not this blob: `0x181038D70/0x181038DE0` derive its base from ECS
+  archetype component columns 127/126, and the value is consumed as a float.
+  The exact later native consumer of record `+0x14` remains open outside this
+  direct lookup/escape surface. This
   loader blob is not the other 24-byte structure used by LOD jobs. The latter
   is archetype component bit 67: `+0x00` is LOD count, `+0x01/+0x02` are the
   desired and availability-resolved indices, `+0x03` carries transition/output
@@ -263,8 +272,8 @@ NPC archetypes are imported as labeled source kits.
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The semantic
   reason for loader record `+0x0C`'s Mesh/filter dual use, the downstream native consumer of
-  `enabledLightModes` at record `+0x14` beyond the now-excluded record-base
-  classifier and callback-A ECS-column lookalike, the component-67
+  `enabledLightModes` at record `+0x14` beyond the now-excluded direct
+  lookup/escape surface and callback-A ECS-column lookalike, the component-67
   standalone native type name, any separate post-dispatch copy or consumer of
   view `+0x18`,
   any separate
@@ -503,8 +512,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
    excludes it. Keep that value distinct from both squared `parentLODBias` and
    the HGTreeRenderer LOD bounds. Resolve the semantic reason for loader record
    `+0x0C`'s Mesh/filter dual use, the downstream native consumer of
-   `enabledLightModes` at record `+0x14` beyond the now-excluded record-base
-   classifier and callback-A ECS-column lookalike, and the
+   `enabledLightModes` at record `+0x14` beyond the now-excluded direct
+   lookup/escape surface and callback-A ECS-column lookalike, and the
    exact native type-name link for component 67; its serialized LOD-count/range producer is
    now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,

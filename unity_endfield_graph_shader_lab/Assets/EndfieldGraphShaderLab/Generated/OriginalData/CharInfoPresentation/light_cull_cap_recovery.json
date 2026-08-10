@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v27",
-  "status": "installed_cap_hgtree_runtime_record_mesh_resource_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. Runtime record +0x08 has a mutable renderFlags lifecycle: four particle setup variants replace it with bit 20 and a scheduled callback ORs it into render flags. Record +0x0C is the third resolved, reference-counted renderer resource index written by the LOD availability initializers, released by their cleanup, and independently consumed as a supplemental filter overlay. Both owner transitions acquire that third slot with kind 2. HyperGryph internal-call entry 437 names the forwarding wrapper HGResourceManager::LoadAsync_Injected, and its IL2CPP signature plus AssetType literals close kind 2 as Mesh. The reason the resolved Mesh-derived index doubles as a filter overlay remains open. Record +0x10 is closed as Renderer property flags updated by the common state synchronizer. Dedicated HyperGryph internal-call entry 204 names record +0x14 exactly as enabledLightModes; its hash-pinned core writes the supplied UInt32 value to every record. IL2CPP metadata closes HGShaderLightMode as 31 named render-pass bits spanning 0..30, and the hash-pinned gameplay PerDrawPassConfig parser and Apply method pass that mask through the managed wrapper. The Renderer base constructor also defaults native field +0x250 to 0xFFFFFFFF; two direct record builders copy it to record +0x14, while the generic path carries it through constructor input +0x20 before the same write. The two inspected renderer-list callbacks compare job+0x44 against a separate renderer-entry +0x1C word. Two hash-pinned entry builders clear that word, query all 31 installed HGShaderLightMode pass names against the renderer material/shader, and set the supported bits. The entry word is therefore a shader-supported-pass mask, not a projection of record +0x14. The two exact renderer-blob record-base escapes reach one classifier that reads only record +0x00 and renderer-entry flags; the apparent callback-A +0x14/0x18-stride read is separately proven to be an ECS component-column float. The later native consumer of record +0x14 remains open. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, the zero reserved/alignment word at +0x06, and eight cumulative renderer-range endpoints. All 25 direct calls to its two accessors and 21 logical caller bodies are pinned. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, which narrowed the producer search to copied StreamingSceneV2 data. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. StreamingSceneV2 root fields 6/7 now close the paired native entity groups and archetype descriptions. Each 8-byte descriptor contains an Int16 component id, Int16 element size, and UInt32 auxiliary value; component 67 is serialized with size 24. The hash-pinned native copier at 0x1801F95E0 copies each entityCount*elementSize initial-data slice directly into native ECS storage. Across all 83 map scopes, the 1,230,041 distinct component-67 entity ids exactly equal the distinct type-0/type-9 owner set. All 1,305,818 serialized occurrences initialize lodCount in 1..6, state bytes 8/8/8/0/0, a zero reserved word at +0x06, zero readiness, and one of 102 cumulative renderer-range patterns. Duplicate map/entity records are byte-identical. Thus the LOD count and range producer is the original game-binary initial-data blob, not a later ConvertFrom inference. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. Any separate post-dispatch cull-view +0x18 consumer, the semantic reason for loader record +0x0C's Mesh/filter dual use, the downstream native consumer of enabledLightModes record +0x14, the component-67 standalone native type name, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v28",
+  "status": "installed_cap_hgtree_enabled_light_modes_lookup_surface_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. Runtime record +0x08 has a mutable renderFlags lifecycle: four particle setup variants replace it with bit 20 and a scheduled callback ORs it into render flags. Record +0x0C is the third resolved, reference-counted renderer resource index written by the LOD availability initializers, released by their cleanup, and independently consumed as a supplemental filter overlay. Both owner transitions acquire that third slot with kind 2. HyperGryph internal-call entry 437 names the forwarding wrapper HGResourceManager::LoadAsync_Injected, and its IL2CPP signature plus AssetType literals close kind 2 as Mesh. The reason the resolved Mesh-derived index doubles as a filter overlay remains open. Record +0x10 is closed as Renderer property flags updated by the common state synchronizer. Dedicated HyperGryph internal-call entry 204 names record +0x14 exactly as enabledLightModes; its hash-pinned core writes the supplied UInt32 value to every record. IL2CPP metadata closes HGShaderLightMode as 31 named render-pass bits spanning 0..30, and the hash-pinned gameplay PerDrawPassConfig parser and Apply method pass that mask through the managed wrapper. The Renderer base constructor also defaults native field +0x250 to 0xFFFFFFFF; two direct record builders copy it to record +0x14, while the generic path carries it through constructor input +0x20 before the same write. The two inspected renderer-list callbacks compare job+0x44 against a separate renderer-entry +0x1C word. Two hash-pinned entry builders clear that word, query all 31 installed HGShaderLightMode pass names against the renderer material/shader, and set the supported bits. The entry word is therefore a shader-supported-pass mask, not a projection of record +0x14. All 53 direct calls to the renderer-blob lookup are now pinned and partitioned into 44 exact 0x7F00-family calls across 41 entry CFGs and nine other-family calls. Cross-hot/cold CFG taint finds no exact-path record +0x14 read, record-base pointer store, or record-base return. The six direct blob+0x04 call escapes are three zero initializers and three calls to one classifier that reads only record +0x00 and renderer-entry flags. One additional blob+0x00 tail memcpy copies the complete count/runtime-record/LOD-pair layout between exact-family blobs, carrying +0x14 verbatim without interpreting it. A third direct component-grouping consumer reads only record +0x00/+0x04/+0x08/+0x10; the apparent callback-A +0x14/0x18-stride read is separately proven to be an ECS component-column float. The later native consumer of record +0x14 remains open outside this direct lookup surface. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, the zero reserved/alignment word at +0x06, and eight cumulative renderer-range endpoints. All 25 direct calls to its two accessors and 21 logical caller bodies are pinned. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, which narrowed the producer search to copied StreamingSceneV2 data. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. StreamingSceneV2 root fields 6/7 now close the paired native entity groups and archetype descriptions. Each 8-byte descriptor contains an Int16 component id, Int16 element size, and UInt32 auxiliary value; component 67 is serialized with size 24. The hash-pinned native copier at 0x1801F95E0 copies each entityCount*elementSize initial-data slice directly into native ECS storage. Across all 83 map scopes, the 1,230,041 distinct component-67 entity ids exactly equal the distinct type-0/type-9 owner set. All 1,305,818 serialized occurrences initialize lodCount in 1..6, state bytes 8/8/8/0/0, a zero reserved word at +0x06, zero readiness, and one of 102 cumulative renderer-range patterns. Duplicate map/entity records are byte-identical. Thus the LOD count and range producer is the original game-binary initial-data blob, not a later ConvertFrom inference. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. Any separate post-dispatch cull-view +0x18 consumer, the semantic reason for loader record +0x0C's Mesh/filter dual use, the downstream native consumer of enabledLightModes record +0x14, the component-67 standalone native type name, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -1920,10 +1920,166 @@
                   "exactLookupVirtualAddress": "0x180424C30",
                   "familyMask": "0x00007F00",
                   "recordStrideBytes": 24,
+                  "allDirectLookupCallCount": 53,
+                  "exactFamilyLookupCallCount": 44,
+                  "exactFamilyEntryCfgCount": 41,
+                  "nonFamilyLookupCallCount": 9,
+                  "exactFamilyLookupCallSites": [
+                    "0x18042A407",
+                    "0x18042AE1D",
+                    "0x1804300AA",
+                    "0x18043076D",
+                    "0x18043080D",
+                    "0x1804308ED",
+                    "0x180430D76",
+                    "0x180431B22",
+                    "0x180431C20",
+                    "0x180432795",
+                    "0x180432DB2",
+                    "0x180BCBA50",
+                    "0x180BCBEDC",
+                    "0x1810416D9",
+                    "0x18104189B",
+                    "0x18104194B",
+                    "0x1810419FB",
+                    "0x181077CF1",
+                    "0x181088E0D",
+                    "0x1810C60E0",
+                    "0x1810C7B3C",
+                    "0x1810CAE29",
+                    "0x1810CB3D4",
+                    "0x1810CE37D",
+                    "0x1810CE38E",
+                    "0x1810CF41D",
+                    "0x1810D07D0",
+                    "0x1810D8C9E",
+                    "0x1810D8D2A",
+                    "0x1810D8ED3",
+                    "0x1810D8EE4",
+                    "0x1810D9097",
+                    "0x1810D9142",
+                    "0x1810D9258",
+                    "0x181129EF8",
+                    "0x18112A4CF",
+                    "0x18112A87A",
+                    "0x18113786B",
+                    "0x181153351",
+                    "0x181154273",
+                    "0x1811577B4",
+                    "0x181159051",
+                    "0x18115BCFB",
+                    "0x18115C01B"
+                  ],
+                  "exactFamilyEntryCfgs": [
+                    "0x18042A130",
+                    "0x18042AB50",
+                    "0x180430082",
+                    "0x18043073C",
+                    "0x1804307DC",
+                    "0x1804308BC",
+                    "0x180430D39",
+                    "0x180431AF1",
+                    "0x180431BDF",
+                    "0x180432750",
+                    "0x180432CF5",
+                    "0x180BCB760",
+                    "0x1810416A0",
+                    "0x181041870",
+                    "0x181041920",
+                    "0x1810419D0",
+                    "0x181077CC3",
+                    "0x181088DA5",
+                    "0x1810C5F30",
+                    "0x1810C7B0E",
+                    "0x1810CAD13",
+                    "0x1810CB2C0",
+                    "0x1810CE280",
+                    "0x1810CF36D",
+                    "0x1810D0725",
+                    "0x1810D8C60",
+                    "0x1810D8D00",
+                    "0x1810D8D40",
+                    "0x1810D9050",
+                    "0x1810D9110",
+                    "0x1810D9220",
+                    "0x181129E0D",
+                    "0x18112A3DD",
+                    "0x18112A790",
+                    "0x18113781A",
+                    "0x181153310",
+                    "0x181154230",
+                    "0x181157760",
+                    "0x181159010",
+                    "0x18115BC9B",
+                    "0x18115BFC0"
+                  ],
+                  "hotColdCfgTraversal": {
+                    "enabled": true,
+                    "windowBytesPerEntry": 131072,
+                    "directControlFlowFollowed": true,
+                    "stackSlotOverlapInvalidation": true,
+                    "recordBaseMemoryStoreSites": [],
+                    "recordBaseReturnSites": [],
+                    "enabledLightModesReadSites": [],
+                    "boundedControlFlowEscape": {
+                      "virtualAddress": "0x1810CE3BE",
+                      "targetVirtualAddress": "0x181C9F9A0",
+                      "role": "tail memcpy of one complete exact-family renderer blob into another"
+                    }
+                  },
+                  "fullBlobCopy": {
+                    "functionVirtualAddress": "0x1810CE280",
+                    "sourceLookupCallVirtualAddress": "0x1810CE37D",
+                    "destinationLookupCallVirtualAddress": "0x1810CE38E",
+                    "tailMemcpyVirtualAddress": "0x1810CE3BE",
+                    "memcpyVirtualAddress": "0x181C9F9A0",
+                    "byteCountEquation": "4 + 32 * (familyMask >> 8)",
+                    "layoutEquation": "4-byte count + 24*capacity runtime records + 8*capacity LOD float2 pairs",
+                    "enabledLightModesBehavior": "record+0x14 is copied verbatim but not read or interpreted"
+                  },
                   "consumerFunctions": [
                     "0x181129E0D",
+                    "0x18112A790",
                     "0x18113781A"
                   ],
+                  "directConsumerRecordReads": [
+                    {
+                      "functionVirtualAddress": "0x181129E0D",
+                      "recordOffsets": [
+                        "0x00",
+                        "0x04",
+                        "0x08"
+                      ]
+                    },
+                    {
+                      "functionVirtualAddress": "0x18112A790",
+                      "role": "component-K / ray-tracing-K record grouping",
+                      "recordOffsets": [
+                        "0x00",
+                        "0x04",
+                        "0x08",
+                        "0x10"
+                      ],
+                      "assertionStrings": [
+                        "componentMaskForK is one bit",
+                        "componentMaskForRayTracingK is one bit"
+                      ]
+                    },
+                    {
+                      "functionVirtualAddress": "0x18113781A",
+                      "recordOffsets": [
+                        "0x00",
+                        "0x04",
+                        "0x08"
+                      ]
+                    }
+                  ],
+                  "recordBaseZeroInitializationCallSites": [
+                    "0x18042A497",
+                    "0x18042AEAD",
+                    "0x180BCBAEC"
+                  ],
+                  "zeroInitializerVirtualAddress": "0x181CA0040",
                   "recordBaseEscapeCallSites": [
                     "0x18112A25A",
                     "0x181137B81",
@@ -1956,7 +2112,7 @@
                     "equation": "r13/r12 = archetype component-column base + rankOffset * elementSize; the callback then reads float@r13+0x14 and advances by 0x18",
                     "interpretation": "the matching offset and stride belong to an ECS component column selected by archetype bits 127/126, not to the 0x7F00 renderer runtime-record blob"
                   },
-                  "interpretation": "both exact renderer-blob paths that pass blob+0x04 across a call boundary reach one hash-pinned classifier. It iterates 0x18-byte records but reads only record+0x00 before classifying rendererEntry+0x18; no record+0x14 read occurs. A same-offset, same-stride callback-A candidate is independently rejected by its ECS column accessor provenance"
+                  "interpretation": "all 53 direct calls to the blob lookup are pinned and partitioned into 44 exact 0x7F00-family calls across 41 entry CFGs plus nine other-family calls. Register/stack taint follows direct hot/cold CFG edges. The six direct blob+0x04 call escapes are three zero-initializer calls and three calls to one hash-pinned classifier. The classifier reads only record+0x00. One additional blob+0x00 tail memcpy copies the complete count, runtime-record, and LOD-pair layout between two exact-family blobs, carrying +0x14 verbatim without interpreting it. A third direct grouping consumer reads record+0x00/+0x04/+0x08/+0x10, while no exact-family path reads record+0x14, stores the record-base pointer, or returns it. A same-offset, same-stride callback-A candidate remains independently rejected by its ECS column accessor provenance"
                 }
               },
               "maskType": "System.UInt32",
@@ -1969,7 +2125,7 @@
                 "callVirtualAddress": "0x1869F3904"
               },
               "proof": "dedicated HyperGryph internal-call entry 204 names SetEntityEnabledLightModes_Injected; its wrapper reaches a core that selects the 0x7F00 renderer family and writes the supplied UInt32 mask to every record+0x14 at stride 0x18; IL2CPP metadata defines HGShaderLightMode as bits 0..30, while PerDrawPassConfig.Apply parses its gameplay pass enum and calls the managed wrapper directly. The Renderer base constructor initializes native field +0x250 to 0xFFFFFFFF; two direct record builders copy that field to record+0x14, and the generic builder passes the same field through constructor input+0x20 before the identical record write",
-              "proofBoundary": "the exact downstream render-stage consumer of enabledLightModes at runtime record+0x14 remains open. Exact blob+0x04 escapes currently reach a classifier that reads only record+0x00, and the callback-A +0x14/0x18-stride lookalike is an ECS component-column float. The two inspected renderer-list callbacks instead test job+0x44 against the independently computed rendererEntry+0x1C shader-pass support mask"
+              "proofBoundary": "the exact downstream render-stage consumer of enabledLightModes at runtime record+0x14 remains open. All 53 direct blob-lookup calls are partitioned; 44 exact 0x7F00 calls across 41 hot/cold entry CFGs expose no record+0x14 read, record-base pointer store, or record-base return. Their six direct blob+0x04 call escapes are three memset-style zero initializers and three calls to a classifier that reads only record+0x00. The one blob+0x00 tail escape is a full-blob memcpy that copies +0x14 verbatim without interpreting it. The third direct grouping consumer reads only +0x00/+0x04/+0x08/+0x10, and the callback-A +0x14/0x18-stride lookalike is an ECS component-column float. The two inspected renderer-list callbacks instead test job+0x44 against the independently computed rendererEntry+0x1C shader-pass support mask"
             }
           }
         },
@@ -2960,10 +3116,28 @@
           "sha256": "8501dd4e046749d9aac8c90f9c9e790d1404441236fbca10655e7785e283b6f0"
         },
         {
+          "label": "runtime_record_blob_consumer_component_grouping",
+          "virtualAddress": "0x18112A790",
+          "sizeBytes": 1662,
+          "sha256": "c18fa00a08895f70768e17736f7572cd66b79355a9715d9cdfd383894827c753"
+        },
+        {
           "label": "runtime_record_batch_flag_classifier",
           "virtualAddress": "0x181131FC0",
           "sizeBytes": 221,
           "sha256": "9e10b56296296a7cc7f6fc0cc5cc68eb16d4e084a641576f1bc8eae9c954db59"
+        },
+        {
+          "label": "runtime_record_blob_zero_initializer",
+          "virtualAddress": "0x181CA0040",
+          "sizeBytes": 904,
+          "sha256": "ce960c33c8b79d15520559d78ace1a20770c9492363a9d2852578962e1ffa782"
+        },
+        {
+          "label": "runtime_record_full_blob_copy",
+          "virtualAddress": "0x1810CE280",
+          "sizeBytes": 323,
+          "sha256": "cf1d0755ae2c40041eefd389ac80cc1f3cf0c436c8bb5a9a26dbda1fdb7eafc6"
         },
         {
           "label": "renderer_list_callback_a",
@@ -4535,7 +4709,7 @@
       "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
       "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
       "the independent renderer-entry +0x1C shader-supported-pass mask, both native builders, and its exact 31-name pass table",
-      "the bounded runtime-record consumer search: all exact blob+0x04 escapes, their record+0-only classifier, and rejection of callback A's ECS-column +0x14 lookalike",
+      "the bounded runtime-record lookup surface: all 53 direct lookup calls, the 44-call exact 0x7F00 partition across 41 hot/cold entry CFGs, all six direct blob+0x04 call escapes, the full-blob copy path, the third component-grouping consumer, zero direct +0x14 reads/stores/returns, and rejection of callback A's ECS-column +0x14 lookalike",
       "the direct-distance and scaled-metric HGTree LOD interval equations",
       "the six-way HGTree LOD job dispatch segment",
       "the HGTree LOD dispatch packet and payload layouts",
