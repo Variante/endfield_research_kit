@@ -298,6 +298,15 @@ resolve through the table to 153 Event-request occurrences, while the two
 factory-area cue definitions remain explicitly missing. Its eight serialized
 RTPC names and seven additional managed-code RTPC literals are parameters, not
 Wwise Events.
+
+Two shipped LevelEvent audio inputs are now typed separately from playback.
+`OnAudioStateChanged` (union `0x0048`, event key 148) compares masked previous
+and current `EAudioState` values; `OnMusicBeatEvent` (`0x007a`, event key 44)
+tests an authored `AudioCallbackType` flag mask against a runtime music callback.
+An exhaustive Persistent-over-Streaming scan of the current 4,517 LevelScripts
+found zero authored instances, so the Audio control catalog reports both
+definitions with occurrence count zero and creates no Event or media rows.
+
 Gameplay audio also consumes recovered Unity `AnimationClip.m_Events` rows for
 the exact `PostAudioEvent`, `PostAudioEventAdvance`,
 `PostAudioEventAtPosition`, and `OnCustomFootStep` callbacks. The callback

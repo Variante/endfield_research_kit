@@ -124,10 +124,46 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 12
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 6
+AUDIO_SEMANTIC_SCHEMA_VERSION = 13
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 7
 MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
     "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+)
+
+LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS = (
+    {
+        "id": "onAudioStateChanged",
+        "semanticKind": "levelEventCondition",
+        "relationType": "observesAudioStateTransition",
+        "type": "Beyond.Gameplay.Actions.LevelEvent.OnAudioStateChanged",
+        "unionTag": 0x0048,
+        "unionTagHex": "0x0048",
+        "eventKey": 148,
+        "fields": ("_expectFromState", "_expectToState", "_fromStateMask", "_toStateMask"),
+        "predicate": (
+            "(from & fromMask) == (expectFrom & fromMask) && "
+            "(to & toMask) == (expectTo & toMask)"
+        ),
+        "authoredOccurrenceCount": 0,
+        "authoredOccurrenceStatus": "absentFromCurrentActiveLevelScriptOverlay",
+        "runtimeExecutionStatus": "notObserved",
+        "playbackRequestStatus": "notApplicableTriggerInput",
+    },
+    {
+        "id": "onMusicBeatEvent",
+        "semanticKind": "levelEventCondition",
+        "relationType": "observesMusicCallbackMask",
+        "type": "Beyond.Gameplay.Actions.LevelEvent.OnMusicBeatEvent",
+        "unionTag": 0x007A,
+        "unionTagHex": "0x007a",
+        "eventKey": 44,
+        "fields": ("_beatType",),
+        "predicate": "(authoredCallbackMask & runtimeCallbackMask) != 0",
+        "authoredOccurrenceCount": 0,
+        "authoredOccurrenceStatus": "absentFromCurrentActiveLevelScriptOverlay",
+        "runtimeExecutionStatus": "producerAndExecutionUnresolved",
+        "playbackRequestStatus": "notApplicableTriggerInput",
+    },
 )
 
 CUSTOM_FOOTSTEP_RUNTIME_VFX_WEIGHT_THRESHOLD = 0.5
@@ -712,6 +748,90 @@ RUNTIME_SYSTEM_SPECS = (
         "Beyond.Gameplay.Audio.AudioStateSystem+EAudioState",
         "game_state",
         "High-level audio state flags for combat, dialog, cutscenes, remote communication, factory, and loading.",
+        enum_values=True,
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Actions.LevelEvent.OnAudioStateChanged",
+        "level_event_condition",
+        (
+            "Trigger input that compares masked previous/current EAudioState values. "
+            "It observes an audio-state transition and does not post a Wwise Event."
+        ),
+        fields=("_expectFromState", "_expectToState", "_fromStateMask", "_toStateMask"),
+        methods=("get_eventKey", "CollectParams", "Process"),
+        serialized_layout={
+            "unionTag": 0x0048,
+            "unionTagHex": "0x0048",
+            "eventKey": 148,
+            "authoredOccurrenceCount": 0,
+            "parameterType": "Param<EAudioState>",
+            "predicate": (
+                "(from & fromMask) == (expectFrom & fromMask) && "
+                "(to & toMask) == (expectTo & toMask)"
+            ),
+        },
+        native_anchors=(
+            {"role": "get_eventKey", "token": "0x0600a10f", "virtualAddress": "0x186aa2ef8"},
+            {"role": "Process", "token": "0x0600a10e", "virtualAddress": "0x186aa2d4c"},
+            {
+                "role": "Deserialize",
+                "type": "Beyond_Gameplay_Actions_LevelEvent_OnAudioStateChangedForMemoryPack",
+                "virtualAddress": "0x189f88fb4",
+            },
+            {
+                "role": "RaiseLevelEvent148",
+                "type": "Beyond.Gameplay.Audio.AudioStateSystem",
+                "method": "_OnAudioStateChanged",
+                "virtualAddress": "0x186ae8a90",
+            },
+        ),
+        runtime_execution_status="notObservedNoAuthoredOccurrence",
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioStateSystem+MaskCondition",
+        "level_event_condition",
+        "Exact masked EAudioState equality predicate used by OnAudioStateChanged.",
+        methods=("IsMet",),
+        native_anchors=(
+            {"role": "IsMet", "virtualAddress": "0x186aeaacc"},
+        ),
+        runtime_execution_status="notObserved",
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Actions.LevelEvent.OnMusicBeatEvent",
+        "level_event_condition",
+        (
+            "Trigger input that intersects an authored AudioCallbackType mask with a runtime "
+            "music-callback mask. It is a condition, not a playback request."
+        ),
+        fields=("_beatType",),
+        methods=("get_eventKey", "CollectParams", "Process"),
+        serialized_layout={
+            "unionTag": 0x007A,
+            "unionTagHex": "0x007a",
+            "eventKey": 44,
+            "authoredOccurrenceCount": 0,
+            "parameterType": "Param<Beyond.Audio.AudioCallbackType>",
+            "predicate": "(authoredCallbackMask & runtimeCallbackMask) != 0",
+        },
+        native_anchors=(
+            {"role": "get_eventKey", "virtualAddress": "0x186ab4184"},
+            {"role": "Process", "virtualAddress": "0x186ab4094"},
+            {
+                "role": "Deserialize",
+                "type": "Beyond_Gameplay_Actions_LevelEvent_OnMusicBeatEventForMemoryPack",
+                "virtualAddress": "0x189fb176c",
+            },
+        ),
+        runtime_execution_status="producerAndExecutionUnresolvedNoAuthoredOccurrence",
+    ),
+    runtime_spec(
+        "Beyond.Audio.AudioCallbackType",
+        "level_event_condition",
+        (
+            "Callback flags accepted by OnMusicBeatEvent, including music beat, bar, entry, "
+            "exit, grid, user-cue, and point masks."
+        ),
         enum_values=True,
     ),
     runtime_spec(
@@ -4592,6 +4712,11 @@ def build_audio_semantic_data(
             "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
             "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
             "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
+            "levelEventAudioConditionDefinitions": len(LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS),
+            "levelEventAudioConditionAuthoredOccurrences": sum(
+                int(row.get("authoredOccurrenceCount") or 0)
+                for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
+            ),
             "authoredPlaySoundActionEvents": play_sound_action_events,
             "authoredPlaySoundActionContexts": play_sound_action_contexts,
             "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
@@ -4659,6 +4784,11 @@ def build_audio_semantic_data(
                 "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
                 "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
                 "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
+                "levelEventAudioConditionDefinitions": len(LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS),
+                "levelEventAudioConditionAuthoredOccurrences": sum(
+                    int(row.get("authoredOccurrenceCount") or 0)
+                    for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
+                ),
             },
             "audioCueDefinitions": [
                 {key: value for key, value in definition.items() if key not in {"behaviorEvents", "expressionOperands"}}
@@ -4679,7 +4809,10 @@ def build_audio_semantic_data(
             "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
             "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
             "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
-            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state.",
+            "levelEventAudioConditions": [
+                dict(row) for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
+            ],
+            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
@@ -4696,6 +4829,7 @@ def build_audio_semantic_data(
             "physicsAudio": physics_audio_semantics.get("evidenceBoundary") or "",
             "modelViewStateAudio": model_view_semantics.get("evidenceBoundary") or "",
             "levelScriptAudio": levelscript_semantics.get("evidenceBoundary") or "",
+            "levelEventAudioConditions": "OnAudioStateChanged and OnMusicBeatEvent are exact current-build LevelEvent condition definitions. The active Persistent-over-Streaming LevelScript overlay contains zero authored occurrences, and neither condition is a Wwise playback request.",
             "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
         },
