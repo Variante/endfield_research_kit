@@ -369,6 +369,36 @@ class AudioSemanticDataTests(unittest.TestCase):
             for row in audio_semantics.LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
         ))
 
+    def test_runtime_model_preserves_exact_native_playback_call_chains(self) -> None:
+        specs = {row["type"]: row for row in audio_semantics.RUNTIME_SYSTEM_SPECS}
+        adapter = specs["Beyond.Audio.AudioAdapter"]
+        animator = specs["Beyond.Gameplay.View.Animation.AnimatorMono"]
+        skill = specs["Beyond.Gameplay.Core.PlaySoundAction"]
+        levelscript = specs["Beyond.Gameplay.Actions.GameAction"]
+        wwise = specs["AkSoundEngine"]
+
+        adapter_chains = {row["id"]: row for row in adapter["nativeCallChains"]}
+        post = adapter_chains["adapterPostEventToWwise"]
+        self.assertEqual(
+            [row["methodIndex"] for row in post["stages"]],
+            [479923, 480010, 480201, 480007, 446377],
+        )
+        self.assertEqual(post["stages"][-1]["type"], "AkSoundEngine")
+        self.assertIn("0x18f361158", post["stages"][-2]["relation"])
+        action = adapter_chains["playingIdActionQueueToWwise"]
+        self.assertEqual(
+            [row["methodIndex"] for row in action["stages"]],
+            [480012, 480160, 480165, 446431],
+        )
+        self.assertEqual(len(animator["nativeCallChains"]), 2)
+        self.assertEqual(skill["nativeCallChains"][0]["id"], "skillPlaySoundActionRouting")
+        self.assertEqual(levelscript["nativeCallChains"][0]["id"], "levelScriptAudioActionRouting")
+        self.assertEqual(len(wwise["nativeCallChains"]), 2)
+        self.assertTrue(all(
+            row["gameAssemblySha256"] == audio_semantics.CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256
+            for row in audio_semantics.AUDIO_PLAYBACK_NATIVE_CALL_CHAINS.values()
+        ))
+
     def test_runtime_cache_schema_invalidates_changed_system_catalog(self) -> None:
         stale = {
             "schemaVersion": audio_semantics.RUNTIME_MODEL_CACHE_SCHEMA_VERSION - 1,
@@ -1835,6 +1865,22 @@ class AudioSemanticDataTests(unittest.TestCase):
             relation_body.index(direct_media_check),
             relation_body.index("record?.eventIds"),
         )
+
+    def test_audio_frontend_renders_native_playback_call_chain_stages(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        body = source.split("function runtimeSystemsSection", 1)[1].split(
+            "function contextEvidenceLabel", 1
+        )[0]
+
+        self.assertIn("system.nativeCallChains", body)
+        self.assertIn('chainCard.className = "audio-runtime-call-chain"', body)
+        self.assertNotIn("systems.slice(0, 40)", body)
+        self.assertIn("stage.methodIndex", body)
+        self.assertIn("stage.virtualAddress", body)
+        self.assertIn("stage.relation", body)
+        self.assertIn("chain.boundary", body)
 
 
 if __name__ == "__main__":

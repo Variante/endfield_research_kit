@@ -124,8 +124,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 15
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 7
+AUDIO_SEMANTIC_SCHEMA_VERSION = 16
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 8
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
 RADIO_CATALOG_ITEM_LIMIT = 64
@@ -346,6 +346,7 @@ def runtime_spec(
     enum_values: bool = False,
     serialized_layout: dict[str, Any] | None = None,
     native_anchors: Iterable[dict[str, Any]] = (),
+    native_call_chains: Iterable[dict[str, Any]] = (),
     runtime_execution_status: str = "",
 ) -> dict[str, Any]:
     row = {
@@ -360,9 +361,356 @@ def runtime_spec(
         row["serializedLayout"] = dict(serialized_layout)
     if native_anchors:
         row["nativeAnchors"] = tuple(dict(value) for value in native_anchors)
+    if native_call_chains:
+        row["nativeCallChains"] = tuple(dict(value) for value in native_call_chains)
     if runtime_execution_status:
         row["runtimeExecutionStatus"] = runtime_execution_status
     return row
+
+
+def native_playback_stage(
+    role: str,
+    type_name: str,
+    method: str,
+    method_index: int,
+    token: str,
+    virtual_address: str,
+    relation: str,
+) -> dict[str, Any]:
+    return {
+        "role": role,
+        "type": type_name,
+        "method": method,
+        "methodIndex": method_index,
+        "token": token,
+        "virtualAddress": virtual_address,
+        "relation": relation,
+    }
+
+
+AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
+    "adapterPost": {
+        "id": "adapterPostEventToWwise",
+        "label": "Event request -> resource preparation -> Wwise PostEvent",
+        "evidence": "exactCurrentGameAssemblyDirectCallsAndSharedNativeFunctionPointer",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticNativeCallChainNotLivePlaybackTrace",
+        "stages": (
+            native_playback_stage(
+                "request",
+                "Beyond.Audio.AudioAdapter",
+                "PostEvent(string)",
+                479923,
+                "0x06000008",
+                "0x1846d3f80",
+                "Hashes the authored name with AudioHashGenerator.Compute and enters _PostEvent.",
+            ),
+            native_playback_stage(
+                "prepare",
+                "Beyond.Audio.AudioAdapter",
+                "_PostEvent",
+                480010,
+                "0x0600005f",
+                "0x18328a690",
+                "Allocates an internal playing id and payload, then requests Event-owned resources.",
+            ),
+            native_playback_stage(
+                "load",
+                "Beyond.Audio.AudioAssetHelper",
+                "_DoLoadEventAsync",
+                480201,
+                "0x0600011e",
+                "0x18328afb0",
+                "Prepares the Event resources before the Wwise post callback runs.",
+            ),
+            native_playback_stage(
+                "post",
+                "Beyond.Audio.AudioAdapter",
+                "_OnEventPreparedDoPostEvent",
+                480007,
+                "0x0600005c",
+                "0x18328c670",
+                "Uses native function-pointer slot 0x18f361158 and records internal-to-real playing-id state.",
+            ),
+            native_playback_stage(
+                "wwise",
+                "AkSoundEngine",
+                "PostEvent(uint, ulong, flags, callback, cookie)",
+                446377,
+                "0x06000a23",
+                "0x18328c940",
+                "Uses the same 0x18f361158 native PostEvent slot and returns the real Wwise playing id.",
+            ),
+        ),
+        "boundary": (
+            "The binary proves request preparation, Wwise Event posting, and playing-id mapping. "
+            "It does not reveal the live switch/state/RTPC values or the selected Wwise media leaf."
+        ),
+    },
+    "playingIdAction": {
+        "id": "playingIdActionQueueToWwise",
+        "label": "Stop / pause / resume -> real playing id -> Wwise action",
+        "evidence": "exactCurrentGameAssemblyDirectCalls",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticNativeCallChainNotLivePlaybackTrace",
+        "stages": (
+            native_playback_stage(
+                "request",
+                "Beyond.Audio.AudioAdapter",
+                "_ExecuteActionOnPlayingId",
+                480012,
+                "0x06000061",
+                "0x183870420",
+                "Uses the real id immediately when mapped; otherwise queues the action.",
+            ),
+            native_playback_stage(
+                "queue",
+                "Beyond.Audio.AudioActionQueueHelper",
+                "QueueExecuteAction",
+                480160,
+                "0x060000f5",
+                "0x183870520",
+                "Retains an early action while Event preparation is still pending.",
+            ),
+            native_playback_stage(
+                "resolve",
+                "Beyond.Audio.AudioActionQueueHelper",
+                "_ConsumeExecute",
+                480165,
+                "0x060000fa",
+                "0x18328c150",
+                "Calls AudioAdapter.TryGetRealPlayingId before consuming the queued action.",
+            ),
+            native_playback_stage(
+                "wwise",
+                "AkSoundEngine",
+                "ExecuteActionOnPlayingID",
+                446431,
+                "0x06000a59",
+                "0x1838702c0",
+                "Applies the stop, pause, or resume action to the real Wwise playing id.",
+            ),
+        ),
+        "boundary": (
+            "The queue explains lifetime control across asynchronous Event preparation; it is not evidence "
+            "that a particular authored stop/pause path executed in a captured session."
+        ),
+    },
+    "animationObject": {
+        "id": "animationCallbackToObjectPost",
+        "label": "Animation callback -> entity audio object -> Event post",
+        "evidence": "exactCurrentGameAssemblyDirectCalls",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "authoredCallbackKnownExecutionNotObserved",
+        "stages": (
+            native_playback_stage(
+                "callback",
+                "Beyond.Gameplay.View.Animation.AnimatorMono",
+                "PostAudioEvent(string, clipIn)",
+                53417,
+                "0x0600d0aa",
+                "0x186c9c2c4",
+                "Hashes the AnimationClip string payload and calls the uint overload.",
+            ),
+            native_playback_stage(
+                "route",
+                "Beyond.Gameplay.View.Animation.AnimatorMono",
+                "PostAudioEvent(uint, clipIn)",
+                53418,
+                "0x0600d0ab",
+                "0x18328e480",
+                "Gets the owning Entity audio-object id and posts the Event through AudioAdapter.",
+            ),
+            native_playback_stage(
+                "object",
+                "Beyond.Gameplay.Audio.AudioManager",
+                "GetAudioObjectId(Entity)",
+                38951,
+                "0x06009828",
+                "0x18328e620",
+                "Resolves or begins tracking the entity-scoped audio object.",
+            ),
+            native_playback_stage(
+                "post",
+                "Beyond.Audio.AudioAdapter",
+                "_PostEvent",
+                480010,
+                "0x0600005f",
+                "0x18328a690",
+                "Runs the shared asynchronous Event-post pipeline.",
+            ),
+        ),
+        "boundary": (
+            "AnimationClip event time/function/payload are authored facts. Controller reachability and actual "
+            "callback execution remain separate evidence, and Wwise leaf selection remains unresolved."
+        ),
+    },
+    "animationPosition": {
+        "id": "animationCallbackToPositionPost",
+        "label": "Positioned animation callback -> temporary emitter -> Event post",
+        "evidence": "exactCurrentGameAssemblyDirectCalls",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "authoredCallbackKnownExecutionNotObserved",
+        "stages": (
+            native_playback_stage(
+                "callback",
+                "Beyond.Gameplay.View.Animation.AnimatorMono",
+                "PostAudioEventAtPosition(uint, clipIn)",
+                53420,
+                "0x0600d0ad",
+                "0x1847db060",
+                "Uses the owning Entity position and requests positioned playback.",
+            ),
+            native_playback_stage(
+                "position",
+                "Beyond.Gameplay.Audio.AudioManager",
+                "PlaySoundAtPosition(uint, Vector3)",
+                38869,
+                "0x060097d6",
+                "0x183b87c60",
+                "Allocates a registered temporary emitter at the requested world position.",
+            ),
+            native_playback_stage(
+                "emitter",
+                "Beyond.Gameplay.Audio.AudioTempEmitter",
+                "PostAndForget",
+                39058,
+                "0x06009893",
+                "0x183b89730",
+                "Posts with the temporary emitter audio-object id through the shared adapter pipeline.",
+            ),
+            native_playback_stage(
+                "post",
+                "Beyond.Audio.AudioAdapter",
+                "_PostEvent",
+                480010,
+                "0x0600005f",
+                "0x18328a690",
+                "Runs the shared asynchronous Event-post pipeline.",
+            ),
+        ),
+        "boundary": (
+            "The call chain proves positional routing and emitter lifetime design, not the observed world "
+            "position or selected Wwise media leaf in a live session."
+        ),
+    },
+    "skillAction": {
+        "id": "skillPlaySoundActionRouting",
+        "label": "Skill PlaySound action -> object / weapon / position route -> Event post",
+        "evidence": "exactCurrentGameAssemblyDirectCalls",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "authoredActionKnownExecutionConditionUnresolved",
+        "stages": (
+            native_playback_stage(
+                "execute",
+                "Beyond.Gameplay.Core.PlaySoundAction",
+                "ExecuteInternal",
+                57089,
+                "0x0600df02",
+                "0x183b84de0",
+                "Resolves action targets and invokes _DoPlaySound when authored gates permit.",
+            ),
+            native_playback_stage(
+                "route",
+                "Beyond.Gameplay.Core.PlaySoundAction",
+                "_DoPlaySound",
+                57090,
+                "0x0600df03",
+                "0x183b85950",
+                "Chooses target audio object or world-position routing; weapon mount points use the same two posts.",
+            ),
+            native_playback_stage(
+                "objectPost",
+                "Beyond.Gameplay.Core.PlaySoundAction",
+                "_DoPostEvent",
+                57092,
+                "0x0600df05",
+                "0x183b87700",
+                "Hashes the authored Event and calls AudioAdapter._PostEvent with the target audio-object id.",
+            ),
+            native_playback_stage(
+                "positionPost",
+                "Beyond.Gameplay.Core.PlaySoundAction",
+                "_DoPostEventAtPosition",
+                57093,
+                "0x0600df06",
+                "0x183b879b0",
+                "Routes through AudioBattleUtil and a temporary positioned emitter.",
+            ),
+            native_playback_stage(
+                "lifetime",
+                "Beyond.Gameplay.Core.PlaySoundAction",
+                "_StopAllSoundInstance",
+                57099,
+                "0x0600df0c",
+                "0x183b83650",
+                "Stops retained playing ids with the authored fade when action lifetime ends.",
+            ),
+        ),
+        "boundary": (
+            "The binary proves the authored action's routing and lifetime machinery. Target selection, action "
+            "conditions, and actual execution remain unresolved without a live trace."
+        ),
+    },
+    "levelScript": {
+        "id": "levelScriptAudioActionRouting",
+        "label": "LevelScript audio action -> GameAction facade -> gameplay audio system",
+        "evidence": "exactCurrentGameAssemblyDirectCalls",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "authoredActionKnownExecutionNotObserved",
+        "stages": (
+            native_playback_stage(
+                "global",
+                "Beyond.Gameplay.Actions.GameAction",
+                "PlayAudio",
+                32629,
+                "0x06007f76",
+                "0x183d40600",
+                "Hashes the resolved string parameter and posts on the shared 2D emitter object.",
+            ),
+            native_playback_stage(
+                "position",
+                "Beyond.Gameplay.Actions.GameAction",
+                "PlayAudioAtPosition",
+                32634,
+                "0x06007f7b",
+                "0x1875e6220",
+                "Routes a resolved Event string and callback through AudioManager.PlaySoundAtPosition.",
+            ),
+            native_playback_stage(
+                "target",
+                "Beyond.Gameplay.Actions.GameAction",
+                "PlayAudioOnTarget",
+                32635,
+                "0x06007f7c",
+                "0x1875e6660",
+                "Routes the Event to the target Entity audio component/object.",
+            ),
+            native_playback_stage(
+                "music",
+                "Beyond.Gameplay.Actions.GameAction",
+                "PostMusicEvent",
+                32648,
+                "0x06007f89",
+                "0x1875e8570",
+                "Routes music Events and the pre-action into AudioMusicSystem rather than direct media playback.",
+            ),
+            native_playback_stage(
+                "release",
+                "Beyond.Gameplay.Actions.GameAction",
+                "StopAudio",
+                32649,
+                "0x06007f8a",
+                "0x1875edfdc",
+                "Stops the returned playing id with the authored fade when release behavior requests it.",
+            ),
+        ),
+        "boundary": (
+            "Decoded constant or exactly resolved property values identify the request. The static call chain "
+            "does not prove script execution, target availability, or the Wwise-selected leaf."
+        ),
+    },
+}
 
 
 RUNTIME_SYSTEM_SPECS = (
@@ -393,12 +741,45 @@ RUNTIME_SYSTEM_SPECS = (
     runtime_spec(
         "Beyond.Audio.AudioAdapter",
         "wwise_bridge",
-        "Low-level bridge for Wwise events, states, switches, RTPCs, objects, listeners, and seek/stop operations.",
+        (
+            "Low-level bridge for Wwise events, states, switches, RTPCs, objects, listeners, and "
+            "seek/stop operations. Event posting uses an internal playing id while resources are "
+            "prepared, then maps it to the real Wwise playing id."
+        ),
         methods=(
             "PostEvent", "StopByPlayingId", "PauseByPlayingId", "ResumeByPlayingId",
             "SetState", "SetSwitch", "SetRtpc", "SeekOnEvent", "RegisterGameObject",
             "UnregisterGameObject", "SetListener", "SetDefaultListener", "SetAudioLanguage",
+            "_OnEventPreparedDoPostEvent", "_PostEvent", "_ExecuteActionOnPlayingId",
         ),
+        native_call_chains=(
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],
+        ),
+    ),
+    runtime_spec(
+        "AkSoundEngine",
+        "wwise_bridge",
+        (
+            "Generated Wwise C# bridge. PostEvent crosses the native P/Invoke boundary and returns "
+            "the real playing id; ExecuteActionOnPlayingID applies stop/pause/resume to that id."
+        ),
+        methods=("PostEvent", "ExecuteActionOnPlayingID", "SetSwitch", "SetRTPCValue"),
+        native_call_chains=(
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],
+        ),
+    ),
+    runtime_spec(
+        "Beyond.Audio.AudioActionQueueHelper",
+        "wwise_bridge",
+        (
+            "Queues playing-id actions issued before asynchronous Event preparation has produced "
+            "a real Wwise playing id, then resolves and consumes them on later frames."
+        ),
+        fields=("s_executeActionQueue", "QUEUE_LIFETIME_FRAME"),
+        methods=("QueueExecuteAction", "ConsumeQueue", "_ConsumeExecute"),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],),
     ),
     runtime_spec(
         "Beyond.Gameplay.Audio.AudioManager",
@@ -411,6 +792,36 @@ RUNTIME_SYSTEM_SPECS = (
             "<roomManager>k__BackingField", "<npcSystem>k__BackingField",
         ),
         methods=("PostEvent", "PostAudioCue", "SetRtpc", "SetSwitch", "PlaySoundAtPosition", "LoadLevel"),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.View.Animation.AnimatorMono",
+        "animation_callbacks",
+        (
+            "Receives normal and positioned AnimationClip audio callbacks, resolves the owning "
+            "entity or a temporary positioned emitter, and tracks returned playing ids for "
+            "montage/timeline lifetime control."
+        ),
+        methods=(
+            "PostAudioEvent", "PostAudioEventAtPosition", "_TryStartAudioEventMontageMonitor",
+            "TrackAudioForTimelinePlayable", "StopAllAudioForPlayable",
+        ),
+        native_call_chains=(
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["animationObject"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["animationPosition"],
+        ),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Actions.GameAction",
+        "levelscript_audio",
+        (
+            "LevelScript-facing facade that routes resolved Event parameters to the global emitter, "
+            "a target entity, a world-position emitter, AudioMusicSystem, or playing-id lifetime controls."
+        ),
+        methods=(
+            "PlayAudio", "PlayAudioAtPosition", "PlayAudioOnTarget", "PostAudioCue",
+            "PostMusicEvent", "StopAudio", "PauseAudio", "ResumeAudio",
+        ),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["levelScript"],),
     ),
     runtime_spec(
         "Beyond.Gameplay.Core.PlaySoundAction",
@@ -429,6 +840,7 @@ RUNTIME_SYSTEM_SPECS = (
             "_DoPostEvent", "_DoPostEventAtPosition", "_IsSourceFromMainCharacter",
             "_InitialSeek", "_TimeDilationSeek", "OnTick", "OnEnd", "_StopAllSoundInstance",
         ),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["skillAction"],),
     ),
     runtime_spec(
         "Beyond.Gameplay.Core.PlaySoundAction+PlaySoundActionData",
@@ -1213,6 +1625,12 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
                 system["nativeAnchorStatus"] = "exactCurrentBuild"
             else:
                 system["nativeAnchorStatus"] = "omittedMetadataFingerprintMismatch"
+        if spec.get("nativeCallChains"):
+            if sha256 == MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256:
+                system["nativeCallChains"] = spec["nativeCallChains"]
+                system["nativeCallChainStatus"] = "exactCurrentBuild"
+            else:
+                system["nativeCallChainStatus"] = "omittedMetadataFingerprintMismatch"
         if spec["enumValues"]:
             enum_values = _metadata_enum_values(module, md, type_def)
             if enum_values:
@@ -1234,10 +1652,11 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
         },
         "evidenceBoundary": (
             "Type, field, method, and enum names are exact current-build IL2CPP metadata. "
-            "Selected ModelView Deserialize/Execute method index, token, and virtual-address "
-            "anchors are emitted only for the matching current metadata fingerprint. "
-            "They prove shipped runtime structure, not live call order, the active game state, "
-            "or which Wwise branch a player heard."
+            "Selected ModelView anchors and audio playback call chains include method index, token, "
+            "virtual address, and the recorded GameAssembly fingerprint only for the matching current "
+            "metadata fingerprint. The playback chains are static direct-call evidence from that "
+            "GameAssembly, not a live execution trace, active game state, or proof of which Wwise "
+            "branch a player heard."
         ),
         "systems": systems,
         "missingTypes": missing_types,
@@ -5457,7 +5876,11 @@ def build_audio_semantic_data(
             "levelScriptRadio": radio_catalog.get("evidenceBoundary") or "",
             "levelEventAudioConditions": "OnAudioStateChanged and OnMusicBeatEvent are exact current-build LevelEvent condition definitions. The active Persistent-over-Streaming LevelScript overlay contains zero authored occurrences, and neither condition is a Wwise playback request.",
             "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
-            "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
+            "runtimeMetadata": (
+                "IL2CPP names prove shipped system structure. Selected current-build native call chains "
+                "prove static request routing, asynchronous Event preparation, Wwise posting, and playing-id "
+                "lifetime handling; they are not a live execution trace, active state, or selected media leaf."
+            ),
         },
     }
     json_dump(out_root / "index.json", payload)

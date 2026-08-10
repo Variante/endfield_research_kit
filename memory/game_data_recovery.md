@@ -127,6 +127,20 @@ state groups for exploration, combat/boss, missions, dialogs, cutscenes,
 factory, loading, and standalone playback. These controls remain separate from
 media and Event objects in generated labels.
 
+Current-build native mapping now closes the common playback path. Named
+requests are hashed, `AudioAdapter._PostEvent` allocates an internal playing id
+and prepares Event-owned resources asynchronously, then
+`_OnEventPreparedDoPostEvent` crosses the same native function-pointer slot as
+`AkSoundEngine.PostEvent(uint, ...)` and records the returned real Wwise playing
+id. Stop, pause, and resume use that mapping immediately or remain in
+`AudioActionQueueHelper` until the real id exists, then reach
+`ExecuteActionOnPlayingID`. Animation callbacks route through an entity audio
+object or a registered temporary position emitter; ability `PlaySoundAction`
+uses the same object/weapon/position paths and retains returned ids for seek,
+time-dilation, fade, and stop-on-end behavior. This is exact static call-chain
+evidence for the current GameAssembly, not a live execution trace or proof of
+the switch/state/RTPC values and media leaf selected by Wwise.
+
 Current IL2CPP managed string literals provide a second exact name source.
 Lowercased Wwise FNV-1 joins recover previously missing `au_*`, `bark_*`, and
 `radio_*` names only when their hash is a HIRC type-4 Event. A string literal

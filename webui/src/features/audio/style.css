@@ -404,6 +404,32 @@
   font-size: 10px;
 }
 
+.audio-runtime-call-chain {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.07);
+}
+
+.audio-runtime-call-chain > strong {
+  color: var(--text);
+  font-size: 10px;
+}
+
+.audio-runtime-call-chain .audio-chip-list > span {
+  max-width: 100%;
+  padding: 4px 7px;
+  border: 1px solid rgba(var(--fg-rgb), 0.08);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 9px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .audio-runtime-boundaries {
   display: grid;
   gap: 7px;
