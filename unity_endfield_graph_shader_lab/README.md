@@ -1718,9 +1718,11 @@ zeros both state-mask bytes; type 9 adds merged-render-collider cleanup.
 Shared `LoadingToUnloaded` walks pending ranges only, releases owner handles,
 clears pending byte `+0x04`, and preserves available byte `+0x05` and mapped
 runtime words. Transition-1 loading is now exact too. Dedicated
-`HGLODStreamingSystem` calls bind `enableLODStreaming` to state `+0x38`,
+`HGLODStreamingSystem` calls 273..291 bind `enableLODStreaming` to state `+0x38`,
 keep-last-resource to `+0x39`, `LODCrossFadeConfig` to `+0x3C`, and squared
-HLOD unload distances to `+0x474`. Installed IL2CPP field-offset rows close
+HLOD unload distances to `+0x474`; the remaining entries name dirty-distance,
+reset, status-query, and pending/load/unload-count controls. Installed IL2CPP
+field-offset rows close
 embedded config `c1` at `+0x18` and
 `RenderObjectLODInfoComponent.lodCenter` at `+0x00`. Type 9 requests the
 terminal LOD when streaming is enabled and all LODs otherwise. Type 0 requests
@@ -1739,8 +1741,13 @@ empty, the task projects batch views through context
 the pinned Material/Mesh/shadow-proxy runtime writers and LOD availability
 updates. Its four direct calls are also closed: one in the grid-load state
 driver and three entity-set branches in the Streaming gameplay batch update.
-The stripped state-2 enum symbol, execution scheduling/thread identity above
-those callers, and native component names remain open. The
+HG internal-call 614 now names the batch driver
+`StreamingGameplayManager::Tick_Injected`; its native core directly enters the
+batch update. Entry 615 names a separate `TickResource_Injected` core with no
+direct call to the component-67 transition task or request poller. Independently,
+a registered native callback slot closes the grid path through manager, scene,
+grid, grid-load driver, and transition task. Its exact lifecycle phase/thread,
+the stripped state-2 enum symbol, and native component names remain open. The
 complete hash-pinned `StreamingSceneManagerScript..ctor` binds only bits
 12/14/15/19/25/29/32/33/40 through the managed Mono-converter path; HGTree
 bit 41 is absent. The complete installed-VFS corpus of 117

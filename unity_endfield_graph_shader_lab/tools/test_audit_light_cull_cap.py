@@ -1312,6 +1312,14 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         controls = ecs_state["lodStreamingControl"]
         self.assertEqual(
+            [row["index"] for row in controls["internalCalls"]],
+            list(range(273, 292)),
+        )
+        self.assertEqual(
+            controls["internalCalls"][-1]["name"],
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::get_pendingEntityCount",
+        )
+        self.assertEqual(
             controls["stateFields"]["enableLODStreaming"],
             "0x38",
         )
@@ -1401,6 +1409,39 @@ class LightCullCapAuditTests(unittest.TestCase):
             caller_surface["streamingBatchUpdate"]["callSites"],
             ["0x181180A25", "0x181180EB4", "0x181181095"],
         )
+        entrypoints = batch["updateEntrypoints"]
+        managed_tick = entrypoints["managedTick"]
+        self.assertEqual(managed_tick["internalCall"]["index"], 614)
+        self.assertEqual(
+            managed_tick["streamingBatchUpdateCallSite"],
+            "0x18117486A",
+        )
+        self.assertEqual(
+            managed_tick["allDirectBatchUpdateCallSites"],
+            ["0x181174727", "0x18117486A"],
+        )
+        managed_tick_resource = entrypoints["managedTickResource"]
+        self.assertEqual(managed_tick_resource["internalCall"]["index"], 615)
+        self.assertEqual(
+            managed_tick_resource["directRequestLifecycleCallSites"],
+            [],
+        )
+        native_update = entrypoints["registeredNativeGridUpdate"]
+        self.assertEqual(
+            native_update["callbackSlotVirtualAddress"],
+            "0x1821A87F8",
+        )
+        self.assertEqual(
+            [row["targetVirtualAddress"] for row in native_update["chain"]],
+            [
+                "0x181172C70",
+                "0x18117FE00",
+                "0x181173950",
+                "0x1811733F0",
+                "0x181172DD0",
+            ],
+        )
+        self.assertIn("remain unproved", native_update["boundary"])
         failure = batch["failureEvidence"]
         self.assertEqual(
             failure["diagnostics"]["load"]["value"],
@@ -1472,7 +1513,7 @@ class LightCullCapAuditTests(unittest.TestCase):
             result["lodControlInternalCalls"]["lodStreamingSystem"][-1][
                 "index"
             ],
-            282,
+            291,
         )
         self.assertNotIn("virtual slot", " ".join(result["callChain"]))
 
@@ -2045,6 +2086,44 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_lod_ecs_grid_load_state_driver_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_streaming_gameplay_tick_binding_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1801DDF20 and size == 0x08:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_streaming_gameplay_tick_binding_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_native_update_callback_slot_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x180FC23E4 and size == 14:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_native_update_callback_slot_init; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

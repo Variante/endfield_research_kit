@@ -636,6 +636,96 @@ UNITY_LOD_STREAMING_CONTROL_ICALLS = [
         "UnityEngine.HyperGryph.HGLODStreamingSystem::SetHLODUnloadDistance",
         0x1801EDF80,
     ),
+    (
+        "lodStreamingLoadDirtyDistance.get",
+        283,
+        (
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::"
+            "get_lodStreamingLoadDirtyDistance"
+        ),
+        0x1801EE020,
+    ),
+    (
+        "lodStreamingLoadDirtyDistance.set",
+        284,
+        (
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::"
+            "set_lodStreamingLoadDirtyDistance"
+        ),
+        0x1801EE060,
+    ),
+    (
+        "lodStreamingUnloadDirtyDistance.get",
+        285,
+        (
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::"
+            "get_lodStreamingUnloadDirtyDistance"
+        ),
+        0x1801EE090,
+    ),
+    (
+        "lodStreamingUnloadDirtyDistance.set",
+        286,
+        (
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::"
+            "set_lodStreamingUnloadDirtyDistance"
+        ),
+        0x1801EE0D0,
+    ),
+    (
+        "resetLastProcessLODStreamingPos",
+        287,
+        (
+            "UnityEngine.HyperGryph.HGLODStreamingSystem::"
+            "ResetLastProcessLODStreamingPos"
+        ),
+        0x1801EE100,
+    ),
+    (
+        "queryLODStreamingStatus",
+        288,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::QueryLODStreamingStatus",
+        0x1801EE150,
+    ),
+    (
+        "needLoadEntityCount.get",
+        289,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::get_needLoadEntityCount",
+        0x1801EE170,
+    ),
+    (
+        "needUnloadEntityCount.get",
+        290,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::get_needUnloadEntityCount",
+        0x1801EE190,
+    ),
+    (
+        "pendingEntityCount.get",
+        291,
+        "UnityEngine.HyperGryph.HGLODStreamingSystem::get_pendingEntityCount",
+        0x1801EE1B0,
+    ),
+]
+
+UNITY_STREAMING_GAMEPLAY_UPDATE_ICALLS = [
+    (
+        "tick",
+        614,
+        (
+            "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager::"
+            "Tick_Injected"
+        ),
+        0x1801DDF20,
+    ),
+    (
+        "tickResource",
+        615,
+        (
+            "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager::"
+            "TickResource_Injected"
+        ),
+        0x1801DE080,
+    ),
 ]
 
 LOD_STREAMING_METADATA_REGISTRATION_VA = 0x18B921C30
@@ -1565,6 +1655,46 @@ UNITY_HGTREE_BODIES = {
         0x863,
         "189f4b2c732dcbef595ce2d8f747a6ff67a4e29cb06a57c61ac5ea8776d71073",
     ),
+    "streaming_gameplay_tick_binding": (
+        0x1801DDF20,
+        0x08,
+        "aeae55e581a519c8ffe062bf2030319e2ab3f52e3d1bcec6aedcc167a6135340",
+    ),
+    "streaming_gameplay_tick_core": (
+        0x181174750,
+        0x376,
+        "3d1d159065ac561f45943d8059e2d80a614f39c465072c5bc6b574aec0ff0049",
+    ),
+    "streaming_gameplay_tick_resource_binding": (
+        0x1801DE080,
+        0x08,
+        "e317a7426feb366b902ee867431188bc63224a9dd2bc158ab952b43792651a31",
+    ),
+    "streaming_gameplay_tick_resource_core": (
+        0x181174AD0,
+        0xF99,
+        "a73be4e3613e1bdc88caec27de36b5d02afa734d18e937c9fa6c8be425c483bc",
+    ),
+    "lod_ecs_native_update_thunk": (
+        0x180FC5F10,
+        0x1E,
+        "1b2c15af8f8a463a15986a807e29ff1efd1b6240ee2640ecc61c98ef927efde4",
+    ),
+    "lod_ecs_native_manager_update": (
+        0x181172C70,
+        0x152,
+        "98d4d22216c5907009a90f04ab7ead5751c1702fb44918b7cc012bdc51e10435",
+    ),
+    "lod_ecs_native_scene_update": (
+        0x18117FE00,
+        0x198,
+        "b8083a9283e2cbb2d2ac3d69d1d704c8caf296d7dda02ba58fb4a27f66245ba9",
+    ),
+    "lod_ecs_grid_update_root": (
+        0x181173950,
+        0x30F,
+        "dc02dc40a0021f0f91f75f4740aae51bf79ca4130a4990ef3668b6cf89b19857",
+    ),
     "hg_geometry_get_handle_binding": (
         0x1801EE550,
         0x7E,
@@ -2354,6 +2484,14 @@ UNITY_HGTREE_RESOURCE_LIFECYCLE_STRINGS = {
 }
 
 UNITY_HGTREE_SLICES = {
+    "native_update_callback_slot_init": (
+        0x180FC23E4,
+        "488d05253b000048890506641e01",
+    ),
+    "native_update_callback_slot_registration": (
+        0x1805976D4,
+        "488d0d1d11c101488b05decdb601488988b0230000",
+    ),
     "component67_companion_component_mask": (
         0x181E22FC0,
         "0000000000000000f007000000000000",
@@ -8133,6 +8271,32 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
+    streaming_gameplay_update_icalls = []
+    for label, index, expected_name, expected_target in (
+        UNITY_STREAMING_GAMEPLAY_UPDATE_ICALLS
+    ):
+        actual_name, actual_target = resolve_hg_icall(index)
+        require(
+            f"unity_hgtree_streaming_gameplay_{label}_icall_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        require(
+            f"unity_hgtree_streaming_gameplay_{label}_icall_target",
+            actual_target,
+            expected_target,
+            image.path,
+        )
+        streaming_gameplay_update_icalls.append(
+            {
+                "label": label,
+                "index": index,
+                "name": actual_name,
+                "targetVirtualAddress": f"0x{actual_target:X}",
+            }
+        )
+
     bodies = []
     for label, (virtual_address, size_bytes, expected_hash) in (
         UNITY_HGTREE_BODIES.items()
@@ -8186,6 +8350,45 @@ def validate_unity_hgtree_renderer_boundary(
         "unity_hgtree_lod_ecs_resource_request_poller_call_sites",
         request_poller_call_sites,
         [0x181173268],
+        image.path,
+    )
+    update_chain_call_sites = find_relative_call_sites_many(
+        image,
+        {0x181180870, 0x18117FE00, 0x181173950, 0x1811733F0},
+    )
+    require(
+        "unity_hgtree_streaming_batch_update_call_sites",
+        update_chain_call_sites[0x181180870],
+        [0x181174727, 0x18117486A],
+        image.path,
+    )
+    require(
+        "unity_hgtree_native_scene_update_call_sites",
+        update_chain_call_sites[0x18117FE00],
+        [0x181172D9F],
+        image.path,
+    )
+    require(
+        "unity_hgtree_grid_update_root_call_sites",
+        update_chain_call_sites[0x181173950],
+        [0x18117FF42],
+        image.path,
+    )
+    require(
+        "unity_hgtree_grid_load_state_driver_call_sites",
+        update_chain_call_sites[0x1811733F0],
+        [0x181173BA2],
+        image.path,
+    )
+    tick_resource_direct_lifecycle_call_sites = sorted(
+        site
+        for site in transition_task_call_sites + request_poller_call_sites
+        if 0x181174AD0 <= site < 0x181175A69
+    )
+    require(
+        "unity_hgtree_tick_resource_direct_request_lifecycle_call_sites",
+        tick_resource_direct_lifecycle_call_sites,
+        [],
         image.path,
     )
 
@@ -9779,7 +9982,10 @@ def validate_unity_hgtree_renderer_boundary(
                         "the installed internal-call names and bodies close "
                         "the state offsets used by the two load callbacks; "
                         "keep-last-resource is named at +0x39 but is not "
-                        "claimed as an input of those two callbacks"
+                        "claimed as an input of those two callbacks. Entries "
+                        "283..291 additionally close the dirty-distance, reset, "
+                        "status-query, and pending/load/unload count API names "
+                        "without assigning new native field semantics"
                     ),
                 },
                 "loadRequestStateMachine": {
@@ -9961,9 +10167,89 @@ def validate_unity_hgtree_renderer_boundary(
                             "closedBoundary": (
                                 "all four direct rel32 callers are enumerated and "
                                 "their two owner bodies are hash-pinned; this closes "
-                                "the grid/batch update call surface, not the "
-                                "scheduler or thread identity that invokes those owners"
+                                "the transition-task call surface. The named managed "
+                                "Tick and registered native grid paths below close the "
+                                "next scheduling layer without claiming thread identity"
                             ),
+                        },
+                        "updateEntrypoints": {
+                            "managedTick": {
+                                "internalCall": streaming_gameplay_update_icalls[0],
+                                "bindingTailJumpTarget": "0x181174750",
+                                "coreVirtualAddress": "0x181174750",
+                                "streamingBatchUpdateVirtualAddress": "0x181180870",
+                                "streamingBatchUpdateCallSite": "0x18117486A",
+                                "allDirectBatchUpdateCallSites": [
+                                    f"0x{virtual_address:X}"
+                                    for virtual_address in update_chain_call_sites[
+                                        0x181180870
+                                    ]
+                                ],
+                                "meaning": (
+                                    "installed internal-call entry 614 names the "
+                                    "managed-facing Tick binding; its native core "
+                                    "synchronously enters the batch entity update"
+                                ),
+                            },
+                            "managedTickResource": {
+                                "internalCall": streaming_gameplay_update_icalls[1],
+                                "bindingTailJumpTarget": "0x181174AD0",
+                                "coreVirtualAddress": "0x181174AD0",
+                                "directRequestLifecycleCallSites": [
+                                    f"0x{virtual_address:X}"
+                                    for virtual_address in (
+                                        tick_resource_direct_lifecycle_call_sites
+                                    )
+                                ],
+                                "boundary": (
+                                    "entry 615 proves a distinct resource-update "
+                                    "core. That core has no direct rel32 call to the "
+                                    "component-67 transition task or request poller; "
+                                    "indirect participation is not excluded"
+                                ),
+                            },
+                            "registeredNativeGridUpdate": {
+                                "callbackThunkVirtualAddress": "0x180FC5F10",
+                                "callbackSlotVirtualAddress": "0x1821A87F8",
+                                "callbackSlotInitializerVirtualAddress": "0x180FC23E4",
+                                "registrationFunctionVirtualAddress": "0x180596830",
+                                "registrationSliceVirtualAddress": "0x1805976D4",
+                                "registrationTableSlotOffset": "0x23B0",
+                                "managerRoot": "graphics singleton+0x140",
+                                "chain": [
+                                    {
+                                        "virtualAddress": "0x180FC5F10",
+                                        "edge": "tail jump",
+                                        "targetVirtualAddress": "0x181172C70",
+                                    },
+                                    {
+                                        "virtualAddress": "0x181172C70",
+                                        "callSite": "0x181172D9F",
+                                        "targetVirtualAddress": "0x18117FE00",
+                                    },
+                                    {
+                                        "virtualAddress": "0x18117FE00",
+                                        "callSite": "0x18117FF42",
+                                        "targetVirtualAddress": "0x181173950",
+                                    },
+                                    {
+                                        "virtualAddress": "0x181173950",
+                                        "callSite": "0x181173BA2",
+                                        "targetVirtualAddress": "0x1811733F0",
+                                    },
+                                    {
+                                        "virtualAddress": "0x1811733F0",
+                                        "callSite": "0x181173854",
+                                        "targetVirtualAddress": "0x181172DD0",
+                                    },
+                                ],
+                                "boundary": (
+                                    "the constructor stores the thunk in a global "
+                                    "function-pointer slot and Unity native registration "
+                                    "records that slot address. The exact lifecycle "
+                                    "phase name and executing thread remain unproved"
+                                ),
+                            },
                         },
                         "failureEvidence": {
                             "relationResolvers": [
@@ -10041,9 +10327,11 @@ def validate_unity_hgtree_renderer_boundary(
                         "outer task then materializes both descriptor sources, "
                         "polls pending/ready/load-failed states 0/1/2, and "
                         "invokes transition 3 with the "
-                        "resource views consumed by the runtime writers. Exact "
-                        "execution scheduling/thread identity, the stripped enum symbol for "
-                        "state 2, and native names for components "
+                        "resource views consumed by the runtime writers. The "
+                        "managed Tick batch path and registered native grid path "
+                        "close the next update layer; only the registered callback's "
+                        "exact lifecycle phase/thread identity, the stripped enum "
+                        "symbol for state 2, and native names for components "
                         "67/68..74/75 remain open"
                     ),
                 },
@@ -10675,8 +10963,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v43",
-        "status": "component67_resource_failure_and_update_surface_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v44",
+        "status": "component67_tick_and_native_update_surfaces_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -10945,8 +11233,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "index crossed the table boundary into unrelated Animator code. "
             "The standalone native type names for components 67 through 75, "
             "the stripped enum symbol for resource load-failure state 2, the "
-            "execution scheduling/thread identity above the closed grid/batch "
-            "update calls, "
+            "registered native callback's exact lifecycle phase/thread identity, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -11164,10 +11451,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the complete 30-declaration/29-body UnityEngine.HyperGryph.ECS Int32 get_id census, codegen pointer slots, constant values, and absence of component id 67",
                 "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
                 "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
-                "HGLODStreamingSystem internal calls 273..282, state+0x38/+0x39/+0x3C/+0x474 controls, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
+                "HGLODStreamingSystem internal calls 273..291, state+0x38/+0x39/+0x3C/+0x474 controls, dirty-distance/reset/status/count API names, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
                 "the component-67 outer request-batch lifecycle: callback-context +0x50/+0x58 descriptor materialization, task+0x18 batch and +0x0A count, resource states 0/1/2, completion polling, callback-context +0x60/+0x68/+0x70 projection, and transition-3 runtime Material/Mesh/shadow-proxy writeback",
                 "resource state 2 as load failure through its no-publish relation path, installed Streaming load/get asset failure diagnostics, and component-specific fallback",
                 "all four direct transition-task calls across the hash-pinned grid-load state driver and three Streaming gameplay batch-update entity-set branches",
+                "StreamingGameplayManager internal-call entries 614/615 as distinct Tick/TickResource bindings, including Tick's direct batch-update edge and TickResource's absence of direct transition-task/request-poller calls",
+                "the registered native grid-update callback slot and hash-pinned thunk -> manager -> scene -> grid -> load-driver -> transition-task chain",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -11179,7 +11468,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "arbitrary/asymmetric final selected-view planes",
                 "the standalone native component type names for components 67 through 75",
                 "the stripped enum symbol for resource load-failure state 2",
-                "execution scheduling/thread identity above the closed grid/batch update call surface",
+                "the registered native grid callback's exact lifecycle phase and executing thread identity",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -11227,8 +11516,8 @@ def main() -> int:
         "component-67 separation, native Render/MergedRenderCollider ownership, "
         "ten-slot EntityTransition registry and exact transitions 1/3/6/8, "
         "resource-capacity companions, named LOD-streaming controls and "
-        "transition-1 request-batch/poll/load-failure and grid/batch update "
-        "surface/transition-3 writeback plus "
+        "transition-1 request-batch/poll/load-failure, named managed Tick and "
+        "registered native grid update surfaces, and transition-3 writeback plus "
         "transition-6/8 teardown semantics, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "

@@ -268,10 +268,12 @@ NPC archetypes are imported as labeled source kits.
   clears only pending byte `+0x04`, and preserves the available byte and
   mapped runtime words. Code admits selector bit 74, but no serialized ID-74
   companion or native name is claimed.
-  The paired transition-1 load path is now exact. HG internal calls 273..282
+  The paired transition-1 load path is now exact. HG internal calls 273..291
   name `enableLODStreaming` at state `+0x38`, keep-last-resource at `+0x39`,
   embedded `LODCrossFadeConfig` at `+0x3C`, and the squared HLOD unload-
-  distance table at `+0x474`. Installed IL2CPP field offsets place config
+  distance table at `+0x474`; entries 283..291 additionally name dirty-distance,
+  reset, status-query, and pending/load/unload-count controls without yet
+  assigning new native fields. Installed IL2CPP field offsets place config
   `c1` at embedded `+0x18` and managed component-6
   `RenderObjectLODInfoComponent.lodCenter` at `+0x00`. Type 9 requests either
   the terminal LOD or every LOD from the streaming switch. Type 0 requests
@@ -291,8 +293,17 @@ NPC archetypes are imported as labeled source kits.
   to the pinned Material/Mesh/shadow-proxy runtime writers and LOD availability
   updates. Its four direct calls are also closed: one in the grid-load state
   driver and three entity-set branches in the Streaming gameplay batch update.
-  The stripped state-2 enum symbol, execution scheduling/thread identity above
-  those callers, and standalone component names remain open.
+  The next update layer is now separated rather than inferred. HG internal-call
+  entry 614 names `StreamingGameplayManager::Tick_Injected`; its binding jumps
+  to `0x181174750`, whose direct call at `0x18117486A` enters the batch update.
+  Entry 615 names a distinct `TickResource_Injected` core at `0x181174AD0`;
+  it has no direct call to the component-67 transition task or request poller,
+  though indirect participation remains possible. The grid path is driven by
+  a native registered callback: constructor code stores thunk `0x180FC5F10`
+  in global slot `0x1821A87F8`, Unity registration records that slot address,
+  and the hash-pinned chain reaches manager, scene, grid, grid-load driver, then
+  transition task synchronously. The callback's exact lifecycle phase/thread,
+  the stripped state-2 enum symbol, and standalone component names remain open.
   The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
   converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
   binding, excluding that static constructor delegate route. A direct installed-VFS
