@@ -124,7 +124,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 24
+AUDIO_SEMANTIC_SCHEMA_VERSION = 25
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
@@ -2631,6 +2631,22 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
                 target["randomSequencePlaylistItemCount"] = int(
                     target.get("randomSequencePlaylistItemCount") or 0
                 ) + int(row.get("playlistItemCount") or 0)
+                membership_status = str(
+                    row.get("playlistMembershipStatus") or "unknown"
+                )
+                target.setdefault("_randomSequenceMembershipStatuses", Counter())[
+                    membership_status
+                ] += 1
+                target["randomSequenceOwnedChildNotInPlaylistCount"] = int(
+                    target.get("randomSequenceOwnedChildNotInPlaylistCount") or 0
+                ) + len(row.get("ownedChildIdsNotInPlaylist") or [])
+                target["randomSequenceDuplicatePlaylistItemCount"] = int(
+                    target.get("randomSequenceDuplicatePlaylistItemCount") or 0
+                ) + int(row.get("duplicatePlaylistItemCount") or 0)
+                if membership_status == "emptyPlaylistOwnedChildrenPreserved":
+                    target["randomSequenceEmptyPlaylistNodeCount"] = int(
+                        target.get("randomSequenceEmptyPlaylistNodeCount") or 0
+                    ) + 1
                 if not row.get("childrenOrderMatchesPlaylist", True):
                     target["playlistOrderDiffersFromChildrenCount"] = int(
                         target.get("playlistOrderDiffersFromChildrenCount") or 0
@@ -2832,6 +2848,9 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
         random_sequence_modes = row.pop("_randomSequenceModes", None)
         random_modes = row.pop("_randomModes", None)
         random_transition_modes = row.pop("_randomTransitionModes", None)
+        random_membership_statuses = row.pop(
+            "_randomSequenceMembershipStatuses", None
+        )
         layer_parser_statuses = row.pop("_layerParserStatuses", None)
         layer_proof_statuses = row.pop("_layerProofStatuses", None)
         layer_assignment_statuses = row.pop("_layerAssignmentStatuses", None)
@@ -2852,6 +2871,10 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
         if random_transition_modes:
             row["randomTransitionModes"] = dict(
                 sorted(random_transition_modes.items())
+            )
+        if random_membership_statuses:
+            row["randomSequenceMembershipStatuses"] = dict(
+                sorted(random_membership_statuses.items())
             )
         if layer_parser_statuses:
             row["layerParserStatuses"] = dict(sorted(layer_parser_statuses.items()))

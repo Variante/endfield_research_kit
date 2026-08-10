@@ -230,12 +230,23 @@ Wwise v150 type-5 Random/Sequence containers now expose the full bounded
 policy block and trailing playlist: loop count and modifiers, transition time
 and mode, avoid-repeat count, Standard/Shuffle and Random/Sequence modes,
 scope/reset/continuous flags, authored playlist order, and per-child weights.
-Playlist order can differ from the reciprocal `Children` array and is the
-authoritative static order for Sequence containers. Weight rows are preserved
+Playlist membership is distinct from reciprocal `Children` ownership: current
+banks contain repeated items, empty playlists, and strict playlist subsets,
+all with exact bounded tails and no child outside the owned set. Sequence order
+therefore comes from the playlist, while owned children omitted by it remain
+structural and are not claimed selectable. Weight rows are preserved
 independently of the raw flag bit because current banks contain non-default
 weights even when that bit is clear. These fields prove the authored selection
 policy, while the random seed, shuffle and avoid-repeat history, Sequence
 cursor, reset timing, and chosen runtime leaf remain unobserved.
+
+Music Switch and Music Random/Sequence selectors use the same ownership-versus-
+selection boundary. A decision tree or music playlist may be a strict subset
+of reciprocal Children without making the typed structure partial; selector
+leaves outside direct or recursive ownership, including absent object ids,
+still fail closed. Extra owned Music Segments remain visible but are not
+treated as playlist choices. Live music group values and the audible branch
+remain unobserved.
 
 Wwise v150 type-9 objects are Layer/Blend containers. Their bounded tail now
 preserves Layer ids, initial RTPC curves, Layer RTPC id/type, child-associated

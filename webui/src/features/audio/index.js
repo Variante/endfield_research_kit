@@ -2057,7 +2057,9 @@
       orderDiffers: 0, nonDefaultWeightItems: 0, nonDefaultWeightNodes: 0,
       nonUniformWeightNodes: 0, nonDefaultAvoid: 0, maxAvoid: 0,
       nonDefaultLoop: 0, globalScope: 0, continuous: 0, resetPlaylist: 0,
+      ownedNotInPlaylist: 0, duplicateItems: 0, emptyPlaylists: 0,
       modes: new Map(), randomModes: new Map(), transitions: new Map(), statuses: new Map(),
+      memberships: new Map(),
     };
     const layerBlend = {
       nodes: 0, exact: 0, unresolved: 0, definitions: 0,
@@ -2134,6 +2136,9 @@
         randomSequence.unresolved += Number(container?.unresolvedRandomSequenceNodeCount || 0);
         randomSequence.playlistItems += Number(container?.randomSequencePlaylistItemCount || 0);
         randomSequence.orderDiffers += Number(container?.playlistOrderDiffersFromChildrenCount || 0);
+        randomSequence.ownedNotInPlaylist += Number(container?.randomSequenceOwnedChildNotInPlaylistCount || 0);
+        randomSequence.duplicateItems += Number(container?.randomSequenceDuplicatePlaylistItemCount || 0);
+        randomSequence.emptyPlaylists += Number(container?.randomSequenceEmptyPlaylistNodeCount || 0);
         randomSequence.nonDefaultWeightItems += Number(container?.nonDefaultWeightItemCount || 0);
         randomSequence.nonDefaultWeightNodes += Number(container?.nonDefaultWeightNodeCount || 0);
         randomSequence.nonUniformWeightNodes += Number(container?.nonUniformWeightNodeCount || 0);
@@ -2154,6 +2159,9 @@
         }
         for (const [key, count] of Object.entries(container?.randomSequenceParserStatuses || {})) {
           randomSequence.statuses.set(key, (randomSequence.statuses.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(container?.randomSequenceMembershipStatuses || {})) {
+          randomSequence.memberships.set(key, (randomSequence.memberships.get(key) || 0) + Number(count || 0));
         }
         layerBlend.nodes += Number(container?.layerNodeCount || 0);
         layerBlend.exact += Number(container?.typedLayerNodeCount || 0);
@@ -2183,10 +2191,20 @@
         const kind = normalize(node?.nodeKind) || `musicType${node?.objectType ?? "?"}`;
         const current = musicNodes.get(kind) || {
           count: 0, children: 0, sources: 0, selectionTypes: new Set(),
+          structureStatuses: new Map(), selectorStatuses: new Map(),
+          ownedNotSelected: 0, outsideOwnedChildren: 0,
         };
         current.count += 1;
         current.children += Number(node?.childCount || 0);
         current.sources += Number(node?.sourceCount || 0);
+        const structureStatus = normalize(node?.structureStatus);
+        if (structureStatus) current.structureStatuses.set(structureStatus, (current.structureStatuses.get(structureStatus) || 0) + 1);
+        const selectorStatus = normalize(node?.selectorValidation?.status);
+        if (selectorStatus) current.selectorStatuses.set(selectorStatus, (current.selectorStatuses.get(selectorStatus) || 0) + 1);
+        current.ownedNotSelected += asArray(node?.selectorValidation?.reciprocalChildrenWithoutTreeLeaf).length;
+        current.ownedNotSelected += asArray(node?.selectorValidation?.reciprocalChildrenWithoutPlaylistTerminal).length;
+        current.outsideOwnedChildren += asArray(node?.selectorValidation?.treeLeafIdsOutsideReciprocalChildren).length;
+        current.outsideOwnedChildren += asArray(node?.selectorValidation?.playlistTerminalSegmentIdsOutsideReciprocalChildren).length;
         for (const label of asArray(node?.selectionTypeLabels).filter(Boolean)) current.selectionTypes.add(humanize(label));
         musicNodes.set(kind, current);
       }
@@ -2254,10 +2272,14 @@
         summarizeCounts(randomSequence.randomModes),
         summarizeCounts(randomSequence.transitions),
         summarizeCounts(randomSequence.statuses),
+        summarizeCounts(randomSequence.memberships),
       ].filter(Boolean).join(" / "));
       values.push([
         `Playlists: ${formatNumber(randomSequence.playlistItems)} weighted items`,
         randomSequence.orderDiffers ? `${formatNumber(randomSequence.orderDiffers)} playlist orders differ from Children` : "",
+        randomSequence.duplicateItems ? `${formatNumber(randomSequence.duplicateItems)} repeated playlist items` : "",
+        randomSequence.emptyPlaylists ? `${formatNumber(randomSequence.emptyPlaylists)} empty playlists with owned Children preserved` : "",
+        randomSequence.ownedNotInPlaylist ? `${formatNumber(randomSequence.ownedNotInPlaylist)} owned Children not referenced by the playlist` : "",
         randomSequence.nonDefaultWeightItems ? `${formatNumber(randomSequence.nonDefaultWeightItems)} non-default weights across ${formatNumber(randomSequence.nonDefaultWeightNodes)} nodes` : "",
         randomSequence.nonUniformWeightNodes ? `${formatNumber(randomSequence.nonUniformWeightNodes)} non-uniform pools` : "",
         randomSequence.nonDefaultAvoid ? `${formatNumber(randomSequence.nonDefaultAvoid)} non-default avoid-repeat nodes (max ${formatNumber(randomSequence.maxAvoid)})` : "",
@@ -2266,7 +2288,7 @@
         randomSequence.continuous ? `${formatNumber(randomSequence.continuous)} continuous nodes` : "",
         randomSequence.resetPlaylist ? `${formatNumber(randomSequence.resetPlaylist)} reset-on-play nodes` : "",
       ].filter(Boolean).join(" / "));
-      values.push("Runtime random seed, shuffle history, avoid-repeat history, Sequence cursor, and reset timing were not observed; playlist rows describe policy, not a selected leaf.");
+      values.push("Reciprocal Children prove container ownership; playlist rows prove selector membership and may repeat, omit, or leave the owned set empty. Runtime random seed, shuffle history, avoid-repeat history, Sequence cursor, and reset timing were not observed; playlist rows describe policy, not a selected leaf.");
     }
     if (layerBlend.nodes) {
       const summarizeCounts = (counts) => [...counts]
@@ -2302,6 +2324,10 @@
         value.children ? `${formatNumber(value.children)} children` : "",
         value.sources ? `${formatNumber(value.sources)} sources` : "",
         value.selectionTypes.size ? [...value.selectionTypes].join(" / ") : "",
+        [...value.structureStatuses].map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`).join(" / "),
+        [...value.selectorStatuses].map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`).join(" / "),
+        value.ownedNotSelected ? `${formatNumber(value.ownedNotSelected)} owned Children outside selector membership` : "",
+        value.outsideOwnedChildren ? `${formatNumber(value.outsideOwnedChildren)} selector leaves outside reciprocal Children (unresolved)` : "",
       ].filter(Boolean).join(" / ");
       values.push(`${taxonomyLabel(kind)}: ${detail}`);
     }

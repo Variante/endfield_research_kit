@@ -158,7 +158,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 13
+EVENT_EVIDENCE_SCHEMA_VERSION = 14
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -3811,7 +3811,7 @@ def hirc_v150_music_switch_structure(
             if outside:
                 status = "treeLeafOutsideReciprocalChildren"
             elif missing:
-                status = "reciprocalChildNotInDecisionTree"
+                status = "decisionTreeSubsetOfReciprocalChildren"
             else:
                 status = "reciprocalChildrenCovered"
             selector_validation = {
@@ -3925,7 +3925,7 @@ def hirc_v150_music_random_sequence_structure(
             if outside:
                 status = "terminalSegmentOutsideReciprocalChildren"
             elif missing:
-                status = "reciprocalChildNotInPlaylist"
+                status = "playlistSubsetOfReciprocalChildren"
             else:
                 status = "reciprocalChildrenCovered"
             selector_validation = {
@@ -4108,9 +4108,6 @@ def hirc_v150_random_sequence_properties(
     playlist_bytes = playlist_count * 8
     if playlist_offset + playlist_bytes != len(data):
         return unresolved("unexpectedPlaylistTailLength", playlist_offset + playlist_bytes)
-    if playlist_count != len(child_ids):
-        return unresolved("playlistChildCountMismatch", tail_start)
-
     playlist_items = [
         {
             "playlistOrdinal": index,
@@ -4120,10 +4117,21 @@ def hirc_v150_random_sequence_properties(
         for index in range(playlist_count)
     ]
     playlist_child_ids = [row["childId"] for row in playlist_items]
-    if len(set(playlist_child_ids)) != len(playlist_child_ids):
-        return unresolved("duplicatePlaylistChild", playlist_offset)
-    if set(playlist_child_ids) != set(child_ids):
-        return unresolved("playlistChildrenMismatch", playlist_offset)
+    playlist_child_id_set = set(playlist_child_ids)
+    reciprocal_child_id_set = set(child_ids)
+    outside = sorted(playlist_child_id_set - reciprocal_child_id_set)
+    owned_not_in_playlist = sorted(reciprocal_child_id_set - playlist_child_id_set)
+    if outside:
+        return unresolved("playlistChildOutsideReciprocalChildren", playlist_offset)
+    duplicate_count = len(playlist_child_ids) - len(playlist_child_id_set)
+    if not playlist_items:
+        membership_status = "emptyPlaylistOwnedChildrenPreserved"
+    elif duplicate_count:
+        membership_status = "playlistWithRepeatedOwnedChildren"
+    elif owned_not_in_playlist:
+        membership_status = "playlistSubsetOfOwnedChildren"
+    else:
+        membership_status = "playlistCoversOwnedChildren"
     weights = [row["weight"] for row in playlist_items]
     return {
         **policy,
@@ -4132,6 +4140,11 @@ def hirc_v150_random_sequence_properties(
         "playlistItems": playlist_items,
         "playlistChildOrder": playlist_child_ids,
         "childrenOrderMatchesPlaylist": playlist_child_ids == child_ids,
+        "playlistMembershipStatus": membership_status,
+        "playlistUniqueChildCount": len(playlist_child_id_set),
+        "duplicatePlaylistItemCount": duplicate_count,
+        "playlistChildIdsOutsideChildren": outside,
+        "ownedChildIdsNotInPlaylist": owned_not_in_playlist,
         "nonDefaultWeightCount": sum(weight != 50000 for weight in weights),
         "uniformWeights": len(set(weights)) <= 1,
         "weightUsageStatus": "playlistWeightsPreservedWeightFlagNotUsedAsGate",
@@ -4848,12 +4861,23 @@ def traverse_hirc_event(
                 if structure:
                     music_row.update(structure)
                     selector_status = (structure.get("selectorValidation") or {}).get("status")
+                    exact_selector_statuses = {
+                        None,
+                        "reciprocalChildrenCovered",
+                        "decisionTreeSubsetOfReciprocalChildren",
+                        "playlistSubsetOfReciprocalChildren",
+                    }
                     music_row["structureStatus"] = (
-                        "typedExactV150"
-                        if selector_status in {None, "reciprocalChildrenCovered"}
+                        "typedExactV150SelectorSubset"
+                        if selector_status in {
+                            "decisionTreeSubsetOfReciprocalChildren",
+                            "playlistSubsetOfReciprocalChildren",
+                        }
+                        else "typedExactV150"
+                        if selector_status in exact_selector_statuses
                         else "typedExactV150SelectorBoundaryUnresolved"
                     )
-                    if selector_status not in {None, "reciprocalChildrenCovered"}:
+                    if selector_status not in exact_selector_statuses:
                         unresolved_nodes.append({
                             "objectId": object_id,
                             "objectType": object_type,
