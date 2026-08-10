@@ -821,6 +821,29 @@ class LightCullCapAuditTests(unittest.TestCase):
             geometry_system["handleEncoding"]["equation"],
             "GeometryHandle = ((slotGeneration + 1) & 0xFF) << 24 | slotIndex",
         )
+        render_flags_abi = result["rendererListVariants"][
+            "renderFlagsFilterAbi"
+        ]
+        self.assertEqual(
+            render_flags_abi["descriptorRenderFlagsMaskOffset"], "0x40"
+        )
+        self.assertEqual(
+            render_flags_abi["callbackRenderFlagsMaskOffset"], "0x3C"
+        )
+        self.assertEqual(render_flags_abi["callbackDescriptorBiasBytes"], 4)
+        renderer_list_method = result["rendererListVariants"][
+            "managedContract"
+        ]["method"]
+        self.assertEqual(renderer_list_method["methodIndex"], 478192)
+        self.assertEqual(
+            [row["name"] for row in renderer_list_method["parameters"][:4]],
+            [
+                "viewHandle",
+                "renderFlagsMask",
+                "renderFlagsValue",
+                "lightModeMask",
+            ],
+        )
         resource_load = result["resourceLoadInternalCall"]
         self.assertEqual(resource_load["index"], 437)
         self.assertIn("LoadAsync_Injected", resource_load["name"])
@@ -1530,6 +1553,31 @@ class LightCullCapAuditTests(unittest.TestCase):
             AUDIT.validate_unity_hgtree_renderer_boundary(
                 AUDIT.PEImage(AUDIT.UNITY_PLAYER), metadata=bytes(metadata)
             )
+
+    def test_changed_hgtree_renderer_list_metadata_fails_closed(self) -> None:
+        metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
+        sections = {
+            section_name: struct.unpack_from(
+                "<Ii", metadata, 8 + section_index * 8
+            )
+            for section_index, section_name in enumerate(
+                AUDIT.IL2CPP_METADATA_SECTION_NAMES
+            )
+        }
+        method_offset, _method_size = sections["methods"]
+        position = (
+            method_offset
+            + AUDIT.HG_TREE_CREATE_RENDERER_LIST_INJECTED_METHOD_INDEX * 32
+            + 8
+        )
+        struct.pack_into("<i", metadata, position, 168242)
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=hgtree_renderer_list_method_return_type; "
+            r"source=.*global-metadata.dat; expected=168243; actual=168242",
+        ):
+            AUDIT.validate_hgtree_renderer_list_metadata(bytes(metadata))
 
     def test_changed_hg_asset_type_mesh_value_fails_closed(self) -> None:
         metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())

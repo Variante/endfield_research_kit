@@ -1586,10 +1586,17 @@ it at `0x18115C110`, and callback read `0x181064B73` consumes it in a combined
 masked filter. HG internal-call entries 300/301 name
 `HGGeometrySystem.GetGeometryHandle/GetMesh`; builder `0x18108B1C0` closes bits
 0..23 as the slot index and bits 24..31 as the 8-bit generation incremented at
-slot `+0x06`. Record `+0x10` is not seeded by a Mesh map; common Renderer
+slot `+0x06`. Installed `HGTreeRender.CreateRendererList` metadata names the
+upstream UInt32 fields `renderFlagsMask/renderFlagsValue/lightModeMask`.
+Binding `0x1801D9D10`, core `0x18107EE40`, and scheduler `0x181080730` preserve
+them into descriptor `+0x40/+0x44/+0x48`; callback `0x181064190` receives
+descriptor `+0x04`, so its `+0x3C/+0x40/+0x44` reads are those exact fields.
+GeometryHandle is intentionally folded into the HGTree renderFlags comparison,
+not a standalone filter bitfield. Record `+0x10` is not seeded by a Mesh map;
+common Renderer
 state synchronizer `0x180432CD0` maintains that separate property-flag word at
-blob `+0x14` while preserving mask `0xFC07FBFD`. Only higher-level job producers
-that deliberately constrain GeometryHandle bits remain open.
+blob `+0x14` while preserving mask `0xFC07FBFD`. Concrete per-pass
+CreateRendererList callers and supplied mask/value pairs remain open.
 Dedicated HG
 internal-call entry 204 is
 `HGFactoryRenderManager.SetEntityEnabledLightModes_Injected`; wrapper
@@ -1752,8 +1759,8 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The higher-level mask/value producers
-for loader record `+0x0C`'s shadow-proxy GeometryHandle, the component-67 native
+boundary into unrelated Animator code. Concrete per-pass callers and values for
+HGTree CreateRendererList's renderFlags mask/value ABI, the component-67 native
 type name, any separate `sceneCullingMask` consumer, and target-frame survivor
 rows remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned

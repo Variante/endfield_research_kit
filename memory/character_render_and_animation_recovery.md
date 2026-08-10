@@ -127,11 +127,18 @@ NPC archetypes are imported as labeled source kits.
   `0x181064B73` consumes it in a combined masked filter. HG internal-call
   entries 300/301 name `HGGeometrySystem.GetGeometryHandle/GetMesh`; the
   hash-pinned slot builder closes bits 0..23 as the slot index and bits 24..31
-  as the 8-bit generation incremented at slot `+0x06`. Record `+0x10` is not
+  as the 8-bit generation incremented at slot `+0x06`. Installed
+  `HGTreeRender.CreateRendererList` metadata names the upstream UInt32 values
+  `renderFlagsMask/renderFlagsValue/lightModeMask`; binding `0x1801D9D10`, core
+  `0x18107EE40`, and scheduler `0x181080730` preserve them into descriptor
+  `+0x40/+0x44/+0x48`. Callback `0x181064190` receives descriptor `+0x04`, so
+  its `+0x3C/+0x40/+0x44` reads are those exact fields. GeometryHandle is thus
+  intentionally folded into the HGTree renderFlags comparison, not a separate
+  bitfield. Record `+0x10` is not
   resource-seeded; common
   Renderer state sync `0x180432CD0` alone maintains that property-flag word at
-  blob `+0x14`. Only the higher-level job producers that intentionally
-  constrain GeometryHandle bits remain open. Dedicated HG
+  blob `+0x14`. Concrete per-pass CreateRendererList callers and supplied
+  mask/value pairs remain open. Dedicated HG
   internal-call entry 204 names `+0x14` as `enabledLightModes`; wrapper
   `0x1801EB940` reaches the all-record writer at `0x1810D9110`. Installed
   IL2CPP metadata closes its argument as `UInt32 lightModeMask` and
@@ -304,8 +311,8 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The standalone
-  higher-level mask/value producers for loader record `+0x0C`'s shadow-proxy
-  GeometryHandle, the
+  concrete per-pass callers and values for HGTree CreateRendererList's
+  renderFlags mask/value ABI, the
   component-67 standalone native type name, any separate `sceneCullingMask`
   consumer, and target-frame survivor rows remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
@@ -537,9 +544,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the higher-level mask/value producers that deliberately constrain
-   loader record `+0x0C`'s shadow-proxy GeometryHandle and the exact native
-   type-name link for
+1. Resolve the concrete per-pass callers and values supplied to HGTree
+   CreateRendererList's renderFlags mask/value ABI and the exact native type-name link for
    component 67; its serialized LOD-count/range producer is now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
