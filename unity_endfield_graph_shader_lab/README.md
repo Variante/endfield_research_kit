@@ -1614,7 +1614,18 @@ component 67 is shared by type 0 `Render` (`0x181154230/0x181159010`) and type
 9 `MergedRenderCollider` (`0x181153310/0x181157760`). The full payload census
 contains 34,672 Render records in 1,384 files and 2,576,964
 MergedRenderCollider records in 4,720 files, closing native entity ownership
-without inventing a standalone component name. All
+without inventing a standalone component name. StreamingSceneV2 root fields
+6/7 pair native entity-ID groups with archetype descriptions. Their 8-byte
+descriptor rows are `(int16 componentId, int16 elementSize, uint32 auxiliary)`;
+component 67 is exactly `(67,24)`, followed by serialized component initial
+data. Hash-pinned native copier `0x1801F95E0` copies each
+`entityCount*elementSize` slice directly into ECS storage. Across all 83 map
+scopes, the 1,230,041 distinct component-67 IDs exactly equal the distinct
+type-0/type-9 owner set. All 1,305,818 occurrences initialize LOD count 1..6,
+state bytes `8/8/8/0/0`, zero readiness, and one of 102 cumulative renderer
+range patterns; repeated map/entity records are byte-identical. This closes
+the LOD-count/range producer to original game-binary data while leaving the
+standalone native component name open. All
 1,576 DynamicStreaming init/stream payloads contain only tag-2 records and no
 component entry. Dynamic `fb_main` is a separate managed gameplay schema: its
 457 files contain 2,828 `FBDynamicSceneTreeRootComp` rows, while
@@ -1626,12 +1637,12 @@ Native entity-type
 registration core `0x1801FAEC0` consumes 8-byte rows `(int16 id, uint16 size,
 uint32 cumulativeOffset)`, places component storage after byte 8, and exposes
 per-rank size/offsets at archetype `+0x42/+0x44 + 8*rank`. No installed-code
-immediate encodes `(67, 24)`, narrowing the missing row and initial LOD values
-to a runtime or copied descriptor source. Writer `0x181157760`
+immediate encodes `(67, 24)`; the recovered StreamingSceneV2 descriptor/blob
+path supplies that row and its initial LOD values. Writer `0x181157760`
 also closes a second direct-availability initializer: it marks either every LOD/subresource
 available or only the terminal LOD and the exact readiness range selected by
-the cumulative endpoints. It consumes but does not produce the LOD count or
-endpoints.
+the cumulative endpoints. It consumes the serialized LOD count/endpoints
+rather than inferring them.
 Dispatch segment `0x181079FB1` selects the
 LOD variants. The direct path selects
 `minSquared < distanceSquared <= maxSquared`; the scaled path tests
@@ -1649,7 +1660,7 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 standalone native type name and LOD-count/range producer, unrelated
+bytes, component-67 standalone native type name, unrelated
 scheduled consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.
