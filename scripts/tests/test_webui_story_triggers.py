@@ -321,9 +321,14 @@ for (const [key, category] of [
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("arm.siblingExclusiveQuestIds", source)
         self.assertIn("arm.storyEvidence", source)
+        self.assertIn("arm.authoredSourceEvidence", source)
         self.assertIn("arm.relatedOriginalFiles", source)
         self.assertIn('t("questForkArmCorridor")', source)
         self.assertIn('t("questForkArmStoryEvidence")', source)
+        self.assertIn('t("questForkArmSourceEvidence")', source)
+        self.assertIn("row.conditionTypes", source)
+        self.assertIn("row.clientActionTypes", source)
+        self.assertIn("row.trackingTypes", source)
         self.assertIn("They do not prove that the server selected the arm", source)
 
     def test_mission_pipeline_surfaces_shared_proxy_candidate_topology(self) -> None:

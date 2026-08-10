@@ -649,16 +649,26 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }), encoding="utf-8")
             levelscript = original_root / "levelscript.json"
             levelscript.write_text("{}", encoding="utf-8")
+            leveldata = original_root / "leveldata.json"
+            leveldata.write_text('{"task":1}', encoding="utf-8")
             dialog_tree = original_root / "dialog_tree.json"
             dialog_tree.write_text('{"tree":1}', encoding="utf-8")
             mission_source = original_root / "m1.json"
-            mission_source.write_text('{"missionId":"m1"}', encoding="utf-8")
+            mission_source.write_text(json.dumps({
+                "missionId": "m1",
+                "questDic": {
+                    "m1_q#1": {},
+                    "m1_q#2": {},
+                    "m1_q#3": {},
+                },
+            }), encoding="utf-8")
             topology = pipeline.build_quest_fork_semantics([
                 {"id": "m1_q#1", "successors": ["m1_q#2", "m1_q#3"], "prev": []},
                 {"id": "m1_q#2", "successors": [], "prev": ["m1_q#1"]},
                 {"id": "m1_q#3", "successors": [], "prev": ["m1_q#1"]},
             ], mission_source)
             mission_payload = {
+                "mission": {"source": mission_source.relative_to(root).as_posix()},
                 "questTopology": topology,
                 "nodes": [
                     {
@@ -666,6 +676,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     },
                     {
                         "id": "m1_q#2",
+                        "levelScriptTaskDependencies": [{
+                            "relatedOriginalFiles": [{
+                                "kind": "level_data",
+                                "relationship": "exact_task_carrier",
+                                "sourceFile": leveldata.relative_to(root).as_posix(),
+                                "sha256": hashlib.sha256(leveldata.read_bytes()).hexdigest(),
+                            }],
+                        }],
                         "dialogTreeDefinitions": [{
                             "sceneKey": "dlg_m1_1",
                             "sourceFile": dialog_tree.relative_to(root).as_posix(),
@@ -745,12 +763,96 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 [row["key"] for row in arms[0]["storyEvidence"]],
                 ["dlg_m1_1", "radio_m1_1"],
             )
-            self.assertEqual(len(arms[0]["relatedOriginalFiles"]), 2)
+            self.assertEqual(len(arms[0]["relatedOriginalFiles"]), 4)
             self.assertTrue(all(row["sha256"] for row in arms[0]["relatedOriginalFiles"]))
+            self.assertEqual(result["counts"]["armsWithRelatedOriginalFiles"], 2)
+            self.assertEqual(result["counts"]["authoredQuestSourcePlacements"], 2)
+            self.assertEqual(
+                arms[0]["authoredSourceEvidence"][0]["questId"],
+                "m1_q#2",
+            )
+            self.assertIn(
+                "mission_runtime_quest_definition",
+                arms[0]["authoredSourceEvidence"][0]["evidenceKinds"],
+            )
+            self.assertIn(
+                "exact_task_carrier",
+                arms[0]["authoredSourceEvidence"][0]["evidenceKinds"],
+            )
+            self.assertEqual(len(arms[1]["relatedOriginalFiles"]), 1)
             self.assertFalse(result["evidencePolicy"]["usesOcrOrManualOrder"])
             self.assertEqual(
                 published["storyOrder"]["branches"]["questForks"][0],
                 published["questTopology"]["forks"][0],
+            )
+
+    def test_publish_quest_fork_arm_evidence_fails_closed_for_missing_original_quest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output_root = root / "webui" / "data" / "mission_pipeline"
+            mission_root = output_root / "missions"
+            sidecar_root = root / "webui" / "data" / "lang" / "CN" / "mission"
+            report_root = root / "reports" / "mission_order"
+            original_root = root / "export_full" / "structured"
+            mission_root.mkdir(parents=True)
+            sidecar_root.mkdir(parents=True)
+            report_root.mkdir(parents=True)
+            original_root.mkdir(parents=True)
+            action_audit = report_root / "action_names.json"
+            action_audit.write_text('{"metadata":{}}', encoding="utf-8")
+            mission_source = original_root / "m1.json"
+            mission_source.write_text(json.dumps({
+                "missionId": "m1",
+                "questDic": {"m1_q#1": {}, "m1_q#2": {}},
+            }), encoding="utf-8")
+            topology = pipeline.build_quest_fork_semantics([
+                {"id": "m1_q#1", "successors": ["m1_q#2", "m1_q#3"], "prev": []},
+                {"id": "m1_q#2", "successors": [], "prev": ["m1_q#1"]},
+                {"id": "m1_q#3", "successors": [], "prev": ["m1_q#1"]},
+            ], mission_source)
+            (mission_root / "m1.json").write_text(json.dumps({
+                "mission": {"source": mission_source.relative_to(root).as_posix()},
+                "questTopology": topology,
+                "nodes": [{"id": quest_id} for quest_id in (
+                    "m1_q#1", "m1_q#2", "m1_q#3"
+                )],
+            }), encoding="utf-8")
+            (sidecar_root / "m1.json").write_text(json.dumps({
+                "flow": {"quests": [
+                    {"id": quest_id, "storyConnections": []}
+                    for quest_id in ("m1_q#1", "m1_q#2", "m1_q#3")
+                ]},
+            }), encoding="utf-8")
+            audit_contract = {
+                "status": "validated",
+                "sourceFile": action_audit.relative_to(root).as_posix(),
+                "sourceSha256": hashlib.sha256(action_audit.read_bytes()).hexdigest().upper(),
+            }
+            with patch.object(pipeline, "ROOT", root), patch.object(
+                pipeline, "ACTIONBASE_FORMATTER_NAME_AUDIT", audit_contract
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    r"validator=quest_fork_arm_evidence gate=corridorQuestsInOriginalQuestDic .*actual=\['m1_q#3'\]",
+                ):
+                    pipeline.publish_quest_fork_arm_evidence(
+                        {"missions": [{"id": "m1", "file": "missions/m1.json"}]},
+                        output_root,
+                        root / "webui" / "data" / "lang",
+                        "CN",
+                    )
+            failed_index = json.loads(
+                (output_root / "index.json").read_text(encoding="utf-8")
+            )
+            validation = failed_index["questForkArmEvidence"]["validation"]
+            self.assertEqual(validation["status"], "validation_failed")
+            self.assertEqual(
+                validation["failures"][0]["gate"],
+                "corridorQuestsInOriginalQuestDic",
+            )
+            self.assertEqual(
+                validation["failures"][0]["sourceHashes"]["missionRuntimeSha256"],
+                hashlib.sha256(mission_source.read_bytes()).hexdigest(),
             )
 
     def test_publish_quest_fork_arm_evidence_fails_closed_for_missing_sidecar(self):
