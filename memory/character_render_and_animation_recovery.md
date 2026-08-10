@@ -245,6 +245,16 @@ NPC archetypes are imported as labeled source kits.
   a non-empty component list whose first entry is Transform. These values are
   converter bits, not ECS component IDs, so they narrow the component-67
   search to the native LOD-state producer rather than either managed name.
+  The native entity lifecycle registry is now closed separately: one
+  `ECSEntityType` record is `0x288` bytes, with ten `0x40`-byte callback
+  slots at `+0x08`. Installed `EntityTransition` metadata names slots 0..9.
+  All 105 calls to installer `0x1811701B0` partition exactly between two
+  hash-pinned `StreamingGameplayManager` constructors (52/53). Both install
+  the same component-67 callbacks for `Render` and `MergedRenderCollider` at
+  `UnloadedToLoading`, `LoadingToLoaded`, `UnloadingToUnloaded`, and
+  `LoadingToUnloaded`; waiting slots 2/7 are unbound. The managed constructor
+  replaces only `Water` and `WaterDecal`, so it does not overwrite either
+  component-67 owner registry.
   The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
   converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
   binding, excluding that static constructor delegate route. A direct installed-VFS
@@ -269,10 +279,10 @@ NPC archetypes are imported as labeled source kits.
   records) finds neither HGTree bit 41 nor HLODGroup bit 11 in tag-1 component
   vectors. Native dispatch tables identify tag 1 as MonoEntity, tag 2 as
   native ECS, and tag 3 as Proxy; installed byte-backed enums close all 14
-  `ECSEntityType` and 11 `ProxyEntityType` values. Native slot registration
-  proves component 67 is shared by type 0 `Render` callbacks
-  `0x181154230/0x181159010` and type 9 `MergedRenderCollider` callbacks
-  `0x181153310/0x181157760`. The complete scan counts 34,672 Render records
+  `ECSEntityType`, 11 `ProxyEntityType`, and 10 `EntityTransition` values.
+  The exact native callback map proves component 67 is shared by type 0
+  `Render` and type 9 `MergedRenderCollider` across transitions 1/3/6/8.
+  The complete scan counts 34,672 Render records
   across 1,384 files and 2,576,964 MergedRenderCollider records across 4,720
   files. Entity ownership is therefore closed. Root fields 6/7 pair native
   entity-ID groups with archetype descriptions; each description carries
@@ -554,10 +564,11 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the exact native type-name link for component 67 from the remaining
-   pure-native registration surface; the complete managed `get_id` namespace,
-   serialized LOD-count/range producer, and HGTree renderer-list filter callers
-   are now closed. Then recover the retail
+1. Resolve the exact native type-name link for component 67 by following the
+   now-closed transition callbacks into their remaining native component
+   descriptor/type registry; the complete lifecycle slot map, managed
+   `get_id` namespace, serialized LOD-count/range producer, and HGTree
+   renderer-list filter callers are closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom

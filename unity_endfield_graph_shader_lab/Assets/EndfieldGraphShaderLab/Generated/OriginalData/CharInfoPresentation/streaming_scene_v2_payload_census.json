@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.streaming-scene-v2-payload-census.v4",
+  "schema": "endfield.streaming-scene-v2-payload-census.v5",
   "installedInputs": {
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -170,6 +170,22 @@
       {
         "image": "UnityPlayer.dll", "name": "native ECS callback-slot installer", "virtualAddress": "0x1811701B0", "sizeBytes": 254,
         "sha256": "044cba2341778c80103264855a41dd1b6e5a361641e9d5f36ef67a70f5839e6e"
+      },
+      {
+        "image": "UnityPlayer.dll", "name": "native ECS transition registry initializer", "virtualAddress": "0x181167200", "sizeBytes": 290,
+        "sha256": "69e0dfb947d76975b8a43c4f567044260d80e02d883df0aa93b50d1a2cb72b3d"
+      },
+      {
+        "image": "UnityPlayer.dll", "name": "StreamingGameplayManager allocation constructor", "virtualAddress": "0x181167360", "sizeBytes": 8871,
+        "sha256": "99d0a04b6851c9ab129d85de9810f1df5e04e1972b17571b48edda9ab1c542c5"
+      },
+      {
+        "image": "UnityPlayer.dll", "name": "StreamingGameplayManager system constructor", "virtualAddress": "0x181169A20", "sizeBytes": 19189,
+        "sha256": "80f0f03f4c1d27726d49acc2a9d50ec16f1a22877878f8ff878c52c16291b1c7"
+      },
+      {
+        "image": "UnityPlayer.dll", "name": "script ECS transition registry replacement", "virtualAddress": "0x1811704B0", "sizeBytes": 620,
+        "sha256": "42fb552925f3e57fe205a5ab34af6189f69c122be4ad4e12f6fc5d278a4b1f85"
       }
     ]
   },
@@ -185,7 +201,7 @@
       {"tag": 3, "name": "Proxy"}
     ],
     "nativeEcsConvertFromVirtualAddress": "0x181152810",
-    "nativeEcsRegistry": {"slotCount": 14, "slotStrideBytes": 648, "callbackSlotInstallerVirtualAddress": "0x1811701B0"}
+    "nativeEcsRegistry": {"entityTypeSlotCount": 14, "entityTypeSlotStrideBytes": 648, "callbackSlotCount": 10, "callbackSlotStrideBytes": 64, "callbackArrayOffset": 8, "callbackSlotInstallerVirtualAddress": "0x1811701B0"}
   },
   "entityTypeEnums": {
     "ecs": [
@@ -218,6 +234,19 @@
       {"name": "TreeGrid", "fieldIndex": 296754, "token": "0x0400028C", "value": 9},
       {"name": "GPUParticleSystem", "fieldIndex": 296755, "token": "0x0400028D", "value": 10},
       {"name": "TypeCount", "fieldIndex": 296756, "token": "0x0400028E", "value": 11}
+    ],
+    "transitions": [
+      {"name": "Initializing", "fieldIndex": 296685, "token": "0x04000247", "value": 0},
+      {"name": "UnloadedToLoading", "fieldIndex": 296686, "token": "0x04000248", "value": 1},
+      {"name": "LoadingWaiting", "fieldIndex": 296687, "token": "0x04000249", "value": 2},
+      {"name": "LoadingToLoaded", "fieldIndex": 296688, "token": "0x0400024A", "value": 3},
+      {"name": "UnloadingToLoaded", "fieldIndex": 296689, "token": "0x0400024B", "value": 4},
+      {"name": "LoadedToUnloading", "fieldIndex": 296690, "token": "0x0400024C", "value": 5},
+      {"name": "UnloadingToUnloaded", "fieldIndex": 296691, "token": "0x0400024D", "value": 6},
+      {"name": "UnloadingWaiting", "fieldIndex": 296692, "token": "0x0400024E", "value": 7},
+      {"name": "LoadingToUnloaded", "fieldIndex": 296693, "token": "0x0400024F", "value": 8},
+      {"name": "Destroying", "fieldIndex": 296694, "token": "0x04000250", "value": 9},
+      {"name": "Count", "fieldIndex": 296695, "token": "0x04000251", "value": 10}
     ]
   },
   "component67Owners": {

@@ -687,6 +687,31 @@ STREAMING_SCENE_V2_CREATE_ICALL_VA = 0x1801DE220
 STREAMING_SCENE_V2_CREATE_ICALL_NAME = (
     "UnityEngine.HyperGryph.Streaming.StreamingSceneV2::Create_Injected"
 )
+STREAMING_GAMEPLAY_MANAGER_CREATE_ICALL_INDEX = 601
+STREAMING_GAMEPLAY_MANAGER_CREATE_ICALL_VA = 0x1801DD4B0
+STREAMING_GAMEPLAY_MANAGER_CREATE_ICALL_NAME = (
+    "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager::Create_Injected"
+)
+STREAMING_BIND_ECS_CONVERT_ICALLS = {
+    "bind": (
+        671,
+        0x1801DFA20,
+        "UnityEngine.HyperGryph.Streaming.HGStreamingSceneManager::"
+        "BindECSEntityConvertFuncFromScript",
+    ),
+    "reset": (
+        672,
+        0x1801DFB10,
+        "UnityEngine.HyperGryph.Streaming.HGStreamingSceneManager::"
+        "ResetECSEntityConvertFuncFromScript",
+    ),
+    "isValid": (
+        673,
+        0x1801DFBC0,
+        "UnityEngine.HyperGryph.Streaming.HGStreamingSceneManager::"
+        "IsECSEntityConvertFuncValid",
+    ),
+}
 STREAMING_SCENE_V2_BINARY_BODIES = [
     (
         "UnityPlayer.dll",
@@ -856,6 +881,34 @@ STREAMING_SCENE_V2_BINARY_BODIES = [
         0xFE,
         "044cba2341778c80103264855a41dd1b6e5a361641e9d5f36ef67a70f5839e6e",
     ),
+    (
+        "UnityPlayer.dll",
+        "native ECS transition registry initializer",
+        0x181167200,
+        0x122,
+        "69e0dfb947d76975b8a43c4f567044260d80e02d883df0aa93b50d1a2cb72b3d",
+    ),
+    (
+        "UnityPlayer.dll",
+        "StreamingGameplayManager allocation constructor",
+        0x181167360,
+        0x22A7,
+        "99d0a04b6851c9ab129d85de9810f1df5e04e1972b17571b48edda9ab1c542c5",
+    ),
+    (
+        "UnityPlayer.dll",
+        "StreamingGameplayManager system constructor",
+        0x181169A20,
+        0x4AF5,
+        "80f0f03f4c1d27726d49acc2a9d50ec16f1a22877878f8ff878c52c16291b1c7",
+    ),
+    (
+        "UnityPlayer.dll",
+        "script ECS transition registry replacement",
+        0x1811704B0,
+        0x26C,
+        "42fb552925f3e57fe205a5ab34af6189f69c122be4ad4e12f6fc5d278a4b1f85",
+    ),
 ]
 STREAMING_UNION_DISPATCH_TABLES = {
     "create": (
@@ -884,6 +937,19 @@ STREAMING_ECS_ENTITY_TYPE_FIELDS = {
     "WaterDecal": (296742, 0x04000280, 13),
     "TypeCount": (296743, 0x04000281, 14),
 }
+STREAMING_ENTITY_TRANSITION_FIELDS = {
+    "Initializing": (296685, 0x04000247, 0),
+    "UnloadedToLoading": (296686, 0x04000248, 1),
+    "LoadingWaiting": (296687, 0x04000249, 2),
+    "LoadingToLoaded": (296688, 0x0400024A, 3),
+    "UnloadingToLoaded": (296689, 0x0400024B, 4),
+    "LoadedToUnloading": (296690, 0x0400024C, 5),
+    "UnloadingToUnloaded": (296691, 0x0400024D, 6),
+    "UnloadingWaiting": (296692, 0x0400024E, 7),
+    "LoadingToUnloaded": (296693, 0x0400024F, 8),
+    "Destroying": (296694, 0x04000250, 9),
+    "Count": (296695, 0x04000251, 10),
+}
 STREAMING_PROXY_ENTITY_TYPE_FIELDS = {
     "IrradianceVolume": (296745, 0x04000283, 0),
     "AudioVolume": (296746, 0x04000284, 1),
@@ -897,6 +963,71 @@ STREAMING_PROXY_ENTITY_TYPE_FIELDS = {
     "TreeGrid": (296754, 0x0400028C, 9),
     "GPUParticleSystem": (296755, 0x0400028D, 10),
     "TypeCount": (296756, 0x0400028E, 11),
+}
+STREAMING_NATIVE_ECS_REGISTRY_INITIALIZER_VA = 0x181167200
+STREAMING_NATIVE_ECS_CALLBACK_INSTALLER_VA = 0x1811701B0
+STREAMING_NATIVE_ECS_SCRIPT_REPLACEMENT_VA = 0x1811704B0
+STREAMING_NATIVE_ECS_REGISTRY_CONSTRUCTORS = {
+    "allocation": {
+        "virtualAddress": 0x181167360,
+        "endVirtualAddress": 0x181169607,
+        "callerVirtualAddress": 0x1801DD52F,
+        "installerCallCount": 52,
+        "entityTypes": [4, 5, 6, 7, 10, 8, 11, 9, 0],
+    },
+    "system": {
+        "virtualAddress": 0x181169A20,
+        "endVirtualAddress": 0x18116E515,
+        "callerVirtualAddress": 0x180FC7DBB,
+        "installerCallCount": 53,
+        "entityTypes": [4, 5, 6, 7, 10, 8, 11, 9, 0],
+    },
+}
+STREAMING_COMPONENT67_NATIVE_CALLBACKS = {
+    "allocation": {
+        9: [
+            (0, 0x180076BE0, 0x18116907C, 0x18116909F, 0x1811690AF),
+            (1, 0x181153310, 0x1811690D3, 0x1811690F6, 0x181169106),
+            (3, 0x181157760, 0x18116912A, 0x18116914D, 0x18116915D),
+            (4, 0x18115AE10, 0x181169181, 0x1811691A4, 0x1811691B4),
+            (5, 0x18115B330, 0x1811691D8, 0x1811691FB, 0x18116920B),
+            (6, 0x18115BC90, 0x18116922F, 0x181169252, 0x181169262),
+            (8, 0x18115C8A0, 0x181169286, 0x1811692A9, 0x1811692B9),
+            (9, 0x180076BE0, 0x1811692DD, 0x181169300, 0x181169310),
+        ],
+        0: [
+            (0, 0x180076BE0, 0x181169355, 0x181169378, 0x181169388),
+            (1, 0x181154230, 0x1811693AC, 0x1811693C7, 0x1811693D4),
+            (3, 0x181159010, 0x1811693E3, 0x1811693FE, 0x18116940B),
+            (4, 0x18115AEE0, 0x18116941A, 0x181169435, 0x181169442),
+            (5, 0x18115B400, 0x181169451, 0x18116946C, 0x181169479),
+            (6, 0x18115BFC0, 0x181169488, 0x1811694A3, 0x1811694B0),
+            (8, 0x18115C8A0, 0x1811694BF, 0x1811694DA, 0x1811694E7),
+            (9, 0x180076BE0, 0x1811694F6, 0x181169511, 0x18116951E),
+        ],
+    },
+    "system": {
+        9: [
+            (0, 0x180076BE0, 0x18116B6B9, 0x18116B6DC, 0x18116B6EC),
+            (1, 0x181153310, 0x18116B717, 0x18116B73A, 0x18116B74A),
+            (3, 0x181157760, 0x18116B775, 0x18116B798, 0x18116B7A8),
+            (4, 0x18115AE10, 0x18116B7D3, 0x18116B7F6, 0x18116B806),
+            (5, 0x18115B330, 0x18116B831, 0x18116B854, 0x18116B864),
+            (6, 0x18115BC90, 0x18116B88F, 0x18116B8B2, 0x18116B8C2),
+            (8, 0x18115C8A0, 0x18116B8ED, 0x18116B910, 0x18116B920),
+            (9, 0x180076BE0, 0x18116B94B, 0x18116B96E, 0x18116B97E),
+        ],
+        0: [
+            (0, 0x180076BE0, 0x18116B9AF, 0x18116B9D2, 0x18116B9E2),
+            (1, 0x181154230, 0x18116B9F3, 0x18116BA16, 0x18116BA26),
+            (3, 0x181159010, 0x18116BA37, 0x18116BA5A, 0x18116BA6A),
+            (4, 0x18115AEE0, 0x18116BA7B, 0x18116BA9E, 0x18116BAAE),
+            (5, 0x18115B400, 0x18116BABF, 0x18116BAE2, 0x18116BAF2),
+            (6, 0x18115BFC0, 0x18116BB03, 0x18116BB26, 0x18116BB36),
+            (8, 0x18115C8A0, 0x18116BB47, 0x18116BB6A, 0x18116BB7A),
+            (9, 0x180076BE0, 0x18116BB8B, 0x18116BBAE, 0x18116BBBE),
+        ],
+    },
 }
 STREAMING_SCENE_V2_COMPONENT_BITS = [
     {"bit": 0, "name": "Transform", "componentCount": 66514, "fileCount": 38452},
@@ -3224,6 +3355,346 @@ def validate_streaming_byte_enum_fields(
     return rows
 
 
+def validate_native_ecs_callback_registry(
+    unity_image: PEImage,
+    game_image: PEImage,
+    transition_rows: list[dict[str, object]],
+) -> dict[str, object]:
+    """Close the native ECS entity-transition registry used by component 67."""
+
+    transition_names = {
+        int(row["value"]): str(row["name"])
+        for row in transition_rows
+        if row["name"] != "Count"
+    }
+    require(
+        "native_ecs_transition_slot_names",
+        sorted(transition_names),
+        list(range(10)),
+        GLOBAL_METADATA,
+    )
+
+    require(
+        "native_ecs_registry_initializer_layout",
+        unity_image.read(0x181167211, 0x4B),
+        bytes.fromhex(
+            "881148897940488bd94889b9800000004889b9c00000004889b900010000"
+            "4889b9400100004889b9800100004889b9c00100004889b900020000"
+            "4889b9400200004889b98002000080fa0e"
+        ),
+        unity_image.path,
+    )
+    require(
+        "native_ecs_callback_installer_index_layout",
+        unity_image.read(0x1811701C3, 0x0C),
+        bytes.fromhex("0fb6da498bf8488bf180fb0a"),
+        unity_image.path,
+    )
+    require(
+        "native_ecs_callback_installer_slot_address",
+        unity_image.read(0x181170283, 0x11),
+        bytes.fromhex("4883c608488bcb48c1e106488bd74803ce"),
+        unity_image.path,
+    )
+
+    def rel32_target(call_site: int, check: str) -> int:
+        body = unity_image.read(call_site, 5)
+        require(f"{check}_opcode", body[0], 0xE8, unity_image.path)
+        return call_site + 5 + struct.unpack_from("<i", body, 1)[0]
+
+    def resolve_hg_icall(index: int) -> tuple[str, int]:
+        name_pointer = unity_image.u64(UNITY_HG_ICALL_NAME_TABLE_VA + index * 8)
+        target = unity_image.u64(UNITY_HG_ICALL_FUNCTION_TABLE_VA + index * 8)
+        return unity_image.cstring(name_pointer), target
+
+    create_name, create_target = resolve_hg_icall(
+        STREAMING_GAMEPLAY_MANAGER_CREATE_ICALL_INDEX
+    )
+    require(
+        "native_ecs_registry_create_icall_name",
+        create_name,
+        STREAMING_GAMEPLAY_MANAGER_CREATE_ICALL_NAME,
+        unity_image.path,
+    )
+    require(
+        "native_ecs_registry_create_icall_target",
+        create_target,
+        STREAMING_GAMEPLAY_MANAGER_CREATE_ICALL_VA,
+        unity_image.path,
+    )
+    script_icalls = {}
+    for label, (index, expected_target, expected_name) in (
+        STREAMING_BIND_ECS_CONVERT_ICALLS.items()
+    ):
+        actual_name, actual_target = resolve_hg_icall(index)
+        require(
+            f"native_ecs_registry_{label}_icall_name",
+            actual_name,
+            expected_name,
+            unity_image.path,
+        )
+        require(
+            f"native_ecs_registry_{label}_icall_target",
+            actual_target,
+            expected_target,
+            unity_image.path,
+        )
+        script_icalls[label] = {
+            "index": index,
+            "name": actual_name,
+            "targetVirtualAddress": f"0x{actual_target:X}",
+        }
+
+    constructor_rows = []
+    installer_sites = find_relative_call_sites(
+        unity_image, STREAMING_NATIVE_ECS_CALLBACK_INSTALLER_VA
+    )
+    require(
+        "native_ecs_callback_installer_call_count",
+        len(installer_sites),
+        105,
+        unity_image.path,
+    )
+    covered_installer_sites = []
+    for label, spec in STREAMING_NATIVE_ECS_REGISTRY_CONSTRUCTORS.items():
+        begin = int(spec["virtualAddress"])
+        end = int(spec["endVirtualAddress"])
+        sites = [site for site in installer_sites if begin <= site < end]
+        require(
+            f"native_ecs_registry_{label}_installer_call_count",
+            len(sites),
+            spec["installerCallCount"],
+            unity_image.path,
+        )
+        require(
+            f"native_ecs_registry_{label}_caller",
+            find_relative_call_sites(unity_image, begin),
+            [spec["callerVirtualAddress"]],
+            unity_image.path,
+        )
+        covered_installer_sites.extend(sites)
+        constructor_rows.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{begin:X}",
+                "endVirtualAddress": f"0x{end:X}",
+                "callerVirtualAddress": f"0x{int(spec['callerVirtualAddress']):X}",
+                "installerCallCount": len(sites),
+                "registeredEntityTypes": spec["entityTypes"],
+            }
+        )
+    require(
+        "native_ecs_callback_installer_calls_partitioned",
+        sorted(covered_installer_sites),
+        installer_sites,
+        unity_image.path,
+    )
+    require(
+        "native_ecs_registry_initializer_call_count",
+        len(
+            find_relative_call_sites(
+                unity_image, STREAMING_NATIVE_ECS_REGISTRY_INITIALIZER_VA
+            )
+        ),
+        19,
+        unity_image.path,
+    )
+    require(
+        "native_ecs_script_replacement_caller",
+        find_relative_call_sites(
+            unity_image, STREAMING_NATIVE_ECS_SCRIPT_REPLACEMENT_VA
+        ),
+        [0x1801DFAF4],
+        unity_image.path,
+    )
+
+    component67_callbacks = {
+        0x181153310,
+        0x181154230,
+        0x181157760,
+        0x181159010,
+        0x18115BC90,
+        0x18115BFC0,
+        0x18115C8A0,
+    }
+    callback_maps = {}
+    registration_rows = []
+    for constructor_label, entity_rows in (
+        STREAMING_COMPONENT67_NATIVE_CALLBACKS.items()
+    ):
+        callback_maps[constructor_label] = {}
+        for entity_type, rows in entity_rows.items():
+            decoded = []
+            for slot, callback, callback_source, slot_source, call_site in rows:
+                lea = unity_image.read(callback_source, 7)
+                require(
+                    f"native_ecs_{constructor_label}_type{entity_type}_slot{slot}_callback_lea_opcode",
+                    lea[:3],
+                    bytes.fromhex("488d05"),
+                    unity_image.path,
+                )
+                actual_callback = (
+                    callback_source + 7 + struct.unpack_from("<i", lea, 3)[0]
+                )
+                require(
+                    f"native_ecs_{constructor_label}_type{entity_type}_slot{slot}_callback",
+                    actual_callback,
+                    callback,
+                    unity_image.path,
+                )
+                expected_slot_instruction = (
+                    bytes.fromhex("33d2") if slot == 0 else bytes((0xB2, slot))
+                )
+                require(
+                    f"native_ecs_{constructor_label}_type{entity_type}_slot{slot}_index",
+                    unity_image.read(slot_source, 2),
+                    expected_slot_instruction,
+                    unity_image.path,
+                )
+                require(
+                    f"native_ecs_{constructor_label}_type{entity_type}_slot{slot}_installer",
+                    rel32_target(
+                        call_site,
+                        f"native_ecs_{constructor_label}_type{entity_type}_slot{slot}_installer",
+                    ),
+                    STREAMING_NATIVE_ECS_CALLBACK_INSTALLER_VA,
+                    unity_image.path,
+                )
+                decoded.append((slot, callback))
+                registration_rows.append(
+                    {
+                        "constructor": constructor_label,
+                        "entityType": entity_type,
+                        "transition": slot,
+                        "transitionName": transition_names[slot],
+                        "callbackVirtualAddress": f"0x{callback:X}",
+                        "callbackSourceVirtualAddress": f"0x{callback_source:X}",
+                        "installerCallVirtualAddress": f"0x{call_site:X}",
+                        "accessesComponent67": callback in component67_callbacks,
+                    }
+                )
+            callback_maps[constructor_label][entity_type] = decoded
+    require(
+        "native_ecs_component67_type0_callback_map_matches",
+        callback_maps["allocation"][0],
+        callback_maps["system"][0],
+        unity_image.path,
+    )
+    require(
+        "native_ecs_component67_type9_callback_map_matches",
+        callback_maps["allocation"][9],
+        callback_maps["system"][9],
+        unity_image.path,
+    )
+
+    active_transitions = {
+        entity_type: sorted(
+            {
+                row[0]
+                for row in callback_maps["system"][entity_type]
+                if row[1] in component67_callbacks
+            }
+        )
+        for entity_type in (0, 9)
+    }
+    require(
+        "native_ecs_component67_type0_active_transitions",
+        active_transitions[0],
+        [1, 3, 6, 8],
+        unity_image.path,
+    )
+    require(
+        "native_ecs_component67_type9_active_transitions",
+        active_transitions[9],
+        [1, 3, 6, 8],
+        unity_image.path,
+    )
+
+    ctor = game_image.read(0x18394A2F0, 0x2F60)
+    require(
+        "native_ecs_managed_streaming_scene_manager_ctor_sha256",
+        hashlib.sha256(ctor).hexdigest(),
+        EXPECTED_HASHES["streaming_scene_manager_ctor_body"],
+        game_image.path,
+    )
+    managed_overrides = []
+    for entity_type, argument_offset, call_offset in (
+        (1, 0x1E89, 0x1E9C),
+        (13, 0x1EC7, 0x1EDA),
+    ):
+        require(
+            f"native_ecs_managed_override_type{entity_type}_argument",
+            ctor[argument_offset : argument_offset + 2],
+            bytes((0xB1, entity_type)),
+            game_image.path,
+        )
+        require(
+            f"native_ecs_managed_override_type{entity_type}_call",
+            relative_call_target(ctor, 0x18394A2F0, call_offset),
+            0x183949EF0,
+            game_image.path,
+        )
+        managed_overrides.append(entity_type)
+    require(
+        "native_ecs_component67_owners_not_managed_overrides",
+        sorted(set(managed_overrides) & {0, 9}),
+        [],
+        game_image.path,
+    )
+
+    entity_names = {0: "Render", 9: "MergedRenderCollider"}
+    return {
+        "registryLayout": {
+            "sizeBytes": 0x288,
+            "entityTypeOffset": "0x00",
+            "callbackArrayOffset": "0x08",
+            "callbackSlotCount": 10,
+            "callbackSlotStrideBytes": 0x40,
+            "initializerVirtualAddress": (
+                f"0x{STREAMING_NATIVE_ECS_REGISTRY_INITIALIZER_VA:X}"
+            ),
+            "installerVirtualAddress": (
+                f"0x{STREAMING_NATIVE_ECS_CALLBACK_INSTALLER_VA:X}"
+            ),
+        },
+        "constructors": constructor_rows,
+        "installerCallCount": len(installer_sites),
+        "component67Owners": [
+            {
+                "entityType": entity_type,
+                "entityTypeName": entity_names[entity_type],
+                "activeTransitions": [
+                    {
+                        "value": slot,
+                        "name": transition_names[slot],
+                    }
+                    for slot in active_transitions[entity_type]
+                ],
+                "unboundWaitingTransitions": [
+                    {"value": 2, "name": transition_names[2]},
+                    {"value": 7, "name": transition_names[7]},
+                ],
+            }
+            for entity_type in (0, 9)
+        ],
+        "verifiedRegistrations": registration_rows,
+        "scriptInternalCalls": script_icalls,
+        "managedScriptOverrides": [
+            {"entityType": 1, "entityTypeName": "Water"},
+            {"entityType": 13, "entityTypeName": "WaterDecal"},
+        ],
+        "component67OwnerRegistriesReplacedByManagedScript": False,
+        "boundary": (
+            "both native StreamingGameplayManager construction paths install "
+            "the same Render/type-0 and MergedRenderCollider/type-9 callback "
+            "maps. Component 67 is touched only during UnloadedToLoading, "
+            "LoadingToLoaded, UnloadingToUnloaded, and LoadingToUnloaded; the "
+            "managed constructor replaces only Water/type-1 and "
+            "WaterDecal/type-13 registries"
+        ),
+    }
+
+
 def decode_il2cpp_compressed_uint32(
     data: bytes, offset: int, end: int
 ) -> tuple[int, int]:
@@ -4885,7 +5356,18 @@ def validate_streaming_scene_v2_payload_census(
             "streaming_proxy_entity_type",
             STREAMING_PROXY_ENTITY_TYPE_FIELDS,
         ),
+        "transitions": validate_streaming_byte_enum_fields(
+            raw_metadata,
+            GLOBAL_METADATA,
+            "streaming_entity_transition",
+            STREAMING_ENTITY_TRANSITION_FIELDS,
+        ),
     }
+    native_callback_registry = validate_native_ecs_callback_registry(
+        unity_image,
+        game_image,
+        entity_type_enums["transitions"],
+    )
     native_entity_dispatch = {
         "runtimeRecordStrideBytes": 56,
         "tables": dispatch_tables,
@@ -4896,8 +5378,11 @@ def validate_streaming_scene_v2_payload_census(
         ],
         "nativeEcsConvertFromVirtualAddress": "0x181152810",
         "nativeEcsRegistry": {
-            "slotCount": 14,
-            "slotStrideBytes": 648,
+            "entityTypeSlotCount": 14,
+            "entityTypeSlotStrideBytes": 648,
+            "callbackSlotCount": 10,
+            "callbackSlotStrideBytes": 64,
+            "callbackArrayOffset": 8,
             "callbackSlotInstallerVirtualAddress": "0x1811701B0",
         },
     }
@@ -5056,7 +5541,7 @@ def validate_streaming_scene_v2_payload_census(
         (
             "schema",
             data.get("schema"),
-            "endfield.streaming-scene-v2-payload-census.v4",
+            "endfield.streaming-scene-v2-payload-census.v5",
         ),
         (
             "unity_player_hash",
@@ -5355,7 +5840,10 @@ def validate_streaming_scene_v2_payload_census(
         "nativeLoader": native,
         "nativeEntityDispatch": entity_dispatch,
         "entityTypeEnums": enums,
-        "component67Owners": owners,
+        "component67Owners": {
+            **owners,
+            "nativeCallbackRegistry": native_callback_registry,
+        },
         "component67InitialData": initial_data,
         "serializedMapConfigs": configs,
         "installedVfs": vfs,
@@ -9343,8 +9831,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v38",
-        "status": "component67_managed_name_surface_exhausted",
+        "schema": "endfield.recovered-light-cull-cap.v39",
+        "status": "component67_native_transition_registry_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -9505,6 +9993,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "concrete constant-return bodies. Its exposed ID set contains no "
             "67, proving that component 67 has no managed name on this shipped "
             "surface rather than merely excluding two likely candidates. The native "
+            "ECS transition registry is now closed as a 0x288-byte entity-type "
+            "record with ten 0x40-byte EntityTransition callback slots at +0x08. "
+            "Installed metadata names all ten transitions, and all 105 callback-"
+            "installer calls are partitioned between two hash-pinned "
+            "StreamingGameplayManager construction paths (52 and 53 calls). "
+            "Both paths install identical component-67 callbacks for Render/type 0 "
+            "and MergedRenderCollider/type 9 at UnloadedToLoading, "
+            "LoadingToLoaded, UnloadingToUnloaded, and LoadingToUnloaded. The "
+            "managed StreamingSceneManagerScript replaces only Water/type 1 and "
+            "WaterDecal/type 13 registries, so it does not displace either native "
+            "component-67 owner path. The "
             "entity-type registration core now closes each 8-byte descriptor "
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
@@ -9776,6 +10275,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the separate DynamicStreaming gameplay-tree route with 2,828 TreeRootComp rows and enum identities Tree=11/TreeRootComp=64",
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
                 "the complete 30-declaration/29-body UnityEngine.HyperGryph.ECS Int32 get_id census, codegen pointer slots, constant values, and absence of component id 67",
+                "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -9830,7 +10330,8 @@ def main() -> int:
         "complete direct renderer-blob lookup/escape census, "
         "Streaming HGTree bit-41/43-slot converter registry, complete managed ECS "
         "get_id census with no id 67, managed LOD-info id 6, "
-        "component-67 separation and native Render/MergedRenderCollider ownership, "
+        "component-67 separation, native Render/MergedRenderCollider ownership, "
+        "ten-slot EntityTransition registry and exact transitions 1/3/6/8, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "
