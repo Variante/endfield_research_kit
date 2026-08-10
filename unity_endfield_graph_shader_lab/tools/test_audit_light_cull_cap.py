@@ -150,6 +150,17 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         self.assertFalse(result["component67Match"])
 
+    def test_render_object_lod_info_component_managed_id_is_6_not_67(
+        self,
+    ) -> None:
+        result = AUDIT.validate_native_handoff(
+            AUDIT.read_native_method_bodies()
+        )["managedRenderObjectLODInfoComponent"]
+        self.assertEqual(result["metadataMethodIndex"], 478390)
+        self.assertEqual(result["metadataToken"], "0x06000252")
+        self.assertEqual(result["componentId"], 6)
+        self.assertFalse(result["component67Match"])
+
     def test_changed_hgtree_component_id_fails_closed(self) -> None:
         bodies = AUDIT.read_native_method_bodies()
         changed = bytearray(bodies["hgtree_component_get_id"])
@@ -162,6 +173,59 @@ class LightCullCapAuditTests(unittest.TestCase):
             r"source=.*GameAssembly.dll; expected=.*actual=",
         ):
             AUDIT.validate_native_handoff(bodies, verify_hashes=False)
+
+    def test_streaming_component_conversion_contract(self) -> None:
+        result = AUDIT.validate_streaming_component_conversion(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        )
+        self.assertEqual(result["internalCall"]["index"], 677)
+        enum = result["streamingComponentType"]
+        self.assertEqual(enum["slotCount"], 43)
+        self.assertEqual(enum["hlodGroupBitIndex"], 11)
+        self.assertEqual(enum["hgtreeBitIndex"], 41)
+        self.assertEqual(enum["selectedFields"]["HGTree"]["value"], 1 << 41)
+        self.assertEqual(
+            result["conversionContract"]["slotStrideBytes"], 0x308
+        )
+        self.assertFalse(
+            result["managedComponentDisambiguation"][
+                "component67MatchesEither"
+            ]
+        )
+
+    def test_changed_streaming_hgtree_enum_value_fails_closed(self) -> None:
+        metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
+        values_offset = 36_439_024
+        hgtree_data_index = 585_112
+        metadata[values_offset + hgtree_data_index] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=streaming_component_HGTree_value; "
+            r"source=.*global-metadata.dat; expected=.*actual=",
+        ):
+            AUDIT.validate_streaming_component_conversion(
+                AUDIT.PEImage(AUDIT.UNITY_PLAYER), bytes(metadata)
+            )
+
+    def test_changed_streaming_converter_registry_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18117B010 and size == 0x1A5:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_streaming_streaming_scene_manager_registry_constructor_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_streaming_component_conversion(image)
 
     def test_unity_native_candidate_producer(self) -> None:
         result = AUDIT.validate_unity_native_producer(AUDIT.PEImage(AUDIT.UNITY_PLAYER))

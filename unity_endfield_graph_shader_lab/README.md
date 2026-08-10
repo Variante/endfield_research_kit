@@ -1576,8 +1576,17 @@ how numeric component IDs become archetype masks: `mask[id >> 6]` receives bit
 478429/token `0x06000279` maps `HGTreeComponent.get_id` to GameAssembly
 `0x184DBCEC0`; the exact body is `mov eax, 0x50; ret`. `HGTreeComponent` is
 therefore ID 80/high-qword bit 16 (`0x10000`), proving that component 67 is a
-separate, still unnamed native LOD-state component. Writer `0x181157760` also closes a
-second direct-availability initializer: it marks either every LOD/subresource
+separate, still unnamed native LOD-state component. The managed
+`RenderObjectLODInfoComponent.get_id` body independently returns 6, excluding
+that similarly named type too. Raw UInt64 field defaults in the installed
+metadata close the separate serialized `StreamingComponentType` values as
+`HLODGroup = 1<<11`, `HGTree = 1<<41`, and `Count = 43`. HG internal-call
+entry 677 reaches the native converter registration path: it constructs 43
+slots at `0x308` bytes each, selects the slot with `bsf(componentTypeMask)`,
+requires a non-empty component list, and requires Transform first. Those are
+serialized converter bits rather than ECS component IDs, so component 67
+remains a native LOD-state identity/producer problem. Writer `0x181157760`
+also closes a second direct-availability initializer: it marks either every LOD/subresource
 available or only the terminal LOD and the exact readiness range selected by
 the cumulative endpoints. It consumes but does not produce the LOD count or
 endpoints.
