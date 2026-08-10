@@ -1535,6 +1535,16 @@ UNITY_HGTREE_BODIES = {
         0x6C4,
         "4ae50616400e412b8c30c649765b11ad1e4906b9f7bf3e5f64a584ddc5027789",
     ),
+    "lod_ecs_resource_request_poller": (
+        0x181172750,
+        0x361,
+        "cda7ec958e46da6e614654cb0b311f3bfae7deac094848c809b1481bc363879c",
+    ),
+    "lod_ecs_transition_task": (
+        0x181172DD0,
+        0x614,
+        "419af56171b4fb28e2010a4ee7688d18f794297008a470914d681a34b44b7f86",
+    ),
     "hg_geometry_get_handle_binding": (
         0x1801EE550,
         0x7E,
@@ -9791,12 +9801,126 @@ def validate_unity_hgtree_renderer_boundary(
                             "pendingMaskWhenRequested": 1,
                         },
                     },
+                    "requestBatchLifecycle": {
+                        "transitionTaskVirtualAddress": "0x181172DD0",
+                        "taskStateByteOffset": "0x01",
+                        "taskRequestCountOffset": "0x0A",
+                        "taskBatchPointerOffset": "0x18",
+                        "callbackContextRoute": "scheduler owner+0x60",
+                        "descriptorInputs": {
+                            "deferredUniqueSet": {
+                                "offset": "callback context+0x50",
+                                "entryStrideBytes": 24,
+                                "countOffset": "0x0C",
+                                "materialization": (
+                                    "reacquire each source/AssetType through "
+                                    "0x180FBFC60 with flags 0xF"
+                                ),
+                            },
+                            "directDescriptorVector": {
+                                "offset": "callback context+0x58",
+                                "entryStrideBytes": 24,
+                                "countOffset": "0x10",
+                                "materialization": "copy each descriptor verbatim",
+                            },
+                            "combinedCount": (
+                                "deferredUniqueSet.count + "
+                                "directDescriptorVector.count"
+                            ),
+                        },
+                        "batchLayout": {
+                            "descriptorVector": "batch+0x00",
+                            "pendingRelationMap": "batch+0x08",
+                            "transitionResourceMap": "batch+0x10",
+                        },
+                        "postMaterialization": (
+                            "store the descriptor count low word at task+0x0A, "
+                            "then destroy and zero callback context+0x50/+0x58"
+                        ),
+                        "poller": {
+                            "virtualAddress": "0x181172750",
+                            "stateField": "resource handle slot+0x10 byte",
+                            "states": [
+                                {
+                                    "value": 0,
+                                    "meaning": "pending; retain the relation",
+                                },
+                                {
+                                    "value": 1,
+                                    "meaning": (
+                                        "ready; publish/update the relation and "
+                                        "remove it from the pending map"
+                                    ),
+                                },
+                                {
+                                    "value": 2,
+                                    "meaning": (
+                                        "terminal non-ready state; remove it from "
+                                        "the pending map"
+                                    ),
+                                },
+                            ],
+                            "unexpectedState": (
+                                "any other nonzero value enters the pinned "
+                                "HG_ALWAYS_ASSERT path"
+                            ),
+                            "completionCondition": "pendingRelationMap.count == 0",
+                        },
+                        "readyHandoff": {
+                            "projections": [
+                                {
+                                    "source": "batch+0x00",
+                                    "destination": "callback context+0x60",
+                                },
+                                {
+                                    "source": "task+0x0A request-count word",
+                                    "destination": "callback context+0x68",
+                                },
+                                {
+                                    "source": "batch+0x10",
+                                    "destination": "callback context+0x70",
+                                },
+                            ],
+                            "transition": {
+                                "name": "LoadingToLoaded",
+                                "value": 3,
+                                "registrySlotOffset": "0x18",
+                            },
+                            "callbacks": [
+                                {
+                                    "entityType": 0,
+                                    "entityTypeName": "Render",
+                                    "virtualAddress": "0x181159010",
+                                    "effect": (
+                                        "resolve ready Material/Mesh/shadow-proxy "
+                                        "handles into runtime records and complete "
+                                        "or fall back the initial LOD0 state"
+                                    ),
+                                },
+                                {
+                                    "entityType": 9,
+                                    "entityTypeName": "MergedRenderCollider",
+                                    "virtualAddress": "0x181157760",
+                                    "effect": (
+                                        "resolve the same resource triplet and "
+                                        "initialize all-LOD or terminal-LOD "
+                                        "availability"
+                                    ),
+                                },
+                            ],
+                        },
+                    },
                     "closedBoundary": (
                         "LOD selection, pending-mask writes, source/handle "
                         "triplets, AssetType values, and 24-byte request "
-                        "descriptor emission are closed for both callbacks; "
-                        "the later request-submission continuation and native "
-                        "names for components 67/68..74/75 remain open"
+                        "descriptor emission are closed for both callbacks. "
+                        "The acquire core performs manager bookkeeping; the "
+                        "outer task then materializes both descriptor sources, "
+                        "polls states 0/1/2, and invokes transition 3 with the "
+                        "resource views consumed by the runtime writers. Exact "
+                        "scheduler/thread semantics, the native label for "
+                        "terminal state 2, and native names for components "
+                        "67/68..74/75 remain open"
                     ),
                 },
                 "unloadStateMachine": {
@@ -10427,8 +10551,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v41",
-        "status": "component67_load_request_state_machine_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v42",
+        "status": "component67_resource_request_batch_lifecycle_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -10623,6 +10747,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "component-75 HLOD-level byte. Both callbacks acquire the exact "
             "Material/Mesh/shadow-proxy-Mesh triplet and append 24-byte source/"
             "AssetType/handle descriptors at transition context+0x58. The "
+            "acquire core already performs resource-manager bookkeeping; a "
+            "hash-pinned outer transition task then combines the callback "
+            "context+0x50 unique set and +0x58 direct descriptors into one "
+            "request batch. Its poller retains state 0, publishes and removes "
+            "ready state 1, removes terminal non-ready state 2, and asserts on "
+            "other nonzero states. Once the pending map is empty, the task "
+            "projects the descriptor/resource views into callback context "
+            "+0x60/+0x68/+0x70 and invokes transition 3 LoadingToLoaded. The "
+            "already pinned type-0/type-9 callbacks then resolve ready "
+            "Material/Mesh/shadow-proxy handles into runtime records and "
+            "complete the corresponding LOD availability state. The "
             "entity-type registration core now closes each 8-byte descriptor "
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
@@ -10679,7 +10814,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The standalone native type names for components 67 through 75, "
-            "the post-descriptor request-submission continuation, "
+            "the exact native label for terminal resource state 2, outer "
+            "transition-task scheduling/thread semantics, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -10898,6 +11034,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
                 "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
                 "HGLODStreamingSystem internal calls 273..282, state+0x38/+0x39/+0x3C/+0x474 controls, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
+                "the component-67 outer request-batch lifecycle: callback-context +0x50/+0x58 descriptor materialization, task+0x18 batch and +0x0A count, resource states 0/1/2, completion polling, callback-context +0x60/+0x68/+0x70 projection, and transition-3 runtime Material/Mesh/shadow-proxy writeback",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -10908,7 +11045,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
                 "the standalone native component type names for components 67 through 75",
-                "the post-descriptor resource request-submission continuation",
+                "the exact native label for terminal resource state 2",
+                "outer transition-task scheduling and thread semantics",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -10956,7 +11094,8 @@ def main() -> int:
         "component-67 separation, native Render/MergedRenderCollider ownership, "
         "ten-slot EntityTransition registry and exact transitions 1/3/6/8, "
         "resource-capacity companions, named LOD-streaming controls and "
-        "transition-1 load-request plus transition-6/8 teardown semantics, "
+        "transition-1 request-batch/poll/transition-3 writeback plus "
+        "transition-6/8 teardown semantics, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "

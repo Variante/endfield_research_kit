@@ -1360,6 +1360,43 @@ class LightCullCapAuditTests(unittest.TestCase):
             "component 75",
             load["render"]["streamingEnabled"]["hlodLevel"],
         )
+        batch = load["requestBatchLifecycle"]
+        self.assertEqual(batch["transitionTaskVirtualAddress"], "0x181172DD0")
+        self.assertEqual(batch["taskBatchPointerOffset"], "0x18")
+        self.assertEqual(
+            batch["descriptorInputs"]["deferredUniqueSet"]["offset"],
+            "callback context+0x50",
+        )
+        self.assertEqual(
+            batch["descriptorInputs"]["directDescriptorVector"]["offset"],
+            "callback context+0x58",
+        )
+        self.assertEqual(
+            batch["descriptorInputs"]["combinedCount"],
+            "deferredUniqueSet.count + directDescriptorVector.count",
+        )
+        poller = batch["poller"]
+        self.assertEqual(poller["virtualAddress"], "0x181172750")
+        self.assertEqual(
+            [row["value"] for row in poller["states"]],
+            [0, 1, 2],
+        )
+        self.assertIn("terminal non-ready", poller["states"][2]["meaning"])
+        handoff = batch["readyHandoff"]
+        self.assertEqual(handoff["transition"]["value"], 3)
+        self.assertEqual(
+            [row["destination"] for row in handoff["projections"]],
+            [
+                "callback context+0x60",
+                "callback context+0x68",
+                "callback context+0x70",
+            ],
+        )
+        self.assertEqual(
+            [row["virtualAddress"] for row in handoff["callbacks"]],
+            ["0x181159010", "0x181157760"],
+        )
+        self.assertNotIn("request-submission continuation", load["closedBoundary"])
         component_mask = ecs_state["componentIdMaskRegistration"]
         self.assertEqual(component_mask["internalCallIndex"], 712)
         self.assertEqual(
@@ -1920,6 +1957,48 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_lod_ecs_initial_completion_writer_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_lod_ecs_resource_request_poller_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181172750 and size == 0x361:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_ecs_resource_request_poller_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_lod_ecs_transition_task_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181172DD0 and size == 0x614:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_ecs_transition_task_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

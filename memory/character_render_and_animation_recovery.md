@@ -280,7 +280,15 @@ NPC archetypes are imported as labeled source kits.
   component-75 HLOD-level byte. Both callbacks acquire the exact
   Material/Mesh/shadow-proxy-Mesh triplet and append 24-byte
   source/AssetType/handle descriptors at transition context `+0x58`. The
-  later submission continuation and standalone component names remain open.
+  acquire core already performs manager bookkeeping. Outer task
+  `0x181172DD0` combines context `+0x50` deferred entries and `+0x58` direct
+  descriptors into a request batch; poller `0x181172750` retains state 0,
+  publishes ready state 1, removes terminal non-ready state 2, and completes
+  when its pending map is empty. It then projects the batch through context
+  `+0x60/+0x68/+0x70` and invokes `LoadingToLoaded`, connecting the requests
+  to the pinned Material/Mesh/shadow-proxy runtime writers and LOD availability
+  updates. The state-2 native label, outer scheduling/thread semantics, and
+  standalone component names remain open.
   The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
   converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
   binding, excluding that static constructor delegate route. A direct installed-VFS
