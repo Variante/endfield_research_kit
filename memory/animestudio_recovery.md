@@ -63,6 +63,12 @@ The normal type-job mode is `auto`: broad Story JSON types run in isolated
 processes while map-filtered asset conversion remains sharded. Reduce
 `--animestudio-jobs` when RAM is constrained.
 
+Endfield-native HGGraphics class IDs recovered from the installed UnityPlayer
+are named directly (`HGTree`, `HGTreeData`, `HGMeshRenderer`, and
+`HGMeshRendererData`). An explicitly selected export-enabled generic TypeTree
+class is retained in a minimal AssetMap; unselected generic objects remain
+omitted, so normal production map scope does not widen.
+
 ## Important boundaries
 
 - Combined Story+asset export must keep Story JSON broad; asset-map filtering

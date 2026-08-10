@@ -1,0 +1,83 @@
+{
+  "schema": "endfield.hgtree-native-serialized-type-census.v1",
+  "installedStreamingAssets": {
+    "fileCount": 966,
+    "totalBytes": 57058764239,
+    "suffixCounts": {
+      ".blc": 17,
+      ".chk": 947,
+      ".json": 2
+    },
+    "relativePathAndSizeSha256": "5c82f20f1e24ab5b1deb8df3b34081fb1223d637875229505080b113bd4415f8"
+  },
+  "nativeSerializedTypes": [
+    {
+      "name": "HGTree",
+      "classId": 748468609,
+      "classIdHex": "0x2C9CB981",
+      "unityPlayerNamePointerSlot": "0x1821252E0",
+      "unityPlayerDescriptorSlot": "0x1821252F8"
+    },
+    {
+      "name": "HGTreeData",
+      "classId": 1496857745,
+      "classIdHex": "0x59383C91",
+      "unityPlayerNamePointerSlot": "0x182125180",
+      "unityPlayerDescriptorSlot": "0x182125198"
+    },
+    {
+      "name": "HGMeshRenderer",
+      "classId": 1351046310,
+      "classIdHex": "0x508754A6",
+      "unityPlayerNamePointerSlot": "0x182125240",
+      "unityPlayerDescriptorSlot": "0x182125258"
+    },
+    {
+      "name": "HGMeshRendererData",
+      "classId": 1358229004,
+      "classIdHex": "0x50F4EE0C",
+      "unityPlayerNamePointerSlot": "0x1821253B0",
+      "unityPlayerDescriptorSlot": "0x1821253C8"
+    }
+  ],
+  "controlledFullScan": {
+    "selectedTypes": [
+      "HGMeshRendererData",
+      "HGTree",
+      "HGTreeData"
+    ],
+    "mapEntryCount": 117,
+    "typeCounts": {
+      "HGMeshRendererData": 117,
+      "HGTree": 0,
+      "HGTreeData": 0
+    },
+    "uniquePhysicalIdentityCount": 117,
+    "uniquePathIdCount": 117,
+    "sourceChunkCount": 1,
+    "sourceChunks": [
+      "7064D8E2/B428C352B17C75CA29122CAACC037A59.chk"
+    ],
+    "normalizedIdentitySha256": "4eb8b092940129454b06549eaecce4e4fe29248b8c9ce16c1f5869033f781331",
+    "rawMapSha256": "f2d30900574b4af68973d8fcdbb9e169f2bc5a9f390eb20b14434be09706002b"
+  },
+  "mapLoadExportGate": {
+    "jsonObjectCount": 117,
+    "typeCounts": {
+      "HGMeshRendererData": 117,
+      "HGTree": 0,
+      "HGTreeData": 0
+    },
+    "classIds": [
+      1358229004
+    ],
+    "uniquePhysicalIdentityCount": 117,
+    "mapAndExportIdentitiesEqual": true
+  },
+  "animestudioSource": {
+    "classIdTypeSha256": "e14cbf9403b8da5c4004a9a441512ffa6b0745d52818ace6aec8bb8645ba8c17",
+    "assetsHelperSha256": "474c636209d2317abcc8c26ac3646cd2a9a13795fd2493e29ce26037451ee288",
+    "minimalMapBehavior": "generic TypeTree objects remain omitted unless their export-enabled native type is explicitly selected"
+  },
+  "boundary": "The installed UnityPlayer descriptor table closes the four numeric native serialized-type identities. A controlled complete StreamingAssets scan and map-load export use HGMeshRendererData as a 117-object positive gate, but find no top-level HGTree or HGTreeData Unity-serialized objects. This excludes that static object surface; proprietary streaming bytes, nested data, and runtime construction remain open."
+}

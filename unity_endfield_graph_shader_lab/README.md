@@ -1594,6 +1594,14 @@ bit 41 is absent. The complete installed-VFS corpus of 117
 `Generated/OriginalData/CharInfoPresentation/hgmesh_renderer_data_component_inventory.json`.
 These results exclude the managed HGTree delegate and generic serialized
 constructor/renderer-data routes without naming the remaining native producer.
+The installed UnityPlayer native descriptor table additionally identifies
+`HGTree=0x2C9CB981` and `HGTreeData=0x59383C91`. A controlled complete
+StreamingAssets map/export scan uses all 117 `HGMeshRendererData` identities
+as its positive gate but finds zero top-level objects of either HGTree type.
+The compact census is
+`Generated/OriginalData/CharInfoPresentation/hgtree_native_serialized_type_census.json`;
+nested data, proprietary streaming `.bytes`, and runtime construction remain
+explicit search surfaces.
 Native entity-type
 registration core `0x1801FAEC0` consumes 8-byte rows `(int16 id, uint16 size,
 uint32 cumulativeOffset)`, places component storage after byte 8, and exposes

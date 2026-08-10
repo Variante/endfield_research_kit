@@ -90,6 +90,13 @@ invalidate an old marker before carrier workers start. Asset-only and
 
 `--types` replaces the default App.config parse/export surface. It does not layer on top of defaults. If GameObject or Animator export is selected, the CLI also parses dependencies such as Texture2D, Material, Animator, or GameObject as needed.
 
+The Endfield fork names the installed native HGGraphics class IDs `HGTree`,
+`HGTreeData`, `HGMeshRenderer`, and `HGMeshRendererData`. These may be used in
+`--types` like built-in classes. Minimal AssetMap generation retains a generic
+TypeTree object only when its export-enabled native type is explicitly
+selected; this supports bounded native-type censuses without broadening normal
+production maps.
+
 ## Integrated VFS Commands
 
 The CLI also exposes the Endfield VFS subcommands used by the WebUI pipeline:

@@ -47,6 +47,17 @@ HGMESH_RENDERER_DATA_INVENTORY = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
     "CharInfoPresentation/hgmesh_renderer_data_component_inventory.json"
 )
+HGTREE_NATIVE_SERIALIZED_TYPE_CENSUS = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
+    "CharInfoPresentation/hgtree_native_serialized_type_census.json"
+)
+ANIMESTUDIO_CLASS_ID_SOURCE = (
+    REPO_ROOT / "tools/AnimeStudio/AnimeStudio/ClassIDType.cs"
+)
+ANIMESTUDIO_ASSET_HELPER_SOURCE = (
+    REPO_ROOT / "tools/AnimeStudio/AnimeStudio/AssetsHelper.cs"
+)
 DEFAULT_EXTRACTED_ROOT = (
     REPO_ROOT
     / "scratch/animestudio/light_cull_cap/"
@@ -70,6 +81,8 @@ EXPECTED_HASHES = {
     "hg_camera_source": "2f0e098481f25f0e77de8d203c7cae1e4d748b4521d5157af0ab1aaa1163205a",
     "ifix_state": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
     "hgmesh_renderer_data_source": "af62293a829675951bbc135b0ba51444f72c8b288a0043617ed0c4300c6feae0",
+    "animestudio_class_id_source": "e14cbf9403b8da5c4004a9a441512ffa6b0745d52818ace6aec8bb8645ba8c17",
+    "animestudio_asset_helper_source": "474c636209d2317abcc8c26ac3646cd2a9a13795fd2493e29ce26037451ee288",
     "do_ecs_culling_body": "bcbfa96588743701a5d1992256c68f193e624dc01ead47e86b80eb0a7653151b",
     "cull_lights_injected_body": "90fe3e38d69fd29a65c4fdc3e472199d9fa0e67733d220875cff6925b4f25503",
     "cull_lights_internal_body": "552b658de9533980b813706c457551aa508c0a2d0fa30dd9817a166898c73564",
@@ -296,6 +309,33 @@ MANAGED_STREAMING_COMPONENT_BINDINGS = [
     ("Volume", 0x2B8F, 0x2B99, 1 << 15),
     ("HGVolumetricCloud", 0x2BF4, 0x2C03, 1 << 40),
 ]
+
+HGTREE_NATIVE_SERIALIZED_TYPE_ROWS = {
+    "HGTree": {
+        "classId": 0x2C9CB981,
+        "namePointerSlot": 0x1821252E0,
+        "descriptorSlot": 0x1821252F8,
+        "descriptorRaw": 0x000000982C9CB981,
+    },
+    "HGTreeData": {
+        "classId": 0x59383C91,
+        "namePointerSlot": 0x182125180,
+        "descriptorSlot": 0x182125198,
+        "descriptorRaw": 0x0000007859383C91,
+    },
+    "HGMeshRenderer": {
+        "classId": 0x508754A6,
+        "namePointerSlot": 0x182125240,
+        "descriptorSlot": 0x182125258,
+        "descriptorRaw": 0x00000058508754A6,
+    },
+    "HGMeshRendererData": {
+        "classId": 0x50F4EE0C,
+        "namePointerSlot": 0x1821253B0,
+        "descriptorSlot": 0x1821253C8,
+        "descriptorRaw": 0x000000F850F4EE0C,
+    },
+}
 
 IL2CPP_METADATA_SECTION_NAMES = [
     "stringLiteral",
@@ -1215,6 +1255,156 @@ def validate_hgmesh_renderer_data_inventory(
             HGMESH_RENDERER_DATA_SOURCE,
         )
     return data
+
+
+def validate_hgtree_native_serialized_type_census(
+    image: PEImage,
+    census: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Close native class IDs and the controlled top-level VFS object census."""
+
+    require("unity_player_image_base", image.image_base, 0x180000000, image.path)
+    rows = []
+    for name, expected in HGTREE_NATIVE_SERIALIZED_TYPE_ROWS.items():
+        name_pointer = image.u64(expected["namePointerSlot"])
+        actual_name = image.cstring(name_pointer)
+        descriptor_raw = image.u64(expected["descriptorSlot"])
+        class_id = descriptor_raw & 0xFFFFFFFF
+        require(
+            f"hgtree_native_serialized_type_{name}_name",
+            actual_name,
+            name,
+            image.path,
+        )
+        require(
+            f"hgtree_native_serialized_type_{name}_descriptor_raw",
+            descriptor_raw,
+            expected["descriptorRaw"],
+            image.path,
+        )
+        require(
+            f"hgtree_native_serialized_type_{name}_class_id",
+            class_id,
+            expected["classId"],
+            image.path,
+        )
+        rows.append(
+            {
+                "name": name,
+                "classId": class_id,
+                "classIdHex": f"0x{class_id:08X}",
+                "namePointer": f"0x{name_pointer:X}",
+                "namePointerSlot": f"0x{expected['namePointerSlot']:X}",
+                "descriptorSlot": f"0x{expected['descriptorSlot']:X}",
+                "descriptorRaw": f"0x{descriptor_raw:016X}",
+            }
+        )
+
+    source = HGTREE_NATIVE_SERIALIZED_TYPE_CENSUS
+    data = (
+        census
+        if census is not None
+        else json.loads(source.read_text(encoding="utf-8"))
+    )
+    installed = data.get("installedStreamingAssets") or {}
+    report_rows = data.get("nativeSerializedTypes") or []
+    scan = data.get("controlledFullScan") or {}
+    gate = data.get("mapLoadExportGate") or {}
+    tool = data.get("animestudioSource") or {}
+    expected_report_rows = [
+        {
+            "name": row["name"],
+            "classId": row["classId"],
+            "classIdHex": row["classIdHex"],
+            "unityPlayerNamePointerSlot": row["namePointerSlot"],
+            "unityPlayerDescriptorSlot": row["descriptorSlot"],
+        }
+        for row in rows
+    ]
+    expected_type_counts = {
+        "HGMeshRendererData": 117,
+        "HGTree": 0,
+        "HGTreeData": 0,
+    }
+    for check, actual, expected in (
+        (
+            "schema",
+            data.get("schema"),
+            "endfield.hgtree-native-serialized-type-census.v1",
+        ),
+        ("streaming_file_count", installed.get("fileCount"), 966),
+        ("streaming_total_bytes", installed.get("totalBytes"), 57_058_764_239),
+        (
+            "streaming_suffix_counts",
+            installed.get("suffixCounts"),
+            {".blc": 17, ".chk": 947, ".json": 2},
+        ),
+        (
+            "streaming_file_set_digest",
+            installed.get("relativePathAndSizeSha256"),
+            "5c82f20f1e24ab5b1deb8df3b34081fb1223d637875229505080b113bd4415f8",
+        ),
+        ("native_rows", report_rows, expected_report_rows),
+        (
+            "selected_types",
+            scan.get("selectedTypes"),
+            ["HGMeshRendererData", "HGTree", "HGTreeData"],
+        ),
+        ("map_entry_count", scan.get("mapEntryCount"), 117),
+        ("map_type_counts", scan.get("typeCounts"), expected_type_counts),
+        (
+            "map_unique_physical_count",
+            scan.get("uniquePhysicalIdentityCount"),
+            117,
+        ),
+        ("map_unique_path_id_count", scan.get("uniquePathIdCount"), 117),
+        ("map_source_chunk_count", scan.get("sourceChunkCount"), 1),
+        (
+            "map_source_chunks",
+            scan.get("sourceChunks"),
+            ["7064D8E2/B428C352B17C75CA29122CAACC037A59.chk"],
+        ),
+        (
+            "map_identity_digest",
+            scan.get("normalizedIdentitySha256"),
+            "4eb8b092940129454b06549eaecce4e4fe29248b8c9ce16c1f5869033f781331",
+        ),
+        (
+            "map_raw_digest",
+            scan.get("rawMapSha256"),
+            "f2d30900574b4af68973d8fcdbb9e169f2bc5a9f390eb20b14434be09706002b",
+        ),
+        ("export_object_count", gate.get("jsonObjectCount"), 117),
+        ("export_type_counts", gate.get("typeCounts"), expected_type_counts),
+        ("export_class_ids", gate.get("classIds"), [0x50F4EE0C]),
+        (
+            "export_unique_physical_count",
+            gate.get("uniquePhysicalIdentityCount"),
+            117,
+        ),
+        ("map_export_identity_equality", gate.get("mapAndExportIdentitiesEqual"), True),
+        (
+            "animestudio_class_id_source_hash",
+            tool.get("classIdTypeSha256"),
+            EXPECTED_HASHES["animestudio_class_id_source"],
+        ),
+        (
+            "animestudio_asset_helper_source_hash",
+            tool.get("assetsHelperSha256"),
+            EXPECTED_HASHES["animestudio_asset_helper_source"],
+        ),
+    ):
+        require(f"hgtree_native_serialized_census_{check}", actual, expected, source)
+
+    return {
+        "nativeDescriptorRows": rows,
+        "installedStreamingAssets": installed,
+        "controlledFullScan": scan,
+        "mapLoadExportGate": gate,
+        "hgtreeTopLevelObjectCount": 0,
+        "hgtreeDataTopLevelObjectCount": 0,
+        "boundary": data.get("boundary"),
+    }
 
 
 def validate_native_handoff(
@@ -2880,10 +3070,20 @@ def validate_unity_hgtree_renderer_boundary(
                         "hgtreeBitIndex": 41,
                         "hgtreeBindingPresent": False,
                     },
+                    "topLevelNativeSerializedObjects": {
+                        "HGTreeClassId": "0x2C9CB981",
+                        "HGTreeDataClassId": "0x59383C91",
+                        "controlledPositiveType": "HGMeshRendererData",
+                        "controlledPositiveCount": 117,
+                        "HGTreeCount": 0,
+                        "HGTreeDataCount": 0,
+                    },
                     "boundary": (
-                        "these two complete hash-pinned source families are "
-                        "excluded; the id-67 descriptor and lodCount/range "
-                        "producer remain in a different native runtime source"
+                        "these hash-pinned source families and the controlled "
+                        "top-level Unity-serialized HGTree/HGTreeData surface "
+                        "are excluded; the id-67 descriptor and lodCount/range "
+                        "producer remain in proprietary streaming bytes, nested "
+                        "data, or another native runtime source"
                     ),
                 },
                 "structureBoundary": (
@@ -3273,6 +3473,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
         "hgmesh_renderer_data_source": verified_hash(
             "hgmesh_renderer_data_source", HGMESH_RENDERER_DATA_SOURCE
         ),
+        "animestudio_class_id_source": verified_hash(
+            "animestudio_class_id_source", ANIMESTUDIO_CLASS_ID_SOURCE
+        ),
+        "animestudio_asset_helper_source": verified_hash(
+            "animestudio_asset_helper_source", ANIMESTUDIO_ASSET_HELPER_SOURCE
+        ),
     }
     _require_source_contracts()
     asset_records, cap_definitions = validate_settings_payloads(extracted_root)
@@ -3301,6 +3507,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     hgmesh_renderer_data_inventory = validate_hgmesh_renderer_data_inventory(
         verify_source_hash=False
     )
+    hgtree_native_serialized_type_census = (
+        validate_hgtree_native_serialized_type_census(PEImage(UNITY_PLAYER))
+    )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
     require(
@@ -3317,8 +3526,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v15",
-        "status": "installed_cap_hgtree_component67_serialized_renderer_source_excluded",
+        "schema": "endfield.recovered-light-cull-cap.v16",
+        "status": "installed_cap_hgtree_component67_top_level_serialized_surface_excluded",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -3379,7 +3588,14 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "family as the producer. The complete hash-pinned managed "
             "StreamingSceneManagerScript constructor binds nine Mono converter "
             "bits but not HGTree bit 41, excluding that managed delegate route "
-            "from the static constructor source set as well. The native name/owner of "
+            "from the static constructor source set as well. The UnityPlayer "
+            "native serialized-type table now closes HGTree/HGTreeData class "
+            "IDs as 0x2C9CB981/0x59383C91. A controlled complete "
+            "StreamingAssets scan uses the 117 HGMeshRendererData objects as a "
+            "positive map-and-export gate but finds zero top-level HGTree or "
+            "HGTreeData objects. Their static Unity-serialized object surface "
+            "is therefore excluded; proprietary streaming bytes, nested data, "
+            "and runtime construction remain open. The native name/owner of "
             "id 67 remains open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
@@ -3427,6 +3643,16 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "inventoryPath": HGMESH_RENDERER_DATA_INVENTORY.relative_to(
                     LAB_ROOT
                 ).as_posix(),
+            },
+            "hgtreeNativeSerializedTypeCensus": {
+                "path": HGTREE_NATIVE_SERIALIZED_TYPE_CENSUS.relative_to(
+                    LAB_ROOT
+                ).as_posix(),
+                "streamingAssetsFileCount": 966,
+                "streamingAssetsTotalBytes": 57_058_764_239,
+                "controlledPositiveCount": 117,
+                "hgtreeCount": 0,
+                "hgtreeDataCount": 0,
             },
         },
         "settingTextAssets": asset_records,
@@ -3491,6 +3717,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "hgmeshRendererDataComponentInventory": (
                 hgmesh_renderer_data_inventory
             ),
+            "hgtreeNativeSerializedTypeCensus": (
+                hgtree_native_serialized_type_census
+            ),
             "desktopNoSecondTruncation": True,
         },
         "sourceFiles": {
@@ -3504,6 +3733,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "setting_parameters_source": SETTING_PARAMETERS_SOURCE,
                 "light_cluster_source": LIGHT_CLUSTER_SOURCE,
                 "hg_camera_source": HG_CAMERA_SOURCE,
+                "animestudio_class_id_source": ANIMESTUDIO_CLASS_ID_SOURCE,
+                "animestudio_asset_helper_source": ANIMESTUDIO_ASSET_HELPER_SOURCE,
             }.items()
         },
         "evidenceBoundary": {
@@ -3535,6 +3766,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the 43-slot Streaming converter registry, bsf(typeMask) lookup, and 0x308-byte slot stride",
                 "the complete nine-call managed Mono-component binding set and the absence of HGTree bit 41",
                 "the 117-object installed HGMeshRendererData corpus, its 1,449 descriptors, and the absence of component id 67",
+                "the UnityPlayer native serialized class IDs for HGTree, HGTreeData, HGMeshRenderer, and HGMeshRendererData",
+                "the controlled full-VFS 117-object positive gate and zero top-level HGTree/HGTreeData object census",
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
@@ -3548,7 +3781,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic names of the initially zero HGTree runtime-state bytes",
-                "the component-bit-67 LOD-count/range producer and native component name/owner outside the excluded HGMeshRendererData and managed HGTree-converter routes",
+                "the component-bit-67 LOD-count/range producer and native component name/owner in proprietary streaming bytes, nested data, or another runtime source outside the excluded static routes",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -3584,7 +3817,8 @@ def main() -> int:
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
-        "component-67 separation plus managed-converter/HGMeshRendererData exclusions, "
+        "component-67 separation plus managed-converter, HGMeshRendererData, and "
+        "top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
