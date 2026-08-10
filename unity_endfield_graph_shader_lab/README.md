@@ -1566,6 +1566,11 @@ closes the initial LOD0 completion/fallback transition. With only LOD0 pending,
 it writes indices `0/0/0`, masks `0/1`, and a readiness mask derived from the
 companion renderer/subresource count; otherwise it writes sentinel `8/8/8`
 and clears readiness. It does not write the LOD count or cumulative ranges.
+Installed scripting registration `0x1807EEEE0 -> 0x1807EC5E0` directly binds
+`::Scripting::UnityEngine::HyperGryph::ECS::HGTreeComponentProxy` to native
+`HGTreeComponent` in `UnityEngine.HyperGryph.ECS` from
+`UnityEngine.HGGraphicsModule.dll`. This closes the proxy/type identity but not
+the still-missing native-type-to-archetype-bit-67 assignment.
 Dispatch segment `0x181079FB1` selects the
 LOD variants. The direct path selects
 `minSquared < distanceSquared <= maxSquared`; the scaled path tests
@@ -1583,7 +1588,8 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 LOD-count/range producer and exact type-name link, unrelated
+bytes, component-67 LOD-count/range producer and native-type-to-archetype-bit
+link, unrelated
 scheduled consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.

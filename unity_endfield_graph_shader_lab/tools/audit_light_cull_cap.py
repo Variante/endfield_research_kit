@@ -394,6 +394,16 @@ UNITY_HGTREE_BODIES = {
         0x398,
         "c1f42c8333a1f0daf613485ee1757e78bdf95899ddcdcde81b7e177027dd8247",
     ),
+    "component_proxy_registration": (
+        0x1807EEEE0,
+        0x2A,
+        "9e408f57aab1474c955e8b1efd201ac40b59de546ba2229a71705c0ef6269246",
+    ),
+    "component_native_type_initializer": (
+        0x1807EC5E0,
+        0x59,
+        "9ae5e42bb98364eb2881612c57bcf0c7a8d3562398a7aeb42f66347f1bf9e8c6",
+    ),
     "lod_ecs_availability_writer": (
         0x1810842E0,
         0x835,
@@ -474,6 +484,16 @@ UNITY_HGTREE_BODIES = {
         0x1B3,
         "5a7dc27ff07a05134333e3443828a6ba4f64f807de74198dba4181a494cc499c",
     ),
+}
+
+UNITY_HGTREE_COMPONENT_TYPE_STRINGS = {
+    "proxy_name": (
+        0x181DA5EA0,
+        "::Scripting::UnityEngine::HyperGryph::ECS::HGTreeComponentProxy",
+    ),
+    "native_type_name": (0x181DA5338, "HGTreeComponent"),
+    "managed_namespace": (0x181D25758, "UnityEngine.HyperGryph.ECS"),
+    "module_name": (0x181D25730, "UnityEngine.HGGraphicsModule.dll"),
 }
 
 UNITY_HGTREE_SLICES = {
@@ -1651,6 +1671,23 @@ def validate_unity_hgtree_renderer_boundary(
             }
         )
 
+    component_type_strings = {}
+    for label, (
+        virtual_address,
+        expected_value,
+    ) in UNITY_HGTREE_COMPONENT_TYPE_STRINGS.items():
+        actual_value = image.cstring(virtual_address)
+        require(
+            f"unity_hgtree_component_{label}",
+            actual_value,
+            expected_value,
+            image.path,
+        )
+        component_type_strings[label] = {
+            "virtualAddress": f"0x{virtual_address:X}",
+            "value": actual_value,
+        }
+
     return {
         "internalCall": {
             "table": "dedicated HyperGryph native internal calls",
@@ -1925,6 +1962,31 @@ def validate_unity_hgtree_renderer_boundary(
                     "it is not the loader-owned registration blob stored in "
                     "the runtime-transform owner's +0x78 vector"
                 ),
+                "nativeScriptingTypeIdentity": {
+                    "proxyToNativeTypeNameClosed": True,
+                    "proxyRegistrationVirtualAddress": "0x1807EEEE0",
+                    "nativeTypeInitializerVirtualAddress": "0x1807EC5E0",
+                    "unregisterThunkVirtualAddress": "0x1807EAF70",
+                    "strings": component_type_strings,
+                    "registrationFlow": [
+                        (
+                            "0x1807EEEE0 registers the decorated proxy name "
+                            "with initializer 0x1807EC5E0 and unregister "
+                            "thunk 0x1807EAF70"
+                        ),
+                        (
+                            "0x1807EC5E0 resolves HGTreeComponent in "
+                            "UnityEngine.HyperGryph.ECS from "
+                            "UnityEngine.HGGraphicsModule.dll"
+                        ),
+                    ],
+                    "boundary": (
+                        "this closes the native scripting proxy-to-type-name "
+                        "identity only; the installed code path assigning "
+                        "that type to archetype component bit 67 is not yet "
+                        "closed"
+                    ),
+                },
                 "nativeTypeNameMappingClosed": False,
             },
             "dispatchPacket": {
@@ -2304,8 +2366,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v9",
-        "status": "installed_cap_hgtree_lifecycle_lod_state_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v10",
+        "status": "installed_cap_hgtree_type_identity_lifecycle_lod_state_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -2339,12 +2401,15 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "pending and available LOD masks, 64-bit renderer-readiness mask, "
             "and eight cumulative renderer-range endpoints. Its indexed "
             "accessor and initial LOD0 completion/fallback writer are pinned "
-            "as well. The old index "
+            "as well. The installed native scripting registration now closes "
+            "HGTreeComponentProxy to the HGTreeComponent type name, namespace, "
+            "and HGGraphics module; its final assignment to archetype bit 67 "
+            "remains open. The old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The scheduled cull-view +0x18 consumer, remaining initially zero "
             "loader-record bytes, the ECS LOD-count/range producer and exact "
-            "type-name link, "
+            "native-type-to-archetype-bit link, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -2471,6 +2536,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTree LOD dispatch packet and payload layouts",
                 "the parent/per-ArtTag LOD-bias encodings and per-view lodBias multiplier",
                 "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
+                "the HGTreeComponentProxy-to-native-type name, namespace, and module identity",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
                 "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
@@ -2481,6 +2547,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic names of the initially zero HGTree runtime-state bytes",
+                "the component-bit-67 LOD-count/range producer and native-type-to-bit assignment",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -2514,7 +2581,8 @@ def main() -> int:
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
-        "registration lifecycle/runtime transform/ECS LOD state and equations, "
+        "type identity/registration lifecycle/runtime transform/ECS LOD state "
+        "and equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
         "16-byte result, and 148-byte capture-row ABI closed."
