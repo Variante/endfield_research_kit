@@ -2962,12 +2962,12 @@
       gameplaySoundCandidateLists.delete(key);
       template.replaceWith(template.content.cloneNode(true));
       if (toggle) toggle.remove();
-      bindCandidatePlayers(container);
+      bindCandidatePlayers(root);
     };
-    container.querySelectorAll("[data-gameplay-sfx-list-toggle]").forEach((toggle) => {
+    root.querySelectorAll("[data-gameplay-sfx-list-toggle]").forEach((toggle) => {
       toggle.addEventListener("click", () => {
         const key = toggle.dataset.gameplaySfxListToggle || "";
-        const template = [...container.querySelectorAll("template[data-gameplay-sfx-list]")]
+        const template = [...root.querySelectorAll("template[data-gameplay-sfx-list]")]
           .find((candidate) => candidate.dataset.gameplaySfxList === key);
         materializeSoundList(template, toggle);
       });
