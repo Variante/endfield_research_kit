@@ -114,18 +114,23 @@ NPC archetypes are imported as labeled source kits.
   16-bit handle to `0x181087E00`, closing that registration lifecycle. The
   former tail is now split by binary behavior: serialized `renderFlags` at
   `+0x08` is mutable, with four particle mode-2/3/4/5 setup variants replacing
-  it with bit 20 and a scheduled callback consuming it. `+0x0C` is the third
-  resolved, reference-counted `Mesh` resource index: both Render and
-  MergedRenderCollider transition paths acquire their third slot with native
-  kind `2`. Dedicated HG internal-call entry 437 maps the forwarding wrapper
-  `0x1801F2AB0` to `HGResourceManager.LoadAsync_Injected`; its IL2CPP `type`
-  parameter is `UnityEngine.HyperGryph.AssetType`, whose installed literals
-  close `1=Material` and `2=Mesh`. LOD availability paths
-  `0x181157760/0x181159010` populate record `+0x0C`, cleanup `0x18115BFC0`
-  releases and clears it through `0x180FBF6B0`, and a callback also consumes
-  the word as a filter overlay. Why the resolved Mesh-derived index doubles as
-  that overlay remains open. Common Renderer state sync
-  `0x180432CD0` updates `+0x10` with property-derived flags. Dedicated HG
+  it with bit 20 and a scheduled callback consuming it. The former `+0x0C`
+  “third Mesh resource index” conclusion is corrected. Render and
+  MergedRenderCollider acquire their second Mesh handle into owner `+0x14`;
+  HG internal-call entry 437 names the wrapper
+  `HGResourceManager.LoadAsync_Injected` and installed `AssetType` closes kind
+  `2=Mesh`. Entries 440/441 close handle
+  slot `+0x18` as a Unity asset instance ID: `UpdateAssetHandle_Injected`
+  writes it and `GetAsset_Injected` uses it to recover the Unity object.
+  Availability writers `0x181157760/0x181159010` require slot `+0x10==1`, map
+  that instance ID through a 12-byte entry table, and copy entry `+0x08` to
+  record `+0x0C` at `0x181157A42/0x181159218`; cleanup clears it at
+  `0x18115C0F3`. The callback consumes this mapped word directly as a masked
+  supplemental filter, so there is no slot-index/filter dual use. The third
+  Mesh handle instead seeds record `+0x10` at `0x181157AD1/0x1811592A0`, before
+  common Renderer state sync `0x180432CD0` updates that property-flag word.
+  Only the mapped filter word's engine name and individual bit meanings remain
+  open. Dedicated HG
   internal-call entry 204 names `+0x14` as `enabledLightModes`; wrapper
   `0x1801EB940` reaches the all-record writer at `0x1810D9110`. Installed
   IL2CPP metadata closes its argument as `UInt32 lightModeMask` and
@@ -297,10 +302,10 @@ NPC archetypes are imported as labeled source kits.
   `[0,lodCount-1]`. The
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
-  crossed the HG table boundary into unrelated Animator code. The semantic
-  reason for loader record `+0x0C`'s Mesh/filter dual use, the component-67
-  standalone native type name, any separate `sceneCullingMask` consumer, and
-  target-frame survivor rows remain open.
+  crossed the HG table boundary into unrelated Animator code. The standalone
+  name/bit meanings of loader record `+0x0C`'s Mesh-instance filter word, the
+  component-67 standalone native type name, any separate `sceneCullingMask`
+  consumer, and target-frame survivor rows remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -530,8 +535,8 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Resolve the semantic reason for loader record `+0x0C`'s Mesh/filter dual
-   use and the exact native type-name link for
+1. Resolve the standalone engine name/bit meanings of loader record `+0x0C`'s
+   Mesh-instance filter word and the exact native type-name link for
    component 67; its serialized LOD-count/range producer is now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
