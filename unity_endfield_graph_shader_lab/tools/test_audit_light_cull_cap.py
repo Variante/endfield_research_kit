@@ -167,6 +167,44 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertEqual(result["componentId"], 6)
         self.assertFalse(result["component67Match"])
 
+    def test_complete_managed_ecs_get_id_surface_excludes_67(self) -> None:
+        result = AUDIT.validate_managed_ecs_get_id_census(
+            AUDIT.GLOBAL_METADATA.read_bytes(),
+            AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+        )
+        self.assertEqual(result["declaredGetIdCount"], 30)
+        self.assertEqual(result["concreteGetIdCount"], 29)
+        self.assertNotIn(67, result["exposedComponentIds"])
+        self.assertFalse(result["component67Present"])
+        by_type = {row["type"].rsplit(".", 1)[-1]: row for row in result["rows"]}
+        self.assertEqual(by_type["HGTreeComponent"]["componentId"], 80)
+        self.assertEqual(
+            by_type["RenderObjectLODInfoComponent"]["componentId"], 6
+        )
+        self.assertIsNone(by_type["IComponentECS"]["componentId"])
+
+    def test_managed_ecs_get_id_metadata_drift_fails_closed(self) -> None:
+        metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())
+        sections = {
+            name: struct.unpack_from("<Ii", metadata, 8 + index * 8)
+            for index, name in enumerate(AUDIT.IL2CPP_METADATA_SECTION_NAMES)
+        }
+        method_offset, _ = sections["methods"]
+        hgtree_method_index = AUDIT.MANAGED_ECS_GET_ID_ROWS[
+            "HGTreeComponent"
+        ][2]
+        token_offset = method_offset + hgtree_method_index * 32 + 20
+        struct.pack_into("<I", metadata, token_offset, 0x0600FFFF)
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=managed_ecs_get_id_HGTreeComponent_method_token; "
+            r"source=.*global-metadata.dat; expected=.*actual=",
+        ):
+            AUDIT.validate_managed_ecs_get_id_census(
+                bytes(metadata), AUDIT.PEImage(AUDIT.GAME_ASSEMBLY)
+            )
+
     def test_changed_hgtree_component_id_fails_closed(self) -> None:
         bodies = AUDIT.read_native_method_bodies()
         changed = bytearray(bodies["hgtree_component_get_id"])

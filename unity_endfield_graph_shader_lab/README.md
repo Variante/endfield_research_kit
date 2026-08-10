@@ -1684,8 +1684,13 @@ how numeric component IDs become archetype masks: `mask[id >> 6]` receives bit
 therefore ID 80/high-qword bit 16 (`0x10000`), proving that component 67 is a
 separate, still unnamed native LOD-state component. The managed
 `RenderObjectLODInfoComponent.get_id` body independently returns 6, excluding
-that similarly named type too. Raw UInt64 field defaults in the installed
-metadata close the separate serialized `StreamingComponentType` values as
+that similarly named type too. The complete installed metadata/codegen surface
+contains 30 `UnityEngine.HyperGryph.ECS` `Int32 get_id` declarations, 30 module
+pointer slots, and 29 concrete constant-return bodies; none exposes ID 67.
+Component 67 therefore has no managed name on the shipped surface and must be
+resolved from the remaining pure-native registration data. Raw UInt64 field
+defaults in the installed metadata close the separate serialized
+`StreamingComponentType` values as
 `HLODGroup = 1<<11`, `HGTree = 1<<41`, and `Count = 43`. HG internal-call
 entry 677 reaches the native converter registration path: it constructs 43
 slots at `0x308` bytes each, selects the slot with `bsf(componentTypeMask)`,

@@ -605,6 +605,44 @@ STREAMING_COMPONENT_ENUM_FIELDS = {
     "Count": (296670, 0x04000238, 43),
 }
 
+MANAGED_ECS_GET_ID_NAMESPACE = "UnityEngine.HyperGryph.ECS"
+MANAGED_ECS_GET_ID_RETURN_TYPE_INDEX = 148327
+MANAGED_ECS_METHOD_POINTER_TABLE_VA = 0x18EF019A0
+# type index, type token, method index, method token, module slot, body VA, id.
+# The interface row deliberately has a null codegen slot and no concrete id.
+MANAGED_ECS_GET_ID_ROWS = {
+    "BoundingCenterXComponent": (61066, 0x020000BD, 478384, 0x0600024C, 587, 0x1811EC580, 0),
+    "BoundingCenterYComponent": (61067, 0x020000BE, 478385, 0x0600024D, 588, 0x184D85B80, 1),
+    "BoundingCenterZComponent": (61068, 0x020000BF, 478386, 0x0600024E, 589, 0x182BBE540, 2),
+    "BoundingExtentXComponent": (61069, 0x020000C0, 478387, 0x0600024F, 590, 0x184D8C9E0, 3),
+    "BoundingExtentYComponent": (61070, 0x020000C1, 478388, 0x06000250, 591, 0x184D882B0, 4),
+    "BoundingExtentZComponent": (61071, 0x020000C2, 478389, 0x06000251, 592, 0x184D9EC50, 5),
+    "RenderObjectLODInfoComponent": (61072, 0x020000C3, 478390, 0x06000252, 593, 0x184D9EC60, 6),
+    "RenderObjectInfoComponent": (61073, 0x020000C4, 478391, 0x06000253, 594, 0x184D9BE00, 7),
+    "RenderObjectK1Component": (61079, 0x020000C8, 478393, 0x06000255, 596, 0x184D8D060, 8),
+    "RenderObjectK2Component": (61082, 0x020000CB, 478395, 0x06000257, 598, 0x184DA4FC0, 9),
+    "RenderObjectK4Component": (61085, 0x020000CE, 478397, 0x06000259, 600, 0x184DA5360, 10),
+    "RenderObjectK8Component": (61088, 0x020000D1, 478399, 0x0600025B, 602, 0x184DA4FE0, 11),
+    "RenderObjectK16Component": (61091, 0x020000D4, 478401, 0x0600025D, 604, 0x184DA5380, 12),
+    "CommonInstanceDataComponent": (61094, 0x020000D8, 478403, 0x0600025F, 606, 0x184DA3EE0, 18),
+    "FactoryInstanceDataComponent": (61096, 0x020000DA, 478404, 0x06000260, 607, 0x184DA3EE0, 18),
+    "DebugContentsComponent": (61099, 0x020000DE, 478407, 0x06000263, 610, 0x184DA43D0, 20),
+    "HGFactoryRendererBinderComponent": (61100, 0x020000DF, 478417, 0x0600026D, 620, 0x184D89170, 25),
+    "HGWaterComponent": (61101, 0x020000E0, 478418, 0x0600026E, 621, 0x184DA77E0, 30),
+    "HGWaterDecalComponent": (61102, 0x020000E1, 478419, 0x0600026F, 622, 0x184DA7810, 31),
+    "GrassClusterK4Component": (61106, 0x020000E4, 478420, 0x06000270, 623, 0x184DA7820, 37),
+    "GrassClusterK8Component": (61108, 0x020000E6, 478421, 0x06000271, 624, 0x184DA9FD0, 38),
+    "GrassClusterK16Component": (61110, 0x020000E8, 478422, 0x06000272, 625, 0x184DAAAE0, 39),
+    "GrassClusterK32Component": (61112, 0x020000EA, 478423, 0x06000273, 626, 0x184DAAB10, 40),
+    "ECSColliderComponent": (61113, 0x020000EC, 478424, 0x06000274, 627, 0x184DAAB60, 44),
+    "HGSludgeComponent": (61114, 0x020000ED, 478425, 0x06000275, 628, 0x184DA9F60, 51),
+    "ECSClothDataComponent": (61115, 0x020000EE, 478426, 0x06000276, 629, 0x184DBCD70, 60),
+    "HGStreamingVolumeComponent": (61116, 0x020000EF, 478427, 0x06000277, 630, 0x184DA9FF0, 61),
+    "HGCullingParameterComponent": (61117, 0x020000F0, 478428, 0x06000278, 631, 0x184DBCEB0, 62),
+    "HGTreeComponent": (61119, 0x020000F2, 478429, 0x06000279, 632, 0x184DBCEC0, 80),
+    "IComponentECS": (61065, 0x020000BC, 478383, 0x0600024B, 586, 0, None),
+}
+
 MANAGED_STREAMING_COMPONENT_BINDINGS = [
     ("HGAdditionalLightData", 0x290A, 0x2914, 1 << 25),
     ("HGEnvironmentVolume", 0x2963, 0x296D, 1 << 14),
@@ -5327,6 +5365,232 @@ def validate_streaming_scene_v2_payload_census(
     }
 
 
+def validate_managed_ecs_get_id_census(
+    raw_metadata: bytes,
+    game_image: PEImage,
+    source: Path = GLOBAL_METADATA,
+) -> dict[str, object]:
+    """Exhaust the managed HGGraphics ECS Int32 get_id naming surface."""
+
+    require(
+        "managed_ecs_get_id_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    require(
+        "managed_ecs_get_id_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        source,
+    )
+    sections = {
+        section_name: struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+        for section_index, section_name in enumerate(
+            IL2CPP_METADATA_SECTION_NAMES
+        )
+    }
+    string_offset, string_size = sections["string"]
+    method_offset, method_size = sections["methods"]
+    type_offset, type_size = sections["typeDefinitions"]
+
+    def metadata_string(index: int, check: str) -> str:
+        start = string_offset + index
+        require(
+            f"managed_ecs_get_id_{check}_string_start_in_bounds",
+            string_offset <= start < string_offset + string_size,
+            True,
+            source,
+        )
+        end = raw_metadata.find(b"\0", start, string_offset + string_size)
+        require(
+            f"managed_ecs_get_id_{check}_string_end_in_bounds",
+            end >= start,
+            True,
+            source,
+        )
+        return raw_metadata[start:end].decode("utf-8")
+
+    discovered: dict[str, tuple[int, int, int, int]] = {}
+    for type_index in range(type_size // 92):
+        type_position = type_offset + type_index * 92
+        type_name_index, namespace_index = struct.unpack_from(
+            "<ii", raw_metadata, type_position
+        )
+        namespace = metadata_string(
+            namespace_index, f"type_{type_index}_namespace"
+        )
+        if namespace != MANAGED_ECS_GET_ID_NAMESPACE:
+            continue
+        type_name = metadata_string(
+            type_name_index, f"type_{type_index}_name"
+        )
+        method_start = struct.unpack_from(
+            "<i", raw_metadata, type_position + 36
+        )[0]
+        method_count = struct.unpack_from(
+            "<H", raw_metadata, type_position + 68
+        )[0]
+        type_token = struct.unpack_from(
+            "<I", raw_metadata, type_position + 88
+        )[0]
+        for method_index in range(method_start, method_start + method_count):
+            method_position = method_offset + method_index * 32
+            require(
+                f"managed_ecs_get_id_{type_name}_method_in_bounds",
+                method_position + 32 <= method_offset + method_size,
+                True,
+                source,
+            )
+            (
+                method_name_index,
+                declaring_type,
+                return_type,
+                _parameter_start,
+                _generic_container,
+                method_token,
+                _flags,
+                _iflags,
+                _slot,
+                parameter_count,
+            ) = struct.unpack_from("<iiiiiIHHHH", raw_metadata, method_position)
+            method_name = metadata_string(
+                method_name_index, f"method_{method_index}_name"
+            )
+            if (
+                method_name != "get_id"
+                or return_type != MANAGED_ECS_GET_ID_RETURN_TYPE_INDEX
+            ):
+                continue
+            require(
+                f"managed_ecs_get_id_{type_name}_declaring_type",
+                declaring_type,
+                type_index,
+                source,
+            )
+            require(
+                f"managed_ecs_get_id_{type_name}_parameter_count",
+                parameter_count,
+                0,
+                source,
+            )
+            discovered[type_name] = (
+                type_index,
+                type_token,
+                method_index,
+                method_token,
+            )
+
+    require(
+        "managed_ecs_get_id_type_names",
+        sorted(discovered),
+        sorted(MANAGED_ECS_GET_ID_ROWS),
+        source,
+    )
+    rows = []
+    exposed_ids = set()
+    for name, expected in MANAGED_ECS_GET_ID_ROWS.items():
+        (
+            expected_type_index,
+            expected_type_token,
+            expected_method_index,
+            expected_method_token,
+            method_pointer_slot,
+            expected_body_va,
+            expected_component_id,
+        ) = expected
+        actual = discovered[name]
+        for label, value, expected_value in (
+            ("type_index", actual[0], expected_type_index),
+            ("type_token", actual[1], expected_type_token),
+            ("method_index", actual[2], expected_method_index),
+            ("method_token", actual[3], expected_method_token),
+        ):
+            require(
+                f"managed_ecs_get_id_{name}_{label}",
+                value,
+                expected_value,
+                source,
+            )
+        pointer_va = (
+            MANAGED_ECS_METHOD_POINTER_TABLE_VA + method_pointer_slot * 8
+        )
+        body_va = game_image.u64(pointer_va)
+        require(
+            f"managed_ecs_get_id_{name}_method_pointer",
+            body_va,
+            expected_body_va,
+            game_image.path,
+        )
+        body_hex = None
+        component_id = None
+        if expected_component_id is not None:
+            expected_body = (
+                bytes.fromhex("33c0c3")
+                if expected_component_id == 0
+                else b"\xB8" + struct.pack("<I", expected_component_id) + b"\xC3"
+            )
+            body = game_image.read(body_va, len(expected_body))
+            require(
+                f"managed_ecs_get_id_{name}_body",
+                body,
+                expected_body,
+                game_image.path,
+            )
+            component_id = (
+                0 if expected_component_id == 0 else struct.unpack_from("<I", body, 1)[0]
+            )
+            require(
+                f"managed_ecs_get_id_{name}_value",
+                component_id,
+                expected_component_id,
+                game_image.path,
+            )
+            exposed_ids.add(component_id)
+            body_hex = body.hex()
+        rows.append(
+            {
+                "type": f"{MANAGED_ECS_GET_ID_NAMESPACE}.{name}",
+                "typeIndex": expected_type_index,
+                "typeToken": f"0x{expected_type_token:08X}",
+                "methodIndex": expected_method_index,
+                "methodToken": f"0x{expected_method_token:08X}",
+                "moduleMethodPointerSlot": method_pointer_slot,
+                "bodyVirtualAddress": (
+                    f"0x{body_va:X}" if body_va else None
+                ),
+                "bodyHex": body_hex,
+                "componentId": component_id,
+            }
+        )
+    require(
+        "managed_ecs_get_id_component_67_absent",
+        67 in exposed_ids,
+        False,
+        game_image.path,
+    )
+    return {
+        "namespace": MANAGED_ECS_GET_ID_NAMESPACE,
+        "returnMetadataTypeIndex": MANAGED_ECS_GET_ID_RETURN_TYPE_INDEX,
+        "methodPointerTableVirtualAddress": (
+            f"0x{MANAGED_ECS_METHOD_POINTER_TABLE_VA:X}"
+        ),
+        "declaredGetIdCount": len(rows),
+        "concreteGetIdCount": sum(row["componentId"] is not None for row in rows),
+        "exposedComponentIds": sorted(exposed_ids),
+        "component67Present": False,
+        "rows": rows,
+        "boundary": (
+            "the complete installed managed UnityEngine.HyperGryph.ECS "
+            "Int32 get_id surface contains 30 declarations and 29 concrete "
+            "getters, but no id 67; component 67 is therefore native-only on "
+            "this managed naming surface"
+        ),
+    }
+
+
 def validate_native_handoff(
     bodies: dict[str, bytes], *, verify_hashes: bool = True
 ) -> dict[str, object]:
@@ -9023,6 +9287,11 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     _require_source_contracts()
     asset_records, cap_definitions = validate_settings_payloads(extracted_root)
     native_handoff = validate_native_handoff(read_native_method_bodies())
+    native_handoff["managedEcsComponentGetIdCensus"] = (
+        validate_managed_ecs_get_id_census(
+            GLOBAL_METADATA.read_bytes(), PEImage(GAME_ASSEMBLY)
+        )
+    )
     unity_native_producer = validate_unity_native_producer(PEImage(UNITY_PLAYER))
     unity_cull_view_constructor = validate_unity_cull_view_constructor(
         PEImage(UNITY_PLAYER)
@@ -9074,8 +9343,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v37",
-        "status": "hgtree_renderer_list_direct_callers_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v38",
+        "status": "component67_managed_name_surface_exhausted",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -9230,7 +9499,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "single-bit type through bsf into a 0x308-byte descriptor slot, "
             "requires a non-empty list, and requires Transform first. The "
             "similarly named managed RenderObjectLODInfoComponent independently "
-            "returns id 6, so neither managed candidate names id 67. The native "
+            "returns id 6. The complete installed "
+            "UnityEngine.HyperGryph.ECS Int32 get_id census now pins all 30 "
+            "metadata declarations, all 30 codegen pointer slots, and all 29 "
+            "concrete constant-return bodies. Its exposed ID set contains no "
+            "67, proving that component 67 has no managed name on this shipped "
+            "surface rather than merely excluding two likely candidates. The native "
             "entity-type registration core now closes each 8-byte descriptor "
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
@@ -9501,6 +9775,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the 1,576-file DynamicStreaming init/stream census with only tag-2 records and no component entries",
                 "the separate DynamicStreaming gameplay-tree route with 2,828 TreeRootComp rows and enum identities Tree=11/TreeRootComp=64",
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
+                "the complete 30-declaration/29-body UnityEngine.HyperGryph.ECS Int32 get_id census, codegen pointer slots, constant values, and absence of component id 67",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -9553,7 +9828,8 @@ def main() -> int:
         "V1/V2 default/PreZ consumer/filter routes, HGTree renderer-list variants, "
         "Factory blob-copy routes, independent renderer-entry pass mask, and "
         "complete direct renderer-blob lookup/escape census, "
-        "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
+        "Streaming HGTree bit-41/43-slot converter registry, complete managed ECS "
+        "get_id census with no id 67, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
