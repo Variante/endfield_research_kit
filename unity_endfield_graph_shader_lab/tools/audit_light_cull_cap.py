@@ -126,6 +126,27 @@ UNITY_ADD_CULL_VIEW_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGCullingSystem::AddCullViewByMatrix"
 )
 
+UNITY_PARENT_LOD_BIAS_GET_ICALL_INDEX = 3300
+UNITY_PARENT_LOD_BIAS_GET_ICALL_VA = 0x1800F8E00
+UNITY_PARENT_LOD_BIAS_GET_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGCullingSystem::get_parentLODBias"
+)
+UNITY_PARENT_LOD_BIAS_SET_ICALL_INDEX = 3301
+UNITY_PARENT_LOD_BIAS_SET_ICALL_VA = 0x1800F8E40
+UNITY_PARENT_LOD_BIAS_SET_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGCullingSystem::set_parentLODBias"
+)
+UNITY_ART_TAG_LOD_BIAS_GET_ICALL_INDEX = 3302
+UNITY_ART_TAG_LOD_BIAS_GET_ICALL_VA = 0x1800F9110
+UNITY_ART_TAG_LOD_BIAS_GET_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGCullingSystem::GetArtTagLODBias"
+)
+UNITY_ART_TAG_LOD_BIAS_SET_ICALL_INDEX = 3303
+UNITY_ART_TAG_LOD_BIAS_SET_ICALL_VA = 0x1800F9230
+UNITY_ART_TAG_LOD_BIAS_SET_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGCullingSystem::SetArtTagLODBias"
+)
+
 UNITY_DISPATCH_CULL_JOBS_ICALL_INDEX = 3315
 UNITY_DISPATCH_CULL_JOBS_ICALL_VA = 0x1800FAFC0
 UNITY_DISPATCH_CULL_JOBS_ICALL_NAME = (
@@ -150,6 +171,16 @@ UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX = 567
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_VA = 0x1801DA040
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGTreeRender::RegisterTreeBatchGroup"
+)
+UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_INDEX = 279
+UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_VA = 0x1801EDEB0
+UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGLODStreamingSystem::GetArtTagLODStreamingOffset"
+)
+UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_INDEX = 280
+UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_VA = 0x1801EDED0
+UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGLODStreamingSystem::SetArtTagLODStreamingOffset"
 )
 
 UNITY_CULL_VIEW_BODIES = {
@@ -307,6 +338,51 @@ UNITY_HGTREE_BODIES = {
         0x181086050,
         0x273,
         "1bafbffc56bfaa42445fea8f10bac1047ab44712ee7361456efc281e07196dc3",
+    ),
+    "parent_lod_bias_getter": (
+        0x1800F8E00,
+        0x38,
+        "73b6639e35051f978ff90c95633128fb4d2f546587aa9fd3b5d50442991520cb",
+    ),
+    "parent_lod_bias_setter": (
+        0x1800F8E40,
+        0x2E,
+        "32acbd119ef72da1c87a12550fa6540bea21fa32f85d546a135f4530c5f93120",
+    ),
+    "art_tag_lod_bias_getter": (
+        0x1800F9110,
+        0x11A,
+        "82d7c9c109821cb8fc2d6b94e67a026d8943a8b0373458f4bd849865ea91ef48",
+    ),
+    "art_tag_lod_bias_setter": (
+        0x1800F9230,
+        0x14C,
+        "b9e6d0ecdea960846b74895c3b96c756a369faeabde473e38a536bca1907e77c",
+    ),
+    "art_tag_lod_streaming_offset_getter": (
+        0x1801EDEB0,
+        0x20,
+        "a2d4580b70a05dbe4b0745a131a9efd0c6656bbd9e4f9f783d1163dfe76e8916",
+    ),
+    "art_tag_lod_streaming_offset_setter": (
+        0x1801EDED0,
+        0x69,
+        "623e351a79c9f7a6d3073e3c583ab3d4a1c160c34d5c8629477e1668da8c0186",
+    ),
+    "lod_dispatch_payload_builder": (
+        0x18106EAD0,
+        0x8A0,
+        "ff7781d15ccf49a3a904fc22a61b6a21a70288776d9b9daca1896b2c7855470c",
+    ),
+    "lod_dispatch_callback_wrapper": (
+        0x181060E60,
+        0x2F,
+        "10c4bc6310d3b34d29874f0f08ca7641bd52a18013b29e31dc0fab4b752cde58",
+    ),
+    "lod_dispatcher": (
+        0x181079C10,
+        0x590,
+        "78c1178d47a48db4ee56a95f643f54b90be0a7e13ac357f3ec83afbbf5bef5b0",
     ),
     "serialized_to_runtime_transform": (
         0x1810C5F30,
@@ -1281,6 +1357,97 @@ def validate_unity_hgtree_renderer_boundary(
         image.path,
     )
 
+    def resolve_main_icall(index: int) -> tuple[str, int]:
+        name_pointer = image.u64(UNITY_ICALL_NAME_TABLE_VA + index * 8)
+        target = image.u64(UNITY_ICALL_FUNCTION_TABLE_VA + index * 8)
+        return image.cstring(name_pointer), target
+
+    lod_bias_icalls = []
+    for label, index, expected_name, expected_target in (
+        (
+            "parentLODBias.get",
+            UNITY_PARENT_LOD_BIAS_GET_ICALL_INDEX,
+            UNITY_PARENT_LOD_BIAS_GET_ICALL_NAME,
+            UNITY_PARENT_LOD_BIAS_GET_ICALL_VA,
+        ),
+        (
+            "parentLODBias.set",
+            UNITY_PARENT_LOD_BIAS_SET_ICALL_INDEX,
+            UNITY_PARENT_LOD_BIAS_SET_ICALL_NAME,
+            UNITY_PARENT_LOD_BIAS_SET_ICALL_VA,
+        ),
+        (
+            "artTagLODBias.get",
+            UNITY_ART_TAG_LOD_BIAS_GET_ICALL_INDEX,
+            UNITY_ART_TAG_LOD_BIAS_GET_ICALL_NAME,
+            UNITY_ART_TAG_LOD_BIAS_GET_ICALL_VA,
+        ),
+        (
+            "artTagLODBias.set",
+            UNITY_ART_TAG_LOD_BIAS_SET_ICALL_INDEX,
+            UNITY_ART_TAG_LOD_BIAS_SET_ICALL_NAME,
+            UNITY_ART_TAG_LOD_BIAS_SET_ICALL_VA,
+        ),
+    ):
+        actual_name, actual_target = resolve_main_icall(index)
+        require(
+            f"unity_hgtree_{label}_icall_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        require(
+            f"unity_hgtree_{label}_icall_target",
+            actual_target,
+            expected_target,
+            image.path,
+        )
+        lod_bias_icalls.append(
+            {
+                "label": label,
+                "index": index,
+                "name": actual_name,
+                "targetVirtualAddress": f"0x{actual_target:X}",
+            }
+        )
+
+    lod_streaming_offset_icalls = []
+    for label, index, expected_name, expected_target in (
+        (
+            "artTagLODStreamingOffset.get",
+            UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_INDEX,
+            UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_NAME,
+            UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_VA,
+        ),
+        (
+            "artTagLODStreamingOffset.set",
+            UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_INDEX,
+            UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_NAME,
+            UNITY_ART_TAG_LOD_STREAMING_OFFSET_SET_ICALL_VA,
+        ),
+    ):
+        actual_name, actual_target = resolve_hg_icall(index)
+        require(
+            f"unity_hgtree_{label}_icall_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        require(
+            f"unity_hgtree_{label}_icall_target",
+            actual_target,
+            expected_target,
+            image.path,
+        )
+        lod_streaming_offset_icalls.append(
+            {
+                "label": label,
+                "index": index,
+                "name": actual_name,
+                "targetVirtualAddress": f"0x{actual_target:X}",
+            }
+        )
+
     bodies = []
     for label, (virtual_address, size_bytes, expected_hash) in (
         UNITY_HGTREE_BODIES.items()
@@ -1379,6 +1546,10 @@ def validate_unity_hgtree_renderer_boundary(
             "name": register_name,
             "targetVirtualAddress": f"0x{register_target:X}",
         },
+        "lodControlInternalCalls": {
+            "cullingSystem": lod_bias_icalls,
+            "lodStreamingSystem": lod_streaming_offset_icalls,
+        },
         "callChain": [
             "0x1801D9D10 HGTreeRender::CreateRendererList binding",
             "0x18107EE40 renderer-list core",
@@ -1467,10 +1638,72 @@ def validate_unity_hgtree_renderer_boundary(
             },
         },
         "lodSelection": {
+            "dispatcherVirtualAddress": "0x181079C10",
             "dispatcherSegmentVirtualAddress": "0x181079FB1",
+            "callbackWrapperVirtualAddress": "0x181060E60",
+            "payloadBuilderVirtualAddress": "0x18106EAD0",
             "directDistanceJobs": ["0x18106D7F0", "0x18106DA90"],
             "scaledMetricJobs": ["0x18106E0E0", "0x18106E400"],
             "positionOrigins": ["view +0x00", "view +0x18"],
+            "dispatchPacket": {
+                "sizeBytes": 64,
+                "payloadPointerOffset": "0x00",
+                "lodCrossFadeConfigOffset": "0x08",
+                "lodCrossFadeConfigSizeBytes": 56,
+                "metadataFieldOrder": [
+                    "cameraPosition",
+                    "c0",
+                    "c1",
+                    "fraction",
+                    "currMaxProjFactorSquared",
+                    "maxProjFactorSquared0",
+                    "maxProjFactorSquared1",
+                    "enableDither",
+                    "isOrtho",
+                    "lodBias",
+                ],
+                "enableDitherPacketOffset": "0x3C",
+                "lodBiasPacketOffset": "0x3E",
+            },
+            "payload": {
+                "sizeBytes": 3120,
+                "parentLODBiasSquaredOffset": "0x28",
+                "artTagLODBiasSquaredOffset": "0x2C",
+                "artTagLODBiasSecondaryEncodingOffset": "0x42C",
+                "artTagLODStreamingOffsetOffset": "0x82C",
+                "artTagEntryCount": 256,
+                "sourceCopies": [
+                    "payload+0x28 <- HGCullingSystem state+0x180",
+                    "payload+0x2C <- HGCullingSystem state+0x184 (0x400 bytes)",
+                    "payload+0x42C <- HGCullingSystem state+0x584 (0x400 bytes)",
+                    "payload+0x82C <- HGLODStreamingSystem state+0x74 (0x400 bytes)",
+                ],
+            },
+            "lodBiasEncoding": {
+                "parentSetter": "state+0x180 = parentLODBias^2",
+                "parentGetter": "sqrt(state+0x180)",
+                "artTagPrimarySetter": (
+                    "state+0x184+4*i = artTagLODBias[i]^2"
+                ),
+                "artTagPrimaryGetter": "sqrt(state+0x184+4*i)",
+                "artTagSecondarySetter": (
+                    "state+0x584+4*i = -artTagLODBias[i]^2 when "
+                    "artTagLODBias[i]^2 < 1; otherwise 255"
+                ),
+                "viewLodBiasMultiplier": (
+                    "when LODCrossFadeConfig.lodBias != 0, both 256-float "
+                    "ArtTag tables are copied and multiplied by "
+                    "(1 + lodBias / 255)^2"
+                ),
+            },
+            "artTagLODStreamingOffset": {
+                "getter": "HGLODStreamingSystem state+0x74+4*i",
+                "setter": "HGLODStreamingSystem state+0x74+4*i",
+                "selectionUse": (
+                    "add the signed per-ArtTag offset to the selected LOD "
+                    "index, then clamp to [0, lodCount-1]"
+                ),
+            },
             "directDistanceEquation": (
                 "distanceSquared = dx*dx + dy*dy + dz*dz; select when "
                 "lodFloat2.y < distanceSquared <= lodFloat2.x"
@@ -1482,8 +1715,8 @@ def validate_unity_hgtree_renderer_boundary(
                 "lodFloat2.x * upperScale"
             ),
             "scaledLowerScaleSelection": (
-                "lowerScale is the secondary per-instance scale when "
-                "lodFloat2.y > 0, otherwise upperScale"
+                "the lower bound uses the secondary ArtTag encoding when "
+                "lodFloat2.y > 0, otherwise the primary squared-bias table"
             ),
             "selectionBoundary": "lower bound exclusive; upper bound inclusive",
             "verifiedFloatConstants": float_constants,
@@ -1559,12 +1792,16 @@ def validate_unity_hgtree_renderer_boundary(
                 "the direct squared-distance LOD interval equation",
                 "the scaled-metric LOD interval equation and its 0.0001 floor",
                 "the six-way LOD job dispatch segment",
+                "the 64-byte dispatch packet and 0xC30-byte payload layouts",
+                "LODCrossFadeConfig enableDither/lodBias packet offsets",
+                "parent and per-ArtTag LOD-bias squared runtime encodings",
+                "the exact per-view lodBias threshold multiplier",
+                "ArtTag LODStreamingOffset production, payload copy, add, and clamp",
                 "the correction that the old 10320/Animator binding was invalid",
                 "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
             "open": [
                 "semantic names for initially zero runtime-record state bytes",
-                "the upstream meanings of the scaled path's per-instance scale arrays",
                 "the unrelated scheduled cull-view +0x18 consumer",
             ],
         },
@@ -1778,8 +2015,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v6",
-        "status": "installed_cap_dispatch_predicates_hgtree_runtime_lod_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v7",
+        "status": "installed_cap_dispatch_predicates_hgtree_lod_controls_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -1802,12 +2039,15 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "exact 28-byte serialized input, 24-byte runtime records, bucketed "
             "LOD float2 array, registration argument mapping, six-way LOD job "
             "dispatch, direct squared-distance interval, and scaled metric "
-            "interval are now closed. The old index "
+            "interval are now closed. The dispatch packet/payload layouts, "
+            "LODCrossFadeConfig enableDither/lodBias controls, parent and "
+            "per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp "
+            "path are now source-closed as well. The old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The scaled-path array semantics, scheduled cull-view +0x18 "
-            "consumer, target-frame pointer/count, and unrelated live native "
-            "lights remain open."
+            "The scheduled cull-view +0x18 consumer, initially zero HGTree "
+            "runtime-state bytes, target-frame pointer/count, and unrelated "
+            "live native lights remain open."
         ),
         "installedInputs": {
             "gameAssembly": {
@@ -1929,6 +2169,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
+                "the HGTree LOD dispatch packet and payload layouts",
+                "the parent/per-ArtTag LOD-bias encodings and per-view lodBias multiplier",
+                "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
                 "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
@@ -1938,7 +2181,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "arbitrary/asymmetric final selected-view planes",
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
-                "the semantic names of the HGTree scaled-route arrays and initially zero runtime-state bytes",
+                "the semantic names of the initially zero HGTree runtime-state bytes",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -1972,8 +2215,9 @@ def main() -> int:
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
-        "registration/runtime transform/LOD equations, mask order, 16-byte "
-        "result, and 148-byte capture-row ABI closed."
+        "registration/runtime transform/LOD equations, LODCrossFadeConfig "
+        "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
+        "16-byte result, and 148-byte capture-row ABI closed."
     )
     return 0
 
