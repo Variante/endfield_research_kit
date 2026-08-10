@@ -144,5 +144,17 @@ assert.equal(merged[0].possibleMediaCount, 2);
         self.assertIn(".filter(gameplaySoundHasExactSkillTrigger)", source)
 
 
+    def test_gameplay_audio_counts_associations_and_unique_files_separately(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        count = source.split("  function gameplaySoundCountText", 1)[1].split(
+            "\n  function gameplaySoundIsSharedAnimation", 1
+        )[0]
+        self.assertIn("const mediaKeys = new Set();", count)
+        self.assertIn("soundUniqueFiles", count)
+        labels = (ROOT / "webui" / "src" / "features" / "gameplay" / "labels.js").read_text(encoding="utf-8")
+        self.assertIn("possible media associations", labels)
+        self.assertIn("unique decoded files", labels)
+
+
 if __name__ == "__main__":
     unittest.main()

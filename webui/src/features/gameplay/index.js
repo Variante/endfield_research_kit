@@ -1178,11 +1178,20 @@
   function gameplaySoundCountText(events, options = {}) {
     const rows = events || [];
     if (options.sharedGraph) return `${rows.length} ${text("soundSharedEvents")}`;
+    const mediaKeys = new Set();
     const possibleFiles = rows.reduce((total, event) => {
+      for (const audio of event.audio || []) {
+        const key = audio?.mediaId != null
+          ? `media:${audio.mediaId}`
+          : audio?.src ? `src:${audio.src}` : "";
+        if (key) mediaKeys.add(key);
+      }
       const resolved = (event.audio || []).filter((audio) => audio?.src).length;
       return total + (resolved || Number(event.possibleMediaCount || event.playableCandidates || 0));
     }, 0);
-    return `${rows.length} ${text("soundEvents")} · ${possibleFiles} ${text("soundPossibleFiles")}`;
+    const uniqueFiles = mediaKeys.size;
+    const uniqueLabel = uniqueFiles ? ` · ${uniqueFiles} ${text("soundUniqueFiles")}` : "";
+    return `${rows.length} ${text("soundEvents")} · ${possibleFiles} ${text("soundPossibleFiles")}${uniqueLabel}`;
   }
 
   function gameplaySoundIsSharedAnimation(event) {
@@ -1472,9 +1481,12 @@
       const roots = Number(event.playRootCount || 0);
       const branch = roots ? `${roots} ${text("soundPlayBranches")}` : text("soundDirectMedia");
       const sharedAnimation = gameplaySoundIsSharedAnimation(event);
+      const uniqueEventFiles = new Set((audio || []).map((candidate) => candidate?.mediaId != null
+        ? `media:${candidate.mediaId}`
+        : candidate?.src ? `src:${candidate.src}` : "").filter(Boolean)).size;
       const eventScope = sharedAnimation
-        ? `${Number(event.animationOwnerCount || 0)} ${text("soundSharedByCharacters")} · ${possibleCount} ${text("soundGlobalPossibleFiles")}`
-        : `${branch} · ${possibleCount} ${text("soundPossibleFiles")}`;
+        ? `${Number(event.animationOwnerCount || 0)} ${text("soundSharedByCharacters")} · ${possibleCount} ${text("soundGlobalPossibleFiles")}${uniqueEventFiles ? ` · ${uniqueEventFiles} ${text("soundUniqueFiles")}` : ""}`
+        : `${branch} · ${possibleCount} ${text("soundPossibleFiles")}${uniqueEventFiles ? ` · ${uniqueEventFiles} ${text("soundUniqueFiles")}` : ""}`;
       const actionLabel = options.showActionLabel ? gameplaySoundActionLabel(gameplaySoundActionGroup(event)) : "";
       const scope = [actionLabel, eventScope].filter(Boolean).join(" · ");
       const boundary = sharedAnimation ? `<p class="gameplay-enemy-sfx-note">${escapeHtml(text("soundSharedRuntimeGraphNote"))}</p>` : "";
