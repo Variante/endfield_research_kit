@@ -526,6 +526,11 @@
       nativeReceiverStoryContextsHint: "These rows are exact LevelScript receiver-to-Story paths whose Story keys intersect this mission's published nodes. The original binary-backed activation contract and related files are attached for inspection; this is not mission ownership, activation selection, branch choice, or Story order evidence.",
       nativeReceiverStoryMissionKeys: "mission Story keys",
       nativeReceiverStoryExternalKeys: "external Story keys",
+      missionAreaLevelDataReceiverContexts: "Typed MissionArea LevelData receiver shells",
+      missionAreaLevelDataReceiverContextsHint: "A typed MissionRuntime area id reaches a MissionAreaTable parent id in the same validated LevelData dictionary as this receiver. Unique and shared mission unions are shown exactly; these rows are shell context, not activation, Story ownership, branch selection, or order evidence.",
+      missionAreaLevelDataReceiverScope: "complete shell union",
+      missionAreaLevelDataReceiverAreas: "MissionArea ids",
+      missionAreaLevelDataReceiverRoots: "sub-data parent roots",
       missionNamedLevelDataReceiverContexts: "Mission-named LevelData receiver contexts",
       missionNamedLevelDataReceiverContextsHint: "The exact LevelData filename names this mission and its validated typed dictionary contains the receiver script. This attaches original files as authored container context only; it does not prove activation, ownership, playback, branch selection, or Story order.",
       missionNamedLevelDataReceiverBoundary: "Mission-named LevelData container context only",
@@ -2027,6 +2032,11 @@
       nativeReceiverStoryContextsHint: "\u8fd9\u4e9b\u884c\u662f\u7cbe\u786e LevelScript \u63a5\u6536\u5668\u5230 Story \u8def\u5f84\uff0c\u4e14 Story \u952e\u4e0e\u8be5\u4efb\u52a1\u5df2\u53d1\u5e03\u8282\u70b9\u76f8\u4ea4\u3002\u5df2\u9644\u52a0\u539f\u59cb\u4e8c\u8fdb\u5236\u6fc0\u6d3b\u5408\u7ea6\u4e0e\u76f8\u5173\u6587\u4ef6\u4f9b\u590d\u6838\uff1b\u8fd9\u4e0d\u662f\u4efb\u52a1\u5f52\u5c5e\u3001\u6fc0\u6d3b\u9009\u62e9\u3001\u5206\u652f\u9009\u62e9\u6216 Story \u987a\u5e8f\u8bc1\u636e\u3002",
       nativeReceiverStoryMissionKeys: "\u4efb\u52a1 Story \u952e",
       nativeReceiverStoryExternalKeys: "\u5916\u90e8 Story \u952e",
+      missionAreaLevelDataReceiverContexts: "\u7c7b\u578b\u5316 MissionArea LevelData \u63a5\u6536\u5668\u4efb\u52a1\u58f3",
+      missionAreaLevelDataReceiverContextsHint: "\u7c7b\u578b\u5316 MissionRuntime \u533a\u57df id \u901a\u8fc7 MissionAreaTable \u7236 id \u5230\u8fbe\u4e0e\u8be5\u63a5\u6536\u5668\u540c\u4e00\u5df2\u9a8c\u8bc1 LevelData \u5b57\u5178\u3002\u552f\u4e00\u548c\u5171\u4eab\u4efb\u52a1\u96c6\u90fd\u6309\u539f\u6837\u663e\u793a\uff1b\u8fd9\u53ea\u662f\u4efb\u52a1\u58f3\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u6fc0\u6d3b\u3001Story \u5f52\u5c5e\u3001\u5206\u652f\u9009\u62e9\u6216\u987a\u5e8f\u8bc1\u636e\u3002",
+      missionAreaLevelDataReceiverScope: "\u5b8c\u6574\u4efb\u52a1\u58f3\u96c6",
+      missionAreaLevelDataReceiverAreas: "MissionArea id",
+      missionAreaLevelDataReceiverRoots: "\u5b50\u6570\u636e\u7236\u6839",
       missionNamedLevelDataReceiverContexts: "\u4efb\u52a1\u547d\u540d LevelData \u63a5\u6536\u5668\u4e0a\u4e0b\u6587",
       missionNamedLevelDataReceiverContextsHint: "\u539f\u59cb LevelData \u6587\u4ef6\u540d\u5305\u542b\u8be5\u4efb\u52a1\uff0c\u5176\u7c7b\u578b\u5316\u5b57\u5178\u5305\u542b\u8be5\u63a5\u6536\u5668脚本\u3002\u8fd9\u53ea\u9644\u52a0\u539f\u59cb\u6587\u4ef6\u5bb9\u5668\u4e0a\u4e0b\u6587\uff0c\u4e0d\u8bc1\u660e\u6fc0\u6d3b\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u5206\u652f\u9009\u62e9\u6216\u5267\u60c5\u987a\u5e8f\u3002",
       missionNamedLevelDataReceiverBoundary: "\u4ec5\u4efb\u52a1\u547d\u540d LevelData \u5bb9\u5668\u4e0a\u4e0b\u6587",
@@ -4512,6 +4522,14 @@
     const relatedOriginalFilesHtml = (row) => (row.relatedOriginalFiles || []).length
       ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${row.relatedOriginalFiles.length}</span></summary>${row.relatedOriginalFiles.map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}</details>`
       : "";
+    const missionAreaLevelDataContexts = (order.missionAreaLevelDataReceiverContexts || []).map((row) => {
+      const stories = (row.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
+      const missions = (row.hostMissionIds || []).map((missionId) => `<code>${esc(missionId)}</code>`).join(" ");
+      const areas = (row.missionAreaIds || []).map((areaId) => `<code>${esc(areaId)}</code>`).join(" ");
+      const roots = (row.subDataParentIds || []).map((rootId) => `<code>${esc(rootId)}</code>`).join(" ");
+      const files = relatedOriginalFilesHtml(row);
+      return `<article class="mp-order-branch is-boundary mp-leveldata-receiver-context"><header><code>${esc(row.missionId || "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")} / ${esc(row.scriptId || "?")}</code><i>&harr;</i>${stories}</header><p><strong>${esc(t("missionAreaLevelDataReceiverScope"))}:</strong> <code>${esc(row.scopeStatus || "?")}</code> ${missions}</p>${areas ? `<p><strong>${esc(t("missionAreaLevelDataReceiverAreas"))}:</strong> ${areas}</p>` : ""}${roots ? `<p><strong>${esc(t("missionAreaLevelDataReceiverRoots"))}:</strong> ${roots}</p>` : ""}<small>${esc(row.evidenceBoundary || t("missionAreaLevelDataReceiverContextsHint"))}</small>${files}</article>`;
+    }).join("");
     const missionNamedLevelDataContexts = (order.missionNamedLevelDataReceiverContexts || []).map((row) => {
       const stories = (row.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
       const host = row.levelDataHost || {};
@@ -5448,6 +5466,7 @@
       ${orderCrossReferenceHtml}
       <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.dialogConditionalBranchCount ? `<span><b>${Number(summary.dialogConditionalBranchCount).toLocaleString()}</b>${esc(t("dialogConditionalCount"))}</span>` : ""}${summary.dialogTreeBranchNodeCount ? `<span><b>${Number(summary.dialogTreeBranchNodeCount).toLocaleString()}</b>${esc(t("dialogTreeBranchCount"))}</span>` : ""}${summary.dialogTreeIfNodeCount ? `<span><b>${Number(summary.dialogTreeIfNodeCount).toLocaleString()}</b>${esc(t("dialogTreeIfCount"))}</span>` : ""}${summary.dialogLineOptionBinaryValidatedGroupCount ? `<span><b>${Number(summary.dialogLineOptionBinaryValidatedGroupCount).toLocaleString()}</b>${esc(t("dialogTimelineBinaryCount"))}</span>` : ""}${summary.nativeSerializedBranchContextCount ? `<span><b>${Number(summary.nativeSerializedBranchContextCount).toLocaleString()}</b>${esc(t("nativeSerializedBranchMissionContext"))}</span>` : ""}${summary.nativeReceiverStoryContextCount ? `<span><b>${Number(summary.nativeReceiverStoryContextCount).toLocaleString()}</b>${esc(t("nativeReceiverStoryContexts"))}</span>` : ""}${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${nativeReceiverStoryContexts ? `<section><h4>${esc(t("nativeReceiverStoryContexts"))} <span>${(order.nativeReceiverStoryContexts || []).length}</span></h4><p>${esc(t("nativeReceiverStoryContextsHint"))}</p><div class="mp-order-branches">${nativeReceiverStoryContexts}</div></section>` : ""}
+      ${missionAreaLevelDataContexts ? `<section><h4>${esc(t("missionAreaLevelDataReceiverContexts"))} <span>${(order.missionAreaLevelDataReceiverContexts || []).length}</span></h4><p>${esc(t("missionAreaLevelDataReceiverContextsHint"))}</p><div class="mp-order-branches">${missionAreaLevelDataContexts}</div></section>` : ""}
       ${missionNamedLevelDataContexts ? `<section><h4>${esc(t("missionNamedLevelDataReceiverContexts"))} <span>${(order.missionNamedLevelDataReceiverContexts || []).length}</span></h4><p>${esc(t("missionNamedLevelDataReceiverContextsHint"))}</p><div class="mp-order-branches">${missionNamedLevelDataContexts}</div></section>` : ""}
       ${missionObservedContexts ? `<section><h4>${esc(t("missionObservedScriptContexts"))}</h4><p>${esc(t("missionObservedScriptContextsHint"))}</p><div class="mp-order-branches">${missionObservedContexts}</div></section>` : ""}
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
@@ -5990,6 +6009,7 @@
           ).values()];
           const activationHosts = (activation.levelDataHosts || [])
             .filter((host) => host && host.fileName);
+          const missionAreaShell = activation.missionAreaLevelDataShellContext || {};
           const modulePropertyFamilies = (activation.modulePropertyFamilies || [])
             .filter((family) => family && family.moduleId);
           const encounterContexts = (activation.encounterControllerContexts || [])
@@ -6161,6 +6181,7 @@
               ]).join("")}
               ${encounterContexts.length ? `<small>${esc(t("encounterControllerBoundary"))}</small>` : ""}
               ${activationHosts.map((host) => `<div><span>${esc(t("levelDataContainer"))}</span><i aria-hidden="true">→</i><code>${esc(host.fileName)}</code><b>${esc(host.hostMissionId || "generic")}</b><small>${esc(`${host.dictionaryEntryCount ?? "?"} LevelScripts`)}</small></div>`).join("")}
+              ${missionAreaShell.status ? `<div class="is-boundary"><span>${esc(t("missionAreaLevelDataReceiverScope"))}</span><i aria-hidden="true">&harr;</i><code>${esc((missionAreaShell.hostMissionIds || []).join(", ") || "?")}</code><b>${esc(missionAreaShell.status)}</b><small>${esc(t("missionAreaLevelDataReceiverContextsHint"))}</small></div>` : ""}
               ${nominalStoryCandidates.map((candidate) => {
                 const matchingHosts = nominalMissionHosts.filter((host) => host.missionId === candidate.nominalMissionId);
                 const excludedHosts = matchingHosts.filter((host) => host.dictionaryValidated && !host.receiverScriptPresent);

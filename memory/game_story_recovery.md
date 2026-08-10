@@ -274,6 +274,18 @@ never promotes an edge.
   activation geometry, local gate, task protocol, and server-applied script
   state. Those facts still do not reveal the server-side reason for activation
   or a mission/quest owner.
+- A corpus-wide typed shell join now follows MissionRuntime
+  `MissionAreaTrackingInfo.missionAreaId` through
+  `MissionAreaTable.subDataParentId` to a root in the same validated LevelData
+  member-22 dictionary as an unresolved receiver. Across 95 receiver scripts it
+  finds five contexts: `map01_lv007/2800100000` has the unique `e3m6` shell,
+  while four `dung01_rdg002` scripts retain the complete shared
+  `c13m2`/`c13m2d5` union. Mission Pipeline publishes nine shell placements
+  with hashes for the MissionRuntime, MissionArea table, LevelData,
+  LevelScript, installed binary, and metadata. This supersedes filename-only
+  display for the unique row but creates no ownership, activation, branch, or
+  order edge; the `cutscene_e3m5_3` name disagreement is therefore retained as
+  cross-context evidence rather than used as identity.
 - `SameWithActive`, current-context ManualStart, SubGame interaction starts,
   active-phase receiver availability, and client active/start request paths
   are recovered as corpus-wide contracts rather than per-scene exceptions.
@@ -323,7 +335,9 @@ Reject as proof:
 
 1. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
-   receiver families.
+   receiver families. Five receiver scripts now have exact typed mission-shell
+   context, but one is unique and four remain shared; none supplies the missing
+   activation or Story-ownership selector.
 2. Resolve the remaining ambiguous LevelData mission shells with an independent
    typed server-selection or mission-owner carrier. The LevelData census still
    retains 11 shared and nine unresolved identities, but the NpcProxy segment

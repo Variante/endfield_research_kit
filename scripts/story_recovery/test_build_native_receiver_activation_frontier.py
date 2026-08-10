@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -16,6 +17,61 @@ import build_native_receiver_activation_frontier as frontier  # noqa: E402
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):
+    def test_mission_area_leveldata_shell_validator_is_shape_driven(self) -> None:
+        pairs = {("map_fixture", "1001")}
+        contexts = {
+            ("map_fixture", "1001"): {
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "status": "unique",
+                "hostMissionIds": ["mission_fixture"],
+                "hosts": [{
+                    "levelId": "map_fixture",
+                    "scriptId": "1001",
+                    "levelDataFile": (
+                        "export_full/structured/StreamingAssets/Data/Json/"
+                        "LevelData/map_fixture/fixture.json"
+                    ),
+                    "hostMissionIds": ["mission_fixture"],
+                    "rootScriptIds": ["9001"],
+                    "missionAreaReferences": [{
+                        "missionId": "mission_fixture",
+                        "missionAreaId": "area_fixture",
+                        "subDataParentId": "9001",
+                    }],
+                }],
+            }
+        }
+        with mock.patch.object(
+            frontier,
+            "_source_file_sha256",
+            return_value="a" * 64,
+        ):
+            validation = (
+                frontier.validate_mission_area_leveldata_shell_contexts(
+                    pairs,
+                    contexts,
+                    {"mission_fixture"},
+                )
+            )
+            contexts[("map_fixture", "1001")]["status"] = "shared"
+            failed = frontier.validate_mission_area_leveldata_shell_contexts(
+                pairs,
+                contexts,
+                {"mission_fixture"},
+            )
+
+        self.assertEqual("validated", validation["status"])
+        self.assertEqual("validation_failed", failed["status"])
+        self.assertEqual(
+            "scopeClassification",
+            failed["failures"][0]["gate"],
+        )
+        self.assertEqual(
+            "map_fixture/1001",
+            failed["failures"][0]["identity"],
+        )
+
     def test_structured_identity_census_accepts_only_reviewed_direct_shape(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1491,6 +1547,111 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 "storyOrderMissionNamedLevelDataReceiverContextCount"
             ],
         )
+
+    def test_publish_attaches_shared_typed_mission_area_shell_to_each_mission(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+            mission_root = Path(tmp)
+            for mission_id in ("mission_a", "mission_b"):
+                (mission_root / f"{mission_id}.json").write_text(
+                    json.dumps({
+                        "mission": {"id": mission_id},
+                        "storyOrder": {
+                            "nodes": [],
+                            "directEdges": [],
+                            "summary": {"strongEdgeCount": 0},
+                        },
+                    }),
+                    encoding="utf-8",
+                )
+            index = {
+                "missions": [{"id": "mission_a"}, {"id": "mission_b"}],
+                "storyCoverage": {"missionlessNativeRuntimeNodes": []},
+            }
+            report = {
+                "schemaVersion": frontier.SCHEMA,
+                "counts": {},
+                "missionAreaLevelDataShellCensus": {
+                    "validation": {"status": "validated", "failures": []},
+                },
+                "rows": [{
+                    "levelId": "map_fixture",
+                    "scriptId": "1001",
+                    "storyKeys": ["radio_fixture_1"],
+                    "eventNames": ["ScriptEvent_OnCustomEvent"],
+                    "listenerHeaderLocalIds": [11],
+                    "activationClass": "nonmanual_start_with_shapes",
+                    "levelScript": {"startTypeName": "ByEnterStartShape"},
+                    "levelDataHosts": [],
+                    "relatedOriginalFiles": [{
+                        "kind": "levelscript",
+                        "sourceFile": "source/1001.json",
+                        "relationship": "exact receiver",
+                    }],
+                    "missionAreaLevelDataShellContext": {
+                        "levelId": "map_fixture",
+                        "scriptId": "1001",
+                        "status": "shared",
+                        "hostMissionIds": ["mission_a", "mission_b"],
+                        "hosts": [{
+                            "levelId": "map_fixture",
+                            "scriptId": "1001",
+                            "levelDataFile": "source/fixture_leveldata.json",
+                            "hostMissionIds": ["mission_a", "mission_b"],
+                            "rootScriptIds": ["9001"],
+                            "missionAreaReferences": [
+                                {
+                                    "missionId": "mission_a",
+                                    "missionAreaId": "area_a",
+                                    "sourceFile": "source/mission_a.json",
+                                },
+                                {
+                                    "missionId": "mission_b",
+                                    "missionAreaId": "area_b",
+                                    "sourceFile": "source/mission_b.json",
+                                },
+                            ],
+                        }],
+                    },
+                }],
+            }
+            frontier.publish_to_pipeline_index(
+                index,
+                report,
+                mission_root=mission_root,
+            )
+            missions = {
+                mission_id: json.loads(
+                    (mission_root / f"{mission_id}.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                for mission_id in ("mission_a", "mission_b")
+            }
+
+        for mission_id, mission in missions.items():
+            contexts = mission["storyOrder"][
+                "missionAreaLevelDataReceiverContexts"
+            ]
+            self.assertEqual(1, len(contexts))
+            self.assertEqual(mission_id, contexts[0]["missionId"])
+            self.assertEqual("shared", contexts[0]["scopeStatus"])
+            self.assertEqual(
+                ["mission_a", "mission_b"],
+                contexts[0]["hostMissionIds"],
+            )
+            self.assertFalse(contexts[0]["ownership"])
+            self.assertFalse(contexts[0]["activation"])
+            self.assertFalse(contexts[0]["storyPlayback"])
+            self.assertFalse(contexts[0]["orderEvidence"])
+            self.assertEqual([], mission["storyOrder"]["directEdges"])
+            self.assertEqual(
+                1,
+                mission["storyOrder"]["summary"][
+                    "missionAreaLevelDataReceiverSharedContextCount"
+                ],
+            )
 
     def test_publish_projects_exact_receiver_story_intersection_without_ownership(
         self,
