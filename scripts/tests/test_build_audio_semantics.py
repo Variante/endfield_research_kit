@@ -262,6 +262,37 @@ class AudioSemanticDataTests(unittest.TestCase):
             [anchor["role"] for anchor in row["nativeAnchors"]] == ["Deserialize", "Execute"]
             for row in model_view_specs
         ))
+        state_condition = specs[
+            "Beyond.Gameplay.Actions.LevelEvent.OnAudioStateChanged"
+        ]
+        mask_condition = specs[
+            "Beyond.Gameplay.Audio.AudioStateSystem+MaskCondition"
+        ]
+        beat_condition = specs[
+            "Beyond.Gameplay.Actions.LevelEvent.OnMusicBeatEvent"
+        ]
+        callback_type = specs["Beyond.Audio.AudioCallbackType"]
+        self.assertEqual(state_condition["serializedLayout"]["unionTag"], 0x0048)
+        self.assertEqual(state_condition["serializedLayout"]["eventKey"], 148)
+        self.assertEqual(state_condition["serializedLayout"]["authoredOccurrenceCount"], 0)
+        self.assertEqual(len(state_condition["fields"]), 4)
+        self.assertIn("IsMet", mask_condition["methods"])
+        self.assertEqual(beat_condition["serializedLayout"]["unionTag"], 0x007A)
+        self.assertEqual(beat_condition["serializedLayout"]["eventKey"], 44)
+        self.assertEqual(beat_condition["serializedLayout"]["authoredOccurrenceCount"], 0)
+        self.assertTrue(callback_type["enumValues"])
+        self.assertEqual(len(audio_semantics.LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS), 2)
+        self.assertEqual(
+            sum(
+                row["authoredOccurrenceCount"]
+                for row in audio_semantics.LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
+            ),
+            0,
+        )
+        self.assertTrue(all(
+            row["playbackRequestStatus"] == "notApplicableTriggerInput"
+            for row in audio_semantics.LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
+        ))
 
     def test_runtime_cache_schema_invalidates_changed_system_catalog(self) -> None:
         stale = {
@@ -676,7 +707,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 webui_root=webui_root,
                 metadata_path=None,
             )
-            self.assertEqual(12, payload["schemaVersion"])
+            self.assertEqual(audio_semantics.AUDIO_SEMANTIC_SCHEMA_VERSION, payload["schemaVersion"])
             self.assertEqual(1, payload["counts"]["patrolSubActionPlayAudioEvents"])
             self.assertEqual(1, payload["counts"]["patrolSubActionPlayAudioContexts"])
             self.assertEqual(0, payload["counts"]["patrolSubActionPlayAudioEventsFoundInWwise"])
@@ -1497,6 +1528,9 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("function customFootstepParameterSummary", source)
         self.assertIn('"float inactive for playback filter"', source)
         self.assertIn("runtimeSelectorBoundary", source)
+        self.assertIn('levelEventConditions: "LevelEvent audio conditions"', source)
+        self.assertIn("catalog.levelEventAudioConditions", source)
+        self.assertIn("authoredOccurrenceCount", source)
         self.assertNotIn("selected Wwise switch child", source)
 
 
