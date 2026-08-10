@@ -1588,7 +1588,7 @@ gameplay pass enum into that mask and `Apply` calls the managed wrapper at
 constructor defaults field `+0x250` to `0xFFFFFFFF`; builders
 `0x18042A130/0x18042AB50` copy it directly to every record `+0x14`, while
 generic path `0x180BCCB60 -> 0x180BCB760` carries it through constructor input
-`+0x20`. The two inspected renderer-list callbacks store the requested mask at
+`+0x20`. The two HGTree renderer-list callbacks store the requested mask at
 job `+0x44` and test it against a separate `0x60`-stride renderer-entry word at
 `+0x1C`. Builders `0x18109BE90/0x18109C9D0` now close that word independently:
 they clear it, query the renderer material/shader against the exact 31-name
@@ -1617,10 +1617,19 @@ base from ECS archetype component columns 127/126, and the value is consumed
 as a float. The remaining HGTree renderer-list variants do not expose another
 route: internal-call entries 564/565/566 (default, child-view, and PreZ) reach
 cores `0x18107EE40/0x18107FCF0/0x181080190`, all converge on scheduler
-`0x181080730`, and select the same two already inspected callbacks. The exact
-later native consumer of record `+0x14` remains open
-outside this direct lookup/escape surface. This loader blob
-is separate
+`0x181080730`, and select the same two already inspected callbacks. The actual
+consumer is in the separate GPU-driven renderer path. HG internal-call entries
+151/152 and 164/165 identify `GPUDrivenRendererV1/V2` default/PreZ routes;
+their four cores build `0xA0`-byte jobs, whose callbacks carry requested light
+modes at job `+0x54` and select the `0x7F00` ECS renderer column.
+Representative V1/V2 default/PreZ consumers
+`0x1810E87E0/0x1810E9AD0/0x1810F58F0/0x1810F6BC0` form record cursors at
+base `+0x0C` or `+0x10`, read dword `+0x14`, and advance by `0x18`. They OR
+this `enabledLightModes` word with candidate-pass `+0x18` and derived flags
+before job `+0x48/+0x4C` mask/value filtering; job `+0x54` is independently
+intersected with candidate-pass light modes at `+0x1C`. This closes the native
+consumer and separates it from the shader-supported-pass mask for all four
+routes. This loader blob is separate
 from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count
 at `+0x00`, desired/resolved/history indices at `+0x01..+0x03`, pending and
 available masks at `+0x04/+0x05`, a reserved/alignment word at `+0x06`, a
@@ -1729,12 +1738,8 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The semantic reason for loader record
-`+0x0C`'s Mesh/filter dual use, the downstream native consumer of
-`enabledLightModes` record `+0x14`
-beyond the now-excluded direct lookup/escape surface and callback-A ECS-column lookalike,
-and the
-component-67 standalone native type
-name, any separate post-dispatch
+`+0x0C`'s Mesh/filter dual use, the component-67 standalone native type name,
+any separate post-dispatch
 copy or consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.
