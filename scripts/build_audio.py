@@ -158,7 +158,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 12
+EVENT_EVIDENCE_SCHEMA_VERSION = 13
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -3142,18 +3142,124 @@ def hirc_v150_playback_action(data: bytes, bank_version: int | None) -> dict[str
     return evidence
 
 
-def hirc_sound_media_id(data: bytes) -> int | None:
-    """Return the v150 AkBankSourceData source ID from a Sound object.
+HIRC_PLUGIN_TYPE_LABELS = {
+    0: "none",
+    1: "codec",
+    2: "source",
+    3: "effect",
+    6: "mixer",
+    7: "sink",
+    8: "globalExtension",
+    9: "metadata",
+}
+HIRC_STREAM_TYPE_LABELS = {
+    0: "memory",
+    1: "streamed",
+    2: "streamedZeroLatency",
+}
+HIRC_SOURCE_PLUGIN_LABELS = {
+    0x00040001: "Wwise Vorbis",
+    0x00140001: "Wwise Opus",
+    0x00080001: "Wwise External Source",
+    0x00640002: "Wwise Sine",
+    0x00650002: "Wwise Silence",
+    0x01990002: "Wwise Motion Source",
+    0x00940002: "Wwise Synth One",
+}
 
-    The current banks serialize U32 plugin ID at offset 0, U8 stream type at
-    offset 4, and U32 source/media ID at offset 5.  The U32 at offset 22 in
-    current Sound objects is the parent node and must never be traversed as a
-    child reference.
+
+def _hirc_v150_source_kind(plugin_id: int, plugin_type: int) -> str:
+    if plugin_id == 0x00080001:
+        return "externalSourceCodec"
+    if plugin_type == 1:
+        return "codecMedia"
+    if plugin_type == 2:
+        return "synthesizedSource"
+    return "unsupportedPluginSource"
+
+
+def _hirc_v150_bank_source_data(
+    data: bytes,
+    offset: int = 0,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode one bounded v150 AkBankSourceData record.
+
+    ``streamType`` is a Wwise buffering policy, not a physical PCK-location
+    proof.  Source plugins carry a length-prefixed parameter blob; the blob is
+    consumed but intentionally not interpreted without a plugin-specific
+    writer fingerprint.
     """
 
-    if len(data) < 9:
+    try:
+        if offset < 0 or offset + 14 > len(data):
+            raise ValueError("truncated v150 AkBankSourceData")
+        plugin_id = unpack_from("<I", data, offset)[0]
+        stream_type = data[offset + 4]
+        source_id = unpack_from("<I", data, offset + 5)[0]
+        in_memory_media_size = unpack_from("<I", data, offset + 9)[0]
+        source_bits = data[offset + 13]
+        offset += 14
+        plugin_type = plugin_id & 0x0F
+        plugin_parameter_size = 0
+        if plugin_type == 2:
+            plugin_parameter_size, offset = _hirc_v150_u32(data, offset)
+            if offset + plugin_parameter_size > len(data):
+                raise ValueError("truncated v150 source plugin parameters")
+            offset += plugin_parameter_size
+        known_source_bits = 0x01 | 0x02 | 0x08 | 0x80
+        row = {
+            "sourceParserStatus": "typedExactV150AkBankSourceData",
+            "pluginId": plugin_id,
+            "pluginIdHex": f"0x{plugin_id:08x}",
+            "pluginName": HIRC_SOURCE_PLUGIN_LABELS.get(plugin_id),
+            "pluginType": plugin_type,
+            "pluginTypeLabel": HIRC_PLUGIN_TYPE_LABELS.get(
+                plugin_type, f"pluginType{plugin_type}"
+            ),
+            "streamType": stream_type,
+            "streamTypeLabel": HIRC_STREAM_TYPE_LABELS.get(
+                stream_type, f"streamType{stream_type}"
+            ),
+            "sourceId": source_id,
+            "inMemoryMediaSize": in_memory_media_size,
+            "sourceBits": source_bits,
+            "sourceFlags": {
+                "isLanguageSpecific": bool(source_bits & 0x01),
+                "prefetch": bool(source_bits & 0x02),
+                "nonCachable": bool(source_bits & 0x08),
+                "hasSource": bool(source_bits & 0x80),
+                "unknownBits": source_bits & ~known_source_bits,
+            },
+            "pluginParameterSize": plugin_parameter_size,
+            "sourceKind": _hirc_v150_source_kind(plugin_id, plugin_type),
+            "streamTypeBoundary": "bufferingPolicyNotPhysicalMediaLocation",
+        }
+        return row, offset
+    except (ValueError, OverflowError):
         return None
-    return unpack_from("<I", data, 5)[0]
+
+
+def hirc_v150_sound_source(data: bytes) -> dict[str, Any] | None:
+    """Decode a Sound's source record and exact NodeBase parent prefix."""
+
+    parsed = _hirc_v150_bank_source_data(data, 0)
+    if not parsed:
+        return None
+    source, node_base_offset = parsed
+    try:
+        parent_id, _parent_end = _hirc_v150_node_base_parent(data, node_base_offset)
+    except (ValueError, OverflowError):
+        return None
+    return {**source, "nodeBaseOffset": node_base_offset, "parentId": parent_id}
+
+
+def hirc_sound_media_id(data: bytes) -> int | None:
+    """Return a fixed codec-media id; external/plugin sources are not media."""
+
+    source = hirc_v150_sound_source(data)
+    if not source or source.get("sourceKind") != "codecMedia":
+        return None
+    return int(source["sourceId"])
 
 
 def _hirc_v150_u32(data: bytes, offset: int) -> tuple[int, int]:
@@ -3213,29 +3319,11 @@ def hirc_v150_music_track(data: bytes) -> dict[str, Any] | None:
         source_count, offset = _hirc_v150_u32(data, 1)
         sources: list[dict[str, Any]] = []
         for _ in range(source_count):
-            plugin_id, offset = _hirc_v150_u32(data, offset)
-            if offset + 10 > len(data):
+            parsed_source = _hirc_v150_bank_source_data(data, offset)
+            if not parsed_source:
                 raise ValueError("truncated v150 MusicTrack source")
-            stream_type = data[offset]
-            media_id = unpack_from("<I", data, offset + 1)[0]
-            memory_size = unpack_from("<I", data, offset + 5)[0]
-            source_bits = data[offset + 9]
-            offset += 10
-            plugin_parameter_size = 0
-            if plugin_id & 0x0F == 2:
-                plugin_parameter_size, offset = _hirc_v150_u32(data, offset)
-                if offset + plugin_parameter_size > len(data):
-                    raise ValueError("truncated v150 MusicTrack plugin parameters")
-                offset += plugin_parameter_size
-            sources.append({
-                "mediaId": media_id,
-                "pluginId": plugin_id,
-                "pluginType": plugin_id & 0x0F,
-                "streamType": stream_type,
-                "inMemoryMediaSize": memory_size,
-                "sourceBits": source_bits,
-                "pluginParameterSize": plugin_parameter_size,
-            })
+            source, offset = parsed_source
+            sources.append({**source, "mediaId": source["sourceId"]})
 
         playlist_count, offset = _hirc_v150_u32(data, offset)
         playlist_items: list[dict[str, Any]] = []
@@ -3295,7 +3383,8 @@ def _hirc_v150_music_parent_id(data: bytes) -> int | None:
 
 def hirc_object_parent_id(object_type: int, data: bytes) -> int | None:
     if object_type == 2:
-        offset = 22
+        source = hirc_v150_sound_source(data)
+        return int(source["parentId"]) if source else None
     elif object_type == 11:
         track = hirc_v150_music_track(data)
         return int(track["parentId"]) if track else None
@@ -3329,6 +3418,19 @@ def hirc_reciprocal_child_list(
     if object_type not in HIRC_TYPED_CHILD_CONTAINER_TYPES:
         return None
     allowed_child_types = HIRC_MUSIC_CHILD_TYPES.get(object_type, HIRC_AUDIO_NODE_TYPES)
+
+    def cached_parent_id(child_id: int) -> int | None:
+        child = objects[child_id]
+        if child.get("_typedParentIdParsed"):
+            value = child.get("_typedParentId")
+            return int(value) if value is not None else None
+        value = hirc_object_parent_id(
+            int(child.get("type") or 0), child.get("data") or b""
+        )
+        child["_typedParentIdParsed"] = True
+        child["_typedParentId"] = value
+        return value
+
     for offset in range(0, max(0, len(data) - 7)):
         count = unpack_from("<I", data, offset)[0]
         if count <= 0 or count > (len(data) - offset - 4) // 4:
@@ -3341,10 +3443,7 @@ def hirc_reciprocal_child_list(
             continue
         if any(
             int(objects[child_id].get("type") or 0) not in allowed_child_types
-            or hirc_object_parent_id(
-                int(objects[child_id].get("type") or 0),
-                objects[child_id].get("data") or b"",
-            ) != object_id
+            or cached_parent_id(child_id) != object_id
             for child_id in children
         ):
             continue
@@ -4419,6 +4518,7 @@ def traverse_hirc_event(
     action_evidence: list[dict[str, Any]] = []
     container_evidence: list[dict[str, Any]] = []
     music_node_evidence: list[dict[str, Any]] = []
+    source_object_evidence: list[dict[str, Any]] = []
     unresolved_nodes: list[dict[str, Any]] = []
 
     def record_media(
@@ -4427,6 +4527,7 @@ def traverse_hirc_event(
         object_type: int,
         root_action_id: int,
         relations: tuple[str, ...],
+        source: dict[str, Any] | None = None,
     ) -> None:
         if media_id not in source_media_ids:
             source_media_ids.append(media_id)
@@ -4440,6 +4541,10 @@ def traverse_hirc_event(
             "rootActionIds": set(),
             "relationTypes": set(),
             "selectionPaths": set(),
+            "sourceKinds": set(),
+            "pluginIds": set(),
+            "streamTypes": set(),
+            "sourceBits": set(),
         })
         if object_type == 2:
             media_row["soundObjectIds"].add(object_id)
@@ -4448,6 +4553,44 @@ def traverse_hirc_event(
         media_row["rootActionIds"].add(root_action_id)
         media_row["relationTypes"].update(relations)
         media_row["selectionPaths"].add(relations)
+        if source:
+            media_row["sourceKinds"].add(str(source.get("sourceKind") or "unknown"))
+            media_row["pluginIds"].add(int(source.get("pluginId") or 0))
+            media_row["streamTypes"].add(int(source.get("streamType") or 0))
+            media_row["sourceBits"].add(int(source.get("sourceBits") or 0))
+
+    def record_source(
+        source: dict[str, Any],
+        object_id: int,
+        object_type: int,
+        root_action_id: int,
+        relations: tuple[str, ...],
+    ) -> None:
+        source_kind = str(source.get("sourceKind") or "unsupportedPluginSource")
+        source_id = int(source.get("sourceId") or 0)
+        decoded_match = source_kind == "codecMedia" and source_id in decoded_media_ids
+        if decoded_match:
+            location_status = "decodedMediaIndexMatch"
+        elif source_kind == "codecMedia":
+            location_status = "unresolvedCodecMedia"
+        elif source_kind == "externalSourceCodec":
+            location_status = "unresolvedExternalSource"
+        elif source_kind == "synthesizedSource":
+            location_status = "synthesizedSource"
+        else:
+            location_status = "unsupportedPluginSource"
+        source_object_evidence.append({
+            **source,
+            "objectId": object_id,
+            "objectType": object_type,
+            "rootActionId": root_action_id,
+            "relationTypes": list(relations),
+            "decodedMediaMatch": decoded_match,
+            "mediaLocationStatus": location_status,
+            "playbackBoundary": (
+                "sourceRecordProvesAuthoredWwiseSourceNotRuntimeInstantiationOrAudibility"
+            ),
+        })
 
     while queue:
         (
@@ -4535,8 +4678,8 @@ def traverse_hirc_event(
             continue
 
         if object_type == 2:
-            media_id = hirc_sound_media_id(data)
-            if media_id is None:
+            source = hirc_v150_sound_source(data)
+            if source is None:
                 unresolved_nodes.append({
                     "objectId": object_id,
                     "objectType": object_type,
@@ -4545,7 +4688,12 @@ def traverse_hirc_event(
                 })
                 continue
             relations = tuple(path_relations) or ("directSound",)
-            record_media(media_id, object_id, object_type, root_action_id, relations)
+            record_source(source, object_id, object_type, root_action_id, relations)
+            if source.get("sourceKind") == "codecMedia":
+                record_media(
+                    int(source["sourceId"]), object_id, object_type,
+                    root_action_id, relations, source,
+                )
             continue
 
         if object_type == 11:
@@ -4575,9 +4723,13 @@ def traverse_hirc_event(
             })
             relations = (*path_relations, "musicTrackSource")
             for source in track["sources"]:
-                media_id = int(source.get("mediaId") or 0)
-                if media_id:
-                    record_media(media_id, object_id, object_type, root_action_id, relations)
+                record_source(source, object_id, object_type, root_action_id, relations)
+                media_id = int(source.get("sourceId") or 0)
+                if media_id and source.get("sourceKind") == "codecMedia":
+                    record_media(
+                        media_id, object_id, object_type, root_action_id,
+                        relations, source,
+                    )
             continue
 
         if object_type in HIRC_TYPED_CHILD_CONTAINER_TYPES:
@@ -4758,8 +4910,64 @@ def traverse_hirc_event(
             "rootActionIds": sorted(row["rootActionIds"]),
             "relationTypes": sorted(row["relationTypes"]),
             "selectionPaths": [list(path) for path in sorted(row["selectionPaths"])],
+            "sourceKinds": sorted(row["sourceKinds"]),
+            "pluginIds": sorted(row["pluginIds"]),
+            "pluginNames": [
+                HIRC_SOURCE_PLUGIN_LABELS.get(plugin_id, f"plugin0x{plugin_id:08x}")
+                for plugin_id in sorted(row["pluginIds"])
+            ],
+            "streamTypes": [
+                {
+                    "value": stream_type,
+                    "label": HIRC_STREAM_TYPE_LABELS.get(
+                        stream_type, f"streamType{stream_type}"
+                    ),
+                }
+                for stream_type in sorted(row["streamTypes"])
+            ],
+            "sourceBits": sorted(row["sourceBits"]),
         }
         for media_id, row in sorted(media_evidence_by_id.items())
+    ]
+    source_kind_counts = Counter(
+        str(row.get("sourceKind") or "unknown") for row in source_object_evidence
+    )
+    plugin_counts = Counter(
+        f"0x{int(row.get('pluginId') or 0):08x}" for row in source_object_evidence
+    )
+    stream_type_counts = Counter(
+        str(row.get("streamTypeLabel") or "unknown") for row in source_object_evidence
+    )
+    source_flag_counts = Counter()
+    for row in source_object_evidence:
+        for flag, enabled in (row.get("sourceFlags") or {}).items():
+            if flag != "unknownBits" and enabled:
+                source_flag_counts[flag] += 1
+        if int((row.get("sourceFlags") or {}).get("unknownBits") or 0):
+            source_flag_counts["unknownBitsNonzero"] += 1
+    source_object_summary = {
+        "sourceReferenceCount": len(source_object_evidence),
+        "uniqueSourceObjectCount": len({
+            (int(row.get("objectType") or 0), int(row.get("objectId") or 0))
+            for row in source_object_evidence
+        }),
+        "sourceKindCounts": dict(sorted(source_kind_counts.items())),
+        "pluginCounts": dict(sorted(plugin_counts.items())),
+        "streamTypeCounts": dict(sorted(stream_type_counts.items())),
+        "sourceFlagCounts": dict(sorted(source_flag_counts.items())),
+        "decodedCodecSourceCount": sum(
+            row.get("sourceKind") == "codecMedia" and row.get("decodedMediaMatch")
+            for row in source_object_evidence
+        ),
+        "unresolvedCodecSourceCount": sum(
+            row.get("sourceKind") == "codecMedia" and not row.get("decodedMediaMatch")
+            for row in source_object_evidence
+        ),
+        "runtimeSelection": "sourceInstantiationAndAudibilityNotObserved",
+    }
+    non_media_source_evidence = [
+        row for row in source_object_evidence
+        if row.get("sourceKind") != "codecMedia"
     ]
     action_dispatch_evidence = summarize_hirc_action_dispatch(
         event_id, root_action_ids, action_evidence
@@ -4779,6 +4987,8 @@ def traverse_hirc_event(
         "actionDispatchEvidence": action_dispatch_evidence,
         "containerEvidence": container_evidence,
         "musicNodeEvidence": music_node_evidence,
+        "sourceObjectSummary": source_object_summary,
+        "nonMediaSourceEvidence": non_media_source_evidence,
         "unresolvedNodes": unresolved_nodes,
         "traversalStatus": "partial" if unresolved_nodes else "complete",
     }
@@ -5944,13 +6154,15 @@ def collect_event_audio_index(
                     "selectionObjectTypes": selection_object_types,
                     "containerEvidence": traversal["containerEvidence"],
                     "musicNodeEvidence": traversal["musicNodeEvidence"],
+                    "sourceObjectSummary": traversal["sourceObjectSummary"],
+                    "nonMediaSourceEvidence": traversal["nonMediaSourceEvidence"],
                     "mediaEvidence": traversal["mediaEvidence"],
                     "sourceMediaIds": traversal["sourceMediaIds"],
                     "mediaIds": media_ids,
                     "resolvedMediaCount": len(media_ids),
                     "unresolvedNodes": traversal["unresolvedNodes"],
                     "traversalStatus": traversal["traversalStatus"],
-                    "edgeParser": "wwise150TypedReciprocalChildrenSwitchMappingAndMusic",
+                    "edgeParser": "wwise150TypedReciprocalChildrenSelectorsMusicAndSources",
                     "source": "wwiseHirc",
                     "nestedReferenceConfidence": "typedExact" if not traversal["unresolvedNodes"] else "typedPartial",
                 }
@@ -5963,6 +6175,8 @@ def collect_event_audio_index(
                                 "mediaId", "soundObjectCount", "soundObjectIds",
                                 "musicTrackObjectCount", "musicTrackObjectIds",
                                 "rootActionIds", "relationTypes", "selectionPaths",
+                                "sourceKinds", "pluginIds", "pluginNames",
+                                "streamTypes", "sourceBits",
                             )
                             if row.get(key) not in (None, "", [])
                         })

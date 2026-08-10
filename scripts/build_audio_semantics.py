@@ -124,8 +124,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 23
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 14
+AUDIO_SEMANTIC_SCHEMA_VERSION = 24
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
 RADIO_CATALOG_ITEM_LIMIT = 64
@@ -2358,12 +2358,22 @@ RUNTIME_SYSTEM_SPECS = (
     runtime_spec(
         "Beyond.Gameplay.Audio.AudioGamePadManager",
         "output_device",
-        "Selects the global Wwise gamepad motion-output backend for XInput or ScePad.",
-        methods=("_TryAddXInputMotionOutput", "_TryRefreshScePadHandle"),
+        "Selects the global Wwise gamepad backend and creates/removes Motion and controller-speaker output devices for XInput or ScePad.",
+        fields=(
+            "m_wwiseMotionOutputDeviceId",
+            "m_wwiseControllerSpeakerOutputDeviceId",
+        ),
+        methods=(
+            "_TryAddXInputMotionOutput", "_TryRefreshScePadHandle",
+            "_DoOnInputTypeChanged", "_ReAddControllerOutputDevice",
+            "_TryRemoveControllerOutputDevice",
+        ),
         native_anchors=(
             {
                 "role": "xinputStateSetter",
                 "method": "_TryAddXInputMotionOutput",
+                "token": "0x060099bd",
+                "virtualAddress": "0x186ad0468",
                 "setStateCallVirtualAddress": "0x186ad04e2",
                 "groupId": 0xF6699CF4,
                 "groupIdHex": "0xf6699cf4",
@@ -2373,14 +2383,39 @@ RUNTIME_SYSTEM_SPECS = (
             {
                 "role": "scePadStateSetter",
                 "method": "_TryRefreshScePadHandle",
+                "token": "0x060099be",
+                "virtualAddress": "0x186ad055c",
                 "setStateCallVirtualAddress": "0x186ad069c",
                 "groupId": 0xF6699CF4,
                 "groupIdHex": "0xf6699cf4",
                 "valueId": 0x1B9ABDB1,
                 "valueIdHex": "0x1b9abdb1",
             },
+            {
+                "role": "motionOutputDevice",
+                "type": "Beyond.Audio.AudioAdapter+Device",
+                "method": "AddOutput",
+                "token": "0x06000086",
+                "virtualAddress": "0x18635fb54",
+                "downstreamType": "AkSoundEngine",
+                "downstreamMethod": "AddOutput",
+                "downstreamVirtualAddress": "0x1853cf1a8",
+            },
+            {
+                "role": "scePadHandleToDeviceId",
+                "type": "Beyond.Audio.AudioAdapter+Device",
+                "method": "GetMmDeviceIdFromScePadHandle",
+                "token": "0x0600008b",
+                "virtualAddress": "0x18635fc34",
+            },
+            {
+                "role": "inputTypeOutputLifecycle",
+                "method": "_DoOnInputTypeChanged",
+                "token": "0x060099c3",
+                "virtualAddress": "0x186ad0068",
+            },
         ),
-        runtime_execution_status="staticSetterCallsitesExactLiveBackendNotObserved",
+        runtime_execution_status="staticStateAndOutputDeviceCallsitesExactLiveEventToDeviceRoutingNotObserved",
     ),
     runtime_spec(
         "Beyond.Gameplay.Audio.VoiceResponseProcessor",
@@ -2545,6 +2580,7 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
                 for key in (
                     "rootActionIds", "soundObjectCount", "relationTypes",
                     "musicTrackObjectCount", "selectionPaths", "bankId", "bankPackage",
+                    "sourceKinds", "pluginIds", "pluginNames", "streamTypes", "sourceBits",
                 )
                 if row.get(key) not in (None, "", [])
             }
@@ -6343,6 +6379,8 @@ def build_event_rows(
             "selectionContainerTypes": selection_types,
             "containerEvidence": compact_container_evidence(evidence.get("containerEvidence") or []),
             "musicNodeEvidence": evidence.get("musicNodeEvidence") or [],
+            "sourceObjectSummary": evidence.get("sourceObjectSummary") or {},
+            "nonMediaSourceEvidence": evidence.get("nonMediaSourceEvidence") or [],
             "unresolvedNodes": evidence.get("unresolvedNodes") or [],
             "source": evidence.get("source") or "wwiseHirc",
             "nestedReferenceConfidence": evidence.get("nestedReferenceConfidence") or "unknown",
@@ -6725,6 +6763,25 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     media = row.get("media") or []
     scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
     banks = sorted({str(value.get("bankPackage") or "") for evidence in media for value in evidence.get("wwiseMediaEvidence") or [] if value.get("bankPackage")})
+    source_kinds: set[str] = set()
+    source_plugin_ids: set[str] = set()
+    non_media_source_count = 0
+    for evidence in row.get("evidence") or []:
+        if not isinstance(evidence, dict):
+            continue
+        source_summary = evidence.get("sourceObjectSummary") or {}
+        source_kinds.update(str(value) for value in (source_summary.get("sourceKindCounts") or {}))
+        source_plugin_ids.update(str(value) for value in (source_summary.get("pluginCounts") or {}))
+        for source in evidence.get("nonMediaSourceEvidence") or []:
+            if not isinstance(source, dict):
+                continue
+            non_media_source_count += 1
+            for key in (
+                "pluginIdHex", "pluginName", "pluginTypeLabel", "streamTypeLabel",
+                "sourceKind", "mediaLocationStatus",
+            ):
+                if source.get(key) not in (None, ""):
+                    context_search.add(str(source[key]))
     keys = (
         "id", "name", "hash", "category", "categoryEvidence", "foundInWwise",
         "possibleMediaCount", "candidateCount", "uniqueDecodedContentCount",
@@ -6755,6 +6812,12 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "bankPackages": banks,
         "detailShard": detail_shard,
     })
+    if source_kinds:
+        summary["sourceKinds"] = sorted(source_kinds)
+    if source_plugin_ids:
+        summary["sourcePluginIds"] = sorted(source_plugin_ids)
+    if non_media_source_count:
+        summary["nonMediaSourceCount"] = non_media_source_count
     canonical_play_sound_contexts = [
         context for context in contexts
         if isinstance(context, dict) and context.get("kind") == "buffPlaySoundAction"
@@ -6947,6 +7010,26 @@ def build_audio_semantic_data(
         for context in row.get("contexts") or []
         if isinstance(context, dict) and context.get("kind") == "buffPlaySoundAction"
     )
+    wwise_source_reference_counts: Counter[str] = Counter()
+    wwise_source_event_counts: Counter[str] = Counter()
+    wwise_source_plugin_counts: Counter[str] = Counter()
+    for event in events:
+        event_source_kinds: set[str] = set()
+        for evidence in event.get("evidence") or []:
+            if not isinstance(evidence, dict):
+                continue
+            summary = evidence.get("sourceObjectSummary") or {}
+            if not isinstance(summary, dict):
+                continue
+            for source_kind, count in (summary.get("sourceKindCounts") or {}).items():
+                source_kind = str(source_kind or "unknown")
+                wwise_source_reference_counts[source_kind] += int(count or 0)
+                if count:
+                    event_source_kinds.add(source_kind)
+            for plugin_id, count in (summary.get("pluginCounts") or {}).items():
+                wwise_source_plugin_counts[str(plugin_id)] += int(count or 0)
+        for source_kind in event_source_kinds:
+            wwise_source_event_counts[source_kind] += 1
 
     out_root = webui_root / f"data/lang/{language}/audio"
     events_name = "events.json"
@@ -7000,6 +7083,12 @@ def build_audio_semantic_data(
             "typedTraversalComplete": sum(row.get("traversalStatus") == "complete" for row in events),
             "typedTraversalPartial": sum(row.get("traversalStatus") == "partial" for row in events),
             "eventsWithMultiplePlayRoots": sum(int(row.get("playRootCount") or 0) > 1 for row in events),
+            "wwiseCodecSourceReferences": wwise_source_reference_counts.get("codecMedia", 0),
+            "wwiseExternalSourceReferences": wwise_source_reference_counts.get("externalSourceCodec", 0),
+            "wwiseSynthesizedSourceReferences": wwise_source_reference_counts.get("synthesizedSource", 0),
+            "wwiseEventsWithExternalSource": wwise_source_event_counts.get("externalSourceCodec", 0),
+            "wwiseEventsWithSynthesizedSource": wwise_source_event_counts.get("synthesizedSource", 0),
+            "wwiseSourcePluginIds": len(wwise_source_plugin_counts),
             "sharedPlayableCharacterAnimationEvents": sum(
                 int(row.get("playableCharacterAnimationOwnerCount") or 0) > 1
                 for row in events
@@ -7244,7 +7333,7 @@ def build_audio_semantic_data(
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
-            "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound source edges. Play roots and random/sequence/switch/layer relations are preserved; runtime selection is not evaluated. Unsupported music nodes and unparsed child structures fail closed.",
+            "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound/MusicTrack AkBankSourceData edges. Ordinary Codec sources may join decoded media; External Source codec and synthesized Source-plugin records remain non-media playback sources. Play roots and random/sequence/switch/layer relations are preserved; runtime selection and source instantiation are not evaluated. Unsupported plugins, music nodes, and unparsed child structures fail closed.",
             "authoredContext": "Table, Timeline, SkillData, and BuffData references prove authored consumers, not a live playback trace.",
             "animationOwnership": "An AnimationClip callback proves that the owned clip requests the Event. If the same Event is used by multiple playable characters, its complete Wwise leaf graph is a shared selector surface and is not character-specific media ownership.",
             "customFootstepCallbacks": custom_footstep_model.get("evidenceBoundary") or "",

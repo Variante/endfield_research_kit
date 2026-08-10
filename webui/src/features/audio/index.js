@@ -126,6 +126,8 @@
       relationMusicPlaylist: "Music playlist branches",
       relationMusicTrack: "Music tracks",
       relationMusicSource: "Music track sources",
+      relationExternalSource: "Runtime external source",
+      relationSynthesizedSource: "Synthesized / plugin source",
       musicSwitchContainer: "Music Switch container",
       musicRandomSequenceContainer: "Music Random / Sequence container",
       musicSegment: "Music segment",
@@ -134,6 +136,7 @@
       playRoots: "Play roots",
       typedTraversal: "Typed traversal",
       selectorEvidence: "Selector evidence",
+      sourceEvidence: "Wwise source evidence",
       actionDispatch: "Action dispatch",
       actionOrdinal: "Action",
       serializedNoDelay: "no serialized delay",
@@ -271,6 +274,8 @@
       relationMusicPlaylist: "\u97f3\u4e50\u64ad\u653e\u5217\u8868\u5206\u652f",
       relationMusicTrack: "\u97f3\u4e50\u8f68\u9053",
       relationMusicSource: "\u97f3\u4e50\u8f68\u9053\u97f3\u6e90",
+      relationExternalSource: "\u8fd0\u884c\u65f6\u5916\u90e8\u97f3\u6e90",
+      relationSynthesizedSource: "\u5408\u6210 / \u63d2\u4ef6\u97f3\u6e90",
       musicSwitchContainer: "\u97f3\u4e50 Switch \u5bb9\u5668",
       musicRandomSequenceContainer: "\u97f3\u4e50\u968f\u673a / \u5e8f\u5217\u5bb9\u5668",
       musicSegment: "\u97f3\u4e50\u7247\u6bb5",
@@ -279,6 +284,7 @@
       playRoots: "Play \u6839",
       typedTraversal: "\u7c7b\u578b\u5316\u904d\u5386",
       selectorEvidence: "\u9009\u62e9\u5668\u8bc1\u636e",
+      sourceEvidence: "Wwise \u97f3\u6e90\u8bc1\u636e",
       actionDispatch: "Action \u6d3e\u53d1",
       actionOrdinal: "Action",
       serializedNoDelay: "\u672a\u5e8f\u5217\u5316\u5ef6\u8fdf",
@@ -442,6 +448,8 @@
     musicPlaylistCandidate: "relationMusicPlaylist",
     musicTrack: "relationMusicTrack",
     musicTrackSource: "relationMusicSource",
+    externalSource: "relationExternalSource",
+    synthesizedSource: "relationSynthesizedSource",
   };
 
   function taxonomyLabel(value) {
@@ -537,8 +545,17 @@
     const candidates = Number(record?.possibleMediaCount ?? record?.candidateCount ?? record?.resolvedMediaCount ?? record?.mediaCount)
       || asArray(record?.media).length;
     if (!foundInWwise) return ["unresolvedEvent"];
-    if (!candidates) return ["noDecodedMedia"];
     const tags = [];
+    const sourceKinds = new Set([
+      ...asArray(record?.sourceKinds),
+      ...evidence.flatMap((row) => Object.keys(row?.sourceObjectSummary?.sourceKindCounts || {})),
+    ]);
+    if (sourceKinds.has("externalSourceCodec")) tags.push("externalSource");
+    if (sourceKinds.has("synthesizedSource")) tags.push("synthesizedSource");
+    if (!candidates) {
+      tags.push("noDecodedMedia");
+      return [...new Set(tags)];
+    }
     if (record?.traversalStatus === "partial") tags.push("partialGraph");
     if (Number(record?.playRootCount) > 1) tags.push("multipleRoots");
     for (const relation of asArray(record?.mediaRelationTypes)) {
@@ -575,6 +592,7 @@
       ...asArray(record?.eventIds), ...asArray(record?.mediaIds), ...asArray(record?.actionIds), ...asArray(record?.visitedObjectIds),
       ...asArray(record?.contextSearch), ...asArray(record?.radioTriggerSearch), ...asArray(record?.radioTriggerActions),
       ...asArray(record?.radioTriggerRoles), ...asArray(record?.bankPackages),
+      ...asArray(record?.sourceKinds), ...asArray(record?.sourcePluginIds),
       ...asArray(taxonomy.contextTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(taxonomy.relationTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
@@ -2291,6 +2309,51 @@
     return values;
   }
 
+  function sourceEvidenceSummary(record) {
+    const sourceKinds = new Map();
+    const plugins = new Map();
+    const streamTypes = new Map();
+    const flags = new Map();
+    let references = 0;
+    let objects = 0;
+    let decoded = 0;
+    let unresolvedCodec = 0;
+    const nonMediaSources = [];
+    for (const evidence of asArray(record?.evidence)) {
+      const summary = evidence?.sourceObjectSummary;
+      if (!summary || typeof summary !== "object") continue;
+      references += Number(summary.sourceReferenceCount || 0);
+      objects += Number(summary.uniqueSourceObjectCount || 0);
+      decoded += Number(summary.decodedCodecSourceCount || 0);
+      unresolvedCodec += Number(summary.unresolvedCodecSourceCount || 0);
+      for (const [key, count] of Object.entries(summary.sourceKindCounts || {})) sourceKinds.set(key, (sourceKinds.get(key) || 0) + Number(count || 0));
+      for (const [key, count] of Object.entries(summary.pluginCounts || {})) plugins.set(key, (plugins.get(key) || 0) + Number(count || 0));
+      for (const [key, count] of Object.entries(summary.streamTypeCounts || {})) streamTypes.set(key, (streamTypes.get(key) || 0) + Number(count || 0));
+      for (const [key, count] of Object.entries(summary.sourceFlagCounts || {})) flags.set(key, (flags.get(key) || 0) + Number(count || 0));
+      for (const source of asArray(evidence?.nonMediaSourceEvidence)) if (source && typeof source === "object") nonMediaSources.push(source);
+    }
+    if (!references && !nonMediaSources.length) return [];
+    const counted = (values) => [...values].map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`).join(" / ");
+    const rows = [
+      `AkBankSourceData: ${formatNumber(references)} routed references / ${formatNumber(objects)} source objects / ${counted(sourceKinds)}`,
+      `Source plugins: ${counted(plugins)} / buffering ${counted(streamTypes)}${flags.size ? ` / flags ${counted(flags)}` : ""}`,
+      `Codec resolution: ${formatNumber(decoded)} decoded-index matches / ${formatNumber(unresolvedCodec)} unresolved codec sources`,
+    ];
+    for (const source of nonMediaSources.slice(0, 16)) {
+      rows.push([
+        source.pluginName || source.pluginIdHex || "unknown plugin",
+        humanize(source.sourceKind || "unknown"),
+        `source ${source.sourceId ?? "?"}`,
+        humanize(source.streamTypeLabel || "unknown buffering"),
+        humanize(source.mediaLocationStatus || "unknown location"),
+        `object ${source.objectId ?? "?"}`,
+      ].join(" / "));
+    }
+    if (nonMediaSources.length > 16) rows.push(`${formatNumber(nonMediaSources.length - 16)} more non-media source records omitted from this compact view.`);
+    rows.push("External Source and synthesized plugin records prove a Wwise playback source, not a fixed recoverable WEM. Stream type is a buffering policy, not a physical PCK location; runtime instantiation and audibility were not observed.");
+    return rows;
+  }
+
   function customFootstepParameterSummary(record) {
     return asArray(record?.customFootstepParameterVariants)
       .filter((variant) => variant && typeof variant === "object")
@@ -2362,6 +2425,8 @@
     if (record.relationTags.length) panel.appendChild(chipSection(t("relation"), record.relationTags.map(taxonomyLabel)));
     const selectorEvidence = selectorEvidenceSummary(raw);
     if (selectorEvidence.length) panel.appendChild(chipSection(t("selectorEvidence"), selectorEvidence));
+    const sourceEvidence = sourceEvidenceSummary(raw);
+    if (sourceEvidence.length) panel.appendChild(chipSection(t("sourceEvidence"), sourceEvidence));
     const customFootstepParameters = customFootstepParameterSummary(raw);
     if (customFootstepParameters.length) {
       panel.appendChild(chipSection(t("customFootstepParameters"), customFootstepParameters));
