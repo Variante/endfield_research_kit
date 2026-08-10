@@ -310,6 +310,18 @@ An exhaustive Persistent-over-Streaming scan of the current 4,517 LevelScripts
 found zero authored instances, so the Audio control catalog reports both
 definitions with occurrence count zero and creates no Event or media rows.
 
+LevelScript radio playback is now decoded as a separate authored-media relation.
+Six exact ActionBase layouts (`PlayRadio`, `PlayRadioAndWait`, `Play3DRadio`,
+`Play3DRadioAndWait`, `StopRadio`, and `ToggleClearScreenButRadio`) decode all
+2,526 current records: 2,177 constant radio-id bindings and one dynamic binding
+remain explicit. RadioTable contributes 2,909 definitions and 4,940 ordered
+lines; 3,078 referenced lines join 3,073 lazy media contexts through exact
+`audioDialogPath` stems (2,681 referenced lines decode, 397 remain unresolved).
+`radioId` and `audioOverride` are dialog identities, not Wwise Events; action
+execution, line selection, playback, and dynamic ids remain unobserved. The
+Audio page exposes routing, actor, line order, lifecycle, unresolved rows, and
+truncation counts while retaining direct-dialog media and lazy players.
+
 Gameplay audio also consumes recovered Unity `AnimationClip.m_Events` rows for
 the exact `PostAudioEvent`, `PostAudioEventAdvance`,
 `PostAudioEventAtPosition`, and `OnCustomFootStep` callbacks. The callback

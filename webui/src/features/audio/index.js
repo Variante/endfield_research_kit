@@ -53,6 +53,13 @@
       levelScriptControls: "LevelScript audio controls",
       levelScriptDynamicControls: "LevelScript dynamic control bindings",
       levelEventConditions: "LevelEvent audio conditions",
+      levelScriptRadioCatalog: "LevelScript radio triggers",
+      unresolvedRadioIds: "Unresolved radio IDs",
+      unresolvedRadioLines: "Unresolved radio lines",
+      dynamicRadioBindings: "Dynamic radio ID bindings",
+      radioTableLines: "RadioTable dialog lines",
+      radioTriggerContexts: "Exact LevelScript radio contexts",
+      radioTriggerContextCoverage: "Radio trigger context coverage",
       corpus: "Corpus",
       selectRecord: "Select an event or media record from the left.",
       overview: "Overview",
@@ -82,6 +89,7 @@
       contextOwnerUnresolvedAnimation: "Animation owner unresolved",
       contextScripted: "LevelScript",
       contextLevelScriptTrigger: "Scripted audio trigger",
+      contextRadioTrigger: "Exact LevelScript radio trigger",
       contextExactSkillTrigger: "Exact skill-config Event reference",
       contextInferredSkillTrigger: "Inferred skill ownership",
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
@@ -189,6 +197,13 @@
       levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
       levelScriptDynamicControls: "LevelScript \u52a8\u6001\u63a7\u5236\u7ed1\u5b9a",
       levelEventConditions: "LevelEvent \u97f3\u9891\u6761\u4ef6",
+      levelScriptRadioCatalog: "LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
+      unresolvedRadioIds: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535 ID",
+      unresolvedRadioLines: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535\u53f0\u8bcd",
+      dynamicRadioBindings: "\u52a8\u6001\u65e0\u7ebf\u7535 ID \u7ed1\u5b9a",
+      radioTableLines: "RadioTable \u5bf9\u8bdd\u884c",
+      radioTriggerContexts: "\u7cbe\u786e LevelScript \u65e0\u7ebf\u7535\u4e0a\u4e0b\u6587",
+      radioTriggerContextCoverage: "\u65e0\u7ebf\u7535\u89e6\u53d1\u4e0a\u4e0b\u6587\u8986\u76d6",
       corpus: "\u6570\u636e\u96c6",
       selectRecord: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u4e8b\u4ef6\u6216\u5a92\u4f53\u8bb0\u5f55\u3002",
       overview: "\u6982\u89c8",
@@ -218,6 +233,7 @@
       contextOwnerUnresolvedAnimation: "\u52a8\u753b\u5f52\u5c5e\u672a\u89e3\u6790",
       contextScripted: "LevelScript \u811a\u672c",
       contextLevelScriptTrigger: "\u811a\u672c\u97f3\u9891\u89e6\u53d1",
+      contextRadioTrigger: "\u7cbe\u786e LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
       contextExactSkillTrigger: "\u7cbe\u786e\u6280\u80fd\u914d\u7f6e Event \u5f15\u7528",
       contextInferredSkillTrigger: "\u63a8\u65ad\u6280\u80fd\u5f52\u5c5e",
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
@@ -385,6 +401,7 @@
     ownerUnresolvedAnimation: "contextOwnerUnresolvedAnimation",
     scripted: "contextScripted",
     levelScriptTrigger: "contextLevelScriptTrigger",
+    radioTrigger: "contextRadioTrigger",
     exactSkillTrigger: "contextExactSkillTrigger",
     inferredSkillTrigger: "contextInferredSkillTrigger",
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
@@ -439,7 +456,7 @@
     if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
-    if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"].includes(kind)) return "scripted";
+    if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
     if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
@@ -458,7 +475,8 @@
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
       if (contextKind === "animationCallbackOwnerUnresolved") tags.add("ownerUnresolvedAnimation");
-      if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"].includes(contextKind)) tags.add("levelScriptTrigger");
+      if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(contextKind)) tags.add("levelScriptTrigger");
+      if (contextKind === "levelScriptRadioTrigger") tags.add("radioTrigger");
     };
     for (const contextKind of asArray(record?.contextKinds)) addContextKindTags(contextKind);
     for (const status of asArray(record?.triggerBindingStatuses)) {
@@ -475,6 +493,17 @@
       if (Number(context.triggerPlaySoundActionCount || 0) > 0) tags.add("authoredPlaySoundAction");
       addContextKindTags(context.kind);
     }
+    for (const context of asArray(record?.radioTriggerContexts)) {
+      if (!context || typeof context !== "object") continue;
+      const group = contextGroup(normalize(context.kind));
+      if (group) tags.add(group);
+      addContextKindTags(context.kind);
+    }
+    if (Number(record?.radioTriggerContextCount || 0) > 0) {
+      tags.add("scripted");
+      tags.add("levelScriptTrigger");
+      tags.add("radioTrigger");
+    }
     if (Number(record?.playableCharacterAnimationOwnerCount || 0) > 1 || record?.animationContextScope === "sharedPlayableCharacters") {
       tags.add("sharedPlayableAnimation");
     }
@@ -483,7 +512,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "animation", "scripted", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -542,7 +571,8 @@
       record?.hash, record?.eventHash, ...numericHashes.map((value) => `0x${(Number(value) >>> 0).toString(16).padStart(8, "0")}`),
       record?.mediaId, record?.bankId, record?.bank, record?.rel, record?.path, record?.src,
       ...asArray(record?.eventIds), ...asArray(record?.mediaIds), ...asArray(record?.actionIds), ...asArray(record?.visitedObjectIds),
-      ...asArray(record?.contextSearch), ...asArray(record?.bankPackages),
+      ...asArray(record?.contextSearch), ...asArray(record?.radioTriggerSearch), ...asArray(record?.radioTriggerActions),
+      ...asArray(record?.radioTriggerRoles), ...asArray(record?.bankPackages),
       ...asArray(taxonomy.contextTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(taxonomy.relationTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
@@ -571,6 +601,17 @@
         ...asArray(context.triggerEvidenceKinds), ...asArray(context.triggerBuffIds), ...asArray(context.triggerSourcePaths),
         ...asArray(context.triggerPlaySoundActions).flatMap((action) => action && typeof action === "object" ? Object.values(action).flat() : []),
         ...asArray(context.animationFunctions), ...asArray(context.animationClipContexts), ...asArray(context.animationClips),
+      ] : []),
+      ...asArray(record?.radioTableLineIdentities).flatMap((line) => line && typeof line === "object" ? [
+        line.radioId, line.lineId, line.lineOrdinal, line.authoredIndex, line.audioOverride,
+        line.actorNameId, line.is3D === true ? "3D" : (line.is3D === false ? "2D" : ""),
+        line.source, line.audioOverrideIdentityKind, line.wwiseEventStatus,
+      ] : []),
+      ...asArray(record?.radioTriggerContexts).flatMap((context) => context && typeof context === "object" ? [
+        context.kind, context.radioId, context.action, context.triggerRole, context.levelScriptId,
+        context.sourcePath, context.sourceField, context.actionMapRole, context.audioDialogMatchEvidence,
+        context.runtimeActivationStatus, context.wwiseEventStatus,
+        ...Object.values(context.radioDefinition || {}), ...Object.values(context.radioLine || {}),
       ] : []),
     ];
     return values.filter((value) => value !== undefined && value !== null).join("\n").toLowerCase();
@@ -1355,6 +1396,8 @@
     if (physicsAudioCatalog && typeof physicsAudioCatalog === "object") panel.appendChild(physicsAudioCatalogSection(physicsAudioCatalog));
     const modelViewStateCatalog = state.index?.triggerCatalog?.modelViewStateAudio;
     if (modelViewStateCatalog && typeof modelViewStateCatalog === "object") panel.appendChild(modelViewStateAudioCatalogSection(modelViewStateCatalog));
+    const levelScriptRadioCatalog = state.index?.triggerCatalog?.levelScriptRadio;
+    if (levelScriptRadioCatalog && typeof levelScriptRadioCatalog === "object") panel.appendChild(levelScriptRadioCatalogSection(levelScriptRadioCatalog));
     const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
     if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
     const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
@@ -1534,6 +1577,50 @@
     return section;
   }
 
+  function levelScriptRadioCatalogSection(catalog) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("levelScriptRadioCatalog");
+    section.appendChild(heading);
+    const counts = catalog.counts && typeof catalog.counts === "object" ? catalog.counts : {};
+    if (Object.keys(counts).length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [key, value] of Object.entries(counts)) {
+        grid.appendChild(statNode(humanize(key), typeof value === "number" ? formatNumber(value) : value));
+      }
+      section.appendChild(grid);
+    }
+    const boundedGroups = [
+      ["unresolvedRadioIds", catalog.unresolvedRadioIds, (row) => `${row.radioId || t("unknown")} / ${formatNumber(row.invocationCount || 0)} invocations / ${asArray(row.triggerRoles).map(humanize).join(", ") || "role unknown"}`],
+      ["unresolvedRadioLines", catalog.unresolvedRadioLines, (row) => `${row.radioId || t("unknown")} / line ${Number(row.lineOrdinal ?? 0) + 1} / ${row.audioOverride || "audioOverride missing"} / ${humanize(row.resolutionStatus || "")}`],
+      ["dynamicRadioBindings", catalog.dynamicRadioBindings, (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${humanize(row.triggerRole || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
+    ];
+    for (const [labelKey, bounded, formatRow] of boundedGroups) {
+      if (!bounded || typeof bounded !== "object") continue;
+      const rows = asArray(bounded.items).filter((row) => row && typeof row === "object");
+      const total = Number(bounded.totalCount || 0);
+      if (!rows.length && !total) continue;
+      const details = document.createElement("details");
+      details.className = "audio-runtime-system";
+      const summary = document.createElement("summary");
+      summary.textContent = `${t(labelKey)} (${formatNumber(rows.length)} / ${formatNumber(total)}${bounded.truncated ? ", truncated" : ""})`;
+      const values = document.createElement("div");
+      values.className = "audio-chip-list";
+      for (const row of rows) {
+        const chip = document.createElement("span");
+        chip.textContent = formatRow(row);
+        values.appendChild(chip);
+      }
+      details.append(summary, values);
+      section.appendChild(details);
+    }
+    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
+    return section;
+  }
+
   function boundaryGrid(entries) {
     const section = document.createElement("div");
     section.style.marginTop = "12px";
@@ -1679,9 +1766,37 @@
     if (context?.templateAssociationStatus) parts.push(humanize(context.templateAssociationStatus));
     const modelViewFingerprints = asArray(context?.sourceFingerprints).filter(Boolean);
     if (modelViewFingerprints.length) parts.push(`controller SHA-256 ${modelViewFingerprints.join(" / ")}`);
-    if (context?.levelScriptId) parts.push(`LevelScript ${context.levelScriptId}`);
-    if (context?.action) parts.push(humanize(context.action));
-    if (context?.triggerRole) parts.push(`request role ${humanize(context.triggerRole)}`);
+    if (kind === "levelScriptRadioTrigger") {
+      const radioDefinition = context?.radioDefinition && typeof context.radioDefinition === "object" ? context.radioDefinition : {};
+      const radioLine = context?.radioLine && typeof context.radioLine === "object" ? context.radioLine : {};
+      if (context?.radioId) parts.push(`radio ${context.radioId}`);
+      if (context?.action || context?.triggerRole) parts.push(`${humanize(context.action || "radio action")} / ${humanize(context.triggerRole || "role unknown")}`);
+      if (context?.levelScriptId) parts.push(`LevelScript ${context.levelScriptId}`);
+      const lifecycle = [];
+      if (radioDefinition.radioType !== undefined) lifecycle.push(`type ${radioDefinition.radioType}`);
+      if (radioDefinition.priority !== undefined) lifecycle.push(`priority ${radioDefinition.priority}`);
+      if (radioDefinition.continueAfterDialog !== undefined) lifecycle.push(`continue after dialog ${String(Boolean(radioDefinition.continueAfterDialog))}`);
+      if (radioDefinition.continueAfterRadio !== undefined) lifecycle.push(`continue after radio ${String(Boolean(radioDefinition.continueAfterRadio))}`);
+      if (lifecycle.length) parts.push(`authored lifecycle ${lifecycle.join(" / ")}`);
+      if (radioLine.is3D !== undefined) parts.push(`authored routing ${radioLine.is3D ? "3D" : "2D"}`);
+      if (radioLine.actorNameId) parts.push(`actor ${radioLine.actorNameId}`);
+      if (radioLine.lineOrdinal !== undefined) {
+        const lineCount = Number(radioDefinition.lineCount);
+        parts.push(`line order ${Number(radioLine.lineOrdinal) + 1}${Number.isFinite(lineCount) && lineCount > 0 ? ` / ${lineCount}` : ""} / ordinal ${radioLine.lineOrdinal}`);
+      }
+      if (radioLine.authoredIndex !== undefined) parts.push(`authored line index ${radioLine.authoredIndex}`);
+      if (radioLine.lineId) parts.push(`line ${radioLine.lineId}`);
+      if (radioLine.audioOverride) parts.push(`direct dialog media ${radioLine.audioOverride}`);
+      if (context?.audioDialogMatchEvidence) parts.push(humanize(context.audioDialogMatchEvidence));
+      if (context?.radioIdentityKind) parts.push(humanize(context.radioIdentityKind));
+      if (context?.wwiseEventStatus || radioLine.wwiseEventStatus) parts.push(`Wwise Event ${humanize(context.wwiseEventStatus || radioLine.wwiseEventStatus)}`);
+      if (radioDefinition.source) parts.push(radioDefinition.source);
+      if (radioLine.source && radioLine.source !== radioDefinition.source) parts.push(radioLine.source);
+    } else {
+      if (context?.levelScriptId) parts.push(`LevelScript ${context.levelScriptId}`);
+      if (context?.action) parts.push(humanize(context.action));
+      if (context?.triggerRole) parts.push(`request role ${humanize(context.triggerRole)}`);
+    }
     if (context?.sourceField) parts.push(context.sourceField);
     if (context?.actionMapRole) parts.push(context.actionMapRole);
     if (context?.recordUid || context?.recordLocalId !== undefined) parts.push(`record ${context.recordUid || "?"} / local ${context.recordLocalId ?? "?"}`);
@@ -1756,6 +1871,21 @@
     const clips = asArray(context?.animationClips).filter(Boolean);
     if (clips.length) parts.push(clips.length === 1 ? clips[0] : `${clips[0]} +${clips.length - 1}`);
     return [...new Set(parts.filter(Boolean))].join(" · ");
+  }
+
+  function radioTableLineLabel(line) {
+    const parts = [];
+    if (line?.radioId) parts.push(`radio ${line.radioId}`);
+    if (line?.lineOrdinal !== undefined) parts.push(`line order ${Number(line.lineOrdinal) + 1} / ordinal ${line.lineOrdinal}`);
+    if (line?.authoredIndex !== undefined) parts.push(`authored index ${line.authoredIndex}`);
+    if (line?.lineId) parts.push(`line ${line.lineId}`);
+    if (line?.actorNameId) parts.push(`actor ${line.actorNameId}`);
+    if (line?.is3D !== undefined) parts.push(`authored routing ${line.is3D ? "3D" : "2D"}`);
+    if (line?.audioOverride) parts.push(`direct dialog media ${line.audioOverride}`);
+    if (line?.audioOverrideIdentityKind) parts.push(humanize(line.audioOverrideIdentityKind));
+    if (line?.wwiseEventStatus) parts.push(`Wwise Event ${humanize(line.wwiseEventStatus)}`);
+    if (line?.source) parts.push(line.source);
+    return parts.join(" / ");
   }
 
   function selectorEvidenceSummary(record) {
@@ -1887,6 +2017,10 @@
           [t("recordType"), t(record.objectType)], [t("id"), raw.mediaId ?? raw.id], [t("category"), record.category], [t("scope"), record.scope],
           [t("source"), record.source], [t("path"), raw.rel ?? raw.path ?? raw.src], [t("format"), raw.format],
           [t("bytes"), raw.bytes !== undefined ? formatBytes(raw.bytes) : ""], [t("bank"), raw.bank ?? raw.sourceBank ?? raw.bankId],
+          [t("radioTableLines"), raw.radioTableLineCount],
+          [t("radioTriggerContextCoverage"), raw.radioTriggerContextCount !== undefined
+            ? `${formatNumber(raw.radioTriggerContextStoredCount || 0)} stored / ${formatNumber(raw.radioTriggerContextCount || 0)} total${raw.radioTriggerContextsTruncated ? " / truncated" : ""}`
+            : ""],
         ];
     const grid = document.createElement("div");
     grid.className = "audio-facts";
@@ -1920,6 +2054,20 @@
     if (actionIds.length) panel.appendChild(chipSection(t("actions"), actionIds));
     const contexts = asArray(raw.contexts).filter((value) => value && typeof value === "object").map(contextEvidenceLabel).filter(Boolean);
     if (contexts.length) panel.appendChild(chipSection(t("contextEvidence"), contexts));
+    const radioTableLines = asArray(raw.radioTableLineIdentities)
+      .filter((value) => value && typeof value === "object")
+      .map(radioTableLineLabel)
+      .filter(Boolean);
+    if (radioTableLines.length) panel.appendChild(chipSection(t("radioTableLines"), radioTableLines));
+    const radioTriggerContexts = asArray(raw.radioTriggerContexts)
+      .filter((value) => value && typeof value === "object")
+      .map(contextEvidenceLabel)
+      .filter(Boolean);
+    if (radioTriggerContexts.length) panel.appendChild(chipSection(t("radioTriggerContexts"), radioTriggerContexts));
+    if (radioTableLines.length || Number(raw.radioTriggerContextCount || 0) > 0) {
+      const radioBoundary = state.index?.triggerCatalog?.levelScriptRadio?.evidenceBoundary;
+      if (radioBoundary) panel.appendChild(noteSection(t("runtimeBoundary"), radioBoundary));
+    }
 
     const players = playableRecords(raw, record.kind);
     const playerSection = document.createElement("section");

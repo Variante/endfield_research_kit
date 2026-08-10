@@ -1287,6 +1287,183 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(semantics["stats"]["controlActions"], 2)
             self.assertEqual(semantics["stats"]["dynamicControlBindings"], 1)
 
+    def test_joins_levelscript_radio_triggers_to_ordered_audio_dialog_media(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            script_path = (
+                export_root
+                / "structured/Persistent/Data/Json/LevelScriptData/map/test.json"
+            )
+            script_path.parent.mkdir(parents=True)
+            script_path.write_bytes(b"radio-fixture")
+            table_path = export_root / "structured/Persistent/Table/RadioTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(json.dumps({
+                "radio_fixture": {
+                    "radioType": 1,
+                    "priority": 3,
+                    "continueAfterDialog": False,
+                    "continueAfterRadio": True,
+                    "radioSingleDataList": [{
+                        "index": 1,
+                        "id": "radio_fixture_001",
+                        "audioOverride": "au_radio_fixture_001",
+                        "audioEvent": "",
+                        "actorNameId": "actor_fixture",
+                        "is3D": False,
+                    }, {
+                        "index": 2,
+                        "id": "radio_fixture_002",
+                        "audioOverride": "au_radio_fixture_002",
+                        "audioEvent": "",
+                        "actorNameId": "actor_fixture",
+                        "is3D": False,
+                    }],
+                },
+                "radio_unplayed": {
+                    "radioSingleDataList": [{
+                        "index": 1,
+                        "id": "radio_unplayed_001",
+                        "audioOverride": "au_radio_unplayed_001",
+                    }],
+                },
+            }), encoding="utf-8")
+
+            common_record = {
+                "uid": "00112233445566778899aabbccddeeff",
+                "localId": 7,
+                "serializedMemberCount": 0x0D,
+            }
+
+            def constant_row(start: int, action: str, role: str, radio_id: str) -> dict:
+                return {
+                    "record": {**common_record, "start": start, "unionTag": 0x0363},
+                    "actionMapRole": "actionList#1 root",
+                    "audioAction": {
+                        "action": action,
+                        "nativeMappingId": "binary-radio-test",
+                        "payloadShape": "exact",
+                        "fields": {
+                            "radioId": {
+                                "sourceField": "_radioId",
+                                "bindingKind": "constant",
+                                "value": radio_id,
+                                "idRef": -1,
+                                "paramSource": 0,
+                            },
+                        },
+                        "radioBindings": [{
+                            "radioId": radio_id,
+                            "role": role,
+                            "sourceField": "_radioId",
+                        }],
+                    },
+                }
+
+            def decode_file(_path: Path, _data: bytes) -> dict:
+                return {"targetCount": 5, "rows": [
+                    constant_row(24, "PlayRadio", "play", "radio_fixture"),
+                    constant_row(48, "StopRadio", "stop", "radio_fixture"),
+                    constant_row(72, "PlayRadio", "play", "radio_missing"),
+                    {
+                        "record": {**common_record, "start": 96, "unionTag": 0x0363},
+                        "actionMapRole": "actionList#4 linked",
+                        "audioAction": {
+                            "action": "PlayRadio",
+                            "fields": {"radioId": {
+                                "sourceField": "_radioId",
+                                "bindingKind": "dynamic",
+                                "idRef": 1,
+                                "paramSource": -1,
+                            }},
+                        },
+                    },
+                    {
+                        "record": {
+                            **common_record,
+                            "start": 120,
+                            "unionTag": 0x04CA,
+                            "serializedMemberCount": 0x09,
+                        },
+                        "actionMapRole": "actionList#5 linked",
+                        "audioAction": {
+                            "action": "ToggleClearScreenButRadio",
+                            "fields": {"isShow": {
+                                "sourceField": "_isShow",
+                                "bindingKind": "constant",
+                                "value": False,
+                            }},
+                        },
+                    },
+                ]}
+
+            semantics = audio_semantics.collect_levelscript_audio_semantics(
+                export_root,
+                decode_file=decode_file,
+                cue_semantics={"cueDefinitions": {}},
+            )
+            self.assertEqual(semantics["stats"]["radioActionRecords"], 5)
+            self.assertEqual(semantics["stats"]["constantRadioBindings"], 3)
+            self.assertEqual(semantics["stats"]["dynamicRadioBindings"], 1)
+            self.assertEqual(
+                semantics["stats"]["radioRoleCounts"],
+                {"play": 2, "stop": 1},
+            )
+            self.assertNotIn("radio_fixture", semantics["eventContexts"])
+
+            media = [{
+                "id": "au_radio_fixture_001",
+                "audioDialogPath": "fixture/au_radio_fixture_001.wem",
+            }, {
+                "id": "au_radio_unplayed_001",
+                "audioDialogPath": "fixture/au_radio_unplayed_001.wem",
+            }]
+            catalog = audio_semantics.attach_levelscript_radio_contexts(
+                media,
+                export_root,
+                semantics,
+            )
+            self.assertEqual(catalog["counts"]["radioTableDefinitions"], 2)
+            self.assertEqual(catalog["counts"]["radioTableLines"], 3)
+            self.assertEqual(catalog["counts"]["decodedDirectMedia"], 2)
+            self.assertEqual(catalog["counts"]["unresolvedRadioTableLines"], 1)
+            self.assertEqual(catalog["counts"]["constantRadioBindings"], 3)
+            self.assertEqual(catalog["counts"]["resolvedConstantRadioBindings"], 2)
+            self.assertEqual(catalog["counts"]["unresolvedConstantRadioBindings"], 1)
+            self.assertEqual(catalog["counts"]["referencedRadioLines"], 2)
+            self.assertEqual(catalog["counts"]["decodedReferencedRadioLines"], 1)
+            self.assertEqual(catalog["counts"]["unresolvedReferencedRadioLines"], 1)
+            self.assertEqual(catalog["counts"]["radioTriggerContextAssociations"], 2)
+
+            triggered = media[0]
+            self.assertEqual(triggered["radioTableLineIdentities"][0]["lineOrdinal"], 0)
+            self.assertEqual(triggered["radioTableLineIdentities"][0]["audioOverride"], "au_radio_fixture_001")
+            self.assertEqual(triggered["radioTriggerContextCount"], 2)
+            self.assertEqual(triggered["radioTriggerContextStoredCount"], 2)
+            self.assertFalse(triggered["radioTriggerContextsTruncated"])
+            self.assertEqual(triggered["radioTriggerRoles"], ["play", "stop"])
+            self.assertIn("radio_fixture", triggered["radioTriggerSearch"])
+            self.assertEqual(
+                triggered["radioTriggerContexts"][0]["audioDialogMatchEvidence"],
+                "exactAudioDialogPathStem",
+            )
+            self.assertEqual(triggered["radioTriggerContexts"][0]["wwiseEventStatus"], "notApplicable")
+
+            unplayed = media[1]
+            self.assertEqual(unplayed["radioTableLineCount"], 1)
+            self.assertEqual(unplayed["radioTriggerContextCount"], 0)
+            self.assertNotIn("radioTriggerContexts", unplayed)
+
+            self.assertEqual(catalog["unresolvedRadioIds"]["totalCount"], 1)
+            self.assertEqual(catalog["unresolvedRadioIds"]["items"][0]["radioId"], "radio_missing")
+            self.assertEqual(catalog["unresolvedRadioLines"]["totalCount"], 1)
+            self.assertEqual(catalog["unresolvedRadioLines"]["items"][0]["audioOverride"], "au_radio_fixture_002")
+            self.assertEqual(catalog["dynamicRadioBindings"]["totalCount"], 1)
+            self.assertEqual(
+                catalog["dynamicRadioBindings"]["items"][0]["binding"]["idRef"],
+                1,
+            )
+
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
@@ -1532,6 +1709,57 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("catalog.levelEventAudioConditions", source)
         self.assertIn("authoredOccurrenceCount", source)
         self.assertNotIn("selected Wwise switch child", source)
+
+    def test_audio_frontend_exposes_exact_levelscript_radio_media_contexts(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        context_tags_body = source.split("function recordContextTags", 1)[1].split(
+            "function recordRelationTags", 1
+        )[0]
+        relation_body = source.split("function recordRelationTags", 1)[1].split(
+            "function recordMeta", 1
+        )[0]
+        search_body = source.split("function searchText", 1)[1].split(
+            "function humanize", 1
+        )[0]
+        evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
+            "function radioTableLineLabel", 1
+        )[0]
+        record_panel_body = source.split("function recordPanel", 1)[1].split(
+            "function collectIds", 1
+        )[0]
+
+        self.assertIn('contextKind === "levelScriptRadioTrigger"', context_tags_body)
+        self.assertIn("record?.radioTriggerContextCount", context_tags_body)
+        self.assertIn("record?.radioTriggerContexts", context_tags_body)
+        self.assertIn("record?.radioTriggerSearch", search_body)
+        self.assertIn("record?.radioTableLineIdentities", search_body)
+        self.assertIn("record?.radioTriggerContexts", search_body)
+        self.assertIn('kind === "levelScriptRadioTrigger"', evidence_body)
+        self.assertIn("radioDefinition.continueAfterDialog", evidence_body)
+        self.assertIn("radioDefinition.continueAfterRadio", evidence_body)
+        self.assertIn("radioLine.is3D", evidence_body)
+        self.assertIn("radioLine.actorNameId", evidence_body)
+        self.assertIn("radioLine.lineOrdinal", evidence_body)
+        self.assertIn("context?.audioDialogMatchEvidence", evidence_body)
+        self.assertIn("raw.radioTableLineIdentities", record_panel_body)
+        self.assertIn("raw.radioTriggerContexts", record_panel_body)
+        self.assertIn("raw.radioTriggerContextStoredCount", record_panel_body)
+        self.assertIn("raw.radioTriggerContextsTruncated", record_panel_body)
+        self.assertIn("triggerCatalog?.levelScriptRadio?.evidenceBoundary", record_panel_body)
+        self.assertIn("state.index?.triggerCatalog?.levelScriptRadio", source)
+        self.assertIn("function levelScriptRadioCatalogSection", source)
+        self.assertIn("catalog.dynamicRadioBindings", source)
+        self.assertIn("catalog.unresolvedRadioIds", source)
+        self.assertIn("catalog.unresolvedRadioLines", source)
+
+        direct_media_check = 'if (record?.audioDialogKey || record?.audioDialogPath) return ["directDialogMedia"]'
+        self.assertIn(direct_media_check, relation_body)
+        self.assertLess(
+            relation_body.index(direct_media_check),
+            relation_body.index("record?.eventIds"),
+        )
 
 
 if __name__ == "__main__":

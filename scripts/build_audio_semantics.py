@@ -124,8 +124,11 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 13
+AUDIO_SEMANTIC_SCHEMA_VERSION = 14
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 7
+RADIO_MEDIA_CONTEXT_LIMIT = 64
+RADIO_MEDIA_SEARCH_LIMIT = 96
+RADIO_CATALOG_ITEM_LIMIT = 64
 MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
     "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 )
@@ -2138,6 +2141,18 @@ LEVELSCRIPT_AUDIO_CONTROL_ROLES = {
     "SwitchAudioState": "entityAudioStateSwitch",
 }
 
+LEVELSCRIPT_RADIO_ACTION_ROLES = {
+    "Play3DRadio": "play3D",
+    "Play3DRadioAndWait": "play3DAndWait",
+    "PlayRadio": "play",
+    "PlayRadioAndWait": "playAndWait",
+    "StopRadio": "stop",
+}
+LEVELSCRIPT_RADIO_ACTION_NAMES = frozenset({
+    *LEVELSCRIPT_RADIO_ACTION_ROLES,
+    "ToggleClearScreenButRadio",
+})
+
 
 def collect_levelscript_audio_semantics(
     export_root: Path,
@@ -2167,11 +2182,14 @@ def collect_levelscript_audio_semantics(
             )
         target_keys = {
             (0x0306, 0x09), (0x0307, 0x0B),
-            (0x034C, 0x0C), (0x034E, 0x0B), (0x034F, 0x10),
-            (0x0352, 0x0C), (0x0367, 0x11), (0x036B, 0x13),
+            (0x034A, 0x14), (0x034B, 0x14), (0x034C, 0x0C),
+            (0x034E, 0x0B), (0x034F, 0x10), (0x0352, 0x0C),
+            (0x0363, 0x0D), (0x0364, 0x0D), (0x0367, 0x11),
+            (0x036B, 0x13),
             (0x0371, 0x0B), (0x0373, 0x0C), (0x03D5, 0x0F),
             (0x04A7, 0x0E), (0x04AC, 0x0A), (0x04B4, 0x0B),
-            (0x04B7, 0x0A), (0x04BA, 0x09), (0x04BC, 0x0B),
+            (0x04B5, 0x09), (0x04B7, 0x0A), (0x04BA, 0x09),
+            (0x04BC, 0x0B), (0x04CA, 0x09),
         }
 
         def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
@@ -2215,6 +2233,8 @@ def collect_levelscript_audio_semantics(
     seen: dict[str, set[str]] = defaultdict(set)
     cue_invocations: list[dict[str, Any]] = []
     dynamic_event_bindings: list[dict[str, Any]] = []
+    radio_invocations: list[dict[str, Any]] = []
+    dynamic_radio_bindings: list[dict[str, Any]] = []
     control_actions: list[dict[str, Any]] = []
     dynamic_control_bindings: list[dict[str, Any]] = []
     action_counts: Counter[str] = Counter()
@@ -2361,6 +2381,42 @@ def collect_levelscript_audio_semantics(
                     if str(behavior.get("levelId") or ""):
                         cue_context["levelId"] = str(behavior["levelId"])
                     _append_context(contexts, seen, event_name, cue_context)
+            for binding in action.get("radioBindings") or []:
+                if not isinstance(binding, dict):
+                    continue
+                radio_id = str(binding.get("radioId") or "").strip()
+                if not radio_id:
+                    continue
+                radio_invocations.append({
+                    **common,
+                    "kind": "levelScriptRadioTrigger",
+                    "semanticRole": "authoredLevelScriptRadioTrigger",
+                    "radioId": radio_id,
+                    "triggerRole": str(
+                        binding.get("role")
+                        or LEVELSCRIPT_RADIO_ACTION_ROLES.get(action_name)
+                        or "play"
+                    ),
+                    "sourceField": str(binding.get("sourceField") or "_radioId"),
+                    "radioIdentityKind": "RadioTableDefinitionId",
+                    "wwiseEventStatus": "notApplicable",
+                })
+            radio_field = fields.get("radioId") or {}
+            if (
+                action_name in LEVELSCRIPT_RADIO_ACTION_ROLES
+                and radio_field.get("bindingKind") == "dynamic"
+            ):
+                dynamic_radio_bindings.append({
+                    **common,
+                    "kind": "levelScriptDynamicRadioBinding",
+                    "semanticRole": "authoredLevelScriptRadioTrigger",
+                    "triggerRole": LEVELSCRIPT_RADIO_ACTION_ROLES[action_name],
+                    "sourceField": str(radio_field.get("sourceField") or "_radioId"),
+                    "binding": radio_field,
+                    "resolutionStatus": "runtimeRadioIdParamUnresolved",
+                    "radioIdentityKind": "RadioTableDefinitionId",
+                    "wwiseEventStatus": "notApplicable",
+                })
             control_role = LEVELSCRIPT_AUDIO_CONTROL_ROLES.get(action_name)
             if control_role:
                 control_actions.append({
@@ -2410,10 +2466,20 @@ def collect_levelscript_audio_semantics(
     cue_definition_statuses = Counter(
         str(row.get("definitionStatus") or "unknown") for row in cue_invocations
     )
+    radio_action_counts = {
+        name: action_counts[name]
+        for name in sorted(LEVELSCRIPT_RADIO_ACTION_NAMES)
+        if action_counts[name]
+    }
+    radio_role_counts = Counter(
+        str(row.get("triggerRole") or "unknown") for row in radio_invocations
+    )
     return {
         "eventContexts": dict(contexts),
         "cueInvocations": cue_invocations,
         "dynamicEventBindings": dynamic_event_bindings,
+        "radioInvocations": radio_invocations,
+        "dynamicRadioBindings": dynamic_radio_bindings,
         "controlActions": control_actions,
         "dynamicControlBindings": dynamic_control_bindings,
         "stats": {
@@ -2429,6 +2495,16 @@ def collect_levelscript_audio_semantics(
             "cueBehaviorEventContexts": cue_behavior_context_count,
             "cueDefinitionStatusCounts": dict(sorted(cue_definition_statuses.items())),
             "dynamicEventBindings": len(dynamic_event_bindings),
+            "radioActionRecords": sum(radio_action_counts.values()),
+            "constantRadioBindings": len(radio_invocations),
+            "dynamicRadioBindings": len(dynamic_radio_bindings),
+            "uniqueConstantRadioIds": len({
+                str(row.get("radioId") or "")
+                for row in radio_invocations
+                if str(row.get("radioId") or "")
+            }),
+            "radioActionCounts": radio_action_counts,
+            "radioRoleCounts": dict(sorted(radio_role_counts.items())),
             "controlActions": len(control_actions),
             "dynamicControlBindings": len(dynamic_control_bindings),
             "actionCounts": dict(sorted(action_counts.items())),
@@ -2442,6 +2518,357 @@ def collect_levelscript_audio_semantics(
             "AudioCue behavior expressions become Event contexts. Cue handler/condition evaluation, action "
             "execution, dynamic Param values, state/variable writes, playback handles, and placeholder-music "
             "ids are not observed."
+        ),
+    }
+
+
+def attach_levelscript_radio_contexts(
+    media_rows: list[dict[str, Any]],
+    export_root: Path,
+    levelscript_semantics: dict[str, Any],
+) -> dict[str, Any]:
+    """Join exact RadioTable line identities to direct AudioDialog media.
+
+    ``radioId`` and each ordered ``audioOverride`` are narrative identities,
+    not Wwise Event names.  A media association exists only when the override
+    equals the stem of an exported direct ``audioDialogPath``.  Invocation
+    detail is attached to the lazy media shard; the returned eager catalog is
+    limited to aggregate counts and bounded unresolved/dynamic examples.
+    """
+
+    table_path = next((
+        export_root / "structured" / source_root / "Table" / "RadioTable.json"
+        for source_root in ("Persistent", "StreamingAssets")
+        if (
+            export_root / "structured" / source_root / "Table" / "RadioTable.json"
+        ).is_file()
+    ), None)
+    payload = load_json(table_path, {}) if table_path else {}
+    if not isinstance(payload, dict):
+        payload = {}
+    table_source = (
+        normalize_posix(table_path.relative_to(export_root)) if table_path else ""
+    )
+
+    definitions: dict[str, dict[str, Any]] = {}
+    lines_by_stem: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    all_lines: list[dict[str, Any]] = []
+    for radio_id, raw_definition in sorted(payload.items(), key=lambda item: str(item[0])):
+        if not isinstance(raw_definition, dict):
+            continue
+        radio_id = str(radio_id)
+        definition = {
+            "radioId": radio_id,
+            "radioType": raw_definition.get("radioType"),
+            "priority": raw_definition.get("priority"),
+            "continueAfterDialog": raw_definition.get("continueAfterDialog"),
+            "continueAfterRadio": raw_definition.get("continueAfterRadio"),
+            "source": table_source,
+            "lines": [],
+        }
+        for line_ordinal, raw_line in enumerate(
+            raw_definition.get("radioSingleDataList") or []
+        ):
+            if not isinstance(raw_line, dict):
+                continue
+            audio_override = str(raw_line.get("audioOverride") or "").strip()
+            override_stem = (
+                PurePosixPath(audio_override.replace("\\", "/")).stem.casefold()
+                if audio_override
+                else ""
+            )
+            line = {
+                "radioId": radio_id,
+                "lineOrdinal": line_ordinal,
+                "authoredIndex": raw_line.get("index"),
+                "lineId": str(raw_line.get("id") or ""),
+                "audioOverride": audio_override,
+                "audioOverrideStem": override_stem,
+                "actorNameId": str(raw_line.get("actorNameId") or ""),
+                "is3D": raw_line.get("is3D"),
+                "source": table_source,
+                "audioOverrideIdentityKind": "AudioDialogPathStem",
+                "wwiseEventStatus": "notApplicable",
+            }
+            line = {
+                key: value
+                for key, value in line.items()
+                if value not in (None, "", [])
+            }
+            definition["lines"].append(line)
+            all_lines.append(line)
+            if override_stem:
+                lines_by_stem[override_stem].append(line)
+        definition["lineCount"] = len(definition["lines"])
+        definitions[radio_id] = definition
+
+    media_indices_by_stem: dict[str, list[int]] = defaultdict(list)
+    for media_index, media in enumerate(media_rows):
+        audio_dialog_path = str(media.get("audioDialogPath") or "").strip()
+        if not audio_dialog_path:
+            continue
+        stem = PurePosixPath(audio_dialog_path.replace("\\", "/")).stem.casefold()
+        if stem:
+            media_indices_by_stem[stem].append(media_index)
+
+    line_identities_by_media: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    contexts_by_media: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    decoded_line_count = 0
+    decoded_media_indices: set[int] = set()
+    for line in all_lines:
+        media_indices = media_indices_by_stem.get(
+            str(line.get("audioOverrideStem") or ""), []
+        )
+        if not media_indices:
+            continue
+        decoded_line_count += 1
+        for media_index in media_indices:
+            decoded_media_indices.add(media_index)
+            line_identities_by_media[media_index].append(line)
+
+    invocations = [
+        row for row in levelscript_semantics.get("radioInvocations") or []
+        if isinstance(row, dict) and str(row.get("radioId") or "")
+    ]
+    invocations_by_radio: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for invocation in invocations:
+        invocations_by_radio[str(invocation["radioId"])].append(invocation)
+
+    missing_definition_items: list[dict[str, Any]] = []
+    resolved_invocation_count = 0
+    referenced_lines: set[tuple[str, int, str]] = set()
+    decoded_referenced_lines: set[tuple[str, int, str]] = set()
+    invocation_line_associations = 0
+    decoded_invocation_line_associations = 0
+    for radio_id, radio_invocations in sorted(invocations_by_radio.items()):
+        definition = definitions.get(radio_id)
+        if definition is None:
+            missing_definition_items.append({
+                "radioId": radio_id,
+                "invocationCount": len(radio_invocations),
+                "actions": dict(sorted(Counter(
+                    str(row.get("action") or "") for row in radio_invocations
+                ).items())),
+                "triggerRoles": sorted({
+                    str(row.get("triggerRole") or "") for row in radio_invocations
+                    if str(row.get("triggerRole") or "")
+                }),
+                "sampleLevelScriptIds": sorted({
+                    str(row.get("levelScriptId") or "") for row in radio_invocations
+                    if str(row.get("levelScriptId") or "")
+                })[:3],
+            })
+            continue
+        resolved_invocation_count += len(radio_invocations)
+        definition_fields = {
+            key: definition.get(key)
+            for key in (
+                "radioType", "priority", "continueAfterDialog",
+                "continueAfterRadio", "lineCount", "source",
+            )
+            if definition.get(key) not in (None, "", [])
+        }
+        for line in definition.get("lines") or []:
+            marker = (
+                radio_id,
+                int(line.get("lineOrdinal") or 0),
+                str(line.get("audioOverride") or ""),
+            )
+            referenced_lines.add(marker)
+            media_indices = media_indices_by_stem.get(
+                str(line.get("audioOverrideStem") or ""), []
+            )
+            invocation_line_associations += len(radio_invocations)
+            if media_indices:
+                decoded_referenced_lines.add(marker)
+                decoded_invocation_line_associations += len(radio_invocations)
+            for media_index in media_indices:
+                for invocation in radio_invocations:
+                    contexts_by_media[media_index].append({
+                        **invocation,
+                        "radioDefinition": definition_fields,
+                        "radioLine": line,
+                        "audioDialogMatchEvidence": "exactAudioDialogPathStem",
+                        "runtimeActivationStatus": (
+                            "levelScriptActionExecutionNotObserved"
+                        ),
+                    })
+
+    unresolved_line_items: list[dict[str, Any]] = []
+    unresolved_referenced_line_count = 0
+    unresolved_referenced_association_count = 0
+    for line in all_lines:
+        if media_indices_by_stem.get(str(line.get("audioOverrideStem") or "")):
+            continue
+        radio_id = str(line.get("radioId") or "")
+        radio_invocations = invocations_by_radio.get(radio_id, [])
+        invocation_count = len(radio_invocations)
+        if invocation_count:
+            unresolved_referenced_line_count += 1
+            unresolved_referenced_association_count += invocation_count
+        unresolved_line_items.append({
+            **line,
+            "triggerInvocationCount": invocation_count,
+            "triggerActions": sorted({
+                str(row.get("action") or "") for row in radio_invocations
+                if str(row.get("action") or "")
+            }),
+            "triggerRoles": sorted({
+                str(row.get("triggerRole") or "") for row in radio_invocations
+                if str(row.get("triggerRole") or "")
+            }),
+            "resolutionStatus": "audioDialogMediaNotDecoded",
+        })
+    unresolved_line_items.sort(key=lambda row: (
+        -int(row.get("triggerInvocationCount") or 0),
+        str(row.get("radioId") or ""),
+        int(row.get("lineOrdinal") or 0),
+    ))
+
+    total_context_count = 0
+    stored_context_count = 0
+    truncated_media_count = 0
+    media_with_trigger_contexts = 0
+    for media_index in sorted(decoded_media_indices):
+        media = media_rows[media_index]
+        line_identities = sorted(
+            line_identities_by_media.get(media_index, []),
+            key=lambda row: (
+                str(row.get("radioId") or ""),
+                int(row.get("lineOrdinal") or 0),
+            ),
+        )
+        contexts = sorted(
+            contexts_by_media.get(media_index, []),
+            key=lambda row: (
+                str(row.get("sourcePath") or ""),
+                int(row.get("recordStart") or 0),
+                str(row.get("radioId") or ""),
+                int((row.get("radioLine") or {}).get("lineOrdinal") or 0),
+            ),
+        )
+        stored_contexts = contexts[:RADIO_MEDIA_CONTEXT_LIMIT]
+        total_context_count += len(contexts)
+        stored_context_count += len(stored_contexts)
+        if contexts:
+            media_with_trigger_contexts += 1
+        if len(stored_contexts) < len(contexts):
+            truncated_media_count += 1
+
+        search_terms = {
+            str(value)
+            for line in line_identities
+            for value in (
+                line.get("radioId"), line.get("lineId"),
+                line.get("audioOverride"), line.get("actorNameId"),
+            )
+            if value not in (None, "", [])
+        }
+        for context in contexts:
+            for value in (
+                context.get("radioId"), context.get("action"),
+                context.get("triggerRole"), context.get("levelScriptId"),
+                context.get("sourcePath"), context.get("actionMapRole"),
+            ):
+                if value not in (None, "", []):
+                    search_terms.add(str(value))
+        sorted_search = sorted(search_terms)
+        stored_search = sorted_search[:RADIO_MEDIA_SEARCH_LIMIT]
+        media.update({
+            "radioTableLineCount": len(line_identities),
+            "radioTableLineIdentities": line_identities,
+            "radioTriggerContextCount": len(contexts),
+            "radioTriggerContextStoredCount": len(stored_contexts),
+            "radioTriggerContextsTruncated": len(stored_contexts) < len(contexts),
+            "radioTriggerActions": sorted({
+                str(row.get("action") or "") for row in contexts
+                if str(row.get("action") or "")
+            }),
+            "radioTriggerRoles": sorted({
+                str(row.get("triggerRole") or "") for row in contexts
+                if str(row.get("triggerRole") or "")
+            }),
+            "radioTriggerSearchTermCount": len(sorted_search),
+            "radioTriggerSearchStoredCount": len(stored_search),
+            "radioTriggerSearchTruncated": len(stored_search) < len(sorted_search),
+            "radioTriggerSearch": stored_search,
+        })
+        if stored_contexts:
+            media["radioTriggerContexts"] = stored_contexts
+
+    dynamic_rows = [
+        {
+            key: row[key]
+            for key in (
+                "action", "triggerRole", "levelScriptId", "sourceRoot",
+                "sourcePath", "recordStart", "recordUid", "recordLocalId",
+                "actionMapRole", "unionTag", "serializedMemberCount",
+                "sourceField", "binding", "resolutionStatus",
+                "radioIdentityKind", "wwiseEventStatus",
+            )
+            if row.get(key) not in (None, "", [])
+        }
+        for row in levelscript_semantics.get("dynamicRadioBindings") or []
+        if isinstance(row, dict)
+    ]
+
+    def bounded(items: list[dict[str, Any]]) -> dict[str, Any]:
+        stored = items[:RADIO_CATALOG_ITEM_LIMIT]
+        return {
+            "totalCount": len(items),
+            "storedCount": len(stored),
+            "truncated": len(stored) < len(items),
+            "items": stored,
+        }
+
+    return {
+        "schemaVersion": 1,
+        "counts": {
+            "radioTableDefinitions": len(definitions),
+            "radioTableLines": len(all_lines),
+            "radioTableUniqueAudioOverrides": len(lines_by_stem),
+            "decodedDirectMedia": len(decoded_media_indices),
+            "decodedRadioTableLines": decoded_line_count,
+            "unresolvedRadioTableLines": len(all_lines) - decoded_line_count,
+            "levelScriptRadioActionRecords": int(
+                (levelscript_semantics.get("stats") or {}).get("radioActionRecords")
+                or 0
+            ),
+            "constantRadioBindings": len(invocations),
+            "dynamicRadioBindings": len(dynamic_rows),
+            "uniqueConstantRadioIds": len(invocations_by_radio),
+            "resolvedConstantRadioBindings": resolved_invocation_count,
+            "unresolvedConstantRadioBindings": (
+                len(invocations) - resolved_invocation_count
+            ),
+            "referencedRadioDefinitions": sum(
+                radio_id in definitions for radio_id in invocations_by_radio
+            ),
+            "referencedRadioLines": len(referenced_lines),
+            "decodedReferencedRadioLines": len(decoded_referenced_lines),
+            "unresolvedReferencedRadioLines": unresolved_referenced_line_count,
+            "invocationLineAssociations": invocation_line_associations,
+            "decodedInvocationLineAssociations": (
+                decoded_invocation_line_associations
+            ),
+            "unresolvedInvocationLineAssociations": (
+                unresolved_referenced_association_count
+            ),
+            "mediaRowsWithRadioTableIdentity": len(decoded_media_indices),
+            "mediaRowsWithRadioTriggerContexts": media_with_trigger_contexts,
+            "radioTriggerContextAssociations": total_context_count,
+            "radioTriggerContextAssociationsStored": stored_context_count,
+            "mediaRowsWithTruncatedRadioTriggerContexts": truncated_media_count,
+        },
+        "unresolvedRadioIds": bounded(missing_definition_items),
+        "unresolvedRadioLines": bounded(unresolved_line_items),
+        "dynamicRadioBindings": bounded(dynamic_rows),
+        "evidenceBoundary": (
+            "A constant LevelScript radioId selects an exact RadioTable definition. "
+            "Its radioSingleDataList order and audioOverride values are authored dialog "
+            "identities; an override links to decoded media only by exact audioDialogPath "
+            "stem. Neither radioId nor audioOverride is a Wwise Event, and action execution, "
+            "line selection, playback, and dynamic radioId values remain unobserved."
         ),
     }
 
@@ -4451,6 +4878,11 @@ def build_audio_semantic_data(
     )
     events, media_to_events, banks = build_event_rows(audio_index, contexts)
     media = build_media_rows(audio_index, media_to_events)
+    radio_catalog = attach_levelscript_radio_contexts(
+        media,
+        export_root,
+        levelscript_semantics,
+    )
     custom_footstep_model = build_custom_footstep_model(events, webui_root, language)
     spawner_event_rows = [
         row for row in events
@@ -4710,6 +5142,26 @@ def build_audio_semantic_data(
             "levelScriptAudioCueBehaviorEvents": context_kind_event_counts.get("levelScriptAudioCueBehaviorEvent", 0),
             "levelScriptAudioCueBehaviorContexts": context_kind_counts.get("levelScriptAudioCueBehaviorEvent", 0),
             "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
+            "levelScriptRadioActions": (
+                (radio_catalog.get("counts") or {}).get(
+                    "levelScriptRadioActionRecords", 0
+                )
+            ),
+            "levelScriptConstantRadioBindings": (
+                (radio_catalog.get("counts") or {}).get("constantRadioBindings", 0)
+            ),
+            "levelScriptDynamicRadioBindings": (
+                (radio_catalog.get("counts") or {}).get("dynamicRadioBindings", 0)
+            ),
+            "radioTableDefinitions": (
+                (radio_catalog.get("counts") or {}).get("radioTableDefinitions", 0)
+            ),
+            "radioTableLines": (
+                (radio_catalog.get("counts") or {}).get("radioTableLines", 0)
+            ),
+            "radioTableDecodedDirectMedia": (
+                (radio_catalog.get("counts") or {}).get("decodedDirectMedia", 0)
+            ),
             "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
             "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
             "levelEventAudioConditionDefinitions": len(LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS),
@@ -4752,6 +5204,7 @@ def build_audio_semantic_data(
             },
             "modelViewStateAudio": model_view_semantics.get("stats") or {},
             "levelScriptAudio": levelscript_semantics.get("stats") or {},
+            "levelScriptRadio": radio_catalog,
         },
         "controlCatalog": {
             "schemaVersion": 1,
@@ -4829,6 +5282,7 @@ def build_audio_semantic_data(
             "physicsAudio": physics_audio_semantics.get("evidenceBoundary") or "",
             "modelViewStateAudio": model_view_semantics.get("evidenceBoundary") or "",
             "levelScriptAudio": levelscript_semantics.get("evidenceBoundary") or "",
+            "levelScriptRadio": radio_catalog.get("evidenceBoundary") or "",
             "levelEventAudioConditions": "OnAudioStateChanged and OnMusicBeatEvent are exact current-build LevelEvent condition definitions. The active Persistent-over-Streaming LevelScript overlay contains zero authored occurrences, and neither condition is a Wwise playback request.",
             "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
