@@ -75,6 +75,9 @@
       contextAnimation: "Animation",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
+      customFootstepParameters: "OnCustomFootStep parameters",
+      customFootstepRuntime: "Footstep runtime boundary",
+      customFootstepNativeAnchors: "Current-build native anchors",
       contextOwnerUnresolvedAnimation: "Animation owner unresolved",
       contextScripted: "LevelScript",
       contextLevelScriptTrigger: "Scripted audio trigger",
@@ -207,6 +210,9 @@
       contextAnimation: "\u52a8\u753b",
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
+      customFootstepParameters: "OnCustomFootStep \u53c2\u6570",
+      customFootstepRuntime: "\u811a\u6b65\u8fd0\u884c\u65f6\u8bc1\u636e\u8fb9\u754c",
+      customFootstepNativeAnchors: "\u5f53\u524d\u7248\u672c\u539f\u751f\u951a\u70b9",
       contextOwnerUnresolvedAnimation: "\u52a8\u753b\u5f52\u5c5e\u672a\u89e3\u6790",
       contextScripted: "LevelScript \u811a\u672c",
       contextLevelScriptTrigger: "\u811a\u672c\u97f3\u9891\u89e6\u53d1",
@@ -1738,6 +1744,9 @@
     if (context?.possibleMediaScope) parts.push(humanize(context.possibleMediaScope));
     const functions = asArray(context?.animationFunctions).filter(Boolean);
     if (functions.length) parts.push(functions.join(" / "));
+    if (Number(context?.customFootstepOccurrenceCount || 0) > 0) {
+      parts.push(`OnCustomFootStep ${formatNumber(context.customFootstepOccurrenceCount)} callbacks / ${asArray(context.customFootstepParameterVariants).length} parameter variants`);
+    }
     const clipContexts = asArray(context?.animationClipContexts).filter(Boolean);
     if (clipContexts.length) parts.push(clipContexts.map(humanize).join(" / "));
     if (context?.clipReachability) parts.push(`clip reachability: ${context.clipReachability}`);
@@ -1818,6 +1827,41 @@
     return values;
   }
 
+  function customFootstepParameterSummary(record) {
+    return asArray(record?.customFootstepParameterVariants)
+      .filter((variant) => variant && typeof variant === "object")
+      .map((variant) => {
+        const fields = [
+          `${formatNumber(variant.occurrenceCount || 0)} callbacks`,
+          `raw int ${variant.rawInt ?? "?"}`,
+          `raw float ${variant.rawFloat ?? "?"}`,
+          `foot ${variant.footSide || "?"}`,
+          `VFX ${variant.vfxType || "?"}`,
+          `filter ${variant.playbackFilter || "?"}`,
+          variant.customWeightThreshold !== null && variant.customWeightThreshold !== undefined
+            ? `custom weight >= ${variant.customWeightThreshold}`
+            : "float inactive for playback filter",
+          `VFX weight >= ${variant.runtimeVfxWeightThreshold ?? 0.5}`,
+        ];
+        if (variant.decodeStatus && variant.decodeStatus !== "exactCurrentBuild") fields.push(humanize(variant.decodeStatus));
+        return fields.join(" / ");
+      });
+  }
+
+  function customFootstepRuntimeSummary() {
+    const model = state.index?.customFootstepModel;
+    if (!model || typeof model !== "object") return [];
+    const corpus = model.corpus || {};
+    const values = [
+      `${formatNumber(corpus.occurrenceCount || 0)} callbacks / ${formatNumber(corpus.eventCount || 0)} canonical Events / ${formatNumber(corpus.parameterVariantCount || 0)} raw parameter variants`,
+    ];
+    for (const anchor of asArray(model.nativeAnchors)) {
+      if (!anchor || typeof anchor !== "object") continue;
+      values.push(`${anchor.type || "native"}.${anchor.method || "?"} ${anchor.token || ""} @ ${anchor.virtualAddress || "?"}`.trim());
+    }
+    return values;
+  }
+
   function recordPanel(record) {
     const panel = document.createElement("section");
     panel.className = "audio-panel";
@@ -1850,6 +1894,13 @@
     if (record.relationTags.length) panel.appendChild(chipSection(t("relation"), record.relationTags.map(taxonomyLabel)));
     const selectorEvidence = selectorEvidenceSummary(raw);
     if (selectorEvidence.length) panel.appendChild(chipSection(t("selectorEvidence"), selectorEvidence));
+    const customFootstepParameters = customFootstepParameterSummary(raw);
+    if (customFootstepParameters.length) {
+      panel.appendChild(chipSection(t("customFootstepParameters"), customFootstepParameters));
+      panel.appendChild(chipSection(t("customFootstepNativeAnchors"), customFootstepRuntimeSummary()));
+      const boundary = state.index?.customFootstepModel?.runtimeSelectorBoundary;
+      if (boundary) panel.appendChild(noteSection(t("customFootstepRuntime"), boundary));
+    }
 
     const evidence = asArray(raw.evidence).filter((value) => value && typeof value === "object");
     const mediaIds = [...new Set([

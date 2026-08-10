@@ -676,7 +676,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 webui_root=webui_root,
                 metadata_path=None,
             )
-            self.assertEqual(11, payload["schemaVersion"])
+            self.assertEqual(12, payload["schemaVersion"])
             self.assertEqual(1, payload["counts"]["patrolSubActionPlayAudioEvents"])
             self.assertEqual(1, payload["counts"]["patrolSubActionPlayAudioContexts"])
             self.assertEqual(0, payload["counts"]["patrolSubActionPlayAudioEventsFoundInWwise"])
@@ -1099,6 +1099,37 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["animationOccurrenceCount"], 1)
             self.assertEqual(context["sourcePaths"], ["AnimationClip/UI_Generic.anim"])
 
+    def test_decodes_and_aggregates_custom_footstep_parameters_exactly(self) -> None:
+        regular = audio_semantics.decode_custom_footstep_parameters(0x0D, 0.5)
+        self.assertEqual(regular["footSide"], "Right")
+        self.assertEqual(regular["vfxType"], "Land")
+        self.assertEqual(regular["playbackFilter"], "IsMaxWeight")
+        self.assertIsNone(regular["customWeightThreshold"])
+        self.assertTrue(regular["inactiveFloat"])
+        self.assertEqual(regular["runtimeVfxWeightThreshold"], 0.5)
+        self.assertEqual(regular["decodeStatus"], "exactCurrentBuild")
+
+        custom = audio_semantics.decode_custom_footstep_parameters(0x44, 0.375)
+        self.assertEqual(custom["footSide"], "Left")
+        self.assertEqual(custom["vfxType"], "Step")
+        self.assertEqual(custom["playbackFilter"], "CustomWeight")
+        self.assertEqual(custom["customWeightThreshold"], 0.375)
+        self.assertFalse(custom["inactiveFloat"])
+        self.assertEqual(custom["floatParameterStatus"], "customWeightThreshold")
+
+        variants = audio_semantics.aggregate_custom_footstep_parameter_variants([
+            {"function": "OnCustomFootStep", "intParameter": 0x0D, "floatParameter": 0.5},
+            {"function": "OnCustomFootStep", "intParameter": 0x0D, "floatParameter": 0.5},
+            {"function": "OnCustomFootStep", "intParameter": 0x44, "floatParameter": 0.375},
+            {"function": "PostAudioEvent", "intParameter": 0x0D, "floatParameter": 0.5},
+        ])
+        self.assertEqual([row["occurrenceCount"] for row in variants], [2, 1])
+        self.assertIsNone(audio_semantics.decode_custom_footstep_parameters(True, 0.5))
+        self.assertEqual(
+            audio_semantics.decode_custom_footstep_parameters(0x02, 0.5)["decodeStatus"],
+            "unsupportedMaskedValue",
+        )
+
     def test_collects_levelscript_events_controls_and_exact_cue_behavior_join(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root)
@@ -1255,7 +1286,12 @@ class AudioSemanticDataTests(unittest.TestCase):
                             "animationOwnerCount": 2,
                             "animationOwnershipScope": "sharedPlayableCharacters",
                             "possibleMediaScope": "sharedEventGraph",
-                            "evidence": [{"time": 0.25, "function": "PostAudioEvent"}],
+                            "evidence": [{
+                                "time": 0.25,
+                                "function": "OnCustomFootStep",
+                                "floatParameter": 0.5,
+                                "intParameter": 0,
+                            }],
                         }],
                         "groups": {
                             "normal": {
@@ -1298,7 +1334,12 @@ class AudioSemanticDataTests(unittest.TestCase):
                             "animationOwnerCount": 2,
                             "animationOwnershipScope": "sharedPlayableCharacters",
                             "possibleMediaScope": "sharedEventGraph",
-                            "evidence": [{"time": 0.5, "function": "OnCustomFootStep"}],
+                            "evidence": [{
+                                "time": 0.5,
+                                "function": "OnCustomFootStep",
+                                "floatParameter": 0.0,
+                                "intParameter": 225,
+                            }],
                         }],
                         "groups": {},
                     },
@@ -1416,6 +1457,18 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertIn("animationOwnership", payload["evidenceBoundary"])
             self.assertEqual(payload["counts"]["sharedPlayableCharacterAnimationEvents"], 1)
             self.assertEqual(payload["counts"]["footstepSystemEvents"], 1)
+            self.assertEqual(payload["counts"]["customFootstepCallbackOccurrences"], 2)
+            self.assertEqual(payload["counts"]["customFootstepParameterVariants"], 2)
+            self.assertEqual(event["customFootstepOccurrenceCount"], 2)
+            self.assertEqual(event_summary["customFootstepOccurrenceCount"], 2)
+            self.assertEqual(
+                [(row["rawInt"], row["rawFloat"], row["occurrenceCount"])
+                 for row in event["customFootstepParameterVariants"]],
+                [(0, 0.5, 1), (225, 0.0, 1)],
+            )
+            self.assertIn("customFootstepCallbacks", payload["evidenceBoundary"])
+            self.assertIn("_SetAudioMatSwitch", payload["customFootstepModel"]["runtimeSelectorBoundary"])
+            self.assertIn("does not map", payload["customFootstepModel"]["runtimeSelectorBoundary"])
 
     def test_audio_frontend_materializes_each_distinct_media_player_on_expand(self) -> None:
         source = (
@@ -1441,6 +1494,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn('contextNpcPatrolTrigger: "NPC patrol-point audio"', source)
         self.assertIn('contextKind === "patrolSubActionPlayAudio"', source)
         self.assertIn('`NPC patrol ${context.patrolId}`', source)
+        self.assertIn("function customFootstepParameterSummary", source)
+        self.assertIn('"float inactive for playback filter"', source)
+        self.assertIn("runtimeSelectorBoundary", source)
+        self.assertNotIn("selected Wwise switch child", source)
 
 
 if __name__ == "__main__":
