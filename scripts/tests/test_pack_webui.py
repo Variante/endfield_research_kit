@@ -26,7 +26,7 @@ class PackWebuiAudioTests(unittest.TestCase):
         self.assertIn('data-view="audio" data-i18n="audioTab"', html)
         self.assertIn('id="audio-view"', html)
 
-    def test_packaged_router_keeps_debug_audio_and_mission_views(self) -> None:
+    def test_packaged_router_keeps_audio_and_debug_mission_views(self) -> None:
         shim = pack_webui.ASSET_SHIM_JS
 
         self.assertIn('"audio"', shim)
