@@ -157,7 +157,17 @@ NPC archetypes are imported as labeled source kits.
   interleaved-token LZ4 decoder pinned. All 83 serialized `StreamingMapConfig`
   roots have matching `StreamingChunkInfo` files. A complete scan of 51,012
   main Streaming payloads (3,088,714,060 decoded bytes; 3,084,834 union
-  records) finds neither HGTree bit 41 nor HLODGroup bit 11. All 1,576
+  records) finds neither HGTree bit 41 nor HLODGroup bit 11 in tag-1 component
+  vectors. Native dispatch tables identify tag 1 as MonoEntity, tag 2 as
+  native ECS, and tag 3 as Proxy; installed byte-backed enums close all 14
+  `ECSEntityType` and 11 `ProxyEntityType` values. Native slot registration
+  proves component 67 is shared by type 0 `Render` callbacks
+  `0x181154230/0x181159010` and type 9 `MergedRenderCollider` callbacks
+  `0x181153310/0x181157760`. The complete scan counts 34,672 Render records
+  across 1,384 files and 2,576,964 MergedRenderCollider records across 4,720
+  files. Entity ownership is therefore closed; only the standalone native
+  component name and the earlier LOD-count/cumulative-range producer remain
+  open. All 1,576
   DynamicStreaming init/stream payloads contain only tag-2 records and no
   component entry. The 457 dynamic `fb_main` files do contain 2,828
   `FBDynamicSceneTreeRootComp` rows, but their gameplay identities
@@ -165,7 +175,6 @@ NPC archetypes are imported as labeled source kits.
   from both serialized HGTree bit 41 and ECS component 67. The compact
   hash/count evidence is
   `Generated/OriginalData/CharInfoPresentation/streaming_scene_v2_payload_census.json`.
-  Nested/procedural data and runtime construction remain open.
   Native entity-type registration core `0x1801FAEC0` now closes each input as
   an 8-byte row `(int16 id, uint16 size, uint32 cumulativeOffset)`, with
   component storage beginning at byte 8 and archetype size/offset lookups at
@@ -195,8 +204,8 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The remaining
-  initially zero loader-record bytes, the component-67 native identity and
-  LOD-count/range producer, the unrelated scheduled consumer of view
+  initially zero loader-record bytes, the component-67 standalone native type
+  name and LOD-count/range producer, the unrelated scheduled consumer of view
   `+0x18`,
   any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.

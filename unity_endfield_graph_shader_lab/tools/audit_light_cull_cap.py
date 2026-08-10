@@ -404,7 +404,153 @@ STREAMING_SCENE_V2_BINARY_BODIES = [
         0x3A0,
         "1391e46affd12e415010bba0224ee91fc72676d15e5a5bed1ed9d3f5a29cc2fb",
     ),
+    (
+        "UnityPlayer.dll",
+        "StreamingSceneV2 union dispatch",
+        0x18117DC50,
+        0xB51,
+        "391f2531f5a880430e9f8ae5c84e69936298d02edfcf1851eaceedd1fa50f70e",
+    ),
+    (
+        "UnityPlayer.dll",
+        "MonoEntity tag-1 create callback",
+        0x18114F380,
+        0x347,
+        "3c053a3579625ba22806b224eb91ad4fd52dc89a16502c6963388af04c04c2fd",
+    ),
+    (
+        "UnityPlayer.dll",
+        "MonoEntity tag-1 destroy callback",
+        0x18114F6D0,
+        0x9A,
+        "d50fcb89d0b62b6de48a0e9ee94d6b7a2b34e0395158f085e72181e0e03a3ec4",
+    ),
+    (
+        "UnityPlayer.dll",
+        "native-ECS tag-2 create callback",
+        0x18114F880,
+        0x251,
+        "ef8a361f6122810670bbb5683de199faf85cacacd4cbd5eb17edbf8f414dd5e6",
+    ),
+    (
+        "UnityPlayer.dll",
+        "native-ECS tag-2 destroy callback",
+        0x18114FAE0,
+        0x19B,
+        "07e666c12dba8832556115f214d8edaa8c06206f029b5ad1b001e8a667bcbe69",
+    ),
+    (
+        "UnityPlayer.dll",
+        "Proxy tag-3 create callback",
+        0x18114FEB0,
+        0x175,
+        "9234d6a8a44f27bd7da4bb2bb548cfc11f663ab966844c4da07d13454bd123f6",
+    ),
+    (
+        "UnityPlayer.dll",
+        "Proxy tag-3 destroy callback",
+        0x181150030,
+        0x9F,
+        "0b2622da3ae6636116f68a0d5ab9763edecf3ec65c38e336328cc9da2b146f9b",
+    ),
+    (
+        "UnityPlayer.dll",
+        "native ECS ConvertFrom dispatcher",
+        0x181152810,
+        0x22E,
+        "83f4aaec73d0843431805404e3ec832d6c3fcae29fff1085842fe92b5b14269a",
+    ),
+    (
+        "UnityPlayer.dll",
+        "MergedRenderCollider type-9 callback registration",
+        0x18116B6AB,
+        0x2F6,
+        "162f141c1c1dca0fc908a44994b0396100724baa90647db52f0fb561376fe084",
+    ),
+    (
+        "UnityPlayer.dll",
+        "Render type-0 callback registration",
+        0x18116B9A1,
+        0x240,
+        "c7f5509630888694f23799662326f637f6dd20954e1daffe11938aae79a08cf9",
+    ),
+    (
+        "UnityPlayer.dll",
+        "MergedRenderCollider type-9 transition-1 callback",
+        0x181153310,
+        0x5DF,
+        "4435143d7cce168aa670402d64f54cd6e813160dceab5e22b01ed28a05ad3d5c",
+    ),
+    (
+        "UnityPlayer.dll",
+        "MergedRenderCollider type-9 ConvertFrom callback",
+        0x181157760,
+        0x7F9,
+        "45633b35ac3c0bd27a71bb8464121584f185445ef18a7fe4a1e9b2808f074d63",
+    ),
+    (
+        "UnityPlayer.dll",
+        "Render type-0 transition-1 callback",
+        0x181154230,
+        0x6C4,
+        "4ae50616400e412b8c30c649765b11ad1e4906b9f7bf3e5f64a584ddc5027789",
+    ),
+    (
+        "UnityPlayer.dll",
+        "Render type-0 ConvertFrom callback",
+        0x181159010,
+        0x398,
+        "c1f42c8333a1f0daf613485ee1757e78bdf95899ddcdcde81b7e177027dd8247",
+    ),
+    (
+        "UnityPlayer.dll",
+        "native ECS callback-slot installer",
+        0x1811701B0,
+        0xFE,
+        "044cba2341778c80103264855a41dd1b6e5a361641e9d5f36ef67a70f5839e6e",
+    ),
 ]
+STREAMING_UNION_DISPATCH_TABLES = {
+    "create": (
+        0x181E226E8,
+        [0, 0x18114F380, 0x18114F880, 0x18114FEB0, 0x1811501E0],
+    ),
+    "destroy": (
+        0x181E228A0,
+        [0, 0x18114F6D0, 0x18114FAE0, 0x181150030, 0x180076890],
+    ),
+}
+STREAMING_ECS_ENTITY_TYPE_FIELDS = {
+    "Render": (296729, 0x04000273, 0),
+    "Water": (296730, 0x04000274, 1),
+    "ConvexCollider": (296731, 0x04000275, 2),
+    "CapsuleCollider": (296732, 0x04000276, 3),
+    "SphereCollider": (296733, 0x04000277, 4),
+    "MeshCollider": (296734, 0x04000278, 5),
+    "MultiCollider": (296735, 0x04000279, 6),
+    "TerrainCollider": (296736, 0x0400027A, 7),
+    "TerrainDecal": (296737, 0x0400027B, 8),
+    "MergedRenderCollider": (296738, 0x0400027C, 9),
+    "HGDecalProjector": (296739, 0x0400027D, 10),
+    "TerrainSplineDecal": (296740, 0x0400027E, 11),
+    "HGStreamingVolume": (296741, 0x0400027F, 12),
+    "WaterDecal": (296742, 0x04000280, 13),
+    "TypeCount": (296743, 0x04000281, 14),
+}
+STREAMING_PROXY_ENTITY_TYPE_FIELDS = {
+    "IrradianceVolume": (296745, 0x04000283, 0),
+    "AudioVolume": (296746, 0x04000284, 1),
+    "AudioEmitter": (296747, 0x04000285, 2),
+    "AudioRoom": (296748, 0x04000286, 3),
+    "TerrainSurfaceTypeData": (296749, 0x04000287, 4),
+    "AudioPortal": (296750, 0x04000288, 5),
+    "SOCChunk": (296751, 0x04000289, 6),
+    "GrassGrid": (296752, 0x0400028A, 7),
+    "GpuClothGroup": (296753, 0x0400028B, 8),
+    "TreeGrid": (296754, 0x0400028C, 9),
+    "GPUParticleSystem": (296755, 0x0400028D, 10),
+    "TypeCount": (296756, 0x0400028E, 11),
+}
 STREAMING_SCENE_V2_COMPONENT_BITS = [
     {"bit": 0, "name": "Transform", "componentCount": 66514, "fileCount": 38452},
     {"bit": 1, "name": "MeshFilter", "componentCount": 28, "fileCount": 26},
@@ -1492,10 +1638,112 @@ def validate_hgtree_native_serialized_type_census(
     }
 
 
+def validate_streaming_byte_enum_fields(
+    raw_metadata: bytes,
+    source: Path,
+    prefix: str,
+    expected_fields: dict[str, tuple[int, int, int]],
+) -> list[dict[str, object]]:
+    """Validate byte-backed IL2CPP enum fields from the installed metadata."""
+
+    require(
+        f"{prefix}_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    sections = {}
+    for section_index, section_name in enumerate(IL2CPP_METADATA_SECTION_NAMES):
+        sections[section_name] = struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+    string_offset, string_size = sections["string"]
+    fields_offset, fields_size = sections["fields"]
+    defaults_offset, defaults_size = sections["fieldDefaultValues"]
+    values_offset, values_size = sections["fieldAndParameterDefaultValueData"]
+    defaults = {}
+    for position in range(defaults_offset, defaults_offset + defaults_size, 12):
+        field_index, type_index, data_index = struct.unpack_from(
+            "<iii", raw_metadata, position
+        )
+        defaults[field_index] = (type_index, data_index)
+    rows = []
+    for expected_name, (field_index, expected_token, expected_value) in (
+        expected_fields.items()
+    ):
+        record_offset = fields_offset + field_index * 12
+        require(
+            f"{prefix}_{expected_name}_field_in_bounds",
+            record_offset + 12 <= fields_offset + fields_size,
+            True,
+            source,
+        )
+        name_index, _, token = struct.unpack_from(
+            "<iii", raw_metadata, record_offset
+        )
+        name_start = string_offset + name_index
+        require(
+            f"{prefix}_{expected_name}_name_in_bounds",
+            string_offset <= name_start < string_offset + string_size,
+            True,
+            source,
+        )
+        name_end = raw_metadata.index(0, name_start, string_offset + string_size)
+        actual_name = raw_metadata[name_start:name_end].decode("utf-8")
+        require(
+            f"{prefix}_{expected_name}_field_name",
+            actual_name,
+            expected_name,
+            source,
+        )
+        require(
+            f"{prefix}_{expected_name}_field_token",
+            token,
+            expected_token,
+            source,
+        )
+        require(
+            f"{prefix}_{expected_name}_default_exists",
+            field_index in defaults,
+            True,
+            source,
+        )
+        default_type_index, data_index = defaults[field_index]
+        require(
+            f"{prefix}_{expected_name}_default_type",
+            default_type_index,
+            131229,
+            source,
+        )
+        require(
+            f"{prefix}_{expected_name}_default_in_bounds",
+            0 <= data_index < values_size,
+            True,
+            source,
+        )
+        value = raw_metadata[values_offset + data_index]
+        require(
+            f"{prefix}_{expected_name}_value",
+            value,
+            expected_value,
+            source,
+        )
+        rows.append(
+            {
+                "name": actual_name,
+                "fieldIndex": field_index,
+                "token": f"0x{token:08X}",
+                "value": value,
+            }
+        )
+    return rows
+
+
 def validate_streaming_scene_v2_payload_census(
     unity_image: PEImage,
     game_image: PEImage,
     census: dict[str, object] | None = None,
+    metadata: bytes | None = None,
 ) -> dict[str, object]:
     """Pin the retail StreamingSceneV2 route and its scanned payload surfaces."""
 
@@ -1553,6 +1801,81 @@ def validate_streaming_scene_v2_payload_census(
             }
         )
 
+    dispatch_tables = {}
+    for label, (virtual_address, expected_entries) in (
+        STREAMING_UNION_DISPATCH_TABLES.items()
+    ):
+        actual_entries = [
+            unity_image.u64(virtual_address + index * 8)
+            for index in range(len(expected_entries))
+        ]
+        require(
+            f"streaming_scene_v2_{label}_dispatch_table",
+            actual_entries,
+            expected_entries,
+            unity_image.path,
+        )
+        dispatch_tables[label] = {
+            "virtualAddress": f"0x{virtual_address:X}",
+            "entries": [f"0x{entry:X}" for entry in actual_entries],
+        }
+
+    raw_metadata = metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
+    entity_type_enums = {
+        "ecs": validate_streaming_byte_enum_fields(
+            raw_metadata,
+            GLOBAL_METADATA,
+            "streaming_ecs_entity_type",
+            STREAMING_ECS_ENTITY_TYPE_FIELDS,
+        ),
+        "proxy": validate_streaming_byte_enum_fields(
+            raw_metadata,
+            GLOBAL_METADATA,
+            "streaming_proxy_entity_type",
+            STREAMING_PROXY_ENTITY_TYPE_FIELDS,
+        ),
+    }
+    native_entity_dispatch = {
+        "runtimeRecordStrideBytes": 56,
+        "tables": dispatch_tables,
+        "tags": [
+            {"tag": 1, "name": "MonoEntity"},
+            {"tag": 2, "name": "NativeECS"},
+            {"tag": 3, "name": "Proxy"},
+        ],
+        "nativeEcsConvertFromVirtualAddress": "0x181152810",
+        "nativeEcsRegistry": {
+            "slotCount": 14,
+            "slotStrideBytes": 648,
+            "callbackSlotInstallerVirtualAddress": "0x1811701B0",
+        },
+    }
+    component67_owners = {
+        "componentId": 67,
+        "recordStrideBytes": 24,
+        "entityTypes": [
+            {
+                "value": 0,
+                "name": "Render",
+                "registrationRange": ["0x18116B9A1", "0x18116BBE1"],
+                "transition1": "0x181154230",
+                "convertFrom": "0x181159010",
+            },
+            {
+                "value": 9,
+                "name": "MergedRenderCollider",
+                "registrationRange": ["0x18116B6AB", "0x18116B9A1"],
+                "transition1": "0x181153310",
+                "convertFrom": "0x181157760",
+            },
+        ],
+        "boundary": (
+            "native ECS entity ownership is closed for Render and "
+            "MergedRenderCollider; the standalone native component type name "
+            "and the earlier lodCount/cumulative-range producer remain open"
+        ),
+    }
+
     data = (
         census
         if census is not None
@@ -1561,6 +1884,9 @@ def validate_streaming_scene_v2_payload_census(
     inputs = data.get("installedInputs") or {}
     managed = data.get("managedBridge") or {}
     native = data.get("nativeLoader") or {}
+    entity_dispatch = data.get("nativeEntityDispatch") or {}
+    enums = data.get("entityTypeEnums") or {}
+    owners = data.get("component67Owners") or {}
     configs = data.get("serializedMapConfigs") or {}
     vfs = data.get("installedVfs") or {}
     blocks = vfs.get("blocks") or {}
@@ -1603,7 +1929,7 @@ def validate_streaming_scene_v2_payload_census(
         (
             "schema",
             data.get("schema"),
-            "endfield.streaming-scene-v2-payload-census.v1",
+            "endfield.streaming-scene-v2-payload-census.v2",
         ),
         (
             "unity_player_hash",
@@ -1682,6 +2008,9 @@ def validate_streaming_scene_v2_payload_census(
             "interleaved-token LZ4 with big-endian match offsets",
         ),
         ("native_binary_bodies", native.get("binaryBodies"), binary_rows),
+        ("native_entity_dispatch", entity_dispatch, native_entity_dispatch),
+        ("entity_type_enums", enums, entity_type_enums),
+        ("component67_owners", owners, component67_owners),
         (
             "map_object_index_hash",
             configs.get("objectIndexObjectsGzipSha256"),
@@ -1773,6 +2102,39 @@ def validate_streaming_scene_v2_payload_census(
             STREAMING_SCENE_V2_COMPONENT_BITS,
         ),
         (
+            "payload_ecs_entity_types",
+            payloads.get("ecsEntityTypes"),
+            [
+                {"value": 0, "name": "Render", "entityCount": 34672, "fileCount": 1384},
+                {"value": 1, "name": "Water", "entityCount": 3976, "fileCount": 118},
+                {"value": 2, "name": "ConvexCollider", "entityCount": 4002, "fileCount": 1238},
+                {"value": 5, "name": "MeshCollider", "entityCount": 5110, "fileCount": 3098},
+                {"value": 6, "name": "MultiCollider", "entityCount": 205656, "fileCount": 7878},
+                {"value": 7, "name": "TerrainCollider", "entityCount": 13600, "fileCount": 3646},
+                {"value": 8, "name": "TerrainDecal", "entityCount": 4488, "fileCount": 428},
+                {"value": 9, "name": "MergedRenderCollider", "entityCount": 2576964, "fileCount": 4720},
+                {"value": 10, "name": "HGDecalProjector", "entityCount": 83976, "fileCount": 1338},
+                {"value": 12, "name": "HGStreamingVolume", "entityCount": 326, "fileCount": 172},
+                {"value": 13, "name": "WaterDecal", "entityCount": 652, "fileCount": 22},
+            ],
+        ),
+        (
+            "payload_proxy_entity_types",
+            payloads.get("proxyEntityTypes"),
+            [
+                {"value": 0, "name": "IrradianceVolume", "entityCount": 166, "fileCount": 166},
+                {"value": 1, "name": "AudioVolume", "entityCount": 17238, "fileCount": 2750},
+                {"value": 2, "name": "AudioEmitter", "entityCount": 24020, "fileCount": 2362},
+                {"value": 3, "name": "AudioRoom", "entityCount": 8560, "fileCount": 2852},
+                {"value": 4, "name": "TerrainSurfaceTypeData", "entityCount": 9856, "fileCount": 9856},
+                {"value": 5, "name": "AudioPortal", "entityCount": 3560, "fileCount": 956},
+                {"value": 6, "name": "SOCChunk", "entityCount": 6864, "fileCount": 2348},
+                {"value": 7, "name": "GrassGrid", "entityCount": 8968, "fileCount": 1256},
+                {"value": 8, "name": "GpuClothGroup", "entityCount": 4278, "fileCount": 652},
+                {"value": 9, "name": "TreeGrid", "entityCount": 1388, "fileCount": 94},
+            ],
+        ),
+        (
             "payload_hlod_bit11_count",
             payloads.get("hlodGroupBit11ComponentCount"),
             0,
@@ -1859,6 +2221,9 @@ def validate_streaming_scene_v2_payload_census(
     return {
         "managedBridge": managed,
         "nativeLoader": native,
+        "nativeEntityDispatch": entity_dispatch,
+        "entityTypeEnums": enums,
+        "component67Owners": owners,
         "serializedMapConfigs": configs,
         "installedVfs": vfs,
         "streamingPayloads": payloads,
@@ -3541,9 +3906,10 @@ def validate_unity_hgtree_renderer_boundary(
                     "boundary": (
                         "these hash-pinned source families and the controlled "
                         "top-level Unity-serialized HGTree/HGTreeData surface "
-                        "are excluded; the id-67 descriptor and lodCount/range "
-                        "producer remain in proprietary streaming bytes, nested "
-                        "data, or another native runtime source"
+                        "are excluded. Streaming tag 1 component vectors are "
+                        "also excluded, but tag 2 is now positively identified "
+                        "as native ECS and contains the active Render and "
+                        "MergedRenderCollider owner paths"
                     ),
                 },
                 "structureBoundary": (
@@ -3581,6 +3947,8 @@ def validate_unity_hgtree_renderer_boundary(
                 "managedHGTreeComponentIdMappingClosed": True,
                 "managedHGTreeComponentId": 80,
                 "component67MatchesHGTreeComponent": False,
+                "nativeEntityOwnershipClosed": True,
+                "nativeEntityOwners": ["Render", "MergedRenderCollider"],
                 "component67NativeIdentityClosed": False,
             },
             "dispatchPacket": {
@@ -3730,6 +4098,9 @@ def validate_unity_hgtree_renderer_boundary(
                 "the exact serialized-record to runtime-record and LOD float2 mapping",
                 "the 1/2/4/8/16/32 runtime capacity buckets and LOD-array offsets",
                 "the separate component-bit-67 24-byte ECS LOD state layout",
+                "StreamingSceneV2 tag 2 as the native ECS union variant",
+                "component 67 ownership by Render and MergedRenderCollider entity paths",
+                "the complete installed ECSEntityType/ProxyEntityType payload census",
                 "pending, available, and per-renderer readiness mask transitions",
                 "the separation between the loader registration blob and ECS LOD state",
                 "the direct squared-distance LOD interval equation",
@@ -3746,7 +4117,7 @@ def validate_unity_hgtree_renderer_boundary(
             "open": [
                 "semantic roles for the loader registration blob's remaining initially zero bytes",
                 "the ECS LOD-count producer and record+0x06/+0x07 semantics",
-                "a direct registration link from archetype component bit 67 to a native type name",
+                "the standalone native component type name for archetype bit 67",
                 "the unrelated scheduled cull-view +0x18 consumer",
             ],
         },
@@ -3991,8 +4362,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v17",
-        "status": "installed_cap_hgtree_component67_streaming_payload_surfaces_excluded",
+        "schema": "endfield.recovered-light-cull-cap.v18",
+        "status": "installed_cap_component67_native_ecs_entity_owners_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -4064,21 +4435,28 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "callback, and interleaved-token LZ4 decoder are now pinned. A full "
             "scan of 51,012 main Streaming payloads (3,088,714,060 decoded "
             "bytes and 3,084,834 union records) finds no HGTree bit-41 or "
-            "HLODGroup bit-11 component entry. All 1,576 DynamicStreaming "
+            "HLODGroup bit-11 tag-1 component entry. The native dispatch "
+            "tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 "
+            "as Proxy. Installed metadata closes all ECSEntityType and "
+            "ProxyEntityType values. The native type-0 Render and type-9 "
+            "MergedRenderCollider callback slots both access component 67, "
+            "closing its entity ownership to a shared native render/merged-"
+            "render-collider LOD-streaming path. The full scan contains "
+            "34,672 Render and 2,576,964 MergedRenderCollider records. All "
+            "1,576 DynamicStreaming "
             "init/stream payloads contain only union tag 2 and no component "
             "entry. Its 457 fb_main files do contain 2,828 gameplay "
             "FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 "
             "and TreeRootComp=64 prove that this destructible-tree normal-model "
             "route is separate from both StreamingComponentType HGTree bit 41 "
-            "and ECS component id 67. Nested/procedural data and runtime "
-            "construction remain open. The native name/owner of "
-            "id 67 remains open. The "
+            "and ECS component id 67. The standalone native component name "
+            "and the earlier lodCount/cumulative-range producer remain open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The scheduled cull-view +0x18 consumer, remaining initially zero "
             "loader-record bytes, the component-67 ECS LOD-count/range "
-            "producer and native component identity, "
+            "producer and standalone native component type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -4313,8 +4691,8 @@ def main() -> int:
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
-        "component-67 separation plus managed-converter, HGMeshRendererData, and "
-        "top-level HGTree/HGTreeData and Streaming payload-vector exclusions, "
+        "component-67 separation and native Render/MergedRenderCollider ownership, "
+        "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
