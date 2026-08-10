@@ -1748,6 +1748,13 @@ direct call to the component-67 transition task or request poller. Independently
 a registered native callback slot closes the grid path through manager, scene,
 grid, grid-load driver, and transition task. Its exact lifecycle phase/thread,
 the stripped state-2 enum symbol, and native component names remain open. The
+managed host is also closed upward: virtual `GameSceneManager.Tick` calls
+`BaseGameScene.Update -> DynamicStreamingScene.Update -> TickSystem`.
+`TickSystem` runs `TickResource_Injected` first, then dispatches valid-system
+virtual Tick slot 19; `_InitTickStatus` registers `DynamicSceneEcsSystem`, whose
+slot-19 body invokes `Tick_Injected` with a `0x100`/`0x800` batch limit. The
+virtual caller/thread above `GameSceneManager.Tick` remains open, and the method
+name `Update` is not treated as proof of Unity main-thread execution. The
 complete hash-pinned `StreamingSceneManagerScript..ctor` binds only bits
 12/14/15/19/25/29/32/33/40 through the managed Mono-converter path; HGTree
 bit 41 is absent. The complete installed-VFS corpus of 117

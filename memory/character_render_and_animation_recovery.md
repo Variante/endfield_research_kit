@@ -302,8 +302,18 @@ NPC archetypes are imported as labeled source kits.
   a native registered callback: constructor code stores thunk `0x180FC5F10`
   in global slot `0x1821A87F8`, Unity registration records that slot address,
   and the hash-pinned chain reaches manager, scene, grid, grid-load driver, then
-  transition task synchronously. The callback's exact lifecycle phase/thread,
-  the stripped state-2 enum symbol, and standalone component names remain open.
+  transition task synchronously. The managed host is now closed separately.
+  Virtual `GameSceneManager.Tick` calls `BaseGameScene.Update`, then
+  `DynamicStreamingScene.Update -> TickSystem`. `TickSystem` first invokes
+  `TickResource_Injected` on field `m_gameplayManager` at `+0x20`, then walks
+  `m_validSystems` at `+0x180` through virtual Tick slot 19. `_InitTickStatus`
+  constructs `DynamicSceneEcsSystem` and adds it to `m_systems` at `+0x170`;
+  that slot-19 implementation invokes `Tick_Injected` with batch limit
+  `0x800` when its opaque state `+0x54` equals 2, otherwise `0x100`.
+  The native callback's exact lifecycle phase/thread, the virtual caller/thread
+  above `GameSceneManager.Tick`, the stripped state-2 enum symbol, and standalone
+  component names remain open; an `Update` method name alone is not evidence of
+  Unity main-thread execution.
   The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
   converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
   binding, excluding that static constructor delegate route. A direct installed-VFS

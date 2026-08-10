@@ -174,6 +174,150 @@ NATIVE_METHODS = {
     },
 }
 
+GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA = 0x18E9E6580
+GAMEPLAY_HG_METHOD_POINTER_TABLE_VA = 0x18EF019A0
+STREAMING_MANAGED_UPDATE_TYPES = {
+    "streaming_gameplay_manager": (
+        61027,
+        0x02000096,
+        "UnityEngine.HyperGryph.Streaming",
+        "StreamingGameplayManager",
+    ),
+    "game_scene_manager": (
+        8330,
+        0x02002089,
+        "Beyond.Gameplay.View",
+        "GameSceneManager",
+    ),
+    "base_game_scene": (
+        8322,
+        0x02002075,
+        "Beyond.Gameplay.View",
+        "BaseGameScene",
+    ),
+    "dynamic_streaming_scene": (
+        12771,
+        0x020031E0,
+        "Beyond.Gameplay.Core.DynamicScene",
+        "DynamicStreamingScene",
+    ),
+    "dynamic_scene_ecs_system": (
+        12643,
+        0x02003164,
+        "Beyond.Gameplay.Core.DynamicScene",
+        "DynamicSceneEcsSystem",
+    ),
+}
+
+# label: type index, method index, token, flags, iflags, virtual slot,
+# parameter count, codegen table, codegen slot, installed body VA.
+STREAMING_MANAGED_UPDATE_METHODS = {
+    "streaming_gameplay_tick": (
+        61027, 478256, 0x060001CC, 0x0086, 0x0000, 0xFFFF, 1,
+        GAMEPLAY_HG_METHOD_POINTER_TABLE_VA, 459, 0x185392C50,
+    ),
+    "streaming_gameplay_tick_resource": (
+        61027, 478257, 0x060001CD, 0x0086, 0x0000, 0xFFFF, 0,
+        GAMEPLAY_HG_METHOD_POINTER_TABLE_VA, 460, 0x185391010,
+    ),
+    "streaming_gameplay_tick_injected": (
+        61027, 478275, 0x060001DF, 0x0091, 0x1000, 0xFFFF, 2,
+        GAMEPLAY_HG_METHOD_POINTER_TABLE_VA, 478, 0x183FD8C40,
+    ),
+    "streaming_gameplay_tick_resource_injected": (
+        61027, 478276, 0x060001E0, 0x0091, 0x1000, 0xFFFF, 1,
+        GAMEPLAY_HG_METHOD_POINTER_TABLE_VA, 479, 0x183F1E450,
+    ),
+    "game_scene_manager_tick": (
+        8330, 49544, 0x0600C189, 0x00C6, 0x0000, 32, 1,
+        GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA, 49544, 0x1831F8240,
+    ),
+    "base_game_scene_update": (
+        8322, 49393, 0x0600C0F2, 0x0086, 0x0000, 0xFFFF, 1,
+        GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA, 49393, 0x1831F83B0,
+    ),
+    "dynamic_streaming_scene_update": (
+        12771, 85628, 0x06014E7D, 0x0086, 0x0000, 0xFFFF, 2,
+        GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA, 85628, 0x1830AC140,
+    ),
+    "dynamic_streaming_scene_tick_system": (
+        12771, 85764, 0x06014F05, 0x0086, 0x0000, 0xFFFF, 1,
+        GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA, 85764, 0x1830AD740,
+    ),
+    "dynamic_streaming_scene_init_tick_status": (
+        12771, 85767, 0x06014F08, 0x0081, 0x0000, 0xFFFF, 0,
+        GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA, 85767, 0x183FD6750,
+    ),
+    "dynamic_scene_ecs_system_ctor": (
+        12643, 83784, 0x06014749, 0x1886, 0x0000, 0xFFFF, 1,
+        GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA, 83784, 0x183FD6060,
+    ),
+    "dynamic_scene_ecs_system_tick": (
+        12643, 83786, 0x0601474B, 0x00C6, 0x0000, 19, 1,
+        GAMEPLAY_BEYOND_METHOD_POINTER_TABLE_VA, 83786, 0x183497D80,
+    ),
+}
+
+STREAMING_MANAGED_UPDATE_METHOD_NAMES = {
+    "streaming_gameplay_tick": "Tick",
+    "streaming_gameplay_tick_resource": "TickResource",
+    "streaming_gameplay_tick_injected": "Tick_Injected",
+    "streaming_gameplay_tick_resource_injected": "TickResource_Injected",
+    "game_scene_manager_tick": "Tick",
+    "base_game_scene_update": "Update",
+    "dynamic_streaming_scene_update": "Update",
+    "dynamic_streaming_scene_tick_system": "TickSystem",
+    "dynamic_streaming_scene_init_tick_status": "_InitTickStatus",
+    "dynamic_scene_ecs_system_ctor": ".ctor",
+    "dynamic_scene_ecs_system_tick": "Tick",
+}
+
+STREAMING_MANAGED_UPDATE_BODIES = {
+    "game_scene_manager_tick": (
+        0x1831F8240, 0x170,
+        "82207ad346e6531838d88987c2ec281dee4ae9adcda72e00f159ea3402e888fd",
+    ),
+    "base_game_scene_update": (
+        0x1831F83B0, 0x12C0,
+        "0a94da2fd6f7132e61fd47027be83a2eb207a1d338c6d1079d33be6a8bedcf21",
+    ),
+    "dynamic_streaming_scene_update": (
+        0x1830AC140, 0xFA0,
+        "066bc45ca99bbf9afcf38f709873e7f39e61f6306808b28b5ebc2ee0d250f2e8",
+    ),
+    "dynamic_streaming_scene_tick_system": (
+        0x1830AD740, 0x948,
+        "8f8f7ff764f6d0a8df6ec4f9c6acc7e067401369033541b2943053f0cd9f8d1c",
+    ),
+    "dynamic_streaming_scene_init_tick_status": (
+        0x183FD6750, 0x19E0,
+        "30a3752d44da39d93fc00513e61ad35f160bd913517095f676273f8259478573",
+    ),
+    "dynamic_scene_ecs_system_tick": (
+        0x183497D80, 0x2B0,
+        "07fb2de64b3dd199f1075d1d911d2be7c568be7fb5b308f0f6db8f39f9d0bef6",
+    ),
+}
+
+STREAMING_MANAGED_UPDATE_RESOLVER_STRINGS = {
+    "tick": (
+        0x18B8CE930,
+        "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager::"
+        "Tick_Injected(UnityEngine.HyperGryph.Streaming.StreamingGameplayManager&,System.Int32)",
+    ),
+    "tickResource": (
+        0x18B8CD030,
+        "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager::"
+        "TickResource_Injected(UnityEngine.HyperGryph.Streaming.StreamingGameplayManager&)",
+    ),
+}
+
+STREAMING_MANAGED_UPDATE_FIELDS = {
+    "m_gameplayManager": (59327, 0x0400E7C0, 165221, 0x20),
+    "m_systems": (59381, 0x0400E7F6, 118506, 0x170),
+    "m_validSystems": (59383, 0x0400E7F8, 66340, 0x180),
+}
+
 UNITY_ICALL_FUNCTION_TABLE_VA = 0x1820CC000
 UNITY_ICALL_NAME_TABLE_VA = 0x1820D3DB0
 UNITY_CULL_LIGHTS_ICALL_INDEX = 3320
@@ -3259,6 +3403,23 @@ def find_relative_call_sites_many(
     return {target: sorted(sites) for target, sites in call_sites.items()}
 
 
+def find_rip_relative_lea_rcx_sites(image: PEImage, target: int) -> list[int]:
+    """Find 48 8D 0D rel32 sites that materialize one exact address in RCX."""
+
+    sites = []
+    opcode = b"\x48\x8D\x0D"
+    for section_va, _span, raw_offset, raw_size in image.sections:
+        body = image.data[raw_offset : raw_offset + raw_size]
+        cursor = body.find(opcode)
+        while cursor >= 0 and cursor + 7 <= len(body):
+            displacement = struct.unpack_from("<i", body, cursor + 3)[0]
+            virtual_address = image.image_base + section_va + cursor
+            if virtual_address + 7 + displacement == target:
+                sites.append(virtual_address)
+            cursor = body.find(opcode, cursor + 1)
+    return sorted(sites)
+
+
 def read_native_method_bodies(game_assembly: Path = GAME_ASSEMBLY) -> dict[str, bytes]:
     bodies: dict[str, bytes] = {}
     with game_assembly.open("rb") as stream:
@@ -4551,6 +4712,382 @@ def validate_lod_streaming_metadata(
         "boundary": (
             "boxed offsets come from the installed IL2CPP fieldOffsets table; "
             "the embedded ECS/config offsets subtract the 16-byte object header"
+        ),
+    }
+
+
+def validate_streaming_gameplay_managed_update_chain(
+    raw_metadata: bytes,
+    game_assembly: PEImage,
+    source: Path = GLOBAL_METADATA,
+) -> dict[str, object]:
+    """Close the managed gameplay update route into the two streaming ticks."""
+
+    require(
+        "streaming_managed_update_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    require(
+        "streaming_managed_update_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        source,
+    )
+    sections = {
+        section_name: struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+        for section_index, section_name in enumerate(
+            IL2CPP_METADATA_SECTION_NAMES
+        )
+    }
+    string_offset, string_size = sections["string"]
+    field_offset, field_size = sections["fields"]
+    method_offset, method_size = sections["methods"]
+    type_offset, type_size = sections["typeDefinitions"]
+
+    def metadata_string(index: int, check: str) -> str:
+        start = string_offset + index
+        require(
+            f"streaming_managed_update_{check}_string_start_in_bounds",
+            string_offset <= start < string_offset + string_size,
+            True,
+            source,
+        )
+        end = raw_metadata.find(b"\0", start, string_offset + string_size)
+        require(
+            f"streaming_managed_update_{check}_string_end_in_bounds",
+            end >= start,
+            True,
+            source,
+        )
+        return raw_metadata[start:end].decode("utf-8")
+
+    types = {}
+    for label, (
+        type_index,
+        expected_token,
+        expected_namespace,
+        expected_name,
+    ) in STREAMING_MANAGED_UPDATE_TYPES.items():
+        position = type_offset + type_index * 92
+        require(
+            f"streaming_managed_update_{label}_type_in_bounds",
+            position + 92 <= type_offset + type_size,
+            True,
+            source,
+        )
+        name_index, namespace_index = struct.unpack_from(
+            "<ii", raw_metadata, position
+        )
+        actual_name = metadata_string(name_index, f"{label}_name")
+        actual_namespace = metadata_string(
+            namespace_index, f"{label}_namespace"
+        )
+        actual_token = struct.unpack_from("<I", raw_metadata, position + 88)[0]
+        for check, actual, expected in (
+            ("name", actual_name, expected_name),
+            ("namespace", actual_namespace, expected_namespace),
+            ("token", actual_token, expected_token),
+        ):
+            require(
+                f"streaming_managed_update_{label}_{check}",
+                actual,
+                expected,
+                source,
+            )
+        types[label] = {
+            "typeIndex": type_index,
+            "token": f"0x{actual_token:08X}",
+            "fullName": f"{actual_namespace}.{actual_name}",
+        }
+
+    type_names = {
+        values[0]: types[label]["fullName"]
+        for label, values in STREAMING_MANAGED_UPDATE_TYPES.items()
+    }
+    methods = {}
+    for label, (
+        declaring_type,
+        method_index,
+        expected_token,
+        expected_flags,
+        expected_iflags,
+        expected_slot,
+        expected_parameter_count,
+        codegen_table,
+        codegen_slot,
+        expected_body,
+    ) in STREAMING_MANAGED_UPDATE_METHODS.items():
+        position = method_offset + method_index * 32
+        require(
+            f"streaming_managed_update_{label}_method_in_bounds",
+            position + 32 <= method_offset + method_size,
+            True,
+            source,
+        )
+        (
+            name_index,
+            actual_declaring_type,
+            _return_type,
+            _parameter_start,
+            _generic_container,
+            actual_token,
+            actual_flags,
+            actual_iflags,
+            actual_slot,
+            actual_parameter_count,
+        ) = struct.unpack_from("<iiiiiIHHHH", raw_metadata, position)
+        actual_name = metadata_string(name_index, f"{label}_method_name")
+        for check, actual, expected in (
+            ("name", actual_name, STREAMING_MANAGED_UPDATE_METHOD_NAMES[label]),
+            ("declaring_type", actual_declaring_type, declaring_type),
+            ("token", actual_token, expected_token),
+            ("flags", actual_flags, expected_flags),
+            ("iflags", actual_iflags, expected_iflags),
+            ("slot", actual_slot, expected_slot),
+            ("parameter_count", actual_parameter_count, expected_parameter_count),
+        ):
+            require(
+                f"streaming_managed_update_{label}_{check}",
+                actual,
+                expected,
+                source,
+            )
+        actual_body = game_assembly.u64(codegen_table + codegen_slot * 8)
+        require(
+            f"streaming_managed_update_{label}_codegen_pointer",
+            actual_body,
+            expected_body,
+            game_assembly.path,
+        )
+        methods[label] = {
+            "declaringType": type_names[declaring_type],
+            "methodIndex": method_index,
+            "name": actual_name,
+            "token": f"0x{actual_token:08X}",
+            "virtualSlot": None if actual_slot == 0xFFFF else actual_slot,
+            "bodyVirtualAddress": f"0x{actual_body:X}",
+        }
+
+    field_offsets_va = game_assembly.u64(
+        LOD_STREAMING_FIELD_OFFSETS_TABLE_VA + 12771 * 8
+    )
+    require(
+        "streaming_managed_update_dynamic_streaming_scene_field_offsets_pointer",
+        field_offsets_va,
+        0x18BA83AA0,
+        game_assembly.path,
+    )
+    fields = {}
+    dynamic_scene_field_start = 59321
+    for label, (
+        field_index,
+        expected_token,
+        expected_type,
+        expected_boxed_offset,
+    ) in STREAMING_MANAGED_UPDATE_FIELDS.items():
+        position = field_offset + field_index * 12
+        require(
+            f"streaming_managed_update_{label}_field_in_bounds",
+            position + 12 <= field_offset + field_size,
+            True,
+            source,
+        )
+        name_index, actual_type, actual_token = struct.unpack_from(
+            "<iiI", raw_metadata, position
+        )
+        actual_name = metadata_string(name_index, f"{label}_field_name")
+        actual_boxed_offset = struct.unpack(
+            "<I",
+            game_assembly.read(
+                field_offsets_va + (field_index - dynamic_scene_field_start) * 4,
+                4,
+            ),
+        )[0]
+        for check, actual, expected in (
+            ("name", actual_name, label),
+            ("token", actual_token, expected_token),
+            ("metadata_type", actual_type, expected_type),
+            ("boxed_offset", actual_boxed_offset, expected_boxed_offset),
+        ):
+            require(
+                f"streaming_managed_update_{label}_{check}",
+                actual,
+                expected,
+                game_assembly.path if check == "boxed_offset" else source,
+            )
+        fields[label] = {
+            "fieldIndex": field_index,
+            "token": f"0x{actual_token:08X}",
+            "boxedOffset": f"0x{actual_boxed_offset:X}",
+        }
+
+    verified_bodies = []
+    for label, (virtual_address, size_bytes, expected_hash) in (
+        STREAMING_MANAGED_UPDATE_BODIES.items()
+    ):
+        actual_hash = hashlib.sha256(
+            game_assembly.read(virtual_address, size_bytes)
+        ).hexdigest()
+        require(
+            f"streaming_managed_update_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            game_assembly.path,
+        )
+        verified_bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    direct_call_sites = find_relative_call_sites_many(
+        game_assembly,
+        {
+            0x1831F8240,
+            0x1831F83B0,
+            0x1830AC140,
+            0x1830AD740,
+            0x183FD6750,
+            0x183FD6060,
+            0x183497D80,
+        },
+    )
+    expected_call_sites = {
+        0x1831F8240: [],
+        0x1831F83B0: [0x1831F8362],
+        0x1830AC140: [0x1831F9284],
+        0x1830AD740: [
+            0x181566D59,
+            0x181566D71,
+            0x1830ACC56,
+            0x183CC6B92,
+            0x183CC6BAA,
+        ],
+        0x183FD6750: [0x183582DB7],
+        0x183FD6060: [0x183FD73AF],
+        0x183497D80: [],
+    }
+    for target, expected_sites in expected_call_sites.items():
+        require(
+            f"streaming_managed_update_{target:X}_direct_call_sites",
+            direct_call_sites[target],
+            expected_sites,
+            game_assembly.path,
+        )
+
+    resolver_rows = {}
+    expected_resolver_xrefs = {
+        "tick": [0x183497FA9, 0x183FD8C6D, 0x184EE8100, 0x18507E79F],
+        "tickResource": [
+            0x1830AD793,
+            0x1830AE028,
+            0x183F1E470,
+            0x184EDDE06,
+        ],
+    }
+    for label, (
+        virtual_address,
+        expected_value,
+    ) in STREAMING_MANAGED_UPDATE_RESOLVER_STRINGS.items():
+        actual_value = game_assembly.cstring(virtual_address)
+        require(
+            f"streaming_managed_update_{label}_resolver_string",
+            actual_value,
+            expected_value,
+            game_assembly.path,
+        )
+        actual_xrefs = find_rip_relative_lea_rcx_sites(
+            game_assembly, virtual_address
+        )
+        require(
+            f"streaming_managed_update_{label}_resolver_xrefs",
+            actual_xrefs,
+            expected_resolver_xrefs[label],
+            game_assembly.path,
+        )
+        resolver_rows[label] = {
+            "virtualAddress": f"0x{virtual_address:X}",
+            "value": actual_value,
+            "leaRcxSites": [f"0x{site:X}" for site in actual_xrefs],
+        }
+
+    return {
+        "managedTypes": types,
+        "managedMethods": methods,
+        "dynamicStreamingSceneFields": fields,
+        "verifiedBodies": verified_bodies,
+        "resolverStrings": resolver_rows,
+        "chain": [
+            {
+                "method": "Beyond.Gameplay.View.GameSceneManager.Tick",
+                "virtualSlot": 32,
+                "bodyVirtualAddress": "0x1831F8240",
+                "directCallSites": [],
+                "nextCallSite": "0x1831F8362",
+            },
+            {
+                "method": "Beyond.Gameplay.View.BaseGameScene.Update",
+                "bodyVirtualAddress": "0x1831F83B0",
+                "nextCallSite": "0x1831F9284",
+            },
+            {
+                "method": (
+                    "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.Update"
+                ),
+                "bodyVirtualAddress": "0x1830AC140",
+                "nextCallSite": "0x1830ACC56",
+            },
+            {
+                "method": (
+                    "Beyond.Gameplay.Core.DynamicScene."
+                    "DynamicStreamingScene.TickSystem"
+                ),
+                "bodyVirtualAddress": "0x1830AD740",
+                "resourceTickResolverSite": "0x1830AD793",
+                "resourceTickCallSite": "0x1830AD7B3",
+                "validSystemArrayField": "m_validSystems at boxed +0x180",
+                "virtualTickSlot": 19,
+                "firstVirtualTickCallSite": "0x1830AD828",
+            },
+            {
+                "method": (
+                    "Beyond.Gameplay.Core.DynamicScene."
+                    "DynamicSceneEcsSystem.Tick"
+                ),
+                "bodyVirtualAddress": "0x183497D80",
+                "tickResolverSite": "0x183497FA9",
+                "tickCallSite": "0x183497ED8",
+                "batchLimitEquation": "system+0x54 == 2 ? 0x800 : 0x100",
+            },
+        ],
+        "dynamicEcsSystemRegistration": {
+            "initializerMethod": (
+                "Beyond.Gameplay.Core.DynamicScene."
+                "DynamicStreamingScene._InitTickStatus"
+            ),
+            "initializerVirtualAddress": "0x183FD6750",
+            "constructorCallSite": "0x183FD73AF",
+            "constructorVirtualAddress": "0x183FD6060",
+            "systemCollectionField": "m_systems at boxed +0x170",
+            "runtimeTickArrayField": "m_validSystems at boxed +0x180",
+        },
+        "ordering": (
+            "TickSystem calls TickResource before reading m_validSystems and "
+            "dispatching virtual Tick slot 19; DynamicSceneEcsSystem's slot-19 "
+            "implementation then calls Tick with the selected batch limit"
+        ),
+        "boundary": (
+            "the installed managed method named GameSceneManager.Tick is the "
+            "highest closed host. Its virtual caller and executing thread are "
+            "not identified; method names alone do not prove Unity main-thread "
+            "Update semantics"
         ),
     }
 
@@ -10912,6 +11449,11 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             GLOBAL_METADATA.read_bytes(), PEImage(GAME_ASSEMBLY)
         )
     )
+    managed_streaming_update_chain = (
+        validate_streaming_gameplay_managed_update_chain(
+            GLOBAL_METADATA.read_bytes(), PEImage(GAME_ASSEMBLY)
+        )
+    )
     unity_native_producer = validate_unity_native_producer(PEImage(UNITY_PLAYER))
     unity_cull_view_constructor = validate_unity_cull_view_constructor(
         PEImage(UNITY_PLAYER)
@@ -10963,8 +11505,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v44",
-        "status": "component67_tick_and_native_update_surfaces_resolved",
+        "schema": "endfield.recovered-light-cull-cap.v45",
+        "status": "component67_managed_tick_host_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -11231,9 +11773,16 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The standalone native type names for components 67 through 75, "
+            "The managed side is closed upward through "
+            "DynamicSceneEcsSystem.Tick, DynamicStreamingScene.TickSystem/Update, "
+            "BaseGameScene.Update, and virtual GameSceneManager.Tick. TickSystem "
+            "runs TickResource before its valid-system Tick loop, whose registered "
+            "DynamicSceneEcsSystem implementation calls Tick with a 0x100/0x800 "
+            "batch limit. The standalone native type names for components 67 "
+            "through 75, "
             "the stripped enum symbol for resource load-failure state 2, the "
             "registered native callback's exact lifecycle phase/thread identity, "
+            "the virtual caller/thread above GameSceneManager.Tick, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -11351,6 +11900,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "maxCount": 256,
             },
             "gameAssemblyHandoff": native_handoff,
+            "gameAssemblyStreamingUpdateChain": (
+                managed_streaming_update_chain
+            ),
             "unityPlayerCandidateProducer": unity_native_producer,
             "unityPlayerCullViewConstructor": unity_cull_view_constructor,
             "unityPlayerScheduledCullingBoundary": (
@@ -11457,6 +12009,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "all four direct transition-task calls across the hash-pinned grid-load state driver and three Streaming gameplay batch-update entity-set branches",
                 "StreamingGameplayManager internal-call entries 614/615 as distinct Tick/TickResource bindings, including Tick's direct batch-update edge and TickResource's absence of direct transition-task/request-poller calls",
                 "the registered native grid-update callback slot and hash-pinned thunk -> manager -> scene -> grid -> load-driver -> transition-task chain",
+                "the managed GameSceneManager.Tick -> BaseGameScene.Update -> DynamicStreamingScene.Update/TickSystem host chain, TickResource-before-system-Tick ordering, registered DynamicSceneEcsSystem slot-19 implementation, and its 0x100/0x800 Tick batch limit",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -11469,6 +12022,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the standalone native component type names for components 67 through 75",
                 "the stripped enum symbol for resource load-failure state 2",
                 "the registered native grid callback's exact lifecycle phase and executing thread identity",
+                "the virtual caller and executing thread above managed GameSceneManager.Tick",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -11517,7 +12071,8 @@ def main() -> int:
         "ten-slot EntityTransition registry and exact transitions 1/3/6/8, "
         "resource-capacity companions, named LOD-streaming controls and "
         "transition-1 request-batch/poll/load-failure, named managed Tick and "
-        "registered native grid update surfaces, and transition-3 writeback plus "
+        "registered native grid update surfaces, managed GameSceneManager/"
+        "DynamicStreamingScene tick host, and transition-3 writeback plus "
         "transition-6/8 teardown semantics, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
