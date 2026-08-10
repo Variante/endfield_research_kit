@@ -7265,9 +7265,14 @@ def decode_levelscript_record_payload(
         (0x00B7, 0x08),
         (0x00E9, 0x08),
     }:
-        audio_action = _decode_audio_action(payload, semantic_key)
-        if audio_action:
-            out["audioAction"] = audio_action
+        # Audio ActionBase formatter tags are reused by getter/header unions
+        # in the same LevelScript stream (notably 0x0016/9).  The maintained
+        # ActionMap membership is the exact owning-union discriminator; do
+        # not promote a same-tag getter payload into an audio request.
+        if action_map_role_text.startswith("actionList"):
+            audio_action = _decode_audio_action(payload, semantic_key)
+            if audio_action:
+                out["audioAction"] = audio_action
     if semantic_key == (0x031E, 0x0C):
         npc_patrol_start = _decode_npc_patrol_start_action(payload)
         if npc_patrol_start:

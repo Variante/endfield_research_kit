@@ -124,7 +124,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 28
+AUDIO_SEMANTIC_SCHEMA_VERSION = 29
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
@@ -4481,8 +4481,17 @@ def collect_levelscript_audio_semantics(
             _action_map, memberships = levelscript_action_map_membership(data, records)
             rows: list[dict[str, Any]] = []
             target_count = 0
+            non_action_target_count = 0
+            non_action_target_roles: Counter[str] = Counter()
             for index, record in enumerate(records):
                 if levelscript_record_semantic_key(record) not in target_keys:
+                    continue
+                action_map_role = str(
+                    memberships.get(int(record.get("start") or 0)) or ""
+                )
+                if not action_map_role.startswith("actionList"):
+                    non_action_target_count += 1
+                    non_action_target_roles[action_map_role or "unknown"] += 1
                     continue
                 target_count += 1
                 next_start = (
@@ -4503,7 +4512,12 @@ def collect_levelscript_audio_semantics(
                         "actionMapRole": str(memberships.get(int(record.get("start") or 0)) or ""),
                         "audioAction": audio_action,
                     })
-            return {"targetCount": target_count, "rows": rows}
+            return {
+                "targetCount": target_count,
+                "rows": rows,
+                "nonActionTargetCount": non_action_target_count,
+                "nonActionTargetRoles": dict(non_action_target_roles),
+            }
 
     overlay: dict[str, tuple[str, Path]] = {}
     for source_root in ("StreamingAssets", "Persistent"):
@@ -4527,6 +4541,8 @@ def collect_levelscript_audio_semantics(
     target_records = 0
     decoded_records = 0
     decode_failures = 0
+    non_action_target_records = 0
+    non_action_target_roles: Counter[str] = Counter()
     levelscript_brief_cache: dict[
         tuple[str, str], tuple[dict[str, Any] | None, str]
     ] = {}
@@ -4557,6 +4573,10 @@ def collect_levelscript_audio_semantics(
             continue
         rows = (decoded.get("rows") or []) if isinstance(decoded, dict) else []
         target_records += int(decoded.get("targetCount") or len(rows)) if isinstance(decoded, dict) else len(rows)
+        if isinstance(decoded, dict):
+            non_action_target_records += int(decoded.get("nonActionTargetCount") or 0)
+            for role, count in (decoded.get("nonActionTargetRoles") or {}).items():
+                non_action_target_roles[str(role)] += int(count or 0)
         if rows:
             source_files_with_actions += 1
         source_path = normalize_posix(path.relative_to(export_root))
@@ -4829,6 +4849,8 @@ def collect_levelscript_audio_semantics(
             "targetAudioActionRecords": target_records,
             "decodedAudioActionRecords": decoded_records,
             "decodeFailures": decode_failures,
+            "skippedNonActionTargetRecords": non_action_target_records,
+            "skippedNonActionTargetRoles": dict(sorted(non_action_target_roles.items())),
             "eventRequestContexts": event_context_count,
             "constantEventRequestContexts": direct_event_context_count,
             "constantEventNames": direct_event_names,
