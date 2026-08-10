@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v14",
-  "status": "installed_cap_hgtree_component67_archetype_descriptor_layout_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, narrowing the remaining producer search to a runtime descriptor source. The native name/owner of id 67 remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the component-67 ECS LOD-count/range producer and native component identity, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v15",
+  "status": "installed_cap_hgtree_component67_serialized_renderer_source_excluded",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, narrowing the remaining producer search to a runtime descriptor source. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The native name/owner of id 67 remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the component-67 ECS LOD-count/range producer and native component identity, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -27,6 +27,12 @@
       "sha256": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
       "targetCount": 30,
       "hgrpSettingOrLightClusterTargets": []
+    },
+    "hgmeshRendererDataSource": {
+      "vfsRelativePath": "7064D8E2/B428C352B17C75CA29122CAACC037A59.chk",
+      "sizeBytes": 1258089569,
+      "sha256": "af62293a829675951bbc135b0ba51444f72c8b288a0043617ed0c4300c6feae0",
+      "inventoryPath": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/hgmesh_renderer_data_component_inventory.json"
     }
   },
   "settingTextAssets": [
@@ -241,6 +247,90 @@
         "component67Match": false,
         "proof": "the hash-pinned six-byte IL2CPP body is mov eax, 6; ret, so this managed LOD-info component is not native component id 67"
       },
+      "managedStreamingComponentBindings": {
+        "owner": "UnityEngine.HyperGryph.Streaming.StreamingSceneManagerScript..ctor",
+        "ownerVirtualAddress": "0x18394A2F0",
+        "ownerSizeBytes": 12128,
+        "bindMethodVirtualAddress": "0x18394A190",
+        "directCallCount": 9,
+        "bindings": [
+          {
+            "name": "HGAdditionalLightData",
+            "value": 33554432,
+            "bitIndex": 25,
+            "constantOffset": "0x290A",
+            "callOffset": "0x2914",
+            "constantInstruction": "mov ecx, imm32"
+          },
+          {
+            "name": "HGEnvironmentVolume",
+            "value": 16384,
+            "bitIndex": 14,
+            "constantOffset": "0x2963",
+            "callOffset": "0x296D",
+            "constantInstruction": "mov ecx, imm32"
+          },
+          {
+            "name": "HGTerrain",
+            "value": 524288,
+            "bitIndex": 19,
+            "constantOffset": "0x29C8",
+            "callOffset": "0x29D2",
+            "constantInstruction": "mov ecx, imm32"
+          },
+          {
+            "name": "HGVolumetricLocalFog",
+            "value": 4096,
+            "bitIndex": 12,
+            "constantOffset": "0x2A1E",
+            "callOffset": "0x2A28",
+            "constantInstruction": "mov ecx, imm32"
+          },
+          {
+            "name": "HGWaterGlobalConfig",
+            "value": 4294967296,
+            "bitIndex": 32,
+            "constantOffset": "0x2A74",
+            "callOffset": "0x2A83",
+            "constantInstruction": "movabs rcx, imm64"
+          },
+          {
+            "name": "HGWindMotor",
+            "value": 8589934592,
+            "bitIndex": 33,
+            "constantOffset": "0x2ACF",
+            "callOffset": "0x2ADE",
+            "constantInstruction": "movabs rcx, imm64"
+          },
+          {
+            "name": "LensFlareComponentSRP",
+            "value": 536870912,
+            "bitIndex": 29,
+            "constantOffset": "0x2B39",
+            "callOffset": "0x2B43",
+            "constantInstruction": "mov ecx, imm32"
+          },
+          {
+            "name": "Volume",
+            "value": 32768,
+            "bitIndex": 15,
+            "constantOffset": "0x2B8F",
+            "callOffset": "0x2B99",
+            "constantInstruction": "mov ecx, imm32"
+          },
+          {
+            "name": "HGVolumetricCloud",
+            "value": 1099511627776,
+            "bitIndex": 40,
+            "constantOffset": "0x2BF4",
+            "callOffset": "0x2C03",
+            "constantInstruction": "movabs rcx, imm64"
+          }
+        ],
+        "hgtreeBitIndex": 41,
+        "hgtreeManagedBindingPresent": false,
+        "boundary": "the complete hash-pinned constructor has nine direct managed Mono-component bindings and none selects StreamingComponentType HGTree (bit 41); the constructor therefore does not register HGTree through its managed delegate path"
+      },
       "methodBodies": [
         {
           "name": "do_ecs_culling",
@@ -313,6 +403,15 @@
           "fileOffset": "0x4D9D260",
           "sizeBytes": 6,
           "sha256": "23334c82ef0133c65cc0394d318a2637276496cb9b99f6dd580d0ee4f6c9e7b5"
+        },
+        {
+          "name": "streaming_scene_manager_ctor",
+          "method": "UnityEngine.HyperGryph.Streaming.StreamingSceneManagerScript..ctor",
+          "methodIndex": 762,
+          "virtualAddress": "0x18394A2F0",
+          "fileOffset": "0x39488F0",
+          "sizeBytes": 12128,
+          "sha256": "788d972a2946b193ca9ca3835f11bca9f8c3bead6a2423a8c788d177c00785b3"
         }
       ]
     },
@@ -1060,6 +1159,20 @@
             "archetypeDataOffsetLookupOffset": "0x44 + 8 * rank",
             "component67Implication": "the 24-byte state must enter through a runtime descriptor row or copied descriptor source; the installed code contains no direct (id=67,size=24) descriptor immediate",
             "boundary": "descriptor layout and cumulative storage placement are closed; the native producer supplying the id-67 row and its initial lodCount/ranges remains open"
+          },
+          "excludedProducerRoutes": {
+            "hgmeshRendererData": {
+              "objectCount": 117,
+              "descriptorCount": 1449,
+              "component67DescriptorCount": 0,
+              "inventory": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/hgmesh_renderer_data_component_inventory.json"
+            },
+            "managedHGTreeConverterBinding": {
+              "completeConstructorBindingCount": 9,
+              "hgtreeBitIndex": 41,
+              "hgtreeBindingPresent": false
+            },
+            "boundary": "these two complete hash-pinned source families are excluded; the id-67 descriptor and lodCount/range producer remain in a different native runtime source"
           },
           "structureBoundary": "this pointer is resolved from archetype component bit 67; it is not the loader-owned registration blob stored in the runtime-transform owner's +0x78 vector, and it is not the managed/native scripting HGTreeComponent at id 80",
           "nativeScriptingTypeIdentity": {
@@ -1838,6 +1951,112 @@
         }
       }
     },
+    "hgmeshRendererDataComponentInventory": {
+      "schema": "endfield.hgmesh-renderer-data-component-inventory.v1",
+      "source": {
+        "vfsRelativePath": "7064D8E2/B428C352B17C75CA29122CAACC037A59.chk",
+        "sizeBytes": 1258089569,
+        "sha256": "af62293a829675951bbc135b0ba51444f72c8b288a0043617ed0c4300c6feae0"
+      },
+      "corpus": {
+        "serializedObjectType": "HGMeshRendererData",
+        "objectCount": 117,
+        "entityDescriptorCount": 1449,
+        "entityPayloadBytes": 49805,
+        "entityBlobBytes": 61865,
+        "descriptorCountRange": [
+          12,
+          13
+        ],
+        "serializedDescriptorOffsets": [
+          0
+        ],
+        "componentIdCounts": {
+          "0": 117,
+          "1": 117,
+          "2": 117,
+          "3": 117,
+          "4": 117,
+          "5": 117,
+          "6": 117,
+          "7": 117,
+          "8": 60,
+          "9": 20,
+          "10": 29,
+          "11": 8,
+          "18": 117,
+          "29": 117,
+          "44": 45,
+          "46": 63,
+          "47": 53,
+          "48": 1
+        },
+        "componentSizes": {
+          "0": [
+            4
+          ],
+          "1": [
+            4
+          ],
+          "2": [
+            4
+          ],
+          "3": [
+            4
+          ],
+          "4": [
+            4
+          ],
+          "5": [
+            4
+          ],
+          "6": [
+            20
+          ],
+          "7": [
+            24
+          ],
+          "8": [
+            36
+          ],
+          "9": [
+            68
+          ],
+          "10": [
+            132
+          ],
+          "11": [
+            260
+          ],
+          "18": [
+            256
+          ],
+          "29": [
+            1
+          ],
+          "44": [
+            16
+          ],
+          "46": [
+            8
+          ],
+          "47": [
+            20
+          ],
+          "48": [
+            68
+          ]
+        },
+        "sourceObjectDigestAlgorithm": "sha256(sorted sourceFile|pathId|sourceOffset|rawDataSha256|descriptorCount|blobBytes)",
+        "sourceObjectDigest": "f40f399f7daa190312036fe2322f3cc1c4675217cc7f9a2388d1ce92c08c043b",
+        "layoutFailureCount": 0
+      },
+      "component67": {
+        "descriptorCount": 0,
+        "present": false,
+        "boundary": "The complete installed HGMeshRendererData corpus in this source chunk does not serialize ECS component id 67. This excludes this generic renderer-data blob family, but does not identify the native runtime producer of the separate 24-byte component-67 LOD state."
+      }
+    },
     "desktopNoSecondTruncation": true
   },
   "sourceFiles": {
@@ -1889,6 +2108,8 @@
       "the IL2CPP HGTreeComponent.get_id return value 80 and its separation from component id 67",
       "the UInt64 StreamingComponentType values HLODGroup=bit11, HGTree=bit41, and Count=43",
       "the 43-slot Streaming converter registry, bsf(typeMask) lookup, and 0x308-byte slot stride",
+      "the complete nine-call managed Mono-component binding set and the absence of HGTree bit 41",
+      "the 117-object installed HGMeshRendererData corpus, its 1,449 descriptors, and the absence of component id 67",
       "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
       "the ECS numeric-component-id to two-qword archetype-mask equation",
       "the direct all-LOD or terminal-LOD HGTree availability initializer",
@@ -1902,7 +2123,7 @@
       "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
       "the semantic names of the initially zero HGTree runtime-state bytes",
-      "the component-bit-67 LOD-count/range producer and native component name/owner",
+      "the component-bit-67 LOD-count/range producer and native component name/owner outside the excluded HGMeshRendererData and managed HGTree-converter routes",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

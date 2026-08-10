@@ -1585,7 +1585,16 @@ entry 677 reaches the native converter registration path: it constructs 43
 slots at `0x308` bytes each, selects the slot with `bsf(componentTypeMask)`,
 requires a non-empty component list, and requires Transform first. Those are
 serialized converter bits rather than ECS component IDs, so component 67
-remains a native LOD-state identity/producer problem. Native entity-type
+remains a native LOD-state identity/producer problem. The complete hash-pinned
+`StreamingSceneManagerScript..ctor` binds only bits
+12/14/15/19/25/29/32/33/40 through the managed Mono-converter path; HGTree
+bit 41 is absent. The complete installed-VFS corpus of 117
+`HGMeshRendererData` objects contains 1,449 valid ECS descriptors and no ID
+67. The compact source/hash/count inventory is
+`Generated/OriginalData/CharInfoPresentation/hgmesh_renderer_data_component_inventory.json`.
+These results exclude the managed HGTree delegate and generic serialized
+constructor/renderer-data routes without naming the remaining native producer.
+Native entity-type
 registration core `0x1801FAEC0` consumes 8-byte rows `(int16 id, uint16 size,
 uint32 cumulativeOffset)`, places component storage after byte 8, and exposes
 per-rank size/offsets at archetype `+0x42/+0x44 + 8*rank`. No installed-code
