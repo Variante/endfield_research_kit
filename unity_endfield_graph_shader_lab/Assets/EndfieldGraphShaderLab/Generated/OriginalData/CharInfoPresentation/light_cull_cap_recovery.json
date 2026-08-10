@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v10",
-  "status": "installed_cap_hgtree_type_identity_lifecycle_lod_state_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module; its final assignment to archetype bit 67 remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the ECS LOD-count/range producer and exact native-type-to-archetype-bit link, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v11",
+  "status": "installed_cap_hgtree_component_mask_type_identity_lifecycle_lod_state_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The HGTreeComponent assignment to numeric id 67 remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the ECS LOD-count/range producer and exact HGTreeComponent-to-id-67 assignment, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -942,6 +942,51 @@
             },
             "closedBoundary": "this closes the initial LOD0 completion/fallback state transition; it does not write record+0x00 or the cumulative ranges at record+0x10..+0x17"
           },
+          "directAvailabilityInitializer": {
+            "virtualAddress": "0x181157760",
+            "allLodsBranch": {
+              "desiredResolvedHistoryAt0x01To0x03": [
+                0,
+                0,
+                0
+              ],
+              "pendingMaskAt0x04": 0,
+              "availableMaskAt0x05": "(1 << lodCount) - 1",
+              "readinessBitsAt0x08": "(1 << companion renderer/subresource count) - 1"
+            },
+            "terminalLodBranch": {
+              "lodIndex": "lodCount - 1",
+              "desiredResolvedHistory": "lodCount - 1",
+              "pendingMaskAt0x04": 0,
+              "availableMaskAt0x05": "1 << (lodCount - 1)",
+              "rangeStart": "0 for LOD0, otherwise cumulativeRange[lodIndex - 1]",
+              "rangeEnd": "cumulativeRange[lodIndex]",
+              "readinessBitsAt0x08": "((1 << (rangeEnd - rangeStart)) - 1) << rangeStart"
+            },
+            "closedBoundary": "this closes the direct all-LOD or terminal-LOD available-state initializer and independently confirms cumulative range consumption; it does not produce lodCount or the cumulative endpoints"
+          },
+          "componentIdMaskRegistration": {
+            "internalCallIndex": 712,
+            "internalCallName": "UnityEngine.HyperGryph.ECS.EntityManager::GetOrRegisterEntityTypeImpl_Injected",
+            "bindingVirtualAddress": "0x1801E0D90",
+            "componentIdInput": "signed 16-bit component id at stride 8",
+            "componentCountLimit": 64,
+            "maskEquation": {
+              "bank": "componentId >> 6",
+              "bit": "componentId & 63",
+              "operation": "mask[bank] |= 1 << bit"
+            },
+            "archetypeMaskOffsets": [
+              "0x10",
+              "0x18"
+            ],
+            "component67Result": {
+              "bank": 1,
+              "bit": 3,
+              "highQwordMask": "0x0000000000000008"
+            },
+            "boundary": "this closes how numeric component ids become archetype bits; it does not yet prove that the HGTreeComponent native type is assigned id 67"
+          },
           "structureBoundary": "this pointer is resolved from archetype component bit 67; it is not the loader-owned registration blob stored in the runtime-transform owner's +0x78 vector",
           "nativeScriptingTypeIdentity": {
             "proxyToNativeTypeNameClosed": true,
@@ -1321,6 +1366,18 @@
           "sha256": "c1f42c8333a1f0daf613485ee1757e78bdf95899ddcdcde81b7e177027dd8247"
         },
         {
+          "label": "lod_ecs_direct_availability_initializer",
+          "virtualAddress": "0x181157760",
+          "sizeBytes": 2041,
+          "sha256": "45633b35ac3c0bd27a71bb8464121584f185445ef18a7fe4a1e9b2808f074d63"
+        },
+        {
+          "label": "ecs_entity_type_component_mask_binding",
+          "virtualAddress": "0x1801E0D90",
+          "sizeBytes": 419,
+          "sha256": "790978a58b50cb40e3ee3b5378de0e1497a836627faaf0db2ced6f06ed886219"
+        },
+        {
           "label": "component_proxy_registration",
           "virtualAddress": "0x1807EEEE0",
           "sizeBytes": 42,
@@ -1588,6 +1645,8 @@
       "the parent/per-ArtTag LOD-bias encodings and per-view lodBias multiplier",
       "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
       "the HGTreeComponentProxy-to-native-type name, namespace, and module identity",
+      "the ECS numeric-component-id to two-qword archetype-mask equation",
+      "the direct all-LOD or terminal-LOD HGTree availability initializer",
       "the retraction of the out-of-range index 10320 Animator misbinding",
       "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
     ],
@@ -1598,7 +1657,7 @@
       "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
       "the semantic names of the initially zero HGTree runtime-state bytes",
-      "the component-bit-67 LOD-count/range producer and native-type-to-bit assignment",
+      "the component-bit-67 LOD-count/range producer and HGTreeComponent-to-id-67 assignment",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

@@ -162,6 +162,12 @@ UNITY_HG_ICALL_NAME_TABLE_SHA256 = (
 UNITY_HG_ICALL_FUNCTION_TABLE_SHA256 = (
     "9ecec341ec864e050d5b31bc4f98bcdea23ad3b5e7c8dd36c7952612ef09a596"
 )
+UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX = 712
+UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_VA = 0x1801E0D90
+UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_NAME = (
+    "UnityEngine.HyperGryph.ECS.EntityManager::"
+    "GetOrRegisterEntityTypeImpl_Injected"
+)
 UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX = 564
 UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_VA = 0x1801D9D10
 UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_NAME = (
@@ -393,6 +399,16 @@ UNITY_HGTREE_BODIES = {
         0x181159010,
         0x398,
         "c1f42c8333a1f0daf613485ee1757e78bdf95899ddcdcde81b7e177027dd8247",
+    ),
+    "lod_ecs_direct_availability_initializer": (
+        0x181157760,
+        0x7F9,
+        "45633b35ac3c0bd27a71bb8464121584f185445ef18a7fe4a1e9b2808f074d63",
+    ),
+    "ecs_entity_type_component_mask_binding": (
+        0x1801E0D90,
+        0x1A3,
+        "790978a58b50cb40e3ee3b5378de0e1497a836627faaf0db2ced6f06ed886219",
     ),
     "component_proxy_registration": (
         0x1807EEEE0,
@@ -1393,6 +1409,15 @@ def validate_unity_hgtree_renderer_boundary(
         image.path,
     )
     require(
+        "unity_hg_icall_get_or_register_entity_type_index_in_bounds",
+        (
+            UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX
+            < UNITY_HG_ICALL_COUNT
+        ),
+        True,
+        image.path,
+    )
+    require(
         "unity_hg_icall_register_batch_group_index_in_bounds",
         UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX < UNITY_HG_ICALL_COUNT,
         True,
@@ -1448,6 +1473,21 @@ def validate_unity_hgtree_renderer_boundary(
 
     name, target = resolve_hg_icall(
         UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX
+    )
+    entity_type_name, entity_type_target = resolve_hg_icall(
+        UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX
+    )
+    require(
+        "unity_ecs_get_or_register_entity_type_icall_target",
+        entity_type_target,
+        UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_ecs_get_or_register_entity_type_icall_name",
+        entity_type_name,
+        UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_NAME,
+        image.path,
     )
     require(
         "unity_hgtree_create_renderer_list_icall_target",
@@ -1957,6 +1997,63 @@ def validate_unity_hgtree_renderer_boundary(
                         "cumulative ranges at record+0x10..+0x17"
                     ),
                 },
+                "directAvailabilityInitializer": {
+                    "virtualAddress": "0x181157760",
+                    "allLodsBranch": {
+                        "desiredResolvedHistoryAt0x01To0x03": [0, 0, 0],
+                        "pendingMaskAt0x04": 0,
+                        "availableMaskAt0x05": "(1 << lodCount) - 1",
+                        "readinessBitsAt0x08": (
+                            "(1 << companion renderer/subresource count) - 1"
+                        ),
+                    },
+                    "terminalLodBranch": {
+                        "lodIndex": "lodCount - 1",
+                        "desiredResolvedHistory": "lodCount - 1",
+                        "pendingMaskAt0x04": 0,
+                        "availableMaskAt0x05": "1 << (lodCount - 1)",
+                        "rangeStart": (
+                            "0 for LOD0, otherwise cumulativeRange[lodIndex - 1]"
+                        ),
+                        "rangeEnd": "cumulativeRange[lodIndex]",
+                        "readinessBitsAt0x08": (
+                            "((1 << (rangeEnd - rangeStart)) - 1) << rangeStart"
+                        ),
+                    },
+                    "closedBoundary": (
+                        "this closes the direct all-LOD or terminal-LOD "
+                        "available-state initializer and independently "
+                        "confirms cumulative range consumption; it does not "
+                        "produce lodCount or the cumulative endpoints"
+                    ),
+                },
+                "componentIdMaskRegistration": {
+                    "internalCallIndex": (
+                        UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX
+                    ),
+                    "internalCallName": entity_type_name,
+                    "bindingVirtualAddress": f"0x{entity_type_target:X}",
+                    "componentIdInput": (
+                        "signed 16-bit component id at stride 8"
+                    ),
+                    "componentCountLimit": 64,
+                    "maskEquation": {
+                        "bank": "componentId >> 6",
+                        "bit": "componentId & 63",
+                        "operation": "mask[bank] |= 1 << bit",
+                    },
+                    "archetypeMaskOffsets": ["0x10", "0x18"],
+                    "component67Result": {
+                        "bank": 1,
+                        "bit": 3,
+                        "highQwordMask": "0x0000000000000008",
+                    },
+                    "boundary": (
+                        "this closes how numeric component ids become "
+                        "archetype bits; it does not yet prove that the "
+                        "HGTreeComponent native type is assigned id 67"
+                    ),
+                },
                 "structureBoundary": (
                     "this pointer is resolved from archetype component bit 67; "
                     "it is not the loader-owned registration blob stored in "
@@ -2366,8 +2463,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v10",
-        "status": "installed_cap_hgtree_type_identity_lifecycle_lod_state_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v11",
+        "status": "installed_cap_hgtree_component_mask_type_identity_lifecycle_lod_state_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -2403,13 +2500,18 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "accessor and initial LOD0 completion/fallback writer are pinned "
             "as well. The installed native scripting registration now closes "
             "HGTreeComponentProxy to the HGTreeComponent type name, namespace, "
-            "and HGGraphics module; its final assignment to archetype bit 67 "
-            "remains open. The old index "
+            "and HGGraphics module. EntityManager's registered internal call "
+            "closes the numeric-component-id to two-qword archetype-mask "
+            "equation, including id 67 -> high-qword bit 3. A second state "
+            "initializer closes the all-LOD and terminal-LOD directly "
+            "available branches while consuming the cumulative ranges. The "
+            "HGTreeComponent assignment to numeric id 67 remains open. The "
+            "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The scheduled cull-view +0x18 consumer, remaining initially zero "
             "loader-record bytes, the ECS LOD-count/range producer and exact "
-            "native-type-to-archetype-bit link, "
+            "HGTreeComponent-to-id-67 assignment, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -2537,6 +2639,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the parent/per-ArtTag LOD-bias encodings and per-view lodBias multiplier",
                 "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
                 "the HGTreeComponentProxy-to-native-type name, namespace, and module identity",
+                "the ECS numeric-component-id to two-qword archetype-mask equation",
+                "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
                 "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
@@ -2547,7 +2651,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic names of the initially zero HGTree runtime-state bytes",
-                "the component-bit-67 LOD-count/range producer and native-type-to-bit assignment",
+                "the component-bit-67 LOD-count/range producer and HGTreeComponent-to-id-67 assignment",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -2581,8 +2685,8 @@ def main() -> int:
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
-        "type identity/registration lifecycle/runtime transform/ECS LOD state "
-        "and equations, "
+        "type identity/registration lifecycle/runtime transform/ECS component "
+        "mask and LOD-state equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
         "16-byte result, and 148-byte capture-row ABI closed."

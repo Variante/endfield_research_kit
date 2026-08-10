@@ -1569,8 +1569,15 @@ and clears readiness. It does not write the LOD count or cumulative ranges.
 Installed scripting registration `0x1807EEEE0 -> 0x1807EC5E0` directly binds
 `::Scripting::UnityEngine::HyperGryph::ECS::HGTreeComponentProxy` to native
 `HGTreeComponent` in `UnityEngine.HyperGryph.ECS` from
-`UnityEngine.HGGraphicsModule.dll`. This closes the proxy/type identity but not
-the still-missing native-type-to-archetype-bit-67 assignment.
+`UnityEngine.HGGraphicsModule.dll`. Dedicated HG internal-call index 712,
+`EntityManager.GetOrRegisterEntityTypeImpl_Injected` at `0x1801E0D90`, closes
+how numeric component IDs become archetype masks: `mask[id >> 6]` receives bit
+`id & 63`, making ID 67 high-qword bit 3 (`0x8`). The remaining identity gap is
+the assignment `HGTreeComponent -> ID 67`. Writer `0x181157760` also closes a
+second direct-availability initializer: it marks either every LOD/subresource
+available or only the terminal LOD and the exact readiness range selected by
+the cumulative endpoints. It consumes but does not produce the LOD count or
+endpoints.
 Dispatch segment `0x181079FB1` selects the
 LOD variants. The direct path selects
 `minSquared < distanceSquared <= maxSquared`; the scaled path tests
@@ -1588,8 +1595,8 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 LOD-count/range producer and native-type-to-archetype-bit
-link, unrelated
+bytes, component-67 LOD-count/range producer and
+`HGTreeComponent`-to-ID-67 link, unrelated
 scheduled consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.
