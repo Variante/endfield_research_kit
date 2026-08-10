@@ -313,6 +313,23 @@ class LightCullCapAuditTests(unittest.TestCase):
             "MergedRenderCollider",
         )
         self.assertEqual(
+            result["component67InitialData"]["runtimeProducer"][
+                "archetypeInitialDataCopy"
+            ],
+            "0x1801F95E0",
+        )
+        self.assertTrue(
+            result["component67InitialData"]["fullScan"][
+                "component67OwnerSetExactPerMapScope"
+            ]
+        )
+        self.assertEqual(
+            result["component67InitialData"]["fullScan"][
+                "distinctComponent67EntityCountByMapScope"
+            ],
+            1230041,
+        )
+        self.assertEqual(
             result["streamingPayloads"]["ecsEntityTypes"][7]["entityCount"],
             2576964,
         )
@@ -369,6 +386,49 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
                 census,
             )
+
+    def test_component67_initial_data_count_drift_fails_closed(self) -> None:
+        census = json.loads(
+            AUDIT.STREAMING_SCENE_V2_PAYLOAD_CENSUS.read_text(
+                encoding="utf-8"
+            )
+        )
+        census["component67InitialData"]["fullScan"][
+            "distinctComponent67EntityCountByMapScope"
+        ] += 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=streaming_scene_v2_census_component67_initial_data; "
+            r"source=.*streaming_scene_v2_payload_census.json; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_streaming_scene_v2_payload_census(
+                AUDIT.PEImage(AUDIT.UNITY_PLAYER),
+                AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+                census,
+            )
+
+    def test_changed_native_ecs_initial_data_copy_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1801F95E0 and size == 0x41A:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=streaming_scene_v2_native_ecs_archetype_initial-data_copy_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_streaming_scene_v2_payload_census(
+                    image, AUDIT.PEImage(AUDIT.GAME_ASSEMBLY)
+                )
 
     def test_changed_merged_render_registration_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)

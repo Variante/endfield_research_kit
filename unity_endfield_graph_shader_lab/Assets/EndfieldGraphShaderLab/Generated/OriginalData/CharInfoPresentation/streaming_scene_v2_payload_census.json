@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.streaming-scene-v2-payload-census.v2",
+  "schema": "endfield.streaming-scene-v2-payload-census.v3",
   "installedInputs": {
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -110,6 +110,10 @@
       {
         "image": "UnityPlayer.dll", "name": "StreamingSceneV2 union dispatch", "virtualAddress": "0x18117DC50", "sizeBytes": 2897,
         "sha256": "391f2531f5a880430e9f8ae5c84e69936298d02edfcf1851eaceedd1fa50f70e"
+      },
+      {
+        "image": "UnityPlayer.dll", "name": "native ECS archetype initial-data copy", "virtualAddress": "0x1801F95E0", "sizeBytes": 1050,
+        "sha256": "0e329dbc2ac208dbb30dd31719a92a5af1548be2c2838c44549c3a81b85cc2dd"
       },
       {
         "image": "UnityPlayer.dll", "name": "MonoEntity tag-1 create callback", "virtualAddress": "0x18114F380", "sizeBytes": 839,
@@ -223,7 +227,62 @@
       {"value": 0, "name": "Render", "registrationRange": ["0x18116B9A1", "0x18116BBE1"], "transition1": "0x181154230", "convertFrom": "0x181159010"},
       {"value": 9, "name": "MergedRenderCollider", "registrationRange": ["0x18116B6AB", "0x18116B9A1"], "transition1": "0x181153310", "convertFrom": "0x181157760"}
     ],
-    "boundary": "native ECS entity ownership is closed for Render and MergedRenderCollider; the standalone native component type name and the earlier lodCount/cumulative-range producer remain open"
+    "boundary": "native ECS entity ownership is closed for Render and MergedRenderCollider; the standalone native component type name remains open"
+  },
+  "component67InitialData": {
+    "rootFields": {
+      "nativeEntityIdGroups": 6,
+      "nativeArchetypeDescriptions": 7,
+      "descriptionComponentDescriptors": 3,
+      "descriptionInitialData": 4,
+      "initialDataBytes": 0
+    },
+    "descriptorLayout": {
+      "strideBytes": 8,
+      "componentId": {"offset": 0, "type": "Int16"},
+      "elementSize": {"offset": 2, "type": "Int16"},
+      "auxiliary": {"offset": 4, "type": "UInt32"},
+      "component67": {"componentId": 67, "elementSize": 24}
+    },
+    "runtimeProducer": {
+      "rootFieldSetupRange": ["0x18117E110", "0x18117E42B"],
+      "archetypeInitialDataCopy": "0x1801F95E0",
+      "behavior": "allocate native ECS archetype storage, then copy each entityCount*elementSize component slice from serialized initialData bytes"
+    },
+    "fullScan": {
+      "fileCount": 51012,
+      "filesWithNativeArchetypes": 5838,
+      "filesWithComponent67": 2769,
+      "nativeArchetypeGroupCount": 17281,
+      "nativeEntityCount": 1466711,
+      "component67EntityOccurrenceCount": 1305818,
+      "unionType0Or9EntityOccurrenceCount": 2611636,
+      "distinctComponent67EntityCountByMapScope": 1230041,
+      "distinctUnionType0Or9EntityCountByMapScope": 1230041,
+      "mapScopeCount": 83,
+      "largestScopeComponent67EntityCount": 388047,
+      "component67OwnerSetExactPerMapScope": true,
+      "repeatedInitialDataByteExactPerMapEntity": true,
+      "normalizedSourceSha256": "6911a86a785c84334b98b7226e915a320f83989f203da641dd207d1f5637ae5b"
+    },
+    "initialState": {
+      "lodCountCounts": {"1": 351082, "2": 273576, "3": 327499, "4": 228398, "5": 104480, "6": 20783},
+      "stateBytes": [8, 8, 8, 0, 0],
+      "stateByteEntityCount": 1305818,
+      "readiness": 0,
+      "readinessEntityCount": 1305818,
+      "rangeEndpointPatternCount": 102,
+      "maximumLodCount": 6
+    },
+    "companionComponents": [
+      {"componentId": 68, "elementSize": 48, "entityCount": 331405},
+      {"componentId": 69, "elementSize": 88, "entityCount": 246293},
+      {"componentId": 70, "elementSize": 168, "entityCount": 415221},
+      {"componentId": 71, "elementSize": 328, "entityCount": 233440},
+      {"componentId": 72, "elementSize": 648, "entityCount": 66202},
+      {"componentId": 73, "elementSize": 1288, "entityCount": 13257}
+    ],
+    "boundary": "component 67 lodCount and cumulative renderer ranges are exact serialized game-binary initial data copied into native ECS storage; the standalone native component type name remains open"
   },
   "serializedMapConfigs": {
     "objectIndexObjectsGzipSha256": "6f59db82177cd1abd027bfed385145337403a5b0791bcb628287b53e1ad341cd",
@@ -355,5 +414,5 @@
     },
     "boundary": "FBDynamicSceneTreeRootComp is a managed gameplay/destructible-tree normal-model route. EDynamicSystem.Tree=11 and EDynamicSceneData.TreeRootComp=64 are separate from StreamingComponentType.HGTree bit 41 and native ECS component id 67."
   },
-  "boundary": "The exact StreamingSceneV2 managed/native loader and tag dispatch are closed. Tag 2 is native ECS, not an excluded opaque surface: installed enum metadata and native slot registration close component 67 to shared Render and MergedRenderCollider entity paths. The full payload scan counts 34,672 Render and 2,576,964 MergedRenderCollider records. The standalone native component name and earlier lodCount/cumulative-range producer remain open."
+  "boundary": "The exact StreamingSceneV2 managed/native loader, tag dispatch, native archetype descriptors, and initial-data copy are closed. Tag 2 is native ECS: exact per-map owner sets tie all 1,230,041 distinct component-67 entities to shared Render and MergedRenderCollider paths. The installed 24-byte records serialize lodCount and eight cumulative renderer-range endpoints before UnityPlayer copies them into native ECS storage. The standalone native component name remains open."
 }

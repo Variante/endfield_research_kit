@@ -165,9 +165,19 @@ NPC archetypes are imported as labeled source kits.
   `0x181154230/0x181159010` and type 9 `MergedRenderCollider` callbacks
   `0x181153310/0x181157760`. The complete scan counts 34,672 Render records
   across 1,384 files and 2,576,964 MergedRenderCollider records across 4,720
-  files. Entity ownership is therefore closed; only the standalone native
-  component name and the earlier LOD-count/cumulative-range producer remain
-  open. All 1,576
+  files. Entity ownership is therefore closed. Root fields 6/7 pair native
+  entity-ID groups with archetype descriptions; each description carries
+  8-byte `(int16 componentId, int16 elementSize, uint32 auxiliary)` rows and a
+  serialized initial-data blob. Component 67 is exactly `(67,24)`, and
+  hash-pinned copier `0x1801F95E0` copies each
+  `entityCount*elementSize` slice directly into native ECS storage. Across all
+  83 map scopes, its 1,230,041 distinct entity IDs exactly match the type-0/9
+  owner set. The 1,305,818 serialized occurrences initialize LOD count 1..6,
+  fixed state bytes `8/8/8/0/0`, zero readiness, and 102 cumulative renderer
+  range patterns; repeated map/entity records are byte-identical. Thus the
+  LOD-count/range producer is now closed to original game-binary data rather
+  than a later `ConvertFrom` inference. Only the standalone native component
+  name remains open. All 1,576
   DynamicStreaming init/stream payloads contain only tag-2 records and no
   component entry. The 457 dynamic `fb_main` files do contain 2,828
   `FBDynamicSceneTreeRootComp` rows, but their gameplay identities
@@ -179,14 +189,13 @@ NPC archetypes are imported as labeled source kits.
   an 8-byte row `(int16 id, uint16 size, uint32 cumulativeOffset)`, with
   component storage beginning at byte 8 and archetype size/offset lookups at
   `+0x42/+0x44 + 8*rank`. No installed-code immediate encodes `(67, 24)`, so
-  the remaining ID-67 row and its initial LOD values come from a runtime or
-  copied descriptor source outside those excluded static routes rather than a
-  static descriptor constant.
+  the recovered StreamingSceneV2 descriptor/blob path, rather than a static
+  descriptor constant, supplies the ID-67 row and initial LOD values.
   Writer `0x181157760` also closes a second direct-availability initialization path:
   it either marks every LOD and companion subresource available or marks only
   the terminal LOD and the exact readiness range selected through the
-  cumulative endpoints. It consumes but still does not produce LOD count or
-  those endpoints. Dispatch
+  cumulative endpoints. It consumes the serialized LOD count/endpoints but
+  does not infer them. Dispatch
   segment `0x181079FB1` selects the recovered LOD job variants. The direct route uses
   `minSquared < distanceSquared <= maxSquared`; the scaled route uses
   `(viewFactor*instanceScale)/max(0.0001,distanceSquared)` and the same
@@ -205,7 +214,7 @@ NPC archetypes are imported as labeled source kits.
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The remaining
   initially zero loader-record bytes, the component-67 standalone native type
-  name and LOD-count/range producer, the unrelated scheduled consumer of view
+  name, the unrelated scheduled consumer of view
   `+0x18`,
   any separate
   `sceneCullingMask` consumer, and zero-threshold pass behavior remain open.
@@ -440,10 +449,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 1. Recover the actual scheduled renderer/entity consumer of cull-view
    `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
-   bounds. Resolve the remaining loader-record zero bytes plus the component-67
-   LOD-count/range producer and exact native type-name link, searching nested or
-   procedural/runtime sources outside the now-excluded Streaming component
-   vectors. Then recover the retail
+   bounds. Resolve the remaining loader-record zero bytes and the exact native
+   type-name link for component 67; its serialized LOD-count/range producer is
+   now closed. Then recover the retail
    survivor list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom

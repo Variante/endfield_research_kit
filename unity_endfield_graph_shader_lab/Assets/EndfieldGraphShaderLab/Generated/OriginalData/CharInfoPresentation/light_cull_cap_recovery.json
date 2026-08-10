@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v18",
-  "status": "installed_cap_component67_native_ecs_entity_owners_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, narrowing the remaining producer search to a runtime descriptor source. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name and the earlier lodCount/cumulative-range producer remain open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the component-67 ECS LOD-count/range producer and standalone native component type name, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v19",
+  "status": "installed_cap_component67_serialized_initial_data_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. Its indexed accessor and initial LOD0 completion/fallback writer are pinned as well. The installed native scripting registration now closes HGTreeComponentProxy to the HGTreeComponent type name, namespace, and HGGraphics module. EntityManager's registered internal call closes the numeric-component-id to two-qword archetype-mask equation, including id 67 -> high-qword bit 3. A second state initializer closes the all-LOD and terminal-LOD directly available branches while consuming the cumulative ranges. The hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, mapping it to high-qword bit 16 and disproving the former candidate link between HGTreeComponent and the separate component-67 LOD-state record. Raw UInt64 metadata defaults now close StreamingComponentType HLODGroup as bit 11 and HGTree as bit 41, with Count=43. The registered conversion path maps each single-bit type through bsf into a 0x308-byte descriptor slot, requires a non-empty list, and requires Transform first. The similarly named managed RenderObjectLODInfoComponent independently returns id 6, so neither managed candidate names id 67. The native entity-type registration core now closes each 8-byte descriptor as component id, component size, and cumulative data offset, with component storage starting at byte 8. No direct id-67/size-24 descriptor immediate exists, which narrowed the producer search to copied StreamingSceneV2 data. The complete installed 117-object HGMeshRendererData corpus contains 1,449 valid ECS descriptors, but none has id 67, excluding that serialized blob family as the producer. The complete hash-pinned managed StreamingSceneManagerScript constructor binds nine Mono converter bits but not HGTree bit 41, excluding that managed delegate route from the static constructor source set as well. The UnityPlayer native serialized-type table now closes HGTree/HGTreeData class IDs as 0x2C9CB981/0x59383C91. A controlled complete StreamingAssets scan uses the 117 HGMeshRendererData objects as a positive map-and-export gate but finds zero top-level HGTree or HGTreeData objects. Their static Unity-serialized object surface is therefore excluded. The exact StreamingSceneV2 managed/native Create route, 83 serialized map roots, path construction, request callback, and interleaved-token LZ4 decoder are now pinned. A full scan of 51,012 main Streaming payloads (3,088,714,060 decoded bytes and 3,084,834 union records) finds no HGTree bit-41 or HLODGroup bit-11 tag-1 component entry. The native dispatch tables close tag 1 as MonoEntity, tag 2 as native ECS, and tag 3 as Proxy. Installed metadata closes all ECSEntityType and ProxyEntityType values. The native type-0 Render and type-9 MergedRenderCollider callback slots both access component 67, closing its entity ownership to a shared native render/merged-render-collider LOD-streaming path. The full scan contains 34,672 Render and 2,576,964 MergedRenderCollider records. StreamingSceneV2 root fields 6/7 now close the paired native entity groups and archetype descriptions. Each 8-byte descriptor contains an Int16 component id, Int16 element size, and UInt32 auxiliary value; component 67 is serialized with size 24. The hash-pinned native copier at 0x1801F95E0 copies each entityCount*elementSize initial-data slice directly into native ECS storage. Across all 83 map scopes, the 1,230,041 distinct component-67 entity ids exactly equal the distinct type-0/type-9 owner set. All 1,305,818 serialized occurrences initialize lodCount in 1..6, state bytes 8/8/8/0/0, zero readiness, and one of 102 cumulative renderer-range patterns. Duplicate map/entity records are byte-identical. Thus the LOD count and range producer is the original game-binary initial-data blob, not a later ConvertFrom inference. All 1,576 DynamicStreaming init/stream payloads contain only union tag 2 and no component entry. Its 457 fb_main files do contain 2,828 gameplay FBDynamicSceneTreeRootComp rows, but managed enum values Tree=11 and TreeRootComp=64 prove that this destructible-tree normal-model route is separate from both StreamingComponentType HGTree bit 41 and ECS component id 67. The standalone native component name remains open. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the component-67 standalone native type name, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -49,6 +49,9 @@
       "mainPayloadFileCount": 51012,
       "mainPayloadDecompressedBytes": 3088714060,
       "hgtreeBit41ComponentCount": 0,
+      "component67DistinctEntityCountByMapScope": 1230041,
+      "component67OwnerSetExactPerMapScope": true,
+      "component67InitialDataOccurrenceCount": 1305818,
       "dynamicUnionComponentCount": 0,
       "dynamicGameplayTreeRootCompCount": 2828
     }
@@ -1496,7 +1499,7 @@
         ],
         "open": [
           "semantic roles for the loader registration blob's remaining initially zero bytes",
-          "the ECS LOD-count producer and record+0x06/+0x07 semantics",
+          "the loader registration record+0x06/+0x07 semantics",
           "the standalone native component type name for archetype bit 67",
           "the unrelated scheduled cull-view +0x18 consumer"
         ]
@@ -2290,6 +2293,13 @@
           },
           {
             "image": "UnityPlayer.dll",
+            "name": "native ECS archetype initial-data copy",
+            "virtualAddress": "0x1801F95E0",
+            "sizeBytes": 1050,
+            "sha256": "0e329dbc2ac208dbb30dd31719a92a5af1548be2c2838c44549c3a81b85cc2dd"
+          },
+          {
+            "image": "UnityPlayer.dll",
             "name": "MonoEntity tag-1 create callback",
             "virtualAddress": "0x18114F380",
             "sizeBytes": 839,
@@ -2626,7 +2636,114 @@
             "convertFrom": "0x181157760"
           }
         ],
-        "boundary": "native ECS entity ownership is closed for Render and MergedRenderCollider; the standalone native component type name and the earlier lodCount/cumulative-range producer remain open"
+        "boundary": "native ECS entity ownership is closed for Render and MergedRenderCollider; the standalone native component type name remains open"
+      },
+      "component67InitialData": {
+        "rootFields": {
+          "nativeEntityIdGroups": 6,
+          "nativeArchetypeDescriptions": 7,
+          "descriptionComponentDescriptors": 3,
+          "descriptionInitialData": 4,
+          "initialDataBytes": 0
+        },
+        "descriptorLayout": {
+          "strideBytes": 8,
+          "componentId": {
+            "offset": 0,
+            "type": "Int16"
+          },
+          "elementSize": {
+            "offset": 2,
+            "type": "Int16"
+          },
+          "auxiliary": {
+            "offset": 4,
+            "type": "UInt32"
+          },
+          "component67": {
+            "componentId": 67,
+            "elementSize": 24
+          }
+        },
+        "runtimeProducer": {
+          "rootFieldSetupRange": [
+            "0x18117E110",
+            "0x18117E42B"
+          ],
+          "archetypeInitialDataCopy": "0x1801F95E0",
+          "behavior": "allocate native ECS archetype storage, then copy each entityCount*elementSize component slice from serialized initialData bytes"
+        },
+        "fullScan": {
+          "fileCount": 51012,
+          "filesWithNativeArchetypes": 5838,
+          "filesWithComponent67": 2769,
+          "nativeArchetypeGroupCount": 17281,
+          "nativeEntityCount": 1466711,
+          "component67EntityOccurrenceCount": 1305818,
+          "unionType0Or9EntityOccurrenceCount": 2611636,
+          "distinctComponent67EntityCountByMapScope": 1230041,
+          "distinctUnionType0Or9EntityCountByMapScope": 1230041,
+          "mapScopeCount": 83,
+          "largestScopeComponent67EntityCount": 388047,
+          "component67OwnerSetExactPerMapScope": true,
+          "repeatedInitialDataByteExactPerMapEntity": true,
+          "normalizedSourceSha256": "6911a86a785c84334b98b7226e915a320f83989f203da641dd207d1f5637ae5b"
+        },
+        "initialState": {
+          "lodCountCounts": {
+            "1": 351082,
+            "2": 273576,
+            "3": 327499,
+            "4": 228398,
+            "5": 104480,
+            "6": 20783
+          },
+          "stateBytes": [
+            8,
+            8,
+            8,
+            0,
+            0
+          ],
+          "stateByteEntityCount": 1305818,
+          "readiness": 0,
+          "readinessEntityCount": 1305818,
+          "rangeEndpointPatternCount": 102,
+          "maximumLodCount": 6
+        },
+        "companionComponents": [
+          {
+            "componentId": 68,
+            "elementSize": 48,
+            "entityCount": 331405
+          },
+          {
+            "componentId": 69,
+            "elementSize": 88,
+            "entityCount": 246293
+          },
+          {
+            "componentId": 70,
+            "elementSize": 168,
+            "entityCount": 415221
+          },
+          {
+            "componentId": 71,
+            "elementSize": 328,
+            "entityCount": 233440
+          },
+          {
+            "componentId": 72,
+            "elementSize": 648,
+            "entityCount": 66202
+          },
+          {
+            "componentId": 73,
+            "elementSize": 1288,
+            "entityCount": 13257
+          }
+        ],
+        "boundary": "component 67 lodCount and cumulative renderer ranges are exact serialized game-binary initial data copied into native ECS storage; the standalone native component type name remains open"
       },
       "serializedMapConfigs": {
         "objectIndexObjectsGzipSha256": "6f59db82177cd1abd027bfed385145337403a5b0791bcb628287b53e1ad341cd",
@@ -2933,7 +3050,7 @@
         },
         "boundary": "FBDynamicSceneTreeRootComp is a managed gameplay/destructible-tree normal-model route. EDynamicSystem.Tree=11 and EDynamicSceneData.TreeRootComp=64 are separate from StreamingComponentType.HGTree bit 41 and native ECS component id 67."
       },
-      "boundary": "The exact StreamingSceneV2 managed/native loader and tag dispatch are closed. Tag 2 is native ECS, not an excluded opaque surface: installed enum metadata and native slot registration close component 67 to shared Render and MergedRenderCollider entity paths. The full payload scan counts 34,672 Render and 2,576,964 MergedRenderCollider records. The standalone native component name and earlier lodCount/cumulative-range producer remain open."
+      "boundary": "The exact StreamingSceneV2 managed/native loader, tag dispatch, native archetype descriptors, and initial-data copy are closed. Tag 2 is native ECS: exact per-map owner sets tie all 1,230,041 distinct component-67 entities to shared Render and MergedRenderCollider paths. The installed 24-byte records serialize lodCount and eight cumulative renderer-range endpoints before UnityPlayer copies them into native ECS storage. The standalone native component name remains open."
     },
     "desktopNoSecondTruncation": true
   },
@@ -3001,6 +3118,10 @@
       "the StreamingSceneV2 managed/native Create route, icall 621, path builder, request callback, and interleaved-token LZ4 decoder",
       "all 83 StreamingMapConfig roots and their one-to-one StreamingChunkInfo coverage",
       "the full 51,012-file main Streaming payload census and absence of HGTree bit 41 and HLODGroup bit 11",
+      "StreamingSceneV2 native entity/archetype root fields 6/7 and their descriptor/initial-data layout",
+      "the hash-pinned generic native ECS archetype initial-data copy at 0x1801F95E0",
+      "the exact 83-map component-67/type-0-or-9 owner sets and byte-identical repeated initial records",
+      "all component-67 serialized lodCount values and 102 cumulative renderer-range patterns",
       "the 1,576-file DynamicStreaming init/stream census with only tag-2 records and no component entries",
       "the separate DynamicStreaming gameplay-tree route with 2,828 TreeRootComp rows and enum identities Tree=11/TreeRootComp=64",
       "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
@@ -3016,7 +3137,7 @@
       "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
       "the semantic names of the initially zero HGTree runtime-state bytes",
-      "the component-bit-67 LOD-count/range producer and native component name/owner in nested/procedural data or another runtime source outside the excluded static and Streaming component-vector routes",
+      "the standalone native component type name for component 67",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

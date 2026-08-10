@@ -413,6 +413,13 @@ STREAMING_SCENE_V2_BINARY_BODIES = [
     ),
     (
         "UnityPlayer.dll",
+        "native ECS archetype initial-data copy",
+        0x1801F95E0,
+        0x41A,
+        "0e329dbc2ac208dbb30dd31719a92a5af1548be2c2838c44549c3a81b85cc2dd",
+    ),
+    (
+        "UnityPlayer.dll",
         "MonoEntity tag-1 create callback",
         0x18114F380,
         0x347,
@@ -1872,7 +1879,79 @@ def validate_streaming_scene_v2_payload_census(
         "boundary": (
             "native ECS entity ownership is closed for Render and "
             "MergedRenderCollider; the standalone native component type name "
-            "and the earlier lodCount/cumulative-range producer remain open"
+            "remains open"
+        ),
+    }
+    component67_initial_data = {
+        "rootFields": {
+            "nativeEntityIdGroups": 6,
+            "nativeArchetypeDescriptions": 7,
+            "descriptionComponentDescriptors": 3,
+            "descriptionInitialData": 4,
+            "initialDataBytes": 0,
+        },
+        "descriptorLayout": {
+            "strideBytes": 8,
+            "componentId": {"offset": 0, "type": "Int16"},
+            "elementSize": {"offset": 2, "type": "Int16"},
+            "auxiliary": {"offset": 4, "type": "UInt32"},
+            "component67": {"componentId": 67, "elementSize": 24},
+        },
+        "runtimeProducer": {
+            "rootFieldSetupRange": ["0x18117E110", "0x18117E42B"],
+            "archetypeInitialDataCopy": "0x1801F95E0",
+            "behavior": (
+                "allocate native ECS archetype storage, then copy each "
+                "entityCount*elementSize component slice from serialized "
+                "initialData bytes"
+            ),
+        },
+        "fullScan": {
+            "fileCount": 51012,
+            "filesWithNativeArchetypes": 5838,
+            "filesWithComponent67": 2769,
+            "nativeArchetypeGroupCount": 17281,
+            "nativeEntityCount": 1466711,
+            "component67EntityOccurrenceCount": 1305818,
+            "unionType0Or9EntityOccurrenceCount": 2611636,
+            "distinctComponent67EntityCountByMapScope": 1230041,
+            "distinctUnionType0Or9EntityCountByMapScope": 1230041,
+            "mapScopeCount": 83,
+            "largestScopeComponent67EntityCount": 388047,
+            "component67OwnerSetExactPerMapScope": True,
+            "repeatedInitialDataByteExactPerMapEntity": True,
+            "normalizedSourceSha256": (
+                "6911a86a785c84334b98b7226e915a320f83989f203da641dd207d1f5637ae5b"
+            ),
+        },
+        "initialState": {
+            "lodCountCounts": {
+                "1": 351082,
+                "2": 273576,
+                "3": 327499,
+                "4": 228398,
+                "5": 104480,
+                "6": 20783,
+            },
+            "stateBytes": [8, 8, 8, 0, 0],
+            "stateByteEntityCount": 1305818,
+            "readiness": 0,
+            "readinessEntityCount": 1305818,
+            "rangeEndpointPatternCount": 102,
+            "maximumLodCount": 6,
+        },
+        "companionComponents": [
+            {"componentId": 68, "elementSize": 48, "entityCount": 331405},
+            {"componentId": 69, "elementSize": 88, "entityCount": 246293},
+            {"componentId": 70, "elementSize": 168, "entityCount": 415221},
+            {"componentId": 71, "elementSize": 328, "entityCount": 233440},
+            {"componentId": 72, "elementSize": 648, "entityCount": 66202},
+            {"componentId": 73, "elementSize": 1288, "entityCount": 13257},
+        ],
+        "boundary": (
+            "component 67 lodCount and cumulative renderer ranges are exact "
+            "serialized game-binary initial data copied into native ECS "
+            "storage; the standalone native component type name remains open"
         ),
     }
 
@@ -1887,6 +1966,7 @@ def validate_streaming_scene_v2_payload_census(
     entity_dispatch = data.get("nativeEntityDispatch") or {}
     enums = data.get("entityTypeEnums") or {}
     owners = data.get("component67Owners") or {}
+    initial_data = data.get("component67InitialData") or {}
     configs = data.get("serializedMapConfigs") or {}
     vfs = data.get("installedVfs") or {}
     blocks = vfs.get("blocks") or {}
@@ -1929,7 +2009,7 @@ def validate_streaming_scene_v2_payload_census(
         (
             "schema",
             data.get("schema"),
-            "endfield.streaming-scene-v2-payload-census.v2",
+            "endfield.streaming-scene-v2-payload-census.v3",
         ),
         (
             "unity_player_hash",
@@ -2011,6 +2091,11 @@ def validate_streaming_scene_v2_payload_census(
         ("native_entity_dispatch", entity_dispatch, native_entity_dispatch),
         ("entity_type_enums", enums, entity_type_enums),
         ("component67_owners", owners, component67_owners),
+        (
+            "component67_initial_data",
+            initial_data,
+            component67_initial_data,
+        ),
         (
             "map_object_index_hash",
             configs.get("objectIndexObjectsGzipSha256"),
@@ -2224,6 +2309,7 @@ def validate_streaming_scene_v2_payload_census(
         "nativeEntityDispatch": entity_dispatch,
         "entityTypeEnums": enums,
         "component67Owners": owners,
+        "component67InitialData": initial_data,
         "serializedMapConfigs": configs,
         "installedVfs": vfs,
         "streamingPayloads": payloads,
@@ -4116,7 +4202,7 @@ def validate_unity_hgtree_renderer_boundary(
             ],
             "open": [
                 "semantic roles for the loader registration blob's remaining initially zero bytes",
-                "the ECS LOD-count producer and record+0x06/+0x07 semantics",
+                "the loader registration record+0x06/+0x07 semantics",
                 "the standalone native component type name for archetype bit 67",
                 "the unrelated scheduled cull-view +0x18 consumer",
             ],
@@ -4362,8 +4448,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v18",
-        "status": "installed_cap_component67_native_ecs_entity_owners_closed",
+        "schema": "endfield.recovered-light-cull-cap.v19",
+        "status": "installed_cap_component67_serialized_initial_data_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -4417,8 +4503,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "entity-type registration core now closes each 8-byte descriptor "
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
-            "descriptor immediate exists, narrowing the remaining producer "
-            "search to a runtime descriptor source. The complete installed "
+            "descriptor immediate exists, which narrowed the producer search "
+            "to copied StreamingSceneV2 data. The complete installed "
             "117-object HGMeshRendererData corpus contains 1,449 valid ECS "
             "descriptors, but none has id 67, excluding that serialized blob "
             "family as the producer. The complete hash-pinned managed "
@@ -4442,7 +4528,21 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "MergedRenderCollider callback slots both access component 67, "
             "closing its entity ownership to a shared native render/merged-"
             "render-collider LOD-streaming path. The full scan contains "
-            "34,672 Render and 2,576,964 MergedRenderCollider records. All "
+            "34,672 Render and 2,576,964 MergedRenderCollider records. "
+            "StreamingSceneV2 root fields 6/7 now close the paired native "
+            "entity groups and archetype descriptions. Each 8-byte descriptor "
+            "contains an Int16 component id, Int16 element size, and UInt32 "
+            "auxiliary value; component 67 is serialized with size 24. The "
+            "hash-pinned native copier at 0x1801F95E0 copies each "
+            "entityCount*elementSize initial-data slice directly into native "
+            "ECS storage. Across all 83 map scopes, the 1,230,041 distinct "
+            "component-67 entity ids exactly equal the distinct type-0/type-9 "
+            "owner set. All 1,305,818 serialized occurrences initialize "
+            "lodCount in 1..6, state bytes 8/8/8/0/0, zero readiness, and one "
+            "of 102 cumulative renderer-range patterns. Duplicate map/entity "
+            "records are byte-identical. Thus the LOD count and range producer "
+            "is the original game-binary initial-data blob, not a later "
+            "ConvertFrom inference. All "
             "1,576 DynamicStreaming "
             "init/stream payloads contain only union tag 2 and no component "
             "entry. Its 457 fb_main files do contain 2,828 gameplay "
@@ -4450,13 +4550,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "and TreeRootComp=64 prove that this destructible-tree normal-model "
             "route is separate from both StreamingComponentType HGTree bit 41 "
             "and ECS component id 67. The standalone native component name "
-            "and the earlier lodCount/cumulative-range producer remain open. The "
+            "remains open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The scheduled cull-view +0x18 consumer, remaining initially zero "
-            "loader-record bytes, the component-67 ECS LOD-count/range "
-            "producer and standalone native component type name, "
+            "loader-record bytes, the component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -4517,6 +4616,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "mainPayloadFileCount": 51_012,
                 "mainPayloadDecompressedBytes": 3_088_714_060,
                 "hgtreeBit41ComponentCount": 0,
+                "component67DistinctEntityCountByMapScope": 1_230_041,
+                "component67OwnerSetExactPerMapScope": True,
+                "component67InitialDataOccurrenceCount": 1_305_818,
                 "dynamicUnionComponentCount": 0,
                 "dynamicGameplayTreeRootCompCount": 2_828,
             },
@@ -4640,6 +4742,10 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the StreamingSceneV2 managed/native Create route, icall 621, path builder, request callback, and interleaved-token LZ4 decoder",
                 "all 83 StreamingMapConfig roots and their one-to-one StreamingChunkInfo coverage",
                 "the full 51,012-file main Streaming payload census and absence of HGTree bit 41 and HLODGroup bit 11",
+                "StreamingSceneV2 native entity/archetype root fields 6/7 and their descriptor/initial-data layout",
+                "the hash-pinned generic native ECS archetype initial-data copy at 0x1801F95E0",
+                "the exact 83-map component-67/type-0-or-9 owner sets and byte-identical repeated initial records",
+                "all component-67 serialized lodCount values and 102 cumulative renderer-range patterns",
                 "the 1,576-file DynamicStreaming init/stream census with only tag-2 records and no component entries",
                 "the separate DynamicStreaming gameplay-tree route with 2,828 TreeRootComp rows and enum identities Tree=11/TreeRootComp=64",
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
@@ -4655,7 +4761,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic names of the initially zero HGTree runtime-state bytes",
-                "the component-bit-67 LOD-count/range producer and native component name/owner in nested/procedural data or another runtime source outside the excluded static and Streaming component-vector routes",
+                "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -4692,6 +4798,7 @@ def main() -> int:
         "type identity/id-80 registration lifecycle/runtime transform, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
+        "serialized LOD-count/range initial-data production and native copy, "
         "managed-converter, HGMeshRendererData, and top-level HGTree/HGTreeData exclusions, "
         "ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "
