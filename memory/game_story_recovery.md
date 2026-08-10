@@ -165,6 +165,18 @@ never promotes an edge.
   rows through LevelData plus the existing SubGame-owned row to 17 Mission
   Pipeline missions. The LevelData carrier proves persistent task-condition
   placement and shell context, not activation, quest ownership, or Story order.
+  A third corpus-wide join now reads all 849 typed `NpcProxyTrackingInfo` rows
+  across 588 proxies directly from the active original MissionRuntime overlay,
+  then requires the same proxy's authored `NpcProxyEx` mission and a
+  `WorldEntityRegistry.segmentIdGlobal` identical to the exact LevelScript id.
+  It finds seven task-script contexts: six unique and one shared. Seven task
+  consumer rows use the unique script-local shell tier; six corroborate the
+  existing unique LevelData result, while `map01_lv002/200080000/f69e4698`
+  refines the shared `sm1l2m2`/`sm1l2m3` whole shell to `sm1l2m3`. The shared
+  `map02_lv002/22800280001` context remains ambiguous between `f1m20` and
+  `sm2l6m1`. Mission Pipeline now attaches 23 authored consumer rows to 18
+  missions. This segment join remains mission-shell context, not NPC or task
+  activation, quest ownership, or Story order.
   The other 28 endpoint-to-task
   dependencies lack an exact MissionRuntime finish match; this is no longer an
   endpoint gap, but server selection and mission/task ownership remain
@@ -266,8 +278,11 @@ Reject as proof:
 1. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families.
-2. Resolve the 11 shared and nine unresolved LevelData mission shells with an
-   independent typed server-selection or mission-owner carrier. The exact
+2. Resolve the remaining ambiguous LevelData mission shells with an independent
+   typed server-selection or mission-owner carrier. The LevelData census still
+   retains 11 shared and nine unresolved identities, but the NpcProxy segment
+   tier now refines one shared task script to `sm1l2m3`; ten shared identities
+   therefore remain unresolved at the task-owner tier. The exact
    member-22 task-progress boundary is complete for all 40 task identities, but
    28 authored endpoint-to-task dependencies still lack an exact
    MissionRuntime finish match. Complete task maps, client lifecycle, authored

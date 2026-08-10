@@ -40,6 +40,7 @@ from scripts.story_builder.levelscript_binary import (
 )
 from scripts.story_builder.level_bindings import (
     build_leveldata_authoritative_scope_script_host_index,
+    build_npc_proxy_segment_script_host_index,
     parse_leveldata_levelscript_brief_dictionary,
 )
 
@@ -1097,6 +1098,165 @@ def _collect_mission_levelscript_contexts(
         )
     )
     return contexts
+
+
+def _collect_mission_npc_proxy_tracking_consumers(
+    roots: Iterable[Path] = DEFAULT_MISSION_RUNTIME_ROOTS,
+) -> dict[str, list[dict[str, Any]]]:
+    """Collect typed tracking rows from the active original MissionRuntime set."""
+    validator = "dialog_finish_npc_proxy_tracking_census"
+    active: dict[str, Path] = {}
+    for root in roots:
+        if not root.is_dir():
+            raise AuditValidationError(
+                f"validator={validator} gate=missionRuntimeRoot "
+                f"expected=directory actual=missing source={root}"
+            )
+        for path in sorted(root.rglob("*.json")):
+            active[path.relative_to(root).as_posix()] = path
+
+    by_proxy: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for logical_path, path in sorted(active.items()):
+        try:
+            payload = read_json(path)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise AuditValidationError(
+                f"validator={validator} gate=typedMissionRuntimeJson "
+                f"identity={logical_path} expected=valid_json "
+                f"actual={type(exc).__name__} source={path}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise AuditValidationError(
+                f"validator={validator} gate=missionRuntimeRootObject "
+                f"identity={logical_path} expected=object "
+                f"actual={type(payload).__name__} source={path}"
+            )
+        mission_id = str(payload.get("missionId") or "").strip()
+        if not mission_id:
+            raise AuditValidationError(
+                f"validator={validator} gate=missionIdentity "
+                f"identity={logical_path} expected=nonempty_missionId "
+                f"actual={payload.get('missionId')!r} source={path}"
+            )
+
+        def visit(value: Any, json_path: str) -> None:
+            if isinstance(value, dict):
+                if _short_type(value.get("$type")) == "NpcProxyTrackingInfo":
+                    proxy_id = str(value.get("npcProxyId") or "").strip()
+                    scene = str(value.get("sceneId") or "").strip()
+                    if proxy_id and scene:
+                        by_proxy[proxy_id].append({
+                            "type": "NpcProxyTrackingInfo",
+                            "proxyId": proxy_id,
+                            "scene": scene,
+                            "missionId": mission_id,
+                            "jsonPath": json_path,
+                            "sourceFile": source_label(path),
+                        })
+                for key, child in value.items():
+                    visit(child, f"{json_path}.{key}")
+            elif isinstance(value, list):
+                for index, child in enumerate(value):
+                    visit(child, f"{json_path}[{index}]")
+
+        visit(payload, "$")
+    for rows in by_proxy.values():
+        rows.sort(
+            key=lambda row: (
+                row["missionId"],
+                row["scene"],
+                row["sourceFile"],
+                row["jsonPath"],
+            )
+        )
+    return dict(sorted(by_proxy.items()))
+
+
+def _npc_proxy_segment_source_rows(
+    context: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for host in (context or {}).get("hosts") or []:
+        registry = host.get("registryRow") or {}
+        if registry.get("sourceFile"):
+            rows.append({
+                "kind": "world_entity_registry",
+                "sourceFile": registry["sourceFile"],
+                "relationship": "exact_npc_proxy_segment_global_script_id",
+            })
+        for proxy_ex in host.get("npcProxyExRows") or []:
+            if proxy_ex.get("sourceFile"):
+                rows.append({
+                    "kind": "npc_proxy_ex",
+                    "sourceFile": proxy_ex["sourceFile"],
+                    "relationship": "exact_npc_proxy_mission_shell",
+                })
+        for consumer in host.get("trackingConsumers") or []:
+            if consumer.get("sourceFile"):
+                rows.append({
+                    "kind": "mission_runtime",
+                    "sourceFile": consumer["sourceFile"],
+                    "relationship": "typed_npc_proxy_tracking_consumer",
+                })
+    return _dedupe_source_rows(rows)
+
+
+def _apply_npc_proxy_segment_mission_shell(
+    row: dict[str, Any],
+    context: dict[str, Any] | None,
+) -> None:
+    """Apply one unique script-local segment owner, reconciling other tiers."""
+    if not context:
+        return
+    row["npcProxySegmentMissionShellContext"] = context
+    mission_ids = [
+        str(value)
+        for value in context.get("hostMissionIds") or []
+        if value
+    ]
+    if context.get("status") != "unique" or len(mission_ids) != 1:
+        return
+    owner = {
+        "ownerKind": "npc_proxy_segment_script_mission_shell",
+        "missionId": mission_ids[0],
+        "levelId": row["levelId"],
+        "scriptId": row["scriptId"],
+        "taskId": row.get("taskId"),
+        "conditionId": row["conditionId"],
+        "proxyIds": sorted({
+            str(host.get("proxyId") or "")
+            for host in context.get("hosts") or []
+            if host.get("proxyId")
+        }),
+        "sourceFiles": sorted({
+            source["sourceFile"]
+            for source in _npc_proxy_segment_source_rows(context)
+        }),
+        "classification": "exact_npc_proxy_segment_unique_mission_shell",
+        "evidenceBoundary": (
+            "A typed MissionRuntime NpcProxyTrackingInfo proxy and scene agree "
+            "with the proxy's NpcProxyEx mission and the WorldEntityRegistry "
+            "segmentIdGlobal equal to this exact LevelScript id. This proves "
+            "script-local authored mission-shell context, not NPC activation, "
+            "quest/task ownership, dialog activation, or Story order."
+        ),
+    }
+    existing_owner = row.get("missionShellOwner")
+    if (
+        existing_owner
+        and existing_owner.get("missionId") != owner["missionId"]
+    ):
+        raise AuditValidationError(
+            "validator=dialog_finish_task_mission_shell_owner "
+            "gate=independentOwnerAgreement "
+            f"identity={row['levelId']}/{row['scriptId']}/"
+            f"{row.get('taskId') or ''}/{row['conditionId']} "
+            f"expected={existing_owner.get('missionId')!r} "
+            f"actual={owner['missionId']!r} "
+            f"source={owner['sourceFiles']!r}"
+        )
+    if not existing_owner:
+        row["missionShellOwner"] = owner
 
 
 def _validate_levelscript_task_contracts(
@@ -2803,6 +2963,48 @@ def build_report(
         exact_levelscript_consumers,
         script_scope_references=levelscript_scope_references,
     )
+    npc_proxy_tracking_consumers = (
+        _collect_mission_npc_proxy_tracking_consumers()
+    )
+    npc_proxy_segment_contexts = build_npc_proxy_segment_script_host_index(
+        {
+            (row["levelId"], row["scriptId"])
+            for row in exact_levelscript_consumers
+        },
+        npc_proxy_tracking_consumers,
+    )
+    npc_proxy_segment_census = {
+        "status": "validated",
+        "targetScriptCount": len({
+            (row["levelId"], row["scriptId"])
+            for row in exact_levelscript_consumers
+        }),
+        "typedTrackingConsumerCount": sum(
+            len(rows) for rows in npc_proxy_tracking_consumers.values()
+        ),
+        "typedTrackingProxyCount": len(npc_proxy_tracking_consumers),
+        "matchedScriptCount": len(npc_proxy_segment_contexts),
+        "uniqueMissionShellScriptCount": sum(
+            context.get("status") == "unique"
+            for context in npc_proxy_segment_contexts.values()
+        ),
+        "sharedMissionShellScriptCount": sum(
+            context.get("status") == "shared"
+            for context in npc_proxy_segment_contexts.values()
+        ),
+        "contexts": [
+            context
+            for _identity, context in sorted(npc_proxy_segment_contexts.items())
+        ],
+        "evidenceBoundary": (
+            "The generic join requires a typed MissionRuntime "
+            "NpcProxyTrackingInfo proxy in the exact scene, an authored "
+            "NpcProxyEx mission for that proxy, and a WorldEntityRegistry "
+            "segmentIdGlobal identical to the LevelScript global id. A unique "
+            "result is script-local mission-shell context only; shared results "
+            "remain ambiguous, and neither class proves activation or order."
+        ),
+    }
     task_identity_carriers = defaultdict(list)
     for carrier in task_identity_carrier_census.get("carriers") or []:
         task_identity_carriers[
@@ -2850,6 +3052,12 @@ def build_report(
                 **subgame_owner,
                 "ownerKind": "subgame_exact_script_task_carrier",
             }
+        _apply_npc_proxy_segment_mission_shell(
+            row,
+            npc_proxy_segment_contexts.get(
+                (row["levelId"], row["scriptId"])
+            ),
+        )
         leveldata_carriers = row.get("levelDataTaskProgressCarriers") or []
         leveldata_mission_ids = sorted({
             mission_id
@@ -2950,6 +3158,9 @@ def build_report(
                 "sourceFile": carrier["sourceFile"],
                 "relationship": carrier["classification"],
             })
+        source_rows.extend(_npc_proxy_segment_source_rows(
+            task_consumer.get("npcProxySegmentMissionShellContext")
+        ))
         source_rows.extend(binary_files)
         owner = task_consumer.get("missionShellOwner")
         if owner:
@@ -2973,6 +3184,10 @@ def build_report(
                 if owner
                 and owner.get("ownerKind")
                 == "subgame_exact_script_task_carrier"
+                else "exact_npc_proxy_segment_script_mission_shell"
+                if owner
+                and owner.get("ownerKind")
+                == "npc_proxy_segment_script_mission_shell"
                 else "exact_leveldata_task_progress_mission_shell"
                 if owner
                 else "unresolved"
@@ -3213,6 +3428,9 @@ def build_report(
                     "sourceFile": carrier["sourceFile"],
                     "relationship": carrier["classification"],
                 })
+            source_rows.extend(_npc_proxy_segment_source_rows(
+                task_consumer.get("npcProxySegmentMissionShellContext")
+            ))
             row = {
                 "missionId": mission_dependency["missionId"],
                 "questId": mission_dependency["questId"],
@@ -3238,6 +3456,9 @@ def build_report(
                 "levelDataTaskProgressCarriers": task_consumer.get(
                     "levelDataTaskProgressCarriers"
                 ) or [],
+                "npcProxySegmentMissionShellContext": task_consumer.get(
+                    "npcProxySegmentMissionShellContext"
+                ),
                 "missionShellOwner": owner,
                 "missionShellRelationship": owner_relationship,
                 "classification": "shared_exact_dialog_finish_consumer_dependency",
@@ -3254,9 +3475,11 @@ def build_report(
                     "the LevelScript, which option a player selected, or any "
                     "cross-file chronology. Mission-shell ownership is shown only "
                     "when either one typed SubGame row co-carries the exact script "
-                    "and task ids, or one validated LevelData task-progress entry "
-                    "belongs to a uniquely classified mission shell. The latter "
-                    "remains shell context, not quest or activation ownership."
+                    "and task ids, one typed NpcProxy segment join identifies the "
+                    "exact script in one mission shell, or one validated LevelData "
+                    "task-progress entry belongs to a uniquely classified mission "
+                    "shell. These remain shell contexts, not quest or activation "
+                    "ownership."
                 ),
             }
             shared_task_dependencies.append(row)
@@ -3323,7 +3546,7 @@ def build_report(
         not in matched_levelscript_signatures
     ]
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v9",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v10",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
@@ -3347,7 +3570,11 @@ def build_report(
             "LevelScript definitions. A second generic census requires paired "
             "lt:p/lt:mp properties inside the exact script entry of a completely "
             "framed LevelData member-22 dictionary, then admits a mission shell "
-            "only from that shell's complete independent reference set. These "
+            "only from that shell's complete independent reference set. A third "
+            "generic join requires a typed MissionRuntime NpcProxyTrackingInfo "
+            "proxy and scene, an authored NpcProxyEx mission, and an identical "
+            "WorldEntityRegistry segmentIdGlobal/LevelScript id; only a unique "
+            "script-local mission set becomes shell context. These "
             "tiers do not infer server selection policy, task activation in a "
             "particular session, quest ownership, branch choice, or cross-file order. "
             "OCR and manual overrides are not read."
@@ -3554,6 +3781,33 @@ def build_report(
                 == "leveldata_task_progress_mission_shell"
                 for row in exact_levelscript_consumers
             ),
+            "levelScriptTaskNpcProxyMissionShellOwners": sum(
+                (row.get("missionShellOwner") or {}).get("ownerKind")
+                == "npc_proxy_segment_script_mission_shell"
+                for row in exact_levelscript_consumers
+            ),
+            "levelScriptTaskNpcProxyCorroboratedLevelDataOwners": sum(
+                (row.get("missionShellOwner") or {}).get("ownerKind")
+                == "npc_proxy_segment_script_mission_shell"
+                and len({
+                    mission_id
+                    for carrier in row.get("levelDataTaskProgressCarriers") or []
+                    for mission_id in carrier.get("missionIds") or []
+                    if mission_id
+                }) == 1
+                for row in exact_levelscript_consumers
+            ),
+            "levelScriptTaskNpcProxyRefinedAmbiguousLevelDataOwners": sum(
+                (row.get("missionShellOwner") or {}).get("ownerKind")
+                == "npc_proxy_segment_script_mission_shell"
+                and len({
+                    mission_id
+                    for carrier in row.get("levelDataTaskProgressCarriers") or []
+                    for mission_id in carrier.get("missionIds") or []
+                    if mission_id
+                }) != 1
+                for row in exact_levelscript_consumers
+            ),
             "levelScriptTaskSameMissionShellDependencies": sum(
                 row["missionShellRelationship"] == "same_mission_shell"
                 for row in shared_task_dependencies
@@ -3638,6 +3892,21 @@ def build_report(
                     "rejectedShellClassificationCount"
                 ]
             ),
+            "levelScriptTaskNpcProxyTrackingConsumers": (
+                npc_proxy_segment_census["typedTrackingConsumerCount"]
+            ),
+            "levelScriptTaskNpcProxyTrackingProxies": (
+                npc_proxy_segment_census["typedTrackingProxyCount"]
+            ),
+            "levelScriptTaskNpcProxyMatchedScripts": (
+                npc_proxy_segment_census["matchedScriptCount"]
+            ),
+            "levelScriptTaskNpcProxyUniqueMissionShellScripts": (
+                npc_proxy_segment_census["uniqueMissionShellScriptCount"]
+            ),
+            "levelScriptTaskNpcProxySharedMissionShellScripts": (
+                npc_proxy_segment_census["sharedMissionShellScriptCount"]
+            ),
         },
         "producerFamilyCounts": dict(
             sorted(Counter(family for row in producers for family in row["producerFamilies"]).items())
@@ -3657,6 +3926,7 @@ def build_report(
         "subGameTaskOwnerCensus": subgame_owner_census,
         "exactTaskIdentityCarrierCensus": task_identity_carrier_census,
         "levelDataTaskProgressCarrierCensus": leveldata_task_progress_census,
+        "npcProxySegmentMissionShellCensus": npc_proxy_segment_census,
         "dependencies": dependencies,
         "endpointDependencies": endpoint_dependencies,
         "levelScriptTaskAuthoredFinishDependencies": task_finish_dependencies,
@@ -3998,10 +4268,11 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Generic typed external carrier census: {counts.get('levelScriptTaskExternalIdentityCarriers', 0)} carriers ({counts.get('levelScriptTaskExternalMissionCarriers', 0)} with mission identity); {counts.get('levelScriptTaskExternalUncarriedIdentities', 0)} task identities remain uncarried",
         f"- Carrier search scope: {counts.get('levelScriptTaskCarrierActiveLogicalFiles', 0)} active structured files; {counts.get('levelScriptTaskCarrierTypedJsonFiles', 0)} typed JSON / {counts.get('levelScriptTaskCarrierNonJsonFiles', 0)} serialized non-JSON; {counts.get('levelScriptTaskCarrierTypedJsonCandidates', 0)} exact-task JSON candidates",
         f"- Serialized LevelData task-progress carriers: {counts.get('levelScriptTaskLevelDataProgressCarriers', 0)} exact rows / {counts.get('levelScriptTaskLevelDataCarriedIdentities', 0)} task identities from {counts.get('levelScriptTaskLevelDataRawCandidateFiles', 0)} raw-candidate files; {counts.get('levelScriptTaskLevelDataUniqueMissionShellIdentities', 0)} unique mission shells / {counts.get('levelScriptTaskLevelDataSharedMissionShellIdentities', 0)} shared / {counts.get('levelScriptTaskLevelDataUnresolvedMissionShellIdentities', 0)} unresolved; {counts.get('levelScriptTaskLevelDataUncarriedConditions', 0)} uncarried conditions / {counts.get('levelScriptTaskLevelDataRejectedShellClassifications', 0)} rejected stale-shell classifications",
+        f"- Script-local NpcProxy segment contexts: {counts.get('levelScriptTaskNpcProxyMatchedScripts', 0)} matched scripts from {counts.get('levelScriptTaskNpcProxyTrackingConsumers', 0)} typed tracking rows / {counts.get('levelScriptTaskNpcProxyTrackingProxies', 0)} proxies; {counts.get('levelScriptTaskNpcProxyUniqueMissionShellScripts', 0)} unique / {counts.get('levelScriptTaskNpcProxySharedMissionShellScripts', 0)} shared mission shells",
         f"- Authored finish endpoint -> exact LevelScript task dependencies: {counts.get('levelScriptTaskAuthoredFinishDependencies', 0)}; unresolved authored endpoints: {counts.get('levelScriptTaskUnresolvedAuthoredFinishEndpoints', 0)}",
         f"- Shared MissionRuntime/LevelScript finish dependencies: {counts.get('levelScriptTaskSharedConsumerDependencies', 0)} placements across {counts.get('levelScriptTaskSharedConsumerMissions', 0)} missions",
         f"- Shared dependencies from complete maps / bounded mixed-map fragments: {counts.get('levelScriptTaskSharedConsumerCompleteMaps', 0)} / {counts.get('levelScriptTaskSharedConsumerFragments', 0)}",
-        f"- Exact mission-shell task owners: {counts.get('levelScriptTaskMissionShellOwners', 0)} consumers ({counts.get('levelScriptTaskSubGameMissionShellOwners', 0)} SubGame / {counts.get('levelScriptTaskLevelDataMissionShellOwners', 0)} LevelData); {counts.get('levelScriptTaskSameMissionShellDependencies', 0)} same-mission dependency placements",
+        f"- Exact mission-shell task owners: {counts.get('levelScriptTaskMissionShellOwners', 0)} consumers ({counts.get('levelScriptTaskSubGameMissionShellOwners', 0)} SubGame / {counts.get('levelScriptTaskNpcProxyMissionShellOwners', 0)} NpcProxy segment / {counts.get('levelScriptTaskLevelDataMissionShellOwners', 0)} LevelData); NpcProxy corroborates {counts.get('levelScriptTaskNpcProxyCorroboratedLevelDataOwners', 0)} unique LevelData owners and refines {counts.get('levelScriptTaskNpcProxyRefinedAmbiguousLevelDataOwners', 0)} ambiguous LevelData owners; {counts.get('levelScriptTaskSameMissionShellDependencies', 0)} same-mission dependency placements",
         f"- Mission any-finish contexts: {counts.get('levelScriptTaskAnyFinishMissionContexts', 0)} placements across {counts.get('levelScriptTaskAnyFinishMissionContextMissions', 0)} missions",
         f"- Exact mission -> active LevelScript contexts: {counts.get('levelScriptTaskMissionScriptContexts', 0)} placements for {counts.get('levelScriptTaskMissionScriptContextConsumers', 0)} task consumers across {counts.get('levelScriptTaskMissionScriptContextMissions', 0)} missions",
         f"- Authored endpoint -> task dependencies without an exact MissionRuntime finish match: {counts.get('levelScriptTaskWithoutExactMissionFinishMatch', 0)}",
@@ -4068,6 +4339,9 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{owner.get('missionId')}` / `LevelData task-progress shell`"
                 if owner.get("ownerKind")
                 == "leveldata_task_progress_mission_shell"
+                else f"`{owner.get('missionId')}` / `NpcProxy segment shell`"
+                if owner.get("ownerKind")
+                == "npc_proxy_segment_script_mission_shell"
                 else
                 f"`{owner.get('missionId')}` / `{owner.get('subGameId')}` / "
                 f"`{owner.get('taskLane')}`"
