@@ -36,8 +36,13 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                     "rootScriptIds": ["9001"],
                     "missionAreaReferences": [{
                         "missionId": "mission_fixture",
+                        "levelId": "map_fixture",
+                        "levelNum": "1",
                         "missionAreaId": "area_fixture",
                         "subDataParentId": "9001",
+                        "sourceFile": "source/mission_fixture.json",
+                        "missionAreaSourceFile": "source/areas.json",
+                        "levelBasicInfoSourceFile": "source/levels.json",
                     }],
                 }],
             }

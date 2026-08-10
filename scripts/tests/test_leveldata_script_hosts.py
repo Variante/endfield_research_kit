@@ -1484,20 +1484,61 @@ class LevelDataScriptHostTests(unittest.TestCase):
             for path in (mra_dir, gameplay_dir, leveldata_dir, levelscript_dir):
                 path.mkdir(parents=True)
 
-            areas = [
-                {"missionAreaId": "unique_area", "subDataParentId": 1000},
-                {"missionAreaId": "c13_area_a", "subDataParentId": 13100010000},
-                {"missionAreaId": "c13_area_b", "subDataParentId": 13100010000},
-                {"missionAreaId": "multi_a", "subDataParentId": 3000},
-                {"missionAreaId": "multi_b", "subDataParentId": 4000},
-                {"missionAreaId": "untyped_area", "subDataParentId": 5000},
-            ]
+            level_id = "map_test"
+            other_level_id = "map_other"
+            areas = {
+                "1": {
+                    "unique_area": {
+                        "missionAreaId": "unique_area",
+                        "subDataParentId": 1000,
+                    },
+                    "c13_area_a": {
+                        "missionAreaId": "c13_area_a",
+                        "subDataParentId": 13100010000,
+                    },
+                    "c13_area_b": {
+                        "missionAreaId": "c13_area_b",
+                        "subDataParentId": 13100010000,
+                    },
+                    "multi_a": {
+                        "missionAreaId": "multi_a",
+                        "subDataParentId": 3000,
+                    },
+                    "multi_b": {
+                        "missionAreaId": "multi_b",
+                        "subDataParentId": 4000,
+                    },
+                    "untyped_area": {
+                        "missionAreaId": "untyped_area",
+                        "subDataParentId": 5000,
+                    },
+                },
+                "2": {
+                    # The duplicated id must resolve only inside map_other.
+                    "c13_area_a": {
+                        "missionAreaId": "c13_area_a",
+                        "subDataParentId": 9000,
+                    },
+                },
+            }
             (gameplay_dir / "MissionAreaTable.json").write_text(
                 json.dumps({"m_areas": areas}),
                 encoding="utf-8",
             )
+            (gameplay_dir / "LevelBasicInfoTable.json").write_text(
+                json.dumps({
+                    level_id: {"id": level_id, "idNum": 1},
+                    other_level_id: {"id": other_level_id, "idNum": 2},
+                }),
+                encoding="utf-8",
+            )
 
-            def write_mra(mission_id: str, area_id: str, type_name: str) -> None:
+            def write_mra(
+                mission_id: str,
+                area_id: str,
+                type_name: str,
+                scene_id: str = level_id,
+            ) -> None:
                 payload = {
                     "missionId": mission_id,
                     "questDic": {
@@ -1506,6 +1547,7 @@ class LevelDataScriptHostTests(unittest.TestCase):
                             "trackingInfoList": [{
                                 "$type": type_name,
                                 "missionAreaId": area_id,
+                                "sceneId": scene_id,
                             }],
                         },
                     },
@@ -1521,6 +1563,12 @@ class LevelDataScriptHostTests(unittest.TestCase):
             write_mra("unique_mission", "unique_area", tracking_type)
             write_mra("c13m2", "c13_area_a", tracking_type)
             write_mra("c13m2d5", "c13_area_b", tracking_type)
+            write_mra(
+                "wrong_level_mission",
+                "c13_area_a",
+                tracking_type,
+                other_level_id,
+            )
             write_mra("multi_mission_a", "multi_a", tracking_type)
             write_mra("multi_mission_b", "multi_b", tracking_type)
             write_mra(
@@ -1529,7 +1577,6 @@ class LevelDataScriptHostTests(unittest.TestCase):
                 "Beyond.Gameplay.MissionAcceptMode+EnterAreaInfo, Gameplay.Beyond",
             )
 
-            level_id = "map_test"
             (leveldata_dir / level_id).mkdir()
             (levelscript_dir / level_id).mkdir()
             dictionaries = {

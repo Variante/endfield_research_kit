@@ -67,7 +67,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v26"
+SCHEMA = "nativeReceiverActivationFrontier.v27"
 
 # This is the binary-validated namespace rule shared by every LevelScript
 # module property.  LevelData writes the module's save-state fields as
@@ -723,6 +723,79 @@ def validate_mission_area_leveldata_shell_contexts(
                     },
                     source_file,
                     {source_file: source_hash} if source_hash else {},
+                )
+            reference_roots = {
+                safe_text(reference.get("subDataParentId"))
+                for reference in references
+                if safe_text(reference.get("subDataParentId"))
+            }
+            if reference_roots != set(roots):
+                fail(
+                    "levelDataRootAgreement",
+                    host_identity,
+                    sorted(reference_roots),
+                    roots,
+                    source_file,
+                    {source_file: source_hash} if source_hash else {},
+                )
+            reference_levels = {
+                safe_text(reference.get("levelId"))
+                for reference in references
+                if safe_text(reference.get("levelId"))
+            }
+            reference_level_nums = {
+                safe_text(reference.get("levelNum"))
+                for reference in references
+                if safe_text(reference.get("levelNum"))
+            }
+            if reference_levels != {level_id} or not reference_level_nums:
+                fail(
+                    "levelScopedMissionAreaSelection",
+                    host_identity,
+                    {
+                        "levelIds": [level_id],
+                        "levelNumCount": "at least one",
+                    },
+                    {
+                        "levelIds": sorted(reference_levels),
+                        "levelNums": sorted(reference_level_nums),
+                    },
+                    source_file,
+                    {source_file: source_hash} if source_hash else {},
+                )
+            reference_source_files = sorted({
+                safe_text(reference.get(field_name))
+                for reference in references
+                for field_name in (
+                    "sourceFile",
+                    "missionAreaSourceFile",
+                    "levelBasicInfoSourceFile",
+                )
+                if safe_text(reference.get(field_name))
+            })
+            reference_source_hashes = {
+                path: _source_file_sha256(path)
+                for path in reference_source_files
+            }
+            missing_reference_hashes = sorted(
+                path
+                for path, digest in reference_source_hashes.items()
+                if not digest
+            )
+            if (
+                len(reference_source_files) < 3
+                or missing_reference_hashes
+            ):
+                fail(
+                    "typedSourceHashes",
+                    host_identity,
+                    "MissionRuntime, MissionAreaTable, and LevelBasicInfoTable hashes",
+                    {
+                        "sourceFiles": reference_source_files,
+                        "missingHashes": missing_reference_hashes,
+                    },
+                    source_file,
+                    reference_source_hashes,
                 )
             reference_missions = {
                 safe_text(reference.get("missionId"))
@@ -3074,6 +3147,7 @@ def build_report(
             leveldata_root=leveldata_root,
             levelscript_root=levelscript_root,
             mission_area_table_path=DEFAULT_MISSION_AREA_TABLE,
+            level_basic_info_table_path=DEFAULT_LEVEL_BASIC_INFO_TABLE,
             mission_runtime_root=mission_runtime_root,
         )
     )
@@ -3261,6 +3335,11 @@ def build_report(
             mission_area_leveldata_shell,
             {
                 "sourceFile": rel_path(DEFAULT_MISSION_AREA_TABLE),
+            }
+            if mission_area_leveldata_shell
+            else {},
+            {
+                "sourceFile": rel_path(DEFAULT_LEVEL_BASIC_INFO_TABLE),
             }
             if mission_area_leveldata_shell
             else {},
@@ -3505,6 +3584,7 @@ def build_report(
             "missionRuntimeRoot": rel_path(mission_runtime_root),
             "missionRuntimeIdCount": len(authored_mission_ids),
             "missionAreaTable": rel_path(DEFAULT_MISSION_AREA_TABLE),
+            "levelBasicInfoTable": rel_path(DEFAULT_LEVEL_BASIC_INFO_TABLE),
             "taskRuntimeAuthority": {
                 "schema": safe_text(task_authority.get("schema")),
                 "source": safe_text(task_authority.get("source")),
@@ -3601,10 +3681,12 @@ def build_report(
             ),
             "missionAreaShellBoundary": (
                 "A typed MissionRuntime MissionAreaTrackingInfo id joined through "
-                "MissionAreaTable.subDataParentId to a root in the same validated "
-                "LevelData member-22 dictionary proves only an authored mission "
-                "shell. Shared mission unions stay shared; neither form proves "
-                "activation, Story ownership, branch selection, or order."
+                "its authored sceneId and LevelBasicInfoTable.idNum to the exact "
+                "level-specific MissionAreaTable.subDataParentId, then to a root "
+                "in the same validated LevelData member-22 dictionary, proves only "
+                "an authored mission shell. Shared mission unions stay shared; "
+                "neither form proves activation, Story ownership, branch selection, "
+                "or order."
             ),
             "encounterBoundary": (
                 "The exact LevelScriptModule LsmPtr-prefixed "
@@ -4793,6 +4875,16 @@ def publish_to_pipeline_index(
                             if isinstance(reference, dict)
                             and safe_text(reference.get("missionAreaId"))
                         }),
+                        "levelNums": sorted({
+                            safe_text(reference.get("levelNum"))
+                            for host in shell_hosts
+                            for reference in host.get(
+                                "missionAreaReferences"
+                            )
+                            or []
+                            if isinstance(reference, dict)
+                            and safe_text(reference.get("levelNum"))
+                        }),
                         "subDataParentIds": sorted({
                             safe_text(root_id)
                             for host in shell_hosts
@@ -4820,10 +4912,12 @@ def publish_to_pipeline_index(
                         "orderEvidence": False,
                         "relatedOriginalFiles": shell_related,
                         "evidenceBoundary": (
-                            "A typed MissionRuntime MissionAreaTrackingInfo id "
-                            "resolves through MissionAreaTable.subDataParentId "
-                            "to a root in the same validated LevelData dictionary "
-                            "as this receiver. The complete mission union is "
+                            "A typed MissionRuntime MissionAreaTrackingInfo "
+                            "(sceneId, missionAreaId) resolves through "
+                            "LevelBasicInfoTable.idNum and the exact level-specific "
+                            "MissionAreaTable.subDataParentId to a root in the same "
+                            "validated LevelData dictionary as this receiver. The "
+                            "complete mission union is "
                             f"{shell_status}; this is authored shell context only, "
                             "not activation, Story ownership, branch selection, "
                             "completion, or order."

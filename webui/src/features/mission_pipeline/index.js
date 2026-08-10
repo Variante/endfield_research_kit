@@ -527,9 +527,10 @@
       nativeReceiverStoryMissionKeys: "mission Story keys",
       nativeReceiverStoryExternalKeys: "external Story keys",
       missionAreaLevelDataReceiverContexts: "Typed MissionArea LevelData receiver shells",
-      missionAreaLevelDataReceiverContextsHint: "A typed MissionRuntime area id reaches a MissionAreaTable parent id in the same validated LevelData dictionary as this receiver. Unique and shared mission unions are shown exactly; these rows are shell context, not activation, Story ownership, branch selection, or order evidence.",
+      missionAreaLevelDataReceiverContextsHint: "A typed MissionRuntime (sceneId, area id) selects LevelBasicInfoTable.idNum, then the exact level-specific MissionAreaTable parent in the same validated LevelData dictionary as this receiver. Unique and shared mission unions are shown exactly; these rows are shell context, not activation, Story ownership, branch selection, or order evidence.",
       missionAreaLevelDataReceiverScope: "complete shell union",
       missionAreaLevelDataReceiverAreas: "MissionArea ids",
+      missionAreaLevelDataReceiverLevelNums: "LevelBasic idNum",
       missionAreaLevelDataReceiverRoots: "sub-data parent roots",
       missionNamedLevelDataReceiverContexts: "Mission-named LevelData receiver contexts",
       missionNamedLevelDataReceiverContextsHint: "The exact LevelData filename names this mission and its validated typed dictionary contains the receiver script. This attaches original files as authored container context only; it does not prove activation, ownership, playback, branch selection, or Story order.",
@@ -2033,9 +2034,10 @@
       nativeReceiverStoryMissionKeys: "\u4efb\u52a1 Story \u952e",
       nativeReceiverStoryExternalKeys: "\u5916\u90e8 Story \u952e",
       missionAreaLevelDataReceiverContexts: "\u7c7b\u578b\u5316 MissionArea LevelData \u63a5\u6536\u5668\u4efb\u52a1\u58f3",
-      missionAreaLevelDataReceiverContextsHint: "\u7c7b\u578b\u5316 MissionRuntime \u533a\u57df id \u901a\u8fc7 MissionAreaTable \u7236 id \u5230\u8fbe\u4e0e\u8be5\u63a5\u6536\u5668\u540c\u4e00\u5df2\u9a8c\u8bc1 LevelData \u5b57\u5178\u3002\u552f\u4e00\u548c\u5171\u4eab\u4efb\u52a1\u96c6\u90fd\u6309\u539f\u6837\u663e\u793a\uff1b\u8fd9\u53ea\u662f\u4efb\u52a1\u58f3\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u6fc0\u6d3b\u3001Story \u5f52\u5c5e\u3001\u5206\u652f\u9009\u62e9\u6216\u987a\u5e8f\u8bc1\u636e\u3002",
+      missionAreaLevelDataReceiverContextsHint: "\u7c7b\u578b\u5316 MissionRuntime (sceneId, \u533a\u57df id) \u5148\u9009\u4e2d LevelBasicInfoTable.idNum\uff0c\u518d\u5230\u8fbe\u4e0e\u8be5\u63a5\u6536\u5668\u540c\u4e00\u5df2\u9a8c\u8bc1 LevelData \u5b57\u5178\u7684\u7cbe\u786e\u5206\u5c42 MissionAreaTable \u7236 id\u3002\u552f\u4e00\u548c\u5171\u4eab\u4efb\u52a1\u96c6\u90fd\u6309\u539f\u6837\u663e\u793a\uff1b\u8fd9\u53ea\u662f\u4efb\u52a1\u58f3\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u6fc0\u6d3b\u3001Story \u5f52\u5c5e\u3001\u5206\u652f\u9009\u62e9\u6216\u987a\u5e8f\u8bc1\u636e\u3002",
       missionAreaLevelDataReceiverScope: "\u5b8c\u6574\u4efb\u52a1\u58f3\u96c6",
       missionAreaLevelDataReceiverAreas: "MissionArea id",
+      missionAreaLevelDataReceiverLevelNums: "LevelBasic idNum",
       missionAreaLevelDataReceiverRoots: "\u5b50\u6570\u636e\u7236\u6839",
       missionNamedLevelDataReceiverContexts: "\u4efb\u52a1\u547d\u540d LevelData \u63a5\u6536\u5668\u4e0a\u4e0b\u6587",
       missionNamedLevelDataReceiverContextsHint: "\u539f\u59cb LevelData \u6587\u4ef6\u540d\u5305\u542b\u8be5\u4efb\u52a1\uff0c\u5176\u7c7b\u578b\u5316\u5b57\u5178\u5305\u542b\u8be5\u63a5\u6536\u5668脚本\u3002\u8fd9\u53ea\u9644\u52a0\u539f\u59cb\u6587\u4ef6\u5bb9\u5668\u4e0a\u4e0b\u6587\uff0c\u4e0d\u8bc1\u660e\u6fc0\u6d3b\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u5206\u652f\u9009\u62e9\u6216\u5267\u60c5\u987a\u5e8f\u3002",
@@ -4526,9 +4528,10 @@
       const stories = (row.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
       const missions = (row.hostMissionIds || []).map((missionId) => `<code>${esc(missionId)}</code>`).join(" ");
       const areas = (row.missionAreaIds || []).map((areaId) => `<code>${esc(areaId)}</code>`).join(" ");
+      const levelNums = (row.levelNums || []).map((levelNum) => `<code>${esc(levelNum)}</code>`).join(" ");
       const roots = (row.subDataParentIds || []).map((rootId) => `<code>${esc(rootId)}</code>`).join(" ");
       const files = relatedOriginalFilesHtml(row);
-      return `<article class="mp-order-branch is-boundary mp-leveldata-receiver-context"><header><code>${esc(row.missionId || "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")} / ${esc(row.scriptId || "?")}</code><i>&harr;</i>${stories}</header><p><strong>${esc(t("missionAreaLevelDataReceiverScope"))}:</strong> <code>${esc(row.scopeStatus || "?")}</code> ${missions}</p>${areas ? `<p><strong>${esc(t("missionAreaLevelDataReceiverAreas"))}:</strong> ${areas}</p>` : ""}${roots ? `<p><strong>${esc(t("missionAreaLevelDataReceiverRoots"))}:</strong> ${roots}</p>` : ""}<small>${esc(row.evidenceBoundary || t("missionAreaLevelDataReceiverContextsHint"))}</small>${files}</article>`;
+      return `<article class="mp-order-branch is-boundary mp-leveldata-receiver-context"><header><code>${esc(row.missionId || "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")} / ${esc(row.scriptId || "?")}</code><i>&harr;</i>${stories}</header><p><strong>${esc(t("missionAreaLevelDataReceiverScope"))}:</strong> <code>${esc(row.scopeStatus || "?")}</code> ${missions}</p>${areas ? `<p><strong>${esc(t("missionAreaLevelDataReceiverAreas"))}:</strong> ${areas}</p>` : ""}${levelNums ? `<p><strong>${esc(t("missionAreaLevelDataReceiverLevelNums"))}:</strong> ${levelNums}</p>` : ""}${roots ? `<p><strong>${esc(t("missionAreaLevelDataReceiverRoots"))}:</strong> ${roots}</p>` : ""}<small>${esc(row.evidenceBoundary || t("missionAreaLevelDataReceiverContextsHint"))}</small>${files}</article>`;
     }).join("");
     const missionNamedLevelDataContexts = (order.missionNamedLevelDataReceiverContexts || []).map((row) => {
       const stories = (row.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
