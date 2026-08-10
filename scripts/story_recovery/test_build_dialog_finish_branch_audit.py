@@ -58,6 +58,43 @@ def connection(target: str, source: str = "option") -> dict:
     }
 
 
+def leveldata_mp_string(value: str) -> bytes:
+    encoded = value.encode("utf-8")
+    return len(encoded).to_bytes(4, "little", signed=True) + encoded
+
+
+def leveldata_brief_dictionary(
+    script_id: int,
+    property_names: list[str],
+) -> bytes:
+    properties = []
+    for name in property_names:
+        properties.append(
+            b"\x02"
+            + leveldata_mp_string(name)
+            + b"\x02"
+            + (3).to_bytes(4, "little", signed=True)
+            + (1).to_bytes(4, "little", signed=True)
+            + b"\x02"
+            + (0).to_bytes(8, "little")
+            + leveldata_mp_string("")
+        )
+    entry = (
+        script_id.to_bytes(8, "little")
+        + b"\x08"
+        + (script_id + 100).to_bytes(8, "little")
+        + (0).to_bytes(4, "little", signed=True)
+        + (1).to_bytes(4, "little", signed=True)
+        + (0).to_bytes(8, "little")
+        + len(properties).to_bytes(4, "little", signed=True)
+        + b"".join(properties)
+        + (0).to_bytes(4, "little", signed=True)
+        + (-1).to_bytes(4, "little", signed=True)
+        + script_id.to_bytes(8, "little")
+    )
+    return b"\x2bfixture" + (1).to_bytes(4, "little", signed=True) + entry
+
+
 class DialogTreeRouteTests(unittest.TestCase):
     def test_recovers_serialized_connection_index_finish_routes(self) -> None:
         outer = text_asset(
@@ -557,6 +594,63 @@ class PipelinePublicationTests(unittest.TestCase):
                     "missionRuntimeUnmatchedLevelScriptTaskFinishDependencies"
                 ],
             )
+
+    def test_publishes_leveldata_task_shell_dependency_on_mission(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = {
+                "missions": [{"id": "mission_fixture", "file": "mission.json"}],
+                "counts": {},
+            }
+            payload = {"mission": {}, "nodes": []}
+            dependency = {
+                "dialogId": "dlg_fixture",
+                "finishId": 2,
+                "levelId": "map_fixture",
+                "scriptId": "4242",
+                "taskId": "deadbeef",
+                "taskConditionId": "condition",
+                "missionShellOwner": {
+                    "ownerKind": "leveldata_task_progress_mission_shell",
+                    "missionId": "mission_fixture",
+                    "sourceFile": "fixture/LevelData/carrier.json",
+                },
+            }
+            report = {
+                "schemaVersion": "dialogFinishMissionBranchAudit.v9",
+                "status": "validated",
+                "evidencePolicy": "fixture",
+                "counts": {},
+                "producerFamilyCounts": {},
+                "nativeContract": {},
+                "dependencies": [],
+                "endpointDependencies": [],
+                "levelScriptTaskSharedConsumerDependencies": [],
+                "levelScriptTaskAuthoredFinishDependencies": [dependency],
+            }
+
+            published = audit.publish_to_pipeline_index(
+                index,
+                report,
+                {"mission_fixture": payload},
+                root,
+            )
+
+            self.assertEqual(1, published)
+            self.assertEqual(
+                [dependency],
+                payload["dialogFinishAuthoredTaskShellDependencies"],
+            )
+            self.assertEqual(
+                1,
+                payload["dialogFinishBranchRecovery"][
+                    "authoredTaskMissionShellDependencyCount"
+                ],
+            )
+            self.assertEqual(
+                1,
+                index["counts"]["dialogFinishAuthoredTaskShellDependencies"],
+            )
             self.assertEqual(
                 1,
                 index["counts"][
@@ -872,6 +966,156 @@ class LevelScriptTaskConsumerTests(unittest.TestCase):
             self.assertEqual(
                 "GameplayConfig/carrier.json",
                 census["carriers"][0]["relativePath"],
+            )
+
+    def test_leveldata_progress_carrier_requires_exact_paired_properties(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            streaming = root / "Streaming" / "LevelData"
+            persistent = root / "Persistent" / "LevelData"
+            levelscript = root / "LevelScriptData"
+            for directory in (streaming, persistent, levelscript):
+                (directory / "map_fixture").mkdir(parents=True)
+            (levelscript / "map_fixture" / "4242.json").write_bytes(b"script")
+            progress = "lt:p:deadbeef:condition"
+            max_progress = "lt:mp:deadbeef:condition"
+            (streaming / "map_fixture" / "carrier.json").write_bytes(
+                leveldata_brief_dictionary(4242, [progress])
+            )
+            (persistent / "map_fixture" / "carrier.json").write_bytes(
+                leveldata_brief_dictionary(4242, [progress, max_progress])
+            )
+            shell_index = {
+                ("map_fixture", "4242"): {
+                    "hosts": [{
+                        "levelDataFile": (
+                            "fixture/LevelData/map_fixture/carrier.json"
+                        ),
+                        "dictionaryScriptIds": ["4242"],
+                        "targetBriefData": {"dataPathHash": "4342"},
+                        "hostMissionIds": ["mission_fixture"],
+                        "authoritativeReferences": [{
+                            "missionId": "mission_fixture",
+                            "scopeKind": "typed_fixture_reference",
+                        }],
+                    }],
+                },
+            }
+            census = audit._scan_leveldata_task_progress_carriers(
+                [{
+                    "levelId": "map_fixture",
+                    "scriptId": "4242",
+                    "taskId": "deadbeef",
+                    "conditionId": "condition",
+                }],
+                (streaming, persistent),
+                (levelscript,),
+                (),
+                authoritative_shell_index=shell_index,
+            )
+
+            self.assertEqual("levelDataTaskProgressCarrierCensus.v1", census["schema"])
+            self.assertEqual(1, census["shadowedFileCount"])
+            self.assertEqual(1, census["rawCandidateFileCount"])
+            self.assertEqual(1, census["carrierCount"])
+            self.assertEqual(1, census["uniqueMissionShellTaskIdentityCount"])
+            self.assertEqual(0, census["rejectedShellClassificationCount"])
+            carrier = census["carriers"][0]
+            self.assertIn("Persistent", carrier["sourceFile"])
+            self.assertEqual(["mission_fixture"], carrier["missionIds"])
+            self.assertEqual(
+                [progress, max_progress],
+                carrier["progressProperties"],
+            )
+
+    def test_leveldata_progress_carrier_rejects_unpaired_raw_token(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            leveldata = root / "LevelData"
+            levelscript = root / "LevelScriptData"
+            for directory in (leveldata, levelscript):
+                (directory / "map_fixture").mkdir(parents=True)
+            (levelscript / "map_fixture" / "4242.json").write_bytes(b"script")
+            (leveldata / "map_fixture" / "carrier.json").write_bytes(
+                leveldata_brief_dictionary(
+                    4242,
+                    ["lt:p:deadbeef:condition"],
+                )
+            )
+
+            census = audit._scan_leveldata_task_progress_carriers(
+                [{
+                    "levelId": "map_fixture",
+                    "scriptId": "4242",
+                    "taskId": "deadbeef",
+                    "conditionId": "condition",
+                }],
+                (leveldata,),
+                (levelscript,),
+                (),
+                authoritative_shell_index={},
+            )
+
+            self.assertEqual(1, census["rawCandidateFileCount"])
+            self.assertEqual(1, census["validatedDictionaryCandidateFileCount"])
+            self.assertEqual(0, census["carrierCount"])
+            self.assertEqual(1, census["un_carriedTaskConditionIdentityCount"])
+
+    def test_leveldata_progress_carrier_rejects_stale_overlay_shell(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            leveldata = root / "LevelData"
+            levelscript = root / "LevelScriptData"
+            for directory in (leveldata, levelscript):
+                (directory / "map_fixture").mkdir(parents=True)
+            (levelscript / "map_fixture" / "4242.json").write_bytes(b"script")
+            progress = "lt:p:deadbeef:condition"
+            max_progress = "lt:mp:deadbeef:condition"
+            (leveldata / "map_fixture" / "carrier.json").write_bytes(
+                leveldata_brief_dictionary(4242, [progress, max_progress])
+            )
+            stale_shell_index = {
+                ("map_fixture", "4242"): {
+                    "hosts": [{
+                        "levelDataFile": (
+                            "fixture/LevelData/map_fixture/carrier.json"
+                        ),
+                        "dictionaryScriptIds": ["4242", "9999"],
+                        "targetBriefData": {"dataPathHash": "stale"},
+                        "hostMissionIds": ["mission_fixture"],
+                        "authoritativeReferences": [{
+                            "missionId": "mission_fixture",
+                            "scopeKind": "typed_fixture_reference",
+                        }],
+                    }],
+                },
+            }
+
+            census = audit._scan_leveldata_task_progress_carriers(
+                [{
+                    "levelId": "map_fixture",
+                    "scriptId": "4242",
+                    "taskId": "deadbeef",
+                    "conditionId": "condition",
+                }],
+                (leveldata,),
+                (levelscript,),
+                (),
+                authoritative_shell_index=stale_shell_index,
+            )
+
+            self.assertEqual(1, census["carrierCount"])
+            self.assertEqual([], census["carriers"][0]["missionIds"])
+            self.assertEqual(1, census["rejectedShellClassificationCount"])
+            diagnostic = census["rejectedShellClassifications"][0]
+            self.assertEqual("activeOverlayAgreement", diagnostic["gate"])
+            self.assertEqual(
+                ["4242"],
+                diagnostic["expected"]["dictionaryScriptIds"],
+            )
+            self.assertEqual(
+                ["4242", "9999"],
+                diagnostic["actual"]["dictionaryScriptIds"],
             )
 
 

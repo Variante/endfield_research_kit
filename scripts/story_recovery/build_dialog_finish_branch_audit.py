@@ -38,6 +38,10 @@ from scripts.story_builder.levelscript_binary import (
     decode_levelscript_task_conditions,
     scan_levelscript_task_condition_fragments,
 )
+from scripts.story_builder.level_bindings import (
+    build_leveldata_authoritative_scope_script_host_index,
+    parse_leveldata_levelscript_brief_dictionary,
+)
 
 
 ROOT = _REPO_ROOT
@@ -73,6 +77,38 @@ DEFAULT_LEVELSCRIPT_ROOTS = (
     / "Data"
     / "Json"
     / "LevelScriptData",
+)
+DEFAULT_LEVELDATA_ROOTS = (
+    ROOT
+    / "export_full"
+    / "structured"
+    / "StreamingAssets"
+    / "Data"
+    / "Json"
+    / "LevelData",
+    ROOT
+    / "export_full"
+    / "structured"
+    / "Persistent"
+    / "Data"
+    / "Json"
+    / "LevelData",
+)
+DEFAULT_MISSION_RUNTIME_ROOTS = (
+    ROOT
+    / "export_full"
+    / "structured"
+    / "StreamingAssets"
+    / "Data"
+    / "Json"
+    / "MissionRuntimeAsset",
+    ROOT
+    / "export_full"
+    / "structured"
+    / "Persistent"
+    / "Data"
+    / "Json"
+    / "MissionRuntimeAsset",
 )
 DEFAULT_TASK_CARRIER_ROOTS = (
     ROOT
@@ -1891,6 +1927,305 @@ def _scan_exact_task_identity_carriers(
     }
 
 
+def _leveldata_logical_relative(source_file: str) -> str:
+    """Return the overlay-relative path below one LevelData family root."""
+    normalized = str(source_file or "").replace("\\", "/")
+    marker = "/LevelData/"
+    if marker not in normalized:
+        return ""
+    return normalized.split(marker, 1)[1]
+
+
+def _scan_leveldata_task_progress_carriers(
+    consumers: list[dict[str, Any]],
+    roots: tuple[Path, ...] = DEFAULT_LEVELDATA_ROOTS,
+    levelscript_roots: tuple[Path, ...] = DEFAULT_LEVELSCRIPT_ROOTS,
+    mission_runtime_roots: tuple[Path, ...] = DEFAULT_MISSION_RUNTIME_ROOTS,
+    *,
+    authoritative_shell_index: dict[tuple[str, str], dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Recover exact task-condition carriers inside serialized LevelData.
+
+    The rule is corpus-wide and contains no mission, script, task, or filename
+    exception. A carrier must be the target script's value in one completely
+    framed member-22 ``LevelScriptBriefData`` dictionary and must contain both
+    ``lt:p`` and ``lt:mp`` properties for the exact decoded task/condition.
+    Mission shell ids come from the existing all-reference shell classifier;
+    the task token and a mission-looking filename alone cannot create an owner.
+    """
+    validator = "dialog_finish_leveldata_task_progress_carrier_census"
+    identities = sorted({
+        (
+            str(row.get("levelId") or ""),
+            str(row.get("scriptId") or ""),
+            str(row.get("taskId") or ""),
+            str(row.get("conditionId") or ""),
+        )
+        for row in consumers
+        if row.get("levelId")
+        and str(row.get("scriptId") or "").isdigit()
+        and row.get("taskId")
+        and row.get("conditionId")
+    })
+    target_set = set(identities)
+    targets_by_level: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
+    for level_id, script_id, task_id, condition_id in identities:
+        targets_by_level[level_id].append((script_id, task_id, condition_id))
+
+    active_leveldata: dict[str, Path] = {}
+    physical_files = 0
+    shadowed_files = 0
+    root_rows: list[dict[str, Any]] = []
+    for priority, root in enumerate(roots):
+        file_count = 0
+        if root.is_dir():
+            for path in sorted(root.rglob("*.json")):
+                relative = path.relative_to(root).as_posix()
+                physical_files += 1
+                file_count += 1
+                if relative in active_leveldata:
+                    shadowed_files += 1
+                active_leveldata[relative] = path
+        root_rows.append({
+            "priority": priority,
+            "sourceRoot": source_label(root),
+            "fileCount": file_count,
+        })
+
+    active_levelscripts: dict[str, Path] = {}
+    for root in levelscript_roots:
+        if not root.is_dir():
+            continue
+        for path in sorted(root.rglob("*.json")):
+            active_levelscripts[path.relative_to(root).as_posix()] = path
+    script_ids_by_level: dict[str, set[int]] = defaultdict(set)
+    for relative in active_levelscripts:
+        parts = Path(relative).parts
+        if len(parts) == 2 and Path(parts[1]).stem.isdigit():
+            script_ids_by_level[parts[0]].add(int(Path(parts[1]).stem))
+
+    mission_runtime_ids = {
+        path.stem
+        for root in mission_runtime_roots
+        if root.is_dir()
+        for path in root.glob("*.json")
+        if path.is_file() and path.stem
+    }
+    script_pairs = {(level_id, script_id) for level_id, script_id, _task, _cond in identities}
+    if authoritative_shell_index is None:
+        authoritative_shell_index = (
+            build_leveldata_authoritative_scope_script_host_index(
+                script_pairs,
+                mission_runtime_ids,
+                {},
+            )
+        )
+    shell_hosts: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for (level_id, script_id), entry in authoritative_shell_index.items():
+        for host in entry.get("hosts") or []:
+            relative = _leveldata_logical_relative(
+                str(host.get("levelDataFile") or "")
+            )
+            if relative:
+                shell_hosts[(level_id, script_id, relative)] = host
+
+    raw_candidate_files: set[str] = set()
+    validated_dictionary_files: set[str] = set()
+    rejected_candidates: list[dict[str, Any]] = []
+    rejected_shell_classifications: list[dict[str, Any]] = []
+    carriers: list[dict[str, Any]] = []
+    for relative, path in sorted(active_leveldata.items()):
+        parts = Path(relative).parts
+        if len(parts) < 2:
+            continue
+        level_id = parts[0]
+        targets = targets_by_level.get(level_id) or []
+        if not targets:
+            continue
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            rejected_candidates.append({
+                "sourceFile": source_label(path),
+                "gate": "readBytes",
+                "diagnostic": f"{type(exc).__name__}: {exc}",
+            })
+            continue
+        raw_targets = [
+            target
+            for target in targets
+            if target[1].encode("utf-8") in data
+        ]
+        if not raw_targets:
+            continue
+        raw_candidate_files.add(relative)
+        candidate_script_ids = script_ids_by_level.get(level_id) or set()
+        dictionary = parse_leveldata_levelscript_brief_dictionary(
+            data,
+            candidate_script_ids,
+        )
+        if not dictionary:
+            rejected_candidates.append({
+                "sourceFile": source_label(path),
+                "gate": "completeMember22Dictionary",
+                "expected": {
+                    "levelId": level_id,
+                    "candidateScriptCount": len(candidate_script_ids),
+                },
+                "actual": {"dictionaryEntryCount": 0},
+                "sourceSha256": hashlib.sha256(data).hexdigest(),
+            })
+            continue
+        validated_dictionary_files.add(relative)
+        source_sha256 = hashlib.sha256(data).hexdigest()
+        for script_id, task_id, condition_id in raw_targets:
+            brief = dictionary.get(int(script_id))
+            if not brief:
+                continue
+            expected_progress = f"lt:p:{task_id}:{condition_id}"
+            expected_max_progress = f"lt:mp:{task_id}:{condition_id}"
+            property_names = {
+                str(row.get("name") or "")
+                for row in brief.get("properties") or []
+                if isinstance(row, dict)
+            }
+            if not {expected_progress, expected_max_progress}.issubset(property_names):
+                continue
+            shell = shell_hosts.get((level_id, script_id, relative)) or {}
+            if shell:
+                expected_shell_shape = {
+                    "dictionaryScriptIds": sorted(
+                        (str(value) for value in dictionary),
+                        key=int,
+                    ),
+                    "targetDataPathHash": str(brief.get("dataPathHash") or ""),
+                }
+                shell_brief = shell.get("targetBriefData") or {}
+                actual_shell_shape = {
+                    "dictionaryScriptIds": shell.get("dictionaryScriptIds") or [],
+                    "targetDataPathHash": str(
+                        shell_brief.get("dataPathHash") or ""
+                    ),
+                }
+                if actual_shell_shape != expected_shell_shape:
+                    rejected_shell_classifications.append({
+                        "sourceFile": source_label(path),
+                        "gate": "activeOverlayAgreement",
+                        "identity": {
+                            "levelId": level_id,
+                            "scriptId": script_id,
+                            "taskId": task_id,
+                            "conditionId": condition_id,
+                        },
+                        "expected": expected_shell_shape,
+                        "actual": actual_shell_shape,
+                        "sourceSha256": source_sha256,
+                    })
+                    shell = {}
+            mission_ids = sorted({
+                str(value)
+                for value in shell.get("hostMissionIds") or []
+                if value
+            })
+            carriers.append({
+                "levelId": level_id,
+                "scriptId": script_id,
+                "taskId": task_id,
+                "conditionId": condition_id,
+                "sourceFile": source_label(path),
+                "sourceSha256": source_sha256,
+                "relativePath": relative,
+                "dictionaryEntryCount": len(dictionary),
+                "briefKeyOffset": int(brief["keyOffset"]),
+                "briefEndOffset": int(brief["endOffset"]),
+                "progressProperties": [
+                    expected_progress,
+                    expected_max_progress,
+                ],
+                "missionIds": mission_ids,
+                "missionShellStatus": (
+                    "unique" if len(mission_ids) == 1
+                    else "shared" if mission_ids
+                    else "unresolved"
+                ),
+                "authoritativeReferences": shell.get(
+                    "authoritativeReferences"
+                ) or [],
+                "classification": (
+                    "leveldata_task_progress_unique_mission_shell"
+                    if len(mission_ids) == 1
+                    else "leveldata_task_progress_shared_mission_shell"
+                    if mission_ids
+                    else "leveldata_task_progress_carrier"
+                ),
+            })
+
+    carriers.sort(key=lambda row: (
+        row["levelId"],
+        int(row["scriptId"]),
+        row["taskId"],
+        row["conditionId"],
+        row["relativePath"],
+    ))
+    carried = {
+        (row["levelId"], row["scriptId"], row["taskId"], row["conditionId"])
+        for row in carriers
+    }
+    missions_by_task_identity: dict[tuple[str, str, str], set[str]] = defaultdict(set)
+    carriers_by_task_identity: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in carriers:
+        key = (row["levelId"], row["scriptId"], row["taskId"])
+        missions_by_task_identity[key].update(row["missionIds"])
+        carriers_by_task_identity[key].append(row)
+    unique_owned_identities = {
+        key for key, values in missions_by_task_identity.items() if len(values) == 1
+    }
+    shared_identities = {
+        key for key, values in missions_by_task_identity.items() if len(values) > 1
+    }
+    return {
+        "schema": "levelDataTaskProgressCarrierCensus.v1",
+        "roots": root_rows,
+        "overlayRule": "later root wins; Persistent overrides StreamingAssets",
+        "physicalFileCount": physical_files,
+        "activeLogicalFileCount": len(active_leveldata),
+        "shadowedFileCount": shadowed_files,
+        "taskConditionIdentityCount": len(target_set),
+        "taskIdentityCount": len({identity[:3] for identity in target_set}),
+        "rawCandidateFileCount": len(raw_candidate_files),
+        "validatedDictionaryCandidateFileCount": len(validated_dictionary_files),
+        "carrierCount": len(carriers),
+        "carriedTaskConditionIdentityCount": len(carried),
+        "carriedTaskIdentityCount": len(carriers_by_task_identity),
+        "uniqueMissionShellTaskIdentityCount": len(unique_owned_identities),
+        "sharedMissionShellTaskIdentityCount": len(shared_identities),
+        "unresolvedMissionShellTaskIdentityCount": (
+            len(carriers_by_task_identity)
+            - len(unique_owned_identities)
+            - len(shared_identities)
+        ),
+        "un_carriedTaskConditionIdentityCount": len(target_set - carried),
+        "rejectedCandidateFileCount": len(rejected_candidates),
+        "rejectedCandidateFiles": rejected_candidates,
+        "rejectedShellClassificationCount": len(
+            rejected_shell_classifications
+        ),
+        "rejectedShellClassifications": rejected_shell_classifications,
+        "carriers": carriers,
+        "evidenceBoundary": (
+            "A carrier is accepted only when a complete original LevelData/43 "
+            "member-22 dictionary places both exact lt:p and lt:mp properties "
+            "inside the decoded script's LevelScriptBriefData entry. Mission "
+            "shell identity is inherited only from the complete independent "
+            "authoritative-reference set for that same LevelData shell and is "
+            "unique only when that set names one mission. This proves persistent "
+            "task-condition placement and mission-shell context, not activation, "
+            "quest ownership, branch choice, or Story-file order. OCR and manual "
+            "overrides are not read."
+        ),
+    }
+
+
 def _collect_dialog_tree_producers(
     payloads: dict[str, dict[str, Any]],
     *,
@@ -2447,10 +2782,25 @@ def build_report(
     task_identity_carrier_census = _scan_exact_task_identity_carriers(
         exact_levelscript_consumers
     )
+    leveldata_task_progress_census = _scan_leveldata_task_progress_carriers(
+        exact_levelscript_consumers
+    )
     task_identity_carriers = defaultdict(list)
     for carrier in task_identity_carrier_census.get("carriers") or []:
         task_identity_carriers[
             (carrier["scriptId"], carrier["taskId"])
+        ].append(carrier)
+    leveldata_progress_carriers: dict[
+        tuple[str, str, str, str], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for carrier in leveldata_task_progress_census.get("carriers") or []:
+        leveldata_progress_carriers[
+            (
+                carrier["levelId"],
+                carrier["scriptId"],
+                carrier["taskId"],
+                carrier["conditionId"],
+            )
         ].append(carrier)
     levelscript_by_finish: dict[
         tuple[str, int], list[dict[str, Any]]
@@ -2461,13 +2811,83 @@ def build_report(
                 (row["scriptId"], row["taskId"]),
                 [],
             )
-        owner = (
+            row["levelDataTaskProgressCarriers"] = (
+                leveldata_progress_carriers.get(
+                    (
+                        row["levelId"],
+                        row["scriptId"],
+                        row["taskId"],
+                        row["conditionId"],
+                    ),
+                    [],
+                )
+            )
+        subgame_owner = (
             subgame_task_owners.get((row["scriptId"], row["taskId"]))
             if row.get("taskId")
             else None
         )
-        if owner:
-            row["missionShellOwner"] = owner
+        if subgame_owner:
+            row["missionShellOwner"] = {
+                **subgame_owner,
+                "ownerKind": "subgame_exact_script_task_carrier",
+            }
+        leveldata_carriers = row.get("levelDataTaskProgressCarriers") or []
+        leveldata_mission_ids = sorted({
+            mission_id
+            for carrier in leveldata_carriers
+            for mission_id in carrier.get("missionIds") or []
+            if mission_id
+        })
+        if len(leveldata_mission_ids) == 1:
+            leveldata_owner = {
+                "ownerKind": "leveldata_task_progress_mission_shell",
+                "missionId": leveldata_mission_ids[0],
+                "levelId": row["levelId"],
+                "scriptId": row["scriptId"],
+                "taskId": row["taskId"],
+                "conditionId": row["conditionId"],
+                "sourceFile": leveldata_carriers[0]["sourceFile"],
+                "sourceFiles": sorted({
+                    carrier["sourceFile"] for carrier in leveldata_carriers
+                }),
+                "progressProperties": sorted({
+                    value
+                    for carrier in leveldata_carriers
+                    for value in carrier.get("progressProperties") or []
+                }),
+                "classification": (
+                    "exact_leveldata_task_progress_unique_mission_shell"
+                ),
+                "evidenceBoundary": (
+                    leveldata_task_progress_census["evidenceBoundary"]
+                ),
+            }
+            existing_owner = row.get("missionShellOwner")
+            if (
+                existing_owner
+                and existing_owner.get("missionId")
+                != leveldata_owner["missionId"]
+            ):
+                raise AuditValidationError(
+                    "validator=dialog_finish_task_mission_shell_owner "
+                    "gate=independentOwnerAgreement "
+                    f"identity={row['levelId']}/{row['scriptId']}/"
+                    f"{row['taskId']}/{row['conditionId']} "
+                    f"expected={existing_owner.get('missionId')!r} "
+                    f"actual={leveldata_owner['missionId']!r} "
+                    f"source={leveldata_owner['sourceFile']!r}"
+                )
+            if not existing_owner:
+                row["missionShellOwner"] = leveldata_owner
+        elif leveldata_mission_ids:
+            row["levelDataMissionShellAmbiguity"] = {
+                "missionIds": leveldata_mission_ids,
+                "sourceFiles": sorted({
+                    carrier["sourceFile"] for carrier in leveldata_carriers
+                }),
+                "status": "shared",
+            }
         levelscript_by_finish[(row["dialogId"], row["finishId"])].append(row)
 
     corpus_endpoints_by_finish: dict[
@@ -2506,14 +2926,21 @@ def build_report(
                 "sourceFile": carrier["sourceFile"],
                 "relationship": carrier["classification"],
             })
+        for carrier in task_consumer.get("levelDataTaskProgressCarriers") or []:
+            source_rows.append({
+                "kind": "level_data",
+                "sourceFile": carrier["sourceFile"],
+                "relationship": carrier["classification"],
+            })
         source_rows.extend(binary_files)
         owner = task_consumer.get("missionShellOwner")
         if owner:
-            source_rows.append({
-                "kind": "subgame_instance_table",
-                "sourceFile": owner["sourceFile"],
-                "relationship": "exact_mission_script_task_co_carrier",
-            })
+            if owner.get("ownerKind") == "subgame_exact_script_task_carrier":
+                source_rows.append({
+                    "kind": "subgame_instance_table",
+                    "sourceFile": owner["sourceFile"],
+                    "relationship": "exact_mission_script_task_co_carrier",
+                })
         dependency = {
             **task_consumer,
             "taskConditionId": task_consumer["conditionId"],
@@ -2525,6 +2952,10 @@ def build_report(
             "missionShellOwner": owner,
             "missionOwnershipStatus": (
                 "exact_subgame_script_task_carrier"
+                if owner
+                and owner.get("ownerKind")
+                == "subgame_exact_script_task_carrier"
+                else "exact_leveldata_task_progress_mission_shell"
                 if owner
                 else "unresolved"
             ),
@@ -2538,8 +2969,9 @@ def build_report(
                 "DialogTree prime node and emits the exact value consumed by this "
                 "original LevelScript task condition. This proves an authored "
                 "Story-finish-to-task dependency, not the route or player choice "
-                "that reaches the endpoint, task activation, mission ownership, "
-                "or cross-file chronology."
+                "that reaches the endpoint, task activation, or cross-file "
+                "chronology. Any displayed mission shell is a separate exact "
+                "carrier classification and does not establish quest ownership."
             ),
         }
         task_finish_dependencies.append(dependency)
@@ -2741,16 +3173,25 @@ def build_report(
                 },
             ]
             if owner:
-                source_rows.append({
-                    "kind": "subgame_instance_table",
-                    "sourceFile": owner["sourceFile"],
-                    "relationship": "exact_mission_script_task_co_carrier",
-                })
+                if owner.get("ownerKind") == "subgame_exact_script_task_carrier":
+                    source_rows.append({
+                        "kind": "subgame_instance_table",
+                        "sourceFile": owner["sourceFile"],
+                        "relationship": "exact_mission_script_task_co_carrier",
+                    })
             for carrier in task_consumer.get(
                 "externalTaskIdentityCarriers"
             ) or []:
                 source_rows.append({
                     "kind": "structured_task_identity_carrier",
+                    "sourceFile": carrier["sourceFile"],
+                    "relationship": carrier["classification"],
+                })
+            for carrier in task_consumer.get(
+                "levelDataTaskProgressCarriers"
+            ) or []:
+                source_rows.append({
+                    "kind": "level_data",
                     "sourceFile": carrier["sourceFile"],
                     "relationship": carrier["classification"],
                 })
@@ -2776,6 +3217,9 @@ def build_report(
                 "externalTaskIdentityCarriers": task_consumer.get(
                     "externalTaskIdentityCarriers"
                 ) or [],
+                "levelDataTaskProgressCarriers": task_consumer.get(
+                    "levelDataTaskProgressCarriers"
+                ) or [],
                 "missionShellOwner": owner,
                 "missionShellRelationship": owner_relationship,
                 "classification": "shared_exact_dialog_finish_consumer_dependency",
@@ -2791,8 +3235,10 @@ def build_report(
                     "fan-out, not that the task was active, that the mission owns "
                     "the LevelScript, which option a player selected, or any "
                     "cross-file chronology. Mission-shell ownership is shown only "
-                    "when one typed SubGame row also co-carries the exact script "
-                    "and task ids."
+                    "when either one typed SubGame row co-carries the exact script "
+                    "and task ids, or one validated LevelData task-progress entry "
+                    "belongs to a uniquely classified mission shell. The latter "
+                    "remains shell context, not quest or activation ownership."
                 ),
             }
             shared_task_dependencies.append(row)
@@ -2859,7 +3305,7 @@ def build_report(
         not in matched_levelscript_signatures
     ]
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v8",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v9",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
@@ -2880,9 +3326,12 @@ def build_report(
             "application and Processing-time condition activation/reporting lifecycle. "
             "A field-shape census independently reports minimal exact script/task "
             "co-carriers across every active typed structured-JSON family outside "
-            "LevelScript definitions. Neither "
-            "tier infers server selection policy, task activation in a particular "
-            "session, mission ownership, branch choice, or cross-file order. "
+            "LevelScript definitions. A second generic census requires paired "
+            "lt:p/lt:mp properties inside the exact script entry of a completely "
+            "framed LevelData member-22 dictionary, then admits a mission shell "
+            "only from that shell's complete independent reference set. These "
+            "tiers do not infer server selection policy, task activation in a "
+            "particular session, quest ownership, branch choice, or cross-file order. "
             "OCR and manual overrides are not read."
         ),
         "nativeContract": native_contract,
@@ -3077,6 +3526,16 @@ def build_report(
                 bool(row.get("missionShellOwner"))
                 for row in exact_levelscript_consumers
             ),
+            "levelScriptTaskSubGameMissionShellOwners": sum(
+                (row.get("missionShellOwner") or {}).get("ownerKind")
+                == "subgame_exact_script_task_carrier"
+                for row in exact_levelscript_consumers
+            ),
+            "levelScriptTaskLevelDataMissionShellOwners": sum(
+                (row.get("missionShellOwner") or {}).get("ownerKind")
+                == "leveldata_task_progress_mission_shell"
+                for row in exact_levelscript_consumers
+            ),
             "levelScriptTaskSameMissionShellDependencies": sum(
                 row["missionShellRelationship"] == "same_mission_shell"
                 for row in shared_task_dependencies
@@ -3127,6 +3586,40 @@ def build_report(
             "levelScriptTaskCarrierNonJsonFiles": (
                 task_identity_carrier_census["nonJsonFileCount"]
             ),
+            "levelScriptTaskLevelDataRawCandidateFiles": (
+                leveldata_task_progress_census["rawCandidateFileCount"]
+            ),
+            "levelScriptTaskLevelDataProgressCarriers": (
+                leveldata_task_progress_census["carrierCount"]
+            ),
+            "levelScriptTaskLevelDataCarriedIdentities": (
+                leveldata_task_progress_census["carriedTaskIdentityCount"]
+            ),
+            "levelScriptTaskLevelDataUniqueMissionShellIdentities": (
+                leveldata_task_progress_census[
+                    "uniqueMissionShellTaskIdentityCount"
+                ]
+            ),
+            "levelScriptTaskLevelDataSharedMissionShellIdentities": (
+                leveldata_task_progress_census[
+                    "sharedMissionShellTaskIdentityCount"
+                ]
+            ),
+            "levelScriptTaskLevelDataUnresolvedMissionShellIdentities": (
+                leveldata_task_progress_census[
+                    "unresolvedMissionShellTaskIdentityCount"
+                ]
+            ),
+            "levelScriptTaskLevelDataUncarriedConditions": (
+                leveldata_task_progress_census[
+                    "un_carriedTaskConditionIdentityCount"
+                ]
+            ),
+            "levelScriptTaskLevelDataRejectedShellClassifications": (
+                leveldata_task_progress_census[
+                    "rejectedShellClassificationCount"
+                ]
+            ),
         },
         "producerFamilyCounts": dict(
             sorted(Counter(family for row in producers for family in row["producerFamilies"]).items())
@@ -3145,6 +3638,7 @@ def build_report(
         },
         "subGameTaskOwnerCensus": subgame_owner_census,
         "exactTaskIdentityCarrierCensus": task_identity_carrier_census,
+        "levelDataTaskProgressCarrierCensus": leveldata_task_progress_census,
         "dependencies": dependencies,
         "endpointDependencies": endpoint_dependencies,
         "levelScriptTaskAuthoredFinishDependencies": task_finish_dependencies,
@@ -3194,12 +3688,20 @@ def publish_to_pipeline_index(
         mission_script_task_by_quest[
             (row["missionId"], row["questId"])
         ].append(row)
+    authored_task_shell_by_mission: dict[str, list[dict[str, Any]]] = (
+        defaultdict(list)
+    )
+    for row in report.get("levelScriptTaskAuthoredFinishDependencies") or []:
+        owner = row.get("missionShellOwner")
+        if isinstance(owner, dict) and owner.get("missionId"):
+            authored_task_shell_by_mission[str(owner["missionId"])].append(row)
     published = 0
     published_endpoints = 0
     published_task_dependencies = 0
     published_owned_task_dependencies = 0
     published_any_finish_task_contexts = 0
     published_mission_script_task_contexts = 0
+    published_authored_task_shell_dependencies = 0
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
@@ -3212,6 +3714,15 @@ def publish_to_pipeline_index(
         mission_task_rows: list[dict[str, Any]] = []
         mission_any_finish_task_rows: list[dict[str, Any]] = []
         mission_script_task_rows: list[dict[str, Any]] = []
+        mission_authored_task_shell_rows = authored_task_shell_by_mission.get(
+            mission_id,
+            [],
+        )
+        payload.pop("dialogFinishAuthoredTaskShellDependencies", None)
+        if mission_authored_task_shell_rows:
+            payload["dialogFinishAuthoredTaskShellDependencies"] = (
+                mission_authored_task_shell_rows
+            )
         for node in payload.get("nodes") or []:
             if not isinstance(node, dict):
                 continue
@@ -3354,6 +3865,9 @@ def publish_to_pipeline_index(
             "levelScriptTaskMissionScriptContextCount": len(
                 mission_script_task_rows
             ),
+            "authoredTaskMissionShellDependencyCount": len(
+                mission_authored_task_shell_rows
+            ),
             "evidenceBoundary": report.get("evidencePolicy"),
         }
         summary["dialogFinishBranchDependencyCount"] = len(mission_rows)
@@ -3369,6 +3883,9 @@ def publish_to_pipeline_index(
         summary["dialogFinishLevelScriptTaskMissionScriptContextCount"] = len(
             mission_script_task_rows
         )
+        summary["dialogFinishAuthoredTaskShellDependencyCount"] = len(
+            mission_authored_task_shell_rows
+        )
         write_json(pipeline_root / str(summary.get("file") or ""), payload)
         published += len(mission_rows)
         published_endpoints += len(mission_endpoint_rows)
@@ -3379,6 +3896,9 @@ def publish_to_pipeline_index(
         )
         published_any_finish_task_contexts += len(mission_any_finish_task_rows)
         published_mission_script_task_contexts += len(mission_script_task_rows)
+        published_authored_task_shell_dependencies += len(
+            mission_authored_task_shell_rows
+        )
     index["dialogFinishBranchRecovery"] = {
         "schema": report.get("schemaVersion"),
         "status": report.get("status"),
@@ -3411,12 +3931,16 @@ def publish_to_pipeline_index(
     index["counts"]["dialogFinishLevelScriptTaskMissionScriptContexts"] = (
         published_mission_script_task_contexts
     )
+    index["counts"]["dialogFinishAuthoredTaskShellDependencies"] = (
+        published_authored_task_shell_dependencies
+    )
     return (
         published
         + published_endpoints
         + published_task_dependencies
         + published_any_finish_task_contexts
         + published_mission_script_task_contexts
+        + published_authored_task_shell_dependencies
     )
 
 
@@ -3455,10 +3979,11 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Exact branch-relevant task consumers: {counts.get('levelScriptTaskExactCompleteMapConsumers', 0)} complete-map rows across {counts.get('levelScriptTaskResolvedExactTaskIdentities', 0)} resolved tasks; {counts.get('levelScriptTaskExactBoundedFragmentConsumers', 0)} bounded fragments",
         f"- Generic typed external carrier census: {counts.get('levelScriptTaskExternalIdentityCarriers', 0)} carriers ({counts.get('levelScriptTaskExternalMissionCarriers', 0)} with mission identity); {counts.get('levelScriptTaskExternalUncarriedIdentities', 0)} task identities remain uncarried",
         f"- Carrier search scope: {counts.get('levelScriptTaskCarrierActiveLogicalFiles', 0)} active structured files; {counts.get('levelScriptTaskCarrierTypedJsonFiles', 0)} typed JSON / {counts.get('levelScriptTaskCarrierNonJsonFiles', 0)} serialized non-JSON; {counts.get('levelScriptTaskCarrierTypedJsonCandidates', 0)} exact-task JSON candidates",
+        f"- Serialized LevelData task-progress carriers: {counts.get('levelScriptTaskLevelDataProgressCarriers', 0)} exact rows / {counts.get('levelScriptTaskLevelDataCarriedIdentities', 0)} task identities from {counts.get('levelScriptTaskLevelDataRawCandidateFiles', 0)} raw-candidate files; {counts.get('levelScriptTaskLevelDataUniqueMissionShellIdentities', 0)} unique mission shells / {counts.get('levelScriptTaskLevelDataSharedMissionShellIdentities', 0)} shared / {counts.get('levelScriptTaskLevelDataUnresolvedMissionShellIdentities', 0)} unresolved; {counts.get('levelScriptTaskLevelDataUncarriedConditions', 0)} uncarried conditions / {counts.get('levelScriptTaskLevelDataRejectedShellClassifications', 0)} rejected stale-shell classifications",
         f"- Authored finish endpoint -> exact LevelScript task dependencies: {counts.get('levelScriptTaskAuthoredFinishDependencies', 0)}; unresolved authored endpoints: {counts.get('levelScriptTaskUnresolvedAuthoredFinishEndpoints', 0)}",
         f"- Shared MissionRuntime/LevelScript finish dependencies: {counts.get('levelScriptTaskSharedConsumerDependencies', 0)} placements across {counts.get('levelScriptTaskSharedConsumerMissions', 0)} missions",
         f"- Shared dependencies from complete maps / bounded mixed-map fragments: {counts.get('levelScriptTaskSharedConsumerCompleteMaps', 0)} / {counts.get('levelScriptTaskSharedConsumerFragments', 0)}",
-        f"- Exact SubGame mission-shell task owners: {counts.get('levelScriptTaskMissionShellOwners', 0)} consumers; {counts.get('levelScriptTaskSameMissionShellDependencies', 0)} same-mission dependency placements",
+        f"- Exact mission-shell task owners: {counts.get('levelScriptTaskMissionShellOwners', 0)} consumers ({counts.get('levelScriptTaskSubGameMissionShellOwners', 0)} SubGame / {counts.get('levelScriptTaskLevelDataMissionShellOwners', 0)} LevelData); {counts.get('levelScriptTaskSameMissionShellDependencies', 0)} same-mission dependency placements",
         f"- Mission any-finish contexts: {counts.get('levelScriptTaskAnyFinishMissionContexts', 0)} placements across {counts.get('levelScriptTaskAnyFinishMissionContextMissions', 0)} missions",
         f"- Exact mission -> active LevelScript contexts: {counts.get('levelScriptTaskMissionScriptContexts', 0)} placements for {counts.get('levelScriptTaskMissionScriptContextConsumers', 0)} task consumers across {counts.get('levelScriptTaskMissionScriptContextMissions', 0)} missions",
         f"- Authored endpoint -> task dependencies without an exact MissionRuntime finish match: {counts.get('levelScriptTaskWithoutExactMissionFinishMatch', 0)}",
@@ -3522,6 +4047,10 @@ def markdown_report(report: dict[str, Any]) -> str:
             task_id = row.get("taskId") or "task-id-unresolved"
             owner = row.get("missionShellOwner") or {}
             owner_text = (
+                f"`{owner.get('missionId')}` / `LevelData task-progress shell`"
+                if owner.get("ownerKind")
+                == "leveldata_task_progress_mission_shell"
+                else
                 f"`{owner.get('missionId')}` / `{owner.get('subGameId')}` / "
                 f"`{owner.get('taskLane')}`"
                 if owner
