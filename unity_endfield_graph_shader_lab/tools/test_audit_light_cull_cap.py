@@ -137,6 +137,32 @@ class LightCullCapAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_native_handoff(bodies, verify_hashes=False)
 
+    def test_hgtree_component_managed_id_is_80_not_67(self) -> None:
+        result = AUDIT.validate_native_handoff(
+            AUDIT.read_native_method_bodies()
+        )["managedHGTreeComponent"]
+        self.assertEqual(result["metadataMethodIndex"], 478429)
+        self.assertEqual(result["metadataToken"], "0x06000279")
+        self.assertEqual(result["componentId"], 80)
+        self.assertEqual(
+            result["archetypeMask"]["highQwordMask"],
+            "0x0000000000010000",
+        )
+        self.assertFalse(result["component67Match"])
+
+    def test_changed_hgtree_component_id_fails_closed(self) -> None:
+        bodies = AUDIT.read_native_method_bodies()
+        changed = bytearray(bodies["hgtree_component_get_id"])
+        changed[1] = 67
+        bodies["hgtree_component_get_id"] = bytes(changed)
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=hgtree_component_get_id_body; "
+            r"source=.*GameAssembly.dll; expected=.*actual=",
+        ):
+            AUDIT.validate_native_handoff(bodies, verify_hashes=False)
+
     def test_unity_native_candidate_producer(self) -> None:
         result = AUDIT.validate_unity_native_producer(AUDIT.PEImage(AUDIT.UNITY_PLAYER))
         self.assertEqual(result["internalCall"]["index"], 3320)
@@ -355,8 +381,12 @@ class LightCullCapAuditTests(unittest.TestCase):
             component_mask["component67Result"]["highQwordMask"],
             "0x0000000000000008",
         )
+        self.assertEqual(
+            component_mask["hgtreeComponent80Result"]["highQwordMask"],
+            "0x0000000000010000",
+        )
         self.assertIn(
-            "does not yet prove",
+            "is not HGTreeComponent",
             component_mask["boundary"],
         )
         type_identity = ecs_state["nativeScriptingTypeIdentity"]
@@ -370,10 +400,14 @@ class LightCullCapAuditTests(unittest.TestCase):
             "UnityEngine.HyperGryph.ECS",
         )
         self.assertIn(
-            "assigning that type to archetype component bit 67",
+            "HGTreeComponent is id 80",
             type_identity["boundary"],
         )
-        self.assertFalse(ecs_state["nativeTypeNameMappingClosed"])
+        self.assertEqual(type_identity["managedGetId"]["componentId"], 80)
+        self.assertTrue(ecs_state["managedHGTreeComponentIdMappingClosed"])
+        self.assertEqual(ecs_state["managedHGTreeComponentId"], 80)
+        self.assertFalse(ecs_state["component67MatchesHGTreeComponent"])
+        self.assertFalse(ecs_state["component67NativeIdentityClosed"])
         self.assertEqual(
             result["lodControlInternalCalls"]["cullingSystem"][-1]["index"],
             3303,

@@ -1572,8 +1572,11 @@ Installed scripting registration `0x1807EEEE0 -> 0x1807EC5E0` directly binds
 `UnityEngine.HGGraphicsModule.dll`. Dedicated HG internal-call index 712,
 `EntityManager.GetOrRegisterEntityTypeImpl_Injected` at `0x1801E0D90`, closes
 how numeric component IDs become archetype masks: `mask[id >> 6]` receives bit
-`id & 63`, making ID 67 high-qword bit 3 (`0x8`). The remaining identity gap is
-the assignment `HGTreeComponent -> ID 67`. Writer `0x181157760` also closes a
+`id & 63`, making ID 67 high-qword bit 3 (`0x8`). Current metadata method
+478429/token `0x06000279` maps `HGTreeComponent.get_id` to GameAssembly
+`0x184DBCEC0`; the exact body is `mov eax, 0x50; ret`. `HGTreeComponent` is
+therefore ID 80/high-qword bit 16 (`0x10000`), proving that component 67 is a
+separate, still unnamed native LOD-state component. Writer `0x181157760` also closes a
 second direct-availability initializer: it marks either every LOD/subresource
 available or only the terminal LOD and the exact readiness range selected by
 the cumulative endpoints. It consumes but does not produce the LOD count or
@@ -1595,8 +1598,7 @@ offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
 boundary into unrelated Animator code. The remaining initially zero loader
-bytes, component-67 LOD-count/range producer and
-`HGTreeComponent`-to-ID-67 link, unrelated
+bytes, component-67 native identity and LOD-count/range producer, unrelated
 scheduled consumer of view `+0x18`, any separate
 `sceneCullingMask` consumer, and whether zero makes that later gate remain
 explicit boundaries.

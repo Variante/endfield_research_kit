@@ -65,6 +65,7 @@ EXPECTED_HASHES = {
     "cull_lights_body": "457b6e62ebd5b4aab211b552da8b3f22a8156c7005a88c21c65f223903ee7245",
     "get_visible_lights_body": "f2d8a942ff09c2a07ee960760bf7e3a2c9bd878955fd7bb0d709c3e1fca3ab66",
     "setup_state_body": "76dcba4f0f93db50a7fdbf2f3fed3084229be907526ff6a33c9556496a81ceab",
+    "hgtree_component_get_id_body": "6786c0e7be3bc2cc01074e814543729b15cd696fdace27b19cf9c499e8df556c",
 }
 
 NATIVE_METHODS = {
@@ -109,6 +110,14 @@ NATIVE_METHODS = {
         "virtualAddress": 0x189D09F50,
         "fileOffset": 0x9D08550,
         "sizeBytes": 0x3DC,
+    },
+    "hgtree_component_get_id": {
+        "method": "UnityEngine.HyperGryph.ECS.HGTreeComponent.get_id",
+        "methodIndex": 478429,
+        "token": "0x06000279",
+        "virtualAddress": 0x184DBCEC0,
+        "fileOffset": 0x4DBB4C0,
+        "sizeBytes": 0x6,
     },
 }
 
@@ -1028,6 +1037,29 @@ def validate_native_handoff(
         GAME_ASSEMBLY,
     )
 
+    hgtree_component_get_id = bodies["hgtree_component_get_id"]
+    require(
+        "hgtree_component_get_id_body",
+        hgtree_component_get_id,
+        bytes.fromhex("b850000000c3"),
+        GAME_ASSEMBLY,
+    )
+    hgtree_component_id = struct.unpack_from(
+        "<I", hgtree_component_get_id, 1
+    )[0]
+    require(
+        "hgtree_component_get_id_value",
+        hgtree_component_id,
+        80,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "hgtree_component_is_not_component_67",
+        hgtree_component_id != 67,
+        True,
+        GAME_ASSEMBLY,
+    )
+
     return {
         "resultAbi": {
             "type": "UnityEngine.HyperGryph.LightCullResult",
@@ -1067,6 +1099,30 @@ def validate_native_handoff(
             },
             "setupStateInputCap": 256,
             "acceptedPunctualTypes": [0, 2],
+        },
+        "managedHGTreeComponent": {
+            "type": "UnityEngine.HyperGryph.ECS.HGTreeComponent",
+            "method": "get_id",
+            "metadataMethodIndex": NATIVE_METHODS[
+                "hgtree_component_get_id"
+            ]["methodIndex"],
+            "metadataToken": NATIVE_METHODS[
+                "hgtree_component_get_id"
+            ]["token"],
+            "virtualAddress": (
+                f"0x{NATIVE_METHODS['hgtree_component_get_id']['virtualAddress']:X}"
+            ),
+            "componentId": hgtree_component_id,
+            "archetypeMask": {
+                "bank": hgtree_component_id >> 6,
+                "bit": hgtree_component_id & 63,
+                "highQwordMask": "0x0000000000010000",
+            },
+            "component67Match": False,
+            "proof": (
+                "the hash-pinned six-byte IL2CPP body is mov eax, 0x50; "
+                "ret, so HGTreeComponent is component id 80 rather than 67"
+            ),
         },
         "methodBodies": [
             {
@@ -1398,10 +1454,27 @@ def validate_unity_scheduled_culling_boundary(
 
 def validate_unity_hgtree_renderer_boundary(
     image: PEImage,
+    managed_hgtree_component: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Pin HGTreeRenderer ownership without merging it into scheduled culling."""
 
+    if managed_hgtree_component is None:
+        managed_hgtree_component = validate_native_handoff(
+            read_native_method_bodies()
+        )["managedHGTreeComponent"]
     require("unity_player_image_base", image.image_base, 0x180000000, image.path)
+    require(
+        "managed_hgtree_component_id",
+        managed_hgtree_component.get("componentId"),
+        80,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "managed_hgtree_component_component_67_match",
+        managed_hgtree_component.get("component67Match"),
+        False,
+        GAME_ASSEMBLY,
+    )
     require(
         "unity_hg_icall_create_renderer_list_index_in_bounds",
         UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX < UNITY_HG_ICALL_COUNT,
@@ -2048,16 +2121,23 @@ def validate_unity_hgtree_renderer_boundary(
                         "bit": 3,
                         "highQwordMask": "0x0000000000000008",
                     },
+                    "hgtreeComponent80Result": {
+                        "bank": 1,
+                        "bit": 16,
+                        "highQwordMask": "0x0000000000010000",
+                    },
                     "boundary": (
                         "this closes how numeric component ids become "
-                        "archetype bits; it does not yet prove that the "
-                        "HGTreeComponent native type is assigned id 67"
+                        "archetype bits; the installed HGTreeComponent "
+                        "get_id body independently returns 80, so this "
+                        "component-67 record is not HGTreeComponent"
                     ),
                 },
                 "structureBoundary": (
                     "this pointer is resolved from archetype component bit 67; "
                     "it is not the loader-owned registration blob stored in "
-                    "the runtime-transform owner's +0x78 vector"
+                    "the runtime-transform owner's +0x78 vector, and it is "
+                    "not the managed/native scripting HGTreeComponent at id 80"
                 ),
                 "nativeScriptingTypeIdentity": {
                     "proxyToNativeTypeNameClosed": True,
@@ -2077,14 +2157,18 @@ def validate_unity_hgtree_renderer_boundary(
                             "UnityEngine.HGGraphicsModule.dll"
                         ),
                     ],
+                    "managedGetId": managed_hgtree_component,
                     "boundary": (
-                        "this closes the native scripting proxy-to-type-name "
-                        "identity only; the installed code path assigning "
-                        "that type to archetype component bit 67 is not yet "
-                        "closed"
+                        "the scripting proxy/type identity and IL2CPP get_id "
+                        "body are both closed: HGTreeComponent is id 80 "
+                        "(high-qword bit 16), which disproves the former "
+                        "candidate link to the separate id-67 LOD-state record"
                     ),
                 },
-                "nativeTypeNameMappingClosed": False,
+                "managedHGTreeComponentIdMappingClosed": True,
+                "managedHGTreeComponentId": 80,
+                "component67MatchesHGTreeComponent": False,
+                "component67NativeIdentityClosed": False,
             },
             "dispatchPacket": {
                 "sizeBytes": 64,
@@ -2445,7 +2529,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
         validate_unity_scheduled_culling_boundary(PEImage(UNITY_PLAYER))
     )
     unity_hgtree_renderer_boundary = validate_unity_hgtree_renderer_boundary(
-        PEImage(UNITY_PLAYER)
+        PEImage(UNITY_PLAYER), native_handoff["managedHGTreeComponent"]
     )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
@@ -2463,8 +2547,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v11",
-        "status": "installed_cap_hgtree_component_mask_type_identity_lifecycle_lod_state_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v12",
+        "status": "installed_cap_hgtree_id80_separated_from_component67_lod_state_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -2505,13 +2589,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "equation, including id 67 -> high-qword bit 3. A second state "
             "initializer closes the all-LOD and terminal-LOD directly "
             "available branches while consuming the cumulative ranges. The "
-            "HGTreeComponent assignment to numeric id 67 remains open. The "
+            "hash-pinned IL2CPP HGTreeComponent.get_id body returns 80, "
+            "mapping it to high-qword bit 16 and disproving the former "
+            "candidate link between HGTreeComponent and the separate "
+            "component-67 LOD-state record. The native name/owner of id 67 "
+            "remains open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
             "The scheduled cull-view +0x18 consumer, remaining initially zero "
-            "loader-record bytes, the ECS LOD-count/range producer and exact "
-            "HGTreeComponent-to-id-67 assignment, "
+            "loader-record bytes, the component-67 ECS LOD-count/range "
+            "producer and native component identity, "
             "target-frame pointer/count, and unrelated live native lights "
             "remain open."
         ),
@@ -2639,6 +2727,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the parent/per-ArtTag LOD-bias encodings and per-view lodBias multiplier",
                 "the ArtTag LODStreamingOffset producer, payload copy, signed add, and clamp",
                 "the HGTreeComponentProxy-to-native-type name, namespace, and module identity",
+                "the IL2CPP HGTreeComponent.get_id return value 80 and its separation from component id 67",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
@@ -2651,7 +2740,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic names of the initially zero HGTree runtime-state bytes",
-                "the component-bit-67 LOD-count/range producer and HGTreeComponent-to-id-67 assignment",
+                "the component-bit-67 LOD-count/range producer and native component name/owner",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -2685,8 +2774,8 @@ def main() -> int:
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
-        "type identity/registration lifecycle/runtime transform/ECS component "
-        "mask and LOD-state equations, "
+        "type identity/id-80 registration lifecycle/runtime transform, "
+        "component-67 separation, ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
         "16-byte result, and 148-byte capture-row ABI closed."
