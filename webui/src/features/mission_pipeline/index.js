@@ -1015,11 +1015,14 @@
       offlineRecoveryEvidenceUnregistered: "Unregistered definition — no runtime consumer",
       offlineRecoveryEvidenceRadioOnly: "Radio definition only — consumer unknown",
       offlineRecoveryEvidenceBinaryRadio: "Definition only — no consumer on current original-data surfaces",
-      offlineRecoveryEvidenceNpcProxyConsumer: "Native NPC-proxy consumer - mission activation unknown",
+      offlineRecoveryEvidenceNpcProxyConsumer: "Auto-discovered DialogTree + native NPC-proxy consumer - mission activation unknown",
       offlineRecoveryEvidenceBinarySns: "SNS definition only - no consumer on current original-data surfaces",
       offlineRecoveryEvidenceBinaryReadingPopup: "Readable definition only - no activator on current original-data surfaces",
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "Unregistered dialog definition - no consumer on current original-data surfaces",
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "Auto-discovered DialogTree definition - no activator on current original-data surfaces",
+      offlineRecoveryOptionRoutes: "Validated authored option routes",
+      offlineRecoveryConnectionIndex: "connection index",
+      offlineRecoveryRouteIssues: "route nodes left unresolved (fail closed)",
       offlineRecoveryEvidenceMissionlessNativePlayback: "Exact local playback - mission bridge and order unknown",
       runtimeRecoveryEvidenceSameMissionLevelDataPlayback: "Exact native playback in this mission shell - quest trigger and order unknown",
       runtimeRecoveryEvidenceLuaControllerPlayback: "Exact shipped-Lua playback - mission owner and order unknown",
@@ -4877,6 +4880,7 @@
       const sources = [
         ...(row.sourceFiles || []),
         ...(row.definitionSourceFiles || []),
+        ...(row.consumerSourceFiles || []),
         ...(row.originalBinaryFiles || []),
         ...(row.originalGameFiles || []),
         ...(row.definitionAssets || []),
@@ -4934,6 +4938,15 @@
         : "";
       const terminalOptions = terminalOptionGroups.length
         ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryTerminalOptions"))}</strong>${terminalOptionGroups.map((group) => `<details open><summary><code>#${esc(group.optionGroup ?? "?")}</code></summary>${(group.routes || []).map((route) => `<div><code>${esc(route.optionId || "?")}</code><i>&rarr;</i><span>${route.finishIdSerialized ? `${esc(t("offlineRecoveryFinishId"))} <code>${esc(route.finishId)}</code>` : esc(t("offlineRecoveryFinishIdAbsent"))}</span></div>`).join("")}</details>`).join("")}</div>`
+        : "";
+      const recoveredOptionRouteNodes = Array.isArray(row.optionRouteRecovery?.nodes)
+        ? row.optionRouteRecovery.nodes
+        : [];
+      const recoveredOptionRouteIssues = Array.isArray(row.optionRouteRecovery?.issues)
+        ? row.optionRouteRecovery.issues.length
+        : 0;
+      const recoveredOptionRoutes = recoveredOptionRouteNodes.length
+        ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryOptionRoutes"))}</strong>${recoveredOptionRouteIssues ? `<small>${recoveredOptionRouteIssues.toLocaleString()} ${esc(t("offlineRecoveryRouteIssues"))}</small>` : ""}${recoveredOptionRouteNodes.map((node) => `<details open><summary><code>node #${esc(node.nodeId ?? "?")}</code> <span>${Number(node.normalOptionCount || 0).toLocaleString()} routes</span></summary>${(node.routes || []).map((route) => `<div><code>${esc(route.optionId || "?")}</code><i>&rarr;</i><code>${esc(route.targetNodeType || "node")} #${esc(route.targetNodeId ?? "?")}</code><span>${esc(t("offlineRecoveryConnectionIndex"))} <code>${esc(route.connectionIndex ?? "?")}</code> / ${esc(route.connectionIndexSource || "?")}</span></div>`).join("")}</details>`).join("")}</div>`
         : "";
       const recoveredLineCount = Array.isArray(row.lineIds) ? row.lineIds.length : 0;
       const missionTracking = row.missionNpcProxyTracking;
@@ -5289,7 +5302,7 @@
       const cutsceneAliasContext = row.rootPlaybackAlias
         ? `<p><strong>${esc(t("offlineRecoveryCutsceneAlias"))}</strong><span><code>${esc(row.rootPlaybackAlias.rootStoryKey || "?")}</code> &rarr; <code>${esc(row.rootPlaybackAlias.playableAssetStoryKey || "?")}</code> · ${esc(t(row.cutsceneAliasRole === "cutscene_root" ? "offlineRecoveryCutsceneAliasRootRole" : "offlineRecoveryCutsceneAliasPlayableRole"))}</span></p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${cutsceneAliasContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${parentLevelContext}${missingLineFragmentContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${cutsceneAliasContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${parentLevelContext}${missingLineFragmentContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${recoveredOptionRoutes}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

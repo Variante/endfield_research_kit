@@ -423,3 +423,11 @@ for (const [key, category] of [
         self.assertIn('t("storyAggregateVariants")', source)
         self.assertIn('t("storyAggregateOriginals")', source)
         self.assertIn("does not establish mission ownership", source)
+
+    def test_mission_pipeline_shows_composed_npc_proxy_dialog_branches(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("Auto-discovered DialogTree + native NPC-proxy consumer", source)
+        self.assertIn("row.optionRouteRecovery?.nodes", source)
+        self.assertIn("route.connectionIndexSource", source)
+        self.assertIn("...(row.consumerSourceFiles || [])", source)
+        self.assertIn("${recoveredOptionRoutes}", source)
