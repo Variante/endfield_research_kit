@@ -604,6 +604,27 @@ class AudioCategoryTests(unittest.TestCase):
         switch = result["musicNodeEvidence"][0]
         self.assertEqual(switch["treeDepth"], 1)
         self.assertEqual(switch["treeLeaves"][0]["audioNodeId"], ranseq_id)
+        self.assertEqual(switch["selectorValidation"], {
+            "status": "reciprocalChildrenCovered",
+            "treeLeafIds": [ranseq_id],
+            "reciprocalChildIds": [ranseq_id],
+            "treeLeafIdsOutsideReciprocalChildren": [],
+            "reciprocalChildrenWithoutTreeLeaf": [],
+        })
+        mismatched_switch = build_audio.hirc_v150_music_switch_structure(
+            switch_data,
+            1 + 12 + 7,
+            1,
+            [ranseq_id + 1],
+        )
+        self.assertEqual(
+            mismatched_switch["selectorValidation"]["status"],
+            "treeLeafOutsideReciprocalChildren",
+        )
+        self.assertEqual(
+            mismatched_switch["selectorValidation"]["treeLeafIdsOutsideReciprocalChildren"],
+            [ranseq_id],
+        )
         ranseq = result["musicNodeEvidence"][1]
         self.assertEqual(ranseq["selectionTypeLabels"], ["continuousSequence", "none"])
         self.assertEqual(ranseq["playlistItems"][1]["segmentId"], segment_id)

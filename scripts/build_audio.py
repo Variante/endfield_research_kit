@@ -3346,7 +3346,9 @@ def hirc_v150_music_switch_structure(
     data: bytes,
     children_offset: int,
     child_count: int,
+    child_ids: list[int] | None = None,
 ) -> dict[str, Any] | None:
+    """Decode a v150 MusicSwitch decision tree and check its child backlinks."""
     common = _hirc_v150_music_common_tail(data, children_offset, child_count)
     if not common:
         return None
@@ -3411,6 +3413,33 @@ def hirc_v150_music_switch_structure(
             visit(0, 0, ())
         if len(visited) != len(raw_nodes):
             raise ValueError("unreachable v150 MusicSwitch tree nodes")
+        tree_leaf_ids = [int(row["audioNodeId"]) for row in leaves]
+        if child_ids is None:
+            selector_validation = {
+                "status": "notCheckedNoReciprocalChildren",
+                "treeLeafIds": sorted(set(tree_leaf_ids)),
+                "reciprocalChildIds": None,
+                "treeLeafIdsOutsideReciprocalChildren": [],
+                "reciprocalChildrenWithoutTreeLeaf": [],
+            }
+        else:
+            tree_leaf_id_set = set(tree_leaf_ids)
+            reciprocal_child_id_set = set(int(child_id) for child_id in child_ids)
+            outside = sorted(tree_leaf_id_set - reciprocal_child_id_set)
+            missing = sorted(reciprocal_child_id_set - tree_leaf_id_set)
+            if outside:
+                status = "treeLeafOutsideReciprocalChildren"
+            elif missing:
+                status = "reciprocalChildNotInDecisionTree"
+            else:
+                status = "reciprocalChildrenCovered"
+            selector_validation = {
+                "status": status,
+                "treeLeafIds": sorted(tree_leaf_id_set),
+                "reciprocalChildIds": sorted(reciprocal_child_id_set),
+                "treeLeafIdsOutsideReciprocalChildren": outside,
+                "reciprocalChildrenWithoutTreeLeaf": missing,
+            }
         return {
             **common_row,
             **transition_row,
@@ -3424,6 +3453,7 @@ def hirc_v150_music_switch_structure(
             "treeNodeCount": len(raw_nodes),
             "treeLeafCount": len(leaves),
             "treeLeaves": leaves,
+            "selectorValidation": selector_validation,
         }
     except (ValueError, OverflowError):
         return None
@@ -3503,13 +3533,18 @@ def hirc_v150_music_structure(
     data: bytes,
     children_offset: int,
     child_count: int,
+    child_ids: list[int] | None = None,
 ) -> dict[str, Any] | None:
     parser = {
         10: hirc_v150_music_segment_structure,
         12: hirc_v150_music_switch_structure,
         13: hirc_v150_music_random_sequence_structure,
     }.get(object_type)
-    return parser(data, children_offset, child_count) if parser else None
+    if not parser:
+        return None
+    if object_type == 12:
+        return parser(data, children_offset, child_count, child_ids)
+    return parser(data, children_offset, child_count)
 
 
 def hirc_v150_empty_music_children(
@@ -3527,7 +3562,7 @@ def hirc_v150_empty_music_children(
     for offset in range(0, max(0, len(data) - 3)):
         if unpack_from("<I", data, offset)[0] != 0:
             continue
-        structure = hirc_v150_music_structure(object_type, data, offset, 0)
+        structure = hirc_v150_music_structure(object_type, data, offset, 0, [])
         if structure:
             matches.append(([], offset, structure))
             if len(matches) > 1:
@@ -3881,15 +3916,21 @@ def traverse_hirc_event(
                 relation = "layerChild"
             elif object_type == 10:
                 relation = "musicTrack"
-                structure = structure or hirc_v150_music_structure(object_type, data, offset, len(child_ids))
+                structure = structure or hirc_v150_music_structure(
+                    object_type, data, offset, len(child_ids), child_ids
+                )
                 node_kind = "musicSegment"
             elif object_type == 12:
                 relation = "musicSwitchCandidate"
-                structure = structure or hirc_v150_music_structure(object_type, data, offset, len(child_ids))
+                structure = structure or hirc_v150_music_structure(
+                    object_type, data, offset, len(child_ids), child_ids
+                )
                 node_kind = "musicSwitchContainer"
             elif object_type == 13:
                 relation = "musicPlaylistCandidate"
-                structure = structure or hirc_v150_music_structure(object_type, data, offset, len(child_ids))
+                structure = structure or hirc_v150_music_structure(
+                    object_type, data, offset, len(child_ids), child_ids
+                )
                 node_kind = "musicRandomSequenceContainer"
             else:
                 relation = "groupChild"
@@ -3903,7 +3944,20 @@ def traverse_hirc_event(
                 }
                 if structure:
                     music_row.update(structure)
-                    music_row["structureStatus"] = "typedExactV150"
+                    selector_status = (structure.get("selectorValidation") or {}).get("status")
+                    music_row["structureStatus"] = (
+                        "typedExactV150"
+                        if selector_status in {None, "reciprocalChildrenCovered"}
+                        else "typedExactV150SelectorBoundaryUnresolved"
+                    )
+                    if selector_status not in {None, "reciprocalChildrenCovered"}:
+                        unresolved_nodes.append({
+                            "objectId": object_id,
+                            "objectType": object_type,
+                            "rootActionId": root_action_id,
+                            "reason": "musicSwitchSelectorReciprocalMismatch",
+                            "selectorValidation": structure["selectorValidation"],
+                        })
                 else:
                     music_row["structureStatus"] = "structureTailUnresolved"
                     unresolved_nodes.append({
