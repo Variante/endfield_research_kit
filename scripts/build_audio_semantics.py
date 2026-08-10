@@ -5158,6 +5158,46 @@ def collect_timeline_audio_ownership(
     carriers: dict[str, list[dict[str, Any]]] = defaultdict(list)
     cue_carriers: dict[str, list[dict[str, Any]]] = defaultdict(list)
     stats = Counter()
+
+    # The object-index writer is not required to emit a referenced asset before
+    # the Track that points at it.  Pre-index the small playable subset so an
+    # AudioMusicPlayable after its Track is still an exact PPtr join.  This is
+    # deliberately not a full object-index materialization.
+    if mono_file.is_file():
+        with mono_file.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                try:
+                    record = json.loads(line)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if not isinstance(record, dict) or record.get("recordType") != "object":
+                    continue
+                name = str(record.get("name") or "")
+                script_name = _scalar_value(record, "$.m_Name")
+                is_audio_event_playable = (
+                    "AudioEventPlayable" in name
+                    or "AudioDlgEventPlayable" in name
+                    or "AudioMusicPlayable" in name
+                    or script_name in {
+                        "AudioEventPlayable",
+                        "AudioDlgEventPlayable",
+                        "AudioMusicPlayable",
+                    }
+                )
+                event_value = _scalar_value(record, "$._audioEventKey")
+                identity = _object_identity(record)
+                key = _object_identity_key(identity)
+                event_id = str(event_value or "").strip().lower()
+                if is_audio_event_playable and event_id and key and (
+                    not wanted
+                    or event_id in wanted
+                    or "AudioMusicPlayable" in name
+                    or script_name == "AudioMusicPlayable"
+                ):
+                    playable_events[key] = event_id
+                    if "AudioMusicPlayable" in name or script_name == "AudioMusicPlayable":
+                        stats["audioMusicPlayableRecords"] += 1
+
     if mono_file.is_file():
         with mono_file.open("r", encoding="utf-8") as handle:
             for line in handle:
@@ -5170,17 +5210,25 @@ def collect_timeline_audio_ownership(
                     continue
                 stats["monoObjects"] += 1
                 name = str(record.get("name") or "")
+                script_name = _scalar_value(record, "$.m_Name")
                 event_value = _scalar_value(record, "$._audioEventKey")
                 if event_value is not None and (
                     "AudioEventPlayable" in name
                     or "AudioDlgEventPlayable" in name
-                    or _scalar_value(record, "$.m_Name")
+                    or "AudioMusicPlayable" in name
+                    or script_name
                     in {"AudioEventPlayable", "AudioDlgEventPlayable"}
+                    or script_name == "AudioMusicPlayable"
                 ):
                     event_id = str(event_value or "").strip().lower()
                     identity = _object_identity(record)
                     key = _object_identity_key(identity)
-                    if event_id and key and (not wanted or event_id in wanted):
+                    is_music_playable = (
+                        "AudioMusicPlayable" in name or script_name == "AudioMusicPlayable"
+                    )
+                    if event_id and key and (
+                        not wanted or event_id in wanted or is_music_playable
+                    ):
                         playable_events[key] = event_id
                         stats["audioEventPlayableRecords"] += 1
                 cue_start = str(_scalar_value(record, "$._startCueName") or "").strip()
@@ -5214,7 +5262,17 @@ def collect_timeline_audio_ownership(
                     if value:
                         clip_displays.append((int(match.group(1)), value))
                 for clip_index, display_name in clip_displays:
-                    if wanted and not scan_all_cues and not wanted_cues and display_name not in wanted:
+                    if (
+                        wanted
+                        and not scan_all_cues
+                        and not wanted_cues
+                        and display_name not in wanted
+                        and display_name not in {
+                            "audioeventplayable",
+                            "audiodlgeventplayable",
+                            "audiomusicplayable",
+                        }
+                    ):
                         continue
                     parent = _resolved_pptr(record, "$.m_Parent")
                     asset = _resolved_pptr(
@@ -5233,17 +5291,23 @@ def collect_timeline_audio_ownership(
                     asset_is_audio_playable = (
                         "AudioEventPlayable" in asset_name
                         or "AudioDlgEventPlayable" in asset_name
+                        or "AudioMusicPlayable" in asset_name
                     )
+                    asset_is_audio_music = "AudioMusicPlayable" in asset_name
                     asset_is_audio_cue = "AudioCuePlayable" in asset_name
                     if (
                         wanted
                         and (playable_event_id or asset_is_audio_playable)
                         and display_name not in wanted
+                        and playable_event_id not in wanted
+                        and not asset_is_audio_music
                     ):
                         continue
                     if playable_event_id and playable_event_id != display_name:
-                        stats["timelineCarrierPlayableMismatch"] += 1
-                        continue
+                        if not asset_is_audio_music:
+                            stats["timelineCarrierPlayableMismatch"] += 1
+                            continue
+                        stats["timelineCarrierMusicDisplayNameMismatchAccepted"] += 1
                     if not playable_event_id and not playable_cue and not asset_is_audio_playable and not asset_is_audio_cue:
                         stats["timelineCarrierPlayableTypeUnresolved"] += 1
                         continue
@@ -5252,7 +5316,8 @@ def collect_timeline_audio_ownership(
                     if not base_id:
                         stats["timelineCarrierNonLevelSequenceParent"] += 1
                     occurrence = {
-                        "eventId": display_name,
+                        "eventId": playable_event_id or display_name,
+                        "timelineClipDisplayName": display_name,
                         "timelineAssetName": parent_name,
                         "timelineAssetNameBase": base_id,
                         "timelineParentNameStatus": (
@@ -5284,8 +5349,10 @@ def collect_timeline_audio_ownership(
                         ),
                     }
                     if playable_event_id or asset_is_audio_playable:
-                        carriers[display_name].append(occurrence)
+                        carriers[playable_event_id or display_name].append(occurrence)
                         stats["exactTimelineCarriers"] += 1
+                        if asset_is_audio_music:
+                            stats["exactTimelineMusicCarriers"] += 1
                     elif playable_cue or asset_is_audio_cue:
                         cue_values = playable_cue or {
                             "startCueName": display_name,
@@ -8265,12 +8332,17 @@ def build_audio_semantic_data(
         export_root,
         event_ids=timeline_target_event_ids,
     )
+    timeline_context_event_ids = timeline_target_event_ids | {
+        str(event_id or "").strip().lower()
+        for event_id in (timeline_ownership.get("occurrencesByEvent") or {})
+        if str(event_id or "").strip()
+    }
     timeline_cue_semantics = build_timeline_audio_cue_contexts(
         timeline_ownership,
         cue_semantics,
     )
     levelsequence_semantics = build_levelsequence_audio_contexts(
-        timeline_target_event_ids,
+        timeline_context_event_ids,
         timeline_ownership,
         levelsequence_play_actions,
     )
@@ -8722,7 +8794,7 @@ def build_audio_semantic_data(
                 **(levelsequence_play_actions.get("stats") or {}),
                 **(timeline_ownership.get("stats") or {}),
                 **(levelsequence_semantics.get("stats") or {}),
-                "targetEventCount": len(timeline_target_event_ids),
+                "targetEventCount": len(timeline_context_event_ids),
                 "evidenceBoundary": levelsequence_semantics.get("evidenceBoundary") or "",
                 "playActionEvidenceBoundary": levelsequence_play_actions.get("evidenceBoundary") or "",
                 "timelineOwnershipEvidenceBoundary": timeline_ownership.get("evidenceBoundary") or "",
