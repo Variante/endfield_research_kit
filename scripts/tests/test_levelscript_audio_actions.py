@@ -86,7 +86,13 @@ def output_param(path: str, *, source: int = 0) -> bytes:
     return b"\x02" + struct.pack("<ii", source, len(raw)) + raw
 
 
-def decode_audio(payload: bytes, tag: int, member_count: int) -> dict:
+def decode_audio(
+    payload: bytes,
+    tag: int,
+    member_count: int,
+    *,
+    action_map_role: str = "actionList#1 root",
+) -> dict:
     source = payload if payload else b"\x00"
     payload_start = len(source) if not payload else 0
     record = {
@@ -101,11 +107,30 @@ def decode_audio(payload: bytes, tag: int, member_count: int) -> dict:
         source,
         record,
         next_start=len(source),
-        action_map_role="actionList#1 root",
+        action_map_role=action_map_role,
     ).get("audioAction") or {}
 
 
 class LevelScriptAudioActionTests(unittest.TestCase):
+    def test_audio_formatter_tag_collision_requires_action_list_membership(self) -> None:
+        valid = (
+            bytes.fromhex("ff ff 00 00 00 00 ff ff ff ff")
+            + string_param("au_int_example")
+        )
+        self.assertEqual(
+            "AnnounceAudioOnTarget",
+            decode_audio(valid, 0x0016, 0x09)["action"],
+        )
+        self.assertEqual(
+            {},
+            decode_audio(
+                valid,
+                0x0016,
+                0x09,
+                action_map_role="getterList#1",
+            ),
+        )
+
     def test_zero_field_audio_controls_decode_with_bounded_list_framing(self) -> None:
         for tag, name in (
             (0x00B7, "ExitCustomMusicMode"),
