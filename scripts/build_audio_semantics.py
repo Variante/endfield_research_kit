@@ -5559,8 +5559,18 @@ def collect_interactive_component_contexts(
     export_root: Path,
     *,
     decoder: Any | None = None,
+    table_decoder: Any | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
-    """Decode per-entity InteractiveAudioData state maps from MemoryPack."""
+    """Decode per-entity InteractiveAudioData state maps from MemoryPack.
+
+    ``InteractiveData`` files are core-template definitions, while
+    ``InteractiveTable`` maps those definitions to configured interactive
+    identities.  The component body itself proves the request, but the file
+    name is not by itself an entity owner.  When both table mirrors decode to
+    the same exact mapping, add the template path and all configured consumer
+    identities to each context.  A missing or ambiguous table mapping stays an
+    explicit association gap rather than being guessed from the file stem.
+    """
 
     if decoder is None:
         try:

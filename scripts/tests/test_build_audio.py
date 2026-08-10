@@ -1405,6 +1405,41 @@ AnimationClip:
             )
             self.assertEqual(result["animationControllerIndex"]["status"], "partial")
 
+    def test_animator_controller_state_clip_refs_are_bounded_authored_membership(self) -> None:
+        payload = {
+            "m_AnimationClips": [
+                {"m_FileID": 2, "m_PathID": 101},
+                {"m_FileID": 2, "m_PathID": 102},
+            ],
+            "m_Controller": {
+                "m_LayerArray": [{"data": {"m_StateMachineIndex": 0}}],
+                "m_StateMachineArray": [{"data": {
+                    "m_StateConstantArray": [{"data": {
+                        "m_NameID": 11,
+                        "m_FullPathID": 22,
+                        "m_TagID": 33,
+                        "m_BlendTreeConstantArray": [{"data": {
+                            "m_NodeArray": [{"data": {
+                                "m_ClipID": 1,
+                                "m_BlendType": 0,
+                            }}],
+                        }}],
+                    }}],
+                }}],
+            },
+        }
+        refs = build_audio.animator_controller_state_clip_refs(payload)
+        self.assertEqual(list(refs), [1])
+        self.assertEqual(refs[1][0]["clipSlot"], 1)
+        self.assertEqual(refs[1][0]["stateMachineLayerIndices"], [0])
+        self.assertTrue(refs[1][0]["stateMachineReferencedByLayer"])
+        self.assertEqual(refs[1][0]["reachability"], "authoredStateMembership")
+        self.assertEqual(refs[1][0]["runtimeExecution"], "unobserved")
+
+        malformed = dict(payload)
+        malformed["m_Controller"] = {"m_LayerArray": "not-a-list"}
+        self.assertEqual(build_audio.animator_controller_state_clip_refs(malformed), {})
+
     def test_collects_direct_character_and_bounded_enemy_audio(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
