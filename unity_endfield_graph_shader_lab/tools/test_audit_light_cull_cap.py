@@ -355,6 +355,29 @@ class LightCullCapAuditTests(unittest.TestCase):
             result["component67Owners"]["entityTypes"][1]["name"],
             "MergedRenderCollider",
         )
+        registry = result["component67Owners"]["nativeCallbackRegistry"]
+        self.assertEqual(registry["installerCallCount"], 105)
+        self.assertEqual(
+            [row["installerCallCount"] for row in registry["constructors"]],
+            [52, 53],
+        )
+        self.assertEqual(
+            [
+                row["name"]
+                for row in registry["component67Owners"][0][
+                    "activeTransitions"
+                ]
+            ],
+            [
+                "UnloadedToLoading",
+                "LoadingToLoaded",
+                "UnloadingToUnloaded",
+                "LoadingToUnloaded",
+            ],
+        )
+        self.assertFalse(
+            registry["component67OwnerRegistriesReplacedByManagedScript"]
+        )
         self.assertEqual(
             result["component67InitialData"]["runtimeProducer"][
                 "archetypeInitialDataCopy"
@@ -401,6 +424,57 @@ class LightCullCapAuditTests(unittest.TestCase):
             result["dynamicStreaming"]["fbMain"]["treeRootCompCount"],
             2828,
         )
+
+    def test_native_ecs_callback_registry_contract(self) -> None:
+        transitions = AUDIT.validate_streaming_byte_enum_fields(
+            AUDIT.GLOBAL_METADATA.read_bytes(),
+            AUDIT.GLOBAL_METADATA,
+            "streaming_entity_transition",
+            AUDIT.STREAMING_ENTITY_TRANSITION_FIELDS,
+        )
+        result = AUDIT.validate_native_ecs_callback_registry(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER),
+            AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+            transitions,
+        )
+        self.assertEqual(result["registryLayout"]["sizeBytes"], 0x288)
+        self.assertEqual(result["registryLayout"]["callbackSlotCount"], 10)
+        self.assertEqual(
+            result["managedScriptOverrides"],
+            [
+                {"entityType": 1, "entityTypeName": "Water"},
+                {"entityType": 13, "entityTypeName": "WaterDecal"},
+            ],
+        )
+
+    def test_native_ecs_callback_target_drift_fails_closed(self) -> None:
+        transitions = AUDIT.validate_streaming_byte_enum_fields(
+            AUDIT.GLOBAL_METADATA.read_bytes(),
+            AUDIT.GLOBAL_METADATA,
+            "streaming_entity_transition",
+            AUDIT.STREAMING_ENTITY_TRANSITION_FIELDS,
+        )
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18116B9F3 and size == 7:
+                data[3] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=native_ecs_system_type0_slot1_callback; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_native_ecs_callback_registry(
+                    image,
+                    AUDIT.PEImage(AUDIT.GAME_ASSEMBLY),
+                    transitions,
+                )
 
     def test_streaming_scene_v2_hgtree_count_drift_fails_closed(self) -> None:
         census = json.loads(

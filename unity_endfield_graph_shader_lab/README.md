@@ -1696,7 +1696,17 @@ entry 677 reaches the native converter registration path: it constructs 43
 slots at `0x308` bytes each, selects the slot with `bsf(componentTypeMask)`,
 requires a non-empty component list, and requires Transform first. Those are
 serialized converter bits rather than ECS component IDs, so component 67
-remains a native LOD-state identity/producer problem. The complete hash-pinned
+remains a native LOD-state identity/producer problem. The native lifecycle
+registry is now exact as well: each `ECSEntityType` owns a `0x288`-byte record
+containing ten `0x40`-byte `EntityTransition` callbacks from `+0x08`.
+Installed metadata names all ten slots. The complete 105-call installer census
+partitions between two `StreamingGameplayManager` constructors (52/53 calls),
+and both install identical component-67 maps for Render/type 0 and
+MergedRenderCollider/type 9. Component 67 is touched only at
+`UnloadedToLoading`, `LoadingToLoaded`, `UnloadingToUnloaded`, and
+`LoadingToUnloaded`; waiting slots 2/7 are unbound. The managed script replaces
+only Water/type 1 and WaterDecal/type 13, leaving those native maps active. The
+complete hash-pinned
 `StreamingSceneManagerScript..ctor` binds only bits
 12/14/15/19/25/29/32/33/40 through the managed Mono-converter path; HGTree
 bit 41 is absent. The complete installed-VFS corpus of 117
@@ -1720,9 +1730,10 @@ complete scan of 51,012 main Streaming payloads decodes 3,088,714,060 bytes and
 3,084,834 union records; no tag-1 component vector contains HGTree bit 41 or
 HLODGroup bit 11. Native tables close tag 1 as MonoEntity, tag 2 as native
 ECS, and tag 3 as Proxy. Installed metadata closes all `ECSEntityType` and
-`ProxyEntityType` byte values. Native callback-slot registration proves
-component 67 is shared by type 0 `Render` (`0x181154230/0x181159010`) and type
-9 `MergedRenderCollider` (`0x181153310/0x181157760`). The full payload census
+`ProxyEntityType` byte values, plus all ten `EntityTransition` byte values.
+Native callback-slot registration proves component 67 is shared by type 0
+`Render` and type 9 `MergedRenderCollider` across transitions 1/3/6/8. The
+full payload census
 contains 34,672 Render records in 1,384 files and 2,576,964
 MergedRenderCollider records in 4,720 files, closing native entity ownership
 without inventing a standalone component name. StreamingSceneV2 root fields
