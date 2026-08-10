@@ -23,11 +23,15 @@ class UniqueMissionTrackedNpcProxyDialogContextTests(unittest.TestCase):
                     "missionId": "m1",
                     "questId": "m1_q#2",
                     "scene": "level_a",
+                    "useFilterCondition": False,
+                    "trackingVisibilityFilter": None,
                 }, {
                     "type": "NpcProxyTrackingInfo",
                     "missionId": "m1",
                     "questId": "m1_q#7",
                     "scene": "level_a",
+                    "useFilterCondition": False,
+                    "trackingVisibilityFilter": None,
                 }],
             },
             "npc_proxy_rows": {
@@ -93,26 +97,50 @@ class UniqueMissionTrackedNpcProxyDialogContextTests(unittest.TestCase):
                 fixture["npc_tracking_consumers"]["proxy_a"][1][field] = value
                 self.assertEqual([], self.build(fixture))
 
-    def test_optional_publication_scope_requires_exact_proxy_mission(self) -> None:
+    def test_discovers_additional_future_proxy_without_an_allowlist(self) -> None:
         fixture = self.fixture()
-        args = {
-            **fixture,
-            "allowed_proxy_missions": {"proxy_a": "m1"},
+        fixture["npc_tracking_consumers"]["proxy_future"] = [{
+            "type": "NpcProxyTrackingInfo",
+            "missionId": "future_mission",
+            "questId": "future_mission_q#12",
+            "scene": "future_level",
+            "useFilterCondition": False,
+            "trackingVisibilityFilter": None,
+        }]
+        fixture["npc_proxy_rows"]["proxy_future"] = {
+            "proxyId": "proxy_future",
+            "levelId": "future_level",
+            "subDataParentId": 200,
         }
-        self.assertEqual(1, len(
-            language_bundle
-            .build_unique_mission_tracked_npc_proxy_dialog_contexts(**args)
-        ))
-        args["allowed_proxy_missions"] = {"proxy_a": "m2"}
-        self.assertEqual([], (
-            language_bundle
-            .build_unique_mission_tracked_npc_proxy_dialog_contexts(**args)
-        ))
-        args["allowed_proxy_missions"] = {"proxy_b": "m1"}
-        self.assertEqual([], (
-            language_bundle
-            .build_unique_mission_tracked_npc_proxy_dialog_contexts(**args)
-        ))
+        fixture["npc_proxy_ex"]["data"]["proxy_future"] = [{
+            "missionId": "",
+            "dialogId": "dlg_future_1",
+        }]
+        fixture["dialog_id_registry"]["dlg_future_1"] = deepcopy(
+            fixture["dialog_id_registry"]["dlg_m1_1"]
+        )
+
+        rows = self.build(fixture)
+        self.assertEqual(
+            [(row["npcProxyId"], row["missionId"]) for row in rows],
+            [("proxy_a", "m1"), ("proxy_future", "future_mission")],
+        )
+
+    def test_rejects_filtered_or_mixed_tracking_rows(self) -> None:
+        for mutation in ("filtered", "mixed"):
+            with self.subTest(mutation=mutation):
+                fixture = deepcopy(self.fixture())
+                fixture["npc_tracking_consumers"]["proxy_a"][0][
+                    "useFilterCondition"
+                ] = True
+                fixture["npc_tracking_consumers"]["proxy_a"][0][
+                    "trackingVisibilityFilter"
+                ] = {"conditionType": "fixture"}
+                if mutation == "filtered":
+                    fixture["npc_tracking_consumers"]["proxy_a"] = [
+                        fixture["npc_tracking_consumers"]["proxy_a"][0]
+                    ]
+                self.assertEqual([], self.build(fixture))
 
     def test_rejects_authored_mission_owner_or_level_mismatch(self) -> None:
         owned = deepcopy(self.fixture())

@@ -1008,6 +1008,7 @@
       offlineRecoveryFinishIdAbsent: "finishId not serialized",
       offlineRecoveryEvidenceResultBranch: "Exact result branch",
       offlineRecoveryEvidenceTrackedNpc: "Mission-tracked NPC dialog — playback owner unknown",
+      offlineRecoveryTrackingAutoCensus: "Auto-discovered from complete active MissionRuntime corpus",
       offlineRecoveryEvidenceEmptyHost: "Definition only \u2014 mission script empty",
       offlineRecoveryEmptyHost: "Exact empty mission host",
       offlineRecoveryEmptyHostBoundary: "The mission-named LevelData contains one propertyless LevelScript. Its action list, UID records, and task maps are empty, so it cannot activate or order these Story definitions.",
@@ -1855,6 +1856,7 @@
       offlineRecoveryFinishIdAbsent: "\u672a\u5e8f\u5217\u5316 finishId",
       offlineRecoveryEvidenceResultBranch: "\u7cbe\u786e\u7ed3\u679c\u5206\u652f",
       offlineRecoveryEvidenceTrackedNpc: "\u4efb\u52a1\u8ffd\u8e2a NPC \u5bf9\u8bdd\uff0c\u64ad\u653e\u5f52\u5c5e\u672a\u77e5",
+      offlineRecoveryTrackingAutoCensus: "\u4ece\u5b8c\u6574\u7684\u5f53\u524d MissionRuntime \u8bed\u6599\u81ea\u52a8\u53d1\u73b0",
       offlineRecoveryEvidenceEmptyHost: "\u4ec5\u5b9a\u4e49 \u2014 \u4efb\u52a1\u811a\u672c\u4e3a\u7a7a",
       offlineRecoveryEmptyHost: "\u7cbe\u786e\u7a7a\u4efb\u52a1\u5bbf\u4e3b",
       offlineRecoveryEmptyHostBoundary: "\u8fd9\u4e2a\u4efb\u52a1\u547d\u540d\u7684 LevelData \u53ea\u5305\u542b\u4e00\u4e2a\u65e0\u5c5e\u6027\u7684 LevelScript\u3002\u5176\u52a8\u4f5c\u5217\u8868\u3001UID \u8bb0\u5f55\u548c\u4efb\u52a1\u6620\u5c04\u5747\u4e3a\u7a7a\uff0c\u56e0\u6b64\u4e0d\u80fd\u6fc0\u6d3b\u6216\u6392\u5217\u8fd9\u4e9b Story \u5b9a\u4e49\u3002",
@@ -4890,6 +4892,8 @@
         row.runtimeRegistry,
         row.npcProxyConsumers?.length ? "NpcProxyExDataTable" : "",
         row.missionNpcProxyTracking?.sourceFile,
+        ...(row.missionNpcProxyTrackingContexts || [])
+          .flatMap((context) => context.sourceFiles || []),
         row.missionQuestBranchContext?.sourceFile,
         row.missionQuestSequenceContext?.sourceFile,
         row.missionQuestTopologyContext?.sourceFile,
@@ -4949,10 +4953,18 @@
         ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryOptionRoutes"))}</strong>${recoveredOptionRouteIssues ? `<small>${recoveredOptionRouteIssues.toLocaleString()} ${esc(t("offlineRecoveryRouteIssues"))}</small>` : ""}${recoveredOptionRouteNodes.map((node) => `<details open><summary><code>node #${esc(node.nodeId ?? "?")}</code> <span>${Number(node.normalOptionCount || 0).toLocaleString()} routes</span></summary>${(node.routes || []).map((route) => `<div><code>${esc(route.optionId || "?")}</code><i>&rarr;</i><code>${esc(route.targetNodeType || "node")} #${esc(route.targetNodeId ?? "?")}</code><span>${esc(t("offlineRecoveryConnectionIndex"))} <code>${esc(route.connectionIndex ?? "?")}</code> / ${esc(route.connectionIndexSource || "?")}</span></div>`).join("")}</details>`).join("")}</div>`
         : "";
       const recoveredLineCount = Array.isArray(row.lineIds) ? row.lineIds.length : 0;
-      const missionTracking = row.missionNpcProxyTracking;
-      const missionTrackingContext = missionTracking
-        ? `<p><strong>${esc(t("offlineRecoveryMissionTracking"))}</strong>${missionTracking.crossMission ? `<span>${esc(t("offlineRecoveryRuntimeMission"))}: <code>${esc(missionTracking.missionId || "?")}</code></span>` : ""}<code>${esc(missionTracking.proxyId || "?")}</code><code>${esc(missionTracking.levelId || "?")}</code>${(missionTracking.questIds || []).length ? `<span>${esc(t("offlineRecoveryTrackedQuests"))}: ${(missionTracking.questIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</span>` : ""}</p>`
-        : "";
+      const missionTrackings = Array.isArray(
+        row.missionNpcProxyTrackingContexts,
+      ) && row.missionNpcProxyTrackingContexts.length
+        ? row.missionNpcProxyTrackingContexts
+        : (row.missionNpcProxyTracking ? [row.missionNpcProxyTracking] : []);
+      const missionTrackingContext = missionTrackings.map((missionTracking) => {
+        const trackingSources = (missionTracking.sourceFiles || []).map((sourceFile) => {
+          const sourceHash = missionTracking.sourceSha256?.[sourceFile];
+          return `<small><code>${esc(sourceFile)}</code>${sourceHash ? ` / SHA-256 <code>${esc(sourceHash)}</code>` : ""}</small>`;
+        }).join("");
+        return `<div><p><strong>${esc(t("offlineRecoveryMissionTracking"))}</strong><span>${esc(t("offlineRecoveryTrackingAutoCensus"))}</span>${missionTracking.crossMission ? `<span>${esc(t("offlineRecoveryRuntimeMission"))}: <code>${esc(missionTracking.missionId || "?")}</code></span>` : ""}<code>${esc(missionTracking.proxyId || "?")}</code><code>${esc(missionTracking.levelId || "?")}</code>${(missionTracking.questIds || []).length ? `<span>${esc(t("offlineRecoveryTrackedQuests"))}: ${(missionTracking.questIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</span>` : ""}</p>${trackingSources}</div>`;
+      }).join("");
       const npcProxyConsumers = Array.isArray(row.npcProxyConsumers)
         ? row.npcProxyConsumers
         : [];
