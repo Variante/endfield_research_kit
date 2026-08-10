@@ -30,11 +30,82 @@ from scripts.story_builder.level_bindings import (
     parse_level_interactive_narrative_mission_context,
     parse_levelscript_interactive_narrative_maps,
     parse_levelscript_brief_data_entry,
+    resolve_levelscript_dynamic_property_string,
     match_levelscript_native_reading_popup_record,
 )
 
 
 class LevelDataScriptHostTests(unittest.TestCase):
+    def test_dynamic_audio_property_join_requires_exact_brief_string_shape(self) -> None:
+        brief = {
+            "properties": [{
+                "name": "Start_music",
+                "value": {
+                    "valueType": 7,
+                    "atomCount": 1,
+                    "atoms": [{"valueBit64": 0, "text": "au_music_race_start"}],
+                },
+            }],
+        }
+        binding = {
+            "bindingKind": "dynamic",
+            "paramSource": 200,
+            "idRef": -1,
+            "path": "Start_music",
+        }
+        resolved = resolve_levelscript_dynamic_property_string(brief, binding)
+        self.assertEqual("au_music_race_start", resolved["value"])
+        self.assertEqual(
+            "exact_levelscript_brief_property_string",
+            resolved["resolutionMode"],
+        )
+        self.assertEqual(0, resolved["propertyAtomValueBit64"])
+
+        for invalid_binding in (
+            {**binding, "paramSource": 100},
+            {**binding, "idRef": 2},
+            {**binding, "path": "Missing"},
+        ):
+            self.assertIsNone(
+                resolve_levelscript_dynamic_property_string(brief, invalid_binding)
+            )
+
+        invalid_briefs = (
+            {
+                "properties": [
+                    *brief["properties"],
+                    brief["properties"][0],
+                ],
+            },
+            {
+                "properties": [{
+                    "name": "Start_music",
+                    "value": {
+                        "valueType": 7,
+                        "atomCount": 2,
+                        "atoms": [
+                            {"valueBit64": 0, "text": "one"},
+                            {"valueBit64": 0, "text": "two"},
+                        ],
+                    },
+                }],
+            },
+            {
+                "properties": [{
+                    "name": "Start_music",
+                    "value": {
+                        "valueType": 3,
+                        "atomCount": 1,
+                        "atoms": [{"valueBit64": 0, "text": "not-a-string"}],
+                    },
+                }],
+            },
+        )
+        for invalid_brief in invalid_briefs:
+            self.assertIsNone(
+                resolve_levelscript_dynamic_property_string(invalid_brief, binding)
+            )
+
     def test_brief_dictionary_decode_is_reused_for_identical_binary_inputs(self) -> None:
         data = self._brief_dictionary([101, 202])
         level_bindings._parse_leveldata_levelscript_brief_dictionary_cached.cache_clear()
