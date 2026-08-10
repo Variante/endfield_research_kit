@@ -65,7 +65,7 @@ Prefer focused tests, direct probes, and data-only builds during the batch.
 | `build_presentation_data.py` | Presentation semantic data |
 | `build_assets.py` | Assets, Story media, and Gameplay asset indexes |
 | `build_audio.py` | Lossless FLAC audio decode/relink and Gameplay SFX sidecar |
-| `build_audio_semantics.py` | Debug Audio runtime/event/media semantic payloads |
+| `build_audio_semantics.py` | Audio runtime/event/media semantic payloads |
 | `convert_audio_to_flac.py` | Standalone WAV-to-FLAC migration helper |
 | `pack_webui.py` | Static package plus FLAC-only audio/media archives |
 
@@ -179,7 +179,7 @@ yield multiple possible media leaves. Play roots, selector/layer relations,
 partial traversal, and decoded-content equivalence remain separate; unresolved
 runtime selection is never labeled as a set of equivalent choices.
 
-`build_audio.py` also refreshes the debug-only Audio view. Run
+`build_audio.py` also refreshes the Audio view. Run
 `python scripts\build_audio_semantics.py --language CN` independently when the
 authoritative audio index is already current and only its semantic payload or
 frontend changed. The compact overview and Event data load on view activation;

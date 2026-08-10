@@ -126,7 +126,7 @@ Progression payloads.
 After frontend or data changes:
 
 1. Check export freshness and run the smallest relevant builder.
-2. Smoke-test all six normal pages and the debug-only Mission Pipeline.
+2. Smoke-test all normal pages and the debug-only Mission Pipeline.
 3. Verify Story reset/filter behavior and inline SNS fixtures.
 4. Open a playable character and enemy; check variants, progression,
    projectiles, sounds, and asset links.

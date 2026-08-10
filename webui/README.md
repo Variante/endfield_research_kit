@@ -29,7 +29,7 @@ Normal navigation exposes:
 - **Updates:** differences between previous and current exported game data.
 
 **Mission Pipeline** is experimental and appears only with `Show debug info`.
-**Audio** is also debug-only. It exposes the current binary-validated runtime
+**Audio** is a normal page. It exposes the current binary-validated runtime
 model, Wwise HIRC object families, authored event contexts, typed possible
 media leaves, and the physical decoded-media inventory without presenting the
 offline graph as a live playback trace.
@@ -47,7 +47,7 @@ projectile matching evidence, and unresolved ownership remain debug-only.
 - `reference.js`, `assets.js`, `updates.js`: Text, Assets, and Updates pages.
 - `src/features/characters/`: Characters page and live override editing.
 - `src/features/gameplay/`: Gameplay page and integrations.
-- `src/features/audio/`: lazy, virtualized debug Audio page.
+- `src/features/audio/`: lazy, virtualized Audio page.
 - `src/features/mission_pipeline/`: experimental mission evidence view.
 - `src/features/{economy,world,presentation,projectiles,combat}/`: semantic
   payload integrations used by Gameplay or debug views.
