@@ -1659,16 +1659,30 @@
       if (system.enumValues && typeof system.enumValues === "object") counts.push(`${Object.keys(system.enumValues).length} enum values`);
       if (asArray(system.nativeAnchors).length) counts.push(`${asArray(system.nativeAnchors).length} native anchors`);
       if (asArray(system.nativeCallChains).length) counts.push(`${asArray(system.nativeCallChains).length} native call chains`);
+      if (asArray(system.nativeStateGroups).length) counts.push(`${asArray(system.nativeStateGroups).length} Wwise state groups`);
+      if (asArray(system.nativeStateTransitions).length) counts.push(`${asArray(system.nativeStateTransitions).length} audio-state masks`);
       card.innerHTML = `<div class="audio-runtime-system-head"><code>${esc(type)}</code>${layer ? `<span>${esc(layer)}</span>` : ""}</div>${meaning ? `<p>${esc(meaning)}</p>` : ""}${counts.length ? `<small>${esc(counts.join(" · "))}</small>` : ""}`;
       const layout = system.serializedLayout && typeof system.serializedLayout === "object" ? system.serializedLayout : null;
       const anchors = asArray(system.nativeAnchors).filter((row) => row && typeof row === "object");
       const callChains = asArray(system.nativeCallChains).filter((row) => row && typeof row === "object");
-      if (layout || anchors.length || callChains.length) {
+      const stateGroups = asArray(system.nativeStateGroups).filter((row) => row && typeof row === "object");
+      const stateTransitions = asArray(system.nativeStateTransitions).filter((row) => row && typeof row === "object");
+      const enumEntries = system.enumValues && typeof system.enumValues === "object"
+        ? Object.entries(system.enumValues)
+        : [];
+      if (layout || anchors.length || callChains.length || stateGroups.length || stateTransitions.length || enumEntries.length) {
         const values = document.createElement("div");
         values.className = "audio-chip-list";
         if (layout) {
           const chip = document.createElement("span");
           chip.textContent = `${layout.unionTagHex || `tag ${layout.unionTag ?? "?"}`} / mc${layout.memberCount ?? "?"} / behavior type ${layout.behaviorType ?? "?"} / ${layout.dataType || "serialized data"}`;
+          values.appendChild(chip);
+        }
+        for (const [name, value] of enumEntries) {
+          const chip = document.createElement("span");
+          const numeric = Number(value);
+          const hex = Number.isFinite(numeric) ? ` / 0x${(numeric >>> 0).toString(16).padStart(8, "0")}` : "";
+          chip.textContent = `${name} = ${value}${hex}`;
           values.appendChild(chip);
         }
         for (const anchor of anchors) {
@@ -1691,12 +1705,59 @@
           chip.textContent = `native call chains ${humanize(system.nativeCallChainStatus)}`;
           values.appendChild(chip);
         }
+        if (system.nativeStateGroupStatus) {
+          const chip = document.createElement("span");
+          chip.textContent = `native state groups ${humanize(system.nativeStateGroupStatus)}`;
+          values.appendChild(chip);
+        }
+        if (system.nativeStateTransitionStatus) {
+          const chip = document.createElement("span");
+          chip.textContent = `native state transitions ${humanize(system.nativeStateTransitionStatus)}`;
+          values.appendChild(chip);
+        }
         card.appendChild(values);
+        for (const group of stateGroups) {
+          const groupCard = document.createElement("div");
+          groupCard.className = "audio-runtime-state-group";
+          const recoveredName = normalize(group.recoveredName);
+          const identity = recoveredName || normalize(group.field) || humanize(group.role || "state group");
+          const title = document.createElement("strong");
+          title.textContent = `${humanize(group.role || "state group")} · ${identity} · ${group.groupIdHex || group.groupId || "unknown id"}`;
+          const detail = document.createElement("small");
+          detail.textContent = [
+            normalize(group.enumType),
+            normalize(group.setterMethod),
+            group.methodIndex !== undefined ? `method ${group.methodIndex}` : "",
+            normalize(group.virtualAddress) ? `VA ${group.virtualAddress}` : "",
+            humanize(group.nameEvidence || ""),
+          ].filter(Boolean).join(" · ");
+          groupCard.append(title, detail);
+          card.appendChild(groupCard);
+        }
+        for (const transition of stateTransitions) {
+          const transitionCard = document.createElement("div");
+          transitionCard.className = "audio-runtime-state-group";
+          const names = asArray(transition.stateNames).map(normalize).filter(Boolean);
+          const title = document.createElement("strong");
+          title.textContent = `${names.length ? names.join(" + ") : "audio state mask"} / ${transition.stateMaskHex || transition.stateMask || "unknown mask"}`;
+          const detail = document.createElement("small");
+          detail.textContent = [
+            `${transition.registrationCount || 0} registrations`,
+            asArray(transition.actionOrders).length ? `orders ${asArray(transition.actionOrders).join(" / ")}` : "",
+            transition.isOneShot === false ? "persistent" : "",
+            asArray(transition.registrationCallOffsets).length ? `call offsets ${asArray(transition.registrationCallOffsets).join(" / ")}` : "",
+            humanize(transition.callbackTargetStatus || ""),
+            humanize(transition.conditionInterpretationStatus || ""),
+          ].filter(Boolean).join(" / ");
+          transitionCard.append(title, detail);
+          card.appendChild(transitionCard);
+        }
         for (const chain of callChains) {
           const chainCard = document.createElement("div");
           chainCard.className = "audio-runtime-call-chain";
           const label = normalize(chain.label ?? chain.id) || "Native call chain";
           const stages = asArray(chain.stages).filter((row) => row && typeof row === "object");
+          const branches = asArray(chain.branches).filter((row) => row && typeof row === "object");
           const title = document.createElement("strong");
           title.textContent = `${label}${stages.length ? ` · ${stages.length} stages` : ""}`;
           chainCard.appendChild(title);
@@ -1712,6 +1773,14 @@
             chip.textContent = [
               humanize(stage.role || "stage"), identity, anchor, normalize(stage.relation),
             ].filter(Boolean).join(" · ");
+            stageList.appendChild(chip);
+          }
+          for (const branch of branches) {
+            const chip = document.createElement("span");
+            chip.textContent = [
+              `branch ${normalize(branch.label ?? branch.id) || "unknown"}`,
+              normalize(branch.relation),
+            ].filter(Boolean).join(" / ");
             stageList.appendChild(chip);
           }
           chainCard.appendChild(stageList);

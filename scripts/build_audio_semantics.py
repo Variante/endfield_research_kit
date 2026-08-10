@@ -124,8 +124,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 16
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 8
+AUDIO_SEMANTIC_SCHEMA_VERSION = 19
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 11
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
 RADIO_CATALOG_ITEM_LIMIT = 64
@@ -347,6 +347,8 @@ def runtime_spec(
     serialized_layout: dict[str, Any] | None = None,
     native_anchors: Iterable[dict[str, Any]] = (),
     native_call_chains: Iterable[dict[str, Any]] = (),
+    native_state_groups: Iterable[dict[str, Any]] = (),
+    native_state_transitions: Iterable[dict[str, Any]] = (),
     runtime_execution_status: str = "",
 ) -> dict[str, Any]:
     row = {
@@ -363,6 +365,12 @@ def runtime_spec(
         row["nativeAnchors"] = tuple(dict(value) for value in native_anchors)
     if native_call_chains:
         row["nativeCallChains"] = tuple(dict(value) for value in native_call_chains)
+    if native_state_groups:
+        row["nativeStateGroups"] = tuple(dict(value) for value in native_state_groups)
+    if native_state_transitions:
+        row["nativeStateTransitions"] = tuple(
+            dict(value) for value in native_state_transitions
+        )
     if runtime_execution_status:
         row["runtimeExecutionStatus"] = runtime_execution_status
     return row
@@ -372,26 +380,234 @@ def native_playback_stage(
     role: str,
     type_name: str,
     method: str,
-    method_index: int,
+    method_index: int | None,
     token: str,
     virtual_address: str,
     relation: str,
 ) -> dict[str, Any]:
-    return {
+    row = {
         "role": role,
         "type": type_name,
         "method": method,
-        "methodIndex": method_index,
         "token": token,
         "virtualAddress": virtual_address,
         "relation": relation,
     }
+    if method_index is not None:
+        row["methodIndex"] = method_index
+    return row
+
+
+AUDIO_MUSIC_NATIVE_STATE_GROUPS = (
+    {
+        "role": "topLevelMusicMode",
+        "field": "MUSIC_STATE_GROUP_ID",
+        "groupId": 0xE414D158,
+        "groupIdHex": "0xe414d158",
+        "recoveredName": "music_state",
+        "nameEvidence": "exactFNV1HashMatch",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMusicState",
+        "setterMethod": "_SetWwiseMusicState",
+        "methodIndex": 39631,
+        "token": "0x06009ad0",
+        "virtualAddress": "0x183a0cb00",
+    },
+    {
+        "role": "worldMap",
+        "field": "MUSIC_MAP_STATE_GROUP_ID",
+        "groupId": 0xB3D78A5D,
+        "groupIdHex": "0xb3d78a5d",
+        "recoveredName": "music_map",
+        "nameEvidence": "exactFNV1HashMatch",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMusicMapState",
+        "setterMethod": "_SetWwiseMusicMapState",
+        "methodIndex": 39634,
+        "token": "0x06009ad3",
+        "virtualAddress": "0x186adc08c",
+    },
+    {
+        "role": "battlePhase",
+        "field": "BATTLE_MUSIC_STATE_GROUP_ID",
+        "groupId": 0x4D9E8C28,
+        "groupIdHex": "0x4d9e8c28",
+        "nameEvidence": "groupHashExactAuthoredNameUnrecovered",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseBattleMusicState",
+        "setterMethod": "_SetWwiseBattleMusicState",
+        "methodIndex": 39636,
+        "token": "0x06009ad5",
+        "virtualAddress": "0x1846ab390",
+    },
+    {
+        "role": "battleIntensity",
+        "field": "BATTLE_MUSIC_INTENSITY_STATE_GROUP_ID",
+        "groupId": 0x2560A0EE,
+        "groupIdHex": "0x2560a0ee",
+        "nameEvidence": "groupHashExactAuthoredNameUnrecovered",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseBattleMusicIntensityState",
+        "setterMethod": "_SetWwiseBattleMusicIntensityState",
+        "methodIndex": 39638,
+        "token": "0x06009ad7",
+        "virtualAddress": "0x183a0ca90",
+    },
+    {
+        "role": "mission",
+        "field": "MISSION_MUSIC_STATE_GROUP_ID",
+        "groupId": 0x3B650E3D,
+        "groupIdHex": "0x3b650e3d",
+        "recoveredName": "music_mission",
+        "nameEvidence": "exactFNV1HashMatch",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMissionMusicState",
+        "setterMethod": "_SetWwiseMissionMusicState",
+        "methodIndex": 39640,
+        "token": "0x06009ad9",
+        "virtualAddress": "0x186adc004",
+    },
+    {
+        "role": "dialog",
+        "field": "DIALOG_MUSIC_STATE_GROUP_ID",
+        "groupId": 0xA4C62908,
+        "groupIdHex": "0xa4c62908",
+        "nameEvidence": "groupHashExactAuthoredNameUnrecovered",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseDialogMusicState",
+        "setterMethod": "_SetWwiseDialogMusicState",
+        "methodIndex": 39642,
+        "token": "0x06009adb",
+        "virtualAddress": "0x186adbef4",
+    },
+    {
+        "role": "cutscene",
+        "field": "CUTSCENE_MUSIC_STATE_GROUP_ID",
+        "groupId": 0x75C98B29,
+        "groupIdHex": "0x75c98b29",
+        "recoveredName": "music_cutscene",
+        "nameEvidence": "exactFNV1HashMatch",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseCutsceneMusicState",
+        "setterMethod": "_SetWwiseCutsceneMusicState",
+        "methodIndex": 39644,
+        "token": "0x06009add",
+        "virtualAddress": "0x186adbe6c",
+    },
+    {
+        "role": "login",
+        "field": "LOGIN_MUSIC_STATE_GROUP_ID",
+        "groupId": 0x6401EC38,
+        "groupIdHex": "0x6401ec38",
+        "nameEvidence": "groupHashExactAuthoredNameUnrecovered",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseLoginMusicState",
+        "setterMethod": "_SetWwiseLoginMenuMusicState",
+        "methodIndex": 39646,
+        "token": "0x06009adf",
+        "virtualAddress": "0x186adbf7c",
+    },
+    {
+        "role": "meta",
+        "field": "META_MUSIC_STATE_GROUP_ID",
+        "groupId": 0x654423EE,
+        "groupIdHex": "0x654423ee",
+        "recoveredName": "music_meta",
+        "nameEvidence": "exactFNV1HashMatch",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMetaMusicState",
+        "setterMethod": "_SetWwiseMetaMusicState",
+        "methodIndex": 39648,
+        "token": "0x06009ae1",
+        "virtualAddress": "0x184491300",
+    },
+    {
+        "role": "remoteCommunication",
+        "field": "REMOTE_COMM_MUSIC_STATE_GROUP_ID",
+        "groupId": 0xC52AA6BC,
+        "groupIdHex": "0xc52aa6bc",
+        "nameEvidence": "groupHashExactAuthoredNameUnrecovered",
+        "enumType": "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseRemoteCommMusicState",
+        "setterMethod": "_SetWwiseRemoteCommMusicState",
+        "methodIndex": 39650,
+        "token": "0x06009ae3",
+        "virtualAddress": "0x186adc19c",
+    },
+)
+
+
+AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS = (
+    {
+        "stateMask": 0x00000040,
+        "stateMaskHex": "0x00000040",
+        "stateNames": ("FMV",),
+        "registrationCallOffsets": ("0x1d3", "0x28f"),
+    },
+    {
+        "stateMask": 0x00000080,
+        "stateMaskHex": "0x00000080",
+        "stateNames": ("CUT_SCENE",),
+        "registrationCallOffsets": ("0x345", "0x401"),
+    },
+    {
+        "stateMask": 0x00000100,
+        "stateMaskHex": "0x00000100",
+        "stateNames": ("TRANSITION_CUT_SCENE",),
+        "registrationCallOffsets": ("0x4b7", "0x573"),
+    },
+    {
+        "stateMask": 0x00000200,
+        "stateMaskHex": "0x00000200",
+        "stateNames": ("DIALOG",),
+        "registrationCallOffsets": ("0x629", "0x6e5"),
+    },
+    {
+        "stateMask": 0x00000400,
+        "stateMaskHex": "0x00000400",
+        "stateNames": ("REMOTE_COMM",),
+        "registrationCallOffsets": ("0x79b", "0x857"),
+    },
+    {
+        "stateMask": 0x02000000,
+        "stateMaskHex": "0x02000000",
+        "stateNames": ("LOADING",),
+        "registrationCallOffsets": ("0x90d", "0x9c9"),
+    },
+    {
+        "stateMask": 0x04000000,
+        "stateMaskHex": "0x04000000",
+        "stateNames": ("TELEPORT_LOADING",),
+        "registrationCallOffsets": ("0xa7f", "0xb3b"),
+    },
+    {
+        "stateMask": 0x000C0000,
+        "stateMaskHex": "0x000c0000",
+        "stateNames": ("IN_FACTORY_AREA", "IN_BLACKBOX"),
+        "registrationCallOffsets": ("0xbf1", "0xcad"),
+    },
+    {
+        "stateMask": 0x00000002,
+        "stateMaskHex": "0x00000002",
+        "stateNames": ("FIGHT",),
+        "registrationCallOffsets": ("0xd63", "0xe1f"),
+    },
+)
+
+for _transition_registration in AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS:
+    _transition_registration.update({
+        "registrationMethod": "_RegisterStateTransitionActions",
+        "registrationMethodIndex": 39571,
+        "registrationToken": "0x06009a94",
+        "registrationVirtualAddress": "0x183a0d940",
+        "registerMethodIndex": 39810,
+        "registerToken": "0x06009b83",
+        "registerVirtualAddress": "0x183a0e800",
+        "registrationCount": 2,
+        "actionOrders": (5, 1),
+        "isOneShot": False,
+        "secondConditionRaw": 1,
+        "conditionInterpretationStatus": "rawEnterLeaveByteUnresolved",
+        "stateNameEvidence": "exactEAudioStateEnumValueMatch",
+        "callbackTargetStatus": "delegateTargetUnresolved",
+        "runtimeObservationStatus": "staticRegistrationNotLiveStateTrace",
+    })
 
 
 AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
     "adapterPost": {
         "id": "adapterPostEventToWwise",
-        "label": "Event request -> resource preparation -> Wwise PostEvent",
+        "label": "Event request -> Event bank/cache preparation -> Wwise PostEvent",
         "evidence": "exactCurrentGameAssemblyDirectCallsAndSharedNativeFunctionPointer",
         "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
         "runtimeObservationStatus": "staticNativeCallChainNotLivePlaybackTrace",
@@ -415,13 +631,67 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "Allocates an internal playing id and payload, then requests Event-owned resources.",
             ),
             native_playback_stage(
-                "load",
+                "loadRequest",
                 "Beyond.Audio.AudioAssetHelper",
                 "_DoLoadEventAsync",
                 480201,
                 "0x0600011e",
                 "0x18328afb0",
-                "Prepares the Event resources before the Wwise post callback runs.",
+                "Tests the Event cache, then enters the Event-id bank load path only when activation returns false.",
+            ),
+            native_playback_stage(
+                "cache",
+                "Beyond.Audio.AudioAssetCache",
+                "ActivateAsset",
+                480175,
+                "0x06000104",
+                "0x18328ac60",
+                "Tests and activates the Event-owned cached resource before any bank load is requested.",
+            ),
+            native_playback_stage(
+                "eventBank",
+                "AkSoundEngine",
+                "LoadBank(uint, callback, cookie, bankType)",
+                446458,
+                "0x06000a74",
+                "0x183eb0c60",
+                "Loads the Event-id bank asynchronously; this path is separate from AudioBankManager's named BankHandle registry.",
+            ),
+            native_playback_stage(
+                "bankCallback",
+                "Beyond.Audio.AudioAssetHelper",
+                "_OnBankLoadedDoPrepareEvent",
+                480211,
+                "0x06000128",
+                "0x183eb0a70",
+                "For the prepare branch, submits exactly one Event id to AkSoundEngine.PrepareEvent with raw preparation type 0.",
+            ),
+            native_playback_stage(
+                "prepareEvent",
+                "AkSoundEngine",
+                "PrepareEvent(preparationType, eventIds, count, callback, cookie)",
+                446489,
+                "0x06000a93",
+                "0x183eb0bd0",
+                "Receives raw preparation type 0, the reusable one-id array, count 1, and the completion callback.",
+            ),
+            native_playback_stage(
+                "prepareDone",
+                "Beyond.Audio.AudioAssetHelper",
+                "_OnDonePrepareEvent",
+                480212,
+                "0x06000129",
+                "0x183eb0e80",
+                "Returns the completed preparation to the waiting Event callback queue.",
+            ),
+            native_playback_stage(
+                "completion",
+                "Beyond.Audio.AudioAssetHelper",
+                "_TryDequeueAndInvokeCallback",
+                480213,
+                "0x0600012a",
+                "0x18328cf20",
+                "Invokes the waiting adapter completion or releases the cached Event and unloads its Event bank on failure/cleanup paths.",
             ),
             native_playback_stage(
                 "post",
@@ -441,10 +711,47 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "0x18328c940",
                 "Uses the same 0x18f361158 native PostEvent slot and returns the real Wwise playing id.",
             ),
+            native_playback_stage(
+                "callback",
+                "Beyond.Audio.AudioAdapter",
+                "_OnEventCallback",
+                480008,
+                "0x0600005d",
+                "0x18328d3e0",
+                "Forwards the original callback and cookie through an unresolved delegate thunk.",
+            ),
+            native_playback_stage(
+                "release",
+                "Beyond.Audio.AudioAssetCache",
+                "DeactivateAsset",
+                480176,
+                "0x06000105",
+                "0x18328a390",
+                "On the callback path gated by raw callback type 1, decrements the Event cache refCount; zero remains pinned or moves toward LRU release.",
+            ),
+        ),
+        "branches": (
+            {
+                "id": "activatedCache",
+                "label": "ActivateAsset returned true",
+                "relation": (
+                    "The native body tests the solid-loaded Event set and can dequeue the waiting callback "
+                    "without entering the LoadBank/PrepareEvent miss path."
+                ),
+            },
+            {
+                "id": "eventBankMiss",
+                "label": "ActivateAsset returned false",
+                "relation": (
+                    "The native body calls LoadBank(eventId, callback, null, 0x1e); the bank callback then "
+                    "either prepares the one Event id or releases the cache entry and forwards completion."
+                ),
+            },
         ),
         "boundary": (
-            "The binary proves request preparation, Wwise Event posting, and playing-id mapping. "
-            "It does not reveal the live switch/state/RTPC values or the selected Wwise media leaf."
+            "The binary proves the cache/miss branch, Event-id bank load, one-Event PrepareEvent call, "
+            "completion callback, Wwise Event post, playing-id mapping, and conditional cache deactivation. It does not prove which branch "
+            "ran for a captured request, live switch/state/RTPC values, or the selected Wwise media leaf."
         ),
     },
     "playingIdAction": {
@@ -710,6 +1017,245 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
             "does not prove script execution, target availability, or the Wwise-selected leaf."
         ),
     },
+    "switchSelector": {
+        "id": "audioObjectSwitchToWwise",
+        "label": "Entity / GameObject Switch -> audio object -> Wwise SetSwitch",
+        "evidence": "exactCurrentGameAssemblyDefaultBranchDirectCalls",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticDefaultBranchNotLiveSelectorTrace",
+        "stages": (
+            native_playback_stage(
+                "entity",
+                "Beyond.Gameplay.Audio.AudioManager",
+                "SetSwitch(Entity, AudioId, AudioId)",
+                38949,
+                "0x06009826",
+                "0x186ac4cb0",
+                "Resolves BaseAudioComponent.audioObjectId and forwards the existing uint group/value ids.",
+            ),
+            native_playback_stage(
+                "adapter",
+                "Beyond.Audio.AudioAdapter",
+                "SetSwitch(uint, uint, ulong)",
+                479949,
+                "0x06000022",
+                "0x18635b9ac",
+                "Forwards group id, value id, and the explicit audio-object id without re-hashing AudioId values.",
+            ),
+            native_playback_stage(
+                "wwise",
+                "AkSoundEngine",
+                "SetSwitch(uint, uint, ulong)",
+                446539,
+                "0x06000ac5",
+                "0x1853dba54",
+                "Crosses the SWIG wrapper and native function-pointer slot 0x18f373598.",
+            ),
+        ),
+        "branches": (
+            {
+                "id": "gameObjectString",
+                "label": "GameObject string route",
+                "relation": (
+                    "AudioManager.SetSwitch(GameObject,string,string) method 38960 / VA 0x186ac4bb4 "
+                    "uses AudioObjectMono.audioObjectId, AudioAdapter method 479950, and the Wwise string "
+                    "overload method 446540 / native slot 0x18f3735a0."
+                ),
+            },
+            {
+                "id": "typedAudioId",
+                "label": "AudioId uint route",
+                "relation": "AudioId.op_Implicit returns the stored uint and does not perform another hash.",
+            },
+        ),
+        "boundary": (
+            "This proves the current stock binary's default object-scoped setter routes. IFix may replace a "
+            "default branch, and no live audio-object id, group value, setter time, or selected HIRC child was observed."
+        ),
+    },
+    "rtpcSelector": {
+        "id": "rtpcParameterToWwise",
+        "label": "Named / AudioId RTPC -> global or object value -> Wwise SetRTPCValue",
+        "evidence": "exactCurrentGameAssemblyDefaultBranchDirectCallsAndNativeSlots",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticDefaultBranchNotLiveParameterTrace",
+        "stages": (
+            native_playback_stage(
+                "request",
+                "Beyond.Gameplay.Audio.AudioManager",
+                "SetRtpc(string, float, fade)",
+                38865,
+                "0x060097d2",
+                "0x186ac492c",
+                "Routes a named global parameter to the adapter.",
+            ),
+            native_playback_stage(
+                "hash",
+                "Beyond.Audio.AudioHashGenerator",
+                "Compute(string)",
+                480228,
+                "0x06000139",
+                "0x18328dcd0",
+                "Computes FNV-1 over UTF-16 code units with ASCII A-Z folding and no whitespace trim.",
+            ),
+            native_playback_stage(
+                "global",
+                "Beyond.Audio.AudioAdapter",
+                "SetRtpc(uint, float, int)",
+                479952,
+                "0x06000025",
+                "0x18459c560",
+                "Uses Wwise global target object id 0x00000000ffffffff.",
+            ),
+            native_playback_stage(
+                "wwise",
+                "AkSoundEngine",
+                "SetRTPCValue(uint, float, ulong, int)",
+                446505,
+                "0x06000aa3",
+                "0x183197c40",
+                "Crosses native function-pointer slot 0x18f3611a8 with parameter id, value, object id, and fade time.",
+            ),
+        ),
+        "branches": (
+            {
+                "id": "entityAudioId",
+                "label": "Entity AudioId route",
+                "relation": (
+                    "AudioManager method 38948 resolves BaseAudioComponent.audioObjectId and calls "
+                    "AudioAdapter method 479954 with the existing uint parameter id."
+                ),
+            },
+            {
+                "id": "entityString",
+                "label": "Entity string route",
+                "relation": (
+                    "AudioManager method 38947 calls AudioAdapter method 479953, which hashes the name before "
+                    "the same object-scoped uint route."
+                ),
+            },
+            {
+                "id": "globalAudioId",
+                "label": "Global AudioId route",
+                "relation": (
+                    "AudioManager method 38864 calls AudioAdapter method 479952; AudioId supplies the stored uint "
+                    "without another hash."
+                ),
+            },
+        ),
+        "boundary": (
+            "The setter shapes and global/object distinction are exact for the current stock binary default "
+            "branches. No live RTPC value, target object, timing, resulting interpolation, or Wwise branch was observed."
+        ),
+    },
+    "musicState": {
+        "id": "musicStateGroupToWwise",
+        "label": "Music mode -> exact Wwise State Group -> SetState",
+        "evidence": "exactCurrentGameAssemblyStateGroupConstantsAndDirectCalls",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticNativeCallChainNotLiveStateTrace",
+        "stages": (
+            native_playback_stage(
+                "select",
+                "Beyond.Gameplay.Audio.AudioMusicSystem",
+                "_SetWwise*State",
+                None,
+                "",
+                "",
+                "Ten group-specific setters pass the enum-backed state value with the exact group constants listed below.",
+            ),
+            native_playback_stage(
+                "wwise",
+                "AkSoundEngine",
+                "SetState(uint, uint)",
+                446543,
+                "0x06000ac9",
+                "0x183a0cbd0",
+                "Crosses native function-pointer slot 0x18f3611b8 with the exact group and state ids.",
+            ),
+        ),
+        "boundary": (
+            "The group hashes, enum state ids, and setter routes are exact for the current binary. "
+            "The current value at a particular gameplay frame and the resulting Wwise music branch are not observed."
+        ),
+    },
+    "musicStateTransition": {
+        "id": "audioStateTransitionToMusicSetter",
+        "label": "Audio lifecycle state registration / dispatch -> unresolved delegate -> music setter boundary",
+        "evidence": "exactCurrentGameAssemblyRegistrationAndDispatchFrameworkWithUnresolvedDelegateTargets",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticRegistrationAndDispatchNotLiveStateTrace",
+        "stages": (
+            native_playback_stage(
+                "register",
+                "Beyond.Gameplay.Audio.AudioMusicSystem",
+                "_RegisterStateTransitionActions",
+                39571,
+                "0x06009a94",
+                "0x183a0d940",
+                "Registers 18 persistent no-parameter callbacks as nine paired mask conditions with action orders 5 and 1.",
+            ),
+            native_playback_stage(
+                "registry",
+                "Beyond.Gameplay.Audio.AudioStateSystem",
+                "RegisterTransitionAction(conditions, Action, isOneShot, actionOrder)",
+                39810,
+                "0x06009b83",
+                "0x183a0e800",
+                "Stores each condition and System.Action callback; the 18 delegate targets remain unresolved.",
+            ),
+            native_playback_stage(
+                "stateChange",
+                "Beyond.Gameplay.Audio.AudioStateSystem",
+                "_OnAudioStateChanged",
+                39842,
+                "0x06009ba3",
+                "0x186ae8a90",
+                "Dispatches from/to lifecycle-state changes to registered StateChangeAction records.",
+            ),
+            native_playback_stage(
+                "condition",
+                "Beyond.Gameplay.Audio.AudioStateSystem+StateChangeAction",
+                "HandleStateChange",
+                39849,
+                "0x06009baa",
+                "0x183d8ebb0",
+                "Evaluates the registered conditions and invokes the stored callback when they pass.",
+            ),
+            native_playback_stage(
+                "mask",
+                "Beyond.Gameplay.Audio.AudioStateSystem+MaskCondition",
+                "IsMet",
+                39861,
+                "0x06009bb6",
+                "0x186aeaacc",
+                "Evaluates exact from/to masks; the paired raw condition byte is retained without naming enter/leave.",
+            ),
+            native_playback_stage(
+                "select",
+                "Beyond.Gameplay.Audio.AudioMusicSystem",
+                "_SetWwise*State",
+                None,
+                "",
+                "",
+                "Direct callers prove several setters, but the 18 registered System.Action delegate targets are not statically named.",
+            ),
+            native_playback_stage(
+                "wwise",
+                "AkSoundEngine",
+                "SetState(uint, uint)",
+                446543,
+                "0x06000ac9",
+                "0x183a0cbd0",
+                "Writes the exact group and enum-backed state ids across native slot 0x18f3611b8.",
+            ),
+        ),
+        "boundary": (
+            "The registration masks, action order, persistence, dispatch types, setters, and SetState boundary "
+            "are exact. The 18 delegate targets, raw paired-condition value meaning, actual state transitions, "
+            "setter order, and selected Wwise music branch remain unresolved."
+        ),
+    },
 }
 
 
@@ -727,16 +1273,54 @@ RUNTIME_SYSTEM_SPECS = (
     runtime_spec(
         "Beyond.Audio.AudioBankManager",
         "banks",
-        "Owns Wwise bank handles and asynchronous load/unload lifetime.",
+        (
+            "Owns named Wwise BankHandle references and asynchronous load/unload lifetime. Event-owned "
+            "banks used by AudioAssetHelper are a separate direct AkSoundEngine path keyed by Event id."
+        ),
         fields=("s_loadedBankHandles",),
         methods=("LoadMainPCK", "LoadBankAsync", "UnloadBank", "UnloadAllBanks", "IsBankLoaded"),
     ),
     runtime_spec(
+        "Beyond.Audio.AudioAssetCache",
+        "banks",
+        (
+            "Tracks active, least-recently-used cached, and pinned Event resources before the adapter "
+            "posts the Event into Wwise."
+        ),
+        fields=("s_lruUsingEvents", "s_cachedEvents", "s_pinnedEvents"),
+        methods=(
+            "PinEvent", "UnpinEvent", "ActivateAsset", "DeactivateAsset",
+            "ForceReleaseCachedAsset", "GetLeastActiveAssetAndUncache",
+        ),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],),
+    ),
+    runtime_spec(
         "Beyond.Audio.AudioAssetHelper",
         "banks",
-        "Prepares, pins, caches, and garbage-collects event-owned audio resources.",
-        fields=("s_memoryBudget", "s_pendingLoadRequests", "s_solidLoadedEvents"),
-        methods=("LoadEventAsync", "PinEvent", "UnpinEvent", "UnloadEvent", "ReleaseAllCachedEventsSync"),
+        (
+            "Prepares, pins, caches, and garbage-collects Event-owned audio resources. On a cache miss it "
+            "loads the Event-id bank, prepares exactly one Event id, then completes the adapter callback."
+        ),
+        fields=(
+            "s_memoryBudget", "s_waitingCallbacks", "s_pendingLoadRequests",
+            "s_solidLoadedEvents",
+        ),
+        methods=(
+            "LoadEventAsync", "_DoLoadEventAsync", "_OnBankLoadedDoPrepareEvent",
+            "_OnDonePrepareEvent", "_TryDequeueAndInvokeCallback", "PinEvent", "UnpinEvent",
+            "UnloadEvent", "ReleaseAllCachedEventsSync",
+        ),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],),
+    ),
+    runtime_spec(
+        "Beyond.Audio.AudioHashGenerator",
+        "wwise_bridge",
+        (
+            "Converts authored Event, Switch, State, RTPC, and cue names to the uint identifiers used by "
+            "the stock Wwise bridge."
+        ),
+        methods=("Compute",),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["rtpcSelector"],),
     ),
     runtime_spec(
         "Beyond.Audio.AudioAdapter",
@@ -750,11 +1334,14 @@ RUNTIME_SYSTEM_SPECS = (
             "PostEvent", "StopByPlayingId", "PauseByPlayingId", "ResumeByPlayingId",
             "SetState", "SetSwitch", "SetRtpc", "SeekOnEvent", "RegisterGameObject",
             "UnregisterGameObject", "SetListener", "SetDefaultListener", "SetAudioLanguage",
-            "_OnEventPreparedDoPostEvent", "_PostEvent", "_ExecuteActionOnPlayingId",
+            "_OnEventPreparedDoPostEvent", "_OnEventCallback", "_PostEvent",
+            "_ExecuteActionOnPlayingId",
         ),
         native_call_chains=(
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["switchSelector"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["rtpcSelector"],
         ),
     ),
     runtime_spec(
@@ -764,10 +1351,17 @@ RUNTIME_SYSTEM_SPECS = (
             "Generated Wwise C# bridge. PostEvent crosses the native P/Invoke boundary and returns "
             "the real playing id; ExecuteActionOnPlayingID applies stop/pause/resume to that id."
         ),
-        methods=("PostEvent", "ExecuteActionOnPlayingID", "SetSwitch", "SetRTPCValue"),
+        methods=(
+            "PostEvent", "LoadBank", "PrepareEvent", "UnloadBank", "ExecuteActionOnPlayingID",
+            "SetState", "SetSwitch", "SetRTPCValue",
+        ),
         native_call_chains=(
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["switchSelector"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["rtpcSelector"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["musicState"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["musicStateTransition"],
         ),
     ),
     runtime_spec(
@@ -792,6 +1386,10 @@ RUNTIME_SYSTEM_SPECS = (
             "<roomManager>k__BackingField", "<npcSystem>k__BackingField",
         ),
         methods=("PostEvent", "PostAudioCue", "SetRtpc", "SetSwitch", "PlaySoundAtPosition", "LoadLevel"),
+        native_call_chains=(
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["switchSelector"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["rtpcSelector"],
+        ),
     ),
     runtime_spec(
         "Beyond.Gameplay.View.Animation.AnimatorMono",
@@ -1119,6 +1717,7 @@ RUNTIME_SYSTEM_SPECS = (
             "MUSIC_STATE_GROUP_ID", "MUSIC_MAP_STATE_GROUP_ID", "BATTLE_MUSIC_STATE_GROUP_ID",
             "BATTLE_MUSIC_INTENSITY_STATE_GROUP_ID", "MISSION_MUSIC_STATE_GROUP_ID",
             "DIALOG_MUSIC_STATE_GROUP_ID", "CUTSCENE_MUSIC_STATE_GROUP_ID",
+            "LOGIN_MUSIC_STATE_GROUP_ID", "META_MUSIC_STATE_GROUP_ID",
             "REMOTE_COMM_MUSIC_STATE_GROUP_ID",
         ),
         methods=(
@@ -1126,6 +1725,12 @@ RUNTIME_SYSTEM_SPECS = (
             "SwitchToDialogMusic", "PlayStandaloneMusic", "ManualSetMusicState",
             "ManualSetBattleMusicState", "ManualSetBattleMusicIntensityState",
         ),
+        native_call_chains=(
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["musicState"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["musicStateTransition"],
+        ),
+        native_state_groups=AUDIO_MUSIC_NATIVE_STATE_GROUPS,
+        native_state_transitions=AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS,
     ),
     runtime_spec(
         "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMusicState",
@@ -1146,6 +1751,48 @@ RUNTIME_SYSTEM_SPECS = (
         enum_values=True,
     ),
     runtime_spec(
+        "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMusicMapState",
+        "music",
+        "World-map music selector values.",
+        enum_values=True,
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMissionMusicState",
+        "music",
+        "Mission music sub-state values.",
+        enum_values=True,
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseDialogMusicState",
+        "music",
+        "Dialog music sub-state values.",
+        enum_values=True,
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseCutsceneMusicState",
+        "music",
+        "Cutscene music sub-state values.",
+        enum_values=True,
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseLoginMusicState",
+        "music",
+        "Login music phases.",
+        enum_values=True,
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseMetaMusicState",
+        "music",
+        "Meta/gacha music modes.",
+        enum_values=True,
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioMusicSystem+EWwiseRemoteCommMusicState",
+        "music",
+        "Remote-communication music phases.",
+        enum_values=True,
+    ),
+    runtime_spec(
         "Beyond.Gameplay.Audio.AudioCueSystem",
         "cues",
         "Resolves named cues with scoped bool/int/float/string variables and default handlers.",
@@ -1158,6 +1805,7 @@ RUNTIME_SYSTEM_SPECS = (
         "Converts gameplay and loading/tag state into ordered audio transition actions.",
         fields=("m_orderedActionDictList", "m_currentState", "GAMEPLAY_TAG_CONDITION_LIST"),
         methods=("RegisterTransitionAction", "CurrentHasState", "OnInFactoryAreaMainRegionChanged", "_OnAudioStateChanged"),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["musicStateTransition"],),
     ),
     runtime_spec(
         "Beyond.Gameplay.Audio.AudioStateSystem+EAudioState",
@@ -1631,6 +2279,18 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
                 system["nativeCallChainStatus"] = "exactCurrentBuild"
             else:
                 system["nativeCallChainStatus"] = "omittedMetadataFingerprintMismatch"
+        if spec.get("nativeStateGroups"):
+            if sha256 == MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256:
+                system["nativeStateGroups"] = spec["nativeStateGroups"]
+                system["nativeStateGroupStatus"] = "exactCurrentBuild"
+            else:
+                system["nativeStateGroupStatus"] = "omittedMetadataFingerprintMismatch"
+        if spec.get("nativeStateTransitions"):
+            if sha256 == MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256:
+                system["nativeStateTransitions"] = spec["nativeStateTransitions"]
+                system["nativeStateTransitionStatus"] = "exactCurrentBuild"
+            else:
+                system["nativeStateTransitionStatus"] = "omittedMetadataFingerprintMismatch"
         if spec["enumValues"]:
             enum_values = _metadata_enum_values(module, md, type_def)
             if enum_values:

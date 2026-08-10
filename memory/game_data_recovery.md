@@ -141,6 +141,53 @@ time-dilation, fade, and stop-on-end behavior. This is exact static call-chain
 evidence for the current GameAssembly, not a live execution trace or proof of
 the switch/state/RTPC values and media leaf selected by Wwise.
 
+Event resource preparation is now bounded more precisely. `_DoLoadEventAsync`
+first calls `AudioAssetCache.ActivateAsset(eventId)`. Its false branch calls
+the Wwise `LoadBank(uint, callback, cookie, bankType)` overload with the Event
+id, a null cookie, and bank type `0x1e`; the bank callback then submits one
+Event id to `PrepareEvent` with raw preparation type `0`. The completion path
+returns through `AudioAssetHelper`'s waiting callback queue before
+`AudioAdapter._OnEventPreparedDoPostEvent` enters Wwise. The activated-cache
+branch can bypass that load/prepare miss path. The Wwise Event callback
+forwards the original callback/cookie, and its raw callback-type-1 path calls
+`AudioAssetCache.DeactivateAsset`: the Event refcount drops, while pinned
+Events stay out of ordinary LRU release. Named `AudioBankManager`
+`BankHandle` reference counting is a separate bank-lifetime surface. This
+proves the static cache/miss topology, not which branch a live request took or
+which streamed media Wwise later selected.
+
+Music selection is now split into ten exact Wwise State Groups rather than one
+generic music label. Current native setters expose the group uint32, state enum
+type, method/token/VA, and the shared `AkSoundEngine.SetState(uint, uint)`
+boundary. Exact FNV-1 matches recover the authored group names `music_state`,
+`music_map`, `music_mission`, `music_cutscene`, and `music_meta`; battle phase,
+battle intensity, dialog, login, and remote-communication group names remain
+hash-only. Enum ids recover top-level modes, battle phase/intensity, map,
+login, meta/gacha, and remote-communication phases. These rows prove the state
+vocabulary and write route, not the state active at a captured frame or the
+music branch selected by Wwise.
+
+The lifecycle-to-music framework is also static-binary exact. AudioMusicSystem
+registers eighteen persistent `StateChangeAction` callbacks as nine paired
+masks with action orders 5 and 1: FMV, cutscene, transition cutscene, dialog,
+remote communication, loading, teleport loading, fight, and the combined
+factory-area/blackbox mask. `AudioStateSystem._OnAudioStateChanged` dispatches
+through `HandleStateChange` and `MaskCondition.IsMet`; separately, recovered
+music setters reach Wwise `SetState`. The eighteen `System.Action` delegate
+targets that would connect those two surfaces, plus the raw paired-condition
+byte, remain unresolved. Registration rows are therefore not promoted to
+observed transitions, particular setters, or specific music branches.
+
+Object selectors and continuous parameters use separate native routes.
+`SetSwitch` always carries an explicit entity/GameObject audio-object id plus
+group/value ids; typed `AudioId` values are already uints, while the string
+overload remains distinct. RTPC setters support global target
+`0x00000000ffffffff` and entity/GameObject targets; string names are hashed by
+`AudioHashGenerator.Compute`, while typed ids are not rehashed. These default
+stock-binary paths cross distinct Wwise native function-pointer slots and may
+still be replaced by IFix. They prove setter shape, not the live object,
+group/value, RTPC value, timing, interpolation, or selected HIRC child.
+
 Current IL2CPP managed string literals provide a second exact name source.
 Lowercased Wwise FNV-1 joins recover previously missing `au_*`, `bark_*`, and
 `radio_*` names only when their hash is a HIRC type-4 Event. A string literal
