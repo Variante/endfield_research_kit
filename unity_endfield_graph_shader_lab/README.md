@@ -1728,7 +1728,15 @@ its single row directly when streaming is disabled; its enabled branch gates
 on squared `lodCenter`-to-`c1` distance and an unnamed component-75 HLOD-level
 byte. Both callbacks acquire Material/Mesh/shadow-proxy-Mesh and append exact
 24-byte source/AssetType/handle descriptors at transition context `+0x58`.
-The later submission continuation and native component names remain open. The
+The acquire core already performs resource-manager bookkeeping. Outer task
+`0x181172DD0` combines context `+0x50` deferred entries and `+0x58` direct
+descriptors into a request batch; poller `0x181172750` retains state 0,
+publishes ready state 1, removes terminal non-ready state 2, and completes when
+the pending map is empty. It then projects batch views through context
+`+0x60/+0x68/+0x70` and invokes `LoadingToLoaded`, connecting acquisition to
+the pinned Material/Mesh/shadow-proxy runtime writers and LOD availability
+updates. The state-2 native label, outer scheduling/thread semantics, and
+native component names remain open. The
 complete hash-pinned `StreamingSceneManagerScript..ctor` binds only bits
 12/14/15/19/25/29/32/33/40 through the managed Mono-converter path; HGTree
 bit 41 is absent. The complete installed-VFS corpus of 117
