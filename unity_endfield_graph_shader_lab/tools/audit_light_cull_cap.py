@@ -241,6 +241,28 @@ UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_VA = 0x1801D9D10
 UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGTreeRender::CreateRendererList"
 )
+UNITY_HGTREE_CREATE_RENDERER_LIST_CHILD_ICALL_INDEX = 565
+UNITY_HGTREE_CREATE_RENDERER_LIST_CHILD_ICALL_VA = 0x1801D9F10
+UNITY_HGTREE_CREATE_RENDERER_LIST_CHILD_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGTreeRender::CreateRendererListWithChildViewHandle"
+)
+UNITY_HGTREE_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX = 566
+UNITY_HGTREE_CREATE_RENDERER_LIST_PREZ_ICALL_VA = 0x1801D9FA0
+UNITY_HGTREE_CREATE_RENDERER_LIST_PREZ_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGTreeRender::CreateRendererListWithPreZ"
+)
+UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_INDEX = 198
+UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_VA = 0x1801EB230
+UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGFactoryRenderManager::"
+    "CreateBatchedEntities_Injected"
+)
+UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_INDEX = 215
+UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_VA = 0x1801EC7C0
+UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGFactoryRenderManager::"
+    "CreateBatchedEntitiesObsolete_Injected"
+)
 UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX = 437
 UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_VA = 0x1801F2AB0
 UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_NAME = (
@@ -923,6 +945,26 @@ UNITY_HGTREE_BODIES = {
         0x462,
         "d7877c2aa90cc5eea0c2801515128b8fec5216ec3dc0a260e63da762769ae2dd",
     ),
+    "create_renderer_list_child_binding": (
+        0x1801D9F10,
+        0x84,
+        "3f16d5e542e73ed61ce0a5349aded395548bb88f03eef4b482931409cb519833",
+    ),
+    "create_renderer_list_child_core": (
+        0x18107FCF0,
+        0x491,
+        "295fb7f0faf287da2f29ee92bf78422fb0e29ecd2c01e3b36c6122dd6b0c93ba",
+    ),
+    "create_renderer_list_prez_binding": (
+        0x1801D9FA0,
+        0x95,
+        "d2a73c8e9d8e795b13e2cc975ae4eb31fcba259e4609a4ba0ee338b24a4c04f8",
+    ),
+    "create_renderer_list_prez_core": (
+        0x181080190,
+        0x59C,
+        "ec78e01c7478fed1a5feaedc34b9881519416c5e4b78d5852287fd579c10705d",
+    ),
     "renderer_list_job_scheduler": (
         0x181080730,
         0x225,
@@ -1178,6 +1220,16 @@ UNITY_HGTREE_BODIES = {
         0x143,
         "cf1d0755ae2c40041eefd389ac80cc1f3cf0c436c8bb5a9a26dbda1fdb7eafc6",
     ),
+    "factory_batched_entity_copy_current": (
+        0x1810CE510,
+        0x6A1,
+        "aca0f9bae4d74c5797d6d868e1b7f4b03937bd831371687ccd520c94ded9a004",
+    ),
+    "factory_batched_entity_copy_obsolete": (
+        0x1810CEBC0,
+        0x6A1,
+        "64d7e311baa06261b3de0d6b0f25b943bf6a64e72159abb18317b072e07aebfa",
+    ),
     "renderer_list_callback_a": (
         0x181067A70,
         0x9E5,
@@ -1376,6 +1428,19 @@ UNITY_RENDERER_BLOB_EXACT_0X7F00_ENTRY_CFGS = [
     0x18115BC9B,
     0x18115BFC0,
 ]
+UNITY_RENDERER_LIST_SCHEDULER_VA = 0x181080730
+UNITY_RENDERER_LIST_SCHEDULER_CALL_SITES = [
+    0x1810793C8,
+    0x18107957E,
+    0x18107AE3B,
+    0x18107F258,
+    0x18108012E,
+    0x1810806E4,
+]
+UNITY_FACTORY_BATCHED_ENTITY_COPY_CALL_SITES = {
+    0x1810CE510: [0x1801EB71A],
+    0x1810CEBC0: [0x1801ECCB5],
+}
 
 UNITY_COMPONENT67_ACCESSOR_TARGETS = {
     "archetype": 0x181038D00,
@@ -4943,6 +5008,107 @@ def validate_unity_hgtree_renderer_boundary(
         UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_NAME,
         image.path,
     )
+    renderer_list_variants = [
+        {
+            "variant": "default",
+            "index": UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX,
+            "name": name,
+            "targetVirtualAddress": f"0x{target:X}",
+            "coreVirtualAddress": "0x18107EE40",
+            "schedulerCallVirtualAddress": "0x18107F258",
+        }
+    ]
+    for (
+        label,
+        index,
+        expected_name,
+        expected_target,
+        core,
+        scheduler_call,
+    ) in (
+        (
+            "child_view",
+            UNITY_HGTREE_CREATE_RENDERER_LIST_CHILD_ICALL_INDEX,
+            UNITY_HGTREE_CREATE_RENDERER_LIST_CHILD_ICALL_NAME,
+            UNITY_HGTREE_CREATE_RENDERER_LIST_CHILD_ICALL_VA,
+            0x18107FCF0,
+            0x18108012E,
+        ),
+        (
+            "pre_z",
+            UNITY_HGTREE_CREATE_RENDERER_LIST_PREZ_ICALL_INDEX,
+            UNITY_HGTREE_CREATE_RENDERER_LIST_PREZ_ICALL_NAME,
+            UNITY_HGTREE_CREATE_RENDERER_LIST_PREZ_ICALL_VA,
+            0x181080190,
+            0x1810806E4,
+        ),
+    ):
+        actual_name, actual_target = resolve_hg_icall(index)
+        require(
+            f"unity_hgtree_create_renderer_list_{label}_icall_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        require(
+            f"unity_hgtree_create_renderer_list_{label}_icall_target",
+            actual_target,
+            expected_target,
+            image.path,
+        )
+        renderer_list_variants.append(
+            {
+                "variant": label,
+                "index": index,
+                "name": actual_name,
+                "targetVirtualAddress": f"0x{actual_target:X}",
+                "coreVirtualAddress": f"0x{core:X}",
+                "schedulerCallVirtualAddress": f"0x{scheduler_call:X}",
+            }
+        )
+
+    factory_batched_copy_icalls = []
+    for label, index, expected_name, expected_target, copy_core, call_site in (
+        (
+            "current",
+            UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_INDEX,
+            UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_NAME,
+            UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_VA,
+            0x1810CE510,
+            0x1801EB71A,
+        ),
+        (
+            "obsolete",
+            UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_INDEX,
+            UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_NAME,
+            UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_VA,
+            0x1810CEBC0,
+            0x1801ECCB5,
+        ),
+    ):
+        actual_name, actual_target = resolve_hg_icall(index)
+        require(
+            f"unity_factory_create_batched_entities_{label}_icall_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        require(
+            f"unity_factory_create_batched_entities_{label}_icall_target",
+            actual_target,
+            expected_target,
+            image.path,
+        )
+        factory_batched_copy_icalls.append(
+            {
+                "variant": label,
+                "index": index,
+                "name": actual_name,
+                "targetVirtualAddress": f"0x{actual_target:X}",
+                "copyCoreVirtualAddress": f"0x{copy_core:X}",
+                "copyCoreCallVirtualAddress": f"0x{call_site:X}",
+            }
+        )
     require(
         "unity_hg_resource_load_async_icall_target",
         resource_load_target,
@@ -5162,6 +5328,29 @@ def validate_unity_hgtree_renderer_boundary(
         44,
         image.path,
     )
+    renderer_list_scheduler_call_sites = find_relative_call_sites(
+        image, UNITY_RENDERER_LIST_SCHEDULER_VA
+    )
+    require(
+        "unity_hgtree_renderer_list_scheduler_call_sites",
+        renderer_list_scheduler_call_sites,
+        UNITY_RENDERER_LIST_SCHEDULER_CALL_SITES,
+        image.path,
+    )
+    factory_batched_copy_call_sites = {}
+    for copy_core, expected_sites in (
+        UNITY_FACTORY_BATCHED_ENTITY_COPY_CALL_SITES.items()
+    ):
+        actual_sites = find_relative_call_sites(image, copy_core)
+        require(
+            f"unity_factory_batched_entity_copy_{copy_core:X}_call_sites",
+            actual_sites,
+            expected_sites,
+            image.path,
+        )
+        factory_batched_copy_call_sites[f"0x{copy_core:X}"] = [
+            f"0x{site:X}" for site in actual_sites
+        ]
 
     component67_caller_bodies = []
     for virtual_address, size_bytes, expected_hash in (
@@ -5316,6 +5505,22 @@ def validate_unity_hgtree_renderer_boundary(
                 "noAlphaTest",
             ],
         },
+        "rendererListVariants": {
+            "entries": renderer_list_variants,
+            "sharedSchedulerVirtualAddress": (
+                f"0x{UNITY_RENDERER_LIST_SCHEDULER_VA:X}"
+            ),
+            "allSchedulerCallSites": [
+                f"0x{site:X}" for site in renderer_list_scheduler_call_sites
+            ],
+            "allHGTreeVariantsReachSharedScheduler": True,
+            "selectedCallbacks": ["0x181067A70", "0x181064190"],
+            "enabledLightModesBoundary": (
+                "default, child-view, and PreZ entry points converge on the "
+                "same scheduler and therefore do not expose a separate "
+                "uninspected callback family for runtime record+0x14"
+            ),
+        },
         "registrationInternalCall": {
             "index": UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX,
             "name": register_name,
@@ -5355,13 +5560,22 @@ def validate_unity_hgtree_renderer_boundary(
             "managedContract": enabled_light_modes_metadata,
             "gameAssemblyContract": enabled_light_modes_game_assembly,
         },
+        "factoryBatchedEntityCopyInternalCalls": {
+            "entries": factory_batched_copy_icalls,
+            "copyCoreCallSites": factory_batched_copy_call_sites,
+            "interpretation": (
+                "both current and obsolete CreateBatchedEntities routes "
+                "invoke the same complete renderer-blob copy helper through "
+                "parallel hash-pinned copy cores"
+            ),
+        },
         "lodControlInternalCalls": {
             "cullingSystem": lod_bias_icalls,
             "lodStreamingSystem": lod_streaming_offset_icalls,
         },
         "callChain": [
-            "0x1801D9D10 HGTreeRender::CreateRendererList binding",
-            "0x18107EE40 renderer-list core",
+            "HGTreeRender CreateRendererList variants at indices 564/565/566",
+            "cores 0x18107EE40/0x18107FCF0/0x181080190",
             "0x181080730 runtime job descriptor/scheduler",
             "0x181067A70 or 0x181064190 scheduled batch job",
         ],
@@ -5705,6 +5919,7 @@ def validate_unity_hgtree_renderer_boundary(
                                     "windowBytesPerEntry": 0x20000,
                                     "directControlFlowFollowed": True,
                                     "stackSlotOverlapInvalidation": True,
+                                    "memoryOperandWidthOverlapChecked": True,
                                     "recordBaseMemoryStoreSites": [],
                                     "recordBaseReturnSites": [],
                                     "enabledLightModesReadSites": [],
@@ -5738,6 +5953,36 @@ def validate_unity_hgtree_renderer_boundary(
                                         "record+0x14 is copied verbatim but not "
                                         "read or interpreted"
                                     ),
+                                    "factoryCreateBatchedEntityRoutes": [
+                                        {
+                                            "internalCallIndex": (
+                                                UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_INDEX
+                                            ),
+                                            "internalCallName": (
+                                                UNITY_FACTORY_CREATE_BATCHED_ENTITIES_ICALL_NAME
+                                            ),
+                                            "copyCoreVirtualAddress": (
+                                                "0x1810CE510"
+                                            ),
+                                            "copyHelperCallVirtualAddress": (
+                                                "0x1810CE853"
+                                            ),
+                                        },
+                                        {
+                                            "internalCallIndex": (
+                                                UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_INDEX
+                                            ),
+                                            "internalCallName": (
+                                                UNITY_FACTORY_CREATE_BATCHED_ENTITIES_OBSOLETE_ICALL_NAME
+                                            ),
+                                            "copyCoreVirtualAddress": (
+                                                "0x1810CEBC0"
+                                            ),
+                                            "copyHelperCallVirtualAddress": (
+                                                "0x1810CEF03"
+                                            ),
+                                        },
+                                    ],
                                 },
                                 "consumerFunctions": [
                                     "0x181129E0D",
@@ -5854,7 +6099,11 @@ def validate_unity_hgtree_renderer_boundary(
                                     "tail memcpy copies the complete count, "
                                     "runtime-record, and LOD-pair layout between "
                                     "two exact-family blobs, carrying +0x14 "
-                                    "verbatim without interpreting it. A third "
+                                    "verbatim without interpreting it. The "
+                                    "current and obsolete Factory "
+                                    "CreateBatchedEntities internal calls both "
+                                    "reach that helper through parallel copy "
+                                    "cores. A third "
                                     "direct grouping "
                                     "consumer reads record+0x00/+0x04/+0x08/"
                                     "+0x10, while no exact-family path reads "
@@ -5902,7 +6151,11 @@ def validate_unity_hgtree_renderer_boundary(
                             "a classifier that reads only record+0x00. The "
                             "one blob+0x00 tail escape is a full-blob memcpy "
                             "that copies +0x14 verbatim without interpreting "
-                            "it. The third direct grouping consumer reads only +0x00/"
+                            "it, and both Factory CreateBatchedEntities routes "
+                            "are pinned to that helper. All three HGTree "
+                            "CreateRendererList variants converge on the same "
+                            "scheduler/callback family. The third direct "
+                            "grouping consumer reads only +0x00/"
                             "+0x04/+0x08/+0x10, and the callback-A +0x14/"
                             "0x18-stride lookalike is an ECS component-column "
                             "float. The two inspected renderer-list callbacks "
@@ -6646,8 +6899,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v28",
-        "status": "installed_cap_hgtree_enabled_light_modes_lookup_surface_closed",
+        "schema": "endfield.recovered-light-cull-cap.v29",
+        "status": "installed_cap_hgtree_renderer_variants_and_blob_copy_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -6712,7 +6965,13 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "record +0x00 and renderer-entry flags. One additional blob+0x00 "
             "tail memcpy copies the complete count/runtime-record/LOD-pair "
             "layout between exact-family blobs, carrying +0x14 verbatim "
-            "without interpreting it. A third direct component-"
+            "without interpreting it. The current and obsolete Factory "
+            "CreateBatchedEntities internal calls both reach that helper "
+            "through parallel hash-pinned copy cores. The three HGTree "
+            "CreateRendererList internal calls (default, child-view, and "
+            "PreZ) independently converge on the same scheduler and selected "
+            "callback family, excluding an alternate variant-specific +0x14 "
+            "consumer. A third direct component-"
             "grouping consumer reads only record +0x00/+0x04/+0x08/+0x10; "
             "the apparent callback-A +0x14/0x18-stride read is separately "
             "proven to be an ECS component-column float. The later native "
@@ -6981,7 +7240,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
                 "the Renderer +0x250 enabledLightModes default and all three hash-pinned native record-initialization paths",
                 "the independent renderer-entry +0x1C shader-supported-pass mask, both native builders, and its exact 31-name pass table",
-                "the bounded runtime-record lookup surface: all 53 direct lookup calls, the 44-call exact 0x7F00 partition across 41 hot/cold entry CFGs, all six direct blob+0x04 call escapes, the full-blob copy path, the third component-grouping consumer, zero direct +0x14 reads/stores/returns, and rejection of callback A's ECS-column +0x14 lookalike",
+                "all three HGTree CreateRendererList variants and their convergence on one shared scheduler/callback family",
+                "the bounded runtime-record lookup surface: all 53 direct lookup calls, the 44-call exact 0x7F00 partition across 41 width-aware hot/cold entry CFGs, all six direct blob+0x04 call escapes, both Factory CreateBatchedEntities routes into the full-blob copy path, the third component-grouping consumer, zero direct +0x14 reads/stores/returns, and rejection of callback A's ECS-column +0x14 lookalike",
                 "the direct-distance and scaled-metric HGTree LOD interval equations",
                 "the six-way HGTree LOD job dispatch segment",
                 "the HGTree LOD dispatch packet and payload layouts",
@@ -7055,7 +7315,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers, independent renderer-entry pass mask, and complete direct renderer-blob lookup/escape census, "
+        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers, all renderer-list variants, Factory blob-copy routes, independent renderer-entry pass mask, and complete direct renderer-blob lookup/escape census, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "

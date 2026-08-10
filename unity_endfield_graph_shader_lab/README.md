@@ -1596,7 +1596,7 @@ they clear it, query the renderer material/shader against the exact 31-name
 shader-supported-pass mask, not a projection of runtime record `+0x14`.
 All 53 direct calls to renderer-blob lookup `0x180424C30` are pinned and
 partitioned into 44 exact `0x7F00` calls across 41 entry CFGs plus nine
-other-family calls. Cross-hot/cold CFG taint finds no exact-path record
+other-family calls. Width-aware cross-hot/cold CFG taint finds no exact-path record
 `+0x14` read, record-base pointer store, or record-base return. The six direct
 `blob+0x04` call escapes split into three zero initializers at `0x181CA0040`
 and three calls to classifier `0x181131FC0`, which advances by `0x18`, reads
@@ -1604,12 +1604,18 @@ only record `+0x00`, and tests renderer-entry `+0x18/+0x26`. One additional
 `blob+0x00` tail path, `0x1810CE280 -> 0x181C9F9A0`, copies the full layout
 with byte count `4 + 32*(familyMask>>8)`: count, `24*capacity` runtime records,
 and `8*capacity` LOD pairs. It carries `+0x14` verbatim between exact-family
-blobs but does not interpret it. A third exact
+blobs but does not interpret it. HG Factory internal-call entries 198/215 name
+the current/obsolete `CreateBatchedEntities` routes; their hash-pinned copy
+cores `0x1810CE510/0x1810CEBC0` both call this helper. A third exact
 component-K / ray-tracing-K grouping consumer at `0x18112A790` reads only
 record `+0x00/+0x04/+0x08/+0x10`. Callback A's apparent `+0x14` read at the
 same stride is also excluded: accessors `0x181038D70/0x181038DE0` derive its
 base from ECS archetype component columns 127/126, and the value is consumed
-as a float. The exact later native consumer of record `+0x14` remains open
+as a float. The remaining HGTree renderer-list variants do not expose another
+route: internal-call entries 564/565/566 (default, child-view, and PreZ) reach
+cores `0x18107EE40/0x18107FCF0/0x181080190`, all converge on scheduler
+`0x181080730`, and select the same two already inspected callbacks. The exact
+later native consumer of record `+0x14` remains open
 outside this direct lookup/escape surface. This loader blob
 is separate
 from the LOD jobs' component-bit-67 24-byte state. That record stores LOD count

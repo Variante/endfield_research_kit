@@ -613,6 +613,33 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertEqual(
             result["internalCall"]["targetVirtualAddress"], "0x1801D9D10"
         )
+        renderer_variants = result["rendererListVariants"]
+        self.assertEqual(
+            [row["index"] for row in renderer_variants["entries"]],
+            [564, 565, 566],
+        )
+        self.assertTrue(
+            renderer_variants["allHGTreeVariantsReachSharedScheduler"]
+        )
+        self.assertEqual(
+            [
+                row["schedulerCallVirtualAddress"]
+                for row in renderer_variants["entries"]
+            ],
+            ["0x18107F258", "0x18108012E", "0x1810806E4"],
+        )
+        factory_copy = result["factoryBatchedEntityCopyInternalCalls"]
+        self.assertEqual(
+            [row["index"] for row in factory_copy["entries"]],
+            [198, 215],
+        )
+        self.assertEqual(
+            factory_copy["copyCoreCallSites"],
+            {
+                "0x1810CE510": ["0x1801EB71A"],
+                "0x1810CEBC0": ["0x1801ECCB5"],
+            },
+        )
         self.assertEqual(result["registrationInternalCall"]["index"], 567)
         self.assertEqual(
             result["registrationInternalCall"]["targetVirtualAddress"],
@@ -798,6 +825,7 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertEqual(hot_cold["enabledLightModesReadSites"], [])
         self.assertEqual(hot_cold["recordBaseMemoryStoreSites"], [])
         self.assertEqual(hot_cold["recordBaseReturnSites"], [])
+        self.assertTrue(hot_cold["memoryOperandWidthOverlapChecked"])
         self.assertEqual(
             pointer_boundary["fullBlobCopy"]["byteCountEquation"],
             "4 + 32 * (familyMask >> 8)",
@@ -807,6 +835,15 @@ class LightCullCapAuditTests(unittest.TestCase):
             pointer_boundary["fullBlobCopy"][
                 "enabledLightModesBehavior"
             ],
+        )
+        self.assertEqual(
+            [
+                row["internalCallIndex"]
+                for row in pointer_boundary["fullBlobCopy"][
+                    "factoryCreateBatchedEntityRoutes"
+                ]
+            ],
+            [198, 215],
         )
         self.assertEqual(
             pointer_boundary["recordBaseEscapeCallSites"],
@@ -1076,6 +1113,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_runtime_record_blob_consumer_component_grouping_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_child_renderer_list_core_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18107FCF0 and size == 0x491:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_create_renderer_list_child_core_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
@@ -1476,6 +1532,12 @@ class LightCullCapAuditTests(unittest.TestCase):
         def changed_sites(_image: object, target: int) -> list[int]:
             if target == AUDIT.UNITY_RENDERER_BLOB_LOOKUP_VA:
                 return AUDIT.UNITY_RENDERER_BLOB_LOOKUP_CALL_SITES
+            if target == AUDIT.UNITY_RENDERER_LIST_SCHEDULER_VA:
+                return AUDIT.UNITY_RENDERER_LIST_SCHEDULER_CALL_SITES
+            if target in AUDIT.UNITY_FACTORY_BATCHED_ENTITY_COPY_CALL_SITES:
+                return AUDIT.UNITY_FACTORY_BATCHED_ENTITY_COPY_CALL_SITES[
+                    target
+                ]
             return []
 
         with mock.patch.object(
@@ -1496,6 +1558,27 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_renderer_blob_lookup_call_sites; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=\[\]",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_renderer_list_scheduler_call_site_drift_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+
+        def changed_sites(_image: object, target: int) -> list[int]:
+            if target == AUDIT.UNITY_RENDERER_BLOB_LOOKUP_VA:
+                return AUDIT.UNITY_RENDERER_BLOB_LOOKUP_CALL_SITES
+            if target == AUDIT.UNITY_RENDERER_LIST_SCHEDULER_VA:
+                return []
+            return AUDIT.find_relative_call_sites(image, target)
+
+        with mock.patch.object(
+            AUDIT, "find_relative_call_sites", side_effect=changed_sites
+        ):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_renderer_list_scheduler_call_sites; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=\[\]",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)
