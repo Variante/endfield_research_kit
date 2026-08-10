@@ -214,6 +214,21 @@ configuration and native `ApplyProperties` assignment shape, not component
 instantiation, physics thresholds being crossed, RTPC updates, Event posting,
 or Wwise branch playback.
 
+`ModelViewStateControllerData` now has a complete fail-closed current-corpus
+decoder rather than a byte scan. All 486 mirrored controllers consume exactly;
+their state graphs contain 918 Event behaviors (union tag `0x0001`, mc14), 67
+positioned Event behaviors (`0x0002`, mc14), nine RTPC behaviors (`0x0003`,
+mc13), and 89 spatial/portal controls (`0x0004`, mc12). Normal nonzero int32
+AudioIds yield 954 exact contexts across 467 hashes with the full
+model/layer/state/behavior chain. Thirteen custom-branch `customAudioId` strings
+remain unresolved controls and are never promoted to Events. Exact serialized
+controller-id matches associate 321 audio-bearing controllers with 127
+InteractiveData templates and 522 interactive identities, but the containing
+property slot is unresolved, so this is an authored association rather than
+runtime ownership. The four runtime families retain current Deserialize and
+Execute method/token/VA anchors; state entry, behavior execution, Event posting,
+RTPC/spatial application, and Wwise branch playback remain unobserved.
+
 Projectile audio preserves seven exact uint32 Wwise Event slots per decoded
 projectile: launch, loop, reach, hit, block, finish, and proximity sizzle. The
 current 265 nonzero field occurrences cover 123 Events; 96 previously
@@ -232,6 +247,17 @@ the current CN HIRC Event inventory; one name resolves to a current Event.
 This proves authored spawn-warning requests, not that a spawner executed.
 Every current `bornBehaviorData` value is null, so a future non-null member-18
 payload fails closed until an authored fixture proves its serialized layout.
+
+Character-interaction perform audio now has a separate fail-closed current-
+build decoder. The 181 StreamingAssets configs and identical Persistent mirrors
+contain five `AudioEventActData` records (action-union tag `0x02`, mc15) in four
+fully bounded mc27 owners: one exact `endActions` placement and four
+`startActions` placements. Their four numeric `AudioId` values currently match
+no CN HIRC Event, so Audio retains hash-only contexts with config id, action
+phase/index, timing, logic id, attached-actor controls, offsets, and source
+SHA-256. This proves authored perform-config requests only; perform execution,
+runtime actor resolution, AudioId registration, Event posting, and Wwise branch
+playback remain unobserved.
 
 Seventeen current LevelScript audio ActionBase layouts now decode from their
 exact union tag/member count and generated-setter field order. The overlaid

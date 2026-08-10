@@ -40,10 +40,14 @@
       hircInventory: "Wwise HIRC inventory",
       controlCatalog: "Audio controls / cue catalog",
       physicsAudioCatalog: "Physics / environment audio definitions",
+      modelViewStateAudioCatalog: "ModelView state audio behaviors",
       cueOperands: "Cue expression operands",
       globalMusicCues: "Global music cue references",
       rtpcParameters: "RTPC parameters",
       physicsAudioRtpcParameters: "Physics / environment RTPC parameters",
+      modelViewStateRtpcParameters: "ModelView state RTPC parameters",
+      modelViewStateSpatialControls: "ModelView state spatial controls",
+      modelViewStateCustomAudioControls: "ModelView custom-audio controls (unresolved)",
       levelScriptCueInvocations: "LevelScript cue invocations",
       levelScriptDynamicBindings: "LevelScript dynamic Event bindings",
       levelScriptControls: "LevelScript audio controls",
@@ -53,6 +57,7 @@
       overview: "Overview",
       details: "Details",
       playableMedia: "Playable media",
+      expandToLoadPlayer: "expand to load player",
       noPlayableMedia: "No browser-playable media path is attached to this record.",
       mediaIds: "Media IDs",
       eventIds: "Event IDs",
@@ -78,7 +83,9 @@
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
       contextProjectileTrigger: "Projectile lifecycle sound",
       contextSpawnerPreWarn: "Enemy-spawner pre-warning",
+      contextCharacterInteraction: "Character interaction perform",
       contextPhysicsEnvironment: "Physics / environment",
+      contextModelViewState: "ModelView state behavior",
       contextInteractiveTrigger: "Interactive object trigger",
       contextGlobalLifecycle: "Global audio lifecycle",
       contextAudioCueTrigger: "Audio cue behavior Event",
@@ -164,10 +171,14 @@
       hircInventory: "Wwise HIRC \u5e93\u5b58",
       controlCatalog: "\u97f3\u9891\u63a7\u5236 / Cue \u76ee\u5f55",
       physicsAudioCatalog: "\u7269\u7406 / \u73af\u5883\u97f3\u9891\u5b9a\u4e49",
+      modelViewStateAudioCatalog: "ModelView \u72b6\u6001\u97f3\u9891\u884c\u4e3a",
       cueOperands: "Cue \u8868\u8fbe\u5f0f\u64cd\u4f5c\u6570",
       globalMusicCues: "\u5168\u5c40\u97f3\u4e50 Cue \u5f15\u7528",
       rtpcParameters: "RTPC \u53c2\u6570",
       physicsAudioRtpcParameters: "\u7269\u7406 / \u73af\u5883 RTPC \u53c2\u6570",
+      modelViewStateRtpcParameters: "ModelView \u72b6\u6001 RTPC \u53c2\u6570",
+      modelViewStateSpatialControls: "ModelView \u72b6\u6001\u7a7a\u95f4\u97f3\u9891\u63a7\u5236",
+      modelViewStateCustomAudioControls: "ModelView \u81ea\u5b9a\u4e49\u97f3\u9891\u63a7\u5236\uff08\u672a\u89e3\u6790\uff09",
       levelScriptCueInvocations: "LevelScript Cue \u8c03\u7528",
       levelScriptDynamicBindings: "LevelScript \u52a8\u6001 Event \u7ed1\u5b9a",
       levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
@@ -177,6 +188,7 @@
       overview: "\u6982\u89c8",
       details: "\u8be6\u7ec6\u4fe1\u606f",
       playableMedia: "\u53ef\u64ad\u653e\u5a92\u4f53",
+      expandToLoadPlayer: "\u5c55\u5f00\u540e\u52a0\u8f7d\u64ad\u653e\u5668",
       noPlayableMedia: "\u8be5\u8bb0\u5f55\u672a\u9644\u52a0\u6d4f\u89c8\u5668\u53ef\u64ad\u653e\u7684\u5a92\u4f53\u8def\u5f84\u3002",
       mediaIds: "\u5a92\u4f53 ID",
       eventIds: "\u4e8b\u4ef6 ID",
@@ -202,7 +214,9 @@
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
       contextProjectileTrigger: "\u6295\u5c04\u7269\u751f\u547d\u5468\u671f\u97f3\u6548",
       contextSpawnerPreWarn: "\u654c\u4eba\u751f\u6210\u5668\u9884\u8b66\u97f3\u6548",
+      contextCharacterInteraction: "\u89d2\u8272\u4ea4\u4e92\u8868\u6f14",
       contextPhysicsEnvironment: "\u7269\u7406 / \u73af\u5883",
+      contextModelViewState: "ModelView \u72b6\u6001\u884c\u4e3a",
       contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
       contextAudioCueTrigger: "Audio Cue \u884c\u4e3a Event",
@@ -366,7 +380,9 @@
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
     projectileTrigger: "contextProjectileTrigger",
     spawnerPreWarnTrigger: "contextSpawnerPreWarn",
+    characterInteraction: "contextCharacterInteraction",
     physicsEnvironment: "contextPhysicsEnvironment",
+    modelViewState: "contextModelViewState",
     interactiveTrigger: "contextInteractiveTrigger",
     globalLifecycle: "contextGlobalLifecycle",
     audioCueTrigger: "contextAudioCueTrigger",
@@ -413,7 +429,7 @@
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"].includes(kind)) return "scripted";
-    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "charInteractAudioEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
   }
@@ -423,7 +439,9 @@
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
       if (contextKind === "spawnerPreWarnAudio") tags.add("spawnerPreWarnTrigger");
+      if (contextKind === "charInteractAudioEvent") tags.add("characterInteraction");
       if (contextKind === "physicsAudioComponentEvent") tags.add("physicsEnvironment");
+      if (["modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"].includes(contextKind)) tags.add("modelViewState");
       if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
@@ -453,7 +471,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "animation", "scripted", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "physicsEnvironment", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -524,6 +542,9 @@
         context.authoredEventId, context.spawnerConfigId, context.enemyLibraryIndex, context.enemyId,
         context.bornTemplateId, context.enemyLevel, context.spawnerEnemyKey, context.preWarnTime,
         context.preWarnEffectKey, ...asArray(context.preWarnEffectFixedRotation), ...asArray(context.bornBuffIds),
+        context.charInteractPerformId, context.actionPhase, context.actionIndex, context.logicId,
+        context.attachedActorType, context.charIndex, context.runtimeOwnerStatus,
+        context.attachedActorResolutionStatus,
         context.definitionOwnerId, context.templatePath, context.componentTag, context.componentTagHex,
         context.componentOccurrenceIndex,
         context.propertyCount, context.authoredProperty, context.runtimeField,
@@ -1320,6 +1341,8 @@
     if (controlCatalog && typeof controlCatalog === "object") panel.appendChild(controlCatalogSection(controlCatalog));
     const physicsAudioCatalog = state.index?.triggerCatalog?.physicsAudio;
     if (physicsAudioCatalog && typeof physicsAudioCatalog === "object") panel.appendChild(physicsAudioCatalogSection(physicsAudioCatalog));
+    const modelViewStateCatalog = state.index?.triggerCatalog?.modelViewStateAudio;
+    if (modelViewStateCatalog && typeof modelViewStateCatalog === "object") panel.appendChild(modelViewStateAudioCatalogSection(modelViewStateCatalog));
     const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
     if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
     const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
@@ -1390,6 +1413,9 @@
     const groups = [
       ["rtpcParameters", asArray(catalog.rtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.field || humanize(row.evidence || "")}`],
       ["physicsAudioRtpcParameters", asArray(catalog.physicsAudioRtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${humanize(row.controlRole || "")} / ${row.definitionOwnerId || row.ownerId || "?"} / ${row.authoredProperty || "?"} -> ${row.runtimeField || "?"}`],
+      ["modelViewStateRtpcParameters", asArray(catalog.modelViewStateRtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / mode ${row.rtpcBehaviourType ?? "?"} / ${row.dependFloatKey || "no blackboard key"}`],
+      ["modelViewStateSpatialControls", asArray(catalog.modelViewStateSpatialControls), (row) => `${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / direct ${String(Boolean(row.directSet))} / target ${row.targetClosePercentage ?? "?"} / ${row.dependFloatKey || "no blackboard key"}`],
+      ["modelViewStateCustomAudioControls", asArray(catalog.modelViewStateCustomAudioControls), (row) => `${row.controlValue || '""'} / ${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / ${humanize(row.wwiseEventStatus || "unresolved")}`],
       ["globalMusicCues", asArray(catalog.audioGlobalMusicCueRefs), (row) => `${row.field || t("unknown")} / ${row.cueHex || row.cueId || "?"} / ${humanize(row.definitionStatus || "unknown")}`],
       ["cueOperands", asArray(catalog.audioCueExpressionOperands), (row) => `${row.stringValue || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.expressionSide || "")} / ${row.expressionPath || ""}`],
       ["levelScriptCueInvocations", asArray(catalog.levelScriptAudioCueInvocations), (row) => `${row.cueName || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.definitionStatus || "unknown")} / ${row.levelScriptId || "?"} / ${humanize(row.action || "")}`],
@@ -1468,6 +1494,33 @@
     return section;
   }
 
+  function modelViewStateAudioCatalogSection(catalog) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("modelViewStateAudioCatalog");
+    section.appendChild(heading);
+    const facts = [
+      ["Controllers decoded", catalog.controllersDecoded],
+      ["Controllers with audio", catalog.controllersWithAudio],
+      ["Event behaviors (tag 0x0001)", catalog.eventBehaviorCount],
+      ["Position Event behaviors (tag 0x0002)", catalog.positionEventBehaviorCount],
+      ["RTPC behaviors (tag 0x0003)", catalog.rtpcBehaviorCount],
+      ["Spatial behaviors (tag 0x0004)", catalog.spatialBehaviorCount],
+      ["Custom-audio controls", catalog.customAudioControlCount],
+      ["Exact InteractiveData associations", catalog.controllersWithTemplateAssociations],
+    ].filter(([, value]) => value !== undefined && value !== null);
+    if (facts.length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [label, value] of facts) grid.appendChild(statNode(label, typeof value === "number" ? formatNumber(value) : value));
+      section.appendChild(grid);
+    }
+    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
+    return section;
+  }
+
   function boundaryGrid(entries) {
     const section = document.createElement("div");
     section.style.marginTop = "12px";
@@ -1504,7 +1557,35 @@
       if (asArray(system.fields).length) counts.push(`${asArray(system.fields).length} fields`);
       if (asArray(system.methods).length) counts.push(`${asArray(system.methods).length} methods`);
       if (system.enumValues && typeof system.enumValues === "object") counts.push(`${Object.keys(system.enumValues).length} enum values`);
+      if (asArray(system.nativeAnchors).length) counts.push(`${asArray(system.nativeAnchors).length} native anchors`);
       card.innerHTML = `<div class="audio-runtime-system-head"><code>${esc(type)}</code>${layer ? `<span>${esc(layer)}</span>` : ""}</div>${meaning ? `<p>${esc(meaning)}</p>` : ""}${counts.length ? `<small>${esc(counts.join(" · "))}</small>` : ""}`;
+      const layout = system.serializedLayout && typeof system.serializedLayout === "object" ? system.serializedLayout : null;
+      const anchors = asArray(system.nativeAnchors).filter((row) => row && typeof row === "object");
+      if (layout || anchors.length) {
+        const values = document.createElement("div");
+        values.className = "audio-chip-list";
+        if (layout) {
+          const chip = document.createElement("span");
+          chip.textContent = `${layout.unionTagHex || `tag ${layout.unionTag ?? "?"}`} / mc${layout.memberCount ?? "?"} / behavior type ${layout.behaviorType ?? "?"} / ${layout.dataType || "serialized data"}`;
+          values.appendChild(chip);
+        }
+        for (const anchor of anchors) {
+          const chip = document.createElement("span");
+          chip.textContent = `${anchor.role || "native"} / method ${anchor.methodIndex ?? "?"} / ${anchor.token || "token ?"} / VA ${anchor.virtualAddress || "?"}${anchor.type ? ` / ${anchor.type}` : ""}`;
+          values.appendChild(chip);
+        }
+        if (system.runtimeExecutionStatus) {
+          const chip = document.createElement("span");
+          chip.textContent = `runtime execution ${humanize(system.runtimeExecutionStatus)}`;
+          values.appendChild(chip);
+        }
+        if (system.nativeAnchorStatus) {
+          const chip = document.createElement("span");
+          chip.textContent = `native anchors ${humanize(system.nativeAnchorStatus)}`;
+          values.appendChild(chip);
+        }
+        card.appendChild(values);
+      }
       list.appendChild(card);
     }
     section.append(heading, list);
@@ -1547,6 +1628,11 @@
     if (context?.spawnerEnemyKey) parts.push(`spawn key ${context.spawnerEnemyKey}`);
     if (context?.preWarnTime !== undefined) parts.push(`pre-warning time ${context.preWarnTime}`);
     if (context?.preWarnEffectKey) parts.push(`effect ${context.preWarnEffectKey}`);
+    if (context?.charInteractPerformId) parts.push(`perform ${context.charInteractPerformId}`);
+    if (context?.actionPhase) parts.push(`${humanize(context.actionPhase)} action ${context.actionIndex ?? "?"}`);
+    if (context?.logicId !== undefined) parts.push(`logic ${context.logicId}`);
+    if (context?.attachedActorType !== undefined) parts.push(`attached actor type ${context.attachedActorType} / char index ${context.charIndex ?? "?"}`);
+    if (context?.endStop !== undefined || context?.is2D !== undefined) parts.push(`end stop ${String(Boolean(context.endStop))} / 2D ${String(Boolean(context.is2D))}`);
     const preWarnRotation = asArray(context?.preWarnEffectFixedRotation);
     if (preWarnRotation.length) parts.push(`effect rotation ${preWarnRotation.join(", ")}`);
     if (context?.definitionOwnerId) parts.push(`physics definition ${context.definitionOwnerId}`);
@@ -1560,6 +1646,22 @@
     if (context?.authoredProperty) parts.push(`${context.authoredProperty} -> ${context.runtimeField || "runtime field unknown"}`);
     if (context?.propertySourceOffset !== undefined) parts.push(`property offset 0x${Number(context.propertySourceOffset).toString(16)}`);
     if (context?.interactiveTableSha256) parts.push(`InteractiveTable SHA-256 ${context.interactiveTableSha256}`);
+    if (context?.controllerId) parts.push(`ModelView controller ${context.controllerId}`);
+    if (context?.modelAnimatorName) parts.push(`model animator ${context.modelAnimatorName}`);
+    if (context?.layerName || context?.layerFsmIndex !== undefined) parts.push(`layer ${context.layerName || "?"} / FSM ${context.layerFsmIndex ?? "?"}`);
+    if (context?.stateName || context?.stateIndex !== undefined) parts.push(`state ${context.stateName || "?"} / index ${context.stateIndex ?? "?"} / type ${context.stateType ?? "?"}`);
+    if (context?.behaviorTagHex || context?.behaviorTag !== undefined) parts.push(`behavior ${context.behaviorTagHex || context.behaviorTag} / mc${context.serializedMemberCount ?? "?"} / type ${context.behaviorType ?? "?"} / index ${context.behaviorIndex ?? "?"}`);
+    if (context?.behaviorTime !== undefined) parts.push(`authored behavior time ${context.behaviorTime} / time-flow switch ${context.timeFlowSwitch ?? "?"}`);
+    if (context?.audioNodeName) parts.push(`audio node ${context.audioNodeName}`);
+    if (context?.normalAudioId !== undefined) parts.push(`normalAudioId int32 ${context.normalAudioId}`);
+    if (context?.eAudioTriggerState !== undefined) parts.push(`audio trigger state ${context.eAudioTriggerState}`);
+    const modelViewTemplates = asArray(context?.interactiveTemplateIds).filter(Boolean);
+    if (modelViewTemplates.length) parts.push(`serialized InteractiveData associations ${modelViewTemplates.length === 1 ? modelViewTemplates[0] : `${modelViewTemplates[0]} +${modelViewTemplates.length - 1}`}`);
+    const modelViewConsumers = asArray(context?.interactiveConsumerIds).filter(Boolean);
+    if (modelViewConsumers.length) parts.push(`associated interactive identities ${modelViewConsumers.length === 1 ? modelViewConsumers[0] : `${modelViewConsumers[0]} +${modelViewConsumers.length - 1}`}`);
+    if (context?.templateAssociationStatus) parts.push(humanize(context.templateAssociationStatus));
+    const modelViewFingerprints = asArray(context?.sourceFingerprints).filter(Boolean);
+    if (modelViewFingerprints.length) parts.push(`controller SHA-256 ${modelViewFingerprints.join(" / ")}`);
     if (context?.levelScriptId) parts.push(`LevelScript ${context.levelScriptId}`);
     if (context?.action) parts.push(humanize(context.action));
     if (context?.triggerRole) parts.push(`request role ${humanize(context.triggerRole)}`);
@@ -1824,7 +1926,13 @@
         contentSha256: normalize(candidate.contentSha256),
         contentEquivalentCount: Number(candidate.contentEquivalentCount || 0),
       };
-    }).filter((candidate) => candidate.src && !seen.has(candidate.src) && seen.add(candidate.src));
+    }).filter((candidate) => {
+      if (!candidate.src) return false;
+      const identity = `${candidate.id}\u0000${candidate.src}`;
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
   }
 
   function audioSource(candidate, parent = {}) {
@@ -1864,9 +1972,9 @@
       groupTitle.textContent = [rootLabel, relationLabel, `${formatNumber(candidates.length)} ${t("possibleMedia")}`].filter(Boolean).join(" · ");
       list.appendChild(groupTitle);
       for (const candidate of candidates) {
-      const card = document.createElement("div");
+      const card = document.createElement("details");
       card.className = "audio-player-card";
-      const head = document.createElement("div");
+      const head = document.createElement("summary");
       head.className = "audio-player-head";
       const title = document.createElement("div");
       title.className = "audio-player-title";
@@ -1879,14 +1987,22 @@
         candidate.soundObjectCount ? `${candidate.soundObjectCount} Sound objects` : "",
         candidate.contentEquivalentCount > 1 ? `${t("equivalentContent")} × ${candidate.contentEquivalentCount}` : "",
         ...candidate.relationTypes.map(taxonomyLabel),
+        t("expandToLoadPlayer"),
       ].filter(Boolean).join(" · ");
       head.append(title, meta);
-      const audio = document.createElement("audio");
-      audio.preload = "none";
-      audio.controls = true;
-      audio.src = candidate.src;
-      const player = players.length <= 200 && window.WebUI?.createMediaPlayer ? window.WebUI.createMediaPlayer(audio) : audio;
-      card.append(head, player);
+      const playerHost = document.createElement("div");
+      let materialized = false;
+      card.addEventListener("toggle", () => {
+        if (!card.open || materialized) return;
+        materialized = true;
+        const audio = document.createElement("audio");
+        audio.preload = "none";
+        audio.controls = true;
+        audio.src = candidate.src;
+        const player = window.WebUI?.createMediaPlayer ? window.WebUI.createMediaPlayer(audio) : audio;
+        playerHost.appendChild(player);
+      });
+      card.append(head, playerHost);
       list.appendChild(card);
       }
     }

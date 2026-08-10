@@ -59,6 +59,27 @@ def spawner_config_fixture() -> bytes:
     return b"\x05" + mp_string("sc_fixture") + pack("<I", len(rows)) + b"".join(rows) + b"unused-tail"
 
 
+def char_interact_audio_action(event_id: int) -> bytes:
+    return b"".join((
+        b"\x02\x0f\x03\x00",
+        pack("<iI", 0, 0),
+        pack("<fBfI", 0.5, 0, -1.0, 0),
+        b"\x00" + pack("<I", 9) + b"\x00\x00\x00",
+        pack("<iIiBB", 1, event_id, -1, 1, 1),
+    ))
+
+
+def char_interact_fixture(event_id: int) -> bytes:
+    action = char_interact_audio_action(event_id)
+    return b"".join((
+        b"\x1b", pack("<I", 0), b"\x00", b"\x01" + pack("<I", 0),
+        pack("<i", 0), pack("<II", 0, 0), b"\xff\x00", pack("<II", 0, 0),
+        pack("<fB", 0.0, 0), pack("<II", 0, 0), b"\x00",
+        pack("<III", 0, 0, 0), b"\x00", pack("<IIiI", 0, 0, 0, 0),
+        pack("<I", 1), action, b"\x01" + pack("<I", 0), pack("<I", 0), b"\x00",
+    ))
+
+
 class AudioSemanticDataTests(unittest.TestCase):
     def test_audio_hash_generator_matches_native_utf16_fnv1_without_trimming(self) -> None:
         self.assertEqual(
@@ -181,12 +202,42 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("targetSettings", data["fields"])
         self.assertIn("useWeaponMountPoint", data["fields"])
         self.assertIn("useTimeDilationPauseAndSeek", data["fields"])
+        interact_audio = specs[
+            "Beyond.Gameplay.Core.CharInteractPerform.AudioEventActData"
+        ]
+        interact_runtime = specs[
+            "Beyond.Gameplay.Core.CharInteractPerform.AudioEventAction"
+        ]
+        self.assertEqual(interact_audio["layer"], "character_interaction_audio")
+        self.assertEqual(interact_audio["serializedLayout"]["unionTag"], 2)
+        self.assertEqual(interact_audio["serializedLayout"]["memberCount"], 15)
+        self.assertIn("audioEvent", interact_audio["fields"])
+        self.assertIn("OnPlay", interact_runtime["methods"])
+        self.assertEqual(interact_runtime["runtimeExecutionStatus"], "runtimeNotObserved")
         physics = specs["Beyond.Gameplay.Core.PhysicsAudioComponentData"]
         self.assertEqual(physics["layer"], "physics_audio")
         self.assertEqual(len(physics["fields"]), 21)
         self.assertIn("<onStartMoveAudioEvent>k__BackingField", physics["fields"])
         self.assertIn("<angularVelocitySqrRtpc>k__BackingField", physics["fields"])
         self.assertIn("ApplyProperties", physics["methods"])
+        model_view_specs = [
+            row for row in audio_semantics.RUNTIME_SYSTEM_SPECS
+            if row["layer"] == "model_view_state_audio"
+        ]
+        self.assertEqual(len(model_view_specs), 4)
+        self.assertEqual(
+            [row["serializedLayout"]["unionTag"] for row in model_view_specs],
+            [1, 2, 3, 4],
+        )
+        self.assertEqual(
+            [row["serializedLayout"]["memberCount"] for row in model_view_specs],
+            [14, 14, 13, 12],
+        )
+        self.assertTrue(all(row["runtimeExecutionStatus"] == "notObserved" for row in model_view_specs))
+        self.assertTrue(all(
+            [anchor["role"] for anchor in row["nativeAnchors"]] == ["Deserialize", "Execute"]
+            for row in model_view_specs
+        ))
 
     def test_runtime_cache_schema_invalidates_changed_system_catalog(self) -> None:
         stale = {
@@ -566,6 +617,71 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertIn("spawnerPreWarnAudio", unresolved_summary["contextKinds"])
             self.assertIn("sc_fixture", unresolved_summary["contextSearch"])
 
+    def test_char_interact_audio_context_preserves_phase_owner_and_numeric_join(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            export_root = root / "export_full"
+            webui_root = root / "webui"
+            event_hash = 0x12345678
+            for source_root in ("StreamingAssets", "Persistent"):
+                path = (
+                    export_root / "structured" / source_root
+                    / "Data/Json/CharInteractPerformCfgs/CharIntPerform_fixture.json"
+                )
+                path.parent.mkdir(parents=True)
+                path.write_bytes(char_interact_fixture(event_hash))
+
+            semantics = audio_semantics.collect_char_interact_audio_semantics(export_root)
+            stats = semantics["stats"]
+            self.assertEqual(stats["status"], "complete")
+            self.assertEqual(stats["physicalFiles"], 2)
+            self.assertEqual(stats["ownerFiles"], 1)
+            self.assertEqual(stats["candidateOwners"], 1)
+            self.assertEqual(stats["audioEventActions"], 1)
+            self.assertEqual(stats["actionPhaseCounts"], {"startActions": 1})
+            context = semantics["eventContexts"]["#0x12345678"][0]
+            self.assertEqual(context["kind"], "charInteractAudioEvent")
+            self.assertEqual(context["charInteractPerformId"], "CharIntPerform_fixture")
+            self.assertEqual(context["actionPhase"], "startActions")
+            self.assertEqual(context["actionIndex"], 0)
+            self.assertEqual(context["logicId"], 9)
+            self.assertEqual(context["sourceOffset"], 80)
+            self.assertEqual(context["runtimeOwnerStatus"], "authoredPerformConfigOwnerOnly")
+            self.assertEqual(
+                context["runtimeActivationStatus"],
+                "charInteractPerformRuntimeExecutionNotObserved",
+            )
+
+            payload = audio_semantics.build_audio_semantic_data(
+                {
+                    "eventNames": ["au_int_fixture"],
+                    "events": [],
+                    "eventEvidence": [{
+                        "eventId": "au_int_fixture",
+                        "eventHash": event_hash,
+                        "bankId": 7,
+                        "bank": "main_banks.pck",
+                        "traversalStatus": "complete",
+                    }],
+                    "entries": [],
+                },
+                language="CN",
+                export_root=export_root,
+                webui_root=webui_root,
+                metadata_path=None,
+            )
+            self.assertEqual(payload["counts"]["charInteractAudioEvents"], 1)
+            self.assertEqual(payload["counts"]["charInteractAudioContexts"], 1)
+            self.assertEqual(payload["counts"]["charInteractAudioEventsFoundInWwise"], 1)
+            self.assertEqual(payload["counts"]["charInteractAudioEventsUnresolved"], 0)
+            self.assertEqual(payload["triggerCatalog"]["charInteractAudio"]["audioEventActions"], 1)
+            summaries = json.loads(
+                (webui_root / "data/lang/CN/audio/events.json").read_text(encoding="utf-8")
+            )["events"]
+            summary = next(row for row in summaries if row["id"] == "au_int_fixture")
+            self.assertIn("charInteractAudioEvent", summary["contextKinds"])
+            self.assertIn("CharIntPerform_fixture", summary["contextSearch"])
+
     def test_physics_audio_contexts_preserve_aliases_offsets_and_rtpc_control(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root) / "export_full"
@@ -696,6 +812,176 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertIn("physicsAudioComponentEvent", start_summary["contextKinds"])
             self.assertIn("int_tumble_weed", start_summary["contextSearch"])
             self.assertIn("on_start_move_audio_event", start_summary["contextSearch"])
+
+    def test_model_view_state_audio_preserves_owner_chain_and_control_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            webui_root = Path(raw_root) / "webui"
+            controller_id = "fixture_postmodel"
+            controller_rel = "Data/Json/Interactive/ModelViewStateControllerData/fixture.json"
+            template_rel = "Data/Json/Interactive/InteractiveData/data_fixture.json"
+            for source_root in ("StreamingAssets", "Persistent"):
+                controller_path = export_root / "structured" / source_root / controller_rel
+                controller_path.parent.mkdir(parents=True, exist_ok=True)
+                controller_path.write_bytes(b"same-controller")
+                table_path = export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveTable.json"
+                table_path.parent.mkdir(parents=True, exist_ok=True)
+                table_path.write_bytes(b"same-table")
+                template_path = export_root / "structured" / source_root / template_rel
+                template_path.parent.mkdir(parents=True, exist_ok=True)
+                template_path.write_bytes(b"prefix" + mp_string(controller_id) + b"suffix")
+
+            event_hash = audio_semantics.audio_hash_generator_compute("au_mv_event")
+            signed_event_hash = event_hash if event_hash < 0x80000000 else event_hash - 0x100000000
+            common = {
+                "modelAnimatorIndex": 0,
+                "modelAnimatorName": "P_fixture",
+                "layerIndex": 1,
+                "layerFsmIndex": 3,
+                "layerName": "audioLayer",
+                "stateIndex": 2,
+                "stateName": "Rotating",
+                "stateType": 4,
+                "behaviorIndex": 0,
+                "memberCount": 14,
+                "canLoopActive": False,
+                "needForceExecute": True,
+                "normalizedTimeFlowBasedActive": False,
+                "time": 0.25,
+                "timeFlowSwitch": 2,
+                "sourceOffset": 0x401,
+                "endOffset": 0x450,
+            }
+            behaviors = [
+                {
+                    **common, "unionTag": 1, "unionTagHex": "0x0001",
+                    "behaviorType": 1, "behaviorKind": "event",
+                    "audioNodeName": "AudioPoint", "customAudioId": "",
+                    "eAudioTriggerState": 1, "isCustom": False, "isDirectlyPlay": True,
+                    "normalAudioId": signed_event_hash, "stopOnEnd": True,
+                    "transitionTime": 200,
+                },
+                {
+                    **common, "unionTag": 2, "unionTagHex": "0x0002",
+                    "behaviorType": 8, "behaviorKind": "positionEvent",
+                    "audioNodeName": "Position", "customAudioId": "",
+                    "eAudioTriggerState": 2, "isCustom": False, "isDirectlyPlay": True,
+                    "normalAudioId": 1348303159, "stopOnEnd": False,
+                    "transitionTime": 300,
+                },
+                {
+                    **common, "unionTag": 1, "unionTagHex": "0x0001",
+                    "behaviorType": 1, "behaviorKind": "event",
+                    "audioNodeName": "AudioPoint", "customAudioId": "custom_portal",
+                    "eAudioTriggerState": 1, "isCustom": True, "isDirectlyPlay": False,
+                    "normalAudioId": 0, "stopOnEnd": False, "transitionTime": 200,
+                },
+                {
+                    **common, "unionTag": 3, "unionTagHex": "0x0003",
+                    "memberCount": 13, "behaviorType": 9, "behaviorKind": "rtpc",
+                    "audioNodeName": "AudioPoint", "audioRTPCSetValue": 0.5,
+                    "audioRTPCValue": "au_rtpc_int_delta_progress",
+                    "rtpcBehaviourType": 2, "continuousTick": True,
+                    "dependBlackBoard": True, "dependFloatKey": "Progress",
+                },
+                {
+                    **common, "unionTag": 4, "unionTagHex": "0x0004",
+                    "memberCount": 12, "behaviorType": 13, "behaviorKind": "spatialAudio",
+                    "continuous": False, "dependBlackBoard": False,
+                    "dependFloatKey": "", "directSet": True,
+                    "targetClosePercentage": 0.75, "totalTime": 1.5,
+                },
+            ]
+
+            def controller_decoder(data: bytes) -> dict:
+                self.assertEqual(data, b"same-controller")
+                return {
+                    "modelId": controller_id,
+                    "audioBehaviors": behaviors,
+                    "schemaMappingId": "fixture-model-view-memorypack",
+                    "runtimeMappingId": "fixture-model-view-runtime",
+                    "schemaStatus": "exact-current-complete",
+                }
+
+            def table_decoder(data: bytes) -> dict:
+                self.assertEqual(data, b"same-table")
+                return {
+                    "coreTemplatePaths": {"int_fixture": template_rel},
+                    "objectToTemplate": {
+                        "int_fixture": "int_fixture",
+                        "int_fixture_alias": "int_fixture",
+                    },
+                }
+
+            semantics = audio_semantics.collect_model_view_state_audio_semantics(
+                export_root,
+                controller_decoder=controller_decoder,
+                table_decoder=table_decoder,
+            )
+
+            self.assertEqual(semantics["stats"]["status"], "complete")
+            self.assertEqual(semantics["stats"]["audioBehaviorCount"], 5)
+            self.assertEqual(semantics["stats"]["normalEventContextCount"], 2)
+            self.assertEqual(semantics["stats"]["customAudioControlCount"], 1)
+            self.assertEqual(len(semantics["rtpcParameters"]), 1)
+            self.assertEqual(len(semantics["spatialControls"]), 1)
+            event = semantics["eventContexts"][audio_semantics.event_hash_context_key(event_hash)][0]
+            self.assertEqual(event["modelAnimatorName"], "P_fixture")
+            self.assertEqual(event["layerName"], "audioLayer")
+            self.assertEqual(event["stateName"], "Rotating")
+            self.assertEqual(event["behaviorTagHex"], "0x0001")
+            self.assertEqual(event["interactiveTemplateIds"], ["int_fixture"])
+            self.assertEqual(event["interactiveConsumerIds"], ["int_fixture", "int_fixture_alias"])
+            self.assertEqual(
+                event["templateAssociationStatus"],
+                "exactSerializedControllerIdReferencePropertyUnresolved",
+            )
+            self.assertEqual(
+                semantics["customAudioControls"][0]["wwiseEventStatus"],
+                "notPromotedToEvent",
+            )
+            self.assertNotIn("custom_portal", semantics["eventContexts"])
+
+            with patch.object(
+                audio_semantics,
+                "collect_model_view_state_audio_semantics",
+                return_value=semantics,
+            ):
+                payload = audio_semantics.build_audio_semantic_data(
+                    {
+                        "eventNames": ["au_mv_event"],
+                        "events": [],
+                        "eventEvidence": [{
+                            "eventId": "au_mv_event", "eventHash": event_hash,
+                            "bankId": 7, "bank": "main_banks.pck",
+                            "traversalStatus": "complete",
+                        }],
+                        "entries": [],
+                    },
+                    language="CN",
+                    export_root=export_root,
+                    webui_root=webui_root,
+                    metadata_path=None,
+                )
+            self.assertEqual(payload["counts"]["modelViewStateAudioEvents"], 2)
+            self.assertEqual(payload["counts"]["modelViewStateAudioEventsFoundInWwise"], 1)
+            self.assertEqual(payload["counts"]["modelViewStateAudioEventsUnresolved"], 1)
+            self.assertEqual(payload["controlCatalog"]["counts"]["modelViewStateRtpcParameters"], 1)
+            self.assertEqual(payload["controlCatalog"]["counts"]["modelViewStateSpatialControls"], 1)
+            self.assertEqual(payload["controlCatalog"]["counts"]["modelViewStateCustomAudioControls"], 1)
+            summaries = json.loads(
+                (webui_root / "data/lang/CN/audio/events.json").read_text(encoding="utf-8")
+            )["events"]
+            summary = next(row for row in summaries if row["id"] == "au_mv_event")
+            self.assertIn("modelViewStateAudioEvent", summary["contextKinds"])
+            self.assertIn("audioLayer", summary["contextSearch"])
+            self.assertIn("int_fixture_alias", summary["contextSearch"])
+            unresolved = next(
+                row for row in summaries
+                if "modelViewStatePositionAudioEvent" in row.get("contextKinds", [])
+            )
+            self.assertEqual(unresolved["category"], "sfx")
+            self.assertEqual(unresolved["categoryEvidence"], "exactModelViewStateAudioBehavior")
 
     def test_collects_owner_unresolved_animation_callbacks_as_debug_contexts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -1050,6 +1336,28 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertIn("animationOwnership", payload["evidenceBoundary"])
             self.assertEqual(payload["counts"]["sharedPlayableCharacterAnimationEvents"], 1)
             self.assertEqual(payload["counts"]["footstepSystemEvents"], 1)
+
+    def test_audio_frontend_materializes_each_distinct_media_player_on_expand(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        playable_body = source.split("function playableRecords", 1)[1].split(
+            "function audioSource", 1
+        )[0]
+        render_body = source.split("function renderPlayers", 1)[1].split(
+            "function statNode", 1
+        )[0]
+
+        self.assertIn("`${candidate.id}\\u0000${candidate.src}`", playable_body)
+        self.assertIn('document.createElement("details")', render_body)
+        self.assertIn('document.createElement("summary")', render_body)
+        self.assertIn('card.addEventListener("toggle"', render_body)
+        self.assertIn("if (!card.open || materialized) return", render_body)
+        self.assertGreater(
+            render_body.index('document.createElement("audio")'),
+            render_body.index('card.addEventListener("toggle"'),
+        )
+        self.assertNotIn("players.length <= 200", render_body)
 
 
 if __name__ == "__main__":
