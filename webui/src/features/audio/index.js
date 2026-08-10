@@ -53,6 +53,7 @@
       levelScriptControls: "LevelScript audio controls",
       levelScriptDynamicControls: "LevelScript dynamic control bindings",
       levelEventConditions: "LevelEvent audio conditions",
+      wwiseSelectorGroups: "Wwise selector runtime joins",
       levelScriptRadioCatalog: "LevelScript radio triggers",
       unresolvedRadioIds: "Unresolved radio IDs",
       unresolvedRadioLines: "Unresolved radio lines",
@@ -197,6 +198,7 @@
       levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
       levelScriptDynamicControls: "LevelScript \u52a8\u6001\u63a7\u5236\u7ed1\u5b9a",
       levelEventConditions: "LevelEvent \u97f3\u9891\u6761\u4ef6",
+      wwiseSelectorGroups: "Wwise \u9009\u62e9\u5668\u8fd0\u884c\u65f6\u8fde\u63a5",
       levelScriptRadioCatalog: "LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
       unresolvedRadioIds: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535 ID",
       unresolvedRadioLines: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535\u53f0\u8bcd",
@@ -1478,6 +1480,10 @@
       ["levelScriptControls", asArray(catalog.levelScriptAudioControls), (row) => `${humanize(row.action || "")} / ${humanize(row.controlRole || "")} / ${row.levelScriptId || "?"} / ${formatControlFields(row)}`],
       ["levelScriptDynamicControls", asArray(catalog.levelScriptDynamicControlBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
       ["levelEventConditions", asArray(catalog.levelEventAudioConditions), (row) => `${row.type || row.id || t("unknown")} / union ${row.unionTagHex || "?"} / event key ${row.eventKey ?? "?"} / ${humanize(row.relationType || "")} / ${row.predicate || "?"} / authored occurrences ${formatNumber(row.authoredOccurrenceCount || 0)} / ${humanize(row.playbackRequestStatus || "")}`],
+      ["wwiseSelectorGroups", asArray(catalog.wwiseSelectorGroups), (row) => {
+        const values = asArray(row.values).map((value) => `${value.valueIdHex || value.valueId || "?"}=${value.semanticName || humanize(value.semanticNameStatus || "unresolved")}`);
+        return `${row.groupIdHex || "?"} / ${row.semanticLabel || humanize(row.semanticRole || "unknown")} / ${humanize(row.semanticEvidence || "unknown")} / ${humanize(row.groupType || "unknown")} / ${humanize(row.runtimeScope || "scope unresolved")}${values.length ? ` / values ${values.join(", ")}` : ""} / ${humanize(row.runtimeObservationStatus || "")}`;
+      }],
     ];
     for (const [labelKey, rows, formatRow] of groups) {
       if (!rows.length) continue;
@@ -2206,7 +2212,15 @@
         selector.nonzeroFadeIn ? `${formatNumber(selector.nonzeroFadeIn)} nonzero fade-in` : "",
       ].filter(Boolean).join(" / "));
       if (groupIds.length) {
-        values.push(`Selector group ids: ${groupIds.slice(0, 12).join(" / ")}${selector.groupIdsTruncated || groupIds.length > 12 ? " / more omitted" : ""}`);
+        const runtimeGroups = new Map(asArray(state.index?.controlCatalog?.wwiseSelectorGroups)
+          .filter((row) => row && typeof row === "object" && row.groupIdHex)
+          .map((row) => [normalize(row.groupIdHex).toLowerCase(), row]));
+        const labeledGroupIds = groupIds.slice(0, 12).map((groupId) => {
+          const runtimeGroup = runtimeGroups.get(normalize(groupId).toLowerCase());
+          if (!runtimeGroup) return groupId;
+          return `${groupId} (${runtimeGroup.semanticLabel || humanize(runtimeGroup.semanticRole || "unknown")} / ${humanize(runtimeGroup.semanticEvidence || "unknown")})`;
+        });
+        values.push(`Selector group ids: ${labeledGroupIds.join(" / ")}${selector.groupIdsTruncated || groupIds.length > 12 ? " / more omitted" : ""}`);
       }
       values.push("Runtime selector value and audio-object state were not observed; every mapped child remains only a possible branch.");
     }

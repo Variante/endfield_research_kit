@@ -124,8 +124,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 22
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 13
+AUDIO_SEMANTIC_SCHEMA_VERSION = 23
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 14
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
 RADIO_CATALOG_ITEM_LIMIT = 64
@@ -523,6 +523,122 @@ AUDIO_MUSIC_NATIVE_STATE_GROUPS = (
         "methodIndex": 39650,
         "token": "0x06009ae3",
         "virtualAddress": "0x186adc19c",
+    },
+)
+
+
+# These ids are joined twice: first to the typed v150 type-6 selector tails in
+# the shipped banks, then to exact current GameAssembly setter callsites.  A
+# semantic role is deliberately not an authored Wwise group name.  The three
+# inferred rows remain visibly weaker than the two exact runtime setter rows.
+AUDIO_RUNTIME_SELECTOR_GROUPS = (
+    {
+        "groupId": 0x7ACDACAF,
+        "groupIdHex": "0x7acdacaf",
+        "groupType": "switch",
+        "semanticRole": "factoryRemoteNodeMode",
+        "semanticLabel": "Factory remote node mode",
+        "semanticEvidence": "exactNativeSetterAndValueMapping",
+        "authoredGroupNameStatus": "unrecovered",
+        "runtimeScope": "audioObject",
+        "runtimeSetter": {
+            "callerType": "Beyond.Gameplay.Audio.AudioRemoteFactoryBridge",
+            "callerMethod": "UpdateNodeMode",
+            "callerMethodIndex": 39714,
+            "callerToken": "0x06009b23",
+            "setSwitchCallVirtualAddress": "0x1850ffa6d",
+            "setter": "Beyond.Audio.AudioAdapter.SetSwitch(uint,uint,ulong)",
+            "audioObjectIdSource": {
+                "method": "Beyond.Audio.AudioObject.get_audioObjectId",
+                "methodIndex": 39038,
+                "token": "0x0600987f",
+                "virtualAddress": "0x1832d2360",
+            },
+        },
+        "valueResolver": {
+            "method": "GetAudioStateValueFromNodeMode",
+            "methodIndex": 39759,
+            "token": "0x06009b50",
+            "virtualAddress": "0x186ae7b18",
+        },
+        "values": (
+            {"valueId": 1, "valueIdHex": "0x00000001", "semanticName": "Normal"},
+            {"valueId": 2, "valueIdHex": "0x00000002", "semanticName": "Liquid"},
+            {"valueId": 4, "valueIdHex": "0x00000004", "semanticName": "Gas"},
+            {"valueId": 8, "valueIdHex": "0x00000008", "semanticName": "GasLiquid"},
+            {"valueId": 16, "valueIdHex": "0x00000010", "semanticName": "GasTransition"},
+            {"valueId": 32, "valueIdHex": "0x00000020", "semanticName": "LiquidTransition"},
+            {"valueId": 64, "valueIdHex": "0x00000040", "semanticName": "SolidTransition"},
+        ),
+        "runtimeObservationStatus": "staticSetterCallsiteExactLiveValueNotObserved",
+    },
+    {
+        "groupId": 0xF6699CF4,
+        "groupIdHex": "0xf6699cf4",
+        "groupType": "state",
+        "semanticRole": "gamepadMotionBackend",
+        "semanticLabel": "Gamepad motion-output backend",
+        "semanticEvidence": "exactNativeStateSetterCallsites",
+        "authoredGroupNameStatus": "unrecovered",
+        "runtimeScope": "global",
+        "runtimeSetter": {
+            "callerType": "Beyond.Gameplay.Audio.AudioGamePadManager",
+            "calls": (
+                {
+                    "method": "_TryAddXInputMotionOutput",
+                    "setStateCallVirtualAddress": "0x186ad04e2",
+                    "valueId": 0x1A9FC91F,
+                    "semanticName": "XInput",
+                },
+                {
+                    "method": "_TryRefreshScePadHandle",
+                    "setStateCallVirtualAddress": "0x186ad069c",
+                    "valueId": 0x1B9ABDB1,
+                    "semanticName": "ScePad",
+                },
+            ),
+            "setterHelperVirtualAddress": "0x183a0cb70",
+            "setterMethodIndex": 446543,
+            "setterToken": "0x06000ac9",
+            "setterVirtualAddress": "0x183a0cbd0",
+            "setter": "AkSoundEngine.SetState(uint,uint)",
+        },
+        "values": (
+            {"valueId": 0x1A9FC91F, "valueIdHex": "0x1a9fc91f", "semanticName": "XInput", "semanticEvidence": "exactNativeCallConstant"},
+            {"valueId": 0x1B9ABDB1, "valueIdHex": "0x1b9abdb1", "semanticName": "ScePad", "semanticEvidence": "exactNativeCallConstant"},
+            {"valueId": 0x2CA33BDB, "valueIdHex": "0x2ca33bdb", "semanticNameStatus": "unresolved"},
+            {"valueId": 0xE59CC828, "valueIdHex": "0xe59cc828", "semanticNameStatus": "unresolved"},
+        ),
+        "runtimeObservationStatus": "staticSetterCallsitesExactLiveBackendNotObserved",
+    },
+    {
+        "groupId": 0x706B5267,
+        "groupIdHex": "0x706b5267",
+        "semanticRole": "voiceIdentitySelector",
+        "semanticLabel": "Character / NPC voice identity selector",
+        "semanticEvidence": "highConfidenceEventAndNpcWwiseIdCorrelation",
+        "authoredGroupNameStatus": "unrecovered",
+        "eventCount": 1601,
+        "voiceEventCount": 1442,
+        "runtimeObservationStatus": "setterAndLiveValueUnresolved",
+    },
+    {
+        "groupId": 0xDFF0BCCC,
+        "groupIdHex": "0xdff0bccc",
+        "semanticRole": "surfaceMaterialSelector",
+        "semanticLabel": "Surface / material selector",
+        "semanticEvidence": "highConfidenceHashedValueVocabularyCorrelation",
+        "authoredGroupNameStatus": "unrecovered",
+        "runtimeObservationStatus": "setterAndLiveValueUnresolved",
+    },
+    {
+        "groupId": 0x3C9C2C56,
+        "groupIdHex": "0x3c9c2c56",
+        "semanticRole": "localRemoteRoutingSelector",
+        "semanticLabel": "Local / remote audio routing selector",
+        "semanticEvidence": "highConfidenceExactLocalRemoteValueHashMatches",
+        "authoredGroupNameStatus": "unrecovered",
+        "runtimeObservationStatus": "setterAndLiveValueUnresolved",
     },
 )
 
@@ -2217,7 +2333,54 @@ RUNTIME_SYSTEM_SPECS = (
         methods=(
             "RegisterAudioFragment", "OnFactoryTopViewChanged", "TriggerFactoryMainRegionAudio",
             "OnBuildingStateChanged", "PlayBuildUpAudio", "PlayDestroyAudio", "PostEventOnUnit",
+            "UpdateNodeMode", "GetAudioStateValueFromNodeMode",
         ),
+        native_anchors=(
+            {
+                "role": "objectScopedFactoryNodeModeSwitch",
+                "method": "UpdateNodeMode",
+                "methodIndex": 39714,
+                "token": "0x06009b23",
+                "setSwitchCallVirtualAddress": "0x1850ffa6d",
+                "groupId": 0x7ACDACAF,
+                "groupIdHex": "0x7acdacaf",
+            },
+            {
+                "role": "factoryNodeModeValueResolver",
+                "method": "GetAudioStateValueFromNodeMode",
+                "methodIndex": 39759,
+                "token": "0x06009b50",
+                "virtualAddress": "0x186ae7b18",
+            },
+        ),
+        runtime_execution_status="staticSetterAndValueMappingExactLiveModeNotObserved",
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Audio.AudioGamePadManager",
+        "output_device",
+        "Selects the global Wwise gamepad motion-output backend for XInput or ScePad.",
+        methods=("_TryAddXInputMotionOutput", "_TryRefreshScePadHandle"),
+        native_anchors=(
+            {
+                "role": "xinputStateSetter",
+                "method": "_TryAddXInputMotionOutput",
+                "setStateCallVirtualAddress": "0x186ad04e2",
+                "groupId": 0xF6699CF4,
+                "groupIdHex": "0xf6699cf4",
+                "valueId": 0x1A9FC91F,
+                "valueIdHex": "0x1a9fc91f",
+            },
+            {
+                "role": "scePadStateSetter",
+                "method": "_TryRefreshScePadHandle",
+                "setStateCallVirtualAddress": "0x186ad069c",
+                "groupId": 0xF6699CF4,
+                "groupIdHex": "0xf6699cf4",
+                "valueId": 0x1B9ABDB1,
+                "valueIdHex": "0x1b9abdb1",
+            },
+        ),
+        runtime_execution_status="staticSetterCallsitesExactLiveBackendNotObserved",
     ),
     runtime_spec(
         "Beyond.Gameplay.Audio.VoiceResponseProcessor",
@@ -7041,6 +7204,12 @@ def build_audio_semantic_data(
                     int(row.get("authoredOccurrenceCount") or 0)
                     for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
                 ),
+                "wwiseSelectorGroupsCensused": 56,
+                "wwiseSelectorGroupsWithRuntimeSetter": 2,
+                "wwiseSelectorGroupsWithSemanticInference": 3,
+                "wwiseSelectorPackageValuesCensused": 234,
+                "wwiseSelectorValuesWithMetadataStringMatch": 67,
+                "wwiseSelectorValuesWithoutRecoveredString": 167,
             },
             "audioCueDefinitions": [
                 {key: value for key, value in definition.items() if key not in {"behaviorEvents", "expressionOperands"}}
@@ -7067,7 +7236,10 @@ def build_audio_semantic_data(
             "levelEventAudioConditions": [
                 dict(row) for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
             ],
-            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences.",
+            "wwiseSelectorGroups": [
+                dict(row) for row in AUDIO_RUNTIME_SELECTOR_GROUPS
+            ],
+            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only. None reveal a live value, selected branch, or authored group name.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
