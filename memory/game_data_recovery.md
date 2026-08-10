@@ -84,11 +84,15 @@ are left unchanged.
 The current banks are Wwise bank version 150. Event traversal now uses only
 typed downward edges: Event action arrays; Action `U16 actionType` plus target
 at offset 2; reciprocal-parent-proven Children arrays for object types 5/6/7/9;
-and the Sound `AkBankSourceData` media id at offset 5. Play (`0x0400`) and
-PlayEvent (`0x2100`) are traversed, while Stop (`0x0100`) and other control
-actions are recorded but not followed. This replaced the former byte-sliding
-u32 scan, which could climb Sound parents or follow incidental property,
-playlist, and switch-map integers into sibling graphs.
+and bounded Sound/MusicTrack `AkBankSourceData` records. Those source records
+separate ordinary Codec media from runtime External Source codecs and generated
+Source plugins, while preserving buffering policy, source flags, memory size,
+and plugin identity. External/plugin sources are playback sources but are not
+promoted into fixed WEM media. Play (`0x0400`) and PlayEvent (`0x2100`) are
+traversed, while Stop (`0x0100`) and other control actions are recorded but not
+followed. This replaced the former byte-sliding u32 scan, which could climb
+Sound parents or follow incidental property, playlist, and switch-map integers
+into sibling graphs.
 
 The output calls decoded Sound leaves *possible media*, not equivalent options
 or a playback trace. Each leaf retains its Play roots and Random, Sequence,

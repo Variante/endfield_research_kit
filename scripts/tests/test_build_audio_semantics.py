@@ -105,6 +105,47 @@ def char_interact_fixture(event_id: int) -> bytes:
 
 
 class AudioSemanticDataTests(unittest.TestCase):
+    def test_event_summary_preserves_non_media_source_taxonomy(self) -> None:
+        row = {
+            "id": "au_music_placeholder_fixture",
+            "name": "au_music_placeholder_fixture",
+            "hash": 1,
+            "category": "music",
+            "foundInWwise": True,
+            "possibleMediaCount": 0,
+            "candidateCount": 0,
+            "contexts": [],
+            "media": [],
+            "evidence": [{
+                "sourceObjectSummary": {
+                    "sourceReferenceCount": 2,
+                    "sourceKindCounts": {
+                        "externalSourceCodec": 1,
+                        "synthesizedSource": 1,
+                    },
+                    "pluginCounts": {"0x00080001": 1, "0x00650002": 1},
+                },
+                "nonMediaSourceEvidence": [{
+                    "pluginIdHex": "0x00080001",
+                    "pluginName": "Wwise External Source",
+                    "sourceKind": "externalSourceCodec",
+                    "streamTypeLabel": "streamedZeroLatency",
+                    "mediaLocationStatus": "unresolvedExternalSource",
+                }],
+            }],
+        }
+        summary = audio_semantics.event_summary_row(row, "event_details/00.json")
+        self.assertEqual(
+            summary["sourceKinds"],
+            ["externalSourceCodec", "synthesizedSource"],
+        )
+        self.assertEqual(
+            summary["sourcePluginIds"],
+            ["0x00080001", "0x00650002"],
+        )
+        self.assertEqual(summary["nonMediaSourceCount"], 1)
+        self.assertIn("Wwise External Source", summary["contextSearch"])
+
     def test_levelscript_dynamic_property_resolution_becomes_authored_event_context(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root) / "export_full"
@@ -595,6 +636,12 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(factory_bridge["nativeAnchors"][0]["groupId"], 0x7ACDACAF)
         self.assertEqual(gamepad_manager["nativeAnchors"][0]["valueId"], 0x1A9FC91F)
         self.assertEqual(gamepad_manager["nativeAnchors"][1]["valueId"], 0x1B9ABDB1)
+        self.assertEqual(gamepad_manager["nativeAnchors"][2]["method"], "AddOutput")
+        self.assertEqual(
+            gamepad_manager["nativeAnchors"][2]["downstreamVirtualAddress"],
+            "0x1853cf1a8",
+        )
+        self.assertIn("m_wwiseMotionOutputDeviceId", gamepad_manager["fields"])
         callback_roles = {row["role"] for row in callback_manager["nativeAnchors"]}
         self.assertTrue({"eventId", "durationMediaId", "playlistSelection", "sourceChange"} <= callback_roles)
         external = adapter_chains["externalSourcePostToWwise"]
@@ -2216,6 +2263,11 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("layerBlend.associations", source)
         self.assertIn("Wwise Layer/Blend structure", source)
         self.assertIn("zero-layer assignments remain structural child relations only", source)
+        self.assertIn("function sourceEvidenceSummary", source)
+        self.assertIn("evidence?.nonMediaSourceEvidence", source)
+        self.assertIn('sourceKinds.has("externalSourceCodec")', source)
+        self.assertIn('sourceKinds.has("synthesizedSource")', source)
+        self.assertIn("Stream type is a buffering policy", source)
 
 
 if __name__ == "__main__":
