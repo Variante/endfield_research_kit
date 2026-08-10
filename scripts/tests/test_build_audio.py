@@ -365,15 +365,16 @@ class AudioCategoryTests(unittest.TestCase):
         event_data = bytes([2]) + pack("<II", play_action, stop_action)
         play_data = pack("<HI", 0x0403, container_id)
         stop_data = pack("<HI", 0x0103, unrelated_sound)
-        container_data = bytearray(80)
+        children_offset = 40
+        container_data = bytearray(children_offset - 24)
         container_data[8:12] = pack("<I", 999)
         # Incidental object/media-looking integers are not typed child edges.
-        container_data[16:20] = pack("<I", unrelated_sound)
-        children_offset = 40
-        container_data[children_offset - 3] = 0
-        container_data[children_offset - 2] = 0
-        container_data[children_offset - 1] = 0x12
-        container_data[children_offset:children_offset + 12] = pack("<III", 2, sound_a, sound_b)
+        container_data[12:16] = pack("<I", unrelated_sound)
+        container_data.extend(pack("<HHHfffHBBBB", 1, 0, 0, 0.0, 0.0, 0.0, 1, 0, 0, 0, 0x12))
+        container_data.extend(pack("<III", 2, sound_a, sound_b))
+        container_data.extend(pack("<H", 2))
+        container_data.extend(pack("<II", sound_b, 50000))
+        container_data.extend(pack("<II", sound_a, 25000))
 
         def sound_data(media_id: int, parent_id: int) -> bytes:
             data = bytearray(30)
@@ -391,12 +392,24 @@ class AudioCategoryTests(unittest.TestCase):
             unrelated_sound: {"type": 2, "data": sound_data(499, 777)},
         }
 
-        result = build_audio.traverse_hirc_event(event_id, objects, {401, 402, 499})
+        result = build_audio.traverse_hirc_event(
+            event_id, objects, {401, 402, 499}, bank_version=150
+        )
         self.assertEqual(result["mediaIds"], [401, 402])
         self.assertEqual(result["rootPlayActionCount"], 1)
         self.assertEqual(result["rootStopActionCount"], 1)
         self.assertEqual(result["containerEvidence"][0]["childrenOffset"], children_offset)
         self.assertEqual(result["containerEvidence"][0]["modeLabel"], "random")
+        self.assertEqual(
+            result["containerEvidence"][0]["selectorParserStatus"],
+            "typedExactV150PlaylistWeights",
+        )
+        self.assertEqual(
+            result["containerEvidence"][0]["playlistChildOrder"],
+            [sound_b, sound_a],
+        )
+        self.assertFalse(result["containerEvidence"][0]["childrenOrderMatchesPlaylist"])
+        self.assertEqual(result["containerEvidence"][0]["nonDefaultWeightCount"], 1)
         self.assertEqual(result["containerEvidence"][0]["flagLabels"], [
             "resetPlaylistAtEachPlay", "global",
         ])
@@ -405,6 +418,46 @@ class AudioCategoryTests(unittest.TestCase):
             {("randomAlternative",)},
         )
         self.assertNotIn(unrelated_sound, result["visitedObjectIds"])
+
+    def test_v150_random_sequence_policy_preserves_playlist_order_weights_and_fail_closed_tail(self) -> None:
+        children_offset = 24
+        child_ids = [10, 20, 30]
+        data = bytearray()
+        data.extend(pack(
+            "<HHHfffHBBBB",
+            2, 1, 3, 125.0, 25.0, 50.0, 4, 3, 1, 1, 0x1A,
+        ))
+        data.extend(pack("<I", len(child_ids)))
+        data.extend(b"".join(pack("<I", child_id) for child_id in child_ids))
+        data.extend(pack("<H", len(child_ids)))
+        for child_id, weight in ((30, 50000), (10, 25000), (20, 75000)):
+            data.extend(pack("<II", child_id, weight))
+
+        policy = build_audio.hirc_v150_random_sequence_properties(
+            bytes(data), children_offset, child_ids, bank_version=150
+        )
+
+        self.assertEqual(policy["selectorParserStatus"], "typedExactV150PlaylistWeights")
+        self.assertEqual(policy["modeLabel"], "sequence")
+        self.assertEqual(policy["randomModeLabel"], "shuffle")
+        self.assertEqual(policy["transitionModeLabel"], "delay")
+        self.assertEqual(policy["playlistChildOrder"], [30, 10, 20])
+        self.assertFalse(policy["childrenOrderMatchesPlaylist"])
+        self.assertEqual(policy["loopCount"], 2)
+        self.assertEqual(policy["avoidRepeatCount"], 4)
+        self.assertEqual(policy["nonDefaultWeightCount"], 2)
+        self.assertFalse(policy["uniformWeights"])
+        self.assertNotIn("usesWeight", policy["flagLabels"])
+
+        truncated = build_audio.hirc_v150_random_sequence_properties(
+            bytes(data[:-8]), children_offset, child_ids, bank_version=150
+        )
+        self.assertEqual(
+            truncated["selectorParserStatus"],
+            "unresolvedV150RandomSequenceTail",
+        )
+        self.assertEqual(truncated["selectorParserFailureReason"], "unexpectedPlaylistTailLength")
+        self.assertEqual(truncated["modeLabel"], "sequence")
 
     def test_v150_switch_mapping_preserves_flat_value_packages_without_pruning(self) -> None:
         event_id = 100
@@ -417,7 +470,8 @@ class AudioCategoryTests(unittest.TestCase):
         value_id = 0xF44F784A
         children_offset = 40
 
-        switch_data = bytearray(children_offset - 9)
+        switch_data = bytearray(children_offset - 10)
+        switch_data.append(0)
         switch_data.extend(pack("<II", group_id, default_value_id))
         switch_data.append(1)
         switch_data.extend(pack("<III", 2, sound_a, sound_b))
@@ -425,8 +479,8 @@ class AudioCategoryTests(unittest.TestCase):
         switch_data.extend(pack("<III", value_id, 1, sound_a))
         switch_data.extend(pack("<II", default_value_id, 0))
         switch_data.extend(pack("<I", 2))
-        switch_data.extend(pack("<IBiiB", sound_a, 3, 500, -250, 7))
-        switch_data.extend(pack("<IBiiB", sound_b, 0, 1, 0, 0))
+        switch_data.extend(pack("<IBBii", sound_a, 3, 1, 500, -250))
+        switch_data.extend(pack("<IBBii", sound_b, 0, 0, 1, 0))
 
         def sound_data(media_id: int) -> bytes:
             data = bytearray(30)
@@ -451,6 +505,8 @@ class AudioCategoryTests(unittest.TestCase):
         switch = result["containerEvidence"][0]["switchMappingEvidence"]
         self.assertEqual(switch["parserStatus"], "typedExactV150FlatPackages")
         self.assertEqual(switch["selectionStructure"], "flatValuePackages")
+        self.assertEqual(switch["groupType"], "switch")
+        self.assertEqual(switch["groupTypeRaw"], 0)
         self.assertEqual(switch["groupId"], group_id)
         self.assertEqual(switch["defaultValueId"], default_value_id)
         self.assertTrue(switch["continuousValidation"])
@@ -463,14 +519,27 @@ class AudioCategoryTests(unittest.TestCase):
         })
         self.assertTrue(switch["packages"][1]["isDefaultValue"])
         self.assertEqual(switch["unmappedChildIds"], [sound_b])
-        self.assertEqual(switch["associations"][0]["parameterARaw"], 500)
-        self.assertEqual(switch["associations"][0]["parameterBRaw"], -250)
+        self.assertTrue(switch["associations"][0]["isFirstOnly"])
+        self.assertTrue(switch["associations"][0]["continuePlayback"])
+        self.assertEqual(switch["associations"][0]["onSwitchMode"], "stop")
+        self.assertEqual(switch["associations"][0]["fadeOutTimeMs"], 500)
+        self.assertEqual(switch["associations"][0]["fadeInTimeMs"], -250)
+        self.assertEqual(switch["associations"][1]["onSwitchMode"], "playToEnd")
         self.assertEqual(
             switch["runtimeSelection"],
             "groupValueUnobservedAllChildrenRemainPossible",
         )
 
-        no_package_data = bytearray(children_offset - 9)
+        state_data = bytearray(switch_data)
+        state_data[children_offset - 10] = 1
+        state_mapping = build_audio.hirc_v150_switch_mapping(
+            bytes(state_data), children_offset, 2, bank_version=150
+        )
+        self.assertEqual(state_mapping["groupType"], "state")
+        self.assertEqual(state_mapping["groupTypeRaw"], 1)
+
+        no_package_data = bytearray(children_offset - 10)
+        no_package_data.append(1)
         no_package_data.extend(pack("<II", 0x3C9C2C56, 0x8D36849F))
         no_package_data.append(0)
         no_package_data.extend(pack("<III", 2, sound_a, sound_b))
@@ -489,15 +558,15 @@ class AudioCategoryTests(unittest.TestCase):
         sound_a = 301
         sound_b = 302
         children_offset = 40
-        switch_data = bytearray(children_offset - 9)
+        switch_data = bytearray(children_offset - 10)
         # Current distinct-layout objects do not have the flat selector header
         # at C-9; interpreting their final header byte as continuous-validation
         # yields a non-boolean value and must fail before package claims.
-        switch_data.extend(bytes.fromhex("00949cee04bb233163"))
+        switch_data.extend(bytes.fromhex("0000949cee04bb233163"))
         switch_data.extend(pack("<III", 2, sound_a, sound_b))
         switch_data.extend(pack("<I", 2))
-        switch_data.extend(pack("<IBiiB", sound_a, 0, 1, 0, 0))
-        switch_data.extend(pack("<IBiiB", sound_b, 0, 1, 0, 0))
+        switch_data.extend(pack("<IBBii", sound_a, 0, 1, 0, 0))
+        switch_data.extend(pack("<IBBii", sound_b, 0, 1, 0, 0))
 
         def sound_data(media_id: int) -> bytes:
             data = bytearray(30)

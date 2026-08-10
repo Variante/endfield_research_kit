@@ -267,6 +267,121 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(rows[0]["evidence"][0]["musicNodeEvidence"], [music_node])
         self.assertEqual(rows[0]["evidence"][0]["actionDispatchEvidence"], dispatch)
 
+    def test_switch_mapping_compaction_preserves_selector_structure_without_flat_children(self) -> None:
+        rows = [
+            {
+                "objectType": 6,
+                "edgeKind": "switchCandidate",
+                "childCount": 3,
+                "parserConfidence": "wwise150TypedReciprocalChildren",
+                "switchMappingEvidence": {
+                    "parserStatus": "typedExactV150FlatPackages",
+                    "groupType": "switch",
+                    "groupId": 0x12345678,
+                    "defaultValueId": 0x11,
+                    "continuousValidation": True,
+                    "packages": [
+                        {"valueId": 0x11, "childIds": [1]},
+                        {"valueId": 0x22, "childIds": [2, 3]},
+                    ],
+                    "associations": [
+                        {
+                            "onSwitchMode": "stop",
+                            "continuePlayback": True,
+                            "isFirstOnly": False,
+                            "fadeOutTimeMs": 250,
+                            "fadeInTimeMs": 0,
+                        }
+                    ],
+                    "mappedChildIdsOutsideChildren": [],
+                    "unmappedChildIds": [],
+                    "associationChildIdsOutsideChildren": [],
+                },
+            },
+            {
+                "objectType": 6,
+                "edgeKind": "switchCandidate",
+                "childCount": 2,
+                "parserConfidence": "wwise150TypedReciprocalChildren",
+                "switchMappingEvidence": {
+                    "parserStatus": "unresolvedV150SwitchTail",
+                    "failureReason": "distinctLayout",
+                },
+            },
+        ]
+
+        compact = audio_semantics.compact_container_evidence(rows)
+
+        self.assertEqual(len(compact), 1)
+        selector = compact[0]
+        self.assertEqual(selector["selectorNodeCount"], 2)
+        self.assertEqual(selector["typedSelectorNodeCount"], 1)
+        self.assertEqual(selector["unresolvedSelectorNodeCount"], 1)
+        self.assertEqual(selector["selectorGroupTypes"], {"switch": 1})
+        self.assertEqual(selector["selectorGroupIdsHex"], ["0x12345678"])
+        self.assertEqual(selector["selectorPackageCount"], 2)
+        self.assertEqual(selector["strictSubsetSelectorPackageCount"], 2)
+        self.assertEqual(selector["selectorAssociationCount"], 1)
+        self.assertEqual(selector["selectorSwitchModes"], {"stop": 1})
+        self.assertEqual(selector["continuePlaybackAssociationCount"], 1)
+        self.assertEqual(selector["nonzeroFadeOutAssociationCount"], 1)
+        self.assertNotIn("packages", selector)
+
+    def test_compact_container_evidence_preserves_random_sequence_policy(self) -> None:
+        rows = [
+            {
+                "objectType": 5,
+                "edgeKind": "sequenceItem",
+                "modeLabel": "sequence",
+                "childCount": 3,
+                "parserConfidence": "wwise150TypedReciprocalChildren",
+                "selectorParserStatus": "typedExactV150PlaylistWeights",
+                "randomModeLabel": "shuffle",
+                "transitionModeLabel": "delay",
+                "playlistItemCount": 3,
+                "childrenOrderMatchesPlaylist": False,
+                "nonDefaultWeightCount": 2,
+                "uniformWeights": False,
+                "avoidRepeatCount": 4,
+                "loopCount": 2,
+                "globalScope": True,
+                "continuous": True,
+                "resetPlaylistAtEachPlay": True,
+            },
+            {
+                "objectType": 5,
+                "edgeKind": "sequenceItem",
+                "modeLabel": "sequence",
+                "childCount": 2,
+                "parserConfidence": "wwise150TypedReciprocalChildren",
+                "selectorParserStatus": "unresolvedV150RandomSequenceTail",
+                "selectorParserFailureReason": "unexpectedPlaylistTailLength",
+            },
+        ]
+
+        compact = audio_semantics.compact_container_evidence(rows)
+
+        self.assertEqual(len(compact), 1)
+        policy = compact[0]
+        self.assertEqual(policy["randomSequenceNodeCount"], 2)
+        self.assertEqual(policy["typedRandomSequenceNodeCount"], 1)
+        self.assertEqual(policy["unresolvedRandomSequenceNodeCount"], 1)
+        self.assertEqual(policy["randomSequenceModes"], {"sequence": 1})
+        self.assertEqual(policy["randomModes"], {"shuffle": 1})
+        self.assertEqual(policy["randomTransitionModes"], {"delay": 1})
+        self.assertEqual(policy["randomSequencePlaylistItemCount"], 3)
+        self.assertEqual(policy["playlistOrderDiffersFromChildrenCount"], 1)
+        self.assertEqual(policy["nonDefaultWeightItemCount"], 2)
+        self.assertEqual(policy["nonDefaultWeightNodeCount"], 1)
+        self.assertEqual(policy["nonUniformWeightNodeCount"], 1)
+        self.assertEqual(policy["nonDefaultAvoidRepeatNodeCount"], 1)
+        self.assertEqual(policy["maxAvoidRepeatCount"], 4)
+        self.assertEqual(policy["nonDefaultLoopNodeCount"], 1)
+        self.assertEqual(policy["globalScopeRandomSequenceNodeCount"], 1)
+        self.assertEqual(policy["continuousRandomSequenceNodeCount"], 1)
+        self.assertEqual(policy["resetPlaylistNodeCount"], 1)
+        self.assertNotIn("playlistItems", policy)
+
     def test_event_categories_preserve_unknowns(self) -> None:
         self.assertEqual(audio_semantics.event_category("au_sfx_test"), "sfx")
         self.assertEqual(audio_semantics.event_category("au_chr_test_attack"), "sfx")
@@ -463,9 +578,21 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertTrue(all(row["actionOrders"] == (5, 1) for row in transition_rows.values()))
         self.assertTrue(all(row["isOneShot"] is False for row in transition_rows.values()))
         self.assertTrue(all(
-            row["callbackTargetStatus"] == "delegateTargetUnresolved"
+            row["callbackTargetStatus"] == "exactMetadataUsageDelegateTargets"
             for row in transition_rows.values()
         ))
+        self.assertEqual(
+            [row["callbackMethod"] for row in transition_rows[0x40]["registrations"]],
+            ["SwitchToDialogMusic", "_OnEnterFMV"],
+        )
+        self.assertEqual(
+            [row["conditionType"] for row in transition_rows[0x40]["registrations"]],
+            ["enter", "leave"],
+        )
+        fight_start = transition_rows[0x2]["registrations"][1]
+        self.assertEqual(fight_start["callbackMethod"], "_StartBattleMusic")
+        self.assertEqual(fight_start["callbackMethodIndex"], 39483)
+        self.assertEqual(len(fight_start["directStateSetters"]), 3)
         for enum_type in (
             "EWwiseMusicMapState", "EWwiseMissionMusicState", "EWwiseDialogMusicState",
             "EWwiseCutsceneMusicState", "EWwiseLoginMusicState", "EWwiseMetaMusicState",
@@ -1964,6 +2091,8 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("group.groupIdHex", body)
         self.assertIn("transition.stateMaskHex", body)
         self.assertIn("transition.callbackTargetStatus", body)
+        self.assertIn("transition.registrations", body)
+        self.assertIn("registration.callbackMethod", body)
         self.assertNotIn("systems.slice(0, 40)", body)
         self.assertIn("stage.methodIndex", body)
         self.assertIn("stage.virtualAddress", body)
@@ -1971,6 +2100,13 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("chain.branches", body)
         self.assertIn("branch.relation", body)
         self.assertIn("chain.boundary", body)
+        self.assertIn("container?.selectorGroupTypes", source)
+        self.assertIn("selector.strictSubsetPackages", source)
+        self.assertIn("Runtime selector value and audio-object state were not observed", source)
+        self.assertIn("container?.randomSequenceModes", source)
+        self.assertIn("randomSequence.orderDiffers", source)
+        self.assertIn("Wwise Random/Sequence policy", source)
+        self.assertIn("Runtime random seed, shuffle history", source)
 
 
 if __name__ == "__main__":
