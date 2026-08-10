@@ -527,6 +527,246 @@ AUDIO_MUSIC_NATIVE_STATE_GROUPS = (
 )
 
 
+# The enum member names below are not display guesses.  They are the managed
+# names recovered from the current Gameplay.Beyond metadata and their value
+# ids are the exact FNV-1/UTF-16 hashes used by AudioHashGenerator.Compute.
+# Keeping the enum member, hash input, and id together makes the distinction
+# between a state *group* and a state *value* explicit in the WebUI catalog.
+_AUDIO_MUSIC_ENUM_VALUES = {
+    "topLevelMusicMode": (
+        ("UNKNOWN", 0xF9D3523D),
+        ("MISSION", 0x166521A5),
+        ("LOADING", 0xD505DEBB),
+        ("EXPLORING", 0x6CB31EE7),
+        ("COMBAT_GENERAL", 0x525E00A0),
+        ("COMBAT_BOSS", 0x271CB603),
+        ("CUTSCENE", 0x468283E1),
+        ("DIALOGUE", 0xEA41209F),
+        ("FACTORY", 0x51FBB249),
+        ("BASE_MODE_DEFENSE", 0x00FC4659),
+        ("DUNGEON", 0x244B0EC9),
+        ("NARRATING", 0x36752FA3),
+    ),
+    "worldMap": (
+        ("UNKNOWN", 0xF9D3523D),
+        ("TUNDRA", 0x9B54723D),
+        ("HONGSHAN", 0xFF51B103),
+    ),
+    "battlePhase": (
+        ("UNKNOWN", 0xF9D3523D),
+        ("MAIN_LOOP", 0xE34AF54B),
+        ("ENDING", 0xEC675524),
+    ),
+    "battleIntensity": (
+        ("UNKNOWN", 0xF9D3523D),
+        ("LOW", 0x2081B4E5),
+        ("HIGH", 0xD3A50981),
+    ),
+    "mission": (("NONE", 0x2CA33BDB),),
+    "dialog": (("NONE", 0x2CA33BDB),),
+    "cutscene": (("NONE", 0x2CA33BDB),),
+    "login": (
+        ("NONE", 0x2CA33BDB),
+        ("INTRO", 0x4315C729),
+        ("THEME", 0x4E9E9BB0),
+        ("ENDING", 0xEC675524),
+    ),
+    "meta": (
+        ("NONE", 0x2CA33BDB),
+        ("GACHA_CUTSCENE", 0x73A7133C),
+        ("GACHA_INTERFACE", 0x854CEF1D),
+    ),
+    "remoteCommunication": (
+        ("NONE", 0x2CA33BDB),
+        ("LOOP", 0x292FEA37),
+        ("ENDING", 0xEC675524),
+    ),
+}
+
+
+def _audio_music_enum_value(member: str, value_id: int) -> dict[str, Any]:
+    return {
+        "member": member,
+        "hashInput": member.lower(),
+        "valueId": value_id,
+        "valueIdHex": f"0x{value_id:08x}",
+        "resolution": "exactCurrentMetadataEnumMemberFNV1Utf16Hash",
+    }
+
+
+# These are exact immediate values observed at current GameAssembly callsites.
+# ManualSet* is intentionally separate: its EBX/EDX input is supplied by the
+# caller at runtime, so the binary proves the route but not a fixed value.
+_AUDIO_MUSIC_STATIC_VALUE_CALLSITES = {
+    "topLevelMusicMode": (
+        {
+            "callerMethod": "_StartBattleMusic",
+            "callerMethodIndex": 39483,
+            "callVirtualAddress": "0x1846ab06f",
+            "valueMember": "COMBAT_GENERAL",
+            "valueId": 0x525E00A0,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+        {
+            "callerMethod": "OnEnterMainGame",
+            "callerMethodIndex": 39513,
+            "callVirtualAddress": "0x18449113e",
+            "valueMember": "LOADING",
+            "valueId": 0xD505DEBB,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+        {
+            "callerMethod": "_TurnToLoadingIfInLoading",
+            "callerMethodIndex": 39581,
+            "callVirtualAddress": "0x186adc919",
+            "valueMember": "LOADING",
+            "valueId": 0xD505DEBB,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+        {
+            "callerMethod": "SwitchToDialogMusic",
+            "callerMethodIndex": 39590,
+            "callVirtualAddress": "0x186ad9f58",
+            "valueMember": "DIALOGUE",
+            "valueId": 0xEA41209F,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+    ),
+    "worldMap": (
+        {
+            "callerMethod": None,
+            "callerMethodIndex": None,
+            "callVirtualAddress": "0x18538585d",
+            "valueMember": "TUNDRA",
+            "valueId": 0x9B54723D,
+            "valueRegister": "edx",
+            "ownerResolution": "unresolvedSharedGenericBody",
+            "ownerGap": "Direct call target and immediate value are exact; the shared/generated body has no safe metadata owner join.",
+        },
+    ),
+    "battlePhase": (
+        {
+            "callerMethod": "_StartBattleMusic",
+            "callerMethodIndex": 39483,
+            "callVirtualAddress": "0x1846ab05f",
+            "valueMember": "MAIN_LOOP",
+            "valueId": 0xE34AF54B,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+    ),
+    "battleIntensity": (
+        {
+            "callerMethod": "_StartBattleMusic",
+            "callerMethodIndex": 39483,
+            "callVirtualAddress": "0x1846ab04f",
+            "valueMember": "HIGH",
+            "valueId": 0xD3A50981,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+        {
+            "callerMethod": "_CheckLeaveFight",
+            "callerMethodIndex": 39486,
+            "callVirtualAddress": "0x183a0d06c",
+            "valueMember": "LOW",
+            "valueId": 0x2081B4E5,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+        {
+            "callerMethod": "_OnEscapeFromFight",
+            "callerMethodIndex": 39491,
+            "callVirtualAddress": "0x186adb46c",
+            "valueMember": "LOW",
+            "valueId": 0x2081B4E5,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+    ),
+    "dialog": (
+        {
+            "callerMethod": "SwitchToDialogMusic",
+            "callerMethodIndex": 39590,
+            "callVirtualAddress": "0x186ad9f2a",
+            "valueMember": "NONE",
+            "valueId": 0x2CA33BDB,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+    ),
+    "remoteCommunication": (
+        {
+            "callerMethod": "EndRemoteComm",
+            "callerMethodIndex": 39599,
+            "callVirtualAddress": "0x186ad8240",
+            "valueMember": "ENDING",
+            "valueId": 0xEC675524,
+            "valueRegister": "edx",
+            "ownerResolution": "exactMetadataBodyTarget",
+        },
+    ),
+}
+
+
+_AUDIO_MUSIC_RUNTIME_VALUE_CALLSITES = {
+    "topLevelMusicMode": (
+        {
+            "callerMethod": "ManualSetMusicState",
+            "callerMethodIndex": 39582,
+            "callVirtualAddress": "0x186ad890f",
+            "valueRegister": "edx<-ebx",
+            "inputStatus": "runtimeParameterValueUnobserved",
+        },
+    ),
+    "battlePhase": (
+        {
+            "callerMethod": "ManualSetBattleMusicState",
+            "callerMethodIndex": 39583,
+            "callVirtualAddress": "0x186ad88a7",
+            "valueRegister": "edx<-ebx",
+            "inputStatus": "runtimeParameterValueUnobserved",
+        },
+    ),
+    "battleIntensity": (
+        {
+            "callerMethod": "ManualSetBattleMusicIntensityState",
+            "callerMethodIndex": 39584,
+            "callVirtualAddress": "0x186ad883f",
+            "valueRegister": "edx<-ebx",
+            "inputStatus": "runtimeParameterValueUnobserved",
+        },
+    ),
+}
+
+
+AUDIO_MUSIC_NATIVE_STATE_GROUPS = tuple(
+    {
+        **row,
+        "values": tuple(
+            _audio_music_enum_value(member, value_id)
+            for member, value_id in _AUDIO_MUSIC_ENUM_VALUES[row["role"]]
+        ),
+        "staticValueCallsites": tuple(
+            dict(value) for value in _AUDIO_MUSIC_STATIC_VALUE_CALLSITES.get(row["role"], ())
+        ),
+        "runtimeValueCallsites": tuple(
+            dict(value) for value in _AUDIO_MUSIC_RUNTIME_VALUE_CALLSITES.get(row["role"], ())
+        ),
+        "binaryEvidence": {
+            "status": "exactCurrentBuildStaticEvidence",
+            "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+            "metadataSha256": MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256,
+        },
+    }
+    for row in AUDIO_MUSIC_NATIVE_STATE_GROUPS
+)
+
+
 # These ids are joined twice: first to the typed v150 type-6 selector tails in
 # the shipped banks, then to exact current GameAssembly setter callsites.  A
 # semantic role is deliberately not an authored Wwise group name.  The three

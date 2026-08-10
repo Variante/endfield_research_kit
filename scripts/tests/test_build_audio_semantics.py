@@ -956,6 +956,33 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(music_groups["cutscene"]["recoveredName"], "music_cutscene")
         self.assertNotIn("recoveredName", music_groups["dialog"])
         self.assertEqual(music_groups["remoteCommunication"]["methodIndex"], 39650)
+        top_level_values = {
+            row["member"]: row["valueId"]
+            for row in music_groups["topLevelMusicMode"]["values"]
+        }
+        self.assertEqual(top_level_values["COMBAT_GENERAL"], 0x525E00A0)
+        self.assertEqual(top_level_values["BASE_MODE_DEFENSE"], 0x00FC4659)
+        self.assertEqual(
+            {
+                row["member"]: row["valueId"]
+                for row in music_groups["battleIntensity"]["values"]
+            },
+            {"UNKNOWN": 0xF9D3523D, "LOW": 0x2081B4E5, "HIGH": 0xD3A50981},
+        )
+        start_calls = {
+            row["valueMember"]: row
+            for row in music_groups["battleIntensity"]["staticValueCallsites"]
+            if row["callerMethod"] == "_StartBattleMusic"
+        }
+        self.assertEqual(start_calls["HIGH"]["callVirtualAddress"], "0x1846ab04f")
+        self.assertEqual(
+            music_groups["topLevelMusicMode"]["runtimeValueCallsites"][0]["inputStatus"],
+            "runtimeParameterValueUnobserved",
+        )
+        self.assertEqual(
+            music_groups["worldMap"]["staticValueCallsites"][0]["ownerResolution"],
+            "unresolvedSharedGenericBody",
+        )
         self.assertTrue(all(
             audio_semantics.audio_hash_generator_compute(row["recoveredName"])
             == row["groupId"]
