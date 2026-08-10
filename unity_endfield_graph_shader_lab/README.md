@@ -1566,10 +1566,14 @@ record `+0x08` is mutable: particle setup variants
 (record `+0x08`), replace the word with bit 20 at the exact `0x18` stride while
 selecting modes 2/3/4/5, and scheduled callback `0x181067A70` ORs it into its
 render flags. Record `+0x0C` is the third resolved, reference-counted renderer
-resource index: LOD availability paths `0x181157760/0x181159010` write it,
+`Mesh` resource index. Both owner transition paths acquire their third slot
+with native kind `2`; dedicated HG internal-call entry 437 maps wrapper
+`0x1801F2AB0` to `HGResourceManager.LoadAsync_Injected`, whose installed
+IL2CPP `AssetType` parameter closes `1=Material` and `2=Mesh`. LOD availability
+paths `0x181157760/0x181159010` write record `+0x0C`,
 cleanup `0x18115BFC0` releases and clears it through `0x180FBF6B0`, and callback
 `0x181064100` also ORs the word with renderer-entry flags before comparison.
-The exact asset class represented by this third slot remains open.
+The semantic reason this Mesh-derived index doubles as a filter overlay remains open.
 Common Renderer state synchronizer `0x180432CD0` updates record `+0x10` with
 property-derived flags after preserving mask `0xFC07FBFD`. Dedicated HG
 internal-call entry 204 is
@@ -1705,8 +1709,9 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The exact asset class of loader record
-`+0x0C`, the downstream native consumer of `enabledLightModes` record `+0x14`
+boundary into unrelated Animator code. The semantic reason for loader record
+`+0x0C`'s Mesh/filter dual use, the downstream native consumer of
+`enabledLightModes` record `+0x14`
 beyond the now-excluded record-base classifier and callback-A ECS-column lookalike,
 and the
 component-67 standalone native type

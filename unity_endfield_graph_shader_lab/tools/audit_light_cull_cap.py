@@ -241,6 +241,11 @@ UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_VA = 0x1801D9D10
 UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGTreeRender::CreateRendererList"
 )
+UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX = 437
+UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_VA = 0x1801F2AB0
+UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGResourceManager::LoadAsync_Injected"
+)
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX = 567
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_VA = 0x1801DA040
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_NAME = (
@@ -700,6 +705,29 @@ STREAMING_SCENE_V2_COMPONENT_BITS = [
     {"bit": 40, "name": "HGVolumetricCloud", "componentCount": 22, "fileCount": 6},
 ]
 
+HG_ASSET_TYPE_INDEX = 60980
+HG_ASSET_TYPE_TOKEN = 0x02000067
+HG_ASSET_TYPE_BYVAL_METADATA_TYPE = 122373
+HG_RESOURCE_MANAGER_TYPE_INDEX = 60990
+HG_RESOURCE_MANAGER_TYPE_TOKEN = 0x0200006E
+HG_RESOURCE_LOAD_ASYNC_INJECTED_METHOD_INDEX = 478100
+HG_RESOURCE_LOAD_ASYNC_INJECTED_METHOD_TOKEN = 0x06000130
+HG_RESOURCE_LOAD_ASYNC_INJECTED_PARAMETER_START = 533738
+HG_ASSET_TYPE_FIELDS = {
+    "Invalid": (296374, 0x04000110, 0),
+    "Material": (296375, 0x04000111, 1),
+    "Mesh": (296376, 0x04000112, 2),
+    "Texture2D": (296377, 0x04000113, 3),
+    "Texture3D": (296378, 0x04000114, 4),
+    "CubeMap": (296379, 0x04000115, 5),
+    "ScriptableObject": (296380, 0x04000116, 6),
+    "Shader": (296381, 0x04000117, 7),
+    "ComputeShader": (296382, 0x04000118, 8),
+    "TerrainLayer": (296383, 0x04000119, 9),
+    "SubsurfaceProfile": (296384, 0x0400011A, 10),
+    "Count": (296385, 0x0400011B, 11),
+}
+
 IL2CPP_METADATA_SECTION_NAMES = [
     "stringLiteral",
     "stringLiteralData",
@@ -1090,6 +1118,21 @@ UNITY_HGTREE_BODIES = {
         0x119,
         "2afaddb9131b06e00ce20914992c37e1dcef0eb21a40feadfbef57786b95d1e0",
     ),
+    "hg_resource_load_async_binding": (
+        0x1801F2AB0,
+        0x5A,
+        "25b1324b6a8c25e3b51fd709a20825199f94afc08b31beff9d0e9909edd90792",
+    ),
+    "renderer_resource_slot_acquire": (
+        0x180FBFC60,
+        0x224,
+        "a3ce5ba53a311f4034772239e66a0b4258863e53a6985e273e27bbd8cb4e124d",
+    ),
+    "renderer_resource_slot_lookup": (
+        0x1801F7410,
+        0xDD,
+        "644c1c7bc0c39844a8332babd6ad747a26bbe10c262b83b09575cfbf0ea22f9c",
+    ),
     "runtime_record_scheduled_flag_consumer": (
         0x181064100,
         0x108D,
@@ -1297,6 +1340,39 @@ UNITY_HGTREE_SLICES = {
     "runtime_record_lookup_a": (
         0x181129EEE,
         "488b4f084d8bc6488bd3e833ad2fff448b384c8d7004",
+    ),
+    "hg_resource_load_async_forwards_asset_type": (
+        0x1801F2AC5,
+        "4d8bf1410fb7d88bfa488bf1e88a33dd00448bcf66895c24204c8bc6488d542458"
+        "488b4848e871d1dc00",
+    ),
+    "merged_render_third_resource_acquire_as_mesh": (
+        0x1811535F4,
+        "4c396f080f84f0000000488b5f08488d55584c8bc366c74424200f00"
+        "41b902000000498bcce842c6e6ff8b4558",
+    ),
+    "render_third_resource_acquire_as_mesh": (
+        0x1811547C3,
+        "48837f08000f84f6000000488b5f08488d55774c8bc366c74424200f00"
+        "41b902000000498bcfe872b4e6ff8b4577",
+    ),
+    "merged_render_third_resource_to_runtime_0x0c": (
+        0x181157A47,
+        "48837ef4000f8484000000498b45288b4e0448c1e1050f100401"
+        "0f104c01100f114560660f7ec83c017564418b4710498d4f084883c004"
+        "660f73d9084c8d4111660f7e8d70010000488d9570010000488d1c40"
+        "480319e86ef909ff483bc3730e8338fe72094883c00c483bc372f2"
+        "418b4f104883c104488d144949035708483bd0750433c0eb038b4008"
+        "4189443e10",
+    ),
+    "render_third_resource_to_runtime_0x0c": (
+        0x18115921D,
+        "48396ef40f847e000000488b43288b4e0448c1e1050f104c0110"
+        "660f7ec83c017566418b4510498d4d084883c004"
+        "660f73d9084c8d4111660f7e8c24c0000000488d9424c0000000488d3c40"
+        "480339e89fe109ff483bc7730e8338fe72094883c00c483bc772f2"
+        "418b4d104883c104488d144949035508483bd075048bc5eb038b4008"
+        "4389442610",
     ),
     "runtime_record_escape_a": (
         0x18112A243,
@@ -2272,6 +2348,272 @@ def decode_il2cpp_compressed_uint32(
         f"source={GLOBAL_METADATA}; expected='supported prefix'; "
         f"actual=0x{first:02X}"
     )
+
+
+def validate_hg_resource_asset_type_metadata(
+    raw_metadata: bytes,
+    source: Path = GLOBAL_METADATA,
+) -> dict[str, object]:
+    """Pin HGResourceManager.LoadAsync to the installed HyperGryph AssetType."""
+
+    require(
+        "hg_resource_asset_type_metadata_magic",
+        struct.unpack_from("<I", raw_metadata, 0)[0],
+        0xFAB11BAF,
+        source,
+    )
+    require(
+        "hg_resource_asset_type_metadata_version",
+        struct.unpack_from("<I", raw_metadata, 4)[0],
+        29,
+        source,
+    )
+    sections = {
+        section_name: struct.unpack_from(
+            "<Ii", raw_metadata, 8 + section_index * 8
+        )
+        for section_index, section_name in enumerate(
+            IL2CPP_METADATA_SECTION_NAMES
+        )
+    }
+    string_offset, string_size = sections["string"]
+    method_offset, method_size = sections["methods"]
+    parameter_offset, parameter_size = sections["parameters"]
+    field_offset, field_size = sections["fields"]
+    default_offset, default_size = sections["fieldDefaultValues"]
+    value_offset, value_size = sections["fieldAndParameterDefaultValueData"]
+    type_offset, type_size = sections["typeDefinitions"]
+
+    def metadata_string(index: int, check: str) -> str:
+        start = string_offset + index
+        require(
+            f"hg_resource_asset_type_{check}_string_start_in_bounds",
+            string_offset <= start < string_offset + string_size,
+            True,
+            source,
+        )
+        end = raw_metadata.find(b"\0", start, string_offset + string_size)
+        require(
+            f"hg_resource_asset_type_{check}_string_end_in_bounds",
+            end >= start,
+            True,
+            source,
+        )
+        return raw_metadata[start:end].decode("utf-8")
+
+    def validate_type(
+        check: str,
+        index: int,
+        expected_name: str,
+        expected_namespace: str,
+        expected_token: int,
+        expected_byval_type: int | None = None,
+    ) -> dict[str, object]:
+        position = type_offset + index * 92
+        require(
+            f"hg_resource_asset_type_{check}_type_in_bounds",
+            position + 92 <= type_offset + type_size,
+            True,
+            source,
+        )
+        name_index, namespace_index, byval_type = struct.unpack_from(
+            "<iii", raw_metadata, position
+        )
+        token = struct.unpack_from("<I", raw_metadata, position + 88)[0]
+        name = metadata_string(name_index, f"{check}_name")
+        namespace = metadata_string(namespace_index, f"{check}_namespace")
+        require(f"hg_resource_asset_type_{check}_name", name, expected_name, source)
+        require(
+            f"hg_resource_asset_type_{check}_namespace",
+            namespace,
+            expected_namespace,
+            source,
+        )
+        require(f"hg_resource_asset_type_{check}_token", token, expected_token, source)
+        if expected_byval_type is not None:
+            require(
+                f"hg_resource_asset_type_{check}_byval_metadata_type",
+                byval_type,
+                expected_byval_type,
+                source,
+            )
+        return {
+            "typeIndex": index,
+            "token": f"0x{token:08X}",
+            "fullName": f"{namespace}.{name}",
+            "byvalMetadataTypeIndex": byval_type,
+        }
+
+    asset_type = validate_type(
+        "enum",
+        HG_ASSET_TYPE_INDEX,
+        "AssetType",
+        "UnityEngine.HyperGryph",
+        HG_ASSET_TYPE_TOKEN,
+        HG_ASSET_TYPE_BYVAL_METADATA_TYPE,
+    )
+    resource_manager = validate_type(
+        "manager",
+        HG_RESOURCE_MANAGER_TYPE_INDEX,
+        "HGResourceManager",
+        "UnityEngine.HyperGryph",
+        HG_RESOURCE_MANAGER_TYPE_TOKEN,
+    )
+
+    defaults = {}
+    for position in range(default_offset, default_offset + default_size, 12):
+        field_index, type_index, data_index = struct.unpack_from(
+            "<iii", raw_metadata, position
+        )
+        defaults[field_index] = (type_index, data_index)
+
+    literals = []
+    for expected_name, (field_index, expected_token, expected_value) in (
+        HG_ASSET_TYPE_FIELDS.items()
+    ):
+        position = field_offset + field_index * 12
+        require(
+            f"hg_resource_asset_type_{expected_name}_field_in_bounds",
+            position + 12 <= field_offset + field_size,
+            True,
+            source,
+        )
+        name_index, literal_type, token = struct.unpack_from(
+            "<iiI", raw_metadata, position
+        )
+        name = metadata_string(name_index, f"{expected_name}_field_name")
+        require(f"hg_resource_asset_type_{expected_name}_name", name, expected_name, source)
+        require(f"hg_resource_asset_type_{expected_name}_token", token, expected_token, source)
+        require(
+            f"hg_resource_asset_type_{expected_name}_literal_type",
+            literal_type,
+            122375,
+            source,
+        )
+        require(
+            f"hg_resource_asset_type_{expected_name}_default_exists",
+            field_index in defaults,
+            True,
+            source,
+        )
+        default_type, data_index = defaults[field_index]
+        require(
+            f"hg_resource_asset_type_{expected_name}_default_type",
+            default_type,
+            148327,
+            source,
+        )
+        require(
+            f"hg_resource_asset_type_{expected_name}_default_in_bounds",
+            0 <= data_index < value_size,
+            True,
+            source,
+        )
+        encoded_value, encoded_size = decode_il2cpp_compressed_uint32(
+            raw_metadata,
+            value_offset + data_index,
+            value_offset + value_size,
+        )
+        value = (encoded_value >> 1) ^ -(encoded_value & 1)
+        require(
+            f"hg_resource_asset_type_{expected_name}_value",
+            value,
+            expected_value,
+            source,
+        )
+        literals.append(
+            {
+                "name": name,
+                "fieldIndex": field_index,
+                "token": f"0x{token:08X}",
+                "value": value,
+                "encodedSizeBytes": encoded_size,
+            }
+        )
+
+    method_position = (
+        method_offset + HG_RESOURCE_LOAD_ASYNC_INJECTED_METHOD_INDEX * 32
+    )
+    require(
+        "hg_resource_load_async_injected_method_in_bounds",
+        method_position + 32 <= method_offset + method_size,
+        True,
+        source,
+    )
+    (
+        method_name_index,
+        declaring_type,
+        return_type,
+        parameter_start,
+        generic_container,
+        method_token,
+        method_flags,
+        method_iflags,
+        method_slot,
+        parameter_count,
+    ) = struct.unpack_from("<iiiiiIHHHH", raw_metadata, method_position)
+    require(
+        "hg_resource_load_async_injected_method_name",
+        metadata_string(method_name_index, "load_async_injected_method"),
+        "LoadAsync_Injected",
+        source,
+    )
+    for check, actual, expected in (
+        ("declaring_type", declaring_type, HG_RESOURCE_MANAGER_TYPE_INDEX),
+        ("return_type", return_type, 170022),
+        ("parameter_start", parameter_start, HG_RESOURCE_LOAD_ASYNC_INJECTED_PARAMETER_START),
+        ("generic_container", generic_container, -1),
+        ("token", method_token, HG_RESOURCE_LOAD_ASYNC_INJECTED_METHOD_TOKEN),
+        ("flags", method_flags, 0x0091),
+        ("iflags", method_iflags, 0x1000),
+        ("slot", method_slot, 0xFFFF),
+        ("parameter_count", parameter_count, 4),
+    ):
+        require(f"hg_resource_load_async_injected_{check}", actual, expected, source)
+
+    expected_parameters = [
+        ("assetHash", 0x08000255, 148369),
+        ("type", 0x08000256, HG_ASSET_TYPE_BYVAL_METADATA_TYPE),
+        ("priority", 0x08000257, 122366),
+        ("ret", 0x08000258, 103721),
+    ]
+    parameters = []
+    for relative_index, (expected_name, expected_token, expected_type) in enumerate(
+        expected_parameters
+    ):
+        parameter_index = parameter_start + relative_index
+        position = parameter_offset + parameter_index * 12
+        require(
+            f"hg_resource_load_async_injected_{expected_name}_parameter_in_bounds",
+            position + 12 <= parameter_offset + parameter_size,
+            True,
+            source,
+        )
+        name_index, token, parameter_type = struct.unpack_from(
+            "<iIi", raw_metadata, position
+        )
+        name = metadata_string(name_index, f"load_async_injected_{expected_name}")
+        require(f"hg_resource_load_async_injected_{expected_name}_name", name, expected_name, source)
+        require(f"hg_resource_load_async_injected_{expected_name}_token", token, expected_token, source)
+        require(f"hg_resource_load_async_injected_{expected_name}_type", parameter_type, expected_type, source)
+        parameters.append(
+            {
+                "name": name,
+                "token": f"0x{token:08X}",
+                "metadataTypeIndex": parameter_type,
+            }
+        )
+
+    return {
+        "metadataVersion": 29,
+        "assetType": {**asset_type, "literals": literals},
+        "resourceManager": resource_manager,
+        "loadAsyncInjected": {
+            "methodIndex": HG_RESOURCE_LOAD_ASYNC_INJECTED_METHOD_INDEX,
+            "token": f"0x{method_token:08X}",
+            "parameters": parameters,
+        },
+    }
 
 
 def validate_enabled_light_modes_metadata(
@@ -4399,6 +4741,9 @@ def validate_unity_hgtree_renderer_boundary(
     name, target = resolve_hg_icall(
         UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX
     )
+    resource_load_name, resource_load_target = resolve_hg_icall(
+        UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX
+    )
     entity_type_name, entity_type_target = resolve_hg_icall(
         UNITY_ECS_GET_OR_REGISTER_ENTITY_TYPE_ICALL_INDEX
     )
@@ -4424,6 +4769,18 @@ def validate_unity_hgtree_renderer_boundary(
         "unity_hgtree_create_renderer_list_icall_name",
         name,
         UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_NAME,
+        image.path,
+    )
+    require(
+        "unity_hg_resource_load_async_icall_target",
+        resource_load_target,
+        UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hg_resource_load_async_icall_name",
+        resource_load_name,
+        UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_NAME,
         image.path,
     )
     register_name, register_target = resolve_hg_icall(
@@ -4707,6 +5064,9 @@ def validate_unity_hgtree_renderer_boundary(
     enabled_light_modes_metadata = validate_enabled_light_modes_metadata(
         metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
     )
+    resource_asset_type_metadata = validate_hg_resource_asset_type_metadata(
+        metadata if metadata is not None else GLOBAL_METADATA.read_bytes()
+    )
     expected_renderer_entry_pass_names = [
         name
         for name, (_field_index, _token, value) in (
@@ -4757,6 +5117,14 @@ def validate_unity_hgtree_renderer_boundary(
             "index": UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_INDEX,
             "name": register_name,
             "targetVirtualAddress": f"0x{register_target:X}",
+        },
+        "resourceLoadInternalCall": {
+            "index": UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX,
+            "name": resource_load_name,
+            "targetVirtualAddress": f"0x{resource_load_target:X}",
+            "acquireCoreVirtualAddress": "0x180FBFC60",
+            "lookupVirtualAddress": "0x1801F7410",
+            "managedContract": resource_asset_type_metadata,
         },
         "unregistrationInternalCalls": [
             {
@@ -4888,7 +5256,7 @@ def validate_unity_hgtree_renderer_boundary(
                         "sizeBytes": 4,
                         "initialValue": 0,
                         "meaning": (
-                            "third resolved renderer resource index and "
+                            "third resolved Mesh resource index and "
                             "supplemental filter overlay"
                         ),
                     },
@@ -4933,7 +5301,26 @@ def validate_unity_hgtree_renderer_boundary(
                     "thirdResolvedResourceAt0x0C": {
                         "consumerRoleClosed": True,
                         "producerClosed": True,
+                        "assetClassClosed": True,
+                        "assetType": "UnityEngine.HyperGryph.AssetType.Mesh",
+                        "assetTypeValue": 2,
                         "initialValue": 0,
+                        "acquisitionPaths": [
+                            {
+                                "ownerType": "MergedRenderCollider",
+                                "transitionFunctionVirtualAddress": "0x181153310",
+                                "sourcePointerReadVirtualAddress": "0x1811535F4",
+                                "acquireCallVirtualAddress": "0x181153619",
+                                "assetTypeImmediate": 2,
+                            },
+                            {
+                                "ownerType": "Render",
+                                "transitionFunctionVirtualAddress": "0x181154230",
+                                "sourcePointerReadVirtualAddress": "0x1811547C3",
+                                "acquireCallVirtualAddress": "0x1811547E9",
+                                "assetTypeImmediate": 2,
+                            },
+                        ],
                         "writerPaths": [
                             {
                                 "functionVirtualAddress": "0x181157760",
@@ -4947,6 +5334,15 @@ def validate_unity_hgtree_renderer_boundary(
                         "cleanupVirtualAddress": "0x18115BFC0",
                         "cleanupWriteVirtualAddress": "0x18115C110",
                         "releaseCoreVirtualAddress": "0x180FBF6B0",
+                        "loadAsyncInternalCallIndex": (
+                            UNITY_HG_RESOURCE_LOAD_ASYNC_ICALL_INDEX
+                        ),
+                        "loadAsyncInternalCallName": resource_load_name,
+                        "loadAsyncBindingVirtualAddress": (
+                            f"0x{resource_load_target:X}"
+                        ),
+                        "acquireCoreVirtualAddress": "0x180FBFC60",
+                        "lookupVirtualAddress": "0x1801F7410",
                         "recordStrideBytes": 24,
                         "consumerVirtualAddress": "0x181064B73",
                         "consumerEquation": (
@@ -4954,16 +5350,23 @@ def validate_unity_hgtree_renderer_boundary(
                             "& filterMask == filterValue"
                         ),
                         "proof": (
-                            "both LOD availability initializers resolve a third "
-                            "reference-counted renderer resource slot into "
-                            "blob+0x10 (record+0x0C); cleanup releases and "
-                            "clears the matching slot, while the scheduled "
-                            "callback also consumes the word as an independent "
-                            "masked filter overlay"
+                            "both owner transition callbacks acquire their "
+                            "third renderer resource with native kind 2; the "
+                            "dedicated HyperGryph internal-call table maps the "
+                            "same acquire wrapper to HGResourceManager::"
+                            "LoadAsync_Injected, whose IL2CPP type parameter is "
+                            "the installed AssetType enum with value 2=Mesh. "
+                            "Both LOD availability initializers then resolve "
+                            "that third slot into blob+0x10 (record+0x0C); "
+                            "cleanup releases and clears it, while the "
+                            "scheduled callback also consumes the word as an "
+                            "independent masked filter overlay"
                         ),
                         "proofBoundary": (
-                            "the exact asset class represented by the third "
-                            "resolved renderer resource index remains open"
+                            "asset class, acquisition, resolution, release, "
+                            "and supplemental-filter consumption are closed; "
+                            "the semantic reason this Mesh-derived index is "
+                            "also used as a filter overlay remains open"
                         ),
                     },
                     "rendererPropertyFlagsAt0x10": {
@@ -5900,8 +6303,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v26",
-        "status": "installed_cap_hgtree_runtime_record_consumer_boundary_closed",
+        "schema": "endfield.recovered-light-cull-cap.v27",
+        "status": "installed_cap_hgtree_runtime_record_mesh_resource_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -5933,7 +6336,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "Record +0x0C is the third resolved, reference-counted renderer "
             "resource index written by the LOD availability initializers, "
             "released by their cleanup, and independently consumed as a "
-            "supplemental filter overlay. Its exact asset class remains open. "
+            "supplemental filter overlay. Both owner transitions acquire that "
+            "third slot with kind 2. HyperGryph internal-call entry 437 names "
+            "the forwarding wrapper HGResourceManager::LoadAsync_Injected, "
+            "and its IL2CPP signature plus AssetType literals close kind 2 as "
+            "Mesh. The reason the resolved Mesh-derived index doubles as a "
+            "filter overlay remains open. "
             "Record +0x10 "
             "is closed as Renderer property flags updated "
             "by the common state synchronizer. Dedicated HyperGryph internal-"
@@ -6039,8 +6447,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "Any separate post-dispatch cull-view +0x18 consumer, the exact "
-            "asset class of loader record +0x0C, the downstream native "
+            "Any separate post-dispatch cull-view +0x18 consumer, the semantic "
+            "reason for loader record +0x0C's Mesh/filter dual use, the downstream native "
             "consumer of enabledLightModes record +0x14, the "
             "component-67 standalone native type name, "
             "target-frame pointer/count, and unrelated live native lights "
@@ -6214,7 +6622,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the HGTreeRender RegisterTreeBatchGroup binding and registration core",
                 "the HGTreeRenderer serialized-to-runtime record and LOD float2 mapping",
                 "loader runtime record +0x08 mutable renderFlags lifecycle, including particle bit-20 writers and scheduled consumption",
-                "loader runtime record +0x0C as the third resolved reference-counted renderer resource index, its two writers and cleanup, and its independent filter-overlay consumption",
+                "loader runtime record +0x0C as the third resolved reference-counted Mesh resource index, including both kind-2 acquisition paths, HGResourceManager::LoadAsync_Injected internal-call binding, installed AssetType enum, two writers, cleanup, and independent filter-overlay consumption",
                 "loader runtime record +0x10 as Renderer property flags and its common state-synchronization writer",
                 "loader runtime record +0x14 as enabledLightModes through dedicated internal-call entry 204 and its all-record writer",
                 "the UInt32 enabledLightModes signature, all 31 named HGShaderLightMode pass bits, and the PerDrawPassConfig parser/Apply producer chain",
@@ -6257,7 +6665,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "arbitrary/asymmetric final selected-view planes",
                 "any separate post-dispatch copy or consumer of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
-                "the exact asset class represented by runtime record +0x0C",
+                "the semantic reason runtime record +0x0C's resolved Mesh-derived index is also consumed as a supplemental filter overlay",
                 "the exact downstream native consumer of enabledLightModes runtime record +0x14",
                 "the standalone native component type name for component 67",
                 "any separate consumer of the forwarded sceneCullingMask slot",
@@ -6294,7 +6702,7 @@ def main() -> int:
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
-        "runtime resource/property fields, enabledLightModes producer/default/initializers, independent renderer-entry pass mask, and bounded downstream record-pointer search, "
+        "runtime Mesh resource/property fields, enabledLightModes producer/default/initializers, independent renderer-entry pass mask, and bounded downstream record-pointer search, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
         "component-67 separation and native Render/MergedRenderCollider ownership, "
         "serialized LOD-count/range/reserved-word initial-data production and native copy, "
