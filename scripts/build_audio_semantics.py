@@ -4300,6 +4300,14 @@ def audio_hash_generator_compute(value: str) -> int:
 
 
 LEVELSCRIPT_AUDIO_CONTROL_ROLES = {
+    "BlockAutoMusicChange": "autoMusicChangeBlock",
+    "BlockAutoMusicChangeCancel": "autoMusicChangeBlockCancel",
+    "BlockBattleMusic": "battleMusicBlock",
+    "BlockResetMusic": "musicResetBlock",
+    "CleanAudioCueVar": "cueVariableClean",
+    "EnterCustomMusicMode": "customMusicModeEnter",
+    "ExitCustomMusicMode": "customMusicModeExit",
+    "FlushRadio": "radioFlush",
     "ManualRestoreMusicState": "musicStateRestore",
     "ManualSetMusicState": "musicStateOverride",
     "PlayStandaloneMusic": "standaloneMusicLifecycle",
@@ -4308,8 +4316,19 @@ LEVELSCRIPT_AUDIO_CONTROL_ROLES = {
     "StopAudio": "playingAudioStop",
     "StopPlaceholderMusic_DevOnly": "placeholderMusicStop",
     "StopVoice": "voiceStop",
+    "PostAudioStopAllEnemyVoice": "enemyVoiceStopAll",
+    "PlayGlobalResponseVoice": "globalResponseVoicePlay",
+    "PlayResponseVoice": "responseVoicePlay",
+    "SetAudioGlobalParameter": "globalParameterWrite",
+    "SetAudioParameter": "parameterWrite",
+    "SetVoiceTriggerLevel": "voiceTriggerLevelWrite",
     "SwitchAIBarkEnable": "aiBarkEnableSwitch",
+    "SwitchAudioCustomState": "customAudioStateSwitch",
     "SwitchAudioState": "entityAudioStateSwitch",
+    "TriggerBarkVoice": "barkVoiceTrigger",
+    "TriggerMainCharVoice": "mainCharacterVoiceTrigger",
+    "MuteMusic_DevOnly": "musicMute",
+    "UnmuteMusic_DevOnly": "musicUnmute",
 }
 
 LEVELSCRIPT_RADIO_ACTION_ROLES = {
@@ -4440,6 +4459,11 @@ def collect_levelscript_audio_semantics(
                 levelscript_record_semantic_key,
             )
         target_keys = {
+            # Audio ActionBase families registered by the current GameAssembly
+            # formatter table.  Keep the member count as part of the key:
+            # several non-ActionBase unions reuse the same numeric tag.
+            (0x0016, 0x09), (0x0028, 0x09), (0x0029, 0x09), (0x002A, 0x09),
+            (0x0089, 0x0B), (0x0368, 0x0B), (0x0369, 0x0A), (0x036E, 0x14),
             (0x0306, 0x09), (0x0307, 0x0B),
             (0x034A, 0x14), (0x034B, 0x14), (0x034C, 0x0C),
             (0x034E, 0x0B), (0x034F, 0x10), (0x0352, 0x0C),

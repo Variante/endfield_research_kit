@@ -104,6 +104,107 @@ def decode_audio(payload: bytes, tag: int, member_count: int) -> dict:
 
 
 class LevelScriptAudioActionTests(unittest.TestCase):
+    def test_current_binary_voice_and_music_control_layouts_decode_exactly(self) -> None:
+        announce = decode_audio(
+            bytes.fromhex("ff ff 00 00 00 00 ff ff ff ff")
+            + string_param("e1m10_q#18"),
+            0x0016,
+            0x09,
+        )
+        self.assertEqual("AnnounceAudioOnTarget", announce["action"])
+        self.assertEqual(
+            "announce-target-compact-null-reference",
+            announce["fields"]["target"]["serializedShape"],
+        )
+        self.assertEqual("opaque", announce["fields"]["target"]["bindingKind"])
+        self.assertEqual("announceTarget", announce["eventBindings"][0]["role"])
+
+        block = decode_audio(output_param("$64@_blockHandle"), 0x0028, 0x09)
+        self.assertEqual("BlockAutoMusicChange", block["action"])
+        self.assertEqual("output", block["fields"]["blockHandle"]["bindingKind"])
+
+        cancel = decode_audio(
+            i32_param(0, source=100, path="$32@_blockHandle"),
+            0x0029,
+            0x09,
+        )
+        self.assertEqual("BlockAutoMusicChangeCancel", cancel["action"])
+        self.assertEqual("dynamic", cancel["fields"]["blockHandle"]["bindingKind"])
+
+        battle = decode_audio(bool_param(False), 0x002A, 0x09)
+        self.assertEqual("BlockBattleMusic", battle["action"])
+        self.assertFalse(battle["fields"]["block"]["value"])
+
+        custom = decode_audio(
+            bool_param(False)
+            + string_param("au_music_activity_bomb")
+            + bool_param(True),
+            0x0089,
+            0x0B,
+        )
+        self.assertEqual("EnterCustomMusicMode", custom["action"])
+        self.assertEqual("customMusic", custom["eventBindings"][0]["role"])
+
+        voice = decode_audio(
+            entity_param(0, 40001, True)
+            + output_param("$1@_voiceHandle")
+            + string_param("au_prts_tape0003_stem_broken"),
+            0x0368,
+            0x0B,
+        )
+        self.assertEqual("PlayVoice", voice["action"])
+        self.assertEqual(40001, voice["fields"]["target"]["slotId"])
+        self.assertEqual("voice", voice["eventBindings"][0]["role"])
+
+        narrative = decode_audio(
+            output_param("$41@_voiceHandle")
+            + string_param("au_efos_gmmode_training_end"),
+            0x0369,
+            0x0A,
+        )
+        self.assertEqual("PlayVoiceNarrative", narrative["action"])
+        self.assertEqual("voiceNarrative", narrative["eventBindings"][0]["role"])
+
+        cue_release = decode_audio(
+            b"".join((
+                i32_param(2),
+                bool_param(True),
+                bool_param(False),
+                bool_param(True),
+                output_param("$12@_cueHandlerId"),
+                b"\xff",
+                b"\xff",
+                string_param("battle_music_start"),
+                b"\xff",
+                b"\xff",
+                float_param(10.0),
+                bool_param(False),
+            )),
+            0x036E,
+            0x14,
+        )
+        self.assertEqual("PostAudioCueOnRelease", cue_release["action"])
+        self.assertEqual("battle_music_start", cue_release["cueBindings"][0]["cueName"])
+        self.assertFalse(cue_release["fields"]["onlyIfExecuted"]["value"])
+
+    def test_current_binary_audio_layouts_fail_closed_on_wrong_shape(self) -> None:
+        compact_target = bytes.fromhex("ff ff 00 00 00 00 ff ff ff ff")
+        self.assertFalse(
+            decode_audio(b"\xff" + compact_target + string_param("bad"), 0x0016, 0x09)
+        )
+        self.assertFalse(
+            decode_audio(bool_param(False) + string_param("music"), 0x0089, 0x0B)
+        )
+        self.assertFalse(
+            decode_audio(
+                output_param("$1@_voiceHandle")
+                + entity_param(0, 40001, True)
+                + string_param("voice"),
+                0x0368,
+                0x0B,
+            )
+        )
+
     def test_play_audio_preserves_constant_dynamic_and_output_evidence(self) -> None:
         constant_payload = b"".join((
             output_param("$5@_audioPlayingId"),
