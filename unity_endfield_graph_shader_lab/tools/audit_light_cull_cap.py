@@ -172,6 +172,16 @@ UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_VA = 0x1801DA040
 UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGTreeRender::RegisterTreeBatchGroup"
 )
+UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_INDEX = 568
+UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_VA = 0x1801DA310
+UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGTreeRender::UnregisterTreeBatchGroup"
+)
+UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_INDEX = 569
+UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_VA = 0x1801DA330
+UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGTreeRender::UnregisterTreeBatchGroupWithHandle"
+)
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_INDEX = 279
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_VA = 0x1801EDEB0
 UNITY_ART_TAG_LOD_STREAMING_OFFSET_GET_ICALL_NAME = (
@@ -339,6 +349,41 @@ UNITY_HGTREE_BODIES = {
         0x273,
         "1bafbffc56bfaa42445fea8f10bac1047ab44712ee7361456efc281e07196dc3",
     ),
+    "unregister_tree_batch_group_binding": (
+        0x1801DA310,
+        0x20,
+        "0a176eaa3e84d0c92ce36fe4f77b93b3a774a2822512f73916b6988fd26af886",
+    ),
+    "unregister_tree_batch_group_with_handle_binding": (
+        0x1801DA330,
+        0x2E,
+        "6b0c7fa81825b727436e1ae3203c53c6dca1c446eea090ada743f03cdf3e2109",
+    ),
+    "unregister_tree_batch_group_core": (
+        0x181087D30,
+        0xC8,
+        "f23cd4db139cf289446d8314f11cdfb7bd6d5be5b2c14d175e58adb50b02b9e9",
+    ),
+    "unregister_tree_batch_group_with_handle_core": (
+        0x181087E00,
+        0x86,
+        "310d8984fc3225999df49d84d74137d4add2ff1b69927950d77f375d1afde7c8",
+    ),
+    "runtime_transform_owner_cleanup": (
+        0x1810BCE00,
+        0x48A,
+        "32f463461d5bca2ca0458400bc608e1fde2b8e80b493653159565bad8304e43f",
+    ),
+    "lod_ecs_component_67_accessor": (
+        0x181038D00,
+        0x6C,
+        "9fd401ef957830896aca114bc591187a39e5772b41b2300439ef3f8f8f4a1699",
+    ),
+    "lod_ecs_availability_writer": (
+        0x1810842E0,
+        0x835,
+        "b40cfccfcea9e2c91b65fba6ac51fa681f27b7fb6cdc89ae9539a0924b500418",
+    ),
     "parent_lod_bias_getter": (
         0x1800F8E00,
         0x38,
@@ -480,6 +525,24 @@ UNITY_HGTREE_SLICES = {
         0x1810C9663,
         "4c8bc744897c2430498bcc48896c242848895c2420488b9c24b0"
         "0000004c8bcbe8a8c8ffff",
+    ),
+    "transform_owner_cleanup_handle_key_loop": (
+        0x1810BD080,
+        "440fb747fe498bce8b17e871adfcff488d7f184883ee0175e74533f6",
+    ),
+    "lod_ecs_availability_unload_clear": (
+        0x1810845E0,
+        "410fb6c68bcd2bc8ba0100000048d3e28bc8410fb6400448ffca48d3e2"
+        "410fb6cf48f7d2492150080fb3c841884004410fb640050fb3c841884005",
+    ),
+    "lod_ecs_availability_complete_transition": (
+        0x18108491A,
+        "498b400848ffca48d3e24823c2483bc27520410fb64804410fb6c10fb3c1"
+        "410fb6c141884804410fb648050fabc141884805",
+    ),
+    "lod_ecs_availability_request_set": (
+        0x181084A65,
+        "4c8b442450400fb6c6410fb648040fabc18d45ff41884804",
     ),
     "lod_direct_interval_equation": (
         0x18106D8F0,
@@ -1293,6 +1356,21 @@ def validate_unity_hgtree_renderer_boundary(
         True,
         image.path,
     )
+    require(
+        "unity_hg_icall_unregister_batch_group_index_in_bounds",
+        UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_INDEX < UNITY_HG_ICALL_COUNT,
+        True,
+        image.path,
+    )
+    require(
+        "unity_hg_icall_unregister_batch_group_with_handle_index_in_bounds",
+        (
+            UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_INDEX
+            < UNITY_HG_ICALL_COUNT
+        ),
+        True,
+        image.path,
+    )
     table_size = UNITY_HG_ICALL_COUNT * 8
     name_table = image.read(UNITY_HG_ICALL_NAME_TABLE_VA, table_size)
     function_table = image.read(UNITY_HG_ICALL_FUNCTION_TABLE_VA, table_size)
@@ -1354,6 +1432,39 @@ def validate_unity_hgtree_renderer_boundary(
         "unity_hgtree_register_batch_group_icall_name",
         register_name,
         UNITY_HGTREE_REGISTER_BATCH_GROUP_ICALL_NAME,
+        image.path,
+    )
+    unregister_name, unregister_target = resolve_hg_icall(
+        UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_INDEX
+    )
+    require(
+        "unity_hgtree_unregister_batch_group_icall_target",
+        unregister_target,
+        UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hgtree_unregister_batch_group_icall_name",
+        unregister_name,
+        UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_NAME,
+        image.path,
+    )
+    (
+        unregister_with_handle_name,
+        unregister_with_handle_target,
+    ) = resolve_hg_icall(
+        UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_INDEX
+    )
+    require(
+        "unity_hgtree_unregister_batch_group_with_handle_icall_target",
+        unregister_with_handle_target,
+        UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hgtree_unregister_batch_group_with_handle_icall_name",
+        unregister_with_handle_name,
+        UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_NAME,
         image.path,
     )
 
@@ -1546,6 +1657,24 @@ def validate_unity_hgtree_renderer_boundary(
             "name": register_name,
             "targetVirtualAddress": f"0x{register_target:X}",
         },
+        "unregistrationInternalCalls": [
+            {
+                "index": UNITY_HGTREE_UNREGISTER_BATCH_GROUP_ICALL_INDEX,
+                "name": unregister_name,
+                "targetVirtualAddress": f"0x{unregister_target:X}",
+                "coreVirtualAddress": "0x181087D30",
+            },
+            {
+                "index": (
+                    UNITY_HGTREE_UNREGISTER_BATCH_GROUP_WITH_HANDLE_ICALL_INDEX
+                ),
+                "name": unregister_with_handle_name,
+                "targetVirtualAddress": (
+                    f"0x{unregister_with_handle_target:X}"
+                ),
+                "coreVirtualAddress": "0x181087E00",
+            },
+        ],
         "lodControlInternalCalls": {
             "cullingSystem": lod_bias_icalls,
             "lodStreamingSystem": lod_streaming_offset_icalls,
@@ -1561,6 +1690,14 @@ def validate_unity_hgtree_renderer_boundary(
             "managed object-handle extraction",
             "0x181086050 runtime batch-group registration core",
         ],
+        "unregistrationChain": [
+            "0x1810BCE00 loader/runtime-transform owner cleanup",
+            "owner vector pointer@+0x78 with element count@+0x88",
+            "blob count@+0x00; records@+0x04 stride 0x18",
+            "record handle word@+0x02 and batchKey dword@+0x04",
+            "0x181087E00 UnregisterTreeBatchGroupWithHandle core",
+            "0x1801DA330 public binding at dedicated HG table index 569",
+        ],
         "runtimeJobs": {
             "callbacks": ["0x181067A70", "0x181064190"],
             "serializedRecordStrideObservedInPinnedJobSlices": False,
@@ -1575,6 +1712,10 @@ def validate_unity_hgtree_renderer_boundary(
             "functionVirtualAddress": "0x1810C5F30",
             "directCallerVirtualAddress": "0x1810C9610",
             "directCallSiteVirtualAddress": "0x1810C9683",
+            "structureIdentity": (
+                "loader-owned registration blob; distinct from the 24-byte "
+                "ECS LOD state component"
+            ),
             "sourceRecord": {
                 "strideBytes": 28,
                 "fieldsConsumed": [
@@ -1636,6 +1777,19 @@ def validate_unity_hgtree_renderer_boundary(
                     {"offset": "0x0C", "sizeBytes": 12, "initialValue": 0},
                 ],
             },
+            "ownerCleanup": {
+                "functionVirtualAddress": "0x1810BCE00",
+                "ownerVectorPointerOffset": "0x78",
+                "ownerVectorCountOffset": "0x88",
+                "recordHandleOffset": "0x02",
+                "recordBatchKeyOffset": "0x04",
+                "unregisterCoreVirtualAddress": "0x181087E00",
+                "proof": (
+                    "cleanup iterates the blob count and 0x18-byte records, "
+                    "passes dword@+0x04 as batchKey and word@+0x02 as handle "
+                    "to UnregisterTreeBatchGroupWithHandle"
+                ),
+            },
         },
         "lodSelection": {
             "dispatcherVirtualAddress": "0x181079C10",
@@ -1645,6 +1799,85 @@ def validate_unity_hgtree_renderer_boundary(
             "directDistanceJobs": ["0x18106D7F0", "0x18106DA90"],
             "scaledMetricJobs": ["0x18106E0E0", "0x18106E400"],
             "positionOrigins": ["view +0x00", "view +0x18"],
+            "ecsStateRecord": {
+                "archetypeComponentBitIndex": 67,
+                "accessorVirtualAddress": "0x181038D00",
+                "strideBytes": 24,
+                "sentinelLodIndex": 8,
+                "fields": [
+                    {
+                        "offset": "0x00",
+                        "sizeBytes": 1,
+                        "meaning": "LOD count consumed by all selection jobs",
+                        "producerClosed": False,
+                    },
+                    {
+                        "offset": "0x01",
+                        "sizeBytes": 1,
+                        "meaning": "mathematically selected/desired LOD index",
+                    },
+                    {
+                        "offset": "0x02",
+                        "sizeBytes": 1,
+                        "meaning": "availability-resolved LOD index",
+                    },
+                    {
+                        "offset": "0x03",
+                        "sizeBytes": 1,
+                        "meaning": (
+                            "transition/output history byte; origin-0 jobs copy "
+                            "the current resolved index, while origin-0x18 jobs "
+                            "snapshot the prior resolved index"
+                        ),
+                    },
+                    {
+                        "offset": "0x04",
+                        "sizeBytes": 1,
+                        "meaning": "requested or pending LOD bit mask",
+                    },
+                    {
+                        "offset": "0x05",
+                        "sizeBytes": 1,
+                        "meaning": "fully available LOD bit mask",
+                    },
+                    {
+                        "offset": "0x06",
+                        "sizeBytes": 2,
+                        "meaning": "not yet semantically closed",
+                    },
+                    {
+                        "offset": "0x08",
+                        "sizeBytes": 8,
+                        "meaning": "per-renderer/subresource readiness bits",
+                    },
+                    {
+                        "offset": "0x10",
+                        "sizeBytes": 8,
+                        "meaning": (
+                            "eight cumulative renderer-range end indices, one "
+                            "per logical LOD"
+                        ),
+                    },
+                ],
+                "availabilityWriter": {
+                    "virtualAddress": "0x1810842E0",
+                    "request": "set the corresponding bit in record+0x04",
+                    "complete": (
+                        "when every renderer/subresource bit in the LOD range "
+                        "is ready, clear record+0x04 and set record+0x05"
+                    ),
+                    "unload": (
+                        "clear the LOD range in record+0x08 and clear the "
+                        "corresponding bits in record+0x04 and record+0x05"
+                    ),
+                },
+                "structureBoundary": (
+                    "this pointer is resolved from archetype component bit 67; "
+                    "it is not the loader-owned registration blob stored in "
+                    "the runtime-transform owner's +0x78 vector"
+                ),
+                "nativeTypeNameMappingClosed": False,
+            },
             "dispatchPacket": {
                 "sizeBytes": 64,
                 "payloadPointerOffset": "0x00",
@@ -1786,9 +2019,14 @@ def validate_unity_hgtree_renderer_boundary(
                 "the dedicated 729-entry HyperGryph internal-call table pair",
                 "HGTreeRender::CreateRendererList binding, core, and job scheduler",
                 "HGTreeRender::RegisterTreeBatchGroup binding and registration core",
+                "both HGTreeRender unregister bindings and native cores",
+                "the owner cleanup's exact batchKey + registration-handle lifecycle",
                 "the two selected runtime batch-job callback addresses",
                 "the exact serialized-record to runtime-record and LOD float2 mapping",
                 "the 1/2/4/8/16/32 runtime capacity buckets and LOD-array offsets",
+                "the separate component-bit-67 24-byte ECS LOD state layout",
+                "pending, available, and per-renderer readiness mask transitions",
+                "the separation between the loader registration blob and ECS LOD state",
                 "the direct squared-distance LOD interval equation",
                 "the scaled-metric LOD interval equation and its 0.0001 floor",
                 "the six-way LOD job dispatch segment",
@@ -1801,7 +2039,9 @@ def validate_unity_hgtree_renderer_boundary(
                 "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
             "open": [
-                "semantic names for initially zero runtime-record state bytes",
+                "semantic roles for the loader registration blob's remaining initially zero bytes",
+                "the ECS LOD-count producer and record+0x06/+0x07 semantics",
+                "a direct registration link from archetype component bit 67 to a native type name",
                 "the unrelated scheduled cull-view +0x18 consumer",
             ],
         },
@@ -2015,8 +2255,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v7",
-        "status": "installed_cap_dispatch_predicates_hgtree_lod_controls_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v8",
+        "status": "installed_cap_hgtree_lifecycle_lod_state_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -2035,19 +2275,26 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "is paired at local index 564 in the dedicated 729-entry HyperGryph "
             "internal-call tables. The binding reaches the renderer-list core, "
             "job scheduler, and two runtime batch-job callbacks; batch-group "
-            "registration is independently paired at index 567. The loader's "
+            "registration is independently paired at index 567. The paired "
+            "unregister entries at 568/569 and the owner cleanup prove that "
+            "the loader record's +0x02 word is the registration handle and "
+            "+0x04 is batchKey. The loader's "
             "exact 28-byte serialized input, 24-byte runtime records, bucketed "
             "LOD float2 array, registration argument mapping, six-way LOD job "
             "dispatch, direct squared-distance interval, and scaled metric "
             "interval are now closed. The dispatch packet/payload layouts, "
             "LODCrossFadeConfig enableDither/lodBias controls, parent and "
             "per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp "
-            "path are now source-closed as well. The old index "
+            "path are now source-closed as well. A separate component-bit-67 "
+            "24-byte ECS record closes the desired/resolved/history LOD bytes, "
+            "pending and available LOD masks, 64-bit renderer-readiness mask, "
+            "and eight cumulative renderer-range endpoints. The old index "
             "10320 and manager/virtual-slot path are retracted because that "
             "index crossed the table boundary into unrelated Animator code. "
-            "The scheduled cull-view +0x18 consumer, initially zero HGTree "
-            "runtime-state bytes, target-frame pointer/count, and unrelated "
-            "live native lights remain open."
+            "The scheduled cull-view +0x18 consumer, remaining initially zero "
+            "loader-record bytes, the ECS LOD-count producer/type-name link, "
+            "target-frame pointer/count, and unrelated live native lights "
+            "remain open."
         ),
         "installedInputs": {
             "gameAssembly": {
@@ -2215,7 +2462,8 @@ def main() -> int:
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
-        "registration/runtime transform/LOD equations, LODCrossFadeConfig "
+        "registration lifecycle/runtime transform/ECS LOD state and equations, "
+        "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
         "16-byte result, and 148-byte capture-row ABI closed."
     )

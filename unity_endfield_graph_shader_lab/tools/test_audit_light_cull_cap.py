@@ -225,6 +225,22 @@ class LightCullCapAuditTests(unittest.TestCase):
             "0x1801DA040",
         )
         self.assertEqual(
+            [row["index"] for row in result["unregistrationInternalCalls"]],
+            [568, 569],
+        )
+        self.assertEqual(
+            result["runtimeTransform"]["ownerCleanup"][
+                "recordHandleOffset"
+            ],
+            "0x02",
+        )
+        self.assertEqual(
+            result["runtimeTransform"]["ownerCleanup"][
+                "recordBatchKeyOffset"
+            ],
+            "0x04",
+        )
+        self.assertEqual(
             result["treeInstance"]["rendererElementType"], "HGTreeRenderer"
         )
         self.assertEqual(result["rendererRecord"]["sizeBytes"], 28)
@@ -286,6 +302,29 @@ class LightCullCapAuditTests(unittest.TestCase):
                 "selectionUse"
             ],
         )
+        ecs_state = result["lodSelection"]["ecsStateRecord"]
+        self.assertEqual(ecs_state["archetypeComponentBitIndex"], 67)
+        self.assertEqual(ecs_state["strideBytes"], 24)
+        self.assertEqual(ecs_state["sentinelLodIndex"], 8)
+        self.assertEqual(
+            [field["offset"] for field in ecs_state["fields"]],
+            [
+                "0x00",
+                "0x01",
+                "0x02",
+                "0x03",
+                "0x04",
+                "0x05",
+                "0x06",
+                "0x08",
+                "0x10",
+            ],
+        )
+        self.assertIn(
+            "clear record+0x04 and set record+0x05",
+            ecs_state["availabilityWriter"]["complete"],
+        )
+        self.assertFalse(ecs_state["nativeTypeNameMappingClosed"])
         self.assertEqual(
             result["lodControlInternalCalls"]["cullingSystem"][-1]["index"],
             3303,
@@ -351,6 +390,46 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_hgtree_serialized_to_runtime_transform_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_owner_cleanup_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1810BCE00 and size == 0x48A:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_runtime_transform_owner_cleanup_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
+
+    def test_changed_hgtree_lod_ecs_availability_writer_fails_closed(
+        self,
+    ) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x1810842E0 and size == 0x835:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_lod_ecs_availability_writer_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_hgtree_renderer_boundary(image)

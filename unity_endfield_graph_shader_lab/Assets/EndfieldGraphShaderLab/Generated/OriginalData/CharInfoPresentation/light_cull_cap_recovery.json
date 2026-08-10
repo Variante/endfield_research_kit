@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v7",
-  "status": "installed_cap_dispatch_predicates_hgtree_lod_controls_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, initially zero HGTree runtime-state bytes, target-frame pointer/count, and unrelated live native lights remain open.",
+  "schema": "endfield.recovered-light-cull-cap.v8",
+  "status": "installed_cap_hgtree_lifecycle_lod_state_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry is paired at local index 564 in the dedicated 729-entry HyperGryph internal-call tables. The binding reaches the renderer-list core, job scheduler, and two runtime batch-job callbacks; batch-group registration is independently paired at index 567. The paired unregister entries at 568/569 and the owner cleanup prove that the loader record's +0x02 word is the registration handle and +0x04 is batchKey. The loader's exact 28-byte serialized input, 24-byte runtime records, bucketed LOD float2 array, registration argument mapping, six-way LOD job dispatch, direct squared-distance interval, and scaled metric interval are now closed. The dispatch packet/payload layouts, LODCrossFadeConfig enableDither/lodBias controls, parent and per-ArtTag bias encodings, and ArtTag LODStreamingOffset add/clamp path are now source-closed as well. A separate component-bit-67 24-byte ECS record closes the desired/resolved/history LOD bytes, pending and available LOD masks, 64-bit renderer-readiness mask, and eight cumulative renderer-range endpoints. The old index 10320 and manager/virtual-slot path are retracted because that index crossed the table boundary into unrelated Animator code. The scheduled cull-view +0x18 consumer, remaining initially zero loader-record bytes, the ECS LOD-count producer/type-name link, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -662,6 +662,20 @@
         "name": "UnityEngine.HyperGryph.HGTreeRender::RegisterTreeBatchGroup",
         "targetVirtualAddress": "0x1801DA040"
       },
+      "unregistrationInternalCalls": [
+        {
+          "index": 568,
+          "name": "UnityEngine.HyperGryph.HGTreeRender::UnregisterTreeBatchGroup",
+          "targetVirtualAddress": "0x1801DA310",
+          "coreVirtualAddress": "0x181087D30"
+        },
+        {
+          "index": 569,
+          "name": "UnityEngine.HyperGryph.HGTreeRender::UnregisterTreeBatchGroupWithHandle",
+          "targetVirtualAddress": "0x1801DA330",
+          "coreVirtualAddress": "0x181087E00"
+        }
+      ],
       "lodControlInternalCalls": {
         "cullingSystem": [
           {
@@ -715,6 +729,14 @@
         "managed object-handle extraction",
         "0x181086050 runtime batch-group registration core"
       ],
+      "unregistrationChain": [
+        "0x1810BCE00 loader/runtime-transform owner cleanup",
+        "owner vector pointer@+0x78 with element count@+0x88",
+        "blob count@+0x00; records@+0x04 stride 0x18",
+        "record handle word@+0x02 and batchKey dword@+0x04",
+        "0x181087E00 UnregisterTreeBatchGroupWithHandle core",
+        "0x1801DA330 public binding at dedicated HG table index 569"
+      ],
       "runtimeJobs": {
         "callbacks": [
           "0x181067A70",
@@ -728,6 +750,7 @@
         "functionVirtualAddress": "0x1810C5F30",
         "directCallerVirtualAddress": "0x1810C9610",
         "directCallSiteVirtualAddress": "0x1810C9683",
+        "structureIdentity": "loader-owned registration blob; distinct from the 24-byte ECS LOD state component",
         "sourceRecord": {
           "strideBytes": 28,
           "fieldsConsumed": [
@@ -811,6 +834,15 @@
               "initialValue": 0
             }
           ]
+        },
+        "ownerCleanup": {
+          "functionVirtualAddress": "0x1810BCE00",
+          "ownerVectorPointerOffset": "0x78",
+          "ownerVectorCountOffset": "0x88",
+          "recordHandleOffset": "0x02",
+          "recordBatchKeyOffset": "0x04",
+          "unregisterCoreVirtualAddress": "0x181087E00",
+          "proof": "cleanup iterates the blob count and 0x18-byte records, passes dword@+0x04 as batchKey and word@+0x02 as handle to UnregisterTreeBatchGroupWithHandle"
         }
       },
       "lodSelection": {
@@ -830,6 +862,68 @@
           "view +0x00",
           "view +0x18"
         ],
+        "ecsStateRecord": {
+          "archetypeComponentBitIndex": 67,
+          "accessorVirtualAddress": "0x181038D00",
+          "strideBytes": 24,
+          "sentinelLodIndex": 8,
+          "fields": [
+            {
+              "offset": "0x00",
+              "sizeBytes": 1,
+              "meaning": "LOD count consumed by all selection jobs",
+              "producerClosed": false
+            },
+            {
+              "offset": "0x01",
+              "sizeBytes": 1,
+              "meaning": "mathematically selected/desired LOD index"
+            },
+            {
+              "offset": "0x02",
+              "sizeBytes": 1,
+              "meaning": "availability-resolved LOD index"
+            },
+            {
+              "offset": "0x03",
+              "sizeBytes": 1,
+              "meaning": "transition/output history byte; origin-0 jobs copy the current resolved index, while origin-0x18 jobs snapshot the prior resolved index"
+            },
+            {
+              "offset": "0x04",
+              "sizeBytes": 1,
+              "meaning": "requested or pending LOD bit mask"
+            },
+            {
+              "offset": "0x05",
+              "sizeBytes": 1,
+              "meaning": "fully available LOD bit mask"
+            },
+            {
+              "offset": "0x06",
+              "sizeBytes": 2,
+              "meaning": "not yet semantically closed"
+            },
+            {
+              "offset": "0x08",
+              "sizeBytes": 8,
+              "meaning": "per-renderer/subresource readiness bits"
+            },
+            {
+              "offset": "0x10",
+              "sizeBytes": 8,
+              "meaning": "eight cumulative renderer-range end indices, one per logical LOD"
+            }
+          ],
+          "availabilityWriter": {
+            "virtualAddress": "0x1810842E0",
+            "request": "set the corresponding bit in record+0x04",
+            "complete": "when every renderer/subresource bit in the LOD range is ready, clear record+0x04 and set record+0x05",
+            "unload": "clear the LOD range in record+0x08 and clear the corresponding bits in record+0x04 and record+0x05"
+          },
+          "structureBoundary": "this pointer is resolved from archetype component bit 67; it is not the loader-owned registration blob stored in the runtime-transform owner's +0x78 vector",
+          "nativeTypeNameMappingClosed": false
+        },
         "dispatchPacket": {
           "sizeBytes": 64,
           "payloadPointerOffset": "0x00",
@@ -1047,9 +1141,14 @@
           "the dedicated 729-entry HyperGryph internal-call table pair",
           "HGTreeRender::CreateRendererList binding, core, and job scheduler",
           "HGTreeRender::RegisterTreeBatchGroup binding and registration core",
+          "both HGTreeRender unregister bindings and native cores",
+          "the owner cleanup's exact batchKey + registration-handle lifecycle",
           "the two selected runtime batch-job callback addresses",
           "the exact serialized-record to runtime-record and LOD float2 mapping",
           "the 1/2/4/8/16/32 runtime capacity buckets and LOD-array offsets",
+          "the separate component-bit-67 24-byte ECS LOD state layout",
+          "pending, available, and per-renderer readiness mask transitions",
+          "the separation between the loader registration blob and ECS LOD state",
           "the direct squared-distance LOD interval equation",
           "the scaled-metric LOD interval equation and its 0.0001 floor",
           "the six-way LOD job dispatch segment",
@@ -1062,7 +1161,9 @@
           "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
         ],
         "open": [
-          "semantic names for initially zero runtime-record state bytes",
+          "semantic roles for the loader registration blob's remaining initially zero bytes",
+          "the ECS LOD-count producer and record+0x06/+0x07 semantics",
+          "a direct registration link from archetype component bit 67 to a native type name",
           "the unrelated scheduled cull-view +0x18 consumer"
         ]
       },
@@ -1114,6 +1215,48 @@
           "virtualAddress": "0x181086050",
           "sizeBytes": 627,
           "sha256": "1bafbffc56bfaa42445fea8f10bac1047ab44712ee7361456efc281e07196dc3"
+        },
+        {
+          "label": "unregister_tree_batch_group_binding",
+          "virtualAddress": "0x1801DA310",
+          "sizeBytes": 32,
+          "sha256": "0a176eaa3e84d0c92ce36fe4f77b93b3a774a2822512f73916b6988fd26af886"
+        },
+        {
+          "label": "unregister_tree_batch_group_with_handle_binding",
+          "virtualAddress": "0x1801DA330",
+          "sizeBytes": 46,
+          "sha256": "6b0c7fa81825b727436e1ae3203c53c6dca1c446eea090ada743f03cdf3e2109"
+        },
+        {
+          "label": "unregister_tree_batch_group_core",
+          "virtualAddress": "0x181087D30",
+          "sizeBytes": 200,
+          "sha256": "f23cd4db139cf289446d8314f11cdfb7bd6d5be5b2c14d175e58adb50b02b9e9"
+        },
+        {
+          "label": "unregister_tree_batch_group_with_handle_core",
+          "virtualAddress": "0x181087E00",
+          "sizeBytes": 134,
+          "sha256": "310d8984fc3225999df49d84d74137d4add2ff1b69927950d77f375d1afde7c8"
+        },
+        {
+          "label": "runtime_transform_owner_cleanup",
+          "virtualAddress": "0x1810BCE00",
+          "sizeBytes": 1162,
+          "sha256": "32f463461d5bca2ca0458400bc608e1fde2b8e80b493653159565bad8304e43f"
+        },
+        {
+          "label": "lod_ecs_component_67_accessor",
+          "virtualAddress": "0x181038D00",
+          "sizeBytes": 108,
+          "sha256": "9fd401ef957830896aca114bc591187a39e5772b41b2300439ef3f8f8f4a1699"
+        },
+        {
+          "label": "lod_ecs_availability_writer",
+          "virtualAddress": "0x1810842E0",
+          "sizeBytes": 2101,
+          "sha256": "b40cfccfcea9e2c91b65fba6ac51fa681f27b7fb6cdc89ae9539a0924b500418"
         },
         {
           "label": "parent_lod_bias_getter",
@@ -1266,6 +1409,30 @@
           "virtualAddress": "0x1810C9663",
           "sizeBytes": 37,
           "sha256": "da45c0186612f9e3ebf6a0537523fe984773fe7f1fef10555862bd21033f4db9"
+        },
+        {
+          "label": "transform_owner_cleanup_handle_key_loop",
+          "virtualAddress": "0x1810BD080",
+          "sizeBytes": 28,
+          "sha256": "db0ca9f651d6d62f8b8a6f4e5701bc306ac507f30f7d09fab941076ef333d951"
+        },
+        {
+          "label": "lod_ecs_availability_unload_clear",
+          "virtualAddress": "0x1810845E0",
+          "sizeBytes": 59,
+          "sha256": "bc4586553e1614ea34e9e6b374c2feb0418570b9f69015681894ee5c65ac1c77"
+        },
+        {
+          "label": "lod_ecs_availability_complete_transition",
+          "virtualAddress": "0x18108491A",
+          "sizeBytes": 50,
+          "sha256": "df721a7a36c7f2cd38104ed4f258f0d403c54df1216bb8ac00f197823168e54d"
+        },
+        {
+          "label": "lod_ecs_availability_request_set",
+          "virtualAddress": "0x181084A65",
+          "sizeBytes": 24,
+          "sha256": "da43fb1acb36ff6028210d5c74fdf03d3ebc2ccec02793962f775f670db7df0f"
         },
         {
           "label": "lod_direct_interval_equation",
