@@ -255,6 +255,77 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(result["stats"]["exactTimelineCarriers"], 1)
             self.assertEqual(result["stats"]["exactPlayableDirectorLinks"], 1)
 
+    def test_timeline_audio_cue_playable_keeps_cue_namespace_separate(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            export_root.mkdir()
+            mono_path = export_root / "mono.jsonl"
+            director_path = export_root / "director.jsonl"
+
+            def object_row(path_id, name, scalars=None, pptrs=None):
+                return {
+                    "recordType": "object",
+                    "object": {"serializedFile": "CAB-cue", "pathId": path_id},
+                    "type": "MonoBehaviour",
+                    "name": name,
+                    "scalars": scalars or [],
+                    "pptrs": pptrs or [],
+                }
+
+            cue = object_row(
+                401,
+                "AudioCuePlayable",
+                [
+                    ["$._startCueName", "s", "cue_fixture_start"],
+                    ["$._endCueName", "s", "cue_fixture_end"],
+                ],
+            )
+            track = object_row(
+                402,
+                "Audio Track",
+                [["$.m_Clips[0].m_DisplayName", "s", "cue_fixture_start"]],
+                [
+                    {"path": "$.m_Parent", "target": {"serializedFile": "CAB-cue", "pathId": 501, "name": "seq_fixture_Audio"}},
+                    {"path": "$.m_Clips[0].m_Asset", "target": {"serializedFile": "CAB-cue", "pathId": 401, "name": "AudioCuePlayable"}},
+                ],
+            )
+            director = {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-cue", "pathId": 601},
+                "type": "PlayableDirector",
+                "name": "cue director",
+                "pptrs": [{"path": "$.m_PlayableAsset", "target": {"serializedFile": "CAB-cue", "pathId": 501, "name": "seq_fixture_Audio"}}],
+            }
+            mono_path.write_text("".join(json.dumps(row) + "\n" for row in [cue, track]), encoding="utf-8")
+            director_path.write_text(json.dumps(director) + "\n", encoding="utf-8")
+            ownership = audio_semantics.collect_timeline_audio_ownership(
+                export_root, mono_path=mono_path, director_path=director_path
+            )
+            self.assertIn("cue_fixture_start", ownership["occurrencesByCue"])
+            self.assertIn("cue_fixture_end", ownership["occurrencesByCue"])
+            self.assertEqual(ownership["stats"]["exactTimelineCueCarriers"], 2)
+            cue_id = audio_semantics.audio_hash_generator_compute("cue_fixture_start")
+            cue_semantics = {"cueDefinitions": {cue_id: {
+                "handlerCount": 1,
+                "directHandlerCount": 1,
+                "levelHandlerCount": 0,
+                "behaviorEvents": [{
+                    "eventId": "au_fixture_cue_event",
+                    "handlerScope": "direct",
+                    "handlerIndex": 0,
+                    "expressionSide": "behavior",
+                    "expressionPath": "fixture.behaviourExpr",
+                    "exprType": 3,
+                }],
+                "expressionOperands": [],
+            }}}
+            result = audio_semantics.build_timeline_audio_cue_contexts(ownership, cue_semantics)
+            context = result["eventContexts"]["au_fixture_cue_event"][0]
+            self.assertEqual(context["kind"], "timelineAudioCueBehaviorEvent")
+            self.assertEqual(context["cueName"], "cue_fixture_start")
+            self.assertEqual(context["definitionStatus"], "resolved")
+            self.assertEqual(result["stats"]["timelineCueInvocations"], 2)
+
     def test_levelsequence_play_action_helper_keeps_active_overlay_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root) / "export_full"
