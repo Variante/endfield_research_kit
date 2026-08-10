@@ -627,6 +627,29 @@ class AudioCategoryTests(unittest.TestCase):
         )
         ranseq = result["musicNodeEvidence"][1]
         self.assertEqual(ranseq["selectionTypeLabels"], ["continuousSequence", "none"])
+        self.assertEqual(ranseq["selectorValidation"], {
+            "status": "reciprocalChildrenCovered",
+            "playlistTerminalSegmentIds": [segment_id],
+            "reciprocalChildIds": [segment_id],
+            "playlistTerminalSegmentIdsOutsideReciprocalChildren": [],
+            "reciprocalChildrenWithoutPlaylistTerminal": [],
+            "terminalPlaylistItemCount": 1,
+            "terminalItemsWithSentinelSegmentId": 0,
+        })
+        mismatched_ranseq = build_audio.hirc_v150_music_random_sequence_structure(
+            ranseq_data,
+            1 + 12 + 7,
+            1,
+            [segment_id, segment_id + 1],
+        )
+        self.assertEqual(
+            mismatched_ranseq["selectorValidation"]["status"],
+            "reciprocalChildNotInPlaylist",
+        )
+        self.assertEqual(
+            mismatched_ranseq["selectorValidation"]["reciprocalChildrenWithoutPlaylistTerminal"],
+            [segment_id + 1],
+        )
         self.assertEqual(ranseq["playlistItems"][1]["segmentId"], segment_id)
         track = result["musicNodeEvidence"][3]
         self.assertEqual(track["sources"][0]["mediaId"], media_id)

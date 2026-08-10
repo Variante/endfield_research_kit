@@ -3730,6 +3730,7 @@ def hirc_v150_music_random_sequence_structure(
     data: bytes,
     children_offset: int,
     child_count: int,
+    child_ids: list[int] | None = None,
 ) -> dict[str, Any] | None:
     common = _hirc_v150_music_common_tail(data, children_offset, child_count)
     if not common:
@@ -3784,12 +3785,51 @@ def hirc_v150_music_random_sequence_structure(
             read_item(0, None)
         if len(items) != playlist_count or offset != len(data):
             raise ValueError("invalid v150 MusicRanSeq playlist size")
+        terminal_items = [
+            row for row in items if int(row.get("childCount") or 0) == 0
+        ]
+        terminal_segment_ids = [
+            int(row["segmentId"])
+            for row in terminal_items
+            if int(row.get("segmentId") or 0) not in {0, 0xFFFFFFFF}
+        ]
+        if child_ids is None:
+            selector_validation = {
+                "status": "notCheckedNoReciprocalChildren",
+                "playlistTerminalSegmentIds": sorted(set(terminal_segment_ids)),
+                "reciprocalChildIds": None,
+                "playlistTerminalSegmentIdsOutsideReciprocalChildren": [],
+                "reciprocalChildrenWithoutPlaylistTerminal": [],
+                "terminalPlaylistItemCount": len(terminal_items),
+                "terminalItemsWithSentinelSegmentId": len(terminal_items) - len(terminal_segment_ids),
+            }
+        else:
+            terminal_segment_id_set = set(terminal_segment_ids)
+            reciprocal_child_id_set = set(int(child_id) for child_id in child_ids)
+            outside = sorted(terminal_segment_id_set - reciprocal_child_id_set)
+            missing = sorted(reciprocal_child_id_set - terminal_segment_id_set)
+            if outside:
+                status = "terminalSegmentOutsideReciprocalChildren"
+            elif missing:
+                status = "reciprocalChildNotInPlaylist"
+            else:
+                status = "reciprocalChildrenCovered"
+            selector_validation = {
+                "status": status,
+                "playlistTerminalSegmentIds": sorted(terminal_segment_id_set),
+                "reciprocalChildIds": sorted(reciprocal_child_id_set),
+                "playlistTerminalSegmentIdsOutsideReciprocalChildren": outside,
+                "reciprocalChildrenWithoutPlaylistTerminal": missing,
+                "terminalPlaylistItemCount": len(terminal_items),
+                "terminalItemsWithSentinelSegmentId": len(terminal_items) - len(terminal_segment_ids),
+            }
         return {
             **common_row,
             **transition_row,
             "playlistItemCount": playlist_count,
             "playlistItems": items,
             "selectionTypeLabels": sorted({str(row["selectionTypeLabel"]) for row in items}),
+            "selectorValidation": selector_validation,
         }
     except (ValueError, OverflowError, RecursionError):
         return None
@@ -3809,7 +3849,7 @@ def hirc_v150_music_structure(
     }.get(object_type)
     if not parser:
         return None
-    if object_type == 12:
+    if object_type in {12, 13}:
         return parser(data, children_offset, child_count, child_ids)
     return parser(data, children_offset, child_count)
 
@@ -4222,7 +4262,7 @@ def traverse_hirc_event(
                             "objectId": object_id,
                             "objectType": object_type,
                             "rootActionId": root_action_id,
-                            "reason": "musicSwitchSelectorReciprocalMismatch",
+                            "reason": "musicSelectorReciprocalMismatch",
                             "selectorValidation": structure["selectorValidation"],
                         })
                 else:
