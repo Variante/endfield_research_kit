@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -192,6 +193,57 @@ class LightCullCapAuditTests(unittest.TestCase):
                 "component67MatchesEither"
             ]
         )
+
+    def test_managed_streaming_binding_set_excludes_hgtree(self) -> None:
+        result = AUDIT.validate_native_handoff(
+            AUDIT.read_native_method_bodies()
+        )["managedStreamingComponentBindings"]
+        self.assertEqual(result["directCallCount"], 9)
+        self.assertEqual(
+            [row["bitIndex"] for row in result["bindings"]],
+            [25, 14, 19, 12, 32, 33, 29, 15, 40],
+        )
+        self.assertFalse(result["hgtreeManagedBindingPresent"])
+
+    def test_changed_managed_streaming_binding_fails_closed(self) -> None:
+        bodies = AUDIT.read_native_method_bodies()
+        changed = bytearray(bodies["streaming_scene_manager_ctor"])
+        changed[0x2BF6] = 0x02
+        bodies["streaming_scene_manager_ctor"] = bytes(changed)
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=managed_streaming_HGVolumetricCloud_component_type; "
+            r"source=.*GameAssembly.dll; expected=.*actual=",
+        ):
+            AUDIT.validate_native_handoff(bodies, verify_hashes=False)
+
+    def test_hgmesh_renderer_data_inventory_excludes_component67(self) -> None:
+        result = AUDIT.validate_hgmesh_renderer_data_inventory(
+            verify_source_hash=False
+        )
+        self.assertEqual(result["corpus"]["objectCount"], 117)
+        self.assertEqual(result["corpus"]["entityDescriptorCount"], 1449)
+        self.assertEqual(result["component67"]["descriptorCount"], 0)
+        self.assertFalse(result["component67"]["present"])
+
+    def test_hgmesh_renderer_data_component67_drift_fails_closed(self) -> None:
+        inventory = json.loads(
+            AUDIT.HGMESH_RENDERER_DATA_INVENTORY.read_text(encoding="utf-8")
+        )
+        inventory["corpus"]["componentIdCounts"]["67"] = 1
+        inventory["component67"]["descriptorCount"] = 1
+        inventory["component67"]["present"] = True
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=hgmesh_renderer_data_component_counts; "
+            r"source=.*hgmesh_renderer_data_component_inventory.json; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_hgmesh_renderer_data_inventory(
+                inventory, verify_source_hash=False
+            )
 
     def test_changed_streaming_hgtree_enum_value_fails_closed(self) -> None:
         metadata = bytearray(AUDIT.GLOBAL_METADATA.read_bytes())

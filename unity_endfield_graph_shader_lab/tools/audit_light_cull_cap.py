@@ -37,6 +37,16 @@ IFIX_STATE = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
     "CharInfoPresentation/installed_ifix_patch_state.json"
 )
+HGMESH_RENDERER_DATA_SOURCE = (
+    GAME_ROOT
+    / "Endfield_Data/StreamingAssets/VFS/7064D8E2/"
+    "B428C352B17C75CA29122CAACC037A59.chk"
+)
+HGMESH_RENDERER_DATA_INVENTORY = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
+    "CharInfoPresentation/hgmesh_renderer_data_component_inventory.json"
+)
 DEFAULT_EXTRACTED_ROOT = (
     REPO_ROOT
     / "scratch/animestudio/light_cull_cap/"
@@ -59,6 +69,7 @@ EXPECTED_HASHES = {
     "light_cluster_source": "a81ef9843339141a86c910a6915ab96e647f1f43c25631d537fe872ef4ead888",
     "hg_camera_source": "2f0e098481f25f0e77de8d203c7cae1e4d748b4521d5157af0ab1aaa1163205a",
     "ifix_state": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
+    "hgmesh_renderer_data_source": "af62293a829675951bbc135b0ba51444f72c8b288a0043617ed0c4300c6feae0",
     "do_ecs_culling_body": "bcbfa96588743701a5d1992256c68f193e624dc01ead47e86b80eb0a7653151b",
     "cull_lights_injected_body": "90fe3e38d69fd29a65c4fdc3e472199d9fa0e67733d220875cff6925b4f25503",
     "cull_lights_internal_body": "552b658de9533980b813706c457551aa508c0a2d0fa30dd9817a166898c73564",
@@ -67,6 +78,7 @@ EXPECTED_HASHES = {
     "setup_state_body": "76dcba4f0f93db50a7fdbf2f3fed3084229be907526ff6a33c9556496a81ceab",
     "hgtree_component_get_id_body": "6786c0e7be3bc2cc01074e814543729b15cd696fdace27b19cf9c499e8df556c",
     "render_object_lod_info_component_get_id_body": "23334c82ef0133c65cc0394d318a2637276496cb9b99f6dd580d0ee4f6c9e7b5",
+    "streaming_scene_manager_ctor_body": "788d972a2946b193ca9ca3835f11bca9f8c3bead6a2423a8c788d177c00785b3",
 }
 
 NATIVE_METHODS = {
@@ -130,6 +142,17 @@ NATIVE_METHODS = {
         "virtualAddress": 0x184D9EC60,
         "fileOffset": 0x4D9D260,
         "sizeBytes": 0x6,
+    },
+    "streaming_scene_manager_ctor": {
+        "method": (
+            "UnityEngine.HyperGryph.Streaming."
+            "StreamingSceneManagerScript..ctor"
+        ),
+        "methodIndex": 762,
+        "token": "0x060002FB",
+        "virtualAddress": 0x18394A2F0,
+        "fileOffset": 0x39488F0,
+        "sizeBytes": 0x2F60,
     },
 }
 
@@ -261,6 +284,18 @@ STREAMING_COMPONENT_ENUM_FIELDS = {
     "HGTree": (296668, 0x04000236, 1 << 41),
     "Count": (296670, 0x04000238, 43),
 }
+
+MANAGED_STREAMING_COMPONENT_BINDINGS = [
+    ("HGAdditionalLightData", 0x290A, 0x2914, 1 << 25),
+    ("HGEnvironmentVolume", 0x2963, 0x296D, 1 << 14),
+    ("HGTerrain", 0x29C8, 0x29D2, 1 << 19),
+    ("HGVolumetricLocalFog", 0x2A1E, 0x2A28, 1 << 12),
+    ("HGWaterGlobalConfig", 0x2A74, 0x2A83, 1 << 32),
+    ("HGWindMotor", 0x2ACF, 0x2ADE, 1 << 33),
+    ("LensFlareComponentSRP", 0x2B39, 0x2B43, 1 << 29),
+    ("Volume", 0x2B8F, 0x2B99, 1 << 15),
+    ("HGVolumetricCloud", 0x2BF4, 0x2C03, 1 << 40),
+]
 
 IL2CPP_METADATA_SECTION_NAMES = [
     "stringLiteral",
@@ -982,6 +1017,206 @@ def read_native_method_bodies(game_assembly: Path = GAME_ASSEMBLY) -> dict[str, 
     return bodies
 
 
+def validate_managed_streaming_component_bindings(
+    body: bytes,
+) -> dict[str, object]:
+    """Close the complete managed Mono-component binding set in the ctor."""
+
+    spec = NATIVE_METHODS["streaming_scene_manager_ctor"]
+    method_va = int(spec["virtualAddress"])
+    bind_target = 0x18394A190
+    direct_call_offsets = [
+        offset
+        for offset in range(len(body) - 4)
+        if body[offset] == 0xE8
+        and relative_call_target(body, method_va, offset) == bind_target
+    ]
+    expected_call_offsets = [row[2] for row in MANAGED_STREAMING_COMPONENT_BINDINGS]
+    require(
+        "managed_streaming_component_bind_calls",
+        direct_call_offsets,
+        expected_call_offsets,
+        GAME_ASSEMBLY,
+    )
+
+    bindings = []
+    for name, constant_offset, call_offset, expected_value in (
+        MANAGED_STREAMING_COMPONENT_BINDINGS
+    ):
+        if body[constant_offset : constant_offset + 2] == b"\x48\xB9":
+            actual_value = struct.unpack_from("<Q", body, constant_offset + 2)[0]
+            instruction = "movabs rcx, imm64"
+        else:
+            require(
+                f"managed_streaming_{name}_constant_opcode",
+                body[constant_offset],
+                0xB9,
+                GAME_ASSEMBLY,
+            )
+            actual_value = struct.unpack_from("<I", body, constant_offset + 1)[0]
+            instruction = "mov ecx, imm32"
+        require(
+            f"managed_streaming_{name}_component_type",
+            actual_value,
+            expected_value,
+            GAME_ASSEMBLY,
+        )
+        require(
+            f"managed_streaming_{name}_bind_target",
+            relative_call_target(body, method_va, call_offset),
+            bind_target,
+            GAME_ASSEMBLY,
+        )
+        bindings.append(
+            {
+                "name": name,
+                "value": actual_value,
+                "bitIndex": actual_value.bit_length() - 1,
+                "constantOffset": f"0x{constant_offset:X}",
+                "callOffset": f"0x{call_offset:X}",
+                "constantInstruction": instruction,
+            }
+        )
+
+    bound_values = [row["value"] for row in bindings]
+    require(
+        "managed_streaming_hgtree_bit41_absent",
+        (1 << 41) not in bound_values,
+        True,
+        GAME_ASSEMBLY,
+    )
+    return {
+        "owner": spec["method"],
+        "ownerVirtualAddress": f"0x{method_va:X}",
+        "ownerSizeBytes": spec["sizeBytes"],
+        "bindMethodVirtualAddress": f"0x{bind_target:X}",
+        "directCallCount": len(direct_call_offsets),
+        "bindings": bindings,
+        "hgtreeBitIndex": 41,
+        "hgtreeManagedBindingPresent": False,
+        "boundary": (
+            "the complete hash-pinned constructor has nine direct managed "
+            "Mono-component bindings and none selects StreamingComponentType "
+            "HGTree (bit 41); the constructor therefore does not register "
+            "HGTree through its managed delegate path"
+        ),
+    }
+
+
+def validate_hgmesh_renderer_data_inventory(
+    inventory: dict[str, object] | None = None,
+    *,
+    verify_source_hash: bool = True,
+) -> dict[str, object]:
+    """Validate the compact inventory derived from all installed HGMeshRendererData."""
+
+    source = HGMESH_RENDERER_DATA_INVENTORY
+    data = (
+        inventory
+        if inventory is not None
+        else json.loads(source.read_text(encoding="utf-8"))
+    )
+    expected_counts = {
+        "0": 117,
+        "1": 117,
+        "2": 117,
+        "3": 117,
+        "4": 117,
+        "5": 117,
+        "6": 117,
+        "7": 117,
+        "8": 60,
+        "9": 20,
+        "10": 29,
+        "11": 8,
+        "18": 117,
+        "29": 117,
+        "44": 45,
+        "46": 63,
+        "47": 53,
+        "48": 1,
+    }
+    expected_sizes = {
+        "0": [4],
+        "1": [4],
+        "2": [4],
+        "3": [4],
+        "4": [4],
+        "5": [4],
+        "6": [20],
+        "7": [24],
+        "8": [36],
+        "9": [68],
+        "10": [132],
+        "11": [260],
+        "18": [256],
+        "29": [1],
+        "44": [16],
+        "46": [8],
+        "47": [20],
+        "48": [68],
+    }
+    source_record = data.get("source") or {}
+    corpus = data.get("corpus") or {}
+    component67 = data.get("component67") or {}
+    for check, actual, expected in (
+        (
+            "schema",
+            data.get("schema"),
+            "endfield.hgmesh-renderer-data-component-inventory.v1",
+        ),
+        (
+            "source_path",
+            source_record.get("vfsRelativePath"),
+            "7064D8E2/B428C352B17C75CA29122CAACC037A59.chk",
+        ),
+        ("source_size", source_record.get("sizeBytes"), 1_258_089_569),
+        (
+            "source_sha256",
+            source_record.get("sha256"),
+            EXPECTED_HASHES["hgmesh_renderer_data_source"],
+        ),
+        ("object_type", corpus.get("serializedObjectType"), "HGMeshRendererData"),
+        ("object_count", corpus.get("objectCount"), 117),
+        ("descriptor_count", corpus.get("entityDescriptorCount"), 1_449),
+        ("payload_bytes", corpus.get("entityPayloadBytes"), 49_805),
+        ("blob_bytes", corpus.get("entityBlobBytes"), 61_865),
+        ("descriptor_count_range", corpus.get("descriptorCountRange"), [12, 13]),
+        ("serialized_offsets", corpus.get("serializedDescriptorOffsets"), [0]),
+        ("component_counts", corpus.get("componentIdCounts"), expected_counts),
+        ("component_sizes", corpus.get("componentSizes"), expected_sizes),
+        (
+            "source_object_digest_algorithm",
+            corpus.get("sourceObjectDigestAlgorithm"),
+            "sha256(sorted sourceFile|pathId|sourceOffset|rawDataSha256|"
+            "descriptorCount|blobBytes)",
+        ),
+        (
+            "source_object_digest",
+            corpus.get("sourceObjectDigest"),
+            "f40f399f7daa190312036fe2322f3cc1c4675217cc7f9a2388d1ce92c08c043b",
+        ),
+        ("layout_failure_count", corpus.get("layoutFailureCount"), 0),
+        ("component67_descriptor_count", component67.get("descriptorCount"), 0),
+        ("component67_present", component67.get("present"), False),
+    ):
+        require(f"hgmesh_renderer_data_{check}", actual, expected, source)
+    if verify_source_hash:
+        require(
+            "hgmesh_renderer_data_source_exists",
+            HGMESH_RENDERER_DATA_SOURCE.is_file(),
+            True,
+            HGMESH_RENDERER_DATA_SOURCE,
+        )
+        require(
+            "hgmesh_renderer_data_installed_source_sha256",
+            sha256(HGMESH_RENDERER_DATA_SOURCE),
+            EXPECTED_HASHES["hgmesh_renderer_data_source"],
+            HGMESH_RENDERER_DATA_SOURCE,
+        )
+    return data
+
+
 def validate_native_handoff(
     bodies: dict[str, bytes], *, verify_hashes: bool = True
 ) -> dict[str, object]:
@@ -1000,6 +1235,10 @@ def validate_native_handoff(
                 EXPECTED_HASHES[f"{name}_body"],
                 GAME_ASSEMBLY,
             )
+
+    managed_streaming_bindings = validate_managed_streaming_component_bindings(
+        bodies["streaming_scene_manager_ctor"]
+    )
 
     getter = bodies["get_visible_lights"]
     require(
@@ -1263,6 +1502,7 @@ def validate_native_handoff(
                 "so this managed LOD-info component is not native component id 67"
             ),
         },
+        "managedStreamingComponentBindings": managed_streaming_bindings,
         "methodBodies": [
             {
                 "name": name,
@@ -2626,6 +2866,26 @@ def validate_unity_hgtree_renderer_boundary(
                         "row and its initial lodCount/ranges remains open"
                     ),
                 },
+                "excludedProducerRoutes": {
+                    "hgmeshRendererData": {
+                        "objectCount": 117,
+                        "descriptorCount": 1449,
+                        "component67DescriptorCount": 0,
+                        "inventory": HGMESH_RENDERER_DATA_INVENTORY.relative_to(
+                            LAB_ROOT
+                        ).as_posix(),
+                    },
+                    "managedHGTreeConverterBinding": {
+                        "completeConstructorBindingCount": 9,
+                        "hgtreeBitIndex": 41,
+                        "hgtreeBindingPresent": False,
+                    },
+                    "boundary": (
+                        "these two complete hash-pinned source families are "
+                        "excluded; the id-67 descriptor and lodCount/range "
+                        "producer remain in a different native runtime source"
+                    ),
+                },
                 "structureBoundary": (
                     "this pointer is resolved from archetype component bit 67; "
                     "it is not the loader-owned registration blob stored in "
@@ -3010,6 +3270,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
         ),
         "hg_camera_source": verified_hash("hg_camera_source", HG_CAMERA_SOURCE),
         "ifix_state": verified_hash("ifix_state", IFIX_STATE),
+        "hgmesh_renderer_data_source": verified_hash(
+            "hgmesh_renderer_data_source", HGMESH_RENDERER_DATA_SOURCE
+        ),
     }
     _require_source_contracts()
     asset_records, cap_definitions = validate_settings_payloads(extracted_root)
@@ -3035,6 +3298,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             ]["componentId"],
         },
     )
+    hgmesh_renderer_data_inventory = validate_hgmesh_renderer_data_inventory(
+        verify_source_hash=False
+    )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
     require(
@@ -3051,8 +3317,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v14",
-        "status": "installed_cap_hgtree_component67_archetype_descriptor_layout_closed",
+        "schema": "endfield.recovered-light-cull-cap.v15",
+        "status": "installed_cap_hgtree_component67_serialized_renderer_source_excluded",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -3107,7 +3373,13 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "as component id, component size, and cumulative data offset, with "
             "component storage starting at byte 8. No direct id-67/size-24 "
             "descriptor immediate exists, narrowing the remaining producer "
-            "search to a runtime descriptor source. The native name/owner of "
+            "search to a runtime descriptor source. The complete installed "
+            "117-object HGMeshRendererData corpus contains 1,449 valid ECS "
+            "descriptors, but none has id 67, excluding that serialized blob "
+            "family as the producer. The complete hash-pinned managed "
+            "StreamingSceneManagerScript constructor binds nine Mono converter "
+            "bits but not HGTree bit 41, excluding that managed delegate route "
+            "from the static constructor source set as well. The native name/owner of "
             "id 67 remains open. The "
             "old index "
             "10320 and manager/virtual-slot path are retracted because that "
@@ -3145,6 +3417,16 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "sha256": hashes["ifix_state"],
                 "targetCount": 30,
                 "hgrpSettingOrLightClusterTargets": [],
+            },
+            "hgmeshRendererDataSource": {
+                "vfsRelativePath": (
+                    "7064D8E2/B428C352B17C75CA29122CAACC037A59.chk"
+                ),
+                "sizeBytes": HGMESH_RENDERER_DATA_SOURCE.stat().st_size,
+                "sha256": hashes["hgmesh_renderer_data_source"],
+                "inventoryPath": HGMESH_RENDERER_DATA_INVENTORY.relative_to(
+                    LAB_ROOT
+                ).as_posix(),
             },
         },
         "settingTextAssets": asset_records,
@@ -3206,6 +3488,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "unityPlayerStreamingComponentConversion": (
                 unity_streaming_component_conversion
             ),
+            "hgmeshRendererDataComponentInventory": (
+                hgmesh_renderer_data_inventory
+            ),
             "desktopNoSecondTruncation": True,
         },
         "sourceFiles": {
@@ -3248,6 +3533,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the IL2CPP HGTreeComponent.get_id return value 80 and its separation from component id 67",
                 "the UInt64 StreamingComponentType values HLODGroup=bit11, HGTree=bit41, and Count=43",
                 "the 43-slot Streaming converter registry, bsf(typeMask) lookup, and 0x308-byte slot stride",
+                "the complete nine-call managed Mono-component binding set and the absence of HGTree bit 41",
+                "the 117-object installed HGMeshRendererData corpus, its 1,449 descriptors, and the absence of component id 67",
                 "the IL2CPP RenderObjectLODInfoComponent.get_id return value 6 and its separation from component id 67",
                 "the ECS numeric-component-id to two-qword archetype-mask equation",
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
@@ -3261,7 +3548,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
                 "the semantic names of the initially zero HGTree runtime-state bytes",
-                "the component-bit-67 LOD-count/range producer and native component name/owner",
+                "the component-bit-67 LOD-count/range producer and native component name/owner outside the excluded HGMeshRendererData and managed HGTree-converter routes",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -3297,7 +3584,8 @@ def main() -> int:
         "scheduled cull-view layout, dispatch predicates, dedicated HGTree "
         "type identity/id-80 registration lifecycle/runtime transform, "
         "Streaming HGTree bit-41/43-slot converter registry, managed LOD-info id 6, "
-        "component-67 separation, ECS component mask and LOD-state equations, "
+        "component-67 separation plus managed-converter/HGMeshRendererData exclusions, "
+        "ECS component mask and LOD-state equations, "
         "LODCrossFadeConfig "
         "bias packet, ArtTag LOD bias/streaming-offset controls, mask order, "
         "16-byte result, and 148-byte capture-row ABI closed."

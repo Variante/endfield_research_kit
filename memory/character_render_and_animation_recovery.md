@@ -136,12 +136,21 @@ NPC archetypes are imported as labeled source kits.
   a non-empty component list whose first entry is Transform. These values are
   converter bits, not ECS component IDs, so they narrow the component-67
   search to the native LOD-state producer rather than either managed name.
+  The complete hash-pinned `StreamingSceneManagerScript..ctor` has nine Mono
+  converter bindings (bits 12/14/15/19/25/29/32/33/40) and no HGTree bit-41
+  binding, excluding that static constructor delegate route. A direct installed-VFS
+  export also closes all 117 `HGMeshRendererData` objects in chunk
+  `7064D8E2/B428...chk`: their 1,449 valid descriptors cover IDs
+  `0..11,18,29,44,46,47,48`, with no ID 67 and no layout failures. This
+  excludes the generic serialized renderer-data blob family without naming
+  the remaining native producer.
   Native entity-type registration core `0x1801FAEC0` now closes each input as
   an 8-byte row `(int16 id, uint16 size, uint32 cumulativeOffset)`, with
   component storage beginning at byte 8 and archetype size/offset lookups at
   `+0x42/+0x44 + 8*rank`. No installed-code immediate encodes `(67, 24)`, so
   the remaining ID-67 row and its initial LOD values come from a runtime or
-  copied descriptor source rather than a static descriptor constant.
+  copied descriptor source outside those two excluded routes rather than a
+  static descriptor constant.
   Writer `0x181157760` also closes a second direct-availability initialization path:
   it either marks every LOD and companion subresource available or marks only
   the terminal LOD and the exact readiness range selected through the

@@ -1,0 +1,70 @@
+{
+  "schema": "endfield.hgmesh-renderer-data-component-inventory.v1",
+  "source": {
+    "vfsRelativePath": "7064D8E2/B428C352B17C75CA29122CAACC037A59.chk",
+    "sizeBytes": 1258089569,
+    "sha256": "af62293a829675951bbc135b0ba51444f72c8b288a0043617ed0c4300c6feae0"
+  },
+  "corpus": {
+    "serializedObjectType": "HGMeshRendererData",
+    "objectCount": 117,
+    "entityDescriptorCount": 1449,
+    "entityPayloadBytes": 49805,
+    "entityBlobBytes": 61865,
+    "descriptorCountRange": [
+      12,
+      13
+    ],
+    "serializedDescriptorOffsets": [
+      0
+    ],
+    "componentIdCounts": {
+      "0": 117,
+      "1": 117,
+      "2": 117,
+      "3": 117,
+      "4": 117,
+      "5": 117,
+      "6": 117,
+      "7": 117,
+      "8": 60,
+      "9": 20,
+      "10": 29,
+      "11": 8,
+      "18": 117,
+      "29": 117,
+      "44": 45,
+      "46": 63,
+      "47": 53,
+      "48": 1
+    },
+    "componentSizes": {
+      "0": [4],
+      "1": [4],
+      "2": [4],
+      "3": [4],
+      "4": [4],
+      "5": [4],
+      "6": [20],
+      "7": [24],
+      "8": [36],
+      "9": [68],
+      "10": [132],
+      "11": [260],
+      "18": [256],
+      "29": [1],
+      "44": [16],
+      "46": [8],
+      "47": [20],
+      "48": [68]
+    },
+    "sourceObjectDigestAlgorithm": "sha256(sorted sourceFile|pathId|sourceOffset|rawDataSha256|descriptorCount|blobBytes)",
+    "sourceObjectDigest": "f40f399f7daa190312036fe2322f3cc1c4675217cc7f9a2388d1ce92c08c043b",
+    "layoutFailureCount": 0
+  },
+  "component67": {
+    "descriptorCount": 0,
+    "present": false,
+    "boundary": "The complete installed HGMeshRendererData corpus in this source chunk does not serialize ECS component id 67. This excludes this generic renderer-data blob family, but does not identify the native runtime producer of the separate 24-byte component-67 LOD state."
+  }
+}
