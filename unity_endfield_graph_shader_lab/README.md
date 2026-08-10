@@ -1696,7 +1696,7 @@ entry 677 reaches the native converter registration path: it constructs 43
 slots at `0x308` bytes each, selects the slot with `bsf(componentTypeMask)`,
 requires a non-empty component list, and requires Transform first. Those are
 serialized converter bits rather than ECS component IDs, so component 67
-remains a native LOD-state identity/producer problem. The native lifecycle
+remains a native LOD-state type-identity problem. The native lifecycle
 registry is now exact as well: each `ECSEntityType` owns a `0x288`-byte record
 containing ten `0x40`-byte `EntityTransition` callbacks from `+0x08`.
 Installed metadata names all ten slots. The complete 105-call installer census
@@ -1705,9 +1705,20 @@ and both install identical component-67 maps for Render/type 0 and
 MergedRenderCollider/type 9. Component 67 is touched only at
 `UnloadedToLoading`, `LoadingToLoaded`, `UnloadingToUnloaded`, and
 `LoadingToUnloaded`; waiting slots 2/7 are unbound. The managed script replaces
-only Water/type 1 and WaterDecal/type 13, leaving those native maps active. The
-complete hash-pinned
-`StreamingSceneManagerScript..ctor` binds only bits
+only Water/type 1 and WaterDecal/type 13, leaving those native maps active.
+The teardown callbacks now close the adjacent resource-capacity family and
+mask semantics. They intersect the archetype high qword with `0x7F0`; the full
+serialized corpus makes that selection one-hot with exactly one companion ID
+68..73 per component-67 archetype. Each uses an 8-byte header plus 40-byte
+rows containing three source pointers and three resource handles, with
+capacities 1/2/4/8/16/32; bit 74 is admitted by code but absent from the
+corpus. `UnloadingToUnloaded` walks `pending|available`, releases all three
+handles, clears the mapped Material/main-Mesh/shadow-proxy runtime words, and
+zeros both state-mask bytes; type 9 adds merged-render-collider cleanup.
+Shared `LoadingToUnloaded` walks pending ranges only, releases owner handles,
+clears pending byte `+0x04`, and preserves available byte `+0x05` and mapped
+runtime words. Native component names remain open. The
+complete hash-pinned `StreamingSceneManagerScript..ctor` binds only bits
 12/14/15/19/25/29/32/33/40 through the managed Mono-converter path; HGTree
 bit 41 is absent. The complete installed-VFS corpus of 117
 `HGMeshRendererData` objects contains 1,449 valid ECS descriptors and no ID
