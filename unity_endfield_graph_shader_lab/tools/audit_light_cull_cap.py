@@ -86,7 +86,6 @@ EXPECTED_HASHES = {
     "light_cluster_source": "a81ef9843339141a86c910a6915ab96e647f1f43c25631d537fe872ef4ead888",
     "hg_camera_source": "2f0e098481f25f0e77de8d203c7cae1e4d748b4521d5157af0ab1aaa1163205a",
     "hg_utils_source": "001686edd13da1e8598d9b252ae0b305d0fb0d2d8c4ecee6d6f8bd1ac10cc97a",
-    "ifix_state": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
     "hgmesh_renderer_data_source": "af62293a829675951bbc135b0ba51444f72c8b288a0043617ed0c4300c6feae0",
     "animestudio_class_id_source": "e14cbf9403b8da5c4004a9a441512ffa6b0745d52818ace6aec8bb8645ba8c17",
     "animestudio_asset_helper_source": "474c636209d2317abcc8c26ac3646cd2a9a13795fd2493e29ce26037451ee288",
@@ -3286,6 +3285,96 @@ def verified_hash(name: str, path: Path) -> str:
     actual = sha256(path)
     require(f"{name}_sha256", actual, EXPECTED_HASHES[name], path)
     return actual
+
+
+def validate_ifix_state(
+    path: Path = IFIX_STATE,
+    *,
+    expected_game_assembly_sha256: str = EXPECTED_HASHES["game_assembly"],
+) -> tuple[str, dict[str, object]]:
+    """Validate the current IFix report without pinning volatile report bytes.
+
+    The refresh tool intentionally updates recovered-at dates, VFS chunk names,
+    and target-table records when the installed game changes.  The audit still
+    pins the installed GameAssembly build, requires a self-consistent target
+    table, and rejects render/HGRP targets; it therefore does not treat a stale
+    whole-report SHA-256 as evidence of a current patch state.
+    """
+
+    require("ifix_state_exists", path.is_file(), True, path)
+    actual_report_sha256 = sha256(path)
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise AssertionError(
+            "Light-cull cap audit failed: "
+            f"validator=light_cull_cap; check=ifix_state_json; source={path}; "
+            f"expected=valid JSON; actual={type(exc).__name__}: {exc}"
+        ) from exc
+    require(
+        "ifix_state_schema",
+        state.get("schema"),
+        "endfield.charinfo.installed-ifix-patch-state.v1",
+        path,
+    )
+    source_build = state.get("source_build") or {}
+    game_assembly = source_build.get("game_assembly") or {}
+    require(
+        "ifix_game_assembly_sha256",
+        game_assembly.get("sha256"),
+        expected_game_assembly_sha256,
+        path,
+    )
+    targets = state.get("targets")
+    patch_format = state.get("patch_format") or {}
+    require(
+        "ifix_targets_array",
+        isinstance(targets, list) and all(isinstance(row, dict) for row in targets),
+        True,
+        path,
+    )
+    require(
+        "ifix_target_count_matches_targets",
+        patch_format.get("target_count"),
+        len(targets),
+        path,
+    )
+    require(
+        "ifix_terminal_int32",
+        patch_format.get("terminal_int32"),
+        0,
+        path,
+    )
+    persistent = (state.get("vfs_state") or {}).get("persistent_overlay") or {}
+    patch_file = persistent.get("file") or {}
+    refresh = state.get("refresh") or {}
+    require(
+        "ifix_refresh_tool",
+        isinstance(refresh.get("tool"), str),
+        True,
+        path,
+    )
+    patch_sha256 = patch_file.get("sha256")
+    require(
+        "ifix_patch_sha256_present",
+        isinstance(patch_sha256, str) and len(patch_sha256) == 64,
+        True,
+        path,
+    )
+    require(
+        "ifix_patch_sha256_consistency",
+        refresh.get("source_patch_sha256"),
+        patch_sha256,
+        path,
+    )
+    hgrp_targets = [
+        f"{row.get('type')}.{row.get('method')}"
+        for row in targets
+        if isinstance(row, dict)
+        and str(row.get("type", "")).startswith("HG.Rendering.Runtime")
+    ]
+    require("ifix_hgrp_targets", hgrp_targets, [], path)
+    return actual_report_sha256, state
 
 
 class PEImage:
@@ -11727,7 +11816,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
         ),
         "hg_camera_source": verified_hash("hg_camera_source", HG_CAMERA_SOURCE),
         "hg_utils_source": verified_hash("hg_utils_source", HG_UTILS_SOURCE),
-        "ifix_state": verified_hash("ifix_state", IFIX_STATE),
+        "ifix_state": validate_ifix_state()[0],
         "hgmesh_renderer_data_source": verified_hash(
             "hgmesh_renderer_data_source", HGMESH_RENDERER_DATA_SOURCE
         ),
@@ -11793,19 +11882,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
         )
     )
 
-    ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
-    require(
-        "ifix_target_count",
-        ifix["patch_format"]["target_count"],
-        30,
-        IFIX_STATE,
-    )
-    hgrp_targets = [
-        f"{row['type']}.{row['method']}"
-        for row in ifix["targets"]
-        if row["type"].startswith("HG.Rendering.Runtime")
-    ]
-    require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
+    _, ifix = validate_ifix_state()
+    ifix_target_count = int(ifix["patch_format"]["target_count"])
 
     return {
         "schema": "endfield.recovered-light-cull-cap.v51",
@@ -12123,7 +12201,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "installedIfixState": {
                 "path": IFIX_STATE.relative_to(LAB_ROOT).as_posix(),
                 "sha256": hashes["ifix_state"],
-                "targetCount": 30,
+                "targetCount": ifix_target_count,
                 "hgrpSettingOrLightClusterTargets": [],
             },
             "hgmeshRendererDataSource": {

@@ -20,6 +20,79 @@ SPEC.loader.exec_module(AUDIT)
 
 
 class LightCullCapAuditTests(unittest.TestCase):
+    def write_ifix_fixture(
+        self,
+        path: Path,
+        *,
+        target_count: int = 1,
+        target_type: str = "Beyond.Gameplay.Test",
+    ) -> None:
+        targets = [
+            {
+                "type": target_type,
+                "method": "Tick",
+                "parameters": [],
+                "implementation_index": 0,
+            }
+            for _ in range(target_count)
+        ]
+        state = {
+            "schema": "endfield.charinfo.installed-ifix-patch-state.v1",
+            "source_build": {
+                "game_assembly": {
+                    "sha256": AUDIT.EXPECTED_HASHES["game_assembly"]
+                }
+            },
+            "vfs_state": {
+                "persistent_overlay": {
+                    "file": {"sha256": "a" * 64}
+                }
+            },
+            "patch_format": {"target_count": target_count, "terminal_int32": 0},
+            "targets": targets,
+            "refresh": {
+                "tool": "refresh_installed_ifix_patch_state.py",
+                "source_patch_sha256": "a" * 64,
+            },
+        }
+        path.write_text(json.dumps(state), encoding="utf-8")
+
+    def test_ifix_state_accepts_current_self_consistent_target_count(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            path = Path(raw_root) / "ifix.json"
+            self.write_ifix_fixture(path, target_count=2)
+            report_hash, state = AUDIT.validate_ifix_state(path)
+            self.assertEqual(len(report_hash), 64)
+            self.assertEqual(state["patch_format"]["target_count"], 2)
+
+    def test_ifix_state_count_mismatch_reports_expected_and_actual(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            path = Path(raw_root) / "ifix.json"
+            self.write_ifix_fixture(path, target_count=2)
+            state = json.loads(path.read_text(encoding="utf-8"))
+            state["patch_format"]["target_count"] = 1
+            path.write_text(json.dumps(state), encoding="utf-8")
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=ifix_target_count_matches_targets; source=.*"
+                r"expected=2; actual=1",
+            ):
+                AUDIT.validate_ifix_state(path)
+
+    def test_ifix_state_rejects_hgrp_target(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            path = Path(raw_root) / "ifix.json"
+            self.write_ifix_fixture(
+                path,
+                target_type="HG.Rendering.Runtime.LightClusteringPassConstructor",
+            )
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; check=ifix_hgrp_targets; source=.*",
+            ):
+                AUDIT.validate_ifix_state(path)
+
     def test_movss_displacement_counter_covers_rex_prefixes(self) -> None:
         body = bytes.fromhex("f30f104018 f3410f104018 f30f10c0")
         self.assertEqual(AUDIT.count_legacy_movss_disp_loads(body, 0x18), 2)
