@@ -272,6 +272,42 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_ecs_render_flags_native(bytes(body))
 
+    def test_native_ifix_wrapper_table_lookup_contract(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_FILE_OFFSET)
+            is_patched = stream.read(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_SIZE)
+            stream.seek(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_COLD_FILE_OFFSET)
+            is_patched_cold = stream.read(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_COLD_SIZE)
+            stream.seek(AUDIT.WRAPPERS_MANAGER_GET_PATCH_FILE_OFFSET)
+            get_patch = stream.read(AUDIT.WRAPPERS_MANAGER_GET_PATCH_SIZE)
+        result = AUDIT.validate_ifix_wrapper_table_native(
+            is_patched, is_patched_cold, get_patch
+        )
+        self.assertEqual(result["managerGlobalSlot"], "0x18E28EC48")
+        self.assertEqual(
+            result["tableLayout"]["entryArray"], "+0x20 + 8 * methodId"
+        )
+        self.assertTrue(result["lookupContractClosed"])
+        self.assertTrue(result["runtimeMembershipStillOpen"])
+        self.assertTrue(result["runtimeWrapperPointersStillOpen"])
+
+    def test_changed_ifix_wrapper_table_body_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.WRAPPERS_MANAGER_GET_PATCH_FILE_OFFSET)
+            get_patch = bytearray(stream.read(AUDIT.WRAPPERS_MANAGER_GET_PATCH_SIZE))
+            stream.seek(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_FILE_OFFSET)
+            is_patched = stream.read(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_SIZE)
+            stream.seek(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_COLD_FILE_OFFSET)
+            is_patched_cold = stream.read(AUDIT.WRAPPERS_MANAGER_IS_PATCHED_COLD_SIZE)
+        get_patch[0x48] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=wrappers_manager_get_patch_body_sha256; source=.*GameAssembly.dll; ",
+        ):
+            AUDIT.validate_ifix_wrapper_table_native(
+                is_patched, is_patched_cold, bytes(get_patch)
+            )
+
     def test_changed_point_shadow_cache_index_unmatched_return_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
