@@ -39,6 +39,17 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredDeferredGBufferB");
         internal static readonly int GBufferCId =
             Shader.PropertyToID("_EndfieldRecoveredDeferredGBufferC");
+        // The selected original D3D11 resolver consumes the GBuffer in its
+        // backend register order C/B/A (t23/t24/t25), not the producer's
+        // logical A/B/C naming. Keep these aliases explicit so a future
+        // resolver consumer cannot silently swap the base-color and MRO
+        // attachments while the production pass remains disabled.
+        internal static readonly int ResolverGBufferT23Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT23");
+        internal static readonly int ResolverGBufferT24Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT24");
+        internal static readonly int ResolverGBufferT25Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT25");
         private static readonly int GpuViewProjectionId =
             Shader.PropertyToID(
                 "_EndfieldRecoveredDeferredGpuViewProjection");
@@ -162,6 +173,12 @@ namespace EndfieldGraphShaderLab
                 command.SetGlobalTexture(GBufferAId, gBufferA);
                 command.SetGlobalTexture(GBufferBId, gBufferB);
                 command.SetGlobalTexture(GBufferCId, gBufferC);
+                // Source-closed selected pass-0 bridge: t23=C, t24=B,
+                // t25=A. These are diagnostic aliases only; no production
+                // resolver draw is enabled by this publication.
+                command.SetGlobalTexture(ResolverGBufferT23Id, gBufferC);
+                command.SetGlobalTexture(ResolverGBufferT24Id, gBufferB);
+                command.SetGlobalTexture(ResolverGBufferT25Id, gBufferA);
                 command.SetGlobalFloat(ReadyId, 1.0f);
                 RequestReadbacks(command, camera.name);
                 // This producer is a non-presented sidecar. Restore the exact
@@ -186,6 +203,7 @@ namespace EndfieldGraphShaderLab
                     "attachments=B10G11R11/A2B10G10R10/A2B10G10R10/" +
                     "A2B10G10R10/R8G8B8A8_SRGB+D32S8, " +
                     "sourceRendererDisabled=" + (!renderer.enabled) + ", " +
+                    "resolverGBufferBindings=t23:C,t24:B,t25:A, " +
                     "pass0ConsumerEnabled=false.");
                 activationLogged = true;
             }
@@ -207,6 +225,9 @@ namespace EndfieldGraphShaderLab
             command.SetGlobalTexture(GBufferAId, Texture2D.blackTexture);
             command.SetGlobalTexture(GBufferBId, Texture2D.blackTexture);
             command.SetGlobalTexture(GBufferCId, Texture2D.blackTexture);
+            command.SetGlobalTexture(ResolverGBufferT23Id, Texture2D.blackTexture);
+            command.SetGlobalTexture(ResolverGBufferT24Id, Texture2D.blackTexture);
+            command.SetGlobalTexture(ResolverGBufferT25Id, Texture2D.blackTexture);
             context.ExecuteCommandBuffer(command);
             command.Release();
             if (!failureLogged)
@@ -552,6 +573,9 @@ namespace EndfieldGraphShaderLab
             Shader.SetGlobalTexture(GBufferAId, Texture2D.blackTexture);
             Shader.SetGlobalTexture(GBufferBId, Texture2D.blackTexture);
             Shader.SetGlobalTexture(GBufferCId, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(ResolverGBufferT23Id, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(ResolverGBufferT24Id, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(ResolverGBufferT25Id, Texture2D.blackTexture);
         }
 
         private static bool Approximately(float actual, float expected)
