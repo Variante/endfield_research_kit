@@ -25,6 +25,9 @@ NPC archetypes are imported as labeled source kits.
 
 - All 31 playable post-models, materials, textures, cameras, profiles, lights,
   portraits, and Overview animation sources are cataloged.
+- The playable mesh-identity audit now passes all 31 generated prefabs (460
+  LOD0 renderer rows, 434 source mesh PathIDs, and 434 prefab GUID bindings),
+  including the separately-owned Zhuangfy piaodai Timeline effect clone.
 - The previous 30-character Overview capture set remains valid and nonblank;
   Liino is imported and awaits the next capture refresh.
 - Playable UI recovery contains 779 body clips and 348 private item/deco clips.
