@@ -694,12 +694,15 @@ NPC archetypes are imported as labeled source kits.
   the reduced/full-size RGBA8 `_HDPLSScreenSpaceShadowMask` consumed by
   deferred binding 22. Their RenderGraph dependencies and global publication
   are closed; inactive frames clear all selectors and bind white to both slots,
-  so stale resources cannot escape. The tracked hash-pinned installed
-  Persistent IFix snapshot has 30 targets; the current refreshed overlay
-  decodes to 32 and still replaces neither `0x877` nor `0x890` owner method,
-  closing the current on-disk branch choice; future/network patches remain a
-  version boundary. Live input values, active rows/selectors, unused persistent
-  rows, atlas texels, and resolved RGBA pixels remain capture-only.
+  so stale resources cannot escape. The current hash-pinned installed
+  Persistent IFix snapshot and refreshed overlay both decode to 32 targets;
+  the overlay still replaces neither `0x877` nor `0x890` owner method,
+  closing the current on-disk branch choice. The maintained
+  `refresh_ifix_deferred_reports.py` projection keeps the deferred contracts
+  synchronized with that snapshot without reformatting their source evidence;
+  future/network patches remain a version boundary. Live input values, active
+  rows/selectors, unused persistent rows, atlas texels, and resolved RGBA
+  pixels remain capture-only.
 
 - The installed no-reload CharInfo V2 irradiance route is now closed as
   inactive. `SetMap` enters native clear state 4, releases all six full-size

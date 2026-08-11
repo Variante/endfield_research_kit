@@ -2418,6 +2418,9 @@ patches remain a version boundary. Run
 `tools/verify_installed_ifix_patch_state.py` after refresh. Live
 bounds/light/settings values, resulting active rows/selectors, unused
 persistent rows, atlas texels, and resolved RGBA pixels remain capture-only.
+Run `tools/refresh_ifix_deferred_reports.py --check` to verify that the two
+deferred-render contracts project the same current IFix summary; its refresh
+mode changes only those projection fields and preserves report formatting.
 The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution

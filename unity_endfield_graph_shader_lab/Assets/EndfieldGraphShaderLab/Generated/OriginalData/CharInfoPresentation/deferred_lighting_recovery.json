@@ -622,23 +622,23 @@
       },
       "installed_ifix_patch_index": {
         "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/persistent_primary_ifix_vfs_index.json",
-        "sha256": "f68f5dc7664c5a60fcde811f05cbfa37567487bcd304baee8001fba7a1546800",
+        "sha256": "5fd873477d882e796299dcfa549c72d5b1dc1de38d0819b89ebad7de00e8bde7",
         "block": "IFixPatchOut",
         "file_count": 1,
         "chunk_count": 1,
-        "byte_count": 82021,
-        "block_version": 22764515,
-        "target_count": 30,
+        "byte_count": 86926,
+        "block_version": 23167343,
+        "target_count": 32,
         "character_recovery_locally_replaced": false,
         "state_report": {
           "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
           "size": 16530,
-          "sha256": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1"
+          "sha256": "ca4e750748a6d0664a0b0abbed5f246116d239fb5a44aada67ab98521cc2cbe9"
         }
       }
     },
     "offline_unpatched_charinfo_route": {
-      "evidence_scope": "Current installed GameAssembly plus the decoded Persistent VFS patch snapshot. The active 30-target Gameplay.Beyond patch is signature-disjoint from this HGRP route and its render-pipeline settings lifecycle. Future/network-delivered IFix patches and live GPU bindings remain outside scope.",
+      "evidence_scope": "Current installed GameAssembly plus the decoded Persistent VFS patch snapshot. The active 32-target Gameplay.Beyond patch is signature-disjoint from this HGRP route and its render-pipeline settings lifecycle. Future/network-delivered IFix patches and live GPU bindings remain outside scope.",
       "feature_defaults": {
         "deferredShading": true,
         "deferredShadingDefaultLit": true,
