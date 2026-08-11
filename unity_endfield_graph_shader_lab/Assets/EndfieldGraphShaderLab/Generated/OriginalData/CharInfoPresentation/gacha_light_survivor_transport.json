@@ -136,6 +136,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 0,
           "record0RgbBits": [
             "0x42C80000",
             "0x427432C1",
@@ -204,6 +205,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x40800000",
             "0x400B53AD",
@@ -272,6 +274,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x42700000",
             "0x42029E72",
@@ -340,6 +343,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x42700000",
             "0x42029E72",
@@ -408,6 +412,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x42C80000",
             "0x4259B2BE",
@@ -476,6 +481,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x40800000",
             "0x401C4971",
@@ -544,6 +550,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x42C80000",
             "0x4259B2BE",
@@ -612,6 +619,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x40800000",
             "0x401C4971",
@@ -680,6 +688,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x42700000",
             "0x4201F93A",
@@ -748,6 +757,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x41F00000",
             "0x414DC57F",
@@ -816,6 +826,7 @@
           }
         },
         "staticRecordTerms": {
+          "unityLightType": 2,
           "record0RgbBits": [
             "0x430C0000",
             "0x42AAF054",

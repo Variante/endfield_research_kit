@@ -24,7 +24,7 @@ namespace EndfieldGraphShaderLab
         public const string DeferredEvidenceSha256 =
             "94fef18cfba11fefc9ec30e2494b6a159716449587b6c46c6780fc1a19a27a3e";
         public const string TransportContractSha256 =
-            "c7ee3e02f07bea3e0c08206de85263d27d1b719eee056e3b3f6feabf67126de8";
+            "05cdde9002ebe8b275e20cb94a132774d198c0f959852c72dd8a55c6fd975c09";
 
         private static readonly string[] RoomRowsStorage =
         {

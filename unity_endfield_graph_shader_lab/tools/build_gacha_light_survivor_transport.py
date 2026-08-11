@@ -119,6 +119,7 @@ def build_contract(
             item["lightPathId"] = source_row["lightPathId"]
             item["candidate"] = candidate
             item["staticRecordTerms"] = {
+                "unityLightType": source_row["unityLightType"],
                 "record0RgbBits": source_row["record0Color"]["record0RgbBits"],
                 "record0WBits": source_row["record0Discriminator"]["record0WBits"],
                 "record1WBits": source_row["record1InverseRange"]["record1WBits"],

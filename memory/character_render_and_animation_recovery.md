@@ -140,6 +140,13 @@ NPC archetypes are imported as labeled source kits.
   rows) into a reusable runtime diagnostic boundary. The transport is gated to
   the canonical perspective 16:9 sample, publishes no shader buffer, and
   explicitly keeps the retail `LightCullResult` pointer/count/rows capture-only.
+  `build_gacha_light_cull_capture_contract.py` now consumes an authorized,
+  binary-pinned capture, reproduces SetupState priority/distance ordering, and
+  bit-matches captured room rows against the eleven authored candidates. It
+  rejects unsupported types, sort ties, ambiguous/duplicate identities, and
+  incomplete selected-room captures; it leaves `PrepareCPUData` record3..7
+  and b31 publication explicitly blocked until their native payload is also
+  captured.
   The same maintained audit now closes
   `AddCullViewByMatrix` from its 16-argument binding through six-plane
   construction and the scheduled view record. The managed screen-size minimum
