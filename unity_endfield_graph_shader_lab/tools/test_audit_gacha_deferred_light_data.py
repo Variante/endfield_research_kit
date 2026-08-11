@@ -632,6 +632,54 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             [0xBFDDB3D7, 0x00000000, 0x40000000, 0x40400000],
         )
 
+    def test_unityplayer_quaternion_euler_boundary(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.QUATERNION_EULER_MANAGED_FILE_OFFSET)
+            managed = stream.read(AUDIT.QUATERNION_EULER_MANAGED_SIZE)
+            stream.seek(AUDIT.QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET)
+            scale_helper = stream.read(AUDIT.QUATERNION_EULER_SCALE_HELPER_SIZE)
+            stream.seek(AUDIT.DEGREES_TO_RADIANS_FILE_OFFSET)
+            degrees_to_radians = stream.read(4)
+        result = AUDIT.validate_quaternion_euler_native(
+            managed,
+            scale_helper,
+            degrees_to_radians,
+            AUDIT.UNITY_PLAYER.read_bytes(),
+        )
+        self.assertEqual(result["icallIndex"], 2489)
+        self.assertEqual(result["degreesToRadiansBits"], "0x3C8EFA35")
+        self.assertEqual(result["halfAngleConstantBits"], "0x3F000000")
+        self.assertEqual(len(result["mathCalls"]), 6)
+
+    def test_changed_quaternion_euler_managed_body_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.QUATERNION_EULER_MANAGED_FILE_OFFSET)
+            managed = bytearray(stream.read(AUDIT.QUATERNION_EULER_MANAGED_SIZE))
+            stream.seek(AUDIT.QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET)
+            scale_helper = stream.read(AUDIT.QUATERNION_EULER_SCALE_HELPER_SIZE)
+            stream.seek(AUDIT.DEGREES_TO_RADIANS_FILE_OFFSET)
+            degrees_to_radians = stream.read(4)
+        managed[0] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=quaternion_euler_managed_body_sha256;.*expected=.*actual=",
+        ):
+            AUDIT.validate_quaternion_euler_native(
+                bytes(managed),
+                scale_helper,
+                degrees_to_radians,
+                AUDIT.UNITY_PLAYER.read_bytes(),
+            )
+
+    def test_quaternion_euler_degrees_to_radians_float32_candidate(self) -> None:
+        radians = AUDIT.unity_quaternion_euler_degrees_to_radians_candidate(
+            [0.0, 90.0, -45.0]
+        )
+        self.assertEqual(
+            [AUDIT.float32_bits(value) for value in radians],
+            [0x00000000, 0x3FC90FDB, 0xBF490FDB],
+        )
+
     def test_native_disabled_distance_falloff_is_one(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.GET_LIGHT_FALLOFF_FILE_OFFSET)
