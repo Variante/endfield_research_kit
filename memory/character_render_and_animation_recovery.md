@@ -525,6 +525,12 @@ NPC archetypes are imported as labeled source kits.
   (castDynamicObjects ? 0x2000 : 0)`, while its patched route is
   `GetPatch(0x887) -> __Gen_Wrap_875`; both runtime wrapper-table entries and
   patched flag returns remain open. The same native body now pins the
+  following `GetECSRenderFlags(0x888)` projection: defaults are object flags /
+  masks `0x08000002` and render flags / masks `0x02080000`; exactly one of the
+  static/dynamic caster outputs adds `0x04000000` to object flags and
+  `0x01000000` to render flags, and the enabled+active HDPLS-character-light
+  path sets object-flags-mask bit 28. Its `__Gen_Wrap_876` route and runtime
+  return values remain open. The same native body now pins the
   transform producer order:
   `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
   `GetPosition` supplies world-space `record1.xyz`; the selected deferred
