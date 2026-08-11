@@ -510,7 +510,12 @@ NPC archetypes are imported as labeled source kits.
   normalization. `PackNormalOctRectEncode` takes the resulting float3 and
   emits the float2 octahedral rectangle encoding. Retail IFix gates are
   `0x77A`, `0x77D`, and `0x77B`; patched-branch return values and target-frame
-  values remain runtime/capture-boundary evidence.
+  values remain runtime/capture-boundary evidence. The pinned SceneLight6Rarity
+  hierarchy and `rotatehouse` transform now recompose all 12 authored room
+  world positions and directions with float32 lane rounding, bit-matching the
+  independent cull-view audit. These are authored static candidates only; they
+  do not replace a retail `LightCullResult` capture or close the final packed
+  `record2.xy` values.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

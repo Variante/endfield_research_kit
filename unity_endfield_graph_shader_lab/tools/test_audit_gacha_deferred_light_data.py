@@ -191,6 +191,57 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_visible_light_transform_helpers(bytes(forward), position, pack)
 
+    def test_authored_room_transform_candidates(self) -> None:
+        cull_view = json.loads(AUDIT.GACHA_CULL_VIEW_AUDIT.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rotatehouse = json.loads(AUDIT.ROTATEHOUSE.read_text(encoding="utf-8"))
+        result = AUDIT.validate_authored_room_transform_candidates(
+            cull_view, hierarchy, rotatehouse
+        )
+        self.assertEqual(result["count"], 12)
+        self.assertEqual(
+            [row["name"] for row in result["rows"]],
+            [
+                "Spot Light (12)",
+                "Spot Light (19)",
+                "Linear Light (12)",
+                "Linear Light (13)",
+                "Linear Light (14)",
+                "Spot Light (17)",
+                "Linear Light (15)",
+                "Spot Light (18)",
+                "Spot Light (9)",
+                "Spot Light (20)",
+                "Spot Light (11)",
+                "Spot Light (10)",
+            ],
+        )
+        self.assertEqual(
+            result["rows"][0]["worldPosition"]["bits"],
+            ["0xC0033333", "0x40CDFBE7", "0xC0975C26"],
+        )
+        self.assertEqual(len(result["rows"][0]["worldForward"]["values"]), 3)
+        self.assertEqual(result["targetFrameValues"], "capture-only; these are authored static candidates, not a retail LightCullResult capture")
+
+    def test_changed_authored_room_transform_fails_closed(self) -> None:
+        cull_view = json.loads(AUDIT.GACHA_CULL_VIEW_AUDIT.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rotatehouse = json.loads(AUDIT.ROTATEHOUSE.read_text(encoding="utf-8"))
+        next(
+            row
+            for row in hierarchy["lights"]
+            if row["name"] == "Spot Light (12)"
+            and row["rarityGroup"] == "SceneLight6Rarity"
+        )["localPosition"]["X"] += 1.0
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=Spot Light \(12\)_authored_world_position_bits; source=.*audit.json; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_authored_room_transform_candidates(
+                cull_view, hierarchy, rotatehouse
+            )
+
     def test_changed_record0_discriminator_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
