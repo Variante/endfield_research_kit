@@ -131,6 +131,27 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_point_shadow_face_pack_native(bytes(body))
 
+    def test_native_point_shadow_cache_index_resolver_contract(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
+            body = stream.read(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_SIZE)
+        result = AUDIT.validate_point_shadow_cache_index_native(body)
+        self.assertEqual(result["dynamicMatchResult"], "dynamicOrdinal + 40 (0x28)")
+        self.assertEqual(result["staticMatchResult"], "PunctualLightCachedShadowDesc.shadowCacheSlotIndex (+0x0C)")
+        self.assertEqual(result["unmatchedResult"], -1)
+        self.assertTrue(result["resolverOutcomeClosed"])
+
+    def test_changed_point_shadow_cache_index_unmatched_return_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_SIZE))
+        body[0xC7] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=point_shadow_cache_index_body_sha256; source=.*GameAssembly.dll; ",
+        ):
+            AUDIT.validate_point_shadow_cache_index_native(bytes(body))
+
     def test_native_point_record_transform_contract(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)

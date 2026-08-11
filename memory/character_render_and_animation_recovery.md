@@ -501,7 +501,13 @@ NPC archetypes are imported as labeled source kits.
   shader sentinel `255`, and packs faces 0..3 into `record2.w` plus faces 4..5
   into the low bytes of `record3.x`. The six target-frame cache-index values
   remain capture-only; this closes the producer packing rule, not their live
-  contents. The same native body now pins the transform producer order:
+  contents. The original `GetShadowCacheIndexForCaster` resolver is now
+  source-closed too: a dynamic-list match returns `40 + dynamicOrdinal`, a
+  static-list match returns `PunctualLightCachedShadowDesc.shadowCacheSlotIndex`
+  at native `+0x0C`, and an unmatched caster returns `-1`; null manager/list
+  state fail-fast. Therefore the `-1 -> 255` mapping is confirmed as the
+  unavailable-cache sentinel, while the six target-frame indices remain
+  capture-only. The same native body now pins the transform producer order:
   `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
   `GetPosition` supplies world-space `record1.xyz`; the selected deferred
   consumer subtracts camera position at read time. The target-frame positions

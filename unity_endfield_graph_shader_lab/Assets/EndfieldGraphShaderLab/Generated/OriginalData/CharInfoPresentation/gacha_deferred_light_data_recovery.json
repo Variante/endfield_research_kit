@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v11",
-  "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v12",
+  "status": "room_record0_record1w_record2z_transform_and_point_shadow_cache_resolver_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
@@ -1311,6 +1311,19 @@
         "method": "HGSharedLightData.get_specularIntensity_Injected"
       }
     ],
+    "pointShadowCacheIndex": {
+      "nativeVirtualAddress": "0x189B486D4",
+      "fileOffset": "0x9B46CD4",
+      "bodySize": 308,
+      "bodySha256": "569216d2b51545da1b7867902e78ff36f9cbcf7f893db66c581481facd9ac622",
+      "dynamicCasterListField": "this + 0x80",
+      "staticCasterListField": "this + 0x38",
+      "dynamicMatchResult": "dynamicOrdinal + 40 (0x28)",
+      "staticMatchResult": "PunctualLightCachedShadowDesc.shadowCacheSlotIndex (+0x0C)",
+      "unmatchedResult": -1,
+      "nullManagerOrCasterList": "fail-fast via 0x1800D8260",
+      "resolverOutcomeClosed": true
+    },
     "additionalLightData": {
       "getLightNprData": {
         "method": "HG.Rendering.Runtime.HGAdditionalLightData.GetLightNPRData",
@@ -1618,6 +1631,19 @@
           "closed": false,
           "requiredCapture": "six target-frame GetShadowCacheIndexForCaster return values"
         }
+      },
+      "pointShadowCacheIndex": {
+        "nativeVirtualAddress": "0x189B486D4",
+        "fileOffset": "0x9B46CD4",
+        "bodySize": 308,
+        "bodySha256": "569216d2b51545da1b7867902e78ff36f9cbcf7f893db66c581481facd9ac622",
+        "dynamicCasterListField": "this + 0x80",
+        "staticCasterListField": "this + 0x38",
+        "dynamicMatchResult": "dynamicOrdinal + 40 (0x28)",
+        "staticMatchResult": "PunctualLightCachedShadowDesc.shadowCacheSlotIndex (+0x0C)",
+        "unmatchedResult": -1,
+        "nullManagerOrCasterList": "fail-fast via 0x1800D8260",
+        "resolverOutcomeClosed": true
       },
       "pointRecordTransform": {
         "calls": [
@@ -5084,6 +5110,7 @@
       "the pinned original scalar-cosine body and exact half-angle scaling close record2.z and record2.w for the one Spot row",
       "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
       "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
+      "GetShadowCacheIndexForCaster is source-closed: dynamic matches return ordinal + 40, static matches return shadowCacheSlotIndex, unmatched casters return -1, and null manager/list state fail-fast",
       "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
       "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
       "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
