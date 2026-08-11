@@ -480,7 +480,14 @@ NPC archetypes are imported as labeled source kits.
   Resolve, and the recovered light-binning bridge now matches its promoted
   source constants. This closes the normal static jitter/input contract only;
   IFix-wrapped history constants, shared-depth overlay scheduling, and settled
-  retail TAA frames remain open.
+  retail TAA frames remain open. The chronology verifier also pins the
+  installed transparent queue selector: low-resolution, pre-refraction,
+  refraction, and all-transparent branches feed the exact queue range, while
+  `CreateTransparentRendererListDesc` preserves world-UI layer removal,
+  culling ratios/mask, renderer configuration, queue range, sorting criteria
+  87, state/material/feedback/motion-vector fields, and IFix targets 2589/1047.
+  This is still source/static evidence; same-queue tie ordering and live IFix
+  replacement remain open.
 - The maintained `audit_taau_history_contract.py` now closes the complementary
   source-backed history/resource ABI. Current retail metadata identifies the
   `TAAUPassConstructor` history fields and methods; the decompiled constructor
