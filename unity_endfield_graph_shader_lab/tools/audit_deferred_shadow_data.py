@@ -6,7 +6,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
+
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from operator_lights_source import load_payload, scoped_sha256
 
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
@@ -73,10 +79,14 @@ EXPECTED_HASHES = {
         "a389af135a196951432d16f1a925f1a9154932b465981703dd6b1ae0fe15939f"
     ),
     "operatorLights": (
-        "706f66b89aa209371df50956e9f1525026ce4a8a1f19a85210fc35d3b2c23ac8"
+        "09fc6f7551170177424d9e1f23d0f7651494182b13c2acd58d9c01c4fedfd0f4"
     ),
 }
 OUTPUT = LAB_ROOT / "scratch/character_recovery/deferred_shadow_data/audit.json"
+
+# Only these actor rows feed the isolated ShadowData fixtures. Other roster
+# additions must not invalidate this audit's source boundary.
+OPERATOR_LIGHT_SCOPE = ("wulfa", "zhuangfy")
 
 
 def sha256(path: Path) -> str:
@@ -105,7 +115,11 @@ def relative(path: Path) -> str:
 def build_audit() -> dict[str, object]:
     hashes: dict[str, str] = {}
     for name, path in SOURCES.items():
-        hashes[name] = sha256(path)
+        hashes[name] = (
+            scoped_sha256(path, OPERATOR_LIGHT_SCOPE)
+            if name == "operatorLights"
+            else sha256(path)
+        )
         require(f"{name}_sha256", hashes[name], EXPECTED_HASHES[name])
 
     shadow_layout = json.loads(
@@ -148,7 +162,7 @@ def build_audit() -> dict[str, object]:
         True,
     )
 
-    lights = json.loads(SOURCES["operatorLights"].read_text(encoding="utf-8"))
+    lights = load_payload(SOURCES["operatorLights"])
     fixtures: dict[str, object] = {}
     for actor, expected_count, expected_type, expected_faces in (
         ("wulfa", 8, 0, 1),
@@ -217,7 +231,15 @@ def build_audit() -> dict[str, object]:
             "sections, and general-scene b34 consumption remain open"
         ),
         "sources": {
-            name: {"path": relative(path), "sha256": hashes[name]}
+            name: {
+                "path": relative(path),
+                "sha256": hashes[name],
+                **(
+                    {"hashScope": {"actors": list(OPERATOR_LIGHT_SCOPE)}}
+                    if name == "operatorLights"
+                    else {}
+                ),
+            }
             for name, path in SOURCES.items()
         },
     }

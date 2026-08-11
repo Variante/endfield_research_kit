@@ -34,6 +34,10 @@ NPC archetypes are imported as labeled source kits.
   CharInfo camera/light/portrait, 25 body UI clips, 27 private-deco clips, and
   external UI controllers are patch-layer data, while her post-model and exact
   Grounder remain in StreamingAssets.
+- Shared `operator_lights.json` now contains the expanded 31-character roster;
+  isolated Wulfa/Zhuangfy ShadowData and Gacha audits hash only the actor rows
+  they consume, so a Liino/roster addition cannot hide a relevant light-data
+  drift or invalidate an unrelated source boundary.
 - The Playable-only native texture payload contract now closes 193 selected
   Texture2D objects over 398 generated GUID owners. Unity validates all 11
   Liino-owned entries byte-for-byte, including compressed mip chains, stable

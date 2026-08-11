@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import struct
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -72,6 +74,19 @@ def native_cull_fixtures() -> tuple[dict, dict, dict, list[dict]]:
 
 
 class GachaLightPopulationAuditTests(unittest.TestCase):
+    def test_operator_light_hash_ignores_unconsumed_roster_rows(self) -> None:
+        payload = json.loads(AUDIT.OPERATOR_LIGHTS.read_text(encoding="utf-8"))
+        payload.setdefault("actors", {}).setdefault("liino", {})[
+            "test_only_marker"
+        ] = "roster-addition"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "operator_lights.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            self.assertEqual(
+                AUDIT.scoped_sha256(path, AUDIT.OPERATOR_LIGHT_SCOPE),
+                AUDIT.EXPECTED_HASHES["operatorLights"],
+            )
+
     def test_installed_resolution_gate(self) -> None:
         result = AUDIT.validate_installed_resolution(
             {
