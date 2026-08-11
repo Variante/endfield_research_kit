@@ -688,6 +688,14 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertEqual(result["candidateRecord"]["sizeBytes"], 12)
         self.assertEqual(result["candidateCoreBody"][0]["sizeBytes"], 0x4E1)
         self.assertEqual(
+            result["resultLifetimeWrapper"]["emptyViewHandle"]["input"],
+            -1,
+        )
+        self.assertIn(
+            "copies converted pointer/count to the hidden sret result",
+            result["resultLifetimeWrapper"]["nonEmptyFlow"],
+        )
+        self.assertEqual(
             result["visibleLightProducer"]["allocationSizeEquation"],
             "inputCount * 0x94",
         )
@@ -750,6 +758,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_visible_light_producer_candidate_vector_to_visible_light_rows_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_native_producer(image)
+
+    def test_changed_unity_native_result_wrapper_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181050FC0 and size == 0x133:
+                data[0x50] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_culling_wrapper_result_lifetime_wrapper_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_native_producer(image)

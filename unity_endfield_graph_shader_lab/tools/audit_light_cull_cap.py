@@ -3175,6 +3175,14 @@ UNITY_CULLING_BODIES = {
     ),
 }
 
+UNITY_CULLING_WRAPPER_BODIES = {
+    "result_lifetime_wrapper": (
+        0x181050FC0,
+        0x133,
+        "5172c0a4b582927e476aca280daa58bff43e47cf22c1ebbcf400a30ab3cc13a4",
+    ),
+}
+
 UNITY_VISIBLE_LIGHT_PRODUCER_BODIES = {
     "candidate_vector_to_visible_light_rows": (
         0x180543CE0,
@@ -7593,6 +7601,27 @@ def validate_unity_native_producer(image: PEImage) -> dict[str, object]:
             }
         )
 
+    wrapper_bodies = []
+    for label, (virtual_address, size_bytes, expected_hash) in (
+        UNITY_CULLING_WRAPPER_BODIES.items()
+    ):
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_culling_wrapper_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        wrapper_bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
     visible_light_producer_bodies = []
     for label, (virtual_address, size_bytes, expected_hash) in (
         UNITY_VISIBLE_LIGHT_PRODUCER_BODIES.items()
@@ -7643,6 +7672,23 @@ def validate_unity_native_producer(image: PEImage) -> dict[str, object]:
             "fields": ["native light pointer (8 bytes)", "camera distanceSquared (4 bytes)"],
         },
         "candidateCoreBody": bodies,
+        "resultLifetimeWrapper": {
+            "virtualAddress": "0x181050FC0",
+            "sizeBytes": 0x133,
+            "emptyViewHandle": {
+                "input": -1,
+                "result": "16 zero bytes at the hidden sret pointer",
+            },
+            "nonEmptyFlow": [
+                "calls the candidate core with a local candidate-pointer vector at [rsp+0x50]",
+                "passes the returned candidate count to 0x180543CE0",
+                "appends the converted row-buffer pointer to manager+0x988 with size +0x998 and capacity +0x9A0",
+                "copies converted pointer/count to the hidden sret result",
+            ],
+            "localVectorCleanup": "0x180129D50 after result publication",
+            "postPublicationCall": "0x180FBF5B0 through manager+0x9B0",
+            "verifiedBodies": wrapper_bodies,
+        },
         "visibleLightProducer": {
             "converterVirtualAddress": "0x180543CE0",
             "inputVector": {
@@ -11762,7 +11808,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v50",
+        "schema": "endfield.recovered-light-cull-cap.v51",
         "status": "component67_managed_tick_host_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
@@ -11771,7 +11817,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "min(survivorCount, cap). Because HGCullingSystem.CullLights already "
             "receives maxCount=256, the desktop settings cap cannot further "
             "truncate that native result. The GameAssembly handoff, UnityPlayer "
-            "native candidate gates, candidate-pointer to VisibleLight row "
+            "native candidate gates, LightCullResult lifetime wrapper, "
+            "candidate-pointer to VisibleLight row "
             "conversion, 16-byte LightCullResult, and 148-byte "
             "VisibleLight capture stride are source-closed. AddCullViewByMatrix "
             "also closes the scheduled view layout and visibility-then-camera-mask "
@@ -12217,7 +12264,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "min survivor/cap final-count rule",
                 "LightClusteringPassConstructor zero-based <=256 row slice, original-row index preservation, post-sort Int32 index handoff, and punctual shadow-preparation consumer",
                 "desktop cap cannot truncate the upstream max-256 cull result",
-                "the unique UnityPlayer CullLightsInternal_Injected binding, complete hash-pinned 0x4E1-byte native candidate core, candidate-vector to 148-byte VisibleLight producer, and native candidate gate chain",
+                "the unique UnityPlayer CullLightsInternal_Injected binding, hash-pinned result/lifetime wrapper, complete hash-pinned 0x4E1-byte native candidate core, candidate-vector to 148-byte VisibleLight producer, and native candidate gate chain",
                 "both GameAssembly DoECSCulling call sites and their exact input/result registers",
                 "the 16-byte LightCullResult pointer/count ABI and NativeArray projection",
                 "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
