@@ -531,6 +531,15 @@ NPC archetypes are imported as labeled source kits.
   `0x01000000` to render flags, and the enabled+active HDPLS-character-light
   path sets object-flags-mask bit 28. Its `__Gen_Wrap_876` route and runtime
   return values remain open. The same native body now pins the
+  `WrappersManagerImpl.IsPatched`/`GetPatch` lookup contract itself: both use
+  the manager singleton at `0x18E28EC48`, follow manager `+0xB8` to the active
+  table, read its entry count at `+0x18`, and use 8-byte entries beginning at
+  `+0x20`. The signed `IsPatched` gate, cold unsigned bounds check, null-entry
+  test, and `GetPatch` pointer load are hash-pinned in the installed
+  `GameAssembly.dll`. This closes table semantics, not live membership:
+  whether entries `0x886/0x887/0x888` are populated and what their wrappers
+  return remains runtime-boundary evidence.
+  The same native body now pins the
   transform producer order:
   `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
   `GetPosition` supplies world-space `record1.xyz`; the selected deferred
