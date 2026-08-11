@@ -151,6 +151,8 @@ def decode_capture(document: Mapping[str, Any]) -> dict[str, Any]:
             16,
             f"capture.result.rows[{index}].localToWorldMatrix",
         )
+        local_to_world_column_2 = local_to_world_matrix[8:12]
+        local_to_world_column_3 = local_to_world_matrix[12:16]
         specular_intensity = _finite_float(
             struct.unpack_from("<f", row, 0x64)[0],
             f"capture.result.rows[{index}].specularIntensity",
@@ -180,6 +182,8 @@ def decode_capture(document: Mapping[str, Any]) -> dict[str, Any]:
                 "lightType": light_type,
                 "finalColor": list(final_color),
                 "localToWorldMatrix": list(local_to_world_matrix),
+                "localToWorldColumn2": list(local_to_world_column_2),
+                "localToWorldColumn3": list(local_to_world_column_3),
                 "specularIntensity": specular_intensity,
                 "priority": priority,
                 "range": light_range,

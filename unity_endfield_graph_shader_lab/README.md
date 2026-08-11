@@ -1540,8 +1540,9 @@ accepts a detached, build-pinned JSON artifact through
 the decoder validates the pointer/null rule, count cap, exact raw-row length,
 the converter-written zero at `VisibleLight+0x84`, and decodes the source-closed
 `finalColor`, `specularIntensity`, and `localToWorldMatrix` fields without
-attaching to the retail process. Converter-unwritten fields such as ScreenRect
-are intentionally not inferred.
+attaching to the retail process. Matrix columns 2 and 3 are also emitted for
+the source-backed `GetForward`/`GetPosition` b31 inputs. Converter-unwritten
+fields such as ScreenRect are intentionally not inferred.
 It now
 also pins internal call 3304 from the 16-argument `AddCullViewByMatrix` binding
 through six-plane extraction and the scheduled view constructor. The physical
