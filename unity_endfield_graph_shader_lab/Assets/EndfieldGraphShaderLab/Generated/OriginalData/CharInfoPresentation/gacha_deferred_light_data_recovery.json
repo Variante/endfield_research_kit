@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v16",
-  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_and_ecs_flags_contract_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v17",
+  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_and_ifix_table_lookup_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
@@ -1324,6 +1324,92 @@
       "nullManagerOrCasterList": "fail-fast via 0x1800D8260",
       "resolverOutcomeClosed": true
     },
+    "ifixWrapperTable": {
+      "managerGlobalSlot": "0x18E28EC48",
+      "managerInitializationField": "+0xE0",
+      "managerTablePointerField": "+0xB8",
+      "tableLayout": {
+        "activeTablePointer": "+0x00 of manager[+0xB8]",
+        "entryCount": "+0x18",
+        "entryArray": "+0x20 + 8 * methodId",
+        "entrySizeBytes": 8
+      },
+      "isPatched": {
+        "virtualAddress": "0x1831068E0",
+        "fileOffset": "0x3104EE0",
+        "sizeBytes": 77,
+        "bodySha256": "48678146c1cbf1cef4ef7bed4718b73df3e74df0f9cf1c827b5dcd4e5fe85692",
+        "coldVirtualAddress": "0x184E35008",
+        "coldFileOffset": "0x4E33608",
+        "coldSizeBytes": 70,
+        "coldBodySha256": "fefa55918137436af9357f114d7eab2296608ddabc34af7ce8a79d57120493d0",
+        "input": "signed int32 methodId in ecx",
+        "outcome": "non-null table entry => true; null/out-of-range/uninitialized => false or fail-fast according to native branch"
+      },
+      "getPatch": {
+        "virtualAddress": "0x189CDC2C0",
+        "fileOffset": "0x9CDA8C0",
+        "sizeBytes": 83,
+        "bodySha256": "026cc13020ea55d8ca602768e0764e672d004b50509eea615e448b8db7fc91fd",
+        "input": "signed int32 methodId in ecx",
+        "outcome": "returns table entry pointer after unsigned count check; invalid bounds fail-fast"
+      },
+      "resolvedBranches": [
+        {
+          "name": "is_patched_init_fallback",
+          "offset": "0x17",
+          "target": "0x18310691F"
+        },
+        {
+          "name": "is_patched_null_table_fail_fast",
+          "offset": "0x26",
+          "target": "0x183106919"
+        },
+        {
+          "name": "is_patched_cold_initialized",
+          "offset": "0x7",
+          "target": "0x184E3501D"
+        },
+        {
+          "name": "is_patched_bounds_ok",
+          "offset": "0x2B",
+          "target": "0x184E3503B"
+        },
+        {
+          "name": "get_patch_initialized",
+          "offset": "0x17",
+          "target": "0x189CDC2E8"
+        },
+        {
+          "name": "get_patch_nonnull_table",
+          "offset": "0x35",
+          "target": "0x189CDC2FD"
+        },
+        {
+          "name": "get_patch_bounds_ok",
+          "offset": "0x40",
+          "target": "0x189CDC308"
+        },
+        {
+          "name": "is_patched_signed_id_gate",
+          "offset": "0x2B",
+          "target": "0x184E35008"
+        },
+        {
+          "name": "is_patched_cold_null_table_fail_fast",
+          "offset": "0x22",
+          "target": "0x183106919"
+        },
+        {
+          "name": "is_patched_entry_null",
+          "offset": "0x39",
+          "target": "0x183106911"
+        }
+      ],
+      "runtimeMembershipStillOpen": true,
+      "runtimeWrapperPointersStillOpen": true,
+      "lookupContractClosed": true
+    },
     "shadowRenderType": {
       "method": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2.GetShadowRenderType",
       "methodIndex": 285595,
@@ -2034,6 +2120,92 @@
         "unmatchedResult": -1,
         "nullManagerOrCasterList": "fail-fast via 0x1800D8260",
         "resolverOutcomeClosed": true
+      },
+      "ifixWrapperTable": {
+        "managerGlobalSlot": "0x18E28EC48",
+        "managerInitializationField": "+0xE0",
+        "managerTablePointerField": "+0xB8",
+        "tableLayout": {
+          "activeTablePointer": "+0x00 of manager[+0xB8]",
+          "entryCount": "+0x18",
+          "entryArray": "+0x20 + 8 * methodId",
+          "entrySizeBytes": 8
+        },
+        "isPatched": {
+          "virtualAddress": "0x1831068E0",
+          "fileOffset": "0x3104EE0",
+          "sizeBytes": 77,
+          "bodySha256": "48678146c1cbf1cef4ef7bed4718b73df3e74df0f9cf1c827b5dcd4e5fe85692",
+          "coldVirtualAddress": "0x184E35008",
+          "coldFileOffset": "0x4E33608",
+          "coldSizeBytes": 70,
+          "coldBodySha256": "fefa55918137436af9357f114d7eab2296608ddabc34af7ce8a79d57120493d0",
+          "input": "signed int32 methodId in ecx",
+          "outcome": "non-null table entry => true; null/out-of-range/uninitialized => false or fail-fast according to native branch"
+        },
+        "getPatch": {
+          "virtualAddress": "0x189CDC2C0",
+          "fileOffset": "0x9CDA8C0",
+          "sizeBytes": 83,
+          "bodySha256": "026cc13020ea55d8ca602768e0764e672d004b50509eea615e448b8db7fc91fd",
+          "input": "signed int32 methodId in ecx",
+          "outcome": "returns table entry pointer after unsigned count check; invalid bounds fail-fast"
+        },
+        "resolvedBranches": [
+          {
+            "name": "is_patched_init_fallback",
+            "offset": "0x17",
+            "target": "0x18310691F"
+          },
+          {
+            "name": "is_patched_null_table_fail_fast",
+            "offset": "0x26",
+            "target": "0x183106919"
+          },
+          {
+            "name": "is_patched_cold_initialized",
+            "offset": "0x7",
+            "target": "0x184E3501D"
+          },
+          {
+            "name": "is_patched_bounds_ok",
+            "offset": "0x2B",
+            "target": "0x184E3503B"
+          },
+          {
+            "name": "get_patch_initialized",
+            "offset": "0x17",
+            "target": "0x189CDC2E8"
+          },
+          {
+            "name": "get_patch_nonnull_table",
+            "offset": "0x35",
+            "target": "0x189CDC2FD"
+          },
+          {
+            "name": "get_patch_bounds_ok",
+            "offset": "0x40",
+            "target": "0x189CDC308"
+          },
+          {
+            "name": "is_patched_signed_id_gate",
+            "offset": "0x2B",
+            "target": "0x184E35008"
+          },
+          {
+            "name": "is_patched_cold_null_table_fail_fast",
+            "offset": "0x22",
+            "target": "0x183106919"
+          },
+          {
+            "name": "is_patched_entry_null",
+            "offset": "0x39",
+            "target": "0x183106911"
+          }
+        ],
+        "runtimeMembershipStillOpen": true,
+        "runtimeWrapperPointersStillOpen": true,
+        "lookupContractClosed": true
       },
       "shadowRenderType": {
         "method": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2.GetShadowRenderType",
@@ -5926,6 +6098,7 @@
       "the patched GetShadowRenderType path is explicitly bounded to WrappersManagerImpl.GetPatch(0x886) and ILFixDynamicMethodWrapper.__Gen_Wrap_874, with missing-patch fail-fast; no runtime wrapper result is inferred",
       "GetRendererConfig method 0x887 is hash-pinned: its unpatched projection is 0x4800 | (castStaticObjects ? 0x1000 : 0) | (castDynamicObjects ? 0x2000 : 0), and its patched path is bounded to __Gen_Wrap_875",
       "GetECSRenderFlags method 0x888 is hash-pinned: it initializes object/render flags, projects exclusive caster results into 0x04000000/0x01000000, and adds objectFlagsMask bit 28 only for the enableHDCharacterShadow + active HDPLS-light path",
+      "WrappersManagerImpl.IsPatched/GetPatch are hash-pinned: the live manager table uses +0xB8 -> active table, +0x18 entry count, and +0x20 + 8*methodId entries, with exact signed/unsigned bounds and null-entry behavior closed",
       "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
       "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
       "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -5937,9 +6110,7 @@
       "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
       "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
       "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
-      "the runtime IsPatched(0x886) wrapper-table membership and any patched GetShadowRenderType return flags remain capture/runtime-boundary evidence",
-      "the runtime IsPatched(0x887) wrapper-table membership and any patched GetRendererConfig flags remain capture/runtime-boundary evidence",
-      "the runtime IsPatched(0x888) wrapper-table membership and any patched GetECSRenderFlags flags remain capture/runtime-boundary evidence",
+      "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
     "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
