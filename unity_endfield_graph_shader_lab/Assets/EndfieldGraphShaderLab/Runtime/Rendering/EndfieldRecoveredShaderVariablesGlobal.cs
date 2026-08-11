@@ -32,7 +32,8 @@ namespace EndfieldGraphShaderLab
                 string value = Environment.GetEnvironmentVariable(Selector);
                 return string.Equals(value, "1", StringComparison.Ordinal) ||
                     string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
+                    string.Equals(value, "on", StringComparison.OrdinalIgnoreCase) ||
+                    EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
             }
         }
 

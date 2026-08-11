@@ -13,6 +13,12 @@ namespace EndfieldGraphShaderLab
     {
         private static readonly int ConstantsId =
             Shader.PropertyToID("VisibilitySHConstData");
+        // The selected original D3D11 resolver reads this same source
+        // payload through register b8.  Keep the exact bridge separate from
+        // the semantic name so the canonical VisibilitySH producer remains
+        // usable by the ordinary lab shaders.
+        private static readonly int ExactDxbcBridgeConstantsId =
+            Shader.PropertyToID("EndfieldCB8");
         private static readonly int ReadyId =
             Shader.PropertyToID("_EndfieldRecoveredVisibilitySHConstDataReady");
 
@@ -52,6 +58,11 @@ namespace EndfieldGraphShaderLab
                     ConstantsId,
                     0,
                     EndfieldRecoveredVisibilitySHConstantsContract.SizeBytes);
+                commandBuffer.SetGlobalConstantBuffer(
+                    buffer,
+                    ExactDxbcBridgeConstantsId,
+                    0,
+                    EndfieldRecoveredVisibilitySHConstantsContract.SizeBytes);
                 commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
                 return true;
             }
@@ -68,6 +79,24 @@ namespace EndfieldGraphShaderLab
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
+            // Do not leave a previous frame's SH rows reachable through the
+            // exact b8 bridge after a failed or disabled publication.  The
+            // buffer is reused to avoid allocating a second zero fixture.
+            if (buffer != null)
+            {
+                Array.Clear(vectors, 0, vectors.Length);
+                buffer.SetData(vectors);
+                commandBuffer.SetGlobalConstantBuffer(
+                    buffer,
+                    ConstantsId,
+                    0,
+                    EndfieldRecoveredVisibilitySHConstantsContract.SizeBytes);
+                commandBuffer.SetGlobalConstantBuffer(
+                    buffer,
+                    ExactDxbcBridgeConstantsId,
+                    0,
+                    EndfieldRecoveredVisibilitySHConstantsContract.SizeBytes);
+            }
         }
 
         public void Dispose()

@@ -65,10 +65,22 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredClusteredNprLightLoop");
         private static readonly int RetailConstantsId =
             Shader.PropertyToID("_LightBinningConstants");
+        // The selected original D3D11 resolver exposes the same 48-byte
+        // LightBinningConstants payload as register b3.  Keep this bridge
+        // beside the semantic name; it is only published when the explicit
+        // recovered transport selector is enabled.
+        private static readonly int ExactDxbcBridgeConstantsId =
+            Shader.PropertyToID("EndfieldCB3");
         private static readonly int RetailConstantsReadyId =
             Shader.PropertyToID("_EndfieldRecoveredLightBinningConstantsReady");
         private static readonly int RetailLightCookieDataId =
             Shader.PropertyToID("_LightCookieData");
+        // The source-closed zero-cookie payload occupies the selected
+        // resolver's register b7 as well as its semantic LightCookieData
+        // name.  The alias is intentionally not used as an active-cookie
+        // claim; non-empty atlas/matrix generation remains open.
+        private static readonly int ExactDxbcBridgeLightCookieDataId =
+            Shader.PropertyToID("EndfieldCB7");
         private static readonly int RetailLightCookieTextureId =
             Shader.PropertyToID("_LightCookie");
         private static readonly int RetailLightCookieDataReadyId =
@@ -118,10 +130,12 @@ namespace EndfieldGraphShaderLab
         {
             retailConstantsRequested =
                 ReadBooleanEnvironment(ConstantsEnvironmentVariable) ||
-                HasCommandLineArgument(ConstantsCommandLineArgument);
+                HasCommandLineArgument(ConstantsCommandLineArgument) ||
+                EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
             retailLightCookieDataRequested =
                 ReadBooleanEnvironment(LightCookieDataEnvironmentVariable) ||
-                HasCommandLineArgument(LightCookieDataCommandLineArgument);
+                HasCommandLineArgument(LightCookieDataCommandLineArgument) ||
+                EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
             canonicalBinningRequested =
                 ReadBooleanEnvironment(CanonicalBinningEnvironmentVariable) ||
                 HasCommandLineArgument(CanonicalBinningCommandLineArgument);
@@ -491,6 +505,11 @@ namespace EndfieldGraphShaderLab
                     RetailConstantsId,
                     0,
                     EndfieldRecoveredLightBinningConstantsContract.SizeBytes);
+                commandBuffer.SetGlobalConstantBuffer(
+                    retailConstantsBuffer,
+                    ExactDxbcBridgeConstantsId,
+                    0,
+                    EndfieldRecoveredLightBinningConstantsContract.SizeBytes);
                 commandBuffer.SetGlobalFloat(RetailConstantsReadyId, 1.0f);
             }
             catch (Exception exception)
@@ -508,7 +527,8 @@ namespace EndfieldGraphShaderLab
                     "source-closed isolated Overview rig: " +
                     $"{data.lightCount} lights, {data.actualWidth}x{data.actualHeight}, " +
                     $"{data.numTilesX}x{data.numTilesY} tiles. This does not claim " +
-                    "the unresolved retail whole-scene survivor list.");
+                    "the unresolved retail whole-scene survivor list; " +
+                    "exact resolver bridge=EndfieldCB3.");
                 loggedConstantsActivation = true;
             }
         }
@@ -569,6 +589,11 @@ namespace EndfieldGraphShaderLab
                     RetailLightCookieDataId,
                     0,
                     EndfieldRecoveredLightCookieDataContract.SizeBytes);
+                commandBuffer.SetGlobalConstantBuffer(
+                    zeroRetailLightCookieDataBuffer,
+                    ExactDxbcBridgeLightCookieDataId,
+                    0,
+                    EndfieldRecoveredLightCookieDataContract.SizeBytes);
                 // The exact resolver skips this texture when every packed
                 // cookie index is -1. A valid black descriptor is therefore
                 // transport-only and cannot affect the source-closed path.
@@ -592,7 +617,7 @@ namespace EndfieldGraphShaderLab
                     $"zero-cookie isolated Overview rig ({sourceClosedLightCount} lights). " +
                     "The exact 2,560-byte binding is zero and _LightCookie is unobserved " +
                     "because every packed cookie index is -1. This does not claim the " +
-                    "retail whole-scene cookie atlas.");
+                    "retail whole-scene cookie atlas; exact resolver bridge=EndfieldCB7.");
                 loggedLightCookieDataActivation = true;
             }
         }
@@ -694,6 +719,11 @@ namespace EndfieldGraphShaderLab
                     RetailConstantsId,
                     0,
                     EndfieldRecoveredLightBinningConstantsContract.SizeBytes);
+                commandBuffer.SetGlobalConstantBuffer(
+                    zeroRetailConstantsBuffer,
+                    ExactDxbcBridgeConstantsId,
+                    0,
+                    EndfieldRecoveredLightBinningConstantsContract.SizeBytes);
             }
             catch (Exception exception)
             {
@@ -716,6 +746,11 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.SetGlobalConstantBuffer(
                     zeroRetailLightCookieDataBuffer,
                     RetailLightCookieDataId,
+                    0,
+                    EndfieldRecoveredLightCookieDataContract.SizeBytes);
+                commandBuffer.SetGlobalConstantBuffer(
+                    zeroRetailLightCookieDataBuffer,
+                    ExactDxbcBridgeLightCookieDataId,
                     0,
                     EndfieldRecoveredLightCookieDataContract.SizeBytes);
                 commandBuffer.SetGlobalTexture(

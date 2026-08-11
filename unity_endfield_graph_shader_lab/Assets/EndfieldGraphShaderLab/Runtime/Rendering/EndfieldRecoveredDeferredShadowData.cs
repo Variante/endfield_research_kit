@@ -44,7 +44,8 @@ namespace EndfieldGraphShaderLab
                     string.Equals(
                         value,
                         "on",
-                        StringComparison.OrdinalIgnoreCase);
+                        StringComparison.OrdinalIgnoreCase) ||
+                    EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
             }
         }
 
