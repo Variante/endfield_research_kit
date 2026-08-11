@@ -62,7 +62,7 @@ Pass `--no-serve` to build without starting the server.
 .\export.bat
 
 :: Refresh Story and assets from the installed game
-.\export.bat --export-from-game --with-assets
+.\export.bat --from-game --with-assets
 
 :: Fast Story/Mission Pipeline recovery loop
 .\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
@@ -74,7 +74,7 @@ Pass `--no-serve` to build without starting the server.
 .\export_assets.bat
 
 :: Refresh assets and CN audio from the installed game
-.\export_assets.bat --export-from-game
+.\export_assets.bat --from-game
 
 :: Serve or package the WebUI
 python serve.py
@@ -82,14 +82,15 @@ python serve.py
 ```
 
 `export.bat` reuses `export_full/` by default and verifies it against the
-installed client. Use `--export-from-game` only for an intentional fresh
+installed client. Use `--from-game` only for an intentional fresh
 extraction. Asset export modes are `--focused-assets`, `--default-assets`, and
-`--debug-assets`; use `--animestudio-jobs N` to reduce peak memory.
+`--debug-assets`; use `--asset-jobs N` to reduce peak memory. Every wrapper
+takes `--help`.
 
 Audio served by the WebUI is lossless FLAC by default. `export_assets.bat` (or
-`export.bat --with-assets`) converts decoded WAV audio and relinks generated
-Story/Gameplay data; the conversion requires `ffmpeg` when WAV files are
-present.
+`export.bat --with-assets`) asks AnimeStudio to encode FLAC directly and relinks
+generated Story/Gameplay data. Normal audio export does not create intermediate
+WAV files or require `ffmpeg`.
 
 To build more languages:
 
@@ -101,10 +102,10 @@ python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 
 ```bat
 :: First export: create an empty Updates feed
-.\build_updates.bat --init-build
+.\build_updates.bat --first-time
 
-:: Seed installed-game VFS change detection
-.\build_updates_by_patch.bat --init-baseline
+:: Record the installed version, so later patches can be detected
+.\build_updates_by_patch.bat --first-time
 
 :: Detect, stage, publish, and report a game update
 .\build_updates_by_patch.bat
@@ -112,9 +113,12 @@ python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 :: Detection only
 .\build_updates_by_patch.bat --check
 
-:: Compare two complete extracted versions
-.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline
+:: Compare two complete extracted versions, old folder first
+.\build_updates.bat OLD NEW
 ```
+
+Both scripts read the folders in `endfield_paths.bat`, so the usual commands
+take no arguments. Run either with `--help` for the full option list.
 
 Updates compare exported game-data roots. Local changes under `webui/`,
 `reports/`, `memory/`, or `scratch/` are never game-data updates.
@@ -138,6 +142,22 @@ Current counts and evidence breakdowns live in
 and [`reports/mission_order/source_story_partial_order_CN.md`](reports/mission_order/source_story_partial_order_CN.md).
 Stable conclusions and the recovery queue live in
 [`memory/game_story_recovery.md`](memory/game_story_recovery.md).
+
+### Game data and combat
+
+- The shipped stock-client damage, defense, elemental resistance, critical,
+  healing, poise, and shield paths are recovered from the binary, IL2CPP
+  metadata, and authored tables.
+- Skills resolve as phased action graphs and DamageUnits; buffs compose
+  modifiers, shields, tags, stacking rules, events, actions, and child buffs.
+- Enemy level controls contain only exact authored points. Variants share raw
+  HP/ATK/DEF curves only when they reference the same attribute template; their
+  buffs and modifiers can still differ.
+- Active IFix patches, server corrections, and live target/branch/blackboard
+  selection remain explicit evidence boundaries.
+
+See [`memory/game_data_recovery.md`](memory/game_data_recovery.md) for the
+formula overview and current recovery limits.
 
 ### Character models and animation
 

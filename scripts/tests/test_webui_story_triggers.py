@@ -152,6 +152,29 @@ for (const [key, category] of [
         self.assertIn("nativeCinematicProducerRouteAttachments", source)
         self.assertIn("route.sourceFiles", source)
 
+    def test_mission_pipeline_labels_nearest_quest_as_spatial_context(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn(
+            'cluster.sourceKind !== "exact_world_entity_interaction_trigger"',
+            source,
+        )
+        self.assertIn("Math.sqrt(dx * dx + dy * dy + dz * dz)", source)
+        self.assertIn('t("spatialNearestQuest")', source)
+        self.assertIn('t("spatialProximityOnly")', source)
+        self.assertIn(
+            "spatial context only; not quest ownership or Story order",
+            source,
+        )
+
+    def test_mission_pipeline_folds_and_separates_weak_spatial_evidence(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("track.inheritedSpatialSourceMatches", source)
+        self.assertIn('sourceKind: "direct_levelscript_spatial_proximity"', source)
+        self.assertIn("rows.slice(1)", source)
+        self.assertIn('t("spatialAlternateWeakPositionsHint")', source)
+        self.assertIn('t("spatialInheritedWeakPositionsHint")', source)
+        self.assertIn("for (const key of exactPositionedKeys) cluster.files.delete(key)", source)
+
     def test_mission_pipeline_labels_pattern_discovered_dialog_definitions(
         self,
     ) -> None:
@@ -500,3 +523,15 @@ for (const [key, category] of [
         self.assertIn("route.connectionIndexSource", source)
         self.assertIn("...(row.consumerSourceFiles || [])", source)
         self.assertIn("${recoveredOptionRoutes}", source)
+
+    def test_mission_pipeline_maps_exact_world_entity_event_positions(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("manifest[key]?.runtimeContextRecovery", source)
+        self.assertIn("overlay[key]?.runtimeContextRecovery", source)
+        self.assertIn("connection.producerEntities", source)
+        self.assertIn(
+            "exact_unique_world_entity_registry_script_slot",
+            source,
+        )
+        self.assertIn("exact_world_entity_event_trigger", source)
+        self.assertIn('t("spatialExactWorldEntityTrigger")', source)

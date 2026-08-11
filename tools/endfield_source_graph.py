@@ -3114,12 +3114,12 @@ class SourceGraphBuilder:
                 key TEXT PRIMARY KEY,
                 value TEXT
             );
+            -- The UNIQUE indexes already begin with edges.src and aliases.alias,
+            -- so separate one-column indexes would duplicate millions of entries.
             CREATE INDEX idx_nodes_kind ON nodes(kind);
             CREATE INDEX idx_nodes_name ON nodes(name);
-            CREATE INDEX idx_edges_src ON edges(src);
             CREATE INDEX idx_edges_dst ON edges(dst);
             CREATE INDEX idx_edges_kind ON edges(kind);
-            CREATE INDEX idx_aliases_alias ON aliases(alias);
             CREATE INDEX idx_files_kind ON files(kind);
             """
         )
@@ -28162,20 +28162,34 @@ class SourceGraphBuilder:
         elif table == "AudioDialog" and isinstance(row, dict):
             path = safe_key(row.get("path"))
             audio_key = Path(path).stem if path else row_key
+            audio_data = {
+                "id": row_key,
+                "speaker": row.get("speakerChannel"),
+                "duration": row.get("wavDuration"),
+                "path": path,
+                "voType": row.get("voType"),
+                "codec": row.get("codec"),
+            }
             audio_node = self.add_node(
                 "audio",
                 audio_key,
                 name=audio_key,
                 source="AudioDialog",
                 path=path,
-                data={
-                    "id": row_key,
-                    "speaker": row.get("speakerChannel"),
-                    "duration": row.get("wavDuration"),
-                    "path": path,
-                    "voType": row.get("voType"),
-                    "codec": row.get("codec"),
-                },
+                data=audio_data,
+            )
+            # WebUI Story is ingested before structured AudioDialog rows.  A
+            # Story line therefore creates the same audio node from its
+            # authored id first; INSERT OR IGNORE does not fill in the later
+            # path/data.  Update the authoritative AudioDialog details so
+            # existing path-backed voice is visible to Story/source-graph
+            # joins without inventing a second audio node.
+            self.update_node_details(
+                audio_node,
+                name=audio_key,
+                source="AudioDialog",
+                path=path or None,
+                data=audio_data,
             )
             self.add_edge(row_node, audio_node, "defines_audio", source="AudioDialog")
             if row.get("speakerChannel"):
@@ -29504,6 +29518,57 @@ def parse_json_text(data: Any) -> dict[str, Any]:
         return {}
 
 
+def classify_story_audio_reference(
+    audio_id: str,
+    audio_source: str | None,
+    owner_kinds: Iterable[str],
+    has_wwise_media: bool,
+) -> dict[str, Any]:
+    """Classify a pathless Story audio reference without calling it missing media.
+
+    The graph can prove several different things about a pathless audio id.  A
+    table owner proves the id is used by a native data row, while a Wwise event
+    plus media proves a candidate playback asset.  Neither proof is the same
+    as an AudioDialog path-backed voice link, so the follow-up report keeps the
+    classes separate.
+    """
+    normalized_id = safe_key(audio_id)
+    family = "other"
+    if normalized_id == "#N/A":
+        family = "placeholder"
+    else:
+        for prefix, prefix_family in (
+            ("au_dlg_", "dialog_voice"),
+            ("au_envTalk", "environment_talk"),
+            ("au_radio_", "radio"),
+            ("au_sim", "simulation"),
+            ("au_envEmoji", "environment_emoji"),
+            ("au_sfx_", "sfx"),
+            ("au_sr_", "system_response"),
+            ("au_charGiftTalkid", "character_gift_talk"),
+        ):
+            if normalized_id.startswith(prefix):
+                family = prefix_family
+                break
+
+    owner_values = sorted({safe_key(value) for value in owner_kinds if safe_key(value)})
+    if family == "placeholder":
+        evidence_class = "placeholder"
+    elif has_wwise_media:
+        evidence_class = "wwise_event_media_candidate"
+    elif safe_key(audio_source) == "AudioDialog":
+        evidence_class = "audio_dialog_row_without_path"
+    elif owner_values:
+        evidence_class = "owner_table_without_path"
+    else:
+        evidence_class = "no_path_or_owner_evidence"
+    return {
+        "family": family,
+        "evidenceClass": evidence_class,
+        "ownerKinds": owner_values,
+    }
+
+
 def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
     story_rows = conn.execute(
         """
@@ -29514,6 +29579,7 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
             audio.id AS audioNode,
             audio.name AS audioId,
             audio.path AS audioPath,
+            audio.source AS audioSource,
             audio.data AS audioData
         FROM edges e
         JOIN nodes line ON line.id = e.src
@@ -29522,8 +29588,123 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
         ORDER BY line.name
         """
     ).fetchall()
+    unresolved_audio_nodes = {
+        safe_key(row["audioNode"])
+        for row in story_rows
+        if not (parse_json_text(row["audioData"]).get("path") or row["audioPath"])
+    }
+    owner_rows = conn.execute(
+        """
+        SELECT e.src AS audioNode, owner.kind AS ownerKind
+        FROM edges e
+        JOIN nodes audio ON audio.id = e.src AND audio.kind = 'audio'
+        JOIN nodes owner ON owner.id = e.dst
+        WHERE e.kind LIKE 'audio_used_by_%%'
+          AND owner.kind NOT IN ('audio', 'file', 'line')
+          AND COALESCE(audio.path, '') = ''
+          AND e.src IN (%s)
+        ORDER BY e.src, owner.kind
+        """ % ",".join("?" for _ in unresolved_audio_nodes),
+        tuple(sorted(unresolved_audio_nodes)),
+    ).fetchall() if unresolved_audio_nodes else []
+    owner_kinds_by_audio: defaultdict[str, set[str]] = defaultdict(set)
+    for row in owner_rows:
+        owner_kinds_by_audio[safe_key(row["audioNode"])].add(safe_key(row["ownerKind"]))
+
+    wwise_event_rows = conn.execute(
+        """
+        SELECT
+            audio.id AS audioNode,
+            event.id AS eventNode,
+            event.name AS eventName,
+            edge.kind AS edgeKind,
+            edge.evidence AS edgeEvidence
+        FROM edges edge
+        JOIN nodes audio ON audio.id = edge.src AND audio.kind = 'audio'
+        JOIN nodes event ON event.id = edge.dst AND event.kind = 'wwise_event'
+        WHERE edge.kind = 'audio_id_matches_wwise_event'
+          AND COALESCE(audio.path, '') = ''
+          AND audio.id IN (%s)
+        UNION ALL
+        SELECT
+            audio.id AS audioNode,
+            event.id AS eventNode,
+            event.name AS eventName,
+            edge.kind AS edgeKind,
+            edge.evidence AS edgeEvidence
+        FROM edges edge
+        JOIN nodes event ON event.id = edge.src AND event.kind = 'wwise_event'
+        JOIN nodes audio ON audio.id = edge.dst AND audio.kind = 'audio'
+        WHERE edge.kind = 'wwise_event_matches_audio_id'
+          AND COALESCE(audio.path, '') = ''
+          AND audio.id IN (%s)
+        ORDER BY audioNode, eventName, edgeEvidence
+        """ % (",".join("?" for _ in unresolved_audio_nodes), ",".join("?" for _ in unresolved_audio_nodes)),
+        tuple(sorted(unresolved_audio_nodes)) + tuple(sorted(unresolved_audio_nodes)),
+    ).fetchall() if unresolved_audio_nodes else []
+    wwise_events_by_audio: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    event_nodes: set[str] = set()
+    for row in wwise_event_rows:
+        event_node = safe_key(row["eventNode"])
+        event_nodes.add(event_node)
+        audio_events = wwise_events_by_audio[safe_key(row["audioNode"])]
+        record = next((item for item in audio_events if item["eventNode"] == event_node), None)
+        if record is None:
+            record = {
+                "eventName": row["eventName"],
+                "eventNode": event_node,
+                "edgeKinds": [],
+                "evidence": [],
+            }
+            audio_events.append(record)
+        if row["edgeKind"] not in record["edgeKinds"]:
+            record["edgeKinds"].append(row["edgeKind"])
+        if row["edgeEvidence"] and row["edgeEvidence"] not in record["evidence"]:
+            record["evidence"].append(row["edgeEvidence"])
+
+    wwise_media_rows = conn.execute(
+        """
+        SELECT
+            edge.src AS eventNode,
+            media.id AS mediaNode,
+            media.name AS mediaId,
+            media.data AS mediaData,
+            edge.evidence AS edgeEvidence
+        FROM edges edge
+        JOIN nodes event ON event.id = edge.src AND event.kind = 'wwise_event'
+        JOIN nodes media ON media.id = edge.dst AND media.kind = 'wwise_media'
+        WHERE edge.kind = 'wwise_event_uses_media'
+          AND edge.src IN (%s)
+        ORDER BY eventNode, mediaId, edgeEvidence
+        """ % ",".join("?" for _ in event_nodes),
+        tuple(sorted(event_nodes)),
+    ).fetchall() if event_nodes else []
+    wwise_media_by_event: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in wwise_media_rows:
+        media_data = parse_json_text(row["mediaData"])
+        event_media = wwise_media_by_event[safe_key(row["eventNode"])]
+        record = next(
+            (item for item in event_media if item["mediaNode"] == row["mediaNode"]),
+            None,
+        )
+        if record is None:
+            record = {
+                "mediaId": row["mediaId"],
+                "mediaNode": row["mediaNode"],
+                "evidence": [],
+                "audioScope": media_data.get("audioScope"),
+                "format": media_data.get("format"),
+            }
+            event_media.append(record)
+        if row["edgeEvidence"] and row["edgeEvidence"] not in record["evidence"]:
+            record["evidence"].append(row["edgeEvidence"])
+
     story_linked = []
     story_unresolved = []
+    story_unresolved_by_family: Counter[str] = Counter()
+    story_unresolved_by_class: Counter[str] = Counter()
+    story_unresolved_by_owner: Counter[str] = Counter()
+    story_wwise_media_candidates: list[dict[str, Any]] = []
     for row in story_rows:
         line_data = parse_json_text(row["lineData"])
         audio_data = parse_json_text(row["audioData"])
@@ -29540,6 +29721,28 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
         if record["audioPath"]:
             story_linked.append(record)
         else:
+            audio_node = safe_key(row["audioNode"])
+            wwise_events = wwise_events_by_audio.get(audio_node, [])
+            wwise_media = [
+                media
+                for event in wwise_events
+                for media in wwise_media_by_event.get(safe_key(event["eventNode"]), [])
+            ]
+            classification = classify_story_audio_reference(
+                row["audioId"],
+                row["audioSource"],
+                owner_kinds_by_audio.get(audio_node, set()),
+                bool(wwise_media),
+            )
+            record.update(classification)
+            record["wwiseEvents"] = wwise_events
+            record["wwiseMedia"] = wwise_media
+            story_unresolved_by_family[classification["family"]] += 1
+            story_unresolved_by_class[classification["evidenceClass"]] += 1
+            for owner_kind in classification["ownerKinds"]:
+                story_unresolved_by_owner[owner_kind] += 1
+            if wwise_media and len(story_wwise_media_candidates) < 5000:
+                story_wwise_media_candidates.append(record)
             story_unresolved.append(record)
 
     path_rows = conn.execute(
@@ -29591,12 +29794,17 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
             "pathBackedUsageLinks": len(path_rows),
             "pathBackedUniqueAudio": len(path_audio_ids),
             "storyAudioIdsAlsoPathBacked": len(story_audio_ids & path_audio_ids),
+            "storyLineUnresolvedByFamily": dict(sorted(story_unresolved_by_family.items())),
+            "storyLineUnresolvedByEvidenceClass": dict(sorted(story_unresolved_by_class.items())),
+            "storyLineUnresolvedOwnerKinds": dict(sorted(story_unresolved_by_owner.items())),
+            "storyWwiseMediaCandidates": len(story_wwise_media_candidates),
         },
         "pathBackedUsageByEdge": dict(sorted(path_edge_counts.items())),
         "pathBackedUsageByOwnerKind": dict(sorted(path_owner_counts.items())),
         "pathBackedLinks": path_backed_links,
         "storyLineLinks": story_linked[:5000],
         "storyLineUnresolvedExamples": story_unresolved[:500],
+        "storyWwiseMediaCandidates": story_wwise_media_candidates,
     }
     (GRAPH_DIR / "voice_audio_links.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     lines = [
@@ -29622,6 +29830,30 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
             )
     else:
         lines.append("No path-backed audio usage links found.")
+    lines.extend(["", "## Unresolved Story Audio By Evidence Class", ""])
+    for evidence_class, count in sorted(story_unresolved_by_class.items(), key=lambda item: (-item[1], item[0])):
+        lines.append(f"- `{evidence_class}`: `{count}`")
+    lines.extend(["", "## Unresolved Story Audio By Family", ""])
+    for family, count in sorted(story_unresolved_by_family.items(), key=lambda item: (-item[1], item[0])):
+        lines.append(f"- `{family}`: `{count}`")
+    if story_wwise_media_candidates:
+        lines.extend(["", "## Story Wwise Media Candidates", ""])
+        lines.append("These are exact Story-audio-id-to-Wwise-event joins with a Wwise media edge. They are candidate event/media links, not AudioDialog voice paths.")
+        lines.append("")
+        lines.append("| Line | Audio | Event | Media | Evidence |")
+        lines.append("| --- | --- | --- | --- | --- |")
+        for item in story_wwise_media_candidates[:80]:
+            for event in item.get("wwiseEvents") or []:
+                media_values = [
+                    media for media in item.get("wwiseMedia") or []
+                    if media.get("mediaNode") in {
+                        value.get("mediaNode") for value in wwise_media_by_event.get(safe_key(event.get("eventNode")), [])
+                    }
+                ]
+                for media in media_values:
+                    lines.append(
+                        f"| `{item['lineId']}` | `{item['audioId']}` | `{event.get('eventName') or ''}` | `{media.get('mediaId') or ''}` | `{', '.join(media.get('evidence') or event.get('evidence') or [])}` |"
+                    )
     lines.append("")
     (GRAPH_DIR / "voice_audio_links.md").write_text("\n".join(lines), encoding="utf-8")
 

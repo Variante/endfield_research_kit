@@ -66,6 +66,12 @@ Important options:
 CLI process. A consumer must reject a missing/non-terminal summary or
 `complete=false`, and must globally uniqueness-check every external CAB
 filename plus PathID before accepting a runtime-resolved external PPtr.
+When the index is enabled for MonoBehaviour or PlayableDirector JSON, the CLI
+also parses GameObject and Transform dependencies without exporting them.
+Component object rows may then include `sceneContext`: exact GameObject and
+Transform identities, hierarchy path, local/world position, and a
+`worldPositionStatus`. Only `exact_transform_hierarchy` is a complete world
+position; unresolved parents, cycles, and depth limits remain explicit gaps.
 
 For a complete Story/all wrapper run, pass `--animestudio-object-index`
 directly to `scripts\export_full_from_game.py`. Relevant MonoBehaviour and
@@ -104,7 +110,7 @@ The CLI also exposes the Endfield VFS subcommands used by the WebUI pipeline:
 ```bat
 AnimeStudio.CLI.exe dump --streaming-assets path\to\StreamingAssets --output export_full\structured\StreamingAssets --fallback-assets path\to\Persistent --block-type table --block-type json-data
 AnimeStudio.CLI.exe dump --streaming-assets path\to\Persistent --output export_full\structured\Persistent --fallback-assets path\to\StreamingAssets --block-type table --block-type json-data
-AnimeStudio.CLI.exe audio --streaming-assets path\to\StreamingAssets --output export_full\structured\Audio\CN --language chinese --format wav --block all
+AnimeStudio.CLI.exe audio --streaming-assets path\to\StreamingAssets --output export_full\structured\Audio\CN --language chinese --block all
 AnimeStudio.CLI.exe stream --streaming-assets path\to\StreamingAssets --block-type audio --file-regex banks\.pck
 AnimeStudio.CLI.exe vfs-index --streaming-assets path\to\StreamingAssets --output export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\bundle_vfs_index.json --block-type bundle
 AnimeStudio.CLI.exe vfs-index --jsonl --streaming-assets path\to\StreamingAssets --output tmp\updates\source_scan\streaming.jsonl
@@ -116,6 +122,9 @@ AnimeStudio.CLI.exe list
 `--file-regex` filters. The fallback is consulted for `.blc` block metadata and
 `.chk` payloads; the WebUI wrapper configures StreamingAssets and Persistent as
 sibling fallbacks in both directions. `stream` writes matching file payloads as JSONL base64.
+The `audio` command defaults to direct lossless FLAC through the in-process
+CUETools FLAKE encoder. Use `--format wav` or `--format wem` only when that
+compatibility output is explicitly required.
 `vfs-index --jsonl` writes compact streaming metadata records while its default
 output remains the existing JSON document.
 `list` prints the known dumpable VFS block types. The WebUI wrappers default to this same
@@ -126,7 +135,7 @@ scripts\export_full_from_game.py  DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDI
 scripts\build_audio.py            DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 ```
 
-`export_assets.bat --export-from-game` writes the lightweight bundle VFS index
+`export_assets.bat --from-game` writes the lightweight bundle VFS index
 through `vfs-index`, then decodes CN audio through `audio` before relinking
 browser conversations.
 
@@ -138,7 +147,7 @@ the cloned staging export rather than claiming unsafe per-output ownership.
 
 ## Wrapper Integration
 
-`export.bat --export-from-game` calls:
+`export.bat --from-game` calls:
 
 ```bat
 python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type
@@ -157,8 +166,42 @@ coverage.
 Pass an optional usable DummyDll folder to the story JSON export with:
 
 ```bat
-.\export.bat --export-from-game --animestudio-dummy-dlls path\to\DummyDll
+.\export.bat --from-game --animestudio-dummy-dlls path\to\DummyDll
 ```
+
+Generate or refresh the preferred repo-local folder with:
+
+```bat
+python scripts\animestudio\generate_dummydll.py --dry-run
+python scripts\animestudio\generate_dummydll.py --replace
+```
+
+The generator uses the installed `GameAssembly.dll` and matching
+`global-metadata.dat`; matches the complete metadata image set to exactly one
+Unity 2021 x64 CodeRegistration module table; derives the nearby
+MetadataRegistration from the registration call site; and rejects missing,
+ambiguous, or pointer-invalid results. The addresses are build-specific and
+must never be copied from an earlier patch.
+
+It prepares a local Cpp2IL `2022.0.7` checkout with the maintained
+`scripts/animestudio/cpp2il-2022.0.7-endfield.patch`. That patch tolerates
+Endfield's malformed packing/type relationships, skips bad images/types rather
+than aborting the whole set, makes `--suppress-attributes` cover attribute
+restoration, and accepts the generator's validated registration environment
+overrides without interactive prompts. Raw work stays under
+`tmp/animestudio/dummydll/` on failure or with `--keep-work-dir`.
+
+Before publication, every generated DLL name must exactly match the DLL images
+in metadata and each file must be a managed PE. Publication is atomic;
+`--replace` moves the previous folder to a timestamped sibling. The resulting
+`generation.json` records both source hashes, registration summaries, Cpp2IL
+and patch provenance, per-DLL hashes, and malformed-image/type skip counts.
+
+DummyDlls supply names, inheritance, and serialized field shapes, not original
+method implementations. A loaded assembly does not prove a particular type was
+emitted. Search the generated assembly for the resolved `scriptFullName` before
+expecting `Studio.MonoBehaviourToTypeTree` to help, and compare a focused
+serialized-first control with script-first output before changing defaults.
 
 The wrapper checks explicit DummyDll paths, then falls back to
 `ANIMESTUDIO_DUMMY_DLLS`, then known local locations such as `tools\DummyDll`.
@@ -166,7 +209,7 @@ It only forwards AnimeStudio.CLI `--dummy_dlls` when the selected directory
 exists and contains `.dll` files. Missing or stale DummyDll paths warn and
 continue without DummyDlls instead of failing the export.
 
-`export_assets.bat --export-from-game` defaults to the default asset mode:
+`export_assets.bat --from-game` defaults to the default asset mode:
 
 ```bat
 python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode default --animestudio-stages maps convert_by_type json_by_type
@@ -362,14 +405,14 @@ For parser or exporter edits:
 
 ```bat
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
-.\export.bat --export-from-game --animestudio-jobs 4 --animestudio-refresh-types StreamingAssets:json_by_type:MonoBehaviour
+.\export.bat --from-game --asset-jobs 4 --animestudio-refresh-types StreamingAssets:json_by_type:MonoBehaviour
 ```
 
 For asset conversion edits:
 
 ```bat
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
-.\export_assets.bat --export-from-game --animestudio-jobs 4 --animestudio-refresh-types StreamingAssets:convert_by_type:Texture2D
+.\export_assets.bat --from-game --asset-jobs 4 --animestudio-refresh-types StreamingAssets:convert_by_type:Texture2D
 ```
 
 Lower `--animestudio-jobs` if the targeted run exceeds available memory.

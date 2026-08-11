@@ -9,7 +9,6 @@ from pack_webui import (
     collect_inline_image_ids,
     collect_wiki_media_image_ids,
     collect_wiki_video_refs,
-    load_asset_index,
     resolve_exact_image_assets,
     resolve_exact_video_asset,
     resolve_inline_image_assets,
@@ -115,7 +114,3 @@ def write_story_media_payload(payload: dict) -> dict:
     return story_media_stats(payload, story_media_path)
 
 
-def write_story_media_index(asset_index_path: Path, video_index_path: Path) -> dict:
-    asset_payload = load_asset_index(asset_index_path)
-    video_payload = load_asset_index(video_index_path)
-    return write_story_media_payload(build_story_media_payload(asset_payload, video_payload))

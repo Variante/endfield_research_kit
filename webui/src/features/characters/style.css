@@ -74,6 +74,17 @@
   margin-bottom: 0;
 }
 
+.characters-sort-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+#characters-sort-direction {
+  width: auto;
+  min-width: 96px;
+}
+
 .characters-range-value {
   color: var(--text);
   font-size: .78rem;

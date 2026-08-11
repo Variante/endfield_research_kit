@@ -90,7 +90,7 @@ def main() -> int:
         roots = ", ".join(str(path) for path in REQUIRED_SOURCE_LINK_ROOTS)
         print(
             "[story-evidence] missing Story source roots; refusing to overwrite evidence. "
-            "Run .\\export.bat --export-from-game to refresh export_full first.",
+            "Run .\\export.bat --from-game to refresh export_full first.",
             file=sys.stderr,
         )
         print(f"[story-evidence] checked roots: {roots}", file=sys.stderr)

@@ -1572,7 +1572,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v130",
+            "sourceStoryGapQueue.v132",
         )
 
     def test_trigger_route_preserves_exact_connected_context_evidence(self):
@@ -1691,6 +1691,54 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("actual={'schemaVersion': 15}", message)
         self.assertIn("source=reports/fixture.json", message)
 
+    def test_gap_queue_refresh_reports_hash_mismatch_values_and_source(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "source_story_gap_queue_CN.json"
+            queue_path.write_text(
+                json.dumps({
+                    "_schema": pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+                    "language": "CN",
+                    "questAttachmentDiagnosticEvidence": {
+                        "status": "inactive_source_validation_failed",
+                        "validationFailures": [],
+                        "sourceHashMismatches": ["gameplayConfig:Registry"],
+                        "sourceHashes": {
+                            "gameplayConfig:Registry": "actual-sha",
+                        },
+                        "expectedSourceHashes": {
+                            "gameplayConfig:Registry": "expected-sha",
+                        },
+                        "sourcePaths": {
+                            "gameplayConfig:Registry":
+                                "export_full/structured/Registry.json",
+                        },
+                    },
+                }),
+                encoding="utf-8",
+            )
+            with patch.object(
+                pipeline.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess([], 0),
+            ):
+                with self.assertRaises(RuntimeError) as raised:
+                    pipeline.refresh_source_story_gap_queue(
+                        "CN",
+                        queue_path,
+                    )
+
+        message = str(raised.exception)
+        self.assertIn(
+            "validator=report.questAttachmentDiagnosticEvidence",
+            message,
+        )
+        self.assertIn("expected=expected-sha", message)
+        self.assertIn("actual=actual-sha", message)
+        self.assertIn(
+            "source=export_full/structured/Registry.json",
+            message,
+        )
+
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
             queue_path = Path(temporary) / "gap_queue.json"
@@ -1773,6 +1821,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "orderBoundary": "selection does not order files",
                         }],
                         "closedExactNativeIsolatedScenes": [{
+                            "sceneKey": "text_testm1_exact",
+                            "recoveryStatus":
+                                "exact_current_build_interaction_trigger_recovered",
+                            "evidenceKind":
+                                "reading_popup_world_entity_interaction_trigger",
+                            "activationStatus":
+                                "exact_world_entity_interaction_trigger",
+                            "worldEntityInteractionTriggers": [{
+                                "scriptIdGlobal": "8700020018",
+                                "entitySlotId": 40001,
+                                "position": {"x": 1, "y": 2, "z": 3},
+                            }],
+                            "graphEffect": "none",
+                        }, {
                             "sceneKey": "dlg_testm1_reachable",
                             "missionId": "testm1",
                             "questId": "testm1_q#3",
@@ -2058,8 +2120,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
         self.assertEqual(result["publishedPartialStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 17)
-        self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 18)
+        self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 4)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
             "definition_only_no_consumer",
@@ -2186,6 +2248,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             ],
             ["testm1", "testm2"],
         )
+        exact_interaction = result["storyTriggerManifestOverlay"][
+            "text_testm1_exact"
+        ]["runtimeContextRecovery"]
+        self.assertEqual(
+            exact_interaction["activationStatus"],
+            "exact_world_entity_interaction_trigger",
+        )
+        self.assertEqual(
+            exact_interaction["worldEntityInteractionTriggers"][0][
+                "entitySlotId"
+            ],
+            40001,
+        )
+        self.assertEqual(exact_interaction["graphEffect"], "none")
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])
         self.assertEqual(
@@ -2438,6 +2514,73 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(shell["storyOrder"]["branches"]["nativeControlBranches"], [{"id": "branch-1"}])
         self.assertEqual(shell["storyOrder"]["sourceGapQueue"], gap)
         self.assertTrue(shell["mission"]["offlineRecoveryShell"])
+
+    def test_story_order_attachment_publishes_compact_gap_classification(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mission_root = root / "missions"
+            mission_root.mkdir()
+            pipeline.write_json(mission_root / "mission_a.json", {
+                "mission": {"id": "mission_a"},
+            })
+            index = {
+                "counts": {"missions": 1},
+                "missions": [{
+                    "id": "mission_a",
+                    "file": "missions/mission_a.json",
+                }],
+            }
+            order_row = {
+                "mission": "mission_a",
+                "summary": {"sceneCount": 2},
+                "branches": {"nativeControlBranches": []},
+            }
+            gap_queue = {
+                "reportJson": "reports/mission_order/source_story_gap_queue_CN.json",
+                "missions": [{
+                    "mission": "mission_a",
+                    "metrics": {
+                        "sceneCount": 2,
+                        "actionableCoreIsolatedScenes": 1,
+                        "internalScore": 99,
+                    },
+                    "coreIsolatedSceneKeys": ["story_a", "story_b"],
+                    "actionableCoreIsolatedSceneKeys": ["story_a"],
+                    "closedExactNativeIsolatedScenes": [{
+                        "sceneKey": "story_b",
+                        "recoveryStatus": "closed_exact_native_event_path_no_relative_order",
+                        "nativeEventPaths": [{"bulk": "must not publish"}],
+                    }],
+                }],
+            }
+            pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=False,
+                require_complete_branch_publication=False,
+                source_gap_queue=gap_queue,
+            )
+            payload = json.loads(
+                (mission_root / "mission_a.json").read_text(encoding="utf-8")
+            )
+
+        compact = payload["storyOrder"]["sourceGapQueue"]
+        self.assertEqual(compact["status"], "recovery_queue_only")
+        self.assertEqual(compact["graphEffect"], "none")
+        self.assertEqual(compact["actionableCoreIsolatedSceneKeys"], ["story_a"])
+        self.assertEqual(compact["metrics"], {
+            "sceneCount": 2,
+            "actionableCoreIsolatedScenes": 1,
+        })
+        self.assertEqual(compact["closedExactNativeIsolatedScenes"], [{
+            "sceneKey": "story_b",
+            "recoveryStatus": "closed_exact_native_event_path_no_relative_order",
+        }])
+        self.assertEqual(
+            compact["source"],
+            "reports/mission_order/source_story_gap_queue_CN.json",
+        )
 
     def test_serialized_branch_context_projection_is_generic_and_non_owning(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -2896,6 +3039,21 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             r"mission=missing_branch_source expected=file actual=missing",
         ):
             pipeline._story_branch_related_original_files(order_row)
+
+    def test_story_branch_related_files_skip_non_materialized_installed_vfs_label(self):
+        related = pipeline._story_branch_related_original_files({
+            "mission": "installed_vfs_provenance",
+            "branches": {
+                "dialogTreeIfNodes": [{
+                    "sourceFile": (
+                        "installed Persistent VFS/Data/IFixPatchOut/Windows/"
+                        "Gameplay.Beyond.patch.bytes"
+                    ),
+                }],
+            },
+        })
+
+        self.assertEqual(related, [])
 
     def test_story_branch_related_files_fail_closed_on_hash_mismatch(self):
         with tempfile.TemporaryDirectory() as temporary:

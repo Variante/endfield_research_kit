@@ -1201,13 +1201,15 @@ def match_levelscript_native_reading_popup_record(
     persistent_leveldata_root: Path = PERSISTENT_DATA_JSON_DIR / "LevelData",
     reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
 ) -> dict | None:
-    """Resolve one ShowUIReadingPopPanel property through exact BriefData.
+    """Resolve one direct ShowUIReadingPopPanel id through the popup table.
 
-    The action stores a LevelScript property name, not a Story id.  Promotion
-    therefore requires the current-build native action tag, one exact property
-    name in the action, a completely framed member-22 BriefData dictionary,
-    an identical Persistent mirror, and one ReadingPopUpTable content id.
-    LevelData filenames contribute no Story identity or chronology.
+    The installed action declares a single ``_readingPopId`` string field and
+    forwards it to ``GameAction.ShowUIReadingPopPanel``.  The current
+    MemoryPack payload serializes that field as the action's sole tagged
+    string.  Promotion therefore requires one exact serialized id, one exact
+    ReadingPopUpTable row, and a nonempty content id.  LevelData registration
+    is unrelated to this direct action argument and contributes no Story
+    identity or chronology.
     """
     if (
         levelscript_record_semantic_key(record) != (0x048C, 0x09)
@@ -1215,92 +1217,266 @@ def match_levelscript_native_reading_popup_record(
         or not str(script_id).isdigit()
     ):
         return None
-    property_names = _levelscript_record_texts(record)
-    if len(property_names) != 1:
+    reading_popup_ids = _levelscript_record_texts(record)
+    if len(reading_popup_ids) != 1:
         return None
-    property_name = property_names[0]
+    reading_popup_id = reading_popup_ids[0]
     try:
         reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
     if not isinstance(reading_rows, dict):
         return None
-    script_dir = levelscript_root / level_id
-    candidate_script_ids = {
-        int(path.stem)
-        for path in script_dir.glob("*.json")
-        if path.stem.isdigit()
-    }
-    if int(script_id) not in candidate_script_ids:
+    script_path = levelscript_root / level_id / f"{script_id}.json"
+    if not script_path.is_file():
         return None
-
-    matches: list[dict] = []
-    for path in sorted((leveldata_root / level_id).glob("*.json")):
-        mirror_path = persistent_leveldata_root / level_id / path.name
-        try:
-            data = read_bytes_cached(path)
-            mirror_data = read_bytes_cached(mirror_path)
-        except OSError:
-            continue
-        if data != mirror_data:
-            continue
-        brief = parse_leveldata_levelscript_brief_dictionary(
-            data,
-            candidate_script_ids,
-        ).get(int(script_id))
-        if not isinstance(brief, dict):
-            continue
-        properties = [
-            prop
-            for prop in brief.get("properties") or []
-            if isinstance(prop, dict) and prop.get("name") == property_name
-        ]
-        if len(properties) != 1:
-            continue
-        value = properties[0].get("value")
-        atoms = value.get("atoms") if isinstance(value, dict) else None
-        if (
-            not isinstance(value, dict)
-            or value.get("valueType") != 7
-            or value.get("atomCount") != 1
-            or not isinstance(atoms, list)
-            or len(atoms) != 1
-            or not isinstance(atoms[0], dict)
-        ):
-            continue
-        popup_id = str(atoms[0].get("text") or "").strip()
-        popup_row = reading_rows.get(popup_id)
-        story_key = str(
-            popup_row.get("contentId") if isinstance(popup_row, dict) else ""
-        ).strip()
-        if not popup_id or not story_key.startswith("text_"):
-            continue
-        matches.append({
-            "key": story_key,
-            "propertyName": property_name,
-            "readingPopupId": popup_id,
-            "levelDataFile": repo_rel(path),
-            "verifiedMirrorFile": repo_rel(mirror_path),
-            "levelDataSha256": hashlib.sha256(data).hexdigest().upper(),
-            "readingPopupTableSourceFile": repo_rel(reading_popup_path),
-            "briefData": brief,
-            "nativeMappingId": (
-                "gameassembly-show-ui-reading-popup-leveldata-property-v1"
-            ),
-        })
-    signatures = {
-        (match["key"], match["readingPopupId"], match["propertyName"])
-        for match in matches
-    }
-    if len(signatures) != 1 or not matches:
+    popup_row = reading_rows.get(reading_popup_id)
+    story_key = str(
+        popup_row.get("contentId") if isinstance(popup_row, dict) else ""
+    ).strip()
+    if not reading_popup_id or not story_key.startswith("text_"):
         return None
     return {
-        **matches[0],
-        "levelDataFiles": [match["levelDataFile"] for match in matches],
-        "verifiedMirrorFiles": [
-            match["verifiedMirrorFile"] for match in matches
-        ],
-        "hostCount": len(matches),
+        "key": story_key,
+        "readingPopupId": reading_popup_id,
+        "readingPopupRowId": reading_popup_id,
+        "targetField": "_readingPopId",
+        "argumentMode": "direct_serialized_string",
+        "levelScriptSourceFile": repo_rel(script_path),
+        "readingPopupTableSourceFile": repo_rel(reading_popup_path),
+        "nativeMappingId": (
+            "gameassembly-show-ui-reading-popup-direct-id-v1"
+        ),
+    }
+
+
+def build_levelscript_unhosted_reading_popup_receiver_index(
+    available_story_keys: set[str],
+    *,
+    levelscript_root: Path = LEVELSCRIPT_DIR,
+    leveldata_root: Path = LEVELDATA_DIR,
+    persistent_leveldata_root: Path = PERSISTENT_DATA_JSON_DIR / "LevelData",
+    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+) -> dict[str, list[dict]]:
+    """Return direct popup receivers and any exact script-entity producer.
+
+    The historical function name is retained for report compatibility.  The
+    action's sole string is the direct ``_readingPopId`` field, so LevelData
+    BriefData is not a required host.  When the same custom-event key is also
+    serialized by a complete WorldEntityRegistry-backed interactive entity in
+    that LevelScript, the row includes the exact interaction producer and map
+    position.  Mission/quest ownership and Story order remain separate.
+    """
+    targets = {str(key) for key in available_story_keys if str(key)}
+    if not targets or not levelscript_root.is_dir():
+        return {}
+    try:
+        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(reading_rows, dict):
+        return {}
+
+    exact_literal_targets = {
+        row_id
+        for row_id, row in reading_rows.items()
+        if (
+            row_id in targets
+            and isinstance(row, dict)
+            and str(row.get("contentId") or "") == row_id
+        )
+    }
+    if not exact_literal_targets:
+        return {}
+
+    out: dict[str, list[dict]] = defaultdict(list)
+    registry_by_script = _load_world_entity_registry_global_script_index()
+    for level_dir in sorted(path for path in levelscript_root.iterdir() if path.is_dir()):
+        info = (
+            _load_levelscript_binding_data(level_dir.name)
+            if levelscript_root == LEVELSCRIPT_DIR
+            else _load_levelscript_binding_data(level_dir.name, levelscript_root)
+        )
+        for file_info in info.get("files") or []:
+            script_id = str(file_info.get("fileStem") or "")
+            source_file = str(file_info.get("file") or "")
+            if not script_id.isdigit() or not source_file:
+                continue
+            try:
+                data = read_bytes_cached(ROOT / source_file)
+            except OSError:
+                continue
+            registered_entities = _parse_levelscript_registered_script_entity_list(
+                data,
+                registry_by_script.get(int(script_id)) or [],
+            )
+            records = list(file_info.get("records") or [])
+            _action_map, membership = levelscript_action_map_membership(data, records)
+            for record in records:
+                if (
+                    levelscript_record_semantic_key(record) != (0x048C, 0x09)
+                    or levelscript_native_action_name(record)
+                    != "ShowUIReadingPopPanel"
+                ):
+                    continue
+                record_start = int(record.get("start") or 0)
+                if not str(membership.get(record_start) or "").startswith(
+                    "actionList#"
+                ):
+                    continue
+                property_names = _levelscript_record_texts(record)
+                if len(property_names) != 1:
+                    continue
+                story_key = property_names[0]
+                if story_key not in exact_literal_targets:
+                    continue
+
+                native_paths = [
+                    path
+                    for path in _levelscript_native_control_paths_to_record(
+                        data,
+                        records,
+                        membership,
+                        record,
+                    )
+                    if path.get("status") == "exact_serialized_control_path"
+                ]
+                if not native_paths:
+                    continue
+                event_keys = sorted({
+                    str((path.get("eventDetail") or {}).get("eventKey") or "")
+                    for path in native_paths
+                    if (path.get("eventDetail") or {}).get("eventKey")
+                })
+                interactive_producers: list[dict] = []
+                for entity in registered_entities:
+                    event_value = (entity.get("properties") or {}).get(
+                        "eventName"
+                    )
+                    atoms = (
+                        event_value.get("atoms")
+                        if isinstance(event_value, dict)
+                        else None
+                    )
+                    if (
+                        not isinstance(event_value, dict)
+                        or event_value.get("valueType") != 7
+                        or event_value.get("atomCount") != 1
+                        or not isinstance(atoms, list)
+                        or len(atoms) != 1
+                        or not isinstance(atoms[0], dict)
+                        or atoms[0].get("valueBits") != 0
+                        or str(atoms[0].get("stringValue") or "")
+                        not in event_keys
+                    ):
+                        continue
+                    interact_value = (entity.get("properties") or {}).get(
+                        "InteractText"
+                    )
+                    interact_atoms = (
+                        interact_value.get("atoms")
+                        if isinstance(interact_value, dict)
+                        else None
+                    )
+                    interactive_producers.append({
+                        "relation": (
+                            "world_entity_interaction_raises_custom_event"
+                        ),
+                        "levelId": level_dir.name,
+                        "scriptIdGlobal": str(script_id),
+                        "entitySlotId": entity.get("entitySlotId"),
+                        "entityType": entity.get("entityType"),
+                        "entityDetailId": entity.get("entityDetailId"),
+                        "position": entity.get("position"),
+                        "rotation": entity.get("rotation"),
+                        "eventName": atoms[0].get("stringValue"),
+                        "interactTextKey": (
+                            interact_atoms[0].get("stringValue")
+                            if isinstance(interact_atoms, list)
+                            and len(interact_atoms) == 1
+                            and isinstance(interact_atoms[0], dict)
+                            else None
+                        ),
+                        "levelScriptEntityRecordOffset": entity.get(
+                            "recordOffset"
+                        ),
+                        "worldEntityRegistryIndex": entity.get(
+                            "registryIndex"
+                        ),
+                        "worldEntityRegistrySourceFile": entity.get(
+                            "registrySourceFile"
+                        ),
+                        "producerEvidence": (
+                            "exact aligned WorldEntityRegistry script/slot + "
+                            "complete LevelInteractiveData/25 eventName"
+                        ),
+                        "missionOwnership": False,
+                        "orderEvidence": False,
+                    })
+                producer_recovered = len(interactive_producers) == 1
+                out[story_key].append({
+                    "key": story_key,
+                    "relation": (
+                        "levelscript_reading_popup_interactive_trigger"
+                        if producer_recovered
+                        else "levelscript_reading_popup_receiver"
+                    ),
+                    "levelId": level_dir.name,
+                    "scriptId": script_id,
+                    "sourceFile": source_file,
+                    "sourceSha256": hashlib.sha256(data).hexdigest().upper(),
+                    "actionMapRole": str(membership.get(record_start) or ""),
+                    "recordOffset": record_start,
+                    "actionLocalId": record.get("localId"),
+                    "actionCode": "0x048c",
+                    "actionKind": "0x09",
+                    "actionName": "ShowUIReadingPopPanel",
+                    "recordClass": "play_reading_popup",
+                    "readingPopupId": story_key,
+                    "readingPopupRowId": story_key,
+                    "readingPopupContentId": story_key,
+                    "nativeEventPaths": native_paths,
+                    "eventKeys": event_keys,
+                    "interactiveEventProducers": interactive_producers,
+                    "levelDataHostStatus": (
+                        "not_required_for_direct_reading_popup_id"
+                    ),
+                    "levelDataHostFiles": [],
+                    "scriptEntityHostStatus": (
+                        "exact_world_entity_registry_host"
+                        if producer_recovered
+                        else "no_exact_interactive_event_producer"
+                    ),
+                    "storyBinding": True,
+                    "playbackConfirmed": True,
+                    "triggerRecovered": producer_recovered,
+                    "missionOwnership": False,
+                    "orderEvidence": False,
+                    "nativeMappingId": (
+                        "gameassembly-show-ui-reading-popup-direct-id-v1"
+                    ),
+                    "associationBoundary": (
+                        (
+                            "the registered map interaction raises the exact "
+                            "custom event consumed by the direct reading-popup "
+                            "action"
+                            if producer_recovered
+                            else
+                            "the direct reading-popup id and receiver are exact, "
+                            "but no registered interactive producer was decoded"
+                        )
+                    ),
+                })
+    return {
+        story_key: sorted(
+            rows,
+            key=lambda row: (
+                str(row.get("levelId") or ""),
+                str(row.get("scriptId") or ""),
+                int(row.get("recordOffset") or 0),
+            ),
+        )
+        for story_key, rows in sorted(out.items())
     }
 
 
@@ -3236,17 +3412,20 @@ def build_levelscript_action_story_occurrences(
                     )
                     if not popup_story_key:
                         continue
-                    property_offsets = [
+                    popup_id_offsets = [
                         int(hit.get("offset"))
-                        for hit in record.get("plainStrings") or []
+                        for hit in [
+                            *(record.get("strings") or []),
+                            *(record.get("plainStrings") or []),
+                        ]
                         if isinstance(hit, dict)
                         and hit.get("text")
-                        == reading_popup_action.get("propertyName")
+                        == reading_popup_action.get("readingPopupId")
                         and isinstance(hit.get("offset"), int)
                     ]
-                    if not property_offsets:
+                    if not popup_id_offsets:
                         continue
-                    story_hits = {popup_story_key: property_offsets}
+                    story_hits = {popup_story_key: popup_id_offsets}
                 all_story_keys = sorted(story_hits)
                 for story_key, string_offsets in story_hits.items():
                     signature = (
@@ -3991,6 +4170,138 @@ def _load_world_entity_registry_global_script_index() -> dict[int, list[dict]]:
     compact = dict(out)
     _WORLD_ENTITY_REGISTRY_GLOBAL_SCRIPT_CACHE[cache_key] = compact
     return compact
+
+
+def _parse_levelscript_registered_script_entity_list(
+    data: bytes,
+    registry_rows: list[dict],
+) -> list[dict]:
+    """Decode one exact WorldEntityRegistry-backed script-entity list.
+
+    Current LevelScript blobs serialize the registered script entities as a
+    counted list of ``slotId + LevelInteractiveData/25`` records.  Discovery
+    starts from the exact registry slot sequence, then requires every complete
+    interactive record to agree with the aligned registry detail, entity type,
+    position, and rotation.  This is intentionally fail-closed: a partial
+    string hit or a duplicate candidate is not a runtime entity host.
+    """
+    ordered = sorted(
+        (
+            row
+            for row in registry_rows or []
+            if isinstance(row, dict)
+            and isinstance(row.get("entitySlotId"), int)
+            and not isinstance(row.get("entitySlotId"), bool)
+            and isinstance(row.get("registryIndex"), int)
+        ),
+        key=lambda row: int(row["registryIndex"]),
+    )
+    if not data or not ordered or len(ordered) > 256:
+        return []
+
+    first_slot = int(ordered[0]["entitySlotId"])
+    first_slot_bytes = struct.pack("<I", first_slot)
+    candidates: list[list[dict]] = []
+    search_offset = 4
+    while True:
+        slot_offset = data.find(first_slot_bytes, search_offset)
+        if slot_offset < 0:
+            break
+        search_offset = slot_offset + 1
+        if (
+            slot_offset < 4
+            or _i32(data, slot_offset - 4) != len(ordered)
+        ):
+            continue
+        cursor = slot_offset
+        parsed_rows: list[dict] = []
+        valid = True
+        for registry in ordered:
+            slot_id = int(registry["entitySlotId"])
+            if cursor + 5 > len(data) or _u32(data, cursor) != slot_id:
+                valid = False
+                break
+            record_offset = cursor + 4
+            parsed = _parse_levelscript_interactive_narrative_record(
+                data,
+                record_offset,
+                len(data),
+                allow_non_narrative_component_shape=True,
+            )
+            if parsed is None:
+                valid = False
+                break
+            detail_decoded = _read_leveldata_memorypack_string(
+                data,
+                record_offset + 1 + (3 * 8),
+                max_length=256,
+            )
+            if detail_decoded is None:
+                valid = False
+                break
+            _detail_id, prefix_end = detail_decoded
+            # The inherited LevelInteractiveData prefix stores entityType
+            # (i32), a one-byte flag, embedded logic id (u64), and a two-byte
+            # discriminator before the float32 transform.
+            transform_offset = prefix_end + 15
+            if transform_offset + 24 > int(parsed["recordEndOffset"]):
+                valid = False
+                break
+            position_values = struct.unpack_from("<fff", data, transform_offset)
+            rotation_values = struct.unpack_from(
+                "<fff", data, transform_offset + 12
+            )
+            position = {
+                axis: float(value)
+                for axis, value in zip(("x", "y", "z"), position_values)
+            }
+            rotation = {
+                axis: float(value)
+                for axis, value in zip(("x", "y", "z"), rotation_values)
+            }
+            expected_position = registry.get("position") or {}
+            expected_rotation = registry.get("rotation") or {}
+            if (
+                parsed.get("entityDetailId")
+                != registry.get("entityDetailId")
+                or parsed.get("entityType") != registry.get("entityType")
+                or any(
+                    not isinstance(expected_position.get(axis), (int, float))
+                    or not math.isclose(
+                        position[axis],
+                        float(expected_position[axis]),
+                        rel_tol=0.0,
+                        abs_tol=1e-4,
+                    )
+                    for axis in ("x", "y", "z")
+                )
+                or any(
+                    not isinstance(expected_rotation.get(axis), (int, float))
+                    or not math.isclose(
+                        rotation[axis],
+                        float(expected_rotation[axis]),
+                        rel_tol=0.0,
+                        abs_tol=1e-4,
+                    )
+                    for axis in ("x", "y", "z")
+                )
+            ):
+                valid = False
+                break
+            parsed_rows.append({
+                **parsed,
+                "entitySlotId": slot_id,
+                "position": position,
+                "rotation": rotation,
+                "transformOffset": transform_offset,
+                "registryIndex": registry["registryIndex"],
+                "scriptIdGlobal": registry.get("scriptIdGlobal"),
+                "registrySourceFile": registry.get("registrySourceFile"),
+            })
+            cursor = int(parsed["recordEndOffset"])
+        if valid and len(parsed_rows) == len(ordered):
+            candidates.append(parsed_rows)
+    return candidates[0] if len(candidates) == 1 else []
 
 
 def resolve_interactive_condition_script_entity(condition: dict) -> dict:
@@ -12259,9 +12570,14 @@ def _build_levelscript_scene_chain_map(
                     mission_id,
                 )
                 for payload in popup_payloads:
-                    payload["resolution"] = "leveldataReadingPopupProperty"
+                    payload["resolution"] = "levelscriptDirectReadingPopupId"
                     payload["readingPopupId"] = popup_action["readingPopupId"]
-                    payload["levelDataFile"] = popup_action["levelDataFile"]
+                    if popup_action.get("levelDataFile"):
+                        payload["levelDataFile"] = popup_action["levelDataFile"]
+                    if popup_action.get("levelScriptSourceFile"):
+                        payload["levelScriptFile"] = popup_action[
+                            "levelScriptSourceFile"
+                        ]
                     if payload not in step["payloads"]:
                         step["payloads"].append(payload)
             scene_keys: list[str] = []

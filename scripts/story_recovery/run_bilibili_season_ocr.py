@@ -122,6 +122,13 @@ def build_command(args: argparse.Namespace) -> list[str]:
     return command
 
 
+def child_process_kwargs() -> dict[str, object]:
+    """Keep the OCR child from creating a second Windows console window."""
+    if sys.platform == "win32":
+        return {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)}
+    return {}
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
     if args.frame_step <= 0:
@@ -140,7 +147,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: season video directory not found: {args.video_root}", file=sys.stderr)
         print("Run scripts/download_bilibili_video.py with --season-url first.", file=sys.stderr)
         return 2
-    return subprocess.run(build_command(args), cwd=str(ROOT), check=False).returncode
+    return subprocess.run(
+        build_command(args),
+        cwd=str(ROOT),
+        check=False,
+        **child_process_kwargs(),
+    ).returncode
 
 
 if __name__ == "__main__":

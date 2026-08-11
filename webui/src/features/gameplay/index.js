@@ -5,6 +5,12 @@
   const GAMEPLAY_DATA_VERSION = "20260809-gp10";
   const GAMEPLAY_INTEGRATION_VERSION = "20260809-sfx5";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
+  const GENDER_VARIANT_STORAGE_KEY = "webui_gender_variant";
+  const ENDADMINISTRATOR_ID = "chr_9000_endmin";
+  const ENDADMINISTRATOR_VARIANTS = [
+    { gender: "f", characterId: "chr_0003_endminf" },
+    { gender: "m", characterId: "chr_0002_endminm" },
+  ];
   // Fixed display order for the data-type groups in the list.
   const KIND_ORDER = ["character", "weapon", "equipment", "item", "enemy"];
   // Enemy display types, ordered 领袖 > 头目 > 精英 > 进阶 > 普通 (by displayType id).
@@ -163,6 +169,85 @@
     return String((select && select.value) || STATE.language || "CN").toUpperCase();
   }
 
+  function normalizeCharacterGender(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    return normalized === "m" || normalized === "f" ? normalized : "";
+  }
+
+  function currentCharacterGender() {
+    if (typeof window.resolveGenderVariant === "function") {
+      const resolved = normalizeCharacterGender(window.resolveGenderVariant());
+      if (resolved) return resolved;
+    }
+    return normalizeCharacterGender(storageGet(GENDER_VARIANT_STORAGE_KEY)) || "f";
+  }
+
+  function setCharacterGender(value) {
+    const gender = normalizeCharacterGender(value) || "f";
+    if (typeof window.setGenderVariant === "function") {
+      window.setGenderVariant(gender);
+      return;
+    }
+    storageSet(GENDER_VARIANT_STORAGE_KEY, gender);
+    document.body.classList.toggle("gender-active-f", gender === "f");
+    document.body.classList.toggle("gender-active-m", gender === "m");
+    window.dispatchEvent(new CustomEvent("webui:gender-changed", { detail: { gender } }));
+  }
+
+  function isEndministrator(entry) {
+    return entry?.kind === "character" && String(entry.id || "") === ENDADMINISTRATOR_ID;
+  }
+
+  function endministratorGenderForValue(value) {
+    const normalized = String(value || "").toLowerCase();
+    if (!normalized) return "";
+    if (normalized.includes("chr_0002_endminm") || normalized.includes("actor_endminm")) return "m";
+    if (
+      normalized.includes("chr_0003_endminf")
+      || normalized.includes("actor_endminf")
+      || /chr_0003_endmin(?:_|$)/.test(normalized)
+    ) return "f";
+    return "";
+  }
+
+  function filterEndministratorVariant(items, entry, valueForItem) {
+    const rows = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!isEndministrator(entry)) return rows;
+    const active = currentCharacterGender();
+    return rows.filter((item) => {
+      const gender = endministratorGenderForValue(valueForItem(item));
+      return !gender || gender === active;
+    });
+  }
+
+  function endministratorVariantEntry(entry) {
+    if (!isEndministrator(entry)) return entry;
+    return {
+      ...entry,
+      skillGroups: (entry.skillGroups || []).map((group) => ({
+        ...group,
+        actionSkillIds: filterEndministratorVariant(group.actionSkillIds, entry, (value) => value),
+        skills: filterEndministratorVariant(group.skills, entry, (skill) => skill?.id),
+      })),
+    };
+  }
+
+  function renderEndministratorVariantControl(entry) {
+    if (!isEndministrator(entry)) return "";
+    const active = currentCharacterGender();
+    const buttons = ENDADMINISTRATOR_VARIANTS.map((variant) => {
+      const selected = variant.gender === active;
+      const label = text(variant.gender === "f" ? "female" : "male");
+      const debugId = STATE.showDebug ? `<code>${escapeHtml(variant.characterId)}</code>` : "";
+      return `<button type="button" class="gameplay-character-gender-button${selected ? " is-selected" : ""}" data-gameplay-character-gender="${variant.gender}" aria-pressed="${selected ? "true" : "false"}"><span>${escapeHtml(label)}</span>${debugId}</button>`;
+    }).join("");
+    return `<div class="gameplay-character-gender-control">
+      <div class="gameplay-character-gender-heading">${escapeHtml(text("characterVariant"))}</div>
+      <div class="gameplay-character-gender-buttons" role="group" aria-label="${escapeHtml(text("characterVariant"))}">${buttons}</div>
+      <p>${escapeHtml(text("characterVariantNote"))}</p>
+    </div>`;
+  }
+
   function gameplayDataPath(language) {
     // Cache-bust so a rebuilt index.json is picked up (bump on data changes).
     return `data/lang/${encodeURIComponent(language)}/gameplay/index.json?v=${GAMEPLAY_DATA_VERSION}`;
@@ -310,7 +395,13 @@
   }
 
   function renderStoryWikiLink(entry) {
-    const keys = storyWikiKeys(entry);
+    const activeGender = currentCharacterGender();
+    const keys = isEndministrator(entry)
+      ? storyWikiKeys(entry).filter((key) => {
+        const gender = endministratorGenderForValue(key);
+        return !gender || gender === activeGender;
+      })
+      : storyWikiKeys(entry);
     return keys.map((key) => {
       const href = storyWikiHrefForKey(key);
       if (!href) return "";
@@ -984,7 +1075,8 @@
       const required = renderRequiredItems(row.requiredItem || []);
       const values = renderBlackboard(row.blackboard || []);
       const alt = row.name || entry.title || entry.id;
-      const pictures = renderPotentialPictures(row.pictures, alt);
+      const visiblePictures = filterEndministratorVariant(row.pictures, entry, (picture) => picture?.id);
+      const pictures = renderPotentialPictures(visiblePictures, alt);
       const topicImages = renderGameplayTokenImages([row.unlockCardTopicItem].filter(Boolean), alt, "gameplay-potential-assets");
       return `<div class="gameplay-talent-level">
         <div class="gameplay-talent-level-title">${escapeHtml(row.name || `${text("potential")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
@@ -1027,12 +1119,11 @@
     // The sidecar ranks character portraits by semantic category and image
     // size: complete illustrations/poses first, then tighter crops. Keep the
     // sidecar order so the crop/pose progression stays stable for every
-    // character instead of being re-sorted by the browser. Most characters
-    // have a single identity capped at 4 images, but a dual-identity entry
-    // (e.g. the Administrator's two gender portraits) carries each
-    // identity's own full set back to back, so allow up to 8 here.
-    const images = (Array.isArray(refs.images) ? refs.images : []).filter((item) => item?.rel).slice(0, 8);
-    const models = (Array.isArray(refs.models) ? refs.models : []).filter((item) => item?.rel);
+    // character instead of being re-sorted by the browser. The Administrator
+    // sidecar carries both concrete portrait identities; only the persisted
+    // active gender variant belongs in the visible strip.
+    const images = filterEndministratorVariant(refs.images, entry, (item) => item?.rel).slice(0, 4);
+    const models = filterEndministratorVariant(refs.models, entry, (item) => item?.rel);
     const imageCards = images.map((asset, index) => {
       const portraitName = `${entry.title || entry.id || asset.rel} #${index + 1}`;
       return renderGameplayImageButton(asset, {
@@ -1573,7 +1664,8 @@
   function renderActiveSkillSoundEffects(group, character) {
     const groups = STATE.integration.soundEffects?.characters?.[character?.id]?.groups || {};
     const soundGroup = groups[group?.id] || {};
-    const events = (soundGroup.events || []).filter(gameplaySoundHasExactSkillTrigger);
+    const events = filterEndministratorVariant(soundGroup.events, character, (event) => event?.id)
+      .filter(gameplaySoundHasExactSkillTrigger);
     return renderGameplaySoundGroup(events, {
       label: text("exactSkillSoundEffects"),
       confidence: "direct",
@@ -1597,8 +1689,12 @@
 
   function renderCharacterAnimationSounds(entry) {
     const sounds = STATE.integration.soundEffects?.characters?.[entry?.id] || {};
-    const animationEvents = sounds.animationEvents || [];
-    const profileVoices = sounds.profileVoices || [];
+    const animationEvents = filterEndministratorVariant(
+      sounds.animationEvents,
+      entry,
+      (event) => [event?.id, ...(event?.sourceAnimationClips || [])].join(" "),
+    );
+    const profileVoices = filterEndministratorVariant(sounds.profileVoices, entry, (event) => event?.id);
     const sharedAnimationEvents = animationEvents.filter(gameplaySoundIsSharedAnimation);
     const ownerAnimationEvents = animationEvents.filter((event) => !gameplaySoundIsSharedAnimation(event));
     return `${renderGameplaySoundGroup(ownerAnimationEvents, {
@@ -1729,9 +1825,13 @@
 
   // Small debug-only combat-log evidence badge folded into the description
   // column so it does not need its own row.
-  function renderActiveSkillCombatMeta(group) {
+  function renderActiveSkillCombatMeta(group, character) {
     if (!STATE.showDebug) return "";
-    const edges = combatEdgesForNode(`skill_group:${group.id}`);
+    const edges = filterEndministratorVariant(
+      combatEdgesForNode(`skill_group:${group.id}`),
+      character,
+      (edge) => [edge?.source, edge?.target, edge?.evidence?.raw].join(" "),
+    );
     if (!edges.length) return "";
     const direct = edges.filter((edge) => edge.confidence === "direct").length;
     return `<div class="gameplay-skill-evidence-summary"><span class="gameplay-skill-evidence-chip"><b>${escapeHtml(text("skillCombat"))}</b>${formatNumber(edges.length)} / ${formatNumber(direct)} ${escapeHtml(text("directEvidence"))}</span></div>`;
@@ -1764,7 +1864,7 @@
       <div class="gameplay-active-skill-desc">
         <div class="gameplay-group-title-wrap">${groupIcon}<div class="gameplay-group-title">${escapeHtml(group.name || group.id || "")}</div></div>
         <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
-        ${renderActiveSkillCombatMeta(group)}
+        ${renderActiveSkillCombatMeta(group, character)}
         ${renderDescription(group.description)}
         ${renderActiveSkillSoundEffects(group, character)}
       </div>
@@ -1795,6 +1895,7 @@
     };
   }
   function renderCharacterDetail(entry) {
+    const variantEntry = endministratorVariantEntry(entry);
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
       fact(text("rarity"), entry.rarity),
@@ -1804,15 +1905,16 @@
       fact(text("defaultWeapon"), entry.defaultWeaponName || entry.defaultWeaponId),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
     ].filter(Boolean);
-    const skillRows = (entry.skillGroups || []).map((group) => renderActiveSkillRow(group, entry)).join("");
-    const unresolvedProjectiles = renderUnassignedCharacterProjectiles(entry);
+    const skillRows = (variantEntry.skillGroups || []).map((group) => renderActiveSkillRow(group, variantEntry)).join("");
+    const unresolvedProjectiles = renderUnassignedCharacterProjectiles(variantEntry);
     const talentGroups = renderTalentGroups(entry.talentGroups || []);
     const talentCards = (entry.talents || []).map(renderTalentCard).join("");
     const characterAssets = renderCharacterAssetStrip(entry);
+    const variantControl = renderEndministratorVariantControl(entry);
     return {
       facts,
       body: [
-        section(text("characterAssets"), characterAssets),
+        section(text("characterAssets"), `${variantControl}${characterAssets}`),
         section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${skillRows ? `<div class="gameplay-active-skill-table${STATE.showDebug ? " is-debug" : ""}">${renderActiveSkillTableHeader()}<p class="gameplay-projectile-coverage-note">${escapeHtml(text("projectileCoverageNote"))}</p>${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
         section(text("characterBreakthroughs"), renderCharacterBreakthroughs(entry)),
@@ -2067,6 +2169,9 @@
   }
 
   function bindVariantSwitches(root) {
+    root.querySelectorAll("[data-gameplay-character-gender]").forEach((button) => {
+      button.addEventListener("click", () => setCharacterGender(button.dataset.gameplayCharacterGender));
+    });
     root.querySelectorAll(".gameplay-variant-switch").forEach((card) => {
       const rows = [...card.querySelectorAll(".gameplay-variant-row")];
       const pane = card.querySelector("[data-selected-variant-pane]");
@@ -2953,41 +3058,6 @@
         audioTab.click();
       });
     });
-    const bindCandidatePlayers = (container) => {
-      container.querySelectorAll("[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])").forEach((row) => {
-        row.dataset.gameplaySfxBound = "1";
-        const button = row.querySelector("[data-gameplay-sfx-play]");
-        if (!button) return;
-        button.addEventListener("click", () => {
-          const host = row.querySelector("[data-gameplay-sfx-player]");
-          const src = row.dataset.gameplaySfxSrc || "";
-          if (!host || !src || host.querySelector("audio")) return;
-          host.innerHTML = `<audio controls preload="none" src="${escapeHtml(src)}"></audio>`;
-          button.disabled = true;
-          if (window.WebUI.enhanceMediaPlayers) window.WebUI.enhanceMediaPlayers(host);
-        });
-      });
-    };
-    const materializeSoundList = (template, toggle) => {
-      if (!template) return;
-      const key = template.dataset.gameplaySfxList || "";
-      const candidateList = gameplaySoundCandidateLists.get(key);
-      if (!candidateList) return;
-      template.innerHTML = renderGameplaySoundCandidateList(candidateList.event, candidateList.audio);
-      gameplaySoundCandidateLists.delete(key);
-      template.replaceWith(template.content.cloneNode(true));
-      if (toggle) toggle.remove();
-      bindCandidatePlayers(root);
-    };
-    root.querySelectorAll("[data-gameplay-sfx-list-toggle]").forEach((toggle) => {
-      toggle.addEventListener("click", () => {
-        const key = toggle.dataset.gameplaySfxListToggle || "";
-        const template = [...root.querySelectorAll("template[data-gameplay-sfx-list]")]
-          .find((candidate) => candidate.dataset.gameplaySfxList === key);
-        materializeSoundList(template, toggle);
-      });
-    });
-    bindCandidatePlayers(root);
     const isRevealed = (media) => {
       for (let node = media.parentElement; node && node !== root; node = node.parentElement) {
         if (node.tagName === "DETAILS" && !node.open) return false;
@@ -3010,7 +3080,6 @@
   }
 
   function renderDetail(entry) {
-    gameplaySoundCandidateLists.clear();
     const empty = gp$("#gameplay-empty");
     const detail = gp$("#gameplay-detail");
     if (!entry || !detail) {
@@ -3046,7 +3115,7 @@
     const trailingAudio = entry.kind === "enemy"
       ? section(text("relatedSoundEffects"), renderEnemySoundEffects(entry))
       : entry.kind === "character"
-        ? section(text("relatedSoundEffects"), renderCharacterSoundEffects(entry))
+        ? section(text("relatedSoundEffects"), renderCharacterSoundEffects(endministratorVariantEntry(entry)))
         : "";
     gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}${trailingAudio}`;
     bindGameplayMediaPlayers(detail);
@@ -3508,6 +3577,9 @@
     window.addEventListener("webui:debug-changed", (event) => {
       STATE.showDebug = Boolean(event.detail && event.detail.enabled);
       if (STATE.selected) renderDetail(STATE.selected);
+    });
+    window.addEventListener("webui:gender-changed", () => {
+      if (STATE.selected && isEndministrator(STATE.selected)) renderDetail(STATE.selected);
     });
   }
 

@@ -71,6 +71,15 @@ class FakeImage:
             raise ValueError(f"VA outside image: 0x{va:x}")
         return struct.unpack_from("<Q", self.buf, offset)[0]
 
+    def c_string_at_va(self, va: int, *, limit: int = 512) -> str:
+        offset, _, _ = self.file_offset_for_va(va)
+        if offset is None:
+            return f"<bad-va:0x{va:x}>"
+        end = self.buf.find(b"\0", offset, min(len(self.buf), offset + limit))
+        if end < 0:
+            end = min(len(self.buf), offset + limit)
+        return bytes(self.buf[offset:end]).decode("utf-8", errors="replace")
+
 
 def fake_metadata(names: dict[int, tuple[str, str]]):
     """Build a metadata stub whose method_signature() output is predictable."""
@@ -94,6 +103,51 @@ def fake_metadata(names: dict[int, tuple[str, str]]):
 
 
 class MetadataRegistrationTests(unittest.TestCase):
+    def test_find_code_registration_matches_complete_module_name_set(self) -> None:
+        helper = load_helper()
+        image = FakeImage()
+        code_reg = IMAGE_BASE + 0x100
+        module_table = IMAGE_BASE + 0x500
+        names = {"Assembly-CSharp.dll", "Gameplay.Beyond.dll", "__Generated"}
+
+        image.sections[0]["name"] = ".rdata"
+        image.write_u32(code_reg + 0x68, len(names))
+        image.write_u64(code_reg + 0x70, module_table)
+        for index, name in enumerate(sorted(names)):
+            module = IMAGE_BASE + 0x600 + index * 0x40
+            name_va = IMAGE_BASE + 0x900 + index * 0x40
+            image.write_u64(module_table + index * 8, module)
+            image.write_u64(module, name_va)
+            image.write(name_va, name.encode("ascii") + b"\0")
+
+        self.assertEqual(code_reg, helper.find_code_registration(image, names))
+        self.assertEqual(
+            [code_reg],
+            helper.find_code_registration_candidates(image, names),
+        )
+
+    def test_find_code_registration_rejects_incomplete_name_set(self) -> None:
+        helper = load_helper()
+        image = FakeImage()
+        image.sections[0]["name"] = ".rdata"
+        code_reg = IMAGE_BASE + 0x100
+        module_table = IMAGE_BASE + 0x500
+        image.write_u32(code_reg + 0x68, 2)
+        image.write_u64(code_reg + 0x70, module_table)
+        for index, name in enumerate(("Assembly-CSharp.dll", "Unexpected.dll")):
+            module = IMAGE_BASE + 0x600 + index * 0x40
+            name_va = IMAGE_BASE + 0x900 + index * 0x40
+            image.write_u64(module_table + index * 8, module)
+            image.write_u64(module, name_va)
+            image.write(name_va, name.encode("ascii") + b"\0")
+
+        self.assertIsNone(
+            helper.find_code_registration(
+                image,
+                {"Assembly-CSharp.dll", "Gameplay.Beyond.dll"},
+            )
+        )
+
     def test_summary_reads_count_pointer_pairs(self) -> None:
         helper = load_helper()
         image = FakeImage()

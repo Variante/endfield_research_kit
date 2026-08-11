@@ -1281,7 +1281,6 @@ def create_package(args: argparse.Namespace) -> int:
         path for path in text_files
         if path.relative_to(webui_root).as_posix() not in {
             "data/assets/index.json",
-            "data/assets/videos.json",
             "assets.js",
             "index.html",
         }
@@ -1295,7 +1294,7 @@ def create_package(args: argparse.Namespace) -> int:
     print(f"Audio zip: {audio_output if audio_output is not None else 'skipped'}")
     if audio_output is not None:
         print(f"Audio format: {args.audio_format}")
-    generated_text_count = 7
+    generated_text_count = 6
     print(f"Text files: {len(copied_text_files) + generated_text_count:,}")
     print(f"Story image IDs: {plan.image_refs:,}")
     print(f"Resolved image files: {len(existing_images):,} ({len(emoji_images):,} emoji, {len(asset_images):,} asset)")
@@ -1342,12 +1341,9 @@ def create_package(args: argparse.Namespace) -> int:
             if isinstance(entry, dict) and is_story_emoji_asset(str(entry.get("r") or ""))
         ]
         story_asset_payload = filtered_asset_index(plan.filtered_asset_payload, emoji_asset_entries, kind="image")
-        story_video_payload = filtered_asset_index(plan.filtered_video_payload, [], kind="video")
 
         asset_index_json = json.dumps(story_asset_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, written, "webui/data/assets/index.json", asset_index_json)
-        video_index_json = json.dumps(story_video_payload, ensure_ascii=False, separators=(",", ":"))
-        zip_writestr(zipf, written, "webui/data/assets/videos.json", video_index_json)
 
         index_html = (webui_root / "index.html").read_text(encoding="utf-8")
         zip_writestr(zipf, written, "webui/index.html", strip_asset_view_from_index(index_html))
@@ -1362,8 +1358,6 @@ def create_package(args: argparse.Namespace) -> int:
         zip_writestr(zipf, assets_written, "README-webui-assets-package.txt", ASSETS_PACKAGE_README)
         asset_index_json = json.dumps(plan.filtered_asset_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, assets_written, "webui/data/assets/index.json", asset_index_json)
-        video_index_json = json.dumps(plan.filtered_video_payload, ensure_ascii=False, separators=(",", ":"))
-        zip_writestr(zipf, assets_written, "webui/data/assets/videos.json", video_index_json)
         for image in asset_images:
             zip_write_file(zipf, assets_written, image.source_path, image.archive_path)
         for video in existing_videos:

@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUTS = (
     REPO_ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour",
     REPO_ROOT / "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour",
@@ -567,7 +567,7 @@ def candidate_files(root: Path) -> Iterable[Path]:
     return sorted(root.rglob("*projectile*.json"), key=lambda item: item.as_posix().lower())
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Build compact WebUI projectile data from exact AnimeStudio MonoBehaviour JSON.",
     )
@@ -582,11 +582,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-audio-links", action="store_true", help="Do not hydrate projectile sound links from the current decoded audio index.")
     parser.add_argument("--pretty", action="store_true", help="Write indented JSON for inspection instead of compact JSON.")
     parser.add_argument("--require-exact", action="store_true", help="Fail if any emitted projectile lacks exact tail consumption.")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     roots = tuple(path.resolve() for path in (args.input_root or DEFAULT_INPUTS))
     entries: list[dict[str, Any]] = []
     scanned = 0

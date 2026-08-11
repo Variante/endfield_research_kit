@@ -270,7 +270,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v130"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v132"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -358,7 +358,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # Story definition remain visible instead of falling out of the manifest.
 # v49 validates every authored fork-arm source identity against the original
 # questDic and publishes generalized, hash-bearing source evidence per arm.
-SCHEMA_VERSION = 49
+SCHEMA_VERSION = 50
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -3464,12 +3464,33 @@ def refresh_source_story_gap_queue(
             first_hash_mismatch = (
                 hash_mismatches[0] if hash_mismatches else None
             )
+            hash_mismatch_key = (
+                str(first_hash_mismatch)
+                if first_hash_mismatch is not None
+                and not isinstance(first_hash_mismatch, dict)
+                else ""
+            )
+            hash_diagnostic = (
+                {
+                    "expected": (
+                        status.get("expectedSourceHashes") or {}
+                    ).get(hash_mismatch_key),
+                    "actual": (
+                        status.get("sourceHashes") or {}
+                    ).get(hash_mismatch_key),
+                    "sourceFile": (
+                        status.get("sourcePaths") or {}
+                    ).get(hash_mismatch_key),
+                }
+                if hash_mismatch_key
+                else {}
+            )
             diagnostic = (
                 first_validation_failure
                 if isinstance(first_validation_failure, dict)
                 else first_hash_mismatch
                 if isinstance(first_hash_mismatch, dict)
-                else {}
+                else hash_diagnostic
             )
             failures.append({
                 "gate": "validator",
@@ -4048,6 +4069,14 @@ def publish_offline_story_recovery(
                 "closed_exact_non_owning_dialog_context_no_relative_order",
             ),
             (
+                "unique_mission_tracked_npc_proxy_dialog_context",
+                "closed_exact_runtime_config_no_relative_order",
+            ),
+            (
+                "unique_mission_tracked_npc_proxy_dialog_context",
+                "closed_exact_cross_mission_runtime_config_no_relative_order",
+            ),
+            (
                 "npc_proxy_ex_mission_context",
                 "closed_exact_runtime_config_no_relative_order",
             ),
@@ -4100,6 +4129,10 @@ def publish_offline_story_recovery(
                 published_runtime_context_keys.add(story_key)
 
         approved_native_contexts = {
+            (
+                "",
+                "exact_current_build_interaction_trigger_recovered",
+            ),
             (
                 "authoritative_scope_leveldata_mission_context",
                 "closed_exact_cross_mission_leveldata_shell_playback_context_no_relative_order",
@@ -13662,6 +13695,68 @@ def _create_story_variant_aggregate_shell(
     return summary
 
 
+def _compact_source_story_gap_queue_row(
+    row: dict[str, Any],
+    source: str,
+) -> dict[str, Any]:
+    """Publish review classifications without turning the queue into evidence."""
+    scene_key_lists = (
+        "coreIsolatedSceneKeys",
+        "actionableCoreIsolatedSceneKeys",
+        "actionableWeakOnlySceneKeys",
+        "nonActionableWeakOnlySceneKeys",
+    )
+    closed_row_lists = (
+        "closedExactNativeIsolatedScenes",
+        "closedExactSystemSelectorIsolatedScenes",
+        "closedExactRuntimeConfigIsolatedScenes",
+        "closedDefinitionOnlyIsolatedScenes",
+        "closedNonMissionContentIsolatedScenes",
+        "deferredOfflineExhaustedIsolatedScenes",
+    )
+    compact: dict[str, Any] = {
+        "mission": str(row.get("mission") or ""),
+        "status": "recovery_queue_only",
+        "graphEffect": "none",
+        "source": source,
+        "metrics": {
+            key: value
+            for key, value in (row.get("metrics") or {}).items()
+            if key in {
+                "sceneCount",
+                "isolatedScenes",
+                "coreIsolatedScenes",
+                "actionableCoreIsolatedScenes",
+                "weakOnlyScenes",
+                "actionableWeakOnlyScenes",
+            }
+        },
+        "evidenceBoundary": (
+            "This compact row is a recovery-priority classification only. It "
+            "does not add mission ownership, activation, playback, or Story-order "
+            "edges."
+        ),
+    }
+    for key in scene_key_lists:
+        compact[key] = [str(value) for value in row.get(key) or [] if value]
+    for key in closed_row_lists:
+        compact[key] = [
+            {
+                field: value
+                for field, value in item.items()
+                if field in {
+                    "sceneKey",
+                    "recoveryStatus",
+                    "relation",
+                    "evidenceKind",
+                }
+            }
+            for item in row.get(key) or []
+            if isinstance(item, dict) and item.get("sceneKey")
+        ]
+    return compact
+
+
 def attach_source_story_partial_order(
     index: dict[str, Any],
     output_root: Path,
@@ -13670,6 +13765,7 @@ def attach_source_story_partial_order(
     create_variant_aggregate_shells: bool,
     require_complete_branch_publication: bool,
     order_cross_reference: dict[str, Any] | None = None,
+    source_gap_queue: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Attach every recovered row that has a validated pipeline destination."""
     rows_by_mission = {
@@ -13737,6 +13833,11 @@ def attach_source_story_partial_order(
         for row in (order_cross_reference or {}).get("missions") or []
         if isinstance(row, dict) and row.get("mission")
     }
+    source_gap_by_mission = {
+        str(row.get("mission") or ""): row
+        for row in (source_gap_queue or {}).get("missions") or []
+        if isinstance(row, dict) and row.get("mission")
+    }
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
@@ -13756,7 +13857,15 @@ def attach_source_story_partial_order(
             inventory_rows,
         )
         previous_order = payload.get("storyOrder") or {}
-        if previous_order.get("sourceGapQueue"):
+        source_gap_row = source_gap_by_mission.get(mission_id)
+        if source_gap_row:
+            published_order["sourceGapQueue"] = (
+                _compact_source_story_gap_queue_row(
+                    source_gap_row,
+                    str((source_gap_queue or {}).get("reportJson") or ""),
+                )
+            )
+        elif previous_order.get("sourceGapQueue"):
             published_order["sourceGapQueue"] = previous_order["sourceGapQueue"]
         if previous_order.get("sourceOrderShell"):
             published_order["sourceOrderShell"] = True
@@ -15179,6 +15288,14 @@ def main() -> int:
             coverage["storyTriggerManifest"],
             source_story_gap_queue,
         )
+        source_gap_queue_payload = None
+        if offline_recovery.get("status") == "active":
+            candidate_gap_queue = read_json(source_story_gap_queue)
+            if isinstance(candidate_gap_queue, dict):
+                source_gap_queue_payload = copy.deepcopy(candidate_gap_queue)
+                source_gap_queue_payload["reportJson"] = repo_path(
+                    source_story_gap_queue
+                )
         offline_recovery["missionShells"] = (
             publish_offline_recovery_mission_shells(
                 index,
@@ -15206,6 +15323,7 @@ def main() -> int:
                 create_variant_aggregate_shells=True,
                 require_complete_branch_publication=True,
                 order_cross_reference=order_cross_reference,
+                source_gap_queue=source_gap_queue_payload,
             )
         report_stem = f"mission_pipeline_story_binding_coverage_{coverage['language']}"
         coverage_report = args.report_root.resolve() / f"{report_stem}.json"

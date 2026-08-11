@@ -2154,38 +2154,58 @@ def attach_levelscript_spatial_proximity(
     attached: list[dict] = []
     matches_by_source_file: dict[str, list[dict]] = {}
     for scene_key, row in sorted(scene_placement.items(), key=lambda item: natural_key(item[0])):
-        source_files = sorted(
+        direct_source_files = sorted(
             scene_placement_source_files(row),
             key=levelscript_source_sort_key,
         )
-        if not source_files:
+        inherited_source_files = sorted(
+            scene_placement_inherited_source_files(row),
+            key=levelscript_source_sort_key,
+        )
+        if not direct_source_files and not inherited_source_files:
             continue
-        scene_candidates: list[dict] = []
-        seen: set[tuple] = set()
-        for source_file in source_files:
-            map_id, _script_id = levelscript_path_components(source_file)
-            pins = pins_by_map.get(map_id) or []
-            if not pins:
-                continue
-            if source_file not in matches_by_source_file:
-                matches_by_source_file[source_file] = find_levelscript_spatial_matches(
-                    source_file,
-                    pins,
-                )
-            for candidate in matches_by_source_file[source_file]:
-                marker = spatial_candidate_key(candidate)
-                if marker in seen:
+
+        def candidates_for(source_files: list[str], placement_evidence: str) -> list[dict]:
+            candidates: list[dict] = []
+            seen: set[tuple] = set()
+            for source_file in source_files:
+                map_id, _script_id = levelscript_path_components(source_file)
+                pins = pins_by_map.get(map_id) or []
+                if not pins:
                     continue
-                seen.add(marker)
-                scene_candidates.append(candidate)
-        if not scene_candidates:
-            continue
-        scene_candidates.sort(key=spatial_candidate_sort_key)
-        row["spatialQuestCandidates"] = scene_candidates[:12]
-        evidence_kinds = row.setdefault("evidenceKinds", [])
-        if "levelscriptSpatialProximity" not in evidence_kinds:
-            evidence_kinds.append("levelscriptSpatialProximity")
-        for candidate in scene_candidates:
+                if source_file not in matches_by_source_file:
+                    matches_by_source_file[source_file] = find_levelscript_spatial_matches(
+                        source_file,
+                        pins,
+                    )
+                for raw_candidate in matches_by_source_file[source_file]:
+                    marker = spatial_candidate_key(raw_candidate)
+                    if marker in seen:
+                        continue
+                    seen.add(marker)
+                    candidate = dict(raw_candidate)
+                    candidate["placementEvidence"] = placement_evidence
+                    candidate["displayOnSpatialMap"] = placement_evidence == "directLevelScriptSource"
+                    candidates.append(candidate)
+            candidates.sort(key=spatial_candidate_sort_key)
+            return candidates
+
+        direct_candidates = candidates_for(direct_source_files, "directLevelScriptSource")
+        inherited_candidates = candidates_for(
+            inherited_source_files,
+            "inheritedCrossFileOrderSource",
+        )
+        if direct_candidates:
+            row["spatialQuestCandidates"] = direct_candidates[:12]
+            evidence_kinds = row.setdefault("evidenceKinds", [])
+            if "levelscriptSpatialProximity" not in evidence_kinds:
+                evidence_kinds.append("levelscriptSpatialProximity")
+        if inherited_candidates:
+            row["inheritedSpatialQuestCandidates"] = inherited_candidates[:12]
+            evidence_kinds = row.setdefault("evidenceKinds", [])
+            if "levelscriptSpatialInherited" not in evidence_kinds:
+                evidence_kinds.append("levelscriptSpatialInherited")
+        for candidate in [*direct_candidates, *inherited_candidates]:
             attached.append({
                 "sceneKey": scene_key,
                 **candidate,
@@ -2205,33 +2225,59 @@ def append_source_file(files: list[str], value: Any) -> None:
         files.append(text)
 
 
-def scene_placement_source_files(row: dict) -> list[str]:
-    files: list[str] = []
+def scene_placement_source_file_groups(row: dict) -> tuple[list[str], list[str]]:
+    """Return direct and cross-file-inherited LevelScript carriers.
+
+    ``levelscriptCrossFileOrder`` joins two independently authored files. Its
+    source list is useful order context, but neither endpoint proves that the
+    other endpoint's Story node physically belongs to that file. Keep those
+    files as inherited diagnostics unless another row field independently
+    identifies the same file as a direct carrier.
+    """
+    direct_files: list[str] = []
+    inherited_files: list[str] = []
     for edge in [
         *list(row.get("incomingEdges") or []),
         *list(row.get("outgoingEdges") or []),
     ]:
         if not isinstance(edge, dict):
             continue
+        target = (
+            inherited_files
+            if edge.get("kind") == "levelscriptCrossFileOrder"
+            else direct_files
+        )
         for source_file in edge.get("sourceFiles") or []:
-            append_source_file(files, source_file)
+            append_source_file(target, source_file)
     for item in [
         *list(row.get("sequenceNeighbors") or []),
         *list(row.get("storyCallContexts") or []),
         *list(row.get("hashTerminals") or []),
     ]:
         if isinstance(item, dict):
-            append_source_file(files, item.get("sourceFile"))
+            append_source_file(direct_files, item.get("sourceFile"))
     for item in row.get("timelineEvidence") or []:
         if isinstance(item, dict):
-            append_source_file(files, item.get("file"))
+            append_source_file(direct_files, item.get("file"))
     for item in [
         *list(row.get("storyRefSources") or []),
         *list(row.get("clientActionSources") or []),
     ]:
         if isinstance(item, dict):
-            append_source_file(files, item.get("file"))
-    return files
+            append_source_file(direct_files, item.get("file"))
+    direct_set = set(direct_files)
+    inherited_files = [value for value in inherited_files if value not in direct_set]
+    return direct_files, inherited_files
+
+
+def scene_placement_source_files(row: dict) -> list[str]:
+    direct_files, _inherited_files = scene_placement_source_file_groups(row)
+    return direct_files
+
+
+def scene_placement_inherited_source_files(row: dict) -> list[str]:
+    _direct_files, inherited_files = scene_placement_source_file_groups(row)
+    return inherited_files
 
 
 def unique_dicts(rows: list[dict], key_fields: tuple[str, ...]) -> list[dict]:
@@ -2406,42 +2452,49 @@ def build_quest_spatial_track(
         return []
     scenes_by_quest: dict[str, set[str]] = defaultdict(set)
     spatial_by_quest: dict[str, list[dict]] = defaultdict(list)
+    inherited_spatial_by_quest: dict[str, list[dict]] = defaultdict(list)
     for scene_key, placement in sorted(scene_placement.items(), key=lambda item: natural_key(item[0])):
         for quest_id in placement.get("questIds") or []:
             quest_id = str(quest_id or "").strip()
             if not quest_id:
                 continue
             scenes_by_quest[quest_id].add(scene_key)
-        for candidate in placement.get("spatialQuestCandidates") or []:
-            if not isinstance(candidate, dict):
-                continue
-            quest_id = str(candidate.get("questId") or "").strip()
-            if not quest_id:
-                continue
-            match = {
-                key: candidate.get(key)
-                for key in (
-                    "mapId",
-                    "levelId",
-                    "scriptId",
-                    "distanceXZ",
-                    "distance3d",
-                    "yDelta",
-                    "offset",
-                )
-                if candidate.get(key) not in (None, "", [], {})
-            }
-            match["sceneKey"] = scene_key
-            if candidate.get("position"):
-                match["position"] = candidate.get("position")
-            pin = candidate.get("pin") if isinstance(candidate.get("pin"), dict) else {}
-            if pin:
-                match["pin"] = {
-                    key: pin.get(key)
-                    for key in ("label", "missionAreaId", "npcProxyId", "jumpId", "trackingType", "subDataParentId", "levelDataParentId", "position")
-                    if pin.get(key) not in (None, "", [], {})
+        for placement_field, target in (
+            ("spatialQuestCandidates", spatial_by_quest),
+            ("inheritedSpatialQuestCandidates", inherited_spatial_by_quest),
+        ):
+            for candidate in placement.get(placement_field) or []:
+                if not isinstance(candidate, dict):
+                    continue
+                quest_id = str(candidate.get("questId") or "").strip()
+                if not quest_id:
+                    continue
+                match = {
+                    key: candidate.get(key)
+                    for key in (
+                        "mapId",
+                        "levelId",
+                        "scriptId",
+                        "distanceXZ",
+                        "distance3d",
+                        "yDelta",
+                        "offset",
+                        "placementEvidence",
+                        "displayOnSpatialMap",
+                    )
+                    if candidate.get(key) not in (None, "", [], {})
                 }
-            spatial_by_quest[quest_id].append(match)
+                match["sceneKey"] = scene_key
+                if candidate.get("position"):
+                    match["position"] = candidate.get("position")
+                pin = candidate.get("pin") if isinstance(candidate.get("pin"), dict) else {}
+                if pin:
+                    match["pin"] = {
+                        key: pin.get(key)
+                        for key in ("label", "missionAreaId", "npcProxyId", "jumpId", "trackingType", "subDataParentId", "levelDataParentId", "position")
+                        if pin.get(key) not in (None, "", [], {})
+                    }
+                target[quest_id].append(match)
 
     rows: list[dict] = []
     previous_centroid: dict | None = None
@@ -2490,6 +2543,23 @@ def build_quest_spatial_track(
             row["spatialSourceMatches"] = unique_dicts(
                 sorted(
                     spatial_by_quest[quest_id],
+                    key=lambda item: (
+                        float(item.get("distanceXZ", 10**9)),
+                        float(item.get("yDelta", 10**9)),
+                        float(item.get("distance3d", 10**9)),
+                        natural_key(str(item.get("sceneKey") or "")),
+                        natural_key(str(item.get("mapId") or "")),
+                        natural_key(str(item.get("levelId") or "")),
+                        natural_key(str(item.get("scriptId") or "")),
+                        int(item.get("offset") or 10**9),
+                    ),
+                ),
+                ("sceneKey", "mapId", "scriptId", "offset"),
+            )[:16]
+        if inherited_spatial_by_quest.get(quest_id):
+            row["inheritedSpatialSourceMatches"] = unique_dicts(
+                sorted(
+                    inherited_spatial_by_quest[quest_id],
                     key=lambda item: (
                         float(item.get("distanceXZ", 10**9)),
                         float(item.get("yDelta", 10**9)),

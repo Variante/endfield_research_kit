@@ -4220,7 +4220,6 @@ body.is-resizing-filter * {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 6px 0;
 }
 
 .gameplay-list-group-header {
@@ -4901,6 +4900,95 @@ body.is-resizing-filter * {
   border: 1px solid rgba(var(--fg-rgb), 0.1);
   border-radius: 7px;
   background: rgba(var(--fg-rgb), 0.025);
+}
+
+.gameplay-character-gender-control,
+.story-gender-variant-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.045);
+}
+
+.story-gender-variant-control {
+  flex: 1 1 100%;
+  width: 100%;
+  margin-bottom: 0;
+  box-sizing: border-box;
+}
+
+.gameplay-character-gender-heading,
+.story-gender-variant-heading {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.gameplay-character-gender-buttons,
+.gender-variant-buttons {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid rgba(var(--fg-rgb), 0.12);
+  border-radius: 7px;
+  background: var(--bg-2);
+}
+
+.gameplay-character-gender-button,
+.gender-variant-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.gameplay-character-gender-button:hover,
+.gameplay-character-gender-button:focus-visible,
+.gender-variant-button:hover,
+.gender-variant-button:focus-visible {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.gameplay-character-gender-button:focus-visible,
+.gender-variant-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.gameplay-character-gender-button.is-selected,
+.gameplay-character-gender-button[aria-pressed="true"],
+.gender-variant-button.is-selected,
+.gender-variant-button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-contrast, #fff);
+}
+
+.gameplay-character-gender-button code,
+.gender-variant-button code {
+  font-size: 10px;
+}
+
+.gameplay-character-gender-control > p,
+.story-gender-variant-control > p {
+  flex: 1 1 320px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .gameplay-character-asset-images {
@@ -5711,6 +5799,11 @@ body.is-resizing-filter * {
   .gameplay-character-asset-strip {
     align-items: flex-start;
     flex-wrap: wrap;
+  }
+
+  .gameplay-character-gender-control,
+  .story-gender-variant-control {
+    align-items: flex-start;
   }
 
   .gameplay-character-asset-model {

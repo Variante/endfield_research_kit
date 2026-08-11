@@ -59,14 +59,20 @@ data should be refreshed and the story export tools should run. Pass
 `--with-assets` when the same command should also rebuild asset indexes and
 relink/decode CN audio; combining it with `--export-from-game` runs one
 AnimeStudio Story+asset export.
+After Story is current, `scripts/build_webui_views.py` runs independent
+semantic builders in dependency-safe parallel phases. Use `--webui-jobs N` on
+`export.bat` to cap that concurrency. Gameplay asset references wait for both
+Gameplay and Assets, the source graph waits for all producers, and Presentation
+and Combat run only from the fresh graph. Step timings are written to
+`reports/export/webui_build_steps_latest.md/json`.
 The default graph stage keeps only exact original AssetMap rows needed by WebUI
 material/shader/texture/FMV edges. Use `--full-source-graph` for exhaustive
 Unity-object/PathID investigation. Use `--mission-pipeline-only` for recovery
 iteration when Story evidence, CN Story/Text Tables, and Mission Pipeline are
 the only requested outputs. Use `--mission-pipeline-data-only` when those Story
 outputs are already current and only Mission Pipeline JSON/frontend work needs
-refreshing; it skips freshness, evidence, Story, semantic-view, and source-graph
-stages.
+refreshing; it verifies freshness, then skips evidence, Story, semantic-view,
+and source-graph stages.
 When Story relations changed but the recovered Timeline and exported Table
 inputs did not, add `--reuse-timeline-orders --reuse-reference`. The latter
 validates the current localized reference index and every indexed file before
@@ -91,6 +97,8 @@ installed-game refresh. Asset modes, from narrowest to broadest, are
 `--animestudio-type-job-mode auto`: it merges map-filtered JSON, runs broad Story
 JSON types sequentially in isolated processes, and leaves asset conversion
 sharded.
+AnimeStudio and `build_audio.py` default to lossless FLAC output without an
+intermediate WAV file or `ffmpeg`; WAV and WEM are explicit compatibility modes.
 
 For a one-off diff between two already extracted versions that should directly
 generate the WebUI Updates page, run:
@@ -129,8 +137,8 @@ timeout_ms >= 900000
 
 Keep `reports/` free of loose files. Use these topic roots:
 
-- `reports/export/`: latest export summary, `runs/<timestamp>/` logs, and
-  `benchmarks/`.
+- `reports/export/`: latest export summary, post-Story step timings,
+  `runs/<timestamp>/` logs, and `benchmarks/`.
 - `reports/story/build/`: normal Story build reports, including source links,
   narrative videos, mission timeline recovery, scene-order gaps, and inferred
   option anchors.

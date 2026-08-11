@@ -995,10 +995,10 @@ function bindEvents() {
   $("#inline-tag-mode").addEventListener("change", (ev) => {
     setInlineTagDisplayMode(ev.target.checked ? "raw" : "rendered");
   });
-  $("#gender-variant").addEventListener("click", () => {
-    const btn = $("#gender-variant");
-    const isF = btn.getAttribute("aria-pressed") === "true";
-    setGenderVariant(isF ? "m" : "f");
+  $("#gender-variant").addEventListener("click", (ev) => {
+    const button = ev.target.closest("[data-story-gender-variant]");
+    if (!button || !ev.currentTarget.contains(button)) return;
+    setGenderVariant(button.dataset.storyGenderVariant);
   });
   $("#reveal-current").addEventListener("click", () => {
     const entry = getSelectedEntry();

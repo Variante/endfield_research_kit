@@ -875,14 +875,14 @@ def _asset_stats(scan: dict[str, Any], out_path: Path, export_root: Path) -> dic
     }
 
 
-def _video_stats(scan: dict[str, Any], out_path: Path, export_root: Path) -> dict:
+def _video_stats(scan: dict[str, Any], out_path: Path | None, export_root: Path) -> dict:
     counts = scan["videoCounts"]
     return {
         "sourceRoot": _label_text(scan["mediaRootLabels"], export_root),
         "sourceRoots": scan["mediaRootLabels"],
         "assets": counts["total"],
         "videos": counts["video"],
-        "indexBytes": out_path.stat().st_size,
+        "indexBytes": out_path.stat().st_size if out_path is not None else 0,
     }
 
 
@@ -935,12 +935,16 @@ def build_video_index(
 
 def build_asset_indexes(
     asset_out_path: Path,
-    video_out_path: Path,
     *,
     root: Path,
     export_root: Path,
-) -> tuple[dict, dict]:
-    """Build image/model and video indexes from a single filesystem scan."""
+) -> tuple[dict, dict, dict, dict]:
+    """Build image/model and video indexes from a single filesystem scan.
+
+    Only the asset index is written. The video payload is a Story-media build
+    input that no WebUI page fetches, so it is returned in memory instead of
+    round-tripping through ``webui/data/assets/videos.json``.
+    """
     scan = scan_exported_media_assets(
         root=root,
         export_root=export_root,
@@ -948,7 +952,6 @@ def build_asset_indexes(
     asset_payload = _asset_payload(scan, root=root, export_root=export_root)
     video_payload = _video_payload(scan, root=root, export_root=export_root)
     write_json(asset_out_path, asset_payload)
-    write_json(video_out_path, video_payload)
 
     asset_counts = scan["counts"]
     video_counts = scan["videoCounts"]
@@ -965,8 +968,10 @@ def build_asset_indexes(
             f"{scan['textureLinks']} texture links; {scan['previewModels']} model preview proxies)"
         ),
     )
-    print("Video index written:", video_out_path, f"({video_counts['video']} videos)")
+    print("Video index:", f"{video_counts['video']} videos (in-memory Story media input)")
     return (
         _asset_stats(scan, asset_out_path, export_root),
-        _video_stats(scan, video_out_path, export_root),
+        _video_stats(scan, None, export_root),
+        asset_payload,
+        video_payload,
     )

@@ -274,6 +274,76 @@ class StoryBuildPerformanceEquivalenceTests(unittest.TestCase):
         self.assertEqual("first", matches[0]["pin"]["label"])
         self.assertEqual(1.0, matches[0]["distanceXZ"])
 
+    def test_cross_file_order_sources_are_inherited_not_direct_carriers(self) -> None:
+        direct = "LevelScriptData/indie_dg002/8700040000.json"
+        neighbor = "LevelScriptData/indie_dg002/8700040001.json"
+        row = {
+            "incomingEdges": [{
+                "kind": "levelscriptFileOrder",
+                "sourceFiles": [direct],
+            }],
+            "outgoingEdges": [{
+                "kind": "levelscriptCrossFileOrder",
+                "sourceFiles": [direct, neighbor],
+            }],
+        }
+
+        direct_files, inherited_files = (
+            mission_recovery.scene_placement_source_file_groups(row)
+        )
+
+        self.assertEqual([direct], direct_files)
+        self.assertEqual([neighbor], inherited_files)
+        self.assertEqual([direct], mission_recovery.scene_placement_source_files(row))
+        self.assertEqual(
+            [neighbor],
+            mission_recovery.scene_placement_inherited_source_files(row),
+        )
+
+    def test_spatial_track_keeps_inherited_matches_out_of_default_map_matches(self) -> None:
+        direct = {
+            "questId": "e0m0_q#1",
+            "mapId": "indie_dg002",
+            "scriptId": "8700040000",
+            "offset": 10,
+            "distanceXZ": 1.0,
+            "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "placementEvidence": "directLevelScriptSource",
+            "displayOnSpatialMap": True,
+        }
+        inherited = {
+            "questId": "e0m0_q#1",
+            "mapId": "indie_dg002",
+            "scriptId": "8700040001",
+            "offset": 20,
+            "distanceXZ": 2.0,
+            "position": {"x": 4.0, "y": 5.0, "z": 6.0},
+            "placementEvidence": "inheritedCrossFileOrderSource",
+            "displayOnSpatialMap": False,
+        }
+        track = mission_recovery.build_quest_spatial_track(
+            {"quests": [{"id": "e0m0_q#1", "flowIndex": 0}]},
+            {
+                "cutscene_e0m0_13": {
+                    "spatialQuestCandidates": [direct],
+                    "inheritedSpatialQuestCandidates": [inherited],
+                }
+            },
+        )
+
+        self.assertEqual(1, len(track))
+        self.assertEqual(
+            ["8700040000"],
+            [row["scriptId"] for row in track[0]["spatialSourceMatches"]],
+        )
+        self.assertEqual(
+            ["8700040001"],
+            [row["scriptId"] for row in track[0]["inheritedSpatialSourceMatches"]],
+        )
+        self.assertFalse(
+            track[0]["inheritedSpatialSourceMatches"][0]["displayOnSpatialMap"]
+        )
+
     def test_scene_key_resolution_cache_isolated_by_resolver(self) -> None:
         anime_assets._resolve_payload_scene_key.cache_clear()
         first_calls = []

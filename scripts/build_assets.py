@@ -22,7 +22,7 @@ from asset_builder.index import (
     scan_exported_media_assets,
 )
 from asset_builder.gameplay_refs import build_from_paths as build_gameplay_asset_refs
-from asset_builder.story_media import build_story_media_payload, write_story_media_index, write_story_media_payload
+from asset_builder.story_media import build_story_media_payload, write_story_media_payload
 from common import ASSET_DIR, EXPORT_ROOT, LANG_DIR, OUT_DIR, ROOT, read_json, write_json
 
 
@@ -35,7 +35,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--index-only",
         dest="skip_bundles",
         action="store_true",
-        help="Build only index.json/videos.json and write an empty bundle index.",
+        help="Build only index.json and write an empty bundle index.",
     )
     parser.add_argument(
         "--fast",
@@ -47,6 +47,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=("focused", "default"),
         default="focused",
         help="`focused` writes compact Story/Wiki media indexes; `default` writes the broad Assets browser index.",
+    )
+    parser.add_argument(
+        "--skip-gameplay-refs",
+        action="store_true",
+        help=(
+            "Do not rebuild gameplay_refs.json. The root export pipeline uses "
+            "this while Gameplay and Assets build concurrently, then writes the "
+            "sidecar once after both inputs are current."
+        ),
     )
     return parser.parse_args(argv)
 
@@ -69,15 +78,36 @@ def write_empty_bundle_index() -> dict:
     }
 
 
-def load_existing_index_stats(asset_index_path: Path, video_index_path: Path) -> tuple[dict, dict] | None:
+def video_payload_from_asset_index(asset_payload: dict) -> dict:
+    """Derive the Story-media video input from the on-disk asset index.
+
+    The asset index already carries every exported video entry, so ``--fast``
+    can reuse it instead of a separate persisted video index.
+    """
+    entries = [
+        entry
+        for entry in (asset_payload.get("entries") or [])
+        if isinstance(entry, dict) and entry.get("k") == "video"
+    ]
+    return {
+        "generated": asset_payload.get("generated"),
+        "root": asset_payload.get("root") or "export_full",
+        "mode": asset_payload.get("mode") or "webui",
+        "sourceRoots": asset_payload.get("sourceRoots") or {},
+        "counts": {"total": len(entries), "video": len(entries)},
+        "entries": entries,
+    }
+
+
+def load_existing_index_stats(asset_index_path: Path) -> tuple[dict, dict, dict, dict] | None:
     asset_payload = read_json(asset_index_path, default={})
-    video_payload = read_json(video_index_path, default={})
-    if not isinstance(asset_payload, dict) or not isinstance(video_payload, dict):
+    if not isinstance(asset_payload, dict):
         return None
     asset_counts = asset_payload.get("counts") or {}
-    video_counts = video_payload.get("counts") or {}
-    if not asset_counts or not video_counts:
+    if not asset_counts:
         return None
+    video_payload = video_payload_from_asset_index(asset_payload)
+    video_counts = video_payload["counts"]
 
     asset_stats = {
         "sourceRoot": ", ".join(
@@ -94,9 +124,9 @@ def load_existing_index_stats(asset_index_path: Path, video_index_path: Path) ->
     }
     video_stats = {
         "videos": int(video_counts.get("video") or 0),
-        "indexBytes": video_index_path.stat().st_size,
+        "indexBytes": 0,
     }
-    return asset_stats, video_stats
+    return asset_stats, video_stats, asset_payload, video_payload
 
 
 def _source_root_label(source_roots: dict) -> str:
@@ -110,7 +140,6 @@ def _stats_from_compact_payloads(
     asset_payload: dict,
     video_payload: dict,
     asset_index_path: Path,
-    video_index_path: Path,
 ) -> tuple[dict, dict]:
     asset_counts = asset_payload.get("counts") or {}
     video_counts = video_payload.get("counts") or {}
@@ -130,7 +159,7 @@ def _stats_from_compact_payloads(
     }
     video_stats = {
         "videos": int(video_counts.get("video") or 0),
-        "indexBytes": video_index_path.stat().st_size,
+        "indexBytes": 0,
     }
     return asset_stats, video_stats
 
@@ -156,7 +185,7 @@ def write_gameplay_refs(asset_index_path: Path) -> None:
     )
 
 
-def build_webui_asset_indexes(asset_index_path: Path, video_index_path: Path) -> tuple[dict, dict, dict]:
+def build_webui_asset_indexes(asset_index_path: Path) -> tuple[dict, dict, dict]:
     scan = scan_exported_media_assets(
         root=ROOT,
         export_root=EXPORT_ROOT,
@@ -213,13 +242,11 @@ def build_webui_asset_indexes(asset_index_path: Path, video_index_path: Path) ->
     }
 
     write_json(asset_index_path, compact_asset_payload)
-    write_json(video_index_path, compact_video_payload)
     story_media_stats = write_story_media_payload(story_payload)
     asset_stats, video_stats = _stats_from_compact_payloads(
         compact_asset_payload,
         compact_video_payload,
         asset_index_path,
-        video_index_path,
     )
     print(
         "WebUI asset index written:",
@@ -229,7 +256,7 @@ def build_webui_asset_indexes(asset_index_path: Path, video_index_path: Path) ->
             f"{asset_stats['images']} images; {asset_stats['videos']} videos)"
         ),
     )
-    print("WebUI video index written:", video_index_path, f"({video_stats['videos']} videos)")
+    print("WebUI video index:", f"{video_stats['videos']} videos (in-memory Story media input)")
     return asset_stats, video_stats, story_media_stats
 
 
@@ -242,21 +269,26 @@ def main(argv: list[str] | None = None) -> None:
 
     print(f"Building {args.mode} asset index from {EXPORT_ROOT}...")
     asset_index_path = ASSET_DIR / "index.json"
-    video_index_path = ASSET_DIR / "videos.json"
-    existing_stats = load_existing_index_stats(asset_index_path, video_index_path) if args.fast else None
+    existing_stats = load_existing_index_stats(asset_index_path) if args.fast else None
     story_media_stats = None
     if existing_stats:
-        asset_stats, video_stats = existing_stats
-        print("Asset index scan: reused existing indexes (--fast)")
-        story_media_stats = write_story_media_index(asset_index_path, video_index_path)
+        asset_stats, video_stats, asset_payload, video_payload = existing_stats
+        print("Asset index scan: reused existing index (--fast)")
+        story_media_stats = write_story_media_payload(
+            build_story_media_payload(asset_payload, video_payload)
+        )
     elif args.mode == "focused":
-        asset_stats, video_stats, story_media_stats = build_webui_asset_indexes(asset_index_path, video_index_path)
+        asset_stats, video_stats, story_media_stats = build_webui_asset_indexes(asset_index_path)
     else:
-        asset_stats, video_stats = build_asset_indexes(
+        asset_stats, video_stats, asset_payload, video_payload = build_asset_indexes(
             asset_index_path,
-            video_index_path,
             root=ROOT,
             export_root=EXPORT_ROOT,
+        )
+        # Story media reuses the freshly scanned payloads instead of re-reading
+        # and re-parsing the ~150 MB asset index that was just written.
+        story_media_stats = write_story_media_payload(
+            build_story_media_payload(asset_payload, video_payload)
         )
     print(
         "\nAsset root copy:",
@@ -269,13 +301,7 @@ def main(argv: list[str] | None = None) -> None:
             f"{asset_stats['previewModels']} reviewable non-OBJ models)"
         ),
     )
-    print(
-        "Video index:",
-        video_index_path,
-        f"({video_stats['videos']} videos)",
-    )
-    if story_media_stats is None:
-        story_media_stats = write_story_media_index(asset_index_path, video_index_path)
+    print("Video index:", f"{video_stats['videos']} videos (in-memory Story media input)")
     print(
         "Story media index:",
         ASSET_DIR / "story_media.json",
@@ -284,7 +310,8 @@ def main(argv: list[str] | None = None) -> None:
             f"{story_media_stats['videos']} videos from {story_media_stats['videoRefs']} refs)"
         ),
     )
-    write_gameplay_refs(asset_index_path)
+    if not args.skip_gameplay_refs:
+        write_gameplay_refs(asset_index_path)
     if args.mode == "focused" or args.fast or args.skip_bundles:
         write_empty_bundle_index()
         print("Asset bundle output: skipped (focused/fast/index-only mode)")

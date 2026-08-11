@@ -35,7 +35,14 @@ DEFAULT_OUTPUT_DIR = ROOT / "videos"
 DEFAULT_CONCURRENCY = 8
 DEFAULT_STALE_LOCK_MINUTES = 30
 DEFAULT_DURATION_TOLERANCE_SECONDS = 2.0
-MAX_PLAYURL_REFRESH_ATTEMPTS = 4
+# Bilibili media mirrors sometimes terminate a bounded range just before its
+# end. Keep enough fresh-URL attempts for the existing partial to advance
+# without forcing a whole-season retry pass for every transient truncation.
+MAX_PLAYURL_REFRESH_ATTEMPTS = 64
+# Several Bilibili mirrors cap bounded responses at 512 KiB even when the
+# requested range is larger. Match that cap so normal responses advance without
+# consuming a fresh-play-URL attempt.
+RANGE_REQUEST_BYTES = 512 * 1024
 
 VIEW_API = "https://api.bilibili.com/x/web-interface/view"
 PLAYURL_API = "https://api.bilibili.com/x/player/playurl"
@@ -86,6 +93,7 @@ class StreamChoice:
     codecs: str = ""
     width: int | None = None
     height: int | None = None
+    backup_urls: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -286,7 +294,7 @@ def fetch_video_info(session: requests.Session, bvid: str) -> dict:
 
 
 def choose_video_stream(streams: list[dict], prefer_codec: str, quality: int) -> StreamChoice | None:
-    candidates = [item for item in streams if item.get("baseUrl") or item.get("base_url")]
+    candidates = [item for item in streams if stream_urls(item)]
     if not candidates:
         return None
 
@@ -309,30 +317,58 @@ def choose_video_stream(streams: list[dict], prefer_codec: str, quality: int) ->
             candidates = codec_matches
 
     best = max(candidates, key=lambda item: (int(item.get("id") or 0), int(item.get("bandwidth") or 0)))
+    urls = stream_urls(best)
     return StreamChoice(
-        url=str(best.get("baseUrl") or best.get("base_url")),
+        url=urls[0],
         label=f"video qn={best.get('id')} codecs={best.get('codecs')}",
         bandwidth=int(best.get("bandwidth") or 0),
         codecs=str(best.get("codecs") or ""),
         width=int_value(best.get("width")),
         height=int_value(best.get("height")),
+        backup_urls=urls[1:],
     )
+
+
+def stream_urls(item: dict) -> tuple[str, ...]:
+    primary = str(item.get("baseUrl") or item.get("base_url") or "").strip()
+    raw_backups = item.get("backupUrl") or item.get("backup_url") or []
+    if isinstance(raw_backups, str):
+        raw_backups = [raw_backups]
+    urls: list[str] = []
+    for value in [primary, *(raw_backups if isinstance(raw_backups, list) else [])]:
+        url = str(value or "").strip()
+        if url and url not in urls:
+            urls.append(url)
+    return tuple(urls)
 
 
 def choose_audio_stream(streams: list[dict]) -> StreamChoice | None:
-    candidates = [item for item in streams if item.get("baseUrl") or item.get("base_url")]
+    candidates = [item for item in streams if stream_urls(item)]
     if not candidates:
         return None
     best = max(candidates, key=lambda item: int(item.get("bandwidth") or 0))
+    urls = stream_urls(best)
     return StreamChoice(
-        url=str(best.get("baseUrl") or best.get("base_url")),
+        url=urls[0],
         label=f"audio id={best.get('id')}",
         bandwidth=int(best.get("bandwidth") or 0),
         codecs=str(best.get("codecs") or ""),
+        backup_urls=urls[1:],
     )
 
 
-def fetch_playurl(session: requests.Session, plan: PagePlan, quality: int, prefer_codec: str) -> tuple[StreamChoice, StreamChoice | None]:
+def stream_url_for_attempt(choice: StreamChoice, attempt: int) -> str:
+    urls = (choice.url, *choice.backup_urls)
+    return urls[(attempt - 1) % len(urls)]
+
+
+def fetch_playurl(
+    session: requests.Session,
+    plan: PagePlan,
+    quality: int,
+    prefer_codec: str,
+    playback_mode: str = "dash",
+) -> tuple[StreamChoice, StreamChoice | None]:
     referer = f"https://www.bilibili.com/video/{plan.bvid}?p={plan.page}"
     data = api_get(
         session,
@@ -341,13 +377,24 @@ def fetch_playurl(session: requests.Session, plan: PagePlan, quality: int, prefe
             "bvid": plan.bvid,
             "cid": plan.cid,
             "qn": quality,
-            "fnval": 16,
+            "fnval": 0 if playback_mode == "durl" else 16,
             "fnver": 0,
             "fourk": 1,
             "high_quality": 1,
         },
         referer=referer,
     )
+
+    durls = data.get("durl") or []
+    if playback_mode == "durl" and durls:
+        if len(durls) != 1:
+            raise DownloadError(
+                f"legacy DURL playback returned {len(durls)} segments for {plan.filename}; "
+                "multi-segment DURL playback is not supported"
+            )
+        durl = durls[0]
+        size = int(durl.get("size") or 0)
+        return StreamChoice(str(durl["url"]), f"single durl stream size={size}", size), None
 
     dash = data.get("dash")
     if isinstance(dash, dict):
@@ -357,10 +404,15 @@ def fetch_playurl(session: requests.Session, plan: PagePlan, quality: int, prefe
             raise DownloadError(f"no DASH video stream found for {plan.filename}")
         return video_choice, audio_choice
 
-    durls = data.get("durl") or []
     if durls:
+        if len(durls) != 1:
+            raise DownloadError(
+                f"legacy DURL playback returned {len(durls)} segments for {plan.filename}; "
+                "multi-segment DURL playback is not supported"
+            )
         best = max(durls, key=lambda item: int(item.get("size") or 0))
-        return StreamChoice(str(best["url"]), "single durl stream", int(best.get("size") or 0)), None
+        size = int(best.get("size") or 0)
+        return StreamChoice(str(best["url"]), f"single durl stream size={size}", size), None
 
     raise DownloadError(f"no playable stream found for {plan.filename}")
 
@@ -390,7 +442,7 @@ def download_stream(
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     last_error: BaseException | None = None
-    range_size = max(chunk_size, 8 * 1024 * 1024)
+    range_size = max(chunk_size, RANGE_REQUEST_BYTES)
     attempt = 1
     printed_start = False
 
@@ -739,6 +791,7 @@ def download_page(
     output_dir: Path,
     quality: int,
     prefer_codec: str,
+    playback_mode: str,
     overwrite: bool,
     dry_run: bool,
     adopt_existing: bool,
@@ -771,7 +824,13 @@ def download_page(
     try:
         for stream_attempt in range(1, MAX_PLAYURL_REFRESH_ATTEMPTS + 1):
             try:
-                video_choice, audio_choice = fetch_playurl(session, plan, quality, prefer_codec)
+                video_choice, audio_choice = fetch_playurl(
+                    session,
+                    plan,
+                    quality,
+                    prefer_codec,
+                    playback_mode,
+                )
                 if stream_attempt == 1:
                     print(f"  download {plan.filename}")
                 else:
@@ -782,7 +841,7 @@ def download_page(
                 print(f"    {video_choice.label}")
                 download_stream(
                     session,
-                    video_choice.url,
+                    stream_url_for_attempt(video_choice, stream_attempt),
                     video_part,
                     referer=referer,
                     lock_path=lock_path,
@@ -793,7 +852,7 @@ def download_page(
                     print(f"    {audio_choice.label}")
                     download_stream(
                         session,
-                        audio_choice.url,
+                        stream_url_for_attempt(audio_choice, stream_attempt),
                         audio_part,
                         referer=referer,
                         lock_path=lock_path,
@@ -830,6 +889,7 @@ def download_page_with_fresh_session(
     output_dir: Path,
     quality: int,
     prefer_codec: str,
+    playback_mode: str,
     overwrite: bool,
     dry_run: bool,
     adopt_existing: bool,
@@ -842,6 +902,7 @@ def download_page_with_fresh_session(
         output_dir=output_dir,
         quality=quality,
         prefer_codec=prefer_codec,
+        playback_mode=playback_mode,
         overwrite=overwrite,
         dry_run=dry_run,
         adopt_existing=adopt_existing,
@@ -857,6 +918,7 @@ def download_plans(
     output_dir: Path,
     quality: int,
     prefer_codec: str,
+    playback_mode: str,
     overwrite: bool,
     dry_run: bool,
     adopt_existing: bool,
@@ -874,6 +936,7 @@ def download_plans(
                     output_dir=output_dir,
                     quality=quality,
                     prefer_codec=prefer_codec,
+                    playback_mode=playback_mode,
                     overwrite=overwrite,
                     dry_run=dry_run,
                     adopt_existing=adopt_existing,
@@ -896,6 +959,7 @@ def download_plans(
                 output_dir=output_dir,
                 quality=quality,
                 prefer_codec=prefer_codec,
+                playback_mode=playback_mode,
                 overwrite=overwrite,
                 dry_run=dry_run,
                 adopt_existing=adopt_existing,
@@ -944,6 +1008,7 @@ def check_existing_page(
     *,
     quality: int,
     prefer_codec: str,
+    playback_mode: str,
     duration_tolerance: float,
     strict_codec: bool,
 ) -> str:
@@ -956,7 +1021,13 @@ def check_existing_page(
         print(f"  missing {plan.filename}")
         return "missing"
 
-    video_choice, audio_choice = fetch_playurl(session, plan, quality, prefer_codec)
+    video_choice, audio_choice = fetch_playurl(
+        session,
+        plan,
+        quality,
+        prefer_codec,
+        playback_mode,
+    )
     probe = probe_media(plan.target)
     problems = validate_media_tracks(
         plan,
@@ -982,6 +1053,7 @@ def check_existing_plans(
     *,
     quality: int,
     prefer_codec: str,
+    playback_mode: str,
     duration_tolerance: float,
     strict_codec: bool,
 ) -> tuple[dict[str, int], list[CheckFailure]]:
@@ -994,6 +1066,7 @@ def check_existing_plans(
                 plan,
                 quality=quality,
                 prefer_codec=prefer_codec,
+                playback_mode=playback_mode,
                 duration_tolerance=duration_tolerance,
                 strict_codec=strict_codec,
             )
@@ -1095,6 +1168,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         choices=("avc", "hevc", "any"),
         default="avc",
         help="Prefer AVC/H.264 by default for easier local playback.",
+    )
+    parser.add_argument(
+        "--playback-mode",
+        choices=("dash", "durl"),
+        default="dash",
+        help=(
+            "Bilibili playback representation to request. DASH is the default; "
+            "use durl for pages whose DASH stream is shorter than the page duration."
+        ),
     )
     parser.add_argument(
         "--concurrency",
@@ -1208,6 +1290,7 @@ def main(argv: list[str] | None = None) -> int:
                 plans,
                 quality=args.quality,
                 prefer_codec=args.prefer_codec,
+                playback_mode=args.playback_mode,
                 duration_tolerance=max(0.0, args.duration_tolerance),
                 strict_codec=args.strict_codec,
             )
@@ -1220,6 +1303,7 @@ def main(argv: list[str] | None = None) -> int:
                 output_dir=output_dir,
                 quality=args.quality,
                 prefer_codec=args.prefer_codec,
+                playback_mode=args.playback_mode,
                 overwrite=args.overwrite,
                 dry_run=args.dry_run,
                 adopt_existing=not args.no_adopt_existing,
@@ -1241,6 +1325,7 @@ def main(argv: list[str] | None = None) -> int:
                 output_dir=output_dir,
                 quality=args.quality,
                 prefer_codec=args.prefer_codec,
+                playback_mode=args.playback_mode,
                 overwrite=True,
                 dry_run=args.dry_run,
                 adopt_existing=False,

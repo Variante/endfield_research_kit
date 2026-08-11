@@ -80,9 +80,9 @@ MEMORYPACK_EXTENDED_OBJECT_HEADER = 250
 MEMORYPACK_UNION_WIDE_TAG = 0xFA
 MEMORYPACK_MAX_MEMBER_COUNT = 128
 LIPSYNC_MEMBER_COUNT = 15
-BUFF_MEMBER_COUNT = 29
+BUFF_MEMBER_COUNT = 30
 CHAR_INTERACT_PERFORM_MEMBER_COUNT = 26
-SKILL_MEMBER_COUNT = 45
+SKILL_MEMBER_COUNT = 47
 LEVELDATA_MEMBER_COUNT = 42
 LEVELSCRIPT_TEMPLATE_MEMBER_COUNT = 6
 INTERACTIVE_TABLE_MEMBER_COUNT = 2
@@ -350,6 +350,7 @@ MEMORYPACK_FIELD_SCHEMAS = {
         "ignoreTagImmune",
         "lifeType",
         "maxTriggerCnt",
+        "onlyUseSelfTimeDilation",
         "poiseModifier",
         "shieldConfigs",
         "stackingSettings",
@@ -574,6 +575,7 @@ MEMORYPACK_FIELD_SCHEMAS = {
     ],
     "SkillData": [
         "actionGroupData",
+        "aiExclusiveFrame",
         "attackRangeType",
         "blackboard",
         "buffInputBase",
@@ -618,6 +620,7 @@ MEMORYPACK_FIELD_SCHEMAS = {
         "tagDuringAttach",
         "toggleBuffs",
         "uiRangeHints",
+        "useAIExclusiveFrame",
     ],
 }
 
@@ -643,6 +646,7 @@ BUFF_MEMORYPACK_FIELD_TYPES = {
     "ignoreTagImmune": "System.Boolean",
     "lifeType": "Beyond.Gameplay.Core.Buff.LifeType",
     "maxTriggerCnt": "Beyond.Blackboard.BlackboardInt",
+    "onlyUseSelfTimeDilation": "System.Boolean",
     "poiseModifier": "List",
     "shieldConfigs": "List",
     "stackingSettings": "Beyond.Gameplay.Core.BuffStackingSettings.IdentifierType",
@@ -663,6 +667,7 @@ BUFF_VALUE_FIELD_NAMES = {
     "ignoreTagImmune",
     "lifeType",
     "maxTriggerCnt",
+    "onlyUseSelfTimeDilation",
     "triggerInterval",
     "useTimeDilationDt",
     "waitFirstTriggerInterval",
@@ -681,6 +686,7 @@ BUFF_SCHEMA_SAMPLE_FIELDS = [
 ]
 SKILL_MEMORYPACK_FIELD_TYPES = {
     "actionGroupData": "Beyond.Gameplay.Core.ActionGroupData",
+    "aiExclusiveFrame": "System.Int32",
     "attackRangeType": "Beyond.Gameplay.AttackRangeType",
     "blackboard": "Dictionary",
     "buffInputBase": "Beyond.Gameplay.Core.BuffInputBase",
@@ -725,8 +731,10 @@ SKILL_MEMORYPACK_FIELD_TYPES = {
     "tagDuringAttach": "Beyond.Gameplay.Core.GameplayTagList",
     "toggleBuffs": "List",
     "uiRangeHints": "List",
+    "useAIExclusiveFrame": "System.Boolean",
 }
 SKILL_VALUE_FIELD_NAMES = {
+    "aiExclusiveFrame",
     "attackRangeType",
     "canCastInAir",
     "canDummyCast",
@@ -757,6 +765,7 @@ SKILL_VALUE_FIELD_NAMES = {
     "skillSpecification",
     "smartTargetSelectStrategy",
     "switchToCenterBeforeCast",
+    "useAIExclusiveFrame",
 }
 SKILL_SCHEMA_SAMPLE_FIELDS = [
     "skillId",
@@ -765,6 +774,7 @@ SKILL_SCHEMA_SAMPLE_FIELDS = [
     "iconId",
     "durationFrame",
     "exclusiveFrame",
+    "aiExclusiveFrame",
     "hittableAttackRange",
     "skillTags",
     "actionGroupData",
@@ -772,6 +782,29 @@ SKILL_SCHEMA_SAMPLE_FIELDS = [
     "blackboard",
     "switchToBuffConfig",
 ]
+
+
+def validate_combat_memorypack_schema_definitions() -> None:
+    for schema_name, expected_count, field_types in (
+        ("BuffData", BUFF_MEMBER_COUNT, BUFF_MEMORYPACK_FIELD_TYPES),
+        ("SkillData", SKILL_MEMBER_COUNT, SKILL_MEMORYPACK_FIELD_TYPES),
+    ):
+        schema = MEMORYPACK_FIELD_SCHEMAS[schema_name]
+        if len(schema) != expected_count:
+            raise RuntimeError(
+                f"{schema_name} schema definition has {len(schema)} fields; "
+                f"member-count gate expects {expected_count}"
+            )
+        missing_types = [field_name for field_name in schema if field_name not in field_types]
+        if missing_types:
+            raise RuntimeError(
+                f"{schema_name} schema is missing field types for: "
+                + ", ".join(missing_types)
+            )
+
+
+validate_combat_memorypack_schema_definitions()
+
 SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH = 148
 SKILL_UI_RANGE_HINT_MEMBER_COUNT = 3
 SKILL_HINT_SHAPE_MEMBER_COUNT = 21
@@ -6298,9 +6331,13 @@ def find_buff_timeline_actions_body_end(
 
 
 BUFF_OPAQUE_STACK_EFFECT_ACTION_MAX_ACTIONS = 16
-BUFF_OPAQUE_STACK_EFFECT_ACTION_FIXED_BYTES = 471
-BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET = 37
 BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_MAX_BYTES = 256
+BUFF_OPAQUE_STACK_EFFECT_ACTION_LAYOUTS = {
+    # memberCount: (EffectActionCfg memberCount, effectName length offset,
+    #               total fixed bytes excluding effectName bytes, trailing shape)
+    15: (74, 37, 471, "target-settings-u32"),
+    17: (85, 71, 581, "target-settings-u32-plus-guard-bool"),
+}
 BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_U32_OFFSETS = (1, 18, 318, 390, 467)
 BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_F32X3_OFFSETS = (190,)
 BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_BLOCK_OFFSETS = (128, 202, 246)
@@ -6315,6 +6352,7 @@ def skip_buff_stack_effects_effect_actions_body(
     action_counts: list[int] = []
     samples: list[dict[str, Any]] = []
     effect_name_counts: Counter[str] = Counter()
+    action_layout_counts: Counter[int] = Counter()
     diagnostic_u32_counts: dict[int, Counter[int]] = {
         raw_offset: Counter() for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_U32_OFFSETS
     }
@@ -6342,29 +6380,33 @@ def skip_buff_stack_effects_effect_actions_body(
 
         for action_index in range(action_count):
             action_start = offset
-            if action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_FIXED_BYTES > len(data):
+            if action_start >= len(data):
                 raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:truncated-body")
             member_count = data[action_start]
-            if member_count != 15:
+            layout = BUFF_OPAQUE_STACK_EFFECT_ACTION_LAYOUTS.get(member_count)
+            if layout is None:
                 raise ValueError(
                     f"stackEffects[{item_index}].effectActions[{action_index}]:member-count={member_count}"
                 )
+            cfg_member_count, name_offset, fixed_bytes, trailing_shape = layout
+            if action_start + fixed_bytes > len(data):
+                raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:truncated-body")
             discriminator = struct.unpack_from("<I", data, action_start + 1)[0]
             if discriminator != 1:
                 raise ValueError(
                     f"stackEffects[{item_index}].effectActions[{action_index}]:discriminator={discriminator}"
                 )
             marker = struct.unpack_from("<I", data, action_start + 18)[0]
-            if marker != 74:
+            if marker != cfg_member_count:
                 raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:marker={marker}")
-            name_len = struct.unpack_from("<I", data, action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET)[0]
+            name_len = struct.unpack_from("<I", data, action_start + name_offset)[0]
             if name_len <= 0 or name_len > BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_MAX_BYTES:
                 raise ValueError(
                     f"stackEffects[{item_index}].effectActions[{action_index}].effectName:invalid-length={name_len}"
                 )
-            name_start = action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET + 4
+            name_start = action_start + name_offset + 4
             name_end = name_start + name_len
-            action_end = action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_FIXED_BYTES + name_len
+            action_end = action_start + fixed_bytes + name_len
             if action_end > len(data):
                 raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:truncated-named-body")
             try:
@@ -6377,13 +6419,28 @@ def skip_buff_stack_effects_effect_actions_body(
                 raise ValueError(
                     f"stackEffects[{item_index}].effectActions[{action_index}].effectName:unexpected={effect_name[:24]}"
                 )
-            if data[action_end - 4:action_end] != b"\x04\x00\x00\x00":
+            if member_count == 17:
+                if struct.unpack_from("<I", data, name_end)[0] != 0:
+                    raise ValueError(
+                        f"stackEffects[{item_index}].effectActions[{action_index}]"
+                        ".effectPosData:nonempty-list"
+                    )
+                if (
+                    data[action_end - 5:action_end - 1] != b"\x04\x00\x00\x00"
+                    or data[action_end - 1] not in (0, 1)
+                ):
+                    raise ValueError(
+                        f"stackEffects[{item_index}].effectActions[{action_index}]"
+                        ":missing-target-settings-tail-or-guard-bool"
+                    )
+            elif data[action_end - 4:action_end] != b"\x04\x00\x00\x00":
                 raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:missing-terminal-u32")
             effect_name_counts[effect_name] += 1
+            action_layout_counts[member_count] += 1
             diagnostic_u32: dict[str, int] = {}
             for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_U32_OFFSETS:
                 source_offset = action_start + raw_offset
-                if raw_offset >= BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET + 4:
+                if raw_offset >= name_offset + 4:
                     source_offset += name_len
                 value = struct.unpack_from("<I", data, source_offset)[0]
                 diagnostic_u32_counts[raw_offset][value] += 1
@@ -6391,7 +6448,7 @@ def skip_buff_stack_effects_effect_actions_body(
             diagnostic_f32x3: dict[str, list[float]] = {}
             for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_F32X3_OFFSETS:
                 source_offset = action_start + raw_offset
-                if raw_offset >= BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET + 4:
+                if raw_offset >= name_offset + 4:
                     source_offset += name_len
                 values = struct.unpack_from("<fff", data, source_offset)
                 if all(math.isfinite(value) for value in values):
@@ -6410,7 +6467,8 @@ def skip_buff_stack_effects_effect_actions_body(
                     "bytes": action_end - action_start,
                     "memberCount": member_count,
                     "rawDiscriminator": discriminator,
-                    "marker": marker,
+                    "effectActionCfgMemberCount": marker,
+                    "trailingShape": trailing_shape,
                     "effectName": effect_name,
                     "effectNameLength": name_len,
                     "normalizedU32Fields": diagnostic_u32,
@@ -6419,22 +6477,40 @@ def skip_buff_stack_effects_effect_actions_body(
                 })
             offset = action_end
 
-    pad_offset = offset
+    stacking_key_prefix_offset = offset
     if offset + 4 > len(data):
-        raise ValueError("stackEffects:truncated-terminal-pad")
-    if data[offset:offset + 4] != b"\x00\x00\x00\x00":
-        raise ValueError("stackEffects:missing-terminal-pad")
-    offset += 4
+        raise ValueError("stackEffects:truncated-stacking-key-prefix")
+    stacking_key_length = struct.unpack_from("<I", data, offset)[0]
+    stacking_key_prefix_handling = "left-nonempty-string-for-stackingSettings"
+    stacking_key_preview = ""
+    if stacking_key_length == 0:
+        # The compact empty-key branch historically looked like a terminal pad.
+        # It is the serialized empty stackingKey string and must be consumed here
+        # because the downstream compact-suffix branch begins at stackingType.
+        offset += 4
+        stacking_key_prefix_handling = "consumed-empty-string-prefix"
+    else:
+        stacking_key_preview, _key_end, key_error = read_memorypack_utf8_string(
+            data,
+            offset,
+            max_length=256,
+        )
+        if key_error or not stacking_key_preview or not is_clean_skill_identifier_string(stacking_key_preview):
+            raise ValueError(f"stackEffects:invalid-stacking-key-prefix={stacking_key_length}")
 
     return {
         "stackEffectsBodyShape": (
-            "opaque EffectActionCfg list; each action has memberCount=15, discriminator=1, "
-            "marker=74, P_* effect name at +37, fixed 471-byte body plus name bytes, terminal u32=4"
+            "opaque EffectAction list with exact versioned byte boundaries; memberCount=15 uses "
+            "EffectActionCfg memberCount=74/name@+37/fixed=471, while memberCount=17 uses "
+            "EffectActionCfg memberCount=85/name@+71/fixed=581 and the added guard-source tail"
         ),
-        "stackEffectsBodyPadOffset": format_offset(pad_offset),
+        "stackingKeyPrefixOffset": format_offset(stacking_key_prefix_offset),
+        "stackingKeyPrefixHandling": stacking_key_prefix_handling,
+        "stackingKeyPreview": stacking_key_preview,
         "effectActionsSemanticStatus": "partial-effectActions-unproven-field-order",
         "opaqueEffectActionCount": total_action_count,
         "effectActionsPerStackEffect": action_counts,
+        "effectActionMemberCountCounts": short_counter_dict(action_layout_counts),
         "effectActionNameCounts": short_counter_dict(effect_name_counts, limit=32),
         "effectActionNormalizedU32Counts": {
             format_offset(raw_offset): short_counter_dict(counter)
@@ -6517,6 +6593,40 @@ def read_buff_compact_tag_list_field(
     }, offset
 
 
+def read_buff_compact_tag_id_list_field(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset + 5 > len(data):
+        raise ValueError(f"{field_name}:truncated-compact-tag-id-list")
+    prefix_member_count = data[offset]
+    if prefix_member_count != 0:
+        raise ValueError(f"{field_name}:compact-id-list-prefix={prefix_member_count}")
+    count = struct.unpack_from("<I", data, offset + 1)[0]
+    if count <= 0 or count > 16:
+        raise ValueError(f"{field_name}:compact-id-list-count={count}")
+    offset += 5
+    end = offset + count * 4
+    if end > len(data):
+        raise ValueError(f"{field_name}:truncated-compact-tag-ids")
+    tag_ids = list(struct.unpack_from(f"<{count}I", data, offset))
+    if any(tag_id == 0 for tag_id in tag_ids):
+        raise ValueError(f"{field_name}:zero-compact-tag-id")
+    return {
+        "memberCount": prefix_member_count,
+        "offset": format_offset(start),
+        "branch": "compact-tag-id-list",
+        "branchNote": (
+            "observed tagsAfterTriggerExtendBuffAction list uses a zero prefix byte, "
+            "u32 count, and packed u32 gameplay-tag ids without inline names"
+        ),
+        "count": count,
+        "tagIds": [f"0x{tag_id:08x}" for tag_id in tag_ids],
+    }, end
+
+
 def read_buff_tags_after_trigger_field(
     data: bytes,
     offset: int,
@@ -6541,7 +6651,12 @@ def read_buff_tags_after_trigger_field(
     try:
         return read_buff_compact_empty_tag_field(data, offset, field_name)
     except (struct.error, UnicodeDecodeError, ValueError):
+        pass
+
+    try:
         return read_buff_compact_tag_list_field(data, offset, field_name)
+    except (struct.error, UnicodeDecodeError, ValueError):
+        return read_buff_compact_tag_id_list_field(data, offset, field_name)
 
 
 def parse_buff_tail_after_shield_configs(
@@ -6874,6 +6989,11 @@ def read_buff_post_ignite_suffix(
         offset,
         "maxTriggerCnt",
     )
+    only_use_self_time_dilation, offset = read_buff_bool_field(
+        data,
+        offset,
+        "onlyUseSelfTimeDilation",
+    )
     poise_modifier_count, offset = read_buff_u32_field(data, offset, "poiseModifierCount")
     if poise_modifier_count > 256:
         raise ValueError(f"poiseModifierCount:large-count={poise_modifier_count}")
@@ -6884,6 +7004,7 @@ def read_buff_post_ignite_suffix(
         "ignoreTagImmune": ignore_tag_immune,
         "lifeTypeRaw": life_type,
         "maxTriggerCnt": max_trigger_count,
+        "onlyUseSelfTimeDilation": only_use_self_time_dilation,
         "poiseModifierCount": poise_modifier_count,
     })
     if poise_modifier_count:
@@ -6910,8 +7031,14 @@ def read_buff_post_ignite_suffix(
 
 
 BUFF_IGNITE_NESTED_BLOCK_START = b"\x03\x01\x00\x00\x00\x03"
-BUFF_IGNITE_NESTED_BLOCK_LONG_HEADER = b"\x03\x01\x00\x00\x00\x03\x02\x00\x00\x00\xfa\x44\x01\x08"
-BUFF_IGNITE_NESTED_BLOCK_SHORT_HEADER = b"\x03\x01\x00\x00\x00\x03\x01\x00\x00\x00\x82\x11\x01"
+BUFF_IGNITE_NESTED_BLOCK_LONG_HEADERS = (
+    ("energy-shard-long-v1", b"\x03\x01\x00\x00\x00\x03\x02\x00\x00\x00\xfa\x44\x01\x08"),
+    ("energy-shard-long-v2", b"\x03\x01\x00\x00\x00\x03\x02\x00\x00\x00\xfa\x5d\x01\x08"),
+)
+BUFF_IGNITE_NESTED_BLOCK_SHORT_HEADERS = (
+    ("energy-shard-short-v1", b"\x03\x01\x00\x00\x00\x03\x01\x00\x00\x00\x82\x11\x01"),
+    ("energy-shard-short-v2", b"\x03\x01\x00\x00\x00\x03\x01\x00\x00\x00\x8a\x13\x01"),
+)
 BUFF_IGNITE_NESTED_BLOCK_TAIL_PREFIX = b"\x04\x00\x00\x00\x00\x00\x00"
 
 
@@ -6944,12 +7071,18 @@ def validate_buff_ignite_nested_blocks(
     for index, start in enumerate(starts):
         block_end = starts[index + 1] if index + 1 < len(starts) else body_end
         if index < 3:
-            expected_header = BUFF_IGNITE_NESTED_BLOCK_LONG_HEADER
-            header_kind = "energy-shard-long"
+            header_variants = BUFF_IGNITE_NESTED_BLOCK_LONG_HEADERS
         else:
-            expected_header = BUFF_IGNITE_NESTED_BLOCK_SHORT_HEADER
-            header_kind = "energy-shard-short"
-        if data[start:start + len(expected_header)] != expected_header:
+            header_variants = BUFF_IGNITE_NESTED_BLOCK_SHORT_HEADERS
+        header_kind = next(
+            (
+                name
+                for name, header in header_variants
+                if data[start:start + len(header)] == header
+            ),
+            "",
+        )
+        if not header_kind:
             raise ValueError(f"igniteEventActionNestedBlocks[{index}]:header-mismatch")
         if block_end - start < 11:
             raise ValueError(f"igniteEventActionNestedBlocks[{index}]:truncated-tail")
@@ -7359,6 +7492,7 @@ def buff_post_id_prefix_sample(prefix: dict[str, Any]) -> str:
         parts = [
             f"life:{prefix.get('lifeTypeRaw')}",
             f"maxTrig:{max_trigger.get('value')}",
+            f"selfTime:{int(bool(prefix.get('onlyUseSelfTimeDilation')))}",
             f"stack:{stacking.get('stackingTypeRaw')}",
             f"maxStack:{stacking.get('maxStackCnt')}",
             f"trig:{trigger.get('value')}",
@@ -7370,6 +7504,7 @@ def buff_post_id_prefix_sample(prefix: dict[str, Any]) -> str:
         f"life:{prefix.get('lifeTypeRaw')}",
         f"maxTrig:{max_trigger.get('value')}",
         f"immune:{int(bool(prefix.get('ignoreTagImmune')))}",
+        f"selfTime:{int(bool(prefix.get('onlyUseSelfTimeDilation')))}",
         f"poise:{prefix.get('poiseModifierCount')}",
     ]
     if "shieldConfigsCount" in prefix:
@@ -7461,15 +7596,21 @@ def read_skill_gameplay_tag_record(data: bytes, offset: int, field_name: str, in
     member_count = data[offset]
     offset += 1
     tag_id, offset = read_buff_u32_field(data, offset, f"{field_name}[{index}].tagId")
-    tag_name, offset, error = read_memorypack_utf8_string(data, offset, max_length=256)
-    if error:
-        raise ValueError(f"{field_name}[{index}].tagName:{error}")
+    if member_count == 1:
+        tag_name = ""
+        encoding = "member1-id-only"
+    else:
+        tag_name, offset, error = read_memorypack_utf8_string(data, offset, max_length=256)
+        if error:
+            raise ValueError(f"{field_name}[{index}].tagName:{error}")
+        encoding = "member-and-id-plus-name"
     tag_name = tag_name or ""
     if tag_name and not is_clean_skill_tag_name(tag_name):
         raise ValueError(f"{field_name}[{index}].tagName:not-clean len={len(tag_name)}")
     return {
         "index": index,
         "memberCount": member_count,
+        "encoding": encoding,
         "tagId": tag_id,
         "tagHash": f"0x{tag_id:08x}",
         "tagName": tag_name,
@@ -8021,9 +8162,16 @@ def decode_skill_post_switch_tail_at(
         for index in range(ui_range_hints_count):
             hint, offset = read_skill_ui_range_hint_data(data, offset, index)
             ui_range_hints.append(hint)
+        use_ai_exclusive_frame, offset = read_skill_bool_field(
+            data,
+            offset,
+            "useAIExclusiveFrame",
+        )
         result["status"] = "parsed-through-exact-tail"
         result["uiRangeHintsCount"] = ui_range_hints_count
+        result["uiRangeHintsEncoding"] = "counted"
         result["uiRangeHints"] = ui_range_hints[:8]
+        result["useAIExclusiveFrame"] = use_ai_exclusive_frame
         result["endOffset"] = format_offset(offset)
         result["exactLength"] = offset == len(data)
         if offset != len(data):
@@ -8384,6 +8532,8 @@ def skill_post_id_tail_sample(prefix: dict[str, Any]) -> str:
                 parts.append(f"toggle:{post_switch_tail.get('toggleBuffsCount')}")
             if "uiRangeHintsCount" in post_switch_tail:
                 parts.append(f"ui:{post_switch_tail.get('uiRangeHintsCount')}")
+            if "useAIExclusiveFrame" in post_switch_tail:
+                parts.append(f"aiExclusive:{int(bool(post_switch_tail.get('useAIExclusiveFrame')))}")
             if post_switch_tail.get("status") == "parsed-through-exact-tail":
                 parts.append("tailExact")
             elif post_switch_tail.get("status") == "parse-error":
@@ -13836,11 +13986,41 @@ def memorypack_schema_for_rel(rel: str, category: str, member_count: int) -> tup
     return None, None
 
 
+def combat_memorypack_schema_mismatch(
+    category: str,
+    member_count: int,
+    expected_count: int,
+) -> dict[str, Any]:
+    return {
+        "kind": "memorypack-json",
+        "subtype": category,
+        "summary": (
+            f"Unsupported MemoryPack {category} schema; object member count "
+            f"{member_count}; expected {expected_count}; decoder stopped before field interpretation"
+        ),
+        "rows": None,
+        "keys": [],
+        "sample": f"schemaMismatch=member-count; actual={member_count}; expected={expected_count}",
+        "decoded": {
+            "memberCount": member_count,
+            "expectedMemberCount": expected_count,
+            "format": "memorypack",
+            "schemaStatus": "unsupported-member-count",
+            "schemaSource": MEMORYPACK_SCHEMA_SOURCE_NOTE,
+        },
+    }
+
+
 def decode_memorypack_json(rel: str, path: Path, size: int, header: bytes) -> dict[str, Any] | None:
     category = category_for_rel(rel)
     member_count = memorypack_member_count(header)
     if member_count is None:
         return None
+
+    if category == "BuffData" and member_count != BUFF_MEMBER_COUNT:
+        return combat_memorypack_schema_mismatch(category, member_count, BUFF_MEMBER_COUNT)
+    if category == "SkillData" and member_count != SKILL_MEMBER_COUNT:
+        return combat_memorypack_schema_mismatch(category, member_count, SKILL_MEMBER_COUNT)
 
     if category == "LevelScriptData":
         data = read_binary_for_parser(path, size, header, max_size=8_000_000)

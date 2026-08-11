@@ -14,6 +14,8 @@
     selectedQuestId: "",
     missionCache: new Map(),
     localizedCache: new Map(),
+    storyPreviewCache: new Map(),
+    storyPreviewRequest: 0,
     indexPromise: null,
     request: 0,
     missionRequest: 0,
@@ -511,6 +513,33 @@
       branches: "fan-outs",
       storyOrder: "Source-proven Story order",
       storyOrderHint: "This is a partial causal graph. It preserves branches, joins, cycles, and unknown pairs; it is not a guessed total file sequence.",
+      spatialStoryMap: "Story file spatial position map",
+      spatialStoryMapHint: "Quest tracking pins and nearby LevelScript carrier coordinates are projected onto the X/Z plane. Hover or focus a file to preview its localized content.",
+      spatialStoryMapBoundary: "Spatial proximity is a weak diagnostic placement hint. It does not prove that a quest triggers a Story file, and it never creates Story order.",
+      spatialDirectWeak: "direct LevelScript carrier (weak)",
+      spatialAlternateWeakPositions: "Additional weak positions",
+      spatialAlternateWeakPositionsHint: "Only the nearest direct-carrier candidate is drawn for each Story file. These folded alternatives remain diagnostic evidence, not additional playbacks.",
+      spatialInheritedWeakPositions: "Cross-file inherited positions",
+      spatialInheritedWeakPositionsHint: "These coordinates come only from a levelscriptCrossFileOrder neighbor. They are retained for audit but are not drawn or used as the Story file position.",
+      spatialPositionedFiles: "positioned files",
+      spatialSourceClusters: "source clusters",
+      spatialQuestPins: "quest pins",
+      spatialTriggerUnknown: "Trigger unresolved",
+      spatialTriggerUnknownHint: "These isolated Story files have no exact trigger route in the current recovery graph and no usable spatial carrier position.",
+      spatialOtherUnpositioned: "Other files without a position",
+      spatialOtherUnpositionedHint: "These files have other evidence or an exact native playback context, but no carrier coordinate suitable for this map.",
+      spatialCarrier: "LevelScript carrier",
+      spatialExactInteractionTrigger: "exact map interaction trigger",
+      spatialExactWorldEntityTrigger: "exact world-entity event trigger",
+      spatialCoordinates: "world X/Y/Z",
+      spatialNearestQuest: "nearest mission point",
+      spatialProximityOnly: "spatial context only; not quest ownership or Story order",
+      spatialQuestGap: "one or more quest positions are missing between these pins",
+      spatialHoverHint: "Hover a file name for a content preview; select it to open the full Story entry.",
+      storyPreviewLoading: "Loading Story preview…",
+      storyPreviewUnavailable: "Preview unavailable for this Story file.",
+      storyPreviewNoDialogue: "No localized dialogue lines are exported for this file.",
+      storyPreviewOpen: "Open full Story entry",
       orderCrossReference: "Manual/OCR order cross-reference",
       orderCrossReferenceHint: "Only strict source partial-order edges are evidence. The active manual override and OCR proposal are shown as diagnostic comparisons; they never create, strengthen, weaken, or remove an edge.",
       orderCrossReferenceStrictEdges: "strict source edges",
@@ -1068,6 +1097,13 @@
       offlineRecoveryEvidenceNpcProxyConsumer: "Auto-discovered DialogTree + native NPC-proxy consumer - mission activation unknown",
       offlineRecoveryEvidenceBinarySns: "SNS definition only - no consumer on current original-data surfaces",
       offlineRecoveryEvidenceBinaryReadingPopup: "Readable definition only - no activator on current original-data surfaces",
+      offlineRecoveryEvidenceReadingPopupReceiver: "Exact popup receiver - interactive event producer unresolved",
+      offlineRecoveryEvidenceReadingPopupTrigger: "Exact map interaction trigger and reading-popup playback",
+      offlineRecoveryReadingPopupReceiver: "Exact reading-popup receiver",
+      offlineRecoveryReadingPopupProperty: "direct reading-popup id",
+      offlineRecoveryReadingPopupHostStatus: "argument host status",
+      offlineRecoveryReadingPopupInteraction: "Map interaction trigger",
+      offlineRecoveryReadingPopupCoordinates: "world coordinates",
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "Unregistered dialog definition - no consumer on current original-data surfaces",
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "Auto-discovered DialogTree definition - no activator on current original-data surfaces",
       offlineRecoveryOptionRoutes: "Validated authored option routes",
@@ -1931,6 +1967,13 @@
       offlineRecoveryEvidenceNpcProxyConsumer: "\u539f\u59cb\u4e8c\u8fdb\u5236 NPC \u4ee3\u7406\u6d88\u8d39\u8005\uff0c\u4efb\u52a1\u6fc0\u6d3b\u65f6\u673a\u672a\u77e5",
       offlineRecoveryEvidenceBinarySns: "\u4ec5 SNS \u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6d88\u8d39\u8005",
       offlineRecoveryEvidenceBinaryReadingPopup: "\u4ec5\u53ef\u8bfb\u5185\u5bb9\u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6fc0\u6d3b\u5668",
+      offlineRecoveryEvidenceReadingPopupReceiver: "\u5df2\u7cbe\u786e\u6062\u590d\u9605\u8bfb\u5f39\u7a97\u63a5\u6536\u5668\uff0c\u4ea4\u4e92\u4e8b\u4ef6\u751f\u4ea7\u8005\u672a\u77e5",
+      offlineRecoveryEvidenceReadingPopupTrigger: "\u7cbe\u786e\u5730\u56fe\u4ea4\u4e92\u89e6\u53d1\u4e0e\u9605\u8bfb\u5f39\u7a97\u64ad\u653e",
+      offlineRecoveryReadingPopupReceiver: "\u7cbe\u786e\u9605\u8bfb\u5f39\u7a97\u63a5\u6536\u5668",
+      offlineRecoveryReadingPopupProperty: "\u76f4\u63a5\u9605\u8bfb\u5f39\u7a97 ID",
+      offlineRecoveryReadingPopupHostStatus: "\u53c2\u6570\u5bbf\u4e3b\u72b6\u6001",
+      offlineRecoveryReadingPopupInteraction: "\u5730\u56fe\u4ea4\u4e92\u89e6\u53d1\u5668",
+      offlineRecoveryReadingPopupCoordinates: "\u4e16\u754c\u5750\u6807",
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "\u672a\u6ce8\u518c\u5bf9\u8bdd\u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6d88\u8d39\u8005",
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "\u5df2\u6ce8\u518c DialogTree \u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6fc0\u6d3b\u5668",
       offlineRecoveryEvidenceMissionlessNativePlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u672c\u5730\u64ad\u653e\uff0c\u4efb\u52a1\u6865\u63a5\u4e0e\u987a\u5e8f\u672a\u77e5",
@@ -2044,6 +2087,33 @@
       triggerUnknownTransport: "\u4f20\u8f93\u8fb9\u754c\u672a\u89e3\u6790",
       storyOrder: "\u6e90\u6570\u636e\u8bc1\u660e\u7684\u5267\u60c5\u987a\u5e8f",
       storyOrderHint: "\u8fd9\u662f\u90e8\u5206\u56e0\u679c\u56fe\uff1a\u4fdd\u7559\u5206\u652f\u3001\u6c47\u5408\u3001\u5faa\u73af\u548c\u672a\u77e5\u987a\u5e8f\uff0c\u4e0d\u731c\u6d4b\u552f\u4e00\u6587\u4ef6\u5e8f\u5217\u3002",
+      spatialStoryMap: "Story \u6587\u4ef6\u7a7a\u95f4\u4f4d\u7f6e\u56fe",
+      spatialStoryMapHint: "\u5c06\u4efb\u52a1\u8ffd\u8e2a\u70b9\u548c\u9644\u8fd1 LevelScript \u8f7d\u4f53\u5750\u6807\u6295\u5f71\u5230 X/Z \u5e73\u9762\u3002\u60ac\u505c\u6216\u805a\u7126\u6587\u4ef6\u53ef\u9884\u89c8\u672c\u5730\u5316\u5185\u5bb9\u3002",
+      spatialStoryMapBoundary: "\u7a7a\u95f4\u63a5\u8fd1\u53ea\u662f\u5f31\u8bca\u65ad\u5b9a\u4f4d\u63d0\u793a\uff1b\u4e0d\u8bc1\u660e\u4efb\u52a1\u4f1a\u89e6\u53d1 Story \u6587\u4ef6\uff0c\u4e5f\u7edd\u4e0d\u751f\u6210 Story \u987a\u5e8f\u3002",
+      spatialDirectWeak: "\u76f4\u63a5 LevelScript \u8f7d\u4f53\uff08\u5f31\u8bc1\u636e\uff09",
+      spatialAlternateWeakPositions: "\u5176\u4ed6\u5f31\u5b9a\u4f4d\u5019\u9009",
+      spatialAlternateWeakPositionsHint: "\u6bcf\u4e2a Story \u6587\u4ef6\u53ea\u5728\u56fe\u4e0a\u7ed8\u5236\u8ddd\u79bb\u6700\u8fd1\u7684\u76f4\u63a5\u8f7d\u4f53\u5019\u9009\u3002\u6298\u53e0\u7684\u5176\u4ed6\u4f4d\u7f6e\u4ecd\u662f\u8bca\u65ad\u7ebf\u7d22\uff0c\u4e0d\u4ee3\u8868\u989d\u5916\u64ad\u653e\u6b21\u6570\u3002",
+      spatialInheritedWeakPositions: "\u8de8\u6587\u4ef6\u7ee7\u627f\u4f4d\u7f6e",
+      spatialInheritedWeakPositionsHint: "\u8fd9\u4e9b\u5750\u6807\u53ea\u6765\u81ea levelscriptCrossFileOrder \u76f8\u90bb\u6587\u4ef6\u3002\u5b83\u4eec\u4fdd\u7559\u4f9b\u5ba1\u8ba1\uff0c\u4f46\u4e0d\u7ed8\u5236\uff0c\u4e5f\u4e0d\u4f5c\u4e3a Story \u6587\u4ef6\u7684\u4f4d\u7f6e\u3002",
+      spatialPositionedFiles: "\u5df2\u5b9a\u4f4d\u6587\u4ef6",
+      spatialSourceClusters: "\u6e90\u5750\u6807\u7c07",
+      spatialQuestPins: "\u4efb\u52a1\u8ffd\u8e2a\u70b9",
+      spatialTriggerUnknown: "\u89e6\u53d1\u65b9\u5f0f\u672a\u89e3\u51b3",
+      spatialTriggerUnknownHint: "\u8fd9\u4e9b\u5b64\u7acb Story \u6587\u4ef6\u5728\u5f53\u524d\u6062\u590d\u56fe\u4e2d\u6ca1\u6709\u7cbe\u786e\u89e6\u53d1\u8def\u5f84\uff0c\u4e5f\u6ca1\u6709\u53ef\u7528\u7684\u7a7a\u95f4\u8f7d\u4f53\u5750\u6807\u3002",
+      spatialOtherUnpositioned: "\u5176\u4ed6\u65e0\u5750\u6807\u6587\u4ef6",
+      spatialOtherUnpositionedHint: "\u8fd9\u4e9b\u6587\u4ef6\u6709\u5176\u4ed6\u8bc1\u636e\u6216\u7cbe\u786e\u539f\u751f\u64ad\u653e\u4e0a\u4e0b\u6587\uff0c\u4f46\u6ca1\u6709\u9002\u5408\u6b64\u5730\u56fe\u7684\u8f7d\u4f53\u5750\u6807\u3002",
+      spatialCarrier: "LevelScript \u8f7d\u4f53",
+      spatialExactInteractionTrigger: "\u7cbe\u786e\u5730\u56fe\u4ea4\u4e92\u89e6\u53d1",
+      spatialExactWorldEntityTrigger: "\u7cbe\u786e\u4e16\u754c\u5b9e\u4f53\u4e8b\u4ef6\u89e6\u53d1",
+      spatialCoordinates: "\u4e16\u754c X/Y/Z",
+      spatialNearestQuest: "\u6700\u8fd1\u4efb\u52a1\u70b9",
+      spatialProximityOnly: "\u4ec5\u4e3a\u7a7a\u95f4\u4e0a\u4e0b\u6587\uff1b\u4e0d\u8bc1\u660e\u4efb\u52a1\u5f52\u5c5e\u6216 Story \u987a\u5e8f",
+      spatialQuestGap: "\u8fd9\u4e24\u4e2a\u8ffd\u8e2a\u70b9\u4e4b\u95f4\u7f3a\u5c11\u4e00\u4e2a\u6216\u591a\u4e2a\u4efb\u52a1\u5750\u6807",
+      spatialHoverHint: "\u60ac\u505c\u6587\u4ef6\u540d\u53ef\u9884\u89c8\u5185\u5bb9\uff1b\u70b9\u51fb\u53ef\u6253\u5f00\u5b8c\u6574 Story \u6761\u76ee\u3002",
+      storyPreviewLoading: "\u6b63\u5728\u52a0\u8f7d Story \u9884\u89c8\u2026",
+      storyPreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u6b64 Story \u6587\u4ef6\u3002",
+      storyPreviewNoDialogue: "\u6b64\u6587\u4ef6\u672a\u5bfc\u51fa\u672c\u5730\u5316\u5bf9\u8bdd\u884c\u3002",
+      storyPreviewOpen: "\u6253\u5f00\u5b8c\u6574 Story \u6761\u76ee",
       orderCrossReference: "\u624b\u52a8/OCR \u987a\u5e8f\u4ea4\u53c9\u53c2\u8003",
       orderCrossReferenceHint: "\u53ea\u6709\u4e25\u683c\u7684\u6e90\u90e8\u5206\u987a\u5e8f\u8fb9\u662f\u8bc1\u636e\u3002\u6d3b\u8dc3\u7684\u624b\u52a8\u8986\u76d6\u548c OCR \u63d0\u6848\u4ec5\u4f5c\u8bca\u65ad\u5bf9\u6bd4\uff1b\u5b83\u4eec\u4e0d\u4f1a\u521b\u5efa\u3001\u52a0\u5f3a\u3001\u524a\u5f31\u6216\u79fb\u9664\u4efb\u4f55\u8fb9\u3002",
       orderCrossReferenceStrictEdges: "\u4e25\u683c\u6e90\u8fb9",
@@ -2542,6 +2612,7 @@
       const button = event.target.closest("button[data-mission]");
       if (button) selectMission(button.dataset.mission);
     });
+    bindStoryPreviewEvents(byId("mp-mission-summary"));
     ["mp-show-hidden", "mp-show-dependencies", "mp-show-edge-labels", "mp-orientation"].forEach((id) => {
       byId(id)?.addEventListener("change", () => {
         if (id === "mp-show-hidden" || id === "mp-orientation") {
@@ -2573,6 +2644,10 @@
     viewport?.addEventListener("wheel", graphWheel, { passive: false });
     window.addEventListener("resize", () => {
       if (document.body.dataset.activeView === "mission-pipeline" && state.layout) applyTransform();
+    });
+    window.addEventListener("scroll", hideStoryPreview, true);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") hideStoryPreview();
     });
     window.addEventListener("webui:ui-locale-changed", () => {
       applyUiText();
@@ -2626,6 +2701,110 @@
     const response = await fetch(url, { signal, cache });
     if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
     return response.json();
+  }
+
+  function ensureStoryPreview() {
+    let preview = byId("mp-story-hover-preview");
+    if (preview) return preview;
+    preview = document.createElement("aside");
+    preview.id = "mp-story-hover-preview";
+    preview.className = "mp-story-hover-preview";
+    preview.hidden = true;
+    preview.setAttribute("role", "tooltip");
+    preview.setAttribute("aria-live", "polite");
+    document.body.appendChild(preview);
+    return preview;
+  }
+
+  function placeStoryPreview(preview, event, anchor) {
+    const gap = 14;
+    const anchorRect = anchor.getBoundingClientRect();
+    const preferredX = event?.clientX ?? anchorRect.right;
+    const preferredY = event?.clientY ?? anchorRect.bottom;
+    const rect = preview.getBoundingClientRect();
+    let left = preferredX + gap;
+    let top = preferredY + gap;
+    if (left + rect.width > window.innerWidth - 10) left = preferredX - rect.width - gap;
+    if (top + rect.height > window.innerHeight - 10) top = preferredY - rect.height - gap;
+    preview.style.left = `${Math.max(10, left)}px`;
+    preview.style.top = `${Math.max(10, top)}px`;
+  }
+
+  function storyPreviewBody(payload, triggerStatus) {
+    const primaryLines = (payload?.lines || []).filter((row) => plainText(row?.text || ""));
+    const candidateLines = primaryLines.length
+      ? primaryLines
+      : (payload?.videoTextCandidates || []).filter((row) => plainText(row?.text || ""));
+    const lines = candidateLines.slice(0, 4).map((row) => {
+      const actor = plainText(row.actor || row.actorName || "");
+      return `<li>${actor ? `<b>${esc(actor)}</b>` : ""}<span>${esc(plainText(row.text || ""))}</span></li>`;
+    }).join("");
+    const summary = (payload?.summary || []).map((row) => plainText(
+      typeof row === "string" ? row : row?.text || "",
+    )).filter(Boolean).slice(0, 2).map((text) => `<li>${esc(text)}</li>`).join("");
+    return `<header><span>${esc(String(payload?.kind || "story"))}</span><code>${esc(String(payload?.key || "?"))}</code></header>
+      <strong class="mp-story-preview-status">${esc(triggerStatus)}</strong>
+      ${lines ? `<ol>${lines}</ol>` : `<p>${esc(t("storyPreviewNoDialogue"))}</p>`}
+      ${summary ? `<ul>${summary}</ul>` : ""}
+      <small>${esc(t("storyPreviewOpen"))}</small>`;
+  }
+
+  async function showStoryPreview(anchor, event = null) {
+    const key = String(anchor?.dataset.storyPreview || "");
+    if (!key) return;
+    const preview = ensureStoryPreview();
+    const cacheKey = `${state.language}:${key}`;
+    const triggerStatus = String(anchor.dataset.storyTriggerStatus || t("spatialOtherUnpositioned"));
+    preview.dataset.previewKey = cacheKey;
+    preview.hidden = false;
+    preview.innerHTML = `<header><span>${esc(anchor.dataset.storyKind || "story")}</span><code>${esc(key)}</code></header><p>${esc(t("storyPreviewLoading"))}</p>`;
+    placeStoryPreview(preview, event, anchor);
+    const request = ++state.storyPreviewRequest;
+    try {
+      const payload = state.storyPreviewCache.has(cacheKey)
+        ? state.storyPreviewCache.get(cacheKey)
+        : await fetchJson(`data/lang/${encodeURIComponent(state.language)}/conv/${encodeURIComponent(key)}.json`, null);
+      state.storyPreviewCache.set(cacheKey, payload);
+      if (request !== state.storyPreviewRequest || preview.hidden || preview.dataset.previewKey !== cacheKey) return;
+      preview.innerHTML = storyPreviewBody(payload, triggerStatus);
+      placeStoryPreview(preview, event, anchor);
+    } catch (_error) {
+      if (request !== state.storyPreviewRequest || preview.hidden || preview.dataset.previewKey !== cacheKey) return;
+      preview.innerHTML = `<header><span>${esc(anchor.dataset.storyKind || "story")}</span><code>${esc(key)}</code></header><p>${esc(t("storyPreviewUnavailable"))}</p>`;
+      placeStoryPreview(preview, event, anchor);
+    }
+  }
+
+  function hideStoryPreview() {
+    state.storyPreviewRequest += 1;
+    const preview = byId("mp-story-hover-preview");
+    if (preview) preview.hidden = true;
+  }
+
+  function bindStoryPreviewEvents(target) {
+    target?.addEventListener("pointerover", (event) => {
+      const anchor = event.target.closest("a[data-story-preview]");
+      if (!anchor || anchor.contains(event.relatedTarget)) return;
+      showStoryPreview(anchor, event);
+    });
+    target?.addEventListener("pointermove", (event) => {
+      const anchor = event.target.closest("a[data-story-preview]");
+      const preview = byId("mp-story-hover-preview");
+      if (anchor && preview && !preview.hidden) placeStoryPreview(preview, event, anchor);
+    });
+    target?.addEventListener("pointerout", (event) => {
+      const anchor = event.target.closest("a[data-story-preview]");
+      if (!anchor || anchor.contains(event.relatedTarget)) return;
+      hideStoryPreview();
+    });
+    target?.addEventListener("focusin", (event) => {
+      const anchor = event.target.closest("a[data-story-preview]");
+      if (anchor) showStoryPreview(anchor);
+    });
+    target?.addEventListener("focusout", (event) => {
+      const anchor = event.target.closest("a[data-story-preview]");
+      if (anchor && !anchor.contains(event.relatedTarget)) hideStoryPreview();
+    });
   }
 
   async function load(language = "CN", { force = false } = {}) {
@@ -2888,6 +3067,7 @@
 
   async function selectMission(id, { force = false } = {}) {
     if (!id || !state.index) return null;
+    hideStoryPreview();
     state.missionId = id;
     state.expandedMissionTypes.add(missionTypeKey(id));
     renderMissionList();
@@ -4567,6 +4747,352 @@
     </details>`;
   }
 
+  function finiteSpatialPosition(value) {
+    if (!value || typeof value !== "object") return null;
+    const x = Number(value.x);
+    const y = Number(value.y);
+    const z = Number(value.z);
+    return Number.isFinite(x) && Number.isFinite(z)
+      ? { x, y: Number.isFinite(y) ? y : null, z }
+      : null;
+  }
+
+  function shortQuestLabel(questId) {
+    const match = String(questId || "").match(/q#(.+)$/i);
+    return match ? `q#${match[1]}` : String(questId || "?");
+  }
+
+  function spatialStoryLink(key, status, kind = "") {
+    return `<a href="${esc(storyHref(key))}" data-story-preview="${esc(key)}" data-story-trigger-status="${esc(status)}" data-story-kind="${esc(kind || storyDisplayKind({ key }))}"><code>${esc(key)}</code></a>`;
+  }
+
+  function spatialStoryMapModel() {
+    const recovery = state.localized?.timelineRecovery || {};
+    const order = state.mission?.storyOrder || {};
+    const orderNodes = (order.nodes || []).filter((row) => row?.key);
+    const tracks = (recovery.questSpatialTrack || []).filter((row) => row?.questId);
+    if (!orderNodes.length || !tracks.length) return null;
+
+    const nodeByKey = new Map(orderNodes.map((row) => [String(row.key), row]));
+    const sceneKeys = new Set(nodeByKey.keys());
+    const coverage = state.index?.storyCoverage || {};
+    const manifest = coverage.storyTriggerManifest || {};
+    const overlay = coverage.offlineRecoveryEvidence?.storyTriggerManifestOverlay || {};
+    const clusters = new Map();
+    const weakMatchesByKey = new Map();
+    const inheritedMatchesByKey = new Map();
+    for (const track of tracks) {
+      for (const match of track.spatialSourceMatches || []) {
+        const key = String(match?.sceneKey || "");
+        const position = finiteSpatialPosition(match?.position);
+        if (!key || !sceneKeys.has(key) || !position) continue;
+        if (!weakMatchesByKey.has(key)) weakMatchesByKey.set(key, []);
+        weakMatchesByKey.get(key).push({ track, match, position });
+      }
+      for (const match of track.inheritedSpatialSourceMatches || []) {
+        const key = String(match?.sceneKey || "");
+        const position = finiteSpatialPosition(match?.position);
+        if (!key || !sceneKeys.has(key) || !position) continue;
+        if (!inheritedMatchesByKey.has(key)) inheritedMatchesByKey.set(key, []);
+        inheritedMatchesByKey.get(key).push({ track, match, position });
+      }
+    }
+
+    const weakMatchSort = (left, right) => {
+      const leftDistance = Number.isFinite(Number(left.match?.distance3d)) ? Number(left.match.distance3d) : Number.POSITIVE_INFINITY;
+      const rightDistance = Number.isFinite(Number(right.match?.distance3d)) ? Number(right.match.distance3d) : Number.POSITIVE_INFINITY;
+      return leftDistance - rightDistance
+        || String(left.match?.scriptId || "").localeCompare(String(right.match?.scriptId || ""), undefined, { numeric: true })
+        || Number(left.match?.offset || 0) - Number(right.match?.offset || 0)
+        || String(left.track?.questId || "").localeCompare(String(right.track?.questId || ""), undefined, { numeric: true });
+    };
+    const alternateWeakPositions = [];
+    for (const [key, rows] of weakMatchesByKey) {
+      rows.sort(weakMatchSort);
+      const primary = rows[0];
+      const { track, match, position } = primary;
+      const signature = [
+        match.levelId || match.mapId || "?",
+        match.scriptId || "?",
+        position.x.toFixed(3),
+        position.y == null ? "?" : position.y.toFixed(3),
+        position.z.toFixed(3),
+      ].join("\u0000");
+      if (!clusters.has(signature)) {
+        clusters.set(signature, {
+          levelId: String(match.levelId || match.mapId || "?"),
+          scriptId: String(match.scriptId || "?"),
+          position,
+          questIds: new Set(),
+          files: new Map(),
+          sourceKind: "direct_levelscript_spatial_proximity",
+        });
+      }
+      const cluster = clusters.get(signature);
+      cluster.questIds.add(String(track.questId));
+      cluster.files.set(key, {
+        key,
+        kind: String(nodeByKey.get(key)?.kind || storyDisplayKind({ key })),
+        distance3d: Number.isFinite(Number(match.distance3d)) ? Number(match.distance3d) : null,
+        triggerStatus: t("spatialDirectWeak"),
+      });
+      if (rows.length > 1) {
+        alternateWeakPositions.push({
+          key,
+          kind: String(nodeByKey.get(key)?.kind || storyDisplayKind({ key })),
+          matches: rows.slice(1),
+        });
+      }
+    }
+    const inheritedWeakPositions = [...inheritedMatchesByKey].map(([key, rows]) => ({
+      key,
+      kind: String(nodeByKey.get(key)?.kind || storyDisplayKind({ key })),
+      matches: rows.sort(weakMatchSort),
+    })).sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+    const exactPositionedKeys = new Set();
+
+    for (const key of sceneKeys) {
+      const recoveryRow = (
+        manifest[key]?.offlineRecovery
+        || manifest[key]?.runtimeContextRecovery
+        || overlay[key]?.offlineRecovery
+        || overlay[key]?.runtimeContextRecovery
+        || {}
+      );
+      for (const trigger of recoveryRow.worldEntityInteractionTriggers || []) {
+        const position = finiteSpatialPosition(trigger?.position);
+        if (!position) continue;
+        exactPositionedKeys.add(key);
+        const signature = [
+          trigger.levelId || recoveryRow.levelId || "?",
+          trigger.scriptIdGlobal || "?",
+          trigger.entitySlotId ?? "?",
+          position.x.toFixed(3),
+          position.y == null ? "?" : position.y.toFixed(3),
+          position.z.toFixed(3),
+        ].join("\u0000");
+        if (!clusters.has(signature)) {
+          clusters.set(signature, {
+            levelId: String(trigger.levelId || recoveryRow.levelId || "?"),
+            scriptId: String(trigger.scriptIdGlobal || "?"),
+            position,
+            questIds: new Set(),
+            files: new Map(),
+            sourceKind: "exact_world_entity_interaction_trigger",
+          });
+        }
+        clusters.get(signature).files.set(key, {
+          key,
+          kind: String(nodeByKey.get(key)?.kind || storyDisplayKind({ key })),
+          distance3d: null,
+          triggerStatus: t("spatialExactInteractionTrigger"),
+        });
+      }
+    }
+
+    for (const connection of state.localized?.flow?.missionStoryConnections || []) {
+      const key = String(connection?.key || "");
+      if (
+        !key
+        || !sceneKeys.has(key)
+        || connection?.relation !== "authoritative_scope_native_event_playback_context"
+        || connection?.producerEntityPositionStatus !== "exact_unique_world_entity_registry_script_slot"
+      ) continue;
+      for (const entity of connection.producerEntities || []) {
+        const position = finiteSpatialPosition(entity?.position);
+        if (!position) continue;
+        exactPositionedKeys.add(key);
+        const signature = [
+          (connection.levelIds || [])[0] || "?",
+          entity.scriptIdGlobal || (connection.producerScriptIds || [])[0] || "?",
+          entity.slotId ?? "?",
+          position.x.toFixed(3),
+          position.y == null ? "?" : position.y.toFixed(3),
+          position.z.toFixed(3),
+        ].join("\u0000");
+        if (!clusters.has(signature)) {
+          clusters.set(signature, {
+            levelId: String((connection.levelIds || [])[0] || "?"),
+            scriptId: String(entity.scriptIdGlobal || (connection.producerScriptIds || [])[0] || "?"),
+            position,
+            questIds: new Set(),
+            files: new Map(),
+            sourceKind: "exact_world_entity_event_trigger",
+          });
+        }
+        clusters.get(signature).files.set(key, {
+          key,
+          kind: String(nodeByKey.get(key)?.kind || storyDisplayKind({ key })),
+          distance3d: null,
+          triggerStatus: `${t("spatialExactWorldEntityTrigger")} · ${entity.detailId || "?"} / slot ${entity.slotId ?? "?"}`,
+        });
+      }
+    }
+
+    for (const [signature, cluster] of clusters) {
+      if (cluster.sourceKind !== "direct_levelscript_spatial_proximity") continue;
+      for (const key of exactPositionedKeys) cluster.files.delete(key);
+      if (!cluster.files.size) clusters.delete(signature);
+    }
+
+    const clusterRows = [...clusters.values()].map((cluster) => ({
+      ...cluster,
+      questIds: [...cluster.questIds].sort((a, b) => naturalQuestNumber(a) - naturalQuestNumber(b)),
+      files: [...cluster.files.values()].sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true })),
+    }));
+    const positionedKeys = new Set(clusterRows.flatMap((cluster) => cluster.files.map((file) => file.key)));
+    const isolatedKeys = new Set((order.isolatedSceneKeys || []).map(String));
+    const exactNativeKeys = new Set(
+      (state.localized?.flow?.unlinkedNativePlayback || [])
+        .filter((row) => row?.key)
+        .map((row) => String(row.key)),
+    );
+    const sourceGap = order.sourceGapQueue || {};
+    const explicitActionable = new Set((sourceGap.actionableCoreIsolatedSceneKeys || []).map(String));
+    const hasExplicitActionable = explicitActionable.size > 0;
+    const triggerUnknown = [];
+    const otherUnpositioned = [];
+    for (const node of orderNodes) {
+      const key = String(node.key);
+      if (positionedKeys.has(key)) continue;
+      const manifestRow = manifest[key] || {};
+      const hasRecoveredContext = Boolean(
+        exactNativeKeys.has(key)
+        || (manifestRow.routes || []).length
+        || manifestRow.runtimeContextRecovery
+        || manifestRow.offlineRecovery
+        || manifestRow.partialRecovery
+        || manifestRow.contentProvenance,
+      );
+      const kind = String(node.kind || storyDisplayKind({ key }));
+      const unresolved = hasExplicitActionable
+        ? explicitActionable.has(key)
+        : isolatedKeys.has(key) && !hasRecoveredContext && kind !== "video";
+      (unresolved ? triggerUnknown : otherUnpositioned).push({ key, kind });
+    }
+    const byKey = (a, b) => a.key.localeCompare(b.key, undefined, { numeric: true });
+    triggerUnknown.sort(byKey);
+    otherUnpositioned.sort(byKey);
+
+    const questPoints = tracks.map((track) => ({
+      questId: String(track.questId),
+      questOrder: Number(track.questOrder),
+      position: finiteSpatialPosition(track.centroid),
+      objective: (track.objectiveInstructions || []).map((row) => plainText(row?.text || "")).filter(Boolean).join(" / "),
+    })).filter((row) => row.position).sort((a, b) => a.questOrder - b.questOrder);
+    for (const cluster of clusterRows) {
+      if (cluster.sourceKind !== "exact_world_entity_interaction_trigger") continue;
+      const nearest = questPoints.map((quest) => {
+        const dx = cluster.position.x - quest.position.x;
+        const dz = cluster.position.z - quest.position.z;
+        const hasY = cluster.position.y != null && quest.position.y != null;
+        const dy = hasY ? cluster.position.y - quest.position.y : 0;
+        return {
+          questId: quest.questId,
+          objective: quest.objective,
+          distance: Math.sqrt(dx * dx + dy * dy + dz * dz),
+          distanceMode: hasY ? "3d" : "xz",
+        };
+      }).sort((a, b) => a.distance - b.distance)[0];
+      if (nearest) cluster.nearestQuest = nearest;
+    }
+    const allPoints = [
+      ...questPoints.map((row) => row.position),
+      ...clusterRows.map((row) => row.position),
+    ];
+    if (!clusterRows.length || !allPoints.length) return null;
+    return {
+      clusters: clusterRows,
+      positionedKeys,
+      questPoints,
+      alternateWeakPositions: alternateWeakPositions.filter((row) => !exactPositionedKeys.has(row.key)),
+      inheritedWeakPositions: inheritedWeakPositions.filter((row) => !exactPositionedKeys.has(row.key)),
+      triggerUnknown,
+      otherUnpositioned,
+      bounds: {
+        minX: Math.min(...allPoints.map((point) => point.x)),
+        maxX: Math.max(...allPoints.map((point) => point.x)),
+        minZ: Math.min(...allPoints.map((point) => point.z)),
+        maxZ: Math.max(...allPoints.map((point) => point.z)),
+      },
+    };
+  }
+
+  function spatialStoryMapHtml() {
+    const model = spatialStoryMapModel();
+    if (!model) return "";
+    const width = 1000;
+    const height = 650;
+    const pad = 54;
+    const rangeX = Math.max(1, model.bounds.maxX - model.bounds.minX);
+    const rangeZ = Math.max(1, model.bounds.maxZ - model.bounds.minZ);
+    const plot = (position) => ({
+      x: pad + ((position.x - model.bounds.minX) / rangeX) * (width - pad * 2),
+      y: height - pad - ((position.z - model.bounds.minZ) / rangeZ) * (height - pad * 2),
+    });
+    const routeSegments = model.questPoints.slice(1).map((point, index) => {
+      const previous = model.questPoints[index];
+      const from = plot(previous.position);
+      const to = plot(point.position);
+      const gap = point.questOrder - previous.questOrder > 1;
+      return `<line class="mp-spatial-route${gap ? " is-gap" : ""}" x1="${from.x.toFixed(2)}" y1="${from.y.toFixed(2)}" x2="${to.x.toFixed(2)}" y2="${to.y.toFixed(2)}">${gap ? `<title>${esc(t("spatialQuestGap"))}</title>` : ""}</line>`;
+    }).join("");
+    const questPins = model.questPoints.map((row) => {
+      const point = plot(row.position);
+      const title = [row.questId, row.objective, `X ${row.position.x.toFixed(1)} / Z ${row.position.z.toFixed(1)}`].filter(Boolean).join(" \u00b7 ");
+      return `<g class="mp-spatial-quest-pin"><circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="7"><title>${esc(title)}</title></circle><text x="${(point.x + 11).toFixed(2)}" y="${(point.y + 4).toFixed(2)}">${esc(shortQuestLabel(row.questId))}</text></g>`;
+    }).join("");
+    const collisionBuckets = new Map();
+    const clusterPins = model.clusters.map((cluster) => {
+      const point = plot(cluster.position);
+      const bucket = `${Math.round(point.x / 28)}:${Math.round(point.y / 28)}`;
+      const collision = collisionBuckets.get(bucket) || 0;
+      collisionBuckets.set(bucket, collision + 1);
+      const offsets = [[0, 0], [18, -15], [-18, 15], [24, 15], [-24, -15]];
+      const [offsetX, offsetY] = offsets[collision % offsets.length];
+      const files = cluster.files.map((file) => {
+        const distance = file.distance3d == null ? "" : `<small>${file.distance3d.toFixed(1)}m</small>`;
+        return `<span>${spatialStoryLink(file.key, file.triggerStatus || t("spatialStoryMapBoundary"), file.kind)}${distance}</span>`;
+      }).join("");
+      const coordinates = [cluster.position.x, cluster.position.y, cluster.position.z]
+        .map((value) => value == null ? "?" : value.toFixed(2)).join(" / ");
+      const questContext = cluster.questIds.length
+        ? cluster.questIds.map((id) => `<code>${esc(shortQuestLabel(id))}</code>`).join(" ")
+        : cluster.nearestQuest
+          ? `${esc(t("spatialNearestQuest"))}: <code>${esc(shortQuestLabel(cluster.nearestQuest.questId))}</code> (${cluster.nearestQuest.distance.toFixed(2)}m, ${esc(cluster.nearestQuest.distanceMode)}) · ${esc(t("spatialProximityOnly"))}`
+          : "";
+      const side = point.x > width * .72 ? " is-left" : "";
+      const vertical = point.y < height * .28 ? " is-below" : "";
+      return `<div class="mp-spatial-cluster${side}${vertical}" style="left:${((point.x / width) * 100).toFixed(3)}%;top:${((point.y / height) * 100).toFixed(3)}%;--cluster-offset-x:${offsetX}px;--cluster-offset-y:${offsetY}px">
+        <button type="button" class="mp-spatial-cluster-pin" aria-label="${esc(`${t("spatialCarrier")} ${cluster.scriptId}, ${cluster.files.length} ${t("spatialPositionedFiles")}`)}"><span>${cluster.files.length}</span></button>
+        <div class="mp-spatial-cluster-popover"><header><strong>${esc(t("spatialCarrier"))}</strong><code>${esc(cluster.levelId)} / ${esc(cluster.scriptId)}</code></header><small>${esc(t("spatialCoordinates"))}: <code>${esc(coordinates)}</code>${questContext ? ` \u00b7 ${questContext}` : ""}</small><div>${files}</div></div>
+      </div>`;
+    }).join("");
+    const fileTray = (rows, status) => rows.map((row) => spatialStoryLink(row.key, status, row.kind)).join("");
+    const foldedPositionRows = (rows, status) => rows.map((row) => {
+      const carriers = row.matches.map(({ track, match }) => {
+        const distance = Number.isFinite(Number(match?.distance3d)) ? ` / ${Number(match.distance3d).toFixed(1)}m` : "";
+        return `<code>${esc(match?.levelId || match?.mapId || "?")} / ${esc(match?.scriptId || "?")} / ${esc(shortQuestLabel(track?.questId))}${esc(distance)}</code>`;
+      }).join(" ");
+      return `<span>${spatialStoryLink(row.key, status, row.kind)}<small>${carriers}</small></span>`;
+    }).join("");
+    return `<details class="mp-mission-story mp-spatial-story-map" data-weight="context" open>
+      <summary>${esc(t("spatialStoryMap"))} <span>${model.positionedKeys.size.toLocaleString()}</span></summary>
+      <p>${esc(t("spatialStoryMapHint"))}</p>
+      <div class="mp-order-metrics mp-spatial-metrics"><span><b>${model.positionedKeys.size.toLocaleString()}</b>${esc(t("spatialPositionedFiles"))}</span><span><b>${model.clusters.length.toLocaleString()}</b>${esc(t("spatialSourceClusters"))}</span><span><b>${model.questPoints.length.toLocaleString()}</b>${esc(t("spatialQuestPins"))}</span><span class="is-unresolved"><b>${model.triggerUnknown.length.toLocaleString()}</b>${esc(t("spatialTriggerUnknown"))}</span></div>
+      <div class="mp-spatial-map-frame">
+        <svg class="mp-spatial-map-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(t("spatialStoryMap"))}"><g class="mp-spatial-grid"><path d="M ${pad} ${pad} V ${height - pad} H ${width - pad}"/><text x="${width - pad - 18}" y="${height - pad + 30}">X</text><text x="${pad - 27}" y="${pad + 8}">Z</text></g>${routeSegments}${questPins}</svg>
+        <div class="mp-spatial-clusters">${clusterPins}</div>
+      </div>
+      <div class="mp-spatial-map-legend"><span class="is-quest">${esc(t("spatialQuestPins"))}</span><span class="is-carrier">${esc(t("spatialCarrier"))}</span><small>${esc(t("spatialHoverHint"))}</small></div>
+      ${model.alternateWeakPositions.length ? `<details class="mp-spatial-unpositioned"><summary>${esc(t("spatialAlternateWeakPositions"))} <span>${model.alternateWeakPositions.length}</span></summary><p>${esc(t("spatialAlternateWeakPositionsHint"))}</p><div>${foldedPositionRows(model.alternateWeakPositions, t("spatialDirectWeak"))}</div></details>` : ""}
+      ${model.inheritedWeakPositions.length ? `<details class="mp-spatial-unpositioned"><summary>${esc(t("spatialInheritedWeakPositions"))} <span>${model.inheritedWeakPositions.length}</span></summary><p>${esc(t("spatialInheritedWeakPositionsHint"))}</p><div>${foldedPositionRows(model.inheritedWeakPositions, t("spatialInheritedWeakPositions"))}</div></details>` : ""}
+      ${model.triggerUnknown.length ? `<section class="mp-spatial-unpositioned is-unresolved"><header><h4>${esc(t("spatialTriggerUnknown"))} <span>${model.triggerUnknown.length}</span></h4><p>${esc(t("spatialTriggerUnknownHint"))}</p></header><div>${fileTray(model.triggerUnknown, t("spatialTriggerUnknown"))}</div></section>` : ""}
+      ${model.otherUnpositioned.length ? `<details class="mp-spatial-unpositioned"><summary>${esc(t("spatialOtherUnpositioned"))} <span>${model.otherUnpositioned.length}</span></summary><p>${esc(t("spatialOtherUnpositionedHint"))}</p><div>${fileTray(model.otherUnpositioned, t("spatialOtherUnpositioned"))}</div></details>` : ""}
+      <small class="mp-spatial-boundary">${esc(t("spatialStoryMapBoundary"))}</small>
+    </details>`;
+  }
+
   function storyOrderHtml() {
     const order = state.mission?.storyOrder;
     if (!order?.summary) return "";
@@ -5522,6 +6048,9 @@
         missionless_npc_proxy_dialog_native_consumer: t("offlineRecoveryEvidenceNpcProxyConsumer"),
         sns_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinarySns"),
         reading_popup_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryReadingPopup"),
+        reading_popup_receiver_without_registered_host_or_producer: t("offlineRecoveryEvidenceReadingPopupReceiver"),
+        reading_popup_receiver_without_registered_producer: t("offlineRecoveryEvidenceReadingPopupReceiver"),
+        reading_popup_world_entity_interaction_trigger: t("offlineRecoveryEvidenceReadingPopupTrigger"),
         unregistered_dialog_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryUnregisteredDialog"),
         registered_dialog_tree_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryRegisteredDialogTree"),
         exact_missionless_native_event_playback_path: t("offlineRecoveryEvidenceMissionlessNativePlayback"),
@@ -5537,7 +6066,18 @@
       const cutsceneAliasContext = row.rootPlaybackAlias
         ? `<p><strong>${esc(t("offlineRecoveryCutsceneAlias"))}</strong><span><code>${esc(row.rootPlaybackAlias.rootStoryKey || "?")}</code> &rarr; <code>${esc(row.rootPlaybackAlias.playableAssetStoryKey || "?")}</code> · ${esc(t(row.cutsceneAliasRole === "cutscene_root" ? "offlineRecoveryCutsceneAliasRootRole" : "offlineRecoveryCutsceneAliasPlayableRole"))}</span></p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${cutsceneAliasContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${parentLevelContext}${missingLineFragmentContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${recoveredOptionRoutes}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      const readingPopupReceiverContext = (row.unhostedReadingPopupReceivers || []).map((receiver) => {
+        const eventKeys = (receiver.eventKeys || []).map((key) => `<code>${esc(key)}</code>`).join(" ");
+        const producers = (receiver.interactiveEventProducers || []).map((producer) => {
+          const position = producer.position || {};
+          const coordinates = [position.x, position.y, position.z].every((value) => Number.isFinite(Number(value)))
+            ? `${Number(position.x).toFixed(3)}, ${Number(position.y).toFixed(3)}, ${Number(position.z).toFixed(3)}`
+            : "?";
+          return `<span><strong>${esc(t("offlineRecoveryReadingPopupInteraction"))}:</strong> <code>${esc(producer.entityDetailId || "?")} / slot ${esc(producer.entitySlotId ?? "?")}</code> &rarr; <code>${esc(producer.eventName || "?")}</code> · ${esc(t("offlineRecoveryReadingPopupCoordinates"))}: <code>${esc(coordinates)}</code></span>`;
+        }).join("");
+        return `<p><strong>${esc(t("offlineRecoveryReadingPopupReceiver"))}</strong><span><code>${esc(receiver.levelId || "?")} / ${esc(receiver.scriptId || "?")}</code> &rarr; <code>${esc(receiver.actionName || "ShowUIReadingPopPanel")}</code>${eventKeys ? ` / ${eventKeys}` : ""}</span>${producers}<small>${esc(t("offlineRecoveryReadingPopupProperty"))}: <code>${esc(receiver.readingPopupId || receiver.propertyName || "?")}</code> / ${esc(t("offlineRecoveryReadingPopupHostStatus"))}: <code>${esc(receiver.levelDataHostStatus || "?")}</code></small></p>`;
+      }).join("");
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${cutsceneAliasContext}${readingPopupReceiverContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${parentLevelContext}${missingLineFragmentContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${recoveredOptionRoutes}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
@@ -5713,7 +6253,7 @@
   // keeps its own summary, hints and boundary notes verbatim, and the order
   // inside each band is the order it had in the flat stack.
   const SUMMARY_SECTIONS = [
-    ["structure", "summarySectionStructure", () => [missionGraphHtml(), questTopologyHtml(), storyOrderHtml(), missionPropertiesHtml()]],
+    ["structure", "summarySectionStructure", () => [missionGraphHtml(), questTopologyHtml(), spatialStoryMapHtml(), storyOrderHtml(), missionPropertiesHtml()]],
     ["runtime", "summarySectionRuntime", () => [nativeRuntimeBindingsHtml(), runtimeTraceHtml()]],
     ["story", "summarySectionStory", () => [
       missionStoryConnectionsHtml(),

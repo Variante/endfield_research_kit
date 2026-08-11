@@ -588,6 +588,171 @@ def _simple_lua_integer_values(text: str, expression: str, offset: int) -> list[
     return sorted(values)
 
 
+def _hl_lua_function_definitions(text: str) -> list[dict[str, Any]]:
+    """Return schema-shaped HL method declarations without naming any controller.
+
+    Endfield's shipped Lua registers class methods through ``Owner.Method =
+    HL.* << function(...)``.  The next such declaration is a conservative end
+    boundary: nested callbacks remain inside their owning registered method,
+    while an expression outside that interval is never attributed to it.
+    """
+    pattern = re.compile(
+        r"(?m)^\s*(?P<qualified>[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+)\s*=\s*"
+        r"HL\.[^\n]*?<<\s*function\s*\((?P<parameters>[^)]*)\)"
+    )
+    matches = list(pattern.finditer(text))
+    definitions: list[dict[str, Any]] = []
+    for index, match in enumerate(matches):
+        qualified = match.group("qualified")
+        owner, method = qualified.rsplit(".", 1)
+        parameters = [
+            value.strip()
+            for value in match.group("parameters").split(",")
+            if value.strip()
+        ]
+        definitions.append({
+            "owner": owner,
+            "method": method,
+            "parameters": parameters,
+            "start": match.start(),
+            "bodyStart": match.end(),
+            "end": matches[index + 1].start() if index + 1 < len(matches) else len(text),
+        })
+    return definitions
+
+
+def _hl_lua_function_at(
+    definitions: list[dict[str, Any]],
+    offset: int,
+) -> dict[str, Any] | None:
+    return next(
+        (
+            definition
+            for definition in reversed(definitions)
+            if definition["bodyStart"] <= offset < definition["end"]
+        ),
+        None,
+    )
+
+
+def _lua_balanced_call_arguments(text: str, open_paren: int) -> list[str] | None:
+    """Split a Lua call's top-level arguments, failing closed on bad syntax."""
+    if open_paren >= len(text) or text[open_paren] != "(":
+        return None
+    pairs = {"(": ")", "[": "]", "{": "}"}
+    stack = [")"]
+    quote = ""
+    escaped = False
+    start = open_paren + 1
+    arguments: list[str] = []
+    index = start
+    while index < len(text):
+        char = text[index]
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = ""
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+        elif char in pairs:
+            stack.append(pairs[char])
+        elif char in ")]}]":
+            if not stack or char != stack[-1]:
+                return None
+            stack.pop()
+            if not stack:
+                tail = text[start:index].strip()
+                if tail or arguments:
+                    arguments.append(tail)
+                return arguments
+        elif char == "," and len(stack) == 1:
+            arguments.append(text[start:index].strip())
+            start = index + 1
+        index += 1
+    return None
+
+
+def _lua_formal_literal_call_paths(
+    text: str,
+    expression: str,
+    offset: int,
+) -> list[dict[str, Any]]:
+    """Find literal in-class call arguments feeding a registered HL method.
+
+    These rows prove concrete shipped-Lua paths but deliberately do not close
+    the formal parameter's complete runtime domain: native/reflection callers
+    or dynamically typed receivers may still supply other values.
+    """
+    value = expression.strip()
+    if not re.fullmatch(r"[A-Za-z_]\w*", value):
+        return []
+    definitions = _hl_lua_function_definitions(text)
+    producer_function = _hl_lua_function_at(definitions, offset)
+    if not producer_function or value not in producer_function["parameters"]:
+        return []
+    parameter_index = producer_function["parameters"].index(value)
+    owner = str(producer_function["owner"])
+    method = str(producer_function["method"])
+    rows: list[dict[str, Any]] = []
+
+    self_pattern = re.compile(rf"\bself\s*:\s*{re.escape(method)}\s*\(")
+    for match in self_pattern.finditer(text):
+        caller = _hl_lua_function_at(definitions, match.start())
+        if not caller or caller["owner"] != owner:
+            continue
+        # Lua's colon call supplies self implicitly.  Registered instance
+        # methods conventionally expose that as their first formal parameter.
+        argument_index = parameter_index - (
+            1 if producer_function["parameters"][:1] == ["self"] else 0
+        )
+        if argument_index < 0:
+            continue
+        arguments = _lua_balanced_call_arguments(text, match.end() - 1)
+        if arguments is None or argument_index >= len(arguments):
+            continue
+        argument = arguments[argument_index]
+        if not re.fullmatch(r"-?\d+", argument):
+            continue
+        rows.append({
+            "kind": "literal_in_class_method_call_argument",
+            "value": int(argument),
+            "expression": argument,
+            "owner": owner,
+            "callerMethod": caller["method"],
+            "calleeMethod": method,
+            "line": _lua_line(text, match.start()),
+            "excerpt": _lua_excerpt(text, match.start()),
+        })
+
+    qualified_pattern = re.compile(
+        rf"\b{re.escape(owner)}\s*\.\s*{re.escape(method)}\s*\("
+    )
+    for match in qualified_pattern.finditer(text):
+        arguments = _lua_balanced_call_arguments(text, match.end() - 1)
+        if arguments is None or parameter_index >= len(arguments):
+            continue
+        argument = arguments[parameter_index]
+        if not re.fullmatch(r"-?\d+", argument):
+            continue
+        rows.append({
+            "kind": "literal_qualified_method_call_argument",
+            "value": int(argument),
+            "expression": argument,
+            "owner": owner,
+            "callerMethod": (_hl_lua_function_at(definitions, match.start()) or {}).get("method", ""),
+            "calleeMethod": method,
+            "line": _lua_line(text, match.start()),
+            "excerpt": _lua_excerpt(text, match.start()),
+        })
+    rows.sort(key=lambda row: (row["line"], row["kind"], row["value"]))
+    return rows
+
+
 def parse_lua_external_result_router(
     lua_sources: dict[str, bytes],
     spec: ExternalResultRouterSpec,
@@ -695,13 +860,27 @@ def parse_lua_external_result_router(
                     f"validator={validator} gate=override_phase_resolution expected=PhaseId_symbol "
                     f"actual={phase_expression!r} source={path} line={_lua_line(text, match.start())}"
                 )
-            values = _simple_lua_integer_values(text, index_expression, match.start())
+            literal_call_paths = _lua_formal_literal_call_paths(
+                text,
+                index_expression,
+                match.start(),
+            )
+            values = (
+                sorted({int(row["value"]) for row in literal_call_paths})
+                if literal_call_paths
+                else _simple_lua_integer_values(text, index_expression, match.start())
+            )
             producers.append({
                 "kind": "override_message",
                 "phaseName": phase,
                 "indexExpression": index_expression,
                 "possibleIndexes": values,
-                "indexStatus": "bounded_literals" if values else "dynamic_expression",
+                "indexStatus": (
+                    "literal_call_paths_with_dynamic_residual"
+                    if literal_call_paths
+                    else ("bounded_literals" if values else "dynamic_expression")
+                ),
+                "valueFlowEvidence": literal_call_paths,
                 "line": _lua_line(text, match.start()),
                 "excerpt": _lua_excerpt(text, match.start()),
                 "source": _lua_source_record(
@@ -744,7 +923,16 @@ def parse_lua_external_result_router(
         phase_candidates = sorted(set(aliases.values()))
         for match in direct_pattern.finditer(text):
             expression = match.group("index").strip()
-            values = _simple_lua_integer_values(text, expression, match.start())
+            literal_call_paths = _lua_formal_literal_call_paths(
+                text,
+                expression,
+                match.start(),
+            )
+            values = (
+                sorted({int(row["value"]) for row in literal_call_paths})
+                if literal_call_paths
+                else _simple_lua_integer_values(text, expression, match.start())
+            )
             if len(phase_candidates) != 1:
                 raise ContractError(
                     f"validator={validator} gate=direct_next_phase_resolution expected=one_local_phase_or_panel "
@@ -755,7 +943,12 @@ def parse_lua_external_result_router(
                 "phaseName": phase_candidates[0],
                 "indexExpression": expression,
                 "possibleIndexes": values,
-                "indexStatus": "bounded_literals" if values else "dynamic_expression",
+                "indexStatus": (
+                    "literal_call_paths_with_dynamic_residual"
+                    if literal_call_paths
+                    else ("bounded_literals" if values else "dynamic_expression")
+                ),
+                "valueFlowEvidence": literal_call_paths,
                 "line": _lua_line(text, match.start()),
                 "excerpt": _lua_excerpt(text, match.start()),
                 "source": _lua_source_record(
@@ -1237,7 +1430,10 @@ def project_serialized_family_node(
     )
     dynamic_producers = [
         producer for producer in phase_producers
-        if producer.get("indexStatus") == "dynamic_expression"
+        if producer.get("indexStatus") in {
+            "dynamic_expression",
+            "literal_call_paths_with_dynamic_residual",
+        }
     ]
 
     def compact_producer(producer: dict[str, Any]) -> dict[str, Any]:
@@ -1245,7 +1441,9 @@ def project_serialized_family_node(
         return {
             "kind": producer.get("kind") or "",
             "indexExpression": producer.get("indexExpression") or "",
+            "indexStatus": producer.get("indexStatus") or "",
             "possibleIndexes": producer.get("possibleIndexes") or [],
+            "valueFlowEvidence": producer.get("valueFlowEvidence") or [],
             "line": producer.get("line"),
             "excerpt": producer.get("excerpt") or "",
             "sourceFile": source.get("sourceFile") or "",
@@ -1276,13 +1474,22 @@ def project_serialized_family_node(
             if ordinal in (producer.get("possibleIndexes") or [])
         )
         dynamic_evidence = [compact_producer(producer) for producer in dynamic_producers]
+        has_dynamic_residual = any(
+            producer.get("indexStatus") == "literal_call_paths_with_dynamic_residual"
+            for producer in phase_producers
+            if ordinal in (producer.get("possibleIndexes") or [])
+        )
         arms.append({
             "connectionOrdinal": ordinal,
             "connectionIndex": connection_index,
             "outcomeLabel": labels[ordinal] if ordinal < len(labels) else "",
             "outcomeStatus": "native_named_port" if ordinal < len(labels) else "external_index_unlabeled",
             "runtimeProducerStatus": (
-                "shipped_lua_producer"
+                (
+                    "shipped_lua_producer_with_dynamic_residual"
+                    if has_dynamic_residual
+                    else "shipped_lua_producer"
+                )
                 if producer_evidence
                 else (
                     "shipped_lua_dynamic_index_unbounded"
@@ -1310,13 +1517,20 @@ def project_serialized_family_node(
             "runtimeRouterStatus": "shipped_lua_router_validated",
             "runtimeDefaultIndex": default_index,
             "runtimeProducedArmCount": sum(
-                arm["runtimeProducerStatus"] == "shipped_lua_producer" for arm in arms
+                arm["runtimeProducerStatus"] in {
+                    "shipped_lua_producer",
+                    "shipped_lua_producer_with_dynamic_residual",
+                }
+                for arm in arms
             ),
             "runtimeUnproducedArmCount": sum(
                 arm["runtimeProducerStatus"] == "no_shipped_lua_producer_found" for arm in arms
             ),
             "runtimeDynamicProducerArmCount": sum(
-                arm["runtimeProducerStatus"] == "shipped_lua_dynamic_index_unbounded"
+                arm["runtimeProducerStatus"] in {
+                    "shipped_lua_dynamic_index_unbounded",
+                    "shipped_lua_producer_with_dynamic_residual",
+                }
                 for arm in arms
             ),
             "runtimeDynamicProducers": [compact_producer(row) for row in dynamic_producers],

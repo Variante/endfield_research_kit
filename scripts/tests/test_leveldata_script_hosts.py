@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -19,6 +20,7 @@ from scripts.story_builder.level_bindings import (
     build_leveldata_authoritative_scope_script_host_index,
     build_leveldata_mission_area_script_host_index,
     build_leveldata_world_entity_quest_script_context,
+    build_levelscript_unhosted_reading_popup_receiver_index,
     classify_world_entity_story_receiver_owner,
     build_npc_proxy_segment_script_host_index,
     find_levelscript_brief_data_entries,
@@ -328,6 +330,47 @@ class LevelDataScriptHostTests(unittest.TestCase):
         )
 
     @classmethod
+    def _levelscript_interactive_event_record(
+        cls,
+        event_name: str,
+        *,
+        entity_detail_id: str = "int_mission_beacon",
+        position: tuple[float, float, float] = (278.377, 55.92, 651.378),
+        rotation: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    ) -> bytes:
+        inherited_suffix = bytearray(52)
+        inherited_suffix[0:4] = (32).to_bytes(4, "little", signed=True)
+        inherited_suffix[15:27] = struct.pack("<fff", *position)
+        inherited_suffix[27:39] = struct.pack("<fff", *rotation)
+        inherited_suffix[39:51] = struct.pack("<fff", 1.0, 1.0, 1.0)
+        properties = (
+            (2).to_bytes(4, "little", signed=True)
+            + cls._param_entry("eventName", 7, [(0, event_name)])
+            + cls._param_entry(
+                "InteractText",
+                28,
+                [(0, "lang_int_trigger_dialog_option")],
+            )
+        )
+        return (
+            b"\x19"
+            + (b"\x00" * 24)
+            + cls._mp_string(entity_detail_id)
+            + bytes(inherited_suffix)
+            + (1).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + b"\x00\x00\x00"
+            + (-1).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + struct.pack("<f", 0.0)
+            + b"\xff"
+            + properties
+        )
+
+    @classmethod
     def _leveldata_horn_interactive_record(
         cls,
         dialog_id: str,
@@ -452,7 +495,7 @@ class LevelDataScriptHostTests(unittest.TestCase):
         )
         return b"\x2bfixture" + (1).to_bytes(4, "little", signed=True) + entry
 
-    def test_show_reading_popup_resolves_only_through_exact_mirrored_brief_property(self) -> None:
+    def test_show_reading_popup_resolves_direct_serialized_id(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             level_id = "map_test_lv001"
@@ -486,7 +529,8 @@ class LevelDataScriptHostTests(unittest.TestCase):
                 "kind": 0x09,
                 "unionTag": 0x048C,
                 "serializedMemberCount": 9,
-                "plainStrings": [{"text": "readingPop", "offset": 10}],
+                "strings": [{"text": "rp_text_fixture_1", "offset": 10}],
+                "plainStrings": [],
             }
             matched = match_levelscript_native_reading_popup_record(
                 level_id,
@@ -500,10 +544,17 @@ class LevelDataScriptHostTests(unittest.TestCase):
             self.assertIsNotNone(matched)
             self.assertEqual("text_fixture_1", matched["key"])
             self.assertEqual("rp_text_fixture_1", matched["readingPopupId"])
-            self.assertEqual(1, matched["hostCount"])
+            self.assertEqual("_readingPopId", matched["targetField"])
+            self.assertEqual(
+                "direct_serialized_string", matched["argumentMode"]
+            )
+            self.assertNotIn("levelDataFile", matched)
+            self.assertTrue(matched["levelScriptSourceFile"].endswith(
+                f"/{level_id}/{script_id}.json"
+            ))
 
             mirror.write_bytes(payload + b"changed")
-            self.assertIsNone(
+            self.assertIsNotNone(
                 match_levelscript_native_reading_popup_record(
                     level_id,
                     str(script_id),
@@ -514,6 +565,148 @@ class LevelDataScriptHostTests(unittest.TestCase):
                     reading_popup_path=popup_table,
                 )
             )
+
+    def test_reading_popup_receiver_recovers_registered_interaction_event(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            level_id = "indie_fixture"
+            script_id = 8700020018
+            levelscript_root = root / "LevelScriptData"
+            leveldata_root = root / "Streaming" / "LevelData"
+            persistent_root = root / "Persistent" / "LevelData"
+            for base in (levelscript_root, leveldata_root, persistent_root):
+                (base / level_id).mkdir(parents=True)
+            source_path = levelscript_root / level_id / f"{script_id}.json"
+            source_path.write_bytes(b"popup receiver fixture")
+            popup_table = root / "ReadingPopUpTable.json"
+            popup_table.write_text(json.dumps({
+                "text_fixture_1": {"contentId": "text_fixture_1"},
+            }), encoding="utf-8")
+            record = {
+                "start": 10,
+                "code": 0x048C,
+                "kind": 0x09,
+                "localId": 21,
+                "strings": [{"text": "text_fixture_1", "offset": 20}],
+                "plainStrings": [],
+            }
+            file_info = {
+                "file": str(source_path),
+                "fileStem": str(script_id),
+                "records": [record],
+            }
+            native_path = {
+                "status": "exact_serialized_control_path",
+                "headerName": "LevelEvent_OnCustomEvent",
+                "headerLocalId": 20,
+                "eventDetail": {
+                    "eventKey": "readepitaph",
+                    "summary": "custom event readepitaph",
+                },
+                "path": [{
+                    "localId": 21,
+                    "actionName": "ShowUIReadingPopPanel",
+                    "recordClass": "play_reading_popup",
+                }],
+            }
+            with (
+                patch.object(
+                    level_bindings,
+                    "_load_levelscript_binding_data",
+                    return_value={"files": [file_info]},
+                ),
+                patch.object(
+                    level_bindings,
+                    "levelscript_action_map_membership",
+                    return_value=({}, {10: "actionList#8 root"}),
+                ),
+                patch.object(
+                    level_bindings,
+                    "_levelscript_native_control_paths_to_record",
+                    return_value=[native_path],
+                ),
+            ):
+                index = build_levelscript_unhosted_reading_popup_receiver_index(
+                    {"text_fixture_1"},
+                    levelscript_root=levelscript_root,
+                    leveldata_root=leveldata_root,
+                    persistent_leveldata_root=persistent_root,
+                    reading_popup_path=popup_table,
+                )
+
+            receiver = index["text_fixture_1"][0]
+            self.assertEqual(receiver["eventKeys"], ["readepitaph"])
+            self.assertEqual(
+                receiver["levelDataHostStatus"],
+                "not_required_for_direct_reading_popup_id",
+            )
+            self.assertTrue(receiver["storyBinding"])
+            self.assertTrue(receiver["playbackConfirmed"])
+            self.assertFalse(receiver["triggerRecovered"])
+            self.assertFalse(receiver["orderEvidence"])
+
+            position = (278.377, 55.92, 651.378)
+            source_path.write_bytes(
+                b"fixture"
+                + (1).to_bytes(4, "little", signed=True)
+                + (40001).to_bytes(4, "little")
+                + self._levelscript_interactive_event_record(
+                    "readepitaph",
+                    position=position,
+                )
+            )
+            registry_row = {
+                "registryIndex": 7,
+                "scriptIdGlobal": script_id,
+                "entitySlotId": 40001,
+                "entityType": 32,
+                "entityDetailId": "int_mission_beacon",
+                "position": dict(zip(("x", "y", "z"), position)),
+                "rotation": {"x": 0.0, "y": 0.0, "z": 0.0},
+                "registrySourceFile": "WorldEntityRegistry.json",
+            }
+            with (
+                patch.object(
+                    level_bindings,
+                    "_load_levelscript_binding_data",
+                    return_value={"files": [file_info]},
+                ),
+                patch.object(
+                    level_bindings,
+                    "levelscript_action_map_membership",
+                    return_value=({}, {10: "actionList#8 root"}),
+                ),
+                patch.object(
+                    level_bindings,
+                    "_levelscript_native_control_paths_to_record",
+                    return_value=[native_path],
+                ),
+                patch.object(
+                    level_bindings,
+                    "_load_world_entity_registry_global_script_index",
+                    return_value={script_id: [registry_row]},
+                ),
+            ):
+                triggered_index = (
+                    build_levelscript_unhosted_reading_popup_receiver_index(
+                        {"text_fixture_1"},
+                        levelscript_root=levelscript_root,
+                        leveldata_root=leveldata_root,
+                        persistent_leveldata_root=persistent_root,
+                        reading_popup_path=popup_table,
+                    )
+                )
+            triggered = triggered_index["text_fixture_1"][0]
+            self.assertTrue(triggered["triggerRecovered"])
+            self.assertEqual(
+                "levelscript_reading_popup_interactive_trigger",
+                triggered["relation"],
+            )
+            producer = triggered["interactiveEventProducers"][0]
+            self.assertEqual(40001, producer["entitySlotId"])
+            self.assertEqual("int_mission_beacon", producer["entityDetailId"])
+            self.assertEqual("readepitaph", producer["eventName"])
+            self.assertAlmostEqual(278.377, producer["position"]["x"], places=3)
 
     def test_exact_level_and_runtime_token_are_required(self) -> None:
         missions = {"sm2l8m1", "c27m4d5"}

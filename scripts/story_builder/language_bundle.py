@@ -51,6 +51,70 @@ _STORY_ORDER_OVERRIDES_PATH = (
     / "webui" / "overrides" / "story_order.json"
 )
 
+_STORY_TEXT_KEY_RE = re.compile(
+    r"^text_(?P<mission>(?:(?:gm|sm|db|dm|[acefm])\d+(?:[a-z]\d+)*(?:d\d+)?|"
+    r"map\d+_(?:lv|research)\d+))(?:_(?P<scene>.+))?$",
+    re.IGNORECASE,
+)
+
+
+def story_text_key_parts(text_key: str) -> tuple[str, str] | None:
+    """Split mission- and map-scoped reading-popup content ids for Story."""
+    match = _STORY_TEXT_KEY_RE.match(str(text_key or ""))
+    if not match:
+        return None
+    return match.group("mission"), match.group("scene") or "0"
+
+
+def build_world_entity_script_slot_position_index(
+    world_entity_registry: dict,
+) -> dict[tuple[str, str], list[dict]]:
+    """Index aligned WorldEntityRegistry script/slot rows with coordinates.
+
+    Duplicate identities are retained so callers can fail closed instead of
+    silently choosing one map entity. A source-array length mismatch makes the
+    registry unusable because positional alignment is the only exact join.
+    """
+    identities = (world_entity_registry or {}).get("m_scriptEntityIdList")
+    briefs = (world_entity_registry or {}).get("m_scriptEntityBriefInfo")
+    if (
+        not isinstance(identities, list)
+        or not isinstance(briefs, list)
+        or len(identities) != len(briefs)
+    ):
+        return {}
+    out: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for registry_index, (identity, brief) in enumerate(zip(identities, briefs)):
+        if not isinstance(identity, dict) or not isinstance(brief, dict):
+            continue
+        script_id = identity.get("scriptIdGlobal")
+        slot_id = identity.get("slotId")
+        position = brief.get("position")
+        if (
+            isinstance(script_id, bool)
+            or not isinstance(script_id, int)
+            or isinstance(slot_id, bool)
+            or not isinstance(slot_id, int)
+            or not isinstance(position, dict)
+        ):
+            continue
+        try:
+            normalized_position = {
+                axis: float(position[axis]) for axis in ("x", "y", "z")
+            }
+        except (KeyError, TypeError, ValueError):
+            continue
+        out[(str(script_id), str(slot_id))].append({
+            "registryIndex": registry_index,
+            "scriptIdGlobal": str(script_id),
+            "slotId": str(slot_id),
+            "entityType": brief.get("entityType"),
+            "detailId": str(brief.get("detailId") or ""),
+            "position": normalized_position,
+            "rotation": brief.get("rotation"),
+        })
+    return dict(out)
+
 
 @_radio_cont_lru_cache(maxsize=65536)
 def _sequence_similarity_at_least(left: str, right: str, threshold: float) -> bool:
@@ -6690,15 +6754,6 @@ def build_language_bundle(
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
-    story_text_key_re = re.compile(
-        r"^text_(?P<mission>(?:gm|sm|db|dm|[acefm])\d+(?:[a-z]\d+)*(?:d\d+)?)(?:_(?P<scene>.+))?$",
-        re.IGNORECASE,
-    )
-    def story_text_key_parts(text_key: str) -> tuple[str, str] | None:
-        match = story_text_key_re.match(str(text_key or ""))
-        if not match:
-            return None
-        return match.group("mission"), match.group("scene") or "0"
     def reading_popup_story_content_key(row_id: str, row: dict | None) -> str:
         if not isinstance(row, dict):
             return ""
@@ -17519,6 +17574,9 @@ def build_language_bundle(
         if world_entity_registry_path.is_file()
         else {}
     )
+    world_entity_script_slot_positions = (
+        build_world_entity_script_slot_position_index(world_entity_registry)
+    )
     npc_proxy_dialog_navigation_contexts = (
         build_npc_proxy_tracking_dialog_navigation_contexts(
             npc_tracking_consumers,
@@ -19246,6 +19304,17 @@ def build_language_bundle(
             or {}
         )
         script_entity = entity_compare.get("scriptEntity") or {}
+        producer_entity_rows = world_entity_script_slot_positions.get((
+            str(native_event.get("producerScriptId") or ""),
+            str(script_entity.get("slotId"))
+            if isinstance(script_entity.get("slotId"), int)
+            else "",
+        ), [])
+        producer_entities = (
+            [dict(producer_entity_rows[0])]
+            if len(producer_entity_rows) == 1
+            else []
+        )
         source_files = sorted({
             str(native_event.get("producerSourceFile") or ""),
             *[
@@ -19298,6 +19367,16 @@ def build_language_bundle(
             "entityLogicIds": [str(script_entity.get("logicId"))]
             if isinstance(script_entity.get("logicId"), int)
             else [],
+            "producerEntities": producer_entities,
+            "producerEntityPositionStatus": (
+                "exact_unique_world_entity_registry_script_slot"
+                if producer_entities
+                else (
+                    "ambiguous_world_entity_registry_script_slot"
+                    if producer_entity_rows
+                    else "missing_world_entity_registry_script_slot"
+                )
+            ),
             "trackedSlotBridgeStatus": "exact_entity_compare_event_bridge",
             "producerEventName": str(
                 native_event.get("producerHeaderName") or ""

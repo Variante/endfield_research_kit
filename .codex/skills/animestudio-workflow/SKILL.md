@@ -7,7 +7,7 @@ description: Use when working on the local tools/AnimeStudio exporter for Endfie
 
 ## When To Use
 
-Use this skill for AnimeStudio or Anime Studio tasks in this repo: building the CLI, changing `tools/AnimeStudio`, running installed-game Unity asset exports, running integrated VFS structured/audio/index commands, explaining CLI arguments, investigating object parser failures, or tuning `--animestudio-jobs`.
+Use this skill for AnimeStudio or Anime Studio tasks in this repo: building the CLI, changing `tools/AnimeStudio`, running installed-game Unity asset exports, running integrated VFS structured/audio/index commands, explaining CLI arguments, investigating object parser failures, or tuning `--asset-jobs`.
 
 If the task is about the whole WebUI export flow, also use `endfield-webui-workflow`. For implementation details, read `references/animestudio.md` before changing code or diagnosing logs.
 
@@ -33,28 +33,51 @@ Expected executable:
 tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 ```
 
+## DummyDll Regeneration
+
+When a task needs script-derived MonoBehaviour schemas, or the installed game
+changed since `tools\DummyDll\generation.json`, first run:
+
+```bat
+python scripts\animestudio\generate_dummydll.py --dry-run
+```
+
+If the unique registration checks pass and regeneration is actually needed:
+
+```bat
+python scripts\animestudio\generate_dummydll.py --replace
+```
+
+The generator owns CodeRegistration/MetadataRegistration discovery, the tested
+Cpp2IL `2022.0.7` patch/build, staged validation, atomic publication, backup,
+and provenance manifest. Never reuse addresses from memory or a prior build.
+Treat Cpp2IL skip counts as coverage gaps, verify that the target full type name
+exists in the generated assembly, and keep AnimeStudio serialized-first unless
+a focused comparison proves script-first is better. Read the DummyDll section
+in `references/animestudio.md` before diagnosing or changing this path.
+
 ## Wrapper Usage
 
 Use the parent wrappers for normal Endfield exports:
 
 ```bat
-.\export.bat --export-from-game
-.\export_assets.bat --export-from-game
+.\export.bat --from-game
+.\export_assets.bat --from-game
 .\build_updates_by_patch.bat
 ```
 
-Both pass AnimeStudio options through to `scripts\export_full_from_game.py`. Keep `--animestudio-jobs` conservative unless the machine has enough free RAM:
+Both pass AnimeStudio options through to `scripts\export_full_from_game.py`. Keep `--asset-jobs` conservative unless the machine has enough free RAM:
 
 ```bat
-.\export.bat --export-from-game --animestudio-jobs 2
-.\export_assets.bat --export-from-game --animestudio-jobs 2
+.\export.bat --from-game --asset-jobs 2
+.\export_assets.bat --from-game --asset-jobs 2
 ```
 
 The default is now `8`; AnimeStudio subprocess tasks for each source share
 that worker pool, and asset shards are queued round-robin by type. Lower
-`--animestudio-jobs` when peak memory is too high.
-`export.bat --export-from-game` also uses AnimeStudio as the default structured
-data dumper. `export_assets.bat --export-from-game` uses AnimeStudio for the
+`--asset-jobs` when peak memory is too high.
+`export.bat --from-game` also uses AnimeStudio as the default structured
+data dumper. `export_assets.bat --from-game` uses AnimeStudio for the
 lightweight `vfs-index` snapshot and CN audio decode before relinking.
 Asset conversion uses more shards than workers by default: `--animestudio-shards 16`
 with `--animestudio-jobs 8`; the shared pool consumes those shards alongside
@@ -63,9 +86,12 @@ per-process asset slice size. Non-sharded JSON type jobs use
 `--animestudio-type-job-mode auto` by default, merging map-filtered JSON while
 running broad Story JSON types sequentially in isolated processes; pass
 `parallel` only when comparing concurrent per-type jobs.
-`export_assets.bat --export-from-game` now defaults to the standard WebUI-facing
+`export_assets.bat --from-game` now defaults to the standard WebUI-facing
 image/model asset export plus `Material` JSON. Asset modes, from narrowest to
 broadest, are `--focused-assets`, `--default-assets`, and `--debug-assets`.
+Audio export defaults to direct lossless FLAC through AnimeStudio's in-process
+encoder. It does not create intermediate WAV files or require `ffmpeg`; use
+`--format wav` or `--format wem` only for explicit compatibility output.
 
 ## Integrated VFS Commands
 

@@ -72,7 +72,38 @@
     els.buffer.style.width = `${buffered * 100}%`;
     els.time.textContent = hasDuration
       ? `${formatMediaTime(preview)} / ${formatMediaTime(duration)}`
-      : formatMediaTime(current);
+      : `${formatMediaTime(current)} / --:--`;
+  }
+
+  // Players are created with preload="none" so long lists stay cheap, which leaves
+  // the duration unknown until the first play. Pull just the metadata once the
+  // player is on screen so the total time shows up without playing anything.
+  function probeMediaDuration(media) {
+    if (!media || media.dataset.mediaDurationProbe === "1") return;
+    if (!(media.currentSrc || media.src)) return;
+    const duration = Number(media.duration);
+    if (Number.isFinite(duration) && duration > 0) return;
+    if (media.readyState >= 1) return;
+    if (media.preload !== "none") return; // anything else already fetches metadata on its own
+    if (!media.paused || Number(media.currentTime) > 0) return;
+    media.dataset.mediaDurationProbe = "1";
+    media.preload = "metadata";
+    try {
+      media.load();
+    } catch (_error) {}
+  }
+
+  function scheduleDurationProbe(wrap, media) {
+    if (typeof IntersectionObserver === "undefined") {
+      probeMediaDuration(media);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      probeMediaDuration(media);
+    }, { rootMargin: "200px" });
+    observer.observe(wrap);
   }
 
   function updateVolumeUi(media, els) {
@@ -512,6 +543,7 @@
 
     updateMediaProgress(media, els);
     updateVolumeUi(media, els);
+    if (options.probeDuration !== false) scheduleDurationProbe(wrap, media);
     return wrap;
   }
 

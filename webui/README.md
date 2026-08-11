@@ -21,7 +21,8 @@ Normal navigation exposes:
 
 - **Story:** dialog, radio, SNS, cutscenes, options, media, recovery labels,
   and evidence-aware ordering.
-- **Characters:** grouped names, source evidence, aliases, and linked assets.
+- **Characters:** grouped names, source evidence, aliases, linked assets, and
+  ascending or descending sorting by name and evidence volume.
 - **Gameplay:** characters, weapons, equipment, enemies, usable items,
   progression requirements, skills, projectiles, assets, and recovered audio.
 - **Assets:** exported images, models, materials, video, and metadata.
@@ -49,8 +50,6 @@ projectile matching evidence, and unresolved ownership remain debug-only.
 - `src/features/gameplay/`: Gameplay page and integrations.
 - `src/features/audio/`: lazy, virtualized Audio page.
 - `src/features/mission_pipeline/`: experimental mission evidence view.
-- `src/features/{economy,world,presentation,projectiles,combat}/`: semantic
-  payload integrations used by Gameplay or debug views.
 
 ## Data contract
 
@@ -66,27 +65,37 @@ data/lang/<LANG>/characters/index.json
 data/lang/<LANG>/gameplay/index.json
 data/lang/<LANG>/gameplay/sound_effects.json
 data/lang/<LANG>/audio/{index,events,media}.json
-data/lang/<LANG>/{economy,world,presentation}/index.json
 data/gameplay/projectiles.json
 data/mission_pipeline/
 data/assets/index.json
 data/assets/gameplay_refs.json
 data/assets/story_media.json
-data/assets/videos.json
 data/updates/latest.json
 ```
 
 Gameplay loads its base index and optional combat, projectile, audio, and asset
 sidecars independently. Missing optional sidecars must degrade to the base
-record instead of breaking the page. Presentation and combat builders expose a
-visible degraded reason when their source graph is absent or stale.
+record instead of breaking the page. The combat builder exposes a
+visible degraded reason when its source graph is absent or stale.
+
+The standalone Factory, World, and Presentation pages are retired alongside
+Combat & Projectiles. `export.bat` no longer runs
+`build_economy_data.py`, `build_world_data.py`, or `build_presentation_data.py`,
+and `data/lang/<LANG>/{economy,world,presentation}/` is no longer generated.
+
+Legacy `data/game_data/` is not an active semantic-page input. Its local
+decoder recognizes the current 47-member SkillData and 30-member BuffData
+schemas, fails visibly on member-count drift, and now reaches exact post-id tail
+boundaries for the current merged export. The output remains a broad diagnostic
+preview: byte-bounded stack/ignite/smart-target action bodies may still be
+semantically partial. Do not surface it as observed runtime combat evidence.
 
 The Audio overview and Event inventory load only when its debug view is opened;
 the larger media inventory remains deferred until the Media mode is selected.
 Both lists are virtualized, and selecting an Event fetches only its keyed detail
 shard before rendering contexts, branch evidence, and players. Playable recovered audio is served from
-`/export_full/structured/Audio/{shared,<LANG>}/`. The normal builder emits
-lossless `.flac` files and writes those paths into Story, cutscene, projectile,
+`/export_full/structured/Audio/{shared,<LANG>}/`. AnimeStudio and the normal
+builder default to lossless `.flac` files and write those paths into Story, cutscene, projectile,
 and Gameplay sound payloads; the frontend uses the same native audio control
 for FLAC and WAV links. Legacy WEM files remain indexable for diagnostics but
 are not a browser-playable output format. Event details list every typed
@@ -137,23 +146,32 @@ Manual inputs live under `webui/overrides/`:
   canonical character ids.
 
 Story overrides require a Story rebuild. Character merges and display names
-are edited live from the Characters page through `serve.py`; they do not
-require rebuilding generated character data. Self-merges and cycles are
-rejected, and merging a flagged source clears that flag.
+are edited live from the Characters page through `serve.py`; their editing
+controls appear only with `Show debug info`, and they do not require rebuilding
+generated character data. Self-merges and cycles are rejected, and merging a
+flagged source clears that flag.
 
 ## Behavior contract
 
 ### Shared navigation
 
 - Recovery issue and method filters remain visible in normal and debug modes.
-- Source panels, mission evidence, and Story order editing stay behind
-  `Show debug info`.
+- Source panels, mission evidence, Story order editing, and Characters name or
+  identity override controls stay behind `Show debug info`.
 - Story reset returns to Story sort while preserving expanded mission groups.
 - Disabling debug while Audio or Mission Pipeline is active moves to Gameplay
   and normalizes the URL.
 
 ### Story and media
 
+- Story uses the same persisted female/male segmented selector as Gameplay.
+  Gender-authored dialogue text, voice, images, video, and gender-only cutscene
+  lines update together, and the selection stays synchronized across both
+  pages.
+- Character Reactions use the same per-line catalog layout as character Wiki
+  voice entries: each reaction shows its authored trigger as the row label;
+  response ids, trigger sets, audio paths, and fallback evidence remain in the
+  generated payload and debug trace.
 - `sns_emoji_*` renders as small inline emoji with no hover or modal.
 - `sns_image_*`, `sns_sticker_*`, and related non-emoji media preserve normal
   image proportions.
@@ -180,12 +198,24 @@ sns_topic_map02_lv005_12002
   exact false-positive source family.
 - Playable-character details keep breakthrough requirements, skill/talent
   costs, potential art, stats, and identity assets in their owning sections.
+- Gameplay keeps the Endministrator as one canonical character and exposes a
+  persisted female/male variant switch for portraits, active action rows,
+  Story voice links, potential pictures, and recovered skill sound effects.
+  Shared stats, skills, talents, and potentials remain sourced from
+  `chr_9000_endmin`.
 - Skill glyphs stay centered in circular controls. Normal-skill, Ultimate, and
   Combo discs use the owning character's exact `CharTypeTable.json` color:
   Cryst `#21C6D0`, Fire `#FF623D`, Natural `#9EDC23`, Physical `#888888`, and
   Pulse `#FFC000`; Normal Attack remains neutral.
 - Enemy variants are a selectable difference table. Stat controls expose only
-  authored points and never interpolate missing levels.
+  exact `EnemyAttributeTemplateTable` points and never interpolate missing
+  levels. Variants share displayed HP/ATK/DEF when they reference the same
+  `attrTemplateId`; separate templates are selected independently, while born
+  buffs and attribute modifiers remain variant-specific.
+- Combat details distinguish authored inputs and references from the recovered
+  stock-client formula. They must not be labeled as observed live results:
+  IFix patches, server corrections, runtime targets, blackboard values, and
+  branch selection can change the evaluated outcome.
 - Character skill rows show one compact linked-projectile summary and only the
   playable Events proven through that displayed Gameplay action id's exact
   SkillData or BuffData dependency chain. A skill may legitimately have no
@@ -209,8 +239,22 @@ sns_topic_map02_lv005_12002
 - Trigger cards preserve evidence type and original source boundaries.
 - Native playback without a mission owner remains explicitly unassigned.
 - Definition-only rows never become activation, ownership, or order evidence.
+- Reading-popup actions use a direct serialized `_readingPopId`. Mission
+  Pipeline shows the exact event/action receiver and, when recovered through
+  the aligned WorldEntityRegistry script/slot plus complete embedded
+  interaction record, the triggering map entity and world coordinates.
+  Mission/quest ownership and Story order still require separate evidence.
 - Quest topology and client-applied state do not prove server successor
   selection.
+- The per-mission spatial map projects quest tracking pins and nearby
+  LevelScript Story carriers onto X/Z. Positioned and unpositioned files expose
+  localized hover previews; unresolved-trigger files remain a separate review
+  tray. Exact interaction anchors show the nearest mission tracking point and
+  3D/XZ distance for review. Spatial proximity is diagnostic only and creates
+  no ownership, trigger, or Story-order edge. Exact native event producers are
+  also positioned when their script/slot has one aligned WorldEntityRegistry
+  entry; this reconstructs the relevant runtime-map layer without requiring a
+  full scene-geometry export.
 - Exact DialogTree/Timeline option finish outcomes may be shown beside the
   MissionRuntime objective that consumes the same finish ID. Each row exposes
   hash-validated original files, the structural option-node/slot scope, and
@@ -254,9 +298,9 @@ After frontend or data changes:
 
 1. Reuse or start the default server.
 2. Confirm Story, Characters, Gameplay, Assets, Text, and Updates load.
-3. Toggle debug and confirm Audio and Mission Pipeline appear and hide cleanly.
-   In Audio, confirm Events loads first, Media loads on demand, and disabling
-   debug returns to Gameplay.
+3. Toggle debug and confirm Audio, Mission Pipeline, and the Characters
+   override controls appear and hide cleanly. In Audio, confirm Events loads
+   first, Media loads on demand, and disabling debug returns to Gameplay.
 4. Check Story reset/filter behavior and the inline SNS fixtures.
 5. Open a playable character and an enemy; verify progression, variants,
    projectiles, sounds, and linked assets degrade cleanly when optional data is
