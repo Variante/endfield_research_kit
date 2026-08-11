@@ -853,7 +853,7 @@
     "populationReport": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/gacha_light_population_recovery.json",
     "populationReportSha256": "0441ec4817e23a69c1162643d05ae0c2c9abd1acdd02cc76d7646f0363b5ecc8",
     "deferredReport": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/gacha_deferred_light_data_recovery.json",
-    "deferredReportSha256": "94fef18cfba11fefc9ec30e2494b6a159716449587b6c46c6780fc1a19a27a3e",
+    "deferredReportSha256": "6675f99a85e528b4ac33631c0cd1198071cc389bf12300d6f992ba62fc401c30",
     "nativeOrder": "CullLights output distance order; SetupState priority descending then camera distance ascending",
     "knownAuthoredScope": "six light_overview rows plus eleven SceneLight6Rarity rows"
   },
