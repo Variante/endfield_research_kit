@@ -3163,6 +3163,14 @@ UNITY_CULLING_SLICES = {
     ),
 }
 
+UNITY_CULLING_BODIES = {
+    "candidate_core": (
+        0x181051A40,
+        0x4E1,
+        "7ffa59970340779c7d6c18246b6410f49bdeaa05de19a8111c2cb69653f8b7a1",
+    ),
+}
+
 TEXT_ASSETS = {
     "SettingFiles": (
         "SettingFiles_pA5D65C734C247CA7.txt",
@@ -7552,6 +7560,27 @@ def validate_unity_native_producer(image: PEImage) -> dict[str, object]:
     require("unity_cull_lights_icall_target", target, UNITY_CULL_LIGHTS_ICALL_VA, image.path)
     require("unity_cull_lights_icall_name", name, UNITY_CULL_LIGHTS_ICALL_NAME, image.path)
 
+    bodies = []
+    for label, (virtual_address, size_bytes, expected_hash) in (
+        UNITY_CULLING_BODIES.items()
+    ):
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_culling_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
     slices = []
     for label, (virtual_address, expected_hex) in UNITY_CULLING_SLICES.items():
         expected = bytes.fromhex(expected_hex)
@@ -7580,6 +7609,7 @@ def validate_unity_native_producer(image: PEImage) -> dict[str, object]:
             "sizeBytes": 12,
             "fields": ["native light pointer (8 bytes)", "camera distanceSquared (4 bytes)"],
         },
+        "candidateCoreBody": bodies,
         "closedBehavior": [
             "PC device-tier min/max gate",
             "maximum culling-distance gate",
@@ -8046,7 +8076,6 @@ def validate_unity_cull_view_constructor(image: PEImage) -> dict[str, object]:
             ],
             "open": [
                 "later renderer/entity screen-size threshold equation",
-                "a separate consumer, if any, for the forwarded sceneCullingMask slot",
                 "target-frame runtime overrides and final survivor rows",
             ],
         },
@@ -11674,7 +11703,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v48",
+        "schema": "endfield.recovered-light-cull-cap.v49",
         "status": "component67_managed_tick_host_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
@@ -12128,7 +12157,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "min survivor/cap final-count rule",
                 "LightClusteringPassConstructor zero-based <=256 row slice, original-row index preservation, post-sort Int32 index handoff, and punctual shadow-preparation consumer",
                 "desktop cap cannot truncate the upstream max-256 cull result",
-                "the unique UnityPlayer CullLightsInternal_Injected binding and native candidate gate chain",
+                "the unique UnityPlayer CullLightsInternal_Injected binding, complete hash-pinned 0x4E1-byte native candidate core, and native candidate gate chain",
                 "both GameAssembly DoECSCulling call sites and their exact input/result registers",
                 "the 16-byte LightCullResult pointer/count ABI and NativeArray projection",
                 "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",

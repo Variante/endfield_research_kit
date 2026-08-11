@@ -422,7 +422,10 @@ NPC archetypes are imported as labeled source kits.
   complete installed CullView-named census found no separate
   `sceneCullingMask` consumer: the field is forwarded by the constructor but
   not read by the scheduled view loop, either selected predicate, fence/reset
-  lifecycle, child-view path, or a post-dispatch packet copy. A direct census of the
+  lifecycle, child-view path, or a post-dispatch packet copy. The complete
+  0x4E1-byte UnityPlayer candidate core is now hash-pinned in the maintained
+  audit, so the native gate/sort/output-cap boundary cannot silently drift.
+  A direct census of the
   installed `UnityPlayer.dll` native strings/RTTI (with the matching
   `GameAssembly.dll` build) adds no unambiguous name for component 67:
   `HGTreeComponent`, `HGTreeRenderer`, `HGTreeInstance`, `HGTree`, and
