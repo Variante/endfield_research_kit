@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v15",
-  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_and_renderer_config_contract_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v16",
+  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_and_ecs_flags_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
@@ -1540,6 +1540,155 @@
       "nativeDefaultFlagsClosed": true,
       "runtimePatchedResultStillOpen": true
     },
+    "ecsRenderFlags": {
+      "method": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2.GetECSRenderFlags",
+      "methodIndex": 285597,
+      "virtualAddress": "0x189B48344",
+      "fileOffset": "0x9B46944",
+      "sizeBytes": 376,
+      "bodySha256": "2ad75354fa81b3958de4783f247c8e0993a6986b4c7ff244ce8f36e04615075d",
+      "patchMethodId": "0x888",
+      "resolvedCalls": [
+        {
+          "offset": "0x38",
+          "target": "0x1831068E0",
+          "method": "WrappersManagerImpl.IsPatched"
+        },
+        {
+          "offset": "0x81",
+          "target": "0x189B48808",
+          "method": "HGPunctualLightShadowManagerV2.GetShadowRenderType"
+        },
+        {
+          "offset": "0xC1",
+          "target": "0x18B3BDD10",
+          "method": "HGSharedLightData.get_enableHDCharacterShadow_Injected"
+        },
+        {
+          "offset": "0xD5",
+          "target": "0x1800036A0",
+          "method": "helper"
+        },
+        {
+          "offset": "0xDA",
+          "target": "0x189B42908",
+          "method": "HGHDPLSCharacterShadowManager.get_isActive"
+        },
+        {
+          "offset": "0xE9",
+          "target": "0x189D08BE8",
+          "method": "HGSharedLightDataExtension.GetEntity"
+        },
+        {
+          "offset": "0xF8",
+          "target": "0x1800036A0",
+          "method": "helper"
+        },
+        {
+          "offset": "0x102",
+          "target": "0x189B46C38",
+          "method": "HGHDPLSCharacterShadowManager.IsHDPLSLight"
+        },
+        {
+          "offset": "0x115",
+          "target": "0x189CDC2C0",
+          "method": "WrappersManagerImpl.GetPatch"
+        },
+        {
+          "offset": "0x122",
+          "target": "0x1800D8260",
+          "method": "fail-fast"
+        },
+        {
+          "offset": "0x158",
+          "target": "0x189CD1664",
+          "method": "ILFixDynamicMethodWrapper.__Gen_Wrap_876"
+        }
+      ],
+      "resolvedBranches": [
+        {
+          "offset": "0x9A",
+          "target": "0x189B483F2",
+          "name": "static_false"
+        },
+        {
+          "offset": "0x9E",
+          "target": "0x189B483F0",
+          "name": "dynamic_true"
+        },
+        {
+          "offset": "0xB3",
+          "target": "0x189B483FF",
+          "name": "caster_projection_done"
+        },
+        {
+          "offset": "0xE1",
+          "target": "0x189B484A1",
+          "name": "hd_character_shadow_disabled"
+        },
+        {
+          "offset": "0x109",
+          "target": "0x189B484A1",
+          "name": "hdpls_light_false"
+        },
+        {
+          "offset": "0x120",
+          "target": "0x189B4846C",
+          "name": "patched_wrapper_call"
+        },
+        {
+          "offset": "0x3F",
+          "target": "0x189B48455",
+          "name": "patched_gate"
+        },
+        {
+          "offset": "0xC8",
+          "target": "0x189B484A1",
+          "name": "hd_character_shadow_inactive"
+        }
+      ],
+      "nativeDefault": {
+        "condition": "IsPatched(0x888) == false",
+        "argumentPointers": {
+          "objectFlags": "r9 -> [rsi]",
+          "objectFlagsMask": "fifth argument -> [rdi]",
+          "renderFlags": "sixth argument -> [r14]",
+          "renderFlagsMask": "seventh argument -> [rbx]"
+        },
+        "baseValues": {
+          "objectFlags": "0x08000002",
+          "objectFlagsMask": "0x08000002",
+          "renderFlags": "0x02080000",
+          "renderFlagsMask": "0x02080000"
+        },
+        "shadowRenderTypeInputs": {
+          "castStaticPointer": "rbp-0x0F (r9)",
+          "castDynamicPointer": "rbp-0x10 (fifth argument)"
+        },
+        "exclusiveCasterProjection": {
+          "condition": "castStaticObjects XOR castDynamicObjects",
+          "objectFlagsAndMaskOr": "0x04000000",
+          "renderFlagsAndMaskOr": "0x01000000"
+        },
+        "hdCharacterShadow": {
+          "condition": "enableHDCharacterShadow && HGHDPLSCharacterShadowManager.isActive && IsHDPLSLight(entity)",
+          "destination": "objectFlagsMask",
+          "bit": 28,
+          "orMask": "0x10000000"
+        },
+        "sourceFlagsClosed": true
+      },
+      "runtimePatchedPath": {
+        "condition": "IsPatched(0x888) == true",
+        "patchLookup": "0x189CDC2C0",
+        "wrapper": "0x189CD1664",
+        "missingPatchFailFast": "0x1800D8260",
+        "runtimeWrapperTableEntryStillOpen": true,
+        "returnedFlagsStillOpen": true
+      },
+      "nativeDefaultFlagsClosed": true,
+      "runtimePatchedResultStillOpen": true
+    },
     "shadowCasterPropertyGetters": {
       "packedWord": "HGSharedLightData.m_CasterProperties",
       "fields": {
@@ -2095,6 +2244,155 @@
           "condition": "IsPatched(0x887) == true",
           "patchLookup": "0x189CDC2C0",
           "wrapper": "0x189CD1564",
+          "missingPatchFailFast": "0x1800D8260",
+          "runtimeWrapperTableEntryStillOpen": true,
+          "returnedFlagsStillOpen": true
+        },
+        "nativeDefaultFlagsClosed": true,
+        "runtimePatchedResultStillOpen": true
+      },
+      "ecsRenderFlags": {
+        "method": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2.GetECSRenderFlags",
+        "methodIndex": 285597,
+        "virtualAddress": "0x189B48344",
+        "fileOffset": "0x9B46944",
+        "sizeBytes": 376,
+        "bodySha256": "2ad75354fa81b3958de4783f247c8e0993a6986b4c7ff244ce8f36e04615075d",
+        "patchMethodId": "0x888",
+        "resolvedCalls": [
+          {
+            "offset": "0x38",
+            "target": "0x1831068E0",
+            "method": "WrappersManagerImpl.IsPatched"
+          },
+          {
+            "offset": "0x81",
+            "target": "0x189B48808",
+            "method": "HGPunctualLightShadowManagerV2.GetShadowRenderType"
+          },
+          {
+            "offset": "0xC1",
+            "target": "0x18B3BDD10",
+            "method": "HGSharedLightData.get_enableHDCharacterShadow_Injected"
+          },
+          {
+            "offset": "0xD5",
+            "target": "0x1800036A0",
+            "method": "helper"
+          },
+          {
+            "offset": "0xDA",
+            "target": "0x189B42908",
+            "method": "HGHDPLSCharacterShadowManager.get_isActive"
+          },
+          {
+            "offset": "0xE9",
+            "target": "0x189D08BE8",
+            "method": "HGSharedLightDataExtension.GetEntity"
+          },
+          {
+            "offset": "0xF8",
+            "target": "0x1800036A0",
+            "method": "helper"
+          },
+          {
+            "offset": "0x102",
+            "target": "0x189B46C38",
+            "method": "HGHDPLSCharacterShadowManager.IsHDPLSLight"
+          },
+          {
+            "offset": "0x115",
+            "target": "0x189CDC2C0",
+            "method": "WrappersManagerImpl.GetPatch"
+          },
+          {
+            "offset": "0x122",
+            "target": "0x1800D8260",
+            "method": "fail-fast"
+          },
+          {
+            "offset": "0x158",
+            "target": "0x189CD1664",
+            "method": "ILFixDynamicMethodWrapper.__Gen_Wrap_876"
+          }
+        ],
+        "resolvedBranches": [
+          {
+            "offset": "0x9A",
+            "target": "0x189B483F2",
+            "name": "static_false"
+          },
+          {
+            "offset": "0x9E",
+            "target": "0x189B483F0",
+            "name": "dynamic_true"
+          },
+          {
+            "offset": "0xB3",
+            "target": "0x189B483FF",
+            "name": "caster_projection_done"
+          },
+          {
+            "offset": "0xE1",
+            "target": "0x189B484A1",
+            "name": "hd_character_shadow_disabled"
+          },
+          {
+            "offset": "0x109",
+            "target": "0x189B484A1",
+            "name": "hdpls_light_false"
+          },
+          {
+            "offset": "0x120",
+            "target": "0x189B4846C",
+            "name": "patched_wrapper_call"
+          },
+          {
+            "offset": "0x3F",
+            "target": "0x189B48455",
+            "name": "patched_gate"
+          },
+          {
+            "offset": "0xC8",
+            "target": "0x189B484A1",
+            "name": "hd_character_shadow_inactive"
+          }
+        ],
+        "nativeDefault": {
+          "condition": "IsPatched(0x888) == false",
+          "argumentPointers": {
+            "objectFlags": "r9 -> [rsi]",
+            "objectFlagsMask": "fifth argument -> [rdi]",
+            "renderFlags": "sixth argument -> [r14]",
+            "renderFlagsMask": "seventh argument -> [rbx]"
+          },
+          "baseValues": {
+            "objectFlags": "0x08000002",
+            "objectFlagsMask": "0x08000002",
+            "renderFlags": "0x02080000",
+            "renderFlagsMask": "0x02080000"
+          },
+          "shadowRenderTypeInputs": {
+            "castStaticPointer": "rbp-0x0F (r9)",
+            "castDynamicPointer": "rbp-0x10 (fifth argument)"
+          },
+          "exclusiveCasterProjection": {
+            "condition": "castStaticObjects XOR castDynamicObjects",
+            "objectFlagsAndMaskOr": "0x04000000",
+            "renderFlagsAndMaskOr": "0x01000000"
+          },
+          "hdCharacterShadow": {
+            "condition": "enableHDCharacterShadow && HGHDPLSCharacterShadowManager.isActive && IsHDPLSLight(entity)",
+            "destination": "objectFlagsMask",
+            "bit": 28,
+            "orMask": "0x10000000"
+          },
+          "sourceFlagsClosed": true
+        },
+        "runtimePatchedPath": {
+          "condition": "IsPatched(0x888) == true",
+          "patchLookup": "0x189CDC2C0",
+          "wrapper": "0x189CD1664",
           "missingPatchFailFast": "0x1800D8260",
           "runtimeWrapperTableEntryStillOpen": true,
           "returnedFlagsStillOpen": true
@@ -5627,6 +5925,7 @@
       "GetShadowRenderType method 0x886 is hash-pinned: IsPatched gates a native default path whose static request returns castStatic=true/castDynamic=false and whose dynamic path consumes the three caster-property getters",
       "the patched GetShadowRenderType path is explicitly bounded to WrappersManagerImpl.GetPatch(0x886) and ILFixDynamicMethodWrapper.__Gen_Wrap_874, with missing-patch fail-fast; no runtime wrapper result is inferred",
       "GetRendererConfig method 0x887 is hash-pinned: its unpatched projection is 0x4800 | (castStaticObjects ? 0x1000 : 0) | (castDynamicObjects ? 0x2000 : 0), and its patched path is bounded to __Gen_Wrap_875",
+      "GetECSRenderFlags method 0x888 is hash-pinned: it initializes object/render flags, projects exclusive caster results into 0x04000000/0x01000000, and adds objectFlagsMask bit 28 only for the enableHDCharacterShadow + active HDPLS-light path",
       "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
       "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
       "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -5640,6 +5939,7 @@
       "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
       "the runtime IsPatched(0x886) wrapper-table membership and any patched GetShadowRenderType return flags remain capture/runtime-boundary evidence",
       "the runtime IsPatched(0x887) wrapper-table membership and any patched GetRendererConfig flags remain capture/runtime-boundary evidence",
+      "the runtime IsPatched(0x888) wrapper-table membership and any patched GetECSRenderFlags flags remain capture/runtime-boundary evidence",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
     "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."

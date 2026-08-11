@@ -235,6 +235,43 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_renderer_config_native(bytes(body))
 
+    def test_native_ecs_render_flags_projection(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_ECS_RENDER_FLAGS_FILE_OFFSET)
+            body = stream.read(AUDIT.GET_ECS_RENDER_FLAGS_SIZE)
+        result = AUDIT.validate_ecs_render_flags_native(body)
+        self.assertEqual(result["patchMethodId"], "0x888")
+        self.assertEqual(
+            result["nativeDefault"]["baseValues"],
+            {
+                "objectFlags": "0x08000002",
+                "objectFlagsMask": "0x08000002",
+                "renderFlags": "0x02080000",
+                "renderFlagsMask": "0x02080000",
+            },
+        )
+        self.assertEqual(
+            result["nativeDefault"]["exclusiveCasterProjection"]["condition"],
+            "castStaticObjects XOR castDynamicObjects",
+        )
+        self.assertEqual(result["nativeDefault"]["hdCharacterShadow"]["bit"], 28)
+        self.assertTrue(result["nativeDefaultFlagsClosed"])
+        self.assertEqual(
+            result["runtimePatchedPath"]["wrapper"],
+            f"0x{AUDIT.ILFIX_DYNAMIC_METHOD_WRAPPER_876_VA:X}",
+        )
+
+    def test_changed_ecs_render_flags_default_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_ECS_RENDER_FLAGS_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.GET_ECS_RENDER_FLAGS_SIZE))
+        body[0x51] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=ecs_render_flags_body_sha256; source=.*GameAssembly.dll; ",
+        ):
+            AUDIT.validate_ecs_render_flags_native(bytes(body))
+
     def test_changed_point_shadow_cache_index_unmatched_return_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
