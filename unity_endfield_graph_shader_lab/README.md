@@ -1917,7 +1917,9 @@ reusing the older no-screen sidecars or claiming retail frame parity.
 The screen-shadow binding audit is independent of that scratch export: it
 records that the current binary Skin consumer reads retail `_ScreenSpaceShadowMask`
 R/G, while the lab producer remains content-invalid and Skin stays on the
-diagnostic branch until canonical publication is recovered.
+source-shaped retail branch with its keyword disabled until canonical
+publication is recovered; the diagnostic branch remains available for
+comparison.
 The Skin export audit also pins the current binary equations: the directional
 R selector honors `DirectionalShadowParams.x` and `CharacterParams1.z`, while
 G feeds the character-shadow alpha product and minimum-shadow path.

@@ -4,7 +4,7 @@
 This intentionally does not use the older capture contract: that contract pins
 an earlier export and is not a valid freshness check after an installed-data
 refresh.  The audit reports what the current lab wires today and refuses to
-claim retail parity while Skin is still on the diagnostic consumer branch.
+claim retail parity while the producer remains content-invalid.
 """
 
 from __future__ import annotations
@@ -58,32 +58,33 @@ def verify_current_boundary() -> dict[str, Any]:
         "bool contentValid = false;",
         "if (contentValid)",
         "commandBuffer.EnableShaderKeyword(EyeConsumerKeyword);",
+        "commandBuffer.EnableShaderKeyword(SkinConsumerKeyword);",
+        "commandBuffer.DisableShaderKeyword(SkinConsumerKeyword);",
     ):
         require(producer, needle, "current screen-shadow producer")
-    if "SkinConsumerKeyword" in producer:
-        raise AssertionError(
-            "current producer unexpectedly publishes a Skin consumer keyword "
-            "without a refreshed source contract"
-        )
 
     for needle in (
         "Texture2D<float2> _ScreenSpaceShadowMask;",
         "_ScreenSpaceShadowMask.Load(",
         "defined(ENDFIELD_RECOVERED_EYE_SCREEN_SHADOW_MASK_R)",
+        "defined(ENDFIELD_RECOVERED_SKIN_SCREEN_SHADOW_MASK_RG)",
         "_EndfieldRecoveredScreenSpaceShadowMaskReady",
         "Texture2D<float2> _EndfieldRecoveredScreenShadowMaskDiagnostic;",
     ):
         require(include, needle, "current HGRP screen-shadow include")
 
     for needle in (
-        "#if defined(ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_CONSUMER)",
+        "#if defined(ENDFIELD_RECOVERED_SKIN_SCREEN_SHADOW_MASK_RG)",
+        "EndfieldHGRPLoadSkinScreenSpaceShadowMaskRG(i.pos.xy);",
+        "#pragma multi_compile __ ENDFIELD_RECOVERED_SKIN_SCREEN_SHADOW_MASK_RG",
+        "#elif defined(ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_CONSUMER)",
         "EndfieldHGRPLoadRecoveredScreenShadowMask(i.pos.xy);",
         "#pragma multi_compile __ ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_CONSUMER",
     ):
         require( skin, needle, "current Skin diagnostic consumer")
 
-    retail_skin_keyword = "ENDFIELD_RECOVERED_RETAIL_SCREEN_SHADOW_MASK" in skin
-    direct_skin_global_load = "EndfieldHGRPLoadScreenSpaceShadowMaskRG" in skin
+    retail_skin_keyword = "ENDFIELD_RECOVERED_SKIN_SCREEN_SHADOW_MASK_RG" in skin
+    direct_skin_global_load = "EndfieldHGRPLoadSkinScreenSpaceShadowMaskRG" in skin
     content_valid = "bool contentValid = true;" in producer
     producer_skin_gate = "SkinConsumerKeyword" in producer
     if retail_skin_keyword != direct_skin_global_load:
@@ -113,6 +114,7 @@ def verify_current_boundary() -> dict[str, Any]:
             "diagnostic_branch": True,
             "retail_global_keyword": retail_skin_keyword,
             "direct_global_load": direct_skin_global_load,
+            "runtime_enabled": content_valid and producer_skin_gate,
         },
         "binary_evidence": {
             "retail_skin_load": True,
@@ -120,8 +122,8 @@ def verify_current_boundary() -> dict[str, Any]:
         },
         "interpretation": {
             "current_boundary": (
-                "producer binds the retail-named resource but content is invalid; "
-                "Skin remains on the diagnostic texture branch"
+                "Skin now has a source-shaped retail R/G bridge, but the producer "
+                "keeps content invalid so the bridge remains disabled at runtime"
             ),
             "retail_frame_parity": "not asserted",
         },
