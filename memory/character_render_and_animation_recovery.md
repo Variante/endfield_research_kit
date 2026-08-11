@@ -62,6 +62,9 @@ NPC archetypes are imported as labeled source kits.
   source and generated-material checks, including the installed
   `DepthCharacterOnly` state and owner-before-opaque chronology. This remains
   a fail-closed diagnostic path; it does not claim live retail frame parity.
+- The default-off screen/direct same-owner audit also passes its Skin/Cloth/Hair
+  shader and pipeline chronology checks, including canonical forward depth and
+  the separate PreG D32S8 sidecar.
 - The CharacterNPR clear-coat audit now covers Liino's three independent
   authored variants (cloth, skill, and skill LOD) instead of collapsing them
   by actor token; all 11 selected source materials and generated `.mat`
