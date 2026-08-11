@@ -69,6 +69,15 @@ NPC archetypes are imported as labeled source kits.
   authored variants (cloth, skill, and skill LOD) instead of collapsing them
   by actor token; all 11 selected source materials and generated `.mat`
   counterparts pass exact PathID, source-hash, property, and mask checks.
+- The current installed-data refresh moved `CharacterNPR_Skin` to source
+  `19F0903A12BA87C0D43E67E64889B525.chk` (PathID
+  `4484747192473637154`). A targeted AnimeStudio export now closes the two
+  body material identities and the selected `0120`--`0125` sidecars; all 846
+  current ForwardLit metadata records across 141 keyword sets include
+  `HG_ENABLE_SCREEN_SPACE_SHADOW_MASK`, with zero current no-screen sets.
+  The older no-screen body contract is therefore stale evidence and remains
+  fail-closed; `verify_current_character_npr_skin_export.py` records source
+  identity and variant metadata only, not retail frame parity.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
