@@ -506,15 +506,18 @@ NPC archetypes are imported as labeled source kits.
   candidate bits are replayed for all 11 rows. Native candidates map authored
   corners back to the unit box within `0.002611`; the `Spot Light (12)`
   one-float32-ULP boundary is now explained by the source body. Retail signed-
-  zero/packed-word capture and the preceding Quaternion.Euler output remain open.
+  zero/packed-word capture and the preceding Quaternion.Euler runtime order remain open.
   The adjacent UnityPlayer icall 2470 (`Matrix4x4::TRS_Injected`) is now also
   source-closed: its `0x1800A1BB0` wrapper, `0x18056CB40` scalar column-scale /
   position-copy body, and `0x18056B8A0` quaternion-to-column-major helper are
   hash-pinned and replayed. The managed `Quaternion.Euler` wrapper and exact
   float32 degree-to-radian/half-angle input are now source-closed as well;
   UnityPlayer icall 2489, its `0x180567590` body, and all six native sin/cos
-  call targets are pinned. Native sin/cos output, runtime IFix Euler-order
-  selection, and retail packed-word capture remain open. Pinned `globalgamemanagers` objects prove
+  call targets are pinned. The audit now maps the installed UnityPlayer image
+  with `DONT_RESOLVE_DLL_REFERENCES` and calls the pinned `0x1800A5010` wrapper,
+  yielding bit-exact native sin/cos quaternion candidates for all 11 authored
+  rows. Runtime IFix Euler-order/output selection and retail packed-word capture
+  remain open. Pinned `globalgamemanagers` objects prove
   Linear color space and linear light intensity; all 11 rows disable color
   temperature, distance/far-show falloff, animation, multistate, and flicker.
   UnityPlayer `finalColor`, `Color.linear`, animation-disable, and flicker

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import math
@@ -220,7 +221,9 @@ MATRIX4X4_TRS_HELPER_CALL_OFFSET = 0x1E
 # Pin both sides of that boundary: the managed wrapper/helper proves the
 # float32 degree-to-radian input, while UnityPlayer proves the half-angle and
 # native sin/cos call sequence. The IFix function-pointer slot remains a
-# runtime boundary and is intentionally reported rather than guessed.
+# runtime boundary and is intentionally reported rather than guessed. The
+# audit calls the pinned native wrapper from a DONT_RESOLVE mapped image so
+# candidate quaternion bits use the installed binary's actual math routines.
 QUATERNION_EULER_MANAGED_VA = 0x182FA5910
 QUATERNION_EULER_MANAGED_FILE_OFFSET = 0x2FA3F10
 QUATERNION_EULER_MANAGED_SIZE = 0x7D
@@ -1710,7 +1713,7 @@ def validate_quaternion_euler_native(
         "halfAngleConstantBits": f"0x{half_angle_bits:08X}",
         "mathCalls": math_calls,
         "order": "native body receives radians, multiplies each component by 0.5f, then dispatches sin/cos pairs; enum/order result remains runtime-capture dependent",
-        "runtimeBoundary": "managed wrapper's IFix Internal_FromEulerRad_Injected slot is not inferred from static bytes",
+        "runtimeBoundary": "managed wrapper's IFix Internal_FromEulerRad_Injected slot and the runtime Euler order/output selection are not inferred from static bytes",
     }
 
 
@@ -3146,6 +3149,76 @@ def unity_quaternion_euler_degrees_to_radians_candidate(
     return [f32_mul(f32(value), scale) for value in degrees]
 
 
+class UnityPlayerQuaternionEulerExecutor:
+    """Call the pinned UnityPlayer Euler wrapper from a mapped image.
+
+    ``UnityPlayer.dll`` cannot be loaded normally in the audit process because
+    its DllMain expects the running game.  ``LoadLibraryExW`` with
+    ``DONT_RESOLVE_DLL_REFERENCES`` maps the exact image without running its
+    initialization or resolving unrelated imports.  The pinned wrapper and
+    native Euler body are self-contained enough for this isolated call, and
+    using the wrapper keeps the call ABI identical to the icall entry.
+    """
+
+    IMAGE_BASE = 0x180000000
+    DONT_RESOLVE_DLL_REFERENCES = 0x00000001
+
+    def __init__(self, path: Path = UNITY_PLAYER) -> None:
+        if struct.calcsize("P") != 8:
+            raise RuntimeError("UnityPlayer Euler execution requires a 64-bit Python process")
+        if not hasattr(ctypes, "WinDLL"):
+            raise RuntimeError("UnityPlayer Euler execution requires Windows ctypes")
+        self._kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        load_library = self._kernel32.LoadLibraryExW
+        load_library.argtypes = [ctypes.c_wchar_p, ctypes.c_void_p, ctypes.c_uint32]
+        load_library.restype = ctypes.c_void_p
+        handle = load_library(
+            str(path), None, self.DONT_RESOLVE_DLL_REFERENCES
+        )
+        if not handle:
+            error = ctypes.get_last_error()
+            raise OSError(error, f"LoadLibraryExW failed for {path}")
+        self._handle = int(handle)
+        wrapper_address = self._handle + (
+            QUATERNION_EULER_STUB_VA - self.IMAGE_BASE
+        )
+        wrapper_type = ctypes.CFUNCTYPE(
+            None,
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_float),
+        )
+        self._wrapper = wrapper_type(wrapper_address)
+        self._closed = False
+
+    def __call__(self, radians: list[float]) -> list[float]:
+        if self._closed:
+            raise RuntimeError("UnityPlayer Euler executor is closed")
+        if len(radians) != 3:
+            raise ValueError(f"expected three Euler radians, got {len(radians)}")
+        input_vector = (ctypes.c_float * 3)(*(f32(value) for value in radians))
+        output_quaternion = (ctypes.c_float * 4)()
+        self._wrapper(input_vector, output_quaternion)
+        return [f32(output_quaternion[index]) for index in range(4)]
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        free_library = self._kernel32.FreeLibrary
+        free_library.argtypes = [ctypes.c_void_p]
+        free_library.restype = ctypes.c_int
+        if not free_library(ctypes.c_void_p(self._handle)):
+            error = ctypes.get_last_error()
+            self._closed = True
+            raise OSError(error, "FreeLibrary failed for mapped UnityPlayer image")
+        self._closed = True
+
+    def __enter__(self) -> "UnityPlayerQuaternionEulerExecutor":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+
 def xor_sign_bit(value: float) -> float:
     """Mirror the native ``xorps`` against UnityPlayer's -0 sign mask."""
 
@@ -3347,6 +3420,8 @@ def unity_matrix4x4_trs_candidate(
 
 def recovered_y_rotation_inverse_rows(
     row: dict[str, Any],
+    euler_executor: Any | None = None,
+    trace: dict[str, Any] | None = None,
 ) -> tuple[list[list[float]], list[list[float]], float]:
     """Model selected rows' Y-only TRS and replay UnityPlayer inverse."""
     orientation = row["cullingBoxOrientationZxyDegrees"]
@@ -3373,11 +3448,25 @@ def recovered_y_rotation_inverse_rows(
 
     radians = unity_quaternion_euler_degrees_to_radians_candidate(
         [float(orientation["x"]), float(orientation["y"]), float(orientation["z"])]
-    )[1]
-    half_angle = f32_mul(radians, f32(0.5))
-    quaternion_y = f32(math.sin(half_angle))
-    quaternion_w = f32(math.cos(half_angle))
-    quaternion = [f32(0.0), quaternion_y, f32(0.0), quaternion_w]
+    )
+    if euler_executor is None:
+        half_angle = f32_mul(radians[1], f32(0.5))
+        quaternion = [
+            f32(0.0),
+            f32(math.sin(half_angle)),
+            f32(0.0),
+            f32(math.cos(half_angle)),
+        ]
+        mode = "python_math_fallback"
+    else:
+        quaternion = [f32(value) for value in euler_executor(radians)]
+        mode = "mapped_unityplayer_wrapper"
+    if trace is not None:
+        trace["inputRadiansBits"] = [f"0x{float32_bits(value):08X}" for value in radians]
+        trace["quaternionBits"] = [
+            f"0x{float32_bits(value):08X}" for value in quaternion
+        ]
+        trace["mode"] = mode
     rotation4 = unity_quaternion_to_matrix_candidate(quaternion)
     rotation = [row[:3] for row in rotation4[:3]]
     trs = unity_matrix4x4_trs_candidate(quaternion, position, scale)
@@ -3391,8 +3480,13 @@ def recovered_y_rotation_inverse_rows(
     return rotation, inverse, determinant
 
 
-def recover_obb_pack(row: dict[str, Any]) -> dict[str, Any]:
-    rotation, inverse, determinant = recovered_y_rotation_inverse_rows(row)
+def recover_obb_pack(
+    row: dict[str, Any], euler_executor: Any | None = None
+) -> dict[str, Any]:
+    euler_trace: dict[str, Any] = {}
+    rotation, inverse, determinant = recovered_y_rotation_inverse_rows(
+        row, euler_executor, euler_trace
+    )
     pairs = [
         (inverse[output_row][lane], inverse[output_row][lane + 1])
         for output_row in range(3)
@@ -3459,6 +3553,9 @@ def recover_obb_pack(row: dict[str, Any]) -> dict[str, Any]:
     )
     return {
         "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+        "quaternionEulerCandidateMode": euler_trace["mode"],
+        "quaternionEulerInputRadiansBits": euler_trace["inputRadiansBits"],
+        "quaternionEulerCandidateBits": euler_trace["quaternionBits"],
         "inverseRowsFloat32Model": inverse,
         "nativeInverseCandidateWordHex": [f"0x{word:08X}" for word in words],
         "signedZeroNormalizedCandidateWordHex": [
@@ -3479,8 +3576,9 @@ def recover_obb_pack(row: dict[str, Any]) -> dict[str, Any]:
             "float32 cofactor/division and signed-zero candidate bits; the "
             "native Matrix4x4::TRS body and quaternion-to-matrix helper now close "
             "the TRS arithmetic, and the managed Euler wrapper now closes the "
-            "float32 degree-to-radian/half-angle input; native sin/cos output, "
-            "runtime IFix order, and retail capture remain separate boundaries"
+            "float32 degree-to-radian/half-angle input; the mapped UnityPlayer "
+            "wrapper supplies bit-exact native sin/cos output for this binary, "
+            "while runtime IFix order and retail capture remain separate boundaries"
         ),
     }
 
@@ -4150,12 +4248,6 @@ def build_audit() -> dict[str, Any]:
     cull_view = json.loads(GACHA_CULL_VIEW_AUDIT.read_text(encoding="utf-8"))
     rotatehouse = json.loads(ROTATEHOUSE.read_text(encoding="utf-8"))
     rows = attach_room_additional_data(room_light_rows(population, hierarchy))
-    for row in rows:
-        row["record0Color"] = recover_record0_color(row)
-        row["record0Discriminator"] = recover_record0_discriminator(row)
-        row["record1InverseRange"] = recover_record1_inverse_range(row)
-        row["record2StaticTerms"] = recover_record2_static_terms(row)
-        row["obbPackedTransform"] = recover_obb_pack(row)
     consumer = validate_consumer(SELECTED_FRAGMENT.read_text(encoding="utf-8"))
     native = validate_native_body(body)
     native["pointShadowCacheIndex"] = validate_point_shadow_cache_index_native(
@@ -4215,6 +4307,31 @@ def build_audit() -> dict[str, Any]:
         degrees_to_radians_bytes,
         unity_player_data,
     )
+    try:
+        euler_executor = UnityPlayerQuaternionEulerExecutor()
+    except Exception as exc:
+        raise RuntimeError(
+            "validator=gacha_deferred_light_data; check=quaternion_euler_native_execution; "
+            f"source={UNITY_PLAYER}; expected=mapped UnityPlayer wrapper callable; actual={exc}"
+        ) from exc
+    try:
+        for row in rows:
+            row["record0Color"] = recover_record0_color(row)
+            row["record0Discriminator"] = recover_record0_discriminator(row)
+            row["record1InverseRange"] = recover_record1_inverse_range(row)
+            row["record2StaticTerms"] = recover_record2_static_terms(row)
+            row["obbPackedTransform"] = recover_obb_pack(row, euler_executor)
+    finally:
+        euler_executor.close()
+    native["quaternionEuler"]["candidateExecution"] = {
+        "mode": "mapped_unityplayer_wrapper_dont_resolve_dll_references",
+        "wrapperVirtualAddress": f"0x{QUATERNION_EULER_STUB_VA:X}",
+        "rowCount": len(rows),
+        "quaternionBitsByLightPathId": {
+            str(row["lightPathId"]): row["obbPackedTransform"]["quaternionEulerCandidateBits"]
+            for row in rows
+        },
+    }
     native["obbHalfPacking"] = validate_obb_pack_native(
         pack_body,
         f32_to_f16_body,
@@ -4295,8 +4412,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v20",
-        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_input_trs_inverse_contract_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v21",
+        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_input_native_sincos_trs_inverse_contract_closed_runtime_ifix_order_open",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -4388,6 +4505,7 @@ def build_audit() -> dict[str, Any]:
                 "nativeInverseCandidateCount": len(rows),
                 "oneFloat32UlpSensitiveLocations": obb_boundaries,
                 "nativeInverseSignedZeroCandidateBits": True,
+                "nativeEulerCandidateExecution": native["quaternionEuler"]["candidateExecution"],
                 "retailSignedZeroBitsCaptured": False,
                 "maximumAuthoredCornerBoundaryError": maximum_obb_corner_error,
             },
@@ -4427,6 +4545,7 @@ def build_audit() -> dict[str, Any]:
                 "the UnityPlayer icall-table entry 2471 (Matrix4x4::Inverse3DAffine_Injected), its 0x1800A2020 stub, and hash-pinned 0x180569BD0 scalar affine-inverse body",
                 "the UnityPlayer icall-table entry 2470 (Matrix4x4::TRS_Injected), its hash-pinned 0x1800A1BB0 wrapper, 0x18056CB40 scale/translation body, and 0x18056B8A0 quaternion-to-column-major-matrix helper",
                 "the managed Quaternion.Euler wrapper/helper, degree-to-radian constant 0x3C8EFA35, UnityPlayer icall 2489 (Internal_FromEulerRad_Injected), its 0x1800A5010 wrapper, hash-pinned 0x180567590 half-angle body, and all six native sin/cos call targets",
+                "the mapped UnityPlayer 0x1800A5010 wrapper execution for all eleven authored Euler inputs, producing bit-exact installed native quaternion candidates without running DllMain",
                 "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
                 "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; the managed Euler degree-to-radian and native half-angle input arithmetic is source-closed",
                 "six-word native-inverse OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
@@ -4455,14 +4574,14 @@ def build_audit() -> dict[str, Any]:
                 "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
                 "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
-                "native sin/cos result payloads, runtime IFix Euler-order/output selection, and retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
+                "runtime IFix Euler-order/output selection and retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
                 "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
                 "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB Euler-input/TRS/inverse arithmetic up to the runtime sin/cos/IFix boundary. Do not publish "
+                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB Euler-input/native-sincos/TRS/inverse arithmetic up to the runtime IFix order/output boundary. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
                 "bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
             ),
@@ -4484,7 +4603,7 @@ def main() -> int:
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
         "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
-        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the UnityPlayer OBB Euler-input/TRS/inverse half candidates closed."
+        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the UnityPlayer OBB Euler-input/native-sincos/TRS/inverse half candidates closed."
     )
     return 0
 
