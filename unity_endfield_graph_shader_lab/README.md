@@ -1150,7 +1150,13 @@ open.
 Run `python tools\verify_overlay_runtime_inputs.py` for the separate
 hash-pinned OverlayShadow DXBC, Halton jitter, TAA pass-order, and clustered
 light-input contract. It does not claim IFix history constants or a settled
-retail TAA frame.
+retail TAA frame. Run `python tools\audit_taau_history_contract.py` for the
+source-backed TAAU history/resource ABI: the history-validity gate, 192-byte
+constants, persistent dilated depth/motion-vector textures, and
+quality-dependent Dilation→MaskDilation→Resolve scheduling. Its report is
+deliberately marked `source_closed_live_history_open`; live TextureHandle
+identities, settled weights/internal extent, frame resets, and IFix replacements
+remain unclaimed.
 
 The selected overlay local-volume term is also active for the isolated
 CharInfo rigs. The recovered type-4 Fog consumer joins all 31 source profiles,
