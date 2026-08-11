@@ -521,16 +521,18 @@ NPC archetypes are imported as labeled source kits.
   rows. The wrapper's explicit native order-4 immediate and six-entry jump
   table are also pinned (case offset `0x425`). The runtime slot/patch state,
   patched IFix output selection, and retail packed-word capture remain open.
-  After the installed-data refresh, a read-only decode of Persistent VFS block
-  `DAFE52C9` (`IFixPatchOut`, block version `23167343`) found the current
+  After the installed-data refresh, Persistent VFS block `DAFE52C9`
+  (`IFixPatchOut`, block version `23167343`) contains the current
   `Gameplay.Beyond.patch.bytes` at 86,926 bytes, SHA-256
   `baa28ae497e64d94e152886622bbe5fb391199bcbf8366e2df91591c9a9f172c`, with
-  32 signature targets. The tracked CharInfo report still describes the older
-  30-target snapshot; do not use that count as current runtime evidence. The
-  refreshed target list adds `FacQuality.Apply`, `NpcSpaceShipController.OnPauseStart`,
-  and `CharacterPhotoSystem.OnExitSystem`, while dropping `BlightMiasmaBrain.Release`;
-  none is a searched render/Character-Info owner. The live IFix slot value and
-  patched output selection still require an authorized runtime capture.
+  32 signature targets. `tools/refresh_installed_ifix_patch_state.py` now
+  regenerates the ignored report and extracted payload from the live local
+  block; `verify_installed_ifix_patch_state.py` passes against that refreshed
+  evidence. The target list adds `FacQuality.Apply`,
+  `NpcSpaceShipController.OnPauseStart`, and `CharacterPhotoSystem.OnExitSystem`,
+  while dropping `BlightMiasmaBrain.Release`; none is a searched
+  render/Character-Info owner. The live IFix slot value and patched output
+  selection still require an authorized runtime capture.
   Pinned
   `globalgamemanagers` objects prove
   Linear color space and linear light intensity; all 11 rows disable color
