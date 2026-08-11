@@ -217,18 +217,37 @@ MATRIX4X4_TRS_QUATERNION_HELPER_BODY_SHA256 = (
 )
 MATRIX4X4_TRS_HELPER_CALL_OFFSET = 0x1E
 # ``Quaternion.Euler(Vector3)`` first converts degrees to radians in the
-# GameAssembly wrapper, then dispatches ``Internal_FromEulerRad_Injected``.
-# Pin both sides of that boundary: the managed wrapper/helper proves the
-# float32 degree-to-radian input, while UnityPlayer proves the half-angle and
-# native sin/cos call sequence. The IFix function-pointer slot remains a
-# runtime boundary and is intentionally reported rather than guessed. The
-# audit calls the pinned native wrapper from a DONT_RESOLVE mapped image so
-# candidate quaternion bits use the installed binary's actual math routines.
+# GameAssembly wrapper, then lazily resolves ``Internal_FromEulerRad_Injected``
+# into a function-pointer slot. Pin both sides of that boundary: the managed
+# wrapper/helper and resolver chain prove the float32 degree-to-radian input and
+# slot ABI, while UnityPlayer proves the half-angle and native sin/cos call
+# sequence. The runtime slot value/patch state remains a boundary and is
+# intentionally reported rather than guessed. The audit calls the pinned
+# native wrapper from a DONT_RESOLVE mapped image so candidate quaternion bits
+# use the installed binary's actual math routines.
 QUATERNION_EULER_MANAGED_VA = 0x182FA5910
 QUATERNION_EULER_MANAGED_FILE_OFFSET = 0x2FA3F10
 QUATERNION_EULER_MANAGED_SIZE = 0x7D
 QUATERNION_EULER_MANAGED_BODY_SHA256 = (
     "f121f5fab7dc03bec3bf2bdc9397d7464ee1b5df96f87c0e00979a67e2a68c01"
+)
+QUATERNION_EULER_MANAGED_SLOT_VA = 0x18F36FAC8
+QUATERNION_EULER_MANAGED_SLOT_LOAD_OFFSET = 0x4A
+QUATERNION_EULER_MANAGED_LAZY_INIT_VA = 0x182FA5A07
+QUATERNION_EULER_MANAGED_LAZY_INIT_FILE_OFFSET = 0x2FA4007
+QUATERNION_EULER_MANAGED_LAZY_INIT_SIZE = 0x1E
+QUATERNION_EULER_MANAGED_LAZY_INIT_BODY_SHA256 = (
+    "c8ea86dddd462e19fbd71bd70f39091be63fda0e98bbe268a6e8fb8075d533de"
+)
+QUATERNION_EULER_ICALL_RESOLVER_VA = 0x180059FC0
+QUATERNION_EULER_RESOLVER_STRING_VA = 0x18B8C32B0
+QUATERNION_EULER_RESOLVER_STRING_FILE_OFFSET = 0xB8C16B0
+QUATERNION_EULER_RESOLVER_STRING = (
+    "UnityEngine.Quaternion::Internal_FromEulerRad_Injected"
+    "(UnityEngine.Vector3&,UnityEngine.Quaternion&)"
+)
+QUATERNION_EULER_RESOLVER_STRING_SHA256 = (
+    "f774b8ffbb8d619c93e3c2753bea6e4620e9a4ff84d35abd8c77f5267be0234e"
 )
 QUATERNION_EULER_SCALE_HELPER_VA = 0x184DBBC80
 QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET = 0x4DBA280
@@ -1531,8 +1550,23 @@ def _relative_call_target_from_source(
     return base_va + offset + 5 + displacement
 
 
+def _rip_relative_target_from_source(
+    body: bytes, base_va: int, offset: int, opcode: bytes, source: Path
+) -> int:
+    require(
+        f"rip_relative_{offset:04x}_opcode",
+        body[offset : offset + len(opcode)],
+        opcode,
+        source,
+    )
+    displacement = struct.unpack_from("<i", body, offset + len(opcode))[0]
+    return base_va + offset + len(opcode) + 4 + displacement
+
+
 def validate_quaternion_euler_native(
     managed_body: bytes,
+    managed_lazy_init_body: bytes,
+    resolver_string_bytes: bytes,
     scale_helper_body: bytes,
     degrees_to_radians_bytes: bytes,
     unity_player_data: bytes,
@@ -1559,6 +1593,78 @@ def validate_quaternion_euler_native(
         "quaternion_euler_managed_body_sha256",
         managed_hash,
         QUATERNION_EULER_MANAGED_BODY_SHA256,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_managed_slot_load_target",
+        _rip_relative_target_from_source(
+            managed_body,
+            QUATERNION_EULER_MANAGED_VA,
+            QUATERNION_EULER_MANAGED_SLOT_LOAD_OFFSET,
+            bytes.fromhex("488B05"),
+            GAME_ASSEMBLY,
+        ),
+        QUATERNION_EULER_MANAGED_SLOT_VA,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_lazy_init_body_size",
+        len(managed_lazy_init_body),
+        QUATERNION_EULER_MANAGED_LAZY_INIT_SIZE,
+        GAME_ASSEMBLY,
+    )
+    lazy_init_hash = hashlib.sha256(managed_lazy_init_body).hexdigest()
+    require(
+        "quaternion_euler_lazy_init_body_sha256",
+        lazy_init_hash,
+        QUATERNION_EULER_MANAGED_LAZY_INIT_BODY_SHA256,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_lazy_init_resolver_name_target",
+        _rip_relative_target_from_source(
+            managed_lazy_init_body,
+            QUATERNION_EULER_MANAGED_LAZY_INIT_VA,
+            0x00,
+            bytes.fromhex("488D0D"),
+            GAME_ASSEMBLY,
+        ),
+        QUATERNION_EULER_RESOLVER_STRING_VA,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_lazy_init_resolver_call_target",
+        _relative_call_target_from_source(
+            managed_lazy_init_body,
+            QUATERNION_EULER_MANAGED_LAZY_INIT_VA,
+            0x07,
+            GAME_ASSEMBLY,
+        ),
+        QUATERNION_EULER_ICALL_RESOLVER_VA,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_lazy_init_slot_store_target",
+        _rip_relative_target_from_source(
+            managed_lazy_init_body,
+            QUATERNION_EULER_MANAGED_LAZY_INIT_VA,
+            0x15,
+            bytes.fromhex("488905"),
+            GAME_ASSEMBLY,
+        ),
+        QUATERNION_EULER_MANAGED_SLOT_VA,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_resolver_string",
+        resolver_string_bytes.decode("ascii"),
+        QUATERNION_EULER_RESOLVER_STRING,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "quaternion_euler_resolver_string_sha256",
+        hashlib.sha256(resolver_string_bytes).hexdigest(),
+        QUATERNION_EULER_RESOLVER_STRING_SHA256,
         GAME_ASSEMBLY,
     )
     require(
@@ -1732,6 +1838,15 @@ def validate_quaternion_euler_native(
         "managedFileOffset": f"0x{QUATERNION_EULER_MANAGED_FILE_OFFSET:X}",
         "managedBodySizeBytes": QUATERNION_EULER_MANAGED_SIZE,
         "managedBodySha256": managed_hash,
+        "managedSlotVirtualAddress": f"0x{QUATERNION_EULER_MANAGED_SLOT_VA:X}",
+        "lazyInitVirtualAddress": f"0x{QUATERNION_EULER_MANAGED_LAZY_INIT_VA:X}",
+        "lazyInitFileOffset": f"0x{QUATERNION_EULER_MANAGED_LAZY_INIT_FILE_OFFSET:X}",
+        "lazyInitBodySizeBytes": QUATERNION_EULER_MANAGED_LAZY_INIT_SIZE,
+        "lazyInitBodySha256": lazy_init_hash,
+        "icallResolverVirtualAddress": f"0x{QUATERNION_EULER_ICALL_RESOLVER_VA:X}",
+        "resolverStringVirtualAddress": f"0x{QUATERNION_EULER_RESOLVER_STRING_VA:X}",
+        "resolverStringFileOffset": f"0x{QUATERNION_EULER_RESOLVER_STRING_FILE_OFFSET:X}",
+        "resolverString": QUATERNION_EULER_RESOLVER_STRING,
         "degreesToRadiansBits": f"0x{DEGREES_TO_RADIANS_BITS:08X}",
         "scaleHelperVirtualAddress": f"0x{QUATERNION_EULER_SCALE_HELPER_VA:X}",
         "scaleHelperFileOffset": f"0x{QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET:X}",
@@ -1754,7 +1869,7 @@ def validate_quaternion_euler_native(
         "halfAngleConstantBits": f"0x{half_angle_bits:08X}",
         "mathCalls": math_calls,
         "order": "native body receives radians, multiplies each component by 0.5f, then dispatches sin/cos pairs; the static wrapper passes order 4 into the pinned jump-table case at native offset 0x425",
-        "runtimeBoundary": "managed wrapper's IFix Internal_FromEulerRad_Injected slot may replace this native path; patched runtime output selection and retail capture are not inferred from static bytes",
+        "runtimeBoundary": "the managed lazy resolver and slot store are source-closed, but the runtime slot value/patch state may replace this native path; patched runtime output selection and retail capture are not inferred from static bytes",
     }
 
 
@@ -4224,6 +4339,14 @@ def build_audit() -> dict[str, Any]:
         body = stream.read(PREPARE_CPU_DATA_SIZE)
         stream.seek(QUATERNION_EULER_MANAGED_FILE_OFFSET)
         quaternion_euler_managed_body = stream.read(QUATERNION_EULER_MANAGED_SIZE)
+        stream.seek(QUATERNION_EULER_MANAGED_LAZY_INIT_FILE_OFFSET)
+        quaternion_euler_managed_lazy_init_body = stream.read(
+            QUATERNION_EULER_MANAGED_LAZY_INIT_SIZE
+        )
+        stream.seek(QUATERNION_EULER_RESOLVER_STRING_FILE_OFFSET)
+        quaternion_euler_resolver_string_bytes = stream.read(
+            len(QUATERNION_EULER_RESOLVER_STRING)
+        )
         stream.seek(QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET)
         quaternion_euler_scale_helper_body = stream.read(
             QUATERNION_EULER_SCALE_HELPER_SIZE
@@ -4344,6 +4467,8 @@ def build_audit() -> dict[str, Any]:
     native["matrix4x4Trs"] = validate_matrix4x4_trs_native(unity_player_data)
     native["quaternionEuler"] = validate_quaternion_euler_native(
         quaternion_euler_managed_body,
+        quaternion_euler_managed_lazy_init_body,
+        quaternion_euler_resolver_string_bytes,
         quaternion_euler_scale_helper_body,
         degrees_to_radians_bytes,
         unity_player_data,
@@ -4453,8 +4578,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v21",
-        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_input_native_sincos_order_trs_inverse_contract_closed_runtime_ifix_path_open",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v22",
+        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_resolver_native_sincos_order_trs_inverse_contract_closed_runtime_ifix_path_open",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -4585,7 +4710,7 @@ def build_audit() -> dict[str, Any]:
                 "the installed HGUtils/math.f32tof16 method bodies, x-low/y-high word layout, and record5.xyz/record6.xyz placement",
                 "the UnityPlayer icall-table entry 2471 (Matrix4x4::Inverse3DAffine_Injected), its 0x1800A2020 stub, and hash-pinned 0x180569BD0 scalar affine-inverse body",
                 "the UnityPlayer icall-table entry 2470 (Matrix4x4::TRS_Injected), its hash-pinned 0x1800A1BB0 wrapper, 0x18056CB40 scale/translation body, and 0x18056B8A0 quaternion-to-column-major-matrix helper",
-                "the managed Quaternion.Euler wrapper/helper, degree-to-radian constant 0x3C8EFA35, UnityPlayer icall 2489 (Internal_FromEulerRad_Injected), its 0x1800A5010 wrapper, hash-pinned 0x180567590 half-angle body, and all six native sin/cos call targets",
+                "the managed Quaternion.Euler wrapper/helper, lazy resolver string/call/store chain, degree-to-radian constant 0x3C8EFA35, UnityPlayer icall 2489 (Internal_FromEulerRad_Injected), its 0x1800A5010 wrapper, hash-pinned 0x180567590 half-angle body, and all six native sin/cos call targets",
                 "the mapped UnityPlayer 0x1800A5010 wrapper execution for all eleven authored Euler inputs, producing bit-exact installed native quaternion candidates without running DllMain; its explicit order-4 immediate and six-entry native jump table are source-pinned",
                 "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
                 "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; the managed Euler degree-to-radian and native half-angle input arithmetic is source-closed",
@@ -4615,14 +4740,14 @@ def build_audit() -> dict[str, Any]:
                 "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
                 "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
-                "the managed IFix Euler path/output selection and retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
+                "the runtime value/patch state of the managed Euler resolver slot and its output selection, plus retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
                 "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
                 "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish "
+                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
                 "bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
             ),
@@ -4644,7 +4769,7 @@ def main() -> int:
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
         "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
-        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse half candidates closed."
+        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the managed Euler resolver plus UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse half candidates closed."
     )
     return 0
 

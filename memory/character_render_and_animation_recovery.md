@@ -513,12 +513,15 @@ NPC archetypes are imported as labeled source kits.
   hash-pinned and replayed. The managed `Quaternion.Euler` wrapper and exact
   float32 degree-to-radian/half-angle input are now source-closed as well;
   UnityPlayer icall 2489, its `0x180567590` body, and all six native sin/cos
-  call targets are pinned. The audit now maps the installed UnityPlayer image
+  call targets are pinned. The GameAssembly lazy resolver now also has a
+  hash-pinned resolver string, `0x180059FC0` call, and slot load/store at
+  `0x18F36FAC8`. The audit maps the installed UnityPlayer image
   with `DONT_RESOLVE_DLL_REFERENCES` and calls the pinned `0x1800A5010` wrapper,
   yielding bit-exact native sin/cos quaternion candidates for all 11 authored
   rows. The wrapper's explicit native order-4 immediate and six-entry jump
-  table are also pinned (case offset `0x425`). A patched IFix path/output
-  selection and retail packed-word capture remain open. Pinned
+  table are also pinned (case offset `0x425`). The runtime slot/patch state,
+  patched IFix output selection, and retail packed-word capture remain open.
+  Pinned
   `globalgamemanagers` objects prove
   Linear color space and linear light intensity; all 11 rows disable color
   temperature, distance/far-show falloff, animation, multistate, and flicker.

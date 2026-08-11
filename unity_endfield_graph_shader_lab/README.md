@@ -2584,12 +2584,15 @@ wrapper, `0x18056CB40` scalar column-scale/position-copy body, and
 `0x18056B8A0` quaternion-to-column-major helper are hash-pinned and replayed.
 The managed `Quaternion.Euler` wrapper and exact float32 degree-to-radian /
 half-angle input are source-closed as well; UnityPlayer icall 2489,
-`0x180567590`, and all six native sin/cos call targets are pinned. The audit
-maps the installed UnityPlayer image with `DONT_RESOLVE_DLL_REFERENCES` and
+`0x180567590`, and all six native sin/cos call targets are pinned. The
+GameAssembly lazy resolver string, `0x180059FC0` call, and slot
+`0x18F36FAC8` load/store are hash-pinned as well. The audit maps the installed
+UnityPlayer image with `DONT_RESOLVE_DLL_REFERENCES` and
 calls the pinned `0x1800A5010` wrapper, producing bit-exact native quaternion
 outputs for all eleven authored rows. The wrapper's explicit order-4 immediate
 and six-entry native jump table are pinned (selected case offset `0x425`). A
-patched IFix path/output selection and retail capture remain open. Pinned
+runtime slot/patch state, patched IFix path/output selection, and retail
+capture remain open. Pinned
 original `globalgamemanagers`
 objects set Linear color space and linear light intensity, while all 11 rows
 disable color temperature, distance/far-show falloff, animation, multistate,
