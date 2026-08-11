@@ -63,6 +63,14 @@ NPC archetypes are imported as labeled source kits.
   serialized LOD blocks are empty fallbacks. Current installed IFix evidence is
   version `23167343` with 32 targets, and the full deferred recovery verifier
   passes after its source/report fingerprints were refreshed.
+- The selected pass-0 contract now carries a high-confidence D3D11 register
+  bridge for the core frame resources: `t0` binning, `t1` camera depth, `t5`
+  reflection-probe array, `t6` punctual shadow comparison, `t7` low-res
+  directional shadow, `t22` HDPLS screen shadow, and `t23/t24/t25` GBuffer
+  C/B/A, joined to their source-closed set-3 bindings. Backend-local
+  decompiler symbol names are deliberately not used as identity; unmapped
+  registers remain open. This removes a binding guess from the next resolver
+  integration step, but does not enable pass 0 or claim live-frame parity.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and

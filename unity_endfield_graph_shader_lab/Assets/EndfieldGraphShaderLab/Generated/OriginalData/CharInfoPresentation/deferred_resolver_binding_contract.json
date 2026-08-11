@@ -2732,7 +2732,87 @@
       "isolated_execution_audit_sha256": "9ca5b321e0a31fb058d9043e328d222b492188f09e298167fc2df807620fa6a6",
       "isolated_execution_scope": "standalone_d3d11_isolated_diagnostic",
       "resource_binding_compatible": true,
-      "numeric_render_fidelity_proven": false
+      "numeric_render_fidelity_proven": false,
+      "d3d11_resource_registers": {
+        "source_path": "scratch/reverse_engineering/gacha_deferred_resolver_chain/pass0_pixel.asm.txt",
+        "source_sha256": "9c009a516031d1f5a35f39102bcef22ebc54b46e6359b41a4d644a904e9850ee",
+        "mapping_basis": "The exact selected pass-0 DXBC declaration/use sites are joined to the source-closed SPIR-V role table. Backend-local decompiler symbols are not treated as identities; only direct register/use semantics are admitted here.",
+        "registers": [
+          {
+            "register": "t0",
+            "kind": "StructuredBuffer",
+            "role": "_BinningBuffer",
+            "set": 3,
+            "binding": 39,
+            "confidence": "source-closed exact DXBC structured declaration and light-list consumer"
+          },
+          {
+            "register": "t1",
+            "kind": "Texture2D",
+            "role": "_CameraDepthTexture",
+            "set": 3,
+            "binding": 27,
+            "confidence": "source-closed depth reconstruction sample"
+          },
+          {
+            "register": "t5",
+            "kind": "Texture2DArray",
+            "role": "_ReflectionProbeOctTextureArray",
+            "set": 3,
+            "binding": 10,
+            "confidence": "source-closed array lookup with probe-slice selection"
+          },
+          {
+            "register": "t6",
+            "kind": "Texture2D",
+            "role": "_PunctualLightShadowTexV2",
+            "set": 3,
+            "binding": 11,
+            "confidence": "source-closed comparison-sampler PCF samples"
+          },
+          {
+            "register": "t7",
+            "kind": "Texture2D",
+            "role": "_LowResDirectionalShadow",
+            "set": 3,
+            "binding": 7,
+            "confidence": "source-closed integer Load used by directional-shadow response"
+          },
+          {
+            "register": "t22",
+            "kind": "Texture2D",
+            "role": "_HDPLSScreenSpaceShadowMask",
+            "set": 3,
+            "binding": 22,
+            "confidence": "source-closed screen-space character-shadow sample"
+          },
+          {
+            "register": "t23",
+            "kind": "Texture2D",
+            "role": "_GBufferTexture[2] / GBuffer C",
+            "set": 3,
+            "binding": 23,
+            "confidence": "source-closed base-color Load at the first GBuffer decode"
+          },
+          {
+            "register": "t24",
+            "kind": "Texture2D",
+            "role": "_GBufferTexture[1] / GBuffer B",
+            "set": 3,
+            "binding": 24,
+            "confidence": "source-closed octahedral-normal Load at the first GBuffer decode"
+          },
+          {
+            "register": "t25",
+            "kind": "Texture2D",
+            "role": "_GBufferTexture[0] / GBuffer A",
+            "set": 3,
+            "binding": 25,
+            "confidence": "source-closed metallic/occlusion/roughness Load at the first GBuffer decode"
+          }
+        ],
+        "unmapped_registers_remain_open": true
+      }
     }
   },
   "named_constant_buffers": [

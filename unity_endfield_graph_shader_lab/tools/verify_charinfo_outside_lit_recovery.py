@@ -5238,6 +5238,37 @@ def verify_selected_resolver_binding_contract() -> None:
     assert observations["sampler_count"] == 5
     assert len(contract["remaining_blockers"]) == 4
 
+    d3d11_registers = contract["selected_original_program"][
+        "installed_d3d11_selection"
+    ]["d3d11_resource_registers"]
+    assert d3d11_registers["source_path"].endswith(
+        "gacha_deferred_resolver_chain/pass0_pixel.asm.txt"
+    )
+    require_hash(
+        repo_path(d3d11_registers["source_path"]),
+        d3d11_registers["source_sha256"],
+    )
+    assert d3d11_registers["unmapped_registers_remain_open"] is True
+    assert [
+        (
+            row["register"],
+            row["role"],
+            row["set"],
+            row["binding"],
+        )
+        for row in d3d11_registers["registers"]
+    ] == [
+        ("t0", "_BinningBuffer", 3, 39),
+        ("t1", "_CameraDepthTexture", 3, 27),
+        ("t5", "_ReflectionProbeOctTextureArray", 3, 10),
+        ("t6", "_PunctualLightShadowTexV2", 3, 11),
+        ("t7", "_LowResDirectionalShadow", 3, 7),
+        ("t22", "_HDPLSScreenSpaceShadowMask", 3, 22),
+        ("t23", "_GBufferTexture[2] / GBuffer C", 3, 23),
+        ("t24", "_GBufferTexture[1] / GBuffer B", 3, 24),
+        ("t25", "_GBufferTexture[0] / GBuffer A", 3, 25),
+    ]
+
 
 def main() -> int:
     recovery = json.loads(RECOVERY_PATH.read_text(encoding="utf-8"))
