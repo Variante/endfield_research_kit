@@ -159,6 +159,9 @@ EXPECTED_HASHES = {
     "unitySetLightAnimationBody": "911725357c454b8224102d6b34d32f12d912f9cadbbfcc26aa64dda8b3bb83c6",
     "unityFinalColorUpdateBody": "39cbb35b17202949963e8cb4ed54a9d1e31067ae1c26c766c191c80e004b5e1d",
     "unityColorLinearBody": "83785743304ef92949c2b53f43ba6b1fd9e30655b389f61a1f56a334babd608f",
+    "visibleLightGetForwardBody": "ed742d362644817a4275490ffadf42fc0843340060584150e4b8f1f017bb29d1",
+    "visibleLightGetPositionBody": "9bf253dbd8822df91b50cc9de46c2aecce39c88fa1b4d9da361639cb02e7dba1",
+    "packNormalOctRectEncodeBody": "9b3353f0544568e35e2bc5317515f22207c58ad3efa889e2e336f0c2670b2a2c",
 }
 
 EXPECTED_INVERSE_RANGE_BITS = {
@@ -296,6 +299,18 @@ POINT_SHADOW_PACK_SEQUENCE = bytes.fromhex(
 VISIBLE_LIGHT_GET_FORWARD_VA = 0x189D14F34
 HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_VA = 0x189C0EF4C
 VISIBLE_LIGHT_GET_POSITION_VA = 0x189D15168
+VISIBLE_LIGHT_GET_FORWARD_FILE_OFFSET = 0x9D13534
+VISIBLE_LIGHT_GET_FORWARD_SIZE = 0x130
+VISIBLE_LIGHT_GET_POSITION_FILE_OFFSET = 0x9D13768
+VISIBLE_LIGHT_GET_POSITION_SIZE = 0x130
+HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_FILE_OFFSET = 0x9C0D54C
+HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE = 0x158
+VISIBLE_LIGHT_GET_FORWARD_IFIX_METHOD_ID = 0x77A
+VISIBLE_LIGHT_GET_POSITION_IFIX_METHOD_ID = 0x77D
+HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_IFIX_METHOD_ID = 0x77B
+VISIBLE_LIGHT_LOCAL_TO_WORLD_MATRIX_FIELD_OFFSET = 0x24
+MATRIX4X4_GET_COLUMN_VA = 0x182FA64C0
+VECTOR4_IMPLICIT_VECTOR3_VA = 0x184DBBDE0
 POINT_RECORD_TRANSFORM_CALLS = (
     (0x073E, VISIBLE_LIGHT_GET_FORWARD_VA, "VisibleLightExtensionMethods.GetForward"),
     (0x0798, HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_VA, "HGUtils.PackNormalOctRectEncode"),
@@ -936,6 +951,138 @@ def validate_point_record_transform_native(body: bytes) -> dict[str, Any]:
             "producer": "HGUtils.PackNormalOctRectEncode(VisibleLightExtensionMethods.GetForward(VisibleLight))",
             "encoding": "octahedral rectangle",
             "targetFrameValues": "capture-only",
+        },
+    }
+
+
+def validate_visible_light_transform_helpers(
+    forward: bytes, position: bytes, pack: bytes
+) -> dict[str, Any]:
+    """Pin the helper bodies behind PrepareCPUData's transform producers."""
+    for check, body, size, expected_hash in (
+        (
+            "visible_light_get_forward",
+            forward,
+            VISIBLE_LIGHT_GET_FORWARD_SIZE,
+            EXPECTED_HASHES["visibleLightGetForwardBody"],
+        ),
+        (
+            "visible_light_get_position",
+            position,
+            VISIBLE_LIGHT_GET_POSITION_SIZE,
+            EXPECTED_HASHES["visibleLightGetPositionBody"],
+        ),
+        (
+            "pack_normal_oct_rect_encode",
+            pack,
+            HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE,
+            EXPECTED_HASHES["packNormalOctRectEncodeBody"],
+        ),
+    ):
+        require(f"{check}_size", len(body), size, GAME_ASSEMBLY)
+        require(
+            f"{check}_body_sha256",
+            hashlib.sha256(body).hexdigest(),
+            expected_hash,
+            GAME_ASSEMBLY,
+        )
+
+    require(
+        "visible_light_get_forward_ifix_method_id",
+        forward[0x1D:0x24],
+        bytes.fromhex("33d2b97a070000"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "visible_light_get_position_ifix_method_id",
+        position[0x1D:0x24],
+        bytes.fromhex("33d2b97d070000"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "pack_normal_oct_rect_encode_ifix_method_id",
+        pack[0x15:0x1A],
+        bytes.fromhex("b97b070000"),
+        GAME_ASSEMBLY,
+    )
+    for name, body in (("forward", forward), ("position", position)):
+        for offset, expected in (
+            (0x2D, bytes.fromhex("0f104324")),
+            (0x39, bytes.fromhex("0f104b34")),
+            (0x47, bytes.fromhex("0f104344")),
+            (0x54, bytes.fromhex("0f104b54")),
+        ):
+            require(
+                f"visible_light_get_{name}_matrix_load_{offset:02x}",
+                body[offset : offset + len(expected)],
+                expected,
+                GAME_ASSEMBLY,
+            )
+        require(
+            f"visible_light_get_{name}_matrix_column",
+            body[0x4B:0x4F],
+            bytes.fromhex("458d4102" if name == "forward" else "458d4103"),
+            GAME_ASSEMBLY,
+        )
+        require(
+            f"visible_light_get_{name}_matrix_get_column_target",
+            relative_call_target(
+                body,
+                VISIBLE_LIGHT_GET_FORWARD_VA
+                if name == "forward"
+                else VISIBLE_LIGHT_GET_POSITION_VA,
+                0x62,
+            ),
+            MATRIX4X4_GET_COLUMN_VA,
+            GAME_ASSEMBLY,
+        )
+        require(
+            f"visible_light_get_{name}_vector4_implicit_target",
+            relative_call_target(
+                body,
+                VISIBLE_LIGHT_GET_FORWARD_VA
+                if name == "forward"
+                else VISIBLE_LIGHT_GET_POSITION_VA,
+                0x7A,
+            ),
+            VECTOR4_IMPLICIT_VECTOR3_VA,
+            GAME_ASSEMBLY,
+        )
+
+    return {
+        "getForward": {
+            "method": "VisibleLightExtensionMethods.GetForward",
+            "virtualAddress": f"0x{VISIBLE_LIGHT_GET_FORWARD_VA:X}",
+            "fileOffset": f"0x{VISIBLE_LIGHT_GET_FORWARD_FILE_OFFSET:X}",
+            "sizeBytes": VISIBLE_LIGHT_GET_FORWARD_SIZE,
+            "bodySha256": hashlib.sha256(forward).hexdigest(),
+            "ifixMethodId": f"0x{VISIBLE_LIGHT_GET_FORWARD_IFIX_METHOD_ID:X}",
+            "sourceField": "VisibleLight.LocalToWorldMatrix",
+            "sourceFieldOffset": f"0x{VISIBLE_LIGHT_LOCAL_TO_WORLD_MATRIX_FIELD_OFFSET:X}",
+            "matrixColumn": 2,
+            "extraction": "Matrix4x4.GetColumn(2) then Vector4.op_Implicit(Vector3), xyz; no normalization call in this body",
+        },
+        "getPosition": {
+            "method": "VisibleLightExtensionMethods.GetPosition",
+            "virtualAddress": f"0x{VISIBLE_LIGHT_GET_POSITION_VA:X}",
+            "fileOffset": f"0x{VISIBLE_LIGHT_GET_POSITION_FILE_OFFSET:X}",
+            "sizeBytes": VISIBLE_LIGHT_GET_POSITION_SIZE,
+            "bodySha256": hashlib.sha256(position).hexdigest(),
+            "ifixMethodId": f"0x{VISIBLE_LIGHT_GET_POSITION_IFIX_METHOD_ID:X}",
+            "sourceField": "VisibleLight.LocalToWorldMatrix",
+            "sourceFieldOffset": f"0x{VISIBLE_LIGHT_LOCAL_TO_WORLD_MATRIX_FIELD_OFFSET:X}",
+            "matrixColumn": 3,
+            "extraction": "Matrix4x4.GetColumn(3) then Vector4.op_Implicit(Vector3), xyz",
+        },
+        "packNormalOctRectEncode": {
+            "method": "HGUtils.PackNormalOctRectEncode",
+            "virtualAddress": f"0x{HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_VA:X}",
+            "fileOffset": f"0x{HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_FILE_OFFSET:X}",
+            "sizeBytes": HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE,
+            "bodySha256": hashlib.sha256(pack).hexdigest(),
+            "ifixMethodId": f"0x{HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_IFIX_METHOD_ID:X}",
+            "input": "float3 direction",
+            "output": "float2 octahedral rectangle encoding",
         },
     }
 
@@ -2043,6 +2190,14 @@ def build_audit() -> dict[str, Any]:
         scale_bytes = stream.read(4)
         stream.seek(DEGREES_TO_RADIANS_FILE_OFFSET)
         degrees_to_radians_bytes = stream.read(4)
+        stream.seek(VISIBLE_LIGHT_GET_FORWARD_FILE_OFFSET)
+        visible_light_get_forward_body = stream.read(VISIBLE_LIGHT_GET_FORWARD_SIZE)
+        stream.seek(VISIBLE_LIGHT_GET_POSITION_FILE_OFFSET)
+        visible_light_get_position_body = stream.read(VISIBLE_LIGHT_GET_POSITION_SIZE)
+        stream.seek(HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_FILE_OFFSET)
+        pack_normal_oct_rect_encode_body = stream.read(
+            HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE
+        )
     global_game_managers_data = GLOBAL_GAME_MANAGERS.read_bytes()
     unity_player_data = UNITY_PLAYER.read_bytes()
     population = json.loads(GACHA_POPULATION.read_text(encoding="utf-8"))
@@ -2056,6 +2211,13 @@ def build_audit() -> dict[str, Any]:
         row["obbPackedTransform"] = recover_obb_pack(row)
     consumer = validate_consumer(SELECTED_FRAGMENT.read_text(encoding="utf-8"))
     native = validate_native_body(body)
+    native["pointRecordTransform"]["helperBodies"] = (
+        validate_visible_light_transform_helpers(
+            visible_light_get_forward_body,
+            visible_light_get_position_body,
+            pack_normal_oct_rect_encode_body,
+        )
+    )
     native["additionalLightData"] = validate_additional_data_native(
         npr_body, additional_body
     )
@@ -2153,7 +2315,7 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v8",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v9",
         "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
@@ -2279,9 +2441,11 @@ def build_audit() -> dict[str, Any]:
                 "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
                 "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
+                "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
             ],
             "open": [
                 "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
+                "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],

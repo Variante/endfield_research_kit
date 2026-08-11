@@ -503,7 +503,14 @@ NPC archetypes are imported as labeled source kits.
   `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
   `GetPosition` supplies world-space `record1.xyz`; the selected deferred
   consumer subtracts camera position at read time. The target-frame positions
-  and encoded directions remain capture-only.
+  and encoded directions remain capture-only. The helper bodies are now pinned:
+  `GetForward` reads `VisibleLight.LocalToWorldMatrix` column 2 and
+  `GetPosition` reads column 3 via `Matrix4x4.GetColumn` plus
+  `Vector4.op_Implicit`; the pinned bodies contain no extra forward
+  normalization. `PackNormalOctRectEncode` takes the resulting float3 and
+  emits the float2 octahedral rectangle encoding. Retail IFix gates are
+  `0x77A`, `0x77D`, and `0x77B`; patched-branch return values and target-frame
+  values remain runtime/capture-boundary evidence.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

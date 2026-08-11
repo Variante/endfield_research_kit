@@ -160,6 +160,37 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_point_record_transform_native(bytes(body))
 
+    def test_visible_light_transform_helper_bodies(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.VISIBLE_LIGHT_GET_FORWARD_FILE_OFFSET)
+            forward = stream.read(AUDIT.VISIBLE_LIGHT_GET_FORWARD_SIZE)
+            stream.seek(AUDIT.VISIBLE_LIGHT_GET_POSITION_FILE_OFFSET)
+            position = stream.read(AUDIT.VISIBLE_LIGHT_GET_POSITION_SIZE)
+            stream.seek(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_FILE_OFFSET)
+            pack = stream.read(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE)
+        result = AUDIT.validate_visible_light_transform_helpers(forward, position, pack)
+        self.assertEqual(result["getForward"]["matrixColumn"], 2)
+        self.assertEqual(result["getPosition"]["matrixColumn"], 3)
+        self.assertEqual(result["getForward"]["ifixMethodId"], "0x77A")
+        self.assertEqual(result["getPosition"]["ifixMethodId"], "0x77D")
+        self.assertEqual(result["packNormalOctRectEncode"]["input"], "float3 direction")
+
+    def test_changed_visible_light_transform_helper_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.VISIBLE_LIGHT_GET_FORWARD_FILE_OFFSET)
+            forward = bytearray(stream.read(AUDIT.VISIBLE_LIGHT_GET_FORWARD_SIZE))
+            stream.seek(AUDIT.VISIBLE_LIGHT_GET_POSITION_FILE_OFFSET)
+            position = stream.read(AUDIT.VISIBLE_LIGHT_GET_POSITION_SIZE)
+            stream.seek(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_FILE_OFFSET)
+            pack = stream.read(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE)
+        forward[0x4D] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=visible_light_get_forward_body_sha256; source=.*GameAssembly.dll; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_visible_light_transform_helpers(bytes(forward), position, pack)
+
     def test_changed_record0_discriminator_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
