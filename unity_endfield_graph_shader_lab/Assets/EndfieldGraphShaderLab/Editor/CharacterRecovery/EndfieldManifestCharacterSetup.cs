@@ -1592,9 +1592,9 @@ namespace EndfieldGraphShaderLabEditor
             if (catalog == null || !catalog.keepAllModelsResident)
                 throw new InvalidDataException(
                     "CharacterRecoveryViewer resident catalog is missing or disabled.");
-            if (catalog.entries == null || catalog.entries.Length != 30)
+            if (catalog.entries == null || catalog.entries.Length != 31)
                 throw new InvalidDataException(
-                    $"Expected 30 resident catalog entries; found " +
+                    $"Expected 31 resident catalog entries; found " +
                     $"{(catalog.entries != null ? catalog.entries.Length : 0)}.");
 
             CharacterRecoveryActorCatalogEntry[] ordered = catalog.entries
@@ -1698,12 +1698,12 @@ namespace EndfieldGraphShaderLabEditor
                 }
             }
 
-            if (recoveredEarOwnerCount != 6 || automaticBlinkEligibleCount != 30 ||
+            if (recoveredEarOwnerCount != 6 || automaticBlinkEligibleCount != 31 ||
                 exactAutomaticBlinkOwnerCount != 2)
                 throw new InvalidDataException(
                     $"Resident skeletal-morph ownership summary differs from installed data: " +
                     $"earOwners={recoveredEarOwnerCount}/6 " +
-                    $"blinkEligible={automaticBlinkEligibleCount}/30 " +
+                    $"blinkEligible={automaticBlinkEligibleCount}/31 " +
                     $"exactAutomaticBlinkOwners={exactAutomaticBlinkOwnerCount}/2.");
 
             float span = CharacterLineupHorizontalSpacing * (ordered.Length - 1);
@@ -1850,6 +1850,11 @@ namespace EndfieldGraphShaderLabEditor
                     throw new InvalidDataException(
                         $"{noProfileActor} received a presentation profile without original source evidence.");
             }
+            CharacterRecoveryActorCatalogEntry liinoEntry = ordered.Single(row =>
+                string.Equals(row.rootName, "Liino", StringComparison.Ordinal));
+            if (liinoEntry.presentationProfile == null)
+                throw new InvalidDataException(
+                    "Liino playable entry is missing its source-backed presentation profile.");
 
             Camera camera = Camera.main ??
                 UnityEngine.Object.FindObjectOfType<Camera>(true);
@@ -11813,7 +11818,7 @@ namespace EndfieldGraphShaderLabEditor
             // Exact installed Texture2D descriptors override filename/property
             // heuristics whenever the current source contract contains the
             // full PathID-bearing filename. This covers all 853 distinct
-            // source objects used by the 30-character generated roster.
+            // source objects used by the 31-character generated roster.
             changed |= ApplyOriginalTextureImportProfile(importer, textureName);
 
             return changed;

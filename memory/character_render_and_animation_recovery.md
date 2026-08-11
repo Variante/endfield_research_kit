@@ -8,7 +8,7 @@ has not reached retail visual parity.
 
 | Layer | Current status |
 | --- | --- |
-| Playable model coverage | 30/30 imported and rendered |
+| Playable model coverage | 31/31 imported and rendered, including Liino |
 | Canonical post-model coverage | 156/156 identities have prefab paths |
 | Static playable Overview assets | high, roughly 90%+ |
 | Selected CharacterNPR equations | medium-high, roughly 60–75% |
@@ -17,16 +17,27 @@ has not reached retail visual parity.
 | Original animation behavior | partial |
 | Final retail visual parity | not reached |
 
-The 156 canonical identities are 30 playables, 2 NPC characters, 1 cutscene
+The 156 canonical identities are 31 playables, 1 NPC character, 1 cutscene
 clone, 94 enemies, and 29 ability/prop actors. Six additional modular ambient
 NPC archetypes are imported as labeled source kits.
 
 ## What works
 
-- All 30 playable post-models, materials, textures, cameras, profiles, lights,
+- All 31 playable post-models, materials, textures, cameras, profiles, lights,
   portraits, and Overview animation sources are cataloged.
-- All 30 current Overview captures are valid and nonblank.
-- Playable UI recovery contains 754 body clips and 321 private item/deco clips.
+- The previous 30-character Overview capture set remains valid and nonblank;
+  Liino is imported and awaits the next capture refresh.
+- Playable UI recovery contains 779 body clips and 348 private item/deco clips.
+- Roster discovery now treats `structured/Persistent/Table/CharacterTable.json`
+  as the current patch overlay and resolves AnimatorControllers from both
+  StreamingAssets and Persistent. Liino proves this boundary: her roster row,
+  CharInfo camera/light/portrait, 25 body UI clips, 27 private-deco clips, and
+  external UI controllers are patch-layer data, while her post-model and exact
+  Grounder remain in StreamingAssets.
+- The Playable-only native texture payload contract now closes 193 selected
+  Texture2D objects over 398 generated GUID owners. Unity validates all 11
+  Liino-owned entries byte-for-byte, including compressed mip chains, stable
+  GUID/PPtr identity, and exact importer state.
 - The Endfield 101-muscle ABI and exact Avatar bases are preserved.
 - Narrow exact behaviors include Wulfa/Li automatic blink, one Zhuang facial
   fixture, and one Wulfa 33-frame physical-transform animation oracle.

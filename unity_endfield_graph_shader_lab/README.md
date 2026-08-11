@@ -31,7 +31,7 @@ Or directly:
 ## All Canonical Character Models
 
 The source-derived superset contains 33 canonical character-container
-identities: the existing 30 playables plus Liino, Si/Jsspsi, and Chenpast.
+identities: 31 playables including Liino, plus Si/Jsspsi and Chenpast.
 It selects only exact
 `postmodels/characters/chr_<id>_<token>_postmodel.prefab` Animator roots.
 The duplicate `postmodels/npc` mirrors and Zhuang Fangyi's `_ult` variant are
@@ -45,7 +45,7 @@ Refresh the 33-character catalog without extracting assets:
 D:\fluffy-dump\unity_endfield_graph_shader_lab\import_all_character_models.bat
 ```
 
-Recover the three nonplayable character models from exact hierarchy
+Recover the two nonplayable character models from exact hierarchy
 Mesh/Material PPtrs and decode only their source-owned preview animation when
 one exists:
 
@@ -53,8 +53,9 @@ one exists:
 D:\fluffy-dump\unity_endfield_graph_shader_lab\import_all_character_models.bat --execute --unity
 ```
 
-Liino and Jsspsi each expose their exact `A_actor_*_t_pose`; Chenpast remains
-static because no token-owned preview clip is shipped. Use
+Jsspsi exposes its exact `A_actor_*_t_pose`; Chenpast remains static because no
+token-owned preview clip is shipped. Liino uses the full playable UI pipeline.
+Use
 `CharacterRecoveryViewer.unity` as the maintained viewer; the separate
 all-character resident scene is no longer retained.
 
@@ -128,7 +129,7 @@ D:\fluffy-dump\unity_endfield_graph_shader_lab\validate_all_generic_actor_galler
 The maintained all-roster path derives its character list from the exported
 game `CharacterTable` and keeps only rows that join to an exact Animator under
 the shipped `postmodels/characters/<charId>_postmodel.prefab` container. On the
-current export that produces 30 concrete playable post-models. The abstract
+current patch-aware export that produces 31 concrete playable post-models. The abstract
 `chr_9000_endmin` selector row is excluded because it has no concrete playable
 post-model; both actual Endministrator variants remain included.
 
@@ -169,16 +170,16 @@ The profile recovery first exports only `CharacterDisplayConfig` with its raw
 sidecar. This is intentional: the current serialized TypeTree leaves its
 managed-reference records heuristic-only, so the maintained decoder reads the
 exact aligned camera/light strings, height enum, and overview-offset floats
-from each bounded raw record before exporting the 30 camera/light/portrait
+from each bounded raw record before exporting the 31 camera/light/portrait
 dependencies.
 
-The second command writes all 30 prefab/profile references into
+The second command writes all 31 prefab/profile references into
 `CharacterRecoveryViewer.unity`. In Play Mode, use the top-left **Model**
 dropdown to instantiate and switch characters on demand.
 
 The canonical scope is now `all-ui`: it imports source-owned actor UI, team,
 relax, equipment, skill, weapon, and gacha body families plus exact private
-item/deco families for all 30 playable characters. Narrower scopes remain
+item/deco families for all 31 playable characters. Narrower scopes remain
 available for diagnostics:
 
 ```bat
@@ -187,7 +188,7 @@ import_playable_characters_ui.bat --clip-scope all-ui
 import_playable_characters_ui.bat --actor wulfa
 ```
 
-For an actor-scoped Wulfa diagnostic without rebuilding the other 29 actors,
+For an actor-scoped Wulfa diagnostic without rebuilding the other 30 actors,
 run:
 
 ```bat
@@ -199,7 +200,7 @@ update_character_recovery_viewer.bat
 verify_wulfa_apple_animation_recovery.bat
 ```
 
-Audit source Mesh identity across all 30 manifests, including exact private
+Audit source Mesh identity across all 31 manifests, including exact private
 item/deco hierarchy, clip-binding, recovered-state visibility, and Overview
 widget paths, without reading or launching Unity:
 
@@ -227,8 +228,8 @@ result to match a fresh ACL sample transform-for-transform. It refuses to start
 a second Unity editor while the project is open.
 
 The same sparse-clip ownership fix applies to the complete playable roster.
-Regenerate all 30 prefabs, require compact MuscleClip track mappings and one
-Awake-time reference-pose provider per prefab, then sample every one of the 754
+Regenerate all 31 prefabs, require compact MuscleClip track mappings and one
+Awake-time reference-pose provider per prefab, then sample every one of the 779
 body clips with the runtime validator using:
 
 ```bat
@@ -278,7 +279,7 @@ Its durable output is
 
 The actor-scoped import deliberately builds a one-actor validation viewer.
 Refresh the canonical `all-ui` catalog and update the shared viewer afterward,
-as shown above, to restore all 30 selectable actors.
+as shown above, to restore all 31 selectable actors.
 
 Generic companion names are admitted only when an exact shipped
 `chr_<id>_<token>_deco_<slot>_controller.controller` contains an animation in
@@ -1047,7 +1048,7 @@ Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewe
 After the playable UI import, the top-left runtime UI can switch among every
 catalog character whose manifest was generated. The catalog and canonical
 `Playable/` manifests are required; there is no ordinary legacy-folder fallback.
-The full viewer embeds all 30 prefabs in one horizontal, alphabetically ordered
+The full viewer embeds all 31 prefabs in one horizontal, alphabetically ordered
 lineup and keeps them resident. The **Model** dropdown moves the recovered
 camera framing to the selected actor without loading or destroying a model.
 Selection also swaps the exact recovered actor profile:
@@ -1069,7 +1070,7 @@ later targeted character-prefab rebuild cannot revert one resident actor to a
 legacy inactive prefab root. Generated playable prefab templates also keep an
 active root, and the Zhuang gacha builder automatically rebinds and validates
 the resident scene after regenerating prefab-local file IDs. The current
-validation passes all 30 active instances, preserves every instance while
+validation passes all 31 active instances, preserves every instance while
 switching, and performs no runtime model load on selection.
 
 The compact right-edge **Recovered state connections** panel derives a button only
@@ -1079,7 +1080,7 @@ with outgoing connections highlighted from the current settled state. Clicking
 one plays the transition once and then hands off to the destination loop; for
 example, Da Pan exposes Overview -> Weapon and Weapon -> Overview alongside
 Equip, Skill, and Upgrade connections. The current all-roster catalog exposes
-268 complete connections across all 30 playable actors. This is a source-clip
+the complete source connections across all 31 playable actors. This is a source-clip
 pairing boundary: it does not invent a connection when either clip is missing.
 
 Private item/deco visibility is refreshed from the active body clip, helper,
@@ -1109,7 +1110,7 @@ CharacterRecoveryViewerRoot
   Backdrop/
     ReferenceBackdrop
   Characters/ (has CharacterRecoveryActorCatalog)
-    <30 active resident actors, horizontal>
+    <31 active resident actors, horizontal>
   Lighting/
     KeyLight
   MainCamera
@@ -1148,7 +1149,7 @@ the custom UnityPlayer command and possible runtime IFix replacement remain
 open.
 
 The selected overlay local-volume term is also active for the isolated
-CharInfo rigs. The recovered type-4 Fog consumer joins all 30 source profiles,
+CharInfo rigs. The recovered type-4 Fog consumer joins all 31 source profiles,
 266 serialized lights, 40 supported Fog rows, and the exact clustered
 membership plus `LightCharacterOnly`/scene-additional-light gates; missing
 producer state returns neutral zero occlusion. Run
@@ -1156,7 +1157,7 @@ producer state returns neutral zero occlusion. Run
 Arbitrary gameplay light culling and unsupported OBB/cookie/flicker/culling-
 distance states remain outside this bounded presentation path.
 
-The playable UI builder embeds all 30 actors as active resident instances in
+The playable UI builder embeds all 31 actors as active resident instances in
 one horizontal lineup. Model selection moves the camera and swaps the recovered
 profile; it does not load, instantiate, destroy, or reactivate another model.
 Use the fast render-style scene for ordinary visual iteration.
@@ -3339,8 +3340,8 @@ folder. The all-character viewer scene is
 rebuilt from the manifest-driven importer and generated catalog. Lower mesh
 LODs are skipped during import; rerunning the preview command also prunes older
 generated scenes to `lod0` only. Complete catalog builds instantiate the
-existing 30 playable prefabs without rebuilding their assets, then build the
-three nonplayable additions and restore all 33 resident scene instances. The
+existing 31 playable prefabs without rebuilding their assets, then builds the
+two nonplayable additions and restores all 33 resident scene instances. The
 rebuild also
 renders a quick preview to:
 
@@ -3575,14 +3576,14 @@ lineup root. This closes one Avatar/clip pair, not Motion placement, runtime IK,
 blending, constraints, secondary simulation, or general humanoid playback.
 
 Original serialized data and `GameAssembly.dll` also narrow the IK contract.
-Exact Grounder exports for all 30 current actors prove that the
+Exact Grounder exports for all 31 current actors prove that the
 `GrounderBipedIK.solver.IKFootBoneL/R` PPtrs equal the authored
 `IK_Foot_L/R_001` Transform PPtrs. They are sampled Grounding references, not
 BipedIK limb targets. `CharacterAnimationBlackboard._UpdateFootIK` at RVA
 `0x3413830` reads `FOOT_IK_WEIGHT`, `FOOT_IK_FOOT_WEIGHT`, and
 `FOOT_IK_ADSORB_WEIGHT`; RVA `0x326CF60` transfers the live block to Grounding.
-The complete current UI audit covers 754 unique clips and recovers only
-`FootIKWeight` (`0x2B797234`): 23 exact 60 Hz ACL arrays, always scalar track
+The complete current UI audit covers 779 unique clips and recovers only
+`FootIKWeight` (`0x2B797234`): 24 exact 60 Hz ACL arrays, always scalar track
 15 and constant one. `FootIKFootWeight` (`0xCF74E25B`) and
 `FootIKAdsorbWeight` (`0x7E3D4086`) occur in zero UI clips. Their missing-key
 lookup is nevertheless source-closed: `TryGetCurveValue` returns false/raw
@@ -3610,8 +3611,8 @@ missing ground produces a height-continuous synthetic plane rather than a zero
 hit. `SetLegIK` at RVA `0x326CB90` requests
 `lerp(authoredFoot, terrainFoot, clamp(weight*maintianPelvisFootWeight,0,1))`
 and assigns `footAdsorbWeight` to the limb position weight. The manifest records
-this contract. Twenty-eight actors select this ordinary family; Chen Qianyu and
-Li Zhiyan set `rotateSolver` at `Grounding+0x9C` and use the recovered
+this contract. Twenty-eight actors select this ordinary family; Chen Qianyu,
+Li Zhiyan, and Liino set `rotateSolver` at `Grounding+0x9C` and use the recovered
 root-aligned frame (`root.up`, root-forward/right, and root-local Y); Camille is
 ordinary. `Grounding+0x3D` is `isAccelerating`, not the rotate gate, and the
 rotated blocks rejoin the same `FinalSetIKPosition` and `SetLegIK` stages. The
@@ -3626,7 +3627,7 @@ remains disabled because the lab still lacks a source-compatible terrain
 provider, live controller values and callback order, Unity
 runtime profile consumption, the retail pelvis-aware solver surface, and
 numeric original-frame fixtures. Exact per-actor serialized profiles are now
-embedded in all 30 manifests and in
+embedded in all 31 manifests and in
 `playable_character_grounder_profiles.json`; none is runtime-enabled.
 Alternate-quality, overstep-disabled, full predictive-step, and exact capsule
 no-hit modes remain unrecovered; tilted-root numeric fixtures are also absent.
@@ -3656,13 +3657,10 @@ validate_resident_character_lineup.bat
 validate_roster_animation_switch_runtime.bat
 ```
 
-The current Unity validation passes all 30 fail-closed IK pose checks, all 23
-exact `FootIKWeight` arrays, the 30-instance resident lineup, and the complete
-754-body-clip roster switch sweep. The source-backed Python suite passes all
-57 character-import tests; its audits cover 875 ACL clips with zero canonical
-order/provenance gaps, 338 selected body meshes with zero skin-tuple gaps, and
-98 owner-qualified item renderers with zero binding gaps. The switch sweep
-confirms 43 Overview start-to-loop handoffs and zero post-reset pose mismatches.
+The current validation scope covers all 31 fail-closed IK pose checks, all 24
+exact `FootIKWeight` arrays, the 31-instance resident lineup, and the complete
+779-body-clip roster switch sweep. Source-backed audits retain fail-closed
+canonical-order, skin-tuple, item-owner, and post-reset pose checks.
 
 ## Current Fidelity Limits
 
