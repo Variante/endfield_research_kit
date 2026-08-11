@@ -1,110 +1,82 @@
 ---
 name: endfield-option-overrides
-description: Edit and validate Endfield WebUI-only manual option recovery overrides. Use when Codex needs to add, update, review, or verify entries in webui/overrides/options.json for known option placement gaps, unknown option positions, inferred option responses, or manual override tags in the Story WebUI.
+description: Edit, review, and validate Endfield WebUI manual option recovery overrides in webui/overrides/options.json. Use for known option placement gaps, pre-scene placement, inferred option responses, stale override targets, coverage audits, and visible manual-override tagging.
 ---
 
 # Endfield Option Overrides
 
-Use this skill to maintain the local override file that covers known WebUI
-option recovery gaps without changing the automatic recovery rules.
+Maintain `webui/overrides/options.json` as a WebUI-only correction layer for
+known automatic recovery gaps. Treat overrides as display decisions, never as
+source evidence.
 
-## Files
+## Guardrails
 
-- Override data: `webui/overrides/options.json`
-- Runtime application point: `webui/app.js`
-- Story rendering tags: `webui/app.js`, `webui/app_labels.js`, `webui/style.css`
-- Generated validation targets: `webui/data/lang/CN/conv/<key>.json`,
-  `reports/story/build/inferred_option_anchors_CN.json`
-- Coverage audit: `reports/story/recovery/options/option_override_coverage_CN.json/.md`
+- Edit the JSON before considering frontend changes; change code only when the
+  format or application behavior must evolve.
+- Override only known `inferredOptionLayout` or `inferredOptionResponse` cases.
+- Never create new option groups, option IDs, or line IDs.
+- Use exact conversation keys, string group numbers, option IDs, and line IDs
+  verified against `webui/data/lang/CN/conv/<key>.json`.
+- Keep notes short and factual and preserve the visible manual-override tag.
 
-## Rules
-
-- Treat overrides as WebUI-only display corrections, not source evidence.
-- Edit the JSON file first. Change frontend code only when the override
-  format itself must evolve.
-- Apply overrides only to known generated issue cases:
-  `inferredOptionLayout` / unknown option position, or
-  `inferredOptionResponse` / inferred following-line response.
-- Do not use overrides to create new option groups, options, or line ids.
-- Prefer exact stable ids: conversation key, group number, option id, and line id.
-- Preserve the visible manual override tag; users must be able to see when a row
-  was manually overridden.
-
-## Override Format
-
-Placement override:
+## Format
 
 ```json
 {
   "scenes": {
     "dlg_example_1": {
       "positions": {
+        "pre": ["2"],
         "after": {
           "dlg_example_1_002": ["1"]
         }
       },
+      "responses": {
+        "option_dlg_example_1_1_001": ["dlg_example_1_003"]
+      },
       "notes": {
-        "1": "Why this manual placement is accepted."
+        "1": "Short factual reason."
       }
     }
   }
 }
 ```
 
-Pre-scene placement:
-
-```json
-"positions": { "pre": ["1"] }
-```
-
-Inferred response override:
-
-```json
-"responses": {
-  "option_dlg_example_1_1_001": ["dlg_example_1_003"]
-}
-```
+`positions.pre` places groups before the scene. `positions.after` anchors
+groups after a line. `responses` maps an option ID to exact branch line IDs.
 
 ## Workflow
 
-1. Identify the target scene and group.
-   - Use existing WebUI JSON, `reports/story/build/inferred_option_anchors_CN.json`, or:
-     `python tools\endfield_source_graph.py story <key> --limit-lines 12`
-   - For inferred responses, inspect the generated warning or run the relevant
-     `scripts/story_recovery/` audit before adding a manual mapping.
+1. Identify the scene, group, and generated issue. Inspect the conversation
+   JSON and `reports/story/build/inferred_option_anchors_CN.json`; use
+   `python tools\endfield_source_graph.py story <key> --limit-lines 12` when
+   graph evidence helps.
+2. For response mappings, inspect the generated warning and the relevant
+   focused recovery audit. Do not promote weak adjacency or default-value hints.
+3. Edit `webui/overrides/options.json` surgically.
+4. Refresh the browser; runtime override edits do not require a Story rebuild.
+5. Validate JSON and confirm the target scene is visibly tagged:
 
-2. Edit `webui/overrides/options.json`.
-   - Keep notes short and factual.
-   - Use string values for group numbers.
-   - Validate option ids and line ids against the generated conv JSON.
+```bat
+python -m json.tool webui\overrides\options.json
+```
 
-3. Refresh the browser. No story rebuild is needed for runtime override edits.
+Run the coverage audit when adding, reviewing, or checking stale targets:
 
-4. Verify results.
-   - `python -m json.tool webui\overrides\options.json`
-   - Run `python scripts\story_recovery\build_option_override_coverage_audit.py --language CN`
-     when coverage or stale override targets need a full audit.
-   - Confirm the target Story scene shows the manual override tag.
-   - Confirm unresolved inferred-anchor counts are expected:
-     `reports/story/build/inferred_option_anchors_CN.json`
-   - Run syntax checks after frontend edits:
-     `node --check webui\app.js`
-     `node --check webui\app_labels.js`
+```bat
+python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
+```
 
-Keep generated option audits under `reports/story/recovery/options/`; do not
-write loose audit files at the `reports/` root. These reports can feed later
-source-graph or recovery audits, so remove only superseded scoped runs rather
-than the current canonical language report.
+If frontend code changed, also run:
 
-Put temporary option probes under `scratch/story/options/<task>/` or
-`tmp/story/options/<task-or-run>/`; do not create loose files at either work
-directory root.
+```bat
+node --check webui\app.js
+node --check webui\app_labels.js
+```
 
-## Reporting Back
+Keep canonical audits under `reports/story/recovery/options/`, revisitable
+probes under `scratch/story/options/<task>/`, and disposable work under
+`tmp/story/options/<task-or-run>/`.
 
-Mention:
-
-- Which scene/group/option ids were overridden.
-- Which line ids or placement were pinned.
-- That the override is WebUI-only and visibly tagged.
-- Which validation commands were run.
+Report the affected scene, group, option and line IDs; state that the change is
+WebUI-only and visibly tagged; and list the validation performed.

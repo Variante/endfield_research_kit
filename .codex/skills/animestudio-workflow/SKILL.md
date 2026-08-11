@@ -1,19 +1,18 @@
 ---
 name: animestudio-workflow
-description: Use when working on the local tools/AnimeStudio exporter for Endfield, including compiling AnimeStudio.CLI, calling it directly or through export.bat and export_assets.bat, using integrated VFS dump/audio/index commands, debugging MonoBehaviour and Export error logs, inspecting code structure, and reducing per-worker memory use.
+description: Build, run, debug, and modify the local Endfield AnimeStudio exporter under tools/AnimeStudio. Use for AnimeStudio.CLI compilation, wrapper integration, VFS dump/audio/stream/index commands, MonoBehaviour or export errors, DummyDll schema recovery, targeted asset conversion, and worker-memory tuning.
 ---
 
-# Animestudio Workflow
+# AnimeStudio Workflow
 
-## When To Use
+Work from the repository root. For normal WebUI refresh decisions, also use
+the `endfield-webui-workflow` skill. Read `references/animestudio.md` before
+changing exporter code, diagnosing nontrivial logs, or working with DummyDlls;
+it contains CLI details, code structure, and focused verification patterns.
 
-Use this skill for AnimeStudio or Anime Studio tasks in this repo: building the CLI, changing `tools/AnimeStudio`, running installed-game Unity asset exports, running integrated VFS structured/audio/index commands, explaining CLI arguments, investigating object parser failures, or tuning `--asset-jobs`.
+## Build
 
-If the task is about the whole WebUI export flow, also use `endfield-webui-workflow`. For implementation details, read `references/animestudio.md` before changing code or diagnosing logs.
-
-## Quick Commands
-
-Initialize and build the local submodule:
+Initialize and build the tracked submodule:
 
 ```bat
 git submodule update --init tools/AnimeStudio
@@ -21,81 +20,26 @@ git submodule update --init tools/AnimeStudio
 .\scripts\animestudio\rebuild.bat -Target CLI
 ```
 
-Fast rebuild after the first restore:
+After the first restore, prefer:
 
 ```bat
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
-Expected executable:
+The expected executable is
+`tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe`.
 
-```text
-tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
-```
+## Choose the Entry Point
 
-## DummyDll Regeneration
+Use repository wrappers for production workflows:
 
-When a task needs script-derived MonoBehaviour schemas, or the installed game
-changed since `tools\DummyDll\generation.json`, first run:
+- Story refresh: `export.bat --from-game`.
+- Story and assets together: `export.bat --from-game --with-assets`.
+- Assets and CN audio only: `export_assets.bat --from-game`.
+- Installed-data patch workflow: `build_updates_by_patch.bat`.
 
-```bat
-python scripts\animestudio\generate_dummydll.py --dry-run
-```
-
-If the unique registration checks pass and regeneration is actually needed:
-
-```bat
-python scripts\animestudio\generate_dummydll.py --replace
-```
-
-The generator owns CodeRegistration/MetadataRegistration discovery, the tested
-Cpp2IL `2022.0.7` patch/build, staged validation, atomic publication, backup,
-and provenance manifest. Never reuse addresses from memory or a prior build.
-Treat Cpp2IL skip counts as coverage gaps, verify that the target full type name
-exists in the generated assembly, and keep AnimeStudio serialized-first unless
-a focused comparison proves script-first is better. Read the DummyDll section
-in `references/animestudio.md` before diagnosing or changing this path.
-
-## Wrapper Usage
-
-Use the parent wrappers for normal Endfield exports:
-
-```bat
-.\export.bat --from-game
-.\export_assets.bat --from-game
-.\build_updates_by_patch.bat
-```
-
-Both pass AnimeStudio options through to `scripts\export_full_from_game.py`. Keep `--asset-jobs` conservative unless the machine has enough free RAM:
-
-```bat
-.\export.bat --from-game --asset-jobs 2
-.\export_assets.bat --from-game --asset-jobs 2
-```
-
-The default is now `8`; AnimeStudio subprocess tasks for each source share
-that worker pool, and asset shards are queued round-robin by type. Lower
-`--asset-jobs` when peak memory is too high.
-`export.bat --from-game` also uses AnimeStudio as the default structured
-data dumper. `export_assets.bat --from-game` uses AnimeStudio for the
-lightweight `vfs-index` snapshot and CN audio decode before relinking.
-Asset conversion uses more shards than workers by default: `--animestudio-shards 16`
-with `--animestudio-jobs 8`; the shared pool consumes those shards alongside
-other AnimeStudio type requests. Adjust `--animestudio-shards` separately to tune
-per-process asset slice size. Non-sharded JSON type jobs use
-`--animestudio-type-job-mode auto` by default, merging map-filtered JSON while
-running broad Story JSON types sequentially in isolated processes; pass
-`parallel` only when comparing concurrent per-type jobs.
-`export_assets.bat --from-game` now defaults to the standard WebUI-facing
-image/model asset export plus `Material` JSON. Asset modes, from narrowest to
-broadest, are `--focused-assets`, `--default-assets`, and `--debug-assets`.
-Audio export defaults to direct lossless FLAC through AnimeStudio's in-process
-encoder. It does not create intermediate WAV files or require `ffmpeg`; use
-`--format wav` or `--format wem` only for explicit compatibility output.
-
-## Integrated VFS Commands
-
-AnimeStudio.CLI now owns the Endfield VFS paths used by the WebUI wrappers:
+Use direct CLI calls only for targeted parity probes, extraction, or debugging.
+Inspect subcommand help rather than duplicating its full option surface:
 
 ```bat
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --help
@@ -105,64 +49,60 @@ AnimeStudio.CLI now owns the Endfield VFS paths used by the WebUI wrappers:
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe list --help
 ```
 
-`dump`, `audio`, `stream`, and `vfs-index` must expose `--fallback-assets`. Use direct
-subcommand calls for parity probes or targeted extraction; use the parent
-wrappers for normal WebUI exports.
+`dump`, `audio`, `stream`, and `vfs-index` must expose `--fallback-assets`.
+`dump`, `stream`, and `vfs-index` support repeated `--block-type` and
+`--file-regex` filters. Audio defaults to direct lossless FLAC; request WAV or
+WEM only for explicit compatibility needs.
 
-`vfs-index --jsonl` writes streaming header/block/chunk/file/summary records for
-the original-data snapshot tracker without materializing the large duplicated
-JSON index shape. The default remains the existing JSON document format.
+## Scope and Concurrency
 
-## Direct CLI Shape
+Use `--focused-assets`, `--default-assets`, or `--debug-assets` from narrowest
+to broadest. Keep `--asset-jobs N` conservative relative to available RAM.
+Adjust worker count before changing shard count or exporter architecture.
 
-Use direct CLI calls only for targeted debugging:
+Preserve the measured scheduling model: map-filtered conversion may shard,
+while broad Story JSON types run sequentially in isolated processes. Do not add
+JSON sharding or concurrent broad JSON loads without byte-for-byte comparison
+and performance evidence. Add a type to map filtering only after broad and
+filtered exports match byte-for-byte; equal object counts are insufficient.
+
+## DummyDll Recovery
+
+Use DummyDlls only when script-derived MonoBehaviour schemas matter. After an
+installed-game update, or when provenance is stale, run:
 
 ```bat
-.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe input_path output_path --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType
+python scripts\animestudio\generate_dummydll.py --dry-run
 ```
 
-Common direct options:
+Run `--replace` only after unique registration and staged validation pass.
+Never reuse registration addresses from an earlier build. Missing or stale
+DummyDlls must warn and fall back cleanly; normal exports must continue.
 
-```bat
---map_op Both --map_type JSON
---export_type JSON --types MonoBehaviour:Both
---export_type Convert --types Texture2D:Both
---dummy_dlls path\to\DummyDll  (optional)
---filter_data export_full\recovered\AnimeStudio-cli\timeline_targets.json
-```
+Keep serialized-first TypeTree priority by default. Treat Cpp2IL skip counts as
+coverage gaps, verify the required full type name exists in the generated
+assembly, and use script-first only for a focused comparison.
 
-## Diagnostics
+## Diagnose and Change Safely
 
-After wrapper runs, start with:
+Start wrapper diagnosis with:
 
-```text
-reports\export\export_full_summary.md
-reports\export\runs\<timestamp>\StreamingAssets\*.stdout.log
-reports\export\runs\<timestamp>\StreamingAssets\*.stderr.log
-reports\export\runs\<timestamp>\Persistent\*.stdout.log
-reports\export\runs\<timestamp>\Persistent\*.stderr.log
-export_full\recovered\AnimeStudio-cli\animestudio_type_manifest.json
-```
+- `reports/export/export_full_summary.md` and its JSON companion.
+- The `reports_run_root` recorded in the latest summary.
+- Per-source stdout/stderr logs under `reports/export/runs/<timestamp>/`.
+- `export_full/recovered/AnimeStudio-cli/animestudio_type_manifest.json`.
 
-Use the `reports_run_root` recorded in the latest JSON summary to locate the
-matching timestamped logs. Do not write exporter logs or summaries directly at
-the `reports/` root.
+An `Export <Type>:<Name> error` is a per-asset failure; the process may have
+continued. A nonzero subprocess return code fails the wrapper. A
+`metadata-only JSON` warning means identity and raw hashes were preserved after
+schema decoding failed.
 
-The exporter keeps five timestamped run directories under
-`reports/export/runs/` by default. Override this with
-`--report-runs-to-keep N`; use `0` only when intentionally disabling pruning.
-The separate `benchmark_export.py` wrapper keeps ten runs per label under
-`reports/export/benchmarks/` and writes its latest summary under
-`reports/export/`.
+For count-driven parser allocations, use the maintained count guards described
+in the reference. Keep failures local to malformed objects when possible. Make
+narrow changes, rebuild the CLI, and rerun the smallest affected source,
+stage, and type before attempting a broad export.
 
-Put revisitable exporter probes under `scratch/animestudio/<task>/` and
-disposable decode/export intermediates under `tmp/animestudio/<task-or-run>/`.
-Put IL2CPP or native-code-only probes under
-`scratch/reverse_engineering/<task>/` or
-`tmp/reverse_engineering/<task-or-run>/`. Do not write loose files or run
-directories at the root of `scratch/` or `tmp/`; remove completed temporary
-runs after validation.
-
-`Export ... error` means one asset conversion failed inside a stage; other assets in that process may still export. A nonzero AnimeStudio subprocess now fails the wrapper. A MonoBehaviour `metadata-only JSON` warning means the tool preserved object metadata and raw hashes after schema decode failed, instead of dropping the object entirely.
-
-For code structure, memory guards, CLI API, and log interpretation, read `references/animestudio.md`.
+Keep exporter reports under `reports/export/`, revisitable probes under
+`scratch/animestudio/<task>/`, and disposable work under
+`tmp/animestudio/<task-or-run>/`. Put native-only probes under the matching
+`reverse_engineering` topic. Remove completed temporary runs.
