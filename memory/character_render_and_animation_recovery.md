@@ -499,7 +499,11 @@ NPC archetypes are imported as labeled source kits.
   shader sentinel `255`, and packs faces 0..3 into `record2.w` plus faces 4..5
   into the low bytes of `record3.x`. The six target-frame cache-index values
   remain capture-only; this closes the producer packing rule, not their live
-  contents.
+  contents. The same native body now pins the transform producer order:
+  `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
+  `GetPosition` supplies world-space `record1.xyz`; the selected deferred
+  consumer subtracts camera position at read time. The target-frame positions
+  and encoded directions remain capture-only.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,
