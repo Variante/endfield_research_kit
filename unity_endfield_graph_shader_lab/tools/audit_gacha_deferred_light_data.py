@@ -289,6 +289,19 @@ POINT_SHADOW_PACK_SEQUENCE = bytes.fromhex(
     "41c1e708450bfec1e3084c8bb59000000041c1e708440bfe8b75c041c1e708440bff0bd86641"
 )
 
+# The first two dynamic rows in every punctual record are produced from the
+# original VisibleLight transform helpers.  The shader later subtracts the
+# camera position from record1.xyz, so the native producer stores world-space
+# position; record2.xy is the helper's octahedral encoding of light forward.
+VISIBLE_LIGHT_GET_FORWARD_VA = 0x189D14F34
+HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_VA = 0x189C0EF4C
+VISIBLE_LIGHT_GET_POSITION_VA = 0x189D15168
+POINT_RECORD_TRANSFORM_CALLS = (
+    (0x073E, VISIBLE_LIGHT_GET_FORWARD_VA, "VisibleLightExtensionMethods.GetForward"),
+    (0x0798, HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_VA, "HGUtils.PackNormalOctRectEncode"),
+    (0x083C, VISIBLE_LIGHT_GET_POSITION_VA, "VisibleLightExtensionMethods.GetPosition"),
+)
+
 NATIVE_CALLS = {
     0x064C: (GET_LIGHT_FALLOFF_VA, "LightExtensions.GetLightFalloff"),
     0x066B: (0x183A1D9B0, "UnityEngine.Color.op_Implicit"),
@@ -893,6 +906,40 @@ def validate_point_shadow_face_pack_native(body: bytes) -> dict[str, Any]:
     }
 
 
+def validate_point_record_transform_native(body: bytes) -> dict[str, Any]:
+    """Pin native world-position and octahedral-forward producer calls."""
+
+    calls = []
+    for call_offset, target, method in POINT_RECORD_TRANSFORM_CALLS:
+        require(
+            f"point_record_transform_{method.rsplit('.', 1)[-1]}_target",
+            call_target(body, call_offset),
+            target,
+            GAME_ASSEMBLY,
+        )
+        calls.append(
+            {
+                "instructionOffset": f"0x{call_offset:04X}",
+                "target": f"0x{target:X}",
+                "method": method,
+            }
+        )
+    return {
+        "calls": calls,
+        "record1XYZ": {
+            "producer": "VisibleLightExtensionMethods.GetPosition(VisibleLight)",
+            "nativeSpace": "world-space",
+            "deferredConsumerSpace": "camera-relative via worldPosition - cameraPosition",
+            "targetFrameValues": "capture-only",
+        },
+        "record2XY": {
+            "producer": "HGUtils.PackNormalOctRectEncode(VisibleLightExtensionMethods.GetForward(VisibleLight))",
+            "encoding": "octahedral rectangle",
+            "targetFrameValues": "capture-only",
+        },
+    }
+
+
 def validate_static_record_terms_native(
     body: bytes,
     range_getter_body: bytes,
@@ -1052,6 +1099,7 @@ def validate_native_body(body: bytes) -> dict[str, Any]:
         "recordWrites": validate_record_writes(body),
         "record0Discriminator": validate_record0_discriminator_native(body),
         "pointShadowFacePack": validate_point_shadow_face_pack_native(body),
+        "pointRecordTransform": validate_point_record_transform_native(body),
         "resolvedCalls": calls,
     }
 
@@ -2071,6 +2119,16 @@ def build_audit() -> dict[str, Any]:
         GAME_ASSEMBLY,
     )
     require(
+        "point_record_transform_call_order",
+        [row["method"] for row in native["pointRecordTransform"]["calls"]],
+        [
+            "VisibleLightExtensionMethods.GetForward",
+            "HGUtils.PackNormalOctRectEncode",
+            "VisibleLightExtensionMethods.GetPosition",
+        ],
+        GAME_ASSEMBLY,
+    )
+    require(
         "selected_room_point_length_counts",
         point_length_counts,
         Counter({-1.0: 6, 18.0: 4}),
@@ -2095,8 +2153,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v7",
-        "status": "room_record0_record1w_record2z_obb_and_point_shadow_pack_contract_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v8",
+        "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -2158,6 +2216,7 @@ def build_audit() -> dict[str, Any]:
                 "record2WExactCandidateCount": record2_w_closed_count,
                 "record2WContractExactCandidateCount": record2_w_contract_closed_count,
                 "pointShadowFacePack": native["pointShadowFacePack"],
+                "pointRecordTransform": native["pointRecordTransform"],
                 "closedLanes": [
                     "record2.z for all rows",
                     "record2.w for the Spot row",
@@ -2219,17 +2278,18 @@ def build_audit() -> dict[str, Any]:
                 "the pinned original scalar-cosine body and exact half-angle scaling close record2.z and record2.w for the one Spot row",
                 "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
                 "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
+                "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
             ],
             "open": [
-                "camera-relative record1.xyz position and record2.xy direction values at the target frame",
+                "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and bounded OBB transform candidates. Do not publish "
+                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and bounded OBB transform candidates. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
-                "bits, record1.xyz/record2.xy target-frame transforms, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
+                "bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
             ),
         },
     }
@@ -2247,8 +2307,9 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
-        "all 11 record0 float4 values, record1.w/record2.z static terms, the Spot record2.w, "
-        "Point face-index packing contract, additional-light components, and bounded OBB half candidates closed."
+        "all 11 record0 float4 values, record1/record2 transform producer contract, "
+        "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing contract, "
+        "additional-light components, and bounded OBB half candidates closed."
     )
     return 0
 

@@ -131,6 +131,35 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_point_shadow_face_pack_native(bytes(body))
 
+    def test_native_point_record_transform_contract(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = stream.read(AUDIT.PREPARE_CPU_DATA_SIZE)
+        result = AUDIT.validate_point_record_transform_native(body)
+        self.assertEqual(
+            [row["method"] for row in result["calls"]],
+            [
+                "VisibleLightExtensionMethods.GetForward",
+                "HGUtils.PackNormalOctRectEncode",
+                "VisibleLightExtensionMethods.GetPosition",
+            ],
+        )
+        self.assertEqual(result["record1XYZ"]["nativeSpace"], "world-space")
+        self.assertIn("cameraPosition", result["record1XYZ"]["deferredConsumerSpace"])
+        self.assertEqual(result["record2XY"]["encoding"], "octahedral rectangle")
+
+    def test_changed_point_record_transform_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+        body[0x0798 + 1] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=point_record_transform_PackNormalOctRectEncode_target; "
+            r"source=.*GameAssembly.dll; expected=.*actual=",
+        ):
+            AUDIT.validate_point_record_transform_native(bytes(body))
+
     def test_changed_record0_discriminator_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
