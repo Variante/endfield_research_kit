@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v20",
-  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_input_trs_inverse_contract_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v21",
+  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_input_native_sincos_trs_inverse_contract_closed_runtime_ifix_order_open",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
@@ -1997,7 +1997,80 @@
         }
       ],
       "order": "native body receives radians, multiplies each component by 0.5f, then dispatches sin/cos pairs; enum/order result remains runtime-capture dependent",
-      "runtimeBoundary": "managed wrapper's IFix Internal_FromEulerRad_Injected slot is not inferred from static bytes"
+      "runtimeBoundary": "managed wrapper's IFix Internal_FromEulerRad_Injected slot and the runtime Euler order/output selection are not inferred from static bytes",
+      "candidateExecution": {
+        "mode": "mapped_unityplayer_wrapper_dont_resolve_dll_references",
+        "wrapperVirtualAddress": "0x1800A5010",
+        "rowCount": 11,
+        "quaternionBitsByLightPathId": {
+          "3145527971969281504": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "6723905289426087392": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "-7516039918534742560": [
+            "0x00000000",
+            "0x3C7084C0",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "-6003850056218071584": [
+            "0x00000000",
+            "0x3C7084EB",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "-4966856337038791200": [
+            "0x00000000",
+            "0x3C7084B1",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "4336752956264328672": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "-2247457476464562720": [
+            "0x00000000",
+            "0x3C7084EB",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "1177420952804240864": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "7037844248082165216": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "7142192322960010720": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "7763697698425908704": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ]
+        }
+      }
     },
     "obbHalfPacking": {
       "packTwoHalfValuesAsFloat": {
@@ -3601,6 +3674,79 @@
         }
       ],
       "nativeInverseSignedZeroCandidateBits": true,
+      "nativeEulerCandidateExecution": {
+        "mode": "mapped_unityplayer_wrapper_dont_resolve_dll_references",
+        "wrapperVirtualAddress": "0x1800A5010",
+        "rowCount": 11,
+        "quaternionBitsByLightPathId": {
+          "3145527971969281504": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "6723905289426087392": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "-7516039918534742560": [
+            "0x00000000",
+            "0x3C7084C0",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "-6003850056218071584": [
+            "0x00000000",
+            "0x3C7084EB",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "-4966856337038791200": [
+            "0x00000000",
+            "0x3C7084B1",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "4336752956264328672": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "-2247457476464562720": [
+            "0x00000000",
+            "0x3C7084EB",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
+          "1177420952804240864": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "7037844248082165216": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "7142192322960010720": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
+          "7763697698425908704": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ]
+        }
+      },
       "retailSignedZeroBitsCaptured": false,
       "maximumAuthoredCornerBoundaryError": 0.002610735595226288
     },
@@ -3777,6 +3923,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x00000000",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.15325927734375,
@@ -3864,7 +4022,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x4230EDC5",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -4017,6 +4175,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x00000000",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.2614278197288513,
@@ -4102,7 +4272,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x40E5C57A",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -4255,6 +4425,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x3CF086F6",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x3C7084C0",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.9002581834793091,
@@ -4338,7 +4520,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x41DF8CD4",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -4491,6 +4673,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x3CF08721",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x3C7084EB",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.9002581834793091,
@@ -4574,7 +4768,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x41DF8CD4",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -4727,6 +4921,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x3CF086E7",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x3C7084B1",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.9002583622932434,
@@ -4810,7 +5016,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x4207F8B1",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -4963,6 +5169,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x00000000",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.45199549198150635,
@@ -5048,7 +5266,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x40B5657F",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -5201,6 +5419,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x3CF08721",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x3C7084EB",
+            "0x00000000",
+            "0x3F7FF8F0"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.9002580642700195,
@@ -5284,7 +5514,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x41F1F6C3",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -5437,6 +5667,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x00000000",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.4606274962425232,
@@ -5522,7 +5764,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x40B1FF46",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -5675,6 +5917,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x00000000",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.14704130589962006,
@@ -5760,7 +6014,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x42E73334",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -5913,6 +6167,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x00000000",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.1260949969291687,
@@ -5998,7 +6264,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x42BAE203",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       },
       {
@@ -6151,6 +6417,18 @@
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
+          "quaternionEulerCandidateMode": "mapped_unityplayer_wrapper",
+          "quaternionEulerInputRadiansBits": [
+            "0x80000000",
+            "0x00000000",
+            "0x00000000"
+          ],
+          "quaternionEulerCandidateBits": [
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x3F800000"
+          ],
           "inverseRowsFloat32Model": [
             [
               0.09685228765010834,
@@ -6236,7 +6514,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x4337DF90",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; native sin/cos output, runtime IFix order, and retail capture remain separate boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic, and the managed Euler wrapper now closes the float32 degree-to-radian/half-angle input; the mapped UnityPlayer wrapper supplies bit-exact native sin/cos output for this binary, while runtime IFix order and retail capture remain separate boundaries"
         }
       }
     ]
@@ -6256,6 +6534,7 @@
       "the UnityPlayer icall-table entry 2471 (Matrix4x4::Inverse3DAffine_Injected), its 0x1800A2020 stub, and hash-pinned 0x180569BD0 scalar affine-inverse body",
       "the UnityPlayer icall-table entry 2470 (Matrix4x4::TRS_Injected), its hash-pinned 0x1800A1BB0 wrapper, 0x18056CB40 scale/translation body, and 0x18056B8A0 quaternion-to-column-major-matrix helper",
       "the managed Quaternion.Euler wrapper/helper, degree-to-radian constant 0x3C8EFA35, UnityPlayer icall 2489 (Internal_FromEulerRad_Injected), its 0x1800A5010 wrapper, hash-pinned 0x180567590 half-angle body, and all six native sin/cos call targets",
+      "the mapped UnityPlayer 0x1800A5010 wrapper execution for all eleven authored Euler inputs, producing bit-exact installed native quaternion candidates without running DllMain",
       "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
       "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; the managed Euler degree-to-radian and native half-angle input arithmetic is source-closed",
       "six-word native-inverse OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
@@ -6284,11 +6563,11 @@
       "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
       "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
       "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
-      "native sin/cos result payloads, runtime IFix Euler-order/output selection, and retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
+      "runtime IFix Euler-order/output selection and retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
       "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
       "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB Euler-input/TRS/inverse arithmetic up to the runtime sin/cos/IFix boundary. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB Euler-input/native-sincos/TRS/inverse arithmetic up to the runtime IFix order/output boundary. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
   }
 }

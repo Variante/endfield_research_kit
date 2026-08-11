@@ -680,6 +680,16 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             [0x00000000, 0x3FC90FDB, 0xBF490FDB],
         )
 
+    def test_mapped_unityplayer_quaternion_euler_wrapper_candidate(self) -> None:
+        with AUDIT.UnityPlayerQuaternionEulerExecutor() as executor:
+            quaternion = executor(
+                [0.0, AUDIT.float32_from_bits(0x3F490FDB), 0.0]
+            )
+        self.assertEqual(
+            [AUDIT.float32_bits(value) for value in quaternion],
+            [0x00000000, 0x3EC3EF16, 0x00000000, 0x3F6C835E],
+        )
+
     def test_native_disabled_distance_falloff_is_one(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.GET_LIGHT_FALLOFF_FILE_OFFSET)
