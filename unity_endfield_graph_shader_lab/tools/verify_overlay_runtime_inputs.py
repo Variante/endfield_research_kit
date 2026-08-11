@@ -21,9 +21,25 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ASSET_ROOT = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab"
 
-GAME_ROOT = Path(
+_CONFIGURED_GAME_ROOT = Path(
     os.environ.get("ENDFIELD_GAME_ROOT", r"D:\Program Files\Endfield Game")
 )
+
+
+def resolve_game_root(configured: Path) -> Path:
+    """Accept either the install root or its ``Endfield_Data`` child."""
+
+    if (configured / "GameAssembly.dll").is_file():
+        return configured
+    if (
+        configured.name.casefold() == "endfield_data"
+        and (configured.parent / "GameAssembly.dll").is_file()
+    ):
+        return configured.parent
+    return configured
+
+
+GAME_ROOT = resolve_game_root(_CONFIGURED_GAME_ROOT)
 GAME_ASSEMBLY = GAME_ROOT / "GameAssembly.dll"
 GLOBAL_METADATA = (
     GAME_ROOT
