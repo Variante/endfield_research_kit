@@ -61,6 +61,14 @@ PREPARE_CPU_DATA_SIZE = 0x1838
 PUNCTUAL_SHADOW_CACHE_INDEX_VA = 0x189B486D4
 PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET = 0x9B46CD4
 PUNCTUAL_SHADOW_CACHE_INDEX_SIZE = 0x134
+GET_SHADOW_RENDER_TYPE_VA = 0x189B48808
+GET_SHADOW_RENDER_TYPE_FILE_OFFSET = 0x9B46E08
+GET_SHADOW_RENDER_TYPE_SIZE = 0x104
+GET_SHADOW_RENDER_TYPE_PATCH_ID = 0x886
+WRAPPERS_MANAGER_IS_PATCHED_VA = 0x1831068E0
+WRAPPERS_MANAGER_GET_PATCH_VA = 0x189CDC2C0
+ILFIX_DYNAMIC_METHOD_WRAPPER_874_VA = 0x189CD140C
+FAIL_FAST_VA = 0x1800D8260
 GET_LIGHT_NPR_DATA_VA = 0x1832025A0
 GET_LIGHT_NPR_DATA_FILE_OFFSET = 0x3200BA0
 GET_LIGHT_NPR_DATA_SIZE = 0x100
@@ -168,6 +176,7 @@ EXPECTED_HASHES = {
     "gachaCullViewAudit": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4",
     "rotatehouse": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4",
     "prepareCpuDataBody": "c55bd6dc86c971123c433a5dd29b446b557f8713f73b132da25c257369e9bd0b",
+    "getShadowRenderTypeBody": "bfb6730d6907e208480291489117015ee10293e8489a3735b868ab0fde517233",
     "getLightNprDataBody": "49eeca70b72791b2ad58f8b77cf3fbc3f27149766dcc0510a00b9d129e6698c8",
     "getLightAdditionalDataBody": "071061feb7f3c76044273efe703f9bdf78288703516b863c10c592b263f73e00",
     "packTwoHalfBody": "dad4b266316d3ba37f5c20fd92f2db90da363f7b65b3467bf313342c1a8814ce",
@@ -528,6 +537,36 @@ def call_target(body: bytes, offset: int) -> int:
 
 def cache_index_call_target(body: bytes, offset: int) -> int:
     return relative_call_target(body, PUNCTUAL_SHADOW_CACHE_INDEX_VA, offset)
+
+
+def shadow_render_type_call_target(body: bytes, offset: int) -> int:
+    return relative_call_target(body, GET_SHADOW_RENDER_TYPE_VA, offset)
+
+
+def relative_short_branch_target(
+    body: bytes,
+    base_va: int,
+    offset: int,
+    opcode: int,
+    source: Path,
+    check: str,
+) -> int:
+    require(f"{check}_opcode", body[offset], opcode, source)
+    displacement = struct.unpack_from("<b", body, offset + 1)[0]
+    return base_va + offset + 2 + displacement
+
+
+def relative_near_branch_target(
+    body: bytes,
+    base_va: int,
+    offset: int,
+    opcode: bytes,
+    source: Path,
+    check: str,
+) -> int:
+    require(f"{check}_opcode", body[offset : offset + len(opcode)], opcode, source)
+    displacement = struct.unpack_from("<i", body, offset + len(opcode))[0]
+    return base_va + offset + len(opcode) + 4 + displacement
 
 
 def relative_branch_target(
@@ -1367,6 +1406,145 @@ def validate_shadow_caster_property_getters(
         "fields": result,
         "propertyMasksClosed": True,
         "runtimeCacheValuesStillOpen": True,
+    }
+
+
+def validate_shadow_render_type_native(body: bytes) -> dict[str, Any]:
+    """Pin GetShadowRenderType's native patch gate and default branches.
+
+    Method 0x886 first asks WrappersManagerImpl.IsPatched.  When that gate is
+    clear, the static request is a native branch (static=true, dynamic=false)
+    and the dynamic request follows the three HGSharedLightData caster bits.
+    When the gate is set, the method obtains patch 0x886 and delegates to the
+    generated ILFix wrapper; that runtime table entry and its returned flags
+    are intentionally not inferred from serialized light data.
+    """
+
+    require("shadow_render_type_size", len(body), GET_SHADOW_RENDER_TYPE_SIZE, GAME_ASSEMBLY)
+    body_hash = hashlib.sha256(body).hexdigest()
+    require(
+        "shadow_render_type_body_sha256",
+        body_hash,
+        EXPECTED_HASHES["getShadowRenderTypeBody"],
+        GAME_ASSEMBLY,
+    )
+    require(
+        "shadow_render_type_patch_id_sequence",
+        body[0x19:0x1E],
+        bytes.fromhex("b986080000"),
+        GAME_ASSEMBLY,
+    )
+    call_offsets = {
+        0x24: (WRAPPERS_MANAGER_IS_PATCHED_VA, "WrappersManagerImpl.IsPatched"),
+        0x46: (HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_VA, "HGSharedLightData.get_isDynamicShadowCaster"),
+        0x56: (HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_VA, "HGSharedLightData.get_castStaticObjects"),
+        0x6A: (HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_VA, "HGSharedLightData.get_castStaticObjects"),
+        0x7A: (HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_VA, "HGSharedLightData.get_castDynamicObjects"),
+        0x8A: (HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_VA, "HGSharedLightData.get_castStaticObjects"),
+        0x9A: (HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_VA, "HGSharedLightData.get_castDynamicObjects"),
+        0xBA: (WRAPPERS_MANAGER_GET_PATCH_VA, "WrappersManagerImpl.GetPatch"),
+        0xC7: (FAIL_FAST_VA, "fail-fast"),
+        0xED: (ILFIX_DYNAMIC_METHOD_WRAPPER_874_VA, "ILFixDynamicMethodWrapper.__Gen_Wrap_874"),
+    }
+    calls = []
+    for offset, (target, name) in call_offsets.items():
+        actual = shadow_render_type_call_target(body, offset)
+        require(f"shadow_render_type_call_{offset:02x}_target", actual, target, GAME_ASSEMBLY)
+        calls.append({"offset": f"0x{offset:02X}", "target": f"0x{target:X}", "method": name})
+
+    short_branches = {
+        0x3D: (0x74, 0xAB, "static_request_default"),
+        0x54: (0x75, 0x6A, "dynamic_static_bit_true"),
+        0x5D: (0x74, 0xA3, "dynamic_static_bit_false"),
+        0x71: (0x74, 0x83, "dynamic_static_fallback"),
+        0x81: (0x74, 0xAB, "dynamic_dynamic_bit_false"),
+        0x91: (0x75, 0x5F, "dynamic_static_only_return"),
+        0xA1: (0x74, 0x5F, "dynamic_dynamic_only_return"),
+        0xA9: (0xEB, 0xF2, "dynamic_only_return"),
+        0xB1: (0xEB, 0xF2, "static_only_return"),
+        0xC5: (0x75, 0xCD, "patched_wrapper_call"),
+    }
+    branch_rows = []
+    for offset, (opcode, target_offset, name) in short_branches.items():
+        target = relative_short_branch_target(
+            body, GET_SHADOW_RENDER_TYPE_VA, offset, opcode, GAME_ASSEMBLY,
+            f"shadow_render_type_{name}",
+        )
+        expected_target = GET_SHADOW_RENDER_TYPE_VA + target_offset
+        require(
+            f"shadow_render_type_{name}_target",
+            target,
+            expected_target,
+            GAME_ASSEMBLY,
+        )
+        branch_rows.append(
+            {
+                "offset": f"0x{offset:02X}",
+                "target": f"0x{target:X}",
+                "name": name,
+            }
+        )
+    near_branches = {
+        0x2B: (bytes.fromhex("0f85"), 0xB3, "patched_gate"),
+        0x65: (bytes.fromhex("e9"), 0xF2, "dynamic_both_true_return"),
+    }
+    for offset, (opcode, target_offset, name) in near_branches.items():
+        target = relative_near_branch_target(
+            body, GET_SHADOW_RENDER_TYPE_VA, offset, opcode, GAME_ASSEMBLY,
+            f"shadow_render_type_{name}",
+        )
+        expected_target = GET_SHADOW_RENDER_TYPE_VA + target_offset
+        require(
+            f"shadow_render_type_{name}_target",
+            target,
+            expected_target,
+            GAME_ASSEMBLY,
+        )
+        branch_rows.append(
+            {
+                "offset": f"0x{offset:02X}",
+                "target": f"0x{target:X}",
+                "name": name,
+            }
+        )
+
+    return {
+        "method": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2.GetShadowRenderType",
+        "methodIndex": 285595,
+        "virtualAddress": f"0x{GET_SHADOW_RENDER_TYPE_VA:X}",
+        "fileOffset": f"0x{GET_SHADOW_RENDER_TYPE_FILE_OFFSET:X}",
+        "sizeBytes": GET_SHADOW_RENDER_TYPE_SIZE,
+        "bodySha256": body_hash,
+        "patchMethodId": f"0x{GET_SHADOW_RENDER_TYPE_PATCH_ID:X}",
+        "resolvedCalls": calls,
+        "resolvedBranches": branch_rows,
+        "nativeDefault": {
+            "staticRequest": {
+                "condition": "IsPatched(0x886) == false and isDynamicRequest == false",
+                "castStaticObjects": True,
+                "castDynamicObjects": False,
+                "branchTarget": f"0x{GET_SHADOW_RENDER_TYPE_VA + 0xAB:X}",
+            },
+            "dynamicRequest": {
+                "condition": "IsPatched(0x886) == false and isDynamicRequest == true",
+                "inputs": [
+                    "HGSharedLightData.get_isDynamicShadowCaster (mask 0x01)",
+                    "HGSharedLightData.get_castStaticObjects (mask 0x02)",
+                    "HGSharedLightData.get_castDynamicObjects (mask 0x04)",
+                ],
+                "branchLogicClosed": True,
+            },
+        },
+        "runtimePatchedPath": {
+            "condition": "IsPatched(0x886) == true",
+            "patchLookup": f"0x{WRAPPERS_MANAGER_GET_PATCH_VA:X}",
+            "wrapper": f"0x{ILFIX_DYNAMIC_METHOD_WRAPPER_874_VA:X}",
+            "missingPatchFailFast": f"0x{FAIL_FAST_VA:X}",
+            "runtimeWrapperTableEntryStillOpen": True,
+            "returnedFlagsStillOpen": True,
+        },
+        "nativeDefaultStaticResultClosed": True,
+        "runtimePatchedResultStillOpen": True,
     }
 
 
@@ -2601,6 +2779,8 @@ def build_audit() -> dict[str, Any]:
         body = stream.read(PREPARE_CPU_DATA_SIZE)
         stream.seek(PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
         point_shadow_cache_index_body = stream.read(PUNCTUAL_SHADOW_CACHE_INDEX_SIZE)
+        stream.seek(GET_SHADOW_RENDER_TYPE_FILE_OFFSET)
+        shadow_render_type_body = stream.read(GET_SHADOW_RENDER_TYPE_SIZE)
         stream.seek(HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_FILE_OFFSET)
         is_dynamic_shadow_caster_body = stream.read(
             HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_SIZE
@@ -2664,6 +2844,9 @@ def build_audit() -> dict[str, Any]:
     native = validate_native_body(body)
     native["pointShadowCacheIndex"] = validate_point_shadow_cache_index_native(
         point_shadow_cache_index_body
+    )
+    native["shadowRenderType"] = validate_shadow_render_type_native(
+        shadow_render_type_body
     )
     native["shadowCasterPropertyGetters"] = validate_shadow_caster_property_getters(
         is_dynamic_shadow_caster_body,
@@ -2779,8 +2962,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v13",
-        "status": "room_record0_record1w_record2z_transform_and_point_shadow_cache_resolver_contract_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v14",
+        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_and_shadow_render_type_gate_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -2846,6 +3029,7 @@ def build_audit() -> dict[str, Any]:
                 "record2WContractExactCandidateCount": record2_w_contract_closed_count,
                 "pointShadowFacePack": native["pointShadowFacePack"],
                 "pointShadowCacheIndex": native["pointShadowCacheIndex"],
+                "shadowRenderType": native["shadowRenderType"],
                 "shadowCasterPropertyGetters": native["shadowCasterPropertyGetters"],
                 "pointRecordTransform": native["pointRecordTransform"],
                 "closedLanes": [
@@ -2911,6 +3095,8 @@ def build_audit() -> dict[str, Any]:
                 "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
                 "GetShadowCacheIndexForCaster is source-closed: dynamic matches return ordinal + 40, static matches return shadowCacheSlotIndex, unmatched casters return -1, and null manager/list state fail-fast",
                 "the native HGSharedLightData caster-property getters are hash-pinned masks 0x01/0x02/0x04; all selected room rows serialize m_CasterProperties=6, point-shadow faces=-1, and LightShadowCasterMode=0",
+                "GetShadowRenderType method 0x886 is hash-pinned: IsPatched gates a native default path whose static request returns castStatic=true/castDynamic=false and whose dynamic path consumes the three caster-property getters",
+                "the patched GetShadowRenderType path is explicitly bounded to WrappersManagerImpl.GetPatch(0x886) and ILFixDynamicMethodWrapper.__Gen_Wrap_874, with missing-patch fail-fast; no runtime wrapper result is inferred",
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
                 "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
                 "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -2921,7 +3107,8 @@ def build_audit() -> dict[str, Any]:
                 "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
-                "GetShadowRenderType's static-request IFix branch and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
+                "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
+                "the runtime IsPatched(0x886) wrapper-table membership and any patched GetShadowRenderType return flags remain capture/runtime-boundary evidence",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (

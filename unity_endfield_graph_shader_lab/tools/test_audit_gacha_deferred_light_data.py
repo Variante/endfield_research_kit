@@ -177,6 +177,36 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
                 is_dynamic, cast_static, bytes(cast_dynamic)
             )
 
+    def test_native_shadow_render_type_patch_gate(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_SHADOW_RENDER_TYPE_FILE_OFFSET)
+            body = stream.read(AUDIT.GET_SHADOW_RENDER_TYPE_SIZE)
+        result = AUDIT.validate_shadow_render_type_native(body)
+        self.assertEqual(result["patchMethodId"], "0x886")
+        self.assertTrue(result["nativeDefaultStaticResultClosed"])
+        self.assertEqual(
+            result["nativeDefault"]["staticRequest"]["castStaticObjects"], True
+        )
+        self.assertEqual(
+            result["nativeDefault"]["staticRequest"]["castDynamicObjects"], False
+        )
+        self.assertTrue(result["runtimePatchedPath"]["runtimeWrapperTableEntryStillOpen"])
+        self.assertEqual(
+            result["runtimePatchedPath"]["wrapper"],
+            f"0x{AUDIT.ILFIX_DYNAMIC_METHOD_WRAPPER_874_VA:X}",
+        )
+
+    def test_changed_shadow_render_type_branch_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_SHADOW_RENDER_TYPE_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.GET_SHADOW_RENDER_TYPE_SIZE))
+        body[0x3D] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=shadow_render_type_body_sha256; source=.*GameAssembly.dll; ",
+        ):
+            AUDIT.validate_shadow_render_type_native(bytes(body))
+
     def test_changed_point_shadow_cache_index_unmatched_return_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)

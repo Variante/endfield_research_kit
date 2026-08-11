@@ -513,7 +513,12 @@ NPC archetypes are imported as labeled source kits.
   serialize `m_CasterProperties=6`, `m_PointLightShadowCasterFaces=-1`, and
   `LightShadowCasterMode=0`. Because those caster bits are enabled, serialized
   `shadowType=0` is not evidence that the runtime resolver must return `-1`;
-  the static-request `GetShadowRenderType` IFix branch and live caster-list
+  the hash-pinned `GetShadowRenderType` body (method `0x886`) now closes the
+  exact gate: `WrappersManagerImpl.IsPatched(0x886)` selects either the native
+  path or `GetPatch(0x886) -> __Gen_Wrap_874`. When unpatched, a static request
+  directly returns `castStaticObjects=true, castDynamicObjects=false`, while a
+  dynamic request follows the three pinned caster-property getters. Runtime
+  wrapper-table membership, patched return flags, and live caster-list
   membership remain capture/runtime-bound. The same native body now pins the
   transform producer order:
   `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
