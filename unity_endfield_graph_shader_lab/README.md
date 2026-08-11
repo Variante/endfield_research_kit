@@ -1538,8 +1538,10 @@ reject truncated rows deterministically. It now
 accepts a detached, build-pinned JSON artifact through
 `python tools/decode_light_cull_capture.py capture.json --output decoded.json`;
 the decoder validates the pointer/null rule, count cap, exact raw-row length,
-and the converter-written zero at `VisibleLight+0x84` without attaching to the
-retail process.
+the converter-written zero at `VisibleLight+0x84`, and decodes the source-closed
+`finalColor`, `specularIntensity`, and `localToWorldMatrix` fields without
+attaching to the retail process. Converter-unwritten fields such as ScreenRect
+are intentionally not inferred.
 It now
 also pins internal call 3304 from the 16-argument `AddCullViewByMatrix` binding
 through six-plane extraction and the scheduled view constructor. The physical

@@ -69,6 +69,15 @@ def _finite_float(value: float, path: str) -> float:
     return value
 
 
+def _finite_floats(
+    row: bytes, offset: int, count: int, path: str
+) -> tuple[float, ...]:
+    return tuple(
+        _finite_float(value, path)
+        for value in struct.unpack_from(f"<{count}f", row, offset)
+    )
+
+
 def decode_capture(document: Mapping[str, Any]) -> dict[str, Any]:
     """Validate and decode one detached LightCullResult JSON document."""
 
@@ -133,6 +142,19 @@ def decode_capture(document: Mapping[str, Any]) -> dict[str, Any]:
     for index in range(count):
         row = raw[index * ROW_STRIDE_BYTES : (index + 1) * ROW_STRIDE_BYTES]
         light_type = struct.unpack_from("<I", row, 0x00)[0]
+        final_color = _finite_floats(
+            row, 0x04, 4, f"capture.result.rows[{index}].finalColor"
+        )
+        local_to_world_matrix = _finite_floats(
+            row,
+            0x24,
+            16,
+            f"capture.result.rows[{index}].localToWorldMatrix",
+        )
+        specular_intensity = _finite_float(
+            struct.unpack_from("<f", row, 0x64)[0],
+            f"capture.result.rows[{index}].specularIntensity",
+        )
         light_range = _finite_float(
             struct.unpack_from("<f", row, 0x68)[0],
             f"capture.result.rows[{index}].range",
@@ -156,6 +178,9 @@ def decode_capture(document: Mapping[str, Any]) -> dict[str, Any]:
             {
                 "index": index,
                 "lightType": light_type,
+                "finalColor": list(final_color),
+                "localToWorldMatrix": list(local_to_world_matrix),
+                "specularIntensity": specular_intensity,
                 "priority": priority,
                 "range": light_range,
                 "spotAngle": spot_angle,

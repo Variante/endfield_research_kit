@@ -437,9 +437,11 @@ NPC archetypes are imported as labeled source kits.
   only after checking the exact build hashes, 0..256 count, pointer/null rule,
   exact `count * 148` raw-row length, and converter-written zero at
   `VisibleLight+0x84`; it decodes the source-closed type, priority, range,
-  spot angle, and position fields without attaching to the retail process. It
-  is an intake/validation tool, not a substitute for the still-missing
-  authorized target-frame capture.
+  spot angle, position, finalColor, specularIntensity, and localToWorldMatrix
+  fields without attaching to the retail process. Converter-unwritten
+  ScreenRect/ScreenSpaceArea fields remain deliberately unclaimed. It is an
+  intake/validation tool, not a substitute for the still-missing authorized
+  target-frame capture.
   A direct census of the
   installed `UnityPlayer.dll` native strings/RTTI (with the matching
   `GameAssembly.dll` build) adds no unambiguous name for component 67:

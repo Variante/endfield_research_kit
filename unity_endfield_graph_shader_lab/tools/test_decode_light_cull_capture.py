@@ -10,6 +10,16 @@ def _fixture(*, count: int = 1, pointer: int = 0x12345000) -> dict:
     for index in range(count):
         offset = index * decoder.ROW_STRIDE_BYTES
         struct.pack_into("<I", rows, offset + 0x00, index % 3)
+        struct.pack_into(
+            "<4f", rows, offset + 0x04, 0.1 + index, 0.2, 0.3, 1.0
+        )
+        struct.pack_into(
+            "<16f",
+            rows,
+            offset + 0x24,
+            *[float(value + index) for value in range(16)],
+        )
+        struct.pack_into("<f", rows, offset + 0x64, 0.5 + index)
         struct.pack_into("<f", rows, offset + 0x68, 10.0 + index)
         struct.pack_into("<f", rows, offset + 0x6C, 35.0 + index)
         struct.pack_into("<i", rows, offset + 0x70, -index)
@@ -38,6 +48,15 @@ class DecodeLightCullCaptureTests(unittest.TestCase):
         result = decoder.decode_capture(_fixture(count=2))
         self.assertEqual(result["result"]["rawBytes"], 296)
         self.assertEqual(result["rows"][1]["lightType"], 1)
+        for actual, expected in zip(
+            result["rows"][1]["finalColor"], [1.1, 0.2, 0.3, 1.0]
+        ):
+            self.assertAlmostEqual(actual, expected, places=6)
+        self.assertEqual(
+            result["rows"][1]["localToWorldMatrix"][8:12],
+            [9.0, 10.0, 11.0, 12.0],
+        )
+        self.assertEqual(result["rows"][1]["specularIntensity"], 1.5)
         self.assertEqual(result["rows"][1]["priority"], -1)
         self.assertEqual(result["rows"][1]["worldPosition"], [2.0, 2.0, 3.0])
         self.assertEqual(result["rows"][1]["rawIdentityWord0x84"], 0)
