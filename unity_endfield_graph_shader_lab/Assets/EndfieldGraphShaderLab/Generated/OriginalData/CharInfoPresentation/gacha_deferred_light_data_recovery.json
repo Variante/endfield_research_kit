@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v9",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v10",
   "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -8,7 +8,9 @@
     "globalGameManagersSha256": "191619377ff312b785aae10faec8a75e39caf1ba60016ad08eff040b8c54f20d",
     "selectedFragmentSha256": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
     "gachaPopulationSha256": "02e15c70197bcd96f804007fe042fcb46577c0014d956d78a28f2d96162e189a",
-    "roomHierarchySha256": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9"
+    "roomHierarchySha256": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9",
+    "gachaCullViewAuditSha256": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4",
+    "rotatehouseSha256": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4"
   },
   "originalGlobalLightingSettings": {
     "sourcePath": "Endfield_Data/globalgamemanagers",
@@ -305,6 +307,694 @@
           "input": "float3 direction",
           "output": "float2 octahedral rectangle encoding"
         }
+      },
+      "authoredRoomCandidates": {
+        "scope": "authored SceneLight6Rarity room hierarchy at pinned rotatehouse transform",
+        "sourceSpace": "world-space",
+        "positionProducerInput": "VisibleLight.LocalToWorldMatrix column 3",
+        "forwardProducerInput": "VisibleLight.LocalToWorldMatrix column 2",
+        "parentTransform": {
+          "position": [
+            -1.0099999904632568,
+            0.0,
+            9.069999694824219
+          ],
+          "rotation": [
+            0.0,
+            0.01817660592496395,
+            0.0,
+            0.9998348355293274
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "count": 12,
+        "rows": [
+          {
+            "name": "Spot Light (12)",
+            "lightPathId": 3145527971969281504,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#381_p2BA729065848ADE0.json",
+            "localPosition": {
+              "values": [
+                -0.5377212762832642,
+                6.436999797821045,
+                -13.828680992126465
+              ],
+              "bits": [
+                "0xBF09A81A",
+                "0x40CDFBE7",
+                "0xC15D4247"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                0.012852895073592663,
+                0.7069900035858154,
+                -0.7069900035858154,
+                0.012852895073592663
+              ],
+              "bits": [
+                "0x3C5294F3",
+                "0x3F34FD4C",
+                "0xBF34FD4C",
+                "0x3C5294F3"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -2.049999952316284,
+                6.436999797821045,
+                -4.729998588562012
+              ],
+              "bits": [
+                "0xC0033333",
+                "0x40CDFBE7",
+                "0xC0975C26"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000001192092896,
+                -1.1920928955078125e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800001",
+                "0xB4000000"
+              ]
+            }
+          },
+          {
+            "name": "Spot Light (19)",
+            "lightPathId": 6723905289426087392,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#471_p5D501C3C679CADE0.json",
+            "localPosition": {
+              "values": [
+                -0.3140000104904175,
+                3.2049999237060547,
+                -16.365999221801758
+              ],
+              "bits": [
+                "0xBEA0C49C",
+                "0x404D1EB8",
+                "0xC182ED91"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.7066395878791809,
+                0.02570139616727829,
+                -0.02570139616727829,
+                -0.7066395878791809
+              ],
+              "bits": [
+                "0xBF34E655",
+                "0x3CD28BBC",
+                "0xBCD28BBC",
+                "0xBF34E655"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -1.9186508655548096,
+                3.2049999237060547,
+                -7.273771286010742
+              ],
+              "bits": [
+                "0xBFF5965A",
+                "0x404D1EB8",
+                "0xC0E8C2BC"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000003576278687,
+                -3.5762786865234375e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800003",
+                "0xB4C00000"
+              ]
+            }
+          },
+          {
+            "name": "Linear Light (12)",
+            "lightPathId": -7516039918534742560,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#40_p97B1A9840A14ADE0.json",
+            "localPosition": {
+              "values": [
+                5.829999923706055,
+                4.130000114440918,
+                -16.469999313354492
+              ],
+              "bits": [
+                "0x40BA8F5C",
+                "0x408428F6",
+                "0xC183C28F"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.0,
+                -0.003214555326849222,
+                -0.0,
+                0.9999948143959045
+              ],
+              "bits": [
+                "0x80000000",
+                "0xBB52AB4A",
+                "0x80000000",
+                "0x3F7FFFA9"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                4.2175092697143555,
+                4.130000114440918,
+                -7.601020812988281
+              ],
+              "bits": [
+                "0x4086F5D6",
+                "0x408428F6",
+                "0xC0F33B90"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.029921624809503555,
+                0.0,
+                0.9995522499084473
+              ],
+              "bits": [
+                "0x3CF51E32",
+                "0x00000000",
+                "0x3F7FE2A8"
+              ]
+            }
+          },
+          {
+            "name": "Linear Light (13)",
+            "lightPathId": -6003850056218071584,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#92_pACAE0A2F0269ADE0.json",
+            "localPosition": {
+              "values": [
+                -5.56788444519043,
+                4.130000114440918,
+                -16.383203506469727
+              ],
+              "bits": [
+                "0xC0B22C1C",
+                "0x408428F6",
+                "0xC18310CD"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.0,
+                -0.003214555326849222,
+                -0.0,
+                0.9999948143959045
+              ],
+              "bits": [
+                "0x80000000",
+                "0xBB52AB4A",
+                "0x80000000",
+                "0x3F7FFFA9"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -7.169689178466797,
+                4.130000114440918,
+                -7.100000381469727
+              ],
+              "bits": [
+                "0xC0E56E18",
+                "0x408428F6",
+                "0xC0E33334"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.029921624809503555,
+                0.0,
+                0.9995522499084473
+              ],
+              "bits": [
+                "0x3CF51E32",
+                "0x00000000",
+                "0x3F7FE2A8"
+              ]
+            }
+          },
+          {
+            "name": "Linear Light (14)",
+            "lightPathId": -4966856337038791200,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#133_pBB122E7A1C67ADE0.json",
+            "localPosition": {
+              "values": [
+                3.1983699798583984,
+                9.89799976348877,
+                -15.854223251342773
+              ],
+              "bits": [
+                "0x404CB218",
+                "0x411E5E35",
+                "0xC17DAAE6"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.0,
+                -0.003214555326849222,
+                -0.0,
+                0.9999948143959045
+              ],
+              "bits": [
+                "0x80000000",
+                "0xBB52AB4A",
+                "0x80000000",
+                "0x3F7FFFA9"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                1.6099998950958252,
+                9.89799976348877,
+                -6.8899993896484375
+              ],
+              "bits": [
+                "0x3FCE147A",
+                "0x411E5E35",
+                "0xC0DC7AE0"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.029921624809503555,
+                0.0,
+                0.9995522499084473
+              ],
+              "bits": [
+                "0x3CF51E32",
+                "0x00000000",
+                "0x3F7FE2A8"
+              ]
+            }
+          },
+          {
+            "name": "Spot Light (17)",
+            "lightPathId": 4336752956264328672,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#413_p3C2F3DD62CC2ADE0.json",
+            "localPosition": {
+              "values": [
+                3.5311596393585205,
+                3.4700000286102295,
+                -19.50153923034668
+              ],
+              "bits": [
+                "0x4061FE85",
+                "0x405E147B",
+                "0xC19C0327"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.7066395878791809,
+                0.02570139616727829,
+                -0.02570139616727829,
+                -0.7066395878791809
+              ],
+              "bits": [
+                "0xBF34E655",
+                "0x3CD28BBC",
+                "0xBCD28BBC",
+                "0xBF34E655"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                1.809999704360962,
+                3.4700000286102295,
+                -10.547000885009766
+              ],
+              "bits": [
+                "0x3FE7AE12",
+                "0x405E147B",
+                "0xC128C084"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000003576278687,
+                -3.5762786865234375e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800003",
+                "0xB4C00000"
+              ]
+            }
+          },
+          {
+            "name": "Linear Light (15)",
+            "lightPathId": -2247457476464562720,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#228_pE0CF6D552B88ADE0.json",
+            "localPosition": {
+              "values": [
+                -4.36466646194458,
+                9.779999732971191,
+                -15.90815544128418
+              ],
+              "bits": [
+                "0xC08BAB59",
+                "0x411C7AE1",
+                "0xC17E87CE"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.0,
+                -0.003214555326849222,
+                -0.0,
+                0.9999948143959045
+              ],
+              "bits": [
+                "0x80000000",
+                "0xBB52AB4A",
+                "0x80000000",
+                "0x3F7FFFA9"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -5.949999809265137,
+                9.779999732971191,
+                -6.669000625610352
+              ],
+              "bits": [
+                "0xC0BE6666",
+                "0x411C7AE1",
+                "0xC0D56874"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.029921624809503555,
+                0.0,
+                0.9995522499084473
+              ],
+              "bits": [
+                "0x3CF51E32",
+                "0x00000000",
+                "0x3F7FE2A8"
+              ]
+            }
+          },
+          {
+            "name": "Spot Light (18)",
+            "lightPathId": 1177420952804240864,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#324_p10570A1E4AFFADE0.json",
+            "localPosition": {
+              "values": [
+                -3.7510766983032227,
+                3.5,
+                -20.122638702392578
+              ],
+              "bits": [
+                "0xC07011A4",
+                "0x40600000",
+                "0xC1A0FB2A"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.7066395878791809,
+                0.02570139616727829,
+                -0.02570139616727829,
+                -0.7066395878791809
+              ],
+              "bits": [
+                "0xBF34E655",
+                "0x3CD28BBC",
+                "0xBCD28BBC",
+                "0xBF34E655"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -5.489999771118164,
+                3.5,
+                -10.90300178527832
+              ],
+              "bits": [
+                "0xC0AFAE14",
+                "0x40600000",
+                "0xC12E72B2"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000003576278687,
+                -3.5762786865234375e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800003",
+                "0xB4C00000"
+              ]
+            }
+          },
+          {
+            "name": "Spot Light (9)",
+            "lightPathId": 7037844248082165216,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#486_p61AB720E3776ADE0.json",
+            "localPosition": {
+              "values": [
+                -0.09690368175506592,
+                4.550000190734863,
+                -20.996397018432617
+              ],
+              "bits": [
+                "0xBDC67570",
+                "0x4091999A",
+                "0xC1A7F89F"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.7066395878791809,
+                0.02570139616727829,
+                -0.02570139616727829,
+                -0.7066395878791809
+              ],
+              "bits": [
+                "0xBF34E655",
+                "0x3CD28BBC",
+                "0xBCD28BBC",
+                "0xBF34E655"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -1.8700001239776611,
+                4.550000190734863,
+                -11.909000396728516
+              ],
+              "bits": [
+                "0xBFEF5C2A",
+                "0x4091999A",
+                "0xC13E8B44"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000003576278687,
+                -3.5762786865234375e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800003",
+                "0xB4C00000"
+              ]
+            }
+          },
+          {
+            "name": "Spot Light (20)",
+            "lightPathId": 4491921571221515744,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#418_p3E5682DEAB92ADE0.json",
+            "localPosition": {
+              "values": [
+                -0.13600000739097595,
+                11.890000343322754,
+                -21.31800079345703
+              ],
+              "bits": [
+                "0xBE0B4396",
+                "0x413E3D71",
+                "0xC1AA8B44"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.7066395878791809,
+                0.02570139616727829,
+                -0.02570139616727829,
+                -0.7066395878791809
+              ],
+              "bits": [
+                "0xBF34E655",
+                "0x3CD28BBC",
+                "0xBCD28BBC",
+                "0xBF34E655"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -1.920759916305542,
+                11.890000343322754,
+                -12.228971481323242
+              ],
+              "bits": [
+                "0xBFF5DB76",
+                "0x413E3D71",
+                "0xC143A9DE"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000003576278687,
+                -3.5762786865234375e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800003",
+                "0xB4C00000"
+              ]
+            }
+          },
+          {
+            "name": "Spot Light (11)",
+            "lightPathId": 7142192322960010720,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#489_p631E2A13A78DADE0.json",
+            "localPosition": {
+              "values": [
+                0.01275026798248291,
+                4.984000205993652,
+                -24.770906448364258
+              ],
+              "bits": [
+                "0x3C50E680",
+                "0x409F7CEE",
+                "0xC1C62AD1"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.7069900035858154,
+                0.012852839194238186,
+                -0.012852839194238186,
+                -0.7069900035858154
+              ],
+              "bits": [
+                "0xBF34FD4C",
+                "0x3C5294B7",
+                "0xBC5294B7",
+                "0xBF34FD4C"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -1.897611379623413,
+                4.984000205993652,
+                -15.685001373291016
+              ],
+              "bits": [
+                "0xBFF2E4EE",
+                "0x409F7CEE",
+                "0xC17AF5C4"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000001192092896,
+                -1.1920928955078125e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800001",
+                "0xB4000000"
+              ]
+            }
+          },
+          {
+            "name": "Spot Light (10)",
+            "lightPathId": 7763697698425908704,
+            "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#513_p6BBE31EC4231ADE0.json",
+            "localPosition": {
+              "values": [
+                0.010024189949035645,
+                11.729999542236328,
+                -24.695955276489258
+              ],
+              "bits": [
+                "0x3C243C80",
+                "0x413BAE14",
+                "0xC1C59151"
+              ]
+            },
+            "localRotation": {
+              "values": [
+                -0.7069900035858154,
+                0.012852839194238186,
+                -0.012852839194238186,
+                -0.7069900035858154
+              ],
+              "bits": [
+                "0xBF34FD4C",
+                "0x3C5294B7",
+                "0xBC5294B7",
+                "0xBF34FD4C"
+              ]
+            },
+            "worldPosition": {
+              "values": [
+                -1.897611379623413,
+                11.729999542236328,
+                -15.610000610351562
+              ],
+              "bits": [
+                "0xBFF2E4EE",
+                "0x413BAE14",
+                "0xC179C290"
+              ]
+            },
+            "worldForward": {
+              "values": [
+                0.0,
+                -1.0000001192092896,
+                -1.1920928955078125e-07
+              ],
+              "bits": [
+                "0x00000000",
+                "0xBF800001",
+                "0xB4000000"
+              ]
+            }
+          }
+        ],
+        "targetFrameValues": "capture-only; these are authored static candidates, not a retail LightCullResult capture"
       }
     },
     "resolvedCalls": [
@@ -856,6 +1546,694 @@
             "input": "float3 direction",
             "output": "float2 octahedral rectangle encoding"
           }
+        },
+        "authoredRoomCandidates": {
+          "scope": "authored SceneLight6Rarity room hierarchy at pinned rotatehouse transform",
+          "sourceSpace": "world-space",
+          "positionProducerInput": "VisibleLight.LocalToWorldMatrix column 3",
+          "forwardProducerInput": "VisibleLight.LocalToWorldMatrix column 2",
+          "parentTransform": {
+            "position": [
+              -1.0099999904632568,
+              0.0,
+              9.069999694824219
+            ],
+            "rotation": [
+              0.0,
+              0.01817660592496395,
+              0.0,
+              0.9998348355293274
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "count": 12,
+          "rows": [
+            {
+              "name": "Spot Light (12)",
+              "lightPathId": 3145527971969281504,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#381_p2BA729065848ADE0.json",
+              "localPosition": {
+                "values": [
+                  -0.5377212762832642,
+                  6.436999797821045,
+                  -13.828680992126465
+                ],
+                "bits": [
+                  "0xBF09A81A",
+                  "0x40CDFBE7",
+                  "0xC15D4247"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  0.012852895073592663,
+                  0.7069900035858154,
+                  -0.7069900035858154,
+                  0.012852895073592663
+                ],
+                "bits": [
+                  "0x3C5294F3",
+                  "0x3F34FD4C",
+                  "0xBF34FD4C",
+                  "0x3C5294F3"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -2.049999952316284,
+                  6.436999797821045,
+                  -4.729998588562012
+                ],
+                "bits": [
+                  "0xC0033333",
+                  "0x40CDFBE7",
+                  "0xC0975C26"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000001192092896,
+                  -1.1920928955078125e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800001",
+                  "0xB4000000"
+                ]
+              }
+            },
+            {
+              "name": "Spot Light (19)",
+              "lightPathId": 6723905289426087392,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#471_p5D501C3C679CADE0.json",
+              "localPosition": {
+                "values": [
+                  -0.3140000104904175,
+                  3.2049999237060547,
+                  -16.365999221801758
+                ],
+                "bits": [
+                  "0xBEA0C49C",
+                  "0x404D1EB8",
+                  "0xC182ED91"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.7066395878791809,
+                  0.02570139616727829,
+                  -0.02570139616727829,
+                  -0.7066395878791809
+                ],
+                "bits": [
+                  "0xBF34E655",
+                  "0x3CD28BBC",
+                  "0xBCD28BBC",
+                  "0xBF34E655"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -1.9186508655548096,
+                  3.2049999237060547,
+                  -7.273771286010742
+                ],
+                "bits": [
+                  "0xBFF5965A",
+                  "0x404D1EB8",
+                  "0xC0E8C2BC"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000003576278687,
+                  -3.5762786865234375e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800003",
+                  "0xB4C00000"
+                ]
+              }
+            },
+            {
+              "name": "Linear Light (12)",
+              "lightPathId": -7516039918534742560,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#40_p97B1A9840A14ADE0.json",
+              "localPosition": {
+                "values": [
+                  5.829999923706055,
+                  4.130000114440918,
+                  -16.469999313354492
+                ],
+                "bits": [
+                  "0x40BA8F5C",
+                  "0x408428F6",
+                  "0xC183C28F"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.0,
+                  -0.003214555326849222,
+                  -0.0,
+                  0.9999948143959045
+                ],
+                "bits": [
+                  "0x80000000",
+                  "0xBB52AB4A",
+                  "0x80000000",
+                  "0x3F7FFFA9"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  4.2175092697143555,
+                  4.130000114440918,
+                  -7.601020812988281
+                ],
+                "bits": [
+                  "0x4086F5D6",
+                  "0x408428F6",
+                  "0xC0F33B90"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.029921624809503555,
+                  0.0,
+                  0.9995522499084473
+                ],
+                "bits": [
+                  "0x3CF51E32",
+                  "0x00000000",
+                  "0x3F7FE2A8"
+                ]
+              }
+            },
+            {
+              "name": "Linear Light (13)",
+              "lightPathId": -6003850056218071584,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#92_pACAE0A2F0269ADE0.json",
+              "localPosition": {
+                "values": [
+                  -5.56788444519043,
+                  4.130000114440918,
+                  -16.383203506469727
+                ],
+                "bits": [
+                  "0xC0B22C1C",
+                  "0x408428F6",
+                  "0xC18310CD"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.0,
+                  -0.003214555326849222,
+                  -0.0,
+                  0.9999948143959045
+                ],
+                "bits": [
+                  "0x80000000",
+                  "0xBB52AB4A",
+                  "0x80000000",
+                  "0x3F7FFFA9"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -7.169689178466797,
+                  4.130000114440918,
+                  -7.100000381469727
+                ],
+                "bits": [
+                  "0xC0E56E18",
+                  "0x408428F6",
+                  "0xC0E33334"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.029921624809503555,
+                  0.0,
+                  0.9995522499084473
+                ],
+                "bits": [
+                  "0x3CF51E32",
+                  "0x00000000",
+                  "0x3F7FE2A8"
+                ]
+              }
+            },
+            {
+              "name": "Linear Light (14)",
+              "lightPathId": -4966856337038791200,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#133_pBB122E7A1C67ADE0.json",
+              "localPosition": {
+                "values": [
+                  3.1983699798583984,
+                  9.89799976348877,
+                  -15.854223251342773
+                ],
+                "bits": [
+                  "0x404CB218",
+                  "0x411E5E35",
+                  "0xC17DAAE6"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.0,
+                  -0.003214555326849222,
+                  -0.0,
+                  0.9999948143959045
+                ],
+                "bits": [
+                  "0x80000000",
+                  "0xBB52AB4A",
+                  "0x80000000",
+                  "0x3F7FFFA9"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  1.6099998950958252,
+                  9.89799976348877,
+                  -6.8899993896484375
+                ],
+                "bits": [
+                  "0x3FCE147A",
+                  "0x411E5E35",
+                  "0xC0DC7AE0"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.029921624809503555,
+                  0.0,
+                  0.9995522499084473
+                ],
+                "bits": [
+                  "0x3CF51E32",
+                  "0x00000000",
+                  "0x3F7FE2A8"
+                ]
+              }
+            },
+            {
+              "name": "Spot Light (17)",
+              "lightPathId": 4336752956264328672,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#413_p3C2F3DD62CC2ADE0.json",
+              "localPosition": {
+                "values": [
+                  3.5311596393585205,
+                  3.4700000286102295,
+                  -19.50153923034668
+                ],
+                "bits": [
+                  "0x4061FE85",
+                  "0x405E147B",
+                  "0xC19C0327"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.7066395878791809,
+                  0.02570139616727829,
+                  -0.02570139616727829,
+                  -0.7066395878791809
+                ],
+                "bits": [
+                  "0xBF34E655",
+                  "0x3CD28BBC",
+                  "0xBCD28BBC",
+                  "0xBF34E655"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  1.809999704360962,
+                  3.4700000286102295,
+                  -10.547000885009766
+                ],
+                "bits": [
+                  "0x3FE7AE12",
+                  "0x405E147B",
+                  "0xC128C084"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000003576278687,
+                  -3.5762786865234375e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800003",
+                  "0xB4C00000"
+                ]
+              }
+            },
+            {
+              "name": "Linear Light (15)",
+              "lightPathId": -2247457476464562720,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#228_pE0CF6D552B88ADE0.json",
+              "localPosition": {
+                "values": [
+                  -4.36466646194458,
+                  9.779999732971191,
+                  -15.90815544128418
+                ],
+                "bits": [
+                  "0xC08BAB59",
+                  "0x411C7AE1",
+                  "0xC17E87CE"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.0,
+                  -0.003214555326849222,
+                  -0.0,
+                  0.9999948143959045
+                ],
+                "bits": [
+                  "0x80000000",
+                  "0xBB52AB4A",
+                  "0x80000000",
+                  "0x3F7FFFA9"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -5.949999809265137,
+                  9.779999732971191,
+                  -6.669000625610352
+                ],
+                "bits": [
+                  "0xC0BE6666",
+                  "0x411C7AE1",
+                  "0xC0D56874"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.029921624809503555,
+                  0.0,
+                  0.9995522499084473
+                ],
+                "bits": [
+                  "0x3CF51E32",
+                  "0x00000000",
+                  "0x3F7FE2A8"
+                ]
+              }
+            },
+            {
+              "name": "Spot Light (18)",
+              "lightPathId": 1177420952804240864,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#324_p10570A1E4AFFADE0.json",
+              "localPosition": {
+                "values": [
+                  -3.7510766983032227,
+                  3.5,
+                  -20.122638702392578
+                ],
+                "bits": [
+                  "0xC07011A4",
+                  "0x40600000",
+                  "0xC1A0FB2A"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.7066395878791809,
+                  0.02570139616727829,
+                  -0.02570139616727829,
+                  -0.7066395878791809
+                ],
+                "bits": [
+                  "0xBF34E655",
+                  "0x3CD28BBC",
+                  "0xBCD28BBC",
+                  "0xBF34E655"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -5.489999771118164,
+                  3.5,
+                  -10.90300178527832
+                ],
+                "bits": [
+                  "0xC0AFAE14",
+                  "0x40600000",
+                  "0xC12E72B2"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000003576278687,
+                  -3.5762786865234375e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800003",
+                  "0xB4C00000"
+                ]
+              }
+            },
+            {
+              "name": "Spot Light (9)",
+              "lightPathId": 7037844248082165216,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#486_p61AB720E3776ADE0.json",
+              "localPosition": {
+                "values": [
+                  -0.09690368175506592,
+                  4.550000190734863,
+                  -20.996397018432617
+                ],
+                "bits": [
+                  "0xBDC67570",
+                  "0x4091999A",
+                  "0xC1A7F89F"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.7066395878791809,
+                  0.02570139616727829,
+                  -0.02570139616727829,
+                  -0.7066395878791809
+                ],
+                "bits": [
+                  "0xBF34E655",
+                  "0x3CD28BBC",
+                  "0xBCD28BBC",
+                  "0xBF34E655"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -1.8700001239776611,
+                  4.550000190734863,
+                  -11.909000396728516
+                ],
+                "bits": [
+                  "0xBFEF5C2A",
+                  "0x4091999A",
+                  "0xC13E8B44"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000003576278687,
+                  -3.5762786865234375e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800003",
+                  "0xB4C00000"
+                ]
+              }
+            },
+            {
+              "name": "Spot Light (20)",
+              "lightPathId": 4491921571221515744,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#418_p3E5682DEAB92ADE0.json",
+              "localPosition": {
+                "values": [
+                  -0.13600000739097595,
+                  11.890000343322754,
+                  -21.31800079345703
+                ],
+                "bits": [
+                  "0xBE0B4396",
+                  "0x413E3D71",
+                  "0xC1AA8B44"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.7066395878791809,
+                  0.02570139616727829,
+                  -0.02570139616727829,
+                  -0.7066395878791809
+                ],
+                "bits": [
+                  "0xBF34E655",
+                  "0x3CD28BBC",
+                  "0xBCD28BBC",
+                  "0xBF34E655"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -1.920759916305542,
+                  11.890000343322754,
+                  -12.228971481323242
+                ],
+                "bits": [
+                  "0xBFF5DB76",
+                  "0x413E3D71",
+                  "0xC143A9DE"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000003576278687,
+                  -3.5762786865234375e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800003",
+                  "0xB4C00000"
+                ]
+              }
+            },
+            {
+              "name": "Spot Light (11)",
+              "lightPathId": 7142192322960010720,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#489_p631E2A13A78DADE0.json",
+              "localPosition": {
+                "values": [
+                  0.01275026798248291,
+                  4.984000205993652,
+                  -24.770906448364258
+                ],
+                "bits": [
+                  "0x3C50E680",
+                  "0x409F7CEE",
+                  "0xC1C62AD1"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.7069900035858154,
+                  0.012852839194238186,
+                  -0.012852839194238186,
+                  -0.7069900035858154
+                ],
+                "bits": [
+                  "0xBF34FD4C",
+                  "0x3C5294B7",
+                  "0xBC5294B7",
+                  "0xBF34FD4C"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -1.897611379623413,
+                  4.984000205993652,
+                  -15.685001373291016
+                ],
+                "bits": [
+                  "0xBFF2E4EE",
+                  "0x409F7CEE",
+                  "0xC17AF5C4"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000001192092896,
+                  -1.1920928955078125e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800001",
+                  "0xB4000000"
+                ]
+              }
+            },
+            {
+              "name": "Spot Light (10)",
+              "lightPathId": 7763697698425908704,
+              "source": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#513_p6BBE31EC4231ADE0.json",
+              "localPosition": {
+                "values": [
+                  0.010024189949035645,
+                  11.729999542236328,
+                  -24.695955276489258
+                ],
+                "bits": [
+                  "0x3C243C80",
+                  "0x413BAE14",
+                  "0xC1C59151"
+                ]
+              },
+              "localRotation": {
+                "values": [
+                  -0.7069900035858154,
+                  0.012852839194238186,
+                  -0.012852839194238186,
+                  -0.7069900035858154
+                ],
+                "bits": [
+                  "0xBF34FD4C",
+                  "0x3C5294B7",
+                  "0xBC5294B7",
+                  "0xBF34FD4C"
+                ]
+              },
+              "worldPosition": {
+                "values": [
+                  -1.897611379623413,
+                  11.729999542236328,
+                  -15.610000610351562
+                ],
+                "bits": [
+                  "0xBFF2E4EE",
+                  "0x413BAE14",
+                  "0xC179C290"
+                ]
+              },
+              "worldForward": {
+                "values": [
+                  0.0,
+                  -1.0000001192092896,
+                  -1.1920928955078125e-07
+                ],
+                "bits": [
+                  "0x00000000",
+                  "0xBF800001",
+                  "0xB4000000"
+                ]
+              }
+            }
+          ],
+          "targetFrameValues": "capture-only; these are authored static candidates, not a retail LightCullResult capture"
         }
       },
       "closedLanes": [
@@ -3433,10 +4811,12 @@
       "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
       "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
       "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
-      "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed"
+      "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
+      "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit"
     ],
     "open": [
       "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
+      "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
       "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
       "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"

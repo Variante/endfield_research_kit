@@ -33,6 +33,14 @@ ROOM_HIERARCHY = (
     REPO_ROOT
     / "scratch/animestudio/zhuangfy_gacha_room_lights/room_light_hierarchy.json"
 )
+GACHA_CULL_VIEW_AUDIT = (
+    REPO_ROOT / "scratch/reverse_engineering/gacha_light_cull_view/audit.json"
+)
+ROTATEHOUSE = (
+    REPO_ROOT
+    / "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/"
+    "GameObject/rotatehouse_pB2306755E2A9ADE0.json"
+)
 ROOM_LIGHT_ROOT = (
     REPO_ROOT / "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light"
 )
@@ -145,6 +153,8 @@ EXPECTED_HASHES = {
     "selectedFragment": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
     "gachaPopulation": "02e15c70197bcd96f804007fe042fcb46577c0014d956d78a28f2d96162e189a",
     "roomHierarchy": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9",
+    "gachaCullViewAudit": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4",
+    "rotatehouse": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4",
     "prepareCpuDataBody": "c55bd6dc86c971123c433a5dd29b446b557f8713f73b132da25c257369e9bd0b",
     "getLightNprDataBody": "49eeca70b72791b2ad58f8b77cf3fbc3f27149766dcc0510a00b9d129e6698c8",
     "getLightAdditionalDataBody": "071061feb7f3c76044273efe703f9bdf78288703516b863c10c592b263f73e00",
@@ -358,6 +368,40 @@ NATIVE_CALLS = {
 
 def f32(value: float) -> float:
     return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
+def quaternion_multiply(a: list[float], b: list[float]) -> list[float]:
+    ax, ay, az, aw = a
+    bx, by, bz, bw = b
+    return [
+        f32(aw * bx + ax * bw + ay * bz - az * by),
+        f32(aw * by - ax * bz + ay * bw + az * bx),
+        f32(aw * bz + ax * by - ay * bx + az * bw),
+        f32(aw * bw - ax * bx - ay * by - az * bz),
+    ]
+
+
+def quaternion_rotate(q: list[float], value: list[float]) -> list[float]:
+    x, y, z, w = q
+    vx, vy, vz = value
+    mul = lambda a, b: f32(a * b)
+    add = lambda a, b: f32(a + b)
+    sub = lambda a, b: f32(a - b)
+    tx, ty, tz = mul(2.0, x), mul(2.0, y), mul(2.0, z)
+    xx = sub(1.0, add(mul(ty, y), mul(tz, z)))
+    xy = sub(mul(tx, y), mul(mul(2.0, w), z))
+    xz = add(mul(tx, z), mul(mul(2.0, w), y))
+    yx = add(mul(tx, y), mul(mul(2.0, w), z))
+    yy = sub(1.0, add(mul(tx, x), mul(tz, z)))
+    yz = sub(mul(ty, z), mul(mul(2.0, w), x))
+    zx = sub(mul(tx, z), mul(mul(2.0, w), y))
+    zy = add(mul(ty, z), mul(mul(2.0, w), x))
+    zz = sub(1.0, add(mul(tx, x), mul(ty, y)))
+    return [
+        add(add(mul(xx, vx), mul(xy, vy)), mul(xz, vz)),
+        add(add(mul(yx, vx), mul(yy, vy)), mul(yz, vz)),
+        add(add(mul(zx, vx), mul(zy, vy)), mul(zz, vz)),
+    ]
 
 
 def float32_bits(value: float) -> int:
@@ -1084,6 +1128,112 @@ def validate_visible_light_transform_helpers(
             "input": "float3 direction",
             "output": "float2 octahedral rectangle encoding",
         },
+    }
+
+
+def validate_authored_room_transform_candidates(
+    cull_view: dict[str, Any],
+    hierarchy: dict[str, Any],
+    rotatehouse: dict[str, Any],
+) -> dict[str, Any]:
+    """Recompose the authored room transforms used by the cull-view audit."""
+
+    parent = rotatehouse["m_Transform"]
+    parent_position = [
+        f32(float(parent["m_LocalPosition"][key])) for key in ("X", "Y", "Z")
+    ]
+    parent_rotation = [
+        f32(float(parent["m_LocalRotation"][key]))
+        for key in ("X", "Y", "Z", "W")
+    ]
+    parent_scale = [
+        f32(float(parent["m_LocalScale"][key])) for key in ("X", "Y", "Z")
+    ]
+    require("rotatehouse_local_scale", parent_scale, [1.0, 1.0, 1.0], ROTATEHOUSE)
+    hierarchy_rows = {
+        row["name"]: row
+        for row in hierarchy["lights"]
+        if row["rarityGroup"] == "SceneLight6Rarity"
+    }
+    cull_rows = {
+        row["name"]: row
+        for row in cull_view["authoredRoomRowsInStrictNativeDistanceOrder"]
+    }
+    require(
+        "authored_room_transform_candidate_membership",
+        set(hierarchy_rows),
+        set(cull_rows),
+        GACHA_CULL_VIEW_AUDIT,
+    )
+
+    candidates = []
+    candidate_order = [
+        row["name"]
+        for row in cull_view["authoredRoomRowsInStrictNativeDistanceOrder"]
+    ]
+    require("authored_room_transform_candidate_order_count", len(candidate_order), 12, GACHA_CULL_VIEW_AUDIT)
+    for name in candidate_order:
+        hierarchy_row = hierarchy_rows[name]
+        cull_row = cull_rows[name]
+        local_position = [
+            f32(float(hierarchy_row["localPosition"][key]))
+            for key in ("X", "Y", "Z")
+        ]
+        local_rotation = [
+            f32(float(hierarchy_row["localRotation"][key]))
+            for key in ("X", "Y", "Z", "W")
+        ]
+        rotated_position = quaternion_rotate(parent_rotation, local_position)
+        world_position = [
+            f32(parent_position[index] + rotated_position[index]) for index in range(3)
+        ]
+        expected_position = [
+            float(item["value"]) for item in cull_row["worldPosition"]
+        ]
+        require(
+            f"{name}_authored_world_position_bits",
+            [float32_bits(value) for value in world_position],
+            [float32_bits(value) for value in expected_position],
+            GACHA_CULL_VIEW_AUDIT,
+        )
+        world_rotation = quaternion_multiply(parent_rotation, local_rotation)
+        world_forward = quaternion_rotate(world_rotation, [0.0, 0.0, 1.0])
+        candidates.append(
+            {
+                "name": name,
+                "lightPathId": int(cull_row["lightPathId"]),
+                "source": cull_row["source"],
+                "localPosition": {
+                    "values": local_position,
+                    "bits": [f"0x{float32_bits(value):08X}" for value in local_position],
+                },
+                "localRotation": {
+                    "values": local_rotation,
+                    "bits": [f"0x{float32_bits(value):08X}" for value in local_rotation],
+                },
+                "worldPosition": {
+                    "values": world_position,
+                    "bits": [f"0x{float32_bits(value):08X}" for value in world_position],
+                },
+                "worldForward": {
+                    "values": world_forward,
+                    "bits": [f"0x{float32_bits(value):08X}" for value in world_forward],
+                },
+            }
+        )
+    return {
+        "scope": "authored SceneLight6Rarity room hierarchy at pinned rotatehouse transform",
+        "sourceSpace": "world-space",
+        "positionProducerInput": "VisibleLight.LocalToWorldMatrix column 3",
+        "forwardProducerInput": "VisibleLight.LocalToWorldMatrix column 2",
+        "parentTransform": {
+            "position": parent_position,
+            "rotation": parent_rotation,
+            "scale": parent_scale,
+        },
+        "count": len(candidates),
+        "rows": candidates,
+        "targetFrameValues": "capture-only; these are authored static candidates, not a retail LightCullResult capture",
     }
 
 
@@ -2160,6 +2310,10 @@ def build_audit() -> dict[str, Any]:
         "selectedFragmentSha256": verified_hash("selectedFragment", SELECTED_FRAGMENT),
         "gachaPopulationSha256": verified_hash("gachaPopulation", GACHA_POPULATION),
         "roomHierarchySha256": verified_hash("roomHierarchy", ROOM_HIERARCHY),
+        "gachaCullViewAuditSha256": verified_hash(
+            "gachaCullViewAudit", GACHA_CULL_VIEW_AUDIT
+        ),
+        "rotatehouseSha256": verified_hash("rotatehouse", ROTATEHOUSE),
     }
     with GAME_ASSEMBLY.open("rb") as stream:
         stream.seek(PREPARE_CPU_DATA_FILE_OFFSET)
@@ -2202,6 +2356,8 @@ def build_audit() -> dict[str, Any]:
     unity_player_data = UNITY_PLAYER.read_bytes()
     population = json.loads(GACHA_POPULATION.read_text(encoding="utf-8"))
     hierarchy = json.loads(ROOM_HIERARCHY.read_text(encoding="utf-8"))
+    cull_view = json.loads(GACHA_CULL_VIEW_AUDIT.read_text(encoding="utf-8"))
+    rotatehouse = json.loads(ROTATEHOUSE.read_text(encoding="utf-8"))
     rows = attach_room_additional_data(room_light_rows(population, hierarchy))
     for row in rows:
         row["record0Color"] = recover_record0_color(row)
@@ -2217,6 +2373,9 @@ def build_audit() -> dict[str, Any]:
             visible_light_get_position_body,
             pack_normal_oct_rect_encode_body,
         )
+    )
+    native["pointRecordTransform"]["authoredRoomCandidates"] = (
+        validate_authored_room_transform_candidates(cull_view, hierarchy, rotatehouse)
     )
     native["additionalLightData"] = validate_additional_data_native(
         npr_body, additional_body
@@ -2315,7 +2474,7 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v9",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v10",
         "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
@@ -2442,9 +2601,11 @@ def build_audit() -> dict[str, Any]:
                 "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
                 "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
+                "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
             ],
             "open": [
                 "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
+                "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
