@@ -50,6 +50,7 @@ ACTIVE_RE = re.compile(
     r"attachments=(?P<attachments>[^,]+), "
     r"sourceRendererDisabled=(?P<disabled>True|False), "
     r"resolverGBufferBindings=(?P<resolver>t23:C,t24:B,t25:A), "
+    r"resolverSourceIdentifiers=(?P<source_ids>t23:_62,t24:_61,t25:_60), "
     r"pass0ConsumerEnabled=(?P<pass0>true|false)\."
 )
 READBACK_RE = re.compile(
@@ -123,6 +124,7 @@ def validate_log(
             "attachments": active_match["attachments"],
             "sourceRendererDisabled": active_match["disabled"] == "True",
             "resolverGBufferBindings": active_match["resolver"],
+            "resolverSourceIdentifiers": active_match["source_ids"],
             "pass0ConsumerEnabled": active_match["pass0"] == "true",
         }
         require("active_camera", active["camera"], "MainCamera")
@@ -140,6 +142,11 @@ def validate_log(
             "resolver_gbuffer_bindings",
             active["resolverGBufferBindings"],
             "t23:C,t24:B,t25:A",
+        )
+        require(
+            "resolver_source_identifiers",
+            active["resolverSourceIdentifiers"],
+            "t23:_62,t24:_61,t25:_60",
         )
         require("pass0_consumer_disabled", active["pass0ConsumerEnabled"], False)
 

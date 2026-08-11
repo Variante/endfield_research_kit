@@ -1312,6 +1312,8 @@ def verify_deferred_gbuffer_frame_report(
             "height": transport["extent"]["height"],
             "attachments": transport["attachment_signature"],
             "sourceRendererDisabled": True,
+            "resolverGBufferBindings": "t23:C,t24:B,t25:A",
+            "resolverSourceIdentifiers": "t23:_62,t24:_61,t25:_60",
             "pass0ConsumerEnabled": False,
         },
     )
@@ -1445,6 +1447,10 @@ def verify_deferred_gbuffer_frame_transport(recovery: dict[str, object]) -> None
             "command.SetRenderTarget(",
             "canonicalColorTarget,",
             "canonicalDepthTarget);",
+            "ResolverSourceTextureT23Id",
+            "ResolverSourceTextureT24Id",
+            "ResolverSourceTextureT25Id",
+            'resolverSourceIdentifiers=t23:_62,t24:_61,t25:_60',
             'pass0ConsumerEnabled=false',
         ],
     )
