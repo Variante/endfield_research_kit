@@ -2409,11 +2409,13 @@ Resource recovery now distinguishes the request-gated `2S x S` D16
 `_HDPLSScreenSpaceShadowMask` consumed by deferred binding 22. Their
 RenderGraph dependencies and global publication are closed; inactive frames
 clear all selectors and bind white to both slots, so stale resources cannot
-escape. The tracked CharInfo IFix report is a 30-target snapshot. The current
-refreshed Persistent `DAFE52C9` overlay decodes to 32 targets (86,926-byte
+escape. The generated CharInfo IFix report is refreshed with
+`tools/refresh_installed_ifix_patch_state.py` from the installed Persistent
+`DAFE52C9` overlay. The current overlay decodes to 32 targets (86,926-byte
 `Gameplay.Beyond.patch.bytes`) and still replaces neither `0x877` nor `0x890`
 owner method, closing the current on-disk branch choice; future/network
-patches remain a version boundary. Live
+patches remain a version boundary. Run
+`tools/verify_installed_ifix_patch_state.py` after refresh. Live
 bounds/light/settings values, resulting active rows/selectors, unused
 persistent rows, atlas texels, and resolved RGBA pixels remain capture-only.
 The remaining
