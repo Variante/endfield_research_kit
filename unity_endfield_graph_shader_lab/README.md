@@ -1525,10 +1525,13 @@ closes the installed Windows desktop `PunctualLightMaxCount` at 256; native
 ascending before taking `min(survivors, cap)`. The equal upstream/settings
 caps prove that the settings layer cannot truncate this result a second time.
 The maintained audit now verifies the current GameAssembly call registers and
-return copies plus the UnityPlayer candidate gates directly. It closes the
-16-byte `LightCullResult` layout and the consumer's 148-byte `VisibleLight`
-stride, including type `+0x00`, priority `+0x70`, and world position `+0x74`;
-future capture can therefore reject truncated rows deterministically. It now
+return copies plus the UnityPlayer candidate gates directly. It also hash-pins
+the candidate-pointer vector conversion at `0x180543CE0`: allocation is
+`inputCount * 0x94`, and the exact source-to-row projection is recorded for
+the 148-byte `VisibleLight` rows. It closes the 16-byte `LightCullResult`
+layout and the consumer's `VisibleLight` stride, including type `+0x00`,
+priority `+0x70`, and world position `+0x74`; future capture can therefore
+reject truncated rows deterministically. It now
 also pins internal call 3304 from the 16-argument `AddCullViewByMatrix` binding
 through six-plane extraction and the scheduled view constructor. The physical
 camera's `cullingMask` lands at view `+0x4`; the squared

@@ -88,7 +88,10 @@ NPC archetypes are imported as labeled source kits.
   `lightCount` remain open. The maintained cap audit now directly pins both
   `DoECSCulling` call sites through the UnityPlayer candidate core: its native
   gates, hidden-sret handoff, 16-byte `LightCullResult`, and 148-byte
-  `VisibleLight` capture stride are source-closed. An authorized target-frame
+  `VisibleLight` capture stride are source-closed. The native candidate-pointer
+  vector is then converted by the hash-pinned `0x180543CE0` producer into
+  `inputCount * 0x94` rows, with the source-to-row field projection recorded
+  in the audit. An authorized target-frame
   capture therefore has an exact pointer/count/row decoding contract, but no
   live values are inferred offline. The same maintained audit now closes
   the post-cull consumer contract: `LightClusteringPassConstructor.SetupState`
@@ -423,8 +426,9 @@ NPC archetypes are imported as labeled source kits.
   `sceneCullingMask` consumer: the field is forwarded by the constructor but
   not read by the scheduled view loop, either selected predicate, fence/reset
   lifecycle, child-view path, or a post-dispatch packet copy. The complete
-  0x4E1-byte UnityPlayer candidate core is now hash-pinned in the maintained
-  audit, so the native gate/sort/output-cap boundary cannot silently drift.
+  0x4E1-byte UnityPlayer candidate core and the candidate-to-`VisibleLight`
+  producer are now hash-pinned in the maintained audit, so the native
+  gate/sort/output-cap/row-conversion boundary cannot silently drift.
   A direct census of the
   installed `UnityPlayer.dll` native strings/RTTI (with the matching
   `GameAssembly.dll` build) adds no unambiguous name for component 67:

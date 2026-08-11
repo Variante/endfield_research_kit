@@ -687,6 +687,15 @@ class LightCullCapAuditTests(unittest.TestCase):
         self.assertEqual(result["internalCall"]["index"], 3320)
         self.assertEqual(result["candidateRecord"]["sizeBytes"], 12)
         self.assertEqual(result["candidateCoreBody"][0]["sizeBytes"], 0x4E1)
+        self.assertEqual(
+            result["visibleLightProducer"]["allocationSizeEquation"],
+            "inputCount * 0x94",
+        )
+        self.assertEqual(result["visibleLightProducer"]["rowStrideBytes"], 148)
+        self.assertIn(
+            "row+0x68 <- source+0x18, or source+0x138 for source type 3/4",
+            result["visibleLightProducer"]["writtenRawFieldMappings"],
+        )
         self.assertIn("maxCount output cap", result["closedBehavior"])
 
     def test_changed_unity_native_cap_fails_closed(self) -> None:
@@ -722,6 +731,25 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; "
                 r"check=unity_culling_candidate_core_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_native_producer(image)
+
+    def test_changed_visible_light_producer_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x180543CE0 and size == 0x1B0:
+                data[0x80] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_visible_light_producer_candidate_vector_to_visible_light_rows_sha256; "
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_native_producer(image)
