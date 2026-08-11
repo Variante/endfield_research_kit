@@ -21,6 +21,14 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
             result["compiled_variants"]["forward_lit_sets_without_screen_shadow_mask"],
             0,
         )
+        self.assertEqual(
+            result["binary_consumer"]["shadow_equations"]["character_shadow"],
+            "G",
+        )
+        self.assertEqual(
+            result["binary_consumer"]["shadow_equations"]["character_shadow_minimum"],
+            "min(G, alpha, material-shadow-sample)",
+        )
         self.assertEqual(result["interpretation"]["retail_frame_parity"], "not asserted")
 
     def test_missing_artifact_reports_path_and_expected_size(self) -> None:

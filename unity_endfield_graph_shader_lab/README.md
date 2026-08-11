@@ -1918,6 +1918,9 @@ The screen-shadow binding audit is independent of that scratch export: it
 records that the current binary Skin consumer reads retail `_ScreenSpaceShadowMask`
 R/G, while the lab producer remains content-invalid and Skin stays on the
 diagnostic branch until canonical publication is recovered.
+The Skin export audit also pins the current binary equations: the directional
+R selector honors `DirectionalShadowParams.x` and `CharacterParams1.z`, while
+G feeds the character-shadow alpha product and minimum-shadow path.
 
 In the corrected 3840x2160 controlled A/B, the only change is the exact body
 selector. On pixels changing by more than 1/255, reference MAE moves

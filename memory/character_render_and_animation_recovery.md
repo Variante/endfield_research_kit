@@ -83,7 +83,10 @@ NPC archetypes are imported as labeled source kits.
   The older no-screen body contract is therefore stale evidence and remains
   fail-closed; its current SPIR-V consumer also pins an integer-pixel
   `_ScreenSpaceShadowMask` load (R = directional scene shadow, G = character
-  shadow), clustered-light bit scanning, and punctual-shadow/rim dispatch.
+  shadow), the exact directional selector
+  `lerp(lerp(1, R, DirectionalShadowParams.x), 1, CharacterParams1.z)`,
+  G*alpha and `min(G, alpha, material-shadow-sample)` uses, clustered-light
+  bit scanning, and punctual-shadow/rim dispatch.
   `verify_current_character_npr_skin_export.py` records these source and
   variant semantics only, not retail frame parity.
 - The current screen-shadow binding audit now makes the remaining connection
