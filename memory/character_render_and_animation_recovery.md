@@ -481,6 +481,18 @@ NPC archetypes are imported as labeled source kits.
   source constants. This closes the normal static jitter/input contract only;
   IFix-wrapped history constants, shared-depth overlay scheduling, and settled
   retail TAA frames remain open.
+- The maintained `audit_taau_history_contract.py` now closes the complementary
+  source-backed history/resource ABI. Current retail metadata identifies the
+  `TAAUPassConstructor` history fields and methods; the decompiled constructor
+  proves the `historySceneColor`/`prevTAAUState` gate, the quality-0 depth/MV
+  validity extension, the 192-byte `TAAUConstants` upload, and persistent
+  render-size dilated depth/MV textures preserved across frames. It also pins
+  the quality-dependent Dilation -> MaskDilation -> Resolve schedule and the
+  history/size constant lanes. This is still static evidence: live
+  `TextureHandle` identities, settled weights/internal extent, reset state, and
+  any IFix replacement remain capture-only/open. Run
+  `python tools/audit_taau_history_contract.py --check` after refreshing the
+  installed evidence.
 - The selected original pass-0 `_TransformVariables` b30 reads are now
   source-closed for view, inverse-view, inverse GPU view-projection, and camera
   position. The default-off same-frame publisher reads all 1,312 bytes back
