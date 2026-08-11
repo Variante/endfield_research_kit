@@ -168,7 +168,13 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             position = stream.read(AUDIT.VISIBLE_LIGHT_GET_POSITION_SIZE)
             stream.seek(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_FILE_OFFSET)
             pack = stream.read(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE)
-        result = AUDIT.validate_visible_light_transform_helpers(forward, position, pack)
+            stream.seek(AUDIT.PACK_NORMAL_ONE_CONSTANT_FILE_OFFSET)
+            one_constant = stream.read(4)
+            stream.seek(AUDIT.PACK_NORMAL_HALF_CONSTANT_FILE_OFFSET)
+            half_constant = stream.read(4)
+        result = AUDIT.validate_visible_light_transform_helpers(
+            forward, position, pack, one_constant, half_constant
+        )
         self.assertEqual(result["getForward"]["matrixColumn"], 2)
         self.assertEqual(result["getPosition"]["matrixColumn"], 3)
         self.assertEqual(result["getForward"]["ifixMethodId"], "0x77A")
@@ -183,13 +189,19 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             position = stream.read(AUDIT.VISIBLE_LIGHT_GET_POSITION_SIZE)
             stream.seek(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_FILE_OFFSET)
             pack = stream.read(AUDIT.HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE)
+            stream.seek(AUDIT.PACK_NORMAL_ONE_CONSTANT_FILE_OFFSET)
+            one_constant = stream.read(4)
+            stream.seek(AUDIT.PACK_NORMAL_HALF_CONSTANT_FILE_OFFSET)
+            half_constant = stream.read(4)
         forward[0x4D] ^= 1
         with self.assertRaisesRegex(
             AssertionError,
             r"check=visible_light_get_forward_body_sha256; source=.*GameAssembly.dll; "
             r"expected=.*actual=",
         ):
-            AUDIT.validate_visible_light_transform_helpers(bytes(forward), position, pack)
+            AUDIT.validate_visible_light_transform_helpers(
+                bytes(forward), position, pack, one_constant, half_constant
+            )
 
     def test_authored_room_transform_candidates(self) -> None:
         cull_view = json.loads(AUDIT.GACHA_CULL_VIEW_AUDIT.read_text(encoding="utf-8"))
@@ -221,6 +233,11 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             ["0xC0033333", "0x40CDFBE7", "0xC0975C26"],
         )
         self.assertEqual(len(result["rows"][0]["worldForward"]["values"]), 3)
+        self.assertEqual(
+            result["rows"][0]["record2XYCandidate"]["bits"],
+            ["0xB3800000", "0xBF7FFFFE"],
+        )
+        self.assertTrue(result["record2XYCandidateClosed"])
         self.assertEqual(result["targetFrameValues"], "capture-only; these are authored static candidates, not a retail LightCullResult capture")
 
     def test_changed_authored_room_transform_fails_closed(self) -> None:

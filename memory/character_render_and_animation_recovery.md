@@ -514,8 +514,13 @@ NPC archetypes are imported as labeled source kits.
   hierarchy and `rotatehouse` transform now recompose all 12 authored room
   world positions and directions with float32 lane rounding, bit-matching the
   independent cull-view audit. These are authored static candidates only; they
-  do not replace a retail `LightCullResult` capture or close the final packed
-  `record2.xy` values.
+  do not replace a retail `LightCullResult` capture. The unpatched
+  `PackNormalOctRectEncode` call chain is now also closed: abs/dot/L1 reciprocal,
+  float3 multiply, clamp, and `CopySign` produce
+  `u=CopySign(clamp(0.5+0.5*(n1.y-n1.x),0,1),n1.z,true)` and
+  `v=n1.x+n1.y`; all 12 authored `record2.xy` candidates are bit-generated
+  from that formula. IFix patched returns and retail target-frame values remain
+  capture-only.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

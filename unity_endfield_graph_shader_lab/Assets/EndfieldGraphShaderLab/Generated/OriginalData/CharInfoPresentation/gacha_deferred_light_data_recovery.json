@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v10",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v11",
   "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -305,7 +305,22 @@
           "bodySha256": "9b3353f0544568e35e2bc5317515f22207c58ad3efa889e2e336f0c2670b2a2c",
           "ifixMethodId": "0x77B",
           "input": "float3 direction",
-          "output": "float2 octahedral rectangle encoding"
+          "output": "float2 octahedral rectangle encoding",
+          "methodIndex": 288324,
+          "token": "0x060014C0",
+          "formula": "n1=n/(abs(n.x)+abs(n.y)+abs(n.z)); u=CopySign(clamp(0.5+0.5*(n1.y-n1.x),0,1),n1.z,true); v=n1.x+n1.y",
+          "consumerDecodeFormula": "a=(0.5+0.5*v)-abs(u); b=v-a; c=abs(max((1-abs(a))-abs(b),0.00048828125)); normalize(float3(a,b,sign(u)*c))",
+          "constants": {
+            "oneBits": "0x3F800000",
+            "halfBits": "0x3F000000"
+          },
+          "callTargets": {
+            "abs": "0x183B0AD90",
+            "dot": "0x184D8B7C0",
+            "float3Multiply": "0x1830E7A60",
+            "clamp": "0x182EE75E0",
+            "copySign": "0x189C0C2F0"
+          }
         }
       },
       "authoredRoomCandidates": {
@@ -313,6 +328,8 @@
         "sourceSpace": "world-space",
         "positionProducerInput": "VisibleLight.LocalToWorldMatrix column 3",
         "forwardProducerInput": "VisibleLight.LocalToWorldMatrix column 2",
+        "record2XYFormula": "PackNormalOctRectEncode(worldForward) using the hash-pinned unpatched body",
+        "record2XYCandidateClosed": true,
         "parentTransform": {
           "position": [
             -1.0099999904632568,
@@ -386,6 +403,16 @@
                 "0xBF800001",
                 "0xB4000000"
               ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -5.960464477539063e-08,
+                -0.9999998807907104
+              ],
+              "bits": [
+                "0xB3800000",
+                "0xBF7FFFFE"
+              ]
             }
           },
           {
@@ -440,6 +467,16 @@
                 "0x00000000",
                 "0xBF800003",
                 "0xB4C00000"
+              ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -1.7881393432617188e-07,
+                -0.9999996423721313
+              ],
+              "bits": [
+                "0xB4400000",
+                "0xBF7FFFFA"
               ]
             }
           },
@@ -496,6 +533,16 @@
                 "0x00000000",
                 "0x3F7FE2A8"
               ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                0.4854675233364105,
+                0.029064966365695
+              ],
+              "bits": [
+                "0x3EF88F33",
+                "0x3CEE19A7"
+              ]
             }
           },
           {
@@ -550,6 +597,16 @@
                 "0x3CF51E32",
                 "0x00000000",
                 "0x3F7FE2A8"
+              ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                0.4854675233364105,
+                0.029064966365695
+              ],
+              "bits": [
+                "0x3EF88F33",
+                "0x3CEE19A7"
               ]
             }
           },
@@ -606,6 +663,16 @@
                 "0x00000000",
                 "0x3F7FE2A8"
               ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                0.4854675233364105,
+                0.029064966365695
+              ],
+              "bits": [
+                "0x3EF88F33",
+                "0x3CEE19A7"
+              ]
             }
           },
           {
@@ -660,6 +727,16 @@
                 "0x00000000",
                 "0xBF800003",
                 "0xB4C00000"
+              ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -1.7881393432617188e-07,
+                -0.9999996423721313
+              ],
+              "bits": [
+                "0xB4400000",
+                "0xBF7FFFFA"
               ]
             }
           },
@@ -716,6 +793,16 @@
                 "0x00000000",
                 "0x3F7FE2A8"
               ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                0.4854675233364105,
+                0.029064966365695
+              ],
+              "bits": [
+                "0x3EF88F33",
+                "0x3CEE19A7"
+              ]
             }
           },
           {
@@ -770,6 +857,16 @@
                 "0x00000000",
                 "0xBF800003",
                 "0xB4C00000"
+              ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -1.7881393432617188e-07,
+                -0.9999996423721313
+              ],
+              "bits": [
+                "0xB4400000",
+                "0xBF7FFFFA"
               ]
             }
           },
@@ -826,6 +923,16 @@
                 "0xBF800003",
                 "0xB4C00000"
               ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -1.7881393432617188e-07,
+                -0.9999996423721313
+              ],
+              "bits": [
+                "0xB4400000",
+                "0xBF7FFFFA"
+              ]
             }
           },
           {
@@ -880,6 +987,16 @@
                 "0x00000000",
                 "0xBF800003",
                 "0xB4C00000"
+              ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -1.7881393432617188e-07,
+                -0.9999996423721313
+              ],
+              "bits": [
+                "0xB4400000",
+                "0xBF7FFFFA"
               ]
             }
           },
@@ -936,6 +1053,16 @@
                 "0xBF800001",
                 "0xB4000000"
               ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -5.960464477539063e-08,
+                -0.9999998807907104
+              ],
+              "bits": [
+                "0xB3800000",
+                "0xBF7FFFFE"
+              ]
             }
           },
           {
@@ -990,6 +1117,16 @@
                 "0x00000000",
                 "0xBF800001",
                 "0xB4000000"
+              ]
+            },
+            "record2XYCandidate": {
+              "values": [
+                -5.960464477539063e-08,
+                -0.9999998807907104
+              ],
+              "bits": [
+                "0xB3800000",
+                "0xBF7FFFFE"
               ]
             }
           }
@@ -1544,7 +1681,22 @@
             "bodySha256": "9b3353f0544568e35e2bc5317515f22207c58ad3efa889e2e336f0c2670b2a2c",
             "ifixMethodId": "0x77B",
             "input": "float3 direction",
-            "output": "float2 octahedral rectangle encoding"
+            "output": "float2 octahedral rectangle encoding",
+            "methodIndex": 288324,
+            "token": "0x060014C0",
+            "formula": "n1=n/(abs(n.x)+abs(n.y)+abs(n.z)); u=CopySign(clamp(0.5+0.5*(n1.y-n1.x),0,1),n1.z,true); v=n1.x+n1.y",
+            "consumerDecodeFormula": "a=(0.5+0.5*v)-abs(u); b=v-a; c=abs(max((1-abs(a))-abs(b),0.00048828125)); normalize(float3(a,b,sign(u)*c))",
+            "constants": {
+              "oneBits": "0x3F800000",
+              "halfBits": "0x3F000000"
+            },
+            "callTargets": {
+              "abs": "0x183B0AD90",
+              "dot": "0x184D8B7C0",
+              "float3Multiply": "0x1830E7A60",
+              "clamp": "0x182EE75E0",
+              "copySign": "0x189C0C2F0"
+            }
           }
         },
         "authoredRoomCandidates": {
@@ -1552,6 +1704,8 @@
           "sourceSpace": "world-space",
           "positionProducerInput": "VisibleLight.LocalToWorldMatrix column 3",
           "forwardProducerInput": "VisibleLight.LocalToWorldMatrix column 2",
+          "record2XYFormula": "PackNormalOctRectEncode(worldForward) using the hash-pinned unpatched body",
+          "record2XYCandidateClosed": true,
           "parentTransform": {
             "position": [
               -1.0099999904632568,
@@ -1625,6 +1779,16 @@
                   "0xBF800001",
                   "0xB4000000"
                 ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -5.960464477539063e-08,
+                  -0.9999998807907104
+                ],
+                "bits": [
+                  "0xB3800000",
+                  "0xBF7FFFFE"
+                ]
               }
             },
             {
@@ -1679,6 +1843,16 @@
                   "0x00000000",
                   "0xBF800003",
                   "0xB4C00000"
+                ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -1.7881393432617188e-07,
+                  -0.9999996423721313
+                ],
+                "bits": [
+                  "0xB4400000",
+                  "0xBF7FFFFA"
                 ]
               }
             },
@@ -1735,6 +1909,16 @@
                   "0x00000000",
                   "0x3F7FE2A8"
                 ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  0.4854675233364105,
+                  0.029064966365695
+                ],
+                "bits": [
+                  "0x3EF88F33",
+                  "0x3CEE19A7"
+                ]
               }
             },
             {
@@ -1789,6 +1973,16 @@
                   "0x3CF51E32",
                   "0x00000000",
                   "0x3F7FE2A8"
+                ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  0.4854675233364105,
+                  0.029064966365695
+                ],
+                "bits": [
+                  "0x3EF88F33",
+                  "0x3CEE19A7"
                 ]
               }
             },
@@ -1845,6 +2039,16 @@
                   "0x00000000",
                   "0x3F7FE2A8"
                 ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  0.4854675233364105,
+                  0.029064966365695
+                ],
+                "bits": [
+                  "0x3EF88F33",
+                  "0x3CEE19A7"
+                ]
               }
             },
             {
@@ -1899,6 +2103,16 @@
                   "0x00000000",
                   "0xBF800003",
                   "0xB4C00000"
+                ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -1.7881393432617188e-07,
+                  -0.9999996423721313
+                ],
+                "bits": [
+                  "0xB4400000",
+                  "0xBF7FFFFA"
                 ]
               }
             },
@@ -1955,6 +2169,16 @@
                   "0x00000000",
                   "0x3F7FE2A8"
                 ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  0.4854675233364105,
+                  0.029064966365695
+                ],
+                "bits": [
+                  "0x3EF88F33",
+                  "0x3CEE19A7"
+                ]
               }
             },
             {
@@ -2009,6 +2233,16 @@
                   "0x00000000",
                   "0xBF800003",
                   "0xB4C00000"
+                ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -1.7881393432617188e-07,
+                  -0.9999996423721313
+                ],
+                "bits": [
+                  "0xB4400000",
+                  "0xBF7FFFFA"
                 ]
               }
             },
@@ -2065,6 +2299,16 @@
                   "0xBF800003",
                   "0xB4C00000"
                 ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -1.7881393432617188e-07,
+                  -0.9999996423721313
+                ],
+                "bits": [
+                  "0xB4400000",
+                  "0xBF7FFFFA"
+                ]
               }
             },
             {
@@ -2119,6 +2363,16 @@
                   "0x00000000",
                   "0xBF800003",
                   "0xB4C00000"
+                ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -1.7881393432617188e-07,
+                  -0.9999996423721313
+                ],
+                "bits": [
+                  "0xB4400000",
+                  "0xBF7FFFFA"
                 ]
               }
             },
@@ -2175,6 +2429,16 @@
                   "0xBF800001",
                   "0xB4000000"
                 ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -5.960464477539063e-08,
+                  -0.9999998807907104
+                ],
+                "bits": [
+                  "0xB3800000",
+                  "0xBF7FFFFE"
+                ]
               }
             },
             {
@@ -2229,6 +2493,16 @@
                   "0x00000000",
                   "0xBF800001",
                   "0xB4000000"
+                ]
+              },
+              "record2XYCandidate": {
+                "values": [
+                  -5.960464477539063e-08,
+                  -0.9999998807907104
+                ],
+                "bits": [
+                  "0xB3800000",
+                  "0xBF7FFFFE"
                 ]
               }
             }
@@ -4812,7 +5086,8 @@
       "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
       "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
       "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
-      "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit"
+      "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
+      "PackNormalOctRectEncode's unpatched abs/dot/float3-multiply/clamp/CopySign call chain and 1.0/0.5 constants close the exact float32 formula; all 12 authored record2.xy candidates are generated from it"
     ],
     "open": [
       "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
