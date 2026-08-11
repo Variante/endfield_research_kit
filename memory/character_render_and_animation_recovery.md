@@ -91,10 +91,11 @@ NPC archetypes are imported as labeled source kits.
   variant semantics only, not retail frame parity.
 - The current screen-shadow binding audit now makes the remaining connection
   explicit: the lab producer binds the retail-named RG8 resource but keeps
-  `contentValid=false`, and Skin remains on the diagnostic texture keyword;
-  only the Eye branch has a runtime retail-name load today. The audit therefore
-  passes as a fail-closed boundary while reporting Skin retail publication and
-  frame parity as open.
+  `contentValid=false`. Skin now has a source-shaped retail R/G keyword and
+  integer-load branch, but the producer disables it together with Eye until
+  canonical publication is recovered; the older diagnostic texture branch is
+  still available for comparison. The audit therefore passes as a fail-closed
+  boundary while reporting Skin retail publication and frame parity as open.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
