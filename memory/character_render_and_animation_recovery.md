@@ -491,8 +491,15 @@ NPC archetypes are imported as labeled source kits.
   scalar-cosine body close record2.z plus the Spot row's record2.w; the Point
   branch closes record2.z as `HGSharedLightData.length` (`-1` on six ordinary
   Points, `18` on four linear extensions). Target-frame record1.xyz/record2.xy,
-  Point record2.w shadow-face packing, runtime carry-in, and final byte-exact
-  b31 rows remain open.
+  live Point record2.w/record3.x shadow-face cache-index values, runtime
+  carry-in, and final byte-exact b31 rows remain open. The Point/linear
+  branch's `record2.w` contract is now
+  source-closed separately: it constructs six `LightCaster` face requests in
+  order 0..5, calls `GetShadowCacheIndexForCaster` for each, maps `-1` to the
+  shader sentinel `255`, and packs faces 0..3 into `record2.w` plus faces 4..5
+  into the low bytes of `record3.x`. The six target-frame cache-index values
+  remain capture-only; this closes the producer packing rule, not their live
+  contents.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,
