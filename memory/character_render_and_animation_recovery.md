@@ -43,6 +43,10 @@ NPC archetypes are imported as labeled source kits.
   fixture, and one Wulfa 33-frame physical-transform animation oracle.
 - All non-playable post-model identities have dependency-safe static prefab
   baselines.
+- Chen and Chenpast remain separate source-authored model identities: their
+  canonical post-model containers, Animator PathIDs, and VFS sources are all
+  distinct. Chenpast's shared facial-morph/CPU-animation basis is not a mesh
+  identity join.
 - Selected CharacterNPR, eye, hair, shadow, material, particle, and gacha
   presentation paths have source-backed diagnostics.
 - The installed UnityPlayer fallback selector now closes the exact

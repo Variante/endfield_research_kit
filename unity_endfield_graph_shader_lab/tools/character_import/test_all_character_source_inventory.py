@@ -115,6 +115,20 @@ class AllCharacterSourceInventoryTests(unittest.TestCase):
             -1377940589218415556,
         )
 
+    def test_chen_and_chenpast_keep_distinct_original_model_identities(self) -> None:
+        chen = self.postmodels["chr_0005_chen"]
+        chenpast = self.postmodels["chr_0037_chenpast"]
+
+        # Chenpast may reuse Chen's facial-morph/CPU-animation basis, but the
+        # rendered post-model must remain a separate source-authored identity.
+        self.assertNotEqual(
+            str(chen["Container"]).casefold(), str(chenpast["Container"]).casefold()
+        )
+        self.assertNotEqual(int(chen["PathID"]), int(chenpast["PathID"]))
+        self.assertNotEqual(
+            str(chen["Source"]).casefold(), str(chenpast["Source"]).casefold()
+        )
+
     def test_npc_source_joins_cover_non_table_display_and_prefab_identity(self) -> None:
         info = json.loads(NPC_INFO_TABLE.read_text(encoding="utf-8"))
         groups = json.loads(NPC_TEMPLATE_GROUP_TABLE.read_text(encoding="utf-8"))
