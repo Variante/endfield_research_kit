@@ -11674,7 +11674,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v47",
+        "schema": "endfield.recovered-light-cull-cap.v48",
         "status": "component67_managed_tick_host_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
@@ -12204,7 +12204,6 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the stripped enum symbol for resource load-failure state 2",
                 "the registered native grid callback's exact lifecycle phase and executing thread identity",
                 "the virtual caller and executing thread above managed GameSceneManager.Tick",
-                "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
                 "the non-zero sceneCullingMask value delivered by an IFix/future patch payload",
             ],

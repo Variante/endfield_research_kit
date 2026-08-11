@@ -784,6 +784,10 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         self.assertIn("manager+0x58", census["childViewSeparation"])
         self.assertIn("manager+0x158", census["uniqueIdRegistry"])
+        self.assertNotIn(
+            "any separate consumer of the forwarded sceneCullingMask slot",
+            result["evidenceBoundary"]["open"],
+        )
 
     def test_changed_cull_view_consumer_loop_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)

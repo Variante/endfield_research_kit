@@ -418,8 +418,11 @@ NPC archetypes are imported as labeled source kits.
   former index-10320,
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The standalone
-  component-67 native type name, any separate `sceneCullingMask`
-  consumer, and target-frame survivor rows remain open. A direct census of the
+  component-67 native type name and target-frame survivor rows remain open. The
+  complete installed CullView-named census found no separate
+  `sceneCullingMask` consumer: the field is forwarded by the constructor but
+  not read by the scheduled view loop, either selected predicate, fence/reset
+  lifecycle, child-view path, or a post-dispatch packet copy. A direct census of the
   installed `UnityPlayer.dll` native strings/RTTI (with the matching
   `GameAssembly.dll` build) adds no unambiguous name for component 67:
   `HGTreeComponent`, `HGTreeRenderer`, `HGTreeInstance`, `HGTree`, and
