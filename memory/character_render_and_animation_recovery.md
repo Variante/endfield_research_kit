@@ -507,7 +507,15 @@ NPC archetypes are imported as labeled source kits.
   at native `+0x0C`, and an unmatched caster returns `-1`; null manager/list
   state fail-fast. Therefore the `-1 -> 255` mapping is confirmed as the
   unavailable-cache sentinel, while the six target-frame indices remain
-  capture-only. The same native body now pins the transform producer order:
+  capture-only. The native `HGSharedLightData` getters are also pinned: the
+  packed `m_CasterProperties` masks are `0x01` (dynamic caster), `0x02`
+  (static objects), and `0x04` (dynamic objects). All 11 selected room lights
+  serialize `m_CasterProperties=6`, `m_PointLightShadowCasterFaces=-1`, and
+  `LightShadowCasterMode=0`. Because those caster bits are enabled, serialized
+  `shadowType=0` is not evidence that the runtime resolver must return `-1`;
+  the static-request `GetShadowRenderType` IFix branch and live caster-list
+  membership remain capture/runtime-bound. The same native body now pins the
+  transform producer order:
   `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
   `GetPosition` supplies world-space `record1.xyz`; the selected deferred
   consumer subtracts camera position at read time. The target-frame positions

@@ -71,6 +71,15 @@ GET_LIGHT_FALLOFF_VA = 0x189D03E58
 GET_LIGHT_FALLOFF_FILE_OFFSET = 0x9D02458
 GET_LIGHT_FALLOFF_SIZE = 0x187
 GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET = 0xB957600
+HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_VA = 0x18B3BDFA4
+HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_FILE_OFFSET = 0xB3BC5A4
+HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_SIZE = 0x12
+HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_VA = 0x18B3BDA84
+HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_FILE_OFFSET = 0xB3BC084
+HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_SIZE = 0x15
+HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_VA = 0x18B3BDA6C
+HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_FILE_OFFSET = 0xB3BC06C
+HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_SIZE = 0x15
 VISIBLE_LIGHT_GET_RANGE_VA = 0x184DBCCB0
 VISIBLE_LIGHT_GET_RANGE_FILE_OFFSET = 0x4DBB2B0
 VISIBLE_LIGHT_GET_RANGE_SIZE = 8
@@ -1300,6 +1309,67 @@ def validate_visible_light_transform_helpers(
     }
 
 
+def validate_shadow_caster_property_getters(
+    is_dynamic_body: bytes,
+    cast_static_body: bytes,
+    cast_dynamic_body: bytes,
+) -> dict[str, Any]:
+    """Pin the native HGSharedLightData caster-property bit masks.
+
+    These getters are the input consumed by GetShadowRenderType.  They read
+    the packed caster-properties word through the Unity native bridge and
+    expose bits 0, 1, and 2 as dynamic-caster, static-object, and
+    dynamic-object flags respectively.  The selected room's serialized word
+    is kept separate from the runtime cache result; it does not by itself
+    establish six unavailable cache slots.
+    """
+
+    expected = {
+        "isDynamicShadowCaster": (
+            is_dynamic_body,
+            HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_SIZE,
+            "90ea0aae2d7409a8dc4fdc07cffdd57af60069b9e34fdbec0506ff946f615bfc",
+            bytes.fromhex("4883ec2833d2e87d03000024014883c428c3"),
+            0x01,
+        ),
+        "castStaticObjects": (
+            cast_static_body,
+            HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_SIZE,
+            "512c74973a1f42fb0bdfcc029266400d3867d6b91cfb8abaec5453e45e9233e1",
+            bytes.fromhex("4883ec2833d2e89d080000a8020f97c04883c428c3"),
+            0x02,
+        ),
+        "castDynamicObjects": (
+            cast_dynamic_body,
+            HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_SIZE,
+            "f71bcbf11d32cb9ce1d32c2959397575b0f3883f2593d730223c8e6c0f723558",
+            bytes.fromhex("4883ec2833d2e8b5080000a8040f97c04883c428c3"),
+            0x04,
+        ),
+    }
+    result = {}
+    for name, (body, size, expected_hash, sequence, mask) in expected.items():
+        require(f"{name}_body_size", len(body), size, GAME_ASSEMBLY)
+        require(
+            f"{name}_body_sha256",
+            hashlib.sha256(body).hexdigest(),
+            expected_hash,
+            GAME_ASSEMBLY,
+        )
+        require(f"{name}_mask_sequence", body, sequence, GAME_ASSEMBLY)
+        result[name] = {
+            "mask": f"0x{mask:02X}",
+            "packedWord": "HGSharedLightData.m_CasterProperties",
+            "nativeBodySha256": hashlib.sha256(body).hexdigest(),
+        }
+    return {
+        "packedWord": "HGSharedLightData.m_CasterProperties",
+        "fields": result,
+        "propertyMasksClosed": True,
+        "runtimeCacheValuesStillOpen": True,
+    }
+
+
 def validate_authored_room_transform_candidates(
     cull_view: dict[str, Any],
     hierarchy: dict[str, Any],
@@ -2237,6 +2307,24 @@ def room_light_rows(population: dict[str, Any], hierarchy: dict[str, Any]) -> li
             0,
             path,
         )
+        require(
+            f"{name}_shadow_caster_properties",
+            int(data["m_Shadows"]["m_CasterProperties"]),
+            6,
+            path,
+        )
+        require(
+            f"{name}_light_shadow_caster_mode",
+            int(data["m_LightShadowCasterMode"]),
+            0,
+            path,
+        )
+        require(
+            f"{name}_point_shadow_caster_faces",
+            int(data["m_Shadows"]["m_PointLightShadowCasterFaces"]),
+            -1,
+            path,
+        )
         result.append(
             {
                 "name": name,
@@ -2276,6 +2364,9 @@ def room_light_rows(population: dict[str, Any], hierarchy: dict[str, Any]) -> li
                 "overrideShadowLight": False,
                 "cookiePathId": 0,
                 "shadowType": 0,
+                "shadowCasterProperties": 6,
+                "lightShadowCasterMode": 0,
+                "pointShadowCasterFaces": -1,
             }
         )
 
@@ -2284,6 +2375,18 @@ def room_light_rows(population: dict[str, Any], hierarchy: dict[str, Any]) -> li
         "selected_linear_extension_count",
         sum(row["unityLightType"] == 2 and row["linearLightLength"] > 0 for row in result),
         4,
+        ROOM_LIGHT_ROOT,
+    )
+    require(
+        "selected_shadow_caster_properties",
+        Counter(row["shadowCasterProperties"] for row in result),
+        Counter({6: len(result)}),
+        ROOM_LIGHT_ROOT,
+    )
+    require(
+        "selected_point_shadow_caster_faces",
+        Counter(row["pointShadowCasterFaces"] for row in result),
+        Counter({-1: len(result)}),
         ROOM_LIGHT_ROOT,
     )
     return result
@@ -2498,6 +2601,14 @@ def build_audit() -> dict[str, Any]:
         body = stream.read(PREPARE_CPU_DATA_SIZE)
         stream.seek(PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
         point_shadow_cache_index_body = stream.read(PUNCTUAL_SHADOW_CACHE_INDEX_SIZE)
+        stream.seek(HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_FILE_OFFSET)
+        is_dynamic_shadow_caster_body = stream.read(
+            HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_SIZE
+        )
+        stream.seek(HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_FILE_OFFSET)
+        cast_static_objects_body = stream.read(HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_SIZE)
+        stream.seek(HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_FILE_OFFSET)
+        cast_dynamic_objects_body = stream.read(HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_SIZE)
         stream.seek(GET_LIGHT_NPR_DATA_FILE_OFFSET)
         npr_body = stream.read(GET_LIGHT_NPR_DATA_SIZE)
         stream.seek(GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET)
@@ -2553,6 +2664,11 @@ def build_audit() -> dict[str, Any]:
     native = validate_native_body(body)
     native["pointShadowCacheIndex"] = validate_point_shadow_cache_index_native(
         point_shadow_cache_index_body
+    )
+    native["shadowCasterPropertyGetters"] = validate_shadow_caster_property_getters(
+        is_dynamic_shadow_caster_body,
+        cast_static_objects_body,
+        cast_dynamic_objects_body,
     )
     native["pointRecordTransform"]["helperBodies"] = (
         validate_visible_light_transform_helpers(
@@ -2663,7 +2779,7 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v12",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v13",
         "status": "room_record0_record1w_record2z_transform_and_point_shadow_cache_resolver_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
@@ -2683,6 +2799,9 @@ def build_audit() -> dict[str, Any]:
             "allObbEnabled": True,
             "allUnshadowed": True,
             "allCookieFree": True,
+            "allShadowCasterProperties": 6,
+            "allPointShadowCasterFaces": -1,
+            "allLightShadowCasterMode": 0,
             "allAdditionalComponentsResolved": True,
             "allColorTemperatureDisabled": True,
             "allDistanceFalloffDisabled": True,
@@ -2727,6 +2846,7 @@ def build_audit() -> dict[str, Any]:
                 "record2WContractExactCandidateCount": record2_w_contract_closed_count,
                 "pointShadowFacePack": native["pointShadowFacePack"],
                 "pointShadowCacheIndex": native["pointShadowCacheIndex"],
+                "shadowCasterPropertyGetters": native["shadowCasterPropertyGetters"],
                 "pointRecordTransform": native["pointRecordTransform"],
                 "closedLanes": [
                     "record2.z for all rows",
@@ -2790,6 +2910,7 @@ def build_audit() -> dict[str, Any]:
                 "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
                 "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
                 "GetShadowCacheIndexForCaster is source-closed: dynamic matches return ordinal + 40, static matches return shadowCacheSlotIndex, unmatched casters return -1, and null manager/list state fail-fast",
+                "the native HGSharedLightData caster-property getters are hash-pinned masks 0x01/0x02/0x04; all selected room rows serialize m_CasterProperties=6, point-shadow faces=-1, and LightShadowCasterMode=0",
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
                 "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
                 "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -2800,6 +2921,7 @@ def build_audit() -> dict[str, Any]:
                 "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
+                "GetShadowRenderType's static-request IFix branch and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (

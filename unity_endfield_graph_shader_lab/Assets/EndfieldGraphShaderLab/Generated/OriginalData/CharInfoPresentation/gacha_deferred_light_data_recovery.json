@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v12",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v13",
   "status": "room_record0_record1w_record2z_transform_and_point_shadow_cache_resolver_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -1324,6 +1324,28 @@
       "nullManagerOrCasterList": "fail-fast via 0x1800D8260",
       "resolverOutcomeClosed": true
     },
+    "shadowCasterPropertyGetters": {
+      "packedWord": "HGSharedLightData.m_CasterProperties",
+      "fields": {
+        "isDynamicShadowCaster": {
+          "mask": "0x01",
+          "packedWord": "HGSharedLightData.m_CasterProperties",
+          "nativeBodySha256": "90ea0aae2d7409a8dc4fdc07cffdd57af60069b9e34fdbec0506ff946f615bfc"
+        },
+        "castStaticObjects": {
+          "mask": "0x02",
+          "packedWord": "HGSharedLightData.m_CasterProperties",
+          "nativeBodySha256": "512c74973a1f42fb0bdfcc029266400d3867d6b91cfb8abaec5453e45e9233e1"
+        },
+        "castDynamicObjects": {
+          "mask": "0x04",
+          "packedWord": "HGSharedLightData.m_CasterProperties",
+          "nativeBodySha256": "f71bcbf11d32cb9ce1d32c2959397575b0f3883f2593d730223c8e6c0f723558"
+        }
+      },
+      "propertyMasksClosed": true,
+      "runtimeCacheValuesStillOpen": true
+    },
     "additionalLightData": {
       "getLightNprData": {
         "method": "HG.Rendering.Runtime.HGAdditionalLightData.GetLightNPRData",
@@ -1495,6 +1517,9 @@
     "allObbEnabled": true,
     "allUnshadowed": true,
     "allCookieFree": true,
+    "allShadowCasterProperties": 6,
+    "allPointShadowCasterFaces": -1,
+    "allLightShadowCasterMode": 0,
     "allAdditionalComponentsResolved": true,
     "allColorTemperatureDisabled": true,
     "allDistanceFalloffDisabled": true,
@@ -1644,6 +1669,28 @@
         "unmatchedResult": -1,
         "nullManagerOrCasterList": "fail-fast via 0x1800D8260",
         "resolverOutcomeClosed": true
+      },
+      "shadowCasterPropertyGetters": {
+        "packedWord": "HGSharedLightData.m_CasterProperties",
+        "fields": {
+          "isDynamicShadowCaster": {
+            "mask": "0x01",
+            "packedWord": "HGSharedLightData.m_CasterProperties",
+            "nativeBodySha256": "90ea0aae2d7409a8dc4fdc07cffdd57af60069b9e34fdbec0506ff946f615bfc"
+          },
+          "castStaticObjects": {
+            "mask": "0x02",
+            "packedWord": "HGSharedLightData.m_CasterProperties",
+            "nativeBodySha256": "512c74973a1f42fb0bdfcc029266400d3867d6b91cfb8abaec5453e45e9233e1"
+          },
+          "castDynamicObjects": {
+            "mask": "0x04",
+            "packedWord": "HGSharedLightData.m_CasterProperties",
+            "nativeBodySha256": "f71bcbf11d32cb9ce1d32c2959397575b0f3883f2593d730223c8e6c0f723558"
+          }
+        },
+        "propertyMasksClosed": true,
+        "runtimeCacheValuesStillOpen": true
       },
       "pointRecordTransform": {
         "calls": [
@@ -2641,6 +2688,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": 5984914939117874656,
         "additionalLightData": {
           "componentPathId": 131563742791577056,
@@ -2869,6 +2919,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": 7333223719365619168,
         "additionalLightData": {
           "componentPathId": -6000736473603199520,
@@ -3097,6 +3150,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": 6094014835465629152,
         "additionalLightData": {
           "componentPathId": -4566151076357231136,
@@ -3323,6 +3379,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": 6812381659781443040,
         "additionalLightData": {
           "componentPathId": -6434313692577354272,
@@ -3549,6 +3608,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": -2342457652508971552,
         "additionalLightData": {
           "componentPathId": 6449319832300531168,
@@ -3775,6 +3837,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": -8277908077795955232,
         "additionalLightData": {
           "componentPathId": 7658305038908763616,
@@ -4003,6 +4068,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": -5234593887898784288,
         "additionalLightData": {
           "componentPathId": 793479633833668064,
@@ -4229,6 +4297,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": -2293898799088816672,
         "additionalLightData": {
           "componentPathId": -4254896755410227744,
@@ -4457,6 +4528,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": -3971220345318494752,
         "additionalLightData": {
           "componentPathId": -7850925599009165856,
@@ -4685,6 +4759,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": 1718015503729470944,
         "additionalLightData": {
           "componentPathId": 2140963938482630112,
@@ -4913,6 +4990,9 @@
         "overrideShadowLight": false,
         "cookiePathId": 0,
         "shadowType": 0,
+        "shadowCasterProperties": 6,
+        "lightShadowCasterMode": 0,
+        "pointShadowCasterFaces": -1,
         "gameObjectPathId": -7274218476356522528,
         "additionalLightData": {
           "componentPathId": -7600925337055351328,
@@ -5111,6 +5191,7 @@
       "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
       "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
       "GetShadowCacheIndexForCaster is source-closed: dynamic matches return ordinal + 40, static matches return shadowCacheSlotIndex, unmatched casters return -1, and null manager/list state fail-fast",
+      "the native HGSharedLightData caster-property getters are hash-pinned masks 0x01/0x02/0x04; all selected room rows serialize m_CasterProperties=6, point-shadow faces=-1, and LightShadowCasterMode=0",
       "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
       "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
       "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -5121,6 +5202,7 @@
       "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
       "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
       "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
+      "GetShadowRenderType's static-request IFix branch and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
     "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
