@@ -55,6 +55,10 @@ NPC archetypes are imported as labeled source kits.
   check is `test_generated_chen_prefabs_keep_mesh_guid_sets_disjoint`.
 - Selected CharacterNPR, eye, hair, shadow, material, particle, and gacha
   presentation paths have source-backed diagnostics.
+- The CharacterNPR clear-coat audit now covers Liino's three independent
+  authored variants (cloth, skill, and skill LOD) instead of collapsing them
+  by actor token; all 11 selected source materials and generated `.mat`
+  counterparts pass exact PathID, source-hash, property, and mask checks.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
