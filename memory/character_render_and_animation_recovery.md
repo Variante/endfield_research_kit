@@ -473,6 +473,14 @@ NPC archetypes are imported as labeled source kits.
   nonzero pixels, while an upstream-off run keeps canonical publication closed.
   A retail settled-frame capture, exact retail posed/view-culled records,
   target-frame light survivors, and the pass-0 consumer remain open.
+- The selected retail `OverlayShadow` fragment now has a maintained,
+  hash-pinned verifier for its `_TaaJitterStrength`/clustered-light ABI and
+  the native Halton jitter producer (`HGCamera+0x68 -> ShaderVariablesGlobal
+  +0x130`). The installed TAA pass order is Dilation -> MaskDilation ->
+  Resolve, and the recovered light-binning bridge now matches its promoted
+  source constants. This closes the normal static jitter/input contract only;
+  IFix-wrapped history constants, shared-depth overlay scheduling, and settled
+  retail TAA frames remain open.
 - The selected original pass-0 `_TransformVariables` b30 reads are now
   source-closed for view, inverse-view, inverse GPU view-projection, and camera
   position. The default-off same-frame publisher reads all 1,312 bytes back
