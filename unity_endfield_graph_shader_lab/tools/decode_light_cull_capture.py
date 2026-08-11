@@ -146,6 +146,12 @@ def decode_capture(document: Mapping[str, Any]) -> dict[str, Any]:
             _finite_float(value, f"capture.result.rows[{index}].worldPosition")
             for value in struct.unpack_from("<3f", row, 0x74)
         )
+        identity_word_0x84 = struct.unpack_from("<I", row, 0x84)[0]
+        if identity_word_0x84 != 0:
+            raise CaptureDecodeError(
+                f"capture.result.rows[{index}].rawIdentityWord0x84: "
+                "expected converter-written zero"
+            )
         rows.append(
             {
                 "index": index,
@@ -155,7 +161,7 @@ def decode_capture(document: Mapping[str, Any]) -> dict[str, Any]:
                 "spotAngle": spot_angle,
                 "worldPosition": list(position),
                 "rawIdentityWord0x80": struct.unpack_from("<I", row, 0x80)[0],
-                "rawIdentityWord0x84": struct.unpack_from("<I", row, 0x84)[0],
+                "rawIdentityWord0x84": identity_word_0x84,
                 "rawIdentityPointer0x88": f"0x{struct.unpack_from('<Q', row, 0x88)[0]:X}",
             }
         )

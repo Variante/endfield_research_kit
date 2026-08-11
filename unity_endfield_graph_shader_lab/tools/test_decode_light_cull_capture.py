@@ -67,6 +67,17 @@ class DecodeLightCullCaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(decoder.CaptureDecodeError, "expected 0..256"):
             decoder.decode_capture(bad)
 
+    def test_rejects_nonzero_converter_flags_word(self) -> None:
+        bad = _fixture()
+        raw = bytearray.fromhex(bad["result"]["rawRowsHex"])
+        struct.pack_into("<I", raw, 0x84, 1)
+        bad["result"]["rawRowsHex"] = raw.hex()
+        with self.assertRaisesRegex(
+            decoder.CaptureDecodeError,
+            "rawIdentityWord0x84: expected converter-written zero",
+        ):
+            decoder.decode_capture(bad)
+
 
 if __name__ == "__main__":
     unittest.main()
