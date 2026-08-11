@@ -44,6 +44,15 @@ I18N_EN = (
     REPO_ROOT
     / "export_full/structured/StreamingAssets/Table/I18nTextTable_EN.json"
 )
+GENERATED_CHARACTERS = (
+    LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/Characters"
+)
+CHEN_MESH_ROOT = GENERATED_CHARACTERS / "Playable/Chen/Meshes"
+CHEN_PREFAB = GENERATED_CHARACTERS / "Playable/Chen/Prefabs/Chen.prefab"
+CHENPAST_MESH_ROOT = GENERATED_CHARACTERS / "NonPlayable/Chenpast/Meshes"
+CHENPAST_PREFAB = (
+    GENERATED_CHARACTERS / "NonPlayable/Chenpast/Prefabs/Chenpast.prefab"
+)
 
 CANONICAL_POSTMODEL_RE = re.compile(
     r"^assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/"
@@ -128,6 +137,54 @@ class AllCharacterSourceInventoryTests(unittest.TestCase):
         self.assertNotEqual(
             str(chen["Source"]).casefold(), str(chenpast["Source"]).casefold()
         )
+
+    def test_generated_chen_prefabs_keep_mesh_guid_sets_disjoint(self) -> None:
+        """The generated gallery must not silently alias the two model kits."""
+
+        def mesh_guids(root: Path) -> dict[str, Path]:
+            result: dict[str, Path] = {}
+            for meta in root.glob("*.asset.meta"):
+                match = re.search(
+                    r"^guid: ([0-9a-f]{32})$",
+                    meta.read_text(encoding="utf-8"),
+                    re.MULTILINE,
+                )
+                self.assertIsNotNone(match, meta)
+                result[match.group(1)] = meta
+            return result
+
+        chen = mesh_guids(CHEN_MESH_ROOT)
+        chenpast = mesh_guids(CHENPAST_MESH_ROOT)
+        self.assertEqual(len(chen), 10)
+        self.assertEqual(len(chenpast), 10)
+        self.assertTrue(set(chen).isdisjoint(chenpast))
+
+        chen_prefab = CHEN_PREFAB.read_text(encoding="utf-8")
+        chenpast_prefab = CHENPAST_PREFAB.read_text(encoding="utf-8")
+        chen_refs = set(re.findall(r"guid: ([0-9a-f]{32})", chen_prefab))
+        chenpast_refs = set(re.findall(r"guid: ([0-9a-f]{32})", chenpast_prefab))
+        self.assertTrue(set(chen).issubset(chen_refs))
+        self.assertTrue(set(chenpast).issubset(chenpast_refs))
+        self.assertTrue(set(chen).isdisjoint(chenpast_refs))
+        self.assertTrue(set(chenpast).isdisjoint(chen_refs))
+        self.assertEqual(chen_prefab.count("S_actor_chen_"), 10)
+        self.assertEqual(chenpast_prefab.count("S_npc_major_chenpast_"), 10)
+
+        # The distinction is not only naming/identity metadata: the two
+        # source-authored body meshes carry different triangle index buffers.
+        chen_body = (
+            CHEN_MESH_ROOT / "S_actor_chen_body_01_lod0.asset"
+        ).read_text(encoding="utf-8")
+        chenpast_body = (
+            CHENPAST_MESH_ROOT / "S_npc_major_chenpast_body_01_lod0.asset"
+        ).read_text(encoding="utf-8")
+        chen_index = re.search(r"^  m_IndexBuffer: (.+)$", chen_body, re.MULTILINE)
+        chenpast_index = re.search(
+            r"^  m_IndexBuffer: (.+)$", chenpast_body, re.MULTILINE
+        )
+        self.assertIsNotNone(chen_index)
+        self.assertIsNotNone(chenpast_index)
+        self.assertNotEqual(chen_index.group(1), chenpast_index.group(1))
 
     def test_npc_source_joins_cover_non_table_display_and_prefab_identity(self) -> None:
         info = json.loads(NPC_INFO_TABLE.read_text(encoding="utf-8"))
