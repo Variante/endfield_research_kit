@@ -8242,6 +8242,33 @@
           "boundary": "both native StreamingGameplayManager construction paths install the same Render/type-0 and MergedRenderCollider/type-9 callback maps. Component 67 is touched only during UnloadedToLoading, LoadingToLoaded, UnloadingToUnloaded, and LoadingToUnloaded; the managed constructor replaces only Water/type-1 and WaterDecal/type-13 registries"
         }
       },
+      "component75HlodLevel": {
+        "callbackVirtualAddress": "0x181154230",
+        "component75PointerField": "selected component-75 storage pointer",
+        "component75ByteOffset": "0x00",
+        "streamingStatePointerOffset": "0x30",
+        "enableLodStreamingOffset": "0x38",
+        "lodCrossFadeConfigOffset": "0x3C",
+        "hlodUnloadDistanceTableOffset": "0x474 + 4 * component75.byte0",
+        "nativeProjectionClosed": true,
+        "validatedSlices": {
+          "lod_state_pointer_and_enable_gate": {
+            "bodyOffset": "0x1A7",
+            "sizeBytes": 14,
+            "sha256": "ad103d5b5a2704d91927b7e99f1d106727426fc473b86427daefddc6f5dad0c7"
+          },
+          "lod_config_and_component75_byte0": {
+            "bodyOffset": "0x1BE",
+            "sizeBytes": 7,
+            "sha256": "52d03f69bc298e04f8f1e977fdbd8bd3a2eccd65d4d95936b7004dac43035aa9"
+          },
+          "hlod_unload_distance_index": {
+            "bodyOffset": "0x1E4",
+            "sizeBytes": 9,
+            "sha256": "d6257341179dfe3de036856a8d6bc7c785f02b9d5cb762a063429c1342223f20"
+          }
+        }
+      },
       "component67InitialData": {
         "rootFields": {
           "nativeEntityIdGroups": 6,
@@ -8758,6 +8785,7 @@
       "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
       "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
       "HGLODStreamingSystem internal calls 273..291, state+0x38/+0x39/+0x3C/+0x474 controls, dirty-distance/reset/status/count API names, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
+      "the Render transition-1 component-75 byte projection: selected component-75 storage +0x00 indexes the squared HLOD unload-distance table at state+0x474+4*byte0, with the native streaming gate and LODCrossFadeConfig offsets source-pinned",
       "the component-67 outer request-batch lifecycle: callback-context +0x50/+0x58 descriptor materialization, task+0x18 batch and +0x0A count, resource states 0/1/2, completion polling, callback-context +0x60/+0x68/+0x70 projection, and transition-3 runtime Material/Mesh/shadow-proxy writeback",
       "resource state 2 as load failure through its no-publish relation path, installed Streaming load/get asset failure diagnostics, and component-specific fallback",
       "all four direct transition-task calls across the hash-pinned grid-load state driver and three Streaming gameplay batch-update entity-set branches",

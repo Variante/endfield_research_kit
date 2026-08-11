@@ -361,7 +361,10 @@ NPC archetypes are imported as labeled source kits.
   the terminal LOD or every LOD from the streaming switch. Type 0 requests
   its single row directly when streaming is disabled; when enabled it gates
   the request by squared `lodCenter`-to-`c1` distance and an unnamed
-  component-75 HLOD-level byte. Both callbacks acquire the exact
+  component-75 HLOD-level byte. The native Render transition-1 body now
+  source-closes that byte at component-75 `+0x00` and indexes the squared
+  unload-distance table as `state+0x474+4*byte0`; the type name itself remains
+  intentionally unresolved. Both callbacks acquire the exact
   Material/Mesh/shadow-proxy-Mesh triplet and append 24-byte
   source/AssetType/handle descriptors at transition context `+0x58`. The
   acquire core already performs manager bookkeeping. Outer task

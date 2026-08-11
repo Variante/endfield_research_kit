@@ -548,6 +548,25 @@ class LightCullCapAuditTests(unittest.TestCase):
             result["dynamicStreaming"]["fbMain"]["treeRootCompCount"],
             2828,
         )
+        component75 = result["component75HlodLevel"]
+        self.assertEqual(component75["component75ByteOffset"], "0x00")
+        self.assertEqual(
+            component75["hlodUnloadDistanceTableOffset"],
+            "0x474 + 4 * component75.byte0",
+        )
+        self.assertTrue(component75["nativeProjectionClosed"])
+
+    def test_changed_component75_hlod_level_projection_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        body = bytearray(image.read(0x181154230, 0x6C4))
+        body[0x1E4] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=render_transition1_hlod_unload_distance_index; "
+            r"source=.*UnityPlayer.dll; expected=.*actual=",
+        ):
+            AUDIT.validate_render_transition1_component75_native(bytes(body))
 
     def test_native_ecs_callback_registry_contract(self) -> None:
         transitions = AUDIT.validate_streaming_byte_enum_fields(
