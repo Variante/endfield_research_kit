@@ -69,6 +69,11 @@ WRAPPERS_MANAGER_IS_PATCHED_VA = 0x1831068E0
 WRAPPERS_MANAGER_GET_PATCH_VA = 0x189CDC2C0
 ILFIX_DYNAMIC_METHOD_WRAPPER_874_VA = 0x189CD140C
 FAIL_FAST_VA = 0x1800D8260
+GET_RENDERER_CONFIG_VA = 0x189B4861C
+GET_RENDERER_CONFIG_FILE_OFFSET = 0x9B46C1C
+GET_RENDERER_CONFIG_SIZE = 0xB8
+GET_RENDERER_CONFIG_PATCH_ID = 0x887
+ILFIX_DYNAMIC_METHOD_WRAPPER_875_VA = 0x189CD1564
 GET_LIGHT_NPR_DATA_VA = 0x1832025A0
 GET_LIGHT_NPR_DATA_FILE_OFFSET = 0x3200BA0
 GET_LIGHT_NPR_DATA_SIZE = 0x100
@@ -177,6 +182,7 @@ EXPECTED_HASHES = {
     "rotatehouse": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4",
     "prepareCpuDataBody": "c55bd6dc86c971123c433a5dd29b446b557f8713f73b132da25c257369e9bd0b",
     "getShadowRenderTypeBody": "bfb6730d6907e208480291489117015ee10293e8489a3735b868ab0fde517233",
+    "getRendererConfigBody": "07df57dc9a61647510d55da24a8cdd309fab5957d87195946a05e94b3ede4a07",
     "getLightNprDataBody": "49eeca70b72791b2ad58f8b77cf3fbc3f27149766dcc0510a00b9d129e6698c8",
     "getLightAdditionalDataBody": "071061feb7f3c76044273efe703f9bdf78288703516b863c10c592b263f73e00",
     "packTwoHalfBody": "dad4b266316d3ba37f5c20fd92f2db90da363f7b65b3467bf313342c1a8814ce",
@@ -541,6 +547,10 @@ def cache_index_call_target(body: bytes, offset: int) -> int:
 
 def shadow_render_type_call_target(body: bytes, offset: int) -> int:
     return relative_call_target(body, GET_SHADOW_RENDER_TYPE_VA, offset)
+
+
+def renderer_config_call_target(body: bytes, offset: int) -> int:
+    return relative_call_target(body, GET_RENDERER_CONFIG_VA, offset)
 
 
 def relative_short_branch_target(
@@ -1544,6 +1554,105 @@ def validate_shadow_render_type_native(body: bytes) -> dict[str, Any]:
             "returnedFlagsStillOpen": True,
         },
         "nativeDefaultStaticResultClosed": True,
+        "runtimePatchedResultStillOpen": True,
+    }
+
+
+def validate_renderer_config_native(body: bytes) -> dict[str, Any]:
+    """Pin GetRendererConfig's shadow-flag projection and patch gate."""
+
+    require("renderer_config_size", len(body), GET_RENDERER_CONFIG_SIZE, GAME_ASSEMBLY)
+    body_hash = hashlib.sha256(body).hexdigest()
+    require(
+        "renderer_config_body_sha256",
+        body_hash,
+        EXPECTED_HASHES["getRendererConfigBody"],
+        GAME_ASSEMBLY,
+    )
+    require(
+        "renderer_config_patch_id_sequence",
+        body[0x20:0x25],
+        bytes.fromhex("b987080000"),
+        GAME_ASSEMBLY,
+    )
+    call_offsets = {
+        0x28: (WRAPPERS_MANAGER_IS_PATCHED_VA, "WrappersManagerImpl.IsPatched"),
+        0x4F: (GET_SHADOW_RENDER_TYPE_VA, "HGPunctualLightShadowManagerV2.GetShadowRenderType"),
+        0x7F: (WRAPPERS_MANAGER_GET_PATCH_VA, "WrappersManagerImpl.GetPatch"),
+        0x89: (FAIL_FAST_VA, "fail-fast"),
+        0xA1: (ILFIX_DYNAMIC_METHOD_WRAPPER_875_VA, "ILFixDynamicMethodWrapper.__Gen_Wrap_875"),
+    }
+    calls = []
+    for offset, (target, name) in call_offsets.items():
+        actual = renderer_config_call_target(body, offset)
+        require(f"renderer_config_call_{offset:02x}_target", actual, target, GAME_ASSEMBLY)
+        calls.append({"offset": f"0x{offset:02X}", "target": f"0x{target:X}", "method": name})
+
+    branches = []
+    for offset, (opcode, target_offset, name) in {
+        0x2F: (0x75, 0x78, "patched_gate"),
+        0x87: (0x75, 0x8F, "patched_wrapper_call"),
+    }.items():
+        target = relative_short_branch_target(
+            body,
+            GET_RENDERER_CONFIG_VA,
+            offset,
+            opcode,
+            GAME_ASSEMBLY,
+            f"renderer_config_{name}",
+        )
+        expected_target = GET_RENDERER_CONFIG_VA + target_offset
+        require(
+            f"renderer_config_{name}_target",
+            target,
+            expected_target,
+            GAME_ASSEMBLY,
+        )
+        branches.append(
+            {"offset": f"0x{offset:02X}", "target": f"0x{target:X}", "name": name}
+        )
+    require(
+        "renderer_config_native_formula_sequence",
+        body[0x54:0x78],
+        bytes.fromhex(
+            "8a442430f6d81bc0250010000005004800008a4c2431"
+            "f6d91bd281e2002000000bc2eb2e"
+        ),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "renderer_config_default_base_flags",
+        int.from_bytes(body[0x62:0x66], "little"),
+        0x4800,
+        GAME_ASSEMBLY,
+    )
+    return {
+        "method": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2.GetRendererConfig",
+        "methodIndex": 285596,
+        "virtualAddress": f"0x{GET_RENDERER_CONFIG_VA:X}",
+        "fileOffset": f"0x{GET_RENDERER_CONFIG_FILE_OFFSET:X}",
+        "sizeBytes": GET_RENDERER_CONFIG_SIZE,
+        "bodySha256": body_hash,
+        "patchMethodId": f"0x{GET_RENDERER_CONFIG_PATCH_ID:X}",
+        "resolvedCalls": calls,
+        "resolvedBranches": branches,
+        "nativeDefault": {
+            "condition": "IsPatched(0x887) == false",
+            "baseFlags": "0x4800",
+            "castStaticPointer": "rsp+0x30 (r9 argument to GetShadowRenderType)",
+            "castDynamicPointer": "rsp+0x31 (fifth argument to GetShadowRenderType)",
+            "formula": "0x4800 | (castStaticObjects ? 0x1000 : 0) | (castDynamicObjects ? 0x2000 : 0)",
+            "sourceFlagsClosed": True,
+        },
+        "runtimePatchedPath": {
+            "condition": "IsPatched(0x887) == true",
+            "patchLookup": f"0x{WRAPPERS_MANAGER_GET_PATCH_VA:X}",
+            "wrapper": f"0x{ILFIX_DYNAMIC_METHOD_WRAPPER_875_VA:X}",
+            "missingPatchFailFast": f"0x{FAIL_FAST_VA:X}",
+            "runtimeWrapperTableEntryStillOpen": True,
+            "returnedFlagsStillOpen": True,
+        },
+        "nativeDefaultFlagsClosed": True,
         "runtimePatchedResultStillOpen": True,
     }
 
@@ -2781,6 +2890,8 @@ def build_audit() -> dict[str, Any]:
         point_shadow_cache_index_body = stream.read(PUNCTUAL_SHADOW_CACHE_INDEX_SIZE)
         stream.seek(GET_SHADOW_RENDER_TYPE_FILE_OFFSET)
         shadow_render_type_body = stream.read(GET_SHADOW_RENDER_TYPE_SIZE)
+        stream.seek(GET_RENDERER_CONFIG_FILE_OFFSET)
+        renderer_config_body = stream.read(GET_RENDERER_CONFIG_SIZE)
         stream.seek(HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_FILE_OFFSET)
         is_dynamic_shadow_caster_body = stream.read(
             HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_SIZE
@@ -2848,6 +2959,7 @@ def build_audit() -> dict[str, Any]:
     native["shadowRenderType"] = validate_shadow_render_type_native(
         shadow_render_type_body
     )
+    native["rendererConfig"] = validate_renderer_config_native(renderer_config_body)
     native["shadowCasterPropertyGetters"] = validate_shadow_caster_property_getters(
         is_dynamic_shadow_caster_body,
         cast_static_objects_body,
@@ -2962,8 +3074,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v14",
-        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_and_shadow_render_type_gate_contract_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v15",
+        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_and_renderer_config_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -3030,6 +3142,7 @@ def build_audit() -> dict[str, Any]:
                 "pointShadowFacePack": native["pointShadowFacePack"],
                 "pointShadowCacheIndex": native["pointShadowCacheIndex"],
                 "shadowRenderType": native["shadowRenderType"],
+                "rendererConfig": native["rendererConfig"],
                 "shadowCasterPropertyGetters": native["shadowCasterPropertyGetters"],
                 "pointRecordTransform": native["pointRecordTransform"],
                 "closedLanes": [
@@ -3097,6 +3210,7 @@ def build_audit() -> dict[str, Any]:
                 "the native HGSharedLightData caster-property getters are hash-pinned masks 0x01/0x02/0x04; all selected room rows serialize m_CasterProperties=6, point-shadow faces=-1, and LightShadowCasterMode=0",
                 "GetShadowRenderType method 0x886 is hash-pinned: IsPatched gates a native default path whose static request returns castStatic=true/castDynamic=false and whose dynamic path consumes the three caster-property getters",
                 "the patched GetShadowRenderType path is explicitly bounded to WrappersManagerImpl.GetPatch(0x886) and ILFixDynamicMethodWrapper.__Gen_Wrap_874, with missing-patch fail-fast; no runtime wrapper result is inferred",
+                "GetRendererConfig method 0x887 is hash-pinned: its unpatched projection is 0x4800 | (castStaticObjects ? 0x1000 : 0) | (castDynamicObjects ? 0x2000 : 0), and its patched path is bounded to __Gen_Wrap_875",
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
                 "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
                 "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -3109,6 +3223,7 @@ def build_audit() -> dict[str, Any]:
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
                 "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
                 "the runtime IsPatched(0x886) wrapper-table membership and any patched GetShadowRenderType return flags remain capture/runtime-boundary evidence",
+                "the runtime IsPatched(0x887) wrapper-table membership and any patched GetRendererConfig flags remain capture/runtime-boundary evidence",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
@@ -3135,7 +3250,7 @@ def main() -> int:
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
         "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
-        "additional-light components, and bounded OBB half candidates closed."
+        "shadow render-type/renderer-config gates, additional-light components, and bounded OBB half candidates closed."
     )
     return 0
 
