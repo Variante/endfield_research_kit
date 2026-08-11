@@ -65,6 +65,22 @@ DECOMPILED_SOURCE = (
     / "Runtime"
     / "TAAUPassConstructor.cs"
 )
+SCENE_SOURCE = (
+    REPO_ROOT
+    / "tools"
+    / "FractalMiner"
+    / "Assets"
+    / "Project"
+    / "EndField"
+    / "HGRP"
+    / "packages"
+    / "com.hg.render-pipelines"
+    / "runtime"
+    / "HG"
+    / "Rendering"
+    / "Runtime"
+    / "HGRenderPathScene.cs"
+)
 CAMERA_METADATA = LAB_ROOT / "scratch" / "overlay_taa_volume" / "camera_taa_metadata.json"
 OUTPUT = LAB_ROOT / "scratch" / "overlay_taa_volume" / "taau_history_contract.json"
 
@@ -80,6 +96,10 @@ EXPECTED_HASHES = {
     "TAAUPassConstructor.cs": (
         DECOMPILED_SOURCE,
         "6a9771638697179d51930330b9f44db6904b4df340466e616e37bc9c83f9f7fc",
+    ),
+    "HGRenderPathScene.cs": (
+        SCENE_SOURCE,
+        "dd4f118d9e3d58f5dac757a934a2897928c5333f4a062a7473f341cbaaa1235f",
     ),
     "camera_taa_metadata.json": (
         CAMERA_METADATA,
@@ -113,6 +133,11 @@ EXPECTED_TAAU_METHODS = {
     "ConstructDilationPass": (287700, "0x06001250"),
     "ConstructMaskDilationPass": (287701, "0x06001251"),
     "ConstructResolvePass": (287702, "0x06001252"),
+}
+EXPECTED_SCENE_METHODS = {
+    "OnPostRendering": (288032, "0x0600139c"),
+    "RenderInternal": (288033, "0x0600139d"),
+    "RenderPostProcessPhase2": (288039, "0x060013a3"),
 }
 
 
@@ -182,9 +207,21 @@ def verify_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
         assert row is not None
         require(f"method {name}.index", row["index"], index)
         require(f"method {name}.token", row["token"].lower(), token.lower())
-    scene_fields = [x["name"] for x in scene["fields"]]
+    scene_fields = {x["name"]: x for x in scene["fields"]}
     for field in ("<sceneColor>k__BackingField", "<sceneDepth>k__BackingField", "<sceneMV>k__BackingField", "<historySceneColor>k__BackingField"):
         require(f"HGRenderPathScene field {field}", field in scene_fields, True)
+    require(
+        "historySceneColor field index/token",
+        (scene_fields["<historySceneColor>k__BackingField"]["index"], scene_fields["<historySceneColor>k__BackingField"]["token"].lower()),
+        (176842, "0x040024f9"),
+    )
+    scene_methods = {row["name"]: row for row in scene["methods"]}
+    for name, (index, token) in EXPECTED_SCENE_METHODS.items():
+        row = scene_methods.get(name)
+        require(f"scene method {name} present", row is not None, True)
+        assert row is not None
+        require(f"scene method {name}.index", row["index"], index)
+        require(f"scene method {name}.token", row["token"].lower(), token.lower())
     return {
         "taauType": {
             "index": taau["index"],
@@ -201,6 +238,11 @@ def verify_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
             "index": scene["index"],
             "fieldCount": scene["fieldCount"],
             "historyField": "<historySceneColor>k__BackingField",
+            "historyFieldIndex": 176842,
+            "methods": {
+                name: {"index": index, "token": token}
+                for name, (index, token) in EXPECTED_SCENE_METHODS.items()
+            },
         },
     }
 
@@ -316,19 +358,71 @@ def verify_source(source: str) -> dict[str, Any]:
     }
 
 
+def verify_scene_source(source: str) -> dict[str, Any]:
+    require_tokens(
+        source,
+        (
+            "if ( renderPathParams.skipRender )",
+            "v9 = *(TextureHandle *)&this[1].fields._.m_shaderVariablesGlobal._PrevNonJitteredViewNoTransProjMatrix.m23",
+            "v9 = *(TextureHandle *)&this[1].fields._.m_shaderVariablesGlobal._PrevNonJitteredViewProjMatrix.m03",
+            "HG::Rendering::RenderGraphModule::HGRenderGraph::PreserveTexture(&v12, m_RenderGraph, &v11, 1, (String *)\"historySceneColor\", 0LL)",
+            "HG::Rendering::Runtime::HGRenderPathBase::OnPostRendering((HGRenderPathBase *)this, renderPathParams, 0LL)",
+            "IFix::WrappersManagerImpl::IsPatched(3037, 0LL)",
+        ),
+        "scene history writeback",
+    )
+    require_tokens(
+        source,
+        (
+            "v161.sceneColor = *(TextureHandle *)&v4[1].fields._.m_shaderVariablesGlobal._PrevNonJitteredViewProjMatrix.m03",
+            "v161.sceneDepth = *(TextureHandle *)&v4[1].fields._.m_shaderVariablesGlobal._PrevNonJitteredViewNoTransProjMatrix.m00",
+            "v161.sceneMV = *(TextureHandle *)&v4[1].fields._.m_shaderVariablesGlobal._PrevNonJitteredViewNoTransProjMatrix.m01",
+            "v161.historySceneColor = *(TextureHandle *)&v4[1].fields._.m_shaderVariablesGlobal._PrevNonJitteredViewNoTransProjMatrix.m23",
+            "v161.screenSize = v23[3]",
+            "v161.renderSize = v24[6]",
+            "HG::Rendering::Runtime::TAAUPassConstructor::ConstructPass(",
+            "*(TAAUPassConstructor_PassOutput *)&v4[1].fields._.m_shaderVariablesGlobal._PrevNonJitteredViewProjMatrix.m03 = output",
+            "hgrp.fields._fastConvergeState_k__BackingField = 0",
+        ),
+        "scene history input handoff",
+    )
+    return {
+        "inputHandoff": {
+            "currentSceneColor": "HGRenderPathScene sceneColor",
+            "sceneDepth": "HGRenderPathScene sceneDepth",
+            "sceneMV": "HGRenderPathScene sceneMV",
+            "historySceneColor": "HGRenderPathScene persistent historySceneColor",
+            "screenSize": "HGCamera view-size entry v23[3]",
+            "renderSize": "HGCamera render-size entry v24[6]",
+        },
+        "writeback": {
+            "normalFrame": "TAAU/PostProcess output currentSceneColor",
+            "skipRender": "previous historySceneColor",
+            "preserveName": "historySceneColor",
+            "fastConvergeState": "reset to 0 after ConstructPass",
+        },
+        "boundary": (
+            "The scene-level history handoff and PreserveTexture writeback are source-closed. "
+            "The runtime TextureHandle identities and the IFix 3037 replacement result remain open."
+        ),
+    }
+
+
 def build_audit() -> dict[str, Any]:
     hashes = verify_hashes()
     metadata = json.loads(CAMERA_METADATA.read_text(encoding="utf-8"))
     source = DECOMPILED_SOURCE.read_text(encoding="utf-8")
+    scene_source = SCENE_SOURCE.read_text(encoding="utf-8")
     return {
         "schema": "endfield.taau-history-contract.v1",
-        "status": "source_closed_live_history_open",
+        "status": "source_closed_live_handles_open",
         "evidence": {
             "hashes": hashes,
             "metadata": verify_metadata(metadata),
             "source": "FractalMiner decompilation comments from the hash-pinned retail GameAssembly",
         },
         "contract": verify_source(source),
+        "sceneHistory": verify_scene_source(scene_source),
     }
 
 
@@ -347,8 +441,8 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "TAAU history audit passed: validity gate, 192-byte constants, "
-        "persistent depth/MV resources, and Dilation->MaskDilation->Resolve are source-closed; "
-        "live history remains open."
+        "persistent depth/MV resources, scene history handoff, and "
+        "Dilation->MaskDilation->Resolve are source-closed; live handles remain open."
     )
     return 0
 

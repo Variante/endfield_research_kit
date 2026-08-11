@@ -38,9 +38,10 @@ class ContractProbeTests(unittest.TestCase):
     def test_current_installed_contract_builds(self) -> None:
         audit = MODULE.build_audit()
         self.assertEqual(audit["schema"], "endfield.taau-history-contract.v1")
-        self.assertEqual(audit["status"], "source_closed_live_history_open")
+        self.assertEqual(audit["status"], "source_closed_live_handles_open")
         self.assertEqual(audit["contract"]["passOrder"], ["Dilation", "MaskDilation", "Resolve"])
         self.assertIn("Live TextureHandle identities", audit["contract"]["boundary"])
+        self.assertEqual(audit["sceneHistory"]["writeback"]["preserveName"], "historySceneColor")
 
 
 if __name__ == "__main__":

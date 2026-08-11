@@ -1153,10 +1153,12 @@ light-input contract. It does not claim IFix history constants or a settled
 retail TAA frame. Run `python tools\audit_taau_history_contract.py` for the
 source-backed TAAU history/resource ABI: the history-validity gate, 192-byte
 constants, persistent dilated depth/motion-vector textures, and
-quality-dependent Dilation→MaskDilation→Resolve scheduling. Its report is
-deliberately marked `source_closed_live_history_open`; live TextureHandle
-identities, settled weights/internal extent, frame resets, and IFix replacements
-remain unclaimed.
+quality-dependent Dilation→MaskDilation→Resolve scheduling. It also verifies
+that `HGRenderPathScene` passes its persistent `historySceneColor` into TAAU
+and preserves the current output back under that name (or retains the old
+history on a skipped frame). Its report is deliberately marked
+`source_closed_live_handles_open`; live TextureHandle identities, settled
+weights/internal extent, and IFix replacements remain unclaimed.
 
 The selected overlay local-volume term is also active for the isolated
 CharInfo rigs. The recovered type-4 Fog consumer joins all 31 source profiles,

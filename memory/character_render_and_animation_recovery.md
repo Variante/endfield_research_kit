@@ -490,7 +490,10 @@ NPC archetypes are imported as labeled source kits.
   the quality-dependent Dilation -> MaskDilation -> Resolve schedule and the
   history/size constant lanes. This is still static evidence: live
   `TextureHandle` identities, settled weights/internal extent, reset state, and
-  any IFix replacement remain capture-only/open. Run
+  any IFix replacement remain capture-only/open. The scene-level handoff is
+  now explicit: `HGRenderPathScene` supplies `historySceneColor` to TAAU and
+  `OnPostRendering` preserves either the current output or the prior history
+  on a skipped frame, then resets `fastConvergeState`. Run
   `python tools/audit_taau_history_contract.py --check` after refreshing the
   installed evidence.
 - The selected original pass-0 `_TransformVariables` b30 reads are now
