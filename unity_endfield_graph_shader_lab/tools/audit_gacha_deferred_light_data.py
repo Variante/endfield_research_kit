@@ -58,6 +58,9 @@ VALIDATOR = "gacha_deferred_light_data"
 PREPARE_CPU_DATA_VA = 0x189D0C7BC
 PREPARE_CPU_DATA_FILE_OFFSET = 0x9D0ADBC
 PREPARE_CPU_DATA_SIZE = 0x1838
+PUNCTUAL_SHADOW_CACHE_INDEX_VA = 0x189B486D4
+PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET = 0x9B46CD4
+PUNCTUAL_SHADOW_CACHE_INDEX_SIZE = 0x134
 GET_LIGHT_NPR_DATA_VA = 0x1832025A0
 GET_LIGHT_NPR_DATA_FILE_OFFSET = 0x3200BA0
 GET_LIGHT_NPR_DATA_SIZE = 0x100
@@ -278,7 +281,6 @@ COMMON_RECORD_WRITE = (0x15F8, 7, 13)
 # The target-frame cache indices are still runtime state; these offsets pin the
 # original producer contract without inventing those values offline.
 LIGHT_CASTER_CONSTRUCTOR_VA = 0x189B52B0C
-PUNCTUAL_SHADOW_CACHE_INDEX_VA = 0x189B486D4
 POINT_SHADOW_FACE_CONSTRUCTOR_CALLS = (
     (0x10D4, 0),
     (0x1120, 1),
@@ -513,6 +515,10 @@ def relative_call_target(body: bytes, base_va: int, offset: int) -> int:
 
 def call_target(body: bytes, offset: int) -> int:
     return relative_call_target(body, PREPARE_CPU_DATA_VA, offset)
+
+
+def cache_index_call_target(body: bytes, offset: int) -> int:
+    return relative_call_target(body, PUNCTUAL_SHADOW_CACHE_INDEX_VA, offset)
 
 
 def relative_branch_target(
@@ -999,6 +1005,84 @@ def validate_point_shadow_face_pack_native(body: bytes) -> dict[str, Any]:
             "closed": False,
             "requiredCapture": "six target-frame GetShadowCacheIndexForCaster return values",
         },
+    }
+
+
+def validate_point_shadow_cache_index_native(body: bytes) -> dict[str, Any]:
+    """Pin the cache resolver that supplies each Point face index.
+
+    The face pack audit proves how ``PrepareCPUData`` consumes the six return
+    values.  This companion audit keeps the resolver's three native outcomes
+    explicit: a dynamic caster returns ``40 + ordinal``, a static descriptor
+    returns its cached slot field, and an unmatched caster returns ``-1``.
+    The latter is the only value that the producer maps to the shader's 255
+    unavailable sentinel.
+    """
+
+    require(
+        "point_shadow_cache_index_body_sha256",
+        hashlib.sha256(body).hexdigest(),
+        "569216d2b51545da1b7867902e78ff36f9cbcf7f893db66c581481facd9ac622",
+        GAME_ASSEMBLY,
+    )
+    for offset, target, name in (
+        (0x26, 0x1831068E0, "patched_gate"),
+        (0x3A, 0x189B4F6CC, "dynamic_count_initial"),
+        (0x87, 0x189B52B7C, "light_caster_equality"),
+        (0x97, 0x189B4F6CC, "dynamic_count_loop"),
+        (0xBC, 0x187C86250, "static_caster_lookup"),
+        (0xE8, 0x1808AE754, "static_cache_descriptor_lookup"),
+        (0xF4, 0x189CDC2C0, "patched_wrapper_lookup"),
+        (0xFE, 0x1800D8260, "null_state_fail_fast"),
+    ):
+        require(
+            f"point_shadow_cache_index_{name}_target",
+            cache_index_call_target(body, offset),
+            target,
+            GAME_ASSEMBLY,
+        )
+    require(
+        "point_shadow_cache_index_dynamic_list_field",
+        body[0x43 : 0x43 + 7],
+        bytes.fromhex("488b8b80000000"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "point_shadow_cache_index_dynamic_return",
+        body[0xCA : 0xCA + 3],
+        bytes.fromhex("8d4728"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "point_shadow_cache_index_static_list_field",
+        body[0xA0 : 0xA0 + 4],
+        bytes.fromhex("488b4b38"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "point_shadow_cache_index_unmatched_return",
+        body[0xC5 : 0xC5 + 3],
+        bytes.fromhex("83c8ff"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "point_shadow_cache_index_static_slot_field",
+        body[0xED : 0xED + 3],
+        bytes.fromhex("8b400c"),
+        GAME_ASSEMBLY,
+    )
+    return {
+        "nativeVirtualAddress": f"0x{PUNCTUAL_SHADOW_CACHE_INDEX_VA:X}",
+        "fileOffset": f"0x{PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET:X}",
+        "bodySize": len(body),
+        "bodySha256": hashlib.sha256(body).hexdigest(),
+        "dynamicCasterListField": "this + 0x80",
+        "staticCasterListField": "this + 0x38",
+        "dynamicMatchResult": "dynamicOrdinal + 40 (0x28)",
+        "staticMatchResult": "PunctualLightCachedShadowDesc.shadowCacheSlotIndex (+0x0C)",
+        "unmatchedResult": -1,
+        "nullManagerOrCasterList": "fail-fast via 0x1800D8260",
+        "resolverOutcomeClosed": True,
     }
 
 
@@ -2412,6 +2496,8 @@ def build_audit() -> dict[str, Any]:
     with GAME_ASSEMBLY.open("rb") as stream:
         stream.seek(PREPARE_CPU_DATA_FILE_OFFSET)
         body = stream.read(PREPARE_CPU_DATA_SIZE)
+        stream.seek(PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
+        point_shadow_cache_index_body = stream.read(PUNCTUAL_SHADOW_CACHE_INDEX_SIZE)
         stream.seek(GET_LIGHT_NPR_DATA_FILE_OFFSET)
         npr_body = stream.read(GET_LIGHT_NPR_DATA_SIZE)
         stream.seek(GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET)
@@ -2465,6 +2551,9 @@ def build_audit() -> dict[str, Any]:
         row["obbPackedTransform"] = recover_obb_pack(row)
     consumer = validate_consumer(SELECTED_FRAGMENT.read_text(encoding="utf-8"))
     native = validate_native_body(body)
+    native["pointShadowCacheIndex"] = validate_point_shadow_cache_index_native(
+        point_shadow_cache_index_body
+    )
     native["pointRecordTransform"]["helperBodies"] = (
         validate_visible_light_transform_helpers(
             visible_light_get_forward_body,
@@ -2574,8 +2663,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v11",
-        "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v12",
+        "status": "room_record0_record1w_record2z_transform_and_point_shadow_cache_resolver_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -2637,6 +2726,7 @@ def build_audit() -> dict[str, Any]:
                 "record2WExactCandidateCount": record2_w_closed_count,
                 "record2WContractExactCandidateCount": record2_w_contract_closed_count,
                 "pointShadowFacePack": native["pointShadowFacePack"],
+                "pointShadowCacheIndex": native["pointShadowCacheIndex"],
                 "pointRecordTransform": native["pointRecordTransform"],
                 "closedLanes": [
                     "record2.z for all rows",
@@ -2699,6 +2789,7 @@ def build_audit() -> dict[str, Any]:
                 "the pinned original scalar-cosine body and exact half-angle scaling close record2.z and record2.w for the one Spot row",
                 "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
                 "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
+                "GetShadowCacheIndexForCaster is source-closed: dynamic matches return ordinal + 40, static matches return shadowCacheSlotIndex, unmatched casters return -1, and null manager/list state fail-fast",
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
                 "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
                 "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -2734,7 +2825,7 @@ def main() -> int:
     print(
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
-        "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing contract, "
+        "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
         "additional-light components, and bounded OBB half candidates closed."
     )
     return 0
