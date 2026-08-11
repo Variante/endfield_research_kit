@@ -1535,6 +1535,11 @@ local-vector cleanup. It closes the 16-byte `LightCullResult`
 layout and the consumer's `VisibleLight` stride, including type `+0x00`,
 priority `+0x70`, and world position `+0x74`; future capture can therefore
 reject truncated rows deterministically. It now
+accepts a detached, build-pinned JSON artifact through
+`python tools/decode_light_cull_capture.py capture.json --output decoded.json`;
+the decoder validates the pointer/null rule, count cap, and exact raw-row
+length without attaching to the retail process.
+It now
 also pins internal call 3304 from the 16-argument `AddCullViewByMatrix` binding
 through six-plane extraction and the scheduled view constructor. The physical
 camera's `cullingMask` lands at view `+0x4`; the squared

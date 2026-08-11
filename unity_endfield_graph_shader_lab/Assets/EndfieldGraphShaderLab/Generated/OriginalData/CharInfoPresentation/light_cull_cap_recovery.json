@@ -1155,7 +1155,7 @@
           "row+0x70 <- source+0x8C (4 bytes)",
           "row+0x74..0x7F <- source+0x9C/+0xA0/+0xA4",
           "row+0x80 <- source+0x00 (4 bytes)",
-          "row+0x84 <- input-vector element index",
+          "row+0x84 <- constant zero (converter r12d is zero throughout the loop)",
           "row+0x88 <- source pointer (8 bytes)"
         ],
         "managedRangeFieldOffset": "0x68",

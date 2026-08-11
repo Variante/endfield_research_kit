@@ -704,6 +704,10 @@ class LightCullCapAuditTests(unittest.TestCase):
             "row+0x68 <- source+0x18, or source+0x138 for source type 3/4",
             result["visibleLightProducer"]["writtenRawFieldMappings"],
         )
+        self.assertIn(
+            "row+0x84 <- constant zero (converter r12d is zero throughout the loop)",
+            result["visibleLightProducer"]["writtenRawFieldMappings"],
+        )
         self.assertIn("maxCount output cap", result["closedBehavior"])
 
     def test_changed_unity_native_cap_fails_closed(self) -> None:
