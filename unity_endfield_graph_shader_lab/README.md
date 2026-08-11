@@ -2578,7 +2578,12 @@ unit-box boundary by at most `0.002611`. UnityPlayer icall 2471
 to the hash-pinned `0x180569BD0` scalar determinant/cofactor body; its exact
 float32 order and `-0` sign-mask candidates are now replayed, including the
 `Spot Light (12)` one-ULP boundary. Retail packed-word capture and the
-preceding Quaternion.Euler/TRS input values remain open. Pinned original `globalgamemanagers`
+preceding Quaternion.Euler input remain open. The adjacent UnityPlayer icall
+2470 (`Matrix4x4::TRS_Injected`) is also source-closed: its `0x1800A1BB0`
+wrapper, `0x18056CB40` scalar column-scale/position-copy body, and
+`0x18056B8A0` quaternion-to-column-major helper are hash-pinned and replayed.
+The native TRS and inverse stages are therefore closed conditional on the
+still-open Euler input. Pinned original `globalgamemanagers`
 objects set Linear color space and linear light intensity, while all 11 rows
 disable color temperature, distance/far-show falloff, animation, multistate,
 and flicker. Hash-pinned UnityPlayer `finalColor`, `Color.linear`, animation-

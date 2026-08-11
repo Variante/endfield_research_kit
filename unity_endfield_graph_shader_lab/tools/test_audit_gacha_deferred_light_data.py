@@ -592,6 +592,46 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertFalse(success)
         self.assertEqual(inverse, [[0.0] * 4 for _ in range(4)])
 
+    def test_unityplayer_matrix4x4_trs_native(self) -> None:
+        result = AUDIT.validate_matrix4x4_trs_native(AUDIT.UNITY_PLAYER.read_bytes())
+        self.assertEqual(result["icallIndex"], 2470)
+        self.assertEqual(result["nativeBodySizeBytes"], 0xC6)
+        self.assertEqual(
+            result["nativeBodySha256"],
+            "ed2c20824bf8944a67566c874df429a53f6ca1c25f51f0eaf39259a16105b980",
+        )
+        self.assertEqual(result["quaternionToMatrixHelperBodySizeBytes"], 0x142)
+
+    def test_changed_matrix4x4_trs_body_fails_closed(self) -> None:
+        data = bytearray(AUDIT.UNITY_PLAYER.read_bytes())
+        data[AUDIT.MATRIX4X4_TRS_NATIVE_FILE_OFFSET] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=matrix4x4_trs_native_body_sha256;.*expected=.*actual=",
+        ):
+            AUDIT.validate_matrix4x4_trs_native(bytes(data))
+
+    def test_native_matrix4x4_trs_replays_quaternion_helper_and_column_scale(self) -> None:
+        quaternion = [0.0, 0.5, 0.0, 0.8660254]
+        rotation = AUDIT.unity_quaternion_to_matrix_candidate(quaternion)
+        self.assertEqual(
+            [AUDIT.float32_bits(rotation[row][column]) for row, column in ((0, 0), (0, 2), (2, 0), (2, 2))],
+            [0x3F000000, 0x3F5DB3D7, 0xBF5DB3D7, 0x3F000000],
+        )
+        trs = AUDIT.unity_matrix4x4_trs_candidate(
+            quaternion,
+            [1.0, 2.0, 3.0],
+            [2.0, 3.0, 4.0],
+        )
+        self.assertEqual(
+            [AUDIT.float32_bits(trs[0][column]) for column in range(4)],
+            [0x3F800000, 0x00000000, 0x405DB3D7, 0x3F800000],
+        )
+        self.assertEqual(
+            [AUDIT.float32_bits(trs[2][column]) for column in range(4)],
+            [0xBFDDB3D7, 0x00000000, 0x40000000, 0x40400000],
+        )
+
     def test_native_disabled_distance_falloff_is_one(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.GET_LIGHT_FALLOFF_FILE_OFFSET)
