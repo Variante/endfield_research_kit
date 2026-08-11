@@ -1528,7 +1528,10 @@ The maintained audit now verifies the current GameAssembly call registers and
 return copies plus the UnityPlayer candidate gates directly. It also hash-pins
 the candidate-pointer vector conversion at `0x180543CE0`: allocation is
 `inputCount * 0x94`, and the exact source-to-row projection is recorded for
-the 148-byte `VisibleLight` rows. It closes the 16-byte `LightCullResult`
+the 148-byte `VisibleLight` rows. The enclosing `CullLightsInternal` wrapper
+is hash-pinned as well, including the `viewHandle == -1` zero-result path,
+hidden-sret pointer/count publication, manager retention-vector append, and
+local-vector cleanup. It closes the 16-byte `LightCullResult`
 layout and the consumer's `VisibleLight` stride, including type `+0x00`,
 priority `+0x70`, and world position `+0x74`; future capture can therefore
 reject truncated rows deterministically. It now

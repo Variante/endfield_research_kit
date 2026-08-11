@@ -91,7 +91,10 @@ NPC archetypes are imported as labeled source kits.
   `VisibleLight` capture stride are source-closed. The native candidate-pointer
   vector is then converted by the hash-pinned `0x180543CE0` producer into
   `inputCount * 0x94` rows, with the source-to-row field projection recorded
-  in the audit. An authorized target-frame
+  in the audit. The enclosing hash-pinned `CullLightsInternal` wrapper now
+  also closes the `viewHandle == -1` zero-result path, hidden-sret pointer/count
+  publication, manager retention-vector append, and local-vector cleanup. An
+  authorized target-frame
   capture therefore has an exact pointer/count/row decoding contract, but no
   live values are inferred offline. The same maintained audit now closes
   the post-cull consumer contract: `LightClusteringPassConstructor.SetupState`
@@ -427,8 +430,9 @@ NPC archetypes are imported as labeled source kits.
   not read by the scheduled view loop, either selected predicate, fence/reset
   lifecycle, child-view path, or a post-dispatch packet copy. The complete
   0x4E1-byte UnityPlayer candidate core and the candidate-to-`VisibleLight`
-  producer are now hash-pinned in the maintained audit, so the native
-  gate/sort/output-cap/row-conversion boundary cannot silently drift.
+  producer and `CullLightsInternal` lifetime wrapper are now hash-pinned in the
+  maintained audit, so the native gate/sort/output-cap/row-conversion/result-
+  ownership boundary cannot silently drift.
   A direct census of the
   installed `UnityPlayer.dll` native strings/RTTI (with the matching
   `GameAssembly.dll` build) adds no unambiguous name for component 67:
