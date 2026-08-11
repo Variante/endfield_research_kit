@@ -630,7 +630,11 @@ NPC archetypes are imported as labeled source kits.
   row is exactly 0 and all ten Point/linear-extension rows are exactly 1.
   Record0 is therefore fully closed. The metadata-backed
   `VisibleLight.get_range` field at `+0x68` and the native scalar divide close
-  record1.w for all 11 rows. Hash-pinned half-angle scaling and the original
+  record1.w for all 11 rows. The native record7 producer is now source-closed
+  on both Spot and Point/linear branches: culling-box falloff threshold,
+  soft-source radius, specular intensity, and the precomputed cookie-slot
+  integer carrier project to lanes x/y/z/w before the common record7 store.
+  Hash-pinned half-angle scaling and the original
   scalar-cosine body close record2.z plus the Spot row's record2.w; the Point
   branch closes record2.z as `HGSharedLightData.length` (`-1` on six ordinary
   Points, `18` on four linear extensions). Target-frame record1.xyz/record2.xy,

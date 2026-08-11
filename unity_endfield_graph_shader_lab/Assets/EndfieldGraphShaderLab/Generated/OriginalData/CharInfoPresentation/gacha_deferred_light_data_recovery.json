@@ -136,6 +136,47 @@
         }
       ]
     },
+    "record7Producer": {
+      "record": 7,
+      "destination": "_LightDataBuffer record7 float4",
+      "lanes": {
+        "x": {
+          "source": "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected",
+          "consumerFormula": "record7.x * 0.5f"
+        },
+        "y": {
+          "source": "HGSharedLightData.get_softSourceRadius_Injected",
+          "consumerFormula": "record7.y * _1397"
+        },
+        "z": {
+          "source": "HGSharedLightData.get_specularIntensity_Injected",
+          "consumerFormula": "record7.z"
+        },
+        "w": {
+          "source": "precomputed cookie-slot integer carrier at stack offset -0x44",
+          "conversion": "float32(int carrier)",
+          "consumerFormula": "int(record7.w)"
+        }
+      },
+      "branchStackLanes": {
+        "Spot": {
+          "threshold": "rbp-0x10",
+          "softRadius": "rbp-0x0C",
+          "specular": "rbp-0x08",
+          "cookieSlot": "rbp-0x04"
+        },
+        "PointOrLinearExtension": {
+          "threshold": "rbp+0x0F0",
+          "softRadius": "rbp+0x0F4",
+          "specular": "rbp+0x0F8",
+          "cookieSlot": "rbp+0x0FC"
+        }
+      },
+      "spotProjectionClosed": true,
+      "pointOrLinearProjectionClosed": true,
+      "commonRecord7StoreClosed": true,
+      "nativeProjectionClosed": true
+    },
     "record0Discriminator": {
       "formula": "float(lightKind + 2 * shadowOnly)",
       "lightKind": {
@@ -6608,6 +6649,7 @@
       "exact UnityPlayer-derived record0.xyz IEEE-754 candidates for all eleven rows: linearized serialized RGB times intensity, with falloff and flickerScale both 1",
       "the native record0.w discriminator formula float(lightKind + 2*shadowOnly), yielding exact 0.0 for the one Spot row and 1.0 for all ten Point/linear-extension rows",
       "VisibleLight.get_range reads field +0x68 and PrepareCPUData divides exact 1.0f by it, closing record1.w for all eleven rows",
+      "the native record7 Spot and Point/linear stack-lane projections: cullingBoxFalloffThreshold -> x, softSourceRadius -> y, specularIntensity -> z, and the precomputed cookie-slot integer carrier -> w, followed by the common record7 vector store",
       "the pinned original scalar-cosine body and exact half-angle scaling close record2.z and record2.w for the one Spot row",
       "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
       "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
@@ -6632,6 +6674,6 @@
       "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the record5.w OBB/override projection, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the record5.w OBB/override projection, the record7 source-to-lane projection, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
   }
 }
