@@ -56,6 +56,14 @@ class DecodeLightCullCaptureTests(unittest.TestCase):
             result["rows"][1]["localToWorldMatrix"][8:12],
             [9.0, 10.0, 11.0, 12.0],
         )
+        self.assertEqual(
+            result["rows"][1]["localToWorldColumn2"],
+            [9.0, 10.0, 11.0, 12.0],
+        )
+        self.assertEqual(
+            result["rows"][1]["localToWorldColumn3"],
+            [13.0, 14.0, 15.0, 16.0],
+        )
         self.assertEqual(result["rows"][1]["specularIntensity"], 1.5)
         self.assertEqual(result["rows"][1]["priority"], -1)
         self.assertEqual(result["rows"][1]["worldPosition"], [2.0, 2.0, 3.0])
