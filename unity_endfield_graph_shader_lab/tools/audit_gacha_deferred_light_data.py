@@ -321,6 +321,18 @@ HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_IFIX_METHOD_ID = 0x77B
 VISIBLE_LIGHT_LOCAL_TO_WORLD_MATRIX_FIELD_OFFSET = 0x24
 MATRIX4X4_GET_COLUMN_VA = 0x182FA64C0
 VECTOR4_IMPLICIT_VECTOR3_VA = 0x184DBBDE0
+PACK_NORMAL_ABS_CALL_OFFSET = 0x5D
+PACK_NORMAL_ABS_VA = 0x183B0AD90
+PACK_NORMAL_DOT_CALL_OFFSET = 0x88
+PACK_NORMAL_DOT_VA = 0x184D8B7C0
+PACK_NORMAL_FLOAT3_MULTIPLY_CALL_OFFSET = 0x9C
+PACK_NORMAL_FLOAT3_MULTIPLY_VA = 0x1830E7A60
+PACK_NORMAL_CLAMP_CALL_OFFSET = 0xE7
+PACK_NORMAL_CLAMP_VA = 0x182EE75E0
+PACK_NORMAL_COPY_SIGN_CALL_OFFSET = 0xF6
+PACK_NORMAL_COPY_SIGN_VA = 0x189C0C2F0
+PACK_NORMAL_ONE_CONSTANT_FILE_OFFSET = 0xB957600
+PACK_NORMAL_HALF_CONSTANT_FILE_OFFSET = 0xB9575E0
 POINT_RECORD_TRANSFORM_CALLS = (
     (0x073E, VISIBLE_LIGHT_GET_FORWARD_VA, "VisibleLightExtensionMethods.GetForward"),
     (0x0798, HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_VA, "HGUtils.PackNormalOctRectEncode"),
@@ -402,6 +414,31 @@ def quaternion_rotate(q: list[float], value: list[float]) -> list[float]:
         add(add(mul(yx, vx), mul(yy, vy)), mul(yz, vz)),
         add(add(mul(zx, vx), mul(zy, vy)), mul(zz, vz)),
     ]
+
+
+def pack_normal_oct_rect_encode_candidate(direction: list[float]) -> list[float]:
+    """Mirror the installed unpatched PackNormalOctRectEncode arithmetic."""
+
+    x, y, z = (f32(value) for value in direction)
+    absolute = [f32(abs(value)) for value in (x, y, z)]
+    # Unity.Mathematics.math.dot(abs(n), float3(1, 1, 1)) executes y+x+z
+    # in the pinned scalar body, with an f32 round after each multiply/add.
+    y_term = f32(absolute[1] * 1.0)
+    x_term = f32(absolute[0] * 1.0)
+    z_term = f32(absolute[2] * 1.0)
+    l1 = f32(f32(y_term + x_term) + z_term)
+    inverse_l1 = f32(1.0 / l1)
+    normalized = [f32(value * inverse_l1) for value in (x, y, z)]
+
+    half_x = f32(normalized[0] * 0.5)
+    first = f32(0.5 - half_x)
+    half_y = f32(normalized[1] * 0.5)
+    first = f32(first + half_y)
+    first = f32(max(min(first, 1.0), 0.0))
+    if normalized[2] < 0.0:
+        first = f32(-first)
+    second = f32(normalized[1] + normalized[0])
+    return [first, second]
 
 
 def float32_bits(value: float) -> int:
@@ -1000,7 +1037,11 @@ def validate_point_record_transform_native(body: bytes) -> dict[str, Any]:
 
 
 def validate_visible_light_transform_helpers(
-    forward: bytes, position: bytes, pack: bytes
+    forward: bytes,
+    position: bytes,
+    pack: bytes,
+    one_constant: bytes,
+    half_constant: bytes,
 ) -> dict[str, Any]:
     """Pin the helper bodies behind PrepareCPUData's transform producers."""
     for check, body, size, expected_hash in (
@@ -1049,6 +1090,35 @@ def validate_visible_light_transform_helpers(
         bytes.fromhex("b97b070000"),
         GAME_ASSEMBLY,
     )
+    require(
+        "pack_normal_oct_rect_encode_one_constant_bits",
+        struct.unpack("<I", one_constant)[0],
+        0x3F800000,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "pack_normal_oct_rect_encode_half_constant_bits",
+        struct.unpack("<I", half_constant)[0],
+        0x3F000000,
+        GAME_ASSEMBLY,
+    )
+    for check, offset, target in (
+        ("abs", PACK_NORMAL_ABS_CALL_OFFSET, PACK_NORMAL_ABS_VA),
+        ("dot", PACK_NORMAL_DOT_CALL_OFFSET, PACK_NORMAL_DOT_VA),
+        (
+            "float3_multiply",
+            PACK_NORMAL_FLOAT3_MULTIPLY_CALL_OFFSET,
+            PACK_NORMAL_FLOAT3_MULTIPLY_VA,
+        ),
+        ("clamp", PACK_NORMAL_CLAMP_CALL_OFFSET, PACK_NORMAL_CLAMP_VA),
+        ("copy_sign", PACK_NORMAL_COPY_SIGN_CALL_OFFSET, PACK_NORMAL_COPY_SIGN_VA),
+    ):
+        require(
+            f"pack_normal_oct_rect_encode_{check}_target",
+            relative_call_target(pack, HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_VA, offset),
+            target,
+            GAME_ASSEMBLY,
+        )
     for name, body in (("forward", forward), ("position", position)):
         for offset, expected in (
             (0x2D, bytes.fromhex("0f104324")),
@@ -1127,6 +1197,21 @@ def validate_visible_light_transform_helpers(
             "ifixMethodId": f"0x{HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_IFIX_METHOD_ID:X}",
             "input": "float3 direction",
             "output": "float2 octahedral rectangle encoding",
+            "methodIndex": 288324,
+            "token": "0x060014C0",
+            "formula": "n1=n/(abs(n.x)+abs(n.y)+abs(n.z)); u=CopySign(clamp(0.5+0.5*(n1.y-n1.x),0,1),n1.z,true); v=n1.x+n1.y",
+            "consumerDecodeFormula": "a=(0.5+0.5*v)-abs(u); b=v-a; c=abs(max((1-abs(a))-abs(b),0.00048828125)); normalize(float3(a,b,sign(u)*c))",
+            "constants": {
+                "oneBits": "0x3F800000",
+                "halfBits": "0x3F000000",
+            },
+            "callTargets": {
+                "abs": f"0x{PACK_NORMAL_ABS_VA:X}",
+                "dot": f"0x{PACK_NORMAL_DOT_VA:X}",
+                "float3Multiply": f"0x{PACK_NORMAL_FLOAT3_MULTIPLY_VA:X}",
+                "clamp": f"0x{PACK_NORMAL_CLAMP_VA:X}",
+                "copySign": f"0x{PACK_NORMAL_COPY_SIGN_VA:X}",
+            },
         },
     }
 
@@ -1198,6 +1283,7 @@ def validate_authored_room_transform_candidates(
         )
         world_rotation = quaternion_multiply(parent_rotation, local_rotation)
         world_forward = quaternion_rotate(world_rotation, [0.0, 0.0, 1.0])
+        packed_forward = pack_normal_oct_rect_encode_candidate(world_forward)
         candidates.append(
             {
                 "name": name,
@@ -1219,6 +1305,12 @@ def validate_authored_room_transform_candidates(
                     "values": world_forward,
                     "bits": [f"0x{float32_bits(value):08X}" for value in world_forward],
                 },
+                "record2XYCandidate": {
+                    "values": packed_forward,
+                    "bits": [
+                        f"0x{float32_bits(value):08X}" for value in packed_forward
+                    ],
+                },
             }
         )
     return {
@@ -1226,6 +1318,8 @@ def validate_authored_room_transform_candidates(
         "sourceSpace": "world-space",
         "positionProducerInput": "VisibleLight.LocalToWorldMatrix column 3",
         "forwardProducerInput": "VisibleLight.LocalToWorldMatrix column 2",
+        "record2XYFormula": "PackNormalOctRectEncode(worldForward) using the hash-pinned unpatched body",
+        "record2XYCandidateClosed": True,
         "parentTransform": {
             "position": parent_position,
             "rotation": parent_rotation,
@@ -2352,6 +2446,10 @@ def build_audit() -> dict[str, Any]:
         pack_normal_oct_rect_encode_body = stream.read(
             HG_UTILS_PACK_NORMAL_OCT_RECT_ENCODE_SIZE
         )
+        stream.seek(PACK_NORMAL_ONE_CONSTANT_FILE_OFFSET)
+        pack_normal_one_constant = stream.read(4)
+        stream.seek(PACK_NORMAL_HALF_CONSTANT_FILE_OFFSET)
+        pack_normal_half_constant = stream.read(4)
     global_game_managers_data = GLOBAL_GAME_MANAGERS.read_bytes()
     unity_player_data = UNITY_PLAYER.read_bytes()
     population = json.loads(GACHA_POPULATION.read_text(encoding="utf-8"))
@@ -2372,6 +2470,8 @@ def build_audit() -> dict[str, Any]:
             visible_light_get_forward_body,
             visible_light_get_position_body,
             pack_normal_oct_rect_encode_body,
+            pack_normal_one_constant,
+            pack_normal_half_constant,
         )
     )
     native["pointRecordTransform"]["authoredRoomCandidates"] = (
@@ -2474,7 +2574,7 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v10",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v11",
         "status": "room_record0_record1w_record2z_transform_and_point_shadow_pack_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
@@ -2602,6 +2702,7 @@ def build_audit() -> dict[str, Any]:
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
                 "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
                 "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
+                "PackNormalOctRectEncode's unpatched abs/dot/float3-multiply/clamp/CopySign call chain and 1.0/0.5 constants close the exact float32 formula; all 12 authored record2.xy candidates are generated from it",
             ],
             "open": [
                 "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
