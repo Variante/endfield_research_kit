@@ -120,17 +120,17 @@ if errorlevel 1 goto :failed
 
 echo.
 echo [setup 5/6] Exporting Story and Text Tables data from the installed game...
-call .\export.bat --export-from-game --game-root "%GAME_ROOT%"
+call .\export.bat --from-game --game-root "%GAME_ROOT%"
 if errorlevel 1 goto :failed
 
 echo.
 echo [setup 6/6] Optional follow-up steps for a fuller WebUI experience...
 echo [setup] Asset media and CN audio export is optional and can take several hours.
 echo [setup] Run this later when you want Assets tab media and playable CN audio:
-echo [setup]   .\export_assets.bat --export-from-game
+echo [setup]   .\export_assets.bat --from-game
 echo [setup] Updates tracking is optional until you want the Updates tab baseline/feed.
 echo [setup] Initialize a first-time empty baseline with:
-echo [setup]   .\build_updates.bat --init-build
+echo [setup]   .\build_updates.bat --first-time
 
 echo.
 echo [setup] First-time setup finished.
@@ -203,7 +203,7 @@ echo   1. check Git, Python, and PowerShell
 echo   2. initialize tools\AnimeStudio
 echo   3. build the AnimeStudio CLI
 echo   4. verify AnimeStudio VFS/audio commands
-echo   5. run export.bat --export-from-game
+echo   5. run export.bat --from-game
 echo   6. print optional export_assets/build_updates follow-up commands
 echo   7. start python serve.py, unless a default server is already running
 echo.

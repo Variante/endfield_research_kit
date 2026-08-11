@@ -21,12 +21,12 @@ Evidence layers:
 ```bat
 python scripts\verify_export_freshness.py
 .\export.bat
-.\export.bat --export-from-game
-.\export.bat --export-from-game --with-assets
+.\export.bat --from-game
+.\export.bat --from-game --with-assets
 python tools\endfield_source_graph.py build --relevant-asset-maps --skip-reference-rows --skip-followups
 ```
 
-Use `--export-from-game` only for an intentional installed-data refresh.
+Use `--from-game` only for an intentional installed-data refresh.
 
 ## Known data model
 
@@ -38,8 +38,10 @@ Use `--export-from-game` only for an intentional installed-data refresh.
 - MonoBehaviour `$partial` output is useful evidence, not a clean decode.
 - Source root plus PathID is the safe Unity identity; PathID alone is not
   globally unique.
-- Static configuration does not prove runtime evaluator order, server state,
-  physics, AI decisions, or final formulas.
+- Static configuration alone does not prove runtime evaluator order, server
+  state, physics, AI decisions, or final formulas. Native IL2CPP paths can
+  establish the shipped stock-client formula, but active IFix patches and
+  server corrections remain a separate evidence boundary.
 
 Current semantic coverage includes Story and mission data, progression,
 economy, factory, world placement, characters, weapons, abilities,
@@ -65,10 +67,155 @@ that every file is one equivalent option.
 
 Current SkillData and BuffData blobs use MemoryPack member counts 47 and 30;
 the source graph also accepts the previously observed 45 and 29 variants.
+The legacy local `build_data_index.py` now gates the current 47/30 layouts,
+reports a visible unsupported-member-count result on future drift, consumes
+BuffData `onlyUseSelfTimeDilation` and SkillData `useAIExclusiveFrame` at their
+exact tail positions, and records SkillData `aiExclusiveFrame` in the recovered
+schema. Its `webui/data/game_data/` output remains a broad diagnostic preview,
+not an active semantic page or runtime-formula source.
+Every current BuffData and SkillData row in the merged Persistent plus
+StreamingAssets diagnostic corpus now reaches an exact post-id tail boundary.
+This is boundary proof, not a claim that every nested action is semantically
+decoded.
+
+Non-empty Buff stack effects have exact versioned skips for the observed
+EffectAction layouts. The current member-17 form contains an EffectActionCfg
+member-85 payload, moves the effect-name length to `+71`, ends at `581 +
+effectNameBytes`, and adds the guard-source target-settings/bool tail. The
+parser also distinguishes the serialized empty stacking-key prefix from a
+non-empty stacking key; it no longer calls that prefix a terminal pad. Current
+stack-effect rows have empty `effectPosData`, which is validated explicitly;
+the inner EffectActionCfg field semantics remain partial and fail closed if
+that list becomes non-empty.
+
+The four energy-shard Buffs use a second validated IgniteEventAction nested-
+block header version; their four block boundaries, header versions, and tail
+codes are exact while the inner action data remains opaque. Gameplay tags also
+have compact forms in this corpus: Buff `tagsAfterTriggerExtendBuffAction` can
+be a packed u32-id list, and Skill member-1 tag records contain only the tag id.
+Recognizing the latter resolves the formerly ambiguous Ikut normal-skill id
+anchor and preserves subsequent toggle/UI-range fields at their real offsets.
+Some Skill smart-target and SwitchToBuffConfig inner payloads remain preserved
+as bounded diagnostics even though their final tail handoff is exact.
+
+Focused validation:
+
+```bat
+python -m unittest scripts.tests.test_build_data_index_combat_memorypack -v
+python scripts\build_data_index.py
+```
+
 Exact length-prefixed `au_`, `bark_`, and `radio_` references can be followed
 through nested buff references and Wwise HIRC to playable media. Exact
 character skill ids prove ownership; authored child-skill and enemy-id-prefix
 placement remains inferred, while explicit enemy born-buff links are direct.
+
+## Enemy level stats and variants
+
+Enemy HP, ATK, DEF, and other level-dependent values come from exact rows in
+`EnemyAttributeTemplateTable.levelDependentAttributes`. The level coordinate is
+authored in each usable row; a row without that coordinate is omitted, and the
+builder never derives a level from row position or interpolates between points.
+Gameplay sliders therefore expose only the levels that have source rows. A
+missing slider level means the export has no supported point, not that the
+value is zero or follows a reconstructed curve.
+
+Enemy variants do not universally have independent stat curves. Each
+`EnemyTable` variant names an `attrTemplateId`: variants that name the same
+attribute template share the same raw HP/ATK/DEF curve, while variants with
+different attribute templates use their own exact rows. Even when the base
+curve is shared, variant-specific `attrModifiers`, born buffs, AI/model fields,
+and other combat configuration can differ, so shared displayed stats do not
+prove identical live behavior. The Gameplay variant selector resolves the
+selected variant's exact attribute template before showing its stats.
+
+## Combat runtime and formula evidence
+
+The installed `GameAssembly.dll` and IL2CPP metadata, joined to the shipped
+`BattleConst.json`, SkillData, and BuffData, establish the stock-client combat
+pipeline below. This is stronger than inference from field names, but it is not
+a claim about a server correction or a replacement loaded through IFix.
+
+For ordinary damage, `BattleFormula.CalculateDamage` has the multiplicative
+shape:
+
+```text
+finalAttackValue
+* weaknessDamageScalar
+* criticalFactor
+* defenseFactor
+* (1 - shelterDamageScalar)
+* max(0, elementalResistanceFactor)
+* abnormalStatusFactor
+* physicalInflictionFactor
+```
+
+Critical hits use a random roll against `CriticalRate`; a successful roll uses
+`1 + CriticalDamageIncrease`. With the shipped
+`BattleConst.efficiencyOfDEF = 0.01`, defense is piecewise:
+
+```text
+DEF >= 0: 1 / (1 + 0.01 * DEF)
+DEF < 0:  2 - 0.99 ^ (-DEF)
+```
+
+The elemental factor for Physical, Fire, Pulse, Cryst, Natural, and Ether is
+`(1 - typeResistance / 100) * typeDamageTakenScalar`. Real damage uses neutral
+defense and elemental factors but still traverses the other ordinary
+multipliers. LifeDrain is a distinct early-return path that uses
+`finalAttackValue` and skips the ordinary critical, defense, resistance,
+weakness, shelter, and status segment. Abnormal/burst/Burning/Shatter
+decorators multiply `IgniteDamageScalar`; Crush, Airborne, KnockDown, and
+Fracture multiply `PhysicalInflictionDamageScalar`. Guard reduction is authored
+on DamageUnits and processors outside this universal scalar.
+
+`finalAttackValue` starts with the authored DamageUnit attack calculation,
+passes the modifier hook and configured damage-scale zones, then applies
+`atkScale`. Attacker and defender zone values start at 1; an applicable zone
+merges them by multiplication or `attacker + defender - 1`, clamps the zone to
+zero or above, and the final zone scale is their product. Named contributions
+include damage-type, ignite/burst, skill-type, broken-target, enhanced, and
+vulnerable damage. Attacker ATK, defender DEF, penetration, critical,
+DamageScale, instant-attribute, and final-result processors can modify the
+inputs or result; many processor bodies dispatch through IFix, so their active
+hotpatch arithmetic is not completely recoverable from the stock method body.
+
+Skills are runtime action graphs, not one formula per localized description.
+SkillData supplies cast/cooldown/duration frames, target selectors, movement,
+buff links, blackboard data, and an ActionGroup containing timeline and passive
+event actions. AbilityAction instances run create, execute, tick, end, and
+recycle phases. A DamageAction owns one or more DamageUnits, each selecting its
+damage type, HP/poise calculation, attack scale, processors, guard behavior,
+effects, sound, and costs. Runtime Skill state additionally owns timers,
+targets, cast context, interruption/cost state, blackboard values, and attached
+buffs.
+
+BuffData is likewise a composition rather than a hardcoded class per buff. It
+can combine attribute, damage, heal, poise, and global modifiers; shields;
+tags; lifetime and trigger rules; stacking/dispel policy; events; timeline
+actions; child buffs; and blackboard values. Damage modifiers choose attacker
+or defender ownership, conditions, processors, and timing hooks. Stacking modes
+cover unlimited, priority, stack, enhance, refresh, extend, modify, unique, and
+duration-overwrite combinations. Buff events distinguish start, trigger,
+finish, enable/disable, enhance changes, dispel, and interruption. Shields
+filter damage types and define value/count/priority and removal behavior before
+the remaining damage reaches HP.
+
+Attribute modifiers have Addition, Multiplier, FinalAddition,
+FinalMultiplier, and corresponding Base lanes. The recovered final-stage order
+is approximately
+`((value + Addition) * max(0, Multiplier) + FinalAddition) * FinalMultiplier`;
+base-stage conversions and clamps occur earlier. Normal healing uses
+`baseHeal * (1 + healer.HealOutputIncrease + receiver.HealTakenIncrease)`
+before heal modifiers. Poise damage uses calculated poise multiplied by the
+attacker output and defender taken scalars before poise modifiers.
+
+The unresolved live boundary is material: `CalculateDamage` checks IFix, many
+processors are patch-dispatched, and server-only validation is absent from the
+client. Static recovery also cannot select the live target, evaluator order,
+blackboard values, random outcome, state-machine branch, or Wwise branch for a
+particular combat event. WebUI labels must keep authored inputs, recovered
+stock-client behavior, and observed live behavior distinct.
 
 ## Audio binary and playback evidence
 
@@ -144,6 +291,19 @@ uses the same object/weapon/position paths and retains returned ids for seek,
 time-dilation, fade, and stop-on-end behavior. This is exact static call-chain
 evidence for the current GameAssembly, not a live execution trace or proof of
 the switch/state/RTPC values and media leaf selected by Wwise.
+
+The stock binary also forces the EndOfEvent callback bit on ordinary
+`AudioAdapter._PostEvent` requests before forwarding the callback mask to
+Wwise; the wrapper preserves caller-supplied optional callback bits and stores
+the real playing id through `AkCallbackManager`. This closes the authored
+request-to-playing-id callback shape, but not a live callback sample. On the
+current CN event inventory, 5,284 Events have typed selector containers; 5,204
+graphs are complete and 1,488 have exactly one decoded leaf by topology (1,484
+of those have zero unresolved nodes). Audio labels this as a single complete
+topology leaf, never as observed runtime playback; the other selector graphs
+remain possible-leaf sets until a live state/switch/RTPC/random observation is
+captured.
+
 The trigger-specific binary paths are now separated as well. Animation
 `AudioAnimationEventReceiver.PostAudioEvent` resolves the target
 `AudioObjectMono.audioObjectId`, hashes the authored key, and enters the same
@@ -293,16 +453,63 @@ groups possible media by semantic context, Play root, selector relation,
 traversal completeness, and decoded-content equivalence.
 The strongest current authored playback joins are SkillData/BuffData audio
 references, Timeline/cutscene audio fields, and AudioDialog-to-lipsync
-`pathStem` associations. We do not yet have a complete runtime receiver,
-activation chronology, or proof of which branch was selected in a live game.
-In the current CN rebuild this conservative join yields 236 target Events,
-228 Timeline-carrier Events, 327 stored contexts, and 8 carrier gaps; the
+`pathStem` associations. Story-line audio is not a missing-media problem:
+existing path-backed `AudioDialog`/voice files can be reused. The remaining
+work is to relink each Story line/actor/voice identity to those existing audio
+records with correct language, path, and source-graph evidence, then validate
+that no link is silently dropped. We do not yet have a complete runtime
+receiver, activation chronology, or proof of which branch was selected in a
+live game.
+The source graph had a concrete ordering gap here: WebUI Story lines were
+ingested before structured `AudioDialog` rows, so the shared `audio:<au_*>`
+node could exist without the later authoritative path and row metadata.
+`tools/endfield_source_graph.py` now backfills that existing node when the
+`AudioDialog` row arrives instead of creating a second identity. The Story
+line -> existing AudioDialog -> path-backed voice relation is therefore a
+supported static join; it still does not prove that the game played that line
+or selected a Wwise branch at runtime.
+The refreshed follow-up now separates these path-backed joins from Story audio
+ids that have no `AudioDialog` path. The remaining set is heterogeneous:
+`au_envTalk_*`, `au_radio_*`, `au_sim_*`, and `#N/A` rows may be ambient-text,
+owner-table, placeholder, or other event-like inputs rather than missing
+decoded voice. They require owner-specific mapping or explicit placeholder
+classification; they must not all be counted as failed voice decoding.
+The follow-up now records those evidence classes directly: pathless Story ids
+can retain exact `DialogTextTable`, `EnvTalkTable`, `RadioTable`, or
+`RemoteCommonLine` ownership, while exact Story-id-to-Wwise-event joins with a
+Wwise media edge are reported as event/media candidates rather than
+`AudioDialog` voice paths. This leaves a clean next split: resolve an existing
+owner-specific media path where one is present, or capture the runtime event
+and selected media; do not synthesize a voice link from an owner row alone.
+The LevelSequence audio pass now keeps a separate `levelSequenceAudio`
+context for the previously context-free playable Events: current object-index
+PPtrs recover `AudioEventPlayable`/`AudioDlgEventPlayable` -> Track clip ->
+Timeline parent -> `PlayableDirector`, while active LevelScript union tags
+`0x0360`/`0x0361` and exact `_levelSeqId` strings join the parent name after
+only the case-sensitive `_Audio` suffix is removed. The join is exact static
+identity evidence, not proof that the Director or action ran; rows without a
+carrier stay explicit gaps, and Timeline-only/non-LevelSequence parents are
+inferred rather than promoted to a LevelScript trigger. Multiple clips and
+multiple Director rows are preserved as occurrences, not “options”.
+In the current CN rebuild this conservative join yields 735 target Events,
+727 Timeline-carrier Events, 1,178 stored contexts, 918 exact Director-linked
+contexts, and 8 carrier gaps; the
 serialized LevelScript scan finds 348 PlayLevelSequence records, but zero of
 the current carrier names pass the exact `levelseq_*_Audio` identity join.
 Those action records remain useful authored inventory, not proof of a trigger
 for these Event rows.
+
+The same serialized Timeline scan now handles `AudioCuePlayable` separately
+from Event playables. Twelve cue carriers (eleven cue names) join exact Track,
+Timeline-parent, and five PlayableDirector identities; seven cue definitions
+resolve through the native AudioCue hash and yield eight downstream behavior
+Event contexts, while five remain explicit missing-definition invocations.
+Cue names are not synthesized as Wwise Events: cue conditions/handlers,
+Timeline/Director activation, AudioCueSystem execution, and Wwise branch
+selection remain unobserved.
+
 Playable skill linkage is recorded per Event instead of inheriting a whole
-group's confidence. An exact Gameplay action id joined to the same SkillData
+group’s confidence. An exact Gameplay action id joined to the same SkillData
 file proves an authored dependency; a complete length-prefixed Event reference
 in that file is `skillDataEventReference`, while an exact
 SkillData-to-BuffData reference walk is `skillBuffChain`. This generic scan
@@ -420,15 +627,21 @@ SHA-256. This proves authored perform-config requests only; perform execution,
 runtime actor resolution, AudioId registration, Event posting, and Wwise branch
 playback remain unobserved.
 
-Seventeen current LevelScript audio ActionBase layouts now decode from their
-exact union tag/member count and generated-setter field order. The overlaid
-corpus has 1,842/1,842 decoded records: 1,394 constant Event requests, 290 named
-AudioCue invocations, 22 dynamic Event parameters, and 152 exact music/state/
-variable/stop/bark controls with 23 dynamic control bindings. Constant Events
-receive exact script/action/role/routing contexts in Audio. Cue names, dynamic
-parameters, playback handles, placeholder-music ids, and state/variable writes
-remain typed control records when their runtime value is unresolved; no name or
-live value is synthesized for them. Native `AudioCueSystem.PostCue(string)`
+Current-build LevelScript audio ActionBase layouts now decode from their exact
+union tag/member count and generated-setter field order. The overlaid corpus
+has 4,611/4,611 ActionBase records decoded: 1,461 constant Event-request
+contexts, 291 named AudioCue invocations, 22 dynamic Event parameters, and 390 typed music/
+state/variable/stop/control records. Newly bounded families include auto-music
+blocks, battle-music blocks, custom music mode, PlayVoice and
+PlayVoiceNarrative, PostAudioCueOnRelease, and three zero-field controls
+(`ExitCustomMusicMode`, `FlushRadio`, `PostAudioStopAllEnemyVoice`) whose
+ActionMap framing is exact. Same-tag getter/header rows are rejected by their
+ActionMap membership (231 former `AnnounceAudioOnTarget` false positives).
+Constant Events receive exact
+script/action/role/routing contexts in Audio. Cue names, dynamic parameters,
+playback handles, placeholder-music ids, and state/variable writes remain
+typed control records when their runtime value is unresolved; no name or live
+value is synthesized for them. Native `AudioCueSystem.PostCue(string)`
 hashes the exact managed string with `AudioHashGenerator.Compute`, then looks up
 the resulting uint32 in `AudioCueHandlerIndex`. The hash is FNV-1 over UTF-16
 code units with ASCII-only `A-Z` folding and no whitespace trim. Normalizing the
@@ -439,6 +652,17 @@ missing from the current table. Exact matched `behaviourExpr` type-3 rows add
 current-level handler selection, condition evaluation, and Wwise playback stay
 unobserved. The shipped `SetAudioGlobalParameter` type is not decoded because
 no current serialized row proves its field shape.
+
+The same Persistent-over-Streaming UID census finds 5,075 rows whose numeric
+tags have audio/radio/music/voice/cue formatter names. A bounded
+`actionMapMembership` check classifies 233 of these as same-tag collisions in
+getter/header lists rather than ActionBase playback records: 98
+`BlockAutoMusicChange` member-count-10 getter rows, 6
+`BlockAutoMusicChangeCancel` member-count-18 header rows, 18
+`CleanAudioCueVar` getter rows, 3 legacy `EnterCustomMusicMode` header rows,
+and 108 legacy `Play3DRadio` getter rows. They remain outside the audio-action
+index until their owning union is independently decoded; no Event is inferred
+from the numeric tag alone.
 
 `AudioCueTable` is an expression system rather than a flat Event list. The
 current 175 cue definitions contain 291 handlers: only 325 `behaviourExpr`
@@ -461,10 +685,10 @@ definitions with occurrence count zero and creates no Event or media rows.
 LevelScript radio playback is now decoded as a separate authored-media relation.
 Six exact ActionBase layouts (`PlayRadio`, `PlayRadioAndWait`, `Play3DRadio`,
 `Play3DRadioAndWait`, `StopRadio`, and `ToggleClearScreenButRadio`) decode all
-2,526 current records: 2,177 constant radio-id bindings and one dynamic binding
-remain explicit. RadioTable contributes 2,909 definitions and 4,940 ordered
-lines; 3,078 referenced lines join 3,073 lazy media contexts through exact
-`audioDialogPath` stems (2,681 referenced lines decode, 397 remain unresolved).
+2,565 current records: 2,216 constant radio-id bindings and one dynamic binding
+remain explicit. RadioTable contributes 2,948 definitions and 4,995 ordered
+lines; 3,129 referenced lines join 3,073 lazy media contexts through exact
+`audioDialogPath` stems (2,681 referenced lines decode, 448 remain unresolved).
 `radioId` and `audioOverride` are dialog identities, not Wwise Events; action
 execution, line selection, playback, and dynamic ids remain unobserved. The
 Audio page exposes routing, actor, line order, lifecycle, unresolved rows, and
@@ -505,6 +729,15 @@ VFX has a separate exact runtime clip-weight threshold of `0.5`. The current
 AudioId posting, and water-depth RTPC updates; it does not map a material or
 water value to a Wwise switch child, prove which callback receiver executed,
 or provide a live playback trace.
+
+Timeline music ownership is now order-independent. The current object index
+contains 756 exact `AudioMusicPlayable` records; 753 join to Timeline clip
+assets across 12 track families and 458 unique `_audioEventKey` Event
+identities. Together with AudioEvent/AudioDlgEvent/Cue carriers, the semantic
+rebuild has 1,170 exact Timeline carrier contexts and 918 exact
+PlayableDirector links. These are serialized ownership joins only: Director
+activation, cue execution, Wwise state values, branch selection, and actual
+playback remain unobserved.
 
 Playable-character callback ownership must not be extended to every leaf of a
 shared Event. The apparent 10,000-plus per-character totals were sums of
@@ -557,15 +790,48 @@ mean this is authored membership, not current-controller execution. Native
 return skips `SetSwitch`. This is exact setter/value mapping, while the live
 NodeMode and selected Wwise branch remain unobserved.
 
-Next audio-recovery work should finish live-value/state capture for the now
-typed v150 switch-value mappings, Action delay/property bundles, and music
-types 10-13, then connect current music-table
-state/control rows to MusicTrack source media. Also fingerprint PCK inputs for
-cache invalidation, identify Timeline/native audio receivers and activation
-paths, finish PlaySound `TargetSettings` and action-condition semantics, recover
-the other ability/AI/interactive audio-trigger action families, and validate
-chronology against a captured game session. Gameplay
-follow-up should finish the partial `EnemyData.AbilitySystemData` mode-tail
+The music catalog now records all ten managed music-state groups with exact
+enum-member hash values and static native callsites: battle start sets combat
+general/main-loop/high, leaving fight sets low, main-game/loading sets loading,
+dialogue sets dialogue plus dialog-none, and remote communication ends with its
+ending state. ManualSetMusicState, ManualSetBattleMusicState, and
+ManualSetBattleMusicIntensityState route to Wwise with caller-supplied values,
+so their live state remains unknown. AnimatorOverrideController recovery adds
+2,046 replacement clip slots (435 effective audio clips, 847 callback rows),
+but missing serialized-file envelopes and runtime activation keep those joins at
+corpus PathID reachability rather than exact live-controller ownership.
+
+The current audio-recovery queue is ordered by evidence value:
+
+1. Build a bounded live-session capture path for `PostEvent`, `PrepareEvent`,
+   `SetState`, `SetSwitch`, RTPC writes, playing-id/callbacks, and selected
+   media ids. Use it to close the boundary between typed possible-media leaves
+   and an observed playback branch.
+2. Close Story audio relinking against existing path-backed AudioDialog files.
+   Normalize `audioDialogPath`/`pathStem`, language and shared scopes, WEM/FLAC
+   paths, and line/actor identities; add a fail-closed report for unresolved
+   references. Keep pathless `DialogTextTable`/`EnvTalkTable`/`RadioTable`
+   ownership separate from playable paths, and do not decode or invent
+   replacement media when an existing audio record is available.
+3. Promote only exact Wwise event/media candidates to a separate playable-event
+   surface after verifying the shared-media path and event payload; they are
+   not Story voice links merely because the names match.
+4. Finish bounded static joins with high downstream value: PlaySound
+   `TargetSettings` and condition semantics, Timeline/PlayableDirector audio
+   receivers, AudioCue handlers, current music-table state/control to
+   MusicTrack sources, and LevelScript bark/response families only when their
+   serialized layouts are proven.
+5. Audit main, patch, and Hotfix banks together; fingerprint PCK inputs for
+   cache invalidation, classify missing names versus missing banks versus
+   direct media, and add bundle/channel-level decode certification.
+
+The exact current UID/actionMap census has no `actionList` rows for
+`PlayGlobalResponseVoice`, `PlayResponseVoice`, `PostAIBarkEvent`,
+`TriggerBarkVoice`, `TriggerMainCharVoice`, `SetAudioGlobalParameter`, or
+`SetAudioParameter`; these remain runtime-capability/Lua-candidate surfaces,
+not authored LevelScript Event links.
+After those four queue items, Gameplay follow-up should finish the partial
+`EnemyData.AbilitySystemData` mode-tail
 decoder, connect animation clips through controllers instead of filename
 ownership alone, recover per-callback material/water/switch values where the
 binary permits it, and recover native effect-audio components for the remaining
@@ -595,10 +861,13 @@ and typed native paths are stronger than normalized names or token similarity.
 ## Remaining gaps
 
 - Server-side mission/property producers and activation policy.
-- Runtime-selected variants, state machines, and evaluator chronology.
+- Active IFix/server combat overrides, patched processor arithmetic, live
+  target selection, evaluator chronology, and evaluated blackboard values.
 - Additional family-specific MemoryPack/FlatBuffer schemas.
+- Deep semantic decoding of byte-bounded Buff EffectActionCfg and
+  IgniteEventAction bodies, plus remaining Skill smart-target and
+  SwitchToBuffConfig inner payload fields.
 - Broader exact world-streaming scene decoding.
-- Complete combat formulas rather than authored inputs and references.
 - Runtime projectile spawn/call-site ownership, evaluated blackboard values,
   remaining unnamed projectile enums, and Wwise container selection.
 - More exact joins between gameplay identities and runtime assets.

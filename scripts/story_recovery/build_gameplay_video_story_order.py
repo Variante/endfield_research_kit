@@ -51,9 +51,6 @@ CONV_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
 ACTIVE_STORY_ORDER_PATH = ROOT / "webui" / "overrides" / "story_order.json"
 MISSIONS_PATH = ROOT / "webui" / "data" / "lang" / "CN" / "missions.json"
 OCR_REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"
-MATCH_REPORT_PATH = OCR_REPORT_DIR / "story_order_ocr_matches.json"
-MATCH_MD_PATH = OCR_REPORT_DIR / "story_order_ocr_matches.md"
-PROPOSED_STORY_ORDER_PATH = OCR_REPORT_DIR / "story_order_ocr_proposed_story_order.json"
 OCR_SCRIPT_PATH = ROOT / "scripts" / "story_recovery" / "build_gameplay_video_ocr_audit.py"
 MIN_OCR_TOOL_VERSION = 17
 ARCHIVE_BOX_CROP_MODE = "fixed-dark-roi"
@@ -1873,7 +1870,7 @@ def build_proposed_story_order(
     }, proposal_rows
 
 
-def write_match_markdown(payload: dict[str, Any]) -> None:
+def write_match_markdown(payload: dict[str, Any], output_path: Path) -> None:
     histogram = payload.get("scoreHistogram") or []
     max_histogram_count = max((int(row.get("segments") or 0) for row in histogram), default=0)
     lines = [
@@ -1975,7 +1972,7 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
                 f"| `{md_escape(', '.join(video.get('missions') or []))}` "
                 f"| {seq_count} |"
             )
-    write_text_if_changed(MATCH_MD_PATH, "\n".join(lines) + "\n")
+    write_text_if_changed(output_path, "\n".join(lines) + "\n")
 
 
 def short_duration(seconds: float | None) -> str:
@@ -2162,6 +2159,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    match_report_path = args.ocr_report_dir / "story_order_ocr_matches.json"
+    match_md_path = args.ocr_report_dir / "story_order_ocr_matches.md"
+    proposed_story_order_path = args.ocr_report_dir / "story_order_ocr_proposed_story_order.json"
     if args.run_ocr:
         run_ocr(args)
 
@@ -2475,13 +2475,13 @@ def main() -> int:
         f"ocrKeys={inserted_key_count}, "
         f"mapDialogCompanions={total_map_dialog_companion_matches}"
     )
-    write_report_json(PROPOSED_STORY_ORDER_PATH, proposed)
+    write_report_json(proposed_story_order_path, proposed)
 
     # Distill the OCR order into a small WebUI-served reference so the story
     # debug mode can compare it against the static recovery order/override.
     from build_webui_ocr_order import build_webui_ocr_order  # noqa: E402
 
-    webui_ocr_path = build_webui_ocr_order(PROPOSED_STORY_ORDER_PATH)
+    webui_ocr_path = build_webui_ocr_order(proposed_story_order_path)
     print(f"Wrote {rel_path(webui_ocr_path)} (WebUI OCR order reference)")
 
     generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -2534,7 +2534,7 @@ def main() -> int:
             "includeTitleMatches": bool(args.include_title_matches),
         },
         "outputs": {
-            "proposedStoryOrder": rel_path(PROPOSED_STORY_ORDER_PATH),
+            "proposedStoryOrder": rel_path(proposed_story_order_path),
             "webuiOcrOrder": rel_path(webui_ocr_path),
             "activeStoryOrder": "",
         },
@@ -2549,13 +2549,13 @@ def main() -> int:
         "proposals": proposal_rows,
         "videos": videos,
     }
-    write_report_json(MATCH_REPORT_PATH, payload)
-    write_match_markdown(payload)
+    write_report_json(match_report_path, payload)
+    write_match_markdown(payload, match_md_path)
 
     print(f"Matched {total_accepted}/{total_matches} OCR segment(s) from {len(ocr_reports)} OCR report(s).")
-    print(f"Wrote {rel_path(MATCH_REPORT_PATH)}")
-    print(f"Review matching summary at {rel_path(MATCH_MD_PATH)}")
-    print(f"Wrote {rel_path(PROPOSED_STORY_ORDER_PATH)}")
+    print(f"Wrote {rel_path(match_report_path)}")
+    print(f"Review matching summary at {rel_path(match_md_path)}")
+    print(f"Wrote {rel_path(proposed_story_order_path)}")
     print(f"Active override left unchanged: {rel_path(ACTIVE_STORY_ORDER_PATH)}")
     print("Locked-order mismatch validation skipped: OCR-only mode does not use active order priors")
     return 0

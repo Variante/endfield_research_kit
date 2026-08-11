@@ -321,6 +321,12 @@ def audit_object_row(
             ),
             "edgeStatus": "no_edge_candidate_only",
         }
+        scene_context = row.get("sceneContext")
+        if isinstance(scene_context, dict):
+            candidate["sceneContext"] = scene_context
+            counts["exactValueMatchesWithSceneContext"] += 1
+            if scene_context.get("worldPositionStatus") == "exact_transform_hierarchy":
+                counts["exactValueMatchesWithExactWorldPosition"] += 1
         if reasons:
             candidate["rejectionReasons"] = reasons
             rejected.append(candidate)

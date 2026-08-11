@@ -14,12 +14,55 @@ from scripts.story_builder.level_bindings import (
 )
 from scripts.story_builder.language_bundle import (
     attach_unconnected_mission_shell_fallbacks,
+    build_world_entity_script_slot_position_index,
     collect_globally_attached_story_keys,
     is_exact_processing_mission_state_story_context,
 )
 
 
 class NativeEventShellContextTests(unittest.TestCase):
+    def test_world_entity_script_slot_position_index_is_aligned_and_fail_closed(
+        self,
+    ) -> None:
+        registry = {
+            "m_scriptEntityIdList": [
+                {"scriptIdGlobal": 8700040013, "slotId": 40007},
+                {"scriptIdGlobal": 8700040013, "slotId": 40006},
+            ],
+            "m_scriptEntityBriefInfo": [
+                {
+                    "entityType": 32,
+                    "detailId": "int_simple_travel_pole",
+                    "position": {"x": -70.6, "y": 60.492, "z": -42.8},
+                    "rotation": {"x": 0.0, "y": 2.47, "z": 0.0},
+                },
+                {
+                    "entityType": 32,
+                    "detailId": "int_simple_travel_pole",
+                    "position": {"x": -21.07, "y": 36.417, "z": -17.94},
+                    "rotation": {"x": 0.0, "y": 0.0, "z": 0.0},
+                },
+            ],
+        }
+        index = build_world_entity_script_slot_position_index(registry)
+        self.assertEqual(
+            index[("8700040013", "40007")][0]["position"],
+            {"x": -70.6, "y": 60.492, "z": -42.8},
+        )
+        self.assertEqual(
+            index[("8700040013", "40006")][0]["registryIndex"],
+            1,
+        )
+        self.assertEqual(
+            build_world_entity_script_slot_position_index({
+                **registry,
+                "m_scriptEntityBriefInfo": registry[
+                    "m_scriptEntityBriefInfo"
+                ][:1],
+            }),
+            {},
+        )
+
     def test_only_equal_processing_true_is_promotable_mission_context(self) -> None:
         gate = {
             "missionId": "testm1",

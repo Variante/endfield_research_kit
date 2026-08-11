@@ -29,11 +29,12 @@ disposable evidence belongs in `scratch/` or `tmp/`.
 .\setup_first_time.bat
 .\export.bat
 .\export.bat --with-assets
-.\export.bat --export-from-game
+.\export.bat --from-game
 .\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
 .\build_updates.bat
-.\build_updates.bat --init-build
-.\build_updates_by_patch.bat --init-baseline
+.\build_updates.bat --first-time
+.\build_updates.bat OLD NEW
+.\build_updates_by_patch.bat --first-time
 .\build_updates_by_patch.bat --check
 .\build_updates_by_patch.bat
 .\export_assets.bat
@@ -51,11 +52,25 @@ file sets the repeated local defaults for `ENDFIELD_GAME_ROOT`,
 `ENDFIELD_PREVIOUS_EXPORT_ROOT`, and `ENDFIELD_EXPORT_ROOT`; explicit path
 flags still override it for one-off commands.
 
+The wrappers share one flag vocabulary: `--from-game` reads installed game
+data, `--focused-assets`/`--default-assets`/`--debug-assets` set asset scope,
+`--asset-jobs N` caps AnimeStudio workers, `--webui-jobs N` caps post-Story
+builders, `--game-root PATH` overrides the installed client, and `--help`
+prints a plain-language option list on every wrapper. Earlier spellings
+(`--export-from-game`, `--animestudio-jobs`, `--animestudio-asset-mode`,
+`--apply`, `--init-baseline`, `--init-build`, `--skip-asset-updates`,
+`--skip-audio-updates`, `--hash-asset-updates`) still work but are no longer
+documented in the help screens. Options that only apply while reading
+installed game data are rejected with an explanatory message when
+`--from-game` is absent, instead of being silently dropped. Batch wrappers are
+CRLF: cmd.exe mis-resolves backward `goto` in LF-only batch files, which
+breaks their argument loops.
+
 `setup_first_time.bat` is the user-facing all-in-one first-time setup path. It
 initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, verifies the
-integrated AnimeStudio VFS/audio commands, runs `export.bat --export-from-game`,
-prints optional `export_assets.bat --export-from-game` and
-`build_updates.bat --init-build` follow-up commands, then starts or reuses the
+integrated AnimeStudio VFS/audio commands, runs `export.bat --from-game`,
+prints optional `export_assets.bat --from-game` and
+`build_updates.bat --first-time` follow-up commands, then starts or reuses the
 default WebUI server. Pass `--no-serve` when setup should finish without
 starting `serve.py`.
 
@@ -63,23 +78,25 @@ starting `serve.py`.
 `export_full/`. It verifies that `export_full/` matches the current installed
 `Endfield_Data` fingerprints before the long WebUI builders run, then builds CN
 Story/Text Tables data by default. It does not export from installed game data by
-default. Pass `--export-from-game` only when the user explicitly asks to refresh
+default. Pass `--from-game` only when the user explicitly asks to refresh
 `export_full/` and run the story export tools. Pass `--with-assets` to also
 rebuild asset indexes and relink/decode CN audio after generated conversations
-are rebuilt. Combining `--export-from-game --with-assets` runs one AnimeStudio
+are rebuilt. Combining `--from-game --with-assets` runs one AnimeStudio
 Story+asset export instead of separate Story and asset exporter invocations.
-After semantic-view builders and any requested asset/audio work, `export.bat`
+After Story is current, independent semantic builders run in dependency-safe
+parallel phases; use `--webui-jobs N` to cap concurrency. Per-step timings are
+written to `reports/export/webui_build_steps_latest.md/json`. After all
+semantic-view builders and any requested asset/audio work, `export.bat`
 rebuilds `reports/source_graph/endfield_source_graph.sqlite` with only the exact
 original AssetMap source/PathID rows consumed by WebUI material, shader,
-texture, and FMV edges, then builds the Presentation and Combat views. Pass
+texture, and FMV edges, then builds the Combat view. Pass
 `--full-source-graph` only when exhaustive Unity-object/PathID investigation and
 generated graph follow-up reports are required. Pass `--mission-pipeline-only`
 for the Story/Mission Pipeline edit loop; it stops before unrelated semantic
 views and the graph. Pass `--mission-pipeline-data-only` when generated Story
 bundles/evidence are already current and only Mission Pipeline JSON or frontend
-work changed; it deliberately skips freshness, Story, evidence, other semantic
-views, and the graph. Presentation emits a stable empty degraded
-payload when its graph is missing or older than its generated inputs. The Combat builder refuses graph edges when the database predates
+work changed; it verifies export freshness, then deliberately skips Story,
+evidence, other semantic views, and the graph. The Combat builder refuses graph edges when the database predates
 its Gameplay/manifest/asset/AbilityEntity/CharacterTemplate inputs and records a
 visible degraded-mode reason instead of treating stale edges as direct.
 `export.bat` does not refresh `webui/overrides/story_order.json`; active Story
@@ -88,19 +105,24 @@ under `webui/data/story_order_ocr.json`. Every `export.bat` run writes a
 wall-time and process-tree RAM benchmark under `reports/export/benchmarks/` and updates
 `reports/export/export_benchmark_latest.md/json`.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
-`build_updates.bat --init-build` for first-time/baseline-only builds where the
+`build_updates.bat --first-time` for first-time/baseline-only builds where the
 Updates feed should be baselined instead of reporting changes. It reads the
 previous/current export roots from `endfield_paths.bat` by default, tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and
-decoded audio, and accepts explicit root flags for one-off comparisons. Pass
-`--skip-audio-updates` to omit decoded audio while keeping other asset entries.
-Pass `--skip-asset-updates` only for a text-only update feed.
+decoded audio, and accepts a leading `OLD NEW` folder pair (or the long
+`--previous-export-root`/`--export-root` flags) for one-off comparisons. A named
+`OLD` implies `--refresh-previous-export-baseline`. Pass `--no-audio` to omit
+decoded audio while keeping other asset entries. Pass `--text-only` only for a
+text-only update feed, and `--exact` to hash asset contents instead of
+comparing sizes. The wrapper still accepts the older `--init-build`,
+`--skip-audio-updates`, `--skip-asset-updates`, and `--hash-asset-updates`
+spellings, and forwards any other option to `scripts/build_updates.py`.
 Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
 lookup, and CN audio relinking from existing decoded assets when Story is
-already current. Pass `--export-from-game` only when the user explicitly asks to
+already current. Pass `--from-game` only when the user explicitly asks to
 run the default AnimeStudio image/model decode, `Material` JSON, and CN
 audio decode from installed game data first. Prefer
-`export.bat --export-from-game --with-assets` when Story and assets both need an
+`export.bat --from-game --with-assets` when Story and assets both need an
 installed-game refresh. Asset modes, from narrowest to broadest, are
 `--focused-assets`, `--default-assets`, and `--debug-assets`.
 Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
@@ -108,21 +130,39 @@ maintenance. The audio builder writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
 `export_full/structured/Audio/<LANG>/`, parses Wwise bank event-to-media links,
 and post-processes generated conversation JSON with playable `audioSrc` links.
-AnimeStudio decodes Wwise media to temporary WAV files; `build_audio.py`
-converts the browser-facing output to lossless FLAC by default and removes the
-temporary WAV after successful conversion. The FLAC step requires `ffmpeg`;
-use `--audio-format wav` to retain WAV or `--format wem` for legacy WEM output.
+AnimeStudio pipes decoded Wwise PCM directly into its in-process FLAC encoder
+and writes lossless FLAC by default, without creating intermediate WAV files or
+requiring `ffmpeg`. Use `--format wav` to write WAV or `--format wem` for legacy
+WEM output.
 It also writes the compact
 per-language Gameplay skill/enemy SFX sidecar from exact SkillData/BuffData
 references and Wwise event traversal. The default exporter mode is
 `--animestudio-type-job-mode auto`: it merges map-filtered JSON, runs broad Story
 JSON types sequentially in isolated processes, and keeps map-filtered asset
 conversion sharded; use `parallel` only when comparing concurrent per-type jobs.
+`TextAsset` loads through the generated asset map instead of every bundle:
+byte-identical output, 508s -> 27s (475,588 bundle containers parsed -> 16,218).
+Every other json type still loads broadly. Map filtering is only sound for a
+type that resolves nothing outside its own bundle, because the filtered load
+never opens the skipped bundles -- matching object counts prove nothing.
+`MonoBehaviour` has complete map coverage and was still rejected: filtering
+renamed 128,181 of 174,133 files to `MonoBehaviour#100001_p...` because the
+defining MonoScript sits in a skipped bundle, and turned 2,709 resolved PPtr
+targets into `external_target_unavailable`. `PlayableDirector` has zero map
+entries and would emit nothing. Add to `ANIMESTUDIO_JSON_MAP_FILTER_TYPES`
+only after exporting a type both ways and diffing the bytes;
+`--no-animestudio-json-map-filter` forces the broad path. Sharding those loads was separately measured and rejected: on identical object sets, `Convert` Texture2D scales
+4.03x across 8 shards while `JSON` Material runs 0.92-0.95x, i.e. no better
+than one process. Convert is CPU-bound decode (~37 ms/object); JSON export is
+~3.55 ms/object and bound on single-disk small-file creation, so extra
+processes only contend. Keep `convert_by_type` sharding; do not add JSON
+sharding. `--animestudio-broad-json-jobs N` bounds concurrent broad loads and
+defaults to 1; values above 1 are not supported by any measurement.
 
 For repeated Mission Pipeline recovery builds with unchanged Timeline and
 Table inputs, use `--mission-pipeline-only --reuse-timeline-orders
 --reuse-reference`. Reference reuse validates the existing localized reference
-index/files and is rejected with `--export-from-game`; omit both reuse flags
+index/files and is rejected with `--from-game`; omit both reuse flags
 after any installed-game refresh.
 
 ### Mission Recovery Edit-Loop Policy
@@ -173,14 +213,11 @@ python scripts\story_builder\refresh_evidence.py
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
+python scripts\animestudio\generate_dummydll.py --dry-run
 python scripts\build_character_data.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
-python scripts\build_gameplay_data.py
-python scripts\build_projectile_data.py
-python scripts\build_combat_relationships.py --languages CN
-python scripts\build_economy_data.py --languages CN --default-language CN
-python scripts\build_world_data.py --languages CN --default-language CN
-python scripts\build_presentation_data.py --languages CN
+python scripts\build_gameplay.py
+python scripts\build_gameplay.py --stage projectiles
 python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
@@ -243,7 +280,7 @@ Export freshness:
 - Run `python scripts\verify_export_freshness.py` directly when checking the
   guard, and pass `--game-root "...\Endfield_Data"` for non-default installs.
 - If freshness reports stale source roots, rerun
-  `.\export.bat --export-from-game` before Story or asset builders read
+  `.\export.bat --from-game` before Story or asset builders read
   `export_full/`.
 
 Setup and export internals:
@@ -262,15 +299,22 @@ Setup and export internals:
   streams Wwise bank metadata directly from VFS when relinking audio events.
   `--structured-dump-mode full` keeps the same production skip rules; use
   `--structured-dump-mode debug` only for broad VFS diagnostics.
-- `export_assets.bat --export-from-game` passes `--skip-structured`, writes a
+- `export_assets.bat --from-game` passes `--skip-structured`, writes a
   lightweight VFS metadata index, runs WebUI-facing image/model/Material
   export, and decodes CN audio before relinking.
-- `export.bat --export-from-game --with-assets` keeps the structured Story
+- `export.bat --from-game --with-assets` keeps the structured Story
   refresh and folds the asset export into the same AnimeStudio run.
 - `tools\DummyDll` is the preferred repo-local IL2CPP DummyDll root when
   optional script-schema recovery is wanted. Wrapper flags or
   `ANIMESTUDIO_DUMMY_DLLS` can supply it, but missing or stale DummyDll paths
   must warn and continue without failing normal exports.
+- `scripts\animestudio\generate_dummydll.py` is the maintained regeneration
+  path. Run `--dry-run` first after a game update, then `--replace` only when
+  script-derived schema recovery is needed. It discovers build-specific
+  registrations, applies the maintained Cpp2IL patch, validates a staged
+  complete DLL image set, retains the previous set, and writes
+  `tools\DummyDll\generation.json`. Never reuse registration addresses from a
+  previous installed build.
 - `--animestudio-mono-behaviour-type-tree-priority script-first` is for
   targeted MonoBehaviour schema experiments; the default is `serialized-first`.
   Script-first must fall back cleanly when no usable DummyDlls are available.
@@ -291,9 +335,6 @@ Browser data inputs and outputs:
   `webui/data/lang/<code>/gameplay/sound_effects.json`,
   `webui/data/lang/<code>/characters/index.json`,
   `webui/data/lang/<code>/gameplay/combat_relationships.json`,
-  `webui/data/lang/<code>/economy/index.json`,
-  `webui/data/lang/<code>/world/index.json`,
-  `webui/data/lang/<code>/presentation/index.json`,
   `webui/data/assets/index.json`, `webui/data/assets/gameplay_refs.json`, and
   `webui/data/updates/latest.json`.
 - The current `export.bat` skips raw VFS output and source inventory because
@@ -402,16 +443,18 @@ export_1d2
 export_full
 ```
 
-when no wrapper config or explicit flags are supplied. Pass
-`--previous-export-root PATH` for a one-off different saved previous export.
-The direct two-extraction command that also generates the WebUI page is:
+when no wrapper config or explicit flags are supplied. The direct
+two-extraction command that also generates the WebUI page is:
 
 ```bat
-.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline
+.\build_updates.bat OLD NEW
 ```
 
 `OLD` is the saved extracted version and `NEW` is the current extracted
-version. `build_updates_by_patch.bat --check` is detection-only; the default
+version; the pair must be the first arguments, and the wrapper adds
+`--refresh-previous-export-baseline` for them. The long
+`--previous-export-root PATH`/`--export-root PATH` flags remain available and
+may override one side only. `build_updates_by_patch.bat --check` is detection-only; the default
 no-argument patch mode invokes the extracted-tree feed comparison itself after
 successful staging and rotation.
 Scanner cache and feed history live under `.game-data-tracker/`; the cached
@@ -420,11 +463,18 @@ is scanned against it using the same focused roots. Do not point this
 comparison at `webui/`, `reports/`, `memory/`, or `scratch/`. WebUI edits and
 generated output outside the export roots must not appear as game-data updates.
 
-`build_updates_by_patch.bat` is the original installed-data patch workflow.
-`--init-baseline` builds a logical VFS snapshot from only the current installed
-version and attaches it under the current export without requiring a previous
-export. Use `build_updates.bat --init-build` separately when an empty first
-WebUI feed is desired. `--check` is detection-only. With no mode, the wrapper
+`build_updates_by_patch.bat` is the original installed-data patch workflow. Its
+three modes are `--update` (default), `--check`, and `--first-time`, and only
+one may be given per run. `--first-time` builds a logical VFS snapshot from only
+the current installed version and attaches it under the current export without
+requiring a previous export. Use `build_updates.bat --first-time` separately
+when an empty first WebUI feed is desired. `--check` is detection-only. Asset
+scope uses the same `--focused-assets`/`--default-assets`/`--debug-assets` names
+as `export.bat`, and `--jobs N` caps AnimeStudio workers. The older `--apply`,
+`--init-baseline`, `--init-current-version`, `--baseline-current`,
+`--asset-mode MODE`, and `--animestudio-jobs N` spellings still work, and any
+other option is forwarded to `scripts/game_data_update_workflow.py`.
+With no mode, the wrapper
 runs `--apply`: logical no-change, version-only, and chunk-only repack results
 leave all published state untouched; logical changes clone the complete current
 export into sibling staging, selectively dump changed Table/JsonData/Video/
@@ -452,7 +502,9 @@ Use `--dry-run-prune-previous-export-untracked` to preview previous-export
 files that exist byte-identically at the same relative paths in the current
 export, and `--prune-previous-export-untracked` only when intentionally
 deleting those old duplicate copies from the previous export folder. This
-pruning must never target `export_full/` or the repo root.
+pruning must never target `export_full/` or the repo root. Through the wrapper
+these are `build_updates.bat --prune-old --dry-run` and
+`build_updates.bat --prune-old`.
 
 Use `--baseline-only` only when an empty feed is intentional. Use
 `--refresh-previous-export-baseline` after replacing the saved previous export
@@ -508,6 +560,7 @@ folder so the cached scanner baseline is rebuilt.
 WebUI:
 
 - `scripts/export_full_from_game.py`
+- `scripts/build_webui_views.py`
 - `scripts/track_export_changes.py`
 - `scripts/story_builder/dialog_registry.py`
 - `scripts/story_builder/video_bindings.py`
@@ -518,17 +571,17 @@ WebUI:
 - `scripts/story_builder/build.py`
 - `scripts/story_builder/timeline_action_evidence.py`
 - `scripts/build_character_data.py`
-- `scripts/build_gameplay_data.py`
-- `scripts/build_gameplay_asset_refs.py`
+- `scripts/build_gameplay.py` (every Gameplay page dataset; stage modules in
+  `scripts/gameplay_builder/`)
 - `scripts/build_mission_pipeline_data.py`
-- `scripts/build_projectile_data.py`
-- `scripts/build_combat_relationships.py`
-- `scripts/build_economy_data.py`
-- `scripts/build_world_data.py`
-- `scripts/build_presentation_data.py`
 - `scripts/build_assets.py`
-- legacy local index helpers `scripts/build_data_index.py` and
-  `scripts/build_decoded_index.py` are not active WebUI pages
+- legacy local index helpers `scripts/build_data_index.py`,
+  `scripts/build_decoded_index.py`, `scripts/build_economy_data.py`,
+  `scripts/build_world_data.py`, and `scripts/build_presentation_data.py` are
+  not active WebUI pages. The Factory, World, and Presentation tabs were
+  removed from `webui/index.html`, so `export.bat` no longer runs those three
+  builders and their `webui/data/lang/<code>/{economy,world,presentation}/`
+  outputs are not generated.
 - `scripts/build_audio.py`
 - `scripts/pack_webui.py`
 - supporting files in `scripts/` and `scripts/asset_builder/`

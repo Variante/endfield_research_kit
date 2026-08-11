@@ -249,6 +249,72 @@ class DialogTreeControlFlowTests(unittest.TestCase):
         ):
             parse_lua_external_result_router(sources, self.router_spec())
 
+    def test_lua_formal_parameter_recovers_general_literal_call_paths(self) -> None:
+        sources = self.lua_router_sources()
+        sources["ArbitraryController.lua"] = b"""
+            local PHASE_ID = PhaseId.ArbitraryController
+            ArbitraryController = HL.Class('ArbitraryController')
+            ArbitraryController.OnCreate = HL.Method() << function(self)
+                self:Finish(7)
+                self:Finish(runtimeValue)
+            end
+            ArbitraryController.Finish = HL.Method(HL.Number) << function(self, selectedPort)
+                Notify(MessageConst.CHANGE_RESULT_INDEX, {
+                    phaseId = PHASE_ID,
+                    nextIndex = selectedPort,
+                })
+            end
+        """
+
+        result = parse_lua_external_result_router(sources, self.router_spec())
+        producer = result["producersByPhase"]["ArbitraryController"][0]
+
+        self.assertEqual(producer["possibleIndexes"], [7])
+        self.assertEqual(
+            producer["indexStatus"],
+            "literal_call_paths_with_dynamic_residual",
+        )
+        self.assertEqual(
+            [(row["callerMethod"], row["calleeMethod"], row["value"])
+             for row in producer["valueFlowEvidence"]],
+            [("OnCreate", "Finish", 7)],
+        )
+
+    def test_projection_marks_proven_call_path_and_dynamic_residual(self) -> None:
+        sources = self.lua_router_sources()
+        sources["ArbitraryController.lua"] = b"""
+            local PHASE_ID = PhaseId.ArbitraryController
+            ArbitraryController = HL.Class('ArbitraryController')
+            ArbitraryController.OnCreate = HL.Method() << function(self)
+                self:Finish(1)
+            end
+            ArbitraryController.Finish = HL.Method(HL.Number) << function(self, selectedPort)
+                Notify(MessageConst.CHANGE_RESULT_INDEX, {
+                    phaseId = PHASE_ID,
+                    nextIndex = selectedPort,
+                })
+            end
+        """
+        router = parse_lua_external_result_router(sources, self.router_spec())
+        projected = project_serialized_family_node(
+            {"selector": 11},
+            [(0, "a"), (1, "b")],
+            target_types={"a": "A", "b": "B"},
+            contract={
+                "serializedSelectorPath": ["selector"],
+                "enumMembers": [{"value": 11, "name": "ArbitraryController"}],
+                "portMaps": [],
+                "externalResultRouter": router,
+            },
+        )
+
+        self.assertEqual(
+            projected["arms"][1]["runtimeProducerStatus"],
+            "shipped_lua_producer_with_dynamic_residual",
+        )
+        self.assertEqual(projected["runtimeProducedArmCount"], 2)
+        self.assertEqual(projected["runtimeDynamicProducerArmCount"], 1)
+
     def test_serialized_projection_marks_current_shipped_producer_coverage(self) -> None:
         router = parse_lua_external_result_router(
             self.lua_router_sources(),

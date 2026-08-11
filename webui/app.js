@@ -5904,6 +5904,25 @@ function isWikiCharacterArchiveConv(conv) {
   return String(conv && conv.key || "").startsWith("wiki_chr_");
 }
 
+function usesLineHintsAsSpeakers(conv) {
+  return isWikiCharacterArchiveConv(conv) || String(conv && conv.kind || "") === "responsive";
+}
+
+function responsiveLineTriggerTitle(line) {
+  const source = line && line._debug && line._debug.source;
+  const triggerKeys = source && Array.isArray(source.triggerKeys)
+    ? source.triggerKeys.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+  return triggerKeys.length ? triggerKeys.join(" / ") : String(line && line.hint || "").trim();
+}
+
+function lineHintSpeakerTitle(conv, line) {
+  if (String(conv && conv.kind || "") === "responsive") {
+    return responsiveLineTriggerTitle(line);
+  }
+  return String(line && line.hint || "").trim();
+}
+
 function resolveRenderedSpeaker(line, {
   fallback = "",
   allowFallback = false,
@@ -6175,7 +6194,7 @@ function isResearchHintLine(line) {
 
 function renderConversationHints(conv) {
   const rows = conversationHintRows(conv).filter((row) => {
-    return !isWikiCharacterArchiveConv(conv) || row.isResearch;
+    return !usesLineHintsAsSpeakers(conv) || row.isResearch;
   });
   if (!rows.length) return null;
 
@@ -6744,7 +6763,7 @@ function renderConv(conv) {
   );
   const uncoveredLineIdSet = getConvUncoveredLineIdSet(conv);
   const duplicateTimestampLineIdSet = getConvDuplicateTimestampLineIdSet(conv);
-  const useWikiCharacterHintsAsSpeakers = isWikiCharacterArchiveConv(conv);
+  const useLineHintsAsSpeakers = usesLineHintsAsSpeakers(conv);
 
   const missionContextBlock = renderMissionContext(missionExtras);
   if (missionContextBlock) frag.appendChild(missionContextBlock);
@@ -7709,11 +7728,12 @@ function renderConv(conv) {
       // Use the per-line resolved name from the source JSON verbatim.
       // This preserves unrevealed-identity lines and other line-specific forms.
       // Fall back to the aggregated actor display only if needed.
+      const hintSpeakerTitle = useLineHintsAsSpeakers ? lineHintSpeakerTitle(conv, ln) : "";
       const speaker = resolveRenderedSpeaker(ln, {
         fallback: conv.kind === "radio" ? uiText("radioSpeaker") : "",
         allowFallback: conv.kind === "radio",
-        speakerOverride: useWikiCharacterHintsAsSpeakers ? ln.hint : "",
-        suppressAid: useWikiCharacterHintsAsSpeakers && Boolean(String(ln.hint || "").trim()),
+        speakerOverride: hintSpeakerTitle,
+        suppressAid: Boolean(hintSpeakerTitle),
       });
       if (speaker.display || speaker.aid) {
         appendSpeakerLabel(actor, speaker.display, {
@@ -9788,10 +9808,22 @@ function resolveStoredGenderVariant() {
 
 function syncGenderVariantControl() {
   const active = resolveGenderVariant();
-  const btn = $("#gender-variant");
-  if (btn) btn.setAttribute("aria-pressed", active === "f" ? "true" : "false");
+  const control = $("#gender-variant");
+  if (control) {
+    for (const button of control.querySelectorAll("[data-story-gender-variant]")) {
+      const selected = normalizeGenderVariant(button.dataset.storyGenderVariant) === active;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+    }
+  }
   const label = $("#gender-variant-label");
-  if (label) label.textContent = uiText("genderVariant").replace("{gender}", active.toUpperCase());
+  if (label) label.textContent = uiText("genderVariant");
+  const femaleLabel = $("#gender-variant-female-label");
+  if (femaleLabel) femaleLabel.textContent = uiText("genderVariantFemale");
+  const maleLabel = $("#gender-variant-male-label");
+  if (maleLabel) maleLabel.textContent = uiText("genderVariantMale");
+  const note = $("#gender-variant-note");
+  if (note) note.textContent = uiText("genderVariantNote");
   applyGenderVariantBodyClass(active);
 }
 
@@ -9808,6 +9840,11 @@ function setGenderVariant(value, { persist = true, refresh = true } = {}) {
   if (persist) persistGenderVariant(next);
   syncGenderVariantControl();
   applyGenderVariantBodyClass(next);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("webui:gender-changed", {
+      detail: { gender: next },
+    }));
+  }
   if (refresh) {
     const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
     if (cached) renderConv(cached);

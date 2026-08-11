@@ -14,9 +14,9 @@ activation, or placement time.
 ## Refresh
 
 ```bat
-.\export.bat --export-from-game --with-assets
+.\export.bat --from-game --with-assets
 .\export_assets.bat
-.\export_assets.bat --export-from-game
+.\export_assets.bat --from-game
 python scripts\build_assets.py
 python tools\endfield_source_graph.py build
 ```

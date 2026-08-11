@@ -19,7 +19,7 @@ from common import EXPORT_REPORTS_DIR, ROOT, rel_path
 
 ACTIVE_ENV = "ENDFIELD_EXPORT_BENCHMARK_ACTIVE"
 DEFAULT_SAMPLE_INTERVAL_SECONDS = 1.0
-DEFAULT_COMMAND = [str(ROOT / "export.bat"), "--export-from-game", "--with-assets"]
+DEFAULT_COMMAND = [str(ROOT / "export.bat"), "--from-game", "--with-assets"]
 WINDOWS_BATCH_EXTENSIONS = {".bat", ".cmd"}
 
 
@@ -487,7 +487,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "command",
         nargs=argparse.REMAINDER,
-        help="command to run after --; defaults to export.bat --export-from-game --with-assets",
+        help="command to run after --; defaults to export.bat --from-game --with-assets",
     )
     args = parser.parse_args(argv)
     if args.command and args.command[0] == "--":

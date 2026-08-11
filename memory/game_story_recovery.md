@@ -48,14 +48,14 @@ never promotes an edge.
   groups and 1,666 branch lines.
 - Narrative videos, inline images, SNS media, and playable audio are linked
   without treating media definitions as playback or mission ownership.
+- Character Wiki voice rows are not a complete substitute for gameplay voice
+  catalogs. ResponsiveDialog retains trigger/response relations and additional
+  exploration lines; `greetEnvTalk` is only partly duplicated by profile
+  voices, while `radio_continue_self_*` remains distinct. Duplicate text/audio
+  may be folded in presentation, but the authored trigger records stay intact.
 - Exact DialogTree conditionals, branch nodes, and IfNodes retain all decoded
   arms and polarity. They describe local selection unless a typed cross-Story
   continuation is independently proven.
-- Timeline option-index and track evidence remains selection/placement
-  evidence, not mission ownership or cross-file chronology.
-- Manual option fixes live in `webui/overrides/options.json`; manual mission
-  order lives in `webui/overrides/story_order.json`. Builders do not replace
-  the latter with OCR output.
 - Multi-output DialogTree controls use one schema-driven native decoder for
   managed enum/static-port families. For OpenUI nodes it derives the installed
   `Dictionary<DialogOpenUIType,List<string>>`, selector-to-string getter,
@@ -70,6 +70,11 @@ never promotes an edge.
   remain ordinal-only. Producer presence is not an observed choice, activation,
   mission owner, or cross-file order; producer absence is not permanent
   unreachability. Anonymous zero-edge controls remain detached definitions.
+- Timeline option-index and track evidence remains selection/placement
+  evidence, not mission ownership or cross-file chronology.
+- Manual option fixes live in `webui/overrides/options.json`; manual mission
+  order lives in `webui/overrides/story_order.json`. Builders do not replace
+  the latter with OCR output.
 
 ## Mission and quest conclusions
 
@@ -340,7 +345,72 @@ never promotes an edge.
 - Spawner and task topology can prove local progression only through typed
   authored relations.
 - Narrative definitions, ReadingPopUp/RichContent rows, and black-screen audio
-  metadata remain definition-only until an exact consumer is recovered.
+  metadata remain definition-only until an exact consumer is recovered. A
+  `ShowUIReadingPopPanel` action carries its direct `_readingPopId`; it does not
+  require a LevelData BriefData property host.
+- The focused `e0m0` unresolved set is now source-bounded rather than attached
+  by filename or position. `text_e0m0_1` has an exact
+  `WorldEntityRegistry 8700020018/40001 -> int_mission_beacon` map interaction
+  at `(278.377, 55.920, 651.378)`. Its complete embedded
+  `LevelInteractiveData/25` record raises `readepitaph`, and the same script's
+  exact `LevelEvent_OnCustomEvent(readepitaph) -> ShowUIReadingPopPanel`
+  receiver carries direct id `text_e0m0_1`. This recovers the interaction
+  trigger and playback route without a broad map re-export; no exact
+  MissionRuntime/quest owner or mission-step order is yet proven. The trigger
+  is 0.343 m in 3D from the `e0m0_q#10` tracking centroid (`进入过去`), while
+  q9 and q11 are about 98 m and 143 m away. This is high-signal spatial
+  context for q10, not a quest-ownership or Story-order edge.
+  The targeted runtime-map layer now also aligns exact WorldEntityRegistry
+  positions for the three active second-zipline transition producers:
+  `cutscene_e0m0_2ndZiplineA` at
+  `(-70.600, 60.492, -42.800)`, `B` at
+  `(-21.070, 36.417, -17.940)`, and `CCamOnly` at
+  `(-17.730, 66.267, 43.690)`. Their matching stage tags and retained-camera
+  paths explain the relationship to legacy `_10`, `_11`, and `_12`, but do
+  not make those legacy roots playback aliases or prove that they trigger.
+  `cutscene_e0m0_1` has only a case-mismatched
+  shipped-Lua call rejected by the case-sensitive native lookup;
+  `cutscene_e0m0_10` through `_12` are legacy zipline definitions parallel to
+  active transition assets without a recovered consumer, and `_11111` likewise
+  has no current exact activator. Field observation confirms that radios
+  `_9d5`, `_10`, and `_21` do play, and all of their decoded media exists
+  (`_10`/`_21` use protagonist-gender `_f/_m` variants), so they are no longer
+  treated as unused definitions. Their exact offline trigger carrier remains
+  unrecovered: focused nearby Audio Timeline exports resolve only unrelated
+  scene SFX. Current native recovery proves the general non-LevelScript
+  `RadioTriggerZoneHandler.OnEnter -> mission gates/once flag ->
+  GameAction.PlayRadio` route, but no authored zone instance has yet joined
+  that route to these three ids. The complete current LevelScript Radio surface
+  excludes all three, and its only dynamic radio-id binding belongs to
+  `map01_lv006/3500060003`. Streaming/DynamicStreaming/ExtendData contain no
+  target-id occurrence; JsonData/Lua/Table occurrences are limited to
+  RadioTable and AudioDialog definitions. The working
+  `9 -> 9d5 -> 10 -> 21 -> tombstone` placement already matches
+  `story_order.json`; it is not promoted to a strict serialized edge.
+- The focused `e0m0` flow is now consolidated in
+  `reports/story/recovery/e0m0_mission_flow.md`. The exact mission backbone is
+  the unbranched `e0m0_q#1 -> ... -> e0m0_q#13` chain, while the apparent
+  53-item Story order contains only 49 WebUI Story roots:
+  `cutscene_e0m0_2ndZiplineC` is a LevelSequence display alias and
+  `radio_e0m0_16_1/_2/_3` are battle-signal ids that play
+  `radio_e0m0_16/_22/_23`. Boss dialogue is event-conditioned partial order,
+  not a fixed sequence. Strong local ordering is currently limited to exact
+  serialized paths such as `cutscene_e0m0_2 -> radio_e0m0_1`,
+  `cutscene_e0m0_New14 -> radio_e0m0_8d8`; ending cutscenes 6/7/8 have exact
+  individual playback paths but their cross-event 6 -> 7 -> 8 progression is
+  still a working sequence, not one serialized control chain. The report lists
+  every displayed key, trigger carrier, preload-only case, and definition with
+  no current consumer.
+- The next offline `e0m0` radio step is now a concrete object-index join, not a
+  broad string scan. AnimeStudio component rows can retain their exact
+  GameObject, Transform hierarchy, local position, and computed world position;
+  identity-like booleans such as `useRadioTriggerOnce` are also retained in the
+  scalar surface. A current complete Story carrier refresh can therefore test
+  `LevelFunctionAreaData` / nested `RadioTriggerZoneData` instances for
+  `radioId`, trigger id, once flag, mission gates, hierarchy, and world
+  position. Until that complete index exists, `_9d5`, `_10`, and `_21` remain
+  observed playback with a proven generic native route but no recovered
+  authored instance or strict order edge.
 - Project-authored WebUI fixtures are labeled and excluded from original-game
   chronology recovery.
 
@@ -372,12 +442,17 @@ Reject as proof:
 
 ## Highest-value remaining gaps
 
-1. Recover a typed mission/quest owner for the 156 unlinked Story files that
+1. Complete a current-CLI StreamingAssets object-index refresh, then audit
+   `indie_dg002` component rows for `LevelFunctionAreaData` /
+   `RadioTriggerZoneData` instances carrying `radio_e0m0_9d5`, `_10`, or `_21`.
+   Promote only exact serialized instance fields and exact Transform context;
+   do not infer a chain from RadioTable order, code address, or nearby objects.
+2. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families. Five receiver scripts now have exact level-scoped typed
    mission-shell context and all five unions are unique, but none supplies the
    missing activation or Story-ownership selector.
-2. Resolve the remaining ambiguous LevelData mission shells with an independent
+3. Resolve the remaining ambiguous LevelData mission shells with an independent
    typed server-selection or mission-owner carrier. The LevelData census still
    retains 11 shared and nine unresolved identities, but the NpcProxy segment
    tier now refines one shared task script to `sm1l2m3`; ten shared identities
@@ -386,7 +461,7 @@ Reject as proof:
    28 authored endpoint-to-task dependencies still lack an exact
    MissionRuntime finish match. Complete task maps, client lifecycle, authored
    DialogTree endpoints, and original LevelData carrier files are recovered.
-3. Find any client-visible carrier for server-side mission/quest successor
+4. Find any client-visible carrier for server-side mission/quest successor
    selection or LevelScript activation policy. Current state/update packets do
    not co-carry Story ownership. Do not repeat LevelScript UID/name searches for
    teleport-finish filters unless the original corpus changes: all 116 current
@@ -396,22 +471,22 @@ Reject as proof:
    interface, reflection, XLua, live-server, or different typed selector path
    that co-carries mission/quest identity; do not add object-specific producer
    exceptions.
-4. Continue external-result recovery only through exact typed producer data.
+5. Continue external-result recovery only through exact typed producer data.
    The shared phase router, defaults, nine override sites, nine direct native
    calls, and current arm coverage are complete for all 1,290 shipped Lua
    files. The next useful evidence is a bounded value source for the 35 dynamic
    indexes or an exact indirect/interface/reflection/XLua/native producer for
    the 14 arms with no current shipped producer. Do not infer those arm values
    from target shapes, authoring proximity, OCR, or per-panel exceptions.
-5. Improve within-mission order through strong relations. Do not turn the
+6. Improve within-mission order through strong relations. Do not turn the
    current sparse partial order into a total order by heuristic sorting.
-6. Revisit option gaps only when new runtime route evidence appears; most
+7. Revisit option gaps only when new runtime route evidence appears; most
    no-route rows are single-option acknowledgements or already bounded
    cosmetic/shared definitions. The 20 corpus-level rejected normal-option
    routes are structurally classified; revisit them only if a new original
    connection or native fallback appears. Do not repair them with positional
    replication or object-specific exceptions.
-7. Republish the StreamingAssets object-index commit marker only through a
+8. Republish the StreamingAssets object-index commit marker only through a
    current-CLI Story carrier refresh. The surviving merged outputs and worker
    parts still hash-match their last valid report and the installed-data
    fingerprint is unchanged, but the current AnimeStudio implementation hashes

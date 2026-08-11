@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
 DEFAULT_ANIMESTUDIO_ROOT = ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
@@ -42,7 +42,7 @@ PROJECTILE_TOKEN_RE = re.compile(r"(?:projectile|bullet|missile)", re.IGNORECASE
 SELECTOR_COUNT_RE = re.compile(r"(?:^|,)(find|select|query):(\d+)")
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--languages", nargs="+", default=["CN"])
     parser.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--animestudio-root", type=Path, default=DEFAULT_ANIMESTUDIO_ROOT)
     parser.add_argument("--max-assets-per-entity", type=int, default=8)
     parser.add_argument("--max-assets-per-effect", type=int, default=2)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def load_json(path: Path) -> Any:
@@ -1154,8 +1154,8 @@ def build_language(args: argparse.Namespace, language: str) -> tuple[Path, dict[
     return output_path, payload
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     for language in args.languages:
         output_path, payload = build_language(args, language)
         graph_mode = "source graph" if payload["graph"]["available"] else ("degraded (stale source graph)" if payload["graph"].get("stale") else "degraded (no source graph)")

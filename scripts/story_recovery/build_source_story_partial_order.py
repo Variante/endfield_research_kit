@@ -375,7 +375,7 @@ DIALOG_TIMELINE_OPTION_BINARY_CONTRACT = {
     ),
 }
 _DIALOG_TREE_BINARY_SOURCE_CACHE: dict[str, dict[str, Any] | None] = {}
-_DIALOG_TIMELINE_SOURCE_HASH_CACHE: dict[str, str] = {}
+_SOURCE_FILE_SHA256_CACHE: dict[str, str] = {}
 
 
 def _dialog_tree_resolve_source(source_file: str) -> Path:
@@ -510,17 +510,27 @@ def _configured_game_metadata_path() -> Path:
     )
 
 
-def _dialog_timeline_source_hash(path: Path) -> str:
-    """Hash a recovered Timeline source once while preserving missing files."""
+def _source_file_sha256(path: Path) -> str:
+    """Hash an evidence source once per run while preserving missing files.
+
+    Provenance rows re-state the same digests for every mission, so the
+    uncached form re-read whole files -- including the ~280 MB installed
+    GameAssembly.dll -- thousands of times per report. Digests are recorded,
+    never compared across a single run, so one read per path is equivalent.
+    """
     if str(path) in {"", "."}:
         return ""
     cache_key = str(path.resolve())
-    if cache_key in _DIALOG_TIMELINE_SOURCE_HASH_CACHE:
-        return _DIALOG_TIMELINE_SOURCE_HASH_CACHE[cache_key]
+    if cache_key in _SOURCE_FILE_SHA256_CACHE:
+        return _SOURCE_FILE_SHA256_CACHE[cache_key]
     digest = ""
     if path.is_file():
-        digest = hashlib.sha256(path.read_bytes()).hexdigest().upper()
-    _DIALOG_TIMELINE_SOURCE_HASH_CACHE[cache_key] = digest
+        accumulator = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(4 * 1024 * 1024), b""):
+                accumulator.update(chunk)
+        digest = accumulator.hexdigest().upper()
+    _SOURCE_FILE_SHA256_CACHE[cache_key] = digest
     return digest
 
 
@@ -540,7 +550,7 @@ def _dialog_timeline_option_evidence(risk: dict[str, Any]) -> dict[str, Any]:
         source_path = Path(source_file)
         if not source_path.is_absolute():
             source_path = ROOT / source_path
-        source_hash = _dialog_timeline_source_hash(source_path)
+        source_hash = _source_file_sha256(source_path)
         if not source_hash:
             missing_tracks.append(source_file)
             continue
@@ -553,8 +563,8 @@ def _dialog_timeline_option_evidence(risk: dict[str, Any]) -> dict[str, Any]:
 
     binary_path = _configured_game_assembly_path()
     metadata_path = _configured_game_metadata_path()
-    binary_hash = _dialog_timeline_source_hash(binary_path)
-    metadata_hash = _dialog_timeline_source_hash(metadata_path)
+    binary_hash = _source_file_sha256(binary_path)
+    metadata_hash = _source_file_sha256(metadata_path)
     validation_failures: list[dict[str, Any]] = []
     for label, source_path, actual_hash, expected_hash in (
         ("GameAssembly.dll", binary_path, binary_hash, contract["gameAssemblySha256"]),
@@ -2369,8 +2379,9 @@ def _dialog_tree_cross_story_conditional_edges(
         # unrelated missions from being audited.
         game_assembly_path = None
     game_assembly_sha256 = (
-        hashlib.sha256(game_assembly_path.read_bytes()).hexdigest().upper()
-        if game_assembly_path is not None and game_assembly_path.is_file() else ""
+        _source_file_sha256(game_assembly_path)
+        if game_assembly_path is not None
+        else ""
     )
     contract = DIALOG_TREE_IF_BINARY_CONTRACT
 
@@ -2451,8 +2462,7 @@ def _dialog_tree_cross_story_conditional_edges(
         source_path = resolved(source_file) if source_file else None
         source_payload = raw_source(source_path) if source_file else None
         source_sha256 = (
-            hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
-            if source_path is not None and source_path.is_file() else ""
+            _source_file_sha256(source_path) if source_path is not None else ""
         )
         node, outgoing = branch_info(source_payload, branch_node_id)
         outgoing_targets = [target_id for _index, target_id in outgoing]
@@ -2637,8 +2647,8 @@ def _dialog_tree_local_conditional_branches(
     except OSError:
         game_assembly_path = None
     game_assembly_sha256 = (
-        hashlib.sha256(game_assembly_path.read_bytes()).hexdigest().upper()
-        if game_assembly_path is not None and game_assembly_path.is_file()
+        _source_file_sha256(game_assembly_path)
+        if game_assembly_path is not None
         else ""
     )
     contract = DIALOG_TREE_IF_BINARY_CONTRACT
@@ -2743,9 +2753,7 @@ def _dialog_tree_local_conditional_branches(
                 )
                 source_payload = _dialog_tree_decode_source(source_path)
                 source_sha256 = (
-                    hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
-                    if source_path is not None and source_path.is_file()
-                    else ""
+                    _source_file_sha256(source_path) if source_path is not None else ""
                 )
                 node, outgoing = _dialog_tree_branch_info(
                     source_payload,
@@ -3021,8 +3029,8 @@ def _dialog_tree_local_branch_nodes(
     except OSError:
         game_assembly_path = None
     game_assembly_sha256 = (
-        hashlib.sha256(game_assembly_path.read_bytes()).hexdigest().upper()
-        if game_assembly_path is not None and game_assembly_path.is_file()
+        _source_file_sha256(game_assembly_path)
+        if game_assembly_path is not None
         else ""
     )
     contract = DIALOG_TREE_BRANCH_BINARY_CONTRACT
@@ -3037,11 +3045,7 @@ def _dialog_tree_local_branch_nodes(
         for source_file in _dialog_tree_source_files(conv):
             source_path = _dialog_tree_resolve_source(source_file)
             source_payload = _dialog_tree_decode_source(source_path)
-            source_sha256 = (
-                hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
-                if source_path.is_file()
-                else ""
-            )
+            source_sha256 = _source_file_sha256(source_path)
             node_ids = _dialog_tree_advertised_node_ids(
                 conv,
                 source_file,
@@ -3223,8 +3227,8 @@ def _dialog_tree_local_if_nodes(
     except OSError:
         game_assembly_path = None
     game_assembly_sha256 = (
-        hashlib.sha256(game_assembly_path.read_bytes()).hexdigest().upper()
-        if game_assembly_path is not None and game_assembly_path.is_file()
+        _source_file_sha256(game_assembly_path)
+        if game_assembly_path is not None
         else ""
     )
     contract = DIALOG_TREE_IF_BINARY_CONTRACT
@@ -3240,11 +3244,7 @@ def _dialog_tree_local_if_nodes(
         for source_file in _dialog_tree_source_files(conv):
             source_path = _dialog_tree_resolve_source(source_file)
             source_payload = _dialog_tree_decode_source(source_path)
-            source_sha256 = (
-                hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
-                if source_path.is_file()
-                else ""
-            )
+            source_sha256 = _source_file_sha256(source_path)
             node_records: dict[str, tuple[str, dict[str, Any], int]] = {}
             if isinstance(source_payload, dict):
                 for serialized_ordinal, node in enumerate(
@@ -3520,11 +3520,7 @@ def _dialog_tree_local_static_port_controls(
         for source_file in _dialog_tree_source_files(conv):
             source_path = _dialog_tree_resolve_source(source_file)
             source_payload = _dialog_tree_decode_source(source_path)
-            source_sha256 = (
-                hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
-                if source_path.is_file()
-                else ""
-            )
+            source_sha256 = _source_file_sha256(source_path)
             if not isinstance(source_payload, dict):
                 continue
             target_types = _dialog_tree_target_type_map(source_payload)
@@ -4315,7 +4311,7 @@ def _quest_succeed_lifecycle_story_edges(
             "actual": "missing",
             "sourcePaths": [mission_source] if mission_source else [],
         }]
-    mission_sha256 = hashlib.sha256(mission_path.read_bytes()).hexdigest().upper()
+    mission_sha256 = _source_file_sha256(mission_path)
     related_original_files = [
         {
             "kind": "original_mission_runtime",
@@ -4394,7 +4390,7 @@ def _quest_lifecycle_definition_rows(
     mission_path = ROOT / mission_source if mission_source else Path()
     if not mission_source or not mission_path.is_file():
         return []
-    mission_sha256 = hashlib.sha256(mission_path.read_bytes()).hexdigest().upper()
+    mission_sha256 = _source_file_sha256(mission_path)
     related_original_files = [{
         "kind": "original_mission_runtime",
         "sourceFile": mission_source,
@@ -8045,7 +8041,10 @@ def build_mission_partial_order(
                 for row in dialog_tree_static_port_controls
             ),
             "dialogTreeStaticPortProducedArmCount": sum(
-                arm.get("runtimeProducerStatus") == "shipped_lua_producer"
+                arm.get("runtimeProducerStatus") in {
+                    "shipped_lua_producer",
+                    "shipped_lua_producer_with_dynamic_residual",
+                }
                 for row in dialog_tree_static_port_controls
                 for arm in row.get("arms") or []
             ),
@@ -8055,7 +8054,16 @@ def build_mission_partial_order(
                 for arm in row.get("arms") or []
             ),
             "dialogTreeStaticPortDynamicProducerArmCount": sum(
-                arm.get("runtimeProducerStatus") == "shipped_lua_dynamic_index_unbounded"
+                arm.get("runtimeProducerStatus") in {
+                    "shipped_lua_dynamic_index_unbounded",
+                    "shipped_lua_producer_with_dynamic_residual",
+                }
+                for row in dialog_tree_static_port_controls
+                for arm in row.get("arms") or []
+            ),
+            "dialogTreeStaticPortResidualDynamicArmCount": sum(
+                arm.get("runtimeProducerStatus")
+                == "shipped_lua_producer_with_dynamic_residual"
                 for row in dialog_tree_static_port_controls
                 for arm in row.get("arms") or []
             ),

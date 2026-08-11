@@ -88,30 +88,45 @@
         "dlg_a1m6d1_2",
         "dlg_a1m6d1_3",
         "dlg_a1m6d1_4",
+        "env_envTalk_a1m6d1_1",
+        "env_envTalk_a1m6d1_2",
         "dlg_a1m6d1_5",
         "dlg_a1m6d1_6",
         "radio_a1m6d1_1",
         "radio_a1m6d1_2",
-        "env_envTalk_a1m6d1_1",
-        "env_envTalk_a1m6d1_2",
         "env_envTalk_a1m6d1_3",
         "env_envTalk_a1m6d1_4",
         "env_envTalk_a1m6d1_5"
       ],
+      "locked": true,
       "level": "map02_lv002",
       "levels": [
         "map02_lv002"
       ]
     },
+    "a1m6d2": {
+      "order": [
+        "dlg_a1m6d2_1",
+        "radio_a1m6d2_3",
+        "radio_a1m6d2_1",
+        "radio_a1m6d2_2",
+        "black_a1m6d2_3",
+        "dlg_a1m6d2_2",
+        "dlg_a1m6d2_3",
+        "env_envTalk_a1m6d2_1"
+      ],
+      "locked": true
+    },
     "a1m6d3": {
       "order": [
         "dlg_a1m6d3_1",
-        "dlg_a1m6d3_3",
-        "dlg_a1m6d3_4",
         "black_a1m6d3_1",
-        "env_envTalk_a1m6d3_1",
-        "radio_a1m6d3_1"
+        "dlg_a1m6d3_4",
+        "radio_a1m6d3_1",
+        "dlg_a1m6d3_3",
+        "env_envTalk_a1m6d3_1"
       ],
+      "locked": true,
       "level": "map02_lv002",
       "levels": [
         "map02_lv002"
@@ -222,6 +237,14 @@
       "level": "map02_lv002",
       "levels": [
         "map02_lv002"
+      ]
+    },
+    "a1m8d2": {
+      "order": [
+        "dlg_a1m8d2_1",
+        "dlg_a1m8d2_2",
+        "radio_a1m8d2_1",
+        "radio_a1m8d2_2"
       ]
     },
     "a1m8d3": {
@@ -1666,6 +1689,9 @@
         "indie_dg004"
       ],
       "possiblyUnused": [
+        "cutscene_e0m0_10",
+        "cutscene_e0m0_11",
+        "cutscene_e0m0_12",
         "cutscene_e0m0_11111"
       ]
     },
@@ -4196,19 +4222,20 @@
     },
     "f1m4d1": {
       "order": [
-        "cutscene_f1m4d1_1",
-        "radio_f1m4d1_1",
+        "sns_f1m4d1_1",
+        "dlg_f1m4d1_1",
+        "dlg_f1m4d1_3",
+        "dlg_f1m4d1_2",
+        "dlg_f1m4d1_4",
+        "dlg_f1m4d1_5",
         "radio_f1m4d1_1d3",
         "radio_f1m4d1_1d6",
         "radio_f1m4d1_2",
-        "cutscene_f1m4d1_2",
         "radio_f1m4d1_3",
+        "cutscene_f1m4d1_1",
+        "radio_f1m4d1_1",
+        "cutscene_f1m4d1_2",
         "cutscene_f1m4d1_3",
-        "dlg_f1m4d1_1",
-        "dlg_f1m4d1_2",
-        "dlg_f1m4d1_3",
-        "dlg_f1m4d1_4",
-        "dlg_f1m4d1_5",
         "dlg_f1m4d1_6",
         "dlg_f1m4d1_9",
         "dlg_f1m4d1_10",
@@ -4230,7 +4257,6 @@
         "env_envTalk_f1m4d1_14",
         "env_envTalk_f1m4d1_15",
         "env_envTalk_f1m4d1_16",
-        "sns_f1m4d1_1",
         "sns_f1m4d1_2",
         "sns_f1m4d1_3",
         "sns_f1m4d1_4",

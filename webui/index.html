@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260701-gp5">
-<link rel="stylesheet" href="style.css?v=20260809-skillicons2">
-  <link rel="stylesheet" href="src/features/characters/style.css?v=20260808-characters14">
+<link rel="stylesheet" href="style.css?v=20260809-storygendervariant1">
+  <link rel="stylesheet" href="src/features/characters/style.css?v=20260809-characters16">
   <link rel="stylesheet" href="src/features/mission_pipeline/style.css?v=20260809-proxycontext1">
   <link rel="stylesheet" href="src/features/audio/style.css?v=20260809-audio1">
 </head>
@@ -65,7 +65,14 @@
             <div class="sidebar-header-actions">
               <button id="filter-toggle" class="panel-toggle" type="button" aria-controls="filter-panel" aria-expanded="true">&#38544;&#34255;&#31579;&#36873;</button>
               <button id="reset" type="button">&#37325;&#32622;&#31579;&#36873;</button>
-              <button id="gender-variant" class="header-toggle-button" type="button" aria-pressed="true"><span id="gender-variant-label">Gender: F</span></button>
+              <div id="gender-variant" class="story-gender-variant-control">
+                <span id="gender-variant-label" class="story-gender-variant-heading">管理员性别版本</span>
+                <div class="gender-variant-buttons" role="group" aria-labelledby="gender-variant-label">
+                  <button class="gender-variant-button is-selected" type="button" data-story-gender-variant="f" aria-pressed="true"><span id="gender-variant-female-label">女</span></button>
+                  <button class="gender-variant-button" type="button" data-story-gender-variant="m" aria-pressed="false"><span id="gender-variant-male-label">男</span></button>
+                </div>
+                <p id="gender-variant-note">对话文本、语音、图片、视频与性别限定过场跟随此选择，并与玩法页保持同步。</p>
+              </div>
             </div>
           </header>
 
@@ -630,18 +637,18 @@
 <script src="src/core/text.js?v=20260701-gp5"></script>
 <script src="src/core/locale.js?v=20260701-gp5"></script>
 <script src="src/core/paths.js?v=20260701-gp5"></script>
-<script src="src/ui/media_player.js?v=20260701-gp5"></script>
+<script src="src/ui/media_player.js?v=20260811-mpduration1"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
 <script src="src/ui/filters.js?v=20260701-gp5"></script>
-<script src="app_labels.js?v=20260809-audio1"></script>
-<script src="app_tree.js?v=20260808-gameplay-image-modal1"></script>
+<script src="app_labels.js?v=20260809-storygendervariant1"></script>
+<script src="app_tree.js?v=20260809-storygendervariant1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
-<script src="app.js?v=20260725-mplayout2"></script>
+<script src="app.js?v=20260809-storygendervariant1"></script>
 <script src="assets.js?v=20260809-audio1"></script>
-  <script src="src/features/characters/index.js?v=20260808-characters14"></script>
-<script src="src/features/gameplay/labels.js?v=20260809-sfx6"></script>
-    <script src="src/features/gameplay/index.js?v=20260810-gpflat3"></script>
-  <script src="src/features/audio/index.js?v=20260810-audio3"></script>
+  <script src="src/features/characters/index.js?v=20260809-characters16"></script>
+<script src="src/features/gameplay/labels.js?v=20260809-endminvariant1"></script>
+    <script src="src/features/gameplay/index.js?v=20260810-gpflat5"></script>
+<script src="src/features/audio/index.js?v=20260810-audio4"></script>
   <script src="src/features/mission_pipeline/index.js?v=20260809-proxycontext1"></script>
 <script src="src/features/next_views.js?v=20260809-audio1"></script>
 <script src="src/features/reference/index.js?v=20260808-titles1"></script>

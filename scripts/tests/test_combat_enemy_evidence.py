@@ -10,7 +10,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from build_combat_relationships import PayloadBuilder
+from gameplay_builder.combat_relationships import PayloadBuilder
 
 
 class CombatEnemyEvidenceTests(unittest.TestCase):

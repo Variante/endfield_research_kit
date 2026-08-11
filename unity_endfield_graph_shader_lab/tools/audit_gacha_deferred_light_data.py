@@ -66,7 +66,15 @@ GET_SHADOW_RENDER_TYPE_FILE_OFFSET = 0x9B46E08
 GET_SHADOW_RENDER_TYPE_SIZE = 0x104
 GET_SHADOW_RENDER_TYPE_PATCH_ID = 0x886
 WRAPPERS_MANAGER_IS_PATCHED_VA = 0x1831068E0
+WRAPPERS_MANAGER_IS_PATCHED_FILE_OFFSET = 0x3104EE0
+WRAPPERS_MANAGER_IS_PATCHED_SIZE = 0x4D
+WRAPPERS_MANAGER_IS_PATCHED_COLD_VA = 0x184E35008
+WRAPPERS_MANAGER_IS_PATCHED_COLD_FILE_OFFSET = 0x4E33608
+WRAPPERS_MANAGER_IS_PATCHED_COLD_SIZE = 0x46
 WRAPPERS_MANAGER_GET_PATCH_VA = 0x189CDC2C0
+WRAPPERS_MANAGER_GET_PATCH_FILE_OFFSET = 0x9CDA8C0
+WRAPPERS_MANAGER_GET_PATCH_SIZE = 0x53
+WRAPPERS_MANAGER_TABLE_GLOBAL_VA = 0x18E28EC48
 ILFIX_DYNAMIC_METHOD_WRAPPER_874_VA = 0x189CD140C
 FAIL_FAST_VA = 0x1800D8260
 GET_RENDERER_CONFIG_VA = 0x189B4861C
@@ -191,6 +199,9 @@ EXPECTED_HASHES = {
     "rotatehouse": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4",
     "prepareCpuDataBody": "c55bd6dc86c971123c433a5dd29b446b557f8713f73b132da25c257369e9bd0b",
     "getShadowRenderTypeBody": "bfb6730d6907e208480291489117015ee10293e8489a3735b868ab0fde517233",
+    "wrappersManagerIsPatchedBody": "48678146c1cbf1cef4ef7bed4718b73df3e74df0f9cf1c827b5dcd4e5fe85692",
+    "wrappersManagerIsPatchedColdBody": "fefa55918137436af9357f114d7eab2296608ddabc34af7ce8a79d57120493d0",
+    "wrappersManagerGetPatchBody": "026cc13020ea55d8ca602768e0764e672d004b50509eea615e448b8db7fc91fd",
     "getRendererConfigBody": "07df57dc9a61647510d55da24a8cdd309fab5957d87195946a05e94b3ede4a07",
     "getEcsRenderFlagsBody": "2ad75354fa81b3958de4783f247c8e0993a6986b4c7ff244ce8f36e04615075d",
     "getLightNprDataBody": "49eeca70b72791b2ad58f8b77cf3fbc3f27149766dcc0510a00b9d129e6698c8",
@@ -604,6 +615,241 @@ def relative_branch_target(
     require(f"{check}_opcode", body[offset], opcode, source)
     displacement = struct.unpack_from("<i", body, offset + 1)[0]
     return base_va + offset + 5 + displacement
+
+
+def validate_ifix_wrapper_table_native(
+    is_patched_body: bytes,
+    is_patched_cold_body: bytes,
+    get_patch_body: bytes,
+) -> dict[str, Any]:
+    """Pin the native IFix wrapper-table lookup ABI.
+
+    The three punctual methods only expose a live table lookup: the manager
+    singleton's ``+0xB8`` points at a table whose first pointer is the active
+    table, ``+0x18`` is its entry count, and ``+0x20 + 8 * methodId`` stores
+    the wrapper pointer. The installed binary does not serialize the active
+    entry values, so this validator closes lookup semantics while keeping
+    membership and patched return values runtime-boundary evidence.
+    """
+
+    expected_bodies = (
+        (
+            "wrappers_manager_is_patched_body",
+            is_patched_body,
+            WRAPPERS_MANAGER_IS_PATCHED_SIZE,
+            EXPECTED_HASHES["wrappersManagerIsPatchedBody"],
+        ),
+        (
+            "wrappers_manager_is_patched_cold_body",
+            is_patched_cold_body,
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_SIZE,
+            EXPECTED_HASHES["wrappersManagerIsPatchedColdBody"],
+        ),
+        (
+            "wrappers_manager_get_patch_body",
+            get_patch_body,
+            WRAPPERS_MANAGER_GET_PATCH_SIZE,
+            EXPECTED_HASHES["wrappersManagerGetPatchBody"],
+        ),
+    )
+    body_hashes: dict[str, str] = {}
+    for check, body, size, expected_hash in expected_bodies:
+        require(f"{check}_size", len(body), size, GAME_ASSEMBLY)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(f"{check}_sha256", actual_hash, expected_hash, GAME_ASSEMBLY)
+        body_hashes[check] = actual_hash
+
+    require(
+        "wrappers_manager_is_patched_global_slot",
+        is_patched_body[0x09:0x10],
+        bytes.fromhex("488b0d5883180b"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "wrappers_manager_is_patched_table_fields",
+        is_patched_body[0x19:0x2B],
+        bytes.fromhex("488b81b8000000488b104885d274113b5a18"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "wrappers_manager_is_patched_cold_table_fields",
+        is_patched_cold_body[0x15:0x2B],
+        bytes.fromhex("488b81b8000000488b084885c90f84e9182dfe3b5918"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "wrappers_manager_get_patch_table_fields",
+        get_patch_body[0x21:0x35],
+        bytes.fromhex("488b0560295b04488b80b8000000488b104885d2"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "wrappers_manager_get_patch_count_check",
+        get_patch_body[0x3D:0x42],
+        bytes.fromhex("3b5a187206"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "wrappers_manager_get_patch_entry_load",
+        get_patch_body[0x48:0x4D],
+        bytes.fromhex("488b44da20"),
+        GAME_ASSEMBLY,
+    )
+
+    branches = []
+    for body, base_va, offset, opcode, target, name in (
+        (
+            is_patched_body,
+            WRAPPERS_MANAGER_IS_PATCHED_VA,
+            0x17,
+            0x74,
+            WRAPPERS_MANAGER_IS_PATCHED_VA + 0x3F,
+            "is_patched_init_fallback",
+        ),
+        (
+            is_patched_body,
+            WRAPPERS_MANAGER_IS_PATCHED_VA,
+            0x26,
+            0x74,
+            WRAPPERS_MANAGER_IS_PATCHED_VA + 0x39,
+            "is_patched_null_table_fail_fast",
+        ),
+        (
+            is_patched_cold_body,
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_VA,
+            0x07,
+            0x75,
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_VA + 0x15,
+            "is_patched_cold_initialized",
+        ),
+        (
+            is_patched_cold_body,
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_VA,
+            0x2B,
+            0x72,
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_VA + 0x33,
+            "is_patched_bounds_ok",
+        ),
+        (
+            get_patch_body,
+            WRAPPERS_MANAGER_GET_PATCH_VA,
+            0x17,
+            0x75,
+            WRAPPERS_MANAGER_GET_PATCH_VA + 0x28,
+            "get_patch_initialized",
+        ),
+        (
+            get_patch_body,
+            WRAPPERS_MANAGER_GET_PATCH_VA,
+            0x35,
+            0x75,
+            WRAPPERS_MANAGER_GET_PATCH_VA + 0x3D,
+            "get_patch_nonnull_table",
+        ),
+        (
+            get_patch_body,
+            WRAPPERS_MANAGER_GET_PATCH_VA,
+            0x40,
+            0x72,
+            WRAPPERS_MANAGER_GET_PATCH_VA + 0x48,
+            "get_patch_bounds_ok",
+        ),
+    ):
+        resolved = relative_short_branch_target(
+            body,
+            base_va,
+            offset,
+            opcode,
+            GAME_ASSEMBLY,
+            name,
+        )
+        require(f"{name}_target", resolved, target, GAME_ASSEMBLY)
+        branches.append(
+            {
+                "name": name,
+                "offset": f"0x{offset:X}",
+                "target": f"0x{resolved:X}",
+            }
+        )
+
+    for body, base_va, offset, opcode, target, name in (
+        (
+            is_patched_body,
+            WRAPPERS_MANAGER_IS_PATCHED_VA,
+            0x2B,
+            bytes.fromhex("0f8c"),
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_VA,
+            "is_patched_signed_id_gate",
+        ),
+        (
+            is_patched_cold_body,
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_VA,
+            0x22,
+            bytes.fromhex("0f84"),
+            WRAPPERS_MANAGER_IS_PATCHED_VA + 0x39,
+            "is_patched_cold_null_table_fail_fast",
+        ),
+        (
+            is_patched_cold_body,
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_VA,
+            0x39,
+            bytes.fromhex("0f84"),
+            WRAPPERS_MANAGER_IS_PATCHED_VA + 0x31,
+            "is_patched_entry_null",
+        ),
+    ):
+        resolved = relative_near_branch_target(
+            body,
+            base_va,
+            offset,
+            opcode,
+            GAME_ASSEMBLY,
+            name,
+        )
+        require(f"{name}_target", resolved, target, GAME_ASSEMBLY)
+        branches.append(
+            {
+                "name": name,
+                "offset": f"0x{offset:X}",
+                "target": f"0x{resolved:X}",
+            }
+        )
+
+    return {
+        "managerGlobalSlot": f"0x{WRAPPERS_MANAGER_TABLE_GLOBAL_VA:X}",
+        "managerInitializationField": "+0xE0",
+        "managerTablePointerField": "+0xB8",
+        "tableLayout": {
+            "activeTablePointer": "+0x00 of manager[+0xB8]",
+            "entryCount": "+0x18",
+            "entryArray": "+0x20 + 8 * methodId",
+            "entrySizeBytes": 8,
+        },
+        "isPatched": {
+            "virtualAddress": f"0x{WRAPPERS_MANAGER_IS_PATCHED_VA:X}",
+            "fileOffset": f"0x{WRAPPERS_MANAGER_IS_PATCHED_FILE_OFFSET:X}",
+            "sizeBytes": WRAPPERS_MANAGER_IS_PATCHED_SIZE,
+            "bodySha256": body_hashes["wrappers_manager_is_patched_body"],
+            "coldVirtualAddress": f"0x{WRAPPERS_MANAGER_IS_PATCHED_COLD_VA:X}",
+            "coldFileOffset": f"0x{WRAPPERS_MANAGER_IS_PATCHED_COLD_FILE_OFFSET:X}",
+            "coldSizeBytes": WRAPPERS_MANAGER_IS_PATCHED_COLD_SIZE,
+            "coldBodySha256": body_hashes["wrappers_manager_is_patched_cold_body"],
+            "input": "signed int32 methodId in ecx",
+            "outcome": "non-null table entry => true; null/out-of-range/uninitialized => false or fail-fast according to native branch",
+        },
+        "getPatch": {
+            "virtualAddress": f"0x{WRAPPERS_MANAGER_GET_PATCH_VA:X}",
+            "fileOffset": f"0x{WRAPPERS_MANAGER_GET_PATCH_FILE_OFFSET:X}",
+            "sizeBytes": WRAPPERS_MANAGER_GET_PATCH_SIZE,
+            "bodySha256": body_hashes["wrappers_manager_get_patch_body"],
+            "input": "signed int32 methodId in ecx",
+            "outcome": "returns table entry pointer after unsigned count check; invalid bounds fail-fast",
+        },
+        "resolvedBranches": branches,
+        "runtimeMembershipStillOpen": True,
+        "runtimeWrapperPointersStillOpen": True,
+        "lookupContractClosed": True,
+    }
 
 
 def validate_global_lighting_settings(data: bytes) -> dict[str, Any]:
@@ -3066,6 +3312,14 @@ def build_audit() -> dict[str, Any]:
         "rotatehouseSha256": verified_hash("rotatehouse", ROTATEHOUSE),
     }
     with GAME_ASSEMBLY.open("rb") as stream:
+        stream.seek(WRAPPERS_MANAGER_IS_PATCHED_FILE_OFFSET)
+        wrappers_manager_is_patched_body = stream.read(WRAPPERS_MANAGER_IS_PATCHED_SIZE)
+        stream.seek(WRAPPERS_MANAGER_IS_PATCHED_COLD_FILE_OFFSET)
+        wrappers_manager_is_patched_cold_body = stream.read(
+            WRAPPERS_MANAGER_IS_PATCHED_COLD_SIZE
+        )
+        stream.seek(WRAPPERS_MANAGER_GET_PATCH_FILE_OFFSET)
+        wrappers_manager_get_patch_body = stream.read(WRAPPERS_MANAGER_GET_PATCH_SIZE)
         stream.seek(PREPARE_CPU_DATA_FILE_OFFSET)
         body = stream.read(PREPARE_CPU_DATA_SIZE)
         stream.seek(PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
@@ -3139,6 +3393,11 @@ def build_audit() -> dict[str, Any]:
     native = validate_native_body(body)
     native["pointShadowCacheIndex"] = validate_point_shadow_cache_index_native(
         point_shadow_cache_index_body
+    )
+    native["ifixWrapperTable"] = validate_ifix_wrapper_table_native(
+        wrappers_manager_is_patched_body,
+        wrappers_manager_is_patched_cold_body,
+        wrappers_manager_get_patch_body,
     )
     native["shadowRenderType"] = validate_shadow_render_type_native(
         shadow_render_type_body
@@ -3259,8 +3518,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v16",
-        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_and_ecs_flags_contract_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v17",
+        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_and_ifix_table_lookup_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -3326,6 +3585,7 @@ def build_audit() -> dict[str, Any]:
                 "record2WContractExactCandidateCount": record2_w_contract_closed_count,
                 "pointShadowFacePack": native["pointShadowFacePack"],
                 "pointShadowCacheIndex": native["pointShadowCacheIndex"],
+                "ifixWrapperTable": native["ifixWrapperTable"],
                 "shadowRenderType": native["shadowRenderType"],
                 "rendererConfig": native["rendererConfig"],
                 "ecsRenderFlags": native["ecsRenderFlags"],
@@ -3398,6 +3658,7 @@ def build_audit() -> dict[str, Any]:
                 "the patched GetShadowRenderType path is explicitly bounded to WrappersManagerImpl.GetPatch(0x886) and ILFixDynamicMethodWrapper.__Gen_Wrap_874, with missing-patch fail-fast; no runtime wrapper result is inferred",
                 "GetRendererConfig method 0x887 is hash-pinned: its unpatched projection is 0x4800 | (castStaticObjects ? 0x1000 : 0) | (castDynamicObjects ? 0x2000 : 0), and its patched path is bounded to __Gen_Wrap_875",
                 "GetECSRenderFlags method 0x888 is hash-pinned: it initializes object/render flags, projects exclusive caster results into 0x04000000/0x01000000, and adds objectFlagsMask bit 28 only for the enableHDCharacterShadow + active HDPLS-light path",
+                "WrappersManagerImpl.IsPatched/GetPatch are hash-pinned: the live manager table uses +0xB8 -> active table, +0x18 entry count, and +0x20 + 8*methodId entries, with exact signed/unsigned bounds and null-entry behavior closed",
                 "the Point/linear native branch calls VisibleLightExtensionMethods.GetForward, HGUtils.PackNormalOctRectEncode, and VisibleLightExtensionMethods.GetPosition for record2.xy and record1.xyz",
                 "the pinned GetForward/GetPosition helper bodies read LocalToWorldMatrix columns 2/3 through Matrix4x4.GetColumn and Vector4.op_Implicit; the PackNormalOctRectEncode body, sizes, hashes, and IFix method IDs are closed",
                 "the authored SceneLight6Rarity hierarchy recomposes all 12 world positions and directions from the pinned rotatehouse transform, bit-matching the independent cull-view audit",
@@ -3409,9 +3670,7 @@ def build_audit() -> dict[str, Any]:
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
                 "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
-                "the runtime IsPatched(0x886) wrapper-table membership and any patched GetShadowRenderType return flags remain capture/runtime-boundary evidence",
-                "the runtime IsPatched(0x887) wrapper-table membership and any patched GetRendererConfig flags remain capture/runtime-boundary evidence",
-                "the runtime IsPatched(0x888) wrapper-table membership and any patched GetECSRenderFlags flags remain capture/runtime-boundary evidence",
+                "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
@@ -3438,7 +3697,7 @@ def main() -> int:
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
         "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
-        "shadow render-type/renderer-config/ECS-flag gates, additional-light components, and bounded OBB half candidates closed."
+        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and bounded OBB half candidates closed."
     )
     return 0
 

@@ -273,7 +273,7 @@ def main(argv: list[str] | None = None) -> int:
     print_report(report)
     if report.get("fresh") or args.warn_only:
         return 0
-    print("[verify_export_freshness] rerun .\\export.bat --export-from-game before building WebUI data", file=sys.stderr)
+    print("[verify_export_freshness] rerun .\\export.bat --from-game before building WebUI data", file=sys.stderr)
     return 1
 
 

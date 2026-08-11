@@ -140,6 +140,180 @@ class AnimeStudioStageOptionsTests(unittest.TestCase):
         self.assertTrue(should_merge_animestudio_type_jobs("json_by_type", items, "merged"))
 
 
+class JsonMapFilterTests(unittest.TestCase):
+    """json_by_type may load through the asset map only for types the map
+    enumerates completely; anything else must still see every bundle."""
+
+    BASE = {"export_type": "JSON", "asset_map_filter": False, "json_map_filter_map": "a.map"}
+
+    def applies(self, types, **overrides):
+        options = dict(self.BASE)
+        options.update(overrides)
+        return export_full_from_game.animestudio_json_map_filter_applies(
+            "json_by_type", options, tuple(types)
+        )
+
+    def test_fully_covered_types_are_filtered(self) -> None:
+        for name in sorted(export_full_from_game.ANIMESTUDIO_JSON_MAP_FILTER_TYPES):
+            self.assertTrue(self.applies([name]), name)
+
+    def test_types_needing_other_bundles_stay_broad(self) -> None:
+        # PlayableDirector has no map entries at all, so a filtered load emits
+        # nothing. MonoBehaviour has full map coverage but resolves its class
+        # name and external PPtrs out of bundles a filtered load never opens,
+        # which silently renames 73% of its output and drops reference targets.
+        for name in ("PlayableDirector", "MonoBehaviour", "Material"):
+            self.assertNotIn(name, export_full_from_game.ANIMESTUDIO_JSON_MAP_FILTER_TYPES)
+            self.assertFalse(self.applies([name]), name)
+
+    def test_merged_job_with_any_uncovered_type_stays_broad(self) -> None:
+        self.assertFalse(self.applies(["TextAsset", "PlayableDirector"]))
+        self.assertFalse(self.applies(["TextAsset", "MonoBehaviour"]))
+
+    def test_requires_a_map(self) -> None:
+        self.assertFalse(self.applies(["TextAsset"], json_map_filter_map=None))
+
+    def test_does_not_double_up_on_a_map_filtered_stage(self) -> None:
+        self.assertFalse(self.applies(["TextAsset"], asset_map_filter=True))
+
+    def test_other_stages_are_untouched(self) -> None:
+        self.assertFalse(
+            export_full_from_game.animestudio_json_map_filter_applies(
+                "convert_by_type", dict(self.BASE), ("Material",)
+            )
+        )
+
+    def test_signature_records_the_decision(self) -> None:
+        covered = build_animestudio_stage_signature("json_by_type", dict(self.BASE), "TextAsset")
+        broad = build_animestudio_stage_signature("json_by_type", dict(self.BASE), "PlayableDirector")
+        self.assertTrue(covered["json_map_filter"])
+        self.assertFalse(broad["json_map_filter"])
+        self.assertNotEqual(covered, broad)
+
+
+class JsonMapFilterWiringTests(unittest.TestCase):
+    """The stage runner must hand map arguments to covered types only."""
+
+    def _map_args_by_type(self, type_names) -> dict:
+        plan = {
+            "options": {
+                "export_type": "JSON",
+                "asset_map_filter": False,
+                "json_map_filter_map": "endfield_streamingassets_assets.map",
+            },
+            "items": [{"item_name": n, "type_spec": n} for n in type_names],
+            "run_items": list(type_names),
+        }
+        seen = {}
+
+        def fake_run(tasks, jobs, call_pool=None):
+            for task in tasks:
+                kwargs = task["kwargs"]
+                seen[task["item_name"]] = (
+                    kwargs.get("map_op"), kwargs.get("map_name"))
+                task["result"] = CommandResult(
+                    name="t", argv=[], cwd=".", returncode=0,
+                    duration_seconds=0.0, stdout_log="o", stderr_log="e")
+
+        with mock.patch.object(
+            export_full_from_game, "run_animestudio_call_tasks", side_effect=fake_run
+        ), mock.patch.object(
+            export_full_from_game, "clear_animestudio_stage_outputs"
+        ), mock.patch.object(
+            export_full_from_game, "write_animestudio_parallel_log_index",
+            return_value=("out.log", "err.log"),
+        ):
+            export_full_from_game.run_animestudio_stage_plan(
+                source="StreamingAssets", input_root=Path("in"), output_root=Path("out"),
+                reports_dir=Path("reports"), animestudio_exe=Path("cli"),
+                animestudio_dummy_dlls=None, stage="json_by_type", plan=plan,
+                jobs=8, type_job_mode="auto",
+            )
+        return seen
+
+    def test_only_covered_types_get_the_map(self) -> None:
+        seen = self._map_args_by_type(
+            ["TextAsset", "MonoBehaviour", "Material", "PlayableDirector"])
+        self.assertEqual(seen["TextAsset"][0], "AssetMap,Load")
+        self.assertTrue(seen["TextAsset"][1].endswith(".map"))
+        # Every type that needs bundles outside its own must still load broadly.
+        for broad in ("MonoBehaviour", "Material", "PlayableDirector"):
+            self.assertIsNone(seen[broad][0], broad)
+            self.assertIsNone(seen[broad][1], broad)
+
+
+class BroadJsonBatchingTests(unittest.TestCase):
+    """The broad json_by_type types cannot shard and cannot merge, so the only
+    lever is how many of their multi-GiB loads are resident at once."""
+
+    STAGE_KWARGS = dict(
+        source="StreamingAssets",
+        input_root=Path("in"),
+        output_root=Path("out"),
+        reports_dir=Path("reports"),
+        animestudio_exe=Path("AnimeStudio.CLI"),
+        animestudio_dummy_dlls=None,
+        stage="json_by_type",
+        jobs=8,
+    )
+
+    def _plan(self) -> dict:
+        names = ("TextAsset", "MonoBehaviour", "PlayableDirector", "Material")
+        return {
+            "options": {"export_type": "JSON", "asset_map_filter": False},
+            "items": [
+                {"item_name": name, "type_spec": name} for name in names
+            ],
+            "run_items": list(names),
+        }
+
+    def _batches(self, broad_json_jobs: int) -> list[int]:
+        """Record how many tasks each dispatch call submitted together."""
+        seen: list[int] = []
+
+        def fake_run(tasks, jobs, call_pool=None):
+            seen.append(len(tasks))
+            for task in tasks:
+                task["result"] = CommandResult(
+                    name=task["kwargs"].get("command_name") or "type",
+                    argv=[],
+                    cwd=".",
+                    returncode=0,
+                    duration_seconds=0.0,
+                    stdout_log="out.log",
+                    stderr_log="err.log",
+                )
+
+        with mock.patch.object(
+            export_full_from_game, "run_animestudio_call_tasks", side_effect=fake_run
+        ), mock.patch.object(
+            export_full_from_game, "clear_animestudio_stage_outputs"
+        ), mock.patch.object(
+            export_full_from_game,
+            "write_animestudio_parallel_log_index",
+            return_value=("out.log", "err.log"),
+        ):
+            export_full_from_game.run_animestudio_stage_plan(
+                plan=self._plan(),
+                type_job_mode="auto",
+                broad_json_jobs=broad_json_jobs,
+                **self.STAGE_KWARGS,
+            )
+        return seen
+
+    def test_default_keeps_one_broad_load_resident(self) -> None:
+        self.assertEqual(self._batches(1), [1, 1, 1, 1])
+
+    def test_batch_of_two_halves_the_broad_tail(self) -> None:
+        self.assertEqual(self._batches(2), [2, 2])
+
+    def test_batch_is_capped_by_the_task_count(self) -> None:
+        self.assertEqual(self._batches(99), [4])
+
+    def test_non_positive_batch_falls_back_to_sequential(self) -> None:
+        self.assertEqual(self._batches(0), [1, 1, 1, 1])
+
+
 class AnimeStudioObjectIndexTests(unittest.TestCase):
     def test_effective_gating_excludes_asset_only_and_skipped_runs(self) -> None:
         self.assertTrue(

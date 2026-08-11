@@ -25,6 +25,9 @@
     mergeOverrides: null,
     flaggedIds: new Set(),
     nameOverrides: null,
+    showDebug: false,
+    sortKey: "default",
+    sortDirection: "asc",
   };
 
   const esc = (value) => String(value ?? "")
@@ -54,6 +57,25 @@
     npc_asset: ui("Asset NPC", "资源 NPC"),
   }[type] || type);
   const SPECIAL_FILTERS = ["no_i18n", "merged", "needs_merge", "name_overridden"];
+  const SORT_KEYS = ["default", "alphabet", "identities", "evidence_groups", "assets", "names", "sources"];
+  const DEFAULT_SORT_DIRECTIONS = {
+    default: "asc",
+    alphabet: "asc",
+    identities: "desc",
+    evidence_groups: "desc",
+    assets: "desc",
+    names: "desc",
+    sources: "desc",
+  };
+  const sortKeyLabel = (key) => ({
+    default: ui("Default order", "原有默认排序"),
+    alphabet: ui("Alphabetical", "字母顺序"),
+    identities: ui("Identities", "身份数量"),
+    evidence_groups: ui("Evidence groups", "证据组数量"),
+    assets: ui("Assets", "资源数量"),
+    names: ui("Observed names", "已发现名称数量"),
+    sources: ui("Evidence sources", "证据来源数量"),
+  }[key] || key);
   const specialFilterLabel = (key) => ({
     no_i18n: ui("No official name", "无官方译名"),
     merged: ui("Manually merged", "已合并"),
@@ -285,6 +307,42 @@
     return { identities: (row.records || []).length, evidenceGroups, assetPathSamples, assetCount };
   }
 
+  function sortValue(row, key) {
+    if (key === "identities") return rowStats(row).identities;
+    if (key === "evidence_groups") return rowStats(row).evidenceGroups;
+    if (key === "assets") return rowStats(row).assetCount;
+    if (key === "names") return (row.names || []).length;
+    if (key === "sources") return (row.sourceTypes || []).length;
+    return 0;
+  }
+
+  function compareCharacterNames(a, b) {
+    const aName = String(a.primaryName || a.id || "");
+    const bName = String(b.primaryName || b.id || "");
+    const locale = ({ CN: "zh-Hans-CN", EN: "en", JP: "ja", KR: "ko" })[state.language];
+    return aName.localeCompare(bName, locale, { numeric: true, sensitivity: "base" })
+      || String(a.id || "").localeCompare(String(b.id || ""), locale, { numeric: true, sensitivity: "base" });
+  }
+
+  function sortRecords(rows) {
+    const direction = state.sortDirection === "desc" ? -1 : 1;
+    if (state.sortKey === "default") return direction === 1 ? rows : [...rows].reverse();
+    const ranked = rows.map((row, index) => ({
+      row,
+      index,
+      value: sortValue(row, state.sortKey),
+    }));
+    ranked.sort((a, b) => {
+      if (state.sortKey === "alphabet") {
+        return direction * compareCharacterNames(a.row, b.row) || a.index - b.index;
+      }
+      return direction * (a.value - b.value)
+        || compareCharacterNames(a.row, b.row)
+        || a.index - b.index;
+    });
+    return ranked.map((entry) => entry.row);
+  }
+
   // Renders a dual-handle range slider into `containerSel` for `state[stateKey]`,
   // a [min, max] pair where max === Infinity means "no upper bound". The slider's
   // own max is the largest observed value across `records`; dragging the upper
@@ -363,7 +421,7 @@
   function filteredRecords() {
     const query = state.query.trim().toLocaleLowerCase();
     const activeCountFilters = activeCountRangeFilters();
-    return groupedRecords().filter((row) => {
+    const rows = groupedRecords().filter((row) => {
       if (state.kind !== "all" && !(row.kinds || []).includes(state.kind)) return false;
       if (state.source !== "all" && !(row.sourceTypes || []).includes(state.source)) return false;
       if (state.evidenceType !== "all") {
@@ -396,6 +454,7 @@
       ].join(" ").toLocaleLowerCase();
       return haystack.includes(query);
     });
+    return sortRecords(rows);
   }
 
   function isMobileLayout() {
@@ -643,6 +702,16 @@
                 <label for="characters-q">${ui("Search", "搜索")}</label>
                 <input id="characters-q" type="search" value="${esc(state.query)}" placeholder="${ui("Name, ID, table key, or asset path", "名称、ID、表键或资源路径")}">
               </div>
+              <div class="filter-control-row">
+                <label for="characters-sort">${ui("Sort", "排序")}</label>
+                <div class="characters-sort-controls">
+                  <select id="characters-sort">${SORT_KEYS.map((key) => `<option value="${esc(key)}"${state.sortKey === key ? " selected" : ""}>${esc(sortKeyLabel(key))}</option>`).join("")}</select>
+                  <select id="characters-sort-direction" aria-label="${esc(ui("Sort direction", "排序方向"))}" title="${esc(ui("Sort direction", "排序方向"))}"${state.sortKey === "default" ? " disabled" : ""}>
+                    <option value="asc"${state.sortDirection === "asc" ? " selected" : ""}>${ui("Ascending ↑", "正序 ↑")}</option>
+                    <option value="desc"${state.sortDirection === "desc" ? " selected" : ""}>${ui("Descending ↓", "倒序 ↓")}</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </section>
           <section class="filter-section is-collapsed" data-filter-section="characters-kind">
@@ -698,6 +767,21 @@
       state.query = event.target.value;
       renderList();
     });
+    state.container.querySelector("#characters-sort")?.addEventListener("change", (event) => {
+      const nextKey = SORT_KEYS.includes(event.target.value) ? event.target.value : "default";
+      state.sortKey = nextKey;
+      state.sortDirection = DEFAULT_SORT_DIRECTIONS[nextKey] || "asc";
+      const direction = state.container.querySelector("#characters-sort-direction");
+      if (direction) {
+        direction.value = state.sortDirection;
+        direction.disabled = nextKey === "default";
+      }
+      renderList();
+    });
+    state.container.querySelector("#characters-sort-direction")?.addEventListener("change", (event) => {
+      state.sortDirection = event.target.value === "desc" ? "desc" : "asc";
+      renderList();
+    });
     state.container.querySelector("#characters-reset")?.addEventListener("click", () => {
       state.query = "";
       state.kind = "all";
@@ -707,8 +791,17 @@
       state.evidenceGroupsRange = [0, Infinity];
       state.assetCountRange = [0, Infinity];
       state.specialFilters.clear();
+      state.sortKey = "default";
+      state.sortDirection = "asc";
       const search = state.container.querySelector("#characters-q");
       if (search) search.value = "";
+      const sort = state.container.querySelector("#characters-sort");
+      if (sort) sort.value = state.sortKey;
+      const direction = state.container.querySelector("#characters-sort-direction");
+      if (direction) {
+        direction.value = state.sortDirection;
+        direction.disabled = true;
+      }
       renderFilterChips();
       renderList();
     });
@@ -724,7 +817,7 @@
   // the `data-filter-section` attributes in renderShell().
   function syncFilterSectionActiveCounts() {
     window.WebUI?.setFilterSectionActiveCounts?.({
-      "characters-basic": state.query.trim() ? 1 : 0,
+      "characters-basic": (state.query.trim() ? 1 : 0) + (state.sortKey === "default" ? 0 : 1),
       "characters-kind": state.kind === "all" ? 0 : 1,
       "characters-source": state.source === "all" ? 0 : 1,
       "characters-evidence-type": state.evidenceType === "all" ? 0 : 1,
@@ -741,7 +834,10 @@
     const rows = filteredRecords();
     if (state.selectedId && !rows.some((row) => row.id === state.selectedId)) state.selectedId = "";
     if (!state.selectedId && rows.length) state.selectedId = rows[0].id;
-    meta.textContent = `${rows.length.toLocaleString()} ${ui("matching names", "个匹配名称")}`;
+    const sortSummary = state.sortKey === "default"
+      ? ""
+      : ` · ${sortKeyLabel(state.sortKey)} ${state.sortDirection === "desc" ? "↓" : "↑"}`;
+    meta.textContent = `${rows.length.toLocaleString()} ${ui("matching names", "个匹配名称")}${sortSummary}`;
     list.innerHTML = rows.map((row) => {
       const evidenceTypes = [...new Set(row.records.flatMap((r) => (r.evidence || []).map((e) => e.type).filter(Boolean)))].sort();
       const typeTags = evidenceTypes.map((t) => `<span class="characters-evidence-type" data-evidence-type="${esc(t)}">${esc(evidenceTypeLabel(t))}</span>`).join("");
@@ -754,7 +850,7 @@
           <span>${(row.kinds || []).map((kind) => esc(kindLabel(kind))).join(" · ")}</span>
           <code>${stats.identities.toLocaleString()} ${ui(stats.identities === 1 ? "identity" : "identities", "身份")}</code>
           <code>${stats.evidenceGroups.toLocaleString()} ${ui(stats.evidenceGroups === 1 ? "evidence group" : "evidence groups", "组证据")}</code>
-          <code>${stats.assetPathSamples.toLocaleString()} ${ui(stats.assetPathSamples === 1 ? "asset path sample" : "asset path samples", "资源路径示例")}</code>
+          <code title="${esc(`${stats.assetPathSamples.toLocaleString()} ${ui("asset path samples", "资源路径示例")}`)}">${stats.assetCount.toLocaleString()} ${ui(stats.assetCount === 1 ? "asset" : "assets", "个资源")}</code>
         </span>
       </button>`;
     }).join("");
@@ -875,7 +971,7 @@
         <h3>${ui("Identifiers and aliases", "标识与别名")}</h3>
         <div class="characters-aliases">${(row.aliases || []).map((alias) => `<code>${esc(alias)}</code>`).join("")}</div>
       </section>
-      <section class="characters-section characters-merge-section">
+      ${state.showDebug ? `<section class="characters-section characters-merge-section">
         <h3>${ui("Display name override", "覆盖显示名称")}</h3>
         ${row.nameOverridden ? `
           <div class="characters-name-detected-row">
@@ -918,7 +1014,7 @@
           <datalist id="characters-merge-target-options">${mergeTargetOptions(row.id).map((opt) => `<option value="${esc(opt.label)}">${esc(opt.id)}</option>`).join("")}</datalist>
           <p id="characters-merge-status" class="characters-merge-status"></p>
         </form>
-      </section>
+      </section>` : ""}
       <section class="characters-section">
         <h3>${ui("Evidence", "证据")}</h3>
         <div class="characters-identity-evidence-list">${row.records.map((identity) => `
@@ -1214,6 +1310,8 @@
   function init() {
     state.container = document.querySelector("#characters-app");
     if (!state.container) return;
+    state.showDebug = document.body.classList.contains("show-debug")
+      || document.querySelector("#show-debug")?.getAttribute("aria-pressed") === "true";
     if (document.body.dataset.activeView === "characters" || location.hash === "#characters") load();
   }
 
@@ -1228,6 +1326,12 @@
   });
   window.addEventListener("webui:ui-locale-changed", () => {
     if (state.data && state.container) renderShell();
+  });
+  window.addEventListener("webui:debug-changed", (event) => {
+    const enabled = Boolean(event.detail?.enabled);
+    if (state.showDebug === enabled) return;
+    state.showDebug = enabled;
+    if (state.data && state.container) renderDetail();
   });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();

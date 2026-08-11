@@ -203,6 +203,30 @@ class MergeTests(unittest.TestCase):
                 (self.root / "second" / name).read_bytes(),
             )
 
+    def test_component_scene_context_survives_the_fail_closed_merge(self) -> None:
+        owner_row = object_row(self.schema["schemaId"])
+        owner_row["sceneContext"] = {
+            "gameObject": identity("CAB-owner", "VFS/owner.chk", 12, 91),
+            "gameObjectName": "RadioTriggerZone",
+            "transform": identity("CAB-owner", "VFS/owner.chk", 12, 92),
+            "localPosition": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "worldPosition": {"x": 4.0, "y": 5.0, "z": 6.0},
+            "worldPositionStatus": "exact_transform_hierarchy",
+            "parentDepth": 2,
+            "hierarchyPath": ["Level", "Triggers", "RadioTriggerZone"],
+        }
+        part = self.root / "scene-context.jsonl"
+        write_part(part, [self.schema, owner_row])
+
+        MERGER.merge_parts([part], self.root / "out")
+        merged = next(
+            row
+            for row in read_gzip_rows(self.root / "out" / "objects.jsonl.gz")
+            if row["recordType"] == "object"
+        )
+
+        self.assertEqual(merged["sceneContext"], owner_row["sceneContext"])
+
     def test_conflicting_duplicate_object_fails(self) -> None:
         first = self.root / "first.jsonl"
         second = self.root / "second.jsonl"

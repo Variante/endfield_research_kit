@@ -9,7 +9,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from build_gameplay_data import build_enemy_entries, enemy_stat_curve_payload
+from gameplay_builder.base_data import build_enemy_entries, enemy_stat_curve_payload
 
 
 def attribute_row(level: int | None, hp: float, atk: float, defense: float) -> dict:

@@ -218,6 +218,35 @@ ANIMESTUDIO_DEBUG_JSON_TYPES = (
     "AvatarMask:Both",
 )
 ANIMESTUDIO_WEBUI_JSON_TYPES: tuple[str, ...] = ()
+# json_by_type types that may load through the generated asset map.
+#
+# Two conditions must hold, and matching object counts alone are NOT enough:
+#   1. the map enumerates every object of the type, and
+#   2. the type resolves nothing outside its own bundle, because a map-filtered
+#      load never opens the bundles the filter skipped.
+#
+# Verified 2026-08-11 by exporting each type both ways and comparing every
+# emitted byte:
+#   TextAsset   - identical (8140/8140 StreamingAssets, 172/172 Persistent),
+#                 9.9x-18.8x faster. Self-contained payloads, no PPtr blocks.
+#   MonoBehaviour - REJECTED. Counts matched (1205964 and 174133) but content
+#                 did not: 128,181 of 174,133 Persistent files came out named
+#                 `MonoBehaviour#100001_p...` instead of `CanvasScaler_p...`
+#                 because the MonoScript defining the class lives in a skipped
+#                 bundle, and 2,709 more lost external PPtr targets, each
+#                 turning `"resolutionStatus": "resolved"` plus its target
+#                 identity into `"resolutionStatus": "external_target_unavailable"`.
+#   Material    - not enabled. Identical on Persistent (1613/1613) and its
+#                 sampled payloads carry no resolution blocks, but that was not
+#                 confirmed on StreamingAssets, where shader/texture references
+#                 span bundles.
+#
+# Before adding a type here, export it both ways and diff the bytes. Equal
+# object counts proved nothing for MonoBehaviour.
+ANIMESTUDIO_JSON_MAP_FILTER_TYPES = frozenset({
+    "TextAsset",
+})
+
 ANIMESTUDIO_ASSET_MAP_FILTER_UNSAFE_TYPES = frozenset({
     # Animator FBX export can need related GameObject, Mesh, Material, and
     # Texture2D objects that a strict Animator-only map slice would not load.
@@ -2043,6 +2072,29 @@ def animestudio_cli_type_tree_priority(value: str) -> str:
     }[value]
 
 
+def animestudio_json_map_filter_applies(
+    stage: str,
+    options: dict[str, Any],
+    type_specs: tuple[str, ...],
+) -> bool:
+    """Whether this json_by_type job may load through the asset map.
+
+    Every type in the job must be one the map fully covers; a merged job that
+    mixes a covered type with an uncovered one stays broad so the uncovered
+    type still sees every bundle.
+    """
+    if stage != "json_by_type" or not options.get("json_map_filter_map"):
+        return False
+    if options.get("asset_map_filter"):
+        return False  # already map-filtered stage-wide
+    if not type_specs:
+        return False
+    names = tuple(animestudio_type_name(spec) for spec in type_specs)
+    if not all(name in ANIMESTUDIO_JSON_MAP_FILTER_TYPES for name in names):
+        return False
+    return animestudio_map_filter_is_safe(type_specs)
+
+
 def animestudio_map_filter_is_safe(types: tuple[str, ...]) -> bool:
     return all(animestudio_type_name(type_spec) not in ANIMESTUDIO_ASSET_MAP_FILTER_UNSAFE_TYPES for type_spec in types)
 
@@ -2059,6 +2111,11 @@ def build_animestudio_stage_signature(stage: str, options: dict[str, Any], type_
         "containers": options.get("containers"),
         "filter_data": options.get("filter_data"),
         "asset_map_filter": bool(options.get("asset_map_filter")),
+        "json_map_filter": animestudio_json_map_filter_applies(
+            stage,
+            options,
+            (type_spec,) if type_spec is not None else (),
+        ),
         "webui_asset_filter": bool(options.get("webui_asset_filter")),
         "webui_asset_filter_signature": options.get("webui_asset_filter_signature"),
         "group_assets": "ByType",
@@ -2404,6 +2461,30 @@ def parse_args() -> argparse.Namespace:
             f"The default {ANIMESTUDIO_DEFAULT_SHARDS} keeps per-process asset slices small; "
             f"the shared --animestudio-jobs pool consumes those shards. "
             "Use 0 to shard by --animestudio-jobs."
+        ),
+    )
+    parser.add_argument(
+        "--no-animestudio-json-map-filter",
+        action="store_true",
+        help=(
+            "Load every json_by_type type broadly instead of routing the "
+            "map-complete ones ("
+            + ", ".join(sorted(ANIMESTUDIO_JSON_MAP_FILTER_TYPES))
+            + ") through the asset map. Filtering emits identical output far "
+            "faster; use this only to compare against a broad load."
+        ),
+    )
+    parser.add_argument(
+        "--animestudio-broad-json-jobs",
+        type=int,
+        default=1,
+        help=(
+            "How many broad Story JSON type jobs `auto` mode may run at once. "
+            "These are the unfiltered json_by_type loads, and each retains a full "
+            "Endfield object graph, so this bounds peak memory directly. Leave it "
+            "at 1: JSON export is bound on single-disk small-file creation, and "
+            "measured concurrency over the same objects ran 0.65-0.95x versus one "
+            "process, so values above 1 are not supported by any measurement."
         ),
     )
     parser.add_argument(
@@ -3871,6 +3952,15 @@ def prepare_animestudio_asset_shards(
             asset_cache = load_animestudio_asset_cache(cache_path)
     else:
         asset_cache = default_animestudio_asset_cache()
+    if not matched_entries:
+        # Fail closed. An empty slice would queue zero shard jobs and mark the
+        # type exported, silently replacing a whole type's output with nothing.
+        log(
+            f"  animestudio asset shards {stage}:{type_name} for {source}: "
+            "asset map matched no entries; using the broad unsharded path"
+        )
+        return None
+
     cached_entries: list[dict[str, Any]] = []
     pending_entries: list[dict[str, Any]] = []
     for entry in matched_entries:
@@ -4480,6 +4570,7 @@ def run_animestudio_stage_plan(
     type_job_mode: str,
     object_index_enabled: bool = False,
     call_pool: AnimeStudioCallPool | None = None,
+    broad_json_jobs: int = 1,
 ) -> list[CommandResult]:
     options = plan["options"]
     runnable_items = animestudio_plan_runnable_items(plan)
@@ -4550,6 +4641,20 @@ def run_animestudio_stage_plan(
         type_specs: tuple[str, ...],
         command_name: str | None,
     ) -> dict[str, Any]:
+        map_op = options.get("map_op")
+        map_type = options.get("map_type")
+        map_name = options.get("map_name")
+        if animestudio_json_map_filter_applies(stage, options, type_specs):
+            # Load this type through the asset map instead of every bundle in
+            # the source. The map covers these types completely, so the emitted
+            # set is unchanged while the ignored bundles are never parsed.
+            map_op = "AssetMap,Load"
+            map_type = "MessagePack"
+            map_name = str(options["json_map_filter_map"])
+            log(
+                f"  animestudio {stage} for {source}: map-filtered load for "
+                f"{', '.join(item_names)}"
+            )
         return {
             "source": source,
             "input_root": input_root,
@@ -4560,9 +4665,9 @@ def run_animestudio_stage_plan(
             "mono_behaviour_type_tree_priority": options.get("mono_behaviour_type_tree_priority"),
             "stage": stage,
             "export_type": options.get("export_type"),
-            "map_op": options.get("map_op"),
-            "map_type": options.get("map_type"),
-            "map_name": options.get("map_name"),
+            "map_op": map_op,
+            "map_type": map_type,
+            "map_name": map_name,
             "names": options.get("names"),
             "containers": options.get("containers"),
             "filter_data": options.get("filter_data"),
@@ -4676,12 +4781,28 @@ def run_animestudio_stage_plan(
                 task["kwargs"]["command_name"] = f"{source}_animestudio_{stage}_{animestudio_log_suffix(item_suffix)}"
 
     if call_tasks and auto_sequential_type_jobs:
-        log(
-            f"  animestudio stage {stage} for {source}: running {len(call_tasks)} "
-            "broad type jobs sequentially for process isolation"
-        )
-        for task in call_tasks:
-            run_animestudio_call_tasks([task], jobs=1, call_pool=call_pool)
+        # A broad Endfield JSON load can retain hundreds of thousands of
+        # MonoBehaviours, so these types are isolated rather than merged. The
+        # batch size bounds how many of those loads are resident at once:
+        # 1 reproduces the strictly sequential default, and each extra unit
+        # costs roughly one more peak broad-load process.
+        batch = max(1, min(broad_json_jobs, len(call_tasks)))
+        if batch == 1:
+            log(
+                f"  animestudio stage {stage} for {source}: running {len(call_tasks)} "
+                "broad type jobs sequentially for process isolation"
+            )
+        else:
+            log(
+                f"  animestudio stage {stage} for {source}: running {len(call_tasks)} "
+                f"broad type jobs {batch} at a time for bounded peak memory"
+            )
+        for start in range(0, len(call_tasks), batch):
+            run_animestudio_call_tasks(
+                call_tasks[start:start + batch],
+                jobs=batch,
+                call_pool=call_pool,
+            )
     elif call_tasks:
         run_animestudio_call_tasks(call_tasks, jobs=jobs, call_pool=call_pool)
 
@@ -5334,6 +5455,7 @@ def main() -> int:
     )
     log(f"  animestudio stages: {', '.join(selected_animestudio_stages)}")
     log(f"  animestudio type job mode: {args.animestudio_type_job_mode}")
+    log(f"  animestudio broad json jobs: {args.animestudio_broad_json_jobs}")
     log(
         "  animestudio stage merge mode: "
         f"{args.animestudio_stage_merge_mode} "
@@ -5574,6 +5696,22 @@ def main() -> int:
                 options["asset_shards"] = args.animestudio_shards
                 if stage == "maps":
                     options["map_name"] = f"endfield_{source.lower()}_assets"
+                if (
+                    stage == "json_by_type"
+                    and not options.get("asset_map_filter")
+                    and not args.no_animestudio_json_map_filter
+                ):
+                    json_map_path = (
+                        animestudio_stage_dir(output_root, source, "maps")
+                        / f"endfield_{source.lower()}_assets.map"
+                    )
+                    if json_map_path.exists() or "maps" in selected_animestudio_stages:
+                        options["json_map_filter_map"] = str(json_map_path)
+                    else:
+                        log(
+                            f"  animestudio json map filter for {source}: missing {json_map_path}; "
+                            "keeping broad type loads"
+                        )
                 if options.get("asset_map_filter"):
                     map_path = animestudio_stage_dir(output_root, source, "maps") / f"endfield_{source.lower()}_assets.map"
                     if not map_path.exists() and "maps" not in selected_animestudio_stages and not args.report_only:
@@ -5710,6 +5848,7 @@ def main() -> int:
                         type_job_mode=args.animestudio_type_job_mode,
                         object_index_enabled=animestudio_object_index_enabled,
                         call_pool=call_pool,
+                        broad_json_jobs=args.animestudio_broad_json_jobs,
                     )
 
                 with AnimeStudioCallPool(animestudio_jobs) as animestudio_call_pool:

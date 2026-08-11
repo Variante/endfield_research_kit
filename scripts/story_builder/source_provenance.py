@@ -45,6 +45,21 @@ _FILE_SUFFIXES = {
 }
 _HASH_CACHE: dict[Path, str] = {}
 _BASENAME_INDEX_CACHE: dict[Path, dict[str, tuple[Path, ...]]] = {}
+_RESOLVED_PATH_CACHE: dict[Path, Path] = {}
+_CANDIDATE_PATHS_CACHE: dict[tuple[str, Path], list[Path]] = {}
+
+
+def _resolved(path: Path) -> Path:
+    """Resolve a path once per run.
+
+    Provenance walks re-resolve the same roots and candidate files for every
+    mission row, and each resolve() costs a realpath syscall chain on Windows.
+    """
+    cached = _RESOLVED_PATH_CACHE.get(path)
+    if cached is None:
+        cached = path.resolve()
+        _RESOLVED_PATH_CACHE[path] = cached
+    return cached
 
 
 def _normalise_reference(value: Any) -> str:
@@ -84,9 +99,13 @@ def _basename_index(root: Path) -> dict[str, tuple[Path, ...]]:
     ):
         if not data_root.is_dir():
             continue
+        # ``data_root`` already descends from a resolved root and rglob reports
+        # on-disk names, so these entries are absolute and canonical. Calling
+        # resolve() per entry only added a realpath syscall for each of the
+        # ~185k exported files.
         for candidate in data_root.rglob("*"):
             if candidate.is_file():
-                index[candidate.name.lower()].append(candidate.resolve())
+                index[candidate.name.lower()].append(candidate)
     frozen = {
         name: tuple(sorted(paths, key=lambda path: path.as_posix()))
         for name, paths in index.items()
@@ -99,6 +118,12 @@ def _candidate_paths(reference: str, root: Path) -> list[Path]:
     path = Path(reference)
     if path.is_absolute():
         return [path]
+    # The same references recur across missions; the answer only depends on the
+    # reference text and the export root.
+    cache_key = (reference, _resolved(root))
+    cached = _CANDIDATE_PATHS_CACHE.get(cache_key)
+    if cached is not None:
+        return list(cached)
     candidates: list[Path] = []
     if reference.startswith("export_full/"):
         candidates.append(root / Path(reference))
@@ -121,17 +146,18 @@ def _candidate_paths(reference: str, root: Path) -> list[Path]:
     out: list[Path] = []
     seen: set[Path] = set()
     for candidate in candidates:
-        resolved = candidate.resolve()
+        resolved = _resolved(candidate)
         if resolved in seen or not resolved.is_file():
             continue
         seen.add(resolved)
         out.append(resolved)
+    _CANDIDATE_PATHS_CACHE[cache_key] = list(out)
     return out
 
 
 def _is_original_game_file(path: Path, root: Path) -> bool:
-    resolved = path.resolve()
-    export_root = (root / "export_full").resolve()
+    resolved = _resolved(path)
+    export_root = _resolved(root / "export_full")
     if resolved.is_relative_to(export_root):
         return True
     return resolved.name in _ORIGINAL_BINARY_NAMES and resolved.is_file()
@@ -157,7 +183,7 @@ def _kind_for_path(path: Path) -> str:
 
 
 def _sha256(path: Path) -> str:
-    resolved = path.resolve()
+    resolved = _resolved(path)
     cached = _HASH_CACHE.get(resolved)
     if cached:
         return cached

@@ -9,8 +9,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "build_projectile_data.py"
-SPEC = importlib.util.spec_from_file_location("build_projectile_data", MODULE_PATH)
+MODULE_PATH = ROOT / "scripts" / "gameplay_builder" / "projectiles.py"
+SPEC = importlib.util.spec_from_file_location("gameplay_builder_projectiles", MODULE_PATH)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE

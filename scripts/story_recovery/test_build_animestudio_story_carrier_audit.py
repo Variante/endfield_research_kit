@@ -22,8 +22,9 @@ def object_row(
     decode_status: str = "decoded",
     script_name: str | None = "Beyond.Gameplay.TestCarrier",
     truncated: bool = False,
+    scene_context: dict | None = None,
 ) -> dict:
-    return {
+    row = {
         "recordType": "object",
         "schemaVersion": 1,
         "object": {
@@ -45,6 +46,9 @@ def object_row(
         "scalars": scalars,
         "pptrs": [],
     }
+    if scene_context is not None:
+        row["sceneContext"] = scene_context
+    return row
 
 
 class AnimeStudioStoryCarrierAuditTests(unittest.TestCase):
@@ -72,6 +76,29 @@ class AnimeStudioStoryCarrierAuditTests(unittest.TestCase):
             "owner_agrees_with_gap_mission",
         )
         self.assertEqual(candidate["edgeStatus"], "no_edge_candidate_only")
+
+    def test_exact_scene_context_is_preserved_without_promoting_an_edge(self) -> None:
+        scene_context = {
+            "gameObjectName": "RadioTriggerZone",
+            "worldPosition": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "worldPositionStatus": "exact_transform_hierarchy",
+        }
+        row = object_row(
+            [
+                ["$.radioId", "s", "dlg_e11m1_30"],
+                ["$.missionId", "s", "e11m1"],
+            ],
+            scene_context=scene_context,
+        )
+
+        result = audit.audit_object_rows([row], self.targets, "StreamingAssets")
+
+        self.assertEqual(result["candidates"][0]["sceneContext"], scene_context)
+        self.assertEqual(
+            result["counts"]["exactValueMatchesWithExactWorldPosition"],
+            1,
+        )
+        self.assertEqual(result["candidates"][0]["edgeStatus"], "no_edge_candidate_only")
 
     def test_untyped_name_match_is_rejected_even_with_mission_id(self) -> None:
         row = object_row([

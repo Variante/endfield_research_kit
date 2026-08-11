@@ -35,7 +35,11 @@ NOTE = (
 )
 
 
-def distill(proposed: dict) -> dict:
+def distill(
+    proposed: dict,
+    *,
+    source_path: Path = PROPOSED_STORY_ORDER_PATH,
+) -> dict:
     """Trim an OCR-observed proposal down to per-mission order lists."""
     missions_in = proposed.get("missions")
     if not isinstance(missions_in, dict):
@@ -57,7 +61,7 @@ def distill(proposed: dict) -> dict:
         "_generatedAt": datetime.now(timezone.utc)
         .isoformat(timespec="seconds")
         .replace("+00:00", "Z"),
-        "_source": str(PROPOSED_STORY_ORDER_PATH.relative_to(ROOT)).replace("\\", "/"),
+        "_source": str(source_path.resolve().relative_to(ROOT)).replace("\\", "/"),
         "missions": missions_out,
     }
 
@@ -67,8 +71,10 @@ def build_webui_ocr_order(
     out_path: Path = WEBUI_OCR_ORDER_PATH,
 ) -> Path:
     """Read the proposed order and write the trimmed WebUI reference file."""
+    proposed_path = proposed_path.resolve()
+    out_path = out_path.resolve()
     proposed = json.loads(proposed_path.read_text(encoding="utf-8"))
-    distilled = distill(proposed)
+    distilled = distill(proposed, source_path=proposed_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
         json.dumps(distilled, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

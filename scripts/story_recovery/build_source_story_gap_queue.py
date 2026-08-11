@@ -52,6 +52,7 @@ from story_builder.level_bindings import (  # noqa: E402
     LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES,
     _load_levelscript_binding_data,
     _levelscript_native_control_paths_to_record,
+    build_levelscript_unhosted_reading_popup_receiver_index,
     decode_levelscript_native_action_topology,
     parse_leveldata_levelscript_brief_dictionary,
 )
@@ -74,8 +75,8 @@ from story_builder.mission_assets import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryGapQueue.v131"
-STORY_BINDING_COVERAGE_SCHEMA_VERSION = 17
+SCHEMA = "sourceStoryGapQueue.v132"
+STORY_BINDING_COVERAGE_SCHEMA_VERSION = 19
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -1278,7 +1279,7 @@ OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256 = (
     "CB0DF9E75EC049B404D73F5A65502D043BE951072A7AF215C80D2FC078319C11"
 )
 OFFLINE_EXHAUSTION_NPC_PROXY_EX_TABLE_SHA256 = (
-    "19C9A7DC69DEED52A9EAFD26D216F31826065137490548E5917BE589BA11BBAC"
+    "572A9F8128F58AA3659F26176F4EDFA167B8AB8623B6367E5B9F739802082AE2"
 )
 OFFLINE_EXHAUSTION_NPC_PROXY_TABLE_SHA256 = (
     "E683D0F7666451D7E7E22D863CC9F2C52AC79D1DBAA6F1A89BA2681829C5C5EA"
@@ -1293,7 +1294,7 @@ OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256 = (
     "3FC412F637063386E7BE4934099A546E24858836FD6C221AA1C2F6BC4092B083"
 )
 OFFLINE_EXHAUSTION_TIMELINE_LINE_ORDERS_SHA256 = (
-    "C8408C67D8E6AD07CECF2007795C8E388B7F9BCE117B11DAADE8A7EFAD4EAEF2"
+    "4AA11A64FFAAA3654CD483424D8F319D8E94BFD0496280B5E4CA56734E3BA79D"
 )
 QUEST_ATTACHMENT_DIAGNOSTIC_MAPPING_ID = (
     "current-build-quest-story-attachment-negative-v3"
@@ -1366,10 +1367,10 @@ QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_HASHES = {
         "A5B6FAFC682D7E12941FFA60DFE8A22BB64CADBF17DAFFB5B14A4381FB02D0EB"
     ),
     "gameplayConfig:NpcProxyTable": (
-        "E3D14D56E6E1B769BD23560CE039F3455DDF8DEDDD80512A6BE726870CD8A14E"
+        "739D890C9D7173F0F20163450814B93B2B68E40B71384E1767BD8A1C2A58F745"
     ),
     "gameplayConfig:WorldEntityRegistry": (
-        "ABA73DDCB14B8DDDB354D5C97F62557581214119EDC95F00750FD30421836ED8"
+        "528591EA60669E624E3B9F8C89D9BBEC0FBCAC215DA086791F2425960D96901A"
     ),
     "missionRuntime:e10m4d5": (
         "D417581D527A42350597FF802A071F2F629C350C3B0942ACDBEB19FD5518FD0B"
@@ -6683,6 +6684,8 @@ def _generic_registered_dialog_tree_definition_facts(
     story_key: str,
     dialog_id_row: Any,
     definition: Any,
+    *,
+    require_control_flow: bool = True,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """Validate one registered DialogTree without assuming an activator.
 
@@ -6816,6 +6819,16 @@ def _generic_registered_dialog_tree_definition_facts(
             "validatedFinishEndpoints"
         ) == len(finish_endpoints)
     )
+    control_flow_payload_valid = (
+        isinstance(option_route_recovery, dict)
+        and option_route_recovery.get("schemaVersion")
+        == "dialogTreeNormalOptionRoutes.v1"
+        and isinstance(option_route_recovery.get("issues"), list)
+        and isinstance(finish_endpoint_recovery, dict)
+        and finish_endpoint_recovery.get("schemaVersion")
+        == "dialogTreeFinishEndpoints.v1"
+        and isinstance(finish_endpoint_recovery.get("issues"), list)
+    )
     structure_valid = (
         isinstance(definition, dict)
         and all(definition.get(key) == value for key, value in required_definition.items())
@@ -6838,8 +6851,13 @@ def _generic_registered_dialog_tree_definition_facts(
             == definition["connectionCount"]
         )
         and isinstance(definition.get("optionIds"), list)
-        and option_routes_valid
-        and finish_endpoints_valid
+        and (
+            control_flow_payload_valid
+            and (
+                not require_control_flow
+                or (option_routes_valid and finish_endpoints_valid)
+            )
+        )
         and bool(safe_key(definition.get("sourcePathId")))
         and source_valid
     )
@@ -6852,8 +6870,8 @@ def _generic_registered_dialog_tree_definition_facts(
                 **required_definition,
                 "positiveNodeCount": True,
                 "nonnegativeStructureCounts": list(count_fields),
-                "validatedOptionRouteRecovery": True,
-                "validatedFinishEndpointRecovery": True,
+                "validatedOptionRouteRecovery": require_control_flow,
+                "validatedFinishEndpointRecovery": require_control_flow,
                 "exactSourceHash": True,
             },
             "actual": {
@@ -6903,6 +6921,12 @@ def _generic_registered_dialog_tree_definition_facts(
             "partial_validated_endpoints_with_fail_closed_issues"
             if finish_endpoint_recovery["issues"]
             else "exact_validated_endpoints"
+        ),
+        "controlFlowValidationRequired": require_control_flow,
+        "controlFlowValidationStatus": (
+            "exact_validated"
+            if option_routes_valid and finish_endpoints_valid
+            else "partial_not_required_for_non_owning_context"
         ),
     }, None
 
@@ -9322,8 +9346,7 @@ def _validate_general_tracked_proxy_flow_context(
         and safe_key(row.get("evidenceTier")) == "derived_exact_mission"
         and safe_key(row.get("storyOwnerMission")) == owner_mission
         and context is not None
-        and context.get("missionId") == owner_mission
-        and context.get("crossMission") is False
+        and context.get("nominalMissionId") == owner_mission
         and _string_list(row.get("candidateQuestIds")) == context.get("questIds")
         and _string_list(row.get("configuredDialogIds")) == configured_dialog_ids
         and selected_dialog_id == story_key
@@ -9370,11 +9393,21 @@ def _validate_general_tracked_proxy_flow_context(
             },
             "actual": {
                 "trackingFailures": tracking_failures,
+                "trackingContext": context,
+                "relation": safe_key(row.get("relation"))
+                if isinstance(row, dict) else "",
+                "direction": safe_key(row.get("direction"))
+                if isinstance(row, dict) else "",
+                "phase": safe_key(row.get("phase"))
+                if isinstance(row, dict) else "",
+                "storyOwnerMission": safe_key(row.get("storyOwnerMission"))
+                if isinstance(row, dict) else "",
                 "candidateQuestIds": _string_list(row.get("candidateQuestIds"))
                 if isinstance(row, dict) else [],
                 "configuredDialogIds": _string_list(row.get("configuredDialogIds"))
                 if isinstance(row, dict) else [],
                 "selectedDialogId": selected_dialog_id,
+                "registeredDialogRoots": registrations_valid,
                 "sourceFiles": source_files,
             },
         }
@@ -10822,6 +10855,10 @@ def build_quest_attachment_diagnostic_index(
             "inactive_source_validation_failed" if mismatches else "validating",
         "sourceHashes": actual_hashes,
         "expectedSourceHashes": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_HASHES,
+        "sourcePaths": {
+            name: _repo_source_path(path)
+            for name, path in source_paths.items()
+        },
         "sourceHashMismatches": mismatches,
         "graphEffect": "none",
         "queueEffect":
@@ -12595,6 +12632,52 @@ def _declared_dialog_context_definitions() -> dict[str, dict[str, Any]]:
     }
 
 
+def _merge_exact_interaction_trigger_with_native_playback(
+    prior: dict[str, Any] | None,
+    native: dict[str, Any],
+) -> tuple[dict[str, Any], bool]:
+    """Preserve an exact activator when generic native playback also exists."""
+    if (
+        not isinstance(prior, dict)
+        or prior.get("evidenceKind")
+        != "reading_popup_world_entity_interaction_trigger"
+        or len(prior.get("worldEntityInteractionTriggers") or []) != 1
+    ):
+        return dict(native), False
+    merged = dict(native)
+    for field in (
+        "levelId",
+        "readingPopupRowId",
+        "readingPopupRowIds",
+        "unhostedReadingPopupReceivers",
+        "worldEntityInteractionTriggers",
+        "richContentStatus",
+        "contentTextIds",
+        "prtsDefinition",
+        "prtsReadingDefinition",
+        "consumerBoundary",
+    ):
+        if field in prior:
+            merged[field] = prior[field]
+    merged.update({
+        "recoveryStatus":
+            "exact_current_build_interaction_trigger_recovered",
+        "evidenceKind":
+            "reading_popup_world_entity_interaction_trigger",
+        "activationStatus":
+            "exact_world_entity_interaction_trigger",
+        "missionBridgeStatus": "unresolved",
+        "activationBoundary": (
+            "the exact WorldEntityRegistry script/slot and complete map "
+            "interaction raise the custom event consumed by the exact local "
+            "ShowUIReadingPopPanel path; neither source carries a mission or "
+            "quest owner"
+        ),
+        "graphEffect": "none",
+    })
+    return merged, True
+
+
 def build_offline_exhaustion_index(
     partial_report: dict[str, Any],
     table_root: Path,
@@ -13001,6 +13084,11 @@ def build_offline_exhaustion_index(
         "status": "inactive_source_validation_failed" if mismatches else "validating",
         "sourceHashes": actual_hashes,
         "expectedSourceHashes": expected_hashes,
+        "sourcePaths": {
+            name: _repo_source_path(path)
+            for name, path in source_paths.items()
+            if name in expected_hashes
+        },
         "sourceHashMismatches": mismatches,
         "graphEffect": "none",
         "queueEffect": "defer only while every exact current-build gate matches",
@@ -15402,6 +15490,13 @@ def build_offline_exhaustion_index(
         status["status"] = "inactive_text_definition_validation_failed"
         status["validationFailures"] = text_definition_validation_failures
         return {}, status
+
+    unhosted_reading_popup_receivers = (
+        build_levelscript_unhosted_reading_popup_receiver_index(
+            all_text_keys,
+            reading_popup_path=source_paths["readingPopupTable"],
+        )
+    )
 
     generic_text_evidence_by_key: dict[str, dict[str, Any]] = {}
     generic_text_validation_failures: list[dict[str, Any]] = []
@@ -19169,13 +19264,53 @@ def build_offline_exhaustion_index(
         }
     for story_key in sorted(all_text_keys, key=natural_key):
         definition = OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[story_key]
+        receiver_rows = list(
+            unhosted_reading_popup_receivers.get(story_key) or []
+        )
+        receiver_paths = [
+            path
+            for receiver in receiver_rows
+            for path in receiver.get("nativeEventPaths") or []
+            if isinstance(path, dict)
+        ]
+        interaction_triggers = [
+            producer
+            for receiver in receiver_rows
+            if receiver.get("triggerRecovered") is True
+            for producer in receiver.get("interactiveEventProducers") or []
+            if isinstance(producer, dict)
+        ]
+        exact_interaction_trigger = len(interaction_triggers) == 1
+        receiver_level_ids = sorted({
+            str(receiver.get("levelId") or "")
+            for receiver in receiver_rows
+            if receiver.get("levelId")
+        })
         index[story_key] = {
             "sceneKey": story_key,
             "missionId": text_mission_by_key[story_key],
+            "levelId": (
+                receiver_level_ids[0]
+                if len(receiver_level_ids) == 1
+                else None
+            ),
             "recoveryStatus":
-                "deferred_current_build_offline_surface_exhausted",
+                (
+                    "exact_current_build_interaction_trigger_recovered"
+                    if exact_interaction_trigger
+                    else "deferred_current_build_offline_surface_exhausted"
+                ),
             "evidenceKind":
-                "reading_popup_definition_without_recovered_activator",
+                (
+                    "reading_popup_world_entity_interaction_trigger"
+                    if exact_interaction_trigger
+                    else (
+                        "reading_popup_receiver_without_registered_producer"
+                        if receiver_rows
+                        else
+                        "reading_popup_definition_without_recovered_activator"
+                    )
+                ),
             "definitionTables": [
                 "ReadingPopUpTable",
                 *(
@@ -19199,6 +19334,9 @@ def build_offline_exhaustion_index(
                 definition.get("readingPopupRows")
                 or [definition.get("readingPopupRowId")]
             ),
+            "unhostedReadingPopupReceivers": receiver_rows,
+            "worldEntityInteractionTriggers": interaction_triggers,
+            "nativeEventPaths": receiver_paths,
             "richContentStatus":
                 definition.get("richContentStatus", "present"),
             "contentTextIds": list(definition["contentTextIds"]),
@@ -19234,17 +19372,47 @@ def build_offline_exhaustion_index(
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
-                "the exact ReadingPopUpTable carrier and RichContentTable "
-                "payload define this current Story file"
+                (
+                    "an exact WorldEntityRegistry script/slot resolves to a "
+                    "complete map interaction whose eventName raises the same "
+                    "custom event consumed by ShowUIReadingPopPanel; the "
+                    "action's direct _readingPopId resolves through the exact "
+                    "ReadingPopUpTable row to this Story file"
+                    if exact_interaction_trigger
+                    else
+                    (
+                        "an exact local custom-event receiver reaches "
+                        "ShowUIReadingPopPanel with a direct _readingPopId "
+                        "matching this ReadingPopUpTable row, but no exact "
+                        "registered interactive event producer was decoded"
+                        if receiver_rows
+                        else
+                        "the exact ReadingPopUpTable carrier and "
+                        "RichContentTable payload define this current Story file"
+                    )
+                )
                 + (
                     ", while the exact PRTS archive entry provides a second "
                     "non-activating content carrier"
                     if definition.get("prtsDefinition")
                     else ""
                 )
-                + "; no exact "
-                "MissionRuntime, LevelScript/LevelData interactive, "
-                "object-index, or direct native caller exposes its activator"
+                + (
+                    "; this proves the map interaction trigger and playback "
+                    "receiver, but not a mission/quest owner or mission-step "
+                    "chronology"
+                    if exact_interaction_trigger
+                    else (
+                        "; no exact MissionRuntime owner, registered interactive "
+                        "custom-event producer, object-index owner, or direct "
+                        "caller closes the activation gap"
+                        if receiver_rows
+                        else
+                        "; no exact MissionRuntime, LevelScript/LevelData "
+                        "interactive, object-index, or direct native caller "
+                        "exposes its activator"
+                    )
+                )
             ),
             "orderBoundary": (
                 "popup table order, PRTS collection order, content-node "
@@ -19378,7 +19546,18 @@ def build_offline_exhaustion_index(
         missionless_native_evidence_by_key.items(),
         key=lambda item: natural_key(item[0]),
     ):
-        if story_key in index:
+        prior = index.get(story_key)
+        evidence, interaction_merged = (
+            _merge_exact_interaction_trigger_with_native_playback(
+                prior,
+                evidence,
+            )
+        )
+        if interaction_merged:
+            missionless_native_exclusions[
+                "mergedExactInteractionTrigger"
+            ].append(story_key)
+        elif story_key in index:
             missionless_native_exclusions[
                 "supersededWeakerOfflineEvidence"
             ].append(story_key)
@@ -21878,6 +22057,7 @@ def _deferred_offline_exhausted_isolated_scenes(
             or evidence.get("recoveryStatus") not in {
                 "deferred_current_build_offline_surface_exhausted",
                 "deferred_exact_native_playback_without_mission_bridge",
+                "exact_current_build_interaction_trigger_recovered",
             }
         ):
             continue
@@ -24493,6 +24673,7 @@ def _generic_registered_dialog_non_owning_context_facts(
             scene_key,
             current_registry.get(scene_key),
             definition,
+            require_control_flow=False,
         )
     )
     if definition_failure is not None:
@@ -25336,13 +25517,21 @@ def _closed_exact_runtime_config_isolated_scenes(
             continue
         row = rows[0]
         context = tracked_proxy_context_by_scene[scene_key]
+        cross_mission_context = context.get("crossMission") is True
         closed.append({
             "sceneKey": scene_key,
             "recoveryStatus":
-                "closed_exact_runtime_config_no_relative_order",
+                (
+                    "closed_exact_cross_mission_runtime_config_"
+                    "no_relative_order"
+                    if cross_mission_context
+                    else "closed_exact_runtime_config_no_relative_order"
+                ),
             "relation":
                 "unique_mission_tracked_npc_proxy_dialog_context",
-            "missionId": owner_mission,
+            "missionId": context["missionId"],
+            "nominalStoryMissionId": owner_mission,
+            "contextMissionMismatch": cross_mission_context,
             "npcProxyId": context["proxyId"],
             "levelId": context["levelId"],
             "candidateQuestIds": context["questIds"],
@@ -26300,6 +26489,15 @@ def build_gap_row(
             row["sceneKey"],
             row,
         )
+    for scene_key, row in list(closed_exact_native_isolated_by_key.items()):
+        merged, interaction_merged = (
+            _merge_exact_interaction_trigger_with_native_playback(
+                offline_exhaustion_index.get(scene_key),
+                row,
+            )
+        )
+        if interaction_merged:
+            closed_exact_native_isolated_by_key[scene_key] = merged
     closed_exact_native_isolated = sorted(
         closed_exact_native_isolated_by_key.values(),
         key=lambda row: natural_key(row["sceneKey"]),
@@ -28100,8 +28298,8 @@ def main(argv: list[str] | None = None) -> int:
     write_report_json(out_json, report)
     write_text_if_changed(out_md, render_markdown(report))
     main_rows = [row for row in report["missions"] if row["bucket"] == "main"]
-    print(f"Source-only Story gap queue: {out_md.relative_to(ROOT)}")
-    print(f"Source-only Story gap data: {out_json.relative_to(ROOT)}")
+    print(f"Source-only Story gap queue: {out_md.resolve().relative_to(ROOT)}")
+    print(f"Source-only Story gap data: {out_json.resolve().relative_to(ROOT)}")
     if main_rows:
         print(
             f"Top main-story mission: {main_rows[0]['mission']} "

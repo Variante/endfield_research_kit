@@ -183,6 +183,99 @@ def code_registration_summary(pe: PeImage, code_registration_va: int) -> dict[st
     }
 
 
+def _file_offset_to_va(pe: PeImage, file_offset: int) -> int | None:
+    for section in pe.sections:
+        start = section["rawPointer"]
+        end = start + section["rawSize"]
+        if start <= file_offset < end:
+            return pe.image_base + section["virtualAddress"] + (file_offset - start)
+    return None
+
+
+def find_code_registration_candidates(
+    pe: PeImage,
+    expected_module_names: set[str] | None = None,
+) -> list[int]:
+    """Find Unity 2021 x64 CodeRegistration candidates by module-table shape.
+
+    The final CodeRegistration count/pointer pair names the
+    Il2CppCodeGenModule table. Every table entry points to a structure whose
+    first pointer is an assembly image name. Matching the complete metadata
+    image-name set makes this scan fail closed instead of trusting a nearby
+    integer/pointer pair that only happens to look plausible.
+    """
+    expected_folded = (
+        {name.casefold() for name in expected_module_names}
+        if expected_module_names
+        else None
+    )
+    expected_count = len(expected_folded) if expected_folded is not None else None
+    candidates: list[int] = []
+    buf = pe.buf
+    for section in pe.sections:
+        if section["name"] not in {".rdata", ".data"} or section["rawSize"] < 0x78:
+            continue
+        start = section["rawPointer"]
+        end = start + section["rawSize"] - 0x78
+        for file_offset in range(start, end + 1, 8):
+            module_count = struct.unpack_from("<I", buf, file_offset + 0x68)[0]
+            if expected_count is not None:
+                if module_count != expected_count:
+                    continue
+            elif not 16 <= module_count <= 4096:
+                continue
+
+            module_table_va = struct.unpack_from("<Q", buf, file_offset + 0x70)[0]
+            table_offset, _, _ = pe.file_offset_for_va(module_table_va)
+            if table_offset is None or table_offset + module_count * 8 > len(buf):
+                continue
+
+            names: list[str] = []
+            valid = True
+            for index in range(module_count):
+                module_va = struct.unpack_from("<Q", buf, table_offset + index * 8)[0]
+                module_offset, _, _ = pe.file_offset_for_va(module_va)
+                if module_offset is None or module_offset + 8 > len(buf):
+                    valid = False
+                    break
+                name_va = struct.unpack_from("<Q", buf, module_offset)[0]
+                name = pe.c_string_at_va(name_va, limit=260)
+                if (
+                    not name
+                    or name.startswith("<bad-va:")
+                    or any(ord(char) < 0x20 or ord(char) > 0x7E for char in name)
+                ):
+                    valid = False
+                    break
+                names.append(name)
+            if not valid or len(set(name.casefold() for name in names)) != module_count:
+                continue
+
+            folded = {name.casefold() for name in names}
+            if expected_folded is not None:
+                if folded != expected_folded:
+                    continue
+            elif sum(
+                name.casefold().endswith((".dll", ".exe")) or name == "__Generated"
+                for name in names
+            ) < max(1, module_count - 1):
+                continue
+
+            candidate = _file_offset_to_va(pe, file_offset)
+            if candidate is not None:
+                candidates.append(candidate)
+    return sorted(set(candidates))
+
+
+def find_code_registration(
+    pe: PeImage,
+    expected_module_names: set[str] | None = None,
+) -> int | None:
+    """Return a unique CodeRegistration candidate, or ``None``."""
+    candidates = find_code_registration_candidates(pe, expected_module_names)
+    return candidates[0] if len(candidates) == 1 else None
+
+
 def parse_codegen_modules(pe: PeImage, code_registration_va: int) -> dict[str, dict[str, Any]]:
     module_count = pe.u32_at_va(code_registration_va + 0x68)
     module_table_va = pe.u64_at_va(code_registration_va + 0x70)
@@ -303,6 +396,16 @@ def metadata_registration_is_plausible(pe: PeImage, candidate_va: int) -> bool:
     return True
 
 
+# REX.W (0x48-0x4F) + LEA (0x8D) + RIP-relative ModRM (mod=00, rm=101), which
+# is exactly the byte test the scan below used to run one offset at a time.
+# The three byte classes are mutually exclusive, so no match can start inside
+# an earlier one and the regex enumerates the same offsets as a linear scan.
+_RIP_RELATIVE_LEA_RE = re.compile(
+    rb"[\x48-\x4f]\x8d[\x05\x0d\x15\x1d\x25\x2d\x35\x3d]", re.DOTALL
+)
+_METADATA_REGISTRATION_CACHE: dict[tuple[str, int, int], int | None] = {}
+
+
 def find_metadata_registration(pe: PeImage, code_registration_va: int) -> int | None:
     """Locate MetadataRegistration from the codegen registration call site.
 
@@ -310,19 +413,33 @@ def find_metadata_registration(pe: PeImage, code_registration_va: int) -> int | 
     with adjacent rip-relative LEAs. CodeRegistration is already known, so scan
     executable sections for the LEA that resolves to it and validate the nearby
     LEA targets as MetadataRegistration candidates.
+
+    The scan reads every executable byte of a ~280 MB image, and several audits
+    ask for the same registration in one process, so the answer is memoized per
+    loaded image and registration address.
     """
+    # Synthetic images used by tests carry no path and are not memoized.
+    image_path = getattr(pe, "path", None)
+    cache_key = (
+        (str(image_path), len(pe.buf), code_registration_va)
+        if image_path is not None
+        else None
+    )
+    if cache_key is not None and cache_key in _METADATA_REGISTRATION_CACHE:
+        return _METADATA_REGISTRATION_CACHE[cache_key]
+
     candidates: list[int] = []
     for section in pe.sections:
         if not section["rawSize"]:
             continue
         data = pe.buf[section["rawPointer"]: section["rawPointer"] + section["rawSize"]]
         va_base = pe.image_base + section["virtualAddress"]
+        limit = len(data) - 7
         targets: list[tuple[int, int]] = []
-        for offset in range(len(data) - 7):
-            if data[offset] & 0xF8 != 0x48 or data[offset + 1] != 0x8D:
-                continue
-            if (data[offset + 2] & 0xC7) != 0x05:
-                continue
+        for match in _RIP_RELATIVE_LEA_RE.finditer(data):
+            offset = match.start()
+            if offset >= limit:
+                break
             disp = struct.unpack_from("<i", data, offset + 3)[0]
             va = va_base + offset
             targets.append((va, va + 7 + disp))
@@ -335,10 +452,14 @@ def find_metadata_registration(pe: PeImage, code_registration_va: int) -> int | 
                     continue
                 if target != code_registration_va:
                     candidates.append(target)
+    registration = None
     for candidate in candidates:
         if metadata_registration_is_plausible(pe, candidate):
-            return candidate
-    return None
+            registration = candidate
+            break
+    if cache_key is not None:
+        _METADATA_REGISTRATION_CACHE[cache_key] = registration
+    return registration
 
 
 def build_generic_method_index(
