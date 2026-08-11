@@ -2213,11 +2213,11 @@
           },
           "persistent_ifix_patch_overlay": {
             "name": "IFixPatchOut",
-            "block_version": 22764515,
+            "block_version": 23167343,
             "file_count": 1,
             "chunk_count": 1,
-            "byte_count": 82021,
-            "target_count": 30,
+            "byte_count": 86926,
+            "target_count": 32,
             "render_pipeline_settings_target_count": 0,
             "state_report": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json"
           }
@@ -2243,7 +2243,7 @@
         "The active render function selects HGRP/VisibilitySH pass 2, and its exact D3D11 vertex/fragment payloads and binding metadata are pinned.",
         "The pass-2 render state, constant-buffer layouts, fixed SH constants, and scale clamps are pinned.",
         "RenderScene's settings-object chain is pinned; retail defaults are enabled, interval 0.8, range 5.0, half-resolution enabled, tiled rendering disabled, and tile size 32.",
-        "The current installed route constructs the settings object once, has no direct caller of its replacement setter, and registers no VisibilitySH setting-hub callback. Its base IFixPatchOut block is empty; the active Persistent overlay has 30 exact Gameplay.Beyond targets, all disjoint from HG render-pipeline settings, so the constructor values are effective for this snapshot.",
+        "The current installed route constructs the settings object once, has no direct caller of its replacement setter, and registers no VisibilitySH setting-hub callback. Its base IFixPatchOut block is empty; the active Persistent overlay has 32 exact Gameplay.Beyond targets, all disjoint from HG render-pipeline settings, so the constructor values are effective for this snapshot.",
         "The half-resolution branch uses shader pass 0 to write min(Gather2x2(source depth)) into a fresh half-size depth attachment before pass 2 writes R16G16B16A16_SFloat."
       ],
       "still_open": [
@@ -2312,7 +2312,7 @@
         "StreamingInNewMapV2": [],
         "HGIrradianceVolumeManagerV2": []
       },
-      "installed_ifix_target_count": 30,
+      "installed_ifix_target_count": 32,
       "matching_installed_ifix_targets": [],
       "reload_escape_hatch": "ReloadIndexFileV2(rootPath) directly calls SetMap on m_defaultIV; its only absolute function-pointer occurrence is the IL2CPP method table, but generic reflection/external invocation remains an explicit runtime boundary",
       "native_missing_map": {
@@ -3142,11 +3142,11 @@
           "deferred_binding_22": "_HDPLSScreenSpaceShadowMask"
         },
         "installed_ifix_state_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
-        "installed_ifix_state_sha256": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
+        "installed_ifix_state_sha256": "ca4e750748a6d0664a0b0abbed5f246116d239fb5a44aada67ab98521cc2cbe9",
         "installed_ifix_state": {
           "base_file_count": 0,
           "persistent_file_count": 1,
-          "persistent_target_count": 30,
+          "persistent_target_count": 32,
           "hdpls_target_count": 0,
           "current_route": "both recovered non-IFix branches",
           "future_patch_boundary": true
