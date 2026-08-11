@@ -1902,6 +1902,18 @@ gate with:
 python tools\verify_body_skin_forward_recovery.py
 ```
 
+After an installed-game refresh, verify the current AnimeStudio source
+boundary separately with:
+
+```bat
+python tools\verify_current_character_npr_skin_export.py
+```
+
+This current-export audit requires the targeted `CharacterNPR_Skin` shader
+export under `scratch/animestudio/body_skin_sidecar_refresh/`. It validates
+the current shader/material identities and ForwardLit keyword census without
+reusing the older no-screen sidecars or claiming retail frame parity.
+
 In the corrected 3840x2160 controlled A/B, the only change is the exact body
 selector. On pixels changing by more than 1/255, reference MAE moves
 74.222 -> 74.040 for Wulfa and 60.286 -> 59.078 for Zhuangfy. This is a modest
