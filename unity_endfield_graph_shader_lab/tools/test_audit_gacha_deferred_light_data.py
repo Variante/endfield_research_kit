@@ -636,12 +636,18 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.QUATERNION_EULER_MANAGED_FILE_OFFSET)
             managed = stream.read(AUDIT.QUATERNION_EULER_MANAGED_SIZE)
+            stream.seek(AUDIT.QUATERNION_EULER_MANAGED_LAZY_INIT_FILE_OFFSET)
+            lazy_init = stream.read(AUDIT.QUATERNION_EULER_MANAGED_LAZY_INIT_SIZE)
+            stream.seek(AUDIT.QUATERNION_EULER_RESOLVER_STRING_FILE_OFFSET)
+            resolver_string = stream.read(len(AUDIT.QUATERNION_EULER_RESOLVER_STRING))
             stream.seek(AUDIT.QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET)
             scale_helper = stream.read(AUDIT.QUATERNION_EULER_SCALE_HELPER_SIZE)
             stream.seek(AUDIT.DEGREES_TO_RADIANS_FILE_OFFSET)
             degrees_to_radians = stream.read(4)
         result = AUDIT.validate_quaternion_euler_native(
             managed,
+            lazy_init,
+            resolver_string,
             scale_helper,
             degrees_to_radians,
             AUDIT.UNITY_PLAYER.read_bytes(),
@@ -649,6 +655,9 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual(result["icallIndex"], 2489)
         self.assertEqual(result["degreesToRadiansBits"], "0x3C8EFA35")
         self.assertEqual(result["halfAngleConstantBits"], "0x3F000000")
+        self.assertEqual(result["managedSlotVirtualAddress"], "0x18F36FAC8")
+        self.assertEqual(result["icallResolverVirtualAddress"], "0x180059FC0")
+        self.assertEqual(result["resolverString"], AUDIT.QUATERNION_EULER_RESOLVER_STRING)
         self.assertEqual(result["nativeOrderParameter"], 4)
         self.assertEqual(result["nativeOrderCaseOffset"], "0x425")
         self.assertEqual(len(result["nativeOrderJumpTable"]), 6)
@@ -658,6 +667,10 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.QUATERNION_EULER_MANAGED_FILE_OFFSET)
             managed = bytearray(stream.read(AUDIT.QUATERNION_EULER_MANAGED_SIZE))
+            stream.seek(AUDIT.QUATERNION_EULER_MANAGED_LAZY_INIT_FILE_OFFSET)
+            lazy_init = stream.read(AUDIT.QUATERNION_EULER_MANAGED_LAZY_INIT_SIZE)
+            stream.seek(AUDIT.QUATERNION_EULER_RESOLVER_STRING_FILE_OFFSET)
+            resolver_string = stream.read(len(AUDIT.QUATERNION_EULER_RESOLVER_STRING))
             stream.seek(AUDIT.QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET)
             scale_helper = stream.read(AUDIT.QUATERNION_EULER_SCALE_HELPER_SIZE)
             stream.seek(AUDIT.DEGREES_TO_RADIANS_FILE_OFFSET)
@@ -669,6 +682,36 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_quaternion_euler_native(
                 bytes(managed),
+                lazy_init,
+                resolver_string,
+                scale_helper,
+                degrees_to_radians,
+                AUDIT.UNITY_PLAYER.read_bytes(),
+            )
+
+    def test_changed_quaternion_euler_lazy_resolver_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.QUATERNION_EULER_MANAGED_FILE_OFFSET)
+            managed = stream.read(AUDIT.QUATERNION_EULER_MANAGED_SIZE)
+            stream.seek(AUDIT.QUATERNION_EULER_MANAGED_LAZY_INIT_FILE_OFFSET)
+            lazy_init = bytearray(
+                stream.read(AUDIT.QUATERNION_EULER_MANAGED_LAZY_INIT_SIZE)
+            )
+            stream.seek(AUDIT.QUATERNION_EULER_RESOLVER_STRING_FILE_OFFSET)
+            resolver_string = stream.read(len(AUDIT.QUATERNION_EULER_RESOLVER_STRING))
+            stream.seek(AUDIT.QUATERNION_EULER_SCALE_HELPER_FILE_OFFSET)
+            scale_helper = stream.read(AUDIT.QUATERNION_EULER_SCALE_HELPER_SIZE)
+            stream.seek(AUDIT.DEGREES_TO_RADIANS_FILE_OFFSET)
+            degrees_to_radians = stream.read(4)
+        lazy_init[0] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=quaternion_euler_lazy_init_body_sha256;.*expected=.*actual=",
+        ):
+            AUDIT.validate_quaternion_euler_native(
+                managed,
+                bytes(lazy_init),
+                resolver_string,
                 scale_helper,
                 degrees_to_radians,
                 AUDIT.UNITY_PLAYER.read_bytes(),
