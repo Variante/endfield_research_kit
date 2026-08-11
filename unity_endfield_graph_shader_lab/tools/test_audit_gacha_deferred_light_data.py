@@ -141,6 +141,42 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual(result["unmatchedResult"], -1)
         self.assertTrue(result["resolverOutcomeClosed"])
 
+    def test_native_shadow_caster_property_masks(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_FILE_OFFSET)
+            is_dynamic = stream.read(AUDIT.HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_SIZE)
+            stream.seek(AUDIT.HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_FILE_OFFSET)
+            cast_static = stream.read(AUDIT.HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_SIZE)
+            stream.seek(AUDIT.HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_FILE_OFFSET)
+            cast_dynamic = stream.read(AUDIT.HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_SIZE)
+        result = AUDIT.validate_shadow_caster_property_getters(
+            is_dynamic, cast_static, cast_dynamic
+        )
+        self.assertEqual(result["fields"]["isDynamicShadowCaster"]["mask"], "0x01")
+        self.assertEqual(result["fields"]["castStaticObjects"]["mask"], "0x02")
+        self.assertEqual(result["fields"]["castDynamicObjects"]["mask"], "0x04")
+        self.assertTrue(result["propertyMasksClosed"])
+        self.assertTrue(result["runtimeCacheValuesStillOpen"])
+
+    def test_changed_shadow_caster_property_mask_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_FILE_OFFSET)
+            cast_dynamic = bytearray(
+                stream.read(AUDIT.HG_SHARED_LIGHT_CAST_DYNAMIC_OBJECTS_SIZE)
+            )
+            stream.seek(AUDIT.HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_FILE_OFFSET)
+            is_dynamic = stream.read(AUDIT.HG_SHARED_LIGHT_IS_DYNAMIC_SHADOW_CASTER_SIZE)
+            stream.seek(AUDIT.HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_FILE_OFFSET)
+            cast_static = stream.read(AUDIT.HG_SHARED_LIGHT_CAST_STATIC_OBJECTS_SIZE)
+        cast_dynamic[0x0C] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=castDynamicObjects_body_sha256; source=.*GameAssembly.dll; ",
+        ):
+            AUDIT.validate_shadow_caster_property_getters(
+                is_dynamic, cast_static, bytes(cast_dynamic)
+            )
+
     def test_changed_point_shadow_cache_index_unmatched_return_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
@@ -474,6 +510,9 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual(len(rows), 11)
         self.assertEqual(sum(row["unityLightType"] == 0 for row in rows), 1)
         self.assertEqual(sum(row["linearLightLength"] > 0 for row in rows), 4)
+        self.assertEqual({row["shadowCasterProperties"] for row in rows}, {6})
+        self.assertEqual({row["pointShadowCasterFaces"] for row in rows}, {-1})
+        self.assertEqual({row["lightShadowCasterMode"] for row in rows}, {0})
 
     def test_selected_room_additional_components(self) -> None:
         population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
