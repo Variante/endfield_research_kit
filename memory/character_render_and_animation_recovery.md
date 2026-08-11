@@ -58,6 +58,11 @@ NPC archetypes are imported as labeled source kits.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
+- The refreshed AnimeStudio shader export still preserves the 14 resolver pass
+  names and 640 D3D11 variants in one populated LOD subshader; the three other
+  serialized LOD blocks are empty fallbacks. Current installed IFix evidence is
+  version `23167343` with 32 targets, and the full deferred recovery verifier
+  passes after its source/report fingerprints were refreshed.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and

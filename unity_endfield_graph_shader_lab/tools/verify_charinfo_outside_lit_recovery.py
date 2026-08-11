@@ -207,7 +207,7 @@ def verify_charinfo_v2_data_path_contract(
         (
             "installed_map_path_selection.installed_ifix_target_count",
             contract_selection["installed_ifix_target_count"],
-            30,
+            32,
         ),
         (
             "audit.installed_map_path_selection.installed_ifix",
@@ -216,7 +216,7 @@ def verify_charinfo_v2_data_path_contract(
                 selection["installedIfix"]["matchingTargets"],
                 selection["installedIfix"]["currentRoute"],
             ),
-            (30, [], "all three recovered non-IFix branches"),
+            (32, [], "all three recovered non-IFix branches"),
         ),
         (
             "installed_map_path_selection.native_missing_map",
@@ -1865,7 +1865,7 @@ def verify_hdpls_resource_lifecycle_contract(
                 "scope": "hash-pinned files currently installed on this machine",
                 "base_ifix_file_count": 0,
                 "persistent_ifix_file_count": 1,
-                "persistent_target_count": 30,
+                "persistent_target_count": 32,
                 "checked_hdpls_signatures": [
                     {
                         "type": (
@@ -2475,8 +2475,8 @@ def verify_native_map(recovery: dict[str, object]) -> None:
             + [part.title() for part in key.split("_")[1:]]
         )
         assert ifix_index["summary"][index_key] == ifix_record[key]
-    assert ifix_record["block_version"] == 22764515
-    assert ifix_record["target_count"] == 30
+    assert ifix_record["block_version"] == 23167343
+    assert ifix_record["target_count"] == 32
     assert ifix_record["character_recovery_locally_replaced"] is False
     state_record = ifix_record["state_report"]
     state_path = repo_path(state_record["repo_path"])
@@ -3802,11 +3802,11 @@ def verify_selected_resolver_binding_contract() -> None:
     }
     assert settings_lifecycle["persistent_ifix_patch_overlay"] == {
         "name": "IFixPatchOut",
-        "block_version": 22764515,
+        "block_version": 23167343,
         "file_count": 1,
         "chunk_count": 1,
-        "byte_count": 82021,
-        "target_count": 30,
+        "byte_count": 86926,
+        "target_count": 32,
         "render_pipeline_settings_target_count": 0,
         "state_report": (
             "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/"
@@ -4038,7 +4038,11 @@ def verify_selected_resolver_binding_contract() -> None:
         "float zBinSlice@40",
         "float invZBinSlice@44",
     ]
-    assert "12 authored room lights are not a valid substitute" in (
+    # The authored-room subset was expanded by the refreshed source audit. Keep
+    # this gate tied to the durable open boundary rather than a superseded
+    # intermediate row count.
+    assert "runtime/custom carry-in" in light_binning_native["remaining_boundary"]
+    assert "final lightCount remain native live state" in (
         light_binning_native["remaining_boundary"]
     )
     light_cull_audit_path = repo_path(
@@ -4782,7 +4786,7 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_native["installed_ifix_state"] == {
         "base_file_count": 0,
         "persistent_file_count": 1,
-        "persistent_target_count": 30,
+        "persistent_target_count": 32,
         "hdpls_target_count": 0,
         "current_route": "both recovered non-IFix branches",
         "future_patch_boundary": True,
@@ -5250,8 +5254,9 @@ def main() -> int:
     verify_visibility_sh_unity_replay()
     print(
         "SphereOutside deferred recovery verification passed: exact HGBuffer "
-        "stages, 4 original shader dumps, 4 serialized subshaders each with "
-        "14 resolver passes / 640 D3D11 variants, 7 native draw targets, the "
+        "stages, 4 original shader dumps, one populated serialized subshader "
+        "with 14 resolver passes / 640 D3D11 variants plus 3 empty LOD "
+        "fallback subshaders, 7 native draw targets, the "
         "installed patch-audited passes 0/1/2 plus conditional WriteAlpha route, "
         "the installed UnityPlayer fallback scorer and unique serialized pass-0 "
         "D3D11 pair 96, with both original stages executed once in a fail-closed "
