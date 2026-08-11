@@ -42,8 +42,8 @@ def raw_row(
     return bytes(row)
 
 
-def capture(rows: list[bytes]) -> dict:
-    return {
+def capture(rows: list[bytes], *, native_b31_payload: dict | None = None) -> dict:
+    document = {
         "schema": CONTRACT.DECODER.SCHEMA,
         "gameBuild": CONTRACT.DECODER.GAME_BUILD,
         "binaryPins": {
@@ -56,6 +56,34 @@ def capture(rows: list[bytes]) -> dict:
             "visibleLightCount": len(rows),
             "rawRowsHex": b"".join(rows).hex(),
         },
+    }
+    if native_b31_payload is not None:
+        document["nativeB31Payload"] = native_b31_payload
+    return document
+
+
+def native_b31_payload(
+    count: int, *, rows: list[dict] | None = None
+) -> dict:
+    if rows is None:
+        rows = [
+            {
+                "captureRowIndex": index,
+                "rawRecordsHex": (
+                    bytes([index + 1]) * CONTRACT.B31_RECORD_STRIDE_BYTES
+                ).hex(),
+            }
+            for index in range(count)
+        ]
+    return {
+        "schema": CONTRACT.B31_PAYLOAD_SCHEMA,
+        "sourcePins": {
+            "gameAssemblySha256": CONTRACT.DECODER.GAME_ASSEMBLY_SHA256,
+            "prepareCpuDataBodySha256": CONTRACT.PREPARE_CPU_DATA_BODY_SHA256,
+        },
+        "recordStrideBytes": CONTRACT.B31_RECORD_STRIDE_BYTES,
+        "recordsPerLight": CONTRACT.B31_RECORDS_PER_LIGHT,
+        "rows": rows,
     }
 
 
@@ -83,6 +111,90 @@ class GachaLightCullCaptureContractTests(unittest.TestCase):
             "Spot Light (12)",
         )
         self.assertFalse(result["targetFrame"]["b31Ready"])
+        self.assertFalse(result["targetFrame"]["nativeB31Payload"]["validated"])
+        self.assertIn(
+            "native PrepareCPUData b31 payload is absent or not validated",
+            result["targetFrame"]["b31BlockedBy"],
+        )
+
+    def test_valid_native_b31_payload_is_retained_but_not_published(self) -> None:
+        row = raw_row(light_type=0, position=(0.0, 0.0, 0.0), priority=1)
+        payload = native_b31_payload(1)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "capture.json"
+            path.write_text(
+                json.dumps(capture([row], native_b31_payload=payload)),
+                encoding="utf-8",
+            )
+            result = CONTRACT.build_contract(
+                path, (0.0, 0.0, 0.0), require_selected_room=False
+            )
+        native = result["targetFrame"]["nativeB31Payload"]
+        self.assertTrue(native["validated"])
+        self.assertEqual(native["rows"][0]["captureRowIndex"], 0)
+        self.assertEqual(
+            len(native["rows"][0]["rawRecordsHex"]),
+            CONTRACT.B31_RECORD_STRIDE_BYTES * 2,
+        )
+        self.assertFalse(result["targetFrame"]["b31Ready"])
+        self.assertNotIn(
+            "native PrepareCPUData b31 payload is absent or not validated",
+            result["targetFrame"]["b31BlockedBy"],
+        )
+
+    def test_native_b31_payload_hash_mismatch_fails_closed(self) -> None:
+        row = raw_row(light_type=0, position=(0.0, 0.0, 0.0), priority=1)
+        payload = native_b31_payload(1)
+        payload["sourcePins"]["prepareCpuDataBodySha256"] = "0" * 64
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "capture.json"
+            path.write_text(
+                json.dumps(capture([row], native_b31_payload=payload)),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                CONTRACT.CaptureContractError,
+                r"check=b31_payload_prepare_cpu_data_sha256; expected=.*actual=",
+            ):
+                CONTRACT.build_contract(
+                    path, (0.0, 0.0, 0.0), require_selected_room=False
+                )
+
+    def test_native_b31_payload_indices_must_cover_capture_rows(self) -> None:
+        rows = [
+            raw_row(light_type=0, position=(0.0, 0.0, 0.0), priority=2),
+            raw_row(light_type=2, position=(2.0, 0.0, 0.0), priority=1),
+        ]
+        payload = native_b31_payload(
+            2,
+            rows=[
+                {
+                    "captureRowIndex": 0,
+                    "rawRecordsHex": (
+                        bytes([1]) * CONTRACT.B31_RECORD_STRIDE_BYTES
+                    ).hex(),
+                },
+                {
+                    "captureRowIndex": 0,
+                    "rawRecordsHex": (
+                        bytes([2]) * CONTRACT.B31_RECORD_STRIDE_BYTES
+                    ).hex(),
+                },
+            ],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "capture.json"
+            path.write_text(
+                json.dumps(capture(rows, native_b31_payload=payload)),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                CONTRACT.CaptureContractError,
+                r"check=b31_payload_capture_row_indices; expected=\[0, 1\]; actual=\[0, 0\]",
+            ):
+                CONTRACT.build_contract(
+                    path, (0.0, 0.0, 0.0), require_selected_room=False
+                )
 
     def test_selected_room_scope_fails_when_capture_is_incomplete(self) -> None:
         row = raw_row(light_type=0, position=(0.0, 0.0, 0.0), priority=0)
