@@ -33,6 +33,9 @@ SHADER_EXPORT = (
     / "HGRP_CharacterNPR_Skin_p3E3D05CF72D25122.shader"
 )
 BYTECODE_ROOT = Path(str(SHADER_EXPORT) + ".bytecode")
+DECOMPILED_SPV_GLSL = (
+    REPO_ROOT / "scratch/animestudio/body_skin_sidecar_refresh/skin_body_forward.spv.glsl"
+)
 
 EXPECTED_SHADER_MAP = {
     "name": "HGRP/CharacterNPR_Skin",
@@ -45,6 +48,10 @@ EXPECTED_SHADER_MAP = {
 EXPECTED_SHADER_EXPORT = {
     "size": 34275574,
     "sha256": "91f3255a631b067f7942756ce96857c5f5d4a3f65f648faa2ccf11b61b75c0b8",
+}
+EXPECTED_DECOMPILED_SPV_GLSL = {
+    "size": 97085,
+    "sha256": "70022f422f83b698b28f30bed89c08502d25e26dd9c30e6d9372cd92c77040a1",
 }
 
 EXPECTED_MATERIALS = {
@@ -294,6 +301,40 @@ def verify_sidecars() -> dict[str, Any]:
     }
 
 
+def verify_decompiled_consumer() -> dict[str, Any]:
+    """Pin the current SPIR-V consumer semantics without claiming parity."""
+
+    require_file(
+        DECOMPILED_SPV_GLSL,
+        EXPECTED_DECOMPILED_SPV_GLSL["size"],
+        EXPECTED_DECOMPILED_SPV_GLSL["sha256"],
+        "current CharacterNPR_Skin SPIR-V decompilation",
+    )
+    text = DECOMPILED_SPV_GLSL.read_text(encoding="utf-8")
+    required = {
+        "screen_mask_resource": "Texture2D<float4> _ScreenSpaceShadowMask",
+        "integer_pixel_load": "_ScreenSpaceShadowMask.Load(int3(int3(_2162, _2163, 0).xy, 0))",
+        "character_shadow_g_channel": "float _2172 = _2167.y;",
+        "scene_shadow_r_channel": "float _2175 = lerp(lerp(1.0f, _2167.x",
+        "clustered_light_bit_scan": "uint _2516 = firstbitlow(_2511);",
+        "punctual_shadow_basis": "float3 _3045 =",
+        "punctual_rim_dispatch": "float _3274 = 0.0f;",
+    }
+    for label, needle in required.items():
+        if needle not in text:
+            raise AssertionError(
+                f"current SPIR-V consumer anchor missing: label={label} needle={needle!r}"
+            )
+    return {
+        "path": str(DECOMPILED_SPV_GLSL.relative_to(REPO_ROOT)).replace("\\", "/"),
+        **EXPECTED_DECOMPILED_SPV_GLSL,
+        "screen_mask_load": "integer pixel Load",
+        "screen_mask_channels": {"r": "directional scene shadow", "g": "character shadow"},
+        "clustered_punctual_consumer": True,
+        "retail_frame_parity": "not asserted",
+    }
+
+
 def verify_current_boundary() -> dict[str, Any]:
     entries = load_map_entries()
     result = {
@@ -301,6 +342,7 @@ def verify_current_boundary() -> dict[str, Any]:
         "source_identity": verify_shader_map(entries),
         "materials": verify_materials(entries),
         "compiled_variants": verify_sidecars(),
+        "binary_consumer": verify_decompiled_consumer(),
         "interpretation": {
             "current_forward_lit_policy": "all current ForwardLit keyword sets include HG_ENABLE_SCREEN_SPACE_SHADOW_MASK",
             "older_no_screen_sidecars": "not evidence for this export",

@@ -76,8 +76,11 @@ NPC archetypes are imported as labeled source kits.
   current ForwardLit metadata records across 141 keyword sets include
   `HG_ENABLE_SCREEN_SPACE_SHADOW_MASK`, with zero current no-screen sets.
   The older no-screen body contract is therefore stale evidence and remains
-  fail-closed; `verify_current_character_npr_skin_export.py` records source
-  identity and variant metadata only, not retail frame parity.
+  fail-closed; its current SPIR-V consumer also pins an integer-pixel
+  `_ScreenSpaceShadowMask` load (R = directional scene shadow, G = character
+  shadow), clustered-light bit scanning, and punctual-shadow/rim dispatch.
+  `verify_current_character_npr_skin_export.py` records these source and
+  variant semantics only, not retail frame parity.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
