@@ -50,6 +50,16 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT24");
         internal static readonly int ResolverGBufferT25Id =
             Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT25");
+        // The selected original SPIR-V/HLSL resolver names the same source
+        // textures _62 (t23/C), _61 (t24/B), and _60 (t25/A). Publish these
+        // exact identifiers alongside the lab-prefixed aliases so a future
+        // binding-compatible resolver can consume the source names directly.
+        internal static readonly int ResolverSourceTextureT23Id =
+            Shader.PropertyToID("_62");
+        internal static readonly int ResolverSourceTextureT24Id =
+            Shader.PropertyToID("_61");
+        internal static readonly int ResolverSourceTextureT25Id =
+            Shader.PropertyToID("_60");
         private static readonly int GpuViewProjectionId =
             Shader.PropertyToID(
                 "_EndfieldRecoveredDeferredGpuViewProjection");
@@ -179,6 +189,9 @@ namespace EndfieldGraphShaderLab
                 command.SetGlobalTexture(ResolverGBufferT23Id, gBufferC);
                 command.SetGlobalTexture(ResolverGBufferT24Id, gBufferB);
                 command.SetGlobalTexture(ResolverGBufferT25Id, gBufferA);
+                command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferC);
+                command.SetGlobalTexture(ResolverSourceTextureT24Id, gBufferB);
+                command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferA);
                 command.SetGlobalFloat(ReadyId, 1.0f);
                 RequestReadbacks(command, camera.name);
                 // This producer is a non-presented sidecar. Restore the exact
@@ -204,6 +217,7 @@ namespace EndfieldGraphShaderLab
                     "A2B10G10R10/R8G8B8A8_SRGB+D32S8, " +
                     "sourceRendererDisabled=" + (!renderer.enabled) + ", " +
                     "resolverGBufferBindings=t23:C,t24:B,t25:A, " +
+                    "resolverSourceIdentifiers=t23:_62,t24:_61,t25:_60, " +
                     "pass0ConsumerEnabled=false.");
                 activationLogged = true;
             }
@@ -228,6 +242,9 @@ namespace EndfieldGraphShaderLab
             command.SetGlobalTexture(ResolverGBufferT23Id, Texture2D.blackTexture);
             command.SetGlobalTexture(ResolverGBufferT24Id, Texture2D.blackTexture);
             command.SetGlobalTexture(ResolverGBufferT25Id, Texture2D.blackTexture);
+            command.SetGlobalTexture(ResolverSourceTextureT23Id, Texture2D.blackTexture);
+            command.SetGlobalTexture(ResolverSourceTextureT24Id, Texture2D.blackTexture);
+            command.SetGlobalTexture(ResolverSourceTextureT25Id, Texture2D.blackTexture);
             context.ExecuteCommandBuffer(command);
             command.Release();
             if (!failureLogged)
@@ -576,6 +593,9 @@ namespace EndfieldGraphShaderLab
             Shader.SetGlobalTexture(ResolverGBufferT23Id, Texture2D.blackTexture);
             Shader.SetGlobalTexture(ResolverGBufferT24Id, Texture2D.blackTexture);
             Shader.SetGlobalTexture(ResolverGBufferT25Id, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(ResolverSourceTextureT23Id, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(ResolverSourceTextureT24Id, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(ResolverSourceTextureT25Id, Texture2D.blackTexture);
         }
 
         private static bool Approximately(float actual, float expected)

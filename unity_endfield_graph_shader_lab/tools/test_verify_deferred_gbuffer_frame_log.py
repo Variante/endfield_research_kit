@@ -24,6 +24,7 @@ def ready_log() -> str:
             "A2B10G10R10/R8G8B8A8_SRGB+D32S8, "
             "sourceRendererDisabled=True, "
             "resolverGBufferBindings=t23:C,t24:B,t25:A, "
+            "resolverSourceIdentifiers=t23:_62,t24:_61,t25:_60, "
             "pass0ConsumerEnabled=false."
         ),
     ]
@@ -57,6 +58,18 @@ class DeferredGBufferFrameLogTests(unittest.TestCase):
         )
         self.assertIn(
             "command.SetGlobalTexture(ResolverGBufferT25Id, gBufferA)",
+            source,
+        )
+        self.assertIn(
+            "command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferC)",
+            source,
+        )
+        self.assertIn(
+            "command.SetGlobalTexture(ResolverSourceTextureT24Id, gBufferB)",
+            source,
+        )
+        self.assertIn(
+            "command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferA)",
             source,
         )
 

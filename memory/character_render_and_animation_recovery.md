@@ -72,10 +72,11 @@ NPC archetypes are imported as labeled source kits.
   registers remain open. This removes a binding guess from the next resolver
   integration step, but does not enable pass 0 or claim live-frame parity.
 - The same-frame SphereOutside GBuffer sidecar now publishes explicit resolver
-  aliases `t23=C`, `t24=B`, `t25=A` and the log validator locks that ordering;
-  fail-closed paths clear those aliases to black. This is only a resource
-  bridge for the next consumer integration step, so the sidecar remains
-  non-presented and pass 0 remains disabled.
+  aliases `t23=C`, `t24=B`, `t25=A` and the exact selected source identifiers
+  `_62`/`_61`/`_60` for `t23`/`t24`/`t25`; the log validator locks both
+  orderings and fail-closed paths clear every alias to black. This is only a
+  resource bridge for the next consumer integration step, so the sidecar
+  remains non-presented and pass 0 remains disabled.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and
