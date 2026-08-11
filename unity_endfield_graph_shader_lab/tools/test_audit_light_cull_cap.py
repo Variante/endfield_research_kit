@@ -131,6 +131,27 @@ class LightCullCapAuditTests(unittest.TestCase):
             "0x70",
         )
 
+    def test_scene_culling_mask_is_ifix_payload_producer(self) -> None:
+        result = AUDIT.validate_scene_culling_mask_source()
+        self.assertEqual(result["ifixTargetId"], 793)
+        self.assertFalse(result["ordinaryManagedCameraComputation"])
+        self.assertIn("IFix/future-patch", result["nativeValueBoundary"])
+
+    def test_changed_scene_culling_mask_ifix_target_fails_closed(self) -> None:
+        source_text = AUDIT.HG_UTILS_SOURCE.read_text(encoding="utf-8")
+        changed = source_text.replace(
+            "GetPatch(793, 0LL)", "GetPatch(794, 0LL)", 1
+        )
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=scene_culling_mask_ifix_target; source=.*HGUtils.cs; "
+            r"expected=1; actual=0",
+        ):
+            AUDIT.validate_scene_culling_mask_source(
+                source_text=changed, verify_source_hash=False
+            )
+
     def test_changed_visible_light_stride_fails_closed(self) -> None:
         bodies = AUDIT.read_native_method_bodies()
         changed = bytearray(bodies["setup_state"])

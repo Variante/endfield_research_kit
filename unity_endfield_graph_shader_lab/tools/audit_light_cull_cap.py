@@ -32,6 +32,7 @@ SETTING_HUB_SOURCE = HGRP_ROOT / "HGRenderPipelineSettingHub.cs"
 SETTING_PARAMETERS_SOURCE = HGRP_ROOT / "HGSettingParameters.cs"
 LIGHT_CLUSTER_SOURCE = HGRP_ROOT / "LightClusteringPassConstructor.cs"
 HG_CAMERA_SOURCE = HGRP_ROOT / "HGCamera.cs"
+HG_UTILS_SOURCE = HGRP_ROOT / "HGUtils.cs"
 IFIX_STATE = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
@@ -84,6 +85,7 @@ EXPECTED_HASHES = {
     "setting_parameters_source": "0ea7d61931aa014fb7ebca149380da2804fc8d5e07705e941bf6474b74a55ce9",
     "light_cluster_source": "a81ef9843339141a86c910a6915ab96e647f1f43c25631d537fe872ef4ead888",
     "hg_camera_source": "2f0e098481f25f0e77de8d203c7cae1e4d748b4521d5157af0ab1aaa1163205a",
+    "hg_utils_source": "001686edd13da1e8598d9b252ae0b305d0fb0d2d8c4ecee6d6f8bd1ac10cc97a",
     "ifix_state": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
     "hgmesh_renderer_data_source": "af62293a829675951bbc135b0ba51444f72c8b288a0043617ed0c4300c6feae0",
     "animestudio_class_id_source": "e14cbf9403b8da5c4004a9a441512ffa6b0745d52818ace6aec8bb8645ba8c17",
@@ -7972,6 +7974,79 @@ def validate_unity_cull_view_constructor(image: PEImage) -> dict[str, object]:
     }
 
 
+def validate_scene_culling_mask_source(
+    source: Path = HG_UTILS_SOURCE,
+    *,
+    source_text: str | None = None,
+    verify_source_hash: bool = True,
+) -> dict[str, object]:
+    """Close the ordinary managed producer boundary for sceneCullingMask.
+
+    The installed managed method is an IFix wrapper, not a camera-field
+    calculation.  Its non-zero value therefore belongs to the patch payload
+    boundary; the native cull-view validators separately pin where that value
+    is forwarded and which fields are actually consumed.
+    """
+
+    if source_text is None:
+        if verify_source_hash:
+            verified_hash("hg_utils_source", source)
+        require("scene_culling_mask_source_exists", source.is_file(), True, source)
+        source_text = source.read_text(encoding="utf-8")
+    method_name = "internal static ulong GetSceneCullingMaskFromCamera(Camera camera)"
+    start = source_text.find(method_name)
+    require(
+        "scene_culling_mask_method_present",
+        start >= 0,
+        True,
+        source,
+    )
+    end = source_text.find("\n\t\tinternal static", start + len(method_name))
+    require(
+        "scene_culling_mask_method_boundary",
+        end > start,
+        True,
+        source,
+    )
+    method = source_text[start:end]
+    require(
+        "scene_culling_mask_ifix_target",
+        method.count("GetPatch(793, 0LL)"),
+        1,
+        source,
+    )
+    require(
+        "scene_culling_mask_wrapper_call",
+        method.count("__Gen_Wrap_3"),
+        1,
+        source,
+    )
+    require(
+        "scene_culling_mask_no_camera_accessor",
+        "UnityEngine::Camera::get_" not in method,
+        True,
+        source,
+    )
+    require(
+        "scene_culling_mask_no_direct_managed_value",
+        "camera." not in method,
+        True,
+        source,
+    )
+    return {
+        "method": "HG.Rendering.Runtime.HGUtils.GetSceneCullingMaskFromCamera",
+        "returnType": "UInt64",
+        "ifixTargetId": 793,
+        "producer": "IFix wrapper target 793",
+        "ordinaryManagedCameraComputation": False,
+        "nativeValueBoundary": (
+            "The non-zero value is supplied by the IFix/future-patch payload; "
+            "the base managed method contains no camera-field computation."
+        ),
+        "sourceSha256": sha256(source) if source.is_file() else None,
+    }
+
+
 def validate_unity_scheduled_culling_boundary(
     image: PEImage,
 ) -> dict[str, object]:
@@ -11367,6 +11442,7 @@ def _require_source_contracts() -> dict[str, str]:
         "setting_parameters_source": SETTING_PARAMETERS_SOURCE,
         "light_cluster_source": LIGHT_CLUSTER_SOURCE,
         "hg_camera_source": HG_CAMERA_SOURCE,
+        "hg_utils_source": HG_UTILS_SOURCE,
     }
     texts = {name: path.read_text(encoding="utf-8-sig") for name, path in paths.items()}
     snippets = {
@@ -11396,6 +11472,11 @@ def _require_source_contracts() -> dict[str, str]:
             "v31 = useOcclusionCulling ? 0x140 : 0",
             "v32 = useOcclusionCulling ? 0xA0 : 0",
             "HGCullingSystem::AddCullViewByMatrix(UnityEngine.Matrix4x4&",
+        ],
+        "hg_utils_source": [
+            "internal static ulong GetSceneCullingMaskFromCamera(Camera camera)",
+            "IFix::WrappersManagerImpl::GetPatch(793, 0LL)",
+            "IFix::ILFixDynamicMethodWrapper::__Gen_Wrap_3",
         ],
     }
     for name, required in snippets.items():
@@ -11430,6 +11511,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "light_cluster_source", LIGHT_CLUSTER_SOURCE
         ),
         "hg_camera_source": verified_hash("hg_camera_source", HG_CAMERA_SOURCE),
+        "hg_utils_source": verified_hash("hg_utils_source", HG_UTILS_SOURCE),
         "ifix_state": verified_hash("ifix_state", IFIX_STATE),
         "hgmesh_renderer_data_source": verified_hash(
             "hgmesh_renderer_data_source", HGMESH_RENDERER_DATA_SOURCE
@@ -11457,6 +11539,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     unity_native_producer = validate_unity_native_producer(PEImage(UNITY_PLAYER))
     unity_cull_view_constructor = validate_unity_cull_view_constructor(
         PEImage(UNITY_PLAYER)
+    )
+    scene_culling_mask_source = validate_scene_culling_mask_source(
+        verify_source_hash=False
     )
     unity_scheduled_culling_boundary = (
         validate_unity_scheduled_culling_boundary(PEImage(UNITY_PLAYER))
@@ -11505,7 +11590,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v45",
+        "schema": "endfield.recovered-light-cull-cap.v46",
         "status": "component67_managed_tick_host_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
@@ -11517,7 +11602,10 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "native candidate gates, 16-byte LightCullResult, and 148-byte "
             "VisibleLight capture stride are source-closed. AddCullViewByMatrix "
             "also closes the scheduled view layout and visibility-then-camera-mask "
-            "gate. DispatchBatchCullingJobs selects an exact six-plane AABB "
+            "gate. HGUtils.GetSceneCullingMaskFromCamera is an IFix-only "
+            "target-793 wrapper with no ordinary Camera-field computation, so "
+            "its non-zero patch value remains a runtime boundary. "
+            "DispatchBatchCullingJobs selects an exact six-plane AABB "
             "predicate, except cameraType 0x80 selects an exact sphere/distance "
             "predicate; neither reads cull-view +0x18. "
             "The complete installed CullView-named internal-call surface is now "
@@ -11905,6 +11993,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             ),
             "unityPlayerCandidateProducer": unity_native_producer,
             "unityPlayerCullViewConstructor": unity_cull_view_constructor,
+            "sceneCullingMaskSource": scene_culling_mask_source,
             "unityPlayerScheduledCullingBoundary": (
                 unity_scheduled_culling_boundary
             ),
@@ -11937,6 +12026,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "setting_parameters_source": SETTING_PARAMETERS_SOURCE,
                 "light_cluster_source": LIGHT_CLUSTER_SOURCE,
                 "hg_camera_source": HG_CAMERA_SOURCE,
+                "hg_utils_source": HG_UTILS_SOURCE,
                 "animestudio_class_id_source": ANIMESTUDIO_CLASS_ID_SOURCE,
                 "animestudio_asset_helper_source": ANIMESTUDIO_ASSET_HELPER_SOURCE,
             }.items()
@@ -12014,6 +12104,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the direct all-LOD or terminal-LOD HGTree availability initializer",
                 "the retraction of the out-of-range index 10320 Animator misbinding",
                 "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
+                "HGUtils.GetSceneCullingMaskFromCamera is an IFix-only target-793 wrapper with no ordinary Camera-field computation",
             ],
             "captureOnly": [
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
@@ -12025,6 +12116,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the virtual caller and executing thread above managed GameSceneManager.Tick",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
+                "the non-zero sceneCullingMask value delivered by an IFix/future patch payload",
             ],
         },
     }
