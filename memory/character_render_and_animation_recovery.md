@@ -519,7 +519,12 @@ NPC archetypes are imported as labeled source kits.
   directly returns `castStaticObjects=true, castDynamicObjects=false`, while a
   dynamic request follows the three pinned caster-property getters. Runtime
   wrapper-table membership, patched return flags, and live caster-list
-  membership remain capture/runtime-bound. The same native body now pins the
+  membership remain capture/runtime-bound. The adjacent `GetRendererConfig`
+  method (`0x887`) is also hash-pinned: its unpatched projection is
+  `0x4800 | (castStaticObjects ? 0x1000 : 0) |
+  (castDynamicObjects ? 0x2000 : 0)`, while its patched route is
+  `GetPatch(0x887) -> __Gen_Wrap_875`; both runtime wrapper-table entries and
+  patched flag returns remain open. The same native body now pins the
   transform producer order:
   `GetForward` → `PackNormalOctRectEncode` supplies `record2.xy`, while
   `GetPosition` supplies world-space `record1.xyz`; the selected deferred

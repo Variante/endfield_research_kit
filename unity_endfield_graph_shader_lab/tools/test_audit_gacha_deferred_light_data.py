@@ -207,6 +207,34 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_shadow_render_type_native(bytes(body))
 
+    def test_native_renderer_config_shadow_flag_projection(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_RENDERER_CONFIG_FILE_OFFSET)
+            body = stream.read(AUDIT.GET_RENDERER_CONFIG_SIZE)
+        result = AUDIT.validate_renderer_config_native(body)
+        self.assertEqual(result["patchMethodId"], "0x887")
+        self.assertEqual(result["nativeDefault"]["baseFlags"], "0x4800")
+        self.assertEqual(
+            result["nativeDefault"]["formula"],
+            "0x4800 | (castStaticObjects ? 0x1000 : 0) | (castDynamicObjects ? 0x2000 : 0)",
+        )
+        self.assertTrue(result["nativeDefaultFlagsClosed"])
+        self.assertEqual(
+            result["runtimePatchedPath"]["wrapper"],
+            f"0x{AUDIT.ILFIX_DYNAMIC_METHOD_WRAPPER_875_VA:X}",
+        )
+
+    def test_changed_renderer_config_formula_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_RENDERER_CONFIG_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.GET_RENDERER_CONFIG_SIZE))
+        body[0x62] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=renderer_config_body_sha256; source=.*GameAssembly.dll; ",
+        ):
+            AUDIT.validate_renderer_config_native(bytes(body))
+
     def test_changed_point_shadow_cache_index_unmatched_return_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PUNCTUAL_SHADOW_CACHE_INDEX_FILE_OFFSET)
