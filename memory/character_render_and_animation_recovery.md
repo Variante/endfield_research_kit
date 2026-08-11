@@ -134,6 +134,12 @@ NPC archetypes are imported as labeled source kits.
   original `VisibleLight` row index through the priority/distance sort, and
   passes the sorted `Int32` index array to punctual shadow preparation. This
   closes index transport, not the missing target-frame row values.
+  The generated `gacha_light_survivor_transport.json` and default-off
+  `EndfieldRecoveredGachaLightSurvivorTransport` now carry the selected
+  3840x2160 authored identity/order (six `light_overview` plus eleven room
+  rows) into a reusable runtime diagnostic boundary. The transport is gated to
+  the canonical perspective 16:9 sample, publishes no shader buffer, and
+  explicitly keeps the retail `LightCullResult` pointer/count/rows capture-only.
   The same maintained audit now closes
   `AddCullViewByMatrix` from its 16-argument binding through six-plane
   construction and the scheduled view record. The managed screen-size minimum

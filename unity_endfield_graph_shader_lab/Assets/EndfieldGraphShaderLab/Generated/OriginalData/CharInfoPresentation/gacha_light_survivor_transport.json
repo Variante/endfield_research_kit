@@ -1,0 +1,859 @@
+{
+  "schema": "endfield.gacha-light-survivor-transport.v1",
+  "status": "known_authored_selected_aspect_survivor_transport",
+  "selection": {
+    "displayAspect": "3840/2160",
+    "displayAspectFloat": 1.7777777777777777,
+    "admission": "AtOrAboveSpot18Threshold",
+    "knownAuthoredCount": 17,
+    "knownAuthoredCharacterCount": 6,
+    "knownAuthoredRoomCount": 11,
+    "setupStateRelativeOrder": [
+      "SpecLight_1 (8)",
+      "RimLight_2 (5)",
+      "SpecLight_1 (11)",
+      "Point Light_overview (2)",
+      "RimLight_2 (4)",
+      "FogLight_1 (2)",
+      "Spot Light (12)",
+      "Spot Light (19)",
+      "Linear Light (12)",
+      "Linear Light (13)",
+      "Linear Light (14)",
+      "Spot Light (17)",
+      "Linear Light (15)",
+      "Spot Light (18)",
+      "Spot Light (9)",
+      "Spot Light (11)",
+      "Spot Light (10)"
+    ],
+    "records": [
+      {
+        "name": "SpecLight_1 (8)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 2.6869993209838867,
+          "bits": "0x402BF7CC"
+        },
+        "targetFrameValue": "capture-only"
+      },
+      {
+        "name": "RimLight_2 (5)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 2.769850730895996,
+          "bits": "0x4031453C"
+        },
+        "targetFrameValue": "capture-only"
+      },
+      {
+        "name": "SpecLight_1 (11)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 2.822427272796631,
+          "bits": "0x4034A2A6"
+        },
+        "targetFrameValue": "capture-only"
+      },
+      {
+        "name": "Point Light_overview (2)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 3.042111873626709,
+          "bits": "0x4042B1F6"
+        },
+        "targetFrameValue": "capture-only"
+      },
+      {
+        "name": "RimLight_2 (4)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 6.110769271850586,
+          "bits": "0x40C38B6C"
+        },
+        "targetFrameValue": "capture-only"
+      },
+      {
+        "name": "FogLight_1 (2)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 9.23973560333252,
+          "bits": "0x4113D5F5"
+        },
+        "targetFrameValue": "capture-only"
+      },
+      {
+        "name": "Spot Light (12)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 73.17103576660156,
+          "bits": "0x42925792"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": 3145527971969281504,
+        "candidate": {
+          "lightPathId": 3145527971969281504,
+          "worldPosition": {
+            "values": [
+              -2.049999952316284,
+              6.436999797821045,
+              -4.729998588562012
+            ],
+            "bits": [
+              "0xC0033333",
+              "0x40CDFBE7",
+              "0xC0975C26"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.0,
+              -1.0000001192092896,
+              -1.1920928955078125e-07
+            ],
+            "bits": [
+              "0x00000000",
+              "0xBF800001",
+              "0xB4000000"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              -5.960464477539063e-08,
+              -0.9999998807907104
+            ],
+            "bits": [
+              "0xB3800000",
+              "0xBF7FFFFE"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x42C80000",
+            "0x427432C1",
+            "0x41ACB03D"
+          ],
+          "record0WBits": "0x00000000",
+          "record1WBits": "0x3DCCCCCD",
+          "record2ZBits": "0x3EAF1D40",
+          "record2WBits": "0x402F4D02",
+          "record2WStatus": "closed",
+          "obbPackedTransformWords": [
+            "0x800030E8",
+            "0xAF310000",
+            "0x3E788000",
+            "0x49348000",
+            "0x80000000",
+            "0xAA842DD7"
+          ]
+        }
+      },
+      {
+        "name": "Spot Light (19)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 88.91108703613281,
+          "bits": "0x42B1D27A"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": 6723905289426087392,
+        "candidate": {
+          "lightPathId": 6723905289426087392,
+          "worldPosition": {
+            "values": [
+              -1.9186508655548096,
+              3.2049999237060547,
+              -7.273771286010742
+            ],
+            "bits": [
+              "0xBFF5965A",
+              "0x404D1EB8",
+              "0xC0E8C2BC"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.0,
+              -1.0000003576278687,
+              -3.5762786865234375e-07
+            ],
+            "bits": [
+              "0x00000000",
+              "0xBF800003",
+              "0xB4C00000"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              -1.7881393432617188e-07,
+              -0.9999996423721313
+            ],
+            "bits": [
+              "0xB4400000",
+              "0xBF7FFFFA"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x40800000",
+            "0x400B53AD",
+            "0x3F080EA2"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3E115050",
+          "record2ZBits": "0xBF800000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x8000342F",
+            "0x2AD40000",
+            "0x3C9E8000",
+            "0xBF5E8000",
+            "0x80000000",
+            "0x3D263763"
+          ]
+        }
+      },
+      {
+        "name": "Linear Light (12)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 113.54882049560547,
+          "bits": "0x42E318FF"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": -7516039918534742560,
+        "candidate": {
+          "lightPathId": -7516039918534742560,
+          "worldPosition": {
+            "values": [
+              4.2175092697143555,
+              4.130000114440918,
+              -7.601020812988281
+            ],
+            "bits": [
+              "0x4086F5D6",
+              "0x408428F6",
+              "0xC0F33B90"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.029921624809503555,
+              0.0,
+              0.9995522499084473
+            ],
+            "bits": [
+              "0x3CF51E32",
+              "0x00000000",
+              "0x3F7FE2A8"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              0.4854675233364105,
+              0.029064966365695
+            ],
+            "bits": [
+              "0x3EF88F33",
+              "0x3CEE19A7"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x42700000",
+            "0x42029E72",
+            "0x40FF1B70"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3DCCCCCD",
+          "record2ZBits": "0x41900000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x80003B34",
+            "0xBB90A6C5",
+            "0x365B8000",
+            "0x3ACA8000",
+            "0x80001A03",
+            "0xADCE2E66"
+          ]
+        }
+      },
+      {
+        "name": "Linear Light (13)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 138.00184631347656,
+          "bits": "0x430A0079"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": -6003850056218071584,
+        "candidate": {
+          "lightPathId": -6003850056218071584,
+          "worldPosition": {
+            "values": [
+              -7.169689178466797,
+              4.130000114440918,
+              -7.100000381469727
+            ],
+            "bits": [
+              "0xC0E56E18",
+              "0x408428F6",
+              "0xC0E33334"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.029921624809503555,
+              0.0,
+              0.9995522499084473
+            ],
+            "bits": [
+              "0x3CF51E32",
+              "0x00000000",
+              "0x3F7FE2A8"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              0.4854675233364105,
+              0.029064966365695
+            ],
+            "bits": [
+              "0x3EF88F33",
+              "0x3CEE19A7"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x42700000",
+            "0x42029E72",
+            "0x40FF1B70"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3DCCCCCD",
+          "record2ZBits": "0x41900000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x80003B34",
+            "0x3BF3A6C5",
+            "0x365B8000",
+            "0x3AC48000",
+            "0x80001A03",
+            "0xADA42E66"
+          ]
+        }
+      },
+      {
+        "name": "Linear Light (14)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 152.18710327148438,
+          "bits": "0x43182FE6"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": -4966856337038791200,
+        "candidate": {
+          "lightPathId": -4966856337038791200,
+          "worldPosition": {
+            "values": [
+              1.6099998950958252,
+              9.89799976348877,
+              -6.8899993896484375
+            ],
+            "bits": [
+              "0x3FCE147A",
+              "0x411E5E35",
+              "0xC0DC7AE0"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.029921624809503555,
+              0.0,
+              0.9995522499084473
+            ],
+            "bits": [
+              "0x3CF51E32",
+              "0x00000000",
+              "0x3F7FE2A8"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              0.4854675233364105,
+              0.029064966365695
+            ],
+            "bits": [
+              "0x3EF88F33",
+              "0x3CEE19A7"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x42C80000",
+            "0x4259B2BE",
+            "0x415496DD"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3D924925",
+          "record2ZBits": "0x41900000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x80003B34",
+            "0xC17AA6C5",
+            "0x353A8000",
+            "0x3AFC8000",
+            "0x80001A03",
+            "0xAE542E66"
+          ]
+        }
+      },
+      {
+        "name": "Spot Light (17)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 159.4006805419922,
+          "bits": "0x431F6693"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": 4336752956264328672,
+        "candidate": {
+          "lightPathId": 4336752956264328672,
+          "worldPosition": {
+            "values": [
+              1.809999704360962,
+              3.4700000286102295,
+              -10.547000885009766
+            ],
+            "bits": [
+              "0x3FE7AE12",
+              "0x405E147B",
+              "0xC128C084"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.0,
+              -1.0000003576278687,
+              -3.5762786865234375e-07
+            ],
+            "bits": [
+              "0x00000000",
+              "0xBF800003",
+              "0xB4C00000"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              -1.7881393432617188e-07,
+              -0.9999996423721313
+            ],
+            "bits": [
+              "0xB4400000",
+              "0xBF7FFFFA"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x40800000",
+            "0x401C4971",
+            "0x3F5D0A8B"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3E4CCCCD",
+          "record2ZBits": "0xBF800000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x8000373B",
+            "0x38D30000",
+            "0x3C9E8000",
+            "0xBE248000",
+            "0x80000000",
+            "0x326D3569"
+          ]
+        }
+      },
+      {
+        "name": "Linear Light (15)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 179.1670684814453,
+          "bits": "0x43332AC5"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": -2247457476464562720,
+        "candidate": {
+          "lightPathId": -2247457476464562720,
+          "worldPosition": {
+            "values": [
+              -5.949999809265137,
+              9.779999732971191,
+              -6.669000625610352
+            ],
+            "bits": [
+              "0xC0BE6666",
+              "0x411C7AE1",
+              "0xC0D56874"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.029921624809503555,
+              0.0,
+              0.9995522499084473
+            ],
+            "bits": [
+              "0x3CF51E32",
+              "0x00000000",
+              "0x3F7FE2A8"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              0.4854675233364105,
+              0.029064966365695
+            ],
+            "bits": [
+              "0x3EF88F33",
+              "0x3CEE19A7"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x42C80000",
+            "0x4259B2BE",
+            "0x415496DD"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3D924925",
+          "record2ZBits": "0x41900000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x80003B34",
+            "0x3FB6A6C5",
+            "0x35E08000",
+            "0x3ADC8000",
+            "0x80001A03",
+            "0xAD2C2E66"
+          ]
+        }
+      },
+      {
+        "name": "Spot Light (18)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 195.24844360351562,
+          "bits": "0x43433F9A"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": 1177420952804240864,
+        "candidate": {
+          "lightPathId": 1177420952804240864,
+          "worldPosition": {
+            "values": [
+              -5.489999771118164,
+              3.5,
+              -10.90300178527832
+            ],
+            "bits": [
+              "0xC0AFAE14",
+              "0x40600000",
+              "0xC12E72B2"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.0,
+              -1.0000003576278687,
+              -3.5762786865234375e-07
+            ],
+            "bits": [
+              "0x00000000",
+              "0xBF800003",
+              "0xB4C00000"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              -1.7881393432617188e-07,
+              -0.9999996423721313
+            ],
+            "bits": [
+              "0xB4400000",
+              "0xBF7FFFFA"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x40800000",
+            "0x401C4971",
+            "0x3F5D0A8B"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3E4CCCCD",
+          "record2ZBits": "0xBF800000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x8000375F",
+            "0xB8710000",
+            "0x3C9E8000",
+            "0xBE018000",
+            "0x80000000",
+            "0x2D263569"
+          ]
+        }
+      },
+      {
+        "name": "Spot Light (9)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 200.93649291992188,
+          "bits": "0x4348EFBE"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": 7037844248082165216,
+        "candidate": {
+          "lightPathId": 7037844248082165216,
+          "worldPosition": {
+            "values": [
+              -1.8700001239776611,
+              4.550000190734863,
+              -11.909000396728516
+            ],
+            "bits": [
+              "0xBFEF5C2A",
+              "0x4091999A",
+              "0xC13E8B44"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.0,
+              -1.0000003576278687,
+              -3.5762786865234375e-07
+            ],
+            "bits": [
+              "0x00000000",
+              "0xBF800003",
+              "0xB4C00000"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              -1.7881393432617188e-07,
+              -0.9999996423721313
+            ],
+            "bits": [
+              "0xB4400000",
+              "0xBF7FFFFA"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x42700000",
+            "0x4201F93A",
+            "0x408C9E6B"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3E13CEC6",
+          "record2ZBits": "0xBF800000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x800030B5",
+            "0x2CA60000",
+            "0x346B8000",
+            "0x370B8000",
+            "0x80000000",
+            "0xB0E332D2"
+          ]
+        }
+      },
+      {
+        "name": "Spot Light (11)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 321.4896240234375,
+          "bits": "0x43A0BEAC"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": 7142192322960010720,
+        "candidate": {
+          "lightPathId": 7142192322960010720,
+          "worldPosition": {
+            "values": [
+              -1.897611379623413,
+              4.984000205993652,
+              -15.685001373291016
+            ],
+            "bits": [
+              "0xBFF2E4EE",
+              "0x409F7CEE",
+              "0xC17AF5C4"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.0,
+              -1.0000001192092896,
+              -1.1920928955078125e-07
+            ],
+            "bits": [
+              "0x00000000",
+              "0xBF800001",
+              "0xB4000000"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              -5.960464477539063e-08,
+              -0.9999998807907104
+            ],
+            "bits": [
+              "0xB3800000",
+              "0xBF7FFFFE"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x41F00000",
+            "0x414DC57F",
+            "0x3F7E3E9C"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3D4CCCCD",
+          "record2ZBits": "0xBF800000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x80003009",
+            "0x2F8E0000",
+            "0x37978000",
+            "0x3D238000",
+            "0x80000000",
+            "0x360D31BA"
+          ]
+        }
+      },
+      {
+        "name": "Spot Light (10)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 414.9300231933594,
+          "bits": "0x43CF770B"
+        },
+        "targetFrameValue": "capture-only",
+        "lightPathId": 7763697698425908704,
+        "candidate": {
+          "lightPathId": 7763697698425908704,
+          "worldPosition": {
+            "values": [
+              -1.897611379623413,
+              11.729999542236328,
+              -15.610000610351562
+            ],
+            "bits": [
+              "0xBFF2E4EE",
+              "0x413BAE14",
+              "0xC179C290"
+            ]
+          },
+          "worldForward": {
+            "values": [
+              0.0,
+              -1.0000001192092896,
+              -1.1920928955078125e-07
+            ],
+            "bits": [
+              "0x00000000",
+              "0xBF800001",
+              "0xB4000000"
+            ]
+          },
+          "record2XYCandidate": {
+            "values": [
+              -5.960464477539063e-08,
+              -0.9999998807907104
+            ],
+            "bits": [
+              "0xB3800000",
+              "0xBF7FFFFE"
+            ]
+          }
+        },
+        "staticRecordTerms": {
+          "record0RgbBits": [
+            "0x430C0000",
+            "0x42AAF054",
+            "0x41F1C388"
+          ],
+          "record0WBits": "0x3F800000",
+          "record1WBits": "0x3D888889",
+          "record2ZBits": "0xBF800000",
+          "record2WBits": null,
+          "record2WStatus": "capture-only",
+          "obbPackedTransformWords": [
+            "0x80002E33",
+            "0x2DCE0000",
+            "0x351A8000",
+            "0x3D648000",
+            "0x80000000",
+            "0x3A3D31A3"
+          ]
+        }
+      }
+    ]
+  },
+  "sourceEvidence": {
+    "populationReport": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/gacha_light_population_recovery.json",
+    "populationReportSha256": "0441ec4817e23a69c1162643d05ae0c2c9abd1acdd02cc76d7646f0363b5ecc8",
+    "deferredReport": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/gacha_deferred_light_data_recovery.json",
+    "deferredReportSha256": "94fef18cfba11fefc9ec30e2494b6a159716449587b6c46c6780fc1a19a27a3e",
+    "nativeOrder": "CullLights output distance order; SetupState priority descending then camera distance ascending",
+    "knownAuthoredScope": "six light_overview rows plus eleven SceneLight6Rarity rows"
+  },
+  "boundary": {
+    "targetFrameCaptureRequired": true,
+    "targetFramePointerAndCount": "open",
+    "runtimeCustomCarryIn": "open",
+    "wholeListOrderAfterNativeCull": "open outside this selected authored scope",
+    "pointShadowCacheIndices": "capture-only",
+    "nonEmptyCookies": "not present in this authored selected scope",
+    "productionPublication": "disabled; this contract does not publish a shader buffer",
+    "decision": "transport authored identity/order only; fail closed until a retail LightCullResult capture supplies target-frame rows"
+  }
+}
