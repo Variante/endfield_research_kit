@@ -1931,6 +1931,144 @@ def validate_record_writes(body: bytes) -> dict[str, Any]:
     return result
 
 
+def validate_record7_native(body: bytes) -> dict[str, Any]:
+    """Pin the native producer of the common b31 record7 float4.
+
+    ``PrepareCPUData`` has separate Spot and Point/linear-extension branches,
+    but both branches project the same four source values into the final
+    common record7 store.  Keep the post-call stores separate in the audit so
+    a changed stack lane cannot silently turn a source-backed formula into a
+    positional guess.
+    """
+
+    calls = {
+        "spot": {
+            "cullingBoxFalloffThreshold": 0x15AE,
+            "softSourceRadius": 0x15BF,
+            "specularIntensity": 0x15D0,
+        },
+        "pointOrLinear": {
+            "cullingBoxFalloffThreshold": 0x1046,
+            "softSourceRadius": 0x105A,
+            "specularIntensity": 0x106E,
+        },
+    }
+    for branch, branch_calls in calls.items():
+        for source_name, offset in branch_calls.items():
+            expected_target, _ = NATIVE_CALLS[offset]
+            require(
+                f"record7_{branch}_{source_name}_call_target",
+                call_target(body, offset),
+                expected_target,
+                GAME_ASSEMBLY,
+            )
+
+    # Each post-call sequence stores xmm0 in the exact stack lane used by the
+    # final record7 vector, then reloads the scratch argument carrier for the
+    # next native getter.  The call displacement itself is checked above so
+    # these slices remain readable and diagnose lane drift precisely.
+    require(
+        "record7_pointOrLinear_cullingBoxFalloffThreshold_projection",
+        body[0x104B:0x105A],
+        bytes.fromhex("33d2f30f1185f0000000488d4c2460"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "record7_pointOrLinear_softSourceRadius_projection",
+        body[0x105F:0x106E],
+        bytes.fromhex("33d2f30f1185f4000000488d4c2460"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "record7_pointOrLinear_specularIntensity_projection",
+        body[0x1073:0x1092],
+        bytes.fromhex(
+            "f30f1185f8000000660f6e45bc0f5bc0"
+            "f30f1185fc0000000f1085f0000000"
+        ),
+        GAME_ASSEMBLY,
+    )
+
+    require(
+        "record7_spot_cullingBoxFalloffThreshold_projection",
+        body[0x15B3:0x15BF],
+        bytes.fromhex("33d2f30f1145f0488d4c2460"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "record7_spot_softSourceRadius_projection",
+        body[0x15C4:0x15D0],
+        bytes.fromhex("33d2f30f1145f4488d4c2460"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "record7_spot_specularIntensity_projection",
+        body[0x15D5:0x15EB],
+        bytes.fromhex(
+            "f30f1145f8660f6e45bc0f5bc0"
+            "f30f1145fc0f1045f0"
+        ),
+        GAME_ASSEMBLY,
+    )
+
+    # Both branches converge on the existing absolute record7 address and
+    # vector store.  Re-check it here with a record7-specific diagnostic.
+    require(
+        "record7_common_address",
+        body[COMMON_RECORD_WRITE[0] : COMMON_RECORD_WRITE[0] + 4],
+        bytes((0x48, 0x83, 0xC1, COMMON_RECORD_WRITE[2])),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "record7_common_store",
+        body[0x15FF:0x1604],
+        bytes.fromhex("f30f7f04c8"),
+        GAME_ASSEMBLY,
+    )
+
+    return {
+        "record": 7,
+        "destination": "_LightDataBuffer record7 float4",
+        "lanes": {
+            "x": {
+                "source": "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected",
+                "consumerFormula": "record7.x * 0.5f",
+            },
+            "y": {
+                "source": "HGSharedLightData.get_softSourceRadius_Injected",
+                "consumerFormula": "record7.y * _1397",
+            },
+            "z": {
+                "source": "HGSharedLightData.get_specularIntensity_Injected",
+                "consumerFormula": "record7.z",
+            },
+            "w": {
+                "source": "precomputed cookie-slot integer carrier at stack offset -0x44",
+                "conversion": "float32(int carrier)",
+                "consumerFormula": "int(record7.w)",
+            },
+        },
+        "branchStackLanes": {
+            "Spot": {
+                "threshold": "rbp-0x10",
+                "softRadius": "rbp-0x0C",
+                "specular": "rbp-0x08",
+                "cookieSlot": "rbp-0x04",
+            },
+            "PointOrLinearExtension": {
+                "threshold": "rbp+0x0F0",
+                "softRadius": "rbp+0x0F4",
+                "specular": "rbp+0x0F8",
+                "cookieSlot": "rbp+0x0FC",
+            },
+        },
+        "spotProjectionClosed": True,
+        "pointOrLinearProjectionClosed": True,
+        "commonRecord7StoreClosed": True,
+        "nativeProjectionClosed": True,
+    }
+
+
 def validate_record0_discriminator_native(body: bytes) -> dict[str, Any]:
     spot = bytes.fromhex(
         "e8360f6b010fb6c003c00fafde660f6ec0498b85c80000000f5bc04863cb"
@@ -3102,6 +3240,7 @@ def validate_native_body(body: bytes) -> dict[str, Any]:
         "sizeBytes": PREPARE_CPU_DATA_SIZE,
         "bodySha256": body_hash,
         "recordWrites": validate_record_writes(body),
+        "record7Producer": validate_record7_native(body),
         "record0Discriminator": validate_record0_discriminator_native(body),
         "obbFlags": validate_obb_flags_native(body),
         "pointShadowFacePack": validate_point_shadow_face_pack_native(body),
@@ -4757,6 +4896,7 @@ def build_audit() -> dict[str, Any]:
                 "exact UnityPlayer-derived record0.xyz IEEE-754 candidates for all eleven rows: linearized serialized RGB times intensity, with falloff and flickerScale both 1",
                 "the native record0.w discriminator formula float(lightKind + 2*shadowOnly), yielding exact 0.0 for the one Spot row and 1.0 for all ten Point/linear-extension rows",
                 "VisibleLight.get_range reads field +0x68 and PrepareCPUData divides exact 1.0f by it, closing record1.w for all eleven rows",
+                "the native record7 Spot and Point/linear stack-lane projections: cullingBoxFalloffThreshold -> x, softSourceRadius -> y, specularIntensity -> z, and the precomputed cookie-slot integer carrier -> w, followed by the common record7 vector store",
                 "the pinned original scalar-cosine body and exact half-angle scaling close record2.z and record2.w for the one Spot row",
                 "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
                 "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x",
@@ -4783,7 +4923,7 @@ def build_audit() -> dict[str, Any]:
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the record5.w OBB/override projection, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish "
+                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the record5.w OBB/override projection, the record7 source-to-lane projection, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
                 "bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
             ),
@@ -4804,6 +4944,7 @@ def main() -> int:
     print(
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
+        "record7 source-to-lane projection, "
         "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
         "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the managed Euler resolver plus UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse half candidates closed."
     )

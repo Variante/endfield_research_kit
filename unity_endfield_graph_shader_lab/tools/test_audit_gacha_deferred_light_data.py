@@ -80,6 +80,54 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual([row["record"] for row in result["spot"]], list(range(7)))
         self.assertEqual(result["common"][0]["record"], 7)
 
+    def test_native_record7_lane_projection(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = stream.read(AUDIT.PREPARE_CPU_DATA_SIZE)
+        result = AUDIT.validate_record7_native(body)
+        self.assertEqual(
+            result["lanes"]["x"]["source"],
+            "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected",
+        )
+        self.assertEqual(
+            result["lanes"]["y"]["source"],
+            "HGSharedLightData.get_softSourceRadius_Injected",
+        )
+        self.assertEqual(
+            result["lanes"]["z"]["source"],
+            "HGSharedLightData.get_specularIntensity_Injected",
+        )
+        self.assertEqual(result["branchStackLanes"]["Spot"]["threshold"], "rbp-0x10")
+        self.assertEqual(
+            result["branchStackLanes"]["PointOrLinearExtension"]["cookieSlot"],
+            "rbp+0x0FC",
+        )
+        self.assertTrue(result["nativeProjectionClosed"])
+
+    def test_changed_record7_spot_projection_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+        body[0x15B8] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=record7_spot_cullingBoxFalloffThreshold_projection; "
+            r"source=.*GameAssembly.dll; expected=.*actual=",
+        ):
+            AUDIT.validate_record7_native(bytes(body))
+
+    def test_changed_record7_point_projection_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+        body[0x1087] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=record7_pointOrLinear_specularIntensity_projection; "
+            r"source=.*GameAssembly.dll; expected=.*actual=",
+        ):
+            AUDIT.validate_record7_native(bytes(body))
+
     def test_native_record0_discriminator_formula(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
