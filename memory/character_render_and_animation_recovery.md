@@ -528,7 +528,9 @@ NPC archetypes are imported as labeled source kits.
   32 signature targets. `tools/refresh_installed_ifix_patch_state.py` now
   regenerates the ignored report and extracted payload from the live local
   block; `verify_installed_ifix_patch_state.py` passes against that refreshed
-  evidence. The target list adds `FacQuality.Apply`,
+  evidence, and the LightCull cap audit now validates the report's pinned
+  GameAssembly/patch consistency instead of a stale whole-report SHA-256. The
+  target list adds `FacQuality.Apply`,
   `NpcSpaceShipController.OnPauseStart`, and `CharacterPhotoSystem.OnExitSystem`,
   while dropping `BlightMiasmaBrain.Release`; none is a searched
   render/Character-Info owner. The live IFix slot value and patched output
