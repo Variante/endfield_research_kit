@@ -1965,6 +1965,40 @@ def validate_record0_discriminator_native(body: bytes) -> dict[str, Any]:
     }
 
 
+def validate_obb_flags_native(body: bytes) -> dict[str, Any]:
+    """Pin PrepareCPUData's record5.w OBB/override flag projection.
+
+    The native producer reads enableOBBCullingBox and
+    enableOverrideShadowLight, shifts the latter by one bit, ORs the two
+    values, and stores the resulting integer as the record5.w float lane.
+    """
+
+    sequence = bytes.fromhex(
+        "e8230b6b010fb6d833d2488d4c2460e8500b6b01440fb6f8"
+        "488d4c24604503ff33d2440bfb44897db4"
+    )
+    require(
+        "obb_flags_projection_sequence",
+        body[0x0A68 : 0x0A68 + len(sequence)],
+        sequence,
+        GAME_ASSEMBLY,
+    )
+    return {
+        "formula": "uint(enableOBBCullingBox) | (uint(enableOverrideShadowLight) << 1)",
+        "enableObbCallOffset": "0x0A68",
+        "enableOverrideCallOffset": "0x0A77",
+        "destination": "record5.w",
+        "record5FlagsStorageOffset": "0x15C",
+        "selectedAuthoredRoomValue": {
+            "enableOBBCullingBox": True,
+            "enableOverrideShadowLight": False,
+            "record5WInteger": 1,
+            "record5WBits": "0x3F800000",
+        },
+        "nativeProjectionClosed": True,
+    }
+
+
 def validate_point_shadow_face_pack_native(body: bytes) -> dict[str, Any]:
     """Pin the native Point/linear record2.w face-index packing contract.
 
@@ -3069,6 +3103,7 @@ def validate_native_body(body: bytes) -> dict[str, Any]:
         "bodySha256": body_hash,
         "recordWrites": validate_record_writes(body),
         "record0Discriminator": validate_record0_discriminator_native(body),
+        "obbFlags": validate_obb_flags_native(body),
         "pointShadowFacePack": validate_point_shadow_face_pack_native(body),
         "pointRecordTransform": validate_point_record_transform_native(body),
         "resolvedCalls": calls,
@@ -4715,6 +4750,7 @@ def build_audit() -> dict[str, Any]:
                 "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
                 "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; the managed Euler degree-to-radian and native half-angle input arithmetic is source-closed",
                 "six-word native-inverse OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
+                "PrepareCPUData record5.w OBB/override projection is source-closed as uint(enableOBBCullingBox) | (uint(enableOverrideShadowLight) << 1); the selected authored room rows therefore use integer 1 / float bits 0x3F800000",
                 "the installed PlayerSettings Linear color space and GraphicsSettings linear-light-intensity/color-temperature flags from pinned globalgamemanagers objects",
                 "the UnityPlayer finalColor producer, Color.linear body, light-animation disable path, and flickerScale inactive fallback of exactly 1.0",
                 "all eleven rows disable per-light color temperature, culling-distance/far-show falloff, animation, multistate, and flicker; their state tables and flicker references are empty",
@@ -4747,7 +4783,7 @@ def build_audit() -> dict[str, Any]:
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish "
+                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the record5.w OBB/override projection, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
                 "bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
             ),

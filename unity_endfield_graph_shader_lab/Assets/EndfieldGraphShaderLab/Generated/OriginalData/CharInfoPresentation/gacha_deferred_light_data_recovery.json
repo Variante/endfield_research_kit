@@ -156,6 +156,20 @@
       "pointSequenceOffset": "0x1347",
       "destination": "record0.w"
     },
+    "obbFlags": {
+      "formula": "uint(enableOBBCullingBox) | (uint(enableOverrideShadowLight) << 1)",
+      "enableObbCallOffset": "0x0A68",
+      "enableOverrideCallOffset": "0x0A77",
+      "destination": "record5.w",
+      "record5FlagsStorageOffset": "0x15C",
+      "selectedAuthoredRoomValue": {
+        "enableOBBCullingBox": true,
+        "enableOverrideShadowLight": false,
+        "record5WInteger": 1,
+        "record5WBits": "0x3F800000"
+      },
+      "nativeProjectionClosed": true
+    },
     "pointShadowFacePack": {
       "faceOrder": [
         0,
@@ -6587,6 +6601,7 @@
       "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
       "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; the managed Euler degree-to-radian and native half-angle input arithmetic is source-closed",
       "six-word native-inverse OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
+      "PrepareCPUData record5.w OBB/override projection is source-closed as uint(enableOBBCullingBox) | (uint(enableOverrideShadowLight) << 1); the selected authored room rows therefore use integer 1 / float bits 0x3F800000",
       "the installed PlayerSettings Linear color space and GraphicsSettings linear-light-intensity/color-temperature flags from pinned globalgamemanagers objects",
       "the UnityPlayer finalColor producer, Color.linear body, light-animation disable path, and flickerScale inactive fallback of exactly 1.0",
       "all eleven rows disable per-light color temperature, culling-distance/far-show falloff, animation, multistate, and flicker; their state tables and flicker references are empty",
@@ -6617,6 +6632,6 @@
       "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, the record5.w OBB/override projection, the managed Euler resolver/slot chain, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
   }
 }

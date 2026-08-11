@@ -91,6 +91,32 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             result["encodedValues"]["PointOrLinearExtension"]["normal"], 1.0
         )
 
+    def test_native_obb_flags_projection(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = stream.read(AUDIT.PREPARE_CPU_DATA_SIZE)
+        result = AUDIT.validate_obb_flags_native(body)
+        self.assertEqual(
+            result["formula"],
+            "uint(enableOBBCullingBox) | (uint(enableOverrideShadowLight) << 1)",
+        )
+        self.assertEqual(
+            result["selectedAuthoredRoomValue"]["record5WBits"], "0x3F800000"
+        )
+        self.assertTrue(result["nativeProjectionClosed"])
+
+    def test_changed_obb_flags_projection_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+        body[0x0A88] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=obb_flags_projection_sequence; source=.*GameAssembly.dll; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_obb_flags_native(bytes(body))
+
     def test_native_point_shadow_face_pack_contract(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)

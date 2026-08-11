@@ -147,6 +147,11 @@ NPC archetypes are imported as labeled source kits.
   incomplete selected-room captures; it leaves `PrepareCPUData` record3..7
   and b31 publication explicitly blocked until their native payload is also
   captured.
+  The deferred native audit now also closes `PrepareCPUData` record5.w as
+  `uint(enableOBBCullingBox) | (uint(enableOverrideShadowLight) << 1)`;
+  the selected authored room rows therefore use integer 1 (`0x3F800000` as
+  float bits), while target-frame row values and live shadow-cache indices
+  remain capture-only.
   The same maintained audit now closes
   `AddCullViewByMatrix` from its 16-argument binding through six-plane
   construction and the scheduled view record. The managed screen-size minimum
