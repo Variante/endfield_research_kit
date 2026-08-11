@@ -1907,12 +1907,17 @@ boundary separately with:
 
 ```bat
 python tools\verify_current_character_npr_skin_export.py
+python tools\verify_current_screen_shadow_binding_boundary.py
 ```
 
 This current-export audit requires the targeted `CharacterNPR_Skin` shader
 export under `scratch/animestudio/body_skin_sidecar_refresh/`. It validates
 the current shader/material identities and ForwardLit keyword census without
 reusing the older no-screen sidecars or claiming retail frame parity.
+The screen-shadow binding audit is independent of that scratch export: it
+records that the current binary Skin consumer reads retail `_ScreenSpaceShadowMask`
+R/G, while the lab producer remains content-invalid and Skin stays on the
+diagnostic branch until canonical publication is recovered.
 
 In the corrected 3840x2160 controlled A/B, the only change is the exact body
 selector. On pixels changing by more than 1/255, reference MAE moves
