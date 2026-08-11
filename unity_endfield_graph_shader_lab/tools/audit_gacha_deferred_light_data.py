@@ -255,6 +255,17 @@ QUATERNION_EULER_NATIVE_SIZE = 0x88B
 QUATERNION_EULER_NATIVE_BODY_SHA256 = (
     "ef6c901cf98d6c2658be06abe98eb7747837b6794fb94063c3d2a1f9804b3130"
 )
+QUATERNION_EULER_NATIVE_ORDER = 4
+QUATERNION_EULER_ORDER_IMMEDIATE_OFFSET = 0x09
+QUATERNION_EULER_ORDER_TABLE_FILE_OFFSET = 0x56741C
+QUATERNION_EULER_ORDER_TABLE_CASES = (
+    (0, 0x180567C6E),
+    (1, 0x180567938),
+    (2, 0x1805677D6),
+    (3, 0x180567B0C),
+    (4, 0x1805679B5),
+    (5, 0x18056767F),
+)
 QUATERNION_EULER_HALF_ANGLE_FILE_OFFSET = 0x1CF0EDC
 QUATERNION_EULER_HALF_ANGLE_BITS = 0x3F000000
 QUATERNION_EULER_SIN_VA = 0x181C634F0
@@ -1531,8 +1542,9 @@ def validate_quaternion_euler_native(
     The managed wrapper's dynamic call target is intentionally not resolved:
     IFix may replace the ``Internal_FromEulerRad_Injected`` slot at runtime.
     The static wrapper, exact float32 scale helper, UnityPlayer icall binding,
-    native half-angle constant, and six sin/cos call sites are all validated so
-    a future runtime capture can be joined without silently substituting a
+    native half-angle constant, six sin/cos call sites, and the wrapper's
+    explicit native order parameter/jump-table case are all validated so a
+    future runtime capture can be joined without silently substituting a
     different Euler order.
     """
 
@@ -1644,6 +1656,13 @@ def validate_quaternion_euler_native(
         QUATERNION_EULER_NATIVE_VA,
         UNITY_PLAYER,
     )
+    require(
+        "quaternion_euler_wrapper_native_order_immediate",
+        wrapper[QUATERNION_EULER_ORDER_IMMEDIATE_OFFSET :
+                QUATERNION_EULER_ORDER_IMMEDIATE_OFFSET + 6],
+        bytes.fromhex("41B804000000"),
+        UNITY_PLAYER,
+    )
 
     native = unity_player_data[
         QUATERNION_EULER_NATIVE_FILE_OFFSET : QUATERNION_EULER_NATIVE_FILE_OFFSET
@@ -1689,6 +1708,25 @@ def validate_quaternion_euler_native(
         QUATERNION_EULER_HALF_ANGLE_BITS,
         UNITY_PLAYER,
     )
+    order_table = []
+    for order, expected_target in QUATERNION_EULER_ORDER_TABLE_CASES:
+        entry_offset = QUATERNION_EULER_ORDER_TABLE_FILE_OFFSET + order * 4
+        relative_target = struct.unpack_from("<i", unity_player_data, entry_offset)[0]
+        actual_target = 0x180000000 + relative_target
+        require(
+            f"quaternion_euler_order_{order}_case_target",
+            actual_target,
+            expected_target,
+            UNITY_PLAYER,
+        )
+        order_table.append(
+            {
+                "order": order,
+                "relativeTarget": f"0x{relative_target & 0xFFFFFFFF:08X}",
+                "target": f"0x{actual_target:X}",
+                "caseOffset": f"0x{actual_target - QUATERNION_EULER_NATIVE_VA:X}",
+            }
+        )
     return {
         "managedVirtualAddress": f"0x{QUATERNION_EULER_MANAGED_VA:X}",
         "managedFileOffset": f"0x{QUATERNION_EULER_MANAGED_FILE_OFFSET:X}",
@@ -1710,10 +1748,13 @@ def validate_quaternion_euler_native(
         "nativeFileOffset": f"0x{QUATERNION_EULER_NATIVE_FILE_OFFSET:X}",
         "nativeBodySizeBytes": QUATERNION_EULER_NATIVE_SIZE,
         "nativeBodySha256": native_hash,
+        "nativeOrderParameter": QUATERNION_EULER_NATIVE_ORDER,
+        "nativeOrderCaseOffset": f"0x{dict(QUATERNION_EULER_ORDER_TABLE_CASES)[QUATERNION_EULER_NATIVE_ORDER] - QUATERNION_EULER_NATIVE_VA:X}",
+        "nativeOrderJumpTable": order_table,
         "halfAngleConstantBits": f"0x{half_angle_bits:08X}",
         "mathCalls": math_calls,
-        "order": "native body receives radians, multiplies each component by 0.5f, then dispatches sin/cos pairs; enum/order result remains runtime-capture dependent",
-        "runtimeBoundary": "managed wrapper's IFix Internal_FromEulerRad_Injected slot and the runtime Euler order/output selection are not inferred from static bytes",
+        "order": "native body receives radians, multiplies each component by 0.5f, then dispatches sin/cos pairs; the static wrapper passes order 4 into the pinned jump-table case at native offset 0x425",
+        "runtimeBoundary": "managed wrapper's IFix Internal_FromEulerRad_Injected slot may replace this native path; patched runtime output selection and retail capture are not inferred from static bytes",
     }
 
 
@@ -4413,7 +4454,7 @@ def build_audit() -> dict[str, Any]:
     )
     return {
         "schema": "endfield.gacha-deferred-light-data-recovery.v21",
-        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_input_native_sincos_trs_inverse_contract_closed_runtime_ifix_order_open",
+        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_euler_input_native_sincos_order_trs_inverse_contract_closed_runtime_ifix_path_open",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -4545,7 +4586,7 @@ def build_audit() -> dict[str, Any]:
                 "the UnityPlayer icall-table entry 2471 (Matrix4x4::Inverse3DAffine_Injected), its 0x1800A2020 stub, and hash-pinned 0x180569BD0 scalar affine-inverse body",
                 "the UnityPlayer icall-table entry 2470 (Matrix4x4::TRS_Injected), its hash-pinned 0x1800A1BB0 wrapper, 0x18056CB40 scale/translation body, and 0x18056B8A0 quaternion-to-column-major-matrix helper",
                 "the managed Quaternion.Euler wrapper/helper, degree-to-radian constant 0x3C8EFA35, UnityPlayer icall 2489 (Internal_FromEulerRad_Injected), its 0x1800A5010 wrapper, hash-pinned 0x180567590 half-angle body, and all six native sin/cos call targets",
-                "the mapped UnityPlayer 0x1800A5010 wrapper execution for all eleven authored Euler inputs, producing bit-exact installed native quaternion candidates without running DllMain",
+                "the mapped UnityPlayer 0x1800A5010 wrapper execution for all eleven authored Euler inputs, producing bit-exact installed native quaternion candidates without running DllMain; its explicit order-4 immediate and six-entry native jump table are source-pinned",
                 "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
                 "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; the managed Euler degree-to-radian and native half-angle input arithmetic is source-closed",
                 "six-word native-inverse OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
@@ -4574,14 +4615,14 @@ def build_audit() -> dict[str, Any]:
                 "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
                 "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
-                "runtime IFix Euler-order/output selection and retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
+                "the managed IFix Euler path/output selection and retail buffer capture of the packed OBB signed-zero bits; target-frame Point record2.w/record3.x shadow-face cache indices and other shadow/cookie cache indices",
                 "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
                 "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB Euler-input/native-sincos/TRS/inverse arithmetic up to the runtime IFix order/output boundary. Do not publish "
+                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse arithmetic up to the runtime IFix path/output boundary. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
                 "bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
             ),
@@ -4603,7 +4644,7 @@ def main() -> int:
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
         "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
-        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the UnityPlayer OBB Euler-input/native-sincos/TRS/inverse half candidates closed."
+        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the UnityPlayer OBB Euler-input/native-sincos/order/TRS/inverse half candidates closed."
     )
     return 0
 

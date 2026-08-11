@@ -2587,8 +2587,10 @@ half-angle input are source-closed as well; UnityPlayer icall 2489,
 `0x180567590`, and all six native sin/cos call targets are pinned. The audit
 maps the installed UnityPlayer image with `DONT_RESOLVE_DLL_REFERENCES` and
 calls the pinned `0x1800A5010` wrapper, producing bit-exact native quaternion
-outputs for all eleven authored rows. Runtime IFix Euler-order/output
-selection and retail capture remain open. Pinned original `globalgamemanagers`
+outputs for all eleven authored rows. The wrapper's explicit order-4 immediate
+and six-entry native jump table are pinned (selected case offset `0x425`). A
+patched IFix path/output selection and retail capture remain open. Pinned
+original `globalgamemanagers`
 objects set Linear color space and linear light intensity, while all 11 rows
 disable color temperature, distance/far-show falloff, animation, multistate,
 and flicker. Hash-pinned UnityPlayer `finalColor`, `Color.linear`, animation-

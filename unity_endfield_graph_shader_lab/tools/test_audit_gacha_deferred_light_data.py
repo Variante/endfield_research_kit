@@ -649,6 +649,9 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual(result["icallIndex"], 2489)
         self.assertEqual(result["degreesToRadiansBits"], "0x3C8EFA35")
         self.assertEqual(result["halfAngleConstantBits"], "0x3F000000")
+        self.assertEqual(result["nativeOrderParameter"], 4)
+        self.assertEqual(result["nativeOrderCaseOffset"], "0x425")
+        self.assertEqual(len(result["nativeOrderJumpTable"]), 6)
         self.assertEqual(len(result["mathCalls"]), 6)
 
     def test_changed_quaternion_euler_managed_body_fails_closed(self) -> None:
