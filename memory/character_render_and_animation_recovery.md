@@ -94,7 +94,10 @@ NPC archetypes are imported as labeled source kits.
   is squared and stored at view `+0x18`; its installed desktop default is zero.
   Candidate visibility bit 0 is evaluated before the mask-enabled bit and
   `Camera.cullingMask & candidate.layerMask`. `sceneCullingMask` is forwarded
-  but not read by this hash-pinned constructor. The next dispatch boundary is
+  but not read by this hash-pinned constructor. Its managed producer is now
+  source-closed as the pure `HGUtils.GetSceneCullingMaskFromCamera` IFix wrapper
+  target 793, with no ordinary Camera-field computation; the non-zero patch or
+  runtime payload remains capture-only. The next dispatch boundary is
   now split exactly: normal views use a six-plane AABB predicate, while
   `cameraType == 0x80` uses a sphere/distance predicate; neither reads view
   `+0x18`. The complete hash-pinned scheduled batch core also has no direct
