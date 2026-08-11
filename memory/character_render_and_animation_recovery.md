@@ -499,11 +499,15 @@ NPC archetypes are imported as labeled source kits.
   OBB chain as inverse TRS of authored relative position, ZXY orientation, and
   half extents, packed row-major into six half2 words at record5.xyz/6.xyz.
   Installed `HGUtils.PackTwoHalfValuesAsFloat` and
-  `Unity.Mathematics.math.f32tof16` close the word order and IEEE conversion;
-  all 11 analytic candidates map authored corners back to the unit box within
-  `0.002611`. Exact signed-zero bits and one `Spot Light (12)` reciprocal at a
-  one-float32-ULP half boundary still need the exact UnityPlayer matrix-inverse
-  output or a retail buffer capture. Pinned `globalgamemanagers` objects prove
+  `Unity.Mathematics.math.f32tof16` close the word order and IEEE conversion.
+  UnityPlayer icall 2471 (`Matrix4x4::Inverse3DAffine_Injected`) now resolves
+  through stub `0x1800A2020` to the hash-pinned `0x180569BD0` scalar
+  determinant/cofactor body; the native float32 order and `-0` sign-mask
+  candidate bits are replayed for all 11 rows. Native candidates map authored
+  corners back to the unit box within `0.002611`; the `Spot Light (12)`
+  one-float32-ULP boundary is now explained by the source body. Retail signed-
+  zero/packed-word capture and the preceding Quaternion.Euler/TRS input values
+  remain open. Pinned `globalgamemanagers` objects prove
   Linear color space and linear light intensity; all 11 rows disable color
   temperature, distance/far-show falloff, animation, multistate, and flicker.
   UnityPlayer `finalColor`, `Color.linear`, animation-disable, and flicker

@@ -2573,9 +2573,12 @@ CharacterOnly, use falloff `-1`, and split volumetric intensity 2/5/4 across
 The pinned producer also builds the authored OBB as inverse TRS and writes six
 row-major half2 words to record5.xyz/6.xyz. Its installed pack and `f32tof16`
 bodies now yield bounded candidates for all 11 rows; decoded corners miss the
-unit-box boundary by at most `0.002611`. Signed-zero bits and one
-`Spot Light (12)` one-ULP half boundary still require the exact UnityPlayer
-matrix-inverse output or retail capture. Pinned original `globalgamemanagers`
+unit-box boundary by at most `0.002611`. UnityPlayer icall 2471
+(`Matrix4x4::Inverse3DAffine_Injected`) resolves through stub `0x1800A2020`
+to the hash-pinned `0x180569BD0` scalar determinant/cofactor body; its exact
+float32 order and `-0` sign-mask candidates are now replayed, including the
+`Spot Light (12)` one-ULP boundary. Retail packed-word capture and the
+preceding Quaternion.Euler/TRS input values remain open. Pinned original `globalgamemanagers`
 objects set Linear color space and linear light intensity, while all 11 rows
 disable color temperature, distance/far-show falloff, animation, multistate,
 and flicker. Hash-pinned UnityPlayer `finalColor`, `Color.linear`, animation-

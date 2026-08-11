@@ -541,6 +541,57 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual(result["flickerScale"]["disabledAnimationResult"], 1.0)
         self.assertEqual(len(result["internalCallTable"]["resolvedEntries"]), 3)
 
+    def test_unityplayer_matrix4x4_inverse_native(self) -> None:
+        result = AUDIT.validate_matrix4x4_inverse_native(
+            AUDIT.UNITY_PLAYER.read_bytes()
+        )
+        self.assertEqual(result["icallIndex"], 2471)
+        self.assertEqual(result["nativeBodySizeBytes"], 0x2C4)
+        self.assertEqual(
+            result["nativeBodySha256"],
+            "71e600ecd556110747f8fb572abb1ab41343b3f0b3154b7bd5187696922fd20d",
+        )
+        self.assertEqual(result["signMaskBits"], "0x80000000")
+
+    def test_changed_matrix4x4_inverse_body_fails_closed(self) -> None:
+        data = bytearray(AUDIT.UNITY_PLAYER.read_bytes())
+        data[AUDIT.MATRIX4X4_INVERSE_NATIVE_FILE_OFFSET] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=matrix4x4_inverse_native_body_sha256;.*expected=.*actual=",
+        ):
+            AUDIT.validate_matrix4x4_inverse_native(bytes(data))
+
+    def test_native_matrix4x4_inverse_replays_signed_zero(self) -> None:
+        inverse, success, determinant = (
+            AUDIT.unity_matrix4x4_inverse_affine_candidate(
+                [
+                    [2.0, 0.0, 0.0, 1.0],
+                    [0.0, 3.0, 0.0, 2.0],
+                    [0.0, 0.0, 4.0, 3.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            )
+        )
+        self.assertTrue(success)
+        self.assertEqual(AUDIT.float32_bits(determinant), 0x41C00000)
+        self.assertEqual(AUDIT.float32_bits(inverse[0][1]), 0x80000000)
+        self.assertEqual(AUDIT.float32_bits(inverse[1][0]), 0x80000000)
+        self.assertEqual(AUDIT.float32_bits(inverse[1][2]), 0x80000000)
+        self.assertEqual(AUDIT.float32_bits(inverse[2][1]), 0x80000000)
+
+    def test_native_matrix4x4_inverse_singular_path_returns_zero(self) -> None:
+        inverse, success, _ = AUDIT.unity_matrix4x4_inverse_affine_candidate(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        self.assertFalse(success)
+        self.assertEqual(inverse, [[0.0] * 4 for _ in range(4)])
+
     def test_native_disabled_distance_falloff_is_one(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.GET_LIGHT_FALLOFF_FILE_OFFSET)
@@ -674,13 +725,13 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         rows = AUDIT.room_light_rows(population, hierarchy)
         recovered = [AUDIT.recover_obb_pack(row) for row in rows]
         self.assertEqual(
-            recovered[0]["analyticCandidateWordHex"],
+            recovered[0]["nativeInverseCandidateWordHex"],
             [
-                "0x000030E8",
-                "0xAF318000",
-                "0x3E780000",
-                "0x49340000",
-                "0x00000000",
+                "0x800030E8",
+                "0xAF310000",
+                "0x3E788000",
+                "0x49348000",
+                "0x80000000",
                 "0xAA842DD7",
             ],
         )
