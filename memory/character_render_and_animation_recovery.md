@@ -55,7 +55,12 @@ NPC archetypes are imported as labeled source kits.
   Unity mesh GUID sets are all distinct. Each generated prefab binds its own
   ten-mesh set with no cross-prefab mesh GUIDs. Chenpast's shared
   facial-morph/CPU-animation basis is not a mesh identity join; the regression
-  check is `test_generated_chen_prefabs_keep_mesh_guid_sets_disjoint`.
+  check is `test_generated_chen_prefabs_keep_mesh_guid_sets_disjoint`. The
+  current source audit pins Chen to PathID `3146666496379329674` from
+  `98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk` and Chenpast to PathID
+  `-1377940589218415556` from `B428C352B17C75CA29122CAACC037A59.chk`; their
+  body index-buffer hashes also differ, so this is not only a naming/container
+  distinction.
 - Selected CharacterNPR, eye, hair, shadow, material, particle, and gacha
   presentation paths have source-backed diagnostics.
 - The CharacterNPR PreGBuffer/canonical-depth owner contract now passes its
@@ -81,6 +86,12 @@ NPC archetypes are imported as labeled source kits.
   shadow), clustered-light bit scanning, and punctual-shadow/rim dispatch.
   `verify_current_character_npr_skin_export.py` records these source and
   variant semantics only, not retail frame parity.
+- The current screen-shadow binding audit now makes the remaining connection
+  explicit: the lab producer binds the retail-named RG8 resource but keeps
+  `contentValid=false`, and Skin remains on the diagnostic texture keyword;
+  only the Eye branch has a runtime retail-name load today. The audit therefore
+  passes as a fail-closed boundary while reporting Skin retail publication and
+  frame parity as open.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
