@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v18",
-  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_inverse_contract_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v19",
+  "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_trs_inverse_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
@@ -1924,6 +1924,24 @@
       "signMaskBits": "0x80000000",
       "arithmetic": "scalar SSE float32 determinant/cofactor/division sequence; affine translation uses cofactor rows and xorps sign flips"
     },
+    "matrix4x4Trs": {
+      "icallIndex": 2470,
+      "name": "UnityEngine.Matrix4x4::TRS_Injected",
+      "namePointer": "0x181CCAFB0",
+      "functionPointer": "0x1800A1BB0",
+      "wrapperVirtualAddress": "0x1800A1BB0",
+      "wrapperBodySizeBytes": 69,
+      "wrapperBodySha256": "3edd178a3e30e9d27b133e50983ed473f223584eb229b1a435d45e82d006a8de",
+      "nativeVirtualAddress": "0x18056CB40",
+      "nativeFileOffset": "0x56C140",
+      "nativeBodySizeBytes": 198,
+      "nativeBodySha256": "ed2c20824bf8944a67566c874df429a53f6ca1c25f51f0eaf39259a16105b980",
+      "quaternionToMatrixHelperVirtualAddress": "0x18056B8A0",
+      "quaternionToMatrixHelperFileOffset": "0x56AEA0",
+      "quaternionToMatrixHelperBodySizeBytes": 322,
+      "quaternionToMatrixHelperBodySha256": "415e200d056300c292a580b888e8604f1f2f01a98afc830de6691461f3d3e285",
+      "arithmetic": "native quaternion-to-column-major-matrix helper, then scalar float32 column scaling and raw position copies"
+    },
     "obbHalfPacking": {
       "packTwoHalfValuesAsFloat": {
         "method": "HG.Rendering.Runtime.HGUtils.PackTwoHalfValuesAsFloat",
@@ -3512,6 +3530,8 @@
       "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
       "wordPlacement": "six row-major half2 words in record5.xyz then record6.xyz",
       "installedPackingMethodClosed": true,
+      "installedMatrix4x4TrsBodyClosed": true,
+      "nativeTrsCandidateUsesQuaternionHelperAndScalarFloat32Scale": true,
       "installedMatrix4x4InverseBodyClosed": true,
       "nativeInverseCandidateUsesScalarFloat32Cofactors": true,
       "nativeInverseCandidateCount": 11,
@@ -3787,7 +3807,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x4230EDC5",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -4025,7 +4045,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x40E5C57A",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -4261,7 +4281,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x41DF8CD4",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -4497,7 +4517,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x41DF8CD4",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -4733,7 +4753,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x4207F8B1",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -4971,7 +4991,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x40B5657F",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -5207,7 +5227,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x41F1F6C3",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -5445,7 +5465,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x40B1FF46",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -5683,7 +5703,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x42E73334",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -5921,7 +5941,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x42BAE203",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       },
       {
@@ -6159,7 +6179,7 @@
             "record6.xyz": "word 3, 4, 5"
           },
           "nativeInverseDeterminantBits": "0x4337DF90",
-          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the Quaternion.Euler/TRS inputs and retail runtime buffer remain separate capture boundaries"
+          "precisionBoundary": "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar float32 cofactor/division and signed-zero candidate bits; the native Matrix4x4::TRS body and quaternion-to-matrix helper now close the TRS arithmetic conditional on the still-open Quaternion.Euler input; retail runtime capture remains a separate boundary"
         }
       }
     ]
@@ -6177,7 +6197,9 @@
       "the OBB producer call chain: relative position, half extents, ZXY Euler orientation, inverse TRS, and six row-major half pairs",
       "the installed HGUtils/math.f32tof16 method bodies, x-low/y-high word layout, and record5.xyz/record6.xyz placement",
       "the UnityPlayer icall-table entry 2471 (Matrix4x4::Inverse3DAffine_Injected), its 0x1800A2020 stub, and hash-pinned 0x180569BD0 scalar affine-inverse body",
+      "the UnityPlayer icall-table entry 2470 (Matrix4x4::TRS_Injected), its hash-pinned 0x1800A1BB0 wrapper, 0x18056CB40 scale/translation body, and 0x18056B8A0 quaternion-to-column-major-matrix helper",
       "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
+      "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; Euler angle conversion and retail input capture remain separate boundaries",
       "six-word native-inverse OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
       "the installed PlayerSettings Linear color space and GraphicsSettings linear-light-intensity/color-temperature flags from pinned globalgamemanagers objects",
       "the UnityPlayer finalColor producer, Color.linear body, light-animation disable path, and flickerScale inactive fallback of exactly 1.0",
@@ -6204,11 +6226,11 @@
       "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
       "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
       "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
-      "retail buffer capture of the packed OBB signed-zero bits and the Quaternion.Euler/TRS input values (the UnityPlayer inverse stage itself is now source-closed), target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
+      "retail buffer capture of the packed OBB signed-zero bits and the Quaternion.Euler input values (the UnityPlayer TRS and inverse stages are source-closed conditional on that input), target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
       "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
       "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB inverse stage. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB TRS/inverse stages conditional on Euler input. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
   }
 }

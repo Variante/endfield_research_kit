@@ -186,6 +186,35 @@ MATRIX4X4_INVERSE_SIGN_MASK_FILE_OFFSET = 0x1CF1410
 MATRIX4X4_INVERSE_SIGN_MASK_BITS = 0x80000000
 MATRIX4X4_INVERSE_DETERMINANT_THRESHOLD_FILE_OFFSET = 0x1D7DA00
 MATRIX4X4_INVERSE_DETERMINANT_THRESHOLD = 1e-25
+# ``Matrix4x4::TRS_Injected`` is the UnityPlayer half of the managed
+# ``Matrix4x4.TRS`` call used immediately before the authored OBB inverse.
+# Keep both the icall-table lookup and the native quaternion-to-matrix helper
+# pinned: the native body applies scale/translation to the helper's exact
+# column-major float32 result.
+MATRIX4X4_TRS_ICALL_INDEX = 2470
+MATRIX4X4_TRS_NAME_FILE_OFFSET = 0x1CC9BB0
+MATRIX4X4_TRS_NAME_POINTER = 0x181CCAFB0
+MATRIX4X4_TRS_NAME = "UnityEngine.Matrix4x4::TRS_Injected"
+MATRIX4X4_TRS_FUNCTION_POINTER = 0x1800A1BB0
+MATRIX4X4_TRS_WRAPPER_FILE_OFFSET = 0xA11B0
+MATRIX4X4_TRS_WRAPPER_VA = 0x1800A1BB0
+MATRIX4X4_TRS_WRAPPER_SIZE = 0x45
+MATRIX4X4_TRS_WRAPPER_BODY_SHA256 = (
+    "3edd178a3e30e9d27b133e50983ed473f223584eb229b1a435d45e82d006a8de"
+)
+MATRIX4X4_TRS_NATIVE_VA = 0x18056CB40
+MATRIX4X4_TRS_NATIVE_FILE_OFFSET = 0x56C140
+MATRIX4X4_TRS_NATIVE_SIZE = 0xC6
+MATRIX4X4_TRS_NATIVE_BODY_SHA256 = (
+    "ed2c20824bf8944a67566c874df429a53f6ca1c25f51f0eaf39259a16105b980"
+)
+MATRIX4X4_TRS_QUATERNION_HELPER_VA = 0x18056B8A0
+MATRIX4X4_TRS_QUATERNION_HELPER_FILE_OFFSET = 0x56AEA0
+MATRIX4X4_TRS_QUATERNION_HELPER_SIZE = 0x142
+MATRIX4X4_TRS_QUATERNION_HELPER_BODY_SHA256 = (
+    "415e200d056300c292a580b888e8604f1f2f01a98afc830de6691461f3d3e285"
+)
+MATRIX4X4_TRS_HELPER_CALL_OFFSET = 0x1E
 UNITY_GET_FINAL_COLOR_STUB_VA = 0x18011FE60
 UNITY_GET_FINAL_COLOR_STUB_FILE_OFFSET = 0x11F460
 UNITY_GET_FINAL_COLOR_STUB_SIZE = 0x33
@@ -1297,6 +1326,136 @@ def validate_matrix4x4_inverse_native(data: bytes) -> dict[str, Any]:
         "arithmetic": (
             "scalar SSE float32 determinant/cofactor/division sequence; affine "
             "translation uses cofactor rows and xorps sign flips"
+        ),
+    }
+
+
+def validate_matrix4x4_trs_native(data: bytes) -> dict[str, Any]:
+    """Pin the UnityPlayer TRS producer used by the authored OBB path."""
+
+    index = MATRIX4X4_TRS_ICALL_INDEX
+    actual_name_pointer = struct.unpack_from(
+        "<Q", data, UNITY_ICALL_NAME_TABLE_OFFSET + index * 8
+    )[0]
+    actual_function_pointer = struct.unpack_from(
+        "<Q", data, UNITY_ICALL_FUNCTION_TABLE_OFFSET + index * 8
+    )[0]
+    require(
+        "matrix4x4_trs_icall_name_pointer",
+        actual_name_pointer,
+        MATRIX4X4_TRS_NAME_POINTER,
+        UNITY_PLAYER,
+    )
+    require(
+        "matrix4x4_trs_icall_function_pointer",
+        actual_function_pointer,
+        MATRIX4X4_TRS_FUNCTION_POINTER,
+        UNITY_PLAYER,
+    )
+    actual_name = data[
+        MATRIX4X4_TRS_NAME_FILE_OFFSET : MATRIX4X4_TRS_NAME_FILE_OFFSET
+        + len(MATRIX4X4_TRS_NAME)
+    ].decode("ascii")
+    require("matrix4x4_trs_icall_name", actual_name, MATRIX4X4_TRS_NAME, UNITY_PLAYER)
+    require(
+        "matrix4x4_trs_icall_name_terminator",
+        data[MATRIX4X4_TRS_NAME_FILE_OFFSET + len(MATRIX4X4_TRS_NAME)],
+        0,
+        UNITY_PLAYER,
+    )
+
+    wrapper = data[
+        MATRIX4X4_TRS_WRAPPER_FILE_OFFSET : MATRIX4X4_TRS_WRAPPER_FILE_OFFSET
+        + MATRIX4X4_TRS_WRAPPER_SIZE
+    ]
+    require(
+        "matrix4x4_trs_wrapper_size",
+        len(wrapper),
+        MATRIX4X4_TRS_WRAPPER_SIZE,
+        UNITY_PLAYER,
+    )
+    wrapper_hash = hashlib.sha256(wrapper).hexdigest()
+    require(
+        "matrix4x4_trs_wrapper_body_sha256",
+        wrapper_hash,
+        MATRIX4X4_TRS_WRAPPER_BODY_SHA256,
+        UNITY_PLAYER,
+    )
+    require(
+        "matrix4x4_trs_wrapper_call_opcode",
+        wrapper[0x17],
+        0xE8,
+        UNITY_PLAYER,
+    )
+    wrapper_call_target = MATRIX4X4_TRS_WRAPPER_VA + 0x17 + 5 + struct.unpack_from(
+        "<i", wrapper, 0x18
+    )[0]
+    require(
+        "matrix4x4_trs_wrapper_native_target",
+        wrapper_call_target,
+        MATRIX4X4_TRS_NATIVE_VA,
+        UNITY_PLAYER,
+    )
+
+    body = data[
+        MATRIX4X4_TRS_NATIVE_FILE_OFFSET : MATRIX4X4_TRS_NATIVE_FILE_OFFSET
+        + MATRIX4X4_TRS_NATIVE_SIZE
+    ]
+    require(
+        "matrix4x4_trs_native_body_size",
+        len(body),
+        MATRIX4X4_TRS_NATIVE_SIZE,
+        UNITY_PLAYER,
+    )
+    body_hash = hashlib.sha256(body).hexdigest()
+    require(
+        "matrix4x4_trs_native_body_sha256",
+        body_hash,
+        MATRIX4X4_TRS_NATIVE_BODY_SHA256,
+        UNITY_PLAYER,
+    )
+    require(
+        "matrix4x4_trs_quaternion_helper_target",
+        relative_call_target(body, MATRIX4X4_TRS_NATIVE_VA, MATRIX4X4_TRS_HELPER_CALL_OFFSET),
+        MATRIX4X4_TRS_QUATERNION_HELPER_VA,
+        UNITY_PLAYER,
+    )
+    helper = data[
+        MATRIX4X4_TRS_QUATERNION_HELPER_FILE_OFFSET : MATRIX4X4_TRS_QUATERNION_HELPER_FILE_OFFSET
+        + MATRIX4X4_TRS_QUATERNION_HELPER_SIZE
+    ]
+    require(
+        "matrix4x4_trs_quaternion_helper_size",
+        len(helper),
+        MATRIX4X4_TRS_QUATERNION_HELPER_SIZE,
+        UNITY_PLAYER,
+    )
+    helper_hash = hashlib.sha256(helper).hexdigest()
+    require(
+        "matrix4x4_trs_quaternion_helper_body_sha256",
+        helper_hash,
+        MATRIX4X4_TRS_QUATERNION_HELPER_BODY_SHA256,
+        UNITY_PLAYER,
+    )
+    return {
+        "icallIndex": index,
+        "name": MATRIX4X4_TRS_NAME,
+        "namePointer": f"0x{MATRIX4X4_TRS_NAME_POINTER:X}",
+        "functionPointer": f"0x{MATRIX4X4_TRS_FUNCTION_POINTER:X}",
+        "wrapperVirtualAddress": f"0x{MATRIX4X4_TRS_WRAPPER_VA:X}",
+        "wrapperBodySizeBytes": MATRIX4X4_TRS_WRAPPER_SIZE,
+        "wrapperBodySha256": wrapper_hash,
+        "nativeVirtualAddress": f"0x{MATRIX4X4_TRS_NATIVE_VA:X}",
+        "nativeFileOffset": f"0x{MATRIX4X4_TRS_NATIVE_FILE_OFFSET:X}",
+        "nativeBodySizeBytes": MATRIX4X4_TRS_NATIVE_SIZE,
+        "nativeBodySha256": body_hash,
+        "quaternionToMatrixHelperVirtualAddress": f"0x{MATRIX4X4_TRS_QUATERNION_HELPER_VA:X}",
+        "quaternionToMatrixHelperFileOffset": f"0x{MATRIX4X4_TRS_QUATERNION_HELPER_FILE_OFFSET:X}",
+        "quaternionToMatrixHelperBodySizeBytes": MATRIX4X4_TRS_QUATERNION_HELPER_SIZE,
+        "quaternionToMatrixHelperBodySha256": helper_hash,
+        "arithmetic": (
+            "native quaternion-to-column-major-matrix helper, then scalar float32 "
+            "column scaling and raw position copies"
         ),
     }
 
@@ -2848,6 +3007,81 @@ def unity_matrix4x4_inverse_affine_candidate(
     return rows, True, determinant
 
 
+def unity_quaternion_to_matrix_candidate(
+    quaternion: list[float],
+) -> list[list[float]]:
+    """Replay UnityPlayer's scalar quaternion-to-Matrix4x4 helper.
+
+    The helper at ``0x18056B8A0`` receives quaternion ``(x, y, z, w)`` and
+    writes Unity's column-major fields.  Each intermediate is rounded to
+    float32 in the same order as the native ``addss/mulss/subss`` sequence.
+    """
+
+    x, y, z, w = (f32(value) for value in quaternion)
+    one = f32(1.0)
+    doubled_z = f32_add(z, z)
+    doubled_y = f32_add(y, y)
+    doubled_x = f32_add(x, x)
+    doubled_z_z = f32_mul(doubled_z, z)
+    doubled_z_w = f32_mul(doubled_z, w)
+    doubled_y_y = f32_mul(doubled_y, y)
+    doubled_y_w = f32_mul(doubled_y, w)
+    doubled_x_x = f32_mul(doubled_x, x)
+    doubled_x_w = f32_mul(doubled_x, w)
+    doubled_xy = f32_mul(doubled_y, x)
+    doubled_xz = f32_mul(doubled_z, x)
+    doubled_yz = f32_mul(doubled_z, y)
+
+    # Keep the native column-major field order (m00, m10, m20, ...).
+    fields = [
+        f32_sub(one, f32_add(doubled_z_z, doubled_y_y)),
+        f32_add(doubled_z_w, doubled_xy),
+        f32_sub(doubled_xz, doubled_y_w),
+        f32(0.0),
+        f32_sub(doubled_xy, doubled_z_w),
+        f32_sub(one, f32_add(doubled_z_z, doubled_x_x)),
+        f32_add(doubled_yz, doubled_x_w),
+        f32(0.0),
+        f32_add(doubled_xz, doubled_y_w),
+        f32_sub(doubled_yz, doubled_x_w),
+        f32_sub(one, f32_add(doubled_y_y, doubled_x_x)),
+        f32(0.0),
+        f32(0.0),
+        f32(0.0),
+        f32(0.0),
+        one,
+    ]
+    return [
+        [fields[column * 4 + row] for column in range(4)]
+        for row in range(4)
+    ]
+
+
+def unity_matrix4x4_trs_candidate(
+    quaternion: list[float],
+    position: list[float],
+    scale: list[float],
+) -> list[list[float]]:
+    """Replay UnityPlayer ``Matrix4x4.TRS`` after its quaternion helper."""
+
+    fields = [
+        f32(value)
+        for column in zip(*unity_quaternion_to_matrix_candidate(quaternion))
+        for value in column
+    ]
+    # Native TRS multiplies each Matrix4x4 column by one scale component.
+    for column, scale_value in enumerate(scale):
+        scale_f32 = f32(scale_value)
+        base = column * 4
+        for row in range(3):
+            fields[base + row] = f32_mul(fields[base + row], scale_f32)
+    fields[12:15] = [f32(value) for value in position]
+    return [
+        [fields[column * 4 + row] for column in range(4)]
+        for row in range(4)
+    ]
+
+
 def recovered_y_rotation_inverse_rows(
     row: dict[str, Any],
 ) -> tuple[list[list[float]], list[list[float]], float]:
@@ -2881,24 +3115,10 @@ def recovered_y_rotation_inverse_rows(
     half_angle = f32(radians * f32(0.5))
     quaternion_y = f32(math.sin(half_angle))
     quaternion_w = f32(math.cos(half_angle))
-    doubled_y = f32(quaternion_y + quaternion_y)
-    cosine = f32(f32(1.0) - f32(quaternion_y * doubled_y))
-    sine = f32(quaternion_w * doubled_y)
-    rotation = [
-        [cosine, 0.0, sine],
-        [0.0, 1.0, 0.0],
-        [f32(-sine), 0.0, cosine],
-    ]
-
-    trs = [
-        [
-            f32(rotation[output_row][column] * scale[column])
-            for column in range(3)
-        ]
-        + [position[output_row]]
-        for output_row in range(3)
-    ]
-    trs.append([0.0, 0.0, 0.0, 1.0])
+    quaternion = [f32(0.0), quaternion_y, f32(0.0), quaternion_w]
+    rotation4 = unity_quaternion_to_matrix_candidate(quaternion)
+    rotation = [row[:3] for row in rotation4[:3]]
+    trs = unity_matrix4x4_trs_candidate(quaternion, position, scale)
     inverse, success, determinant = unity_matrix4x4_inverse_affine_candidate(trs)
     require(
         f"room_{row['lightPathId']}_obb_native_inverse_success",
@@ -2995,8 +3215,9 @@ def recover_obb_pack(row: dict[str, Any]) -> dict[str, Any]:
         "precisionBoundary": (
             "the pinned UnityPlayer Matrix4x4::Inverse body now closes the scalar "
             "float32 cofactor/division and signed-zero candidate bits; the "
-            "Quaternion.Euler/TRS inputs and retail runtime buffer remain separate "
-            "capture boundaries"
+            "native Matrix4x4::TRS body and quaternion-to-matrix helper now close "
+            "the TRS arithmetic conditional on the still-open Quaternion.Euler "
+            "input; retail runtime capture remains a separate boundary"
         ),
     }
 
@@ -3718,6 +3939,7 @@ def build_audit() -> dict[str, Any]:
     native["matrix4x4Inverse"] = validate_matrix4x4_inverse_native(
         unity_player_data
     )
+    native["matrix4x4Trs"] = validate_matrix4x4_trs_native(unity_player_data)
     native["obbHalfPacking"] = validate_obb_pack_native(
         pack_body,
         f32_to_f16_body,
@@ -3798,8 +4020,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v18",
-        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_inverse_contract_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v19",
+        "status": "room_record0_record1w_record2z_transform_point_shadow_cache_shadow_render_type_renderer_config_ecs_flags_ifix_table_lookup_and_unityplayer_obb_trs_inverse_contract_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -3884,6 +4106,8 @@ def build_audit() -> dict[str, Any]:
                 "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
                 "wordPlacement": "six row-major half2 words in record5.xyz then record6.xyz",
                 "installedPackingMethodClosed": True,
+                "installedMatrix4x4TrsBodyClosed": True,
+                "nativeTrsCandidateUsesQuaternionHelperAndScalarFloat32Scale": True,
                 "installedMatrix4x4InverseBodyClosed": True,
                 "nativeInverseCandidateUsesScalarFloat32Cofactors": True,
                 "nativeInverseCandidateCount": len(rows),
@@ -3926,7 +4150,9 @@ def build_audit() -> dict[str, Any]:
                 "the OBB producer call chain: relative position, half extents, ZXY Euler orientation, inverse TRS, and six row-major half pairs",
                 "the installed HGUtils/math.f32tof16 method bodies, x-low/y-high word layout, and record5.xyz/record6.xyz placement",
                 "the UnityPlayer icall-table entry 2471 (Matrix4x4::Inverse3DAffine_Injected), its 0x1800A2020 stub, and hash-pinned 0x180569BD0 scalar affine-inverse body",
+                "the UnityPlayer icall-table entry 2470 (Matrix4x4::TRS_Injected), its hash-pinned 0x1800A1BB0 wrapper, 0x18056CB40 scale/translation body, and 0x18056B8A0 quaternion-to-column-major-matrix helper",
                 "the native inverse determinant threshold, -0 sign mask, cofactor/division order, translation cofactor rows, and exact float32 candidate half words for all eleven authored rows",
+                "the native TRS helper's quaternion matrix arithmetic, scalar column scaling order, and raw position-field copies; Euler angle conversion and retail input capture remain separate boundaries",
                 "six-word native-inverse OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
                 "the installed PlayerSettings Linear color space and GraphicsSettings linear-light-intensity/color-temperature flags from pinned globalgamemanagers objects",
                 "the UnityPlayer finalColor producer, Color.linear body, light-animation disable path, and flickerScale inactive fallback of exactly 1.0",
@@ -3953,14 +4179,14 @@ def build_audit() -> dict[str, Any]:
                 "target-frame record1.xyz world positions, camera-relative subtraction input, and record2.xy encoded directions",
                 "the authored candidates do not replace a retail LightCullResult capture; runtime transform mutation and the final packed record2.xy values remain open",
                 "the IFix patched helper branches and their target-frame return values remain version/runtime-boundary evidence, even though the retail unpatched helper bodies are hash-pinned",
-                "retail buffer capture of the packed OBB signed-zero bits and the Quaternion.Euler/TRS input values (the UnityPlayer inverse stage itself is now source-closed), target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
+                "retail buffer capture of the packed OBB signed-zero bits and the Quaternion.Euler input values (the UnityPlayer TRS and inverse stages are source-closed conditional on that input), target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
                 "GetShadowRenderType's runtime IsPatched(0x886) gate, any patched return flags, and the runtime caster-list membership/culling state; serialized shadowType=0 is not treated as proof that all six Point cache lookups return -1",
                 "the active IFix table membership/pointers for 0x886/0x887/0x888 and any patched return values remain runtime-boundary evidence; static GameAssembly does not contain the live table entries",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB inverse stage. Do not publish "
+                "including all record0 lanes, the record1/record2 transform producer contract, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and the native UnityPlayer OBB TRS/inverse stages conditional on Euler input. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
                 "bits, target-frame record1.xyz/record2.xy values, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
             ),
@@ -3982,7 +4208,7 @@ def main() -> int:
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
         "all 11 record0 float4 values, record1/record2 transform producer contract, "
         "record1.w/record2.z static terms, the Spot record2.w, Point face-index packing and cache-resolver contracts, "
-        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the UnityPlayer OBB inverse/half candidates closed."
+        "shadow render-type/renderer-config/ECS-flag gates, IFix wrapper-table lookup contract, additional-light components, and the UnityPlayer OBB TRS/inverse half candidates closed."
     )
     return 0
 

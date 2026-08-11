@@ -506,8 +506,12 @@ NPC archetypes are imported as labeled source kits.
   candidate bits are replayed for all 11 rows. Native candidates map authored
   corners back to the unit box within `0.002611`; the `Spot Light (12)`
   one-float32-ULP boundary is now explained by the source body. Retail signed-
-  zero/packed-word capture and the preceding Quaternion.Euler/TRS input values
-  remain open. Pinned `globalgamemanagers` objects prove
+  zero/packed-word capture and the preceding Quaternion.Euler input remain open.
+  The adjacent UnityPlayer icall 2470 (`Matrix4x4::TRS_Injected`) is now also
+  source-closed: its `0x1800A1BB0` wrapper, `0x18056CB40` scalar column-scale /
+  position-copy body, and `0x18056B8A0` quaternion-to-column-major helper are
+  hash-pinned and replayed. Thus the native TRS and inverse stages are closed
+  conditional on the still-open Euler input. Pinned `globalgamemanagers` objects prove
   Linear color space and linear light intensity; all 11 rows disable color
   temperature, distance/far-show falloff, animation, multistate, and flicker.
   UnityPlayer `finalColor`, `Color.linear`, animation-disable, and flicker
