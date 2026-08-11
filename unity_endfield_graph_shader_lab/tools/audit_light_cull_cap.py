@@ -6457,6 +6457,62 @@ def validate_hgtree_renderer_list_game_assembly(
     }
 
 
+def validate_render_transition1_component75_native(body: bytes) -> dict[str, object]:
+    """Pin the Render transition-1 HLOD-level byte/table projection.
+
+    The native Render callback receives the selected component-75 storage
+    pointer, reads its byte at offset zero, and indexes the
+    HGLODStreamingSystem squared unload-distance table at state +0x474.
+    This closes the producer/use contract without inventing a stripped native
+    type name for component 75.
+    """
+
+    require(
+        "render_transition1_component75_body_size",
+        len(body),
+        0x6C4,
+        UNITY_PLAYER,
+    )
+    slices = {
+        "lod_state_pointer_and_enable_gate": (
+            0x1A7,
+            bytes.fromhex("488b4630807838000f84b7010000"),
+        ),
+        "lod_config_and_component75_byte0": (
+            0x1BE,
+            bytes.fromhex("0f10403c0fb609"),
+        ),
+        "hlod_unload_distance_index": (
+            0x1E4,
+            bytes.fromhex("f30f10bc8874040000"),
+        ),
+    }
+    validated = {}
+    for label, (offset, expected) in slices.items():
+        require(
+            f"render_transition1_{label}",
+            body[offset : offset + len(expected)],
+            expected,
+            UNITY_PLAYER,
+        )
+        validated[label] = {
+            "bodyOffset": f"0x{offset:X}",
+            "sizeBytes": len(expected),
+            "sha256": hashlib.sha256(expected).hexdigest(),
+        }
+    return {
+        "callbackVirtualAddress": "0x181154230",
+        "component75PointerField": "selected component-75 storage pointer",
+        "component75ByteOffset": "0x00",
+        "streamingStatePointerOffset": "0x30",
+        "enableLodStreamingOffset": "0x38",
+        "lodCrossFadeConfigOffset": "0x3C",
+        "hlodUnloadDistanceTableOffset": "0x474 + 4 * component75.byte0",
+        "nativeProjectionClosed": True,
+        "validatedSlices": validated,
+    }
+
+
 def validate_streaming_scene_v2_payload_census(
     unity_image: PEImage,
     game_image: PEImage,
@@ -6518,6 +6574,10 @@ def validate_streaming_scene_v2_payload_census(
                 "sha256": actual_hash,
             }
         )
+
+    component75_hlod_level = validate_render_transition1_component75_native(
+        unity_image.read(0x181154230, 0x6C4)
+    )
 
     dispatch_tables = {}
     for label, (virtual_address, expected_entries) in (
@@ -7040,6 +7100,7 @@ def validate_streaming_scene_v2_payload_census(
             **owners,
             "nativeCallbackRegistry": native_callback_registry,
         },
+        "component75HlodLevel": component75_hlod_level,
         "component67InitialData": initial_data,
         "serializedMapConfigs": configs,
         "installedVfs": vfs,
@@ -12398,6 +12459,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the ten-name EntityTransition enum, 0x288-byte native ECS registry ABI, complete 105-call installer census, duplicate 52/53-call constructor maps, exact component-67 transitions 1/3/6/8, and disjoint Water/WaterDecal managed overrides",
                 "the component-67 resource-companion selector mask, ids 68..73 serialized capacity classes, 8-byte header plus 40-byte resource rows, and exact transition-6 versus transition-8 teardown state machine",
                 "HGLODStreamingSystem internal calls 273..291, state+0x38/+0x39/+0x3C/+0x474 controls, dirty-distance/reset/status/count API names, installed LODCrossFadeConfig and RenderObjectLODInfoComponent field offsets, and exact type-0/type-9 transition-1 LOD selection, distance gate, Material/Mesh request triplet, and 24-byte request descriptors",
+                "the Render transition-1 component-75 byte projection: selected component-75 storage +0x00 indexes the squared HLOD unload-distance table at state+0x474+4*byte0, with the native streaming gate and LODCrossFadeConfig offsets source-pinned",
                 "the component-67 outer request-batch lifecycle: callback-context +0x50/+0x58 descriptor materialization, task+0x18 batch and +0x0A count, resource states 0/1/2, completion polling, callback-context +0x60/+0x68/+0x70 projection, and transition-3 runtime Material/Mesh/shadow-proxy writeback",
                 "resource state 2 as load failure through its no-publish relation path, installed Streaming load/get asset failure diagnostics, and component-specific fallback",
                 "all four direct transition-task calls across the hash-pinned grid-load state driver and three Streaming gameplay batch-update entity-set branches",
