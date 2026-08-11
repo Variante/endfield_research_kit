@@ -1147,6 +1147,10 @@ value 36 maps to ref 4. Run
 binary, Shader/material evidence, and lab schedule. Same-queue ordering inside
 the custom UnityPlayer command and possible runtime IFix replacement remain
 open.
+Run `python tools\verify_overlay_runtime_inputs.py` for the separate
+hash-pinned OverlayShadow DXBC, Halton jitter, TAA pass-order, and clustered
+light-input contract. It does not claim IFix history constants or a settled
+retail TAA frame.
 
 The selected overlay local-volume term is also active for the isolated
 CharInfo rigs. The recovered type-4 Fog consumer joins all 31 source profiles,
