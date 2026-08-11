@@ -144,9 +144,11 @@ NPC archetypes are imported as labeled source kits.
   binary-pinned capture, reproduces SetupState priority/distance ordering, and
   bit-matches captured room rows against the eleven authored candidates. It
   rejects unsupported types, sort ties, ambiguous/duplicate identities, and
-  incomplete selected-room captures; it leaves `PrepareCPUData` record3..7
-  and b31 publication explicitly blocked until their native payload is also
-  captured.
+  incomplete selected-room captures. It now also accepts an optional detached
+  raw b31 payload only when all capture-row indices, 8-record/128-byte rows,
+  whole GameAssembly hash, and `PrepareCPUData` body hash validate; the payload
+  is retained for later consumption but `b31Ready` remains false until runtime
+  carry-in and retail publication are captured.
   The deferred native audit now also closes `PrepareCPUData` record5.w as
   `uint(enableOBBCullingBox) | (uint(enableOverrideShadowLight) << 1)`;
   the selected authored room rows therefore use integer 1 (`0x3F800000` as
