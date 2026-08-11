@@ -316,6 +316,10 @@ def verify_decompiled_consumer() -> dict[str, Any]:
         "integer_pixel_load": "_ScreenSpaceShadowMask.Load(int3(int3(_2162, _2163, 0).xy, 0))",
         "character_shadow_g_channel": "float _2172 = _2167.y;",
         "scene_shadow_r_channel": "float _2175 = lerp(lerp(1.0f, _2167.x",
+        "scene_shadow_ignore_main_gate": "ShaderVariablesGlobal_CharacterParams1.z);",
+        "character_shadow_alpha_product": "float _2215 = _472 * _2172;",
+        "character_shadow_minimum": "float _2221 = min(min(_2172, _472), _2205);",
+        "scene_shadow_lighting_selector": "float3 _2250 = _2175.xxx;",
         "clustered_light_bit_scan": "uint _2516 = firstbitlow(_2511);",
         "punctual_shadow_basis": "float3 _3045 =",
         "punctual_rim_dispatch": "float _3274 = 0.0f;",
@@ -330,6 +334,15 @@ def verify_decompiled_consumer() -> dict[str, Any]:
         **EXPECTED_DECOMPILED_SPV_GLSL,
         "screen_mask_load": "integer pixel Load",
         "screen_mask_channels": {"r": "directional scene shadow", "g": "character shadow"},
+        "shadow_equations": {
+            "directional_scene": (
+                "lerp(lerp(1, R, DirectionalShadowParams.x), "
+                "1, CharacterParams1.z)"
+            ),
+            "character_shadow": "G",
+            "character_shadow_material_alpha": "alpha * G",
+            "character_shadow_minimum": "min(G, alpha, material-shadow-sample)",
+        },
         "clustered_punctual_consumer": True,
         "retail_frame_parity": "not asserted",
     }
