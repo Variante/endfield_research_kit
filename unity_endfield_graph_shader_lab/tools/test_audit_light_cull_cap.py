@@ -686,6 +686,7 @@ class LightCullCapAuditTests(unittest.TestCase):
         result = AUDIT.validate_unity_native_producer(AUDIT.PEImage(AUDIT.UNITY_PLAYER))
         self.assertEqual(result["internalCall"]["index"], 3320)
         self.assertEqual(result["candidateRecord"]["sizeBytes"], 12)
+        self.assertEqual(result["candidateCoreBody"][0]["sizeBytes"], 0x4E1)
         self.assertIn("maxCount output cap", result["closedBehavior"])
 
     def test_changed_unity_native_cap_fails_closed(self) -> None:
@@ -706,6 +707,25 @@ class LightCullCapAuditTests(unittest.TestCase):
             ):
                 AUDIT.validate_unity_native_producer(image)
 
+    def test_changed_unity_native_candidate_core_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x181051A40 and size == 0x4E1:
+                data[0x200] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_culling_candidate_core_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_native_producer(image)
+
     def test_unity_scheduled_cull_view_constructor(self) -> None:
         result = AUDIT.validate_unity_cull_view_constructor(
             AUDIT.PEImage(AUDIT.UNITY_PLAYER)
@@ -717,6 +737,10 @@ class LightCullCapAuditTests(unittest.TestCase):
         )
         self.assertFalse(
             result["managedInputContract"]["sceneCullingMask"]["constructorRead"]
+        )
+        self.assertNotIn(
+            "a separate consumer, if any, for the forwarded sceneCullingMask slot",
+            result["evidenceBoundary"]["open"],
         )
         self.assertEqual(result["viewRecord"]["planeCount"], 6)
         self.assertEqual(

@@ -1831,9 +1831,13 @@ squared parent bias and both 256-entry ArtTag encodings. Nonzero view
 offset to the selected index and clamps it to `[0,lodCount-1]`. The
 former index-10320 and `0x180175A10 -> 0x180A5E320`
 virtual-slot interpretation is retracted because it crossed the HG table
-boundary into unrelated Animator code. The component-67 native type name, any
-separate `sceneCullingMask` consumer, and target-frame survivor
-rows remain explicit boundaries.
+boundary into unrelated Animator code. The complete `0x4E1`-byte UnityPlayer
+candidate core is hash-pinned by the maintained audit, including the native
+gate/sort/output-cap surface. The component-67 native type name and target-frame
+survivor rows remain explicit boundaries. The complete installed CullView
+census found no separate `sceneCullingMask` consumer: the field is forwarded by
+the constructor but not read by the scheduled loop, either selected predicate,
+fence/reset lifecycle, child-view path, or a post-dispatch packet copy.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that
