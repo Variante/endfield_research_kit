@@ -49,8 +49,13 @@
       "sha256": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9"
     },
     "operatorLights": {
-      "sizeBytes": 1657381,
-      "sha256": "706f66b89aa209371df50956e9f1525026ce4a8a1f19a85210fc35d3b2c23ac8"
+      "sizeBytes": 1706180,
+      "sha256": "1c1c1c6953f9eac04a820d95f802c5d68aa9585978fab6b97afe6a33dc61f830",
+      "hashScope": {
+        "actors": [
+          "zhuangfy"
+        ]
+      }
     },
     "nativeCullReport": {
       "sizeBytes": 17366,
@@ -73,8 +78,8 @@
       "sha256": "575b8b4967cf3458e93b6e883679a19bb985b0888a1d8fde5f81876bf14dfdee"
     },
     "zhuangfyManifest": {
-      "sizeBytes": 6775751,
-      "sha256": "63bd1cbc2de2acfa8cb507d1186dec736cbdbaacf4c861e803b802a04b1e8ae9"
+      "sizeBytes": 6864437,
+      "sha256": "0801b3ca6f1c80db5a27307563d281a4112a9859de4c60daf2eee1d9fd5f20de"
     },
     "actorTrack": {
       "sizeBytes": 21834,

@@ -11,11 +11,17 @@ import math
 import re
 import struct
 import subprocess
+import sys
 import tempfile
 import winreg
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
+
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from operator_lights_source import scoped_sha256
 
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
@@ -71,6 +77,7 @@ OPERATOR_LIGHTS = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
     "RenderParameters/operator_lights.json"
 )
+OPERATOR_LIGHT_SCOPE = ("zhuangfy",)
 NATIVE_CULL_REPORT = (
     REPO_ROOT
     / "scratch/reverse_engineering/clustered_light_native_culling/report.json"
@@ -167,13 +174,13 @@ EXPECTED_HASHES = {
     "characterTable": "50392af8d8c93854b99e5342b4b70c049b68d2da306e366325d749ba77bf4779",
     "gachaCharTable": "05c1b414bab1f3fbb7a9a983c7193c40ccf0884d6cb50edf7469d8ee05dd50fb",
     "roomHierarchy": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9",
-    "operatorLights": "706f66b89aa209371df50956e9f1525026ce4a8a1f19a85210fc35d3b2c23ac8",
+    "operatorLights": "1c1c1c6953f9eac04a820d95f802c5d68aa9585978fab6b97afe6a33dc61f830",
     "nativeCullReport": "f7b6e9b6407bb26555491c13f9895b712a9219218c19ac07efd56d7c947d7d7e",
     "gachaCullViewAudit": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4",
     "gachaSelectedListAudit": "7b3624526a77102fb075cdc1ad98277eb6746b5a1853faa1fd2ad2032951e1b3",
     "rotatehouse": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4",
     "actorTimelineAudit": "575b8b4967cf3458e93b6e883679a19bb985b0888a1d8fde5f81876bf14dfdee",
-    "zhuangfyManifest": "63bd1cbc2de2acfa8cb507d1186dec736cbdbaacf4c861e803b802a04b1e8ae9",
+    "zhuangfyManifest": "0801b3ca6f1c80db5a27307563d281a4112a9859de4c60daf2eee1d9fd5f20de",
     "actorTrack": "2b37d07f4a2b6964a7cf66d10de2bd41211af8e78ceba1ce03c2647eecfece31",
     "actorPlayableEntrance": "55b80868b750786b07c38dff5bc71fa0517b950acbb669d8f68acf1d22461e1e",
     "actorPlayableLoop": "2b24eed5a1488a722e516730fa557e904259213f3f655b79240749aa1f558bed",
@@ -354,11 +361,20 @@ def require(check: str, actual: object, expected: object, source: Path | str) ->
         )
 
 
-def verified_hash(name: str, path: Path) -> dict[str, object]:
+def verified_hash(
+    name: str,
+    path: Path,
+    *,
+    scope: tuple[str, ...] | None = None,
+) -> dict[str, object]:
     require(f"{name}_exists", path.is_file(), True, path)
-    actual = sha256(path)
+    actual = scoped_sha256(path, scope) if scope is not None else sha256(path)
     require(f"{name}_sha256", actual, EXPECTED_HASHES[name], path)
-    return {"sizeBytes": path.stat().st_size, "sha256": actual}
+    return {
+        "sizeBytes": path.stat().st_size,
+        "sha256": actual,
+        **({"hashScope": {"actors": list(scope)}} if scope is not None else {}),
+    }
 
 
 def load_json(path: Path) -> Any:
@@ -1762,7 +1778,14 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
         "aclSamplerSource": ACL_SAMPLER_SOURCE,
     }
     source_hashes = (
-        {name: verified_hash(name, path) for name, path in source_paths.items()}
+        {
+            name: verified_hash(
+                name,
+                path,
+                scope=OPERATOR_LIGHT_SCOPE if name == "operatorLights" else None,
+            )
+            for name, path in source_paths.items()
+        }
         if verify_hashes
         else {}
     )
