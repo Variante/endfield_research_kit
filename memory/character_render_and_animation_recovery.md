@@ -408,7 +408,13 @@ NPC archetypes are imported as labeled source kits.
   `0x180175A10 -> 0x180A5E320`, and virtual-slot conclusion is retracted: it
   crossed the HG table boundary into unrelated Animator code. The standalone
   component-67 native type name, any separate `sceneCullingMask`
-  consumer, and target-frame survivor rows remain open.
+  consumer, and target-frame survivor rows remain open. A direct census of the
+  installed `UnityPlayer.dll` native strings/RTTI (with the matching
+  `GameAssembly.dll` build) adds no unambiguous name for component 67:
+  `HGTreeComponent`, `HGTreeRenderer`, `HGTreeInstance`, `HGTree`, and
+  `HGTreeData` are each already tied to distinct managed/serialized surfaces.
+  Keep the component unnamed and fail closed rather than reusing one of those
+  labels as a speculative native type.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
