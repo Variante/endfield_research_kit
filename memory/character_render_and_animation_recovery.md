@@ -89,6 +89,12 @@ NPC archetypes are imported as labeled source kits.
   `VisibleLight` capture stride are source-closed. An authorized target-frame
   capture therefore has an exact pointer/count/row decoding contract, but no
   live values are inferred offline. The same maintained audit now closes
+  the post-cull consumer contract: `LightClusteringPassConstructor.SetupState`
+  projects the returned rows into a zero-based `<=256` slice, preserves each
+  original `VisibleLight` row index through the priority/distance sort, and
+  passes the sorted `Int32` index array to punctual shadow preparation. This
+  closes index transport, not the missing target-frame row values.
+  The same maintained audit now closes
   `AddCullViewByMatrix` from its 16-argument binding through six-plane
   construction and the scheduled view record. The managed screen-size minimum
   is squared and stored at view `+0x18`; its installed desktop default is zero.

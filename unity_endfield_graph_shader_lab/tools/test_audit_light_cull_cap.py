@@ -152,6 +152,36 @@ class LightCullCapAuditTests(unittest.TestCase):
                 source_text=changed, verify_source_hash=False
             )
 
+    def test_light_clustering_preserves_sorted_original_row_indices(self) -> None:
+        result = AUDIT.validate_light_clustering_consumer()
+        self.assertEqual(result["sourceProjection"]["maxRows"], 256)
+        self.assertEqual(result["sourceProjection"]["rowStrideBytes"], 148)
+        self.assertTrue(result["survivorIndexTransport"]["postSortCopy"])
+        self.assertEqual(
+            result["survivorIndexTransport"]["elementType"], "Int32"
+        )
+        self.assertIn(
+            "PreparePunctualLightShadowCasters",
+            result["survivorIndexTransport"]["consumer"],
+        )
+
+    def test_changed_light_clustering_index_consumer_fails_closed(self) -> None:
+        source_text = AUDIT.LIGHT_CLUSTER_SOURCE.read_text(encoding="utf-8")
+        changed = source_text.replace(
+            "PreparePunctualLightShadowCasters",
+            "PreparePunctualLightShadowCastersChanged",
+            1,
+        )
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=light_cull_cap; "
+            r"check=light_cluster_shadow_index_consumer; "
+            r"source=.*LightClusteringPassConstructor.cs; expected=True; actual=False",
+        ):
+            AUDIT.validate_light_clustering_consumer(
+                source_text=changed, verify_source_hash=False
+            )
+
     def test_changed_visible_light_stride_fails_closed(self) -> None:
         bodies = AUDIT.read_native_method_bodies()
         changed = bytearray(bodies["setup_state"])

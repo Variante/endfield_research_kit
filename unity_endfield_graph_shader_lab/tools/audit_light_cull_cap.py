@@ -7459,6 +7459,87 @@ def validate_native_handoff(
     }
 
 
+def validate_light_clustering_consumer(
+    source: Path = LIGHT_CLUSTER_SOURCE,
+    *,
+    source_text: str | None = None,
+    verify_source_hash: bool = True,
+) -> dict[str, object]:
+    """Close the post-cull survivor-index transport from original source."""
+
+    if source_text is None:
+        if verify_source_hash:
+            verified_hash("light_cluster_source", source)
+        require("light_cluster_source_exists", source.is_file(), True, source)
+        source_text = source.read_text(encoding="utf-8-sig")
+    method_name = "public void SetupState(CullingResults cullingResults, LightCullResult lightCullResult"
+    start = source_text.find(method_name)
+    require("light_cluster_setup_state_method_present", start >= 0, True, source)
+    end = source_text.find("private static int GetDirectionalLightIndex", start)
+    require("light_cluster_setup_state_method_boundary", end > start, True, source)
+    method = source_text[start:end]
+    snippets = {
+        "light_cull_result_projection": "LightCullResult::get_visibleLights",
+        "native_result_cap": "if ( v11 > 256 )",
+        "punctual_type_filter": (
+            "if ( *(_DWORD *)m_Buffer == 2 || !*(_DWORD *)m_Buffer )"
+        ),
+        "source_row_index_write": (
+            "this.fields.m_punctualLightIndices.m_Buffer[v22] = v19"
+        ),
+        "sorted_index_copy": (
+            "this.fields.m_punctualLightIndices.m_Buffer[4 * v13] = v41"
+        ),
+        "shadow_index_consumer": (
+            "PreparePunctualLightShadowCasters("
+        ),
+        "sort_job_completion": "Unity::Jobs::JobHandle::Complete(&v50",
+    }
+    for check, snippet in snippets.items():
+        require(
+            f"light_cluster_{check}",
+            snippet in method,
+            True,
+            source,
+        )
+    return {
+        "method": "HG.Rendering.Runtime.LightClusteringPassConstructor.SetupState",
+        "sourceProjection": {
+            "from": "LightCullResult.visibleLights",
+            "maxRows": 256,
+            "rowStrideBytes": 148,
+            "subArrayStart": 0,
+        },
+        "survivorIndexTransport": {
+            "elementType": "Int32",
+            "sourceIndex": "original VisibleLight row index",
+            "sortKey": [
+                "priority descending",
+                "squared camera distance ascending",
+            ],
+            "postSortCopy": True,
+            "consumer": (
+                "HGPunctualLightShadowManagerV2.PreparePunctualLightShadowCasters"
+            ),
+        },
+        "acceptedVisibleLightTypes": [0, 2],
+        "punctualCountSettingClamp": "min(filteredCount, PunctualLightMaxCount)",
+        "evidenceBoundary": {
+            "closed": [
+                "LightCullResult NativeArray projection into a zero-based <=256 row slice",
+                "punctual type 0/2 admission",
+                "original-row index preservation through the punctual sort",
+                "sorted Int32 index-array handoff to punctual shadow preparation",
+            ],
+            "open": [
+                "target-frame LightCullResult pointer/count and row values",
+                "runtime/custom lights outside the authored source set",
+            ],
+        },
+        "sourceSha256": sha256(source) if source.is_file() else None,
+    }
+
+
 def validate_unity_native_producer(image: PEImage) -> dict[str, object]:
     require("unity_player_image_base", image.image_base, 0x180000000, image.path)
     target = image.u64(
@@ -11526,6 +11607,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     _require_source_contracts()
     asset_records, cap_definitions = validate_settings_payloads(extracted_root)
     native_handoff = validate_native_handoff(read_native_method_bodies())
+    light_clustering_consumer = validate_light_clustering_consumer(
+        verify_source_hash=False
+    )
     native_handoff["managedEcsComponentGetIdCensus"] = (
         validate_managed_ecs_get_id_census(
             GLOBAL_METADATA.read_bytes(), PEImage(GAME_ASSEMBLY)
@@ -11590,7 +11674,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v46",
+        "schema": "endfield.recovered-light-cull-cap.v47",
         "status": "component67_managed_tick_host_resolved",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
@@ -11605,6 +11689,10 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "gate. HGUtils.GetSceneCullingMaskFromCamera is an IFix-only "
             "target-793 wrapper with no ordinary Camera-field computation, so "
             "its non-zero patch value remains a runtime boundary. "
+            "LightClusteringPassConstructor then projects the returned rows into "
+            "a zero-based <=256 slice, preserves original row indices through "
+            "the priority/distance sort, and hands the sorted Int32 indices to "
+            "punctual shadow preparation. "
             "DispatchBatchCullingJobs selects an exact six-plane AABB "
             "predicate, except cameraType 0x80 selects an exact sphere/distance "
             "predicate; neither reads cull-view +0x18. "
@@ -11988,6 +12076,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "maxCount": 256,
             },
             "gameAssemblyHandoff": native_handoff,
+            "lightClusteringConsumer": light_clustering_consumer,
             "gameAssemblyStreamingUpdateChain": (
                 managed_streaming_update_chain
             ),
@@ -12037,6 +12126,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "type 0/2 punctual filter",
                 "priority/distance shortlist order",
                 "min survivor/cap final-count rule",
+                "LightClusteringPassConstructor zero-based <=256 row slice, original-row index preservation, post-sort Int32 index handoff, and punctual shadow-preparation consumer",
                 "desktop cap cannot truncate the upstream max-256 cull result",
                 "the unique UnityPlayer CullLightsInternal_Injected binding and native candidate gate chain",
                 "both GameAssembly DoECSCulling call sites and their exact input/result registers",
