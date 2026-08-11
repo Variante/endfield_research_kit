@@ -44,9 +44,11 @@ NPC archetypes are imported as labeled source kits.
 - All non-playable post-model identities have dependency-safe static prefab
   baselines.
 - Chen and Chenpast remain separate source-authored model identities: their
-  canonical post-model containers, Animator PathIDs, and VFS sources are all
-  distinct. Chenpast's shared facial-morph/CPU-animation basis is not a mesh
-  identity join.
+  canonical post-model containers, Animator PathIDs, VFS sources, and generated
+  Unity mesh GUID sets are all distinct. Each generated prefab binds its own
+  ten-mesh set with no cross-prefab mesh GUIDs. Chenpast's shared
+  facial-morph/CPU-animation basis is not a mesh identity join; the regression
+  check is `test_generated_chen_prefabs_keep_mesh_guid_sets_disjoint`.
 - Selected CharacterNPR, eye, hair, shadow, material, particle, and gacha
   presentation paths have source-backed diagnostics.
 - The installed UnityPlayer fallback selector now closes the exact
