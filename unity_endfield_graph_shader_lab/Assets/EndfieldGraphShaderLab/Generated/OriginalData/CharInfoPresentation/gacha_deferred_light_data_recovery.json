@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v6",
-  "status": "room_record0_record1w_record2z_and_obb_candidates_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v7",
+  "status": "room_record0_record1w_record2z_obb_and_point_shadow_pack_contract_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
@@ -153,6 +153,93 @@
       "spotSequenceOffset": "0x0DD9",
       "pointSequenceOffset": "0x1347",
       "destination": "record0.w"
+    },
+    "pointShadowFacePack": {
+      "faceOrder": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "faceConstructors": [
+        {
+          "face": 0,
+          "constructorInstructionOffset": "0x10D4",
+          "target": "0x189B52B0C"
+        },
+        {
+          "face": 1,
+          "constructorInstructionOffset": "0x1120",
+          "target": "0x189B52B0C"
+        },
+        {
+          "face": 2,
+          "constructorInstructionOffset": "0x1163",
+          "target": "0x189B52B0C"
+        },
+        {
+          "face": 3,
+          "constructorInstructionOffset": "0x11A5",
+          "target": "0x189B52B0C"
+        },
+        {
+          "face": 4,
+          "constructorInstructionOffset": "0x11E7",
+          "target": "0x189B52B0C"
+        },
+        {
+          "face": 5,
+          "constructorInstructionOffset": "0x122A",
+          "target": "0x189B52B0C"
+        }
+      ],
+      "cacheIndexLookups": [
+        {
+          "face": 0,
+          "cacheIndexInstructionOffset": "0x10F7",
+          "target": "0x189B486D4"
+        },
+        {
+          "face": 1,
+          "cacheIndexInstructionOffset": "0x113A",
+          "target": "0x189B486D4"
+        },
+        {
+          "face": 2,
+          "cacheIndexInstructionOffset": "0x117D",
+          "target": "0x189B486D4"
+        },
+        {
+          "face": 3,
+          "cacheIndexInstructionOffset": "0x11BF",
+          "target": "0x189B486D4"
+        },
+        {
+          "face": 4,
+          "cacheIndexInstructionOffset": "0x1202",
+          "target": "0x189B486D4"
+        },
+        {
+          "face": 5,
+          "cacheIndexInstructionOffset": "0x1245",
+          "target": "0x189B486D4"
+        }
+      ],
+      "unavailableCacheIndex": -1,
+      "unavailableSentinelByte": 255,
+      "packing": {
+        "source": "six uint8 face indices",
+        "byteOrder": "face0, face1, face2, face3, face4, face5",
+        "record2W": "(face0 << 24) | (face1 << 16) | (face2 << 8) | face3",
+        "record3X": "(face4 << 8) | face5",
+        "nativeFallbackAndPackClosed": true
+      },
+      "liveValues": {
+        "closed": false,
+        "requiredCapture": "six target-frame GetShadowCacheIndexForCaster return values"
+      }
     },
     "resolvedCalls": [
       {
@@ -551,12 +638,101 @@
       },
       "record2ZExactCandidateCount": 11,
       "record2WExactCandidateCount": 1,
+      "record2WContractExactCandidateCount": 11,
+      "pointShadowFacePack": {
+        "faceOrder": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "faceConstructors": [
+          {
+            "face": 0,
+            "constructorInstructionOffset": "0x10D4",
+            "target": "0x189B52B0C"
+          },
+          {
+            "face": 1,
+            "constructorInstructionOffset": "0x1120",
+            "target": "0x189B52B0C"
+          },
+          {
+            "face": 2,
+            "constructorInstructionOffset": "0x1163",
+            "target": "0x189B52B0C"
+          },
+          {
+            "face": 3,
+            "constructorInstructionOffset": "0x11A5",
+            "target": "0x189B52B0C"
+          },
+          {
+            "face": 4,
+            "constructorInstructionOffset": "0x11E7",
+            "target": "0x189B52B0C"
+          },
+          {
+            "face": 5,
+            "constructorInstructionOffset": "0x122A",
+            "target": "0x189B52B0C"
+          }
+        ],
+        "cacheIndexLookups": [
+          {
+            "face": 0,
+            "cacheIndexInstructionOffset": "0x10F7",
+            "target": "0x189B486D4"
+          },
+          {
+            "face": 1,
+            "cacheIndexInstructionOffset": "0x113A",
+            "target": "0x189B486D4"
+          },
+          {
+            "face": 2,
+            "cacheIndexInstructionOffset": "0x117D",
+            "target": "0x189B486D4"
+          },
+          {
+            "face": 3,
+            "cacheIndexInstructionOffset": "0x11BF",
+            "target": "0x189B486D4"
+          },
+          {
+            "face": 4,
+            "cacheIndexInstructionOffset": "0x1202",
+            "target": "0x189B486D4"
+          },
+          {
+            "face": 5,
+            "cacheIndexInstructionOffset": "0x1245",
+            "target": "0x189B486D4"
+          }
+        ],
+        "unavailableCacheIndex": -1,
+        "unavailableSentinelByte": 255,
+        "packing": {
+          "source": "six uint8 face indices",
+          "byteOrder": "face0, face1, face2, face3, face4, face5",
+          "record2W": "(face0 << 24) | (face1 << 16) | (face2 << 8) | face3",
+          "record3X": "(face4 << 8) | face5",
+          "nativeFallbackAndPackClosed": true
+        },
+        "liveValues": {
+          "closed": false,
+          "requiredCapture": "six target-frame GetShadowCacheIndexForCaster return values"
+        }
+      },
       "closedLanes": [
         "record2.z for all rows",
-        "record2.w for the Spot row"
+        "record2.w for the Spot row",
+        "Point record2.w/record3.x face-index packing contract"
       ],
       "openLanes": [
-        "record2.w packed point-shadow face indices for Point rows"
+        "target-frame Point record2.w/record3.x cache-index values"
       ]
     },
     "obbHalfPackingSummary": {
@@ -740,7 +916,8 @@
           "record2WSemantic": "inverse inner-minus-outer half-angle cosine difference",
           "record2W": 2.739075183868408,
           "record2WBits": "0x402F4D02",
-          "record2WClosed": true
+          "record2WClosed": true,
+          "record2WContractClosed": true
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -967,7 +1144,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1192,7 +1372,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1415,7 +1598,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1638,7 +1824,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1861,7 +2050,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -2086,7 +2278,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -2309,7 +2504,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -2534,7 +2732,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -2759,7 +2960,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -2984,7 +3188,10 @@
           "record2WSemantic": "packed point-shadow face indices",
           "record2W": null,
           "record2WBits": null,
-          "record2WClosed": false
+          "record2WClosed": false,
+          "record2WContractClosed": true,
+          "record3XSemantic": "packed point-shadow face indices 4 and 5",
+          "record3X": null
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -3091,13 +3298,14 @@
       "the native record0.w discriminator formula float(lightKind + 2*shadowOnly), yielding exact 0.0 for the one Spot row and 1.0 for all ten Point/linear-extension rows",
       "VisibleLight.get_range reads field +0x68 and PrepareCPUData divides exact 1.0f by it, closing record1.w for all eleven rows",
       "the pinned original scalar-cosine body and exact half-angle scaling close record2.z and record2.w for the one Spot row",
-      "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows"
+      "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
+      "the Point/linear native branch constructs LightCaster face requests in order 0..5, queries GetShadowCacheIndexForCaster for each, maps -1 to 255, and packs faces 0..3 into record2.w plus faces 4..5 into record3.x"
     ],
     "open": [
       "camera-relative record1.xyz position and record2.xy direction values at the target frame",
-      "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, Point record2.w packed shadow-face indices, and other shadow/cookie cache indices",
+      "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, target-frame Point record2.w/record3.x shadow-face cache indices, and other shadow/cookie cache indices",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, record1.w, record2.z, the Spot record2.w, additional-light lanes, and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, record1.xyz/record2.xy target-frame transforms, Point record2.w, and runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including all record0 lanes, record1.w, record2.z, the Spot record2.w, the Point face-index packing contract, additional-light lanes, and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, record1.xyz/record2.xy target-frame transforms, live Point record2.w/record3.x cache indices, and runtime list boundary are closed."
   }
 }

@@ -91,6 +91,46 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             result["encodedValues"]["PointOrLinearExtension"]["normal"], 1.0
         )
 
+    def test_native_point_shadow_face_pack_contract(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = stream.read(AUDIT.PREPARE_CPU_DATA_SIZE)
+        result = AUDIT.validate_point_shadow_face_pack_native(body)
+        self.assertEqual(result["faceOrder"], list(range(6)))
+        self.assertEqual(
+            [row["face"] for row in result["cacheIndexLookups"]], list(range(6))
+        )
+        self.assertEqual(result["unavailableSentinelByte"], 255)
+        self.assertEqual(
+            result["packing"]["record2W"],
+            "(face0 << 24) | (face1 << 16) | (face2 << 8) | face3",
+        )
+        self.assertTrue(result["packing"]["nativeFallbackAndPackClosed"])
+
+    def test_changed_point_shadow_face_lookup_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+        body[0x117D + 1] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=point_shadow_face_2_cache_index_target; source=.*GameAssembly.dll; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_point_shadow_face_pack_native(bytes(body))
+
+    def test_changed_point_shadow_face_pack_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+        body[0x1280] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=point_shadow_face_pack_sequence; source=.*GameAssembly.dll; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_point_shadow_face_pack_native(bytes(body))
+
     def test_changed_record0_discriminator_fails_closed(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
