@@ -55,6 +55,10 @@ NPC archetypes are imported as labeled source kits.
   check is `test_generated_chen_prefabs_keep_mesh_guid_sets_disjoint`.
 - Selected CharacterNPR, eye, hair, shadow, material, particle, and gacha
   presentation paths have source-backed diagnostics.
+- The CharacterNPR PreGBuffer/canonical-depth owner contract now passes its
+  source and generated-material checks, including the installed
+  `DepthCharacterOnly` state and owner-before-opaque chronology. This remains
+  a fail-closed diagnostic path; it does not claim live retail frame parity.
 - The CharacterNPR clear-coat audit now covers Liino's three independent
   authored variants (cloth, skill, and skill LOD) instead of collapsing them
   by actor token; all 11 selected source materials and generated `.mat`
