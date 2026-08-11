@@ -88,7 +88,8 @@ namespace EndfieldGraphShaderLab
         {
             requested =
                 ReadBooleanEnvironment(EnvironmentVariable) ||
-                HasCommandLineArgument(CommandLineArgument);
+                HasCommandLineArgument(CommandLineArgument) ||
+                EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             PublishBlackFallbacks();
         }
@@ -223,6 +224,20 @@ namespace EndfieldGraphShaderLab
             }
             failureLogged = false;
             return true;
+        }
+
+        internal bool TryGetResolverInputs(
+            out RenderTexture resolverT23,
+            out RenderTexture resolverT24,
+            out RenderTexture resolverT25)
+        {
+            resolverT23 = gBufferC;
+            resolverT24 = gBufferB;
+            resolverT25 = gBufferA;
+            return requested &&
+                resolverT23 != null && resolverT23.IsCreated() &&
+                resolverT24 != null && resolverT24.IsCreated() &&
+                resolverT25 != null && resolverT25.IsCreated();
         }
 
         private void FailClosed(

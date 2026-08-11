@@ -49,22 +49,50 @@
       "GBufferC": {"format": "R8G8B8A8_SRGB", "nonzero_bytes": 1382400, "sha256": "b6ffa8536d9c20724bbd90c514cde0a80e0cb3e95911bd5a3293b8d320bbfa56"}
     },
     "sources": {
-      "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "0236ce0c13db3459ec76f63aff5d86d1a9d4cb29992bfa33c927d0837cc7ce8a"},
+      "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "c5549f31b8fc01a89d498523f4ace248102d21ec323bc6826bfe22c9520df56f"},
       "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfoHGRPLitUnavailable.shader", "sha256": "e957bcb140a066a452423f32efc5bd3195f410094943562c96376cff44d2d23e"},
-      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "2028e29eb90afc3b61c22b3534204edfec88e6d63a352e16aecbf8c112d2d9ac"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
       "material_source": {"path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Materials/M_CharInfo_outside.raw.json", "sha256": "45b4e36ddf66010b838abdbad0e7bf8906d5cf2ec2ea9997771bd14c75ecfaf7"}
     },
     "validation": {
       "gpu_reports": {
-        "d3d11": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d11.json", "sha256": "4afac242ed2b1a917548f0c0ba61ce430ceab74288746314c99a0ed536ac776f", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d11.log", "log_sha256": "4821aadfdf3f8304ee89cb93caf34fc3a74eee792840a4f73f494c7a03f8ab0e"},
-        "d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d12.json", "sha256": "98211fc9ff394c0b5fd7d041fa670b07975eafe882aa73544c9972f157da8a7e", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d12.log", "log_sha256": "5b8ba8cc9b920b1a655b6701332ee17ef4d57780885c3d5e7737191c5981c81b"}
+        "d3d11": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d11.json", "sha256": "7f477c37e0d7c60b9a1cabf4aae31d85267e4333f00ad0974f2bb067da039cb2", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d11.log", "log_sha256": "4821aadfdf3f8304ee89cb93caf34fc3a74eee792840a4f73f494c7a03f8ab0e"},
+        "d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d12.json", "sha256": "d84dc96262c8da36abbfea1ad1ca84c60fe317056f353d317968f62c034374e9", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d12.log", "log_sha256": "5b8ba8cc9b920b1a655b6701332ee17ef4d57780885c3d5e7737191c5981c81b"}
       },
-      "fail_closed_d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_fail_closed_d3d12.json", "sha256": "a6f8b9bea86991c4d3dc08f989c115927d49d68e0eca66e7acb84e90bc05ad67", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_fail_closed_d3d12.log", "log_sha256": "612e6ac2371cfd98922fa823972cbda80950c8f0bc57285b89ce867c85a80309"},
+      "fail_closed_d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_fail_closed_d3d12.json", "sha256": "e211ff901d1654e4894023be49fc47e73241e177a9c1569c8ee614dba033eb74", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_fail_closed_d3d12.log", "log_sha256": "612e6ac2371cfd98922fa823972cbda80950c8f0bc57285b89ce867c85a80309"},
       "validator": {"path": "tools/verify_deferred_gbuffer_frame_log.py", "sha256": "aaea923780e84583c393724fef7718126a5db75ad3295d445360c154ff63da29"},
       "tests": {"path": "tools/test_verify_deferred_gbuffer_frame_log.py", "sha256": "c37d1511acdc5b2f834328f28531856ef0d9cf0c7fafccab25f2e27a57447fdb"},
       "wrapper": {"path": "verify_recovered_deferred_gbuffer_frame.bat", "sha256": "c1ecdcd3ae4433be02498b9da8cc2620d7c331a9385058da7fe4f57f00336921"},
       "beauty_unchanged": true,
       "cross_api_readbacks_bit_exact": true
+    }
+  },
+  "deferred_resolver_input_probe": {
+    "status": "default-off non-presented source-identifier consumer probe; retail pass 0 remains disabled",
+    "selector": "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE",
+    "requires": ["b30", "b35", "b31", "b34", "GBufferFrame"],
+    "register_bridges": {
+      "b0": "EndfieldCB0",
+      "b1": "EndfieldCB1",
+      "b2": "EndfieldCB2",
+      "b3": "EndfieldCB3",
+      "b4": "EndfieldCB4",
+      "b5": "EndfieldCB5",
+      "b6": "zero-fallback",
+      "b7": "EndfieldCB7",
+      "b8": "EndfieldCB8"
+    },
+    "source_gbuffer_reads": {"t23": "_62/GBufferC", "t24": "_61/GBufferB", "t25": "_60/GBufferA"},
+    "presented": false,
+    "retail_pass0_enabled": false,
+    "sources": {
+      "policy": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverBindingPolicy.cs", "sha256": "093cd5e82db67fee3bf8c910f344f3117893478fa413b726de0f578181a8da2f"},
+      "consumer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverInputProbe.cs", "sha256": "9c2d628aa6862bd521e80e649a965b904b5346cf95bb2fddb77bbf23f38f023c"},
+      "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldDeferredResolverInputProbe.shader", "sha256": "6ecaedad32ac0c1c88b6d86f97df178b15348166a305341e19e3e107c96ab946"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
+      "gbuffer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "c5549f31b8fc01a89d498523f4ace248102d21ec323bc6826bfe22c9520df56f"},
+      "b3_b7_owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs", "sha256": "2dbaa1a1f000043979a66e5ac5311947984d84c10e01020c1db7082a1b2fab0c"},
+      "b8_owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHConstants.cs", "sha256": "74d2376fd24056d044bebf725c359ab5f406899c1e70ea46ce51063e29ab3209"}
     }
   },
   "selected_deferred_transform_variables_transport": {
@@ -100,8 +128,8 @@
     "source_audit": {"path": "scratch/character_recovery/deferred_transform_variables/audit.json", "sha256": "402a8ddb90b1555a78f5e9fd7c7456c1fa5658bb9f55fd1acae9abd2ae516e3b"},
     "sources": {
       "contract": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs", "sha256": "152fb8b7c6c63bd7e6c5f0fb0e8222b37e92e431bcb35557acdd60d062d44089"},
-      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs", "sha256": "db67e00e21b11e6e426864e5ce5099ab5b8bb5dfcd8184b4dc0ec01305541ba0"},
-      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "2028e29eb90afc3b61c22b3534204edfec88e6d63a352e16aecbf8c112d2d9ac"},
+      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs", "sha256": "90d6cb5816f280503406501b7e89aa2cf190e1b99cbe0819ece2642fe9cc434b"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
       "probe": {"path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredDeferredTransformVariablesProbe.compute", "sha256": "8d88e212bddfa13a5985db7a5e392ec3a0e5df40411dbb848b8a7e7ee2486910"},
       "batch_verifier": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredDeferredTransformVariablesBatchVerifier.cs", "sha256": "b27b97ae89ee90800268cf4d77fab41a291c03035627d607cb7723feaceb8f9f"},
       "source_auditor": {"path": "tools/audit_deferred_transform_variables.py", "sha256": "248de36524cd21fff287ecdae71a302d65b40ac756aa19ef3ee5364361fee163"},
@@ -110,7 +138,7 @@
       "wrapper": {"path": "verify_recovered_deferred_transform_variables.bat", "sha256": "907e279fadf7a80402b66f2a78297d6e188f236a40afb57c0be3237154d45353"}
     },
     "validation": {
-      "frame_report": {"path": "scratch/character_recovery/deferred_transform_variables/frame_validation.json", "sha256": "54cdcb6aacc54d232d7dd33d6b7455d88800941dbf26fdabcc082a950cd217c8"},
+      "frame_report": {"path": "scratch/character_recovery/deferred_transform_variables/frame_validation.json", "sha256": "0b61b6e30b215b619824821913afcec1e8df212a1653c7c268a9725adb65a1c8"},
       "gpu_reports": {
         "d3d11": {"path": "scratch/character_recovery/deferred_transform_variables/gpu_validation_d3d11.json", "sha256": "34f195862a761240644c6bd4a41d9699be53d652381db75023e4812f43f63ca3", "log_path": "scratch/character_recovery/deferred_transform_variables/unity_frame_d3d11.log", "log_sha256": "d0270e239c71e8f48e1747f544788270335bbbc2c96ab1992f0b69bd7d937067", "beauty_sha256": "1753e0bd900dfc068e2604632122136a4abf047af0ef5ba9607f17abc8a27ec7"},
         "d3d12": {"path": "scratch/character_recovery/deferred_transform_variables/gpu_validation_d3d12.json", "sha256": "e3de8d0a02bc647034094c4ad02297bee13478f1e8f1d2d6d43c2fc41842d155", "log_path": "scratch/character_recovery/deferred_transform_variables/unity_frame_d3d12.log", "log_sha256": "56eee9315d7a0d0828de94eade5e1ebef56b9627bff3e078ee790519772f9622", "beauty_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"}
@@ -154,7 +182,7 @@
     "selected_span": "punctual matrices c64..c287, params c288..c343, params2 c344..c399, texel size c400",
     "isolated_rows": {"Wulfa": "spot slot 40", "Zhuangfy": "point slots 40..45"},
     "atlas": "6144x4096 D16 at T=1024",
-    "source_audit": {"path": "scratch/character_recovery/deferred_shadow_data/audit.json", "sha256": "2f9ba6db602f533ba13515bc97eb55a0a6f289dd5ece94565edad30c379926df"},
+    "source_audit": {"path": "scratch/character_recovery/deferred_shadow_data/audit.json", "sha256": "bb2d68e2e58344ee4d590a08b4e9fe629f90b46fa27744525dfa082083b50ef1"},
     "validation": {"d3d11_named_and_cb5_exact": true, "d3d12_named_and_cb5_exact": true, "unowned_sections_zero": true, "same_frame_spot_and_point_activation": true, "fail_closed": true, "wulfa_active_control_beauty_unchanged": true},
     "remaining_boundary": "general-scene/static-cache rows, non-punctual sections, retail physical identity and settled atlas pixels, runtime IFix/setting overrides, and pass 0 remain open"
   },
@@ -184,8 +212,8 @@
     "transport": {"canonical_words": 800, "d3d11_bridge_words": 628, "selected_vectors": 32, "unselected_vectors_zero": true, "c28_packing": "raw int32 bit patterns", "same_frame_prerequisites": "canonical binning/reflection/VisibilitySHConstData plus deferred TransformVariables"},
     "sources": {
       "contract": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs", "sha256": "6a9dba4552546da194db1d582c1a6232bd7026fa326aeb2aee1ee642eb1032bf"},
-      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs", "sha256": "d71b4c74f908397e35969c67eab2f38bb292612efe30de57e5cdf43fc327fdd8"},
-      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "2028e29eb90afc3b61c22b3534204edfec88e6d63a352e16aecbf8c112d2d9ac"},
+      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs", "sha256": "cb76a2eca9030f16e2899ff72b078edf8b58c1c868392e1d84fd7947a13353d9"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
       "probe": {"path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredShaderVariablesGlobalProbe.compute", "sha256": "48c22703ef2f4cb3f90550b96517a04d99d4ba35471a3770873391aca54d9a1f"},
       "batch_verifier": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredShaderVariablesGlobalBatchVerifier.cs", "sha256": "bbfbd5f1780a8d73eac2c82ae8e034b91f9b5c2d65faef633705241722180a08"},
       "validator": {"path": "tools/verify_shader_variables_global.py", "sha256": "dc737db2e8765230d9c2c0211bd72ef9ee35dc40f5db3baba11c952342ca4c2a"},
@@ -357,7 +385,7 @@
       "compute_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredLightBinning.compute",
       "compute_sha256": "ae0e9953831cca53115ee2b4ab4d607b8983ecd3fe72ad1fd1e07a6cbd27778d",
       "owner_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs",
-      "owner_sha256": "268e3dc02c4c7f19a8fbee2cf6dfc96f8fbc7297a647c146ff6a53a608f857fd",
+      "owner_sha256": "2dbaa1a1f000043979a66e5ac5311947984d84c10e01020c1db7082a1b2fab0c",
       "canonicalCombinedPublication": false
     },
     "canonical_combined_transport": {
@@ -410,7 +438,7 @@
         "source_cubemap_asset_path": "Assets/EndfieldGraphShaderLab/Generated/Environment/T_hdri_env_char_01.asset",
         "source_payload_sha256": "948f8d8dfb77e1b29171c4b04caaa679202e06624ab7be2203719e11ca6ee7b7",
         "runtime_pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-        "runtime_pipeline_sha256": "2028e29eb90afc3b61c22b3534204edfec88e6d63a352e16aecbf8c112d2d9ac",
+        "runtime_pipeline_sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1",
         "reflection_owner_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredReflectionProbeFallback.cs",
         "reflection_owner_sha256": "1b7891f411de104ce6ad4bbeef5e89b4062fe9bc5278eed9fe59e6da1f723f5b",
         "lighting_volume_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGRPCharacterLightingVolume.cs",
@@ -651,9 +679,9 @@
       "contract_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHConstantsContract.cs",
       "contract_sha256": "0a7284c74ced96f88c37346d277aaebb0b5313b8b81a61e3d1f0d46b47696354",
       "owner_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHConstants.cs",
-      "owner_sha256": "5ef73bd512b9e4a7ad51af7b15565bb45962da8123280d44caca5754b987e597",
+      "owner_sha256": "74d2376fd24056d044bebf725c359ab5f406899c1e70ea46ce51063e29ab3209",
       "pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-      "pipeline_sha256": "2028e29eb90afc3b61c22b3534204edfec88e6d63a352e16aecbf8c112d2d9ac",
+      "pipeline_sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1",
       "probe_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySHConstantsProbe.compute",
       "probe_sha256": "dbc1f765472cf60a4943cb921ef46c040d3682bad28b30604a60626e37ca1861",
       "verifier_path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredVisibilitySHConstantsBatchVerifier.cs",
@@ -698,7 +726,7 @@
       "producer_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHProducer.cs",
       "producer_sha256": "c4d477dc95f02a7e09c5fdf09d06df1caed4eb448dafa02580dad36f4483a31a",
       "pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-      "pipeline_sha256": "2028e29eb90afc3b61c22b3534204edfec88e6d63a352e16aecbf8c112d2d9ac",
+      "pipeline_sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1",
       "shader_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySH.shader",
       "shader_sha256": "5df7633dd265cef8b80257ec655f8e3211e78c45a2ac70e6024a752dd486fd45",
       "payload_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySH/visibility_sh_runtime.json",
@@ -725,7 +753,7 @@
       "gpu_reports": {
         "d3d11": {
           "path": "scratch/character_recovery/visibility_sh_frame/gpu_validation_d3d11.json",
-          "sha256": "c476dc525135dd8dbf26b413941c7a1643fbc90de276894e56b803b1bb87ca0c",
+          "sha256": "b67ddf5fe838fe1cfae5c08992a3b737df9ee86a3793979125859ff70b2d6f14",
           "log_path": "scratch/character_recovery/visibility_sh_frame/unity_validation_d3d11.log",
           "log_sha256": "f6744d9eb0174d22ad00c10dc578d7d854b8a7a160aacbec5b861c06695f942a",
           "beauty_path": "scratch/character_recovery/visibility_sh_frame/wulfa_beauty_d3d11.png",
@@ -733,7 +761,7 @@
         },
         "d3d12": {
           "path": "scratch/character_recovery/visibility_sh_frame/gpu_validation_d3d12.json",
-          "sha256": "071d6643b00784b87db55723f0ff9ac6e3838d0e95c6ff27f452fe010a32139d",
+          "sha256": "04f91f6af841ab6153f06ee70c5391bd2057030c68fabb0793505d3456232dd3",
           "log_path": "scratch/character_recovery/visibility_sh_frame/unity_validation_d3d12.log",
           "log_sha256": "d792e98801a092a08e98b5bdfb49b3a140b08b4ab60d72bfa23de7ba9228e678",
           "beauty_path": "scratch/character_recovery/visibility_sh_frame/wulfa_beauty_d3d12.png",
@@ -742,7 +770,7 @@
       },
       "fail_closed_report": {
         "path": "scratch/character_recovery/visibility_sh_frame/gpu_fail_closed_d3d12.json",
-        "sha256": "7e519cf3d7129230e0c2e05eda751160cb15fec9baf82198c25f55fc4a46b301",
+        "sha256": "4480ad328015f094f82aac11f73fe114a9cfa41392e00f8bc4a1c372a75262a0",
         "log_path": "scratch/character_recovery/visibility_sh_frame/unity_fail_closed_d3d12.log",
         "log_sha256": "9319cbde1aaffb99f98e876c6d03bef23a7cc759a1ad866617526657bfa886e1",
         "gate": "canonical binning selector absent",
@@ -2947,7 +2975,7 @@
         "contract_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinningConstantsContract.cs",
         "contract_sha256": "3aa329efd8fee08ed2db58f876043add5ca7a6a25c252871adf478cb88f2ba5b",
         "runtime_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs",
-        "runtime_sha256": "268e3dc02c4c7f19a8fbee2cf6dfc96f8fbc7297a647c146ff6a53a608f857fd",
+        "runtime_sha256": "2dbaa1a1f000043979a66e5ac5311947984d84c10e01020c1db7082a1b2fab0c",
         "probe_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredLightBinningConstantsProbe.compute",
         "probe_sha256": "248d993c03bcb352b8d5c58349c9dc5810d94cd7ac582a52166e60c86b4fc755",
         "verifier_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredLightBinningConstantsBatchVerifier.cs",
@@ -3125,7 +3153,7 @@
         "contract_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightCookieDataContract.cs",
         "contract_sha256": "370d74f8042650a631e840e8a79eaad06b0c1436dd31002330b097668f930c3d",
         "runtime_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs",
-        "runtime_sha256": "268e3dc02c4c7f19a8fbee2cf6dfc96f8fbc7297a647c146ff6a53a608f857fd",
+        "runtime_sha256": "2dbaa1a1f000043979a66e5ac5311947984d84c10e01020c1db7082a1b2fab0c",
         "probe_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredLightCookieDataProbe.compute",
         "probe_sha256": "43d59fd42711932d0bfc1061c82619f93a5da54fc23160606c625de87e775cbb",
         "verifier_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredLightCookieDataBatchVerifier.cs",

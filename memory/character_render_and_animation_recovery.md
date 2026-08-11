@@ -77,6 +77,15 @@ NPC archetypes are imported as labeled source kits.
   orderings and fail-closed paths clear every alias to black. This is only a
   resource bridge for the next consumer integration step, so the sidecar
   remains non-presented and pass 0 remains disabled.
+- The next consumer boundary is now executable under the explicit
+  `ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE` selector. It opts the
+  source-closed b30/b35/b31/b34 publishers into one frame, publishes exact
+  D3D11 bridge aliases b3 (`EndfieldCB3`), b7 (`EndfieldCB7`), and b8
+  (`EndfieldCB8`), supplies a zero/fail-closed b6 fallback, and reads the
+  private output in the original `_62(t23=C)` / `_61(t24=B)` / `_60(t25=A)`
+  order. The probe restores the camera target and never presents or enables
+  retail pass 0; target-frame survivor bindings, nonzero HDPLS/cookie data,
+  and the full lighting consumer remain open.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and
