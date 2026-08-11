@@ -433,6 +433,12 @@ NPC archetypes are imported as labeled source kits.
   producer and `CullLightsInternal` lifetime wrapper are now hash-pinned in the
   maintained audit, so the native gate/sort/output-cap/row-conversion/result-
   ownership boundary cannot silently drift.
+  `tools/decode_light_cull_capture.py` now consumes a detached JSON artifact
+  only after checking the exact build hashes, 0..256 count, pointer/null rule,
+  and exact `count * 148` raw-row length; it decodes the source-closed type,
+  priority, range, spot angle, and position fields without attaching to the
+  retail process. It is an intake/validation tool, not a substitute for the
+  still-missing authorized target-frame capture.
   A direct census of the
   installed `UnityPlayer.dll` native strings/RTTI (with the matching
   `GameAssembly.dll` build) adds no unambiguous name for component 67:
