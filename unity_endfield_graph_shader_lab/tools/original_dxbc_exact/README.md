@@ -36,9 +36,10 @@ Activation requires all of the following:
 
 The diagnostic binds the exact selected D3D11 objects in native render event 0
 and issues the three-vertex draw after Unity has populated the synthetic b/t/s
-fixture; event 1 records the binding state. The current standalone capture
-retains the constant-buffer and sampler bindings, but Unity has already
-cleared the SRV slots by event 1, so source-texture population remains open.
+fixture; event 1 records the binding state. Before the draw, the native event
+recreates all 25 source SRVs from Unity's D3D11 texture resources; the
+standalone report pins `shader_resource_mask=0x3fffffe`. Unity clears those
+SRV slots by event 1, so the report records that post-draw cleanup separately.
 The neutral fixture is still not a render-fidelity fixture. The compiler
 callback remains an optional build-time variant probe, while the runtime proof
 does not depend on a player-side compiler callback or a shell material

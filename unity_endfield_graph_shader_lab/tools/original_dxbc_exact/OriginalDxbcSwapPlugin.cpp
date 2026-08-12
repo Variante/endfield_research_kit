@@ -16,6 +16,7 @@ namespace
 {
 constexpr const char* kReservedKeyword = "ENDFIELD_ORIGINAL_DXBC_EXACT";
 constexpr std::uint32_t kContractVersion = 1;
+constexpr std::uint32_t kTextureSlotCount = 26;
 
 IUnityInterfaces* g_unityInterfaces = nullptr;
 std::atomic<bool> g_armed{false};
@@ -38,7 +39,10 @@ std::atomic<std::uint32_t> g_renderEventCount{0};
 std::atomic<std::uint32_t> g_exactShaderBound{0};
 std::atomic<std::uint32_t> g_constantBufferMask{0};
 std::atomic<std::uint32_t> g_shaderResourceMask{0};
+std::atomic<std::uint32_t> g_postDrawShaderResourceMask{0};
 std::atomic<std::uint32_t> g_samplerMask{0};
+std::uintptr_t g_texturePointers[kTextureSlotCount] = {};
+std::atomic<std::uint32_t> g_texturePointerCount{0};
 
 IUnityGraphicsD3D11* GetD3D11()
 {
@@ -64,7 +68,10 @@ void ResetDiagnosticState()
     g_exactShaderBound.store(0, std::memory_order_relaxed);
     g_constantBufferMask.store(0, std::memory_order_relaxed);
     g_shaderResourceMask.store(0, std::memory_order_relaxed);
+    g_postDrawShaderResourceMask.store(0, std::memory_order_relaxed);
     g_samplerMask.store(0, std::memory_order_relaxed);
+    std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
+    g_texturePointerCount.store(0, std::memory_order_relaxed);
 }
 
 void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
@@ -231,6 +238,27 @@ void DrawExactRuntimeShader()
     // buffers, SRVs, and samplers. Draw from this plugin event so Unity cannot
     // overwrite the exact stages with the shell material between installation
     // and the draw call.
+    ID3D11ShaderResourceView* resources[kTextureSlotCount] = {};
+    std::uint32_t resourceMask = 0;
+    const std::uint32_t textureCount =
+        g_texturePointerCount.load(std::memory_order_acquire);
+    for (std::uint32_t slot = 0;
+         slot < textureCount && slot < kTextureSlotCount;
+         ++slot)
+    {
+        if (g_texturePointers[slot] == 0)
+            continue;
+        ID3D11Resource* resource = reinterpret_cast<ID3D11Resource*>(
+            g_texturePointers[slot]);
+        HRESULT result = device->CreateShaderResourceView(
+            resource,
+            nullptr,
+            &resources[slot]);
+        if (SUCCEEDED(result) && resources[slot] != nullptr)
+            resourceMask |= 1u << slot;
+    }
+    context->PSSetShaderResources(0, kTextureSlotCount, resources);
+    g_shaderResourceMask.store(resourceMask, std::memory_order_relaxed);
     context->IASetInputLayout(nullptr);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(g_runtimeVertexShader, nullptr, 0);
@@ -342,7 +370,7 @@ void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
     if (g_exactShaderBound.load(std::memory_order_relaxed) == 0)
         g_exactShaderBound.store(exact ? 1u : 0u, std::memory_order_relaxed);
     g_constantBufferMask.store(constantMask, std::memory_order_relaxed);
-    g_shaderResourceMask.store(resourceMask, std::memory_order_relaxed);
+    g_postDrawShaderResourceMask.store(resourceMask, std::memory_order_relaxed);
     g_samplerMask.store(samplerMask, std::memory_order_relaxed);
     g_renderEventCount.fetch_add(1, std::memory_order_relaxed);
 }
@@ -429,6 +457,27 @@ EndfieldOriginalDxbcSetDiagnosticArmed(std::uint32_t armed)
     return g_armed.load(std::memory_order_acquire) ? 1u : 0u;
 }
 
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetDiagnosticTexturePointers(
+    const std::uint64_t* texturePointers,
+    std::uint32_t count)
+{
+    std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
+    if (texturePointers != nullptr && count != 0)
+    {
+        if (count > kTextureSlotCount)
+            count = kTextureSlotCount;
+        std::memcpy(
+            g_texturePointers,
+            texturePointers,
+            static_cast<std::size_t>(count) * sizeof(std::uint64_t));
+    }
+    std::atomic_thread_fence(std::memory_order_release);
+    g_texturePointerCount.store(
+        texturePointers == nullptr ? 0 : count,
+        std::memory_order_release);
+}
+
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcGetDiagnosticArmed()
 {
@@ -505,6 +554,12 @@ extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcGetShaderResourceMask()
 {
     return g_shaderResourceMask.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetPostDrawShaderResourceMask()
+{
+    return g_postDrawShaderResourceMask.load(std::memory_order_relaxed);
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

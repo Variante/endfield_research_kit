@@ -32,6 +32,7 @@ def passing_report() -> dict[str, object]:
         "last_hresult": "0x00000000",
         "render_event_count": 2,
         "post_draw_exact_shader_objects_bound": True,
+        "shader_resource_mask": "0x3fffffe",
         "resource_binding_compatible": True,
         "readback_changed_from_sentinel": True,
         "callback_count": 0,
@@ -66,6 +67,21 @@ class LiveReportTests(unittest.TestCase):
             MODULE.load_live(path, "standalone", errors)
             self.assertTrue(
                 any("post_draw_exact_shader_objects_bound" in error for error in errors),
+                errors,
+            )
+
+    def test_missing_source_srv_mask_is_actionable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "standalone_validation.json"
+            import json
+
+            changed = passing_report()
+            changed["shader_resource_mask"] = "0x0"
+            path.write_text(json.dumps(changed), encoding="utf-8")
+            errors: list[str] = []
+            MODULE.load_live(path, "standalone", errors)
+            self.assertTrue(
+                any("shader_resource_mask" in error for error in errors),
                 errors,
             )
 

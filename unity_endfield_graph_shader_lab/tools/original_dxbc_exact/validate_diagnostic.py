@@ -40,7 +40,7 @@ DURABLE = (
 
 VERTEX_HASH = "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155"
 PIXEL_HASH = "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f"
-PLUGIN_HASH = "d970d4cd41f94058dd36ca83522729beb87d639b96b701ad2525bf47896335e4"
+PLUGIN_HASH = "fc5cdd483240ddc2588918749680bced61e49a83d53b5e34c208ab1b3f71fa6c"
 VALIDATOR_HASH = "3cc382f0fe0307051a5d9f53de50a9750406761ef5fc7ab56b89581f376fd9fd"
 KEYWORD = "ENDFIELD_ORIGINAL_DXBC_EXACT"
 
@@ -131,6 +131,7 @@ def load_live(
             "last_hresult": "0x00000000",
             "render_event_count": 2,
             "post_draw_exact_shader_objects_bound": True,
+            "shader_resource_mask": "0x3fffffe",
             "resource_binding_compatible": True,
             "readback_changed_from_sentinel": True,
         }
@@ -244,6 +245,7 @@ def main() -> int:
             "EndfieldOriginalDxbcGetLastResult",
             "EndfieldOriginalDxbcGetPixelSwapCount",
             "EndfieldOriginalDxbcGetPluginLoadCount",
+            "EndfieldOriginalDxbcGetPostDrawShaderResourceMask",
             "EndfieldOriginalDxbcGetRenderEventCount",
             "EndfieldOriginalDxbcGetRenderEventFunc",
             "EndfieldOriginalDxbcGetSamplerMask",
@@ -251,6 +253,7 @@ def main() -> int:
             "EndfieldOriginalDxbcGetUnarmedCallbackCount",
             "EndfieldOriginalDxbcGetVertexSwapCount",
             "EndfieldOriginalDxbcSetDiagnosticArmed",
+            "EndfieldOriginalDxbcSetDiagnosticTexturePointers",
             "UnityPluginLoad",
             "UnityPluginUnload",
             "UnityShaderCompilerExtEvent",
@@ -283,6 +286,8 @@ def main() -> int:
         "g_pixelClaimed",
         "CreateVertexShader",
         "CreatePixelShader",
+        "CreateShaderResourceView",
+        "EndfieldOriginalDxbcSetDiagnosticTexturePointers",
         "PSGetConstantBuffers",
         "PSGetShaderResources",
         "PSGetSamplers",

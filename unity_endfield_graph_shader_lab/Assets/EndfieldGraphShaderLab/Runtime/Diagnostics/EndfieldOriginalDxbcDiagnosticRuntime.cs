@@ -248,7 +248,10 @@ namespace EndfieldGraphShaderLab
                     throw new InvalidOperationException(
                         "Reserved local keyword did not become active.");
                 BindConstantBuffers(command, buffers);
-                BindResources(command, buffers, textures);
+                ulong[] nativeTexturePointers = BindResources(command, buffers, textures);
+                Native.SetDiagnosticTexturePointers(
+                    nativeTexturePointers,
+                    (uint)nativeTexturePointers.Length);
 
                 var descriptor = new RenderTextureDescriptor(1, 1)
                 {
@@ -342,10 +345,13 @@ namespace EndfieldGraphShaderLab
                 uint exactShaderBound = Native.GetExactShaderBound();
                 uint constantBufferMask = Native.GetConstantBufferMask();
                 uint shaderResourceMask = Native.GetShaderResourceMask();
+                uint postDrawShaderResourceMask =
+                    Native.GetPostDrawShaderResourceMask();
                 uint samplerMask = Native.GetSamplerMask();
                 bool resourceBindingsCompatible =
                     renderEvents >= 2 &&
                     exactShaderBound != 0 &&
+                    shaderResourceMask != 0 &&
                     failures == 0 &&
                     finite &&
                     changed;
@@ -394,6 +400,7 @@ namespace EndfieldGraphShaderLab
                     exactShaderBound,
                     constantBufferMask,
                     shaderResourceMask,
+                    postDrawShaderResourceMask,
                     samplerMask,
                     resourceBindingsCompatible,
                     finite,
@@ -406,6 +413,7 @@ namespace EndfieldGraphShaderLab
             {
                 if (armed)
                     Native.SetDiagnosticArmed(0);
+                Native.SetDiagnosticTexturePointers(null, 0);
                 command.Release();
                 foreach (ComputeBuffer buffer in buffers)
                     buffer?.Release();
@@ -465,7 +473,7 @@ namespace EndfieldGraphShaderLab
             }
         }
 
-        private static void BindResources(
+        private static ulong[] BindResources(
             CommandBuffer command,
             ICollection<ComputeBuffer> buffers,
             ICollection<Texture> textures)
@@ -518,6 +526,7 @@ namespace EndfieldGraphShaderLab
             textures.Add(zeroArray);
             textures.Add(zero3D);
 
+            var nativeTexturePointers = new ulong[26];
             for (int slot = 1; slot <= 25; slot++)
             {
                 Texture texture;
@@ -545,7 +554,20 @@ namespace EndfieldGraphShaderLab
                 command.SetGlobalTexture(
                     Shader.PropertyToID("_EndfieldTextureT" + slot),
                     texture);
+                nativeTexturePointers[slot] = NativeTexturePointer(texture);
             }
+            return nativeTexturePointers;
+        }
+
+        private static ulong NativeTexturePointer(Texture texture)
+        {
+            // D3D11 GetNativeTexturePtr returns the underlying
+            // ID3D11Resource*. The exact native event creates a compatible
+            // SRV for each resource after Unity's command-buffer state has
+            // been established.
+            return texture == null
+                ? 0ul
+                : unchecked((ulong)texture.GetNativeTexturePtr().ToInt64());
         }
 
         private static Texture2D Make2D(
@@ -694,6 +716,9 @@ namespace EndfieldGraphShaderLab
                 result.ConstantBufferMask.ToString("x") + "\",");
             builder.AppendLine(
                 "  \"post_draw_shader_resource_mask\": \"0x" +
+                result.PostDrawShaderResourceMask.ToString("x") + "\",");
+            builder.AppendLine(
+                "  \"shader_resource_mask\": \"0x" +
                 result.ShaderResourceMask.ToString("x") + "\",");
             builder.AppendLine(
                 "  \"post_draw_sampler_mask\": \"0x" +
@@ -792,6 +817,7 @@ namespace EndfieldGraphShaderLab
             internal readonly bool ExactShaderBound;
             internal readonly uint ConstantBufferMask;
             internal readonly uint ShaderResourceMask;
+            internal readonly uint PostDrawShaderResourceMask;
             internal readonly uint SamplerMask;
             internal readonly bool ResourceBindingsCompatible;
             internal readonly bool ReadbackFinite;
@@ -818,6 +844,7 @@ namespace EndfieldGraphShaderLab
                 uint exactShaderBound,
                 uint constantBufferMask,
                 uint shaderResourceMask,
+                uint postDrawShaderResourceMask,
                 uint samplerMask,
                 bool resourceBindingsCompatible,
                 bool readbackFinite,
@@ -843,6 +870,7 @@ namespace EndfieldGraphShaderLab
                 ExactShaderBound = exactShaderBound == 1;
                 ConstantBufferMask = constantBufferMask;
                 ShaderResourceMask = shaderResourceMask;
+                PostDrawShaderResourceMask = postDrawShaderResourceMask;
                 SamplerMask = samplerMask;
                 ResourceBindingsCompatible = resourceBindingsCompatible;
                 ReadbackFinite = readbackFinite;
@@ -873,6 +901,7 @@ namespace EndfieldGraphShaderLab
                     0,
                     0,
                     0,
+                    0,
                     false,
                     false,
                     false,
@@ -897,6 +926,11 @@ namespace EndfieldGraphShaderLab
 
             [DllImport(Library, EntryPoint = "EndfieldOriginalDxbcSetDiagnosticArmed")]
             internal static extern uint SetDiagnosticArmed(uint armed);
+
+            [DllImport(Library, EntryPoint = "EndfieldOriginalDxbcSetDiagnosticTexturePointers")]
+            internal static extern void SetDiagnosticTexturePointers(
+                [In] ulong[] texturePointers,
+                uint count);
 
             [DllImport(Library, EntryPoint = "EndfieldOriginalDxbcGetDiagnosticArmed")]
             internal static extern uint GetDiagnosticArmed();
@@ -936,6 +970,9 @@ namespace EndfieldGraphShaderLab
 
             [DllImport(Library, EntryPoint = "EndfieldOriginalDxbcGetShaderResourceMask")]
             internal static extern uint GetShaderResourceMask();
+
+            [DllImport(Library, EntryPoint = "EndfieldOriginalDxbcGetPostDrawShaderResourceMask")]
+            internal static extern uint GetPostDrawShaderResourceMask();
 
             [DllImport(Library, EntryPoint = "EndfieldOriginalDxbcGetSamplerMask")]
             internal static extern uint GetSamplerMask();

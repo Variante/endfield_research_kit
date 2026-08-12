@@ -190,11 +190,13 @@ NPC archetypes are imported as labeled source kits.
   result `[0, 0, 0, 1]` (`render_event_count=2`, exact-bound=true,
   `callback_count=0`). The player-side compiler callback is intentionally not
   required; the editor immediate command-buffer check remains fail-closed.
-  The post-draw capture retains the 9 constant buffers and 5 samplers, while
-  Unity has already cleared the 26 SRV slots; source-texture population is
-  therefore still an explicit open boundary. This proves exact bytecode
-  execution in the disposable D3D11 fixture only, not retail resolver
-  activation or frame parity.
+  The native event now recreates all 25 source-texture SRVs from the fixture's
+  D3D11 resources before the exact draw (`shader_resource_mask=0x3fffffe`);
+  Unity has cleared those slots by the post-draw inspection event, as expected.
+  This closes source-texture population in the disposable fixture, while the
+  retail target-frame resource ownership and numeric parity remain open.
+  This proves exact bytecode execution in the disposable D3D11 fixture only,
+  not retail resolver activation or frame parity.
 - The selected pass-0 contract now carries a high-confidence D3D11 register
   bridge for the core frame resources: `t0` binning, `t1` camera depth, `t5`
   reflection-probe array, `t6` punctual shadow comparison, `t7` low-res
