@@ -39,6 +39,8 @@ std::atomic<std::uint32_t> g_renderEventCount{0};
 std::atomic<std::uint32_t> g_exactShaderBound{0};
 std::atomic<std::uint32_t> g_constantBufferMask{0};
 std::atomic<std::uint32_t> g_shaderResourceMask{0};
+std::atomic<std::uint32_t> g_shaderResourceFailureMask{0};
+HRESULT g_shaderResourceFailureResults[kTextureSlotCount] = {};
 std::atomic<std::uint32_t> g_postDrawShaderResourceMask{0};
 std::atomic<std::uint32_t> g_samplerMask{0};
 std::uintptr_t g_texturePointers[kTextureSlotCount] = {};
@@ -68,6 +70,8 @@ void ResetDiagnosticState()
     g_exactShaderBound.store(0, std::memory_order_relaxed);
     g_constantBufferMask.store(0, std::memory_order_relaxed);
     g_shaderResourceMask.store(0, std::memory_order_relaxed);
+    g_shaderResourceFailureMask.store(0, std::memory_order_relaxed);
+    std::memset(g_shaderResourceFailureResults, 0, sizeof(g_shaderResourceFailureResults));
     g_postDrawShaderResourceMask.store(0, std::memory_order_relaxed);
     g_samplerMask.store(0, std::memory_order_relaxed);
     std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
@@ -178,6 +182,138 @@ void ReleaseRuntimeShaders()
     }
 }
 
+DXGI_FORMAT ShaderResourceFormat(DXGI_FORMAT format)
+{
+    switch (format)
+    {
+        case DXGI_FORMAT_D16_UNORM:
+            return DXGI_FORMAT_R16_UNORM;
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+            return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+        case DXGI_FORMAT_D32_FLOAT:
+            return DXGI_FORMAT_R32_FLOAT;
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+            return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+        case DXGI_FORMAT_R16_TYPELESS:
+            return DXGI_FORMAT_R16_UNORM;
+        case DXGI_FORMAT_R32_TYPELESS:
+            return DXGI_FORMAT_R32_FLOAT;
+        case DXGI_FORMAT_R24G8_TYPELESS:
+            return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+        case DXGI_FORMAT_R32G8X24_TYPELESS:
+            return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+        default:
+            return format;
+    }
+}
+
+HRESULT CreateDiagnosticShaderResourceView(
+    ID3D11Device* device,
+    ID3D11Resource* resource,
+    ID3D11ShaderResourceView** view)
+{
+    if (device == nullptr || resource == nullptr || view == nullptr)
+        return E_POINTER;
+    *view = nullptr;
+
+    HRESULT result = device->CreateShaderResourceView(resource, nullptr, view);
+    if (SUCCEEDED(result) && *view != nullptr)
+        return result;
+
+    D3D11_RESOURCE_DIMENSION dimension = D3D11_RESOURCE_DIMENSION_UNKNOWN;
+    resource->GetType(&dimension);
+    D3D11_SHADER_RESOURCE_VIEW_DESC description = {};
+    if (dimension == D3D11_RESOURCE_DIMENSION_BUFFER)
+    {
+        ID3D11Buffer* buffer = nullptr;
+        result = resource->QueryInterface(
+            __uuidof(ID3D11Buffer),
+            reinterpret_cast<void**>(&buffer));
+        if (FAILED(result) || buffer == nullptr)
+            return result;
+        D3D11_BUFFER_DESC bufferDescription = {};
+        buffer->GetDesc(&bufferDescription);
+        buffer->Release();
+        if (bufferDescription.StructureByteStride == 0)
+        {
+            // Raw ComputeBuffer resources are exposed as a typeless 32-bit
+            // buffer SRV with the RAW flag, not as a structured SRV.
+            description.Format = DXGI_FORMAT_R32_TYPELESS;
+            description.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+            description.BufferEx.FirstElement = 0;
+            description.BufferEx.NumElements =
+                bufferDescription.ByteWidth / sizeof(std::uint32_t);
+            description.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+            return device->CreateShaderResourceView(resource, &description, view);
+        }
+        description.Format = DXGI_FORMAT_UNKNOWN;
+        description.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+        description.Buffer.FirstElement = 0;
+        description.Buffer.NumElements =
+            bufferDescription.ByteWidth / bufferDescription.StructureByteStride;
+        return device->CreateShaderResourceView(resource, &description, view);
+    }
+
+    if (dimension == D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+    {
+        ID3D11Texture2D* texture = nullptr;
+        result = resource->QueryInterface(
+            __uuidof(ID3D11Texture2D),
+            reinterpret_cast<void**>(&texture));
+        if (FAILED(result) || texture == nullptr)
+            return result;
+        D3D11_TEXTURE2D_DESC textureDescription = {};
+        texture->GetDesc(&textureDescription);
+        texture->Release();
+        description.Format = ShaderResourceFormat(textureDescription.Format);
+        if (textureDescription.SampleDesc.Count > 1)
+        {
+            description.ViewDimension = textureDescription.ArraySize > 1
+                ? D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY
+                : D3D11_SRV_DIMENSION_TEXTURE2DMS;
+            if (description.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY)
+            {
+                description.Texture2DMSArray.FirstArraySlice = 0;
+                description.Texture2DMSArray.ArraySize = textureDescription.ArraySize;
+            }
+        }
+        else if (textureDescription.ArraySize > 1)
+        {
+            description.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+            description.Texture2DArray.MostDetailedMip = 0;
+            description.Texture2DArray.MipLevels = textureDescription.MipLevels;
+            description.Texture2DArray.FirstArraySlice = 0;
+            description.Texture2DArray.ArraySize = textureDescription.ArraySize;
+        }
+        else
+        {
+            description.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+            description.Texture2D.MostDetailedMip = 0;
+            description.Texture2D.MipLevels = textureDescription.MipLevels;
+        }
+        return device->CreateShaderResourceView(resource, &description, view);
+    }
+
+    if (dimension == D3D11_RESOURCE_DIMENSION_TEXTURE3D)
+    {
+        ID3D11Texture3D* texture = nullptr;
+        result = resource->QueryInterface(
+            __uuidof(ID3D11Texture3D),
+            reinterpret_cast<void**>(&texture));
+        if (FAILED(result) || texture == nullptr)
+            return result;
+        D3D11_TEXTURE3D_DESC textureDescription = {};
+        texture->GetDesc(&textureDescription);
+        texture->Release();
+        description.Format = ShaderResourceFormat(textureDescription.Format);
+        description.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+        description.Texture3D.MostDetailedMip = 0;
+        description.Texture3D.MipLevels = textureDescription.MipLevels;
+        return device->CreateShaderResourceView(resource, &description, view);
+    }
+    return result;
+}
+
 void DrawExactRuntimeShader()
 {
     if (!g_armed.load(std::memory_order_acquire))
@@ -250,12 +386,19 @@ void DrawExactRuntimeShader()
             continue;
         ID3D11Resource* resource = reinterpret_cast<ID3D11Resource*>(
             g_texturePointers[slot]);
-        HRESULT result = device->CreateShaderResourceView(
+        HRESULT result = CreateDiagnosticShaderResourceView(
+            device,
             resource,
-            nullptr,
             &resources[slot]);
         if (SUCCEEDED(result) && resources[slot] != nullptr)
             resourceMask |= 1u << slot;
+        else
+        {
+            g_shaderResourceFailureMask.fetch_or(
+                1u << slot,
+                std::memory_order_relaxed);
+            g_shaderResourceFailureResults[slot] = result;
+        }
     }
     context->PSSetShaderResources(0, kTextureSlotCount, resources);
     g_shaderResourceMask.store(resourceMask, std::memory_order_relaxed);
@@ -293,7 +436,20 @@ void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
         return;
     }
     if (eventId != 1)
+    {
+        if (eventId == 2)
+        {
+            // Event 2 is queued after the exact draw and its readback copy.
+            // Clear the native resource-pointer lifetime only on the render
+            // thread; clearing it from C# immediately after ExecuteCommandBuffer
+            // can race a deferred SRP submission.
+            std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
+            g_texturePointerCount.store(0, std::memory_order_release);
+            g_armed.store(false, std::memory_order_release);
+            ReleaseRuntimeShaders();
+        }
         return;
+    }
 
     IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
     ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
@@ -554,6 +710,20 @@ extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcGetShaderResourceMask()
 {
     return g_shaderResourceMask.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetShaderResourceFailureMask()
+{
+    return g_shaderResourceFailureMask.load(std::memory_order_relaxed);
+}
+
+extern "C" std::int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetShaderResourceFailureResult(std::uint32_t slot)
+{
+    if (slot >= kTextureSlotCount)
+        return static_cast<std::int32_t>(E_INVALIDARG);
+    return static_cast<std::int32_t>(g_shaderResourceFailureResults[slot]);
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

@@ -431,6 +431,8 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredGBufferFrame;
         private readonly EndfieldRecoveredDeferredResolverInputProbe
             recoveredDeferredResolverInputProbe;
+        private readonly EndfieldRecoveredDeferredExactConsumer
+            recoveredDeferredExactConsumer;
         private readonly EndfieldRecoveredDirectionalCSMProducer
             recoveredDirectionalCSMProducer;
         private readonly EndfieldRecoveredContactShadowProducer
@@ -541,6 +543,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredDeferredGBufferFrame();
             recoveredDeferredResolverInputProbe =
                 new EndfieldRecoveredDeferredResolverInputProbe();
+            recoveredDeferredExactConsumer =
+                new EndfieldRecoveredDeferredExactConsumer();
             recoveredContactShadowProducer =
                 new EndfieldRecoveredContactShadowProducer();
             recoveredLowResDirectionalShadowProducer =
@@ -618,6 +622,7 @@ namespace EndfieldGraphShaderLab
             recoveredPreGBufferDiagnostic?.Dispose();
             recoveredDeferredGBufferFrame?.Dispose();
             recoveredDeferredResolverInputProbe?.Dispose();
+            recoveredDeferredExactConsumer?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
             recoveredDeferredShadowData?.Dispose();
@@ -1457,6 +1462,15 @@ namespace EndfieldGraphShaderLab
                 recoveredShaderVariablesGlobalReady,
                 recoveredDeferredLightDataReady,
                 recoveredDeferredShadowDataReady,
+                recoveredDeferredResolverResources,
+                canonicalColorTarget,
+                canonicalDepthTarget);
+            recoveredDeferredExactConsumer.Render(
+                context,
+                camera,
+                renderWidth,
+                renderHeight,
+                recoveredDeferredGBufferFrame,
                 recoveredDeferredResolverResources,
                 canonicalColorTarget,
                 canonicalDepthTarget);
