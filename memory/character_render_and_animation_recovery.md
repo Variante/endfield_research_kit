@@ -272,20 +272,23 @@ NPC archetypes are imported as labeled source kits.
   boundaries explicitly: native history/deformation inputs, packed-flag
   inputs, and retail pass-0 publication. The runtime sidecar still
   does not publish these lanes through the retail deferred resolver.
-- The packed-flag producer was audited against the refreshed installed
+- The packed-flag consumer remains closed against the refreshed installed
   GameAssembly/metadata (metadata SHA-256
   `90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e`). The
-  original fragment and generated DXBC both read an independent `register(b3)`
+  original fragment and generated DXBC read an independent `register(b3)`
   one-vector buffer (`cb3[0].w`), then split its integer bits into `Target2.w`
-  and `Target3.w`. Native `GBufferPassConstructor`/`HGRendererListUtils`
-  only build and submit the HGBuffer renderer list; `GpuClothManager` uploads
-  cloth data, and `SkinnedMeshCaptureManager` uploads `BAKE_SKIN_MATRICES_CB`.
-  None identifies or writes this b3 word, and the material export has no named
-  property for it (`_ShadingModel` is a cb2 value). The durable audit is
+  and `Target3.w`. The earlier producer census was incomplete: native
+  `Beyond.Rendering.CustomPerDrawDataChannelUtils.SetPerDrawData_CharacterParams`
+  copies a Vector4 unchanged into renderer custom-per-draw channel
+  `CHARACTER_PARAMS_INDEX=2`, and `EntityRenderHelperMaterialController` has
+  matching `TrySetCharacterPerDrawData`/controller forwarding. This recovers a
+  source-backed character per-draw producer, but the original DXBC has no RDEF
+  and the shipped fragment metadata is a stale vertex copy, so channel 2 to
+  `cb3[0].w` is not yet a proven binding ABI. The durable audit is
   `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`.
-  This is a producer gap, not permission to substitute zero, `_ShadingModel`,
-  or an arbitrary UnityPerDraw field; the sidecar remains neutral and
-  fail-closed for these two lanes.
+  Do not substitute `_ShadingModel`, UnityPerDraw, channel 2, or zero/default
+  values; the sidecar remains neutral and fail-closed until that binding or an
+  authorized target-frame upload is recovered.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count
   publisher verified bit-for-bit on D3D11/D3D12. Its unique native

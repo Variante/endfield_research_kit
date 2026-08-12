@@ -2,7 +2,7 @@
   "schema": "endfield.charinfo.hgrp-packed-flags-producer-recovery.v1",
   "shader": "HGRP/Lit",
   "pass": "HGBuffer",
-  "status": "consumer-closed-producer-open",
+  "status": "consumer-closed-producer-recovered-binding-abi-partial",
   "consumer": {
     "source_hlsl": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/hgbuffer_fragment.hlsl",
     "fragment_dxbc": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/HGRPLitHGBuffer.fragment.dxbc.bytes",
@@ -19,15 +19,60 @@
       "HG.Rendering.Runtime.GBufferPassConstructor",
       "HG.Rendering.Runtime.HGRendererListUtils",
       "HG.Rendering.Runtime.GpuClothManager._SetPerDrawData",
-      "HG.Rendering.Runtime.SkinnedMeshCaptureManager.SetCaptureDataForPropertyBlock"
+      "HG.Rendering.Runtime.SkinnedMeshCaptureManager.SetCaptureDataForPropertyBlock",
+      "Beyond.Rendering.CustomPerDrawDataChannelUtils.SetPerDrawData_CharacterParams",
+      "Beyond.Rendering.EntityRenderHelperMaterialController+RendererInfo.TrySetCharacterPerDrawData",
+      "Beyond.Rendering.EntityRenderHelperMaterialController+CustomPerDrawDataController.SetFloatToCustomPerDraw"
     ],
+    "custom_per_draw_channel": {
+      "channel_name": "CHARACTER_PARAMS_INDEX",
+      "channel_index": 2,
+      "value_layout": "Vector4 / 16 bytes",
+      "managed_methods": [
+        {
+          "type": "Beyond.Rendering.CustomPerDrawDataChannelUtils",
+          "method": "SetPerDrawData_CharacterParams",
+          "metadata_method_index": 455195,
+          "native_catalog_index": 280686,
+          "native_pointer": "0x18323af00",
+          "observed": "Copies the incoming param0 Vector4 unchanged, passes channel index 2, and calls the renderer custom-per-draw injected setter through a lazy native slot."
+        },
+        {
+          "type": "Beyond.Rendering.EntityRenderHelperMaterialController+RendererInfo",
+          "method": "TrySetCharacterPerDrawData",
+          "metadata_method_index": 455434,
+          "native_catalog_index": 280806,
+          "native_pointer": "0x182e5f980",
+          "observed": "Forwards the RendererInfo value to the character custom-per-draw route and again uses channel index 2."
+        },
+        {
+          "type": "Beyond.Rendering.EntityRenderHelperMaterialController+CustomPerDrawDataController",
+          "method": "SetFloatToCustomPerDraw",
+          "native_catalog_index": 280850,
+          "native_pointer": "0x18323af90",
+          "observed": "Dispatches typed custom-per-draw updates to renderer-info records; this is the controller entry that can reach the character channel."
+        },
+        {
+          "type": "UnityEngine.Renderer",
+          "method": "SetCustomPerDrawData_Injected",
+          "native_pointer": "0x183e6e280",
+          "observed": "Native renderer upload endpoint reached by the channel utility; the original HGRP shader consumes a separate register(b3) vector."
+        }
+      ]
+    },
+    "binding_gap": {
+      "status": "open",
+      "reason": "The original fragment DXBC has no RDEF chunk, and its shipped fragment metadata is a stale byte-identical copy of the vertex metadata; neither names the b3 buffer. Static evidence therefore proves the character channel-2 producer but not the final channel-2-to-register(b3) binding ABI for HGRP/Lit HGBuffer.",
+      "required_evidence": "A compatible Unity/HGRP reflection record or an authorized target-frame capture showing the renderer custom-per-draw channel mapped to cb3[0].w."
+    },
     "observed": [
       "GBufferPassConstructor builds renderer-list descriptions and submits the HGBuffer renderer list; it does not write b3.",
       "GpuClothManager._SetPerDrawData writes cloth ECS/per-draw data, with no b3 or packed-flag property evidence.",
       "SkinnedMeshCaptureManager uploads BAKE_SKIN_MATRICES_CB through MaterialPropertyBlock.SetConstantBuffer; it is unrelated to the b3 scalar and does not identify cb3[0].w.",
-      "The generated ShaderLab has no named material property for cb3[0].w; _ShadingModel is consumed from cb2 and is not the packed flag word."
+      "The generated ShaderLab has no named material property for cb3[0].w; _ShadingModel is consumed from cb2 and is not the packed flag word.",
+      "CustomPerDrawDataChannelUtils and EntityRenderHelperMaterialController provide a source-backed character per-draw producer at channel 2, but its register binding is not named by the available reflection."
     ],
-    "conclusion": "No source-backed producer for cb3[0].w is recovered in the current installed binary. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, or zero/default values. Keep Target2.w and Target3.w neutral until the native/material capture or an exact per-renderer upload is recovered."
+    "conclusion": "The source-backed producer for the character custom per-draw channel is recovered (CHARACTER_PARAMS_INDEX=2), while the final channel-2-to-cb3[0].w binding remains open. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the binding-compatible upload or an authorized target-frame capture is recovered."
   },
   "activation_policy": "default-off-fail-closed"
 }
