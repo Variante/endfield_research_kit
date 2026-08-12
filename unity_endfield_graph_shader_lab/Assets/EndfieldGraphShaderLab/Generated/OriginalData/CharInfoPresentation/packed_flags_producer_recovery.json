@@ -69,7 +69,9 @@
           "name_file_offset": "0x1cbc018",
           "name": "UnityEngine.Renderer::SetCustomPerDrawData_Injected",
           "function_pointer": "0x1800fe590",
-          "function_file_offset": "0xfdb90"
+          "function_file_offset": "0xfdb90",
+          "implementation_body_pointer": "0x180430680",
+          "implementation_body_observed": "The registration target is a small lazy/error-handling stub; its successful path calls 0x180430680, where the index guard, renderer movups, vtable refresh, and resolved-resource movups are implemented."
         },
         "arguments": {
           "rcx": "native Renderer object",
@@ -103,6 +105,19 @@
             "0x18042d692 (renderer create/rebuild path)"
           ],
           "observed": "The refresh path copies all five renderer custom-per-draw vectors into the same resolved resource array; channel 2 therefore remains the third Vector4 at resource +0xd0. This independently confirms the slot stride and shared resource layout, but does not identify the later GPU descriptor/constant-buffer upload."
+        },
+        "resource_consumer_census": {
+          "status": "source-closed-resource-writes-upload-edge-open",
+          "source": "Exhaustive direct-call census for UnityPlayer 0x1804255f0 (26 call sites) plus renderer-list/property-block copy helpers in the installed UnityPlayer.dll.",
+          "confirmed_resource_writers": [
+            "0x180430680 writes the setter Vector4 to resource +0xb0 + 0x10*index.",
+            "0x18042f750 copies all five renderer slots to resource +0xb0..+0xf0."
+          ],
+          "related_copy_helpers": [
+            "0x1810ccd20 copies two 0x80-byte blocks between resolved resource records; it is called by renderer-list/resource-record preparation and has no custom-channel or GPU descriptor identity.",
+            "0x1810d2fc4/0x1810d2fd9 perform the same generic block-copy pattern for paired records."
+          ],
+          "negative_result": "No inspected UnityPlayer path reads resource +0xd0 (or a proven equivalent vector lane) into a constant-buffer/descriptor binding, and no direct call edge names set 0/binding 33. Keep the channel-to-resource-to-GPU edge open."
         },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
