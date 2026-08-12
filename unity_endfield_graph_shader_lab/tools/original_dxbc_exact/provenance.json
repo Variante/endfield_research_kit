@@ -1,0 +1,38 @@
+{
+  "schema": "endfield.original-dxbc-exact-plugin-provenance.v1",
+  "activation_policy": "default-off-fail-closed-isolated-diagnostic-only",
+  "unity_version": "2022.3.62f3",
+  "graphics_api": "Direct3D11",
+  "reserved_local_keyword": "ENDFIELD_ORIGINAL_DXBC_EXACT",
+  "source_shader": "HGRP/DeferredLighting",
+  "source_pass": 0,
+  "source_pass_name": "Default Lit - Full Lighting",
+  "source_classification": "exact extracted asset variant; not exact retail executed-variant proof",
+  "vertex": {
+    "file": "bytecode/selected_deferred_resolver_vs.dxbc",
+    "size": 496,
+    "sha256": "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155",
+    "profile": "vs_5_0"
+  },
+  "pixel": {
+    "file": "bytecode/selected_deferred_resolver_ps.dxbc",
+    "size": 48984,
+    "sha256": "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f",
+    "profile": "ps_5_0"
+  },
+  "source_evidence": "scratch/reverse_engineering/gacha_deferred_resolver_chain/audit.json",
+  "execution_path_evidence": "scratch/reverse_engineering/gacha_unity_original_bytecode_execution/audit.json",
+  "live_validation_evidence": "scratch/reverse_engineering/gacha_unity_original_bytecode_execution/unity_live_validation.json",
+  "live_activation_scope": "standalone_d3d11_isolated_diagnostic",
+  "editor_status": "no_activation",
+  "neutral_fixture_numeric_fidelity": false,
+  "guardrails": [
+    "native explicit arm is required",
+    "one swap per stage per arm cycle",
+    "unique local keyword is required",
+    "D3D11 compiler/platform masks only",
+    "ShaderLab only_renderers d3d11",
+    "batch command-line diagnostic token required",
+    "no production room or compatibility pipeline submission"
+  ]
+}

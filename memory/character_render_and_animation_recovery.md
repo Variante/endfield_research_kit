@@ -184,11 +184,17 @@ NPC archetypes are imported as labeled source kits.
   `b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f`.
   This confirms the pass-0 binary evidence remains current, while the live
   resolver bindings and numeric frame parity remain open.
-  The latest isolated Unity exact-DXBC rerun remains fail-closed with
-  `callback_count=0` and `status=no_activation`; no custom compiler callbacks
-  were observed in that player run. Retain the earlier exact-execution result
-  as historical evidence only and do not promote this rerun to a live parity
-  claim until variant activation is reproduced.
+  The latest isolated Unity exact-DXBC rerun now passes in the standalone
+  player through a native render event: both embedded stages are created from
+  the selected bytes, bound for the draw, and produce the changed one-pixel
+  result `[0, 0, 0, 1]` (`render_event_count=2`, exact-bound=true,
+  `callback_count=0`). The player-side compiler callback is intentionally not
+  required; the editor immediate command-buffer check remains fail-closed.
+  The post-draw capture retains the 9 constant buffers and 5 samplers, while
+  Unity has already cleared the 26 SRV slots; source-texture population is
+  therefore still an explicit open boundary. This proves exact bytecode
+  execution in the disposable D3D11 fixture only, not retail resolver
+  activation or frame parity.
 - The selected pass-0 contract now carries a high-confidence D3D11 register
   bridge for the core frame resources: `t0` binning, `t1` camera depth, `t5`
   reflection-probe array, `t6` punctual shadow comparison, `t7` low-res
