@@ -1908,6 +1908,7 @@ boundary separately with:
 ```bat
 python tools\verify_current_character_npr_skin_export.py
 python tools\verify_current_screen_shadow_binding_boundary.py
+python tools\verify_current_screen_shadow_resolve_export.py
 ```
 
 This current-export audit requires the targeted `CharacterNPR_Skin` shader
@@ -1923,6 +1924,15 @@ comparison.
 The Skin export audit also pins the current binary equations: the directional
 R selector honors `DirectionalShadowParams.x` and `CharacterParams1.z`, while
 G feeds the character-shadow alpha product and minimum-shadow path.
+
+The resolve export audit is the producer-side complement. It pins the original
+`HGRP/ScreenSpaceShadowResolve` AssetMap identity and its
+`ScreenSpaceShadowResolve_Character` pass: packed GBuffer0 selects one of 15
+character shadow records, the projected point uses the original light-facing
+bias, and `_CharacterShadowmapTex` is filtered with 16 `GatherRed` depth
+comparisons before the result is written to mask G. This is source-backed
+producer semantics only; the lab keeps the runtime publication fail-closed
+until the character atlas upload and target-frame state are validated.
 
 In the corrected 3840x2160 controlled A/B, the only change is the exact body
 selector. On pixels changing by more than 1/255, reference MAE moves
