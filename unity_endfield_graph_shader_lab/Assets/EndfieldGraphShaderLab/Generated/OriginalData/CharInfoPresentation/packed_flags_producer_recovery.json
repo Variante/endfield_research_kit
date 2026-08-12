@@ -900,24 +900,54 @@
         "boundary": "This closes a concrete native/GameAssembly entry into the Burst per-draw configuration path and its binder Vector4 writer. It still ends at the generic factory shared-data/dirty-flag producer: no static edge from this bridge proves _UploadBuffer population, UploadPerDrawParams kernel 7 selection, or channel-2 resource +0xd0 consumption."
       },
       "native_partial_endpoint_evidence": {
-        "status": "registered-native-factory-service-bridge-upload-unresolved",
-        "source": "Installed UnityPlayer.dll HyperGryph internal-call name/pointer tables and PData-scoped x64 disassembly.",
+        "status": "primary-native-record-copy-closed-gpu-upload-open",
+        "source": "Installed UnityPlayer.dll HyperGryph AddInternalCall name/pointer table plus the alternate legacy pointer table, with PData-scoped x64 disassembly.",
+        "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
         "registration": {
+          "registration_loop": "0x1801fa6f0",
+          "name_table": "0x1820e6e90",
+          "function_table": "0x1820e8560",
+          "table_count": 729,
           "entry_index": 206,
           "name": "UnityEngine.HyperGryph.HGFactoryRenderManager::SetEntitySharedDataPartial",
-          "function_pointer": "0x180155300",
-          "function_rva": "0x155300",
-          "function_file_offset": "0x154900",
+          "function_pointer": "0x1801eb9a0",
+          "function_rva": "0x1eb9a0",
+          "function_file_offset": "0x1eb5a0",
           "pdata_segments": [
-            "0x180155300..0x1801553c7",
-            "0x1801553c7..0x180155464",
-            "0x180155464..0x1801554fc",
-            "0x1801554fc..0x180155510",
-            "0x180155510..0x180155554",
-            "0x180155554..0x18015558b"
+            "0x1801eb9a0..0x1801eb9ed"
           ]
         },
-        "body_contract": {
+        "primary_record_copy": {
+          "helper_target": "0x1810d91f0",
+          "helper_pdata": "not separately represented in the UnityPlayer .pdata table",
+          "manager_resolution": "0x1801eb9bf calls 0x1810d8c30, which calls 0x180fc5e60 and returns [result+0x110]",
+          "abi": {
+            "ecx": "sharedDataIndex",
+            "rdx": "source data pointer",
+            "r8d": "destination byte offset",
+            "r9d": "copy size; saved by the wrapper and passed on the stack"
+          },
+          "record_layout": {
+            "manager_record_base_field": "+0x38",
+            "record_stride_bytes": 140,
+            "destination": "manager[+0x38] + sharedDataIndex * 0x8c + offset"
+          },
+          "copy_body": "0x1810d91f0 widens the stack size, forms the destination above, and jumps to optimized memcpy 0x181c9f9a0; the helper has no graphics API, shader property, command-buffer, or dispatch operation.",
+          "cross_checks": {
+            "full_set": "0x1801eb970 tail-jumps to 0x1810d9170, which writes the complete 0x8c-byte record into the same manager[+0x38] array",
+            "vat_entry": "0x1801eb9f0 resolves the same manager object but calls 0x1810ce200 instead of the partial memcpy helper",
+            "flag_accessors": "0x1801eba50/0x1801eba70/0x1801ebaa0/0x1801ebac0/0x1801ebae0 all resolve through 0x1810d8c30 into adjacent native record/flag helpers"
+          },
+          "boundary": "This closes the primary native endpoint as a CPU-side per-entity shared-record copy. It does not prove that the record array is later uploaded to _UploadBuffer, kernel 7, channel 2, or resource +0xd0."
+        },
+        "alternate_pointer_table": {
+          "table_va": "0x1820e0670",
+          "entry_index": 0,
+          "partial_function_pointer": "0x180155300",
+          "vat_function_pointer": "0x180155870",
+          "interpretation": "This is a separate legacy/secondary pointer array; it is not the 0x1820e8560 AddInternalCall function table that owns entry 206 in the current build. Its dynamic service bridge remains useful negative evidence but must not replace the primary registration mapping."
+        },
+        "alternate_pointer_table_body_contract": {
           "visible_entry_behavior": "The registered body uses the IL2CPP GC write barrier for managed local roots, unwraps a wrapper through +0x10, calls the resulting factory-manager object's virtual slot +0xb0, obtains a global record container, walks record indices, and invokes generic record helpers before returning.",
           "incoming_payload_registers": {
             "rdx": "data pointer is not preserved in the visible body",
@@ -932,7 +962,7 @@
           ],
           "paired_full_set_cross_check": "The adjacent SetEntitySharedData registration target 0x180153ee0 has the same GC-root/unwrapper and virtual-service shape and ends at virtual slot +0xc0 rather than exposing a file-backed payload copy."
         },
-        "service_registry_boundary": {
+        "alternate_service_registry_boundary": {
           "status": "factory-service-registry-slot-5-and-record-container-bounded",
           "registry_accessor": {
             "helper": "0x180776410",
@@ -958,7 +988,7 @@
           },
           "interpretation": "This closes the dynamic factory-service and record-container side of the native boundary while keeping the shared-payload-to-GPU edge unresolved. Do not identify registry slot 5, the +0xb0 wrapper result, or the +0x1c8 record table with _UploadBuffer, UploadPerDrawParams kernel 7, or channel-2 resource +0xd0 without runtime evidence."
         },
-        "interpretation": "This is the correct UnityPlayer registration target, but its payload consumer is a dynamic factory service/vtable boundary. It must not be counted as proof that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
+        "interpretation": "The current AddInternalCall target now closes a concrete CPU record copy, while the older 0x180155300 surface remains a separate dynamic service/vtable path. Neither surface proves that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
       },
       "native_factory_batch_vat_evidence": {
         "status": "native-batch-vat-registry-finalizer-negative-upload-edge-open",
