@@ -560,15 +560,16 @@ NPC archetypes are imported as labeled source kits.
   The adjacent native factory/VAT surface is also bounded: the registered
   `HGFactoryRenderManager::BatchSetFactoryVATParams_Internal` entry is
   `UnityPlayer 0x180155870` (`0x180155870..0x1801558ed`), which calls
-  `0x180a37780`. That body allocates/initializes a 0x3c-byte batch object,
-  passes it through `0x180763670`, and tail-jumps through the resulting vtable
-  slot `+0x28`. Its visible bytes contain no `_RTPerDrawParamsBuffer`,
-  `GpuSceneDirtyUpdateCS`/`UploadPerDrawParams`, buffer/property bind, or
-  compute-dispatch edge; the initialized 0x3c-byte object only exposes paired
-  handle/state fields before the resolved object's runtime vtable `+0x28`
-  takes over. Treat it as a dynamic VAT handoff, not evidence that the 80-byte
-  shared record reaches the GPU upload path. Details are recorded under
-  `native_factory_batch_vat_evidence` in the packed-flag audit.
+  `0x180a37780`. That body allocates an object of size `0x128` (`ecx=0x128`;
+  `r8d=0x3c` is a type/tag), initializes it through `0x180a34960`, performs
+  hash/handle registration in `0x180319450`, and tail-jumps through the
+  statically initialized vtable `0x181dd6c30` slot `+0x28` to `0x180a38ea0`.
+  The final target only clears handle/table state; the visible chain contains
+  no `_RTPerDrawParamsBuffer`, `GpuSceneDirtyUpdateCS`/`UploadPerDrawParams`,
+  buffer/property bind, or compute dispatch. This closes the VAT entry as
+  negative evidence rather than a GPU upload path; the independent 80-byte
+  factory per-draw edge remains open and fail-closed. Details are recorded
+  under `native_factory_batch_vat_evidence` in the packed-flag audit.
   The managed `HGFactoryRenderManager.FrameUpdateEntities` entry is an
   additional bounded negative: metadata method `477917` resolves through the
   current code-registration pair to `GameAssembly 0x1841e1670`, whose body is
