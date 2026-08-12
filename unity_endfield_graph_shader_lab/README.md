@@ -1938,11 +1938,16 @@ The lab resolve now carries that source shape into its default-off attachment:
 it binds the same-frame PreGBuffer selector/normal lanes, chooses the scalar or
 15-slot character atlas transform, applies light-facing bias, and executes the
  16-tap `GatherRed` depth filter for mask G. The producer checks camera, atlas,
- and GBuffer ownership before drawing. Its scene and character passes retain
- the original stencil split (`Ref 4`, `ReadMask 7`, `NotEqual`/`Equal`), while
- `contentValid=false` still keeps
- the retail consumers disabled until complete scene-R and deferred-GBuffer
- ownership are recovered.
+and GBuffer ownership before drawing. Its scene and character passes retain
+the original stencil split (`Ref 4`, `ReadMask 7`, `NotEqual`/`Equal`), while
+`contentValid=false` still keeps
+the retail consumers disabled until complete scene-R and deferred-GBuffer
+ownership are recovered.
+The directional CSM bridge also publishes the installed CharInfo environment's
+serialized `csmIntensity=1.0` gate (the source of
+`DirectionalShadowParams.x`) and applies it after CSM composition, matching
+the original final blend. Unity `Light.shadowStrength` is a separate field;
+this remains diagnostic-only.
 
 In the corrected 3840x2160 controlled A/B, the only change is the exact body
 selector. On pixels changing by more than 1/255, reference MAE moves
