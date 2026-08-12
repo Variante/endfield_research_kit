@@ -2240,6 +2240,16 @@ a render-style parity claim. Current source evidence, GPU results, and blocked
 coverage are recorded in
 `memory/character_render_and_animation_recovery.md`.
 
+The current Skin DXBC `PreGBuffer` fragment has also been re-decompiled from
+the refreshed AnimeStudio sidecar. The original pass writes five MRT lanes:
+zero/unused `Target0`, motion-vector payload `Target1`, packed 10-bit
+selector `Target2`, octahedral normal `Target3`, and material/color payload
+`Target4`; it uses `DepthCharacterOnly` with stencil `Ref 36 / Always /
+Replace`. The maintained diagnostic deliberately binds only the selector and
+normal A/B pair. Motion vectors and the material/color GBuffer lane are not
+published, so this evidence closes the source boundary without claiming a
+complete retail GBuffer.
+
 The separate canonical-depth owner is also default-off. Unlike the sidecar, it
 binds two exact `A2B10G10R10_UNormPack32` PreG colors together with the same
 stencil-bearing camera depth attachment consumed by the immediately following
