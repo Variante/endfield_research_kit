@@ -91,6 +91,19 @@
           "bytes_written": 16,
           "boundary": "This proves the secondary per-draw resource storage, but the resource's GPU constant-buffer binding/component swizzle is not exposed by this body."
         },
+        "resource_refresh_cross_check": {
+          "status": "five-slot-resource-layout-closed-upload-edge-open",
+          "source": "Installed UnityPlayer.dll Renderer refresh path, independent of the managed setter body.",
+          "refresh_function": "0x18042f750",
+          "refresh_lookup_site": "0x18042f7bc-0x18042f7cc calls 0x180fc5e60 then 0x1804255f0",
+          "renderer_source_range": "+0x140..+0x180 (five Vector4 slots)",
+          "resource_destination_range": "+0xb0..+0xf0 (five contiguous Vector4 slots)",
+          "callers": [
+            "0x18042c947 (renderer registration/update path)",
+            "0x18042d692 (renderer create/rebuild path)"
+          ],
+          "observed": "The refresh path copies all five renderer custom-per-draw vectors into the same resolved resource array; channel 2 therefore remains the third Vector4 at resource +0xd0. This independently confirms the slot stride and shared resource layout, but does not identify the later GPU descriptor/constant-buffer upload."
+        },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
           "function_pointer": "0x1800fedc0",

@@ -314,8 +314,14 @@ NPC archetypes are imported as labeled source kits.
   conditionally mirrors it to the returned per-draw resource at
   `+0xb0 + 0x10*index` (channel 2 `+0xd0`). `GetCustomPerDrawData_Injected`
   reads the same renderer formula. This proves the channel-2 native
-  storage/resource layout rather than merely the managed forwarding path, but
-  the resource-to-descriptor upload remains open. Do not treat the sidecar
+  storage/resource layout rather than merely the managed forwarding path. An
+  independent UnityPlayer refresh path at `0x18042f750` resolves the same
+  resource and copies all five renderer vectors (`renderer +0x140..+0x180`) to
+  its contiguous five-vector array (`resource +0xb0..+0xf0`); its callers at
+  `0x18042c947` and `0x18042d692` cover renderer registration and create/rebuild
+  paths. This closes the shared five-slot resource layout and reconfirms channel
+  2 at `resource +0xd0`, but the resource-to-descriptor upload remains open. Do
+  not treat the sidecar
   metadata label `_TerrainSubsurfaceConstants` as a recovered source name: it
   is inherited from the serialized parameter record, while raw Vulkan binding
   33/member 3 is the stable fact. Keep this channel-to-resource edge fail
