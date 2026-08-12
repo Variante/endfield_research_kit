@@ -900,7 +900,7 @@
         "interpretation": "This is the correct UnityPlayer registration target, but its payload consumer is a dynamic factory service/vtable boundary. It must not be counted as proof that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
       },
       "native_factory_batch_vat_evidence": {
-        "status": "native-batch-vat-call-surface-dynamic-upload-edge-open",
+        "status": "native-batch-vat-registry-finalizer-negative-upload-edge-open",
         "source": "Installed UnityPlayer.dll HyperGryph internal-call surface and PData-scoped x64 disassembly.",
         "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
         "registered_name": "UnityEngine.HyperGryph.HGFactoryRenderManager::BatchSetFactoryVATParams_Internal",
@@ -913,20 +913,41 @@
           "pdata_range": "0x180a37780..0x180a377f8",
           "file_offset": "0xa36d80",
           "observed": [
-            "allocates and initializes a 0x3c-byte batch object through 0x180303ec0 and 0x180a34960",
-            "passes the object through 0x180763670",
-            "tail-jumps through the resulting object's vtable slot +0x28"
+            "allocates an object with size ecx=0x128 through 0x180303ec0; r8d=0x3c is a type/tag argument, not the object byte size",
+            "initializes the 0x128-byte object through 0x180a34960, then passes it through 0x180319450 and 0x180763670",
+            "tail-jumps through the object's statically initialized vtable slot +0x28"
           ],
           "batch_object_layout": {
             "initializer": "0x180a34960",
+            "object_size_bytes": "0x128",
+            "allocator_type_tag": "0x3c",
+            "vtable": "0x181dd6c30",
             "visible_fields": [
               "+0x00 vtable pointer",
               "+0x38/+0x48, +0x58/+0x68, and +0x78/+0x88 paired handle/state fields",
               "+0x40/+0x60/+0x80/+0xa8 small kind/count or sentinel fields",
-              "+0x50/+0x70/+0x90 flag/state bytes or words"
+              "+0x50/+0x70/+0x90 flag/state bytes or words",
+              "+0xe8 embedded 16-byte-record table pointer, +0xf0 byte count, +0xf4 cursor, +0xfc derived count, +0x108/+0x118 handle/state pair"
             ],
-            "handoff": "0x180763670 returns a resolved object; 0x180a377f4 jumps through [object+0x00]+0x28",
-            "dynamic_target": "The +0x28 implementation is selected from the resolved object's runtime vtable; no static target in the installed UnityPlayer image exposes a GPU upload operation."
+            "handoff": "0x180319450 returns the same object after registry bookkeeping; 0x180763670 resolves its record view; 0x180a377f4 jumps through [object+0x00]+0x28",
+            "vtable_slot_0x28": "0x180a38ea0",
+            "vtable_slot_0x40": "0x180a37770"
+          },
+          "registry_bookkeeping": {
+            "function": "0x180319450",
+            "slot_0x40_helper": "0x180a37770",
+            "hash_insertions": ["0x180319120", "0x180318ef0"],
+            "atomic_counter": "0x18031a670",
+            "interpretation": "The visible pre-handoff work is type/handle registration and hash-table insertion; no payload copy, buffer upload, shader-property bind, or compute dispatch appears."
+          },
+          "finalizer_body": {
+            "function": "0x180a38ea0",
+            "observed": [
+              "clears paired handle fields at +0x48/+0x68/+0x88/+0xd0 when their state flags permit",
+              "fills the embedded +0xe8 table's 16-byte records with 0xffffffff",
+              "resets +0xf4/+0xfc and conditionally clears +0x118"
+            ],
+            "missing_gpu_operations": "No _RTPerDrawParamsBuffer, ComputeBuffer/InternalSetData, shader-property bind, command recording, or compute dispatch."
           }
         },
         "missing_static_operations": [
@@ -935,7 +956,7 @@
           "no visible ComputeBuffer/InternalSetData call",
           "no shader-property bind or compute dispatch"
         ],
-        "interpretation": "This is a real native factory/VAT batch call surface, but its visible implementation is an indirect object/vtable handoff over a 0x3c-byte batch object with paired handle/state fields. The resolved vtable +0x28 target remains runtime-selected; the installed image does not statically connect it to the five-Vector4 factory shared record, _UploadBuffer, kernel 7, or channel-2 resource +0xd0. Keep the upload edge fail-closed."
+        "interpretation": "This is a real native factory/VAT call surface, but the current static chain is a 0x128-byte registry/handle object (type tag 0x3c), not a 0x3c-byte GPU payload. Its pre-handoff work is hash/handle registration and its vtable +0x28 target is statically 0x180a38ea0, a handle/table finalizer with no GPU operation. This closes the VAT entry as negative evidence against the five-Vector4 shared record reaching _UploadBuffer, kernel 7, or channel-2 resource +0xd0; the independent factory per-draw upload edge remains open and fail-closed."
       },
       "managed_frame_update_evidence": {
         "status": "factory-frame-update-stub-noop",
