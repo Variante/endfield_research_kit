@@ -523,6 +523,15 @@ NPC archetypes are imported as labeled source kits.
   guard. This closes a coherent CPU-side writer family, while all paths still
   terminate at the dynamically dispatched factory service rather than a
   statically named `_UploadBuffer`, shader bind, or compute dispatch.
+  A generated factory job at `GameAssembly 0x1869fe53c`
+  (`0x1869fe53c..0x1869fe73d`) broadens the CPU-side boundary: it forwards
+  scalar updates at offsets `0x48/0x4c` and conditional updates at
+  `0x7c/0x80/0x84/0x88` through the unbounded shared-data helpers
+  `0x183d68850`/`0x1876aad78`, then reads and sets dirty flags through
+  `0x1834a4030`/`0x1834a4070`. The latter offsets exceed the five-lane
+  80-byte `UploadPerDrawParams` record, so they are explicitly kept out of
+  channel-2 evidence; all these helpers still terminate at the dynamic
+  partial service and do not expose a GPU upload or dispatch.
   A direct GameAssembly bridge now closes the caller-side entry into that
   factory path. The generated/native range `0x180471cd8..0x180471d27` calls
   `ApplyPerDrawRender` at `0x1869d8488` (`rsi`/`rdi`/`ebx` preserve
