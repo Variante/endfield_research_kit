@@ -301,6 +301,28 @@ NPC archetypes are imported as labeled source kits.
   This is stronger producer/layout evidence, but it does not resolve the
   observed native `.x` versus HGRP consumer `.w` component binding; keep that
   remap open and fail closed.
+  The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
+  body is also recovered at native `0x183523ad0`: it quantizes two
+  environment getter results (from `this+0x180` and `this+0x178`) together with
+  fixed `255` and `0` lanes, then returns the reinterpreted four-byte word.
+  This is a source-backed packed-word producer, but no direct call edge to the
+  character renderer upload was recovered, so it remains upstream evidence.
+  A cross-variant CharacterNPR forward source closes the ordinary UnityPerDraw
+  carrier independently: `UnityPerDrawArray` `Param2` is at byte offset `+208`
+  (`_m7`), with `_m7.x` carrying the packed environment word and `_m7.y` the
+  wet world-space height. That narrows the standard channel-2 layout, but does
+  not establish the HGRP/Lit HGBuffer `register(b3)` `cb3[0].w` component remap.
+  The durable audit records both additions in
+  `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`.
+  The native history/deformation census is narrowed as well: `GpuClothManager._SetPerDrawData`
+  (`0x189c6cbec`) walks ECS cloth data and enters a dynamic IFix wrapper without a
+  statically resolved custom-per-draw call; `_SetCharacterProxyMesh`
+  (`0x1847a53c0`) only updates proxy bounds/cloth constants; and
+  `SkinnedMeshCaptureManager.SetCaptureDataForPropertyBlock`
+  (`0x183d438b0`) allocates/copies/binds `BAKE_SKIN_MATRICES_CB` through a
+  property block. These routes do not identify the missing HGRP packed scalar or
+  previous-deformed-position upload. The IFix cloth wrapper and renderer-side
+  history state remain open and are recorded as such in the same audit.
   Do not substitute `_ShadingModel`, UnityPerDraw, channel 2, or zero/default
   values; the sidecar remains neutral and fail-closed until that binding or an
   authorized target-frame upload is recovered.

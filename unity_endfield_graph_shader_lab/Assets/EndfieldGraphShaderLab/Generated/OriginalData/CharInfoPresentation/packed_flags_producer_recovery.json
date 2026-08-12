@@ -160,6 +160,36 @@
       "The generated ShaderLab has no named material property for cb3[0].w; _ShadingModel is consumed from cb2 and is not the packed flag word.",
       "CustomPerDrawDataChannelUtils and EntityRenderHelperMaterialController provide a source-backed character per-draw producer at channel 2, but its register binding is not named by the available reflection."
     ],
+    "native_history_and_deformation_scope": {
+      "status": "known-native-input-boundaries-narrowed-dynamic-cloth-route-open",
+      "methods": [
+        {
+          "type": "HG.Rendering.Runtime.GpuClothManager",
+          "method": "_SetPerDrawData",
+          "metadata_method_index": 284258,
+          "native_pointer": "0x189c6cbec",
+          "native_body_size_bytes": 644,
+          "observed": "The static body walks an EntityManager range, reads the cloth enumerator payload, and dispatches through a dynamically selected IFix wrapper (`__Gen_Wrap_*`). It contains no statically resolved Renderer.SetCustomPerDrawData call; the dynamic patch path remains an explicit open boundary rather than evidence for b3 or previous-deformed history."
+        },
+        {
+          "type": "HG.Rendering.Runtime.GpuClothManager",
+          "method": "_SetCharacterProxyMesh",
+          "metadata_method_index": 284282,
+          "native_pointer": "0x1847a53c0",
+          "native_body_size_bytes": 384,
+          "observed": "Updates the character proxy mesh reference and bounds, then writes two vectors through ClothConstData.SetVec4; no renderer custom-per-draw or previous-position history upload is present in the static body."
+        },
+        {
+          "type": "HG.Rendering.Runtime.SkinnedMeshCaptureManager",
+          "method": "SetCaptureDataForPropertyBlock",
+          "metadata_method_index": 285793,
+          "native_pointer": "0x183d438b0",
+          "native_body_size_bytes": 1008,
+          "observed": "The body allocates a constant buffer, copies capture bytes with UnsafeUtility.MemCpy, binds it with MaterialPropertyBlock.SetConstantBufferImpl0, and calls Renderer.Internal_SetPropertyBlock. It does not call SetCustomPerDrawData; this is the BAKE_SKIN_MATRICES_CB route, not the HGRP packed scalar or deformed-history carrier."
+        }
+      ],
+      "boundary": "Static native evidence now separates the known cloth/proxy/skin-capture routes from the missing previous-deformed-position producer. The IFix-patched cloth wrapper and the renderer-side history state still require compatible patch-body or target-frame evidence before publication."
+    },
     "conclusion": "The source-backed producer for the character custom per-draw channel is recovered (CHARACTER_PARAMS_INDEX=2), while the final channel-2-to-cb3[0].w binding remains open. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the binding-compatible upload or an authorized target-frame capture is recovered."
   },
   "activation_policy": "default-off-fail-closed"
