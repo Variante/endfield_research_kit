@@ -557,6 +557,16 @@ NPC archetypes are imported as labeled source kits.
   not GPU identity: the incoming `data`, `offset`, and `size` registers still do
   not reach a visible copy, buffer API, command recording, or dispatch, so the
   shared-payload-to-`_UploadBuffer` edge remains fail-closed.
+  The adjacent native factory/VAT surface is also bounded: the registered
+  `HGFactoryRenderManager::BatchSetFactoryVATParams_Internal` entry is
+  `UnityPlayer 0x180155870` (`0x180155870..0x1801558ed`), which calls
+  `0x180a37780`. That body allocates/initializes a 0x3c-byte batch object,
+  passes it through `0x180763670`, and tail-jumps through the resulting vtable
+  slot `+0x28`. Its visible bytes contain no `_RTPerDrawParamsBuffer`,
+  `GpuSceneDirtyUpdateCS`/`UploadPerDrawParams`, buffer/property bind, or
+  compute-dispatch edge; treat it as a dynamic VAT handoff, not evidence that
+  the 80-byte shared record reaches the GPU upload path. Details are recorded
+  under `native_factory_batch_vat_evidence` in the packed-flag audit.
   The managed `HGFactoryRenderManager.FrameUpdateEntities` entry is an
   additional bounded negative: metadata method `477917` resolves through the
   current code-registration pair to `GameAssembly 0x1841e1670`, whose body is

@@ -899,6 +899,33 @@
         },
         "interpretation": "This is the correct UnityPlayer registration target, but its payload consumer is a dynamic factory service/vtable boundary. It must not be counted as proof that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
       },
+      "native_factory_batch_vat_evidence": {
+        "status": "native-batch-vat-call-surface-dynamic-upload-edge-open",
+        "source": "Installed UnityPlayer.dll HyperGryph internal-call surface and PData-scoped x64 disassembly.",
+        "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+        "registered_name": "UnityEngine.HyperGryph.HGFactoryRenderManager::BatchSetFactoryVATParams_Internal",
+        "function_pointer": "0x180155870",
+        "function_rva": "0x155870",
+        "function_file_offset": "0x154f70",
+        "pdata_range": "0x180155870..0x1801558ed",
+        "direct_body_target": {
+          "function": "0x180a37780",
+          "pdata_range": "0x180a37780..0x180a377f8",
+          "file_offset": "0xa36d80",
+          "observed": [
+            "allocates and initializes a 0x3c-byte batch object through 0x180303ec0 and 0x180a34960",
+            "passes the object through 0x180763670",
+            "tail-jumps through the resulting object's vtable slot +0x28"
+          ]
+        },
+        "missing_static_operations": [
+          "no _RTPerDrawParamsBuffer reference",
+          "no GpuSceneDirtyUpdateCS or UploadPerDrawParams reference",
+          "no visible ComputeBuffer/InternalSetData call",
+          "no shader-property bind or compute dispatch"
+        ],
+        "interpretation": "This is a real native factory/VAT batch call surface, but its visible implementation is an indirect object/vtable handoff over a 0x3c-byte batch object. It does not statically connect the five-Vector4 factory shared record to _UploadBuffer, kernel 7, or channel-2 resource +0xd0; keep the upload edge fail-closed."
+      },
       "managed_frame_update_evidence": {
         "status": "factory-frame-update-stub-noop",
         "source": "Current global-metadata.dat method declaration plus the matching GameAssembly.dll code-registration mapping and static call census.",
