@@ -81,6 +81,16 @@ namespace EndfieldGraphShaderLab
         private bool activationLogged;
         private bool failureLogged;
         private bool readbackRequested;
+        // Resolver inputs are a same-camera-frame publication.  Keeping the
+        // stamp beside the textures prevents a later camera (or a reused
+        // RenderTexture allocation) from being mistaken for the current
+        // target frame by the deferred consumer probe.
+        private bool publicationValid;
+        private int publishedFrame = -1;
+        private int publishedCameraInstanceId;
+        private int publishedWidth;
+        private int publishedHeight;
+        private uint publicationSerial;
 
         internal bool Requested => requested;
 
@@ -91,11 +101,13 @@ namespace EndfieldGraphShaderLab
                 HasCommandLineArgument(CommandLineArgument) ||
                 EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
             Shader.SetGlobalFloat(ReadyId, 0.0f);
+            InvalidatePublication();
             PublishBlackFallbacks();
         }
 
         public void Dispose()
         {
+            InvalidatePublication();
             ReleaseResources();
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             PublishBlackFallbacks();
@@ -203,6 +215,7 @@ namespace EndfieldGraphShaderLab
                     canonicalDepthTarget);
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
                 context.ExecuteCommandBuffer(command);
+                PublishFrame(camera, width, height);
             }
             finally
             {
@@ -227,23 +240,69 @@ namespace EndfieldGraphShaderLab
         }
 
         internal bool TryGetResolverInputs(
+            Camera camera,
+            int width,
+            int height,
             out RenderTexture resolverT23,
             out RenderTexture resolverT24,
-            out RenderTexture resolverT25)
+            out RenderTexture resolverT25,
+            out uint resolverPublicationSerial,
+            out string failure)
         {
             resolverT23 = gBufferC;
             resolverT24 = gBufferB;
             resolverT25 = gBufferA;
-            return requested &&
-                resolverT23 != null && resolverT23.IsCreated() &&
-                resolverT24 != null && resolverT24.IsCreated() &&
-                resolverT25 != null && resolverT25.IsCreated();
+            resolverPublicationSerial = publicationSerial;
+            failure = string.Empty;
+            if (!requested)
+            {
+                failure = "deferred GBuffer sidecar selector is disabled";
+                return false;
+            }
+            if (camera == null)
+            {
+                failure = "resolver requested without a camera";
+                return false;
+            }
+            if (!publicationValid)
+            {
+                failure =
+                    "same-frame deferred GBuffer has not published resolver inputs";
+                return false;
+            }
+            int actualCameraInstanceId = camera.GetInstanceID();
+            int actualFrame = Time.frameCount;
+            if (publishedFrame != actualFrame ||
+                publishedCameraInstanceId != actualCameraInstanceId ||
+                publishedWidth != width ||
+                publishedHeight != height)
+            {
+                failure =
+                    "resolver input publication stamp mismatch: " +
+                    $"expected frame={actualFrame},camera={actualCameraInstanceId}," +
+                    $"size={width}x{height}; " +
+                    $"actual frame={publishedFrame},camera={publishedCameraInstanceId}," +
+                    $"size={publishedWidth}x{publishedHeight}," +
+                    $"serial={publicationSerial}";
+                return false;
+            }
+            if (resolverT23 == null || !resolverT23.IsCreated() ||
+                resolverT24 == null || !resolverT24.IsCreated() ||
+                resolverT25 == null || !resolverT25.IsCreated())
+            {
+                failure =
+                    "same-frame C/B/A resolver textures are unavailable " +
+                    $"for publication serial {publicationSerial}";
+                return false;
+            }
+            return true;
         }
 
         private void FailClosed(
             ScriptableRenderContext context,
             string failure)
         {
+            InvalidatePublication();
             var command = new CommandBuffer
             {
                 name = "Fail-closed recovered deferred HGBuffer sidecar"
@@ -570,6 +629,7 @@ namespace EndfieldGraphShaderLab
 
         private void ReleaseResources()
         {
+            InvalidatePublication();
             ReleaseTexture(sceneColor);
             ReleaseTexture(sceneMV);
             ReleaseTexture(gBufferA);
@@ -584,6 +644,29 @@ namespace EndfieldGraphShaderLab
             depthStencil = null;
             allocatedWidth = 0;
             allocatedHeight = 0;
+        }
+
+        private void PublishFrame(Camera camera, int width, int height)
+        {
+            publicationSerial = publicationSerial == uint.MaxValue
+                ? 1u
+                : publicationSerial + 1u;
+            publicationValid = true;
+            publishedFrame = Time.frameCount;
+            publishedCameraInstanceId = camera != null
+                ? camera.GetInstanceID()
+                : 0;
+            publishedWidth = width;
+            publishedHeight = height;
+        }
+
+        private void InvalidatePublication()
+        {
+            publicationValid = false;
+            publishedFrame = -1;
+            publishedCameraInstanceId = 0;
+            publishedWidth = 0;
+            publishedHeight = 0;
         }
 
         private static void ReleaseTexture(RenderTexture texture)

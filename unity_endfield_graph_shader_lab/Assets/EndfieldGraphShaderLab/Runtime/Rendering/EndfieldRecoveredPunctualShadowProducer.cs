@@ -34,6 +34,8 @@ namespace EndfieldGraphShaderLab
             "Hidden/Endfield/Recovered/PunctualShadowClear";
         private const string CasterKeyword =
             "ENDFIELD_RECOVERED_CHARACTER_SHADOW_PASS_VP";
+        private const string CharacterShadowProxyShaderName =
+            "Hidden/Endfield/Recovered/CharacterShadowProxy";
 
         private static readonly int ShadowMapId =
             Shader.PropertyToID("_EndfieldRecoveredPunctualShadowMap");
@@ -62,7 +64,14 @@ namespace EndfieldGraphShaderLab
                 "Endfield/Recovered/CharacterCloth",
                 "Endfield/Recovered/CharacterHair",
                 "Endfield/Recovered/CharacterSkin",
-                "Endfield/Recovered/CharacterEye"
+                "Endfield/Recovered/CharacterEye",
+                // The exact desktop LOD1 Shadow_Proxy hierarchy is created by
+                // EndfieldRecoveredCharacterShadowProxyProvider. Its material
+                // owns the same source-backed ShadowCaster contract and must
+                // be admitted when the punctual producer enumerates the
+                // actor root; rejecting it leaves b34 unavailable even though
+                // the proxy mesh/material contract was recovered.
+                CharacterShadowProxyShaderName
             };
 
         private readonly Matrix4x4[] worldToShadow =

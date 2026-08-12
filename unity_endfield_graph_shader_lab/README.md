@@ -2658,6 +2658,21 @@ binning/reflection/b33 prerequisites produce no draw or readback. This does not
 claim the original render graph's physical identity, lifetime, or presentation.
 The original pass-0 consumer remains deliberately disabled.
 
+The next deferred boundary is validated with
+`ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE=1`. The GBuffer sidecar
+stamps camera, frame, extent, and publication serial; the resolver probe
+rejects stale or cross-camera C/B/A inputs and records the source order
+`t23:_62,t24:_61,t25:_60`. Use the existing D3D12 frame command, then run:
+
+```bat
+set ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE=1
+verify_recovered_deferred_gbuffer_frame.bat --d3d12
+python tools\verify_deferred_resolver_input_probe.py --log scratch\character_recovery\deferred_gbuffer_frame\unity_validation_d3d12.log --report scratch\character_recovery\deferred_gbuffer_frame\resolver_input_validation_d3d12.json
+```
+
+This is same-frame input-order evidence only: the probe is non-presented and
+retail deferred pass 0 remains disabled.
+
 The selected original pass-0 `_TransformVariables` b30 reads are now closed for
 the physical camera's view matrix, inverse view, inverse GPU view-projection,
 and world-space position. A default-off same-frame publisher exposes the full

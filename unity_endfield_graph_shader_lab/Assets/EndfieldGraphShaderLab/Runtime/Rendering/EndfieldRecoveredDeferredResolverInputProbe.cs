@@ -74,13 +74,32 @@ namespace EndfieldGraphShaderLab
                 FailClosed(context, failure);
                 return false;
             }
-            if (camera == null || gBufferFrame == null ||
-                !gBufferFrame.TryGetResolverInputs(
-                    out RenderTexture resolverT23,
-                    out RenderTexture resolverT24,
-                    out RenderTexture resolverT25))
+            RenderTexture resolverT23 = null;
+            RenderTexture resolverT24 = null;
+            RenderTexture resolverT25 = null;
+            uint resolverPublicationSerial = 0;
+            if (camera == null)
             {
-                failure = "same-frame C/B/A resolver textures are unavailable";
+                failure = "resolver input probe received a null camera";
+                FailClosed(context, failure);
+                return false;
+            }
+            if (gBufferFrame == null)
+            {
+                failure = "resolver input probe received a null GBuffer frame";
+                FailClosed(context, failure);
+                return false;
+            }
+            if (!gBufferFrame.TryGetResolverInputs(
+                    camera,
+                    width,
+                    height,
+                    out resolverT23,
+                    out resolverT24,
+                    out resolverT25,
+                    out resolverPublicationSerial,
+                    out failure))
+            {
                 FailClosed(context, failure);
                 return false;
             }
@@ -180,6 +199,7 @@ namespace EndfieldGraphShaderLab
                 Debug.Log(
                     "Recovered deferred resolver input consumer probe active: " +
                     $"camera={camera.name}, size={width}x{height}, " +
+                    $"publicationSerial={resolverPublicationSerial}, " +
                     "sourceIdentifiers=t23:_62,t24:_61,t25:_60, " +
                     "registerBridges=b0..b8, b6=zero-fallback, " +
                     "presented=false, retailPass0=false.");
