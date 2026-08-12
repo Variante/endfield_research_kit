@@ -2265,6 +2265,12 @@ the signed fourth-root delta blended by the source motion-validity mask in
 neutral SceneMV and remains non-presented until previous deformation and
 target-frame state are recovered.
 
+The Eye `PreGBuffer` vertex variant confirms the same 6044-byte DXBC and
+decompiled vertex program as Skin (Eye uses source pass index 1; Skin uses 3),
+so the previous-deformation ABI is shared across these two CharacterNPR
+families. Its fragment preserves the same five MRT lanes while setting the
+oct-normal alpha lane to `0.7` (Skin uses `0.4`).
+
 The separate canonical-depth owner is also default-off. Unlike the sidecar, it
 binds two exact `A2B10G10R10_UNormPack32` PreG colors together with the same
 stencil-bearing camera depth attachment consumed by the immediately following
