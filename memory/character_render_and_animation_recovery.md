@@ -582,6 +582,14 @@ NPC archetypes are imported as labeled source kits.
   CPU-record boundary but does not exclude a later indirect render-stage
   consumer; the shared-record-to-GPU edge remains fail-closed. Details are in
   `native_factory_update_consumption_census`.
+  A broader full-UnityPlayer PData scan found 113,390 function ranges, with 39
+  functions matching both an immediate `0x8c`/140 record-shape operand and a
+  `+0x38` field access; none directly reaches the checked ComputeBuffer,
+  ComputeShader, CommandBuffer, or GPUDriven entrypoints. Six candidates call
+  optimized memcpy, including the adjacent factory record helpers. This is
+  stronger static CPU-record negative evidence, not proof against an indirect
+  or dynamically registered render-stage consumer; details are under
+  `native_unityplayer_record_shape_scan`.
   The adjacent native factory/VAT surface is also bounded: the registered
   `HGFactoryRenderManager::BatchSetFactoryVATParams_Internal` entry is
   `UnityPlayer 0x180155870` (`0x180155870..0x1801558ed`), which calls
