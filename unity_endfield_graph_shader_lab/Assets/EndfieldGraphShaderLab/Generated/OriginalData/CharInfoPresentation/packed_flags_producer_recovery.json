@@ -119,6 +119,33 @@
           ],
           "negative_result": "No inspected UnityPlayer path reads resource +0xd0 (or a proven equivalent vector lane) into a constant-buffer/descriptor binding, and no direct call edge names set 0/binding 33. Keep the channel-to-resource-to-GPU edge open."
         },
+        "gpu_driven_binding_census": {
+          "status": "gpu-driven-entrypoints-mapped-custom-resource-edge-unproven",
+          "source": "UnityPlayer internal-call name/function tables plus exact runtime-function disassembly from the installed binary.",
+          "entrypoints": {
+            "V1": {
+              "PopulatePerFrameData": "0x1801e9200 -> 0x1810f2ab0",
+              "BindFrameConstantsBuffer": "0x1801e9280 -> 0x1810ef350",
+              "BindFrameConstantsBufferGlobal": "0x1801e9360 -> 0x1810ef3f0",
+              "BindBuffersForCulling": "0x1801e93a0 -> 0x1810eece0",
+              "BindBuffersForRendering": "0x1801e9480 -> 0x1810ef150"
+            },
+            "V2": {
+              "PopulatePerFrameData": "0x1801e98f0 -> 0x1810ff600",
+              "BindFrameConstantsBuffer": "0x1801e9970 -> 0x1810fbca0",
+              "BindFrameConstantsBufferGlobal": "0x1801e9a50 -> 0x1810fbd40",
+              "BindBuffersForCulling": "0x1801e9a90 -> 0x1810fb5a0",
+              "BindBuffersForRendering": "0x1801e9b70 -> 0x1810fbaf0/0x1810fbb00"
+            }
+          },
+          "rejected_candidate": {
+            "helper": "0x1810fb5a0",
+            "observed": "The V2 culling helper enumerates [gpu_driven_state + 0xa0..0xd0] and passes each address to 0x1805f84a0. Here gpu_driven_state is [this + 0x68], and the +0xd0 lane is one member of that GPU-driven buffer/property array; it is not an alias proven to come from resolver 0x1804255f0.",
+            "downstream": "0x1805f84a0 validates the command-context capacity at [command_context + 0xd0] and records the indexed binding. No custom-per-draw resource lookup, resource +0xd0 read, or set 0/binding 33 identity occurs on this edge.",
+            "classification": "generic-gpu-driven-buffer-binding-not-custom-per-draw-consumer"
+          },
+          "negative_result": "The mapped V1/V2 GPU-driven entrypoints expose frame/buffer binding helpers, but the inspected call paths do not alias their +0xd0 fields to the custom resource returned by 0x1804255f0. Keep resource +0xd0 to descriptor upload unresolved."
+        },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
           "function_pointer": "0x1800fedc0",
