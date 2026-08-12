@@ -743,6 +743,50 @@
           "value": 1
         }
       },
+      "related_shared_data_writers": {
+        "status": "factory-shared-record-writer-family-bounded",
+        "source": "Installed GameAssembly.dll PData-scoped x64 disassembly plus generic-instantiation mapping.",
+        "record_width_bytes": 80,
+        "writers": [
+          {
+            "method": "HGFactoryRendererBinderComponent.SetPosition",
+            "native_pointer": "0x1834a3ce0",
+            "partial_callsite": "0x1834a3d32",
+            "shared_offset": "0x50",
+            "payload_bytes": 12,
+            "dirty_flag": 4,
+            "endpoint": "lazy slot 0x18f370720"
+          },
+          {
+            "method": "HGFactoryRendererBinderComponent.SetRotation",
+            "native_pointer": "0x183e21230",
+            "partial_callsite": "0x183e21283",
+            "shared_offset": "0x60",
+            "payload_bytes": 16,
+            "dirty_flag": 4,
+            "endpoint": "HGFactoryRenderManager.SetEntitySharedDataPartial at 0x183d689c0"
+          },
+          {
+            "method": "HGFactoryRendererBinderComponent.SetCustomPerDrawData<float>",
+            "native_pointer": "0x1840f30e0",
+            "partial_callsite": "0x1840f3134 via 0x183d68850",
+            "shared_offset": "caller-supplied, guarded offset + 4 <= 0x50",
+            "payload_bytes": 4,
+            "dirty_flag": 1,
+            "endpoint": "HGFactoryRenderManager.SetEntitySharedDataPartial at 0x183d689c0"
+          },
+          {
+            "method": "HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>",
+            "native_pointer": "0x1834a3d60",
+            "partial_callsite": "0x1834a3dea",
+            "shared_offset": "caller-supplied, guarded offset + 16 <= 0x50",
+            "payload_bytes": 16,
+            "dirty_flag": 1,
+            "endpoint": "lazy slot 0x18f370720"
+          }
+        ],
+        "interpretation": "The fixed transform writers and generic per-draw writers independently fit the same five-Vector4 shared record and mark it dirty. This strengthens the CPU-side producer family, but the dynamic native service still has no static payload-copy, _UploadBuffer, shader-binding, or dispatch edge."
+      },
       "upload_buffer_relation": {
         "source_stride": 84,
         "destination_stride": 80,
