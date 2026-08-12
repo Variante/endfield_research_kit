@@ -257,8 +257,10 @@ NPC archetypes are imported as labeled source kits.
   MainCamera RGBA-float oracle is SHA-256
   `b0130f5a0f67f714181847413757e81fbeebe59af0428abecdc9b33e67d2cb83`, with
   1,843,200 finite values and no non-finite samples. This is still private
-  diagnostic output, not a presented retail result; recovered numerical
-  implementation comparison and retail pass-0 activation remain open.
+  diagnostic output, not a presented retail result; a second D3D11 run
+  reproduced the same dimensions, masks, finite-value bounds, and SHA-256.
+  Recovered numerical implementation comparison and retail pass-0 activation
+  remain open.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and
