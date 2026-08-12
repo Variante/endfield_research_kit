@@ -16,6 +16,7 @@ set "EXPORT_FROM_GAME=0"
 set "WITH_ASSETS=0"
 set "ASSET_MODE=default"
 set "FULL_SOURCE_GRAPH=0"
+set "STORY_ONLY=0"
 set "MISSION_PIPELINE_ONLY=0"
 set "MISSION_PIPELINE_DATA_ONLY=0"
 set "REUSE_TIMELINE_ORDERS=0"
@@ -58,6 +59,7 @@ if /I "%~1"=="--debug-assets" goto :assets_debug
 if /I "%~1"=="--animestudio-asset-mode" goto :assets_explicit
 
 rem Faster partial rebuilds.
+if /I "%~1"=="--story-only" goto :opt_story_only
 if /I "%~1"=="--mission-pipeline-only" goto :opt_pipeline_only
 if /I "%~1"=="--pipeline-only" goto :opt_pipeline_only
 if /I "%~1"=="--mission-pipeline-data-only" goto :opt_pipeline_data_only
@@ -124,6 +126,11 @@ shift
 shift
 goto :parse_args
 
+:opt_story_only
+set "STORY_ONLY=1"
+shift
+goto :parse_args
+
 :opt_pipeline_only
 set "MISSION_PIPELINE_ONLY=1"
 shift
@@ -177,6 +184,22 @@ rem Reject contradictory input before starting any Python process.
 call :validate_asset_mode "%ASSET_MODE%"
 if errorlevel 1 exit /b 2
 if "%EXPORT_FROM_GAME%"=="0" if defined FIRST_PASSTHROUGH goto :passthrough_needs_game
+if "%STORY_ONLY%"=="1" if "%WITH_ASSETS%"=="1" (
+  echo --story-only cannot be combined with --with-assets or an asset scope.
+  exit /b 2
+)
+if "%STORY_ONLY%"=="1" if "%FULL_SOURCE_GRAPH%"=="1" (
+  echo --story-only cannot be combined with --full-source-graph.
+  exit /b 2
+)
+if "%STORY_ONLY%"=="1" if "%MISSION_PIPELINE_ONLY%"=="1" (
+  echo Choose either --story-only or --mission-pipeline-only.
+  exit /b 2
+)
+if "%STORY_ONLY%"=="1" if "%MISSION_PIPELINE_DATA_ONLY%"=="1" (
+  echo Choose either --story-only or --mission-pipeline-data-only.
+  exit /b 2
+)
 if "%MISSION_PIPELINE_ONLY%"=="1" if "%WITH_ASSETS%"=="1" (
   echo --mission-pipeline-only cannot be combined with --with-assets.
   exit /b 2
@@ -255,6 +278,11 @@ if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link %STORY_BUILD_ARGS%
 if errorlevel 1 exit /b %errorlevel%
+
+if "%STORY_ONLY%"=="1" (
+  echo [export.bat] Story-only refresh complete; skipped Mission Pipeline and all post-Story semantic views.
+  goto :done
+)
 
 set "WEBUI_VIEW_ARGS=--jobs "%WEBUI_JOBS%" --asset-mode "%ASSET_MODE%""
 if "%MISSION_PIPELINE_ONLY%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --mission-pipeline-only"
@@ -339,7 +367,10 @@ echo   --game-root PATH   Installed Endfield_Data folder. Defaults to the one
 echo                      in endfield_paths.bat.
 echo   --help             This text.
 echo.
-echo Faster partial rebuilds, for editing work rather than a fresh export:
+echo Faster scoped rebuilds:
+echo   --story-only      Build Story and Text Tables, then stop before Mission
+echo                      Pipeline and every post-Story semantic view. May be
+echo                      combined with --from-game for a lean first export.
 echo   --mission-pipeline-only
 echo                      Story evidence, CN Story and Mission Pipeline, then
 echo                      stop before Gameplay, Projectile, graph and Combat.
@@ -372,6 +403,7 @@ echo.
 echo Examples:
 echo   export.bat
 echo   export.bat --from-game
+echo   export.bat --story-only --reuse-timeline-orders --reuse-reference
 echo   export.bat --from-game --with-assets --focused-assets
 echo   export.bat --from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
 echo   export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference

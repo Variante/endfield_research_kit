@@ -93,8 +93,10 @@ The normal type-job mode is `auto`: broad Story JSON types run in isolated
 processes while map-filtered asset conversion remains sharded. Reduce
 `--animestudio-jobs` when RAM is constrained.
 
-First-time setup uses the opt-in
-`--animestudio-story-monobehaviour-names` filter. It still loads all bundles so
+First-time setup uses `export.bat --from-game --story-only` with the opt-in
+`--animestudio-story-monobehaviour-names` filter. Story-only stops after CN
+Story/Text Tables and does not schedule Mission Pipeline or any post-Story
+semantic view. The filter still loads all bundles so
 MonoScript names and external PPtrs resolve, but writes only the Timeline,
 dialog/cutscene, FMV, and exact generic-parent name families consumed by the
 Story/video builders. On the current StreamingAssets map this selects 92,266

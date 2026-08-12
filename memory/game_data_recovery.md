@@ -508,7 +508,7 @@ unmute, Set State, Set/Reset Game Parameter, Set Switch, Trigger, Stop, and the
 remaining typed non-Play operations no longer masquerade as unknown audio use.
 Of these library roles, 881 control-only and 140 empty definitions have no
 authored consumer and move to secondary priority while retaining an unknown
-external caller. The highest-priority queue is now 10,335 Events, all of which
+external caller. The highest-priority queue is now 10,174 Events, all of which
 contain an exact Play/Post Event action. Event
 details expose operation names and uint16 operation types. The source graph
 records 2,608 library-role edges and 2,217 Event-to-operation edges, but adds
@@ -557,8 +557,24 @@ layout, and exact six-word length all match. The two objects
 `P_fxbat_lbshamman_line_changeflow` bind playback Event `0x33952647` as
 `soundSpawn` and control Event `0x518abe42` as `soundFinish`. This raises the
 MonoBehaviour inventory to 506 occurrences across 63 hashes, reduces
-`unknownUse` to 10,065 and highest priority to 10,335, and records no runtime
+`unknownUse` to 10,065 and highest priority to 10,335 at schema 53, and records no runtime
 execution edge.
+Schema 54 adds the distinct integer-`AudioId` Timeline carrier
+`Beyond.Gameplay.Core.DialogAudioEventPlayableAsset`. All 14 current objects
+serialize the exact Event hash `0x89379220`; their Track clip names contain
+`au_dlg_foley_stop_chr`, whose current AudioHashGenerator value equals that
+integer. They therefore merge the anonymous Wwise Stop Event into one named,
+control-only, purpose-resolved Event with 14 exact authored Timeline placements
+under `dlgtl_e10m4_5_sub_1_Audio`. Native code proves
+`CreatePlayable -> SetValues` and that the behaviour consumes the `AudioId`,
+uses the bound audio-object id, and stops through `_StopPlaying`; it does not
+prove that either candidate PlayableDirector activated at runtime. The schema
+refresh also invalidated the old Timeline cache and re-enumerated the current
+exact carrier set. The resulting corpus has 21,393 Events, 14,994 trigger
+contexts, 9,904 `unknownUse` Events, and 10,174 highest-priority Events. Only
+the one Stop Event is the direct purpose change from this new carrier; the
+broader 161-row unknown-purpose reduction comes from the refreshed exact
+Timeline carrier inventory and must not be attributed to this carrier alone.
 Exact Wwise output topology now reduces a separate anonymous-library gap. For
 82 highest-priority Events, a different authored Event in the same bank reaches
 the identical complete set of Play Action targets: 55 classify as UI output,
@@ -576,7 +592,7 @@ and partial media-set overlap is rejected. The combined library-relation
 dataset contains 204 source Events and has no trigger, Story, line, or speaker
 edges introduced by either equivalence rule.
 
-The audio index now records the exact collection surface for each of its 7,622
+The audio index now records the exact collection surface for each of its 7,834
 authored Event names: Story/core audio tables, typed table/config contexts,
 Lua PostEvent, managed string literals, cutscene Timeline, Gameplay references,
 or a current-Wwise exact alias. Rebuilding this provenance removed 313 names
@@ -799,8 +815,10 @@ play/pause/graph-stop surface plus `_TryPostExitEvent`, `MarkSkip`, and an
 `_exitAudioEvent` `AudioId`. These are static IL2CPP method/field surfaces, not
 an observed call order or Wwise request. The distinct
 `Beyond.Gameplay.Core.DialogAudioEventPlayableAsset` uses an integer
-`AudioId` with `OnClipEnable`/`OnClipDisable`; it must not be merged with the
-C35 string-key SFX lane. `Beyond.Gameplay.Audio.AudioMusicPlayable` adds the
+`AudioId`; current native flow is `CreatePlayable -> SetValues`, with behaviour
+processing and `_StopPlaying` on clip disable. It must not be merged with the
+C35 string-key SFX lane, and static method flow is not an observed Director
+activation. `Beyond.Gameplay.Audio.AudioMusicPlayable` adds the
 music carrier fields `_audioEventKey`, `musicActionType`, and `triggerOnSkip`;
 its matching behaviour exposes `OnBehaviourPlay`, `_ShouldPlay`,
 `_TriggerEvent`, and `OnTimelineSkip`, but the call order and live music-state

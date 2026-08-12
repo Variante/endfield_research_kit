@@ -252,6 +252,13 @@ compatibility path is the current IL2CPP-validated six-field/24-byte
 class, namespace, assembly, layout, and length identity. A future exporter
 output with named `soundSpawn`/`soundFinish` fields uses the same evidence
 contract.
+`Beyond.Gameplay.Core.DialogAudioEventPlayableAsset` is a separate Timeline
+carrier whose `audioEvent._id` is an integer `AudioId`, not a string-key
+playable. Its Track display name is promoted to an authored Event name only
+when the current AudioHashGenerator value exactly equals the serialized id.
+The detail view keeps that equality, clip timing, `stopOnDisable`, and
+Track/Timeline/PlayableDirector identities visible while leaving Director
+activation and runtime playback unobserved.
 `AudioGlobalConfig` lifecycle `AudioId` values use the same exact-identity
 boundary. When its raw MonoBehaviour JSON is absent from a Story-focused
 export, the builder reconstructs only the scalar paths retained by the complete

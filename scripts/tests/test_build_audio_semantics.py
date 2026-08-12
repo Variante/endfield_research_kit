@@ -725,6 +725,182 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(result["stats"]["exactTimelineCarriers"], 1)
             self.assertEqual(result["stats"]["exactPlayableDirectorLinks"], 1)
 
+    def test_timeline_object_index_recovers_typed_dialog_audio_id_and_display_name(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            export_root.mkdir()
+            mono_path = export_root / "mono.jsonl"
+            director_path = export_root / "director.jsonl"
+
+            def object_row(path_id, name, scalars=None, pptrs=None):
+                return {
+                    "recordType": "object",
+                    "object": {
+                        "serializedFile": "CAB-dialog-audio",
+                        "source": "fixture.chk",
+                        "sourceOffset": 100,
+                        "pathId": path_id,
+                    },
+                    "type": "MonoBehaviour",
+                    "name": name,
+                    "scalars": scalars or [],
+                    "pptrs": pptrs or [],
+                }
+
+            event_hash = audio_semantics.audio_hash_generator_compute(
+                "au_dlg_foley_stop_chr"
+            )
+            playable = object_row(
+                101,
+                "DialogAudioEventPlayableAsset",
+                [["$.audioEvent._id", "i", event_hash - (1 << 32)]],
+            )
+            track = object_row(
+                102,
+                "Dialog Audio Entity Bindable Track",
+                [[
+                    "$.m_Clips[0].m_DisplayName",
+                    "s",
+                    "Post Event <au_dlg_foley_stop_chr>",
+                ]],
+                [
+                    {
+                        "path": "$.m_Parent",
+                        "target": {
+                            "serializedFile": "CAB-dialog-audio",
+                            "pathId": 201,
+                            "source": "fixture.chk",
+                            "sourceOffset": 100,
+                            "name": "dlgtl_fixture_Audio",
+                        },
+                    },
+                    {
+                        "path": "$.m_Clips[0].m_Asset",
+                        "target": {
+                            "serializedFile": "CAB-dialog-audio",
+                            "pathId": 101,
+                            "name": "DialogAudioEventPlayableAsset",
+                        },
+                    },
+                ],
+            )
+            mono_path.write_text(
+                "".join(json.dumps(row) + "\n" for row in [playable, track]),
+                encoding="utf-8",
+            )
+            director_path.write_text("", encoding="utf-8")
+
+            result = audio_semantics.collect_timeline_audio_ownership(
+                export_root,
+                event_ids=[f"hashed-event:0x{event_hash:08x}"],
+                mono_path=mono_path,
+                director_path=director_path,
+            )
+            event_id = f"hashed-event:0x{event_hash:08x}"
+            occurrence = result["occurrencesByEvent"][event_id][0]
+            self.assertEqual(occurrence["authoredEventName"], "au_dlg_foley_stop_chr")
+            self.assertEqual(
+                occurrence["authoredEventNameEvidence"],
+                "exactTimelineDisplayNameHashEqualsSerializedAudioId",
+            )
+            self.assertEqual(
+                occurrence["audioPlayableKeyStatus"],
+                "exactDialogAudioEventPlayableAudioIdScalar",
+            )
+            self.assertEqual(
+                occurrence["audioPlayableRuntimeContractId"],
+                "timelineAudioId.dialogAudioEvent",
+            )
+
+            track["scalars"][0][2] = "Post Event <au_wrong_name>"
+            mono_path.write_text(
+                "".join(json.dumps(row) + "\n" for row in [playable, track]),
+                encoding="utf-8",
+            )
+            mismatch = audio_semantics.collect_timeline_audio_ownership(
+                export_root,
+                event_ids=[event_id],
+                mono_path=mono_path,
+                director_path=director_path,
+            )
+            mismatch_occurrence = mismatch["occurrencesByEvent"][event_id][0]
+            self.assertIsNone(mismatch_occurrence["authoredEventName"])
+            self.assertIsNone(mismatch_occurrence["authoredEventNameEvidence"])
+
+    def test_timeline_dialog_audio_clip_survives_compact_display_name_omission(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            export_root.mkdir()
+            mono_path = export_root / "mono.jsonl"
+            director_path = export_root / "director.jsonl"
+            raw_dir = (
+                export_root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "json_by_type" / "MonoBehaviour"
+            )
+            raw_dir.mkdir(parents=True)
+            event_hash = audio_semantics.audio_hash_generator_compute("au_dialog_exact")
+            playable = {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-compact", "pathId": 11},
+                "name": "DialogAudioEventPlayableAsset",
+                "scalars": [["$.audioEvent._id", "i", event_hash]],
+            }
+            track = {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-compact", "pathId": 12},
+                "name": "Dialog Audio Entity Bindable Track",
+                "scalars": [],
+                "pptrs": [
+                    {
+                        "path": "$.m_Parent",
+                        "target": {
+                            "serializedFile": "CAB-compact",
+                            "pathId": 13,
+                            "name": "dlgtl_compact_Audio",
+                        },
+                    },
+                    {
+                        "path": "$.m_Clips[0].m_Asset",
+                        "target": {
+                            "serializedFile": "CAB-compact",
+                            "pathId": 11,
+                            "name": "DialogAudioEventPlayableAsset",
+                        },
+                    },
+                ],
+            }
+            mono_path.write_text(
+                "".join(json.dumps(row) + "\n" for row in (playable, track)),
+                encoding="utf-8",
+            )
+            director_path.write_text("", encoding="utf-8")
+            suffix = f"{12:016X}"
+            (raw_dir / f"Dialog Audio Entity Bindable Track_p{suffix}.json").write_text(
+                json.dumps({
+                    "$animestudio": {"sourceFile": "CAB-compact", "pathId": 12},
+                    "m_Clips": [{
+                        "m_Start": 4.0,
+                        "m_Duration": 5.0,
+                        "m_DisplayName": "Post Event <au_dialog_exact>",
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            ownership = audio_semantics.collect_timeline_audio_ownership(
+                export_root,
+                event_ids=[f"hashed-event:0x{event_hash:08x}"],
+                mono_path=mono_path,
+                director_path=director_path,
+            )
+            event_id = f"hashed-event:0x{event_hash:08x}"
+            self.assertEqual(len(ownership["occurrencesByEvent"][event_id]), 1)
+            enriched = audio_semantics.enrich_timeline_audio_ownership_from_raw_json(
+                export_root, ownership
+            )
+            occurrence = enriched["occurrencesByEvent"][event_id][0]
+            self.assertEqual(occurrence["timelineClipDisplayName"], "Post Event <au_dialog_exact>")
+            self.assertEqual(occurrence["authoredEventName"], "au_dialog_exact")
+
     def test_timeline_raw_json_adds_clip_timing_and_playable_controls(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root) / "export_full"
@@ -1600,6 +1776,44 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         summary = audio_semantics.event_summary_row(rows[0], "event_details/00.json")
         self.assertEqual(summary["playbackRole"], "controlOnly")
+
+    def test_typed_timeline_audio_id_name_replaces_anonymous_control_event(self) -> None:
+        event_name = "au_dlg_foley_stop_chr"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        context = {
+            "kind": "levelSequenceAudio",
+            "authoredEventName": event_name,
+            "authoredEventNameEvidence": (
+                "exactTimelineDisplayNameHashEqualsSerializedAudioId"
+            ),
+        }
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": [],
+            "events": [],
+            "eventEvidence": [],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": 7,
+                "bank": "default_banks.pck",
+                "actionEvidence": [{
+                    "actionType": 0x0202,
+                    "operation": "pause",
+                }],
+                "rootPlayActionCount": 0,
+                "mediaIds": [],
+                "traversalStatus": "complete",
+            }],
+        }, {f"hashed-event:0x{event_hash:08x}": [context]})
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["id"], event_name)
+        self.assertEqual(rows[0]["hash"], event_hash)
+        self.assertEqual(rows[0]["playbackRole"], "controlOnly")
+        self.assertEqual(rows[0]["purposeKnowledgeStatus"], "authoredContextKnown")
+        self.assertEqual(rows[0]["purposeInvestigationPriority"], "resolved")
+        self.assertEqual(
+            rows[0]["eventNameCollectionSources"],
+            ["exactTimelineDisplayNameHashEqualsSerializedAudioId"],
+        )
 
     def test_unlabeled_typed_nonplay_action_is_control_only(self) -> None:
         profile = audio_semantics.wwise_event_action_profile([{

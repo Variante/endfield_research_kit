@@ -138,7 +138,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 53
+AUDIO_SEMANTIC_SCHEMA_VERSION = 54
 TRIGGER_CONTEXT_SCHEMA_VERSION = 7
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -170,6 +170,30 @@ MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
 # Wwise received a PostEvent.  Keep the full contract in the compact index
 # coverage and attach only the stable id to each occurrence.
 TIMELINE_AUDIO_RUNTIME_CONTRACTS = {
+    "DialogAudioEventPlayableAsset": {
+        "id": "timelineAudioId.dialogAudioEvent",
+        "type": "Beyond.Gameplay.Core.DialogAudioEventPlayableAsset",
+        "behaviourType": "Beyond.Gameplay.Core.DialogAudioEventPlayableBehaviour",
+        "assetToken": "0x020027eb",
+        "behaviourToken": "0x0200282d",
+        "requestMethods": [
+            {"name": "CreatePlayable", "token": "0x0600f08d"},
+            {"name": "ProcessFrame", "token": "0x0600f20e"},
+        ],
+        "stopMethods": [
+            {"name": "OnClipDisable", "token": "0x0600f20d"},
+            {"name": "_StopPlaying", "token": "0x0600f20f"},
+        ],
+        "serializedControls": ["audioEvent", "stopOnDisable"],
+        "nativeEvidence": {
+            "createPlayableVa": "0x186dcb008",
+            "processFrameVa": "0x186dd6d98",
+            "stopPlayingVa": "0x186dd7028",
+            "processFrameAudioObjectResolver": "Beyond.Audio.AudioPlayableUtil.GetBindObjectAudioObjectId",
+            "onClipDisableCallsStopPlaying": True,
+        },
+        "evidenceBoundary": "currentIl2CppMetadataAndMappedNativePlayableBodies; runtimeDirectorEvaluationUnobserved",
+    },
     "AudioDlgEventPlayable": {
         "id": "timelineStringEventKey.audioDlg",
         "type": "Beyond.Audio.AudioDlgEventPlayable",
@@ -5650,6 +5674,7 @@ def collect_timeline_audio_ownership(
                     "AudioEventPlayable" in name
                     or "AudioDlgEventPlayable" in name
                     or "AudioMusicPlayable" in name
+                    or "DialogAudioEventPlayableAsset" in name
                     or script_name in {
                         "AudioEventPlayable",
                         "AudioDlgEventPlayable",
@@ -5660,6 +5685,15 @@ def collect_timeline_audio_ownership(
                 identity = _object_identity(record)
                 key = _object_identity_key(identity)
                 event_id = str(event_value or "").strip().lower()
+                integer_event_value = _scalar_value(record, "$.audioEvent._id")
+                if "DialogAudioEventPlayableAsset" in name and key:
+                    try:
+                        integer_event_hash = int(integer_event_value) & 0xFFFFFFFF
+                    except (TypeError, ValueError):
+                        integer_event_hash = 0
+                    if integer_event_hash:
+                        playable_events[key] = hashed_event_key(integer_event_hash)
+                        stats["dialogAudioEventPlayableRecords"] += 1
                 if is_audio_event_playable and event_id and key and (
                     not wanted
                     or event_id in wanted
@@ -5684,6 +5718,16 @@ def collect_timeline_audio_ownership(
                 name = str(record.get("name") or "")
                 script_name = _scalar_value(record, "$.m_Name")
                 event_value = _scalar_value(record, "$._audioEventKey")
+                integer_event_value = _scalar_value(record, "$.audioEvent._id")
+                identity = _object_identity(record)
+                key = _object_identity_key(identity)
+                if "DialogAudioEventPlayableAsset" in name and key:
+                    try:
+                        integer_event_hash = int(integer_event_value) & 0xFFFFFFFF
+                    except (TypeError, ValueError):
+                        integer_event_hash = 0
+                    if integer_event_hash:
+                        playable_events[key] = hashed_event_key(integer_event_hash)
                 if event_value is not None and (
                     "AudioEventPlayable" in name
                     or "AudioDlgEventPlayable" in name
@@ -5733,19 +5777,23 @@ def collect_timeline_audio_ownership(
                     value = str(scalar[2] or "").strip().lower()
                     if value:
                         clip_displays.append((int(match.group(1)), value))
-                for clip_index, display_name in clip_displays:
-                    if (
-                        wanted
-                        and not scan_all_cues
-                        and not wanted_cues
-                        and display_name not in wanted
-                        and display_name not in {
-                            "audioeventplayable",
-                            "audiodlgeventplayable",
-                            "audiomusicplayable",
-                        }
-                    ):
+                clip_indices = {index for index, _display in clip_displays}
+                for pptr in record.get("pptrs") or []:
+                    if not isinstance(pptr, dict):
                         continue
+                    match = re.fullmatch(r"\$\.m_Clips\[(\d+)\]\.m_Asset", str(pptr.get("path") or ""))
+                    if not match:
+                        continue
+                    clip_index = int(match.group(1))
+                    if clip_index in clip_indices:
+                        continue
+                    target = pptr.get("target") if isinstance(pptr.get("target"), dict) else {}
+                    if "DialogAudioEventPlayableAsset" not in str(target.get("name") or ""):
+                        continue
+                    clip_displays.append((clip_index, ""))
+                    clip_indices.add(clip_index)
+                    stats["dialogAudioClipsRecoveredFromExactAssetPPtr"] += 1
+                for clip_index, display_name in clip_displays:
                     parent = _resolved_pptr(record, "$.m_Parent")
                     asset = _resolved_pptr(
                         record, f"$.m_Clips[{clip_index}].m_Asset"
@@ -5764,7 +5812,9 @@ def collect_timeline_audio_ownership(
                         "AudioEventPlayable" in asset_name
                         or "AudioDlgEventPlayable" in asset_name
                         or "AudioMusicPlayable" in asset_name
+                        or "DialogAudioEventPlayableAsset" in asset_name
                     )
+                    asset_is_dialog_audio_id = "DialogAudioEventPlayableAsset" in asset_name
                     asset_is_audio_music = "AudioMusicPlayable" in asset_name
                     asset_is_audio_cue = "AudioCuePlayable" in asset_name
                     if (
@@ -5773,9 +5823,10 @@ def collect_timeline_audio_ownership(
                         and display_name not in wanted
                         and playable_event_id not in wanted
                         and not asset_is_audio_music
+                        and not asset_is_dialog_audio_id
                     ):
                         continue
-                    if playable_event_id and playable_event_id != display_name:
+                    if playable_event_id and playable_event_id != display_name and not asset_is_dialog_audio_id:
                         if not asset_is_audio_music:
                             stats["timelineCarrierPlayableMismatch"] += 1
                             continue
@@ -5786,6 +5837,14 @@ def collect_timeline_audio_ownership(
                     parent_name = str(parent.get("name") or "")
                     base_id = normalize_levelsequence_audio_id(parent_name)
                     playable_type = asset_name or "AudioEventPlayable"
+                    authored_event_name = ""
+                    if asset_is_dialog_audio_id and playable_event_id:
+                        display_match = re.search(r"<([^<>]+)>", display_name)
+                        candidate_name = str(display_match.group(1) if display_match else "").strip()
+                        if candidate_name and audio_hash_generator_compute(candidate_name) == int(
+                            playable_event_id.rsplit("0x", 1)[1], 16
+                        ):
+                            authored_event_name = candidate_name
                     if not base_id:
                         stats["timelineCarrierNonLevelSequenceParent"] += 1
                     occurrence = {
@@ -5812,14 +5871,23 @@ def collect_timeline_audio_ownership(
                             _timeline_audio_runtime_contract_id(playable_type)
                         ),
                         "audioPlayableKeyStatus": (
-                            "exactAudioEventPlayableScalar"
+                            "exactDialogAudioEventPlayableAudioIdScalar"
+                            if asset_is_dialog_audio_id and playable_event_id
+                            else "exactAudioEventPlayableScalar"
                             if playable_event_id
                             else "trackDisplayNameOnlyScalar"
+                        ),
+                        "authoredEventName": authored_event_name or None,
+                        "authoredEventNameEvidence": (
+                            "exactTimelineDisplayNameHashEqualsSerializedAudioId"
+                            if authored_event_name else None
                         ),
                         "audioPlayableSerializedFile": asset.get("serializedFile"),
                         "audioPlayablePathId": asset.get("pathId"),
                         "evidence": (
-                            "exactAudioEventPlayableScalarTrackParentAssetPPtrs"
+                            "exactDialogAudioEventPlayableAudioIdTrackParentAssetPPtrs"
+                            if asset_is_dialog_audio_id and playable_event_id
+                            else "exactAudioEventPlayableScalarTrackParentAssetPPtrs"
                             if playable_event_id
                             else "exactTimelineTrackDisplayNameAudioPlayableParentAssetPPtrs"
                         ),
@@ -5920,7 +5988,10 @@ def collect_timeline_audio_ownership(
         "stats": dict(stats),
         "evidenceBoundary": (
             "AudioEventPlayable scalar keys, Track m_Asset/m_Parent PPtrs, and PlayableDirector "
-            "m_PlayableAsset PPtrs are exact serialized-object identity joins. They prove authored "
+            "m_PlayableAsset PPtrs are exact serialized-object identity joins. Typed integer "
+            "DialogAudioEventPlayableAsset AudioIds additionally require exact display-name hash "
+            "agreement before recovering an authored Event name. "
+            "They prove authored "
             "Timeline ownership and Director references, not Director activation, audio posting, or "
             "Wwise leaf selection. The caller may combine the complete StreamingAssets and "
             "Persistent object-index parts."
@@ -6748,6 +6819,7 @@ def enrich_timeline_audio_ownership_from_raw_json(
         ("_enableSeek", "audioPlayableEnableSeek"),
         ("_useBindingObj", "audioPlayableUseBindingObject"),
         ("_is2D", "audioPlayableIs2D"),
+        ("stopOnDisable", "audioPlayableStopOnDisable"),
         ("musicActionType", "audioMusicActionType"),
         ("triggerOnSkip", "audioMusicTriggerOnSkip"),
     )
@@ -6773,6 +6845,29 @@ def enrich_timeline_audio_ownership_from_raw_json(
                     if value is not None:
                         result[output_key] = value
                 result["timelineClipTimingEvidence"] = "exactSerializedTimelineClip"
+                display_name = str(clip.get("m_DisplayName") or "").strip()
+                if display_name:
+                    result["timelineClipDisplayName"] = display_name
+                if (
+                    result.get("audioPlayableKeyStatus")
+                    == "exactDialogAudioEventPlayableAudioIdScalar"
+                ):
+                    display_match = re.search(r"<([^<>]+)>", display_name)
+                    candidate_name = str(display_match.group(1) if display_match else "").strip()
+                    event_id = str(result.get("eventId") or "")
+                    try:
+                        event_hash = int(event_id.rsplit("0x", 1)[1], 16) & 0xFFFFFFFF
+                    except (ValueError, IndexError):
+                        event_hash = None
+                    if (
+                        candidate_name
+                        and event_hash is not None
+                        and audio_hash_generator_compute(candidate_name) == event_hash
+                    ):
+                        result["authoredEventName"] = candidate_name
+                        result["authoredEventNameEvidence"] = (
+                            "exactTimelineDisplayNameHashEqualsSerializedAudioId"
+                        )
                 result["timelineTrackRawJsonPath"] = normalize_posix(
                     track_path.relative_to(export_root)
                 )
@@ -6915,9 +7010,16 @@ def build_levelsequence_audio_contexts(
                 ],
                 "triggerRequestEvidence": [
                     (
-                        "exactAudioEventPlayableScalar"
+                        "exactDialogAudioEventPlayableAudioIdScalar"
+                        if occurrence.get("audioPlayableKeyStatus") == "exactDialogAudioEventPlayableAudioIdScalar"
+                        else "exactAudioEventPlayableScalar"
                         if occurrence.get("audioPlayableKeyStatus") == "exactAudioEventPlayableScalar"
                         else "exactTimelineTrackDisplayName"
+                    ),
+                    (
+                        "exactTimelineDisplayNameHashEqualsSerializedAudioId"
+                        if occurrence.get("authoredEventNameEvidence")
+                        else "authoredEventNameNotRecovered"
                     ),
                     "exactTimelineTrackPPtr",
                     "exactTimelineParentPPtr",
@@ -6974,6 +7076,8 @@ def build_levelsequence_audio_contexts(
                     "audioPlayableRuntimeContractId"
                 ),
                 "audioPlayableKeyStatus": occurrence.get("audioPlayableKeyStatus"),
+                "authoredEventName": occurrence.get("authoredEventName"),
+                "authoredEventNameEvidence": occurrence.get("authoredEventNameEvidence"),
                 "audioPlayableSerializedFile": occurrence.get("audioPlayableSerializedFile"),
                 "audioPlayablePathId": occurrence.get("audioPlayablePathId"),
                 "timelineClipDisplayName": occurrence.get("timelineClipDisplayName"),
@@ -6996,6 +7100,7 @@ def build_levelsequence_audio_contexts(
                 "audioPlayableEnableSeek": occurrence.get("audioPlayableEnableSeek"),
                 "audioPlayableUseBindingObject": occurrence.get("audioPlayableUseBindingObject"),
                 "audioPlayableIs2D": occurrence.get("audioPlayableIs2D"),
+                "audioPlayableStopOnDisable": occurrence.get("audioPlayableStopOnDisable"),
                 "audioMusicActionType": occurrence.get("audioMusicActionType"),
                 "audioMusicActionTypeLabel": occurrence.get("audioMusicActionTypeLabel"),
                 "audioMusicTriggerOnSkip": occurrence.get("audioMusicTriggerOnSkip"),
@@ -8503,10 +8608,13 @@ def _build_timeline_trigger_contexts(
                     "timelineTrackSerializedFile", "timelineTrackPathId",
                     "timelineTrackSource", "timelineTrackSourceOffset", "audioPlayableType",
                     "audioPlayableRuntimeContractId",
+                    "audioPlayableKeyStatus", "authoredEventName",
+                    "authoredEventNameEvidence",
                     "audioPlayableSerializedFile", "audioPlayablePathId", "audioPlayableIsCue",
                     "audioPlayableStopEventAtClipEnd", "audioPlayableStopEventAtClipEndKey",
                     "audioPlayableFadeOutMs", "audioPlayableEnableSeek",
                     "audioPlayableUseBindingObject", "audioPlayableIs2D",
+                    "audioPlayableStopOnDisable",
                     "audioMusicActionType", "audioMusicActionTypeLabel",
                     "audioMusicTriggerOnSkip", "audioMusicTriggerOnSkipLabel",
                     "audioPlayableControlEvidence", "audioPlayableRawJsonPath",
@@ -8609,7 +8717,10 @@ def _build_timeline_trigger_contexts(
                         value
                         for value in (
                             (
-                                "exactAudioEventPlayableScalar"
+                                "exactDialogAudioEventPlayableAudioIdScalar"
+                                if context.get("audioPlayableKeyStatus")
+                                == "exactDialogAudioEventPlayableAudioIdScalar"
+                                else "exactAudioEventPlayableScalar"
                                 if context.get("audioPlayableKeyStatus")
                                 == "exactAudioEventPlayableScalar"
                                 else "exactTimelineTrackDisplayName"
@@ -8632,6 +8743,7 @@ def _build_timeline_trigger_contexts(
                                 else None
                             ),
                             context.get("timelineClipTimingEvidence"),
+                            context.get("authoredEventNameEvidence"),
                             context.get("audioPlayableControlEvidence"),
                         )
                         if value
@@ -11455,6 +11567,31 @@ def build_event_rows(
             continue
         key = display.lower()
         hashes.setdefault(key, audio_hash_generator_compute(display))
+    context_authored_display_names: dict[str, str] = {}
+    for context_key, context_rows in contexts.items():
+        expected_hash = None
+        if str(context_key).lower().startswith("hashed-event:0x"):
+            try:
+                expected_hash = int(str(context_key).rsplit("0x", 1)[1], 16) & 0xFFFFFFFF
+            except ValueError:
+                expected_hash = None
+        for context in context_rows or []:
+            if not isinstance(context, dict):
+                continue
+            display = str(context.get("authoredEventName") or "").strip()
+            if not display:
+                continue
+            event_hash = audio_hash_generator_compute(display)
+            if expected_hash is not None and event_hash != expected_hash:
+                continue
+            key = display.lower()
+            hashes.setdefault(key, event_hash)
+            context_authored_display_names.setdefault(key, display)
+            sources = event_name_sources.setdefault(key, [])
+            source = str(context.get("authoredEventNameEvidence") or "typedTriggerContext")
+            if source not in sources:
+                sources.append(source)
+                sources.sort()
 
     # Wwise banks also contain Event objects whose uint32 identity has no
     # recovered string or gameplay callsite yet. Keep those objects visible
@@ -11653,6 +11790,8 @@ def build_event_rows(
         display = str(alias.get("name") or "").strip()
         if display:
             display_names.setdefault(display.lower(), display)
+    for key, display in context_authored_display_names.items():
+        display_names.setdefault(key, display)
     for entry in audio_index.get("events") or []:
         if not isinstance(entry, dict):
             continue
@@ -12289,9 +12428,11 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "timelineClipStartSec", "timelineClipDurationSec", "timelineClipEndSec",
             "timelineClipTimingEvidence", "timelineTrackRawJsonPath", "audioPlayableType",
             "audioPlayableRuntimeContractId", "audioPlayablePathId",
-            "audioPlayableKeyStatus", "audioPlayableIsCue",
+            "audioPlayableKeyStatus", "authoredEventName", "authoredEventNameEvidence",
+            "audioPlayableIsCue",
             "audioPlayableStopEventAtClipEnd", "audioPlayableFadeOutMs",
             "audioPlayableEnableSeek", "audioPlayableUseBindingObject", "audioPlayableIs2D",
+            "audioPlayableStopOnDisable",
             "audioPlayableControlEvidence", "audioPlayableRawJsonPath",
             "playableDirectorName", "playableDirectorPathId",
             "ownershipEvidenceLevel", "triggerEvidenceLevel", "timelineOwnershipStatus",

@@ -866,6 +866,7 @@
         context.modelId, context.subTemplateId, context.triggerStateId, context.triggerStateName,
         context.triggerCustomState, context.ownerKind, context.stateDirection, context.audioStateMask, context.description,
         context.authoredFieldRole, context.serializedFieldPath, context.componentName,
+        context.authoredEventName, context.authoredEventNameEvidence,
         context.gameObjectName, ...asArray(context.hierarchyPath), context.serializedFile,
         context.objectIndexSource, context.rawJsonSource, context.sourceAssetFile,
         ...Object.entries(context.serializedPlaybackControls || {}).flat(),
@@ -2497,9 +2498,14 @@
         parts.push(`runtime contract ${context.audioPlayableRuntimeContractId} (static metadata)`);
       }
       if (context?.audioPlayableKeyStatus) parts.push(humanize(context.audioPlayableKeyStatus));
+      if (context?.authoredEventName) parts.push(`authored Event ${context.authoredEventName}`);
+      if (context?.authoredEventNameEvidence) parts.push(humanize(context.authoredEventNameEvidence));
       if (context?.audioPlayableIsCue !== undefined) parts.push(`isCue ${context.audioPlayableIsCue ? "yes" : "no"}`);
       if (context?.audioPlayableStopEventAtClipEnd !== undefined) {
         parts.push(`stop-at-clip-end ${context.audioPlayableStopEventAtClipEnd ? "yes" : "no"}`);
+      }
+      if (context?.audioPlayableStopOnDisable !== undefined) {
+        parts.push(`stop-on-disable ${context.audioPlayableStopOnDisable ? "yes" : "no"}`);
       }
       if (context?.audioPlayableEnableSeek !== undefined) parts.push(`seek ${context.audioPlayableEnableSeek ? "yes" : "no"}`);
       if (context?.audioPlayableIs2D !== undefined) parts.push(`2D ${context.audioPlayableIs2D ? "yes" : "no"}`);
