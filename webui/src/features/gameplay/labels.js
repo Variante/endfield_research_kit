@@ -697,7 +697,7 @@
       soundTraversalTyped: "Complete typed v150 graph",
       soundTraversalPartial: "Partial typed v150 graph",
       soundTraversalDirect: "Direct authored media",
-      soundOpenToList: "Expand this event to list every playable file together.",
+      soundOpenToList: "Expand to list every playable file together.",
       soundEquivalentContent: "Same decoded content",
       soundActionAttack: "Attacks",
       soundActionSkill: "Skills",

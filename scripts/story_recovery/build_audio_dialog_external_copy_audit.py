@@ -69,12 +69,19 @@ def build_audit(export_root: Path, language: str = "CN") -> dict[str, Any]:
     for path in candidates:
         external_id = int(path.stem)
         match = by_external_id.get(external_id)
+        recovered_identity = (
+            build_audio.RECOVERED_EXTERNAL_MEDIA_IDENTITIES.get(language) or {}
+        ).get(external_id)
         record: dict[str, Any] = {
             "externalMediaId": external_id,
             "externalMediaIdHex": f"0x{external_id:016x}",
             "numericPath": path.relative_to(audio_root).as_posix(),
             "numericBytes": path.stat().st_size,
-            "identityStatus": "currentAudioDialogPathHash" if match else "absentFromCurrentAudioDialog",
+            "identityStatus": (
+                "currentAudioDialogPathHash"
+                if match else "boundedRecoveredAuthoredPathHash"
+                if recovered_identity else "absentFromCurrentAudioDialog"
+            ),
         }
         if match:
             row_key, row = match
@@ -109,6 +116,27 @@ def build_audit(export_root: Path, language: str = "CN") -> dict[str, Any]:
                     "sourcePath": record["numericPath"],
                     "audioDialogPath": dialog_path,
                 })
+        elif recovered_identity:
+            recovered_path = str(recovered_identity["path"])
+            recovered_hash = build_audio.audio_dialog_external_media_id(
+                recovered_path, language_info["dumper"]
+            )
+            record.update({
+                "recoveredAudioId": recovered_identity["audioId"],
+                "recoveredAuthoredPath": recovered_path,
+                "recoveredPathHash": recovered_hash,
+                "identityEvidence": recovered_identity["evidence"],
+                "playbackPlacementStatus": recovered_identity["playbackPlacementStatus"],
+            })
+            if recovered_hash != external_id:
+                validation_errors.append({
+                    "externalMediaId": external_id,
+                    "check": "boundedRecoveredAuthoredPathHash",
+                    "expected": external_id,
+                    "actual": recovered_hash,
+                    "sourcePath": record["numericPath"],
+                    "recoveredAuthoredPath": recovered_path,
+                })
         records.append(record)
 
     status_counts: dict[str, int] = {}
@@ -125,6 +153,7 @@ def build_audit(export_root: Path, language: str = "CN") -> dict[str, Any]:
             "externalNumericPathCount": len(records),
             "currentAudioDialogPathHashCount": status_counts.get("currentAudioDialogPathHash", 0),
             "byteIdenticalCurrentAuthoredCopyCount": content_counts.get("byteIdenticalCurrentAuthoredCopy", 0),
+            "boundedRecoveredAuthoredPathHashCount": status_counts.get("boundedRecoveredAuthoredPathHash", 0),
             "absentFromCurrentAudioDialogCount": status_counts.get("absentFromCurrentAudioDialog", 0),
             "validationErrorCount": len(validation_errors),
             "identityStatusCounts": status_counts,
@@ -134,7 +163,9 @@ def build_audit(export_root: Path, language: str = "CN") -> dict[str, Any]:
             "The 64-bit id is accepted only when it exactly equals FNV-1a-64 of "
             "voice/<language>/<AudioDialog.path lowercase>. Suppression additionally "
             "requires the current canonical file to have identical SHA-256 bytes. An "
-            "unmatched numeric file remains unknown and is not assigned by audio similarity."
+            "identity absent from current AudioDialog is recovered only when a bounded "
+            "authored-path namespace has one exact hash preimage; this does not establish "
+            "a dialog row, speaker, trigger, or playback location."
         ),
         "validationErrors": validation_errors,
         "records": records,
@@ -149,6 +180,7 @@ def write_markdown(payload: dict[str, Any], path: Path) -> None:
         f"- numeric External Source paths: `{summary['externalNumericPathCount']}`",
         f"- exact current AudioDialog path hashes: `{summary['currentAudioDialogPathHashCount']}`",
         f"- byte-identical canonical copies: `{summary['byteIdenticalCurrentAuthoredCopyCount']}`",
+        f"- bounded recovered authored paths: `{summary['boundedRecoveredAuthoredPathHashCount']}`",
         f"- absent from current AudioDialog: `{summary['absentFromCurrentAudioDialogCount']}`",
         f"- validation errors: `{summary['validationErrorCount']}`",
         "",
@@ -156,7 +188,7 @@ def write_markdown(payload: dict[str, Any], path: Path) -> None:
         "",
         payload["evidenceBoundary"],
         "",
-        "## Unmatched current files",
+        "## Current-table gaps",
         "",
         "| External id | Numeric path | Bytes |",
         "| --- | --- | ---: |",
@@ -188,6 +220,7 @@ def main() -> int:
         "AudioDialog external copy audit: "
         f"paths={summary['externalNumericPathCount']}, "
         f"exactCopies={summary['byteIdenticalCurrentAuthoredCopyCount']}, "
+        f"boundedIdentities={summary['boundedRecoveredAuthoredPathHashCount']}, "
         f"unmatched={summary['absentFromCurrentAudioDialogCount']}, "
         f"errors={summary['validationErrorCount']}"
     )

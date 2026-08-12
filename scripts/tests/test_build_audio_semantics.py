@@ -1115,28 +1115,38 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_media_playback_location_statuses_keep_evidence_boundaries(self) -> None:
         media = [
-            {"id": "dialog", "audioDialogPath": "dialog/path"},
+            {"id": "dialog", "audioDialogPath": "dialog/path", "storyLineBindingCount": 2},
             {"id": "placed", "eventIds": ["au_placed"]},
             {"id": "event_only", "eventIds": ["au_contextless"]},
+            {"id": "literal_only", "eventIds": ["au_literal"]},
             {"id": "unknown"},
         ]
         events = [
             {"id": "au_placed", "contexts": [{"kind": "table"}]},
             {"id": "au_contextless", "contexts": []},
+            {"id": "au_literal", "contexts": [{
+                "kind": "binaryManagedLiteral",
+                "playbackPlacementStatus": "identityOnlyManagedStringLiteral",
+            }]},
         ]
 
         counts = audio_semantics.annotate_media_playback_locations(media, events)
 
         self.assertEqual(
             [row["playbackLocationStatus"] for row in media],
-            ["directDialogMedia", "authoredEventContext", "eventRelationOnly", "unknown"],
+            ["directDialogMedia", "authoredEventContext", "eventRelationOnly", "eventRelationOnly", "unknown"],
         )
         self.assertEqual(counts, {
             "directDialogMedia": 1,
             "authoredEventContext": 1,
-            "eventRelationOnly": 1,
+            "eventRelationOnly": 2,
             "unknown": 1,
         })
+        self.assertEqual(
+            [row["purposeInvestigationPriority"] for row in media],
+            ["resolvedTerminal", "resolved", "secondary", "secondary", "highest"],
+        )
+        self.assertEqual(media[0]["purposeKnowledgeStatus"], "exactStoryLineBinding")
 
     def test_unresolved_event_records_scanned_bank_fingerprint_and_exact_hash(self) -> None:
         rows, _, _ = audio_semantics.build_event_rows({
@@ -1155,6 +1165,241 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(row["authoredEventHash"], audio_semantics.audio_hash_generator_compute("Au_Sfx_Fixture_Missing"))
         self.assertEqual(row["scannedBankPackageCount"], 5)
         self.assertEqual(row["scannedBankPackageFingerprint"], "a" * 64)
+        self.assertEqual(row["purposeKnowledgeStatus"], "authoredContextKnown")
+        self.assertEqual(row["purposeInvestigationPriority"], "resolved")
+
+    def test_anonymous_wwise_event_is_high_priority_unknown_use(self) -> None:
+        event_hash = 0x12345678
+        rows, _, _ = audio_semantics.build_event_rows(
+            {
+                "eventNames": [],
+                "events": [],
+                "eventEvidence": [],
+                "wwiseEventInventory": [
+                    {
+                        "eventHash": event_hash,
+                        "bankId": 7,
+                        "bank": "default_banks.pck",
+                        "actionEvidence": [],
+                        "mediaIds": [],
+                        "traversalStatus": "complete",
+                    }
+                ],
+            },
+            {},
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["eventIdentityStatus"], "wwiseObjectWithoutRecoveredTriggerName")
+        self.assertEqual(rows[0]["playbackLocationStatus"], "unknown")
+        self.assertEqual(rows[0]["purposeKnowledgeStatus"], "unknownUse")
+        self.assertEqual(rows[0]["purposeInvestigationPriority"], "highest")
+
+    def test_shared_wwise_play_target_recovers_output_category_not_trigger(self) -> None:
+        bank = "default_banks.pck"
+        known = {
+            "id": "au_ui_known",
+            "category": "ui",
+            "purposeKnowledgeStatus": "authoredContextKnown",
+            "purposeInvestigationPriority": "resolved",
+            "evidence": [{
+                "bank": bank,
+                "actionEvidence": [
+                    {"actionId": 10, "operation": "play", "targetId": 100},
+                    {"actionId": 11, "operation": "play", "targetId": 200},
+                ],
+            }],
+        }
+        anonymous = {
+            "id": "hashed-event:0x12345678",
+            "category": "unknown",
+            "categoryEvidence": "unclassified",
+            "purposeKnowledgeStatus": "unknownUse",
+            "purposeInvestigationPriority": "highest",
+            "evidence": [{
+                "bank": bank,
+                "actionEvidence": [
+                    {"actionId": 20, "operation": "play", "targetId": 200},
+                    {"actionId": 21, "operation": "play", "targetId": 100},
+                ],
+            }],
+        }
+
+        count = audio_semantics.annotate_shared_wwise_play_targets([known, anonymous])
+
+        self.assertEqual(count, 1)
+        self.assertEqual(anonymous["category"], "ui")
+        self.assertEqual(anonymous["categoryEvidence"], "exactSharedWwisePlayTargetSet")
+        self.assertEqual(anonymous["audioLibraryEquivalentEventIds"], ["au_ui_known"])
+        self.assertEqual(anonymous["purposeKnowledgeStatus"], "unknownUse")
+        self.assertEqual(anonymous["purposeInvestigationPriority"], "highest")
+
+    def test_partial_shared_wwise_play_target_does_not_equate_output(self) -> None:
+        known = {
+            "id": "au_sfx_known",
+            "category": "sfx",
+            "purposeKnowledgeStatus": "authoredContextKnown",
+            "purposeInvestigationPriority": "resolved",
+            "evidence": [{
+                "bank": "default_banks.pck",
+                "actionEvidence": [
+                    {"operation": "play", "targetId": 100},
+                    {"operation": "play", "targetId": 200},
+                ],
+            }],
+        }
+        anonymous = {
+            "id": "hashed-event:0x87654321",
+            "category": "unknown",
+            "purposeKnowledgeStatus": "unknownUse",
+            "purposeInvestigationPriority": "highest",
+            "evidence": [{
+                "bank": "default_banks.pck",
+                "actionEvidence": [{"operation": "play", "targetId": 100}],
+            }],
+        }
+
+        self.assertEqual(
+            audio_semantics.annotate_shared_wwise_play_targets([known, anonymous]),
+            0,
+        )
+        self.assertNotIn("audioLibraryPlaybackTargetStatus", anonymous)
+
+    def test_complete_shared_wwise_media_set_records_leaf_equivalence_only(self) -> None:
+        known = {
+            "id": "au_ui_known",
+            "category": "ui",
+            "purposeKnowledgeStatus": "authoredContextKnown",
+            "purposeInvestigationPriority": "resolved",
+            "media": [
+                {"mediaId": 100, "bank": "vfs/audio/default_banks.pck"},
+                {"mediaId": 200, "bank": "vfs/audio/default_banks.pck"},
+            ],
+        }
+        unknown = {
+            "id": "hashed-event:0x12345678",
+            "category": "unknown",
+            "purposeKnowledgeStatus": "unknownUse",
+            "purposeInvestigationPriority": "highest",
+            "media": [
+                {"mediaId": 200, "bank": "vfs/audio/default_banks.pck"},
+                {"mediaId": 100, "bank": "vfs/audio/default_banks.pck"},
+            ],
+        }
+
+        count = audio_semantics.annotate_shared_wwise_media_leaves([known, unknown])
+
+        self.assertEqual(count, 1)
+        self.assertEqual(
+            unknown["audioLibraryMediaLeafStatus"],
+            "exactCompleteWwiseMediaIdSetWithAuthoredEvent",
+        )
+        self.assertEqual(unknown["audioLibraryMediaEquivalentEventIds"], ["au_ui_known"])
+        self.assertEqual(unknown["audioLibrarySharedMediaIds"], [100, 200])
+        self.assertEqual(unknown["category"], "unknown")
+        self.assertEqual(unknown["purposeKnowledgeStatus"], "unknownUse")
+        self.assertEqual(unknown["purposeInvestigationPriority"], "highest")
+
+    def test_partial_shared_wwise_media_set_does_not_equate_leaf_output(self) -> None:
+        known = {
+            "id": "au_sfx_known",
+            "purposeKnowledgeStatus": "authoredContextKnown",
+            "media": [
+                {"mediaId": 100, "bank": "default_banks.pck"},
+                {"mediaId": 200, "bank": "default_banks.pck"},
+            ],
+        }
+        unknown = {
+            "id": "hashed-event:0x87654321",
+            "purposeKnowledgeStatus": "unknownUse",
+            "purposeInvestigationPriority": "highest",
+            "media": [{"mediaId": 100, "bank": "default_banks.pck"}],
+        }
+
+        self.assertEqual(
+            audio_semantics.annotate_shared_wwise_media_leaves([known, unknown]),
+            0,
+        )
+        self.assertNotIn("audioLibraryMediaLeafStatus", unknown)
+
+    def test_managed_literal_without_wwise_object_or_consumer_is_not_an_event(self) -> None:
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": ["au_music_", "au_real_missing"],
+            "binaryManagedEventNames": ["au_music_"],
+            "events": [],
+            "eventEvidence": [],
+            "wwiseEventInventory": [],
+        }, {
+            "au_real_missing": [{"kind": "table"}],
+        })
+
+        self.assertEqual([row["id"] for row in rows], ["au_real_missing"])
+
+    def test_authored_event_name_joins_matching_raw_wwise_inventory(self) -> None:
+        event_name = "au_sfx_levelscript_fixture"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        rows, _, banks = audio_semantics.build_event_rows({
+            # LevelScript/Timeline names are collected after the base audio
+            # index and may exist only as semantic context keys.
+            "eventNames": [],
+            "events": [],
+            "eventEvidence": [],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": event_hash,
+                "bankVersion": 150,
+                "bank": "default_banks.pck",
+                "actionIds": [9],
+                "actionEvidence": [{"rootActionId": 9, "operation": "play"}],
+                "rootPlayActionCount": 1,
+                "mediaIds": [],
+                "traversalStatus": "complete",
+            }],
+        }, {event_name: [{"kind": "levelScriptAudioAction"}]})
+
+        self.assertEqual([row["id"] for row in rows], [event_name])
+        self.assertTrue(rows[0]["foundInWwise"])
+        self.assertEqual(
+            rows[0]["audioLibraryResolutionStatus"],
+            "resolvedWwiseEventObject",
+        )
+        self.assertEqual(rows[0]["eventIdentityStatus"], "recoveredAuthoredName")
+        self.assertEqual(rows[0]["evidence"][0]["bank"], "default_banks.pck")
+        self.assertEqual(banks[0]["namedEventCount"], 1)
+
+    def test_context_name_replaces_preexisting_hash_only_event_evidence(self) -> None:
+        event_name = "au_music_levelscript_fixture"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        hashed_key = f"hashed-event:0x{event_hash:08x}"
+        evidence = {
+            "eventId": hashed_key,
+            "eventHash": event_hash,
+            "bankId": 7,
+            "bankVersion": 150,
+            "bank": "default_banks.pck",
+            "actionIds": [9],
+            "actionEvidence": [{"rootActionId": 9, "operation": "play"}],
+            "rootPlayActionCount": 1,
+            "mediaIds": [],
+            "traversalStatus": "complete",
+        }
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": [],
+            "events": [],
+            "eventEvidence": [evidence],
+            "wwiseEventInventory": [evidence],
+        }, {
+            event_name: [{"kind": "levelScriptAudioAction"}],
+            hashed_key: [{"kind": "tableEventHash"}],
+        })
+
+        self.assertEqual([row["id"] for row in rows], [event_name])
+        self.assertTrue(rows[0]["foundInWwise"])
+        self.assertEqual(
+            sorted(context["kind"] for context in rows[0]["contexts"]),
+            ["levelScriptAudioAction", "tableEventHash"],
+        )
+        self.assertEqual(len(rows[0]["evidence"]), 1)
 
     def test_unnamed_wwise_event_inventory_recovers_media_without_inventing_trigger(self) -> None:
         inventory_row = {
@@ -1273,11 +1518,18 @@ class AudioSemanticDataTests(unittest.TestCase):
             }],
             "hircSummary": {"definitionOnlyDecodedSoundObjects": [{
                 "mediaId": 30151934,
+                "bank": "default_banks.pck",
+                "bankId": 7,
                 "soundObjectId": 10,
                 "parentObjectId": 20,
                 "parentObjectType": 5,
                 "evidence": "exactTypedWwiseSoundCodecMediaObject",
             }]},
+            "wwiseEventInventory": [{
+                "eventId": "au_int_rolling_stone_big_rolling",
+                "bank": "default_banks.pck",
+                "bankId": 7,
+            }],
         }
 
         media = audio_semantics.build_media_rows(audio_index, {})
@@ -1289,6 +1541,30 @@ class AudioSemanticDataTests(unittest.TestCase):
             "wwiseSoundDefinitionWithoutEventPath",
         )
         self.assertEqual(media[0]["wwiseDefinitionEvidence"][0]["soundObjectId"], 10)
+        self.assertEqual(
+            media[0]["audioLibraryBankEventIds"],
+            ["au_int_rolling_stone_big_rolling"],
+        )
+        self.assertEqual(media[0]["purposeHintStatus"], "authoredEventBankColocationOnly")
+
+    def test_media_rows_keep_media_purpose_separate_from_related_event_types(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/1.flac"
+        audio_index = {"entries": [{
+            "id": "1",
+            "rel": "wwise/sfx/1.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "sfx",
+        }]}
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_music_fixture", "au_sfx_fixture"]},
+            {"au_music_fixture": "music", "au_sfx_fixture": "sfx"},
+        )
+
+        self.assertEqual(media[0]["audioCategory"], "sfx")
+        self.assertEqual(media[0]["relatedEventCategories"], ["music", "sfx"])
 
     def test_control_only_event_role_uses_serialized_action_type(self) -> None:
         event_name = "au_ui_fixture_control"
@@ -1316,8 +1592,52 @@ class AudioSemanticDataTests(unittest.TestCase):
         }, {})
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["playbackRole"], "controlOnly")
+        self.assertEqual(rows[0]["purposeKnowledgeStatus"], "audioLibraryControlKnown")
+        self.assertEqual(rows[0]["purposeInvestigationPriority"], "secondary")
+        self.assertEqual(
+            rows[0]["playbackLocationStatus"],
+            "libraryControlOnlyExternalCallerUnknown",
+        )
         summary = audio_semantics.event_summary_row(rows[0], "event_details/00.json")
         self.assertEqual(summary["playbackRole"], "controlOnly")
+
+    def test_unlabeled_typed_nonplay_action_is_control_only(self) -> None:
+        profile = audio_semantics.wwise_event_action_profile([{
+            "actionEvidence": [{"actionType": 0x3102, "operation": "operation0x3100"}],
+            "rootPlayActionCount": 0,
+            "traversalStatus": "complete",
+        }])
+
+        self.assertEqual(profile["role"], "controlOnly")
+        self.assertEqual(profile["operationTypesHex"], ["0x3100"])
+        self.assertEqual(profile["operationLabels"], ["operation0x3100"])
+
+    def test_complete_zero_action_event_is_known_empty_library_definition(self) -> None:
+        event_name = "au_global_fixture_empty"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": [event_name],
+            "events": [],
+            "eventEvidence": [],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": 7,
+                "bank": "default_banks.pck",
+                "actionEvidence": [],
+                "actionDispatchEvidence": {"serializedActionCount": 0},
+                "rootPlayActionCount": 0,
+                "mediaIds": [],
+                "traversalStatus": "complete",
+            }],
+        }, {})
+
+        self.assertEqual(rows[0]["playbackRole"], "emptyEventDefinition")
+        self.assertEqual(rows[0]["purposeKnowledgeStatus"], "audioLibraryEmptyEventKnown")
+        self.assertEqual(rows[0]["purposeInvestigationPriority"], "secondary")
+        self.assertEqual(
+            rows[0]["playbackLocationStatus"],
+            "libraryEmptyEventExternalCallerUnknown",
+        )
 
     def test_audio_dialog_alias_names_raw_wwise_inventory_without_duplicate_hash_row(self) -> None:
         event_name = "eny_fixture_combat_taunt_sv"
@@ -1920,7 +2240,37 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(audio_semantics.event_category("au_amb_wind"), "ambience")
         self.assertEqual(audio_semantics.event_category("au_rtpc_speed"), "control")
         self.assertEqual(audio_semantics.event_category("au_vibration_test"), "control")
+        self.assertEqual(audio_semantics.event_category(":au_music_test"), "music")
+        self.assertEqual(audio_semantics.event_category("au_ul_popup_close"), "ui")
+        self.assertEqual(audio_semantics.event_category("player_fol_cloth_fallover"), "sfx")
         self.assertEqual(audio_semantics.event_category("unproven_name"), "unknown")
+
+    def test_audio_dialog_custom_event_hash_is_control_context(self) -> None:
+        event_hash = 0x35B925DA
+        rows, _, _ = audio_semantics.build_event_rows(
+            {
+                "eventNames": [],
+                "events": [],
+                "eventEvidence": [],
+            },
+            {
+                audio_semantics.event_hash_context_key(event_hash): [
+                    {
+                        "kind": "tableEventHash",
+                        "table": "AudioDialogCustomEventTable",
+                        "path": "dlg_fixture.preExitEvents[0]",
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["id"], "hashed-event:0x35b925da")
+        self.assertEqual(rows[0]["category"], "control")
+        self.assertEqual(
+            rows[0]["categoryEvidence"],
+            "exactAudioDialogLifecycleEventField",
+        )
 
     def test_missing_metadata_degrades_without_runtime_claims(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -2227,6 +2577,18 @@ class AudioSemanticDataTests(unittest.TestCase):
             contexts, event_names = audio_semantics.managed_literal_contexts(path)
             self.assertEqual(event_names, ["au_ui_confirm", "BARK_TEST"])
             self.assertNotIn("au_rtpc_fixture", contexts)
+            matched_contexts, all_names = audio_semantics.managed_literal_contexts(
+                path,
+                current_wwise_event_hashes={
+                    audio_semantics.audio_hash_generator_compute("au_ui_confirm")
+                },
+            )
+            self.assertEqual(all_names, ["au_ui_confirm", "BARK_TEST"])
+            self.assertEqual(list(matched_contexts), ["au_ui_confirm"])
+            self.assertEqual(
+                matched_contexts["au_ui_confirm"][0]["playbackPlacementStatus"],
+                "identityOnlyManagedStringLiteral",
+            )
 
     def test_collects_signed_table_event_hashes_without_promoting_music_state(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -3433,6 +3795,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 semantics["stats"]["radioRoleCounts"],
                 {"play": 2, "stop": 1},
             )
+
             self.assertNotIn("radio_fixture", semantics["eventContexts"])
 
             media = [{
@@ -3487,6 +3850,38 @@ class AudioSemanticDataTests(unittest.TestCase):
                 catalog["dynamicRadioBindings"]["items"][0]["binding"]["idRef"],
                 1,
             )
+
+    def test_levelscript_voice_id_joins_audio_dialog_media_not_wwise_event(self) -> None:
+        media = [{
+            "id": "au_voice_fixture",
+            "src": "/voice/au_voice_fixture.flac",
+            "audioDialogPath": "v1d0/Narrating/au_voice_fixture.wem",
+            "audioCategory": "story_voice",
+            "storyLineBindingCount": 1,
+            "purposeKnowledgeStatus": "exactStoryLineBinding",
+        }]
+        invocations = [{
+            "action": "PlayVoiceNarrative",
+            "voiceId": "au_voice_fixture",
+            "triggerRole": "voiceNarrative",
+            "levelScriptId": "map/fixture",
+            "sourcePath": "structured/Persistent/Data/Json/LevelScriptData/map/fixture.json",
+            "recordStart": 24,
+            "sourceField": "_voId",
+            "runtimeActivationStatus": "levelScriptActionExecutionNotObserved",
+        }]
+
+        rows = audio_semantics._build_levelscript_voice_trigger_contexts(
+            media,
+            invocations,
+        )
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual("levelScriptVoice", rows[0]["semanticKind"])
+        self.assertEqual("exactAudioDialogPathStem", rows[0]["selection"]["voiceSelectionStatus"])
+        self.assertEqual("notApplicable", rows[0]["selection"]["wwiseEventStatus"])
+        self.assertEqual("/voice/au_voice_fixture.flac", rows[0]["mediaRefs"][0]["src"])
+        self.assertEqual(1, rows[0]["meaning"]["storyLineBindingCount"])
 
     def test_resolves_dynamic_radio_string_list_candidates_without_selecting_one(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -3818,6 +4213,18 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("catalog.levelEventAudioConditions", source)
         self.assertIn("authoredOccurrenceCount", source)
         self.assertNotIn("selected Wwise switch child", source)
+
+    def test_audio_frontend_keeps_event_type_and_media_purpose_separate(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('eventType: "Event type"', source)
+        self.assertIn('mediaPurpose: "Media purpose"', source)
+        self.assertIn('relatedEventTypes: "Related Event types"', source)
+        self.assertIn('state.mode === "events" ? "eventType" : "mediaPurpose"', source)
+        self.assertIn('record?.relatedEventCategories', source)
+        self.assertIn('["#audio-category-filter", "category", state.filters.categories, categoryLabel]', source)
 
     def test_audio_frontend_exposes_exact_levelscript_radio_media_contexts(self) -> None:
         source = (

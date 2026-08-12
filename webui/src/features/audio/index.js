@@ -20,7 +20,26 @@
       reset: "Reset filters",
       basicFilters: "Basic filters",
       search: "Search event / media / bank / category",
+      sort: "Sort",
+      sortPurposePriority: "Unknown purpose first",
+      sortTitle: "File title (A-Z)",
+      sortDurationDesc: "Duration (longest first)",
+      sortDurationAsc: "Duration (shortest first)",
       category: "Category",
+      eventType: "Event type",
+      mediaPurpose: "Media purpose",
+      relatedEventTypes: "Related Event types",
+      categorySfx: "Sound effects",
+      categoryMusic: "Music",
+      categoryVoice: "Voice",
+      categoryAmbience: "Ambience",
+      categoryUi: "UI",
+      categoryCue: "Audio cue",
+      categoryControl: "Control",
+      categoryStoryVoice: "Story voice",
+      categoryCharacterVoice: "Character voice",
+      categoryEnemyVoice: "Enemy voice",
+      categoryVoiceEvents: "Wwise voice Event media",
       context: "Context",
       relation: "Media relation",
       recovery: "Recovery status",
@@ -70,6 +89,9 @@
       details: "Details",
       playableMedia: "Playable media",
       playbackLocation: "Playback location",
+      storyLineBindings: "Exact story-line bindings",
+      purposeStatus: "Purpose status",
+      libraryBankEvent: "Authored Event in the same bank",
       locationDirectDialogMedia: "Direct dialog media",
       locationAuthoredEventContext: "Recovered authored Event context",
       locationEventRelationOnly: "Event relation recovered; playback location unknown",
@@ -85,6 +107,7 @@
       unknownTriggerBoundary: "This hash is an exact Wwise Event object from the scanned banks, but no authored name, numeric trigger field, or trigger callsite has been recovered. Its typed playback graph and possible media are real library relations; gameplay or story ownership remains unknown.",
       identityOnlyBoundary: "The authored Event name is recovered by exact skill-id dictionary and SkillData-file identity, and its hash resolves to this Wwise Event object. No audio consumer or Event-hash field was found in the SkillData payload, so the skill is not claimed as its playback trigger or owner.",
       definitionOnlyMediaBoundary: "This decoded file resolves to an exact typed Wwise Sound codec-media object, but no Event in the scanned bank set reaches that Sound/container branch. The audio-library definition is real; its authored playback trigger and runtime location remain unknown.",
+      orphanExternalIdentityBoundary: "This 64-bit External Source id has one exact authored path preimage in the bounded d4 mission-voice namespace, recovering the media identity. The current AudioDialog table and source graph contain no definition or trigger for that path, so no dialog, speaker, Event, or playback location is claimed.",
       expandToLoadPlayer: "expand to load player",
       noPlayableMedia: "No browser-playable media path is attached to this record.",
       mediaIds: "Media IDs",
@@ -192,6 +215,8 @@
       path: "Path",
       format: "Format",
       bytes: "Bytes",
+      duration: "Duration",
+      bitrate: "Bitrate",
       generated: "Generated",
       language: "Language",
       unknown: "unknown",
@@ -207,7 +232,26 @@
       reset: "\u91cd\u7f6e\u7b5b\u9009",
       basicFilters: "\u57fa\u7840\u7b5b\u9009",
       search: "\u641c\u7d22\u4e8b\u4ef6 / \u5a92\u4f53 / \u97f3\u9891\u5305 / \u5206\u7c7b",
+      sort: "\u6392\u5e8f",
+      sortPurposePriority: "\u672a\u77e5\u7528\u9014\u4f18\u5148",
+      sortTitle: "\u6587\u4ef6\u6807\u9898 (A-Z)",
+      sortDurationDesc: "\u65f6\u957f\uff08\u4ece\u957f\u5230\u77ed\uff09",
+      sortDurationAsc: "\u65f6\u957f\uff08\u4ece\u77ed\u5230\u957f\uff09",
       category: "\u5206\u7c7b",
+      eventType: "Event \u7c7b\u578b",
+      mediaPurpose: "\u5a92\u4f53\u7528\u9014",
+      relatedEventTypes: "\u5173\u8054 Event \u7c7b\u578b",
+      categorySfx: "\u97f3\u6548",
+      categoryMusic: "\u97f3\u4e50",
+      categoryVoice: "\u8bed\u97f3",
+      categoryAmbience: "\u73af\u5883\u97f3",
+      categoryUi: "UI",
+      categoryCue: "Audio Cue",
+      categoryControl: "\u63a7\u5236",
+      categoryStoryVoice: "\u5267\u60c5\u8bed\u97f3",
+      categoryCharacterVoice: "\u89d2\u8272\u8bed\u97f3",
+      categoryEnemyVoice: "\u654c\u4eba\u8bed\u97f3",
+      categoryVoiceEvents: "Wwise \u8bed\u97f3 Event \u5a92\u4f53",
       context: "\u4e0a\u4e0b\u6587",
       relation: "\u5a92\u4f53\u5173\u7cfb",
       recovery: "\u6062\u590d\u72b6\u6001",
@@ -257,6 +301,9 @@
       details: "\u8be6\u7ec6\u4fe1\u606f",
       playableMedia: "\u53ef\u64ad\u653e\u5a92\u4f53",
       playbackLocation: "\u64ad\u653e\u4f4d\u7f6e",
+      storyLineBindings: "\u7cbe\u786e\u5267\u60c5\u53f0\u8bcd\u7ed1\u5b9a",
+      purposeStatus: "\u7528\u9014\u72b6\u6001",
+      libraryBankEvent: "\u540c\u4e00 bank \u5185\u7684\u521b\u4f5c Event",
       locationDirectDialogMedia: "\u76f4\u63a5\u5bf9\u8bdd\u5a92\u4f53",
       locationAuthoredEventContext: "\u5df2\u6062\u590d\u521b\u4f5c Event \u4e0a\u4e0b\u6587",
       locationEventRelationOnly: "\u5df2\u6062\u590d Event \u5173\u7cfb\uff0c\u4f46\u4e0d\u77e5\u9053\u64ad\u653e\u4f4d\u7f6e",
@@ -272,6 +319,7 @@
       unknownTriggerBoundary: "\u8be5\u54c8\u5e0c\u662f\u5df2\u626b\u63cf bank \u4e2d\u7684\u7cbe\u786e Wwise Event \u5bf9\u8c61\uff0c\u4f46\u5c1a\u672a\u6062\u590d\u521b\u4f5c\u540d\u79f0\u3001\u6570\u503c\u89e6\u53d1\u5b57\u6bb5\u6216\u89e6\u53d1\u8c03\u7528\u4f4d\u7f6e\u3002\u7c7b\u578b\u5316\u64ad\u653e\u56fe\u548c\u53ef\u80fd\u5a92\u4f53\u662f\u771f\u5b9e\u97f3\u9891\u5e93\u5173\u7cfb\uff0c\u73a9\u6cd5\u6216\u5267\u60c5\u5f52\u5c5e\u4ecd\u672a\u77e5\u3002",
       identityOnlyBoundary: "\u5df2\u901a\u8fc7\u7cbe\u786e\u7684 skill_id \u5b57\u5178\u548c\u540c\u540d SkillData \u6587\u4ef6\u6062\u590d Event \u540d\u79f0\uff0c\u4e14\u54c8\u5e0c\u6307\u5411\u8be5 Wwise Event \u5bf9\u8c61\u3002SkillData \u8f7d\u8377\u4e2d\u672a\u627e\u5230\u97f3\u9891\u6d88\u8d39\u8005\u6216 Event \u54c8\u5e0c\u5b57\u6bb5\uff0c\u56e0\u6b64\u4e0d\u4f1a\u5c06\u8be5\u6280\u80fd\u58f0\u79f0\u4e3a\u64ad\u653e\u89e6\u53d1\u5668\u6216\u6240\u6709\u8005\u3002",
       definitionOnlyMediaBoundary: "\u8be5\u89e3\u7801\u6587\u4ef6\u5df2\u7cbe\u786e\u89e3\u6790\u5230\u7c7b\u578b\u5316 Wwise Sound \u7f16\u89e3\u7801\u5a92\u4f53\u5bf9\u8c61\uff0c\u4f46\u5df2\u626b\u63cf bank \u4e2d\u6ca1\u6709 Event \u5230\u8fbe\u8be5 Sound / \u5bb9\u5668\u5206\u652f\u3002\u97f3\u9891\u5e93\u5b9a\u4e49\u662f\u771f\u5b9e\u7684\uff0c\u5176\u521b\u4f5c\u64ad\u653e\u89e6\u53d1\u548c\u8fd0\u884c\u65f6\u4f4d\u7f6e\u4ecd\u672a\u77e5\u3002",
+      orphanExternalIdentityBoundary: "\u8be5 64 \u4f4d External Source ID \u5728\u6709\u754c d4 \u4efb\u52a1\u8bed\u97f3\u547d\u540d\u7a7a\u95f4\u4e2d\u53ea\u6709\u4e00\u4e2a\u7cbe\u786e\u521b\u4f5c\u8def\u5f84\u539f\u50cf\uff0c\u56e0\u6b64\u53ef\u6062\u590d\u5a92\u4f53\u8eab\u4efd\u3002\u5f53\u524d AudioDialog \u8868\u548c\u6e90\u56fe\u4e2d\u90fd\u6ca1\u6709\u8be5\u8def\u5f84\u7684\u5b9a\u4e49\u6216\u89e6\u53d1\uff0c\u56e0\u6b64\u4e0d\u58f0\u79f0\u5bf9\u8bdd\u3001\u8bf4\u8bdd\u4eba\u3001Event \u6216\u64ad\u653e\u4f4d\u7f6e\u3002",
       expandToLoadPlayer: "\u5c55\u5f00\u540e\u52a0\u8f7d\u64ad\u653e\u5668",
       noPlayableMedia: "\u8be5\u8bb0\u5f55\u672a\u9644\u52a0\u6d4f\u89c8\u5668\u53ef\u64ad\u653e\u7684\u5a92\u4f53\u8def\u5f84\u3002",
       mediaIds: "\u5a92\u4f53 ID",
@@ -379,6 +427,8 @@
       path: "\u8def\u5f84",
       format: "\u683c\u5f0f",
       bytes: "\u5b57\u8282",
+      duration: "\u65f6\u957f",
+      bitrate: "\u6bd4\u7279\u7387",
       generated: "\u751f\u6210\u65f6\u95f4",
       language: "\u8bed\u8a00",
       unknown: "\u672a\u77e5",
@@ -402,6 +452,7 @@
     rows: [],
     selected: null,
     query: "",
+    sort: "purpose-priority",
     filters: { categories: new Set(), contexts: new Set(), relations: new Set(), recovery: new Set(), scopes: new Set(), sources: new Set() },
     eventTaxonomyById: new Map(),
     eventDetailCache: new Map(),
@@ -447,6 +498,39 @@
     return `${bytes.toFixed(digits)} ${units[unit]}`;
   }
 
+  function recordDuration(record) {
+    const duration = Number(record?.duration ?? record?.durationSeconds);
+    return Number.isFinite(duration) && duration > 0 ? duration : null;
+  }
+
+  function recordBitrate(record) {
+    const bitrate = Number(record?.bitrate ?? record?.bitRate);
+    if (Number.isFinite(bitrate) && bitrate > 0) return bitrate;
+    const duration = recordDuration(record);
+    const bytes = Number(record?.bytes);
+    return duration && Number.isFinite(bytes) && bytes > 0 ? bytes * 8 / duration : null;
+  }
+
+  function formatDuration(value) {
+    const seconds = Number(value);
+    if (!Number.isFinite(seconds) || seconds <= 0) return "";
+    if (seconds < 60) return `${seconds.toFixed(seconds < 10 ? 2 : 1)} s`;
+    const whole = Math.round(seconds);
+    const hours = Math.floor(whole / 3600);
+    const minutes = Math.floor((whole % 3600) / 60);
+    const remainder = whole % 60;
+    return hours
+      ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`
+      : `${minutes}:${String(remainder).padStart(2, "0")}`;
+  }
+
+  function formatBitrate(value) {
+    const bitrate = Number(value);
+    if (!Number.isFinite(bitrate) || bitrate <= 0) return "";
+    const kbps = bitrate / 1000;
+    return `${kbps.toFixed(kbps < 100 ? 1 : 0)} kbps`;
+  }
+
   function recordId(record, kind = state.mode) {
     const raw = kind === "events"
       ? (record?.eventId ?? record?.id ?? record?.name ?? record?.eventHash ?? record?.hash)
@@ -454,13 +538,33 @@
     return normalize(raw);
   }
 
+  function uniqueMediaEventId(record) {
+    const eventIds = collectIds(record, ["eventIds", "events", "eventId"]);
+    return eventIds.length === 1 ? eventIds[0] : "";
+  }
+
   function recordTitle(record, kind = state.mode) {
     if (kind === "events") return normalize(record?.eventName ?? record?.name ?? record?.eventId ?? record?.id ?? record?.eventHash) || t("unknown");
+    const eventId = uniqueMediaEventId(record);
+    if (eventId) return eventId;
     return normalize(record?.name ?? record?.title ?? record?.mediaId ?? record?.id ?? fileName(record?.rel ?? record?.path ?? record?.src)) || t("unknown");
   }
 
   function recordCategory(record) {
     return normalize(record?.eventCategory ?? record?.audioCategory ?? record?.category ?? record?.kind) || t("unknown");
+  }
+
+  const CATEGORY_LABEL_KEYS = {
+    sfx: "categorySfx", music: "categoryMusic", voice: "categoryVoice",
+    ambience: "categoryAmbience", ui: "categoryUi", cue: "categoryCue",
+    cues: "categoryCue", control: "categoryControl", story_voice: "categoryStoryVoice",
+    character_voice: "categoryCharacterVoice", enemy_voice: "categoryEnemyVoice",
+    voice_events: "categoryVoiceEvents", unknown: "unknown",
+  };
+
+  function categoryLabel(value) {
+    const normalized = normalize(value);
+    return t(CATEGORY_LABEL_KEYS[normalized] || normalized || "unknown");
   }
 
   function recordScope(record) {
@@ -698,8 +802,17 @@
     return [...new Set(tags)];
   }
 
-  function recordMeta(record, kind = state.mode, taxonomy = {}) {
-    const parts = [t(taxonomy.objectType || recordType(record, kind)), recordCategory(record)];
+  function recordMeta(record, kind = state.mode, taxonomy = {}, { includeFileStats = true } = {}) {
+    const parts = [
+      t(taxonomy.objectType || recordType(record, kind)),
+      `${t(kind === "events" ? "eventType" : "mediaPurpose")}: ${categoryLabel(recordCategory(record))}`,
+    ];
+    if (kind === "media") {
+      const relatedEventTypes = asArray(record?.relatedEventCategories).filter(Boolean);
+      if (relatedEventTypes.length) {
+        parts.push(`${t("relatedEventTypes")}: ${relatedEventTypes.map(categoryLabel).join(" + ")}`);
+      }
+    }
     const contexts = asArray(taxonomy.contextTags);
     if (contexts.length) parts.push(contexts.map(taxonomyLabel).join(" + "));
     const relations = asArray(taxonomy.relationTags);
@@ -709,16 +822,31 @@
         || asArray(record?.mediaIds).length
         || asArray(record?.media).length;
       if (count) parts.push(`${formatNumber(count)} ${t("media")}`);
-    } else if (record?.bytes !== undefined) {
+    } else if (includeFileStats && record?.bytes !== undefined) {
       parts.push(formatBytes(record.bytes));
+      const duration = recordDuration(record);
+      const bitrate = recordBitrate(record);
+      if (duration) parts.push(formatDuration(duration));
+      if (bitrate) parts.push(formatBitrate(bitrate));
     }
     return [...new Set(parts.filter(Boolean))].join(" · ");
+  }
+
+  function recordFileStats(record, kind = state.mode) {
+    if (kind !== "media") return "";
+    return [
+      formatDuration(recordDuration(record)),
+      record?.bytes !== undefined ? formatBytes(record.bytes) : "",
+      formatBitrate(recordBitrate(record)),
+    ].filter(Boolean).join(" / ");
   }
 
   function searchText(record, kind, taxonomy = {}) {
     const numericHashes = [record?.hash, record?.eventHash].filter((value) => Number.isInteger(Number(value)));
     const values = [
       recordTitle(record, kind), recordId(record, kind), recordCategory(record), recordScope(record), recordSource(record),
+      record?.name, record?.title,
+      ...asArray(record?.relatedEventCategories).flatMap((value) => [value, categoryLabel(value)]),
       record?.hash, record?.eventHash, ...numericHashes.map((value) => `0x${(Number(value) >>> 0).toString(16).padStart(8, "0")}`),
       record?.mediaId, record?.bankId, record?.bank, record?.rel, record?.path, record?.src,
       ...asArray(record?.eventIds), ...asArray(record?.mediaIds), ...asArray(record?.actionIds), ...asArray(record?.visitedObjectIds),
@@ -796,6 +924,8 @@
       recoveryTags,
       objectType,
       meta: recordMeta(raw, kind, taxonomy),
+      listMeta: recordMeta(raw, kind, taxonomy, { includeFileStats: false }),
+      fileStats: recordFileStats(raw, kind),
       search: searchText(raw, kind, taxonomy),
     };
   }
@@ -880,6 +1010,8 @@
     record.contextTags = recordContextTags(record.raw, record.kind);
     record.relationTags = recordRelationTags(record.raw, record.kind);
     record.meta = recordMeta(record.raw, record.kind, record);
+    record.listMeta = recordMeta(record.raw, record.kind, record, { includeFileStats: false });
+    record.fileStats = recordFileStats(record.raw, record.kind);
     record.search = searchText(record.raw, record.kind, record);
     if (state.selected === record) renderDetail();
     return record.raw;
@@ -1078,6 +1210,15 @@
               <div class="filter-section-title"><span id="audio-basic-filter-label"></span></div>
               <div class="filter-section-body filter-section-body-stack">
                 <input id="audio-q" type="search" autocomplete="off">
+                <div id="audio-sort-row" class="filter-control-row" hidden>
+                  <label id="audio-sort-label" for="audio-sort"></label>
+                  <select id="audio-sort" aria-labelledby="audio-sort-label">
+                    <option id="audio-sort-purpose-priority" value="purpose-priority"></option>
+                    <option id="audio-sort-title" value="title"></option>
+                    <option id="audio-sort-duration-desc" value="duration-desc"></option>
+                    <option id="audio-sort-duration-asc" value="duration-asc"></option>
+                  </select>
+                </div>
               </div>
             </section>
             <section class="filter-section is-collapsed" data-filter-section="audio-category" data-default-collapsed="1">
@@ -1131,6 +1272,10 @@
   function bindShellEvents() {
     $("#audio-q", state.container)?.addEventListener("input", (event) => {
       state.query = event.target.value;
+      applyFilters({ resetScroll: true });
+    });
+    $("#audio-sort", state.container)?.addEventListener("change", (event) => {
+      state.sort = event.target.value;
       applyFilters({ resetScroll: true });
     });
     $("#audio-reset", state.container)?.addEventListener("click", () => resetFilters());
@@ -1283,18 +1428,24 @@
     const pairs = {
       "audio-construction-banner": "underConstruction", "audio-title": "title", "audio-count-label": "countLabel", "audio-filter-toggle": state.filterPanel?.collapsed ? "showFilters" : "hideFilters",
       "audio-reset": "reset", "audio-events-mode": "events", "audio-media-mode": "media", "audio-basic-filter-label": "basicFilters",
-      "audio-category-label": "category", "audio-context-label": "context", "audio-relation-label": "relation", "audio-recovery-label": "recovery",
+      "audio-sort-label": "sort", "audio-sort-purpose-priority": "sortPurposePriority", "audio-sort-title": "sortTitle", "audio-sort-duration-desc": "sortDurationDesc", "audio-sort-duration-asc": "sortDurationAsc",
+      "audio-context-label": "context", "audio-relation-label": "relation", "audio-recovery-label": "recovery",
       "audio-scope-label": "scope", "audio-source-label": "source", "audio-shown-label": "shown",
     };
     for (const [id, key] of Object.entries(pairs)) {
       const node = $(`#${id}`, state.container);
       if (node) node.textContent = t(key);
     }
+    const categoryLabelNode = $("#audio-category-label", state.container);
+    if (categoryLabelNode) categoryLabelNode.textContent = t(state.mode === "events" ? "eventType" : "mediaPurpose");
     const search = $("#audio-q", state.container);
     if (search) search.placeholder = t("search");
+    syncSortControl();
     for (const records of Object.values(state.datasets)) {
       for (const record of records || []) {
         record.meta = recordMeta(record.raw, record.kind, record);
+        record.listMeta = recordMeta(record.raw, record.kind, record, { includeFileStats: false });
+        record.fileStats = recordFileStats(record.raw, record.kind);
         record.search = searchText(record.raw, record.kind, record);
       }
     }
@@ -1329,11 +1480,22 @@
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-pressed", String(active));
     });
+    const categoryLabelNode = $("#audio-category-label", state.container);
+    if (categoryLabelNode) categoryLabelNode.textContent = t(state.mode === "events" ? "eventType" : "mediaPurpose");
+    syncSortControl();
     applyIndexHeader();
+  }
+
+  function syncSortControl() {
+    const row = $("#audio-sort-row", state.container);
+    const select = $("#audio-sort", state.container);
+    if (row) row.hidden = state.mode !== "media";
+    if (select) select.value = state.sort;
   }
 
   function resetFilters({ render = true } = {}) {
     state.query = "";
+    state.sort = "purpose-priority";
     state.filters.categories.clear();
     state.filters.contexts.clear();
     state.filters.relations.clear();
@@ -1342,6 +1504,7 @@
     state.filters.sources.clear();
     const search = $("#audio-q", state.container);
     if (search) search.value = "";
+    syncSortControl();
     if (render) {
       buildFilterChips();
       applyFilters({ resetScroll: true });
@@ -1361,7 +1524,7 @@
     const build = window.WebUI?.filters?.buildChips;
     if (!build) return;
     const groups = [
-      ["#audio-category-filter", "category", state.filters.categories, null],
+      ["#audio-category-filter", "category", state.filters.categories, categoryLabel],
       ["#audio-context-filter", "contextTags", state.filters.contexts, taxonomyLabel],
       ["#audio-relation-filter", "relationTags", state.filters.relations, taxonomyLabel],
       ["#audio-recovery-filter", "recoveryTags", state.filters.recovery, recoveryLabel],
@@ -1405,7 +1568,24 @@
       if (state.filters.scopes.size && !state.filters.scopes.has(record.scope)) return false;
       if (state.filters.sources.size && !state.filters.sources.has(record.source)) return false;
       return true;
-    }).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }) || a.key.localeCompare(b.key, undefined, { numeric: true }));
+    }).sort((a, b) => {
+      if (state.mode === "events" || state.sort === "purpose-priority") {
+        const priority = { highest: 0, secondary: 1, resolved: 2, resolvedTerminal: 3 };
+        const left = priority[a.raw?.purposeInvestigationPriority] ?? 2;
+        const right = priority[b.raw?.purposeInvestigationPriority] ?? 2;
+        if (left !== right) return left - right;
+      }
+      if (state.mode === "media" && state.sort.startsWith("duration-")) {
+        const left = recordDuration(a.raw);
+        const right = recordDuration(b.raw);
+        if (left !== null || right !== null) {
+          if (left === null) return 1;
+          if (right === null) return -1;
+          if (left !== right) return state.sort === "duration-desc" ? right - left : left - right;
+        }
+      }
+      return a.title.localeCompare(b.title, undefined, { numeric: true }) || a.key.localeCompare(b.key, undefined, { numeric: true });
+    });
     state.rows = state.filtered.map((record, index) => ({ record, index, top: index * ROW_HEIGHT }));
     const spacer = $("#audio-list-spacer", state.container);
     if (spacer) spacer.style.height = `${state.rows.length * ROW_HEIGHT}px`;
@@ -1451,7 +1631,8 @@
       button.dataset.index = String(row.index);
       button.style.top = `${row.top}px`;
       button.style.height = `${ROW_HEIGHT}px`;
-      button.innerHTML = `<span class="audio-row-title-line"><span class="audio-row-kind">${esc(state.mode === "events" ? t("event") : t("mediaItem"))}</span><span class="audio-row-title">${esc(row.record.title)}</span></span><span class="audio-row-meta">${esc(row.record.meta)}</span>`;
+      const fileStats = row.record.fileStats ? `<span class="audio-row-file-stats">${esc(row.record.fileStats)}</span>` : "";
+      button.innerHTML = `<span class="audio-row-title-line"><span class="audio-row-kind">${esc(state.mode === "events" ? t("event") : t("mediaItem"))}</span><span class="audio-row-title">${esc(row.record.title)}</span>${fileStats}</span><span class="audio-row-meta">${esc(row.record.listMeta)}</span>`;
       fragment.appendChild(button);
       index += 1;
     }
@@ -2883,12 +3064,26 @@
     const raw = record.raw;
     const facts = record.kind === "events"
       ? [
-          [t("recordType"), t(record.objectType)], [t("id"), raw.eventId ?? raw.id], [t("hash"), raw.eventHash ?? raw.hash], [t("category"), record.category],
+          [t("recordType"), t(record.objectType)], [t("id"), raw.eventId ?? raw.id], [t("hash"), raw.eventHash ?? raw.hash], [t("eventType"), categoryLabel(record.category)],
           ["Category evidence", raw.categoryEvidence],
           ["Library resolution", humanize(raw.audioLibraryResolutionStatus || "")],
+          ["Wwise playback role", humanize(raw.playbackRole || "")],
+          ["Wwise Action operations", asArray(raw.wwiseActionOperations).map(humanize).join(" / ")],
+          ["Wwise Action types", asArray(raw.wwiseActionOperationTypesHex).join(" / ")],
+          [t("playbackLocation"), playbackLocationLabel(raw.playbackLocationStatus)],
+          [t("purposeStatus"), humanize(raw.purposeKnowledgeStatus || "")],
           ["Event identity", humanize(raw.eventIdentityStatus || "")],
           ["Event name evidence", humanize(raw.eventNameEvidence || "")],
           ["Event name source", humanize(raw.eventNameSourceKind || "")],
+          ["Library output relation", humanize(raw.audioLibraryPlaybackTargetStatus || "")],
+          ["Equivalent authored Events", asArray(raw.audioLibraryEquivalentEventIds).join(" / ")],
+          ["Equivalent output categories", asArray(raw.audioLibraryEquivalentCategories).map(categoryLabel).join(" / ")],
+          ["Library purpose boundary", humanize(raw.audioLibraryPurposeHintStatus || "")],
+          ["Library media-leaf relation", humanize(raw.audioLibraryMediaLeafStatus || "")],
+          ["Media-equivalent authored Events", asArray(raw.audioLibraryMediaEquivalentEventIds).join(" / ")],
+          ["Media-equivalent categories", asArray(raw.audioLibraryMediaEquivalentCategories).map(categoryLabel).join(" / ")],
+          ["Shared Wwise media IDs", asArray(raw.audioLibrarySharedMediaIds).join(" / ")],
+          ["Media-leaf evidence boundary", humanize(raw.audioLibraryMediaPurposeHintStatus || "")],
           ["Identity-only placement", humanize(raw.identityOnlyPlaybackPlacementStatus || "")],
           ["Numeric skill IDs", asArray(raw.identityNumericSkillIds).join(" / ")],
           ["Authored Event hash", raw.authoredEventHashHex],
@@ -2903,13 +3098,21 @@
           ["Animation callbacks", asArray(raw.animationFunctions).join(" / ")],
         ]
       : [
-          [t("recordType"), t(record.objectType)], [t("id"), raw.mediaId ?? raw.id], [t("category"), record.category], [t("scope"), record.scope],
+          [t("recordType"), t(record.objectType)], [t("id"), raw.mediaId ?? raw.id], [t("mediaPurpose"), categoryLabel(record.category)],
+          [t("relatedEventTypes"), asArray(raw.relatedEventCategories).map(categoryLabel).join(" / ")], [t("scope"), record.scope],
           [t("source"), record.source], [t("path"), raw.rel ?? raw.path ?? raw.src], [t("format"), raw.format],
+          [t("duration"), formatDuration(recordDuration(raw))], [t("bitrate"), formatBitrate(recordBitrate(raw))],
           [t("bytes"), raw.bytes !== undefined ? formatBytes(raw.bytes) : ""], [t("bank"), raw.bank ?? raw.sourceBank ?? raw.bankId],
           ["Library object", humanize(raw.audioLibraryObjectStatus || "")],
           ["Wwise Sound objects", asArray(raw.wwiseDefinitionEvidence).map((row) => row?.soundObjectId).filter((value) => value !== undefined).join(" / ")],
+          [t("libraryBankEvent"), asArray(raw.audioLibraryBankEventIds).join(" / ")],
+          ["Recovered external audio ID", raw.externalAuthoredAudioId],
+          ["Recovered external path", raw.externalAuthoredPath],
+          ["External identity evidence", humanize(raw.externalIdentityEvidence || "")],
           [t("radioTableLines"), raw.radioTableLineCount],
           [t("playbackLocation"), playbackLocationLabel(raw.playbackLocationStatus)],
+          [t("storyLineBindings"), raw.storyLineBindingCount],
+          [t("purposeStatus"), humanize(raw.purposeKnowledgeStatus || "")],
           [t("radioTriggerContextCoverage"), raw.radioTriggerContextCount !== undefined
             ? `${formatNumber(raw.radioTriggerContextStoredCount || 0)} stored / ${formatNumber(raw.radioTriggerContextCount || 0)} total${raw.radioTriggerContextsTruncated ? " / truncated" : ""}`
             : ""],
@@ -2921,6 +3124,9 @@
 
     if (record.contextTags.length) panel.appendChild(chipSection(t("contextGroups"), record.contextTags.map(taxonomyLabel)));
     if (record.relationTags.length) panel.appendChild(chipSection(t("relation"), record.relationTags.map(taxonomyLabel)));
+    if (record.kind === "media" && asArray(raw.relatedEventCategories).length) {
+      panel.appendChild(chipSection(t("relatedEventTypes"), asArray(raw.relatedEventCategories).map(categoryLabel)));
+    }
     const selectorEvidence = selectorEvidenceSummary(raw);
     if (selectorEvidence.length) panel.appendChild(chipSection(t("selectorEvidence"), selectorEvidence));
     const sourceEvidence = sourceEvidenceSummary(raw);
@@ -2938,6 +3144,8 @@
       panel.appendChild(noteSection(t("runtimeBoundary"), t("unknownTriggerBoundary")));
     } else if (record.kind === "events" && raw.identityOnlyPlaybackPlacementStatus === "identityOnlyNoAudioConsumer") {
       panel.appendChild(noteSection(t("runtimeBoundary"), t("identityOnlyBoundary")));
+    } else if (record.kind === "media" && raw.externalMediaIdentityStatus === "recoveredAuthoredPathHash") {
+      panel.appendChild(noteSection(t("runtimeBoundary"), t("orphanExternalIdentityBoundary")));
     } else if (record.kind === "media" && raw.audioLibraryObjectStatus === "wwiseSoundDefinitionWithoutEventPath") {
       panel.appendChild(noteSection(t("runtimeBoundary"), t("definitionOnlyMediaBoundary")));
     } else if (record.kind === "media" && raw.playbackLocationStatus === "unknown") {
@@ -3038,7 +3246,7 @@
       const relationTypes = [...new Set(wwise.flatMap((row) => asArray(row.relationTypes)).filter(Boolean))].sort();
       const soundObjectCount = wwise.reduce((total, row) => total + Number(row.soundObjectCount || 0), 0);
       return {
-        raw: candidate, src, id, bytes: candidate.bytes, format: candidate.format,
+        raw: candidate, src, id, title: kind === "media" ? recordTitle(raw, "media") : id, bytes: candidate.bytes, format: candidate.format,
         rootActionIds, relationTypes, soundObjectCount,
         contentSha256: normalize(candidate.contentSha256),
         contentEquivalentCount: Number(candidate.contentEquivalentCount || 0),
@@ -3086,7 +3294,11 @@
       groupTitle.className = "audio-fact-label";
       const rootLabel = exemplar.rootActionIds.length
         ? `${t("playRoots")}: ${exemplar.rootActionIds.join(" / ")}`
-        : t("relationDirectDialogMedia");
+        : (parent?.audioDialogKey || parent?.audioDialogPath)
+          ? t("relationDirectDialogMedia")
+          : asArray(parent?.eventIds).length || parent?.eventId
+            ? ""
+            : t("relationUnlinkedMedia");
       const relationLabel = exemplar.relationTypes.map(taxonomyLabel).join(" + ");
       groupTitle.textContent = [rootLabel, relationLabel, `${formatNumber(candidates.length)} ${t("possibleMedia")}`].filter(Boolean).join(" · ");
       list.appendChild(groupTitle);
@@ -3097,18 +3309,23 @@
       head.className = "audio-player-head";
       const title = document.createElement("div");
       title.className = "audio-player-title";
-      title.textContent = candidate.id || fileName(candidate.src);
+      title.textContent = candidate.title || candidate.id || fileName(candidate.src);
       const meta = document.createElement("div");
       meta.className = "audio-player-meta";
       meta.textContent = [
         candidate.format,
         candidate.bytes !== undefined ? formatBytes(candidate.bytes) : "",
+      ].filter(Boolean).join(" 路 ");
+      const evidence = document.createElement("div");
+      evidence.className = "audio-player-meta";
+      evidence.textContent = [
         candidate.soundObjectCount ? `${candidate.soundObjectCount} Sound objects` : "",
         candidate.contentEquivalentCount > 1 ? `${t("equivalentContent")} × ${candidate.contentEquivalentCount}` : "",
         candidate.hotfixMediaReplacement ? t("hotfixMediaReplacement") : "",
         ...candidate.relationTypes.map(taxonomyLabel),
         collapsePlayers ? t("expandToLoadPlayer") : "",
       ].filter(Boolean).join(" · ");
+      meta.textContent = [meta.textContent, evidence.textContent].filter(Boolean).join(" / ");
       head.append(title, meta);
       const playerHost = document.createElement("div");
       playerHost.className = "audio-player-host";

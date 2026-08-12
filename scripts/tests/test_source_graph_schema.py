@@ -338,6 +338,150 @@ class SourceGraphSchemaTests(unittest.TestCase):
             finally:
                 builder.close()
 
+    def test_external_audio_media_identity_does_not_infer_playback_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            media_path = root / "webui" / "data" / "lang" / "CN" / "audio" / "media.json"
+            media_path.parent.mkdir(parents=True)
+            media_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 49,
+                        "language": "CN",
+                        "media": [
+                            {
+                                "id": "955778167792087661",
+                                "rel": "wwise/unknown/955778167792087661.flac",
+                                "storageRoot": "CN",
+                                "format": "flac",
+                                "externalMediaIdentityStatus": "recoveredAuthoredPathHash",
+                                "externalAuthoredAudioId": "au_voice_c35m3_3_001",
+                                "externalAuthoredPath": "v1d4/Narrating/HS_Part04/c35m3/au_voice_c35m3_3_001.wem",
+                                "externalIdentityEvidence": "boundedD4MissionVoiceNamespaceUniqueFNV1a64Preimage",
+                                "identityOnlyPlaybackPlacementStatus": "identityOnlyNoCurrentAudioDialogOrTrigger",
+                                "playbackLocationStatus": "unknown",
+                                "purposeKnowledgeStatus": "unknownUse",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export_full",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                builder.ingest_external_audio_media_identities()
+                audio_node = builder.node_id("audio", "au_voice_c35m3_3_001")
+                self.assertTrue(builder.node_exists("audio", "au_voice_c35m3_3_001"))
+                self.assertTrue(builder.node_exists("wwise_media", "955778167792087661"))
+                node = builder.db.execute(
+                    "SELECT path, data FROM nodes WHERE id = ?",
+                    (audio_node,),
+                ).fetchone()
+                self.assertEqual(
+                    node[0],
+                    "v1d4/Narrating/HS_Part04/c35m3/au_voice_c35m3_3_001.wem",
+                )
+                self.assertEqual(json.loads(node[1])["playbackLocationStatus"], "unknown")
+                edges = {
+                    row[0]
+                    for row in builder.db.execute(
+                        "SELECT kind FROM edges WHERE src = ? OR dst = ?",
+                        (audio_node, audio_node),
+                    )
+                }
+                self.assertIn("has_external_audio_media_identity", edges)
+                self.assertIn("audio_identity_matches_wwise_media", edges)
+                self.assertIn("audio_identity_decoded_file", edges)
+                self.assertFalse(
+                    any(
+                        marker in edge
+                        for edge in edges
+                        for marker in ("trigger", "story", "line", "speaker")
+                    )
+                )
+                self.assertEqual(
+                    builder.alias_node_ids("955778167792087661"),
+                    [audio_node, builder.node_id("wwise_media", "955778167792087661")],
+                )
+            finally:
+                builder.close()
+
+    def test_audio_event_library_relation_does_not_create_trigger_edge(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            events_path = root / "webui" / "data" / "lang" / "CN" / "audio" / "events.json"
+            events_path.parent.mkdir(parents=True)
+            events_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 47,
+                        "language": "CN",
+                        "events": [
+                            {
+                                "id": "hashed-event:0x12345678",
+                                "audioLibraryPlaybackTargetStatus": "exactSharedPlayTargetSetWithAuthoredEvent",
+                                "audioLibraryEquivalentEventIds": ["au_ui_known"],
+                                "audioLibraryEquivalentCategories": ["ui"],
+                                "audioLibrarySharedPlayTargetSets": [
+                                    {"bank": "default_banks.pck", "targetIds": [100, 200]}
+                                ],
+                                "audioLibraryPurposeHintStatus": "libraryOutputEquivalentOnlyExternalTriggerUnknown",
+                                "audioLibraryMediaLeafStatus": "exactCompleteWwiseMediaIdSetWithAuthoredEvent",
+                                "audioLibraryMediaEquivalentEventIds": ["au_ui_media_known"],
+                                "audioLibraryMediaEquivalentCategories": ["ui"],
+                                "audioLibrarySharedMediaIds": [300],
+                                "audioLibrarySharedMediaPackages": ["default_banks.pck"],
+                                "audioLibraryMediaPurposeHintStatus": "completeMediaLeafSetEquivalentOnlyContainersAndExternalTriggerUnknown",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export_full",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                builder.ingest_audio_event_library_relations()
+                event_node = builder.node_id("wwise_event", "hashed-event:0x12345678")
+                equivalent_node = builder.node_id("wwise_event", "au_ui_known")
+                edges = builder.db.execute(
+                    "SELECT kind, dst FROM edges WHERE src = ? ORDER BY kind, dst",
+                    (event_node,),
+                ).fetchall()
+                self.assertIn(
+                    ("wwise_event_shares_exact_play_target_set", equivalent_node),
+                    edges,
+                )
+                self.assertIn(
+                    (
+                        "wwise_event_shares_exact_media_leaf_set",
+                        builder.node_id("wwise_event", "au_ui_media_known"),
+                    ),
+                    edges,
+                )
+                self.assertFalse(
+                    any(
+                        marker in kind
+                        for kind, _dst in edges
+                        for marker in ("trigger", "story", "line", "speaker")
+                    )
+                )
+            finally:
+                builder.close()
+
     def test_audio_trigger_contexts_link_remote_common_auto_play_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
