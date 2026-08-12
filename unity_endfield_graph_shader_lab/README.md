@@ -2665,9 +2665,8 @@ rejects stale or cross-camera C/B/A inputs and records the source order
 `t23:_62,t24:_61,t25:_60`. Use the existing D3D12 frame command, then run:
 
 ```bat
-set ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE=1
-verify_recovered_deferred_gbuffer_frame.bat --d3d12
-python tools\verify_deferred_resolver_input_probe.py --log scratch\character_recovery\deferred_gbuffer_frame\unity_validation_d3d12.log --report scratch\character_recovery\deferred_gbuffer_frame\resolver_input_validation_d3d12.json
+verify_recovered_deferred_gbuffer_frame.bat --resolver-input-d3d12
+python tools\verify_deferred_resolver_input_probe.py --log scratch\character_recovery\deferred_gbuffer_frame\unity_resolver_input_d3d12.log --report scratch\character_recovery\deferred_gbuffer_frame\resolver_input_validation_d3d12.json
 ```
 
 This is same-frame input-order evidence only: the probe is non-presented and
