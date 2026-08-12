@@ -187,6 +187,52 @@
               "call_graph_scope": "All 21 resolver call sites with recorded memory accesses were checked for direct calls and one-level child calls into the known GPU-driven/command-binding address range; none reached a command encoder or explicit buffer/property API.",
               "negative_result": "These virtual lifecycle slots remain an unresolved dynamic implementation boundary, but their visible registration, refresh, record-preparation, and teardown bodies do not identify the missing channel-2 resource-to-GPU upload. Keep the edge fail-closed."
             },
+            "concrete_vtable_followup": {
+              "status": "renderer-vtables-resolved-no-custom-resource-consumer",
+              "constructor": {
+                "function": "0x18042bf10..0x18042c0b8",
+                "main_vtable": "0x181d664e8",
+                "embedded_vtable": "0x181d66658",
+                "main_vtable_write": "0x18042bf4f..0x18042bf56",
+                "embedded_vtable_write": "0x18042bf59..0x18042bf60"
+              },
+              "main_slots": {
+                "+0x80": "0x180433300 -> 0x1804262a0 generic property/material metadata route; no custom +0x140..+0x180 or resource +0xd0",
+                "+0xe8": "0x18042f5c0 -> generic flags/manager path",
+                "+0xf0": "0x18042f5a0 -> renderer +0x208 generic manager path",
+                "+0xf8": "0x18042f660 -> renderer +0x208 generic manager path",
+                "+0x120": "0x18042dc20 -> generic index/output path; no custom resource +0xd0",
+                "+0x128": "0x180076be0 -> always-false stub",
+                "+0x130": "0x18042cf60 -> embedded record-count check; no custom resource +0xd0"
+              },
+              "embedded_slots": {
+                "+0x30": "0x18042de10 -> main +0x1c8 ordinary record state",
+                "+0x38": "0x18042ddf0 -> main +0x1b8 indexed ordinary array",
+                "+0x80": "0x18042e680 -> main +0x268/+0x26c component validity",
+                "+0x88": "0x18042dc10 -> main +0x268 component key"
+              },
+              "bounded_scan": {
+                "roots": [
+                  "0x180433300",
+                  "0x18042dc20",
+                  "0x18042cf60",
+                  "0x18042f5a0",
+                  "0x18042f660",
+                  "0x18042f5c0",
+                  "0x18042e680",
+                  "0x18042dc10",
+                  "0x18042de10",
+                  "0x18042ddf0",
+                  "0x18042dc60",
+                  "0x18042d860"
+                ],
+                "method": "PData-scoped Capstone disassembly of each root extent plus direct static callees",
+                "literal_resource_d0_reads": 0,
+                "mapped_gpu_driven_direct_calls": 0,
+                "explicit_buffer_property_calls": 0,
+                "note": "The concrete table entries close the previously dynamic lifecycle slots for the visible renderer object. Their bodies and direct callees still contain no resource +0xd0-to-descriptor upload. This is a bounded negative result, not proof against another indirect or table-dispatched consumer."
+              }
+            },
             "negative_result": "The expanded resolver-callsite sample closes additional false-positive record writers and explicit MPB/global-buffer routes, but still finds no resource +0xd0 to GPU descriptor upload edge."
           },
           "negative_result": "No inspected UnityPlayer path reads resource +0xd0 (or a proven equivalent vector lane) into a constant-buffer/descriptor binding, and no direct call edge names set 0/binding 33. Keep the channel-to-resource-to-GPU edge open."
