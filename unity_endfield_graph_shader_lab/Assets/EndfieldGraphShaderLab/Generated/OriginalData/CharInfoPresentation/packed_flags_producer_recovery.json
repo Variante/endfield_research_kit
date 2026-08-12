@@ -319,9 +319,44 @@
           "negative_result": "The mapped V1/V2 GPU-driven entrypoints expose frame/buffer binding helpers, but the inspected call paths do not alias their +0xd0 fields to the custom resource returned by 0x1804255f0. Keep resource +0xd0 to descriptor upload unresolved."
         },
         "gpu_scene_upload_kernel_evidence": {
-          "status": "per-draw-gpu-buffer-consumer-source-closed-native-edge-open",
-          "source": "Installed-game serialized ComputeShader metadata and extracted SPIR-V for GpuSceneDirtyUpdateCS (source VFS 0CE8FA57/8DD47144D943BE755C0086B41C34F33D.chk, rawDataSha256 0202830400d56f224dd45c43f2ff1cdfe848272509ae8663cccfa1abd0351f36).",
+          "status": "per-draw-gpu-buffer-consumer-and-resource-identity-closed-native-edge-open",
+          "source": "Current installed-game serialized ComputeShader metadata and extracted SPIR-V for GpuSceneDirtyUpdateCS (Persistent VFS 0CE8FA57/36243F039A1BFD05676B5D323B50D4AA.chk, rawDataSha256 0202830400d56f224dd45c43f2ff1cdfe848272509ae8663cccfa1abd0351f36).",
           "kernel": "UploadPerDrawParams",
+          "runtime_resource_owner": {
+            "type": "HG.Rendering.Runtime.HGRenderPipelineRuntimeResources+ShaderResources",
+            "field": "gpuSceneDirtyUpdateCS",
+            "field_index": 173512,
+            "field_token": "0x040017f7",
+            "field_type": "UnityEngine.ComputeShader",
+            "serialized_path": "$.shaders.gpuSceneDirtyUpdateCS",
+            "runtime_resources_object": {
+              "type": "HG.Rendering.Runtime.HGRenderPipelineRuntimeResources",
+              "source": "Persistent VFS 0CE8FA57/36243F039A1BFD05676B5D323B50D4AA.chk",
+              "path_id": 5613980184714137857,
+              "raw_data_sha256": "0376ca02e3cac7a1d29419e187cedabc62c60b2a20bb9d08035acffc8649c1c5"
+            },
+            "compute_shader_pptr": {
+              "file_id": 196,
+              "path_id": 9129651272751059356,
+              "target_type": "ComputeShader",
+              "target_name": "GpuSceneDirtyUpdateCS",
+              "source_file": "CAB-ecc84404f9c9b9c9da48bf71380d776b",
+              "source": "Persistent VFS 0CE8FA57/36243F039A1BFD05676B5D323B50D4AA.chk",
+              "source_offset": 4105822,
+              "byte_size": 20628,
+              "raw_data_sha256": "0202830400d56f224dd45c43f2ff1cdfe848272509ae8663cccfa1abd0351f36"
+            }
+          },
+          "kernel_identity": {
+            "variant_index": 0,
+            "target_renderer": 21,
+            "target_level": 0,
+            "kernel_index": 7,
+            "kernel_count": 8,
+            "kernel_name": "UploadPerDrawParams",
+            "spirv_code_length_bytes": 3132,
+            "observed": "The current serialized object is explicitly named GpuSceneDirtyUpdateCS; its runtime-resource PPtr resolves to this object, and UploadPerDrawParams is kernel index 7 in its only renderer-21/level-0 variant."
+          },
           "resources": {
             "constant_buffer": {
               "name": "GpuSceneUploadConstants",
@@ -353,10 +388,10 @@
             "vector_count": 5,
             "observed": "Each invocation reads one source index followed by five float4-equivalent 16-byte lanes from _UploadBuffer and stores the five lanes to _DstPerDrawParamsBuffer at the indexed 80-byte destination record."
           },
-          "boundary": "This is the first source-closed GPU consumer for a five-vector per-draw record, and it materially narrows the GPU scene carrier. The shader contains no Unity renderer object, custom-per-draw channel index, resource +0xd0 address, or binding-33 identity; no native call edge from SetCustomPerDrawData_Injected/0x18042f750 to the upload-buffer producer or this dispatch has been recovered. Therefore it closes the generic per-draw-buffer copy contract only; it does not authorize mapping channel 2 to any one of the five lanes."
+          "boundary": "This now closes the serialized runtime-resource field to the named ComputeShader object and kernel identity, in addition to the five-vector copy contract. It still does not prove that a native GPUDriven call selects kernel index 7 at the upload schedule, does not expose the upload-buffer producer, and does not connect channel 2/resource +0xd0 to any one of the five lanes or to Vulkan set 0/binding 33."
         },
         "gpu_scene_setup_wiring": {
-          "status": "managed-compute-shader-initialization-closed-dispatch-edge-open",
+          "status": "managed-compute-shader-identity-and-initialization-closed-dispatch-edge-open",
           "managed_method": {
             "type": "UnityEngine.HyperGryph.HGShadingStateSystem",
             "method": "SetupGpuSceneUploadCs",
@@ -381,7 +416,7 @@
             "native_pointer": "0x183947230",
             "callsite": "0x183948786",
             "argument_provenance": "After HGRenderPipeline setup calls 0x183104af0, the callsite loads [returned_object + 0x18], then [that_object + 0x638] into rcx, clears edx, and calls the wrapper 0x1839454d0.",
-            "observed": "This closes a concrete managed constructor edge that registers the GPU-scene upload ComputeShader once during HGRenderPipeline construction. Neighboring calls initialize VAT BLAS, ray-tracing scene, and cloth compute services; the constructor contains no UploadPerDrawParams dispatch or custom-per-draw channel read."
+            "observed": "This closes a concrete managed constructor edge that registers the GPU-scene upload ComputeShader once during HGRenderPipeline construction. The serialized runtime-resource field now identifies that object as GpuSceneDirtyUpdateCS, but the native object offset chain is not treated as a pointer-identity proof without a runtime object snapshot. Neighboring calls initialize VAT BLAS, ray-tracing scene, and cloth compute services; the constructor contains no UploadPerDrawParams dispatch or custom-per-draw channel read."
           },
           "unityplayer_native_setup": {
             "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
@@ -389,10 +424,10 @@
             "parallel_managed_registration": "UnityEngine.HyperGryph.HGRayTracingScene::SetupGpuSceneUploadCs(UnityEngine.ComputeShader) uses the same UnityPlayer implementation 0x1801ee4c0.",
             "observed": "The native body forwards the ComputeShader handle through four calls to the shared CFG indirect-call slot at 0x1821be708, consults RuntimeInitializeOnLoadManager through 0x180fc5e60, and conditionally extracts the native object handle through 0x180769270. The CFG target is runtime-initialized and is not recoverable from the installed file bytes; none of these calls is identified as ComputeShader.Dispatch or an upload-buffer producer."
           },
-          "boundary": "This is positive initialization/wiring evidence for GpuSceneDirtyUpdateCS, not proof of its dispatch schedule or of a custom-per-draw resource upload. No native call edge from SetCustomPerDrawData_Injected, renderer refresh 0x18042f750, resource +0xd0, or the five-slot resolver reaches UploadPerDrawParams. Keep channel 2 to GPU descriptor binding fail-closed."
+          "boundary": "This is positive initialization/wiring evidence for the named GpuSceneDirtyUpdateCS object, not proof of its dispatch schedule or of a custom-per-draw resource upload. No native call edge from SetCustomPerDrawData_Injected, renderer refresh 0x18042f750, resource +0xd0, or the five-slot resolver reaches UploadPerDrawParams. Keep channel 2 to GPU descriptor binding fail-closed."
         },
         "gpu_dispatch_bridge_evidence": {
-          "status": "native-compute-dispatch-bridge-closed-kernel-identity-open",
+          "status": "native-compute-dispatch-bridge-closed-dispatch-selection-open",
           "source": "Current installed UnityPlayer.dll GPUDrivenRendererV1/V2 wrapper and native-core disassembly; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
           "gpu_driven_wrappers": {
             "V1": {
@@ -428,7 +463,7 @@
             },
             "observed": "The four GPUDriven cores are the only direct dispatch bridge callers attributable to the mapped V1/V2 methods; the remaining direct callers belong to unrelated Unity native compute passes."
           },
-          "boundary": "This closes Unity's native compute-dispatch mechanism and distinguishes command-buffer recording from immediate context dispatch. It does not identify which ComputeShader/kernel is GpuSceneDirtyUpdateCS::UploadPerDrawParams, does not expose the upload-buffer producer, and does not connect channel 2/resource +0xd0 to the five-vector destination. Keep the shader component and carrier mapping fail-closed."
+          "boundary": "This closes Unity's native compute-dispatch mechanism and distinguishes command-buffer recording from immediate context dispatch. The managed resource identity now separately proves that GpuSceneDirtyUpdateCS::UploadPerDrawParams exists at kernel index 7, but the native core census does not prove that a particular dispatch call supplies this object and index 7. It also does not expose the upload-buffer producer or connect channel 2/resource +0xd0 to the five-vector destination. Keep dispatch selection and carrier mapping fail-closed."
         },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",

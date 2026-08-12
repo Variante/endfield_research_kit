@@ -380,18 +380,28 @@ NPC archetypes are imported as labeled source kits.
   entrypoint/candidate audit is recorded in
   `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`;
   the resource-to-descriptor edge remains fail-closed.
-  The installed `GpuSceneDirtyUpdateCS` now supplies a source-closed GPU carrier
-  contract. Its `UploadPerDrawParams` kernel reads `_UploadBuffer` records with
-  an 84-byte stride (a leading index plus five 16-byte lanes) and writes the five
-  lanes to `_DstPerDrawParamsBuffer` with an 80-byte stride, using
+  The current installed `HGRenderPipelineRuntimeResources.shaders`
+  serialization now closes the positive object edge for the GPU carrier:
+  `gpuSceneDirtyUpdateCS` (field index `173512`, token `0x040017f7`) resolves to
+  ComputeShader PathID `9129651272751059356`, explicitly named
+  `GpuSceneDirtyUpdateCS`, from the current Persistent chunk
+  `36243F039A1BFD05676B5D323B50D4AA.chk` at offset `4105822`. Its only
+  renderer-21/level-0 variant contains eight kernels; `UploadPerDrawParams` is
+  kernel index 7. That kernel reads `_UploadBuffer` records with an 84-byte
+  stride (a leading index plus five 16-byte lanes) and writes the five lanes to
+  `_DstPerDrawParamsBuffer` with an 80-byte stride, using
   `GpuSceneUploadConstants._UploadBufferOffset` and `_EntryCount` and a
-  `[64,1,1]` dispatch. This proves a real five-vector per-draw GPU consumer, but
-  the serialized SPIR-V has no renderer/resource identity, custom channel index,
-  or binding-33 label, and no native edge from `SetCustomPerDrawData_Injected`
-  or `0x18042f750` to this upload-buffer producer has been recovered. It narrows
-  the carrier without mapping channel 2 to a lane; structured source/hash and
-  offsets are recorded under `gpu_scene_upload_kernel_evidence` in the packed-
-  flag audit. Keep the channel-2 resource-to-GPU edge fail-closed.
+  `[64,1,1]` dispatch. The raw ComputeShader hash remains
+  `0202830400d56f224dd45c43f2ff1cdfe848272509ae8663cccfa1abd0351f36`, so the
+  earlier byte-level contract is current rather than a stale object path.
+  This closes the serialized resource-to-object-to-kernel identity, but not the
+  native dispatch selection: the native bridge still does not prove that a
+  particular call supplies this object and kernel 7, and the shader has no
+  renderer/resource identity, custom channel index, resource `+0xd0`, or
+  binding-33 label. No native edge from `SetCustomPerDrawData_Injected` or
+  `0x18042f750` to the upload-buffer producer has been recovered. Details are
+  recorded under `gpu_scene_upload_kernel_evidence` in the packed-flag audit;
+  keep channel 2 to GPU descriptor binding fail-closed.
   The managed/native initialization chain for that GPU carrier is now also
   closed. Installed metadata identifies the public static
   `HGShadingStateSystem.SetupGpuSceneUploadCs(ComputeShader)` method (index
@@ -409,12 +419,13 @@ NPC archetypes are imported as labeled source kits.
   `0x1810f1890/0x1810f17e0` and `0x1810fe040/0x1810fdf90`; each uses
   `0x1805e7e10` for immediate context/vtable dispatch or `0x1804c74d0` to
   record CommandBuffer opcode `0x11`. This proves the Unity dispatch
-  mechanism, but not that any call selects `GpuSceneDirtyUpdateCS` kernel
-  `UploadPerDrawParams`; no upload-buffer producer or edge from custom-
-  per-draw channel 2/resource `+0xd0` has been recovered. Structured hashes,
-  addresses, caller census, and the fail-closed boundary are recorded under
-  `gpu_scene_setup_wiring` and `gpu_dispatch_bridge_evidence` in the packed-
-  flag audit.
+  mechanism, but not that any native call selects the identified
+  `GpuSceneDirtyUpdateCS` kernel `UploadPerDrawParams` (index 7); no
+  upload-buffer producer or edge from custom-per-draw channel 2/resource `+0xd0`
+  has been recovered. Structured hashes, addresses, caller census, resource
+  field identity, and the fail-closed boundary are recorded under
+  `gpu_scene_setup_wiring`, `gpu_scene_upload_kernel_evidence`, and
+  `gpu_dispatch_bridge_evidence` in the packed-flag audit.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
