@@ -1934,6 +1934,13 @@ comparisons before the result is written to mask G. This is source-backed
 producer semantics only; the lab keeps the runtime publication fail-closed
 until the character atlas upload and target-frame state are validated.
 
+The lab resolve now carries that source shape into its default-off attachment:
+it binds the same-frame PreGBuffer selector/normal lanes, chooses the scalar or
+15-slot character atlas transform, applies light-facing bias, and executes the
+16-tap `GatherRed` depth filter for mask G. The producer checks camera, atlas,
+and GBuffer ownership before drawing, while `contentValid=false` still keeps
+the retail consumers disabled until complete scene-R ownership is recovered.
+
 In the corrected 3840x2160 controlled A/B, the only change is the exact body
 selector. On pixels changing by more than 1/255, reference MAE moves
 74.222 -> 74.040 for Wulfa and 60.286 -> 59.078 for Zhuangfy. This is a modest
