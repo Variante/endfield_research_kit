@@ -233,19 +233,18 @@ NPC archetypes are imported as labeled source kits.
   order. The probe restores the camera target and never presents or enables
   retail pass 0; target-frame survivor bindings, nonzero HDPLS/cookie data,
   and the full lighting consumer remain open.
-- The resolver probe now binds and audits the source-backed target-resource
-  registers in the same camera/frame: `t0` canonical binning, `t1` camera
-  depth, `t5` 576x576x32 reflection oct array, and `t6` 6144x4096 D16
-  punctual atlas are physical on both D3D11 and D3D12. A strict
-  `ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE` mode also requests
-  low-resolution directional shadow and screen-shadow resources (`t7/t22`),
-  but both backends fail closed before allocation because the upstream
-  PreGBuffer diagnostic rejects substituted color formats. This is now an
-  explicit reproducible blocker rather than an unobserved binding gap;
-  `t22` content would remain invalid even after allocation. The fail-closed
-  reports are under
-  `scratch/character_recovery/deferred_gbuffer_frame/resolver_resource_fail_closed_d3d11.json`
-  and `resolver_resource_fail_closed_d3d12.json`.
+- The resolver probe now binds and audits all source-backed target-resource
+  registers in the same camera/frame. Both D3D11 and D3D12 strict runs report
+  physical `t0` binning, `t1` 640x720 camera depth, `t5` 576x576x32 reflection
+  oct array, `t6` 6144x4096 D16 punctual atlas, `t7` 160x180 R8 low-resolution
+  directional shadow, and `t22` 640x720 RG8 screen-shadow allocation. The
+  final missing-resource result was traced to our PreGBuffer descriptor forcing
+  `sRGB=false`; changing it to `GraphicsFormatUtility.IsSRGBFormat(format)`
+  preserves `R8G8B8A8_SRGB` and releases the downstream gates. The strict
+  reports are `resolver_resource_validation_d3d11.json` and
+  `resolver_resource_validation_d3d12.json`. `t22` content remains explicitly
+  invalid (`screenContentValid=false`) because full retail scene-R ownership
+  and Eye/Skin consumer activation are still open.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and

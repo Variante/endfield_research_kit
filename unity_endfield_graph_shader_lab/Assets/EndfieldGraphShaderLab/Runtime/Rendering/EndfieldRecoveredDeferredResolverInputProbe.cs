@@ -53,10 +53,8 @@ namespace EndfieldGraphShaderLab
             internal ComputeBuffer t0Binning;
             internal RenderTexture t5Reflection;
             internal RenderTexture t6PunctualShadow;
-            internal bool t7LowResReady;
-            // The ignored screen-shadow producer is not made a tracked
-            // dependency merely to expose its private allocation.
-            internal bool t22ScreenAllocated;
+            internal RenderTexture t7LowResShadow;
+            internal RenderTexture t22ScreenShadow;
 
             internal bool T0Ready =>
                 t0Binning != null && t0Binning.IsValid();
@@ -65,9 +63,9 @@ namespace EndfieldGraphShaderLab
             internal bool T6Ready =>
                 t6PunctualShadow != null && t6PunctualShadow.IsCreated();
             internal bool T7Ready =>
-                t7LowResReady;
+                t7LowResShadow != null && t7LowResShadow.IsCreated();
             internal bool T22Ready =>
-                t22ScreenAllocated;
+                t22ScreenShadow != null && t22ScreenShadow.IsCreated();
 
             internal bool AllPhysical =>
                 cameraDepthReady && T0Ready && T5Ready && T6Ready &&
@@ -90,8 +88,8 @@ namespace EndfieldGraphShaderLab
                     $"t1={width}x{height}," +
                     $"t5={Describe(t5Reflection)}," +
                     $"t6={Describe(t6PunctualShadow)}," +
-                    $"t7={(T7Ready ? $"{(width + 3) / 4}x{(height + 3) / 4}" : "none")}," +
-                    $"t22={(T22Ready ? $"{width}x{height}" : "none")}";
+                    $"t7={Describe(t7LowResShadow)}," +
+                    $"t22={Describe(t22ScreenShadow)}";
             }
 
             private static string Describe(RenderTexture texture)
@@ -113,8 +111,8 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredLightBinning lightBinning,
             EndfieldRecoveredReflectionProbeFallback reflection,
             EndfieldRecoveredPunctualShadowProducer punctual,
-            bool lowResReady,
-            bool screenResourceAllocated)
+            EndfieldRecoveredLowResDirectionalShadowProducer lowRes,
+            EndfieldRecoveredScreenShadowMaskProducer screen)
         {
             ResourceFrame frame = new ResourceFrame
             {
@@ -146,8 +144,22 @@ namespace EndfieldGraphShaderLab
                     out frame.t6PunctualShadow,
                     out string ignoredFailure);
             }
-            frame.t7LowResReady = lowResReady;
-            frame.t22ScreenAllocated = screenResourceAllocated;
+            if (lowRes != null)
+            {
+                lowRes.TryGetCurrentPublication(
+                    camera,
+                    width,
+                    height,
+                    out frame.t7LowResShadow);
+            }
+            if (screen != null)
+            {
+                screen.TryGetCurrentPublication(
+                    camera,
+                    width,
+                    height,
+                    out frame.t22ScreenShadow);
+            }
             return frame;
         }
 
@@ -272,10 +284,10 @@ namespace EndfieldGraphShaderLab
                 command.SetGlobalTexture(ResolverT6Id, resourceFrame.t6PunctualShadow);
                 command.SetGlobalTexture(
                     ResolverT7Id,
-                    Texture2D.whiteTexture);
+                    resourceFrame.T7Ready ? resourceFrame.t7LowResShadow : Texture2D.whiteTexture);
                 command.SetGlobalTexture(
                     ResolverT22Id,
-                    Texture2D.whiteTexture);
+                    resourceFrame.T22Ready ? resourceFrame.t22ScreenShadow : Texture2D.whiteTexture);
                 command.SetGlobalTexture(
                     EndfieldRecoveredDeferredGBufferFrame.ResolverGBufferT23Id,
                     resolverT23);

@@ -102,6 +102,19 @@ class DeferredResolverInputProbeTests(unittest.TestCase):
         self.assertIn("CaptureResources(", pipeline)
         self.assertIn("recoveredDeferredResolverResources", pipeline)
 
+    def test_pregbuffer_preserves_srgb_material_lane(self) -> None:
+        preg = (RUNTIME / "EndfieldRecoveredPreGBufferDiagnostic.cs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "sRGB = GraphicsFormatUtility.IsSRGBFormat(format)",
+            preg,
+        )
+        self.assertIn(
+            "gBufferC={resources.gBufferC.graphicsFormat}",
+            preg,
+        )
+
     def test_existing_publishers_opt_into_probe_policy(self) -> None:
         paths = (
             "EndfieldRecoveredLightBinning.cs",
