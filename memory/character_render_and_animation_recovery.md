@@ -380,6 +380,18 @@ NPC archetypes are imported as labeled source kits.
   entrypoint/candidate audit is recorded in
   `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`;
   the resource-to-descriptor edge remains fail-closed.
+  The installed `GpuSceneDirtyUpdateCS` now supplies a source-closed GPU carrier
+  contract. Its `UploadPerDrawParams` kernel reads `_UploadBuffer` records with
+  an 84-byte stride (a leading index plus five 16-byte lanes) and writes the five
+  lanes to `_DstPerDrawParamsBuffer` with an 80-byte stride, using
+  `GpuSceneUploadConstants._UploadBufferOffset` and `_EntryCount` and a
+  `[64,1,1]` dispatch. This proves a real five-vector per-draw GPU consumer, but
+  the serialized SPIR-V has no renderer/resource identity, custom channel index,
+  or binding-33 label, and no native edge from `SetCustomPerDrawData_Injected`
+  or `0x18042f750` to this upload-buffer producer has been recovered. It narrows
+  the carrier without mapping channel 2 to a lane; structured source/hash and
+  offsets are recorded under `gpu_scene_upload_kernel_evidence` in the packed-
+  flag audit. Keep the channel-2 resource-to-GPU edge fail-closed.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches

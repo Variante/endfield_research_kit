@@ -318,6 +318,43 @@
           },
           "negative_result": "The mapped V1/V2 GPU-driven entrypoints expose frame/buffer binding helpers, but the inspected call paths do not alias their +0xd0 fields to the custom resource returned by 0x1804255f0. Keep resource +0xd0 to descriptor upload unresolved."
         },
+        "gpu_scene_upload_kernel_evidence": {
+          "status": "per-draw-gpu-buffer-consumer-source-closed-native-edge-open",
+          "source": "Installed-game serialized ComputeShader metadata and extracted SPIR-V for GpuSceneDirtyUpdateCS (source VFS 0CE8FA57/8DD47144D943BE755C0086B41C34F33D.chk, rawDataSha256 0202830400d56f224dd45c43f2ff1cdfe848272509ae8663cccfa1abd0351f36).",
+          "kernel": "UploadPerDrawParams",
+          "resources": {
+            "constant_buffer": {
+              "name": "GpuSceneUploadConstants",
+              "byte_size": 8,
+              "fields": {
+                "_UploadBufferOffset": {"offset": 0, "type": "uint"},
+                "_EntryCount": {"offset": 4, "type": "uint"}
+              },
+              "packed_bind_point": 16842752
+            },
+            "input_buffer": {
+              "name": "_UploadBuffer",
+              "packed_bind_point": 16777217,
+              "kind": "ByteAddressBuffer"
+            },
+            "output_buffer": {
+              "name": "_DstPerDrawParamsBuffer",
+              "bind_point": 0,
+              "kind": "RWByteAddressBuffer"
+            }
+          },
+          "dispatch": {"thread_group_size": [64, 1, 1]},
+          "copy_contract": {
+            "source_entry_stride_bytes": 84,
+            "destination_entry_stride_bytes": 80,
+            "source_index_offset_bytes": 0,
+            "source_vector_offsets_bytes": [4, 20, 36, 52, 68],
+            "destination_vector_offsets_bytes": [0, 16, 32, 48, 64],
+            "vector_count": 5,
+            "observed": "Each invocation reads one source index followed by five float4-equivalent 16-byte lanes from _UploadBuffer and stores the five lanes to _DstPerDrawParamsBuffer at the indexed 80-byte destination record."
+          },
+          "boundary": "This is the first source-closed GPU consumer for a five-vector per-draw record, and it materially narrows the GPU scene carrier. The shader contains no Unity renderer object, custom-per-draw channel index, resource +0xd0 address, or binding-33 identity; no native call edge from SetCustomPerDrawData_Injected/0x18042f750 to the upload-buffer producer or this dispatch has been recovered. Therefore it closes the generic per-draw-buffer copy contract only; it does not authorize mapping channel 2 to any one of the five lanes."
+        },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
           "function_pointer": "0x1800fedc0",
