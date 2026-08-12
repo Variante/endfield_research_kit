@@ -387,9 +387,48 @@
             "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
             "internal_call_implementation": "0x1801ee4c0",
             "parallel_managed_registration": "UnityEngine.HyperGryph.HGRayTracingScene::SetupGpuSceneUploadCs(UnityEngine.ComputeShader) uses the same UnityPlayer implementation 0x1801ee4c0.",
-            "observed": "The native body forwards the ComputeShader handle through four indirect helper calls, consults RuntimeInitializeOnLoadManager through 0x180fc5e60, and conditionally extracts the native object handle through 0x180769270. The indirect targets are encoded in the installed function table and remain unresolved by static file bytes; none is identified as ComputeShader.Dispatch or an upload-buffer producer."
+            "observed": "The native body forwards the ComputeShader handle through four calls to the shared CFG indirect-call slot at 0x1821be708, consults RuntimeInitializeOnLoadManager through 0x180fc5e60, and conditionally extracts the native object handle through 0x180769270. The CFG target is runtime-initialized and is not recoverable from the installed file bytes; none of these calls is identified as ComputeShader.Dispatch or an upload-buffer producer."
           },
           "boundary": "This is positive initialization/wiring evidence for GpuSceneDirtyUpdateCS, not proof of its dispatch schedule or of a custom-per-draw resource upload. No native call edge from SetCustomPerDrawData_Injected, renderer refresh 0x18042f750, resource +0xd0, or the five-slot resolver reaches UploadPerDrawParams. Keep channel 2 to GPU descriptor binding fail-closed."
+        },
+        "gpu_dispatch_bridge_evidence": {
+          "status": "native-compute-dispatch-bridge-closed-kernel-identity-open",
+          "source": "Current installed UnityPlayer.dll GPUDrivenRendererV1/V2 wrapper and native-core disassembly; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+          "gpu_driven_wrappers": {
+            "V1": {
+              "DispatchComputeMeshletInstanceCount": {"wrapper": "0x1801e94c0", "native_core": "0x1810f1890"},
+              "DispatchComputeDrawBucketCount": {"wrapper": "0x1801e95a0", "native_core": "0x1810f17e0"}
+            },
+            "V2": {
+              "DispatchComputeMeshletInstanceCount": {"wrapper": "0x1801e9bb0", "native_core": "0x1810fe040"},
+              "DispatchComputeDrawBucketCount": {"wrapper": "0x1801e9c90", "native_core": "0x1810fdf90"}
+            }
+          },
+          "native_core_contract": {
+            "observed": "Each V1/V2 core receives the ComputeShader managed object, command-buffer pointer, native shader handle, and kernel index; it reads shader metadata rooted at +0x68, combines metadata fields (+0x20/+0x28, variant-specific +0x48 or +0x60, and +0x84), and forwards the resulting group dimensions with the kernel index.",
+            "no_command_buffer_path": {
+              "function": "0x1805e7e10",
+              "observed": "Validates/resolves the shader kernel through 0x1800a8c70 and 0x1805e8100, obtains a command context through 0x180725dc0, then calls the context vtable slot +0xab0 with the native shader handle and computed dispatch arguments."
+            },
+            "command_buffer_path": {
+              "function": "0x1804c74d0",
+              "observed": "Serializes a compute-dispatch command into the native CommandBuffer stream, writing opcode 0x11 and the kernel/dispatch argument payload; this is the explicit command-buffer recording branch."
+            }
+          },
+          "direct_call_census": {
+            "immediate_dispatch": {
+              "function": "0x1805e7e10",
+              "direct_call_count": 15,
+              "gpu_driven_core_call_sites": ["0x1810f1837", "0x1810f18eb", "0x1810fdfe7", "0x1810fe09b"]
+            },
+            "command_buffer_recording": {
+              "function": "0x1804c74d0",
+              "direct_call_count": 5,
+              "gpu_driven_core_call_sites": ["0x1810f1870", "0x1810f1920", "0x1810fe020", "0x1810fe0d0"]
+            },
+            "observed": "The four GPUDriven cores are the only direct dispatch bridge callers attributable to the mapped V1/V2 methods; the remaining direct callers belong to unrelated Unity native compute passes."
+          },
+          "boundary": "This closes Unity's native compute-dispatch mechanism and distinguishes command-buffer recording from immediate context dispatch. It does not identify which ComputeShader/kernel is GpuSceneDirtyUpdateCS::UploadPerDrawParams, does not expose the upload-buffer producer, and does not connect channel 2/resource +0xd0 to the five-vector destination. Keep the shader component and carrier mapping fail-closed."
         },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
