@@ -2241,7 +2241,20 @@ def verify_hgbuffer(recovery: dict[str, object]) -> None:
             "SV_Target_1.y = mad(_195, 0.5f - _161, _161);",
             "SV_Target_1.w = _195 * 0.699999988079071044921875f;",
             "SV_Target_1.z = (_195 > 0.0f) ? 1.0f : _26_m0[7u].x;",
+            # The material lanes are part of the source HGBuffer ABI, not
+            # optional decoration.  Keep the packed selector, porosity,
+            # normal flags, and base-colour equations pinned so a future
+            # runtime sidecar cannot silently collapse them to defaults.
+            "SV_Target_2.x = _301;",
+            "SV_Target_2.y = mad(_26_m0[1u].x, _290.z - 1.0f, 1.0f);",
+            "SV_Target_3.z = _312;",
+            "SV_Target_2.z = mad(clamp(mad(_26_m0[4u].w, _312, _301 * _26_m0[5u].y) + _26_m0[5u].x, 0.0f, 1.0f), 0.949999988079071044921875f, 0.0500000007450580596923828125f) * (1.0f - _26_m0[7u].y);",
+            "SV_Target_3.w = _71(_341 & 3u) * 0.3333333432674407958984375f;",
+            "SV_Target_2.w = _71(_341 >> 2u) * 0.3333333432674407958984375f;",
             "SV_Target_3.x = mad(",
+            "SV_Target_4.x = mad(_26_m0[4u].x, _32_m0[8u].x - _275, _275);",
+            "SV_Target_4.y = mad(_26_m0[4u].x, _32_m0[8u].y - _276, _276);",
+            "SV_Target_4.z = mad(_26_m0[4u].x, _32_m0[8u].z - _277, _277);",
             "SV_Target_4.w = 0.0f;",
         ],
     )

@@ -209,6 +209,12 @@ NPC archetypes are imported as labeled source kits.
   the source motion-validity mask (`Target1.z/w`). The current SphereOutside
   sidecar still emits neutral SceneMV and remains non-presented; publishing
   motion requires the original previous deformation/target-frame state.
+  The verifier also pins the remaining source MRT payload: `Target2.x/y/z/w`
+  carry the sampled MRO/porosity/packed-flag lanes, `Target3.z/w` carry the
+  sampled mask and low packed flags beside octahedral normal xy, and
+  `Target4.xyz/w` carry the tint-blended base colour with zero alpha. These
+  source equations are now evidence-closed; the runtime sidecar still does
+  not publish them through the retail deferred resolver.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count
   publisher verified bit-for-bit on D3D11/D3D12. Its unique native

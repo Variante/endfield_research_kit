@@ -2264,6 +2264,11 @@ the signed fourth-root delta blended by the source motion-validity mask in
 `Target1.z/w`. The current SphereOutside frame sidecar intentionally keeps a
 neutral SceneMV and remains non-presented until previous deformation and
 target-frame state are recovered.
+The audit also pins the remaining source MRT payload: MRO/porosity and
+packed-flag equations in `Target2`, sampled mask and packed flags in `Target3`,
+and tint-blended base colour with zero alpha in `Target4`. This closes the
+source equations only; the runtime sidecar still does not publish those lanes
+through the retail deferred resolver.
 
 The Eye `PreGBuffer` vertex variant confirms the same 6044-byte DXBC and
 decompiled vertex program as Skin (Eye uses source pass index 1; Skin uses 3),
