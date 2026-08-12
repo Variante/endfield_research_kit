@@ -1450,7 +1450,8 @@ namespace EndfieldGraphShaderLab
                         recoveredReflectionProbeFallback,
                         recoveredPunctualShadowProducer,
                         recoveredLowResDirectionalShadowProducer,
-                        recoveredScreenShadowMaskProducer);
+                        recoveredScreenShadowMaskProducer,
+                        recoveredVisibilitySHProducer);
             recoveredDeferredResolverInputProbe.Render(
                 context,
                 camera,
