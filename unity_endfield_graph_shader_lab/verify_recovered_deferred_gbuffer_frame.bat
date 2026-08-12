@@ -53,8 +53,18 @@ if /i "%~1"=="--fail-closed-d3d12" (
   set "RUN_EXIT=!ERRORLEVEL!"
   exit /b !RUN_EXIT!
 )
+if /i "%~1"=="--resolver-input-d3d12" (
+  call :RUN_RESOLVER_INPUT d3d12
+  set "RUN_EXIT=!ERRORLEVEL!"
+  exit /b !RUN_EXIT!
+)
+if /i "%~1"=="--resolver-input-d3d11" (
+  call :RUN_RESOLVER_INPUT d3d11
+  set "RUN_EXIT=!ERRORLEVEL!"
+  exit /b !RUN_EXIT!
+)
 
-echo Usage: %~nx0 --all ^| --d3d11 ^| --d3d12 ^| --fail-closed-d3d12
+echo Usage: %~nx0 --all ^| --d3d11 ^| --d3d12 ^| --fail-closed-d3d12 ^| --resolver-input-d3d11 ^| --resolver-input-d3d12
 exit /b 2
 
 :RUN
@@ -89,3 +99,15 @@ if not "!COPY_EXIT!"=="0" exit /b !COPY_EXIT!
 python "%PROJECT_PATH%\tools\verify_deferred_gbuffer_frame_log.py" --api !API! --log "!LOG_PATH!" --report "!REPORT_PATH!" --beauty "!BEAUTY_PATH!" --expect-fail-closed
 set "VERIFY_EXIT=!ERRORLEVEL!"
 exit /b !VERIFY_EXIT!
+
+:RUN_RESOLVER_INPUT
+set "API=%~1"
+set "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE=1"
+set "LOG_PATH=%OUTPUT_ROOT%\unity_resolver_input_!API!.log"
+set "REPORT_PATH=%OUTPUT_ROOT%\resolver_input_validation_!API!.json"
+echo Validating same-frame deferred resolver input probe with !API!...
+"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_PATH%" -force-!API! -executeMethod %METHOD% -logFile "!LOG_PATH!"
+set "UNITY_EXIT=!ERRORLEVEL!"
+if not "!UNITY_EXIT!"=="0" exit /b !UNITY_EXIT!
+python "%PROJECT_PATH%\tools\verify_deferred_resolver_input_probe.py" --log "!LOG_PATH!" --report "!REPORT_PATH!"
+exit /b !ERRORLEVEL!
