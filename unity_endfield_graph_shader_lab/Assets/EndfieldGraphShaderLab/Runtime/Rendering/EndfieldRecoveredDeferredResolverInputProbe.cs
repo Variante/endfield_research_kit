@@ -20,6 +20,20 @@ namespace EndfieldGraphShaderLab
             "_EndfieldRecoveredDeferredResolverInputProbeReady");
         private static readonly int ExactDxbcBridgeConstantsId =
             Shader.PropertyToID("EndfieldCB6");
+        private static readonly int ResolverT0Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT0");
+        private static readonly int ResolverT1Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT1");
+        private static readonly int ResolverT5Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT5");
+        private static readonly int ResolverT6Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT6");
+        private static readonly int ResolverT7Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT7");
+        private static readonly int ResolverT22Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT22");
+        private static readonly int CameraDepthSourceId =
+            Shader.PropertyToID("_EndfieldRecoveredCameraDepthTexture");
 
         private readonly bool requested;
         private Material material;
@@ -28,9 +42,114 @@ namespace EndfieldGraphShaderLab
         private int allocatedWidth;
         private int allocatedHeight;
         private bool activationLogged;
+        private bool resourceSnapshotLogged;
         private bool failureLogged;
         private bool readbackRequested;
         private bool disposed;
+
+        internal struct ResourceFrame
+        {
+            internal bool cameraDepthReady;
+            internal ComputeBuffer t0Binning;
+            internal RenderTexture t5Reflection;
+            internal RenderTexture t6PunctualShadow;
+            internal bool t7LowResReady;
+            // The ignored screen-shadow producer is not made a tracked
+            // dependency merely to expose its private allocation.
+            internal bool t22ScreenAllocated;
+
+            internal bool T0Ready =>
+                t0Binning != null && t0Binning.IsValid();
+            internal bool T5Ready =>
+                t5Reflection != null && t5Reflection.IsCreated();
+            internal bool T6Ready =>
+                t6PunctualShadow != null && t6PunctualShadow.IsCreated();
+            internal bool T7Ready =>
+                t7LowResReady;
+            internal bool T22Ready =>
+                t22ScreenAllocated;
+
+            internal bool AllPhysical =>
+                cameraDepthReady && T0Ready && T5Ready && T6Ready &&
+                T7Ready && T22Ready;
+
+            internal string BuildStatusToken()
+            {
+                return
+                    $"t0={(T0Ready ? "ready" : "absent")}," +
+                    $"t1={(cameraDepthReady ? "ready" : "absent")}," +
+                    $"t5={(T5Ready ? "ready" : "absent")}," +
+                    $"t6={(T6Ready ? "ready" : "absent")}," +
+                    $"t7={(T7Ready ? "ready" : "absent")}," +
+                    $"t22={(T22Ready ? "allocated" : "absent")}";
+            }
+
+            internal string BuildShapeToken(int width, int height)
+            {
+                return
+                    $"t1={width}x{height}," +
+                    $"t5={Describe(t5Reflection)}," +
+                    $"t6={Describe(t6PunctualShadow)}," +
+                    $"t7={(T7Ready ? $"{(width + 3) / 4}x{(height + 3) / 4}" : "none")}," +
+                    $"t22={(T22Ready ? $"{width}x{height}" : "none")}";
+            }
+
+            private static string Describe(RenderTexture texture)
+            {
+                if (texture == null || !texture.IsCreated())
+                    return "none";
+                int depth = texture.dimension == TextureDimension.Tex2DArray
+                    ? texture.volumeDepth
+                    : 1;
+                return $"{texture.width}x{texture.height}x{depth}";
+            }
+        }
+
+        internal static ResourceFrame CaptureResources(
+            Camera camera,
+            int width,
+            int height,
+            bool cameraDepthReady,
+            EndfieldRecoveredLightBinning lightBinning,
+            EndfieldRecoveredReflectionProbeFallback reflection,
+            EndfieldRecoveredPunctualShadowProducer punctual,
+            bool lowResReady,
+            bool screenResourceAllocated)
+        {
+            ResourceFrame frame = new ResourceFrame
+            {
+                cameraDepthReady = cameraDepthReady
+            };
+            if (lightBinning != null)
+            {
+                lightBinning.TryGetCurrentCanonicalPublication(
+                    camera,
+                    width,
+                    height,
+                    out frame.t0Binning);
+            }
+            if (reflection != null)
+            {
+                reflection.TryGetCurrentPublication(
+                    camera,
+                    width,
+                    height,
+                    out frame.t5Reflection);
+            }
+            if (punctual != null)
+            {
+                punctual.TryGetCurrentPublication(
+                    out Matrix4x4[] ignoredMatrices,
+                    out Vector4[] ignoredParams,
+                    out Vector4[] ignoredRects,
+                    out Vector4 ignoredTexelSize,
+                    out frame.t6PunctualShadow,
+                    out string ignoredFailure);
+            }
+            frame.t7LowResReady = lowResReady;
+            frame.t22ScreenAllocated = screenResourceAllocated;
+            return frame;
+        }
 
         internal EndfieldRecoveredDeferredResolverInputProbe()
         {
@@ -51,6 +170,7 @@ namespace EndfieldGraphShaderLab
             bool shaderVariablesReady,
             bool lightDataReady,
             bool shadowDataReady,
+            ResourceFrame resourceFrame,
             RenderTargetIdentifier canonicalColorTarget,
             RenderTargetIdentifier canonicalDepthTarget)
         {
@@ -103,6 +223,28 @@ namespace EndfieldGraphShaderLab
                 FailClosed(context, failure);
                 return false;
             }
+            if (!resourceFrame.T0Ready ||
+                !resourceFrame.cameraDepthReady ||
+                !resourceFrame.T5Ready ||
+                !resourceFrame.T6Ready)
+            {
+                failure =
+                    "core resolver target resources are not all ready: " +
+                    resourceFrame.BuildStatusToken();
+                FailClosed(context, failure);
+                return false;
+            }
+            if (EndfieldRecoveredDeferredResolverBindingPolicy
+                    .IsResourceProbeRequested &&
+                !resourceFrame.AllPhysical)
+            {
+                failure =
+                    "strict resolver target-resource probe requires physical " +
+                    "t0/t1/t5/t6/t7/t22 resources: " +
+                    resourceFrame.BuildStatusToken();
+                FailClosed(context, failure);
+                return false;
+            }
             if (!TryResolveMaterial(out failure) ||
                 !TryEnsureOutput(width, height, out failure))
             {
@@ -122,6 +264,18 @@ namespace EndfieldGraphShaderLab
                     ExactDxbcBridgeConstantsId,
                     0,
                     216 * sizeof(float) * 4);
+                command.SetGlobalBuffer(ResolverT0Id, resourceFrame.t0Binning);
+                command.SetGlobalTexture(
+                    ResolverT1Id,
+                    new RenderTargetIdentifier(CameraDepthSourceId));
+                command.SetGlobalTexture(ResolverT5Id, resourceFrame.t5Reflection);
+                command.SetGlobalTexture(ResolverT6Id, resourceFrame.t6PunctualShadow);
+                command.SetGlobalTexture(
+                    ResolverT7Id,
+                    Texture2D.whiteTexture);
+                command.SetGlobalTexture(
+                    ResolverT22Id,
+                    Texture2D.whiteTexture);
                 command.SetGlobalTexture(
                     EndfieldRecoveredDeferredGBufferFrame.ResolverGBufferT23Id,
                     resolverT23);
@@ -204,6 +358,16 @@ namespace EndfieldGraphShaderLab
                     "registerBridges=b0..b8, b6=zero-fallback, " +
                     "presented=false, retailPass0=false.");
                 activationLogged = true;
+            }
+            if (!resourceSnapshotLogged)
+            {
+                Debug.Log(
+                    "Recovered deferred resolver target-resource snapshot: " +
+                    resourceFrame.BuildStatusToken() + ", " +
+                    resourceFrame.BuildShapeToken(width, height) + ", " +
+                    $"allPhysical={resourceFrame.AllPhysical.ToString().ToLowerInvariant()}, " +
+                    "screenContentValid=false.");
+                resourceSnapshotLogged = true;
             }
             failureLogged = false;
             return true;

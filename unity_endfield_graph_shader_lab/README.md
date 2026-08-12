@@ -2672,6 +2672,21 @@ python tools\verify_deferred_resolver_input_probe.py --log scratch\character_rec
 This is same-frame input-order evidence only: the probe is non-presented and
 retail deferred pass 0 remains disabled.
 
+The probe also audits the target resource registers `t0/t1/t5/t6/t7/t22`.
+Use the strict resource command when checking the remaining shadow ownership
+boundary:
+
+```bat
+verify_recovered_deferred_gbuffer_frame.bat --resolver-resource-d3d12
+verify_recovered_deferred_gbuffer_frame.bat --resolver-resource-d3d11
+```
+
+At present both backends fail closed before `t7/t22` allocation because the
+upstream PreGBuffer diagnostic rejects substituted color formats; the
+fail-closed reports preserve that reason. `t0/t1/t5/t6` are physical and
+same-frame in the normal resolver probe, while screen-shadow content remains
+invalid and pass 0 stays disabled.
+
 The selected original pass-0 `_TransformVariables` b30 reads are now closed for
 the physical camera's view matrix, inverse view, inverse GPU view-projection,
 and world-space position. A default-off same-frame publisher exposes the full

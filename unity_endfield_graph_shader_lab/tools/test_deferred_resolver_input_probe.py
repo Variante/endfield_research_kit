@@ -45,6 +45,8 @@ class DeferredResolverInputProbeTests(unittest.TestCase):
         self.assertIn("_60.Load", shader)
         for slot in range(9):
             self.assertIn(f"cbuffer EndfieldCB{slot} : register(b{slot})", shader)
+        for slot in (0, 1, 5, 6, 7, 22):
+            self.assertIn(f": register(t{slot})", shader)
         self.assertIn("Texture2D<float4> _62 : register(t23)", shader)
         self.assertIn("Texture2D<float4> _61 : register(t24)", shader)
         self.assertIn("Texture2D<float4> _60 : register(t25)", shader)
@@ -73,6 +75,32 @@ class DeferredResolverInputProbeTests(unittest.TestCase):
             probe,
         )
         self.assertIn("publicationSerial=", probe)
+
+    def test_probe_captures_target_resource_ownership(self) -> None:
+        policy = (
+            RUNTIME / "EndfieldRecoveredDeferredResolverBindingPolicy.cs"
+        ).read_text(encoding="utf-8")
+        probe = (
+            RUNTIME / "EndfieldRecoveredDeferredResolverInputProbe.cs"
+        ).read_text(encoding="utf-8")
+        pipeline = (RUNTIME / "HGCompatRenderPipeline.cs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            '"ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE"',
+            policy,
+        )
+        for token in (
+            "ResourceFrame",
+            "CaptureResources",
+            "TryGetCurrentCanonicalPublication",
+            "TryGetCurrentPublication",
+            "resolver target-resource snapshot",
+            "allPhysical=",
+        ):
+            self.assertIn(token, probe, token)
+        self.assertIn("CaptureResources(", pipeline)
+        self.assertIn("recoveredDeferredResolverResources", pipeline)
 
     def test_existing_publishers_opt_into_probe_policy(self) -> None:
         paths = (

@@ -204,7 +204,7 @@ NPC archetypes are imported as labeled source kits.
   with an actionable fail-closed reason. Both backend runs reached the recovered
   punctual shadow producer (D16 atlas `6144x4096`, 23 caster draws), published
   b34, consumed `_62/_61/_60` as `t23/t24/t25`, and read back `7,372,800`
-  bytes with `5,524,150` nonzero bytes (`publicationSerial=1`) and matching
+  bytes with `5,523,986` nonzero bytes (`publicationSerial=1`) and matching
   resolver payload counts. This remains
   input-order evidence only: the probe is non-presented and retail pass 0 is
   disabled; full numeric lighting parity and retail survivor ownership remain
@@ -233,6 +233,19 @@ NPC archetypes are imported as labeled source kits.
   order. The probe restores the camera target and never presents or enables
   retail pass 0; target-frame survivor bindings, nonzero HDPLS/cookie data,
   and the full lighting consumer remain open.
+- The resolver probe now binds and audits the source-backed target-resource
+  registers in the same camera/frame: `t0` canonical binning, `t1` camera
+  depth, `t5` 576x576x32 reflection oct array, and `t6` 6144x4096 D16
+  punctual atlas are physical on both D3D11 and D3D12. A strict
+  `ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE` mode also requests
+  low-resolution directional shadow and screen-shadow resources (`t7/t22`),
+  but both backends fail closed before allocation because the upstream
+  PreGBuffer diagnostic rejects substituted color formats. This is now an
+  explicit reproducible blocker rather than an unobserved binding gap;
+  `t22` content would remain invalid even after allocation. The fail-closed
+  reports are under
+  `scratch/character_recovery/deferred_gbuffer_frame/resolver_resource_fail_closed_d3d11.json`
+  and `resolver_resource_fail_closed_d3d12.json`.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and

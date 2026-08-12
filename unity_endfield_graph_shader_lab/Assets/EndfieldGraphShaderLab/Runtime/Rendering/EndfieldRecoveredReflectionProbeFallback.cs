@@ -86,6 +86,11 @@ namespace EndfieldGraphShaderLab
         private uint[] zeroBinningWords;
         private Cubemap populatedSource;
         private bool octDispatchRecorded;
+        private bool publicationValid;
+        private int publicationCameraInstanceId;
+        private int publicationFrame;
+        private int publicationWidth;
+        private int publicationHeight;
         private bool disposed;
 
         public EndfieldRecoveredReflectionProbeFallback()
@@ -142,6 +147,7 @@ namespace EndfieldGraphShaderLab
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
+            publicationValid = false;
             if (source == null)
             {
                 failure = "the exact T_hdri_env_char_01 Cubemap is not bound";
@@ -273,6 +279,11 @@ namespace EndfieldGraphShaderLab
                         reflectionZOffset));
             }
             commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
+            publicationValid = true;
+            publicationCameraInstanceId = camera.GetInstanceID();
+            publicationFrame = Time.frameCount;
+            publicationWidth = width;
+            publicationHeight = height;
             return true;
         }
 
@@ -280,7 +291,30 @@ namespace EndfieldGraphShaderLab
         {
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
+            publicationValid = false;
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
+        }
+
+        internal bool TryGetCurrentPublication(
+            Camera camera,
+            int width,
+            int height,
+            out RenderTexture publishedTexture)
+        {
+            publishedTexture = null;
+            if (!publicationValid ||
+                camera == null ||
+                publicationCameraInstanceId != camera.GetInstanceID() ||
+                publicationFrame != Time.frameCount ||
+                publicationWidth != width ||
+                publicationHeight != height ||
+                octTextureArray == null ||
+                !octTextureArray.IsCreated())
+            {
+                return false;
+            }
+            publishedTexture = octTextureArray;
+            return true;
         }
 
         private void EnsureOctTexture()
@@ -315,6 +349,7 @@ namespace EndfieldGraphShaderLab
                     "could not create the 576x576x32 RGBAHalf oct array");
             octDispatchRecorded = false;
             populatedSource = null;
+            publicationValid = false;
         }
 
         private void EnsureGlobalBuffer()
@@ -453,6 +488,7 @@ namespace EndfieldGraphShaderLab
             if (disposed)
                 return;
             disposed = true;
+            publicationValid = false;
             ReleaseOctTexture();
             reflectionGlobalData?.Release();
             reflectionGlobalData = null;
