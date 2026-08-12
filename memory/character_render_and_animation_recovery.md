@@ -74,10 +74,12 @@ NPC archetypes are imported as labeled source kits.
   (`z=0`, `w=0.4`), and `Target4` carries the material/color payload. The
   pass is `DepthCharacterOnly` with stencil `Ref 36 / Always / Replace` and
   the `HG_ENABLE_PER_OBJECT_MV` + `SRP_INSTANCING_ON` variant. The maintained
-  lab intentionally publishes only the selector/normal A/B pair for its
-  default-off screen-shadow diagnostic; motion vectors and material/color
-  GBuffer lanes remain unbound and are not claimed as recovered. The current
-  export audit now reports this five-MRT contract and the explicit subset.
+  lab now also writes the source-shaped material/color payload into a
+  default-off `R8G8B8A8_SRGB` GBuffer C sidecar and validates its readback;
+  motion vectors remain unbound. The C sidecar is not consumed by the retail
+  resolver yet, so this closes a producer input without claiming full deferred
+  publication. The current export audit reports the five-MRT contract and
+  this explicit subset.
 - The default-off screen/direct same-owner audit also passes its Skin/Cloth/Hair
   shader and pipeline chronology checks, including canonical forward depth and
   the separate PreG D32S8 sidecar.

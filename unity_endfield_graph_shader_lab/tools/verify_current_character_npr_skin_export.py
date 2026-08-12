@@ -33,6 +33,11 @@ SHADER_EXPORT = (
     / "HGRP_CharacterNPR_Skin_p3E3D05CF72D25122.shader"
 )
 BYTECODE_ROOT = Path(str(SHADER_EXPORT) + ".bytecode")
+PREGBUFFER_RUNTIME = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
+    / "EndfieldRecoveredPreGBufferDiagnostic.cs"
+)
 DECOMPILED_SPV_GLSL = (
     REPO_ROOT / "scratch/animestudio/body_skin_sidecar_refresh/skin_body_forward.spv.glsl"
 )
@@ -432,6 +437,21 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
                 f"current Skin PreGBuffer decompilation anchor missing: "
                 f"label={label} needle={needle!r}"
             )
+    runtime = PREGBUFFER_RUNTIME.read_text(encoding="utf-8")
+    runtime_required = {
+        "g_buffer_c_property": 'Shader.PropertyToID("_EndfieldRecoveredPreGBufferC")',
+        "g_buffer_c_attachment": "new RenderTargetIdentifier(resources.gBufferC)",
+        "g_buffer_c_format": "GraphicsFormat.R8G8B8A8_SRGB",
+        "g_buffer_c_readback": "CompleteMaterialReadback",
+        "five_readbacks": "internal int remaining = 5;",
+        "motion_vector_gap": "does not publish motion vectors",
+    }
+    for label, needle in runtime_required.items():
+        if needle not in runtime:
+            raise AssertionError(
+                f"current PreGBuffer runtime anchor missing: "
+                f"label={label} needle={needle!r}"
+            )
     return {
         "pass": "PreGBuffer",
         "light_mode": "DepthCharacterOnly",
@@ -448,7 +468,7 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
         "lab_consumption": {
             "selector_normal_pair": "diagnostic A/B only",
             "motion_vector": "not published",
-            "material_color": "not published",
+            "material_color": "source-shaped diagnostic C sidecar, not consumed by retail resolver",
         },
         "retail_frame_parity": "not asserted",
     }
