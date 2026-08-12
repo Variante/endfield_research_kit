@@ -170,8 +170,25 @@ NPC archetypes are imported as labeled source kits.
 - The refreshed AnimeStudio shader export still preserves the 14 resolver pass
   names and 640 D3D11 variants in one populated LOD subshader; the three other
   serialized LOD blocks are empty fallbacks. Current installed IFix evidence is
-  version `23167343` with 32 targets, and the full deferred recovery verifier
-  passes after its source/report fingerprints were refreshed.
+  version `23167343` with 32 targets, and the deferred source/report
+  fingerprint gates pass. A full verifier invocation can still be stopped by
+  an unrelated dirty `HGCompatRenderPipeline.cs` fingerprint, so that run is
+  not treated as a complete runtime-parity result.
+  After the latest installed-data refresh, a targeted current-game
+  `HGRP/DeferredLighting` export re-selected the same source row (PathID
+  `6850169740889141214`, offset `102276665`, source
+  `19F0903A12BA87C0D43E67E64889B525.chk`) and the same exact D3D11 pair:
+  `0096` vertex SHA-256
+  `a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155` and
+  `0097` fragment SHA-256
+  `b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f`.
+  This confirms the pass-0 binary evidence remains current, while the live
+  resolver bindings and numeric frame parity remain open.
+  The latest isolated Unity exact-DXBC rerun remains fail-closed with
+  `callback_count=0` and `status=no_activation`; no custom compiler callbacks
+  were observed in that player run. Retain the earlier exact-execution result
+  as historical evidence only and do not promote this rerun to a live parity
+  claim until variant activation is reproduced.
 - The selected pass-0 contract now carries a high-confidence D3D11 register
   bridge for the core frame resources: `t0` binning, `t1` camera depth, `t5`
   reflection-probe array, `t6` punctual shadow comparison, `t7` low-res
