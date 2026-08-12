@@ -393,6 +393,20 @@ NPC archetypes are imported as labeled source kits.
   proof that the upload does not exist; keep the channel-2 resource-to-GPU
   edge fail-closed. Structured details are in
   `packed_flags_producer_recovery.json` under `indirect_lifecycle_followup`.
+  The renderer constructor (`0x18042bf10..0x18042c0b8`) now resolves the
+  visible virtual boundary: it writes main vtable `0x181d664e8` and embedded
+  vtable `0x181d66658` at `+0`/`+0x38`. Main `+0x80` is the generic
+  property/material metadata route (`0x180433300` -> `0x1804262a0`),
+  `+0xe8`/`+0xf0`/`+0xf8` are generic flag/manager paths,
+  `+0x120` is generic index output, `+0x128` is an always-false stub, and
+  `+0x130` checks embedded record count. Embedded `+0x30`/`+0x38` access
+  ordinary record state, while `+0x80`/`+0x88` read component18 validity/key
+  at main `+0x268`/`+0x26c`. A PData-scoped Capstone scan of these roots and
+  direct callees found zero literal `resource +0xd0` reads, zero direct calls
+  to mapped GPU-driven entrypoints, and no explicit buffer/property API. This
+  closes the visible vtable indirection but remains a bounded negative result;
+  an indirect or table-dispatched upload consumer is still open. Details are
+  in `packed_flags_producer_recovery.json` under `concrete_vtable_followup`.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with
