@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import io
 import json
 import signal
@@ -26,8 +25,17 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file,
+)
+
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game")
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root().parent
 DEFAULT_MANIFEST = SCRIPT_DIR / "mission_runtime_trace_hooks.json"
 DEFAULT_AGENT = SCRIPT_DIR / "mission_runtime_trace_agent.js"
 DEFAULT_SHADER_MANIFEST = (
@@ -138,12 +146,6 @@ def load_shader_manifest(path: Path, target_id: str) -> dict[str, Any]:
     return value
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def verify_game_files(game_root: Path, manifest: dict[str, Any]) -> dict[str, Path]:

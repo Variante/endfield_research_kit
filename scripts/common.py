@@ -7,6 +7,7 @@ import hashlib
 import os
 import re
 import sys
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
@@ -395,12 +396,14 @@ SPACESHIP_STORY_NON_MISSION_SCHEMA = "spaceshipStoryContentAudit.v2"
 SPACESHIP_STORY_NON_MISSION_MAPPING_ID = (
     "gameassembly-2026-08-02-spaceship-story-consumers-v1"
 )
-SPACESHIP_STORY_GAMEASSEMBLY_SHA256 = (
+RECORDED_NATIVE_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
-SPACESHIP_STORY_METADATA_SHA256 = (
+RECORDED_NATIVE_METADATA_SHA256 = (
     "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
 )
+SPACESHIP_STORY_GAMEASSEMBLY_SHA256 = RECORDED_NATIVE_GAMEASSEMBLY_SHA256
+SPACESHIP_STORY_METADATA_SHA256 = RECORDED_NATIVE_METADATA_SHA256
 STORY_ROOT_PLAYBACK_ALIAS_REPORT = (
     STORY_RECOVERY_REPORTS_DIR
     / "animestudio_story_reverse_pptr_audit.json"
@@ -409,12 +412,259 @@ STORY_ROOT_PLAYBACK_ALIAS_SCHEMA = "animestudioStoryReversePPtrAudit.v4"
 STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID = (
     "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
 )
-STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256 = RECORDED_NATIVE_GAMEASSEMBLY_SHA256
+STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256 = RECORDED_NATIVE_METADATA_SHA256
+DEFAULT_INSTALLED_GAME_DATA_ROOT = Path(
+    r"D:\Program Files\Endfield Game\Endfield_Data"
 )
-STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
+GLOBAL_METADATA_REL = Path("il2cpp_data") / "Metadata" / "global-metadata.dat"
+NATIVE_EVIDENCE_VALIDATED = "validated"
+NATIVE_EVIDENCE_MISSING = "missing"
+NATIVE_EVIDENCE_MISMATCHED = "mismatched"
+REQUIRE_NATIVE_EVIDENCE_ENV = "ENDFIELD_REQUIRE_NATIVE_EVIDENCE"
+
+
+def _game_data_root_from_paths_bat() -> Path | None:
+    """Read ENDFIELD_GAME_ROOT out of the checkout's endfield_paths.bat."""
+    try:
+        text = (ROOT / "endfield_paths.bat").read_text(
+            encoding="utf-8", errors="replace"
+        )
+    except OSError:
+        return None
+    match = re.search(
+        r'^\s*set\s+"ENDFIELD_GAME_ROOT=([^"\r\n]+)"',
+        text,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
+    value = match.group(1).strip() if match else ""
+    return Path(value) if value else None
+
+
+def installed_game_data_root_candidates(
+    export_summary_path: Path = EXPORT_FULL_SUMMARY,
+) -> list[Path]:
+    """Ordered ``Endfield_Data`` roots this checkout may be built against.
+
+    ``ENDFIELD_GAME_ROOT`` comes first and ``endfield_paths.bat`` second
+    because both are deliberate statements about where the client lives; the
+    wrapper scripts also set the variable from ``--game-root``. The export
+    summary follows as the root the current ``export_full`` was produced from,
+    which covers scripts run outside the wrappers, and the historical default
+    is last.
+    """
+    candidates: list[Path] = []
+    env_value = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
+    if env_value:
+        candidates.append(Path(env_value.strip('"')))
+    configured = _game_data_root_from_paths_bat()
+    if configured is not None:
+        candidates.append(configured)
+    summary = read_json(export_summary_path, {})
+    if isinstance(summary, dict):
+        recorded = safe_key(summary.get("game_root")).strip()
+        if recorded:
+            candidates.append(Path(recorded))
+    candidates.append(DEFAULT_INSTALLED_GAME_DATA_ROOT)
+
+    ordered: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate).rstrip("\\/").casefold()
+        if key and key not in seen:
+            seen.add(key)
+            ordered.append(candidate)
+    return ordered
+
+
+def sha256_file(path: Path, *, chunk_bytes: int = 1024 * 1024) -> str:
+    """Return the lowercase SHA-256 of a file, read in bounded chunks."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(chunk_bytes), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def resolve_installed_game_data_root(
+    export_summary_path: Path = EXPORT_FULL_SUMMARY,
+) -> Path:
+    """Return the installed ``Endfield_Data`` root this checkout builds against.
+
+    The first candidate that exists on disk wins; otherwise the highest
+    priority candidate is returned so callers report a path the user can fix.
+    Edit ``endfield_paths.bat`` (or set ``ENDFIELD_GAME_ROOT``) to move it.
+    """
+    candidates = installed_game_data_root_candidates(export_summary_path)
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return candidates[0]
+
+
+def resolve_installed_native_inputs(
+    export_summary_path: Path = EXPORT_FULL_SUMMARY,
+) -> tuple[Path, Path]:
+    """Return the installed ``(GameAssembly.dll, global-metadata.dat)`` pair.
+
+    The first candidate root whose files both exist wins, so a relocated
+    install is found even when a stale export summary or a leftover default
+    points elsewhere. When nothing exists the highest-priority candidate is
+    returned so callers report the path the user is expected to fix.
+    """
+    fallback: tuple[Path, Path] | None = None
+    for root in installed_game_data_root_candidates(export_summary_path):
+        pair = (root.parent / "GameAssembly.dll", root / GLOBAL_METADATA_REL)
+        if fallback is None:
+            fallback = pair
+        if pair[0].is_file() and pair[1].is_file():
+            return pair
+    assert fallback is not None  # the default candidate is always present
+    return fallback
+
+
+@dataclass(frozen=True)
+class InstalledNativeInputs:
+    """Result of gating a recovery step on the installed IL2CPP binaries.
+
+    ``status`` is ``validated`` when every required file is present and every
+    supplied expectation matches, ``missing`` when a file is absent, and
+    ``mismatched`` when the installed client is a different build from the one
+    the caller's recorded native facts were derived on.
+    """
+
+    gameassembly: Path
+    metadata: Path
+    gameassembly_sha256: str
+    metadata_sha256: str
+    status: str
+    detail: str
+
+    @property
+    def validated(self) -> bool:
+        return self.status == NATIVE_EVIDENCE_VALIDATED
+
+
+class NativeEvidenceUnavailable(RuntimeError):
+    """Raised when a step's recorded native facts do not describe the install.
+
+    Carries the gate result so the caller can decide between skipping the
+    step and failing, without re-running the hashes.
+    """
+
+    def __init__(
+        self,
+        result: "InstalledNativeInputs",
+        message: str = "",
+    ) -> None:
+        super().__init__(message or result.detail)
+        self.result = result
+
+
+def native_evidence_required() -> bool:
+    """Whether unusable native inputs must fail instead of skipping a step.
+
+    Recovery steps carry native facts derived from one specific client build.
+    Off by default so a different or absent install degrades to a skip and the
+    rest of the pipeline still builds; set ``ENDFIELD_REQUIRE_NATIVE_EVIDENCE``
+    to keep the historical fail-closed behavior when auditing that build.
+    """
+    value = os.environ.get(REQUIRE_NATIVE_EVIDENCE_ENV, "").strip().casefold()
+    return value not in {"", "0", "false", "no", "off"}
+
+
+def check_installed_native_inputs(
+    expected_gameassembly_sha256: str = "",
+    expected_metadata_sha256: str = "",
+    *,
+    gameassembly: Path | None = None,
+    metadata: Path | None = None,
+    require_metadata: bool = True,
+    export_summary_path: Path = EXPORT_FULL_SUMMARY,
+) -> InstalledNativeInputs:
+    """Resolve and gate the installed native inputs a recovery step needs.
+
+    Explicit paths win over the resolved install. Expectations are optional:
+    a step that only reads the current binary can pass none and still get the
+    existence check plus the measured hashes for its report.
+    """
+    resolved_gameassembly, resolved_metadata = resolve_installed_native_inputs(
+        export_summary_path
+    )
+    gameassembly = (
+        Path(gameassembly) if gameassembly is not None else resolved_gameassembly
+    )
+    metadata = Path(metadata) if metadata is not None else resolved_metadata
+    # Pinning the metadata hash implies the metadata is needed to check it.
+    require_metadata = require_metadata or bool(expected_metadata_sha256)
+
+    required = [("GameAssembly.dll", gameassembly)]
+    if require_metadata:
+        required.append(("global-metadata.dat", metadata))
+    absent = [(label, path) for label, path in required if not path.is_file()]
+    if absent:
+        names = ", ".join(label for label, _path in absent)
+        paths = ", ".join(str(path) for _label, path in absent)
+        return InstalledNativeInputs(
+            gameassembly=gameassembly,
+            metadata=metadata,
+            gameassembly_sha256="",
+            metadata_sha256="",
+            status=NATIVE_EVIDENCE_MISSING,
+            detail=(
+                f"installed {names} not found at {paths}; point "
+                "endfield_paths.bat or ENDFIELD_GAME_ROOT at the installed "
+                "client"
+            ),
+        )
+
+    gameassembly_sha256 = sha256_file(gameassembly)
+    metadata_sha256 = sha256_file(metadata) if require_metadata else ""
+    drifted: list[str] = []
+    for label, actual, expected in (
+        ("GameAssembly.dll", gameassembly_sha256, expected_gameassembly_sha256),
+        ("global-metadata.dat", metadata_sha256, expected_metadata_sha256),
+    ):
+        expected = safe_key(expected).strip().casefold()
+        if expected and actual.casefold() != expected:
+            drifted.append(
+                f"{label} is {actual[:12]} but the recorded evidence was "
+                f"derived on {expected[:12]}"
+            )
+
+    return InstalledNativeInputs(
+        gameassembly=gameassembly,
+        metadata=metadata,
+        gameassembly_sha256=gameassembly_sha256,
+        metadata_sha256=metadata_sha256,
+        status=NATIVE_EVIDENCE_MISMATCHED if drifted else NATIVE_EVIDENCE_VALIDATED,
+        detail="; ".join(drifted),
+    )
+
+
+NATIVE_EVIDENCE_SKIP_MARKER = "] skipped: "
+
+
+def is_native_evidence_skip(stderr: str) -> bool:
+    """Whether a step that exited zero reported a skip rather than work."""
+    return NATIVE_EVIDENCE_SKIP_MARKER in (stderr or "")
+
+
+def native_evidence_skip_message(
+    tool: str,
+    result: InstalledNativeInputs,
+    *,
+    required: bool = False,
+) -> str:
+    """Render the one-line reason a step is skipped or failed, for stderr."""
+    outcome = "failed" if required else "skipped"
+    if result.status == NATIVE_EVIDENCE_MISSING:
+        return f"[{tool}] {outcome}: {result.detail}"
+    return (
+        f"[{tool}] {outcome}: the installed client is a different build "
+        f"({result.detail}); this step's recorded native facts do not "
+        "describe it"
+    )
 
 
 def non_mission_content_keys(table_root: Path) -> dict[str, dict[str, str]]:

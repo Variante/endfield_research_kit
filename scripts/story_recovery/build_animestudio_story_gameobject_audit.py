@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import json
 import mmap
-import os
 import re
 import subprocess
 import sys
@@ -36,6 +35,12 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import resolve_installed_game_data_root  # noqa: E402
 
 import build_animestudio_story_carrier_audit as carrier  # noqa: E402
 
@@ -55,12 +60,7 @@ DEFAULT_CLI = (
     / "net9.0-windows"
     / "AnimeStudio.CLI.exe"
 )
-DEFAULT_GAME_ROOT = Path(
-    os.environ.get(
-        "ENDFIELD_GAME_ROOT",
-        r"D:\Program Files\Endfield Game\Endfield_Data",
-    )
-)
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 SOURCES = ("StreamingAssets", "Persistent")
 TARGETED_DUMP_BATCH_SIZE = 64
 

@@ -14,7 +14,6 @@ import base64
 import copy
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys
@@ -27,8 +26,11 @@ try:
     from common import (
         combined_non_mission_content_keys,
         compact_dict,
+        native_evidence_required,
+        native_evidence_skip_message,
         read_bytes_cached,
         read_json,
+        resolve_installed_game_data_root,
         story_root_playback_aliases,
         write_report_json,
         write_text_if_changed,
@@ -62,6 +64,7 @@ try:
     from story_recovery.build_dialog_finish_branch_audit import (
         DEFAULT_JSON as DIALOG_FINISH_BRANCH_AUDIT_JSON,
         DEFAULT_MARKDOWN as DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
+        NativeContractUnavailable as DialogFinishNativeUnavailable,
         build_report as build_dialog_finish_branch_audit_report,
         markdown_report as render_dialog_finish_branch_audit_markdown,
         publish_to_pipeline_index as publish_dialog_finish_branch_audit,
@@ -92,6 +95,7 @@ try:
     from story_recovery.build_timeline_embedded_story_runtime_audit import (
         DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
         DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
+        TimelineNativeUnavailable,
         build_default_report as build_timeline_embedded_runtime_report,
         render_markdown as render_timeline_embedded_runtime_markdown,
     )
@@ -99,8 +103,11 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.common import (
         combined_non_mission_content_keys,
         compact_dict,
+        native_evidence_required,
+        native_evidence_skip_message,
         read_bytes_cached,
         read_json,
+        resolve_installed_game_data_root,
         story_root_playback_aliases,
         write_report_json,
         write_text_if_changed,
@@ -134,6 +141,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.story_recovery.build_dialog_finish_branch_audit import (
         DEFAULT_JSON as DIALOG_FINISH_BRANCH_AUDIT_JSON,
         DEFAULT_MARKDOWN as DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
+        NativeContractUnavailable as DialogFinishNativeUnavailable,
         build_report as build_dialog_finish_branch_audit_report,
         markdown_report as render_dialog_finish_branch_audit_markdown,
         publish_to_pipeline_index as publish_dialog_finish_branch_audit,
@@ -164,16 +172,20 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.story_recovery.build_timeline_embedded_story_runtime_audit import (
         DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
         DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
+        TimelineNativeUnavailable,
         build_default_report as build_timeline_embedded_runtime_report,
         render_markdown as render_timeline_embedded_runtime_markdown,
     )
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_GAME_ROOT = Path(os.environ.get(
-    "ENDFIELD_GAME_ROOT",
-    r"D:\Program Files\Endfield Game\Endfield_Data",
-))
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import sha256_file as sha256_path  # noqa: E402
+
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 STREAMING_MISSION_ROOT = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
@@ -3535,12 +3547,6 @@ def repo_path(path: Path) -> str:
     return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
 
 
-def sha256_path(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _lua_phase(module: str) -> str:
@@ -15189,30 +15195,44 @@ def main() -> int:
     )
     dialog_finish_branch_audit: dict[str, Any] = {}
     if output_root == DEFAULT_OUTPUT_ROOT.resolve():
-        (
-            dialog_finish_branch_audit,
-            dialog_finish_pipeline_payloads,
-        ) = build_dialog_finish_branch_audit_report(
-            index,
-            output_root,
-        )
-        write_report_json(
-            DIALOG_FINISH_BRANCH_AUDIT_JSON,
-            dialog_finish_branch_audit,
-        )
-        write_text_if_changed(
-            DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
-            render_dialog_finish_branch_audit_markdown(
-                dialog_finish_branch_audit
-            ),
-        )
-        publish_dialog_finish_branch_audit(
-            index,
-            dialog_finish_branch_audit,
-            dialog_finish_pipeline_payloads,
-            output_root,
-        )
-        write_json(output_root / "index.json", index)
+        try:
+            (
+                dialog_finish_branch_audit,
+                dialog_finish_pipeline_payloads,
+            ) = build_dialog_finish_branch_audit_report(
+                index,
+                output_root,
+            )
+        except DialogFinishNativeUnavailable as exc:
+            # This audit reads recorded method bodies out of one specific
+            # client build; the rest of the pipeline is build-independent, so
+            # keep the published audit and carry on.
+            if native_evidence_required():
+                raise
+            print(
+                native_evidence_skip_message(
+                    "dialog-finish-branch", exc.result
+                ),
+                file=sys.stderr,
+            )
+        else:
+            write_report_json(
+                DIALOG_FINISH_BRANCH_AUDIT_JSON,
+                dialog_finish_branch_audit,
+            )
+            write_text_if_changed(
+                DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
+                render_dialog_finish_branch_audit_markdown(
+                    dialog_finish_branch_audit
+                ),
+            )
+            publish_dialog_finish_branch_audit(
+                index,
+                dialog_finish_branch_audit,
+                dialog_finish_pipeline_payloads,
+                output_root,
+            )
+            write_json(output_root / "index.json", index)
     order_report = publish_source_story_partial_order(
         index,
         output_root,
@@ -15235,17 +15255,32 @@ def main() -> int:
                 callserver_callback_audit
             ),
         )
-        timeline_embedded_runtime_audit = build_timeline_embedded_runtime_report()
-        write_report_json(
-            TIMELINE_EMBEDDED_RUNTIME_JSON,
-            timeline_embedded_runtime_audit,
-        )
-        write_text_if_changed(
-            TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
-            render_timeline_embedded_runtime_markdown(
-                timeline_embedded_runtime_audit
-            ),
-        )
+        try:
+            timeline_embedded_runtime_audit = (
+                build_timeline_embedded_runtime_report()
+            )
+        except TimelineNativeUnavailable as exc:
+            # Recorded runtime contracts and the code-registration address
+            # belong to one client build; keep the published audit and carry on.
+            if native_evidence_required():
+                raise
+            print(
+                native_evidence_skip_message(
+                    "timeline-embedded-runtime", exc.result
+                ),
+                file=sys.stderr,
+            )
+        else:
+            write_report_json(
+                TIMELINE_EMBEDDED_RUNTIME_JSON,
+                timeline_embedded_runtime_audit,
+            )
+            write_text_if_changed(
+                TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
+                render_timeline_embedded_runtime_markdown(
+                    timeline_embedded_runtime_audit
+                ),
+            )
     coverage = build_story_binding_coverage(
         index,
         output_root / "index.json",

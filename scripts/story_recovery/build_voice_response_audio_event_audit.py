@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
@@ -17,6 +16,10 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as sha256,
+)
 from build_audio_semantics import audio_hash_generator_compute  # noqa: E402
 
 
@@ -24,12 +27,6 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def display_path(path: Path) -> str:
@@ -244,7 +241,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--export-root", type=Path, default=ROOT / "export_full")
     parser.add_argument("--language", default="CN")
-    parser.add_argument("--game-root", type=Path, default=Path(r"D:\Program Files\Endfield Game\Endfield_Data"))
+    parser.add_argument("--game-root", type=Path, default=resolve_installed_game_data_root())
     parser.add_argument("--out", type=Path, default=ROOT / "reports/story/recovery/audio/voice_response_audio_event_audit.json")
     parser.add_argument("--markdown", type=Path, default=ROOT / "reports/story/recovery/audio/voice_response_audio_event_audit.md")
     return parser.parse_args()

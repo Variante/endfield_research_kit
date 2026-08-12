@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import io
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -284,6 +288,52 @@ class SpaceshipStoryContentAuditTests(unittest.TestCase):
                     source_root=root,
                 ),
             )
+
+
+class SpaceshipNativeGateTests(unittest.TestCase):
+    """A different or absent client skips the step instead of failing it."""
+
+    def setUp(self) -> None:
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.report = self.root / "report.json"
+        self.enterContext(mock.patch.dict(os.environ))
+        os.environ.pop("ENDFIELD_REQUIRE_NATIVE_EVIDENCE", None)
+
+    def run_audit(self, gameassembly: Path) -> tuple[int, str]:
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            code = audit.main([
+                "--gameassembly", str(gameassembly),
+                "--metadata", str(gameassembly),
+                "--out", str(self.report),
+                "--markdown", str(self.root / "report.md"),
+            ])
+        return code, stderr.getvalue()
+
+    def test_absent_client_skips_without_writing_a_report(self) -> None:
+        code, stderr = self.run_audit(self.root / "absent.dll")
+        self.assertEqual(0, code)
+        self.assertIn("[spaceship-story-content] skipped:", stderr)
+        self.assertFalse(self.report.exists())
+
+    def test_another_build_skips_and_names_both_builds(self) -> None:
+        other = self.root / "GameAssembly.dll"
+        other.write_bytes(b"a different build")
+
+        code, stderr = self.run_audit(other)
+        self.assertEqual(0, code)
+        self.assertIn("different build", stderr)
+        self.assertIn(audit.EXPECTED_GAMEASSEMBLY_SHA256[:12].lower(), stderr)
+        self.assertFalse(self.report.exists())
+
+    def test_required_mode_still_fails_closed(self) -> None:
+        os.environ["ENDFIELD_REQUIRE_NATIVE_EVIDENCE"] = "1"
+
+        code, stderr = self.run_audit(self.root / "absent.dll")
+        self.assertEqual(1, code)
+        self.assertIn("[spaceship-story-content] failed:", stderr)
 
 
 if __name__ == "__main__":

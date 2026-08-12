@@ -17,11 +17,11 @@ from bisect import bisect_right
 import hashlib
 import importlib.util
 import json
-import os
 import re
 import struct
 import sys
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -31,16 +31,21 @@ SCRIPTS_ROOT = REPO_ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    ROOT,
+    check_installed_native_inputs,
+    md_escape,
+    native_evidence_required,
+    native_evidence_skip_message,
+    resolve_installed_game_data_root,
+    sha256_file as file_sha256,
+    write_report_json,
+    write_text_if_changed,
+)
 from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
-DEFAULT_GAME_DATA_ROOT = Path(
-    os.environ.get(
-        "ENDFIELD_GAME_ROOT",
-        r"D:\Program Files\Endfield Game\Endfield_Data",
-    )
-)
+DEFAULT_GAME_DATA_ROOT = resolve_installed_game_data_root()
 DEFAULT_METADATA = DEFAULT_GAME_DATA_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 DEFAULT_GAMEASSEMBLY = DEFAULT_GAME_DATA_ROOT.parent / "GameAssembly.dll"
 METADATA_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
@@ -417,7 +422,9 @@ KNOWN_ID_CHECKS = {
 }
 
 
+@lru_cache(maxsize=None)
 def load_metadata_helper(path: Path) -> Any:
+    """Load the metadata helper once, so its exception classes stay identical."""
     spec = importlib.util.spec_from_file_location("endfield_protocol_metadata", path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load metadata helper: {path}")
@@ -763,14 +770,6 @@ def normalized_field_name(value: str) -> str:
         value = value[: -len("FieldNumber")]
     value = value.rstrip("_")
     return re.sub(r"[^a-z0-9]", "", value.lower())
-
-
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while chunk := handle.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def load_native_task_paths(path: Path) -> dict[str, Any]:
@@ -9502,12 +9501,21 @@ def current_report_status(
 
 def main() -> int:
     args = parse_args()
-    if not args.metadata.is_file():
-        raise SystemExit(f"metadata file not found: {args.metadata}")
+    native = check_installed_native_inputs(
+        gameassembly=args.gameassembly,
+        metadata=args.metadata,
+    )
+    if not native.validated:
+        required = native_evidence_required()
+        print(
+            native_evidence_skip_message(
+                "protocol-registry", native, required=required
+            ),
+            file=sys.stderr,
+        )
+        return 1 if required else 0
     if not args.helper.is_file():
         raise SystemExit(f"metadata helper not found: {args.helper}")
-    if not args.gameassembly.is_file():
-        raise SystemExit(f"GameAssembly file not found: {args.gameassembly}")
     if not args.native_mapper.is_file():
         raise SystemExit(f"native mapper not found: {args.native_mapper}")
     if args.ensure_current:
@@ -9527,14 +9535,23 @@ def main() -> int:
             print(f"protocol registry audit current: {reason}")
             return 0
         print(f"protocol registry audit refresh required: {reason}")
-    report = build_report(
-        args.metadata,
-        args.helper,
-        gameassembly_path=args.gameassembly,
-        mapper_path=args.native_mapper,
-        mission_runtime_root=args.mission_runtime_root,
-        union_audit_path=args.union_audit,
-    )
+    try:
+        report = build_report(
+            args.metadata,
+            args.helper,
+            gameassembly_path=args.gameassembly,
+            mapper_path=args.native_mapper,
+            mission_runtime_root=args.mission_runtime_root,
+            union_audit_path=args.union_audit,
+        )
+    except load_metadata_helper(args.helper).MetadataParseError as exc:
+        # Re-deriving the registry is how a different client build is
+        # supported; metadata this parser cannot read is a real stop.
+        print(
+            f"[protocol-registry] cannot read {args.metadata}: {exc}",
+            file=sys.stderr,
+        )
+        return 1
     write_report_json(args.json_output, report)
     write_text_if_changed(args.markdown_output, render_markdown(report))
     validation = report["stateUpdateApplicationCensus"]["validation"]

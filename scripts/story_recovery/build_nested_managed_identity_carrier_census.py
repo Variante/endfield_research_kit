@@ -31,7 +31,13 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(ROOT / "scripts"))
 
-from common import md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    md_escape,
+    resolve_installed_game_data_root,
+    sha256_file,
+    write_report_json,
+    write_text_if_changed,
+)
 from story_builder.anime_assets import (  # noqa: E402
     recover_dialog_tree_open_ui_actions,
 )
@@ -47,7 +53,7 @@ MAPPER_HELPER = (
 PROTOCOL_AUDIT = (
     ROOT / "scripts" / "story_recovery" / "build_protocol_registry_audit.py"
 )
-DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 DEFAULT_ANIMESTUDIO_CLI = (
@@ -495,12 +501,6 @@ def load_module(name: str, path: Path) -> Any:
     return module
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def dump_target_lua(

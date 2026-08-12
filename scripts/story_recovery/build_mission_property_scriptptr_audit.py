@@ -27,13 +27,19 @@ for _path in (ROOT / "scripts",):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from common import md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    md_escape,
+    resolve_installed_game_data_root,
+    sha256_file,
+    write_report_json,
+    write_text_if_changed,
+)
 from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 CATALOG_PATH = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
-DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 DEFAULT_MISSION_ROOTS = (
@@ -178,12 +184,6 @@ def load_module(name: str, path: Path) -> Any:
     return module
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def repo_rel(path: Path) -> str:

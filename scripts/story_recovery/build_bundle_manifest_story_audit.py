@@ -17,6 +17,7 @@ import argparse
 import hashlib
 import json
 import struct
+import sys
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -27,6 +28,15 @@ except ImportError:  # pragma: no cover
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file,
+)
+
 PROBE_ROOT = ROOT / "tmp" / "story" / "bundle_manifest_probe"
 DEFAULT_STREAMING_INDEX = PROBE_ROOT / "streaming.json"
 DEFAULT_PERSISTENT_INDEX = PROBE_ROOT / "persistent.json"
@@ -38,10 +48,10 @@ DEFAULT_MANIFEST = (
     / "Windows"
     / "manifest.hgmmap"
 )
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_METADATA = Path(
-    r"D:\Program Files\Endfield Game\Endfield_Data"
-    r"\il2cpp_data\Metadata\global-metadata.dat"
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
+DEFAULT_GAMEASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
+DEFAULT_METADATA = (
+    DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_OUT = (
     ROOT / "reports" / "story" / "recovery" / "bundle_manifest_story_audit.json"
@@ -95,12 +105,6 @@ def rel_path(path: Path) -> str:
         return path.resolve().as_posix()
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def write_json(path: Path, payload: Any) -> None:

@@ -18,7 +18,6 @@ import base64
 from collections import defaultdict
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import struct
@@ -28,6 +27,12 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import resolve_installed_game_data_root  # noqa: E402
+
 DEFAULT_CLI = (
     ROOT
     / "tools"
@@ -38,12 +43,7 @@ DEFAULT_CLI = (
     / "net9.0-windows"
     / "AnimeStudio.CLI.exe"
 )
-DEFAULT_GAME_ROOT = Path(
-    os.environ.get(
-        "ENDFIELD_GAME_ROOT",
-        r"D:\Program Files\Endfield Game\Endfield_Data",
-    )
-)
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_LEVEL_SCRIPT_ROOT = (
     ROOT
     / "export_full"

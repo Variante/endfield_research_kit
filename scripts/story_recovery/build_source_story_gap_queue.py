@@ -14,7 +14,6 @@ import base64
 import binascii
 import hashlib
 import json
-import os
 import re
 import sys
 from collections import Counter, defaultdict
@@ -35,7 +34,9 @@ from common import (  # noqa: E402
     md_escape,
     non_mission_content_keys,
     read_json,
+    resolve_installed_native_inputs,
     safe_key,
+    sha256_file,
     write_report_json,
     write_text_if_changed,
 )
@@ -10474,13 +10475,7 @@ def _string_list(values: Any) -> list[str]:
 
 
 def _sha256_file(path: Path) -> str:
-    if not path.is_file():
-        return ""
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
+    return sha256_file(path).upper()
 
 
 def load_story_trigger_manifest_evidence(
@@ -11916,33 +11911,11 @@ def build_general_quest_attachment_boundary_index(
 
 
 def _configured_game_assembly_path() -> Path | None:
-    game_root = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
-    if not game_root:
-        config_path = ROOT / "endfield_paths.bat"
-        if config_path.is_file():
-            match = re.search(
-                r'(?im)^\s*set\s+"ENDFIELD_GAME_ROOT=([^"]+)"\s*$',
-                config_path.read_text(encoding="utf-8", errors="replace"),
-            )
-            if match:
-                game_root = match.group(1).strip()
-    if not game_root:
-        return None
-    root = Path(game_root)
-    return root.parent / "GameAssembly.dll" if root.name == "Endfield_Data" else root / "GameAssembly.dll"
+    return resolve_installed_native_inputs()[0]
 
 
 def _configured_global_metadata_path() -> Path | None:
-    game_assembly_path = _configured_game_assembly_path()
-    if game_assembly_path is None:
-        return None
-    return (
-        game_assembly_path.parent
-        / "Endfield_Data"
-        / "il2cpp_data"
-        / "Metadata"
-        / "global-metadata.dat"
-    )
+    return resolve_installed_native_inputs()[1]
 
 
 def _core_isolated_target_missions(

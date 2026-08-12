@@ -204,6 +204,22 @@ report actionable diagnostics:
 Improve a validator's diagnostics before another full rebuild when its current
 result is only a generic status such as `validation_failed`.
 
+Steps that read the installed IL2CPP binaries gate on
+`common.check_installed_native_inputs`, which resolves `GameAssembly.dll` and
+`global-metadata.dat` from `ENDFIELD_GAME_ROOT`, then `endfield_paths.bat`,
+then the export summary's `game_root`. Recorded native facts (method virtual
+addresses, body hashes, field offsets) describe one specific client build, so
+the gate reports `missing`, `mismatched`, or `validated`:
+
+- an absent or different build skips only that step, with a one-line reason on
+  stderr, and leaves its published report untouched; the rest of the pipeline
+  is build-independent and still builds;
+- a skipped step never emits unvalidated classifications, and each report's own
+  source hashes still decide whether its recorded rows describe current data,
+  so consumers stay fail-closed;
+- set `ENDFIELD_REQUIRE_NATIVE_EVIDENCE=1` to restore hard failure when
+  auditing the pinned build.
+
 Useful direct commands:
 
 ```bat

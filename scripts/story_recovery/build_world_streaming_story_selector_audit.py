@@ -17,7 +17,6 @@ from collections import Counter, defaultdict
 import gzip
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import subprocess
@@ -31,7 +30,12 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from common import write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as sha256_path,
+    write_report_json,
+    write_text_if_changed,
+)
 
 
 DEFAULT_CLI = (
@@ -44,12 +48,7 @@ DEFAULT_CLI = (
     / "net9.0-windows"
     / "AnimeStudio.CLI.exe"
 )
-DEFAULT_GAME_ROOT = Path(
-    os.environ.get(
-        "ENDFIELD_GAME_ROOT",
-        r"D:\Program Files\Endfield Game\Endfield_Data",
-    )
-)
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_HASH_AUDIT = (
     ROOT
     / "reports"
@@ -94,12 +93,6 @@ class AuditError(RuntimeError):
     pass
 
 
-def sha256_path(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def normalized_leaf(path: str) -> str:

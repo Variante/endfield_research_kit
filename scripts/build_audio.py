@@ -11,10 +11,17 @@ import re
 import subprocess
 import tempfile
 import time
+import wave
 from collections import Counter, defaultdict, deque
+import sys
 from pathlib import Path, PurePosixPath
 from struct import unpack_from
 from typing import Any
+
+try:
+    from common import resolve_installed_game_data_root
+except ImportError:  # Imported as scripts.build_audio from repository-root tests.
+    from scripts.common import resolve_installed_game_data_root
 
 try:
     from convert_audio_to_flac import convert_audio_root
@@ -48,7 +55,13 @@ except ImportError:  # Imported as scripts.build_audio from repository-root test
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import sha256_file as file_sha256  # noqa: E402
+
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
@@ -87,11 +100,23 @@ ANIMATION_AUDIO_FUNCTIONS = frozenset({
 ANIMATOR_CONTROLLER_REL = Path(
     "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController"
 )
+ANIMATOR_CONTROLLER_RELS = (
+    ANIMATOR_CONTROLLER_REL,
+    Path("recovered/AnimeStudio-cli/Persistent/json_by_type/AnimatorController"),
+)
 ANIMATOR_OVERRIDE_CONTROLLER_REL = Path(
     "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorOverrideController"
 )
+ANIMATOR_OVERRIDE_CONTROLLER_RELS = (
+    ANIMATOR_OVERRIDE_CONTROLLER_REL,
+    Path("recovered/AnimeStudio-cli/Persistent/json_by_type/AnimatorOverrideController"),
+)
 ANIMATION_CLIP_REL = Path(
     "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
+)
+ANIMATION_CLIP_RELS = (
+    ANIMATION_CLIP_REL,
+    Path("recovered/AnimeStudio-cli/Persistent/convert_by_type/AnimationClip"),
 )
 ANIMATOR_OVERRIDE_IDENTITY_RE = re.compile(
     r"(?:^|_)((?:eny|chr)_\d+_[^_]+)", re.IGNORECASE
@@ -178,7 +203,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])(?:[^\\/]*banks|hotfix[^\\/]*)\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 24
+EVENT_EVIDENCE_SCHEMA_VERSION = 27
 HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECASE)
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
@@ -187,9 +212,16 @@ HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECAS
 # edges; Stop and the other control actions must not be followed as media.
 HIRC_ACTION_OPERATION_LABELS = {
     0x0100: "stop",
+    0x0200: "pause",
+    0x0300: "resume",
     0x0400: "play",
+    0x0600: "mute",
+    0x0700: "unmute",
     0x1200: "setState",
+    0x1300: "setGameParameter",
     0x1400: "resetGameParameter",
+    0x1900: "setSwitch",
+    0x1B00: "trigger",
     0x2100: "playEvent",
 }
 HIRC_PLAYBACK_ACTION_OPERATIONS = frozenset({0x0400, 0x2100})
@@ -689,6 +721,16 @@ def animation_clip_path_id(path: Path) -> int | None:
     return value - (1 << 64) if value >= (1 << 63) else value
 
 
+def animestudio_storage_root(path: Path) -> str:
+    """Return the VFS storage root encoded in an AnimeStudio export path."""
+
+    lowered = {part.lower(): part for part in path.parts}
+    for storage_root in ("StreamingAssets", "Persistent"):
+        if storage_root.lower() in lowered:
+            return storage_root
+    return ""
+
+
 def _animator_data_node(value: Any) -> dict[str, Any] | None:
     """Unwrap one serialized Unity ``OffsetPtr.data`` value safely."""
 
@@ -811,11 +853,19 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
     serialized-file context can be resolved without ambiguity.
     """
 
-    root = export_root / ANIMATOR_CONTROLLER_REL
+    roots = [export_root / rel for rel in ANIMATOR_CONTROLLER_RELS]
+    available_roots = [root for root in roots if root.is_dir()]
     by_clip_path_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    by_clip_storage_path_id: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     counts = {
-        "status": "unavailable" if not root.is_dir() else "complete",
+        "status": "unavailable" if not available_roots else "complete",
         "sourceRoot": normalize_posix(ANIMATOR_CONTROLLER_REL),
+        "sourceRoots": [
+            normalize_posix(rel) for rel in ANIMATOR_CONTROLLER_RELS
+        ],
+        "availableSourceRoots": [
+            normalize_posix(root.relative_to(export_root)) for root in available_roots
+        ],
         "filesScanned": 0,
         "filesWithDirectReferences": 0,
         "malformedFiles": 0,
@@ -826,12 +876,20 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
         "authoredStateClipReferenceCount": 0,
         "overrideControllersExcluded": True,
     }
-    if not root.is_dir():
-        return {"byClipPathId": {}, "summary": counts}
+    if not available_roots:
+        return {
+            "byClipPathId": {},
+            "byClipStoragePathId": {},
+            "summary": counts,
+        }
 
     seen_controllers: set[tuple[str, str, str]] = set()
     seen_references: set[tuple[int, str, str, str]] = set()
-    for path in sorted(root.glob("*.json"), key=lambda value: value.name.lower()):
+    controller_paths = sorted(
+        (path for root in available_roots for path in root.glob("*.json")),
+        key=lambda value: normalize_posix(value.relative_to(export_root)).lower(),
+    )
+    for path in controller_paths:
         counts["filesScanned"] += 1
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -856,6 +914,7 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
         ).strip()
         controller_source_file = str(metadata.get("sourceFile") or "").strip()
         controller_path_id = metadata.get("pathId")
+        storage_root = animestudio_storage_root(path)
         controller_key = (
             controller_source_file,
             str(controller_path_id) if isinstance(controller_path_id, int) else "",
@@ -912,6 +971,7 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
                     "sourceFile": controller_source_file,
                     "pathId": controller_path_id,
                     "targetSourceFile": target_source_file,
+                    "storageRoot": storage_root,
                     "resolutionStatus": resolution_status,
                     "clipSlots": [],
                     "authoredStateReferences": [],
@@ -941,6 +1001,7 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
             )
             context["authoredStateReferenceCount"] = len(context["authoredStateReferences"])
             by_clip_path_id[context_key[0]].append(context)
+            by_clip_storage_path_id[(storage_root, context_key[0])].append(context)
         if direct_file_reference_count:
             counts["filesWithDirectReferences"] += 1
 
@@ -956,7 +1017,20 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
     counts["uniqueReferencedClipPathIds"] = len(by_clip_path_id)
     if counts["malformedFiles"] and counts["filesWithDirectReferences"]:
         counts["status"] = "partial"
-    return {"byClipPathId": dict(by_clip_path_id), "summary": counts}
+    for storage_path_id, contexts in by_clip_storage_path_id.items():
+        by_clip_storage_path_id[storage_path_id] = sorted(
+            contexts,
+            key=lambda row: (
+                str(row.get("name") or ""),
+                str(row.get("sourcePath") or ""),
+                str(row.get("targetSourceFile") or ""),
+            ),
+        )
+    return {
+        "byClipPathId": dict(by_clip_path_id),
+        "byClipStoragePathId": dict(by_clip_storage_path_id),
+        "summary": counts,
+    }
 
 
 def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
@@ -964,19 +1038,24 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
 
     The current AnimeStudio JSON exporter writes the raw override payload but
     does not attach its ``$animestudio`` source-file envelope.  Unity PPtrs are
-    therefore only safe to join by a PathID when that PathID is unique in the
-    exported corpus.  Keep that limitation explicit: these rows annotate an
+    therefore only safe to join by a PathID when that PathID is unique in its
+    exported VFS storage root.  Keep that limitation explicit: these rows annotate an
     effective clip substitution, but never claim an exact serialized-file
     join or live override activation.
     """
 
-    root = export_root / ANIMATOR_OVERRIDE_CONTROLLER_REL
-    clip_root = export_root / ANIMATION_CLIP_REL
-    controller_root = export_root / ANIMATOR_CONTROLLER_REL
+    roots = [export_root / rel for rel in ANIMATOR_OVERRIDE_CONTROLLER_RELS]
+    available_roots = [root for root in roots if root.is_dir()]
+    clip_roots = [export_root / rel for rel in ANIMATION_CLIP_RELS]
+    controller_roots = [export_root / rel for rel in ANIMATOR_CONTROLLER_RELS]
     counts = {
-        "status": "unavailable" if not root.is_dir() else "complete",
+        "status": "unavailable" if not available_roots else "complete",
         "sourceRoot": normalize_posix(ANIMATOR_OVERRIDE_CONTROLLER_REL),
+        "sourceRoots": [
+            normalize_posix(rel) for rel in ANIMATOR_OVERRIDE_CONTROLLER_RELS
+        ],
         "clipSourceRoot": normalize_posix(ANIMATION_CLIP_REL),
+        "clipSourceRoots": [normalize_posix(rel) for rel in ANIMATION_CLIP_RELS],
         "filesScanned": 0,
         "malformedFiles": 0,
         "malformedReferences": 0,
@@ -997,12 +1076,16 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
         "assetIdentityTokenReferences": 0,
         "sourceBoundary": (
             "Override payloads have no exporter source-file envelope; joins are "
-            "corpus-unique PathID annotations only. They do not prove the Unity "
+            "VFS-root-scoped corpus-unique PathID annotations only. They do not prove the Unity "
             "serialized-file identity or live AnimatorOverrideController activation."
         ),
     }
-    if not root.is_dir():
-        return {"byClipPathId": {}, "summary": counts}
+    if not available_roots:
+        return {
+            "byClipPathId": {},
+            "byClipStoragePathId": {},
+            "summary": counts,
+        }
 
     def path_id(value: Any) -> int | None:
         if not isinstance(value, int) or isinstance(value, bool) or value == 0:
@@ -1010,48 +1093,65 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
         return int(value)
 
     # PathID uniqueness is measured over the actual exported AnimationClip
-    # files, not over names.  Ambiguous or missing IDs remain visible but are
-    # excluded from any stronger reachability classification.
-    clip_paths_by_id: dict[int, list[str]] = defaultdict(list)
-    if clip_root.is_dir():
-        for path in clip_root.glob("*.anim"):
-            clip_path_id = animation_clip_path_id(path)
-            if clip_path_id is None:
-                continue
-            clip_paths_by_id[clip_path_id].append(
-                normalize_posix(path.relative_to(export_root))
-            )
-    for paths in clip_paths_by_id.values():
+    # files within one VFS storage root, not over names. Ambiguous or missing
+    # IDs remain visible but are excluded from stronger reachability claims.
+    clip_paths_by_storage_id: dict[tuple[str, int], list[str]] = defaultdict(list)
+    for clip_root in clip_roots:
+        if clip_root.is_dir():
+            storage_root = animestudio_storage_root(clip_root)
+            for path in clip_root.glob("*.anim"):
+                clip_path_id = animation_clip_path_id(path)
+                if clip_path_id is None:
+                    continue
+                relative_path = normalize_posix(path.relative_to(export_root))
+                clip_paths_by_storage_id[(storage_root, clip_path_id)].append(relative_path)
+    for paths in clip_paths_by_storage_id.values():
         paths.sort()
 
     # Controller JSON has an identity envelope, unlike override JSON.  Use it
-    # only to label a corpus-unique target; the override's missing FileID source
-    # context is deliberately not reconstructed from names.
-    controller_paths_by_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
-    if controller_root.is_dir():
-        for path in controller_root.glob("*.json"):
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, UnicodeDecodeError, ValueError):
-                continue
-            if not isinstance(payload, dict):
-                continue
-            metadata = payload.get("$animestudio")
-            if not isinstance(metadata, dict) or metadata.get("type") != "AnimatorController":
-                continue
-            controller_path_id = path_id(metadata.get("pathId"))
-            if controller_path_id is None:
-                continue
-            controller_paths_by_id[controller_path_id].append({
-                "name": str(payload.get("m_Name") or metadata.get("name") or path.stem),
-                "sourcePath": normalize_posix(path.relative_to(export_root)),
-                "sourceFile": str(metadata.get("sourceFile") or ""),
-                "pathId": controller_path_id,
-            })
+    # only to label a storage-root-scoped corpus-unique target; the override's
+    # missing FileID source context is deliberately not reconstructed from names.
+    controller_paths_by_storage_id: dict[
+        tuple[str, int], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for controller_root in controller_roots:
+        if controller_root.is_dir():
+            storage_root = animestudio_storage_root(controller_root)
+            for path in controller_root.glob("*.json"):
+                try:
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                except (OSError, UnicodeDecodeError, ValueError):
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                metadata = payload.get("$animestudio")
+                if not isinstance(metadata, dict) or metadata.get("type") != "AnimatorController":
+                    continue
+                controller_path_id = path_id(metadata.get("pathId"))
+                if controller_path_id is None:
+                    continue
+                context = {
+                    "name": str(payload.get("m_Name") or metadata.get("name") or path.stem),
+                    "sourcePath": normalize_posix(path.relative_to(export_root)),
+                    "sourceFile": str(metadata.get("sourceFile") or ""),
+                    "pathId": controller_path_id,
+                    "storageRoot": storage_root,
+                }
+                controller_paths_by_storage_id[
+                    (storage_root, controller_path_id)
+                ].append(context)
 
     by_clip_path_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    by_clip_storage_path_id: dict[
+        tuple[str, int], list[dict[str, Any]]
+    ] = defaultdict(list)
     identity_tokens: set[str] = set()
-    for path in sorted(root.glob("*.json"), key=lambda value: value.name.lower()):
+    override_paths = sorted(
+        (path for root in available_roots for path in root.glob("*.json")),
+        key=lambda value: normalize_posix(value.relative_to(export_root)).lower(),
+    )
+    for path in override_paths:
+        storage_root = animestudio_storage_root(path)
         counts["filesScanned"] += 1
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -1072,7 +1172,9 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
         controller_pointer = controller_pointer if isinstance(controller_pointer, dict) else {}
         controller_path_id = path_id(controller_pointer.get("m_PathID"))
         counts["controllerPathIdReferences"] += 1
-        controller_matches = controller_paths_by_id.get(controller_path_id or 0) or []
+        controller_matches = (
+            controller_paths_by_storage_id.get((storage_root, controller_path_id or 0)) or []
+        )
         if len(controller_matches) == 1:
             controller_join_status = "corpusUniqueControllerPathId"
             controller_context = controller_matches[0]
@@ -1107,7 +1209,7 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
                 counts["replacementReferenceCount"] += 1
             else:
                 counts["baseClipReferenceCount"] += 1
-            clip_matches = clip_paths_by_id.get(effective_path_id) or []
+            clip_matches = clip_paths_by_storage_id.get((storage_root, effective_path_id)) or []
             if len(clip_matches) == 1:
                 clip_join_status = "corpusUniqueAnimationClipPathId"
                 counts["effectiveClipCorpusUniqueReferences"] += 1
@@ -1134,8 +1236,10 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
                 "effectiveClipSourcePaths": clip_matches,
                 "assetIdentityToken": identity_token,
                 "runtimeActivation": "unobserved",
+                "storageRoot": storage_root,
             }
             by_clip_path_id[effective_path_id].append(context)
+            by_clip_storage_path_id[(storage_root, effective_path_id)].append(context)
 
     counts["uniqueEffectiveClipPathIds"] = len(by_clip_path_id)
     counts["assetIdentityTokenCount"] = len(identity_tokens)
@@ -1162,7 +1266,19 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
                 str(row.get("overrideSourcePath") or ""),
             )
         )
-    return {"byClipPathId": dict(by_clip_path_id), "summary": counts}
+    for contexts in by_clip_storage_path_id.values():
+        contexts.sort(
+            key=lambda row: (
+                str(row.get("overrideName") or ""),
+                int(row.get("clipIndex") or 0),
+                str(row.get("overrideSourcePath") or ""),
+            )
+        )
+    return {
+        "byClipPathId": dict(by_clip_path_id),
+        "byClipStoragePathId": dict(by_clip_storage_path_id),
+        "summary": counts,
+    }
 
 
 def animation_controller_contexts(
@@ -1173,7 +1289,7 @@ def animation_controller_contexts(
     path_id = animation_clip_path_id(path)
     if path_id is None:
         return []
-    contexts = controller_index.get(path_id) or {}
+    contexts = controller_index.get((animestudio_storage_root(path), path_id)) or {}
     return [dict(row) for row in contexts if isinstance(row, dict)]
 
 
@@ -1185,7 +1301,7 @@ def animation_override_contexts(
     path_id = animation_clip_path_id(path)
     if path_id is None:
         return []
-    contexts = override_index.get(path_id) or {}
+    contexts = override_index.get((animestudio_storage_root(path), path_id)) or {}
     return [dict(row) for row in contexts if isinstance(row, dict)]
 
 
@@ -1229,16 +1345,13 @@ def collect_gameplay_animation_audio(
                 "ownershipSources": sorted(sources),
             })
 
-    root = (
-        export_root
-        / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
-    )
+    roots = [export_root / rel for rel in ANIMATION_CLIP_RELS]
     owners: dict[tuple[str, str], dict[str, Any]] = {}
     unowned_events: dict[str, list[dict[str, Any]]] = defaultdict(list)
     controller_index_data = collect_animation_controller_index(export_root)
-    controller_index = controller_index_data.get("byClipPathId") or {}
+    controller_index = controller_index_data.get("byClipStoragePathId") or {}
     override_index_data = collect_animation_override_index(export_root)
-    override_index = override_index_data.get("byClipPathId") or {}
+    override_index = override_index_data.get("byClipStoragePathId") or {}
     controller_reachable_clips = 0
     controller_unresolved_clips = 0
     controller_reachable_callback_rows = 0
@@ -1252,7 +1365,9 @@ def collect_gameplay_animation_audio(
     unowned_clips = 0
     owned_callback_rows = 0
     unowned_callback_rows = 0
-    if root.exists():
+    for root in roots:
+        if not root.exists():
+            continue
         candidate_paths = sorted([
             *root.glob("A_actor_*.anim"),
             *root.glob("A_monster_*.anim"),
@@ -3200,12 +3315,6 @@ def display_path(path: Path) -> str:
     return normalize_posix(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
 
 
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def lua_audio_source_fingerprints(args: argparse.Namespace) -> list[dict[str, Any]]:
@@ -4147,12 +4256,13 @@ def hirc_object_parent_id(object_type: int, data: bytes) -> int | None:
     elif object_type in HIRC_MUSIC_PARENT_NODE_TYPES:
         return _hirc_v150_music_parent_id(data)
     elif object_type in HIRC_TYPED_CHILD_CONTAINER_TYPES:
-        offset = 8
+        try:
+            parent_id, _offset = _hirc_v150_node_base_parent(data, 0)
+            return parent_id
+        except (ValueError, OverflowError):
+            return None
     else:
         return None
-    if len(data) < offset + 4:
-        return None
-    return unpack_from("<I", data, offset)[0]
 
 
 def hirc_reciprocal_child_list(
@@ -6349,6 +6459,42 @@ def has_decoded_audio(language_root: Path) -> bool:
     return False
 
 
+def audio_file_metrics(path: Path, file_size: int | None = None) -> dict[str, Any]:
+    """Read bounded container metadata used by the WebUI media inventory."""
+    duration = 0.0
+    try:
+        suffix = path.suffix.lower()
+        if suffix == ".flac":
+            with path.open("rb") as handle:
+                header = handle.read(42)
+            if (
+                len(header) >= 42
+                and header[:4] == b"fLaC"
+                and header[4] & 0x7F == 0
+                and int.from_bytes(header[5:8], "big") >= 34
+            ):
+                packed = int.from_bytes(header[18:26], "big")
+                sample_rate = (packed >> 44) & 0xFFFFF
+                total_samples = packed & ((1 << 36) - 1)
+                if sample_rate and total_samples:
+                    duration = total_samples / sample_rate
+        elif suffix == ".wav":
+            with wave.open(str(path), "rb") as wav_file:
+                sample_rate = wav_file.getframerate()
+                frame_count = wav_file.getnframes()
+                if sample_rate and frame_count:
+                    duration = frame_count / sample_rate
+    except (EOFError, OSError, ValueError, wave.Error):
+        return {}
+    if not duration or not isinstance(duration, (int, float)):
+        return {}
+    size = int(file_size if file_size is not None else path.stat().st_size)
+    return {
+        "duration": round(float(duration), 6),
+        "bitrate": round(size * 8 / duration) if size > 0 else 0,
+    }
+
+
 def collect_audio_files(
     audio_root: Path,
     webui_root: Path,
@@ -6373,6 +6519,7 @@ def collect_audio_files(
         seen_occurrences.add(occurrence_key)
         audio_id = path.stem.lower()
         stat = path.stat()
+        metrics = audio_file_metrics(path, stat.st_size)
         metadata = source_metadata_for_rel(
             storage_root,
             rel,
@@ -6388,6 +6535,7 @@ def collect_audio_files(
             "src": served_audio_href(audio_root, webui_root, storage_root, rel),
             "format": path.suffix.lower().lstrip("."),
             "bytes": stat.st_size,
+            **metrics,
             **metadata,
         }
         for key, value in audio_path_tags_for_rel(rel).items():
@@ -6423,6 +6571,33 @@ def merge_audio_file_indexes(
                 merged[f"{previous_id}@{previous_storage}:{previous_rel}"] = previous
             merged[key] = entry
     return merged
+
+
+def numeric_audio_entries_by_media_id(
+    audio_index: dict[str, dict[str, Any]],
+) -> dict[int, dict[str, Any]]:
+    """Return decoded uint32 Wwise media by the entry's actual media id.
+
+    Occurrence keys deliberately gain an ``@storage:path`` suffix when the
+    same id exists more than once.  After an obsolete unknown-path occurrence
+    is suppressed, that suffixed row can be the only surviving canonical
+    media.  HIRC resolution must therefore inspect ``entry['id']`` rather than
+    assuming every dictionary key is the numeric media id.
+    """
+
+    out: dict[int, dict[str, Any]] = {}
+    for lookup_key, entry in audio_index.items():
+        raw_id = str(entry.get("id") or "").strip().lower()
+        if not raw_id.isdigit():
+            continue
+        media_id = int(raw_id)
+        if media_id > 0xFFFFFFFF:
+            continue
+        # Preserve the historical direct-key preference when a genuine
+        # same-id collision remains, but recover an occurrence-key-only row.
+        if media_id not in out or str(lookup_key).lower() == raw_id:
+            out[media_id] = entry
+    return out
 
 def build_dialog_audio_index(
     audio_dialog_paths: list[Path],
@@ -6469,20 +6644,25 @@ def build_dialog_audio_index(
             if selected is None:
                 continue
             rel, file_path = selected
-            duration = row.get(duration_field)
+            stat = file_path.stat()
+            metrics = audio_file_metrics(file_path, stat.st_size)
+            authored_duration = row.get(duration_field)
+            duration = authored_duration if isinstance(authored_duration, (int, float)) else metrics.get("duration")
+            bitrate = round(stat.st_size * 8 / duration) if isinstance(duration, (int, float)) and duration > 0 else metrics.get("bitrate")
             entry = {
                 "id": audio_id,
                 "rel": rel,
                 "storageRoot": language,
                 "src": served_audio_href(audio_root, webui_root, language, rel),
                 "format": file_path.suffix.lower().lstrip("."),
-                "bytes": file_path.stat().st_size,
+                "bytes": stat.st_size,
                 "audioDialogKey": int(row_key) if str(row_key).lstrip("-").isdigit() else row_key,
                 "audioDialogPath": dialog_path,
                 "audioDialogSource": source_path,
                 "speakerChannel": str(row.get("speakerChannel") or ""),
                 "voType": row.get("voType"),
                 "duration": duration if isinstance(duration, (int, float)) else None,
+                "bitrate": bitrate,
                 **audio_source_metadata("voice", language, language_info),
             }
             apply_audio_category(entry)
@@ -6591,6 +6771,22 @@ VOICE_TABLE_WWISE_EVENT_FIELDS = {
             "responsiveVoiceEventTemplate",
             "ResponsiveDialogTriggerData.eventTemplate -> response selection -> VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice",
         ),
+    },
+}
+
+# Current AudioChinese sub_d4 externals contains one media entry whose exact
+# authored path is absent from the current AudioDialog table. The path is the
+# unique exact preimage in the bounded v1d4 C35 mission voice namespace; this
+# recovers media identity only, not a dialog row, speaker, trigger, or playback
+# location.
+RECOVERED_EXTERNAL_MEDIA_IDENTITIES = {
+    "CN": {
+        955778167792087661: {
+            "audioId": "au_voice_c35m3_3_001",
+            "path": "v1d4/Narrating/HS_Part04/c35m3/au_voice_c35m3_3_001.wem",
+            "evidence": "boundedD4MissionVoiceNamespaceUniqueFNV1a64Preimage",
+            "playbackPlacementStatus": "identityOnlyNoCurrentAudioDialogOrTrigger",
+        },
     },
 }
 
@@ -7551,11 +7747,8 @@ def collect_event_audio_index(
             event_hash,
             (explicit_event_names_by_hash or {}).get(event_hash) or hashed_event_key(event_hash),
         )
-    numeric_audio_ids = {
-        int(audio_id)
-        for audio_id in audio_by_id
-        if audio_id.isdigit()
-    }
+    numeric_audio_entries = numeric_audio_entries_by_media_id(audio_by_id)
+    numeric_audio_ids = set(numeric_audio_entries)
     if not numeric_audio_ids:
         return {}, []
 
@@ -7752,7 +7945,7 @@ def collect_event_audio_index(
                             if row.get(key) not in (None, "", [])
                         })
                 for media_id in media_ids:
-                    audio_entry = audio_by_id.get(str(media_id))
+                    audio_entry = numeric_audio_entries.get(media_id)
                     if not audio_entry:
                         continue
                     link_key = (event_name.lower(), str(media_id))
@@ -7928,11 +8121,16 @@ def _audio_entry_file_exists(audio_root: Path, language: str, entry: dict[str, A
 def event_media_inventory_fingerprint(
     audio_by_id: dict[str, dict[str, Any]],
 ) -> str:
-    """Fingerprint decoded numeric media occurrences used by HIRC traversal."""
+    """Fingerprint decoded uint32 codec media used by HIRC traversal.
+
+    AKPK External Source sectors use uint64 FNV path identities. They are
+    instantiated by the External Source playback route and cannot be a fixed
+    HIRC Sound media id, so their layout must not invalidate Event traversal.
+    """
     rows = []
     for lookup_key, entry in audio_by_id.items():
         media_id = str(entry.get("id") or lookup_key).strip().lower()
-        if not media_id.isdigit():
+        if not media_id.isdigit() or int(media_id) > 0xFFFFFFFF:
             continue
         rows.append({
             "id": media_id,
@@ -7981,7 +8179,19 @@ def load_cached_event_audio_index(
         and str(payload.get("eventMediaInventoryFingerprint") or "")
         != expected_media_inventory_fingerprint
     ):
-        return None
+        # Schema migration: older fingerprints included uint64 External
+        # Source path ids. Recompute the codec-only fingerprint from the
+        # authoritative cached entries before rejecting the Event cache.
+        cached_entries = payload.get("entries") or []
+        if not isinstance(cached_entries, list):
+            return None
+        cached_codec_fingerprint = event_media_inventory_fingerprint({
+            f"cached:{index}": entry
+            for index, entry in enumerate(cached_entries)
+            if isinstance(entry, dict) and not entry.get("eventId")
+        })
+        if cached_codec_fingerprint != expected_media_inventory_fingerprint:
+            return None
     wanted_names = {
         str(name or "").strip().lower()
         for name in event_names
@@ -8412,6 +8622,8 @@ def link_conversation_audio(
             for audio_id in audio_ids:
                 entry = audio_by_id.get(audio_id)
                 if entry:
+                    entry["storyLineBindingCount"] = int(entry.get("storyLineBindingCount") or 0) + 1
+                    entry["purposeKnowledgeStatus"] = "exactStoryLineBinding"
                     if attach_audio_to_line(line, entry):
                         changed = True
                     stats["lineAudioLinked"] += 1
@@ -8422,6 +8634,9 @@ def link_conversation_audio(
                 }
                 variants = {gender: variant for gender, variant in variants.items() if variant}
                 if variants:
+                    for variant in variants.values():
+                        variant["storyLineBindingCount"] = int(variant.get("storyLineBindingCount") or 0) + 1
+                        variant["purposeKnowledgeStatus"] = "exactStoryLineBinding"
                     if attach_audio_variants_to_line(line, variants):
                         changed = True
                     stats["lineAudioLinked"] += 1
@@ -8797,10 +9012,12 @@ def suppress_redundant_unknown_audio_occurrences(
         storage = entry_storage_root(entry, language)
         dialog_by_external_id[(storage, audio_dialog_external_media_id(dialog_path, dumper_language))] = entry
     for key, entry in list(generic_audio.items()):
-        if str(entry.get("sourceBank") or "") != "external":
-            continue
         raw_id = str(entry.get("id") or "")
-        if not raw_id.isdigit():
+        # Externals-sector ids are uint64 FNV path hashes. Older generated
+        # wwise/unknown paths may predate sourceBank tagging, so the exact
+        # AudioDialog hash join is authoritative; do not require that mutable
+        # layout metadata to still be present.
+        if not raw_id.isdigit() or int(raw_id) <= 0xFFFFFFFF:
             continue
         storage = entry_storage_root(entry, language)
         reference = dialog_by_external_id.get((storage, int(raw_id)))
@@ -8813,11 +9030,35 @@ def suppress_redundant_unknown_audio_occurrences(
             continue
         generic_audio.pop(key, None)
         external_dialog_suppressed += 1
+    recovered_external_identities = 0
+    for entry in generic_audio.values():
+        raw_id = str(entry.get("id") or "")
+        if not raw_id.isdigit() or int(raw_id) <= 0xFFFFFFFF:
+            continue
+        identity = (RECOVERED_EXTERNAL_MEDIA_IDENTITIES.get(language) or {}).get(int(raw_id))
+        if not identity:
+            continue
+        authored_path = str(identity["path"])
+        if audio_dialog_external_media_id(authored_path, dumper_language) != int(raw_id):
+            raise SystemExit(
+                f"Recovered External Source path hash mismatch for media {raw_id}: {authored_path}"
+            )
+        entry.update({
+            "externalMediaIdentityStatus": "recoveredAuthoredPathHash",
+            "externalAuthoredAudioId": identity["audioId"],
+            "externalAuthoredPath": authored_path,
+            "externalIdentityEvidence": identity["evidence"],
+            "identityOnlyPlaybackPlacementStatus": identity["playbackPlacementStatus"],
+            "audioCategory": "story_voice",
+            "audioCategoryDetail": "hongshan",
+        })
+        recovered_external_identities += 1
     return {
         "contentIdenticalDuplicateOccurrencesCompared": compared,
         "contentIdenticalUnknownOccurrencesSuppressed": suppressed,
         "audioDialogExternalCopiesCompared": external_dialog_compared,
         "audioDialogExternalCopiesSuppressed": external_dialog_suppressed,
+        "recoveredOrphanExternalMediaIdentities": recovered_external_identities,
     }
 
 
@@ -8913,6 +9154,28 @@ def build_audio(args: argparse.Namespace) -> int:
         language_info,
         "." + output_format.lower(),
     )
+    # Normalize the logical media inventory before computing the Event-cache
+    # fingerprint. Otherwise the cache compares an unsuppressed physical scan
+    # with the suppressed inventory stored by the previous build and needlessly
+    # reparses every Wwise bank on every --skip-decode run.
+    duplicate_suppression_stats = suppress_redundant_unknown_audio_occurrences(
+        args.audio_root,
+        generic_audio,
+        dialog_audio,
+        language,
+    )
+    if duplicate_suppression_stats["contentIdenticalUnknownOccurrencesSuppressed"]:
+        print(
+            "Audio index: suppressed "
+            f"{duplicate_suppression_stats['contentIdenticalUnknownOccurrencesSuppressed']:,} "
+            "byte-identical unknown-path duplicates"
+        )
+    if duplicate_suppression_stats["audioDialogExternalCopiesSuppressed"]:
+        print(
+            "Audio index: suppressed "
+            f"{duplicate_suppression_stats['audioDialogExternalCopiesSuppressed']:,} "
+            "exact AudioDialog external-id path copies"
+        )
     audio_by_id = {**generic_audio, **dialog_audio}
     media_inventory_fingerprint = event_media_inventory_fingerprint(audio_by_id)
 
@@ -9091,32 +9354,6 @@ def build_audio(args: argparse.Namespace) -> int:
     )
     if category_moved:
         print(f"Audio layout: {category_moved:,} Wwise files filed under event-category folders")
-    duplicate_suppression_stats = suppress_redundant_unknown_audio_occurrences(
-        args.audio_root,
-        generic_audio,
-        dialog_audio,
-        language,
-    )
-    if duplicate_suppression_stats["contentIdenticalUnknownOccurrencesSuppressed"]:
-        print(
-            "Audio index: suppressed "
-            f"{duplicate_suppression_stats['contentIdenticalUnknownOccurrencesSuppressed']:,} "
-            "byte-identical unknown-path duplicates"
-        )
-    if duplicate_suppression_stats["audioDialogExternalCopiesSuppressed"]:
-        print(
-            "Audio index: suppressed "
-            f"{duplicate_suppression_stats['audioDialogExternalCopiesSuppressed']:,} "
-            "exact AudioDialog external-id path copies"
-        )
-    # The suppression pass mutates generic_audio. Rebuild the combined lookup
-    # so conversation/gameplay links and the emitted index see the same set.
-    audio_by_id = {**generic_audio, **dialog_audio}
-    audio_by_id.update({
-        str(entry.get("eventId") or entry.get("id") or "").lower(): entry
-        for entry in event_entries
-        if entry.get("eventId") or entry.get("id")
-    })
     # Category filing mutates canonical generic entries and their paths. Store
     # the post-layout fingerprint so the next --skip-decode run does not
     # invalidate an otherwise complete Event cache merely because this same

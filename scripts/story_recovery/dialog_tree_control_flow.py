@@ -19,7 +19,6 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
-import os
 import re
 import struct
 import subprocess
@@ -31,12 +30,18 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as shared_sha256_file,
+)
+
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 CATALOG_PATH = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
-DEFAULT_GAME_ROOT = Path(os.environ.get(
-    "ENDFIELD_GAME_ROOT",
-    r"D:\Program Files\Endfield Game\Endfield_Data",
-))
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 DEFAULT_IFIX_AUDIT = ROOT / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
@@ -142,11 +147,7 @@ def _load_module(name: str, path: Path) -> Any:
 
 
 def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
+    return shared_sha256_file(path).upper()
 
 
 def repo_path(path: Path) -> str:

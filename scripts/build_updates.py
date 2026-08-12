@@ -37,6 +37,7 @@ from common import (
     path_id_export_base_stem,
     read_json,
     rel_requires_path_id_export_name,
+    resolve_installed_game_data_root,
     write_json,
 )
 
@@ -47,7 +48,7 @@ if str(SCRIPT_DIR) not in sys.path:
 from asset_builder.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
 from source_paths import resolve_asset_source_roots
 
-DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
 DEFAULT_PREVIOUS_EXPORT_ROOT = ROOT / "export_1d2"

@@ -15,7 +15,6 @@ import argparse
 import base64
 import hashlib
 import json
-import os
 import re
 import sys
 from collections import Counter, defaultdict, deque
@@ -31,6 +30,7 @@ if str(ROOT / "scripts") not in sys.path:
 from common import (  # noqa: E402
     md_escape,
     read_json,
+    resolve_installed_native_inputs,
     safe_key,
     write_report_json,
     write_text_if_changed,
@@ -480,34 +480,12 @@ def _dialog_tree_branch_conditions(node: dict[str, Any]) -> list[dict[str, Any]]
 
 
 def _configured_game_assembly_path() -> Path:
-    game_root = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
-    if not game_root:
-        paths_file = ROOT / "endfield_paths.bat"
-        text = paths_file.read_text(encoding="utf-8", errors="replace")
-        match = re.search(
-            r'^set\s+"ENDFIELD_GAME_ROOT=([^"\r\n]+)"',
-            text,
-            flags=re.IGNORECASE | re.MULTILINE,
-        )
-        game_root = match.group(1).strip() if match else ""
-    return (
-        Path(game_root).parent / "GameAssembly.dll"
-        if game_root else Path()
-    )
+    return resolve_installed_native_inputs()[0]
 
 
 def _configured_game_metadata_path() -> Path:
     """Resolve the metadata paired with the configured original binary."""
-    game_assembly_path = _configured_game_assembly_path()
-    if str(game_assembly_path) in {"", "."}:
-        return Path()
-    return (
-        game_assembly_path.parent
-        / "Endfield_Data"
-        / "il2cpp_data"
-        / "Metadata"
-        / "global-metadata.dat"
-    )
+    return resolve_installed_native_inputs()[1]
 
 
 def _source_file_sha256(path: Path) -> str:

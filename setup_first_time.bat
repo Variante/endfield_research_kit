@@ -3,7 +3,11 @@ setlocal EnableExtensions
 
 set "DEFAULT_GAME_ROOT=D:\Program Files\Endfield Game\Endfield_Data"
 
-if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
+rem Capture the checkout before parsing: shift moves %0 too, so %~dp0 would
+rem otherwise point at whatever was passed to --game-root.
+set "SCRIPT_DIR=%~dp0"
+
+if exist "%SCRIPT_DIR%endfield_paths.bat" call "%SCRIPT_DIR%endfield_paths.bat"
 if errorlevel 1 exit /b %errorlevel%
 
 if /I "%~1"=="--help" goto :help
@@ -23,26 +27,19 @@ if /I "%~1"=="/?" goto :help
 if /I "%~1"=="/h" goto :help
 if /I "%~1"=="help" goto :help
 set "ARG=%~1"
-set "NEXT_ARG=%~2"
+rem The sentinel keeps the prefix test valid when there is no second argument:
+rem a substring of an undefined variable mangles the whole line.
+set "NEXT_PREFIX=%~2##"
 if /I "%ARG:~0,12%"=="--game-root=" (
-  if "%ARG:~12%"=="" (
-    echo Missing value for --game-root.
-    exit /b 2
-  )
+  if "%ARG:~12%"=="" goto :missing_game_root
   set "GAME_ROOT=%ARG:~12%"
   shift
   goto :parse_args
 )
 if /I "%ARG%"=="--game-root" (
-  if "%~2"=="" (
-    echo Missing value for --game-root.
-    exit /b 2
-  )
-  if "%NEXT_ARG:~0,2%"=="--" (
-    echo Missing value for --game-root.
-    exit /b 2
-  )
-  set "GAME_ROOT=%NEXT_ARG%"
+  if "%~2"=="" goto :missing_game_root
+  if "%NEXT_PREFIX:~0,2%"=="--" goto :missing_game_root
+  set "GAME_ROOT=%~2"
   shift
   shift
   goto :parse_args
@@ -62,11 +59,21 @@ echo Unknown option: %ARG%
 echo Run setup_first_time.bat --help for usage.
 exit /b 2
 
+:missing_game_root
+echo Missing value for --game-root.
+echo Example: setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+exit /b 2
+
 :parsed_args
-pushd "%~dp0" || exit /b 1
+pushd "%SCRIPT_DIR%" || exit /b 1
 
 if not defined GAME_ROOT if not "%ENDFIELD_GAME_ROOT%"=="" set "GAME_ROOT=%ENDFIELD_GAME_ROOT%"
 if not defined GAME_ROOT set "GAME_ROOT=%DEFAULT_GAME_ROOT%"
+
+rem Every child resolves the installed client from this variable first, so a
+rem --game-root run agrees with endfield_paths.bat instead of overriding only
+rem the export step.
+set "ENDFIELD_GAME_ROOT=%GAME_ROOT%"
 
 
 set "ANIMESTUDIO_EXE=%CD%\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe"
