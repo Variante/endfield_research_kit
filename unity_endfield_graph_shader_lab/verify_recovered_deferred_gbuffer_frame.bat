@@ -73,8 +73,13 @@ if /i "%~1"=="--resolver-resource-d3d11" (
   set "RUN_EXIT=!ERRORLEVEL!"
   exit /b !RUN_EXIT!
 )
+if /i "%~1"=="--exact-consumer-d3d11" (
+  call :RUN_EXACT_CONSUMER d3d11
+  set "RUN_EXIT=!ERRORLEVEL!"
+  exit /b !RUN_EXIT!
+)
 
-echo Usage: %~nx0 --all ^| --d3d11 ^| --d3d12 ^| --fail-closed-d3d12 ^| --resolver-input-d3d11 ^| --resolver-input-d3d12 ^| --resolver-resource-d3d11 ^| --resolver-resource-d3d12
+echo Usage: %~nx0 --all ^| --d3d11 ^| --d3d12 ^| --fail-closed-d3d12 ^| --resolver-input-d3d11 ^| --resolver-input-d3d12 ^| --resolver-resource-d3d11 ^| --resolver-resource-d3d12 ^| --exact-consumer-d3d11
 exit /b 2
 
 :RUN
@@ -134,4 +139,17 @@ echo Validating same-frame deferred resolver target resources with !API!...
 set "UNITY_EXIT=!ERRORLEVEL!"
 if not "!UNITY_EXIT!"=="0" exit /b !UNITY_EXIT!
 python "%PROJECT_PATH%\tools\verify_deferred_resolver_input_probe.py" --log "!LOG_PATH!" --report "!REPORT_PATH!" --expect-resource-probe
+exit /b !ERRORLEVEL!
+
+:RUN_EXACT_CONSUMER
+set "API=%~1"
+set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1"
+set "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW=1"
+set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=1"
+set "LOG_PATH=%OUTPUT_ROOT%\unity_exact_consumer_!API!.log"
+echo Validating exact original deferred resolver consumer with !API!...
+"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_PATH%" -force-!API! -executeMethod %METHOD% -logFile "!LOG_PATH!"
+set "UNITY_EXIT=!ERRORLEVEL!"
+if not "!UNITY_EXIT!"=="0" exit /b !UNITY_EXIT!
+python "%PROJECT_PATH%\tools\verify_deferred_exact_consumer.py" --log "!LOG_PATH!"
 exit /b !ERRORLEVEL!

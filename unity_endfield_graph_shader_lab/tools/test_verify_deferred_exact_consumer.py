@@ -1,0 +1,39 @@
+import unittest
+import importlib.util
+import sys
+from pathlib import Path
+
+MODULE_PATH = Path(__file__).with_name("verify_deferred_exact_consumer.py")
+SPEC = importlib.util.spec_from_file_location(
+    "verify_deferred_exact_consumer", MODULE_PATH
+)
+MODULE = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = MODULE
+assert SPEC.loader is not None
+SPEC.loader.exec_module(MODULE)
+validate_log = MODULE.validate_log
+
+
+GOOD_LOG = """
+Exiting batchmode successfully now!
+Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3fffffe, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
+Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=1200, exactBound=1, resourceMask=0x3fffffe, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false.
+"""
+
+
+class VerifyDeferredExactConsumerTests(unittest.TestCase):
+    def test_accepts_exact_non_presented_frame(self):
+        report = validate_log(GOOD_LOG, Path("fixture.log"))
+        self.assertTrue(report["valid"], report["failures"])
+
+    def test_reports_missing_exact_binding(self):
+        report = validate_log(
+            GOOD_LOG.replace("exactBound=1", "exactBound=0"),
+            Path("fixture.log"),
+        )
+        self.assertFalse(report["valid"])
+        self.assertTrue(any("exact_shader_bound" in failure for failure in report["failures"]))
+
+
+if __name__ == "__main__":
+    unittest.main()

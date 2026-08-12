@@ -13,6 +13,8 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE";
         internal const string ResourceProbeEnvironmentVariable =
             "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE";
+        internal const string ExactConsumerEnvironmentVariable =
+            "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER";
 
         internal static bool IsRequested
         {
@@ -21,7 +23,19 @@ namespace EndfieldGraphShaderLab
                 string value = Environment.GetEnvironmentVariable(EnvironmentVariable);
                 string resourceValue = Environment.GetEnvironmentVariable(
                     ResourceProbeEnvironmentVariable);
-                return IsEnabled(value) || IsEnabled(resourceValue);
+                string exactValue = Environment.GetEnvironmentVariable(
+                    ExactConsumerEnvironmentVariable);
+                return IsEnabled(value) || IsEnabled(resourceValue) ||
+                    IsEnabled(exactValue);
+            }
+        }
+
+        internal static bool IsExactConsumerRequested
+        {
+            get
+            {
+                return IsEnabled(Environment.GetEnvironmentVariable(
+                    ExactConsumerEnvironmentVariable));
             }
         }
 
