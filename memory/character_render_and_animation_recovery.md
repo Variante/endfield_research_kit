@@ -252,9 +252,13 @@ NPC archetypes are imported as labeled source kits.
   nonzero bytes). The render-thread arm boundary preserves Unity's shell SRVs,
   and the native bridge's complete resource mask is now `0x3ffffff`: every
   `t0` through `t25` source view binds with `resourceFailureMask=0x0`. This
-  closes exact same-frame resource transport, but the output is still private
-  diagnostic data; numeric lighting comparison and retail pass-0 activation
-  remain open.
+  closes exact same-frame resource transport. The publisher-owned b0–b8
+  constant buffers also bind completely (`constantBufferMask=0x1ff`); the
+  MainCamera RGBA-float oracle is SHA-256
+  `b0130f5a0f67f714181847413757e81fbeebe59af0428abecdc9b33e67d2cb83`, with
+  1,843,200 finite values and no non-finite samples. This is still private
+  diagnostic output, not a presented retail result; recovered numerical
+  implementation comparison and retail pass-0 activation remain open.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and

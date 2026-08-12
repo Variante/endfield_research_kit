@@ -99,6 +99,8 @@ namespace EndfieldGraphShaderLab
             }
         }
 
+        internal ComputeBuffer CurrentBuffer => buffer;
+
         public void Dispose()
         {
             if (disposed)

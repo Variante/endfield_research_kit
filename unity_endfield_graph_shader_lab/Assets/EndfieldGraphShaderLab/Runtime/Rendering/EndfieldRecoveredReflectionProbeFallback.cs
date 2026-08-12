@@ -129,6 +129,8 @@ namespace EndfieldGraphShaderLab
                 out failure);
         }
 
+        internal ComputeBuffer CurrentGlobalDataBuffer => reflectionGlobalData;
+
         public bool PrepareAndPublishRecoveredResources(
             Camera camera,
             int width,

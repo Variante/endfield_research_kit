@@ -16,8 +16,8 @@ validate_log = MODULE.validate_log
 
 GOOD_LOG = """
 Exiting batchmode successfully now!
-Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
-Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false.
+Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
+Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, rgbaFloatSha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, finiteFloats=1843200, nonFiniteFloats=0, min=0, max=1, failureCount=0, presented=false, retailPass0=false.
 """
 
 

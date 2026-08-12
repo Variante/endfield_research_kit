@@ -1,5 +1,9 @@
 using System;
+using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -18,6 +22,20 @@ namespace EndfieldGraphShaderLab
         private const string ShaderName =
             EndfieldOriginalDxbcDiagnosticRuntime.ShaderName;
         private const int TextureSlotCount = 26;
+        private const int ConstantBufferSlotCount = 9;
+        private static readonly int[] ConstantBufferIds = CreateConstantBufferIds();
+        private static readonly int[] ConstantBufferByteCounts =
+        {
+            45 * sizeof(float) * 4,
+            157 * sizeof(float) * 4,
+            259 * sizeof(float) * 4,
+            3 * sizeof(float) * 4,
+            2054 * sizeof(float) * 4,
+            401 * sizeof(float) * 4,
+            216 * sizeof(float) * 4,
+            160 * sizeof(float) * 4,
+            4 * sizeof(float) * 4,
+        };
         private static readonly int BufferT0Id =
             Shader.PropertyToID("_EndfieldBufferT0");
         private static readonly int CameraDepthId =
@@ -30,6 +48,7 @@ namespace EndfieldGraphShaderLab
         private Texture2D fallback2D;
         private Texture2DArray fallbackArray;
         private Texture3D fallback3D;
+        private ComputeBuffer zeroHdplsBuffer;
         private int allocatedWidth;
         private int allocatedHeight;
         private bool loggedFailure;
@@ -53,6 +72,17 @@ namespace EndfieldGraphShaderLab
             int height,
             EndfieldRecoveredDeferredGBufferFrame gBufferFrame,
             EndfieldRecoveredDeferredResolverInputProbe.ResourceFrame resources,
+            EndfieldRecoveredDeferredTransformVariables transformVariables,
+            EndfieldRecoveredShaderVariablesGlobal shaderVariablesGlobal,
+            EndfieldRecoveredReflectionProbeFallback reflectionProbeFallback,
+            EndfieldRecoveredLightBinning lightBinning,
+            EndfieldRecoveredVisibilitySHConstants visibilitySHConstants,
+            EndfieldRecoveredDeferredLightData lightData,
+            EndfieldRecoveredDeferredShadowData shadowData,
+            bool transformsReady,
+            bool shaderVariablesReady,
+            bool lightDataReady,
+            bool shadowDataReady,
             RenderTargetIdentifier canonicalColorTarget,
             RenderTargetIdentifier canonicalDepthTarget)
         {
@@ -85,6 +115,28 @@ namespace EndfieldGraphShaderLab
                 return FailClosed(
                     "exact consumer requires physical t0/t1/t5/t6/t7/t22 resources: " +
                     resources.BuildStatusToken());
+            if (!transformsReady || !shaderVariablesReady ||
+                !lightDataReady || !shadowDataReady)
+            {
+                return FailClosed(
+                    "exact consumer constant-buffer prerequisites are not ready: " +
+                    $"b0={transformsReady}, b1={shaderVariablesReady}, " +
+                    $"b4={lightDataReady}, b5={shadowDataReady}");
+            }
+            EnsureZeroHdplsBuffer();
+            if (!TryBuildConstantBuffers(
+                    transformVariables,
+                    shaderVariablesGlobal,
+                    reflectionProbeFallback,
+                    lightBinning,
+                    visibilitySHConstants,
+                    lightData,
+                    shadowData,
+                    out ComputeBuffer[] constantBuffers,
+                    out string constantBufferFailure))
+            {
+                return FailClosed(constantBufferFailure);
+            }
             if (!gBufferFrame.TryGetResolverInputs(
                     camera,
                     width,
@@ -122,6 +174,14 @@ namespace EndfieldGraphShaderLab
                 if (!TryPrepareNative(out string nativeFailure))
                     return FailClosed(nativeFailure);
 
+                for (int slot = 0; slot < ConstantBufferSlotCount; slot++)
+                {
+                    command.SetGlobalConstantBuffer(
+                        constantBuffers[slot],
+                        ConstantBufferIds[slot],
+                        0,
+                        ConstantBufferByteCounts[slot]);
+                }
                 command.SetGlobalBuffer(BufferT0Id, resources.t0Binning);
                 pointers[0] = NativeBufferPointer(resources.t0Binning);
                 for (int slot = 1; slot < TextureSlotCount; slot++)
@@ -169,6 +229,7 @@ namespace EndfieldGraphShaderLab
                 command.IssuePluginEvent(renderEvent, 3);
                 command.IssuePluginEvent(renderEvent, 0);
                 RequestReadback(command, camera.name, width, height);
+                command.IssuePluginEvent(renderEvent, 1);
                 // The native event clears armed state and pointer ownership on
                 // the render thread after the exact draw/readback copy. Do not
                 // clear those pointers from this C# finally block while SRP
@@ -186,6 +247,7 @@ namespace EndfieldGraphShaderLab
                 uint exactBound = Native.GetExactShaderBound();
                 uint resourceMask = Native.GetShaderResourceMask();
                 uint resourceFailureMask = Native.GetShaderResourceFailureMask();
+                uint constantBufferMask = Native.GetConstantBufferMask();
                 Debug.Log(
                     "Recovered exact deferred resolver consumer submitted: " +
                     $"camera={camera.name}, size={width}x{height}, " +
@@ -194,6 +256,7 @@ namespace EndfieldGraphShaderLab
                     $"resourceMask=0x{resourceMask:x}, " +
                     $"resourceFailureMask=0x{resourceFailureMask:x}, " +
                     $"resourceFailureResults={FormatResourceFailures()}, " +
+                    $"constantBufferMask=0x{constantBufferMask:x}, " +
                     $"failureCount={failureCount}, presented=false, " +
                     "retailPass0=false, screenContentValid=false.");
                 loggedFailure = false;
@@ -233,10 +296,66 @@ namespace EndfieldGraphShaderLab
             DisposeUnityObject(fallbackArray);
             DisposeUnityObject(fallback3D);
             DisposeUnityObject(material);
+            if (zeroHdplsBuffer != null)
+            {
+                zeroHdplsBuffer.Release();
+                zeroHdplsBuffer = null;
+            }
             fallback2D = null;
             fallbackArray = null;
             fallback3D = null;
             material = null;
+        }
+
+        private bool TryBuildConstantBuffers(
+            EndfieldRecoveredDeferredTransformVariables transformVariables,
+            EndfieldRecoveredShaderVariablesGlobal shaderVariablesGlobal,
+            EndfieldRecoveredReflectionProbeFallback reflectionProbeFallback,
+            EndfieldRecoveredLightBinning lightBinning,
+            EndfieldRecoveredVisibilitySHConstants visibilitySHConstants,
+            EndfieldRecoveredDeferredLightData lightData,
+            EndfieldRecoveredDeferredShadowData shadowData,
+            out ComputeBuffer[] buffers,
+            out string failure)
+        {
+            buffers = new[]
+            {
+                transformVariables?.CurrentBuffer,
+                shaderVariablesGlobal?.CurrentBuffer,
+                reflectionProbeFallback?.CurrentGlobalDataBuffer,
+                lightBinning?.CurrentRetailConstantsBuffer,
+                lightData?.CurrentBuffer,
+                shadowData?.CurrentBuffer,
+                zeroHdplsBuffer,
+                lightBinning?.CurrentLightCookieDataBuffer,
+                visibilitySHConstants?.CurrentBuffer,
+            };
+            failure = string.Empty;
+            for (int slot = 0; slot < buffers.Length; slot++)
+            {
+                if (buffers[slot] == null || !buffers[slot].IsValid())
+                {
+                    failure =
+                        "exact consumer b" + slot +
+                        " source-backed constant buffer is unavailable";
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private void EnsureZeroHdplsBuffer()
+        {
+            if (zeroHdplsBuffer != null)
+                return;
+            zeroHdplsBuffer = new ComputeBuffer(
+                216,
+                sizeof(float) * 4,
+                ComputeBufferType.Constant)
+            {
+                name = "Recovered exact deferred resolver b6 zero fallback"
+            };
+            zeroHdplsBuffer.SetData(new Vector4[216]);
         }
 
         private bool TryPrepareNative(out string failure)
@@ -432,6 +551,26 @@ namespace EndfieldGraphShaderLab
                     if (data[index] != 0)
                         nonzeroBytes++;
                 }
+                byte[] byteCopy = new byte[data.Length];
+                data.CopyTo(byteCopy);
+                string sha256 = Hash(byteCopy);
+                NativeArray<float> floats = request.GetData<float>();
+                int finiteFloats = 0;
+                int nonFiniteFloats = 0;
+                float minimum = float.PositiveInfinity;
+                float maximum = float.NegativeInfinity;
+                for (int index = 0; index < floats.Length; index++)
+                {
+                    float value = floats[index];
+                    if (float.IsNaN(value) || float.IsInfinity(value))
+                    {
+                        nonFiniteFloats++;
+                        continue;
+                    }
+                    finiteFloats++;
+                    minimum = Mathf.Min(minimum, value);
+                    maximum = Mathf.Max(maximum, value);
+                }
                 Debug.Log(
                     "Recovered exact deferred resolver consumer readback: " +
                     $"camera={cameraName}, size={width}x{height}, " +
@@ -440,6 +579,12 @@ namespace EndfieldGraphShaderLab
                     $"resourceMask=0x{Native.GetShaderResourceMask():x}, " +
                     $"resourceFailureMask=0x{Native.GetShaderResourceFailureMask():x}, " +
                     $"resourceFailureResults={FormatResourceFailures()}, " +
+                    $"constantBufferMask=0x{Native.GetConstantBufferMask():x}, " +
+                    $"rgbaFloatSha256={sha256}, " +
+                    $"finiteFloats={finiteFloats}, " +
+                    $"nonFiniteFloats={nonFiniteFloats}, " +
+                    $"min={minimum.ToString("R", CultureInfo.InvariantCulture)}, " +
+                    $"max={maximum.ToString("R", CultureInfo.InvariantCulture)}, " +
                     $"failureCount={Native.GetFailureCount()}, " +
                     "presented=false, retailPass0=false.");
             });
@@ -473,6 +618,16 @@ namespace EndfieldGraphShaderLab
                 values.Append(result.ToString("x8"));
             }
             return values.Length == 0 ? "none" : values.ToString();
+        }
+
+        private static string Hash(byte[] bytes)
+        {
+            using SHA256 sha = SHA256.Create();
+            byte[] digest = sha.ComputeHash(bytes);
+            var builder = new StringBuilder(digest.Length * 2);
+            for (int index = 0; index < digest.Length; index++)
+                builder.Append(digest[index].ToString("x2"));
+            return builder.ToString();
         }
 
         private Texture SelectTexture(
@@ -511,6 +666,14 @@ namespace EndfieldGraphShaderLab
             var ids = new int[TextureSlotCount];
             for (int slot = 1; slot < TextureSlotCount; slot++)
                 ids[slot] = Shader.PropertyToID("_EndfieldTextureT" + slot);
+            return ids;
+        }
+
+        private static int[] CreateConstantBufferIds()
+        {
+            var ids = new int[ConstantBufferSlotCount];
+            for (int slot = 0; slot < ConstantBufferSlotCount; slot++)
+                ids[slot] = Shader.PropertyToID("EndfieldCB" + slot);
             return ids;
         }
 
@@ -602,6 +765,10 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetShaderResourceFailureResult")]
             internal static extern int GetShaderResourceFailureResult(uint slot);
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetConstantBufferMask")]
+            internal static extern uint GetConstantBufferMask();
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetExactShaderBound")]

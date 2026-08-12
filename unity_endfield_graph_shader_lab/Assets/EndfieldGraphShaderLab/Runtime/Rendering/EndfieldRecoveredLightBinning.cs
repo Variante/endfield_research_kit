@@ -360,6 +360,11 @@ namespace EndfieldGraphShaderLab
             return canonicalBinningPublished;
         }
 
+        internal ComputeBuffer CurrentRetailConstantsBuffer => retailConstantsBuffer;
+
+        internal ComputeBuffer CurrentLightCookieDataBuffer =>
+            zeroRetailLightCookieDataBuffer;
+
         private bool PublishCanonicalBinning(
             CommandBuffer commandBuffer,
             int width,

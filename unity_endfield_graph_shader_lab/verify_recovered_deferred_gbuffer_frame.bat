@@ -147,9 +147,10 @@ set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1"
 set "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW=1"
 set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=1"
 set "LOG_PATH=%OUTPUT_ROOT%\unity_exact_consumer_!API!.log"
+set "REPORT_PATH=%OUTPUT_ROOT%\exact_consumer_validation_!API!.json"
 echo Validating exact original deferred resolver consumer with !API!...
 "%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_PATH%" -force-!API! -executeMethod %METHOD% -logFile "!LOG_PATH!"
 set "UNITY_EXIT=!ERRORLEVEL!"
 if not "!UNITY_EXIT!"=="0" exit /b !UNITY_EXIT!
-python "%PROJECT_PATH%\tools\verify_deferred_exact_consumer.py" --log "!LOG_PATH!"
+python "%PROJECT_PATH%\tools\verify_deferred_exact_consumer.py" --log "!LOG_PATH!" --report "!REPORT_PATH!"
 exit /b !ERRORLEVEL!
