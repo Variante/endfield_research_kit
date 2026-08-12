@@ -307,6 +307,16 @@ NPC archetypes are imported as labeled source kits.
   fixed `255` and `0` lanes, then returns the reinterpreted four-byte word.
   This is a source-backed packed-word producer, but no direct call edge to the
   character renderer upload was recovered, so it remains upstream evidence.
+  A separate global-CB production path is now source-closed: installed
+  `HGRenderPathScene.UpdateShaderVariablesGlobal` calls
+  `UpdateShaderVariablesGlobalCharacter`, whose native body calls
+  `HGCharacterVolume.GetPackedEnvironmentEffectIntensity` and writes its
+  result to `cb + 0x754`, exactly `ShaderVariablesGlobal` c117.y. The
+  `ShaderVariablesGlobal` metadata names `_CharacterParams10`, and the
+  CharacterNPR source consumes c117.y as the global packed-word override when
+  c117.x is enabled (otherwise it uses UnityPerDraw Param2.x). This proves a
+  second real producer/carrier, but it is not the HGRP/Lit HGBuffer `b3[0].w`
+  binding; keep that register/component boundary fail-closed in the audit.
   A cross-variant CharacterNPR forward source closes the ordinary UnityPerDraw
   carrier independently: `UnityPerDrawArray` `Param2` is at byte offset `+208`
   (`_m7`), with `_m7.x` carrying the packed environment word and `_m7.y` the
