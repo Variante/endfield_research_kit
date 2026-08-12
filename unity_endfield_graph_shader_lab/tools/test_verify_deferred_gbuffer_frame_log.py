@@ -23,8 +23,8 @@ def ready_log() -> str:
             "attachments=B10G11R11/A2B10G10R10/A2B10G10R10/"
             "A2B10G10R10/R8G8B8A8_SRGB+D32S8, "
             "sourceRendererDisabled=True, "
-            "resolverGBufferBindings=t23:C,t24:B,t25:A, "
-            "resolverSourceIdentifiers=t23:_62,t24:_61,t25:_60, "
+            "resolverGBufferBindings=t23:A,t24:B,t25:C, "
+            "resolverSourceIdentifiers=t23:_60,t24:_61,t25:_62, "
             "pass0ConsumerEnabled=false."
         ),
     ]
@@ -49,7 +49,7 @@ class DeferredGBufferFrameLogTests(unittest.TestCase):
         )
         source = producer.read_text(encoding="utf-8")
         self.assertIn(
-            "command.SetGlobalTexture(ResolverGBufferT23Id, gBufferC)",
+            "command.SetGlobalTexture(ResolverGBufferT23Id, gBufferA)",
             source,
         )
         self.assertIn(
@@ -57,11 +57,11 @@ class DeferredGBufferFrameLogTests(unittest.TestCase):
             source,
         )
         self.assertIn(
-            "command.SetGlobalTexture(ResolverGBufferT25Id, gBufferA)",
+            "command.SetGlobalTexture(ResolverGBufferT25Id, gBufferC)",
             source,
         )
         self.assertIn(
-            "command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferC)",
+            "command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferA)",
             source,
         )
         self.assertIn(
@@ -69,7 +69,7 @@ class DeferredGBufferFrameLogTests(unittest.TestCase):
             source,
         )
         self.assertIn(
-            "command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferA)",
+            "command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferC)",
             source,
         )
 

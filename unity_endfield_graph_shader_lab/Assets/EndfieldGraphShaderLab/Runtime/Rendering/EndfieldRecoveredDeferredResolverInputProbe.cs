@@ -7,7 +7,7 @@ namespace EndfieldGraphShaderLab
 {
     /// <summary>
     /// Default-off, non-presented consumer probe for the source-closed
-    /// deferred resolver input boundary. It reads the exact _62/_61/_60
+    /// deferred resolver input boundary. It reads the exact _60/_61/_62
     /// t23/t24/t25 order and the recovered b0-b8 bridge, but deliberately does
     /// not implement or submit the retail lighting result.
     /// </summary>
@@ -30,8 +30,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT6");
         private static readonly int ResolverT7Id =
             Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT7");
-        private static readonly int ResolverT22Id =
-            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT22");
+        private static readonly int ResolverT11Id =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT11");
         private static readonly int CameraDepthSourceId =
             Shader.PropertyToID("_EndfieldRecoveredCameraDepthTexture");
 
@@ -54,7 +54,7 @@ namespace EndfieldGraphShaderLab
             internal RenderTexture t5Reflection;
             internal RenderTexture t6PunctualShadow;
             internal RenderTexture t7LowResShadow;
-            internal RenderTexture t22ScreenShadow;
+            internal RenderTexture t11ScreenShadow;
 
             internal bool T0Ready =>
                 t0Binning != null && t0Binning.IsValid();
@@ -64,12 +64,12 @@ namespace EndfieldGraphShaderLab
                 t6PunctualShadow != null && t6PunctualShadow.IsCreated();
             internal bool T7Ready =>
                 t7LowResShadow != null && t7LowResShadow.IsCreated();
-            internal bool T22Ready =>
-                t22ScreenShadow != null && t22ScreenShadow.IsCreated();
+            internal bool T11Ready =>
+                t11ScreenShadow != null && t11ScreenShadow.IsCreated();
 
             internal bool AllPhysical =>
                 cameraDepthReady && T0Ready && T5Ready && T6Ready &&
-                T7Ready && T22Ready;
+                T7Ready && T11Ready;
 
             internal string BuildStatusToken()
             {
@@ -79,7 +79,7 @@ namespace EndfieldGraphShaderLab
                     $"t5={(T5Ready ? "ready" : "absent")}," +
                     $"t6={(T6Ready ? "ready" : "absent")}," +
                     $"t7={(T7Ready ? "ready" : "absent")}," +
-                    $"t22={(T22Ready ? "allocated" : "absent")}";
+                    $"t11={(T11Ready ? "allocated" : "absent")}";
             }
 
             internal string BuildShapeToken(int width, int height)
@@ -89,7 +89,7 @@ namespace EndfieldGraphShaderLab
                     $"t5={Describe(t5Reflection)}," +
                     $"t6={Describe(t6PunctualShadow)}," +
                     $"t7={Describe(t7LowResShadow)}," +
-                    $"t22={Describe(t22ScreenShadow)}";
+                    $"t11={Describe(t11ScreenShadow)}";
             }
 
             private static string Describe(RenderTexture texture)
@@ -158,7 +158,7 @@ namespace EndfieldGraphShaderLab
                     camera,
                     width,
                     height,
-                    out frame.t22ScreenShadow);
+                    out frame.t11ScreenShadow);
             }
             return frame;
         }
@@ -252,7 +252,7 @@ namespace EndfieldGraphShaderLab
             {
                 failure =
                     "strict resolver target-resource probe requires physical " +
-                    "t0/t1/t5/t6/t7/t22 resources: " +
+                    "t0/t1/t5/t6/t7/t11 resources: " +
                     resourceFrame.BuildStatusToken();
                 FailClosed(context, failure);
                 return false;
@@ -286,8 +286,8 @@ namespace EndfieldGraphShaderLab
                     ResolverT7Id,
                     resourceFrame.T7Ready ? resourceFrame.t7LowResShadow : Texture2D.whiteTexture);
                 command.SetGlobalTexture(
-                    ResolverT22Id,
-                    resourceFrame.T22Ready ? resourceFrame.t22ScreenShadow : Texture2D.whiteTexture);
+                    ResolverT11Id,
+                    resourceFrame.T11Ready ? resourceFrame.t11ScreenShadow : Texture2D.whiteTexture);
                 command.SetGlobalTexture(
                     EndfieldRecoveredDeferredGBufferFrame.ResolverGBufferT23Id,
                     resolverT23);
@@ -366,7 +366,7 @@ namespace EndfieldGraphShaderLab
                     "Recovered deferred resolver input consumer probe active: " +
                     $"camera={camera.name}, size={width}x{height}, " +
                     $"publicationSerial={resolverPublicationSerial}, " +
-                    "sourceIdentifiers=t23:_62,t24:_61,t25:_60, " +
+                    "sourceIdentifiers=t23:_60,t24:_61,t25:_62, " +
                     "registerBridges=b0..b8, b6=zero-fallback, " +
                     "presented=false, retailPass0=false.");
                 activationLogged = true;

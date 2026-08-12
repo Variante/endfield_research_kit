@@ -39,10 +39,10 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredDeferredGBufferB");
         internal static readonly int GBufferCId =
             Shader.PropertyToID("_EndfieldRecoveredDeferredGBufferC");
-        // The selected original D3D11 resolver consumes the GBuffer in its
-        // backend register order C/B/A (t23/t24/t25), not the producer's
-        // logical A/B/C naming. Keep these aliases explicit so a future
-        // resolver consumer cannot silently swap the base-color and MRO
+        // The selected original D3D11 resolver consumes the GBuffer in
+        // register order A/B/C (t23/t24/t25). The source SPIR-V identifiers
+        // are _60/_61/_62 respectively; keep these aliases explicit so a
+        // future consumer cannot silently swap the base-color and MRO
         // attachments while the production pass remains disabled.
         internal static readonly int ResolverGBufferT23Id =
             Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT23");
@@ -50,16 +50,16 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT24");
         internal static readonly int ResolverGBufferT25Id =
             Shader.PropertyToID("_EndfieldRecoveredDeferredResolverT25");
-        // The selected original SPIR-V/HLSL resolver names the same source
-        // textures _62 (t23/C), _61 (t24/B), and _60 (t25/A). Publish these
+        // The selected original SPIR-V/HLSL resolver names these source
+        // textures _60 (t23/A), _61 (t24/B), and _62 (t25/C). Publish the
         // exact identifiers alongside the lab-prefixed aliases so a future
         // binding-compatible resolver can consume the source names directly.
         internal static readonly int ResolverSourceTextureT23Id =
-            Shader.PropertyToID("_62");
+            Shader.PropertyToID("_60");
         internal static readonly int ResolverSourceTextureT24Id =
             Shader.PropertyToID("_61");
         internal static readonly int ResolverSourceTextureT25Id =
-            Shader.PropertyToID("_60");
+            Shader.PropertyToID("_62");
         private static readonly int GpuViewProjectionId =
             Shader.PropertyToID(
                 "_EndfieldRecoveredDeferredGpuViewProjection");
@@ -196,15 +196,15 @@ namespace EndfieldGraphShaderLab
                 command.SetGlobalTexture(GBufferAId, gBufferA);
                 command.SetGlobalTexture(GBufferBId, gBufferB);
                 command.SetGlobalTexture(GBufferCId, gBufferC);
-                // Source-closed selected pass-0 bridge: t23=C, t24=B,
-                // t25=A. These are diagnostic aliases only; no production
+                // Source-closed selected pass-0 bridge: t23=A, t24=B,
+                // t25=C. These are diagnostic aliases only; no production
                 // resolver draw is enabled by this publication.
-                command.SetGlobalTexture(ResolverGBufferT23Id, gBufferC);
+                command.SetGlobalTexture(ResolverGBufferT23Id, gBufferA);
                 command.SetGlobalTexture(ResolverGBufferT24Id, gBufferB);
-                command.SetGlobalTexture(ResolverGBufferT25Id, gBufferA);
-                command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferC);
+                command.SetGlobalTexture(ResolverGBufferT25Id, gBufferC);
+                command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferA);
                 command.SetGlobalTexture(ResolverSourceTextureT24Id, gBufferB);
-                command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferA);
+                command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferC);
                 command.SetGlobalFloat(ReadyId, 1.0f);
                 RequestReadbacks(command, camera.name);
                 // This producer is a non-presented sidecar. Restore the exact
@@ -230,8 +230,8 @@ namespace EndfieldGraphShaderLab
                     "attachments=B10G11R11/A2B10G10R10/A2B10G10R10/" +
                     "A2B10G10R10/R8G8B8A8_SRGB+D32S8, " +
                     "sourceRendererDisabled=" + (!renderer.enabled) + ", " +
-                    "resolverGBufferBindings=t23:C,t24:B,t25:A, " +
-                    "resolverSourceIdentifiers=t23:_62,t24:_61,t25:_60, " +
+                    "resolverGBufferBindings=t23:A,t24:B,t25:C, " +
+                    "resolverSourceIdentifiers=t23:_60,t24:_61,t25:_62, " +
                     "pass0ConsumerEnabled=false.");
                 activationLogged = true;
             }
@@ -249,9 +249,9 @@ namespace EndfieldGraphShaderLab
             out uint resolverPublicationSerial,
             out string failure)
         {
-            resolverT23 = gBufferC;
+            resolverT23 = gBufferA;
             resolverT24 = gBufferB;
-            resolverT25 = gBufferA;
+            resolverT25 = gBufferC;
             resolverPublicationSerial = publicationSerial;
             failure = string.Empty;
             if (!requested)
@@ -291,7 +291,7 @@ namespace EndfieldGraphShaderLab
                 resolverT25 == null || !resolverT25.IsCreated())
             {
                 failure =
-                    "same-frame C/B/A resolver textures are unavailable " +
+                    "same-frame A/B/C resolver textures are unavailable " +
                     $"for publication serial {publicationSerial}";
                 return false;
             }

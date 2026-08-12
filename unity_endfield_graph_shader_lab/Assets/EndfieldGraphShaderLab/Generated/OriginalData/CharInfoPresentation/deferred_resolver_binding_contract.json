@@ -3,7 +3,7 @@
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
   "outcome": "The selected original deferred resolver ABI is substantially source-closed while live pass 0 remains disabled. For binding 32, the installed Gacha Lua/layer state, decoded Zhuangfy and room prefabs, identity placement, original entrance/loop ACL pose streams, constant root motion, native follower equations, and selected 3840x2160 culling geometry now close the exact known authored result as 17 survivors: all six light_overview rows plus 11 of 12 SceneLight6Rarity rows, with only Spot Light (20) rejected. This is the exact authored contribution and internal priority/distance order, not the complete retail LightCullResult: runtime/custom carry-in, target-frame pointer/count, whole-list order, and final lightCount remain open. Bindings 30 through 35 and the selected cookie, HDPLS, reflection, binning, VisibilitySH, wetness, volumetric, and shadow paths retain their existing source-closed and GPU-verified narrow contracts. Complete pass-0 publication, settled retail resources/pixels, and final visual parity remain open.",
-  "latest_recovery": "All selected b35 value producers are source-closed, and a default-off ShaderVariablesGlobal/EndfieldCB1 publisher is now integrated. It writes the 3,200-byte canonical buffer plus the 2,512-byte D3D11 prefix, preserves raw int32 c28 offsets, leaves every unselected row zero, and rejects missing canonical resources, wrong dimensions/camera/lens/environment, or wrong destination size. D3D11/D3D12 read back canonical 800/800 and EndfieldCB1 628/628 words exactly; both APIs activate in the Wulfa same-frame path, the D3D12 missing-prerequisite run fails closed, and its beauty hash remains unchanged. Pass 0 remains disabled.",
+  "latest_recovery": "The selected original D3D11 compact resource map is now source-closed for t0..t25 from the exact DXBC declaration/use sites joined to the source HLSL roles: t11 is the screen-space shadow mask, t22 is wetness, and t23/t24/t25 are GBuffer A/B/C (_60/_61/_62). The former t22-HDPLS and C/B/A bindings were corrected. A default-off exact-consumer D3D11 rerun reproduces resourceMask=0x3ffffff, resourceFailureMask=0, constantBufferMask=0x1ff, 1,843,200 finite floats, and stable RGBA-float SHA-256 b93a4b5a38c96133bf6f0fa95e7ecb5b6fee9a0c46b48b7a85d3dfbf8b34d8c2. Output remains private/non-presented; numerical parity and pass 0 remain disabled.",
   "deferred_gbuffer_frame_transport": {
     "status": "source-camera five-MRT producer GPU-closed as a non-presented sidecar; canonical publication and pass 0 remain disabled",
     "default_off": true,
@@ -12,8 +12,8 @@
     "pass0_consumer_enabled": false,
     "source_renderer_disabled": true,
     "resolver_binding_aliases": {
-      "backend_registers": {"t23": "GBufferC", "t24": "GBufferB", "t25": "GBufferA"},
-      "source_identifiers": {"t23": "_62", "t24": "_61", "t25": "_60"}
+      "backend_registers": {"t23": "GBufferA", "t24": "GBufferB", "t25": "GBufferC"},
+      "source_identifiers": {"t23": "_60", "t24": "_61", "t25": "_62"}
     },
     "selector": "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
     "source_camera": {
@@ -49,7 +49,7 @@
       "GBufferC": {"format": "R8G8B8A8_SRGB", "nonzero_bytes": 1382400, "sha256": "b6ffa8536d9c20724bbd90c514cde0a80e0cb3e95911bd5a3293b8d320bbfa56"}
     },
     "sources": {
-      "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "c5549f31b8fc01a89d498523f4ace248102d21ec323bc6826bfe22c9520df56f"},
+      "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "17e2e481c2f4809e23bb13f29c2b809f7ce98143efd265f364da550a8733c300"},
       "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfoHGRPLitUnavailable.shader", "sha256": "e957bcb140a066a452423f32efc5bd3195f410094943562c96376cff44d2d23e"},
       "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
       "material_source": {"path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Materials/M_CharInfo_outside.raw.json", "sha256": "45b4e36ddf66010b838abdbad0e7bf8906d5cf2ec2ea9997771bd14c75ecfaf7"}
@@ -82,15 +82,15 @@
       "b7": "EndfieldCB7",
       "b8": "EndfieldCB8"
     },
-    "source_gbuffer_reads": {"t23": "_62/GBufferC", "t24": "_61/GBufferB", "t25": "_60/GBufferA"},
+    "source_gbuffer_reads": {"t23": "_60/GBufferA", "t24": "_61/GBufferB", "t25": "_62/GBufferC"},
     "presented": false,
     "retail_pass0_enabled": false,
     "sources": {
       "policy": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverBindingPolicy.cs", "sha256": "093cd5e82db67fee3bf8c910f344f3117893478fa413b726de0f578181a8da2f"},
-      "consumer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverInputProbe.cs", "sha256": "9c2d628aa6862bd521e80e649a965b904b5346cf95bb2fddb77bbf23f38f023c"},
+      "consumer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverInputProbe.cs", "sha256": "ab7fd5c40cabae1f862c0815924c8e988ec1a7f54abee9671ab12c7ca8561a14"},
       "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldDeferredResolverInputProbe.shader", "sha256": "6ecaedad32ac0c1c88b6d86f97df178b15348166a305341e19e3e107c96ab946"},
       "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
-      "gbuffer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "c5549f31b8fc01a89d498523f4ace248102d21ec323bc6826bfe22c9520df56f"},
+      "gbuffer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "17e2e481c2f4809e23bb13f29c2b809f7ce98143efd265f364da550a8733c300"},
       "b3_b7_owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs", "sha256": "2dbaa1a1f000043979a66e5ac5311947984d84c10e01020c1db7082a1b2fab0c"},
       "b8_owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHConstants.cs", "sha256": "74d2376fd24056d044bebf725c359ab5f406899c1e70ea46ce51063e29ab3209"}
     }
@@ -2787,6 +2787,30 @@
             "confidence": "source-closed depth reconstruction sample"
           },
           {
+            "register": "t2",
+            "kind": "Texture2D",
+            "role": "_SSRLighting",
+            "set": 3,
+            "binding": 8,
+            "confidence": "exact D3D11 compact register/use match for source _19 screen-space reflection lighting"
+          },
+          {
+            "register": "t3",
+            "kind": "Texture2D",
+            "role": "_SSRFadeness",
+            "set": 3,
+            "binding": 9,
+            "confidence": "exact D3D11 compact register/use match for source _20 screen-space reflection fade"
+          },
+          {
+            "register": "t4",
+            "kind": "Texture2D",
+            "role": "_AmbientOcclusionTexture",
+            "set": 3,
+            "binding": 21,
+            "confidence": "exact D3D11 compact register/use match for source _21 AO sample"
+          },
+          {
             "register": "t5",
             "kind": "Texture2DArray",
             "role": "_ReflectionProbeOctTextureArray",
@@ -2811,20 +2835,132 @@
             "confidence": "source-closed integer Load used by directional-shadow response"
           },
           {
-            "register": "t22",
+            "register": "t8",
             "kind": "Texture2D",
             "role": "_HDPLSScreenSpaceShadowMask",
             "set": 3,
             "binding": 22,
-            "confidence": "source-closed screen-space character-shadow sample"
+            "confidence": "exact D3D11 compact register/use match for source _38 HDPLS sample"
+          },
+          {
+            "register": "t9",
+            "kind": "Texture2D",
+            "role": "_CSMRamp",
+            "set": 3,
+            "binding": 28,
+            "confidence": "exact D3D11 compact register/use match for source _39 CSM ramp sample"
+          },
+          {
+            "register": "t10",
+            "kind": "Texture2D",
+            "role": "_MultiscatteringLUT",
+            "set": 3,
+            "binding": 12,
+            "confidence": "exact D3D11 compact register/use match for source _41 multiscattering sample"
+          },
+          {
+            "register": "t11",
+            "kind": "Texture2D",
+            "role": "_ScreenSpaceShadowMask",
+            "set": 3,
+            "binding": 26,
+            "confidence": "exact D3D11 compact register/use match for source _42 screen-space shadow sample"
+          },
+          {
+            "register": "t12",
+            "kind": "Texture2D",
+            "role": "_LightCookie",
+            "set": 3,
+            "binding": 13,
+            "confidence": "exact D3D11 compact register/use match for source _43 light-cookie sample"
+          },
+          {
+            "register": "t13",
+            "kind": "Texture3D",
+            "role": "_IntegratedFog",
+            "set": 3,
+            "binding": 20,
+            "confidence": "exact D3D11 compact register/use match for source _48 integrated-fog sample"
+          },
+          {
+            "register": "t14",
+            "kind": "Texture2D",
+            "role": "_LogSH",
+            "set": 3,
+            "binding": 29,
+            "confidence": "exact D3D11 compact register/use match for source _51 log-SH sample"
+          },
+          {
+            "register": "t15",
+            "kind": "Texture2D",
+            "role": "VisibilitySHConstData",
+            "set": 3,
+            "binding": 6,
+            "confidence": "exact D3D11 compact register/use match for source _52 VisibilitySH sample"
+          },
+          {
+            "register": "t16",
+            "kind": "Texture3D",
+            "role": "_IrradianceVolume0",
+            "set": 3,
+            "binding": 19,
+            "confidence": "exact D3D11 compact register/use match for source _53 IV sample"
+          },
+          {
+            "register": "t17",
+            "kind": "Texture3D",
+            "role": "_IrradianceVolume1",
+            "set": 3,
+            "binding": 16,
+            "confidence": "exact D3D11 compact register/use match for source _54 IV sample"
+          },
+          {
+            "register": "t18",
+            "kind": "Texture3D",
+            "role": "_IrradianceVolume2",
+            "set": 3,
+            "binding": 18,
+            "confidence": "exact D3D11 compact register/use match for source _55 IV sample"
+          },
+          {
+            "register": "t19",
+            "kind": "Texture3D",
+            "role": "_IrradianceVolume3",
+            "set": 3,
+            "binding": 15,
+            "confidence": "exact D3D11 compact register/use match for source _56 IV sample"
+          },
+          {
+            "register": "t20",
+            "kind": "Texture3D",
+            "role": "_IrradianceVolume4",
+            "set": 3,
+            "binding": 17,
+            "confidence": "exact D3D11 compact register/use match for source _57 IV sample"
+          },
+          {
+            "register": "t21",
+            "kind": "Texture3D",
+            "role": "_IrradianceVolume5",
+            "set": 3,
+            "binding": 14,
+            "confidence": "exact D3D11 compact register/use match for source _58 IV sample"
+          },
+          {
+            "register": "t22",
+            "kind": "Texture2D",
+            "role": "_Wetness",
+            "set": 3,
+            "binding": 5,
+            "confidence": "exact D3D11 compact register/use match for source _59 wetness sample"
           },
           {
             "register": "t23",
             "kind": "Texture2D",
-            "role": "_GBufferTexture[2] / GBuffer C",
+            "role": "_GBufferTexture[0] / GBuffer A",
             "set": 3,
-            "binding": 23,
-            "confidence": "source-closed base-color Load at the first GBuffer decode"
+            "binding": 25,
+            "confidence": "exact D3D11 compact register/use match for source _60 metallic/occlusion/roughness Load"
           },
           {
             "register": "t24",
@@ -2832,18 +2968,18 @@
             "role": "_GBufferTexture[1] / GBuffer B",
             "set": 3,
             "binding": 24,
-            "confidence": "source-closed octahedral-normal Load at the first GBuffer decode"
+            "confidence": "exact D3D11 compact register/use match for source _61 octahedral-normal Load"
           },
           {
             "register": "t25",
             "kind": "Texture2D",
-            "role": "_GBufferTexture[0] / GBuffer A",
+            "role": "_GBufferTexture[2] / GBuffer C",
             "set": 3,
-            "binding": 25,
-            "confidence": "source-closed metallic/occlusion/roughness Load at the first GBuffer decode"
+            "binding": 23,
+            "confidence": "exact D3D11 compact register/use match for source _62 base-color Load"
           }
         ],
-        "unmapped_registers_remain_open": true
+        "unmapped_registers_remain_open": false
       }
     }
   },
@@ -3251,7 +3387,8 @@
         "texture_roles": {
           "raw_atlas_global": "_HDPLSTex",
           "screen_resolve_global": "_HDPLSScreenSpaceShadowMask",
-          "deferred_binding_22": "_HDPLSScreenSpaceShadowMask"
+          "source_binding_22": "_HDPLSScreenSpaceShadowMask",
+          "d3d11_register_t8": "_HDPLSScreenSpaceShadowMask"
         },
         "installed_ifix_state_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
         "installed_ifix_state_sha256": "ca4e750748a6d0664a0b0abbed5f246116d239fb5a44aada67ab98521cc2cbe9",

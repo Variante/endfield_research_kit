@@ -15,7 +15,7 @@ ACTIVE_RE = re.compile(
     r"camera=(?P<camera>[^,]+),\s*"
     r"size=(?P<width>\d+)x(?P<height>\d+),\s*"
     r"publicationSerial=(?P<serial>\d+),\s*"
-    r"sourceIdentifiers=(?P<source_ids>t23:_62,t24:_61,t25:_60),\s*"
+    r"sourceIdentifiers=(?P<source_ids>t23:_60,t24:_61,t25:_62),\s*"
     r"registerBridges=(?P<bridges>b0\.\.b8),\s*"
     r"b6=(?P<b6>[^,]+),\s*"
     r"presented=(?P<presented>true|false),\s*"
@@ -37,19 +37,19 @@ RESOURCE_RE = re.compile(
     r"t5=(?P<t5>ready|absent),"
     r"t6=(?P<t6>ready|absent),"
     r"t7=(?P<t7>ready|absent),"
-    r"t22=(?P<t22>allocated|absent),\s*"
+    r"t11=(?P<t11>allocated|absent),\s*"
     r"t1=(?P<t1shape>[^,]+),"
     r"t5=(?P<t5shape>[^,]+),"
     r"t6=(?P<t6shape>[^,]+),"
     r"t7=(?P<t7shape>[^,]+),"
-    r"t22=(?P<t22shape>[^,]+),\s*"
+    r"t11=(?P<t11shape>[^,]+),\s*"
     r"allPhysical=(?P<allphysical>true|false),\s*"
     r"screenContentValid=false\.",
     re.IGNORECASE,
 )
 G_BUFFER_TOKEN = (
-    "resolverGBufferBindings=t23:C,t24:B,t25:A, "
-    "resolverSourceIdentifiers=t23:_62,t24:_61,t25:_60"
+    "resolverGBufferBindings=t23:A,t24:B,t25:C, "
+    "resolverSourceIdentifiers=t23:_60,t24:_61,t25:_62"
 )
 SHADOW_DATA_TOKEN = (
     "Recovered selected deferred ShadowData b34 punctual section and "
@@ -127,7 +127,7 @@ def validate_log(
         require("camera", active["camera"], "MainCamera")
         require("extent", (active["width"], active["height"]), (640, 720))
         require("publication_serial", active["publicationSerial"] > 0, True)
-        require("source_identifiers", active["sourceIdentifiers"], "t23:_62,t24:_61,t25:_60")
+        require("source_identifiers", active["sourceIdentifiers"], "t23:_60,t24:_61,t25:_62")
         require("register_bridges", active["registerBridges"], "b0..b8")
         require("b6_fallback", active["b6"], "zero-fallback")
         require("presented", active["presented"], False)
@@ -157,25 +157,25 @@ def validate_log(
             "t5": match["t5"],
             "t6": match["t6"],
             "t7": match["t7"],
-            "t22": match["t22"],
+            "t11": match["t11"],
             "shapes": {
                 "t1": match["t1shape"],
                 "t5": match["t5shape"],
                 "t6": match["t6shape"],
                 "t7": match["t7shape"],
-                "t22": match["t22shape"],
+                "t11": match["t11shape"],
             },
             "allPhysical": match["allphysical"].lower() == "true",
             "screenContentValid": False,
         }
         expected_resources = (
-            {"t0": "ready", "t1": "ready", "t5": "ready", "t6": "ready", "t7": "ready", "t22": "allocated", "allPhysical": True}
+            {"t0": "ready", "t1": "ready", "t5": "ready", "t6": "ready", "t7": "ready", "t11": "allocated", "allPhysical": True}
             if expect_resource_probe
-            else {"t0": "ready", "t1": "ready", "t5": "ready", "t6": "ready", "t7": "absent", "t22": "absent", "allPhysical": False}
+            else {"t0": "ready", "t1": "ready", "t5": "ready", "t6": "ready", "t7": "absent", "t11": "absent", "allPhysical": False}
         )
         for key, expected in expected_resources.items():
             require(f"resource_{key}", resources[key], expected)
-        for key in ("t1", "t5", "t6", "t7", "t22"):
+        for key in ("t1", "t5", "t6", "t7", "t11"):
             require(f"resource_shape_{key}_present", resources["shapes"][key] != "none", expect_resource_probe or key in ("t1", "t5", "t6"))
 
     return {

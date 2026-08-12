@@ -197,70 +197,26 @@ NPC archetypes are imported as labeled source kits.
   retail target-frame resource ownership and numeric parity remain open.
   This proves exact bytecode execution in the disposable D3D11 fixture only,
   not retail resolver activation or frame parity.
-- The deferred resolver input boundary is now exercised by the actual
-  same-camera D3D11/D3D12 compatibility frames, not only by source gates. The GBuffer
-  producer stamps camera instance, `Time.frameCount`, extent, and a monotonic
-  publication serial; the consumer rejects stale or cross-camera resources
-  with an actionable fail-closed reason. Both backend runs reached the recovered
-  punctual shadow producer (D16 atlas `6144x4096`, 23 caster draws), published
-  b34, consumed `_62/_61/_60` as `t23/t24/t25`, and read back `7,372,800`
-  bytes with `5,523,986` nonzero bytes (`publicationSerial=1`) and matching
-  resolver payload counts. This remains
-  input-order evidence only: the probe is non-presented and retail pass 0 is
-  disabled; full numeric lighting parity and retail survivor ownership remain
-  open. The run's legacy beauty-image hash check drifted independently and is
-  not used as resolver evidence.
-- The selected pass-0 contract now carries a high-confidence D3D11 register
-  bridge for the core frame resources: `t0` binning, `t1` camera depth, `t5`
-  reflection-probe array, `t6` punctual shadow comparison, `t7` low-res
-  directional shadow, `t22` HDPLS screen shadow, and `t23/t24/t25` GBuffer
-  C/B/A, joined to their source-closed set-3 bindings. Backend-local
-  decompiler symbol names are deliberately not used as identity; unmapped
-  registers remain open. This removes a binding guess from the next resolver
-  integration step, but does not enable pass 0 or claim live-frame parity.
-- The same-frame SphereOutside GBuffer sidecar now publishes explicit resolver
-  aliases `t23=C`, `t24=B`, `t25=A` and the exact selected source identifiers
-  `_62`/`_61`/`_60` for `t23`/`t24`/`t25`; the log validator locks both
-  orderings and fail-closed paths clear every alias to black. This is only a
-  resource bridge for the next consumer integration step, so the sidecar
-  remains non-presented and pass 0 remains disabled.
-- The next consumer boundary is now executable under the explicit
-  `ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE` selector. It opts the
-  source-closed b30/b35/b31/b34 publishers into one frame, publishes exact
-  D3D11 bridge aliases b3 (`EndfieldCB3`), b7 (`EndfieldCB7`), and b8
-  (`EndfieldCB8`), supplies a zero/fail-closed b6 fallback, and reads the
-  private output in the original `_62(t23=C)` / `_61(t24=B)` / `_60(t25=A)`
-  order. The probe restores the camera target and never presents or enables
-  retail pass 0; target-frame survivor bindings, nonzero HDPLS/cookie data,
-  and the full lighting consumer remain open.
-- The resolver probe now binds and audits all source-backed target-resource
-  registers in the same camera/frame. Both D3D11 and D3D12 strict runs report
-  physical `t0` binning, `t1` 640x720 camera depth, `t5` 576x576x32 reflection
-  oct array, `t6` 6144x4096 D16 punctual atlas, `t7` 160x180 R8 low-resolution
-  directional shadow, and `t22` 640x720 RG8 screen-shadow allocation. The
-  final missing-resource result was traced to our PreGBuffer descriptor forcing
-  `sRGB=false`; changing it to `GraphicsFormatUtility.IsSRGBFormat(format)`
-  preserves `R8G8B8A8_SRGB` and releases the downstream gates. The strict
-  reports are `resolver_resource_validation_d3d11.json` and
-  `resolver_resource_validation_d3d12.json`. `t22` content remains explicitly
-  invalid (`screenContentValid=false`) because full retail scene-R ownership
-  and Eye/Skin consumer activation are still open.
-- An explicit `ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1` D3D11-only bridge
-  now submits the selected original resolver DXBC against the same-frame
-  resources into a private, non-presented output. The MainCamera readback
-  proves exact shader execution (`exactBound=1`, 7,372,800 bytes, 6,430,845
-  nonzero bytes). The render-thread arm boundary preserves Unity's shell SRVs,
-  and the native bridge's complete resource mask is now `0x3ffffff`: every
-  `t0` through `t25` source view binds with `resourceFailureMask=0x0`. This
-  closes exact same-frame resource transport. The publisher-owned b0–b8
-  constant buffers also bind completely (`constantBufferMask=0x1ff`); the
-  MainCamera RGBA-float oracle is SHA-256
-  `b0130f5a0f67f714181847413757e81fbeebe59af0428abecdc9b33e67d2cb83`, with
-  1,843,200 finite values and no non-finite samples. This is still private
-  diagnostic output, not a presented retail result; a second D3D11 run
-  reproduced the same dimensions, masks, finite-value bounds, and SHA-256.
-  Recovered numerical implementation comparison and retail pass-0 activation
-  remain open.
+- The deferred resolver input boundary is exercised by actual same-camera
+  D3D11/D3D12 compatibility frames. The producer stamps camera, frame, extent,
+  and publication serial; stale or cross-camera inputs fail closed. The exact
+  D3D11 compact register audit now covers all `t0..t25`: `t11` is the source
+  screen-space shadow mask, `t22` is wetness, and `t23/t24/t25` are GBuffer
+  A/B/C (`_60/_61/_62`). This corrects the former C/B/A and t22-HDPLS guess;
+  source set-3 binding numbers are not D3D11 register numbers.
+- The same-frame SphereOutside sidecar publishes resolver aliases `t23=A`,
+  `t24=B`, `t25=C` and source identifiers `_60/_61/_62`; validators and the
+  generated binding contract lock this order. The sidecar remains non-presented
+  and retail pass 0 remains disabled.
+- `ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1` now submits the exact selected
+  resolver DXBC against the corrected same-frame slots into a private D3D11
+  output. Two runs reproduce `resourceMask=0x3ffffff`,
+  `resourceFailureMask=0`, `constantBufferMask=0x1ff`, all 1,843,200 floats
+  finite, and the corrected stable RGBA-float SHA-256
+  `b93a4b5a38c96133bf6f0fa95e7ecb5b6fee9a0c46b48b7a85d3dfbf8b34d8c2`
+  (`nonzeroBytes=6,441,402`, min `0.3043011`, max `1`). This proves exact
+  shader execution and corrected resource transport only; numerical lighting
+  comparison, settled retail pixels, and pass-0 presentation remain open.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and

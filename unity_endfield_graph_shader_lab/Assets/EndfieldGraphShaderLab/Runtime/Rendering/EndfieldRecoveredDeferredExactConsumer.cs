@@ -113,7 +113,7 @@ namespace EndfieldGraphShaderLab
                 return FailClosed("exact consumer received no camera or GBuffer frame");
             if (!resources.AllPhysical)
                 return FailClosed(
-                    "exact consumer requires physical t0/t1/t5/t6/t7/t22 resources: " +
+                    "exact consumer requires physical t0/t1/t5/t6/t7/t11 resources: " +
                     resources.BuildStatusToken());
             if (!transformsReady || !shaderVariablesReady ||
                 !lightDataReady || !shadowDataReady)
@@ -644,7 +644,7 @@ namespace EndfieldGraphShaderLab
                 case 5: return resources.t5Reflection;
                 case 6: return resources.t6PunctualShadow;
                 case 7: return resources.t7LowResShadow;
-                case 22: return resources.t22ScreenShadow;
+                case 11: return resources.t11ScreenShadow;
                 case 23: return resolverT23;
                 case 24: return resolverT24;
                 case 25: return resolverT25;

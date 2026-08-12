@@ -309,11 +309,11 @@ def main() -> int:
         "SetGlobalConstantBuffer",
         "IssuePluginEvent",
         "ReadPixels",
-        "logical GBuffer in backend order t23=C, t24=B, t25=A",
+        "logical GBuffer in backend order t23=A, t24=B, t25=C",
         "else if (slot == 23)",
-        "texture = gbufferC",
-        "else if (slot == 25)",
         "texture = gbufferA",
+        "else if (slot == 25)",
+        "texture = gbufferC",
     ]:
         check(token in runtime, f"runtime fail-closed token missing: {token}", errors)
     for token in [

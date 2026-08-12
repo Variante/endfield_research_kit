@@ -1312,8 +1312,8 @@ def verify_deferred_gbuffer_frame_report(
             "height": transport["extent"]["height"],
             "attachments": transport["attachment_signature"],
             "sourceRendererDisabled": True,
-            "resolverGBufferBindings": "t23:C,t24:B,t25:A",
-            "resolverSourceIdentifiers": "t23:_62,t24:_61,t25:_60",
+            "resolverGBufferBindings": "t23:A,t24:B,t25:C",
+            "resolverSourceIdentifiers": "t23:_60,t24:_61,t25:_62",
             "pass0ConsumerEnabled": False,
         },
     )
@@ -1450,7 +1450,7 @@ def verify_deferred_gbuffer_frame_transport(recovery: dict[str, object]) -> None
             "ResolverSourceTextureT23Id",
             "ResolverSourceTextureT24Id",
             "ResolverSourceTextureT25Id",
-            'resolverSourceIdentifiers=t23:_62,t24:_61,t25:_60',
+            'resolverSourceIdentifiers=t23:_60,t24:_61,t25:_62',
             'pass0ConsumerEnabled=false',
         ],
     )
@@ -1904,7 +1904,8 @@ def verify_hdpls_resource_lifecycle_contract(
             {
                 "raw_atlas_global": "_HDPLSTex",
                 "screen_resolve_global": "_HDPLSScreenSpaceShadowMask",
-                "deferred_binding_22": "_HDPLSScreenSpaceShadowMask",
+                "source_binding_22": "_HDPLSScreenSpaceShadowMask",
+                "d3d11_register_t8": "_HDPLSScreenSpaceShadowMask",
             },
         ),
         (
@@ -4898,7 +4899,8 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_native["texture_roles"] == {
         "raw_atlas_global": "_HDPLSTex",
         "screen_resolve_global": "_HDPLSScreenSpaceShadowMask",
-        "deferred_binding_22": "_HDPLSScreenSpaceShadowMask",
+        "source_binding_22": "_HDPLSScreenSpaceShadowMask",
+        "d3d11_register_t8": "_HDPLSScreenSpaceShadowMask",
     }
     assert hdpls_native["installed_ifix_state"] == {
         "base_file_count": 0,
@@ -5365,7 +5367,7 @@ def verify_selected_resolver_binding_contract() -> None:
         repo_path(d3d11_registers["source_path"]),
         d3d11_registers["source_sha256"],
     )
-    assert d3d11_registers["unmapped_registers_remain_open"] is True
+    assert d3d11_registers["unmapped_registers_remain_open"] is False
     assert [
         (
             row["register"],
@@ -5377,13 +5379,30 @@ def verify_selected_resolver_binding_contract() -> None:
     ] == [
         ("t0", "_BinningBuffer", 3, 39),
         ("t1", "_CameraDepthTexture", 3, 27),
+        ("t2", "_SSRLighting", 3, 8),
+        ("t3", "_SSRFadeness", 3, 9),
+        ("t4", "_AmbientOcclusionTexture", 3, 21),
         ("t5", "_ReflectionProbeOctTextureArray", 3, 10),
         ("t6", "_PunctualLightShadowTexV2", 3, 11),
         ("t7", "_LowResDirectionalShadow", 3, 7),
-        ("t22", "_HDPLSScreenSpaceShadowMask", 3, 22),
-        ("t23", "_GBufferTexture[2] / GBuffer C", 3, 23),
+        ("t8", "_HDPLSScreenSpaceShadowMask", 3, 22),
+        ("t9", "_CSMRamp", 3, 28),
+        ("t10", "_MultiscatteringLUT", 3, 12),
+        ("t11", "_ScreenSpaceShadowMask", 3, 26),
+        ("t12", "_LightCookie", 3, 13),
+        ("t13", "_IntegratedFog", 3, 20),
+        ("t14", "_LogSH", 3, 29),
+        ("t15", "VisibilitySHConstData", 3, 6),
+        ("t16", "_IrradianceVolume0", 3, 19),
+        ("t17", "_IrradianceVolume1", 3, 16),
+        ("t18", "_IrradianceVolume2", 3, 18),
+        ("t19", "_IrradianceVolume3", 3, 15),
+        ("t20", "_IrradianceVolume4", 3, 17),
+        ("t21", "_IrradianceVolume5", 3, 14),
+        ("t22", "_Wetness", 3, 5),
+        ("t23", "_GBufferTexture[0] / GBuffer A", 3, 25),
         ("t24", "_GBufferTexture[1] / GBuffer B", 3, 24),
-        ("t25", "_GBufferTexture[0] / GBuffer A", 3, 25),
+        ("t25", "_GBufferTexture[2] / GBuffer C", 3, 23),
     ]
 
 
