@@ -416,6 +416,17 @@ NPC archetypes are imported as labeled source kits.
   constant-buffer upload primitive. This closes another equal-displacement
   false positive while leaving the channel-2 resource-to-GPU edge open. The
   structured result is recorded under `inlined_lookup_followup`.
+  The refresh body also has a separate five-slot override path: after the
+  `+0x140..+0x180` to `+0xb0..+0xf0` copy, `0x18042f750` interns five fixed
+  keys through `0x180627040`, binary-searches the optional manager table at
+  `+0xc0` with `0x18042ba20`, and writes any found `Vector4` to the matching
+  renderer/resource slot. This is still a named per-draw override writer,
+  not a read of resource `+0xd0` or a descriptor/constant-buffer upload.
+  The apparent `0x180fc5e60` service lookup on these paths is now identified
+  as registry index 20 (`RuntimeInitializeOnLoadManager`) through
+  `0x18030f100`, so its `+0x38`/`+0xf0` fields are not custom-resource lanes.
+  Both boundaries are recorded under `override_refresh_followup` and
+  `runtime_initialize_service_identity` in the packed-flag audit.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with
