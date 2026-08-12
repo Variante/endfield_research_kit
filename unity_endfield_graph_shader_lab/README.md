@@ -2271,6 +2271,12 @@ so the previous-deformation ABI is shared across these two CharacterNPR
 families. Its fragment preserves the same five MRT lanes while setting the
 oct-normal alpha lane to `0.7` (Skin uses `0.4`).
 
+The current `CharacterNPR_Hair` export confirms the same 6044-byte vertex
+program at source pass index 3. Hair is not a fragment alias: its five-MRT
+fragment sets oct-normal alpha to `1.0` and writes sampled hair color scaled by
+the serialized per-material tint words. The source identity and these anchors
+are included in `verify_current_character_npr_skin_export.py`.
+
 The separate canonical-depth owner is also default-off. Unlike the sidecar, it
 binds two exact `A2B10G10R10_UNormPack32` PreG colors together with the same
 stencil-bearing camera depth attachment consumed by the immediately following

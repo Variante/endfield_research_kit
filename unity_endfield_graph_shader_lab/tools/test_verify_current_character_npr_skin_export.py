@@ -58,6 +58,18 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
             result["pregbuffer"]["vertex_motion_inputs"]["eye_fragment"],
             "same five MRT topology; Eye Target3.w=0.7",
         )
+        self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["hair_shared_vertex"],
+            "exact same 6044-byte DXBC and decompilation; Hair pass index is 3",
+        )
+        self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["hair_fragment"],
+            "same five MRT topology; Hair Target3.w=1.0 and tinted sampled color",
+        )
+        self.assertEqual(
+            result["hair_source_identity"]["name"],
+            "HGRP/CharacterNPR_Hair",
+        )
         self.assertEqual(result["interpretation"]["retail_frame_parity"], "not asserted")
 
     def test_missing_artifact_reports_path_and_expected_size(self) -> None:

@@ -90,7 +90,12 @@ NPC archetypes are imported as labeled source kits.
   Skin and Eye rather than a Skin-only special case. Eye's fragment keeps the
   same five MRT topology while its oct-normal alpha is `0.7` rather than Skin's
   `0.4`. The current export audit reports the five-MRT contract and this
-  explicit subset.
+  explicit subset. The refreshed current `CharacterNPR_Hair` export now closes
+  the third family too: it uses the exact same 6044-byte vertex DXBC and
+  decompilation (pass index 3), while its fragment keeps the five MRT lanes,
+  sets the oct-normal alpha to `1.0`, and multiplies sampled color by the
+  per-material tint words. This is a family-specific payload distinction, not
+  a generic Skin/Eye alias.
 - The default-off screen/direct same-owner audit also passes its Skin/Cloth/Hair
   shader and pipeline chronology checks, including canonical forward depth and
   the separate PreG D32S8 sidecar.

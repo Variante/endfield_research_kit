@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the current installed CharacterNPR_Skin export boundary.
+"""Verify current installed CharacterNPR Skin/Eye/Hair export boundaries.
 
 This audit deliberately proves source/export identity and compiled-variant
 metadata only.  It does not claim that the recovered Unity shader has retail
@@ -32,7 +32,13 @@ SHADER_EXPORT = (
     / "scratch/animestudio/body_skin_sidecar_refresh/shader_export/Shader"
     / "HGRP_CharacterNPR_Skin_p3E3D05CF72D25122.shader"
 )
+HAIR_SHADER_EXPORT = (
+    REPO_ROOT
+    / "scratch/animestudio/character_npr_hair_sidecars_current/shader_export/Shader"
+    / "HGRP_CharacterNPR_Hair_p8FA556110AA47B6F.shader"
+)
 BYTECODE_ROOT = Path(str(SHADER_EXPORT) + ".bytecode")
+HAIR_BYTECODE_ROOT = Path(str(HAIR_SHADER_EXPORT) + ".bytecode")
 PREGBUFFER_RUNTIME = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
@@ -67,6 +73,18 @@ EYE_PREGBUFFER_FRAGMENT_SIDECAR = (
     / "HGRP_CharacterNPR_Eye_pE852494D61D6F176.shader.bytecode"
     / "0217_endfield_dxbc_1.dxbc"
 )
+HAIR_PREGBUFFER_VERTEX_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/hair_1836_vertex.hlsl"
+)
+HAIR_PREGBUFFER_VERTEX_SIDECAR = (
+    HAIR_BYTECODE_ROOT / "1836_endfield_dxbc_0.dxbc"
+)
+HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/hair_1837.hlsl"
+)
+HAIR_PREGBUFFER_FRAGMENT_SIDECAR = (
+    HAIR_BYTECODE_ROOT / "1837_endfield_dxbc_1.dxbc"
+)
 
 EXPECTED_SHADER_MAP = {
     "name": "HGRP/CharacterNPR_Skin",
@@ -79,6 +97,18 @@ EXPECTED_SHADER_MAP = {
 EXPECTED_SHADER_EXPORT = {
     "size": 34275574,
     "sha256": "91f3255a631b067f7942756ce96857c5f5d4a3f65f648faa2ccf11b61b75c0b8",
+}
+EXPECTED_HAIR_SHADER_MAP = {
+    "name": "HGRP/CharacterNPR_Hair",
+    "type": "Shader",
+    "path_id": -8095970123935614097,
+    "source_name": "19F0903A12BA87C0D43E67E64889B525.chk",
+    "asset_map_hash": "e4374147eb3b556b",
+    "offset": 131820552,
+}
+EXPECTED_HAIR_SHADER_EXPORT = {
+    "size": 34529482,
+    "sha256": "3105e54c77021710dd8a8cd5eceaf0a38dafb2e71cc69832cc3f5dee967f6087",
 }
 EXPECTED_DECOMPILED_SPV_GLSL = {
     "size": 97085,
@@ -113,6 +143,20 @@ EXPECTED_EYE_PREGBUFFER_FRAGMENT_SIDECAR = {
 EXPECTED_EYE_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = {
     "size": 6266,
     "sha256": "7e8566d7486f0a5257c56ff58091de30eb4414e18981805868e8885c78f9820c",
+}
+EXPECTED_HAIR_PREGBUFFER_VERTEX_SIDECAR = {
+    "size": 6044,
+    "sha256": "bee21d747a5ee3abea06b5db3535165471eea079222993a339377fe5e28b2a8e",
+    "pass_index": 3,
+}
+EXPECTED_HAIR_PREGBUFFER_FRAGMENT_SIDECAR = {
+    "size": 2316,
+    "sha256": "3783aae7b9c2c32a0573d539ac44f784bbd68e330ef0176316d60a9363c1adff",
+    "pass_index": 3,
+}
+EXPECTED_HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = {
+    "size": 6243,
+    "sha256": "b97e735f4005f650bf0bafa7db8a70f33140284474603905ac6ab55d48ad1f3e",
 }
 
 EXPECTED_MATERIALS = {
@@ -239,6 +283,67 @@ def verify_shader_map(entries: list[dict[str, Any]]) -> dict[str, Any]:
         "source_name": actual_source,
         "asset_map_hash": entry["Hash"],
         "offset": int(entry["Offset"]),
+    }
+
+
+def verify_hair_shader_map(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    matches = [
+        entry
+        for entry in entries
+        if entry.get("Name") == EXPECTED_HAIR_SHADER_MAP["name"]
+        and entry.get("Type") == EXPECTED_HAIR_SHADER_MAP["type"]
+        and int(entry.get("PathID", 0)) == EXPECTED_HAIR_SHADER_MAP["path_id"]
+    ]
+    if len(matches) != 1:
+        raise AssertionError(
+            "current CharacterNPR_Hair AssetMap identity mismatch: "
+            f"expected one row, actual={len(matches)}"
+        )
+    entry = matches[0]
+    actual_source = Path(str(entry.get("Source") or "")).name
+    for key in ("asset_map_hash", "offset"):
+        actual = entry.get("Hash" if key == "asset_map_hash" else "Offset")
+        if actual != EXPECTED_HAIR_SHADER_MAP[key]:
+            raise AssertionError(
+                f"current CharacterNPR_Hair AssetMap {key} mismatch: "
+                f"expected={EXPECTED_HAIR_SHADER_MAP[key]} actual={actual}"
+            )
+    if actual_source != EXPECTED_HAIR_SHADER_MAP["source_name"]:
+        raise AssertionError(
+            "current CharacterNPR_Hair source mismatch: "
+            f"expected={EXPECTED_HAIR_SHADER_MAP['source_name']} actual={actual_source}"
+        )
+    return {
+        "name": entry["Name"],
+        "type": entry["Type"],
+        "path_id": int(entry["PathID"]),
+        "source_name": actual_source,
+        "asset_map_hash": entry["Hash"],
+        "offset": int(entry["Offset"]),
+    }
+
+
+def verify_hair_shader_export() -> dict[str, Any]:
+    require_file(
+        HAIR_SHADER_EXPORT,
+        EXPECTED_HAIR_SHADER_EXPORT["size"],
+        EXPECTED_HAIR_SHADER_EXPORT["sha256"],
+        "current CharacterNPR_Hair shader export",
+    )
+    shader_text = HAIR_SHADER_EXPORT.read_text(encoding="utf-8")
+    for needle in (
+        'Shader "HGRP/CharacterNPR_Hair"',
+        'Name "PreGBuffer"',
+        'Tags { "ChildMaterial" = "" "LIGHTMODE" = "DepthCharacterOnly"',
+    ):
+        if needle not in shader_text:
+            raise AssertionError(
+                f"current Hair shader export missing {needle!r}"
+            )
+    return {
+        "path": str(HAIR_SHADER_EXPORT.relative_to(REPO_ROOT)).replace("\\", "/"),
+        "size": EXPECTED_HAIR_SHADER_EXPORT["size"],
+        "sha256": EXPECTED_HAIR_SHADER_EXPORT["sha256"],
     }
 
 
@@ -688,6 +793,121 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
                 "current Eye PreGBuffer fragment decompilation anchor missing: "
                 f"label={label} needle={needle!r}"
             )
+
+    # Hair's current PreGBuffer uses the same shared vertex history program,
+    # but its fragment is not interchangeable with Skin/Eye: the authored
+    # normal-alpha lane is 1.0 and its color lane multiplies sampled hair
+    # texture by the per-material tint words.
+    require_file(
+        HAIR_PREGBUFFER_VERTEX_SIDECAR,
+        EXPECTED_HAIR_PREGBUFFER_VERTEX_SIDECAR["size"],
+        EXPECTED_HAIR_PREGBUFFER_VERTEX_SIDECAR["sha256"],
+        "current Hair PreGBuffer vertex DXBC sidecar",
+    )
+    hair_vertex_metadata_path = Path(
+        str(HAIR_PREGBUFFER_VERTEX_SIDECAR) + ".metadata.json"
+    )
+    if not hair_vertex_metadata_path.is_file():
+        raise AssertionError(
+            "missing Hair PreGBuffer vertex metadata: "
+            f"{hair_vertex_metadata_path}"
+        )
+    hair_vertex_metadata = json.loads(
+        hair_vertex_metadata_path.read_text(encoding="utf-8")
+    )
+    for key, expected in {
+        "SourcePassName": "PreGBuffer",
+        "SourcePassIndex": EXPECTED_HAIR_PREGBUFFER_VERTEX_SIDECAR["pass_index"],
+        "SourceSerializedProgramStage": "vertex",
+        "DecodedProgramStage": "vertex",
+        "DecodedProgramEncoding": "DXBC",
+    }.items():
+        if hair_vertex_metadata.get(key) != expected:
+            raise AssertionError(
+                "current Hair PreGBuffer vertex metadata mismatch: "
+                f"field={key} expected={expected!r} "
+                f"actual={hair_vertex_metadata.get(key)!r}"
+            )
+    if hair_vertex_metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current Hair PreGBuffer vertex keyword mismatch: "
+            f"expected={expected_keywords} "
+            f"actual={hair_vertex_metadata.get('SourceCompiledKeywords')}"
+        )
+    require_file(
+        HAIR_PREGBUFFER_VERTEX_DECOMPILED_HLSL,
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["size"],
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["sha256"],
+        "current Hair PreGBuffer vertex decompilation",
+    )
+    hair_vertex_text = HAIR_PREGBUFFER_VERTEX_DECOMPILED_HLSL.read_text(
+        encoding="utf-8"
+    )
+    if hair_vertex_text != vertex_text:
+        raise AssertionError(
+            "current Hair/Skin PreGBuffer vertex decompilations differ despite "
+            "the expected shared DXBC hash"
+        )
+
+    require_file(
+        HAIR_PREGBUFFER_FRAGMENT_SIDECAR,
+        EXPECTED_HAIR_PREGBUFFER_FRAGMENT_SIDECAR["size"],
+        EXPECTED_HAIR_PREGBUFFER_FRAGMENT_SIDECAR["sha256"],
+        "current Hair PreGBuffer fragment DXBC sidecar",
+    )
+    hair_fragment_metadata_path = Path(
+        str(HAIR_PREGBUFFER_FRAGMENT_SIDECAR) + ".metadata.json"
+    )
+    if not hair_fragment_metadata_path.is_file():
+        raise AssertionError(
+            "missing Hair PreGBuffer fragment metadata: "
+            f"{hair_fragment_metadata_path}"
+        )
+    hair_fragment_metadata = json.loads(
+        hair_fragment_metadata_path.read_text(encoding="utf-8")
+    )
+    for key, expected in {
+        "SourcePassName": "PreGBuffer",
+        "SourcePassIndex": EXPECTED_HAIR_PREGBUFFER_FRAGMENT_SIDECAR["pass_index"],
+        "SourceSerializedProgramStage": "vertex",
+        "DecodedProgramStage": "fragment",
+        "DecodedProgramEncoding": "DXBC",
+    }.items():
+        if hair_fragment_metadata.get(key) != expected:
+            raise AssertionError(
+                "current Hair PreGBuffer fragment metadata mismatch: "
+                f"field={key} expected={expected!r} "
+                f"actual={hair_fragment_metadata.get(key)!r}"
+            )
+    if hair_fragment_metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current Hair PreGBuffer fragment keyword mismatch: "
+            f"expected={expected_keywords} "
+            f"actual={hair_fragment_metadata.get('SourceCompiledKeywords')}"
+        )
+    require_file(
+        HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL,
+        EXPECTED_HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL["size"],
+        EXPECTED_HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL["sha256"],
+        "current Hair PreGBuffer fragment decompilation",
+    )
+    hair_fragment_text = HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL.read_text(
+        encoding="utf-8"
+    )
+    for label, needle in {
+        "five_mrt_outputs": "float4 SV_Target_4 : SV_Target4;",
+        "target0_zero": "SV_Target.z = 0.0f;",
+        "target1_motion": "SV_Target_1.z = 1.0f;",
+        "target2_selector": "SV_Target_2.x = _59(_162 & 1023u)",
+        "target3_hair_normal_alpha": "SV_Target_3.w = 1.0f;",
+        "target4_hair_color": "SV_Target_4.x = _256.x * asfloat(_268.x);",
+        "target4_color_alpha": "SV_Target_4.w = 1.0f;",
+    }.items():
+        if needle not in hair_fragment_text:
+            raise AssertionError(
+                "current Hair PreGBuffer fragment decompilation anchor missing: "
+                f"label={label} needle={needle!r}"
+            )
     runtime = PREGBUFFER_RUNTIME.read_text(encoding="utf-8")
     runtime_required = {
         "g_buffer_c_property": 'Shader.PropertyToID("_EndfieldRecoveredPreGBufferC")',
@@ -729,6 +949,8 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
             "encoding": "Target1.xy = 0.5 + sign(sqrt(sqrt(abs(delta * 0.5))) * 0.5), Target1.z=1, Target1.w=0.4",
             "eye_shared_vertex": "exact same 6044-byte DXBC and decompilation; Eye pass index is 1",
             "eye_fragment": "same five MRT topology; Eye Target3.w=0.7",
+            "hair_shared_vertex": "exact same 6044-byte DXBC and decompilation; Hair pass index is 3",
+            "hair_fragment": "same five MRT topology; Hair Target3.w=1.0 and tinted sampled color",
         },
         "lab_consumption": {
             "selector_normal_pair": "diagnostic A/B only",
@@ -744,6 +966,8 @@ def verify_current_boundary() -> dict[str, Any]:
     result = {
         "ok": True,
         "source_identity": verify_shader_map(entries),
+        "hair_source_identity": verify_hair_shader_map(entries),
+        "hair_shader_export": verify_hair_shader_export(),
         "materials": verify_materials(entries),
         "compiled_variants": verify_sidecars(),
         "binary_consumer": verify_decompiled_consumer(),
