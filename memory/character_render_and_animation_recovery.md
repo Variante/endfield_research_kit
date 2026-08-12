@@ -217,17 +217,17 @@ NPC archetypes are imported as labeled source kits.
   (`nonzeroBytes=6,441,402`, min `0.3043011`, max `1`). This proves exact
   shader execution and corrected resource transport only; numerical lighting
   comparison, settled retail pixels, and pass-0 presentation remain open.
-- The exact consumer now feeds four additional source-backed texture slots:
-  t10 uses the verified original Multiscattering LUT bytes, t11 uses the
-  same-frame screen-shadow producer, and t14/t15 use the VisibilitySH
-  producer's exact LogSH LUT and half-resolution output. Missing t14/t15 now
-  fails closed instead of silently selecting a neutral fallback. The latest
-  D3D11 runs log all four as ready and produce stable hash
+- The exact consumer now feeds the source-backed Multiscattering LUT at t10,
+  zero-cookie LightCookie black at t12, disabled-volumetric-fog 1x1x1 ASTC
+  black at t13, same-frame screen-shadow at t11, and the VisibilitySH
+  producer's exact LogSH LUT and half-resolution output at t14/t15. Missing
+  t14/t15 still fails closed instead of silently selecting a neutral fallback.
+  The latest D3D11 runs log all nine closed slots and produce stable hash
   `04f18f095e02b9d2dfcb2263bd6051e988594b4cf82eb264f402482d9be9eae2`.
   It also uses the source-closed inactive HDPLS white fallback at t8, the
   null-CharInfo black CSM ramp at t9, and the disabled-wetness white fallback
-  at t22. Only t2/t3/t4/t12/t13/t16..t21 remain explicit fallback slots and
-  are the next texture-source recovery queue.
+  at t22. Only t2/t3/t4/t16..t21 remain explicit fallback slots; t16..t21
+  stay open because the live irradiance scene voxel payload is unresolved.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and
