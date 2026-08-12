@@ -787,6 +787,67 @@
         ],
         "interpretation": "The fixed transform writers and generic per-draw writers independently fit the same five-Vector4 shared record and mark it dirty. This strengthens the CPU-side producer family, but the dynamic native service still has no static payload-copy, _UploadBuffer, shader-binding, or dispatch edge."
       },
+      "native_extended_shared_data_writer": {
+        "status": "generated-factory-record-writer-and-dirty-consumer-bounded",
+        "source": "Installed GameAssembly.dll PData-scoped x64 disassembly and the generated native function-pointer table.",
+        "function": {
+          "native_pointer": "0x1869fe53c",
+          "pdata_range": "0x1869fe53c..0x1869fe73d",
+          "function_pointer_table": "0x18e9def00 + 0xe8",
+          "owner": "unresolved generated/native factory job; do not assign an unverified managed type"
+        },
+        "shared_data_calls": [
+          {
+            "callsite": "0x1869fe61d",
+            "helper": "0x183d68850",
+            "offset": "0x48",
+            "size": 4
+          },
+          {
+            "callsite": "0x1869fe646",
+            "helper": "0x183d68850",
+            "offset": "0x4c",
+            "size": 4
+          },
+          {
+            "callsite": "0x1869fe668",
+            "helper": "0x1876aad78",
+            "offset": "0x7c",
+            "size": 4
+          },
+          {
+            "callsite": "0x1869fe67f",
+            "helper": "0x1876aad78",
+            "offset": "0x80",
+            "size": 4
+          },
+          {
+            "callsite": "0x1869fe6a1",
+            "helper": "0x183d68850",
+            "offset": "0x84",
+            "size": 4
+          },
+          {
+            "callsite": "0x1869fe6d8",
+            "helper": "0x183d68850",
+            "offset": "0x88",
+            "size": 4
+          }
+        ],
+        "helper_contract": {
+          "0x183d68850": "float-to-partial wrapper; forwards size 4 without the concrete SetCustomPerDrawData<T> 0x50-byte guard",
+          "0x1876aad78": "scalar-to-partial wrapper; forwards size 4 and an explicit source scalar",
+          "endpoint": "Both wrappers call HGFactoryRenderManager.SetEntitySharedDataPartial at 0x183d689c0."
+        },
+        "dirty_consumption": {
+          "get_callsite": "0x1869fe6e1",
+          "get_target": "0x1834a4030",
+          "set_callsite": "0x1869fe6ef",
+          "set_target": "0x1834a4070",
+          "operation": "reads existing flags, ORs bit 1, and writes the updated flags"
+        },
+        "interpretation": "This closes another generated CPU-side producer into the factory shared-data service. Offsets 0x7c..0x88 exceed the five-lane 80-byte UploadPerDrawParams record and must not be treated as channel-2 payload evidence; the shared-data-to-GPU edge remains fail-closed."
+      },
       "upload_buffer_relation": {
         "source_stride": 84,
         "destination_stride": 80,
