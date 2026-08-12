@@ -298,9 +298,20 @@ NPC archetypes are imported as labeled source kits.
   to `customPerDrawData0.x` before forwarding channel 2. Native offsets are
   controller field `m_characterEnvironmentEffectPackedValue +0x18` and
   renderer-info `customPerDrawData0 +0x48`, with quantizer `0x182f3ea70`.
-  This is stronger producer/layout evidence, but it does not resolve the
-  observed native `.x` versus HGRP consumer `.w` component binding; keep that
-  remap open and fail closed.
+  UnityPlayer now closes the native setter/getter storage ABI independently.
+  Its internal-call registration pair maps
+  `UnityEngine.Renderer::SetCustomPerDrawData_Injected` to native
+  `0x1800fe590` (UnityPlayer SHA-256
+  `b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2`).
+  The body accepts only indices `0..4`, writes the Vector4 to
+  `nativeRenderer + 0x28 + 0x20*index` (channel 2 therefore `+0x68`), then
+  conditionally mirrors it to the returned per-draw resource at
+  `+0xb0 + 0x10*index` (channel 2 `+0xd0`). `GetCustomPerDrawData_Injected`
+  reads the same renderer formula. This proves the channel-2 native
+  storage/resource layout rather than merely the managed forwarding path, but
+  the resource's GPU constant-buffer component mapping is still not exposed;
+  the observed native `.x` versus HGRP consumer `.w` remap therefore remains
+  open and fail closed.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with
