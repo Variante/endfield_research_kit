@@ -277,8 +277,9 @@ namespace EndfieldGraphShaderLab
                     "t13=IntegratedFog:black-disabled-1x1-ASTC," +
                     $"t14=LogSH:{(resources.T14Ready ? "ready" : "absent")}," +
                     $"t15=VisibilitySH:{(resources.T15Ready ? "ready" : "absent")}," +
+                    "t16-t21=IrradianceV2:zero-inactive-fallback," +
                     "t22=wetness:white-disabled-fallback," +
-                    "fallbackTextureSlots=t2,t3,t4,t16-t21.");
+                    "fallbackTextureSlots=t2,t3,t4.");
                 loggedFailure = false;
                 return true;
             }
@@ -712,6 +713,11 @@ namespace EndfieldGraphShaderLab
                 case 23: return resolverT23;
                 case 24: return resolverT24;
                 case 25: return resolverT25;
+                // The installed CharInfo V2 route resolves no /aiTest/index.bytes
+                // map, so the native missing-map result uses one shared 1x1x1
+                // zero Texture3D for all six irradiance slots.  This fixture
+                // texture mirrors that zero texel only; it is not a live V2
+                // atlas and must not be replaced with the legacy Gacha payload.
                 case 16:
                 case 17:
                 case 18:
