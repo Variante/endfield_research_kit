@@ -48,6 +48,7 @@ namespace EndfieldGraphShaderLab
         private Texture2D fallback2D;
         private Texture2DArray fallbackArray;
         private Texture3D fallback3D;
+        private Texture2D multiscatteringLut;
         private ComputeBuffer zeroHdplsBuffer;
         private int allocatedWidth;
         private int allocatedHeight;
@@ -115,6 +116,12 @@ namespace EndfieldGraphShaderLab
                 return FailClosed(
                     "exact consumer requires physical t0/t1/t5/t6/t7/t11 resources: " +
                     resources.BuildStatusToken());
+            if (!resources.T14Ready || !resources.T15Ready)
+                return FailClosed(
+                    "exact consumer requires source-backed t14 LogSH and t15 " +
+                    "VisibilitySH publications: " + resources.BuildStatusToken() +
+                    $",t14={(resources.T14Ready ? "ready" : "absent")}," +
+                    $"t15={(resources.T15Ready ? "ready" : "absent")}");
             if (!transformsReady || !shaderVariablesReady ||
                 !lightDataReady || !shadowDataReady)
             {
@@ -259,6 +266,15 @@ namespace EndfieldGraphShaderLab
                     $"constantBufferMask=0x{constantBufferMask:x}, " +
                     $"failureCount={failureCount}, presented=false, " +
                     "retailPass0=false, screenContentValid=false.");
+                Debug.Log(
+                    "Recovered exact deferred resolver source texture closures: " +
+                    $"t10=multiscattering:{(multiscatteringLut != null ? "ready" : "absent")}," +
+                    $"t14=LogSH:{(resources.T14Ready ? "ready" : "absent")}," +
+                    $"t15=VisibilitySH:{(resources.T15Ready ? "ready" : "absent")}," +
+                    $"t11=screenShadow:{(resources.T11Ready ? "ready" : "absent")}," +
+                    "t8=HDPLS:white-inactive-fallback," +
+                    "t9=CSMRamp:black-null-fallback,t22=wetness:white-disabled-fallback," +
+                    "fallbackTextureSlots=t2,t3,t4,t12,t13,t16-t21.");
                 loggedFailure = false;
                 return true;
             }
@@ -295,6 +311,7 @@ namespace EndfieldGraphShaderLab
             DisposeUnityObject(fallback2D);
             DisposeUnityObject(fallbackArray);
             DisposeUnityObject(fallback3D);
+            DisposeUnityObject(multiscatteringLut);
             DisposeUnityObject(material);
             if (zeroHdplsBuffer != null)
             {
@@ -304,6 +321,7 @@ namespace EndfieldGraphShaderLab
             fallback2D = null;
             fallbackArray = null;
             fallback3D = null;
+            multiscatteringLut = null;
             material = null;
         }
 
@@ -464,6 +482,12 @@ namespace EndfieldGraphShaderLab
                     };
                     fallback3D.SetPixels(new[] { Color.clear });
                     fallback3D.Apply(false, true);
+                }
+                if (multiscatteringLut == null)
+                {
+                    multiscatteringLut =
+                        EndfieldRecoveredGachaM02ExactEnvironmentClosures
+                            .CreateMultiscatteringLut();
                 }
                 return true;
             }
@@ -644,7 +668,14 @@ namespace EndfieldGraphShaderLab
                 case 5: return resources.t5Reflection;
                 case 6: return resources.t6PunctualShadow;
                 case 7: return resources.t7LowResShadow;
+                case 10: return multiscatteringLut;
                 case 11: return resources.t11ScreenShadow;
+                // CharInfo serializes a null CSM ramp; the installed native
+                // push binds Texture2D.blackTexture for this slot.
+                case 9: return Texture2D.blackTexture;
+                // The selected CharInfo HDPLS selector rows are all zero; the
+                // inactive native push binds white to the HDPLS screen mask.
+                case 8: return Texture2D.whiteTexture;
                 case 23: return resolverT23;
                 case 24: return resolverT24;
                 case 25: return resolverT25;
@@ -656,6 +687,12 @@ namespace EndfieldGraphShaderLab
                 case 20:
                 case 21:
                     return fallback3D;
+                case 14: return resources.t14LogSh;
+                case 15: return resources.t15VisibilitySh;
+                // The selected CharInfo environment keeps rain/wetness
+                // disabled; the original native push binds its white fallback
+                // to the wetness slot in that state.
+                case 22: return Texture2D.whiteTexture;
                 default:
                     return fallback2D;
             }

@@ -55,6 +55,8 @@ namespace EndfieldGraphShaderLab
             internal RenderTexture t6PunctualShadow;
             internal RenderTexture t7LowResShadow;
             internal RenderTexture t11ScreenShadow;
+            internal Texture2D t14LogSh;
+            internal RenderTexture t15VisibilitySh;
 
             internal bool T0Ready =>
                 t0Binning != null && t0Binning.IsValid();
@@ -66,6 +68,10 @@ namespace EndfieldGraphShaderLab
                 t7LowResShadow != null && t7LowResShadow.IsCreated();
             internal bool T11Ready =>
                 t11ScreenShadow != null && t11ScreenShadow.IsCreated();
+            internal bool T14Ready =>
+                t14LogSh != null && t14LogSh.GetNativeTexturePtr() != IntPtr.Zero;
+            internal bool T15Ready =>
+                t15VisibilitySh != null && t15VisibilitySh.IsCreated();
 
             internal bool AllPhysical =>
                 cameraDepthReady && T0Ready && T5Ready && T6Ready &&
@@ -101,6 +107,13 @@ namespace EndfieldGraphShaderLab
                     : 1;
                 return $"{texture.width}x{texture.height}x{depth}";
             }
+
+            private static string Describe(Texture texture)
+            {
+                if (texture == null || texture.GetNativeTexturePtr() == IntPtr.Zero)
+                    return "none";
+                return $"{texture.width}x{texture.height}";
+            }
         }
 
         internal static ResourceFrame CaptureResources(
@@ -112,7 +125,8 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredReflectionProbeFallback reflection,
             EndfieldRecoveredPunctualShadowProducer punctual,
             EndfieldRecoveredLowResDirectionalShadowProducer lowRes,
-            EndfieldRecoveredScreenShadowMaskProducer screen)
+            EndfieldRecoveredScreenShadowMaskProducer screen,
+            EndfieldRecoveredVisibilitySHProducer visibility)
         {
             ResourceFrame frame = new ResourceFrame
             {
@@ -159,6 +173,16 @@ namespace EndfieldGraphShaderLab
                     width,
                     height,
                     out frame.t11ScreenShadow);
+            }
+            if (visibility != null)
+            {
+                visibility.TryGetCurrentPublication(
+                    camera,
+                    width,
+                    height,
+                    out frame.t14LogSh,
+                    out frame.t15VisibilitySh,
+                    out string ignoredFailure);
             }
             return frame;
         }

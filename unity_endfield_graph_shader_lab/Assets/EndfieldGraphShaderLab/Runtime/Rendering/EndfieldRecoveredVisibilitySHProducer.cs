@@ -187,6 +187,44 @@ namespace EndfieldGraphShaderLab
 
         internal bool Requested => requested;
 
+        internal bool TryGetCurrentPublication(
+            Camera camera,
+            int width,
+            int height,
+            out Texture2D logShLut,
+            out RenderTexture visibilitySh,
+            out string failure)
+        {
+            logShLut = null;
+            visibilitySh = null;
+            failure = string.Empty;
+            if (!requested || disposed)
+            {
+                failure = "VisibilitySH producer is not requested";
+                return false;
+            }
+            if (!initialized || visibilityShLut == null)
+            {
+                failure = "VisibilitySH exact LUT has not been initialized";
+                return false;
+            }
+            if (camera == null ||
+                !cameraResources.TryGetValue(camera, out CameraResources resources) ||
+                resources.width != Math.Max(1, width / 2) ||
+                resources.height != Math.Max(1, height / 2) ||
+                resources.color == null ||
+                !resources.color.IsCreated())
+            {
+                failure =
+                    "VisibilitySH same-camera publication is unavailable for " +
+                    $"{width}x{height}";
+                return false;
+            }
+            logShLut = visibilityShLut;
+            visibilitySh = resources.color;
+            return true;
+        }
+
         internal bool Render(
             ScriptableRenderContext context,
             Camera camera,
