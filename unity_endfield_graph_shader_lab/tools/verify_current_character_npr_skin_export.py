@@ -45,6 +45,10 @@ PREG_BUFFER_DECOMPILED_HLSL = (
     REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/skin_1261.hlsl"
 )
 PREG_BUFFER_SIDECAR = BYTECODE_ROOT / "1261_endfield_dxbc_1.dxbc"
+PREG_BUFFER_VERTEX_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/skin_1260_vertex.hlsl"
+)
+PREG_BUFFER_VERTEX_SIDECAR = BYTECODE_ROOT / "1260_endfield_dxbc_0.dxbc"
 
 EXPECTED_SHADER_MAP = {
     "name": "HGRP/CharacterNPR_Skin",
@@ -69,6 +73,14 @@ EXPECTED_PREG_BUFFER_SIDECAR = {
 EXPECTED_PREG_BUFFER_DECOMPILED_HLSL = {
     "size": 7299,
     "sha256": "597b675391e99509c443c327460e9f55b414f1d460d1278ce823905568ceb4c8",
+}
+EXPECTED_PREG_BUFFER_VERTEX_SIDECAR = {
+    "size": 6044,
+    "sha256": "bee21d747a5ee3abea06b5db3535165471eea079222993a339377fe5e28b2a8e",
+}
+EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL = {
+    "size": 19906,
+    "sha256": "c0eda911850f70be443f8de0642f102bf9426d7dde1d7748ac83ffeeee0331e7",
 }
 
 EXPECTED_MATERIALS = {
@@ -370,7 +382,8 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
 
     The source pass writes five MRT lanes.  The maintained lab deliberately
     consumes only the selector/normal pair for its default-off screen-shadow
-    diagnostic; motion vectors and material/color GBuffer lanes remain open.
+    diagnostic; motion vectors remain open while the material/color lane has a
+    source-shaped diagnostic sidecar.
     """
 
     require_file(
@@ -430,11 +443,114 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
         "target2_selector": "SV_Target_2.x = _65(_168 & 1023u)",
         "target3_oct_normal": "SV_Target_3.x = mad(_229 ?",
         "target4_material_color": "SV_Target_4.x = mad(asfloat(_308.x), _301, _302)",
+        "motion_current_ndc_y": "float _105 = TEXCOORD_3.y / _98;",
+        "motion_previous_ndc_y": "float _114 = TEXCOORD_4.y / _108;",
+        "motion_delta_x": "float _115 = (TEXCOORD_3.x / _98) - (TEXCOORD_4.x / _108);",
+        "motion_delta_y": "float _117 = _114 - _105;",
+        "motion_x_encoding": "SV_Target_1.x = mad(_61(((_115 < 0.0f)",
+        "motion_y_encoding": "SV_Target_1.y = mad(_61(uint(_117 > 0.0f)",
     }
     for label, needle in required.items():
         if needle not in text:
             raise AssertionError(
                 f"current Skin PreGBuffer decompilation anchor missing: "
+                f"label={label} needle={needle!r}"
+            )
+
+    require_file(
+        PREG_BUFFER_VERTEX_SIDECAR,
+        EXPECTED_PREG_BUFFER_VERTEX_SIDECAR["size"],
+        EXPECTED_PREG_BUFFER_VERTEX_SIDECAR["sha256"],
+        "current Skin PreGBuffer vertex DXBC sidecar",
+    )
+    vertex_metadata_path = Path(str(PREG_BUFFER_VERTEX_SIDECAR) + ".metadata.json")
+    if not vertex_metadata_path.is_file():
+        raise AssertionError(
+            f"missing PreGBuffer vertex metadata: {vertex_metadata_path}"
+        )
+    vertex_metadata = json.loads(vertex_metadata_path.read_text(encoding="utf-8"))
+    if vertex_metadata.get("SourcePassName") != "PreGBuffer":
+        raise AssertionError(
+            "current Skin PreGBuffer vertex pass mismatch: "
+            f"expected=PreGBuffer actual={vertex_metadata.get('SourcePassName')}"
+        )
+    if vertex_metadata.get("SourcePassIndex") != 3:
+        raise AssertionError(
+            "current Skin PreGBuffer vertex pass index mismatch: "
+            f"expected=3 actual={vertex_metadata.get('SourcePassIndex')}"
+        )
+    if vertex_metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current Skin PreGBuffer vertex keyword mismatch: "
+            f"expected={expected_keywords} actual="
+            f"{vertex_metadata.get('SourceCompiledKeywords')}"
+        )
+    if vertex_metadata.get("SourceSerializedProgramStage") != "vertex":
+        raise AssertionError(
+            "current Skin PreGBuffer vertex serialized stage mismatch: "
+            f"expected=vertex actual={vertex_metadata.get('SourceSerializedProgramStage')}"
+        )
+    if vertex_metadata.get("DecodedProgramStage") != "vertex":
+        raise AssertionError(
+            "current Skin PreGBuffer vertex decoded stage mismatch: "
+            f"expected=vertex actual={vertex_metadata.get('DecodedProgramStage')}"
+        )
+    if vertex_metadata.get("DecodedProgramEncoding") != "DXBC":
+        raise AssertionError(
+            "current Skin PreGBuffer vertex encoding mismatch: "
+            f"expected=DXBC actual={vertex_metadata.get('DecodedProgramEncoding')}"
+        )
+    vertex_parameters = vertex_metadata.get("ConstantBufferParameters") or []
+    parameter_names = {
+        str(parameter.get("Name"))
+        for buffer in vertex_parameters
+        if isinstance(buffer, dict)
+        for parameter in (buffer.get("MatrixParameters") or [])
+        + (buffer.get("VectorParameters") or [])
+        if isinstance(parameter, dict)
+    }
+    if not {
+        "_NonJitteredViewNoTransProjMatrix",
+        "_PrevNonJitteredViewNoTransProjMatrix",
+        "_PrevCamPosRWS_Internal",
+    }.issubset(parameter_names):
+        raise AssertionError(
+            "current Skin PreGBuffer vertex history parameter boundary mismatch: "
+            f"actual={sorted(parameter_names)}"
+        )
+    per_draw_members = {
+        str(member.get("Name"))
+        for buffer in vertex_parameters
+        if isinstance(buffer, dict)
+        for struct in (buffer.get("StructParameters") or [])
+        if isinstance(struct, dict)
+        for member in (struct.get("MatrixMembers") or [])
+        + (struct.get("VectorMembers") or [])
+        if isinstance(member, dict)
+    }
+    if "unity_MatrixPreviousM" not in per_draw_members:
+        raise AssertionError(
+            "current Skin PreGBuffer vertex previous-object matrix boundary missing"
+        )
+    require_file(
+        PREG_BUFFER_VERTEX_DECOMPILED_HLSL,
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["size"],
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["sha256"],
+        "current Skin PreGBuffer vertex decompilation",
+    )
+    vertex_text = PREG_BUFFER_VERTEX_DECOMPILED_HLSL.read_text(encoding="utf-8")
+    vertex_required = {
+        "current_clip_varying": "float3 TEXCOORD_3 : TEXCOORD4;",
+        "previous_clip_varying": "float3 TEXCOORD_4_1 : TEXCOORD5;",
+        "current_clip_assignment": "TEXCOORD_3.x = _612;",
+        "current_clip_w_assignment": "TEXCOORD_3.z = _615;",
+        "previous_clip_assignment": "TEXCOORD_4_1.x = mad(",
+        "previous_clip_w_assignment": "TEXCOORD_4_1.z = mad(",
+    }
+    for label, needle in vertex_required.items():
+        if needle not in vertex_text:
+            raise AssertionError(
+                f"current Skin PreGBuffer vertex decompilation anchor missing: "
                 f"label={label} needle={needle!r}"
             )
     runtime = PREGBUFFER_RUNTIME.read_text(encoding="utf-8")
@@ -464,6 +580,18 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
             "target2": "packed 10-bit selector bits",
             "target3": "octahedral world normal, z=0, w=0.4",
             "target4": "material/color payload",
+        },
+        "vertex_motion_inputs": {
+            "current_clip": "TEXCOORD_3 = current clip x/y/w",
+            "previous_clip": "TEXCOORD_4_1 = previous skinned/world clip x/y/w",
+            "history_parameters": [
+                "_NonJitteredViewNoTransProjMatrix",
+                "_PrevNonJitteredViewNoTransProjMatrix",
+                "_PrevCamPosRWS_Internal",
+                "unity_MatrixPreviousM",
+            ],
+            "source_deformation": "previous clip is generated from a separate previous skinned/object path; previous camera matrix alone is insufficient",
+            "encoding": "Target1.xy = 0.5 + sign(sqrt(sqrt(abs(delta * 0.5))) * 0.5), Target1.z=1, Target1.w=0.4",
         },
         "lab_consumption": {
             "selector_normal_pair": "diagnostic A/B only",

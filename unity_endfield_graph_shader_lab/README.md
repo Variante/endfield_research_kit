@@ -2248,8 +2248,13 @@ selector `Target2`, octahedral normal `Target3`, and material/color payload
 `Target4`; it uses `DepthCharacterOnly` with stencil `Ref 36 / Always /
 Replace`. The maintained diagnostic binds selector/normal A/B and now writes
 the source-shaped material/color payload to diagnostic C, with a byte readback
-gate. Motion vectors remain unpublished and C is not yet consumed by retail
-deferred lighting, so this evidence closes one producer input without
+gate. The paired source vertex DXBC is also pinned: `TEXCOORD_3` carries
+current clip x/y/w, `TEXCOORD_4_1` carries previous skinned/object clip x/y/w,
+and the source binds both non-jittered current/previous camera matrices,
+previous camera position, and `unity_MatrixPreviousM`. Because previous skin
+deformation is a separate input, motion vectors remain unpublished rather than
+being replaced with a camera-only approximation. C is not yet consumed by
+retail deferred lighting, so this evidence closes one producer input without
 claiming a complete retail GBuffer.
 
 The separate canonical-depth owner is also default-off. Unlike the sidecar, it

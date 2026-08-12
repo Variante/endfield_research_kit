@@ -38,6 +38,18 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
             result["pregbuffer"]["lab_consumption"]["material_color"],
             "source-shaped diagnostic C sidecar, not consumed by retail resolver",
         )
+        self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["current_clip"],
+            "TEXCOORD_3 = current clip x/y/w",
+        )
+        self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["previous_clip"],
+            "TEXCOORD_4_1 = previous skinned/world clip x/y/w",
+        )
+        self.assertIn(
+            "_PrevNonJitteredViewNoTransProjMatrix",
+            result["pregbuffer"]["vertex_motion_inputs"]["history_parameters"],
+        )
         self.assertEqual(result["interpretation"]["retail_frame_parity"], "not asserted")
 
     def test_missing_artifact_reports_path_and_expected_size(self) -> None:
