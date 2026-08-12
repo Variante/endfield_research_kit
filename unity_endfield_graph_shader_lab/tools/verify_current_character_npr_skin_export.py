@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify current installed CharacterNPR Skin/Eye/Hair export boundaries.
+"""Verify current installed CharacterNPR Generic/Skin/Eye/Hair boundaries.
 
 This audit deliberately proves source/export identity and compiled-variant
 metadata only.  It does not claim that the recovered Unity shader has retail
@@ -37,8 +37,14 @@ HAIR_SHADER_EXPORT = (
     / "scratch/animestudio/character_npr_hair_sidecars_current/shader_export/Shader"
     / "HGRP_CharacterNPR_Hair_p8FA556110AA47B6F.shader"
 )
+GENERIC_SHADER_EXPORT = (
+    REPO_ROOT
+    / "scratch/animestudio/character_npr_generic_sidecars_current/shader_export/Shader"
+    / "HGRP_CharacterNPR_p9371FF9C9E74391E.shader"
+)
 BYTECODE_ROOT = Path(str(SHADER_EXPORT) + ".bytecode")
 HAIR_BYTECODE_ROOT = Path(str(HAIR_SHADER_EXPORT) + ".bytecode")
+GENERIC_BYTECODE_ROOT = Path(str(GENERIC_SHADER_EXPORT) + ".bytecode")
 PREGBUFFER_RUNTIME = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
@@ -85,6 +91,18 @@ HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = (
 HAIR_PREGBUFFER_FRAGMENT_SIDECAR = (
     HAIR_BYTECODE_ROOT / "1837_endfield_dxbc_1.dxbc"
 )
+GENERIC_PREGBUFFER_VERTEX_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/generic_4788_vertex.hlsl"
+)
+GENERIC_PREGBUFFER_VERTEX_SIDECAR = (
+    GENERIC_BYTECODE_ROOT / "4788_endfield_dxbc_0.dxbc"
+)
+GENERIC_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/generic_4789.hlsl"
+)
+GENERIC_PREGBUFFER_FRAGMENT_SIDECAR = (
+    GENERIC_BYTECODE_ROOT / "4789_endfield_dxbc_1.dxbc"
+)
 
 EXPECTED_SHADER_MAP = {
     "name": "HGRP/CharacterNPR_Skin",
@@ -109,6 +127,18 @@ EXPECTED_HAIR_SHADER_MAP = {
 EXPECTED_HAIR_SHADER_EXPORT = {
     "size": 34529482,
     "sha256": "3105e54c77021710dd8a8cd5eceaf0a38dafb2e71cc69832cc3f5dee967f6087",
+}
+EXPECTED_GENERIC_SHADER_MAP = {
+    "name": "HGRP/CharacterNPR",
+    "type": "Shader",
+    "path_id": -7822190029627442914,
+    "source_name": "19F0903A12BA87C0D43E67E64889B525.chk",
+    "asset_map_hash": "6e1e996a72074e02",
+    "offset": 185104054,
+}
+EXPECTED_GENERIC_SHADER_EXPORT = {
+    "size": 35960100,
+    "sha256": "2d848a8c34959a7551135b1d24ed5f522d6cfaacfb8a26f3cff78cb69b1f0316",
 }
 EXPECTED_DECOMPILED_SPV_GLSL = {
     "size": 97085,
@@ -157,6 +187,20 @@ EXPECTED_HAIR_PREGBUFFER_FRAGMENT_SIDECAR = {
 EXPECTED_HAIR_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = {
     "size": 6243,
     "sha256": "b97e735f4005f650bf0bafa7db8a70f33140284474603905ac6ab55d48ad1f3e",
+}
+EXPECTED_GENERIC_PREGBUFFER_VERTEX_SIDECAR = {
+    "size": 6044,
+    "sha256": "bee21d747a5ee3abea06b5db3535165471eea079222993a339377fe5e28b2a8e",
+    "pass_index": 3,
+}
+EXPECTED_GENERIC_PREGBUFFER_FRAGMENT_SIDECAR = {
+    "size": 2316,
+    "sha256": "9d511f83bc2c211ed46e0c671973f799ae92471eda260105c278d1bbd3bfebd1",
+    "pass_index": 3,
+}
+EXPECTED_GENERIC_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = {
+    "size": 6243,
+    "sha256": "cca05d98a17a2019f53d623b44d4ed134d3a93b7311a0c4ffd1d9e1a2b404b9f",
 }
 
 EXPECTED_MATERIALS = {
@@ -320,6 +364,67 @@ def verify_hair_shader_map(entries: list[dict[str, Any]]) -> dict[str, Any]:
         "source_name": actual_source,
         "asset_map_hash": entry["Hash"],
         "offset": int(entry["Offset"]),
+    }
+
+
+def verify_generic_shader_map(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    matches = [
+        entry
+        for entry in entries
+        if entry.get("Name") == EXPECTED_GENERIC_SHADER_MAP["name"]
+        and entry.get("Type") == EXPECTED_GENERIC_SHADER_MAP["type"]
+        and int(entry.get("PathID", 0)) == EXPECTED_GENERIC_SHADER_MAP["path_id"]
+    ]
+    if len(matches) != 1:
+        raise AssertionError(
+            "current CharacterNPR AssetMap identity mismatch: "
+            f"expected one row, actual={len(matches)}"
+        )
+    entry = matches[0]
+    actual_source = Path(str(entry.get("Source") or "")).name
+    for key in ("asset_map_hash", "offset"):
+        actual = entry.get("Hash" if key == "asset_map_hash" else "Offset")
+        if actual != EXPECTED_GENERIC_SHADER_MAP[key]:
+            raise AssertionError(
+                f"current CharacterNPR AssetMap {key} mismatch: "
+                f"expected={EXPECTED_GENERIC_SHADER_MAP[key]} actual={actual}"
+            )
+    if actual_source != EXPECTED_GENERIC_SHADER_MAP["source_name"]:
+        raise AssertionError(
+            "current CharacterNPR source mismatch: "
+            f"expected={EXPECTED_GENERIC_SHADER_MAP['source_name']} actual={actual_source}"
+        )
+    return {
+        "name": entry["Name"],
+        "type": entry["Type"],
+        "path_id": int(entry["PathID"]),
+        "source_name": actual_source,
+        "asset_map_hash": entry["Hash"],
+        "offset": int(entry["Offset"]),
+    }
+
+
+def verify_generic_shader_export() -> dict[str, Any]:
+    require_file(
+        GENERIC_SHADER_EXPORT,
+        EXPECTED_GENERIC_SHADER_EXPORT["size"],
+        EXPECTED_GENERIC_SHADER_EXPORT["sha256"],
+        "current CharacterNPR shader export",
+    )
+    shader_text = GENERIC_SHADER_EXPORT.read_text(encoding="utf-8")
+    for needle in (
+        'Shader "HGRP/CharacterNPR"',
+        'Name "PreGBuffer"',
+        'Tags { "ChildMaterial" = "" "LIGHTMODE" = "DepthCharacterOnly"',
+    ):
+        if needle not in shader_text:
+            raise AssertionError(
+                f"current CharacterNPR shader export missing {needle!r}"
+            )
+    return {
+        "path": str(GENERIC_SHADER_EXPORT.relative_to(REPO_ROOT)).replace("\\", "/"),
+        "size": EXPECTED_GENERIC_SHADER_EXPORT["size"],
+        "sha256": EXPECTED_GENERIC_SHADER_EXPORT["sha256"],
     }
 
 
@@ -794,6 +899,120 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
                 f"label={label} needle={needle!r}"
             )
 
+    # The generic CharacterNPR body pass also uses the shared vertex history
+    # program.  Its fragment is a separate source variant: it writes the same
+    # sampled-color/tint lane as Hair, but the normal-alpha lane is zero.
+    require_file(
+        GENERIC_PREGBUFFER_VERTEX_SIDECAR,
+        EXPECTED_GENERIC_PREGBUFFER_VERTEX_SIDECAR["size"],
+        EXPECTED_GENERIC_PREGBUFFER_VERTEX_SIDECAR["sha256"],
+        "current CharacterNPR PreGBuffer vertex DXBC sidecar",
+    )
+    generic_vertex_metadata_path = Path(
+        str(GENERIC_PREGBUFFER_VERTEX_SIDECAR) + ".metadata.json"
+    )
+    if not generic_vertex_metadata_path.is_file():
+        raise AssertionError(
+            "missing CharacterNPR PreGBuffer vertex metadata: "
+            f"{generic_vertex_metadata_path}"
+        )
+    generic_vertex_metadata = json.loads(
+        generic_vertex_metadata_path.read_text(encoding="utf-8")
+    )
+    for key, expected in {
+        "SourcePassName": "PreGBuffer",
+        "SourcePassIndex": EXPECTED_GENERIC_PREGBUFFER_VERTEX_SIDECAR["pass_index"],
+        "SourceSerializedProgramStage": "vertex",
+        "DecodedProgramStage": "vertex",
+        "DecodedProgramEncoding": "DXBC",
+    }.items():
+        if generic_vertex_metadata.get(key) != expected:
+            raise AssertionError(
+                "current CharacterNPR PreGBuffer vertex metadata mismatch: "
+                f"field={key} expected={expected!r} "
+                f"actual={generic_vertex_metadata.get(key)!r}"
+            )
+    if generic_vertex_metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current CharacterNPR PreGBuffer vertex keyword mismatch: "
+            f"expected={expected_keywords} "
+            f"actual={generic_vertex_metadata.get('SourceCompiledKeywords')}"
+        )
+    require_file(
+        GENERIC_PREGBUFFER_VERTEX_DECOMPILED_HLSL,
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["size"],
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["sha256"],
+        "current CharacterNPR PreGBuffer vertex decompilation",
+    )
+    generic_vertex_text = GENERIC_PREGBUFFER_VERTEX_DECOMPILED_HLSL.read_text(
+        encoding="utf-8"
+    )
+    if generic_vertex_text != vertex_text:
+        raise AssertionError(
+            "current CharacterNPR/Skin PreGBuffer vertex decompilations differ "
+            "despite the expected shared DXBC hash"
+        )
+
+    require_file(
+        GENERIC_PREGBUFFER_FRAGMENT_SIDECAR,
+        EXPECTED_GENERIC_PREGBUFFER_FRAGMENT_SIDECAR["size"],
+        EXPECTED_GENERIC_PREGBUFFER_FRAGMENT_SIDECAR["sha256"],
+        "current CharacterNPR PreGBuffer fragment DXBC sidecar",
+    )
+    generic_fragment_metadata_path = Path(
+        str(GENERIC_PREGBUFFER_FRAGMENT_SIDECAR) + ".metadata.json"
+    )
+    if not generic_fragment_metadata_path.is_file():
+        raise AssertionError(
+            "missing CharacterNPR PreGBuffer fragment metadata: "
+            f"{generic_fragment_metadata_path}"
+        )
+    generic_fragment_metadata = json.loads(
+        generic_fragment_metadata_path.read_text(encoding="utf-8")
+    )
+    for key, expected in {
+        "SourcePassName": "PreGBuffer",
+        "SourcePassIndex": EXPECTED_GENERIC_PREGBUFFER_FRAGMENT_SIDECAR["pass_index"],
+        "SourceSerializedProgramStage": "vertex",
+        "DecodedProgramStage": "fragment",
+        "DecodedProgramEncoding": "DXBC",
+    }.items():
+        if generic_fragment_metadata.get(key) != expected:
+            raise AssertionError(
+                "current CharacterNPR PreGBuffer fragment metadata mismatch: "
+                f"field={key} expected={expected!r} "
+                f"actual={generic_fragment_metadata.get(key)!r}"
+            )
+    if generic_fragment_metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current CharacterNPR PreGBuffer fragment keyword mismatch: "
+            f"expected={expected_keywords} "
+            f"actual={generic_fragment_metadata.get('SourceCompiledKeywords')}"
+        )
+    require_file(
+        GENERIC_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL,
+        EXPECTED_GENERIC_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL["size"],
+        EXPECTED_GENERIC_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL["sha256"],
+        "current CharacterNPR PreGBuffer fragment decompilation",
+    )
+    generic_fragment_text = GENERIC_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL.read_text(
+        encoding="utf-8"
+    )
+    for label, needle in {
+        "five_mrt_outputs": "float4 SV_Target_4 : SV_Target4;",
+        "target0_zero": "SV_Target.x = 0.0f;",
+        "target1_motion": "SV_Target_1.z = 1.0f;",
+        "target2_selector": "SV_Target_2.x = _59(_162 & 1023u)",
+        "target3_generic_normal_alpha": "SV_Target_3.w = 0.0f;",
+        "target4_generic_color": "SV_Target_4.x = _256.x * asfloat(_268.x);",
+        "target4_color_alpha": "SV_Target_4.w = 1.0f;",
+    }.items():
+        if needle not in generic_fragment_text:
+            raise AssertionError(
+                "current CharacterNPR PreGBuffer fragment decompilation anchor missing: "
+                f"label={label} needle={needle!r}"
+            )
+
     # Hair's current PreGBuffer uses the same shared vertex history program,
     # but its fragment is not interchangeable with Skin/Eye: the authored
     # normal-alpha lane is 1.0 and its color lane multiplies sampled hair
@@ -949,6 +1168,8 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
             "encoding": "Target1.xy = 0.5 + sign(sqrt(sqrt(abs(delta * 0.5))) * 0.5), Target1.z=1, Target1.w=0.4",
             "eye_shared_vertex": "exact same 6044-byte DXBC and decompilation; Eye pass index is 1",
             "eye_fragment": "same five MRT topology; Eye Target3.w=0.7",
+            "generic_shared_vertex": "exact same 6044-byte DXBC and decompilation; CharacterNPR pass index is 3",
+            "generic_fragment": "same five MRT topology; CharacterNPR Target3.w=0 and tinted sampled color",
             "hair_shared_vertex": "exact same 6044-byte DXBC and decompilation; Hair pass index is 3",
             "hair_fragment": "same five MRT topology; Hair Target3.w=1.0 and tinted sampled color",
         },
@@ -966,6 +1187,8 @@ def verify_current_boundary() -> dict[str, Any]:
     result = {
         "ok": True,
         "source_identity": verify_shader_map(entries),
+        "generic_source_identity": verify_generic_shader_map(entries),
+        "generic_shader_export": verify_generic_shader_export(),
         "hair_source_identity": verify_hair_shader_map(entries),
         "hair_shader_export": verify_hair_shader_export(),
         "materials": verify_materials(entries),

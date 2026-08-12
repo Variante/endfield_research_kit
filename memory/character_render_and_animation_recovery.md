@@ -95,7 +95,13 @@ NPC archetypes are imported as labeled source kits.
   decompilation (pass index 3), while its fragment keeps the five MRT lanes,
   sets the oct-normal alpha to `1.0`, and multiplies sampled color by the
   per-material tint words. This is a family-specific payload distinction, not
-  a generic Skin/Eye alias.
+  a generic Skin/Eye alias. The current generic `HGRP/CharacterNPR` export is
+  now pinned as a fourth source family: its base `HG_ENABLE_PER_OBJECT_MV` +
+  `SRP_INSTANCING_ON` PreGBuffer vertex is byte/text-identical to Skin/Eye/Hair,
+  but its fragment has `Target3.w=0.0` and the sampled-color × tint `Target4`
+  lane. Its AssetMap identity is PathID `-7822190029627442914` at offset
+  `185104054` in the current `19F0903A...` chunk; the generic fragment is not
+  substituted with Hair's `Target3.w=1.0` output.
 - The default-off screen/direct same-owner audit also passes its Skin/Cloth/Hair
   shader and pipeline chronology checks, including canonical forward depth and
   the separate PreG D32S8 sidecar.
