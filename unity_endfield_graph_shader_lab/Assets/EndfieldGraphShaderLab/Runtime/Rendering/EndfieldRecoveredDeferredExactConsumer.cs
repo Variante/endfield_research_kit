@@ -48,6 +48,7 @@ namespace EndfieldGraphShaderLab
         private Texture2D fallback2D;
         private Texture2DArray fallbackArray;
         private Texture3D fallback3D;
+        private Texture3D integratedFogFallback;
         private Texture2D multiscatteringLut;
         private ComputeBuffer zeroHdplsBuffer;
         private int allocatedWidth;
@@ -268,13 +269,16 @@ namespace EndfieldGraphShaderLab
                     "retailPass0=false, screenContentValid=false.");
                 Debug.Log(
                     "Recovered exact deferred resolver source texture closures: " +
+                    "t8=HDPLS:white-inactive-fallback," +
+                    "t9=CSMRamp:black-null-fallback," +
                     $"t10=multiscattering:{(multiscatteringLut != null ? "ready" : "absent")}," +
+                    $"t11=screenShadow:{(resources.T11Ready ? "ready" : "absent")}," +
+                    "t12=LightCookie:black-zero-cookie," +
+                    "t13=IntegratedFog:black-disabled-1x1-ASTC," +
                     $"t14=LogSH:{(resources.T14Ready ? "ready" : "absent")}," +
                     $"t15=VisibilitySH:{(resources.T15Ready ? "ready" : "absent")}," +
-                    $"t11=screenShadow:{(resources.T11Ready ? "ready" : "absent")}," +
-                    "t8=HDPLS:white-inactive-fallback," +
-                    "t9=CSMRamp:black-null-fallback,t22=wetness:white-disabled-fallback," +
-                    "fallbackTextureSlots=t2,t3,t4,t12,t13,t16-t21.");
+                    "t22=wetness:white-disabled-fallback," +
+                    "fallbackTextureSlots=t2,t3,t4,t16-t21.");
                 loggedFailure = false;
                 return true;
             }
@@ -311,6 +315,7 @@ namespace EndfieldGraphShaderLab
             DisposeUnityObject(fallback2D);
             DisposeUnityObject(fallbackArray);
             DisposeUnityObject(fallback3D);
+            DisposeUnityObject(integratedFogFallback);
             DisposeUnityObject(multiscatteringLut);
             DisposeUnityObject(material);
             if (zeroHdplsBuffer != null)
@@ -321,6 +326,7 @@ namespace EndfieldGraphShaderLab
             fallback2D = null;
             fallbackArray = null;
             fallback3D = null;
+            integratedFogFallback = null;
             multiscatteringLut = null;
             material = null;
         }
@@ -482,6 +488,27 @@ namespace EndfieldGraphShaderLab
                     };
                     fallback3D.SetPixels(new[] { Color.clear });
                     fallback3D.Apply(false, true);
+                }
+                if (integratedFogFallback == null)
+                {
+                    integratedFogFallback = new Texture3D(
+                        1,
+                        1,
+                        1,
+                        TextureFormat.ASTC_4x4,
+                        false)
+                    {
+                        name = "Recovered exact resolver disabled volumetric fog fallback",
+                        filterMode = FilterMode.Point,
+                        wrapMode = TextureWrapMode.Clamp,
+                        hideFlags = HideFlags.HideAndDontSave,
+                    };
+                    integratedFogFallback.SetPixel(
+                        0,
+                        0,
+                        0,
+                        new Color(0.0f, 0.0f, 0.0f, 1.0f));
+                    integratedFogFallback.Apply(false, true);
                 }
                 if (multiscatteringLut == null)
                 {
@@ -676,10 +703,15 @@ namespace EndfieldGraphShaderLab
                 // The selected CharInfo HDPLS selector rows are all zero; the
                 // inactive native push binds white to the HDPLS screen mask.
                 case 8: return Texture2D.whiteTexture;
+                // The source-closed isolated light fixtures have no cookie
+                // indices; the native zero-cookie transport binds black.
+                case 12: return Texture2D.blackTexture;
+                // The installed CharInfo route disables volumetric fog and
+                // publishes the native 1x1x1 ASTC_4x4 black Texture3D.
+                case 13: return integratedFogFallback;
                 case 23: return resolverT23;
                 case 24: return resolverT24;
                 case 25: return resolverT25;
-                case 13:
                 case 16:
                 case 17:
                 case 18:

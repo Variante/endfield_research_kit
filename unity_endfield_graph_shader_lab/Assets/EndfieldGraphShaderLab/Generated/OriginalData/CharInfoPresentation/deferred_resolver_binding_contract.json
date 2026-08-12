@@ -3,7 +3,7 @@
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
   "outcome": "The selected original deferred resolver ABI is substantially source-closed while live pass 0 remains disabled. For binding 32, the installed Gacha Lua/layer state, decoded Zhuangfy and room prefabs, identity placement, original entrance/loop ACL pose streams, constant root motion, native follower equations, and selected 3840x2160 culling geometry now close the exact known authored result as 17 survivors: all six light_overview rows plus 11 of 12 SceneLight6Rarity rows, with only Spot Light (20) rejected. This is the exact authored contribution and internal priority/distance order, not the complete retail LightCullResult: runtime/custom carry-in, target-frame pointer/count, whole-list order, and final lightCount remain open. Bindings 30 through 35 and the selected cookie, HDPLS, reflection, binning, VisibilitySH, wetness, volumetric, and shadow paths retain their existing source-closed and GPU-verified narrow contracts. Complete pass-0 publication, settled retail resources/pixels, and final visual parity remain open.",
-  "latest_recovery": "The selected original D3D11 compact resource map is now source-closed for t0..t25 from the exact DXBC declaration/use sites joined to the source HLSL roles: t11 is the screen-space shadow mask, t22 is wetness, and t23/t24/t25 are GBuffer A/B/C (_60/_61/_62). The former t22-HDPLS and C/B/A bindings were corrected. The exact consumer now uses source-backed t10 Multiscattering, t14 LogSH, t15 VisibilitySH, plus source-closed t8 HDPLS-white, t9 CSM-ramp-black, and t22 wetness-white fallbacks. Two default-off exact-consumer D3D11 runs reproduce resourceMask=0x3ffffff, resourceFailureMask=0, constantBufferMask=0x1ff, 1,843,200 finite floats, and stable RGBA-float SHA-256 04f18f095e02b9d2dfcb2263bd6051e988594b4cf82eb264f402482d9be9eae2. Output remains private/non-presented; numerical parity and pass 0 remain disabled.",
+  "latest_recovery": "The selected original D3D11 compact resource map is now source-closed for t0..t25 from the exact DXBC declaration/use sites joined to the source HLSL roles: t11 is the screen-space shadow mask, t22 is wetness, and t23/t24/t25 are GBuffer A/B/C (_60/_61/_62). The former t22-HDPLS and C/B/A bindings were corrected. The exact consumer now uses source-backed t10 Multiscattering, t12 zero-cookie LightCookie black, t13 disabled-volumetric-fog 1x1x1 ASTC black, t14 LogSH, and t15 VisibilitySH, plus source-closed t8 HDPLS-white, t9 CSM-ramp-black, and t22 wetness-white fallbacks. Two default-off exact-consumer D3D11 runs reproduce resourceMask=0x3ffffff, resourceFailureMask=0, constantBufferMask=0x1ff, 1,843,200 finite floats, and stable RGBA-float SHA-256 04f18f095e02b9d2dfcb2263bd6051e988594b4cf82eb264f402482d9be9eae2. Output remains private/non-presented; numerical parity and pass 0 remain disabled.",
   "deferred_gbuffer_frame_transport": {
     "status": "source-camera five-MRT producer GPU-closed as a non-presented sidecar; canonical publication and pass 0 remain disabled",
     "default_off": true,
@@ -96,31 +96,33 @@
     }
   },
   "deferred_resolver_source_texture_transport": {
-    "status": "exact-consumer source texture subset is now source-backed or source-closed for t8, t9, t10, t11, t14, t15, and t22; remaining slots stay explicit fallbacks",
+    "status": "exact-consumer source texture subset is now source-backed or source-closed for t8, t9, t10, t11, t12, t13, t14, t15, and t22; remaining slots stay explicit fallbacks",
     "default_off": true,
     "presented": false,
     "retail_pass0_enabled": false,
     "closed_slots": {
       "t10": {"role": "_MultiscatteringLUT", "source_hash": "1a15afe25b25e7aa64dcf17d74f5375dd1b692b3805cd00aa4f531ad289f030e", "producer": "EndfieldRecoveredGachaM02ExactEnvironmentClosures.CreateMultiscatteringLut"},
       "t11": {"role": "_ScreenSpaceShadowMask", "producer": "EndfieldRecoveredScreenShadowMaskProducer", "same_frame": true},
+      "t12": {"role": "_LightCookie", "producer": "original zero-cookie isolated transport binds Texture2D.blackTexture; every prepared fixture light hasCookie=false", "same_frame": false},
+      "t13": {"role": "_IntegratedFog", "producer": "original disabled volumetric-fog branch creates 1x1x1 TextureFormat.ASTC_4x4 black texture", "same_frame": false},
       "t14": {"role": "_LogSH", "producer": "EndfieldRecoveredVisibilitySHProducer.visibilityShLut", "same_frame": true},
       "t15": {"role": "VisibilitySHConstData", "producer": "EndfieldRecoveredVisibilitySHProducer current half-resolution output", "same_frame": true},
       "t8": {"role": "_HDPLSScreenSpaceShadowMask", "producer": "original inactive HDPLS white fallback because selected HDPLS selector rows are zero", "same_frame": false},
       "t9": {"role": "_CSMRamp", "producer": "original native black fallback because selected CharInfo csmRampTexture is null", "same_frame": false},
       "t22": {"role": "_WaterWetnessMaskTexture", "producer": "original native white fallback because selected CharInfo rain/wetness is disabled", "same_frame": false}
     },
-    "fallback_slots": ["t2", "t3", "t4", "t12", "t13", "t16", "t17", "t18", "t19", "t20", "t21"],
+    "fallback_slots": ["t2", "t3", "t4", "t16", "t17", "t18", "t19", "t20", "t21"],
     "sources": {
       "multiscattering_owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredGachaM02ExactEnvironmentClosures.cs", "sha256": "74c94756e661961e7b7fff43524f3587932bf2207cd365663c4520f43bed99fb"},
       "visibility_owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHProducer.cs", "sha256": "0adebb2d71f7d2e8bd592835f5272d974a2575894a08228ec6f1169a8d77a6dd"},
       "resource_capture": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverInputProbe.cs", "sha256": "3a2a139608fc4c3cc650e6b80569368603d9499afd532853716c0be69c8d1cb6"},
-      "exact_consumer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredExactConsumer.cs", "sha256": "ff3038901da4992cd140126d40c95c6990f040462b032eb8e1884fb75b964b81"},
+      "exact_consumer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredExactConsumer.cs", "sha256": "881e8af89939f4f256ba750b539bfafb95f23bdee26a0a05be965fcd5aac65ec"},
       "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f45851b8f682cf5fb81e7d4530e05844ccffd18bfecfea03a232b120e8599113"}
     },
     "validation": {
       "d3d11_log": "scratch/character_recovery/deferred_gbuffer_frame/unity_exact_consumer_d3d11.log",
       "d3d11_rgba_float_sha256": "04f18f095e02b9d2dfcb2263bd6051e988594b4cf82eb264f402482d9be9eae2",
-      "d3d11_source_closure_log": "t10=multiscattering:ready,t14=LogSH:ready,t15=VisibilitySH:ready,t11=screenShadow:ready,t8=HDPLS:white-inactive-fallback,t9=CSMRamp:black-null-fallback,t22=wetness:white-disabled-fallback",
+      "d3d11_source_closure_log": "t8=HDPLS:white-inactive-fallback,t9=CSMRamp:black-null-fallback,t10=multiscattering:ready,t11=screenShadow:ready,t12=LightCookie:black-zero-cookie,t13=IntegratedFog:black-disabled-1x1-ASTC,t14=LogSH:ready,t15=VisibilitySH:ready,t22=wetness:white-disabled-fallback",
       "resource_mask": "0x3ffffff",
       "resource_failure_mask": "0x0",
       "constant_buffer_mask": "0x1ff",
