@@ -506,6 +506,18 @@ NPC archetypes are imported as labeled source kits.
   channel 2/resource `+0xd0`; keep the GPU edge fail-closed. Details are in
   `packed_flags_producer_recovery.json` under
   `factory_per_draw_shared_payload_evidence`.
+  A direct GameAssembly bridge now closes the caller-side entry into that
+  factory path. The generated/native range `0x180471cd8..0x180471d27` calls
+  `ApplyPerDrawRender` at `0x1869d8488` (`rsi`/`rdi`/`ebx` preserve
+  `binderPtr`/`perDrawConfigs`/`length`, while `r9d` is cleared). The Burst
+  path reaches `PerDrawGlobalSetting.Apply` at `0x1869d5d30`, loops the
+  configs, and calls `PerDrawConfig.Apply` at `0x1869f3654`, which ends at
+  the concrete `SetCustomPerDrawData<Vector4>` writer `0x1834a3d60`. The
+  bridge range has no ordinary IL2CPP method-pointer owner, so its managed
+  name remains intentionally unresolved. This closes native entry through
+  binder Vector4 production, not the GPU edge: `_UploadBuffer`, kernel 7,
+  and channel-2/resource `+0xd0` consumption remain fail-closed. The durable
+  details are under `apply_per_draw_render_bridge` in the packed-flag audit.
   The UnityPlayer registration target for that partial update is now bounded,
   rather than treated as a false static upload edge: internal-call table entry
   206 maps `SetEntitySharedDataPartial` to `0x180155300`, whose PData-split body
