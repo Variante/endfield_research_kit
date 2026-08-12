@@ -399,15 +399,22 @@ NPC archetypes are imported as labeled source kits.
   `HGRenderPipeline` constructor (native `0x183947230`, callsite
   `0x183948786`) loads a ComputeShader from the object chain
   `[returned+0x18]+0x638` before calling it. UnityPlayer internal-call
-  implementation `0x1801ee4c0` forwards the handle through four indirect
-  setup helpers, consults the runtime initialization service, and conditionally
-  extracts the native shader handle. `HGRayTracingScene.SetupGpuSceneUploadCs`
-  shares that native implementation. This proves concrete one-time GPU-scene
-  ComputeShader setup, but not dispatch timing or upload-buffer production:
-  the indirect targets are encoded in the installed function table, and no
-  edge from custom-per-draw channel 2/resource `+0xd0` to `UploadPerDrawParams`
-  has been recovered. Structured hashes, addresses, and the fail-closed
-  boundary are recorded under `gpu_scene_setup_wiring` in the packed-flag audit.
+  implementation `0x1801ee4c0` forwards the handle through four calls to the
+  shared CFG indirect-call slot `0x1821be708`, consults the runtime
+  initialization service, and conditionally extracts the native shader handle.
+  `HGRayTracingScene.SetupGpuSceneUploadCs` shares that native implementation.
+  The CFG target is runtime-initialized and is not recoverable from installed
+  file bytes. The native compute-dispatch bridge is independently closed for
+  GPUDriven V1/V2: their four dispatch wrappers reach cores
+  `0x1810f1890/0x1810f17e0` and `0x1810fe040/0x1810fdf90`; each uses
+  `0x1805e7e10` for immediate context/vtable dispatch or `0x1804c74d0` to
+  record CommandBuffer opcode `0x11`. This proves the Unity dispatch
+  mechanism, but not that any call selects `GpuSceneDirtyUpdateCS` kernel
+  `UploadPerDrawParams`; no upload-buffer producer or edge from custom-
+  per-draw channel 2/resource `+0xd0` has been recovered. Structured hashes,
+  addresses, caller census, and the fail-closed boundary are recorded under
+  `gpu_scene_setup_wiring` and `gpu_dispatch_bridge_evidence` in the packed-
+  flag audit.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
