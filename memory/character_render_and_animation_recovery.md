@@ -469,6 +469,21 @@ NPC archetypes are imported as labeled source kits.
   managed wrappers, and all four native callers zero `r9d`. Thus no additional
   direct dispatch producer selects kernel 7 in the installed binary, while a
   managed caller could still do so dynamically.
+  The RenderGraph GPUDriven culling producer is now mapped at the managed
+  callback `GPUDrivenCullingPassConstructor+<>c.<.cctor>b__10_0`,
+  `GameAssembly 0x189bb558c` (metadata method `287367`). Its V1 and V2
+  branches each run `Valid`, `PopulatePerFrameData` (thread-group size `0x40`),
+  then `BindFrameConstantsBuffer`, `BindBuffersForCulling`, and one of the
+  bucket/meshlet dispatch wrappers twice for shader values at callback-data
+  offsets `+0x10` and `+0x18`. The callback explicitly clears the wrapper
+  `kernelIdx` argument (`r8d=0`) for every bind/dispatch call; the wrappers
+  preserve it as native `r9d`, so this live culling route selects kernel 0 in
+  both renderer versions. This is the first closed managed RenderGraph
+  producer for the known GPUDriven dispatch cores, and is negative evidence
+  against `GpuSceneDirtyUpdateCS.UploadPerDrawParams` kernel 7 on this route;
+  it still does not connect channel 2/resource `+0xd0` to `_UploadBuffer` or
+  binding 33. Details are recorded under
+  `gpu_driven_culling_pass_callback` in the packed-flag audit.
   `HGConstantBufferPool.ApplyPendingUpload` is a separate generic upload
   candidate: `GameAssembly 0x189b6a7c0` updates `this+0x10` through
   `ComputeBuffer.SetData` (`0x187af05e0`), but its visible body has no
