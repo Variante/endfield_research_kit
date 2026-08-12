@@ -544,28 +544,24 @@ NPC archetypes are imported as labeled source kits.
   binder Vector4 production, not the GPU edge: `_UploadBuffer`, kernel 7,
   and channel-2/resource `+0xd0` consumption remain fail-closed. The durable
   details are under `apply_per_draw_render_bridge` in the packed-flag audit.
-  The UnityPlayer registration target for that partial update is now bounded,
-  rather than treated as a false static upload edge: internal-call table entry
-  206 maps `SetEntitySharedDataPartial` to `0x180155300`, whose PData-split body
-  unwraps the managed wrapper, calls the factory service's virtual slot `+0xb0`, walks generic
-  records, and never visibly preserves the incoming `data`/`offset`/`size`
-  registers or calls a buffer/property/command API. The paired full-set target
-  `0x180153ee0` has the same dynamic service shape and ends at virtual slot
-  `+0xc0`. This confirms the native boundary is real but dynamically
-  implemented; it does not prove shared payload → `_UploadBuffer` or GPU
-  dispatch. The bounded registration/body evidence is recorded under
-  `native_partial_endpoint_evidence`; keep the upload edge fail-closed.
-  The dynamic service side is now bounded one step further: UnityPlayer helper
-  `0x180776410` calls registry accessor `0x18030f100`, whose table is at
-  `0x182168800`; the partial endpoint requests slot `5`. Constructor
-  `0x18076ff30..0x180770173` registers its approximately `0x368`-byte service
-  object into that slot at `0x18077011a` and initializes the record-container
-  field `+0x1c8`. The partial body reads `[slot5+0x1c8]`, selects a record using
-  the global index at `0x180155417`, and walks the wrapper `+0xb0` result through
-  `0x180769da0`/`0x180760900`. This is concrete factory-service/record evidence,
-  not GPU identity: the incoming `data`, `offset`, and `size` registers still do
-  not reach a visible copy, buffer API, command recording, or dispatch, so the
-  shared-payload-to-`_UploadBuffer` edge remains fail-closed.
+  Updated primary registration conclusion (the legacy surface is noted below):
+  the current
+  `AddInternalCall` table at `0x1820e8560` maps entry 206
+  `SetEntitySharedDataPartial` to `0x1801eb9a0` (PData
+  `0x1801eb9a0..0x1801eb9ed`). Its wrapper resolves the manager through
+  `0x1810d8c30`, then calls `0x1810d91f0` with the original
+  `(sharedDataIndex, data, offset, size)` ABI. That helper computes
+  `manager[+0x38] + index * 0x8c + offset` and jumps to optimized memcpy
+  `0x181c9f9a0`; sibling full-set entry `0x1801eb970` writes the complete
+  0x8c-byte record through `0x1810d9170`. This closes the primary endpoint as
+  a CPU-side per-entity shared-record copy, but not shared payload to
+  `_UploadBuffer`, kernel 7, channel 2, or resource `+0xd0`; keep the GPU
+  upload edge fail-closed. The corrected registration/body evidence is under
+  `native_partial_endpoint_evidence`.
+  The earlier `0x180155300`/`0x180155870` values are from a separate pointer
+  array at `0x1820e0670`, not the current `AddInternalCall` function table.
+  The dynamic service/registry observations from the legacy surface remain
+  alternate negative evidence and must not replace the primary mapping.
   The adjacent native factory/VAT surface is also bounded: the registered
   `HGFactoryRenderManager::BatchSetFactoryVATParams_Internal` entry is
   `UnityPlayer 0x180155870` (`0x180155870..0x1801558ed`), which calls
