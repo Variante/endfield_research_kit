@@ -80,10 +80,10 @@
         },
         "index_guard": "rejects index < 0 or index >= 5 (edx*16 >= 0x50)",
         "renderer_storage": {
-          "formula": "*(Vector4*)(native_renderer + 0x28 + 0x20 * index)",
-          "character_params_index_2_offset": "0x68",
+          "formula": "*(Vector4*)(native_renderer + 0x140 + 0x10 * index)",
+          "character_params_index_2_offset": "0x160",
           "bytes_written": 16,
-          "observed": "The native body performs movups from the Vector4 argument directly into the renderer object before invoking its vtable update hook at renderer+0x38, vtable slot +0x80."
+          "observed": "The native body computes (index + 0x14) * 2 * 8, so the effective base is +0x140 with a 16-byte stride; it performs movups from the Vector4 argument directly into the renderer object before invoking its vtable update hook at renderer+0x38, vtable slot +0x80."
         },
         "resource_update": {
           "condition": "renderer+0x38 vtable slot +0x80 returns true",
@@ -123,7 +123,8 @@
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
           "function_pointer": "0x1800fedc0",
           "registration_entry_index": 1334,
-          "observed": "The getter reads the same native renderer storage formula (+0x28 + 0x20*index), confirming that the setter's channel layout is not a transient wrapper artifact."
+          "implementation_body_pointer": "0x18042db70",
+          "observed": "The getter reads the same native renderer five-slot base (+0x140 + 0x10*index), confirming the corrected setter layout. The separate GetCustomPerDrawDataPtr internal call (entry 1335, implementation 0x1800ff180) returns this +0x140 base on its successful path."
         }
       },
       "typed_index_evidence": {
@@ -356,7 +357,7 @@
       ],
       "boundary": "Static native evidence now separates the known cloth/proxy/skin-capture routes from the missing previous-deformed-position producer. The IFix-patched cloth wrapper and the renderer-side history state still require compatible patch-body or target-frame evidence before publication."
     },
-    "conclusion": "The source-backed producer and Unity native storage/resource ABI for the character custom per-draw channel are recovered (CHARACTER_PARAMS_INDEX=2; renderer +0x68; resource +0xd0), and refreshed Vulkan reflection closes the HGRP/Lit b3 equivalent at descriptor set 0/binding 33, vector member w. The remaining open edge is channel 2 into that resource binding. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the channel-to-resource upload or an authorized target-frame capture is recovered."
+    "conclusion": "The source-backed producer and Unity native storage/resource ABI for the character custom per-draw channel are recovered (CHARACTER_PARAMS_INDEX=2; renderer +0x160; resource +0xd0), and refreshed Vulkan reflection closes the HGRP/Lit b3 equivalent at descriptor set 0/binding 33, vector member w. The remaining open edge is channel 2 into that resource binding. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the channel-to-resource upload or an authorized target-frame capture is recovered."
   },
   "activation_policy": "default-off-fail-closed"
 }

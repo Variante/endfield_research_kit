@@ -312,10 +312,12 @@ NPC archetypes are imported as labeled source kits.
   That registration target is a lazy/error-handling stub whose successful path
   calls implementation body `0x180430680`. The body accepts only indices
   `0..4`, writes the Vector4 to
-  `nativeRenderer + 0x28 + 0x20*index` (channel 2 therefore `+0x68`), then
+  `nativeRenderer + 0x140 + 0x10*index` (channel 2 therefore `+0x160`), then
   conditionally mirrors it to the returned per-draw resource at
   `+0xb0 + 0x10*index` (channel 2 `+0xd0`). `GetCustomPerDrawData_Injected`
-  reads the same renderer formula. This proves the channel-2 native
+  `GetCustomPerDrawData_Injected` implementation `0x18042db70` reads the same
+  five-slot renderer formula, and `GetCustomPerDrawDataPtr` returns the
+  `+0x140` base on its successful path. This proves the channel-2 native
   storage/resource layout rather than merely the managed forwarding path. An
   independent UnityPlayer refresh path at `0x18042f750` resolves the same
   resource and copies all five renderer vectors (`renderer +0x140..+0x180`) to
