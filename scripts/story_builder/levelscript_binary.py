@@ -6939,8 +6939,6 @@ def _decode_audio_action(
             ("startEvent", "standaloneStart"),
             ("stopEvent", "standaloneStop"),
         ),
-        "PlayVoice": (("voId", "voice"),),
-        "PlayVoiceNarrative": (("voId", "voiceNarrative"),),
         "PostAudioStatusEvent": (
             ("statusEnterEvent", "statusEnter"),
             ("statusExitEvent", "statusExit"),
@@ -6963,6 +6961,25 @@ def _decode_audio_action(
                 "eventName": value,
                 "role": role,
                 "sourceField": field["sourceField"],
+            })
+    voice_bindings = []
+    for field_name, role in {
+        "PlayVoice": (("voId", "voice"),),
+        "PlayVoiceNarrative": (("voId", "voiceNarrative"),),
+    }.get(action_name, ()):
+        field = fields[field_name]
+        value = field.get("value")
+        if (
+            field.get("bindingKind") == "constant"
+            and isinstance(value, str)
+            and value
+        ):
+            voice_bindings.append({
+                "voiceId": value,
+                "role": role,
+                "sourceField": field["sourceField"],
+                "identityKind": "AudioDialogPathStem",
+                "wwiseEventStatus": "notApplicable",
             })
     cue_bindings = []
     if action_name.startswith("PostAudioCue"):
@@ -6997,6 +7014,7 @@ def _decode_audio_action(
         "action": action_name,
         "fields": fields,
         "eventBindings": event_bindings,
+        "voiceBindings": voice_bindings,
         "cueBindings": cue_bindings,
         "radioBindings": radio_bindings,
     }))

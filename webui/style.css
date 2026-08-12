@@ -5812,6 +5812,26 @@ body.is-resizing-filter * {
   font-size: 9px;
 }
 
+.gameplay-sfx-overflow > .gameplay-sfx-list-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gameplay-sfx-overflow > .gameplay-sfx-list-toggle strong {
+  color: var(--fg);
+  font-size: 10px;
+}
+
+.gameplay-sfx-overflow > .gameplay-sfx-list-toggle span {
+  margin-left: auto;
+  text-align: right;
+}
+
+.gameplay-sfx-event-list {
+  margin-top: 6px;
+}
+
 .gameplay-sfx-possible-file small,
 .gameplay-sfx-possible-file code {
   display: block;

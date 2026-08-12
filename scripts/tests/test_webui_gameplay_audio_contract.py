@@ -125,6 +125,11 @@ assert.equal(merged[0].possibleMediaCount, 2);
         self.assertIn("renderGameplaySoundEvidence(event, audio)", source)
         self.assertIn('text("soundPlayBranches")', source)
         self.assertIn("selectorEvidence.containers", source)
+        self.assertIn("const GAMEPLAY_INLINE_AUDIO_LIMIT = 20;", source)
+        self.assertIn(
+            'row.audio.length > 0 && row.audio.length <= GAMEPLAY_INLINE_AUDIO_LIMIT ? " open" : ""',
+            source,
+        )
 
     def test_related_audio_uses_flat_event_cards_and_keeps_action_labels(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")

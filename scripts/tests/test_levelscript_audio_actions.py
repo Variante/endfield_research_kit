@@ -242,7 +242,10 @@ class LevelScriptAudioActionTests(unittest.TestCase):
         )
         self.assertEqual("PlayVoice", voice["action"])
         self.assertEqual(40001, voice["fields"]["target"]["slotId"])
-        self.assertEqual("voice", voice["eventBindings"][0]["role"])
+        self.assertNotIn("eventBindings", voice)
+        self.assertEqual("voice", voice["voiceBindings"][0]["role"])
+        self.assertEqual("au_prts_tape0003_stem_broken", voice["voiceBindings"][0]["voiceId"])
+        self.assertEqual("AudioDialogPathStem", voice["voiceBindings"][0]["identityKind"])
 
         narrative = decode_audio(
             output_param("$41@_voiceHandle")
@@ -251,7 +254,8 @@ class LevelScriptAudioActionTests(unittest.TestCase):
             0x0A,
         )
         self.assertEqual("PlayVoiceNarrative", narrative["action"])
-        self.assertEqual("voiceNarrative", narrative["eventBindings"][0]["role"])
+        self.assertNotIn("eventBindings", narrative)
+        self.assertEqual("voiceNarrative", narrative["voiceBindings"][0]["role"])
 
         cue_release = decode_audio(
             b"".join((

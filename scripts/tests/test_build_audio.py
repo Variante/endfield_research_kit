@@ -36,6 +36,106 @@ def sound_source_data(
 
 
 class AudioCategoryTests(unittest.TestCase):
+    def test_hirc_container_parent_decodes_variable_fx_prefix(self) -> None:
+        parent_id = 386813193
+        # NodeBase: override FX, one authored effect row, metadata header,
+        # override-bus id, then DirectParentID.
+        data = (
+            bytes([1, 1, 0, 4])
+            + pack("<I", 0)
+            + bytes([0, 0, 0])
+            + pack("<II", 0, parent_id)
+            + bytes(32)
+        )
+
+        self.assertEqual(build_audio.hirc_object_parent_id(9, data), parent_id)
+
+    def test_variable_fx_parent_restores_exact_sequence_layer_event_graph(self) -> None:
+        event_id = 0x8A88723C
+        container_id = 386813193
+        variable_layer_id = 144808260
+        ordinary_layer_id = 337304808
+        media_by_sound = {
+            369109803: (205675749, variable_layer_id),
+            723059349: (748608357, variable_layer_id),
+            414986928: (475840163, ordinary_layer_id),
+            716252337: (594611880, ordinary_layer_id),
+        }
+        objects = {
+            event_id: {"type": 4, "data": bytes.fromhex("01102ef12d")},
+            770780688: {"type": 3, "data": bytes.fromhex("0304094d0e17000000043c72888a1e000000")},
+            container_id: {"type": 5, "data": bytes.fromhex(
+                "0000000000000000e553d01a0001080000c0c20000086d580507000000000000000000000000000000000001000000000000000001000000000000007a440000000000000000010000000112020000004499a108e8dc1a1402004499a10850c30000e8dc1a1450c30000"
+            )},
+            variable_layer_id: {"type": 9, "data": bytes.fromhex(
+                "010100000000000004000000000000094d0e17000400020308000070c10000c041000074420000c0c20000086d580507000000000000000000000000000000000d010200000000000000020000002b2b00169502192b0000000000"
+            )},
+            ordinary_layer_id: {"type": 9, "data": bytes.fromhex(
+                "0000000000000000094d0e170004000203080000b0c10000c041000018420000c0c20000086d580507000000000000000000000000000000000001000000000000000002000000b032bc18b124b12a0000000000"
+            )},
+        }
+        for sound_id, (media_id, parent_id) in media_by_sound.items():
+            objects[sound_id] = {
+                "type": 2,
+                "data": sound_source_data(media_id, parent_id),
+            }
+
+        result = build_audio.traverse_hirc_event(
+            event_id, objects, {row[0] for row in media_by_sound.values()}, bank_version=150
+        )
+
+        self.assertEqual(set(result["mediaIds"]), {205675749, 748608357, 475840163, 594611880})
+        self.assertEqual(result["unresolvedNodes"], [])
+        self.assertEqual(
+            {(row["objectId"], row["edgeKind"]) for row in result["containerEvidence"]},
+            {(container_id, "sequenceItem"), (variable_layer_id, "layerChild"), (ordinary_layer_id, "layerChild")},
+        )
+
+    def test_link_conversation_audio_marks_exact_story_line_purpose_terminal(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            conv_dir = Path(raw_root)
+            conv_path = conv_dir / "dlg_fixture.json"
+            conv_path.write_text(json.dumps({
+                "lines": [{"id": "line_1", "audioId": "au_dlg_fixture"}],
+            }), encoding="utf-8")
+            entry = {"id": "au_dlg_fixture", "src": "/audio/fixture.flac"}
+
+            stats = build_audio.link_conversation_audio(
+                conv_dir, {"au_dlg_fixture": entry}
+            )
+
+            self.assertEqual(stats["lineAudioLinked"], 1)
+            self.assertEqual(entry["storyLineBindingCount"], 1)
+            self.assertEqual(entry["purposeKnowledgeStatus"], "exactStoryLineBinding")
+
+    def test_numeric_audio_entries_recovers_occurrence_key_only_media(self) -> None:
+        surviving = {
+            "id": "1040066173",
+            "storageRoot": "shared",
+            "rel": "wwise/voice_events/1040066173.flac",
+        }
+        entries = build_audio.numeric_audio_entries_by_media_id({
+            "1040066173@shared:wwise/voice_events/1040066173.flac": surviving,
+            "955778167792087661": {
+                "id": "955778167792087661",
+                "storageRoot": "CN",
+                "rel": "wwise/unknown/955778167792087661.flac",
+            },
+        })
+
+        self.assertEqual(entries, {1040066173: surviving})
+
+    def test_event_media_inventory_fingerprint_ignores_uint64_external_ids(self) -> None:
+        base = {"1": {"id": "1", "storageRoot": "shared", "rel": "wwise/sfx/1.flac", "bytes": 3}}
+        with_external = {**base, "external": {
+            "id": "955778167792087661", "storageRoot": "CN",
+            "rel": "wwise/unknown/955778167792087661.flac", "bytes": 5,
+        }}
+        self.assertEqual(
+            build_audio.event_media_inventory_fingerprint(base),
+            build_audio.event_media_inventory_fingerprint(with_external),
+        )
+
     def test_audio_dialog_external_media_id_matches_game_path_hash(self) -> None:
         self.assertEqual(
             build_audio.audio_dialog_external_media_id(
@@ -168,7 +268,6 @@ class AudioCategoryTests(unittest.TestCase):
                 "rel": f"wwise/unknown/{external_id}.flac",
                 "bytes": unknown_path.stat().st_size,
                 "audioCategory": "unknown",
-                "sourceBank": "external",
             }}
             dialog = {"au_dlg_fixture": {
                 "id": "au_dlg_fixture",
@@ -216,6 +315,29 @@ class AudioCategoryTests(unittest.TestCase):
             self.assertEqual(stats["audioDialogExternalCopiesCompared"], 1)
             self.assertEqual(stats["audioDialogExternalCopiesSuppressed"], 0)
             self.assertEqual(len(generic), 1)
+
+    def test_orphan_external_media_identity_recovers_name_without_trigger(self) -> None:
+        external_id = 955778167792087661
+        generic = {str(external_id): {
+            "id": str(external_id),
+            "storageRoot": "CN",
+            "rel": f"wwise/unknown/{external_id}.flac",
+            "bytes": 1,
+            "audioCategory": "unknown",
+            "sourceBank": "external",
+        }}
+
+        stats = build_audio.suppress_redundant_unknown_audio_occurrences(
+            Path("unused"), generic, {}, "CN"
+        )
+
+        self.assertEqual(stats["recoveredOrphanExternalMediaIdentities"], 1)
+        self.assertEqual(generic[str(external_id)]["externalAuthoredAudioId"], "au_voice_c35m3_3_001")
+        self.assertEqual(
+            generic[str(external_id)]["identityOnlyPlaybackPlacementStatus"],
+            "identityOnlyNoCurrentAudioDialogOrTrigger",
+        )
+        self.assertEqual(generic[str(external_id)]["audioCategory"], "story_voice")
 
     def test_audio_dialog_path_recovers_only_exact_current_wwise_event_alias(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -961,6 +1083,27 @@ class AudioCategoryTests(unittest.TestCase):
         )
         self.assertEqual(result["rootPlayActionCount"], 0)
         self.assertEqual(result["mediaIds"], [])
+        self.assertTrue(all(not row["traversed"] for row in result["actionEvidence"]))
+
+    def test_named_v150_control_action_operations_are_not_playback_edges(self) -> None:
+        operation_types = [0x0203, 0x0303, 0x0602, 0x0702, 0x1302, 0x1902, 0x1B02]
+        objects = {
+            1: {"type": 4, "data": bytes([len(operation_types)]) + b"".join(
+                pack("<I", index + 2) for index in range(len(operation_types))
+            )},
+            **{
+                index + 2: {"type": 3, "data": pack("<HI", action_type, 100 + index)}
+                for index, action_type in enumerate(operation_types)
+            },
+        }
+
+        result = build_audio.traverse_hirc_event(1, objects, set(), bank_version=150)
+
+        self.assertEqual(
+            [row["operation"] for row in result["actionEvidence"]],
+            ["pause", "resume", "mute", "unmute", "setGameParameter", "setSwitch", "trigger"],
+        )
+        self.assertEqual(result["rootPlayActionCount"], 0)
         self.assertTrue(all(not row["traversed"] for row in result["actionEvidence"]))
 
     def test_v150_random_sequence_policy_preserves_playlist_order_weights_and_fail_closed_tail(self) -> None:
@@ -1723,6 +1866,25 @@ class AudioDumperTests(unittest.TestCase):
             files = build_audio.iter_audio_files(root)
             self.assertEqual([path.suffix for path in files], [".flac", ".wav"])
 
+    def test_flac_file_metrics_read_duration_and_average_bitrate(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            path = Path(raw_root) / "test.flac"
+            sample_rate = 48_000
+            total_samples = 96_000
+            packed_stream_info = (
+                (sample_rate << 44)
+                | (1 << 41)
+                | (15 << 36)
+                | total_samples
+            )
+            stream_info = bytes(10) + packed_stream_info.to_bytes(8, "big") + bytes(16)
+            path.write_bytes(b"fLaC" + bytes((0x80, 0, 0, 34)) + stream_info + bytes(958))
+
+            metrics = build_audio.audio_file_metrics(path)
+
+            self.assertEqual(metrics["duration"], 2.0)
+            self.assertEqual(metrics["bitrate"], path.stat().st_size * 4)
+
     def test_media_id_collisions_preserve_distinct_physical_occurrences(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
@@ -1966,6 +2128,93 @@ AnimationClip:
                 1,
             )
             self.assertEqual(result["animationControllerIndex"]["status"], "partial")
+
+    def test_animation_audio_scans_persistent_and_scopes_controller_path_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            streaming_clip_root = (
+                export_root
+                / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
+            )
+            persistent_clip_root = (
+                export_root
+                / "recovered/AnimeStudio-cli/Persistent/convert_by_type/AnimationClip"
+            )
+            persistent_controller_root = (
+                export_root
+                / "recovered/AnimeStudio-cli/Persistent/json_by_type/AnimatorController"
+            )
+            streaming_clip_root.mkdir(parents=True)
+            persistent_clip_root.mkdir(parents=True)
+            persistent_controller_root.mkdir(parents=True)
+            clip_template = """%YAML 1.1
+AnimationClip:
+  m_Name: {clip_name}
+  m_Events:
+  - time: 0.25
+    functionName: PostAudioEvent
+    data: {event_id}
+"""
+            # PathIDs are serialized-file identities, not global identities.
+            # A Persistent controller reference must not annotate the same
+            # numeric PathID under StreamingAssets.
+            (streaming_clip_root / "A_actor_test_battle_stream_p0000000000000001.anim").write_text(
+                clip_template.format(
+                    clip_name="A_actor_test_battle_stream",
+                    event_id="au_stream_unresolved",
+                ),
+                encoding="utf-8",
+            )
+            (persistent_clip_root / "A_actor_test_battle_patch_p0000000000000001.anim").write_text(
+                clip_template.format(
+                    clip_name="A_actor_test_battle_patch",
+                    event_id="au_persistent_direct",
+                ),
+                encoding="utf-8",
+            )
+            (persistent_controller_root / "AnimatorController#fixture_p0000000000000003.json").write_text(
+                json.dumps({
+                    "$animestudio": {
+                        "type": "AnimatorController",
+                        "pathId": 3,
+                        "sourceFile": "CAB-persistent-controller",
+                        "pptrReferences": [{
+                            "targetType": "AnimationClip",
+                            "targetPathId": 1,
+                            "targetSourceFile": "CAB-persistent-clip",
+                            "resolutionStatus": "resolved",
+                        }],
+                    },
+                    "m_Name": "AC_persistent_fixture",
+                }),
+                encoding="utf-8",
+            )
+
+            result = build_audio.collect_gameplay_animation_audio(
+                export_root,
+                [{"kind": "character", "id": "chr_0001_test", "skillGroups": []}],
+                [],
+            )
+
+            events = result["owners"][0]["events"]
+            self.assertEqual(
+                events["au_persistent_direct"][0]["clipReachability"],
+                "directAnimatorController",
+            )
+            self.assertEqual(
+                events["au_persistent_direct"][0]["animatorControllerContexts"][0]["storageRoot"],
+                "Persistent",
+            )
+            self.assertEqual(
+                events["au_stream_unresolved"][0]["clipReachability"],
+                "unresolved",
+            )
+            self.assertEqual(result["counts"]["animationAudioClipsScanned"], 2)
+            self.assertEqual(result["counts"]["animationAudioControllerReachableClips"], 1)
+            self.assertEqual(
+                result["animationControllerIndex"]["availableSourceRoots"],
+                ["recovered/AnimeStudio-cli/Persistent/json_by_type/AnimatorController"],
+            )
 
     def test_animator_controller_state_clip_refs_are_bounded_authored_membership(self) -> None:
         payload = {

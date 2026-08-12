@@ -26,6 +26,18 @@ locations are separate visible states; neither is promoted into a runtime edge.
 They are also first-class recovery-status filters and overview counts. Media
 placement uses four mutually exclusive generated states: direct dialog,
 authored Event context, Event relation only, and unknown.
+An exact generated Story-line binding is a terminal purpose result: media rows
+record the binding count and no longer receive deeper purpose-recovery
+priority. The Media list defaults to unknown-purpose-first order; unlinked
+playable media comes first, Event-graph-only media is secondary, and exact
+Story-line bindings sort last.
+Audio Event type and Media purpose remain separate facets because they are
+derived from different evidence. Media rows expose related Event types as
+secondary evidence without overwriting their path-based purpose classification.
+The seven former Sound-definition-only rows were fixed by decoding the complete
+variable-length Wwise v150 NodeBase FX/metadata prefix before `DirectParentID`.
+All seven now have exact Event paths; the current inventory has no decoded
+Sound definition without an Event path.
 The Audio HIRC inventory now exposes the SHA-256-locked nine-PCK scan set and
 per-package Event-object coverage, including Persistent HotfixAudio. Unresolved
 Event details carry the exact authored hash and scanned-set fingerprint. The
@@ -51,20 +63,50 @@ audio, synchronized UI video audio, region switching, and domain-upgrade
 animation stages. Two additional SNS Voice nodes recover their exact Events from
 metadata `Voice=5`, `contentParam[0]`, and the decrypted-Lua click handler,
 and six exact `skill_id.dic`/same-name `SkillData`/current-Wwise-hash matches
-recover Event identity without inventing a skill playback route. This leaves
-12,183 hashes without a recovered authored identity.
+recover Event identity without inventing a skill playback route. Authored
+context names are now joined back to anonymous raw HIRC rows by exact Event
+hash, leaving 10,829 hashes without a recovered authored identity and no
+duplicate named/hash-only Event rows.
 These use stable hash identities and a separate recovery state rather than
-being conflated with authored references absent from Wwise. As a result,
-20,329 decoded media are Event-related with authored placement unknown, 38,775
-have a recovered authored Event context, and 615 remain without a recovered
-playback location. Of those, seven shared files resolve to exact typed Wwise
-Sound codec-media objects but no scanned Event reaches their three parent
-container branches; the other 608 are language External Source files.
-recovered playback relation. The builder suppresses 2,237 byte-identical
+being conflated with authored references absent from Wwise. Event purpose is
+now ranked independently: 10,321 rows have no recovered consumer context and
+281 have identity/definition evidence only, so all 10,602 sort ahead of the
+10,256 Events with authored playback context. Another 527 pure Wwise control
+Events have exact library operations but unknown external callers and sort at
+secondary priority; this includes `au_music_exploring_state_dlg_in/out`, whose
+sole actions are exact `setState` operations rather than media playback. Of the
+10,829 anonymous Wwise Event hashes, 514 are such control-only objects; the
+rest remain highest priority. The 163 managed-string-only identities keep
+unknown placement. The 261 authored/hash requests missing from the scanned
+bank set all have a bounded trigger context and are not mislabeled unknown-use.
+Within the highest-priority set, 85 Events share an exact same-bank complete
+Wwise Play-target set with a named authored-context Event. Their library output
+is classified as 55 UI, 29 SFX, and one voice, while their external caller and
+trigger placement remain unknown/highest priority. Event details and the source
+graph expose this as library-output equivalence rather than a trigger edge.
+Another 126 highest-priority Events share an exact complete Wwise media-ID set
+with an authored-context Event in the same PCK after excluding the 85 stronger
+Play-target matches. Audio details expose this as media-leaf equivalence only:
+113 remain `unknownUse`, 13 remain `identityOnlyNoConsumer`, and none inherit
+the matched Event's category, trigger, owner, placement, or resolved-purpose
+state. The source graph records 146 such forward edges and no contextual edge.
+As a result,
+20,095 decoded media are Event-related with authored placement unknown, 39,016
+have a recovered authored Event context, and one remains without a recovered
+playback location. That CN External Source file has the uniquely recovered authored
+identity `au_voice_c35m3_3_001`, but no current AudioDialog row, speaker,
+Event, or trigger placement. Same-mission crowd-loop Events are retained only
+as investigation candidates because no bank or selector edge connects them to
+the file. Its source-graph node therefore carries only authored identity,
+numeric media, and decoded-file edges, with no inferred ownership edge. The
+builder suppresses 2,237 byte-identical
 `wwise/unknown` occurrences when a stronger same-storage categorized copy is
 already indexed, without deleting either file. Two same-id music collisions
 have different bytes and remain visible as Hotfix replacements under
-`au_music_main`, rather than being mislabeled unknown. The view exposes
+`au_music_main`, rather than being mislabeled unknown. It separately suppresses
+607 numeric External Source path copies only after exact FNV-1a-64
+AudioDialog-path equality and identical SHA-256 content; all physical files
+remain on disk. The view exposes
 1,084 responsive-voice Events
 across 4,020 authored response positions and 81 tone variants. Response
 membership is a possible trigger family, tone membership is a selection
@@ -168,6 +210,12 @@ Runtime overrides:
   playback. An audio-only toggle selects or unselects every audio clip while
   preserving video choices; every visible label and playback status follows the
   shared zh/en UI locale.
+- Audio Media rows, detail headings, and player cards use the unique related
+  Event id as their title when exactly one Event is known; ambiguous or unlinked
+  media retains its existing file/media title. Media supports ascending and
+  descending duration sorting, with duration and average file bitrate visible
+  in detail facts. The left Media file list keeps duration, size, and bitrate
+  right-aligned opposite the filename, with purpose and evidence below.
 - Recovery issue/method filters remain visible in normal and debug modes.
 - Story source panels, manual order controls, and Characters name/identity
   override controls stay behind debug mode.
@@ -204,7 +252,9 @@ Runtime overrides:
   Wwise selection remain unresolved. Inferred skill links, animation systems,
   profile voice, and all enemy audio stay in the final detail section. Shared
   selector events expose bank, Stop, selector-node, and child-edge evidence
-  before their together-listed files. Character Normal Skill,
+  before their together-listed files. Related-sound groups, projectile phases,
+  and individual Events keep their audio controls expanded unless one group
+  contains more than 20 playable files. Character Normal Skill,
   Ultimate, and Combo discs preserve the exact element colors authored in
   `CharTypeTable.json`; Normal Attack remains neutral.
 - Endministrator remains one canonical Gameplay character. Its persisted

@@ -9,6 +9,11 @@ million Unity objects without relying on a generic silent fallback.
 The remaining work is semantic: proving binary layouts, joining records across
 systems, and separating authored configuration from live runtime behavior.
 
+For audio-purpose recovery, an exact generated Story-line binding is terminal
+evidence of use and should not receive deeper Wwise investigation priority.
+Current work prioritizes decoded media with no line, authored trigger, or Event
+path; Event-graph-only media remains a secondary placement problem.
+
 Evidence layers:
 
 1. structured tables and JSON;
@@ -478,9 +483,51 @@ tail uniquely, and remain visibly partial; the live RTPC value, child gains,
 audible layers, and selected media are not observed.
 
 Current IL2CPP managed string literals provide a second exact name source.
-Lowercased Wwise FNV-1 joins recover previously missing `au_*`, `bark_*`, and
-`radio_*` names only when their hash is a HIRC type-4 Event. A string literal
-alone proves that managed code shipped the identifier, not that it played.
+Lowercased Wwise FNV-1 joins recover `au_*`, `bark_*`, and `radio_*` names only
+when their hash is a current HIRC type-4 Event. A string literal alone proves
+that managed code shipped the identifier, not that it played or where it
+played: 163 current Events currently have only this identity evidence, so
+their 440 media relations remain playback-location unknown. Nineteen literals
+absent from every current Event and without another typed consumer—including
+prefixes/parameter names such as `au_music_`, `au_dlg_commvo_`, `bark_id`, and
+`radio_id`—are no longer emitted as authored Event requests. This leaves 261
+real authored/hash requests absent from the nine scanned PCKs. All 261 have at
+least one exact or bounded authored trigger context, so they are bank/media
+resolution gaps rather than wholly unknown-use audio: 145 voice, 73 music, 33
+SFX, seven UI, two dialog-lifecycle controls, and one cue. The two numeric
+controls are exact `AudioDialogCustomEventTable` post-enter/pre-exit fields;
+the remaining formerly `unknown` labels were only prefix edge cases (a leading
+`:` on one Timeline music key, `au_ul_` UI spelling, and `player_fol_`
+animation Foley). Runtime execution and missing bank objects remain unresolved.
+Purpose-first Event triage also separates 527 current Wwise control-only Events
+from unknown playback use. Their exact Action operation is known while the
+external caller is not; for example, `au_music_exploring_state_dlg_in/out`
+contain one `setState` Action each and no Play, Stop, or media leaf.
+Exact Wwise output topology now reduces a separate anonymous-library gap. For
+85 highest-priority Events, a different authored Event in the same bank reaches
+the identical complete set of Play Action targets: 55 classify as UI output,
+29 as SFX, and one as voice. The source graph records 124 directed equivalence
+edges because some target sets have several authored Event entry points. This
+proves library-output equivalence only; all 85 retain unknown external callers
+and highest trigger-investigation priority. Partial target overlap is rejected.
+For another 126 highest-priority Events, the complete decoded Wwise media-ID
+set exactly matches an authored-context Event within the same PCK. These create
+146 source-graph media-leaf equivalence edges. This weaker relation is useful
+for grouping final library output, but deliberately copies neither category nor
+purpose: different Event/Action/container paths can reach the same media. All
+126 remain highest priority (113 `unknownUse`, 13 `identityOnlyNoConsumer`),
+and partial media-set overlap is rejected. The combined library-relation
+dataset contains 211 source Events and has no trigger, Story, line, or speaker
+edges introduced by either equivalence rule.
+
+A bounded current-build native constant scan tested all 10,233 high-priority
+playback Event hashes against the 280 MB `GameAssembly.dll`. The `.text`
+section had four raw four-byte collisions, but none was a decoded x64 immediate.
+`.rdata`/`.data` had 33 raw collisions and none was referenced by a decoded
+RIP-relative instruction. No native trigger was promoted. The six named
+`skill_id.dic` identity aliases also remain identity-only: the existing complete
+10,161-file, 48.3 MB SkillData/BuffData scan has zero serialized uint32 Event
+hash hits, and the animation evidence catalog has no matching callback.
 Numeric event-designated fields in `AudioFactory`, `AudioBattleBuildings`, and
 `AudioLevel` are normalized from signed JSON integers to uint32 and joined by
 exact HIRC object id. Their table row and field give useful authored meaning
@@ -832,15 +879,18 @@ playback remain unobserved.
 
 Current-build LevelScript audio ActionBase layouts now decode from their exact
 union tag/member count and generated-setter field order. The overlaid corpus
-has 4,611/4,611 ActionBase records decoded: 1,461 constant Event-request
-contexts, 291 named AudioCue invocations, 22 dynamic Event parameters, and 390 typed music/
+has 4,611/4,611 ActionBase records decoded: 1,505 constant Event-request
+contexts, 291 named AudioCue invocations, 22 dynamic Event parameters, and 395 typed music/
 state/variable/stop/control records. Newly bounded families include auto-music
 blocks, battle-music blocks, custom music mode, PlayVoice and
 PlayVoiceNarrative, PostAudioCueOnRelease, and three zero-field controls
 (`ExitCustomMusicMode`, `FlushRadio`, `PostAudioStopAllEnemyVoice`) whose
 ActionMap framing is exact. Same-tag getter/header rows are rejected by their
 ActionMap membership (231 former `AnnounceAudioOnTarget` false positives).
-Constant Events receive exact
+`PlayVoice` and `PlayVoiceNarrative` are no longer classified as Event
+requests: their `_voId` fields select `AudioDialog` path stems through the
+voice-player route. All four current constant bindings exactly join decoded CN
+media; one is already bound to a Story line. Constant Events receive exact
 script/action/role/routing contexts in Audio. Cue names, dynamic parameters,
 playback handles, placeholder-music ids, and state/variable writes remain
 typed control records when their runtime value is unresolved; no name or live
@@ -921,6 +971,13 @@ when the clip name contains the unique table-id suffix token; the callback
 does not prove that a current controller can reach the clip or which Wwise
 container branch wins at runtime. Canonical Wwise events therefore retain
 per-clip owner contexts rather than one global owner.
+
+The active Gameplay collector covers both StreamingAssets and Persistent
+AnimeStudio exports. Controller and override PathID lookup is storage-root
+scoped, because identical numeric PathIDs in the two VFS roots are not a shared
+Unity object identity. A resolved controller PPtr proves authored membership
+for the matching-root clip only; state transition selection and live execution
+remain unobserved.
 
 `OnCustomFootStep` parameters now retain their exact stock-client meaning:
 `intParameter` masks select Left/Right foot (`0x03`), None/Step/Jump/Land VFX
@@ -1046,10 +1103,9 @@ resolved same-file sibling Events remain review evidence only; no alias is
 promoted without a binary or authored identity source.
 
 The full nine-PCK inventory contains 21,712 Event-object occurrences over
-21,124 unique hashes. The semantic Audio view now includes all of them:
-12,183 hashes still have neither an authored name, numeric trigger field, nor
-trigger callsite; 1,259 hash-only Events have an authored numeric context; the
-rest have recovered names. Exact equality between an `AudioDialog` path hash,
+21,124 unique hashes. The semantic Audio view now includes every unique hash
+exactly once: 10,829 still have neither an authored name, numeric trigger field,
+nor trigger callsite. Exact equality between an `AudioDialog` path hash,
 its signed voice id, and a current type-4 Wwise Event id validates 1,213 voice
 aliases without fuzzy matching. Of those, 1,199 restore names that were
 previously absent. `ResponsiveDialog` places 1,084 of these Events in 4,020
@@ -1121,9 +1177,9 @@ and an `AudioDialog` definition alone is not a playback location. The compact
 table/binary audit and current-build metadata/GameAssembly reports live under
 `reports/story/recovery/audio/`.
 
-This changes decoded-media placement from 27,556 fully unknown files to 615.
-After adding responsive, typed UI, and SNS Voice trigger contexts, 38,775 media have
-authored Event context and 20,329 remain honestly separated as Event-related media whose
+This changes decoded-media placement from 27,556 fully unknown files to one.
+After adding responsive, typed UI, and SNS Voice trigger contexts, 38,780 media have
+authored Event context and 20,331 remain honestly separated as Event-related media whose
 authored trigger placement is still unknown; 27,399 direct dialog media retain
 their stronger classification. The generated index also suppresses 2,237
 byte-identical `wwise/unknown` path occurrences that have a stronger
@@ -1133,15 +1189,43 @@ same-id rows whose bytes differ. The two Hotfix/category same-id groups
 and inherit the exact `au_music_main` relation because HotfixAudio replacement
 uses the same numeric Wwise media id.
 
-The final seven shared unknown-location files are not unparsed library blobs.
-Each is an exact version-150 type-2 Sound codec-media object. Five sit below
-two type-5 containers (`74630620`, `824607808`) and two sit below type-9
-container `144808260`; the only Event/Action graphs in those embedded banks do
-not reach these branches. WebUI therefore labels them as resolved Wwise Sound
-definitions without an Event path while keeping playback location unknown.
-The remaining 608 unknown-location rows are CN language External Source files,
-which must not be attached to one of the 1,396 External Source Events without
-an authored voice-selection identity.
+The seven formerly unknown shared files were parser false negatives, not
+unreachable library definitions. Wwise v150 type-5/6/7/9 nodes inherit the
+variable-length NodeBase FX and metadata prefixes before `DirectParentID`; a
+fixed offset of eight bytes misread parents whenever an authored FX row was
+present. Parsing the complete prefix restores exact reciprocal parent chains.
+The five rolling-stone media now reach
+`au_int_rolling_stone_big_rolling`; the other two reach unnamed Event
+`0x8a88723c`, whose sequence traverses two layers to four media. The current
+inventory therefore has zero decoded Sound definitions without an Event path.
+The 608 CN numeric External Source paths are 64-bit FNV-1a path identities, not
+ordinary Wwise media ids. Exactly 607 equal
+`FNV-1a-64("voice/chinese/<current AudioDialog.path lowercase>")` and have
+SHA-256-identical canonical AudioDialog-path files, so they are suppressed as
+logical duplicate occurrences without deleting either file. The repeatable
+audit is
+`reports/story/recovery/audio/audio_dialog_external_copy_audit.{json,md}`.
+The final id `955778167792087661` has one exact preimage in the bounded v1d4
+C35 mission-voice namespace:
+`v1d4/Narrating/HS_Part04/c35m3/au_voice_c35m3_3_001.wem`. This recovers the
+media identity, but the path is absent from current AudioDialog and no
+definition or trigger has been recovered, so speaker, Event, dialog ownership,
+and playback location remain unknown. The source graph now exposes an
+identity-only `audio` node joined to numeric Wwise media and the decoded FLAC;
+it deliberately has zero Story, line, speaker, or trigger-context edges. It is
+present in the current Persistent
+`sub_d4_chinese_external_source.pck`, but absent from the saved prior export;
+it is therefore a current package addition, not a stale local decode. Exact
+searches across 181,959 overlaid Table/JsonData payloads (1.57 GB) find neither
+its 64-bit path hash, its 32-bit authored-name hash, nor its authored string.
+Sibling `_4_001` and `_5_001` rows are current `AudioDialog` voice definitions
+for `liino`, but naming adjacency is not a consumer edge. The same C35
+LevelScript contains exact
+`au_sfx_levelscript_c35_crowd_loop_in/out` status actions, but both Event hashes
+are absent from the scanned bank set and no selector joins either Event to this
+External Source. Package proximity and the repeated-vocal audio content are
+only investigation clues. It must not be attached to either crowd Event or one
+of the 1,396 External Source Events without an authored selection edge.
 
 1. Use the new bounded live-session capture path in
    `scripts/story_recovery/capture_audio_runtime_trace.py` and normalize its
@@ -1178,7 +1262,7 @@ an authored voice-selection identity.
    receivers, AudioCue handlers, current music-table state/control to
    MusicTrack sources, and LevelScript bark/response families only when their
    serialized layouts are proven.
-6. Recover authored trigger identities for the 12,183 raw Wwise Event hashes
+6. Recover authored trigger identities for the 10,829 raw Wwise Event hashes
    that currently have only library-object/media evidence, and resolve whether
    the eight direct Lua `PostEvent` names absent from all current banks are
    stale requests, misspellings, or references to another bank version. Do not

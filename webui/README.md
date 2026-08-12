@@ -105,7 +105,16 @@ the larger media inventory remains deferred until the Media mode is selected.
 Both lists are virtualized, and selecting an Event fetches only its keyed detail
 shard before rendering contexts, branch evidence, and players. Selected records
 show only record-specific evidence and playable media; corpus-wide runtime
-statistics remain on the unselected Audio overview. Playable recovered audio is served from
+statistics remain on the unselected Audio overview.
+Media rows and player cards use the Event id as their display title when the
+file has exactly one known related Event; files with zero or multiple related
+Events retain their normal media/file title. Media defaults to unknown-purpose-
+first order and can also be sorted by file title or duration in either
+direction. Exact generated Story-line bindings are terminal purpose evidence,
+record their binding count, and sort after unresolved-purpose media. Detail
+facts include duration and average file bitrate. In the left Media file list,
+duration, size, and bitrate stay right-aligned opposite the filename while the
+second row is reserved for purpose and evidence. Playable recovered audio is served from
 `/export_full/structured/Audio/{shared,<LANG>}/`. AnimeStudio and the normal
 builder default to lossless `.flac` files and write those paths into Story, cutscene, projectile,
 and Gameplay sound payloads; the frontend uses the same native audio control
@@ -129,6 +138,10 @@ The Audio recovery-status filter exposes Wwise-object resolution for Events and
 placement coverage for Media. Media placement is partitioned into direct dialog
 media, recovered authored Event context, Event relation only, and unknown; the
 overview reports the same generated counts. A byte-identical
+Event type and Media purpose are deliberately separate facets: Event type is
+derived from Event semantics and authored evidence, while Media purpose comes
+from the decoded media path. Media rows show the types of their related Events
+as secondary evidence without replacing their own purpose classification.
 `wwise/unknown/<mediaId>` occurrence is omitted from the logical inventory when
 the same storage root already has a stronger categorized copy. The files remain
 on disk, while different-byte and cross-storage same-id collisions remain
@@ -139,6 +152,13 @@ library definition with unknown playback location, distinct from both an Event
 relation and a completely unidentified decoded file. HotfixAudio same-ID
 replacements inherit the exact Event relation while retaining separate players
 when their bytes differ.
+When such an unreachable definition shares an independently packaged bank with
+a named Event, the UI may show that Event as a bank-colocation purpose hint.
+This never becomes a playback edge unless the Event action tree reaches the
+definition's Sound/container branch.
+The current dataset has no such definition-only rows: seven former cases were
+resolved after the v150 container parser began consuming variable-length
+NodeBase FX/metadata prefixes before reading `DirectParentID`.
 SNS Voice message Events retain their exact dialog/content/speaker/duration
 placement and click-to-PostEvent plus stop-by-playing-id route; the static
 handler does not claim that the user clicked the message.
@@ -153,8 +173,15 @@ Every raw Event object is now represented, including hashes with no recovered
 authored name or trigger. Those records expose exact typed library/media
 relations under stable `hashed-event:0x...` identities and are labeled
 separately from both named Events and authored references absent from Wwise.
+Authored names recovered later from LevelScript, Timeline, or other semantic
+contexts merge into the same raw HIRC row by exact Event hash, so the Audio
+view does not duplicate a named row and a `hashed-event:*` row.
 Their media is classified as Event-related with authored placement unknown,
 not as having no playback relation.
+LevelScript `PlayVoice`/`PlayVoiceNarrative` `_voId` values are kept outside
+the Wwise Event namespace and joined by exact `AudioDialog` path stem to their
+playable voice media. This proves the authored selection and script location,
+not that the LevelScript action executed.
 Exact `AudioDialog` path-hash/voice-id/Event-id matches recover voice Event
 names without guessing. The Event detail keeps an `AudioDialog` definition,
 each `ResponsiveDialog` speaker/trigger response, and each `AudioVoTone`
@@ -173,6 +200,12 @@ templates. Their Event details retain the table field, bounded logical row
 samples, and native selection route while explicitly marking the live voice
 and branch choice unobserved. External Source Events do not acquire a decoded
 player merely because their authored route is now known.
+Numeric External Source paths use 64-bit FNV-1a authored-path identities. The
+builder omits one from the logical Media inventory only when the id exactly
+matches the current language/AudioDialog path and the canonical file has the
+same SHA-256 bytes. A bounded unique path preimage may recover media identity,
+but without a current AudioDialog row or trigger it remains an unknown playback
+location and does not acquire a speaker, dialog, or Event.
 Activity/UI table Events are promoted only when the field has a current
 metadata getter, the decrypted Lua consumer reaches `PostEvent`, `PlayAudio`,
 or `SetAudioOnOpen`, and the exact hash is a current Wwise Event object. Event
@@ -185,6 +218,30 @@ family. Direct `PostEvent` string literals can resolve a Wwise Event name and
 retain their exact VFS source, line, and expression; RTPC, AudioCue, and
 indirect literals are not promoted to playback Events. These rows explicitly
 say that branch execution was not observed.
+Managed string-pool names recover Event identity only when their exact hash is
+a current Wwise Event object. Without a typed consumer they do not establish a
+playback location; literals absent from both the current Event inventory and
+all typed consumers are not emitted as unresolved Event requests.
+Event rows use the same purpose-first investigation order as Media: no recovered
+consumer context sorts first, identity/definition-only evidence stays at
+unknown placement, and authored trigger contexts sort after those gaps. Bank
+resolution is separate—a missing current Wwise object does not mean unknown use
+when a Timeline, Lua, animation, table, or other typed trigger is already known.
+Pure control Events are also separate from playback gaps: exact Wwise actions
+such as `setState` establish their library-side role, while the still-missing
+external caller remains visible as an unresolved placement.
+Anonymous Events may also show an exact shared Play-target-set relation when a
+named authored-context Event in the same bank reaches the identical complete
+set of Wwise targets. This can recover the broad output category and avoid
+re-investigating identical library topology, but it does not copy the named
+Event's trigger, owner, Story placement, or resolved-purpose status. Partial
+target overlap is not enough.
+When the stronger target-set relation is unavailable, an Event may instead
+show that its complete decoded Wwise media-ID set exactly matches an
+authored-context Event within the same PCK. This is a final-media-leaf relation
+only: Event/Action/container behavior may differ, so the UI does not inherit
+category, trigger, owner, playback location, or resolved-purpose status.
+Partial media-set overlap is likewise rejected.
 Version-150 music Events use the same evidence boundary but additionally show
 typed Music Switch, playlist, segment, track, and track-source nodes; these are
 possible authored paths, not an observed current track.
@@ -324,7 +381,9 @@ sns_topic_map02_lv005_12002
 - Typed Wwise possible-media leaves are listed together, with Play roots and
   switch/state/random/sequence/layer evidence shown separately; the UI does
   not present them as equivalent choices or observed live playback. Direct and
-  inferred skill/enemy ownership are labeled.
+  inferred skill/enemy ownership are labeled. Related-sound groups,
+  projectile phases, and individual Event lists stay expanded unless one group
+  contains more than 20 playable files.
 - Character-owned animation callbacks and shared Wwise animation systems are
   separate Gameplay groups. Shared footstep/cloth/material Events show owner
   counts and global reachable leaves without presenting those leaves as the
@@ -332,7 +391,9 @@ sns_topic_map02_lv005_12002
   playable file together. Inferred character-skill links, animation systems,
   and profile voice remain in the final character section; enemy audio remains
   at the end of the enemy page. Compact bank, Stop, selector-node, and
-  child-edge counts substantiate large Wwise fan-outs.
+  child-edge counts substantiate large Wwise fan-outs. Animation callbacks and
+  controller evidence are collected from both StreamingAssets and Persistent,
+  with PathID reachability isolated per VFS storage root.
 - Gameplay thumbnails and model paths link back to the matching Assets entry.
 
 ### Mission Pipeline

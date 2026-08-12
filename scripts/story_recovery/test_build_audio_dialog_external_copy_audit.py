@@ -37,7 +37,7 @@ class AudioDialogExternalCopyAuditTests(unittest.TestCase):
             self.assertEqual(payload["summary"]["validationErrorCount"], 0)
             self.assertTrue(numeric.is_file())
 
-    def test_unmatched_numeric_file_remains_a_visible_gap(self) -> None:
+    def test_bounded_recovered_numeric_file_remains_a_trigger_gap(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root)
             numeric = export_root / "structured/Audio/CN/wwise/unknown/955778167792087661.flac"
@@ -46,9 +46,11 @@ class AudioDialogExternalCopyAuditTests(unittest.TestCase):
 
             payload = audit.build_audit(export_root)
 
-            self.assertEqual(payload["summary"]["absentFromCurrentAudioDialogCount"], 1)
+            self.assertEqual(payload["summary"]["boundedRecoveredAuthoredPathHashCount"], 1)
+            self.assertEqual(payload["summary"]["absentFromCurrentAudioDialogCount"], 0)
             self.assertEqual(payload["summary"]["validationErrorCount"], 0)
-            self.assertEqual(payload["records"][0]["identityStatus"], "absentFromCurrentAudioDialog")
+            self.assertEqual(payload["records"][0]["identityStatus"], "boundedRecoveredAuthoredPathHash")
+            self.assertEqual(payload["records"][0]["recoveredAudioId"], "au_voice_c35m3_3_001")
 
 
 if __name__ == "__main__":

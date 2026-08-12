@@ -3487,6 +3487,10 @@ class SourceGraphBuilder:
             self.commit_step("audioConfig")
             self.ingest_decoded_audio_index()
             self.commit_step("decodedAudio")
+            self.ingest_external_audio_media_identities()
+            self.commit_step("externalAudioMediaIdentities")
+            self.ingest_audio_event_library_relations()
+            self.commit_step("audioEventLibraryRelations")
             self.ingest_audio_trigger_contexts()
             self.commit_step("audioTriggerContexts")
             self.ingest_hotfix_audio_event_audit()
@@ -25207,6 +25211,217 @@ class SourceGraphBuilder:
                 if media_node and bank_node:
                     self.add_edge(media_node, bank_node, "wwise_media_from_bank", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
                     self.add_edge(bank_node, media_node, "wwise_bank_has_media", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
+
+    def ingest_external_audio_media_identities(self) -> None:
+        """Expose recovered external-media identities without inventing a consumer.
+
+        ``media.json`` can contain a uniquely recovered authored WEM path for an
+        external-source media id even when no current AudioDialog row, Wwise
+        Event, or trigger context references it.  Those identity/file facts are
+        useful graph evidence, but they must remain separate from playback
+        placement and ownership.
+        """
+        path = (
+            self.root
+            / "webui"
+            / "data"
+            / "lang"
+            / safe_key(self.language).upper()
+            / "audio"
+            / "media.json"
+        )
+        payload = read_json(path, {})
+        media_rows = payload.get("media") if isinstance(payload, dict) else None
+        if not isinstance(media_rows, list):
+            return
+
+        source = f"webui/audio/{safe_key(self.language).upper()}"
+        recovered_rows = [
+            row
+            for row in media_rows
+            if isinstance(row, dict)
+            and safe_key(row.get("externalAuthoredAudioId"))
+            and safe_key(row.get("externalAuthoredPath"))
+        ]
+        if not recovered_rows:
+            return
+
+        dataset = self.add_node(
+            "dataset",
+            f"external_audio_media_identities:{safe_key(self.language).upper()}",
+            name=f"Recovered external audio media identities ({safe_key(self.language).upper()})",
+            source=source,
+            path=slash(path),
+            data={
+                "schemaVersion": payload.get("schemaVersion"),
+                "language": payload.get("language"),
+                "count": len(recovered_rows),
+                "evidenceBoundary": "authored media identity and file path only; no playback trigger, placement, speaker, or story ownership inferred",
+            },
+        )
+        self.add_file(slash(path), kind="generated_audio_media", source=source)
+
+        for row in recovered_rows:
+            audio_key = safe_key(row.get("externalAuthoredAudioId"))
+            media_key = safe_key(row.get("id"))
+            authored_path = safe_key(row.get("externalAuthoredPath"))
+            identity_evidence = safe_key(row.get("externalIdentityEvidence")) or "media.externalAuthoredAudioId"
+            audio_node = self.add_node(
+                "audio",
+                audio_key,
+                name=audio_key,
+                source=source,
+                path=authored_path,
+                data=compact_payload(
+                    {
+                        "mediaId": media_key,
+                        "externalMediaIdentityStatus": row.get("externalMediaIdentityStatus"),
+                        "externalIdentityEvidence": row.get("externalIdentityEvidence"),
+                        "identityOnlyPlaybackPlacementStatus": row.get("identityOnlyPlaybackPlacementStatus"),
+                        "playbackLocationStatus": row.get("playbackLocationStatus"),
+                        "purposeKnowledgeStatus": row.get("purposeKnowledgeStatus"),
+                        "evidenceBoundary": "identity only; consumer and playback placement unresolved",
+                    },
+                    depth=2,
+                ),
+            )
+            self.add_alias(audio_key, audio_node, kind="external_authored_audio_id", source=source)
+            self.add_alias(authored_path, audio_node, kind="external_authored_audio_path", source=source)
+            if media_key:
+                self.add_alias(media_key, audio_node, kind="external_media_id", source=source)
+            self.add_edge(dataset, audio_node, "has_external_audio_media_identity", source=source, evidence=identity_evidence)
+
+            media_node = self.add_wwise_media_node(
+                media_key,
+                source=source,
+                data={
+                    "externalAuthoredAudioId": audio_key,
+                    "externalAuthoredPath": authored_path,
+                    "externalMediaIdentityStatus": row.get("externalMediaIdentityStatus"),
+                },
+            )
+            if media_node:
+                self.add_edge(audio_node, media_node, "audio_identity_matches_wwise_media", source=source, evidence=identity_evidence)
+                self.add_edge(media_node, audio_node, "wwise_media_has_recovered_audio_identity", source=source, evidence=identity_evidence)
+
+            file_node = self.decoded_audio_file_node(row, source=source)
+            if file_node:
+                self.add_edge(audio_node, file_node, "audio_identity_decoded_file", source=source, evidence=safe_key(row.get("rel")))
+                self.add_edge(file_node, audio_node, "decoded_audio_file_has_identity", source=source, evidence=safe_key(row.get("rel")))
+
+    def ingest_audio_event_library_relations(self) -> None:
+        """Add exact library-output relations without treating them as triggers."""
+        path = (
+            self.root
+            / "webui"
+            / "data"
+            / "lang"
+            / safe_key(self.language).upper()
+            / "audio"
+            / "events.json"
+        )
+        payload = read_json(path, {})
+        rows = payload.get("events") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            return
+        related_rows = [
+            row
+            for row in rows
+            if isinstance(row, dict)
+            and (
+                (
+                    row.get("audioLibraryPlaybackTargetStatus")
+                    == "exactSharedPlayTargetSetWithAuthoredEvent"
+                    and isinstance(row.get("audioLibraryEquivalentEventIds"), list)
+                )
+                or (
+                    row.get("audioLibraryMediaLeafStatus")
+                    == "exactCompleteWwiseMediaIdSetWithAuthoredEvent"
+                    and isinstance(row.get("audioLibraryMediaEquivalentEventIds"), list)
+                )
+            )
+        ]
+        if not related_rows:
+            return
+        source = f"webui/audio/{safe_key(self.language).upper()}"
+        dataset = self.add_node(
+            "dataset",
+            f"audio_event_library_relations:{safe_key(self.language).upper()}",
+            name=f"Audio Event library relations ({safe_key(self.language).upper()})",
+            source=source,
+            path=slash(path),
+            data={
+                "schemaVersion": payload.get("schemaVersion"),
+                "language": payload.get("language"),
+                "count": len(related_rows),
+                "evidenceBoundary": "exact Wwise Play-target-set or complete media-leaf-set equivalence only; external trigger, execution, and ownership are not shared",
+            },
+        )
+        self.add_file(slash(path), kind="generated_audio_events", source=source)
+        for row in related_rows:
+            event_key = safe_key(row.get("id"))
+            event_node = self.add_wwise_event_node(event_key, source=source)
+            if not event_node:
+                continue
+            self.update_node_details(
+                event_node,
+                data=compact_payload(
+                    {
+                        "audioLibraryPlaybackTargetStatus": row.get("audioLibraryPlaybackTargetStatus"),
+                        "audioLibraryEquivalentCategories": row.get("audioLibraryEquivalentCategories"),
+                        "audioLibrarySharedPlayTargetSets": row.get("audioLibrarySharedPlayTargetSets"),
+                        "audioLibraryPurposeHintStatus": row.get("audioLibraryPurposeHintStatus"),
+                        "audioLibraryMediaLeafStatus": row.get("audioLibraryMediaLeafStatus"),
+                        "audioLibraryMediaEquivalentCategories": row.get("audioLibraryMediaEquivalentCategories"),
+                        "audioLibrarySharedMediaIds": row.get("audioLibrarySharedMediaIds"),
+                        "audioLibrarySharedMediaPackages": row.get("audioLibrarySharedMediaPackages"),
+                        "audioLibraryMediaPurposeHintStatus": row.get("audioLibraryMediaPurposeHintStatus"),
+                        "evidenceBoundary": "library output only; external trigger remains unresolved",
+                    },
+                    depth=3,
+                ),
+            )
+            self.add_edge(dataset, event_node, "has_audio_event_library_relation", source=source)
+            for equivalent_id in row.get("audioLibraryEquivalentEventIds") or []:
+                equivalent_key = safe_key(equivalent_id)
+                if not equivalent_key or equivalent_key == event_key:
+                    continue
+                equivalent_node = self.add_wwise_event_node(equivalent_key, source=source)
+                evidence = "exactSameBankCompleteWwisePlayTargetSet"
+                self.add_edge(
+                    event_node,
+                    equivalent_node,
+                    "wwise_event_shares_exact_play_target_set",
+                    source=source,
+                    evidence=evidence,
+                )
+                self.add_edge(
+                    equivalent_node,
+                    event_node,
+                    "wwise_event_play_target_set_shared_by",
+                    source=source,
+                    evidence=evidence,
+                )
+            for equivalent_id in row.get("audioLibraryMediaEquivalentEventIds") or []:
+                equivalent_key = safe_key(equivalent_id)
+                if not equivalent_key or equivalent_key == event_key:
+                    continue
+                equivalent_node = self.add_wwise_event_node(equivalent_key, source=source)
+                evidence = "exactSamePackageCompleteWwiseMediaIdSet"
+                self.add_edge(
+                    event_node,
+                    equivalent_node,
+                    "wwise_event_shares_exact_media_leaf_set",
+                    source=source,
+                    evidence=evidence,
+                )
+                self.add_edge(
+                    equivalent_node,
+                    event_node,
+                    "wwise_event_media_leaf_set_shared_by",
+                    source=source,
+                    evidence=evidence,
+                )
 
     def ingest_hotfix_audio_event_audit(self) -> None:
         audit_path = self.root / "reports" / "mission_order" / "hotfix_audio_event_audit.json"

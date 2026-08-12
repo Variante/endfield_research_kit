@@ -184,6 +184,7 @@
 }
 
 .audio-row-title {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   color: var(--text);
@@ -191,6 +192,16 @@
   font-size: 12px;
   font-weight: 650;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audio-row-file-stats {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
   white-space: nowrap;
 }
 
