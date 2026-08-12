@@ -59,6 +59,14 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
             "same five MRT topology; Eye Target3.w=0.7",
         )
         self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["generic_shared_vertex"],
+            "exact same 6044-byte DXBC and decompilation; CharacterNPR pass index is 3",
+        )
+        self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["generic_fragment"],
+            "same five MRT topology; CharacterNPR Target3.w=0 and tinted sampled color",
+        )
+        self.assertEqual(
             result["pregbuffer"]["vertex_motion_inputs"]["hair_shared_vertex"],
             "exact same 6044-byte DXBC and decompilation; Hair pass index is 3",
         )
@@ -69,6 +77,10 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
         self.assertEqual(
             result["hair_source_identity"]["name"],
             "HGRP/CharacterNPR_Hair",
+        )
+        self.assertEqual(
+            result["generic_source_identity"]["name"],
+            "HGRP/CharacterNPR",
         )
         self.assertEqual(result["interpretation"]["retail_frame_parity"], "not asserted")
 

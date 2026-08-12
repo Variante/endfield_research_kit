@@ -2277,6 +2277,14 @@ fragment sets oct-normal alpha to `1.0` and writes sampled hair color scaled by
 the serialized per-material tint words. The source identity and these anchors
 are included in `verify_current_character_npr_skin_export.py`.
 
+The current generic `HGRP/CharacterNPR` export is pinned separately as well.
+Its base `HG_ENABLE_PER_OBJECT_MV` + `SRP_INSTANCING_ON` PreGBuffer vertex is
+byte/text-identical to Skin/Eye/Hair, but its fragment keeps the sampled-color
+× tint `Target4` lane while writing `Target3.w = 0.0`; it must not be replaced
+with Hair's `Target3.w = 1.0` variant. The AssetMap row is PathID
+`-7822190029627442914` at offset `185104054` in the current `19F0903A...`
+source chunk. These anchors are covered by the same verifier.
+
 The separate canonical-depth owner is also default-off. Unlike the sidecar, it
 binds two exact `A2B10G10R10_UNormPack32` PreG colors together with the same
 stencil-bearing camera depth attachment consumed by the immediately following
