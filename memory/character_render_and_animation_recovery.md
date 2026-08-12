@@ -419,19 +419,26 @@ NPC archetypes are imported as labeled source kits.
   `HGRenderPipeline` constructor (native `0x183947230`, callsite
   `0x183948786`) loads a ComputeShader from the object chain
   `[returned+0x18]+0x638` before calling it. UnityPlayer internal-call
-  implementation `0x1801ee4c0` forwards the handle through four calls to the
-  shared CFG indirect-call slot `0x1821be708`, consults the runtime
-  initialization service, and conditionally extracts the native shader handle.
-  `HGRayTracingScene.SetupGpuSceneUploadCs` shares that native implementation.
-  The CFG target is runtime-initialized and is not recoverable from installed
-  file bytes. The native compute-dispatch bridge is independently closed for
+  implementation `0x1801ee4c0` uses four calls to the IL2CPP GC write-barrier
+  slot `0x1821be708` (resolved at `0x18077c055` from the literal
+  `il2cpp_gc_wbarrier_set_field`) to maintain managed pointer locals, then
+  consults the RuntimeInitializeOnLoadManager pointer table and conditionally
+  reads the wrapper's native handle at `+0x10`. `HGRayTracingScene.SetupGpuSceneUploadCs`
+  shares that native implementation. These calls are not CFG dispatch calls and
+  do not identify a ComputeShader kernel or upload producer. The native
+  compute-dispatch bridge is independently closed for
   GPUDriven V1/V2: their four dispatch wrappers reach cores
   `0x1810f1890/0x1810f17e0` and `0x1810fe040/0x1810fdf90`; each uses
   `0x1805e7e10` for immediate context/vtable dispatch or `0x1804c74d0` to
   record CommandBuffer opcode `0x11`. This proves the Unity dispatch
-  mechanism, but not that any native call selects the identified
-  `GpuSceneDirtyUpdateCS` kernel `UploadPerDrawParams` (index 7); no
-  upload-buffer producer or edge from custom-per-draw channel 2/resource `+0xd0`
+  mechanism. The only non-wrapper native callers (`0x181280530` for the
+  meshlet pair and `0x18127c730` for the bucket pair) explicitly pass `r9d=0`,
+  so those internal GPUDriven paths select kernel index 0, not the identified
+  `GpuSceneDirtyUpdateCS` kernel `UploadPerDrawParams` (index 7). The managed
+  wrappers still accept a caller-supplied kernel index; therefore this is
+  negative evidence for the known internal paths, not a proof that no managed
+  caller can select index 7. Dispatch selection and the upload-buffer producer
+  remain unresolved, and no edge from custom-per-draw channel 2/resource `+0xd0`
   has been recovered. Structured hashes, addresses, caller census, resource
   field identity, and the fail-closed boundary are recorded under
   `gpu_scene_setup_wiring`, `gpu_scene_upload_kernel_evidence`, and
@@ -461,7 +468,7 @@ NPC archetypes are imported as labeled source kits.
   The UnityPlayer registration target for that partial update is now bounded,
   rather than treated as a false static upload edge: internal-call table entry
   206 maps `SetEntitySharedDataPartial` to `0x180155300`, whose PData-split body
-  resolves the factory service, calls virtual slot `+0xb0`, walks generic
+  unwraps the managed wrapper, calls the factory service's virtual slot `+0xb0`, walks generic
   records, and never visibly preserves the incoming `data`/`offset`/`size`
   registers or calls a buffer/property/command API. The paired full-set target
   `0x180153ee0` has the same dynamic service shape and ends at virtual slot
