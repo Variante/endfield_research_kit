@@ -3,8 +3,8 @@
 
 This is a source-contract gate, not a retail-parity claim.  It checks the
 selected fragment's five original MRT lanes against the source-shaped Unity
-sidecar and records the deliberately open runtime boundary (native per-object
-motion validity/deformation, packed flags, and no pass-0 presentation).
+sidecar and records the deliberately open runtime boundary (skinned/deformed
+motion history, packed flags, and no pass-0 presentation).
 """
 
 from __future__ import annotations
@@ -186,10 +186,14 @@ def validate_payload_contract(
             "float4 gBufferC : SV_Target4;",
             "float4x4 _EndfieldRecoveredDeferredPreviousGpuViewProjection;",
             "float4x4 _EndfieldRecoveredDeferredPreviousObjectToWorld;",
+            "float4 _EndfieldRecoveredDeferredMotionVectorsParams;",
             "float4 previousPositionWS = mul(",
+            "cameraOnlyMotion =",
             "output.currentClipXYW = currentClip.xyw;",
             "output.previousClipXYW = previousClip.xyw;",
-            "float motionValid = saturate(_EndfieldRecoveredDeferredMotionValid);",
+            "float hasDeformation = step(",
+            "float allowMotion = step(",
+            "float motionValid = saturate(",
         ),
     )
     _check_count(
@@ -234,6 +238,11 @@ def validate_payload_contract(
             "PreviousGpuViewProjectionId,",
             "PreviousObjectToWorldId,",
             "MotionValidId,",
+            "MotionVectorsParamsId,",
+            "GetMotionVectorsParams(renderer)",
+            "MotionVectorGenerationMode.ForceNoMotion",
+            "MotionVectorGenerationMode.Camera",
+            "MotionVectorGenerationMode.Object",
             "previousCameraInstanceId == camera.GetInstanceID()",
             "previousRendererInstanceId == renderer.GetInstanceID()",
             "previousFrame == Time.frameCount - 1",
@@ -260,8 +269,8 @@ def validate_payload_contract(
         {
             "check": "sidecar.scene_motion",
             "status": "partial",
-            "evidence": "sidecar transports previous camera clip history and evaluates the source signed fourth-root equation; first samples and discontinuities remain neutral",
-            "meaning": "static sidecar camera history is closed, but native per-object validity/deformation history is not",
+            "evidence": "sidecar transports previous camera/object clip history, derives Unity's managed MeshRenderer motion-vector mode, and evaluates the source signed fourth-root equation; first samples and discontinuities remain neutral",
+            "meaning": "the static MeshRenderer/Object validity path is closed for this source fixture, but native carry-in and skinned/deformed previous-position history remain open",
         },
         {
             "check": "sidecar.packed_flags",

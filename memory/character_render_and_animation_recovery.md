@@ -255,8 +255,13 @@ NPC archetypes are imported as labeled source kits.
   projection; first samples and discontinuities remain neutral. Reflection
   metadata still exposes native
   `unity_MatrixPreviousM`, `_PrevNonJitteredViewNoTransProjMatrix`, and
-  `unity_MotionVectorsParamsInternal`, so skinned/deformed vertices and the
-  native validity policy are not claimed closed.
+  `unity_MotionVectorsParamsInternal`. The recovered MeshRenderer now derives
+  Unity's managed motion-vector tuple explicitly: SphereOutside's serialized
+  `MotionVectorGenerationMode.Object` maps to `(x,y,z,w)=(0,1,0,1)`, while
+  Camera and ForceNoMotion are fail-closed alternatives. The shader selects
+  current object history for camera-only mode and suppresses unsupported
+  deformed-position history, so the static Object producer is closed without
+  claiming native previous-history carry-in or skinned/deformed parity.
   The verifier also pins the remaining source MRT payload: `Target2.x/y/z/w`
   carry the sampled MRO/porosity/packed-flag lanes, `Target3.z/w` carry the
   sampled mask and low packed flags beside octahedral normal xy, and
@@ -264,8 +269,8 @@ NPC archetypes are imported as labeled source kits.
   source equations are now evidence-closed. The maintained
   `verify_deferred_gbuffer_payload_contract.py` gate passes all nine producer,
   sidecar, alias, and material checks and reports the remaining three open
-  boundaries explicitly: native motion-validity/deformation inputs,
-  packed-flag inputs, and retail pass-0 publication. The runtime sidecar still
+  boundaries explicitly: native history/deformation inputs, packed-flag
+  inputs, and retail pass-0 publication. The runtime sidecar still
   does not publish these lanes through the retail deferred resolver.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count

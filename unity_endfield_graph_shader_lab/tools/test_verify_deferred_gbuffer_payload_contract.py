@@ -40,7 +40,8 @@ class DeferredGBufferPayloadContractTests(unittest.TestCase):
             if item["check"] == "sidecar.scene_motion"
         )
         self.assertEqual(motion_gap["status"], "partial")
-        self.assertIn("previous camera clip history", motion_gap["evidence"])
+        self.assertIn("previous camera/object clip history", motion_gap["evidence"])
+        self.assertIn("MeshRenderer motion-vector mode", motion_gap["evidence"])
 
     def test_missing_porosity_term_reports_bounded_failure(self) -> None:
         inputs = current_inputs()
