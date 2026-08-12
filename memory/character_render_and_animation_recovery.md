@@ -272,6 +272,20 @@ NPC archetypes are imported as labeled source kits.
   boundaries explicitly: native history/deformation inputs, packed-flag
   inputs, and retail pass-0 publication. The runtime sidecar still
   does not publish these lanes through the retail deferred resolver.
+- The packed-flag producer was audited against the refreshed installed
+  GameAssembly/metadata (metadata SHA-256
+  `90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e`). The
+  original fragment and generated DXBC both read an independent `register(b3)`
+  one-vector buffer (`cb3[0].w`), then split its integer bits into `Target2.w`
+  and `Target3.w`. Native `GBufferPassConstructor`/`HGRendererListUtils`
+  only build and submit the HGBuffer renderer list; `GpuClothManager` uploads
+  cloth data, and `SkinnedMeshCaptureManager` uploads `BAKE_SKIN_MATRICES_CB`.
+  None identifies or writes this b3 word, and the material export has no named
+  property for it (`_ShadingModel` is a cb2 value). The durable audit is
+  `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`.
+  This is a producer gap, not permission to substitute zero, `_ShadingModel`,
+  or an arbitrary UnityPerDraw field; the sidecar remains neutral and
+  fail-closed for these two lanes.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count
   publisher verified bit-for-bit on D3D11/D3D12. Its unique native

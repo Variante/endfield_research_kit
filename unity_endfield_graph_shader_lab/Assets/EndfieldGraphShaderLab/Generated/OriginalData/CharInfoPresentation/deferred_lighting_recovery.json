@@ -38,7 +38,8 @@
       "SV_Target2 packed material payload",
       "SV_Target3 octahedral world normal plus packed material flags",
       "SV_Target4 base-color/occlusion payload"
-    ]
+    ],
+    "packed_flags_producer_audit": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json"
   },
   "high_end_attachments": {
     "depth_intent": "D32_SFloat_S8_UInt; runtime may select a supported fallback",
