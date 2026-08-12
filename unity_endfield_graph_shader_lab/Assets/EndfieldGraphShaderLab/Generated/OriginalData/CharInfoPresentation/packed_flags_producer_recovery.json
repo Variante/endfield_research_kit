@@ -710,6 +710,41 @@
         "destination_stride": 80,
         "matching_contract": "The guarded 80-byte shared payload is the same five-Vector4 width written by GpuSceneDirtyUpdateCS.UploadPerDrawParams.",
         "boundary": "This closes the strongest CPU-side generic factory producer into a shared per-draw payload and its dirty flag. SetEntitySharedDataPartial's native body remains dynamically dispatched; no file-backed edge yet proves that this payload becomes _UploadBuffer or that a dispatch selects kernel 7/channel 2/resource +0xd0."
+      },
+      "native_partial_endpoint_evidence": {
+        "status": "registered-native-factory-service-bridge-upload-unresolved",
+        "source": "Installed UnityPlayer.dll HyperGryph internal-call name/pointer tables and PData-scoped x64 disassembly.",
+        "registration": {
+          "entry_index": 206,
+          "name": "UnityEngine.HyperGryph.HGFactoryRenderManager::SetEntitySharedDataPartial",
+          "function_pointer": "0x180155300",
+          "function_rva": "0x155300",
+          "function_file_offset": "0x154900",
+          "pdata_segments": [
+            "0x180155300..0x1801553c7",
+            "0x1801553c7..0x180155464",
+            "0x180155464..0x1801554fc",
+            "0x1801554fc..0x180155510",
+            "0x180155510..0x180155554",
+            "0x180155554..0x18015558b"
+          ]
+        },
+        "body_contract": {
+          "visible_entry_behavior": "The registered body resolves a factory-manager service through indirect resolver slots, calls the resolved object's virtual slot +0xb0, obtains a global record container, walks record indices, and invokes generic record helpers before returning.",
+          "incoming_payload_registers": {
+            "rdx": "data pointer is not preserved in the visible body",
+            "r8": "offset is overwritten during service resolution",
+            "r9": "size is not consumed by the visible body"
+          },
+          "missing_static_operations": [
+            "no payload memcpy or vector store sourced from the incoming data pointer",
+            "no GraphicsBuffer/InternalSetData call",
+            "no MaterialPropertyBlock or shader-buffer bind",
+            "no command-buffer recording or compute dispatch"
+          ],
+          "paired_full_set_cross_check": "The adjacent SetEntitySharedData registration target 0x180153ee0 has the same resolver/virtual-service shape and ends at virtual slot +0xc0 rather than exposing a file-backed payload copy."
+        },
+        "interpretation": "This is the correct UnityPlayer registration target, but its payload consumer is a dynamic factory service/vtable boundary. It must not be counted as proof that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
       }
     },
     "binding_gap": {

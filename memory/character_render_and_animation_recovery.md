@@ -451,6 +451,17 @@ NPC archetypes are imported as labeled source kits.
   channel 2/resource `+0xd0`; keep the GPU edge fail-closed. Details are in
   `packed_flags_producer_recovery.json` under
   `factory_per_draw_shared_payload_evidence`.
+  The UnityPlayer registration target for that partial update is now bounded,
+  rather than treated as a false static upload edge: internal-call table entry
+  206 maps `SetEntitySharedDataPartial` to `0x180155300`, whose PData-split body
+  resolves the factory service, calls virtual slot `+0xb0`, walks generic
+  records, and never visibly preserves the incoming `data`/`offset`/`size`
+  registers or calls a buffer/property/command API. The paired full-set target
+  `0x180153ee0` has the same dynamic service shape and ends at virtual slot
+  `+0xc0`. This confirms the native boundary is real but dynamically
+  implemented; it does not prove shared payload → `_UploadBuffer` or GPU
+  dispatch. The bounded registration/body evidence is recorded under
+  `native_partial_endpoint_evidence`; keep the upload edge fail-closed.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
