@@ -2,7 +2,7 @@
   "schema": "endfield.charinfo.hgrp-packed-flags-producer-recovery.v1",
   "shader": "HGRP/Lit",
   "pass": "HGBuffer",
-  "status": "consumer-closed-producer-recovered-binding-abi-partial",
+  "status": "consumer-closed-producer-recovered-native-layout-binding-abi-partial",
   "consumer": {
     "source_hlsl": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/hgbuffer_fragment.hlsl",
     "fragment_dxbc": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/HGRPLitHGBuffer.fragment.dxbc.bytes",
@@ -39,6 +39,46 @@
         "injected_wrapper_pointer": "0x183e6e280",
         "observed": "The managed wrapper forwards the logical index and Vector4 to SetCustomPerDrawData_Injected; the injected wrapper reaches Unity's renderer upload slot. The index is a typed custom-per-draw slot, not a generated-HLSL array index.",
         "get_api": "UnityEngine.Renderer.GetCustomPerDrawData(int index)"
+      },
+      "unity_native_implementation": {
+        "status": "source-closed-native-storage-and-resource-update",
+        "source": "Installed UnityPlayer.dll internal-call registration pair recovered from the current binary.",
+        "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+        "registration_pair": {
+          "function_pointer_array_file_offset": "0x20caa00",
+          "name_pointer_array_file_offset": "0x20d27b0",
+          "entry_index": 1333,
+          "name_file_offset": "0x1cbc018",
+          "name": "UnityEngine.Renderer::SetCustomPerDrawData_Injected",
+          "function_pointer": "0x1800fe590",
+          "function_file_offset": "0xfdb90"
+        },
+        "arguments": {
+          "rcx": "native Renderer object",
+          "edx": "logical custom-per-draw index",
+          "r8": "Vector4 pointer"
+        },
+        "index_guard": "rejects index < 0 or index >= 5 (edx*16 >= 0x50)",
+        "renderer_storage": {
+          "formula": "*(Vector4*)(native_renderer + 0x28 + 0x20 * index)",
+          "character_params_index_2_offset": "0x68",
+          "bytes_written": 16,
+          "observed": "The native body performs movups from the Vector4 argument directly into the renderer object before invoking its vtable update hook at renderer+0x38, vtable slot +0x80."
+        },
+        "resource_update": {
+          "condition": "renderer+0x38 vtable slot +0x80 returns true",
+          "resource_lookup": "UnityPlayer 0x180fc5e60 followed by 0x1804255f0",
+          "formula": "*(Vector4*)(returned_resource + 0xb0 + 0x10 * index)",
+          "character_params_index_2_offset": "0xd0",
+          "bytes_written": 16,
+          "boundary": "This proves the secondary per-draw resource storage, but the resource's GPU constant-buffer binding/component swizzle is not exposed by this body."
+        },
+        "getter_cross_check": {
+          "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
+          "function_pointer": "0x1800fedc0",
+          "registration_entry_index": 1334,
+          "observed": "The getter reads the same native renderer storage formula (+0x28 + 0x20*index), confirming that the setter's channel layout is not a transient wrapper artifact."
+        }
       },
       "typed_index_evidence": {
         "CHARACTER_PARAMS_INDEX": {
@@ -148,7 +188,7 @@
           "operation": "Clamp value to [0,1], quantize to an 8-bit value, clear byte ((type - 8) & 31) in the packed word, OR the quantized value shifted to that byte, then reinterpret the uint bits as float.",
           "propagation": "The packed word is written to customPerDrawData0.x and the Vector4 is forwarded through RendererInfo.TrySetCharacterPerDrawData to custom-per-draw channel 2."
         },
-        "component_binding_gap": "The native producer writes customPerDrawData0.x while the closed HGRP/Lit HGBuffer consumer reads cb3[0].w; no Unity/HGRP reflection or target-frame capture currently proves the component/register remap."
+        "component_binding_gap": "The native producer now has a closed storage/resource ABI for channel 2 (renderer +0x68 and resource +0xd0), but the closed HGRP/Lit HGBuffer consumer reads cb3[0].w; no Unity/HGRP reflection or target-frame capture currently proves the resource-to-register/component remap."
       },
       "global_character_params10_producer": {
         "status": "source-closed-independent-global-carrier-hgrp-binding-still-open",
@@ -214,7 +254,7 @@
         "observed": "The method is an independent native producer of the same four-byte environment-intensity word family: it quantizes two runtime getter values plus fixed 255 and 0 lanes, then returns the reinterpreted uint. No direct call edge from this method to SetPerDrawData_CharacterParams was recovered, so it is recorded as upstream packed-word evidence rather than as the final renderer upload."
       },
       "cross_variant_layout_evidence": {
-        "status": "standard-channel-2-layout-narrowed-hgrp-lit-component-gap-open",
+      "status": "standard-channel-2-native-layout-closed-hgrp-lit-component-gap-open",
         "source_hlsl": "unity_endfield_graph_shader_lab/scratch/character_recovery/ruri_character_npr/base_forward_fragment.hlsl",
         "source_sha256": "5db908a74f4c84bb00d5259c113c684098fa34ed74a81e8621e35d2d61c99998",
         "companion_glsl": "unity_endfield_graph_shader_lab/scratch/character_recovery/skin_face_dark_side_branch/0269_face_forward.glsl",
@@ -230,14 +270,14 @@
     "binding_gap": {
       "status": "open",
       "reason": "The original fragment DXBC has no RDEF chunk, and its shipped fragment metadata is a stale byte-identical copy of the vertex metadata; neither names the b3 buffer. Static evidence therefore proves the character channel-2 producer but not the final channel-2-to-register(b3) binding ABI for HGRP/Lit HGBuffer.",
-      "required_evidence": "A compatible Unity/HGRP reflection record or an authorized target-frame capture showing the renderer custom-per-draw channel mapped to cb3[0].w."
+      "required_evidence": "A compatible Unity/HGRP reflection record or an authorized target-frame capture showing the renderer/resource custom-per-draw channel mapped to cb3[0].w."
     },
     "observed": [
       "GBufferPassConstructor builds renderer-list descriptions and submits the HGBuffer renderer list; it does not write b3.",
       "GpuClothManager._SetPerDrawData writes cloth ECS/per-draw data, with no b3 or packed-flag property evidence.",
       "SkinnedMeshCaptureManager uploads BAKE_SKIN_MATRICES_CB through MaterialPropertyBlock.SetConstantBuffer; it is unrelated to the b3 scalar and does not identify cb3[0].w.",
       "The generated ShaderLab has no named material property for cb3[0].w; _ShadingModel is consumed from cb2 and is not the packed flag word.",
-      "CustomPerDrawDataChannelUtils and EntityRenderHelperMaterialController provide a source-backed character per-draw producer at channel 2, but its register binding is not named by the available reflection.",
+      "CustomPerDrawDataChannelUtils and EntityRenderHelperMaterialController provide a source-backed character per-draw producer at channel 2; UnityPlayer now closes its native renderer/resource storage offsets, but the register/component binding is not named by the available reflection.",
       "HGRenderPathScene.UpdateShaderVariablesGlobal -> UpdateShaderVariablesGlobalCharacter calls GetPackedEnvironmentEffectIntensity and writes ShaderVariablesGlobal c117.y; this independent global carrier does not identify HGRP/Lit cb3[0].w."
     ],
     "native_history_and_deformation_scope": {
@@ -270,7 +310,7 @@
       ],
       "boundary": "Static native evidence now separates the known cloth/proxy/skin-capture routes from the missing previous-deformed-position producer. The IFix-patched cloth wrapper and the renderer-side history state still require compatible patch-body or target-frame evidence before publication."
     },
-    "conclusion": "The source-backed producer for the character custom per-draw channel is recovered (CHARACTER_PARAMS_INDEX=2), while the final channel-2-to-cb3[0].w binding remains open. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the binding-compatible upload or an authorized target-frame capture is recovered."
+    "conclusion": "The source-backed producer and Unity native storage/resource ABI for the character custom per-draw channel are recovered (CHARACTER_PARAMS_INDEX=2; renderer +0x68; resource +0xd0), while the final channel-2-to-cb3[0].w binding remains open. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the binding-compatible upload or an authorized target-frame capture is recovered."
   },
   "activation_policy": "default-off-fail-closed"
 }
