@@ -827,6 +827,32 @@
           ],
           "paired_full_set_cross_check": "The adjacent SetEntitySharedData registration target 0x180153ee0 has the same GC-root/unwrapper and virtual-service shape and ends at virtual slot +0xc0 rather than exposing a file-backed payload copy."
         },
+        "service_registry_boundary": {
+          "status": "factory-service-registry-slot-5-and-record-container-bounded",
+          "registry_accessor": {
+            "helper": "0x180776410",
+            "implementation": "0x18030f100",
+            "operation": "movsxd rax, ecx; lea rcx, [rip+0x1e596f6]; mov rax, [rcx+rax*8]; ret",
+            "table_va": "0x182168800",
+            "partial_body_index": 5,
+            "interpretation": "The partial endpoint obtains the UnityPlayer global service registry entry at slot 5; this is not a proof of a GPU resource identity."
+          },
+          "service_constructor": {
+            "function_range": "0x18076ff30..0x180770173",
+            "registration_callsite": "0x18077011a",
+            "registration_target": "0x18030f5b0",
+            "registration_arguments": "ecx=5, rdx=service_object",
+            "object_size_contract": "The constructor initializes fields through +0x368 and zeroes the record-container field at +0x1c8 before registering the object.",
+            "vtable_initializers": ["0x181d9bee8", "0x181d9c058"]
+          },
+          "partial_record_walk": {
+            "service_load": "0x180155412 calls 0x180776410, then reads [service+0x1c8]",
+            "record_selector": "The record-table entry is selected with the global index loaded at 0x180155417 and passed through 0x180760990.",
+            "resolved_wrapper_container": "The virtual +0xb0 result at 0x180155405 supplies a begin pointer at +0x0 and count/end metadata at +0x10; the body loops those records and calls 0x180769da0/0x180760900.",
+            "payload_boundary": "Neither the incoming data pointer (rdx), offset (r8), nor size (r9) is preserved into this record walk; no visible payload memcpy, GraphicsBuffer/InternalSetData, material-property write, command recording, or compute dispatch follows."
+          },
+          "interpretation": "This closes the dynamic factory-service and record-container side of the native boundary while keeping the shared-payload-to-GPU edge unresolved. Do not identify registry slot 5, the +0xb0 wrapper result, or the +0x1c8 record table with _UploadBuffer, UploadPerDrawParams kernel 7, or channel-2 resource +0xd0 without runtime evidence."
+        },
         "interpretation": "This is the correct UnityPlayer registration target, but its payload consumer is a dynamic factory service/vtable boundary. It must not be counted as proof that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
       },
       "managed_frame_update_evidence": {
