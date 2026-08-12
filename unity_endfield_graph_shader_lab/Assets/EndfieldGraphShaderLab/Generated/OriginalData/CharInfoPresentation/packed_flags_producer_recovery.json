@@ -671,6 +671,47 @@
         "boundary": "This cross-variant evidence closes the standard UnityPerDraw Param2 x/y layout for CharacterNPR, but HGRP/Lit HGBuffer still consumes a separate register(b3) cb3[0].w vector with no reflection naming. It therefore does not prove x-to-w remapping or authorize publishing the HGRP packed flags."
       }
     },
+    "factory_per_draw_shared_payload_evidence": {
+      "status": "generic-vector4-shared-payload-producer-closed-upload-edge-open",
+      "source": "Installed global-metadata.dat plus GameAssembly.dll generic-instantiation mapping; the ordinary method pointer is null because this IL2CPP method is generic.",
+      "type": "UnityEngine.HyperGryph.ECS.HGFactoryRendererBinderComponent",
+      "method": "SetCustomPerDrawData<T>",
+      "metadata_method_index": 478414,
+      "generic_container_index": 8670,
+      "concrete_instantiation": "UnityEngine.Vector4",
+      "method_spec_index": 515702,
+      "generic_method_pointer_slot": 482788,
+      "native_pointer": "0x1834a3d60",
+      "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+      "body_contract": {
+        "arguments": {
+          "rcx": "HGFactoryRendererBinderComponent this",
+          "rdx": "Vector4 data pointer",
+          "r8d": "caller-supplied byte offset",
+          "r9": "generic component/context pointer"
+        },
+        "shared_data_index": "this+0x8",
+        "bounds_guard": "offset + 16 <= 0x50 (80-byte shared per-draw payload)",
+        "copy": "movups xmm0,[data]; movaps [rsp+0x20],xmm0; forwards a 16-byte Vector4",
+        "partial_update_call": {
+          "lazy_slot": "0x18f370720",
+          "managed_wrapper": "HGFactoryRenderManager.SetEntitySharedDataPartial at 0x183d689c0",
+          "abi": "ecx=sharedDataIndex, rdx=&Vector4, r8d=offset, r9d=16",
+          "unityplayer_internal_call_target": "0x180155300"
+        },
+        "dirty_flag": {
+          "tail": "mov dl,1; jmp HGFactoryRendererBinderComponent.SetDirtyFlag (0x1834a3fa0)",
+          "enum": "HGFactoryDirtyFlags.PerDrawData",
+          "value": 1
+        }
+      },
+      "upload_buffer_relation": {
+        "source_stride": 84,
+        "destination_stride": 80,
+        "matching_contract": "The guarded 80-byte shared payload is the same five-Vector4 width written by GpuSceneDirtyUpdateCS.UploadPerDrawParams.",
+        "boundary": "This closes the strongest CPU-side generic factory producer into a shared per-draw payload and its dirty flag. SetEntitySharedDataPartial's native body remains dynamically dispatched; no file-backed edge yet proves that this payload becomes _UploadBuffer or that a dispatch selects kernel 7/channel 2/resource +0xd0."
+      }
+    },
     "binding_gap": {
       "status": "channel-to-resource-binding-open",
       "reason": "The original fragment DXBC still has no RDEF and the shipped fragment metadata remains a stale vertex copy, but the refreshed Vulkan fragment independently closes descriptor set 0/binding 33 and member 3 (the cb3 vector w component). Static evidence now proves the shader resource/component; it does not yet prove that Unity's channel-2 renderer/resource slot feeds that binding.",

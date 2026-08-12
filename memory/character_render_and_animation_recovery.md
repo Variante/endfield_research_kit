@@ -436,6 +436,21 @@ NPC archetypes are imported as labeled source kits.
   field identity, and the fail-closed boundary are recorded under
   `gpu_scene_setup_wiring`, `gpu_scene_upload_kernel_evidence`, and
   `gpu_dispatch_bridge_evidence` in the packed-flag audit.
+  Generic-instantiation mapping now recovers the strongest CPU-side factory
+  producer that the ordinary method table hid: concrete
+  `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at
+  `GameAssembly 0x1834a3d60` (`MethodSpec 515702`). Its body guards
+  `offset + 16 <= 0x50`, copies one Vector4, takes `sharedDataIndex` from
+  `this+0x8`, and calls the same lazy `0x18f370720` slot as
+  `HGFactoryRenderManager.SetEntitySharedDataPartial` (`0x183d689c0`) with
+  `(index, data, offset, 16)`, then marks `HGFactoryDirtyFlags.PerDrawData`
+  (`1`). The 80-byte guarded payload matches the five-lane width consumed by
+  `UploadPerDrawParams`, so the generic binder/shared-payload producer boundary
+  is now closed. The native partial-update body is still dynamic: no installed
+  file edge yet proves this payload reaches `_UploadBuffer`, kernel 7, or
+  channel 2/resource `+0xd0`; keep the GPU edge fail-closed. Details are in
+  `packed_flags_producer_recovery.json` under
+  `factory_per_draw_shared_payload_evidence`.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
