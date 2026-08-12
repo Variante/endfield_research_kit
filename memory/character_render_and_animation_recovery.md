@@ -458,7 +458,17 @@ NPC archetypes are imported as labeled source kits.
   that property to the character resource `+0xd0` or to `UploadPerDrawParams`
   kernel 7. This closes the kernel-index/binding-record ABI while keeping the
   channel-2 resource-to-descriptor and upload-dispatch edges fail-closed;
-  details are recorded under `gpu_driven_binding_path_evidence`.
+  details are recorded under `gpu_driven_binding_path_evidence`. The helper's
+  valid-index path is now explicit: `0x1805f84a0` gates
+  `kernelIdx < [bindingState+0xd0]`, takes the selected metadata slot's first
+  dword as a binding-record key, and updates
+  `[bindingState+0xc0]+0x818+kernelIdx*0x880` through `0x1805f8630`; this is
+  cache/command metadata, not yet a named `SetBuffer` edge. A complete current
+  UnityPlayer E8 census finds exactly one native caller for each V1/V2 dispatch
+  core (`0x18127c7b4`, `0x181280849`, `0x18127c814`, `0x1812808ac`) plus the
+  managed wrappers, and all four native callers zero `r9d`. Thus no additional
+  direct dispatch producer selects kernel 7 in the installed binary, while a
+  managed caller could still do so dynamically.
   `HGConstantBufferPool.ApplyPendingUpload` is a separate generic upload
   candidate: `GameAssembly 0x189b6a7c0` updates `this+0x10` through
   `ComputeBuffer.SetData` (`0x187af05e0`), but its visible body has no
