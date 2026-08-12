@@ -96,6 +96,20 @@ NPC archetypes are imported as labeled source kits.
   canonical publication is recovered; the older diagnostic texture branch is
   still available for comparison. The audit therefore passes as a fail-closed
   boundary while reporting Skin retail publication and frame parity as open.
+- A fresh targeted export of the original `HGRP/ScreenSpaceShadowResolve`
+  closes the retail producer side of that boundary. AssetMap PathID
+  `-2059563319398876808` comes from
+  `hgrenderpipelineglobalsettings.asset` in
+  `19F0903A12BA87C0D43E67E64889B525.chk`. Its independent
+  `ScreenSpaceShadowResolve_Character` pass binds
+  `_CharacterShadowmapTex` plus 15 character world-to-shadow, bias, light,
+  and atlas records; it decodes the character index from packed GBuffer0,
+  projects with light-facing bias, performs 16 `GatherRed` depth-comparison
+  taps, and writes `float3(scene_directional_shadow, character_shadow, 0)`.
+  `verify_current_screen_shadow_resolve_export.py` and its focused test pin
+  the export/decompilation hashes and these equations. This establishes the
+  G producer semantics, but the lab still keeps publication disabled until
+  the runtime character atlas upload and target-frame state are validated.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
