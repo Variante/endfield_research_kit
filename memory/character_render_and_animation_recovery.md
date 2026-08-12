@@ -436,6 +436,13 @@ NPC archetypes are imported as labeled source kits.
   field identity, and the fail-closed boundary are recorded under
   `gpu_scene_setup_wiring`, `gpu_scene_upload_kernel_evidence`, and
   `gpu_dispatch_bridge_evidence` in the packed-flag audit.
+  `HGConstantBufferPool.ApplyPendingUpload` is a separate generic upload
+  candidate: `GameAssembly 0x189b6a7c0` updates `this+0x10` through
+  `ComputeBuffer.SetData` (`0x187af05e0`), but its visible body has no
+  ComputeShader dispatch, `SetBuffer`, named `GpuSceneDirtyUpdateCS`, or edge
+  from the factory shared-payload producer. It therefore remains an unresolved
+  generic buffer path, not evidence for `_UploadBuffer` or channel 2/resource
+  `+0xd0`; details are under `constant_buffer_pool_cross_check`.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at
@@ -462,6 +469,16 @@ NPC archetypes are imported as labeled source kits.
   implemented; it does not prove shared payload → `_UploadBuffer` or GPU
   dispatch. The bounded registration/body evidence is recorded under
   `native_partial_endpoint_evidence`; keep the upload edge fail-closed.
+  The managed `HGFactoryRenderManager.FrameUpdateEntities` entry is an
+  additional bounded negative: metadata method `477917` resolves through the
+  current code-registration pair to `GameAssembly 0x1841e1670`, whose body is
+  exactly one byte (`ret`). A static census finds five callers, but this
+  installed build contains no frame-update instructions at that entry, so it
+  cannot be credited as the shared-payload to `_UploadBuffer` or GPU-dispatch
+  producer. This does not rule out a dynamically initialized factory service,
+  IFix-patched code, or unrelated GPU-driven ECS work; the channel-2 upload edge
+  remains fail-closed. Details are recorded under
+  `managed_frame_update_evidence` in the packed-flag audit.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches

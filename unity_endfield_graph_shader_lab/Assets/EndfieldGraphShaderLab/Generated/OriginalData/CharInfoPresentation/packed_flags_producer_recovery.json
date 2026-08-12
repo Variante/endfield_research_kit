@@ -390,6 +390,19 @@
           },
           "boundary": "This now closes the serialized runtime-resource field to the named ComputeShader object and kernel identity, in addition to the five-vector copy contract. It still does not prove that a native GPUDriven call selects kernel index 7 at the upload schedule, does not expose the upload-buffer producer, and does not connect channel 2/resource +0xd0 to any one of the five lanes or to Vulkan set 0/binding 33."
         },
+        "constant_buffer_pool_cross_check": {
+          "status": "generic-computebuffer-upload-candidate-no-gpu-scene-edge",
+          "source": "Current GameAssembly.dll body for HG.Rendering.Runtime.HGConstantBufferPool.ApplyPendingUpload.",
+          "method": {
+            "metadata_method_index": 286467,
+            "token": "0x06000d7f",
+            "native_pointer": "0x189b6a7c0",
+            "native_body_size_bytes": 508,
+            "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+          },
+          "observed": "The body operates on this+0x10 as a ComputeBuffer, queries stride/count, reallocates or disposes the buffer as needed, iterates pool segments, and calls ComputeBuffer.SetData through 0x187af05e0. The visible body contains no ComputeShader dispatch, SetBuffer, GpuSceneDirtyUpdateCS reference, or call edge from the factory shared-payload producer.",
+          "interpretation": "This is a real generic ComputeBuffer upload candidate, but its static contract does not identify the named _UploadBuffer or UploadPerDrawParams kernel. Keep it separate from the GPU-scene upload edge and do not use it to bind channel 2/resource +0xd0."
+        },
         "gpu_scene_setup_wiring": {
           "status": "managed-compute-shader-identity-and-initialization-closed-dispatch-edge-open",
           "managed_method": {
@@ -745,6 +758,34 @@
           "paired_full_set_cross_check": "The adjacent SetEntitySharedData registration target 0x180153ee0 has the same resolver/virtual-service shape and ends at virtual slot +0xc0 rather than exposing a file-backed payload copy."
         },
         "interpretation": "This is the correct UnityPlayer registration target, but its payload consumer is a dynamic factory service/vtable boundary. It must not be counted as proof that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
+      },
+      "managed_frame_update_evidence": {
+        "status": "factory-frame-update-stub-noop",
+        "source": "Current global-metadata.dat method declaration plus the matching GameAssembly.dll code-registration mapping and static call census.",
+        "managed_method": {
+          "type": "UnityEngine.HyperGryph.HGFactoryRenderManager",
+          "method": "FrameUpdateEntities",
+          "metadata_method_index": 477917,
+          "token": "0x06000079",
+          "flags": "0x0096",
+          "iflags": "0x0000"
+        },
+        "gameassembly_body": {
+          "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+          "code_registration": "0x18b9217d0",
+          "native_pointer": "0x1841e1670",
+          "native_body_size_bytes": 1,
+          "body_bytes_hex": "c3",
+          "observed": "The resolved native body is a single ret instruction; the current installed GameAssembly file contains no managed frame-update work at this method pointer."
+        },
+        "static_callers": [
+          "0x180112402",
+          "0x180c37ead",
+          "0x1841b6ec1",
+          "0x1841cb3c0",
+          "0x189ea513e"
+        ],
+        "interpretation": "This specific managed factory per-frame entry cannot be credited as a shared-payload to _UploadBuffer or GPU-dispatch producer in the current build. The result does not disprove a dynamically initialized native factory service, IFix-patched code, or unrelated GPU-driven ECS work; those remain separate boundaries and the channel-2 upload edge stays fail-closed."
       }
     },
     "binding_gap": {
