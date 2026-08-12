@@ -9,6 +9,7 @@ wrappers for normal work; call Python builders directly for focused iteration.
 | Task | Command |
 | --- | --- |
 | First setup | `.\setup_first_time.bat` |
+| Story/Text Tables only | `.\export.bat --story-only` |
 | Rebuild from current `export_full/` | `.\export.bat` |
 | Refresh Story from the installed game | `.\export.bat --from-game` |
 | Refresh Story and assets | `.\export.bat --from-game --with-assets` |

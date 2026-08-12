@@ -74,7 +74,7 @@ playback, 942 mixed playback/control, 2,138 control-only, and 470 empty Event
 definitions; another 267 authored requests absent from current banks remain
 role-unresolved. The current Story-focused export leaves 881 consumer-unresolved
 control Events and 140 consumer-unresolved empty definitions at secondary
-priority. All 10,335 highest-priority rows contain Play/Post Event,
+priority. All 10,174 highest-priority rows contain Play/Post Event,
 so pause/resume, mute/unmute, RTPC/Switch/State/Trigger control, Stop, and empty
 definitions no longer pollute the unknown-audio queue. Details show exact
 operation labels/types and name-collection provenance while preserving the
@@ -101,6 +101,18 @@ an authored purpose. The object index keeps the managed type, GameObject,
 PathID, field role, and decode status visible. Component/state execution and
 actual Event posting remain unobserved. The current MonoBehaviour total is 506
 placements across 63 Event hashes.
+Schema 54 adds 14 exact `DialogAudioEventPlayableAsset` Timeline placements
+for the integer `AudioId` `0x89379220`. The Track-authored name
+`au_dlg_foley_stop_chr` is accepted only because its current hash equals that
+serialized value, so the formerly anonymous control-only Stop Event becomes
+purpose-resolved without inventing media. Audio details expose the authored
+name/hash evidence, `stopOnDisable`, clip timing, Track/Timeline/Director
+identities, and the static native behaviour contract. Both candidate Director
+activation and live Event execution remain unobserved. The schema refresh also
+re-enumerated the current exact Timeline carrier inventory; current totals are
+21,393 Events, 14,994 trigger contexts, 9,904 `unknownUse`, and 10,174
+highest-priority Events. The broader unknown-purpose delta is a refreshed
+carrier-set result, not evidence that this one Stop Event accounts for it.
 Within the highest-priority set, 82 Events share an exact same-bank complete
 Wwise Play-target set with a named authored-context Event. Their library output
 is classified as 55 UI, 26 SFX, and one voice, while their external caller and

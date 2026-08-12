@@ -756,6 +756,9 @@ class SourceGraphSchemaTests(unittest.TestCase):
                         "audioPlayableType": "AudioMusicPlayable",
                         "audioPlayableRuntimeContractId": "timelineMusicEventKey.audioMusic",
                         "audioPlayableKeyStatus": "exactAudioEventPlayableScalar",
+                        "authoredEventName": "au_music_fixture",
+                        "authoredEventNameEvidence": "exactTimelineDisplayNameHashEqualsSerializedAudioId",
+                        "audioPlayableStopOnDisable": 1,
                         "audioMusicActionType": 1,
                         "audioMusicActionTypeLabel": "NORMAL_MUSIC",
                         "audioMusicTriggerOnSkip": 0,
@@ -792,6 +795,12 @@ class SourceGraphSchemaTests(unittest.TestCase):
                     data["owner"]["audioPlayableRuntimeContractId"],
                     "timelineMusicEventKey.audioMusic",
                 )
+                self.assertEqual(data["owner"]["authoredEventName"], "au_music_fixture")
+                self.assertEqual(
+                    data["owner"]["authoredEventNameEvidence"],
+                    "exactTimelineDisplayNameHashEqualsSerializedAudioId",
+                )
+                self.assertEqual(data["owner"]["audioPlayableStopOnDisable"], 1)
                 self.assertEqual(data["owner"]["audioMusicActionType"], 1)
                 self.assertEqual(data["owner"]["audioMusicActionTypeLabel"], "NORMAL_MUSIC")
                 self.assertEqual(data["owner"]["audioMusicTriggerOnSkip"], 0)
