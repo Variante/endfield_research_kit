@@ -2214,8 +2214,9 @@ See
 
 The recovered PreGBuffer producer boundary has a separately named, default-off
 sidecar diagnostic. It allocates the source-backed `D32_SFloat_S8_UInt`
-depth/stencil target, exact `A2B10G10R10_UNormPack32` A/B targets, and an
-`R32_SFloat` depth copy; it then draws the recovered character PreGBuffer
+depth/stencil target, exact `A2B10G10R10_UNormPack32` A/B targets, an
+`R8G8B8A8_SRGB` material/color C target, and an `R32_SFloat` depth copy; it
+then draws the recovered character PreGBuffer
 passes after a conservative opaque-scene depth helper. This approximates the
 shipped CharInfo `DefaultDeferred` order: generic ECS/ordinary opaque PreZ in
 the earlier DepthPrepass, then character ECS/outline/SRP PreG in GBuffer on the
@@ -2245,10 +2246,11 @@ the refreshed AnimeStudio sidecar. The original pass writes five MRT lanes:
 zero/unused `Target0`, motion-vector payload `Target1`, packed 10-bit
 selector `Target2`, octahedral normal `Target3`, and material/color payload
 `Target4`; it uses `DepthCharacterOnly` with stencil `Ref 36 / Always /
-Replace`. The maintained diagnostic deliberately binds only the selector and
-normal A/B pair. Motion vectors and the material/color GBuffer lane are not
-published, so this evidence closes the source boundary without claiming a
-complete retail GBuffer.
+Replace`. The maintained diagnostic binds selector/normal A/B and now writes
+the source-shaped material/color payload to diagnostic C, with a byte readback
+gate. Motion vectors remain unpublished and C is not yet consumed by retail
+deferred lighting, so this evidence closes one producer input without
+claiming a complete retail GBuffer.
 
 The separate canonical-depth owner is also default-off. Unlike the sidecar, it
 binds two exact `A2B10G10R10_UNormPack32` PreG colors together with the same

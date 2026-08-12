@@ -36,7 +36,7 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
         )
         self.assertEqual(
             result["pregbuffer"]["lab_consumption"]["material_color"],
-            "not published",
+            "source-shaped diagnostic C sidecar, not consumed by retail resolver",
         )
         self.assertEqual(result["interpretation"]["retail_frame_parity"], "not asserted")
 
