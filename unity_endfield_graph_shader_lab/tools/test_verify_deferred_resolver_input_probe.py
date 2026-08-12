@@ -34,6 +34,12 @@ def ready_log() -> str:
                 "camera=MainCamera, size=640x720, bytes=7372800, "
                 "nonzeroBytes=5524150."
             ),
+            (
+                "Recovered deferred resolver target-resource snapshot: "
+                "t0=ready,t1=ready,t5=ready,t6=ready,t7=absent,t22=absent, "
+                "t1=640x720,t5=576x576x32,t6=6144x4096,t7=none,t22=none, "
+                "allPhysical=false, screenContentValid=false."
+            ),
             "Exiting batchmode successfully now!",
         )
     )
@@ -44,6 +50,22 @@ class DeferredResolverInputProbeLogTests(unittest.TestCase):
         report = MODULE.validate_log(ready_log(), Path("ready.log"))
         self.assertTrue(report["valid"], report["failures"])
         self.assertEqual(report["active"]["publicationSerial"], 1)
+        self.assertFalse(report["resources"]["allPhysical"])
+
+    def test_strict_resource_probe_requires_target_resources(self) -> None:
+        text = ready_log().replace(
+            "t7=absent,t22=absent, t1=640x720,t5=576x576x32,t6=6144x4096,t7=none,t22=none, "
+            "allPhysical=false",
+            "t7=ready,t22=allocated, t1=640x720,t5=576x576x32,t6=6144x4096,t7=160x180,t22=640x720, "
+            "allPhysical=true",
+        )
+        report = MODULE.validate_log(
+            text,
+            Path("strict-ready.log"),
+            expect_resource_probe=True,
+        )
+        self.assertTrue(report["valid"], report["failures"])
+        self.assertTrue(report["resources"]["allPhysical"])
 
     def test_missing_publication_is_actionable(self) -> None:
         text = ready_log().replace("publicationSerial=1", "publicationSerial=0")
@@ -67,6 +89,27 @@ class DeferredResolverInputProbeLogTests(unittest.TestCase):
             text,
             Path("fail-closed.log"),
             expect_fail_closed=True,
+        )
+        self.assertTrue(report["valid"], report["failures"])
+
+    def test_strict_resource_probe_failure_keeps_upstream_evidence(self) -> None:
+        text = "\n".join(
+            (
+                "Forcing GfxDevice: Direct3D 12",
+                MODULE.G_BUFFER_TOKEN,
+                MODULE.SHADOW_DATA_TOKEN,
+                "Recovered deferred resolver input probe failed closed: "
+                "strict resolver target-resource probe requires physical "
+                "t0/t1/t5/t6/t7/t22 resources: "
+                "t0=ready,t1=ready,t5=ready,t6=ready,t7=absent,t22=absent.",
+                "Exiting batchmode successfully now!",
+            )
+        )
+        report = MODULE.validate_log(
+            text,
+            Path("strict-fail-closed.log"),
+            expect_fail_closed=True,
+            expect_resource_probe=True,
         )
         self.assertTrue(report["valid"], report["failures"])
 

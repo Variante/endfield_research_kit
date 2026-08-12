@@ -124,6 +124,11 @@ namespace EndfieldGraphShaderLab
         private bool loggedLightCookieDataFailure;
         private bool loggedCanonicalBinningActivation;
         private bool loggedCanonicalBinningFailure;
+        private bool canonicalPublicationValid;
+        private int canonicalPublicationCameraInstanceId;
+        private int canonicalPublicationFrame;
+        private int canonicalPublicationWidth;
+        private int canonicalPublicationHeight;
         private bool disposed;
 
         internal EndfieldRecoveredLightBinning()
@@ -186,6 +191,7 @@ namespace EndfieldGraphShaderLab
                 throw new ArgumentNullException(nameof(camera));
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
+            canonicalPublicationValid = false;
             commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 0.0f);
 
             bool membershipRequested =
@@ -325,6 +331,14 @@ namespace EndfieldGraphShaderLab
                 width,
                 height,
                 requiredWordCount);
+            if (canonicalBinningPublished)
+            {
+                canonicalPublicationValid = true;
+                canonicalPublicationCameraInstanceId = camera.GetInstanceID();
+                canonicalPublicationFrame = Time.frameCount;
+                canonicalPublicationWidth = width;
+                canonicalPublicationHeight = height;
+            }
 
             commandBuffer.SetGlobalBuffer(BinningBufferId, binningBuffer);
             commandBuffer.SetGlobalVector(
@@ -445,7 +459,30 @@ namespace EndfieldGraphShaderLab
         {
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
+            canonicalPublicationValid = false;
             commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 0.0f);
+        }
+
+        internal bool TryGetCurrentCanonicalPublication(
+            Camera camera,
+            int width,
+            int height,
+            out ComputeBuffer publishedBuffer)
+        {
+            publishedBuffer = null;
+            if (!canonicalPublicationValid ||
+                camera == null ||
+                canonicalPublicationCameraInstanceId != camera.GetInstanceID() ||
+                canonicalPublicationFrame != Time.frameCount ||
+                canonicalPublicationWidth != width ||
+                canonicalPublicationHeight != height ||
+                canonicalBinningBuffer == null ||
+                !canonicalBinningBuffer.IsValid())
+            {
+                return false;
+            }
+            publishedBuffer = canonicalBinningBuffer;
+            return true;
         }
 
         private void EnsureCanonicalBinningBuffer(int wordCount)
@@ -962,6 +999,7 @@ namespace EndfieldGraphShaderLab
             binningBuffer = null;
             canonicalBinningBuffer?.Release();
             canonicalBinningBuffer = null;
+            canonicalPublicationValid = false;
             zeroFallbackBuffer?.Release();
             zeroFallbackBuffer = null;
             retailConstantsBuffer?.Release();

@@ -1359,19 +1359,6 @@ namespace EndfieldGraphShaderLab
                     recoveredCanonicalFrameResourcesReady,
                     canonicalColorTarget,
                     canonicalDepthTarget);
-            recoveredDeferredResolverInputProbe.Render(
-                context,
-                camera,
-                renderWidth,
-                renderHeight,
-                recoveredDeferredGBufferFrame,
-                recoveredDeferredGBufferFrameReady,
-                recoveredDeferredTransformsReady,
-                recoveredShaderVariablesGlobalReady,
-                recoveredDeferredLightDataReady,
-                recoveredDeferredShadowDataReady,
-                canonicalColorTarget,
-                canonicalDepthTarget);
             EndfieldRecoveredContactShadowProducer.Frame
                 recoveredContactShadowFrame =
                     recoveredContactShadowProducer.Render(
@@ -1446,6 +1433,33 @@ namespace EndfieldGraphShaderLab
                 preGBufferFrame,
                 recoveredLowResDirectionalShadowReady,
                 recoveredContactShadowFrame.ready);
+
+            EndfieldRecoveredDeferredResolverInputProbe.ResourceFrame
+                recoveredDeferredResolverResources =
+                    EndfieldRecoveredDeferredResolverInputProbe.CaptureResources(
+                        camera,
+                        renderWidth,
+                        renderHeight,
+                        useRecoveredCameraDepth,
+                        recoveredLightBinning,
+                        recoveredReflectionProbeFallback,
+                        recoveredPunctualShadowProducer,
+                        recoveredLowResDirectionalShadowReady,
+                        false);
+            recoveredDeferredResolverInputProbe.Render(
+                context,
+                camera,
+                renderWidth,
+                renderHeight,
+                recoveredDeferredGBufferFrame,
+                recoveredDeferredGBufferFrameReady,
+                recoveredDeferredTransformsReady,
+                recoveredShaderVariablesGlobalReady,
+                recoveredDeferredLightDataReady,
+                recoveredDeferredShadowDataReady,
+                recoveredDeferredResolverResources,
+                canonicalColorTarget,
+                canonicalDepthTarget);
 
             recoveredScreenDirectAudit.BeginForward(
                 context,
