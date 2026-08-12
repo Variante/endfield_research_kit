@@ -435,7 +435,19 @@
             "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
             "internal_call_implementation": "0x1801ee4c0",
             "parallel_managed_registration": "UnityEngine.HyperGryph.HGRayTracingScene::SetupGpuSceneUploadCs(UnityEngine.ComputeShader) uses the same UnityPlayer implementation 0x1801ee4c0.",
-            "observed": "The native body forwards the ComputeShader handle through four calls to the shared CFG indirect-call slot at 0x1821be708, consults RuntimeInitializeOnLoadManager through 0x180fc5e60, and conditionally extracts the native object handle through 0x180769270. The CFG target is runtime-initialized and is not recoverable from the installed file bytes; none of these calls is identified as ComputeShader.Dispatch or an upload-buffer producer."
+            "indirect_call_slot_evidence": {
+              "status": "il2cpp-gc-write-barrier-not-dispatch",
+              "slot": "0x1821be708",
+              "initialization_site": "0x18077c055",
+              "resolver": "0x1806898f0",
+              "symbol_string": {
+                "va": "0x181d9e7f8",
+                "file_offset": "0x1d9d3f8",
+                "value": "il2cpp_gc_wbarrier_set_field"
+              },
+              "observed": "The slot has one static write from the IL2CPP symbol resolver and is populated from the literal il2cpp_gc_wbarrier_set_field. The four calls in 0x1801ee4c0 only maintain managed pointer locals/root slots; they are not CFG dispatch calls and do not select a ComputeShader kernel or upload buffer."
+            },
+            "observed": "The native body manages local managed-pointer roots with the IL2CPP GC write barrier, consults the RuntimeInitializeOnLoadManager pointer table through 0x180fc5e60, and conditionally reads the native object handle from wrapper +0x10 through 0x180769270. It contains no visible ComputeShader.Dispatch, buffer upload, or per-draw producer operation."
           },
           "boundary": "This is positive initialization/wiring evidence for the named GpuSceneDirtyUpdateCS object, not proof of its dispatch schedule or of a custom-per-draw resource upload. No native call edge from SetCustomPerDrawData_Injected, renderer refresh 0x18042f750, resource +0xd0, or the five-slot resolver reaches UploadPerDrawParams. Keep channel 2 to GPU descriptor binding fail-closed."
         },
@@ -473,6 +485,19 @@
               "function": "0x1804c74d0",
               "direct_call_count": 5,
               "gpu_driven_core_call_sites": ["0x1810f1870", "0x1810f1920", "0x1810fe020", "0x1810fe0d0"]
+            },
+            "internal_gpu_driven_callers": {
+              "V1_meshlet_and_V2_meshlet": {
+                "function": "0x181280530",
+                "calls": ["0x1810f1890", "0x1810fe040"],
+                "kernel_argument": "r9d is explicitly zero at both call sites"
+              },
+              "V1_bucket_and_V2_bucket": {
+                "function": "0x18127c730",
+                "calls": ["0x1810f17e0", "0x1810fdf90"],
+                "kernel_argument": "r9d is explicitly zero at both call sites"
+              },
+              "interpretation": "The only non-wrapper native callers of the four GPUDriven cores select kernel index 0 in this build. The managed wrapper callsites still accept a caller-supplied kernel index, so this is negative evidence against these internal paths selecting UploadPerDrawParams index 7, not proof that no other managed caller can dispatch it."
             },
             "observed": "The four GPUDriven cores are the only direct dispatch bridge callers attributable to the mapped V1/V2 methods; the remaining direct callers belong to unrelated Unity native compute passes."
           },
@@ -743,7 +768,7 @@
           ]
         },
         "body_contract": {
-          "visible_entry_behavior": "The registered body resolves a factory-manager service through indirect resolver slots, calls the resolved object's virtual slot +0xb0, obtains a global record container, walks record indices, and invokes generic record helpers before returning.",
+          "visible_entry_behavior": "The registered body uses the IL2CPP GC write barrier for managed local roots, unwraps a wrapper through +0x10, calls the resulting factory-manager object's virtual slot +0xb0, obtains a global record container, walks record indices, and invokes generic record helpers before returning.",
           "incoming_payload_registers": {
             "rdx": "data pointer is not preserved in the visible body",
             "r8": "offset is overwritten during service resolution",
@@ -755,7 +780,7 @@
             "no MaterialPropertyBlock or shader-buffer bind",
             "no command-buffer recording or compute dispatch"
           ],
-          "paired_full_set_cross_check": "The adjacent SetEntitySharedData registration target 0x180153ee0 has the same resolver/virtual-service shape and ends at virtual slot +0xc0 rather than exposing a file-backed payload copy."
+          "paired_full_set_cross_check": "The adjacent SetEntitySharedData registration target 0x180153ee0 has the same GC-root/unwrapper and virtual-service shape and ends at virtual slot +0xc0 rather than exposing a file-backed payload copy."
         },
         "interpretation": "This is the correct UnityPlayer registration target, but its payload consumer is a dynamic factory service/vtable boundary. It must not be counted as proof that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
       },
