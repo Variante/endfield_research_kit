@@ -28,6 +28,53 @@
       "channel_name": "CHARACTER_PARAMS_INDEX",
       "channel_index": 2,
       "value_layout": "Vector4 / 16 bytes",
+      "api_contract": {
+        "managed_signature": "UnityEngine.Renderer.SetCustomPerDrawData(int index, UnityEngine.Vector4 param)",
+        "managed_method_index": 403897,
+        "injected_method_index": 403922,
+        "managed_wrapper_pointer": "0x185391a94",
+        "injected_wrapper_pointer": "0x183e6e280",
+        "observed": "The managed wrapper forwards the logical index and Vector4 to SetCustomPerDrawData_Injected; the injected wrapper reaches Unity's renderer upload slot. The index is a typed custom-per-draw slot, not a generated-HLSL array index.",
+        "get_api": "UnityEngine.Renderer.GetCustomPerDrawData(int index)"
+      },
+      "typed_index_evidence": {
+        "CHARACTER_PARAMS_INDEX": {
+          "index": 2,
+          "producer": "SetPerDrawData_CharacterParams / TrySetCharacterPerDrawData"
+        },
+        "LIT_EMISSIVE_INDEX": {
+          "index": 2,
+          "producer": "SetPerDrawData_EmissiveColor / TrySetEmissiveColor"
+        },
+        "LIT_EMISSIVE_ALBEDO_INDEX": {
+          "index": 4,
+          "producer": "SetPerDrawData_EmissiveAlbedoColor"
+        },
+        "LIT_DISSOLVE_INDEX": {
+          "index": 4,
+          "producer": "SetPerDrawData_LitDissolve"
+        },
+        "HOUDINI_VAT_INDEX": {
+          "index": 3,
+          "producer": "SetPerDrawData_HoudiniVAT"
+        },
+        "UV_ANIMATION_INDEX": {
+          "index": 3,
+          "producer": "SetPerDrawData_UVAnimation"
+        },
+        "VFX_ALPHA0_INDEX": {
+          "index": 4,
+          "producer": "SetPerDrawData_VFXAlpha0"
+        },
+        "TRAIL_DISPLAY_AREA_INDEX": {
+          "index": 2,
+          "producer": "SetPerDrawData_TrailDisplayArea"
+        },
+        "TRAIL_SCAN_CIRCLE_INDEX": {
+          "index": 3,
+          "producer": "SetPerDrawData_TrailScanCircle"
+        }
+      },
       "managed_methods": [
         {
           "type": "Beyond.Rendering.CustomPerDrawDataChannelUtils",
@@ -48,6 +95,7 @@
         {
           "type": "Beyond.Rendering.EntityRenderHelperMaterialController+CustomPerDrawDataController",
           "method": "SetFloatToCustomPerDraw",
+          "metadata_method_index": 455456,
           "native_catalog_index": 280850,
           "native_pointer": "0x18323af90",
           "observed": "Dispatches typed custom-per-draw updates to renderer-info records; this is the controller entry that can reach the character channel."
