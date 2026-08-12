@@ -338,6 +338,19 @@ NPC archetypes are imported as labeled source kits.
   No inspected UnityPlayer path reads `resource +0xd0` (or an equivalent vector
   lane) into a constant-buffer/descriptor binding, and no direct call edge names
   Vulkan set 0/binding 33. Keep the channel-to-resource-to-GPU edge open.
+  The installed UnityPlayer GPU-driven internal-call table is now mapped as a
+  separate negative audit. V1 frame/buffer entrypoints are
+  `0x1801e9200/0x1801e9280/0x1801e9360/0x1801e93a0/0x1801e9480`, and V2 uses
+  `0x1801e98f0/0x1801e9970/0x1801e9a50/0x1801e9a90/0x1801e9b70`. The most
+  tempting V2 candidate, `0x1810fb5a0`, enumerates
+  `[gpuDrivenState +0xa0..+0xd0]` where `gpuDrivenState = [this+0x68]`, then
+  passes each lane to generic indexed binder `0x1805f84a0`; that helper checks
+  command-context capacity at its own `+0xd0`. No edge aliases this array to
+  the `0x1804255f0` custom-per-draw resource, so it is GPU-driven buffer/property
+  binding rather than the missing channel-2 descriptor consumer. The durable
+  entrypoint/candidate audit is recorded in
+  `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`;
+  the resource-to-descriptor edge remains fail-closed.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with
