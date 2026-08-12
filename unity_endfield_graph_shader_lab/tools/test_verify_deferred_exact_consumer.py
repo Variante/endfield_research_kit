@@ -37,6 +37,9 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         self.assertIn("TextureFormat.ASTC_4x4", source)
         self.assertIn("t12=LightCookie:black-zero-cookie", source)
         self.assertIn("t13=IntegratedFog:black-disabled-1x1-ASTC", source)
+        self.assertIn("t16-t21=IrradianceV2:zero-inactive-fallback", source)
+        self.assertIn("fallbackTextureSlots=t2,t3,t4.", source)
+        self.assertIn("legacy Gacha payload", source)
 
     def test_accepts_exact_non_presented_frame(self):
         report = validate_log(GOOD_LOG, Path("fixture.log"))

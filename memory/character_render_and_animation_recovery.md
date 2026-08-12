@@ -222,12 +222,21 @@ NPC archetypes are imported as labeled source kits.
   black at t13, same-frame screen-shadow at t11, and the VisibilitySH
   producer's exact LogSH LUT and half-resolution output at t14/t15. Missing
   t14/t15 still fails closed instead of silently selecting a neutral fallback.
-  The latest D3D11 runs log all nine closed slots and produce stable hash
+  The latest D3D11 runs log the nine source-backed/closed slots plus the six
+  inactive-V2 zero-result slots t16–t21 and produce stable hash
   `04f18f095e02b9d2dfcb2263bd6051e988594b4cf82eb264f402482d9be9eae2`.
   It also uses the source-closed inactive HDPLS white fallback at t8, the
   null-CharInfo black CSM ramp at t9, and the disabled-wetness white fallback
-  at t22. Only t2/t3/t4/t16..t21 remain explicit fallback slots; t16..t21
-  stay open because the live irradiance scene voxel payload is unresolved.
+  at t22. Only t2/t3/t4 remain generic fallback slots. The current
+  `EndfieldRecoveredDeferredExactConsumer` labels t16–t21 as
+  `IrradianceV2:zero-inactive-fallback`: this mirrors the source-closed
+  missing-map result's shared 1×1×1 zero texel for the inactive fixture, but
+  does not claim a live atlas. A direct AnimeStudio `stream --block-type iv`
+  probe re-read the shipped Gacha V3 index (1,008 bytes) and payload
+  (1,399,240 bytes, SHA-256
+  `ccba259839d3b91cf9d32c2edce1d672eb82f489c7aae33014982aa310b351b4`); the
+  complete IV inventory still contains zero `/aiTest/index.bytes` files, so
+  that legacy Gacha payload remains explicitly barred from CharInfo V2.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and
