@@ -49,6 +49,24 @@ PREG_BUFFER_VERTEX_DECOMPILED_HLSL = (
     REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/skin_1260_vertex.hlsl"
 )
 PREG_BUFFER_VERTEX_SIDECAR = BYTECODE_ROOT / "1260_endfield_dxbc_0.dxbc"
+EYE_PREGBUFFER_VERTEX_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/eye_0216_vertex.hlsl"
+)
+EYE_PREGBUFFER_VERTEX_SIDECAR = (
+    REPO_ROOT
+    / "scratch/animestudio/body_skin_sidecar_refresh/shader_export/Shader"
+    / "HGRP_CharacterNPR_Eye_pE852494D61D6F176.shader.bytecode"
+    / "0216_endfield_dxbc_0.dxbc"
+)
+EYE_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/eye_0217.hlsl"
+)
+EYE_PREGBUFFER_FRAGMENT_SIDECAR = (
+    REPO_ROOT
+    / "scratch/animestudio/body_skin_sidecar_refresh/shader_export/Shader"
+    / "HGRP_CharacterNPR_Eye_pE852494D61D6F176.shader.bytecode"
+    / "0217_endfield_dxbc_1.dxbc"
+)
 
 EXPECTED_SHADER_MAP = {
     "name": "HGRP/CharacterNPR_Skin",
@@ -81,6 +99,20 @@ EXPECTED_PREG_BUFFER_VERTEX_SIDECAR = {
 EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL = {
     "size": 19906,
     "sha256": "c0eda911850f70be443f8de0642f102bf9426d7dde1d7748ac83ffeeee0331e7",
+}
+EXPECTED_EYE_PREGBUFFER_VERTEX_SIDECAR = {
+    "size": 6044,
+    "sha256": "bee21d747a5ee3abea06b5db3535165471eea079222993a339377fe5e28b2a8e",
+    "pass_index": 1,
+}
+EXPECTED_EYE_PREGBUFFER_FRAGMENT_SIDECAR = {
+    "size": 2316,
+    "sha256": "207e55c4830c804557a1e732cea6f8e5573c0c231ef0f55964f56771f4d09a5f",
+    "pass_index": 1,
+}
+EXPECTED_EYE_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL = {
+    "size": 6266,
+    "sha256": "7e8566d7486f0a5257c56ff58091de30eb4414e18981805868e8885c78f9820c",
 }
 
 EXPECTED_MATERIALS = {
@@ -553,6 +585,109 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
                 f"current Skin PreGBuffer vertex decompilation anchor missing: "
                 f"label={label} needle={needle!r}"
             )
+
+    # Eye's authored PreGBuffer uses a different pass index but the exact same
+    # vertex DXBC blob. This closes the shared current/previous deformation
+    # ABI across two CharacterNPR families instead of assuming Skin-only
+    # behavior.
+    require_file(
+        EYE_PREGBUFFER_VERTEX_SIDECAR,
+        EXPECTED_EYE_PREGBUFFER_VERTEX_SIDECAR["size"],
+        EXPECTED_EYE_PREGBUFFER_VERTEX_SIDECAR["sha256"],
+        "current Eye PreGBuffer vertex DXBC sidecar",
+    )
+    eye_metadata_path = Path(str(EYE_PREGBUFFER_VERTEX_SIDECAR) + ".metadata.json")
+    if not eye_metadata_path.is_file():
+        raise AssertionError(f"missing Eye PreGBuffer vertex metadata: {eye_metadata_path}")
+    eye_metadata = json.loads(eye_metadata_path.read_text(encoding="utf-8"))
+    for key, expected in {
+        "SourcePassName": "PreGBuffer",
+        "SourcePassIndex": EXPECTED_EYE_PREGBUFFER_VERTEX_SIDECAR["pass_index"],
+        "SourceSerializedProgramStage": "vertex",
+        "DecodedProgramStage": "vertex",
+        "DecodedProgramEncoding": "DXBC",
+    }.items():
+        if eye_metadata.get(key) != expected:
+            raise AssertionError(
+                "current Eye PreGBuffer vertex metadata mismatch: "
+                f"field={key} expected={expected!r} actual={eye_metadata.get(key)!r}"
+            )
+    if eye_metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current Eye PreGBuffer vertex keyword mismatch: "
+            f"expected={expected_keywords} actual={eye_metadata.get('SourceCompiledKeywords')}"
+        )
+    require_file(
+        EYE_PREGBUFFER_VERTEX_DECOMPILED_HLSL,
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["size"],
+        EXPECTED_PREG_BUFFER_VERTEX_DECOMPILED_HLSL["sha256"],
+        "current Eye PreGBuffer vertex decompilation",
+    )
+    eye_vertex_text = EYE_PREGBUFFER_VERTEX_DECOMPILED_HLSL.read_text(encoding="utf-8")
+    if eye_vertex_text != vertex_text:
+        raise AssertionError(
+            "current Eye/Skin PreGBuffer vertex decompilations differ despite "
+            "the expected shared DXBC hash"
+        )
+
+    require_file(
+        EYE_PREGBUFFER_FRAGMENT_SIDECAR,
+        EXPECTED_EYE_PREGBUFFER_FRAGMENT_SIDECAR["size"],
+        EXPECTED_EYE_PREGBUFFER_FRAGMENT_SIDECAR["sha256"],
+        "current Eye PreGBuffer fragment DXBC sidecar",
+    )
+    eye_fragment_metadata_path = Path(
+        str(EYE_PREGBUFFER_FRAGMENT_SIDECAR) + ".metadata.json"
+    )
+    if not eye_fragment_metadata_path.is_file():
+        raise AssertionError(
+            "missing Eye PreGBuffer fragment metadata: "
+            f"{eye_fragment_metadata_path}"
+        )
+    eye_fragment_metadata = json.loads(
+        eye_fragment_metadata_path.read_text(encoding="utf-8")
+    )
+    for key, expected in {
+        "SourcePassName": "PreGBuffer",
+        "SourcePassIndex": EXPECTED_EYE_PREGBUFFER_FRAGMENT_SIDECAR["pass_index"],
+        "SourceSerializedProgramStage": "vertex",
+        "DecodedProgramStage": "fragment",
+        "DecodedProgramEncoding": "DXBC",
+    }.items():
+        if eye_fragment_metadata.get(key) != expected:
+            raise AssertionError(
+                "current Eye PreGBuffer fragment metadata mismatch: "
+                f"field={key} expected={expected!r} "
+                f"actual={eye_fragment_metadata.get(key)!r}"
+            )
+    if eye_fragment_metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current Eye PreGBuffer fragment keyword mismatch: "
+            f"expected={expected_keywords} "
+            f"actual={eye_fragment_metadata.get('SourceCompiledKeywords')}"
+        )
+    require_file(
+        EYE_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL,
+        EXPECTED_EYE_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL["size"],
+        EXPECTED_EYE_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL["sha256"],
+        "current Eye PreGBuffer fragment decompilation",
+    )
+    eye_fragment_text = EYE_PREGBUFFER_FRAGMENT_DECOMPILED_HLSL.read_text(
+        encoding="utf-8"
+    )
+    for label, needle in {
+        "five_mrt_outputs": "float4 SV_Target_4 : SV_Target4;",
+        "target0_zero": "SV_Target.z = 0.0f;",
+        "target1_motion": "SV_Target_1.z = 1.0f;",
+        "target2_selector": "SV_Target_2.x = _59(_162 & 1023u)",
+        "target3_eye_normal_alpha": "SV_Target_3.w = 0.699999988079071044921875f;",
+        "target4_color": "SV_Target_4.w = 1.0f;",
+    }.items():
+        if needle not in eye_fragment_text:
+            raise AssertionError(
+                "current Eye PreGBuffer fragment decompilation anchor missing: "
+                f"label={label} needle={needle!r}"
+            )
     runtime = PREGBUFFER_RUNTIME.read_text(encoding="utf-8")
     runtime_required = {
         "g_buffer_c_property": 'Shader.PropertyToID("_EndfieldRecoveredPreGBufferC")',
@@ -592,6 +727,8 @@ def verify_pregbuffer_contract() -> dict[str, Any]:
             ],
             "source_deformation": "previous clip is generated from a separate previous skinned/object path; previous camera matrix alone is insufficient",
             "encoding": "Target1.xy = 0.5 + sign(sqrt(sqrt(abs(delta * 0.5))) * 0.5), Target1.z=1, Target1.w=0.4",
+            "eye_shared_vertex": "exact same 6044-byte DXBC and decompilation; Eye pass index is 1",
+            "eye_fragment": "same five MRT topology; Eye Target3.w=0.7",
         },
         "lab_consumption": {
             "selector_normal_pair": "diagnostic A/B only",

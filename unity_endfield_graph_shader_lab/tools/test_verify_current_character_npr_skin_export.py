@@ -50,6 +50,14 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
             "_PrevNonJitteredViewNoTransProjMatrix",
             result["pregbuffer"]["vertex_motion_inputs"]["history_parameters"],
         )
+        self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["eye_shared_vertex"],
+            "exact same 6044-byte DXBC and decompilation; Eye pass index is 1",
+        )
+        self.assertEqual(
+            result["pregbuffer"]["vertex_motion_inputs"]["eye_fragment"],
+            "same five MRT topology; Eye Target3.w=0.7",
+        )
         self.assertEqual(result["interpretation"]["retail_frame_parity"], "not asserted")
 
     def test_missing_artifact_reports_path_and_expected_size(self) -> None:

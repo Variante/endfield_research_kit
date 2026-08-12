@@ -85,8 +85,12 @@ NPC archetypes are imported as labeled source kits.
   skinned/object path is separately generated, so the lab does not publish a
   guessed motion lane. The C sidecar is not consumed by the retail resolver
   yet, so this closes a producer input without claiming full deferred
-  publication. The current export audit reports the five-MRT contract and
-  this explicit subset.
+  publication. Eye's PreGBuffer uses a different pass index but the exact same
+  6044-byte vertex DXBC/decompilation, so this history boundary is shared by
+  Skin and Eye rather than a Skin-only special case. Eye's fragment keeps the
+  same five MRT topology while its oct-normal alpha is `0.7` rather than Skin's
+  `0.4`. The current export audit reports the five-MRT contract and this
+  explicit subset.
 - The default-off screen/direct same-owner audit also passes its Skin/Cloth/Hair
   shader and pipeline chronology checks, including canonical forward depth and
   the separate PreG D32S8 sidecar.
