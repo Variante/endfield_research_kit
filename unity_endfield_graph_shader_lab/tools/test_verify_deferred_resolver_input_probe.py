@@ -25,7 +25,7 @@ def ready_log() -> str:
             (
                 "Recovered deferred resolver input consumer probe active: "
                 "camera=MainCamera, size=640x720, publicationSerial=1, "
-                "sourceIdentifiers=t23:_62,t24:_61,t25:_60, "
+                "sourceIdentifiers=t23:_60,t24:_61,t25:_62, "
                 "registerBridges=b0..b8, b6=zero-fallback, "
                 "presented=false, retailPass0=false."
             ),
@@ -36,8 +36,8 @@ def ready_log() -> str:
             ),
             (
                 "Recovered deferred resolver target-resource snapshot: "
-                "t0=ready,t1=ready,t5=ready,t6=ready,t7=absent,t22=absent, "
-                "t1=640x720,t5=576x576x32,t6=6144x4096,t7=none,t22=none, "
+                "t0=ready,t1=ready,t5=ready,t6=ready,t7=absent,t11=absent, "
+                "t1=640x720,t5=576x576x32,t6=6144x4096,t7=none,t11=none, "
                 "allPhysical=false, screenContentValid=false."
             ),
             "Exiting batchmode successfully now!",
@@ -54,9 +54,9 @@ class DeferredResolverInputProbeLogTests(unittest.TestCase):
 
     def test_strict_resource_probe_requires_target_resources(self) -> None:
         text = ready_log().replace(
-            "t7=absent,t22=absent, t1=640x720,t5=576x576x32,t6=6144x4096,t7=none,t22=none, "
+            "t7=absent,t11=absent, t1=640x720,t5=576x576x32,t6=6144x4096,t7=none,t11=none, "
             "allPhysical=false",
-            "t7=ready,t22=allocated, t1=640x720,t5=576x576x32,t6=6144x4096,t7=160x180,t22=640x720, "
+            "t7=ready,t11=allocated, t1=640x720,t5=576x576x32,t6=6144x4096,t7=160x180,t11=640x720, "
             "allPhysical=true",
         )
         report = MODULE.validate_log(
@@ -100,8 +100,8 @@ class DeferredResolverInputProbeLogTests(unittest.TestCase):
                 MODULE.SHADOW_DATA_TOKEN,
                 "Recovered deferred resolver input probe failed closed: "
                 "strict resolver target-resource probe requires physical "
-                "t0/t1/t5/t6/t7/t22 resources: "
-                "t0=ready,t1=ready,t5=ready,t6=ready,t7=absent,t22=absent.",
+                "t0/t1/t5/t6/t7/t11 resources: "
+                "t0=ready,t1=ready,t5=ready,t6=ready,t7=absent,t11=absent.",
                 "Exiting batchmode successfully now!",
             )
         )

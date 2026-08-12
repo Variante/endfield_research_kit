@@ -45,11 +45,11 @@ class DeferredResolverInputProbeTests(unittest.TestCase):
         self.assertIn("_60.Load", shader)
         for slot in range(9):
             self.assertIn(f"cbuffer EndfieldCB{slot} : register(b{slot})", shader)
-        for slot in (0, 1, 5, 6, 7, 22):
+        for slot in (0, 1, 5, 6, 7, 11):
             self.assertIn(f": register(t{slot})", shader)
-        self.assertIn("Texture2D<float4> _62 : register(t23)", shader)
+        self.assertIn("Texture2D<float4> _60 : register(t23)", shader)
         self.assertIn("Texture2D<float4> _61 : register(t24)", shader)
-        self.assertIn("Texture2D<float4> _60 : register(t25)", shader)
+        self.assertIn("Texture2D<float4> _62 : register(t25)", shader)
 
     def test_probe_requires_current_camera_frame_publication(self) -> None:
         producer = (

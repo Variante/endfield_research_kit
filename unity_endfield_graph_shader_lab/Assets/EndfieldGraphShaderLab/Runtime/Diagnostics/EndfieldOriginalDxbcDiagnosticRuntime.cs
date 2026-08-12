@@ -538,17 +538,16 @@ namespace EndfieldGraphShaderLab
                     texture = shadow2D;
                 else if (slot == 13 || (slot >= 16 && slot <= 21))
                     texture = zero3D;
-                // The selected original resolver consumes the producer's
-                // logical GBuffer in backend order t23=C, t24=B, t25=A.
-                // Keep this explicit in the exact-DXBC fixture; binding A/B/C
-                // in declaration order would execute successfully while
-                // feeding every material lane to the wrong source register.
+                // The selected original D3D11 compact resolver consumes the
+                // producer's logical GBuffer in t23=A, t24=B, t25=C order.
+                // Keep this explicit in the exact-DXBC fixture; source HLSL
+                // identifiers are _60/_61/_62, not the compact register names.
                 else if (slot == 23)
-                    texture = gbufferC;
+                    texture = gbufferA;
                 else if (slot == 24)
                     texture = gbufferB;
                 else if (slot == 25)
-                    texture = gbufferA;
+                    texture = gbufferC;
                 else
                     texture = zero2D;
                 command.SetGlobalTexture(

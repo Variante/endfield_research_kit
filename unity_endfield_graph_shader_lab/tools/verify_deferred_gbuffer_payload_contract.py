@@ -219,12 +219,12 @@ def validate_payload_contract(
         source=runtime_path,
         text=runtime_text,
         tokens=(
-            "command.SetGlobalTexture(ResolverGBufferT23Id, gBufferC)",
+            "command.SetGlobalTexture(ResolverGBufferT23Id, gBufferA)",
             "command.SetGlobalTexture(ResolverGBufferT24Id, gBufferB)",
-            "command.SetGlobalTexture(ResolverGBufferT25Id, gBufferA)",
-            "command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferC)",
+            "command.SetGlobalTexture(ResolverGBufferT25Id, gBufferC)",
+            "command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferA)",
             "command.SetGlobalTexture(ResolverSourceTextureT24Id, gBufferB)",
-            "command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferA)",
+            "command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferC)",
             "pass0ConsumerEnabled=false",
         ),
     )

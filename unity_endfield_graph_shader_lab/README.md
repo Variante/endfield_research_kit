@@ -2661,8 +2661,8 @@ The original pass-0 consumer remains deliberately disabled.
 The next deferred boundary is validated with
 `ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE=1`. The GBuffer sidecar
 stamps camera, frame, extent, and publication serial; the resolver probe
-rejects stale or cross-camera C/B/A inputs and records the source order
-`t23:_62,t24:_61,t25:_60`. Use the existing D3D12 frame command, then run:
+rejects stale or cross-camera A/B/C inputs and records the source order
+`t23:_60,t24:_61,t25:_62`. Use the existing D3D12 frame command, then run:
 
 ```bat
 verify_recovered_deferred_gbuffer_frame.bat --resolver-input-d3d12
@@ -2672,7 +2672,7 @@ python tools\verify_deferred_resolver_input_probe.py --log scratch\character_rec
 This is same-frame input-order evidence only: the probe is non-presented and
 retail deferred pass 0 remains disabled.
 
-The probe also audits the target resource registers `t0/t1/t5/t6/t7/t22`.
+The probe also audits the target resource registers `t0/t1/t5/t6/t7/t11`.
 Use the strict resource command when checking the shadow ownership boundary:
 
 ```bat
