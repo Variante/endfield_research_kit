@@ -990,6 +990,77 @@
         },
         "interpretation": "The current AddInternalCall target now closes a concrete CPU record copy, while the older 0x180155300 surface remains a separate dynamic service/vtable path. Neither surface proves that the 80-byte shared payload reaches _UploadBuffer, UploadPerDrawParams kernel 7, or the channel-2 resource +0xd0 slot."
       },
+      "native_factory_update_consumption_census": {
+        "status": "factory-record-consumers-cpu-only-gpu-edge-open",
+        "source": "Installed UnityPlayer.dll AddInternalCall table, PData-scoped x64 disassembly, and a bounded direct-call census over the factory update entrypoints and their concrete record helpers.",
+        "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+        "known_gpu_entrypoints_checked": [
+          "ComputeBuffer.InternalSetNativeData 0x1800906c0",
+          "ComputeBuffer.InternalSetData 0x180091050",
+          "ComputeBuffer.InternalGetData 0x180091d70",
+          "ComputeShader.Internal_SetBuffer 0x1801153f0",
+          "ComputeShader.Internal_HGSetBuffer 0x180116c10",
+          "ComputeShader.SetConstantComputeBuffer 0x180117130",
+          "ComputeShader.Dispatch 0x180119af0",
+          "CommandBuffer.Add_GPUDriven_PopulatePerFrameData 0x180065ff0",
+          "CommandBuffer.Add_GPUDriven_DrawRendererList 0x180066360",
+          "GPUDrivenRendererV1/V2 binding and dispatch entries 0x1801e9200..0x1801e9c90"
+        ],
+        "entrypoints": [
+          {
+            "name": "HGFactoryRenderManager::UpdateRegularEntity_Injected",
+            "unityplayer_entry": "0x1801eaa50",
+            "pdata_range": "0x1801eaa50..0x1801eaeb0",
+            "record_helper": "0x1810d93a0",
+            "record_access": "reads and rewrites manager[+0x38] with index * 0x8c; copies all 0x8c bytes and updates record flags at +0x70/+0x71",
+            "helper_direct_calls": [
+              "0x1810cd260",
+              "0x180133a20",
+              "0x1810cd3d0",
+              "0x1810ccf80",
+              "0x180133b70",
+              "0x1810d20c0",
+              "0x1810d19f0",
+              "0x180129d50",
+              "0x180303e70"
+            ],
+            "gpu_api_direct_edges": []
+          },
+          {
+            "name": "HGFactoryRenderManager::UpdateRegularEntityAdditiveMaterials_Injected",
+            "unityplayer_entry": "0x1801eaeb0",
+            "pdata_range": "0x1801eaeb0..0x1801eb1eb",
+            "record_helper": "0x1810d9690",
+            "record_access": "operates on the same factory update/metadata state and reaches record helper calls, but does not expose a graphics API",
+            "helper_direct_calls": [
+              "0x1810cd260",
+              "0x1810ccf80",
+              "0x1810cd3d0"
+            ],
+            "gpu_api_direct_edges": []
+          },
+          {
+            "name": "HGFactoryRenderManager::UpdateRegularEntityObsolete_Injected",
+            "unityplayer_entry": "0x1801ec340",
+            "pdata_range": "0x1801ec340..0x1801ec7b4",
+            "record_helper": "0x1810d97f0",
+            "record_access": "reads and rewrites manager[+0x38] with index * 0x8c; the obsolete path mirrors the current 0x8c-byte CPU record handling",
+            "helper_direct_calls": [
+              "0x1810cd260",
+              "0x180133a20",
+              "0x1810cd3d0",
+              "0x1810ccf80",
+              "0x180133b70",
+              "0x1810d20c0",
+              "0x1810d1c50",
+              "0x180129d50",
+              "0x180303e70"
+            ],
+            "gpu_api_direct_edges": []
+          }
+        ],
+        "bounded_result": "The current, additive-material, and obsolete factory update entries plus their concrete record helpers contain no direct ComputeBuffer upload, shader buffer/property bind, CommandBuffer GPUDriven recording, or compute dispatch edge. This is positive CPU-record-consumer evidence, not proof that an indirect/dynamically registered render stage cannot consume the array later; keep the shared-record-to-GPU edge fail-closed."
+      },
       "native_factory_batch_vat_evidence": {
         "status": "native-batch-vat-registry-finalizer-negative-upload-edge-open",
         "source": "Installed UnityPlayer.dll HyperGryph internal-call surface and PData-scoped x64 disassembly.",
