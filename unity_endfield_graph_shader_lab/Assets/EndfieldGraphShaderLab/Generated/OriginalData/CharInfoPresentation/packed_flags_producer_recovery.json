@@ -931,6 +931,56 @@
           },
           "native_kernel_argument": "All four known native callsites zero r9d before entering their core; no additional direct E8 producer was found in the current UnityPlayer text."
         },
+        "gpu_driven_culling_pass_callback": {
+          "status": "rendergraph-culling-call-chain-closed-kernel-zero",
+          "source": "Current global-metadata.dat body-target catalog plus GameAssembly.dll code-registration mapping and bounded x64 body disassembly.",
+          "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+          "managed_method": {
+            "type": "HG.Rendering.Runtime.GPUDrivenCullingPassConstructor+<>c",
+            "method": "<.cctor>b__10_0",
+            "metadata_method_index": 287367,
+            "native_pointer": "0x189bb558c",
+            "body_scan_bytes": 1728,
+            "first_ret_offset": 1718,
+            "parameters": [
+              "data: GPUDrivenCullingPassConstructor+CullingPassData",
+              "context: HGRenderGraphContext"
+            ]
+          },
+          "callback_data_offsets": {
+            "populate_per_frame_data": {
+              "thread_group_size": "0x40",
+              "hzb_width": "data+0x30",
+              "hzb_height": "data+0x34",
+              "use_prev_vp_stack_byte": "data+0x40"
+            },
+            "shader_arguments": ["data+0x10", "data+0x18"],
+            "command_buffer_context": "context+0x18"
+          },
+          "v1_sequence": [
+            "Valid(0x183f9bd70)",
+            "PopulatePerFrameData(0x18b3f80b4, threadGroupSize=0x40)",
+            "BindFrameConstantsBuffer(0x18b3f7e50, shader=data+0x10, kernelIdx=0)",
+            "BindBuffersForCulling(0x18b3f7d94, shader=data+0x10, kernelIdx=0)",
+            "DispatchComputeDrawBucketCount(0x18b3f7ff0, shader=data+0x10, kernelIdx=0)",
+            "BindFrameConstantsBuffer(0x18b3f7e50, shader=data+0x18, kernelIdx=0)",
+            "BindBuffersForCulling(0x18b3f7d94, shader=data+0x18, kernelIdx=0)",
+            "DispatchComputeMeshletInstanceCount(0x18b3f8044, shader=data+0x18, kernelIdx=0)"
+          ],
+          "v2_sequence": [
+            "Valid(0x183f9bd30)",
+            "PopulatePerFrameData(0x18b3f8478, threadGroupSize=0x40)",
+            "BindFrameConstantsBuffer(0x18b3f8230, shader=data+0x10, kernelIdx=0)",
+            "BindBuffersForCulling(0x18b3f8174, shader=data+0x10, kernelIdx=0)",
+            "DispatchComputeDrawBucketCount(0x18b3f83d0, shader=data+0x10, kernelIdx=0)",
+            "BindFrameConstantsBuffer(0x18b3f8230, shader=data+0x18, kernelIdx=0)",
+            "BindBuffersForCulling(0x18b3f8174, shader=data+0x18, kernelIdx=0)",
+            "DispatchComputeMeshletInstanceCount(0x18b3f8424, shader=data+0x18, kernelIdx=0)"
+          ],
+          "observed_argument_contract": "The static callback zeroes r8d before every BindFrameConstantsBuffer/BindBuffersForCulling/DispatchCompute* call. The managed wrappers preserve that kernel argument and forward it to UnityPlayer as native r9d; therefore this live RenderGraph culling callback selects kernel 0 in both V1 and V2 branches.",
+          "additional_stage": "Both branches also record SetComputeTextureParam for the RenderGraph texture handle before the second shader sequence.",
+          "boundary": "This closes the known RenderGraph GPUDriven culling producer and gives negative evidence against kernel 7 on this route. It does not identify a producer for GpuSceneDirtyUpdateCS.UploadPerDrawParams, nor connect channel 2/resource +0xd0 to _UploadBuffer or binding 33."
+        },
         "shader_property_registry": {
           "initializer": "0x181217db0",
           "table_root": "0x1821ed7b0",
