@@ -117,6 +117,34 @@
             "0x1810ccd20 copies two 0x80-byte blocks between resolved resource records; it is called by renderer-list/resource-record preparation and has no custom-channel or GPU descriptor identity.",
             "0x1810d2fc4/0x1810d2fd9 perform the same generic block-copy pattern for paired records."
           ],
+          "runtime_initialize_service_identity": {
+            "status": "service-registry-thunk-classified-not-custom-resource",
+            "thunk": "0x180fc5e60",
+            "registry_lookup": "0x18030f100",
+            "registry_index": 20,
+            "registry_slot_offset": "+0x178",
+            "service_name": "RuntimeInitializeOnLoadManager",
+            "observed": "The lookup thunk loads service-registry entry 20; the installed registry initializer names that slot RuntimeInitializeOnLoadManager. Therefore the 0x180fc5e60 results used by renderer refresh/record paths are a Unity service singleton, not the custom resource returned by 0x1804255f0. Reads such as service +0x38 or service +0xf0 must not be counted as resource +0xd0 evidence.",
+            "negative_result": "This removes a recurring false-positive service-object alias from the resource-consumer census; it does not recover the resource-to-descriptor upload edge."
+          },
+          "override_refresh_followup": {
+            "status": "five-slot-named-override-refresh-classified-no-upload",
+            "function": "0x18042f750",
+            "manager_source": "renderer +0x1b8..+0x1c8 via 0x18012be60",
+            "lookup_helpers": {
+              "intern_or_register": "0x180627040",
+              "sorted_override_lookup": "0x18042ba20"
+            },
+            "observed": "After copying renderer +0x140..+0x180 into resource +0xb0..+0xf0, the refresh body optionally walks five fixed override keys. Each key is interned/registered, binary-searched in the manager table at +0xc0, and, when present, its Vector4 at entry +4 is written to the corresponding five-slot destination. The destination is the renderer slot array or the resolved resource array depending on the branch; no resource +0xd0 read, descriptor/constant-buffer API, or command encoder call occurs.",
+            "slot_offsets": [
+              "+0x0",
+              "+0x10",
+              "+0x20",
+              "+0x30",
+              "+0x40"
+            ],
+            "negative_result": "This is a named per-draw override refresh/write path, not the missing GPU consumer; keep the channel-2 resource-to-descriptor edge fail-closed."
+          },
           "secondary_callsite_followup": {
             "status": "sampled-secondary-resolver-callers-classified-no-upload-edge",
             "callsite_groups": [
