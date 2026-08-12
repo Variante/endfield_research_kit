@@ -63,6 +63,14 @@ namespace EndfieldGraphShaderLab
         private static readonly int GpuViewProjectionId =
             Shader.PropertyToID(
                 "_EndfieldRecoveredDeferredGpuViewProjection");
+        private static readonly int PreviousGpuViewProjectionId =
+            Shader.PropertyToID(
+                "_EndfieldRecoveredDeferredPreviousGpuViewProjection");
+        private static readonly int PreviousObjectToWorldId =
+            Shader.PropertyToID(
+                "_EndfieldRecoveredDeferredPreviousObjectToWorld");
+        private static readonly int MotionValidId =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredMotionValid");
 
         private static readonly Color SceneColorClear =
             new Color(0.025f, 0.07f, 0.19f, 0.0f);
@@ -91,6 +99,18 @@ namespace EndfieldGraphShaderLab
         private int publishedWidth;
         private int publishedHeight;
         private uint publicationSerial;
+        // HGRP/Lit's source vertex supplies previous clip x/y/w lanes to the
+        // fragment motion encoder. Keep the immediately preceding camera and
+        // object transforms; a camera, renderer, or extent discontinuity
+        // starts a neutral sample and never reuses unrelated history.
+        private Matrix4x4 previousGpuViewProjection;
+        private Matrix4x4 previousObjectToWorld;
+        private bool hasPreviousGpuViewProjection;
+        private int previousCameraInstanceId;
+        private int previousRendererInstanceId;
+        private int previousFrame = -1;
+        private int previousWidth;
+        private int previousHeight;
 
         internal bool Requested => requested;
 
@@ -102,12 +122,14 @@ namespace EndfieldGraphShaderLab
                 EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             InvalidatePublication();
+            InvalidateMotionHistory();
             PublishBlackFallbacks();
         }
 
         public void Dispose()
         {
             InvalidatePublication();
+            InvalidateMotionHistory();
             ReleaseResources();
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             PublishBlackFallbacks();
@@ -152,6 +174,25 @@ namespace EndfieldGraphShaderLab
             };
             try
             {
+                Matrix4x4 gpuViewProjection =
+                    GL.GetGPUProjectionMatrix(
+                        camera.nonJitteredProjectionMatrix,
+                        true) *
+                    camera.worldToCameraMatrix;
+                Matrix4x4 objectToWorld = renderer.localToWorldMatrix;
+                bool motionHistoryValid =
+                    hasPreviousGpuViewProjection &&
+                    previousCameraInstanceId == camera.GetInstanceID() &&
+                    previousRendererInstanceId == renderer.GetInstanceID() &&
+                    previousFrame == Time.frameCount - 1 &&
+                    previousWidth == width &&
+                    previousHeight == height;
+                Matrix4x4 previousViewProjection = motionHistoryValid
+                    ? previousGpuViewProjection
+                    : gpuViewProjection;
+                Matrix4x4 previousObjectTransform = motionHistoryValid
+                    ? previousObjectToWorld
+                    : objectToWorld;
                 command.SetRenderTarget(sceneColor);
                 command.ClearRenderTarget(false, true, SceneColorClear);
                 command.SetRenderTarget(sceneMV);
@@ -187,8 +228,16 @@ namespace EndfieldGraphShaderLab
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
                 command.SetGlobalMatrix(
                     GpuViewProjectionId,
-                    GL.GetGPUProjectionMatrix(camera.projectionMatrix, true) *
-                    camera.worldToCameraMatrix);
+                    gpuViewProjection);
+                command.SetGlobalMatrix(
+                    PreviousGpuViewProjectionId,
+                    previousViewProjection);
+                command.SetGlobalMatrix(
+                    PreviousObjectToWorldId,
+                    previousObjectTransform);
+                command.SetGlobalFloat(
+                    MotionValidId,
+                    motionHistoryValid ? 1.0f : 0.0f);
                 command.DrawRenderer(renderer, material, 0, passIndex);
 
                 command.SetGlobalTexture(SceneColorId, sceneColor);
@@ -216,6 +265,14 @@ namespace EndfieldGraphShaderLab
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
                 context.ExecuteCommandBuffer(command);
                 PublishFrame(camera, width, height);
+                previousGpuViewProjection = gpuViewProjection;
+                previousObjectToWorld = objectToWorld;
+                hasPreviousGpuViewProjection = true;
+                previousCameraInstanceId = camera.GetInstanceID();
+                previousRendererInstanceId = renderer.GetInstanceID();
+                previousFrame = Time.frameCount;
+                previousWidth = width;
+                previousHeight = height;
             }
             finally
             {
@@ -303,6 +360,7 @@ namespace EndfieldGraphShaderLab
             string failure)
         {
             InvalidatePublication();
+            InvalidateMotionHistory();
             var command = new CommandBuffer
             {
                 name = "Fail-closed recovered deferred HGBuffer sidecar"
@@ -667,6 +725,18 @@ namespace EndfieldGraphShaderLab
             publishedCameraInstanceId = 0;
             publishedWidth = 0;
             publishedHeight = 0;
+        }
+
+        private void InvalidateMotionHistory()
+        {
+            hasPreviousGpuViewProjection = false;
+            previousGpuViewProjection = Matrix4x4.identity;
+            previousObjectToWorld = Matrix4x4.identity;
+            previousCameraInstanceId = 0;
+            previousRendererInstanceId = 0;
+            previousFrame = -1;
+            previousWidth = 0;
+            previousHeight = 0;
         }
 
         private static void ReleaseTexture(RenderTexture texture)

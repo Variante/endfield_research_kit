@@ -248,9 +248,15 @@ NPC archetypes are imported as labeled source kits.
   the Skin PreGBuffer audit: vertex `TEXCOORD_5` carries current clip x/y/w and
   `TEXCOORD_6` carries the separately generated previous clip x/y/w; the
   fragment computes the same signed fourth-root deltas, then blends them with
-  the source motion-validity mask (`Target1.z/w`). The current SphereOutside
-  sidecar still emits neutral SceneMV and remains non-presented; publishing
-  motion requires the original previous deformation/target-frame state.
+  the source motion-validity mask (`Target1.z/w`). The default-off
+  SphereOutside sidecar now transports the preceding camera VP and
+  object-to-world matrices and emits this source-shaped SceneMV for settled
+  adjacent same-camera/same-renderer samples using the source non-jittered
+  projection; first samples and discontinuities remain neutral. Reflection
+  metadata still exposes native
+  `unity_MatrixPreviousM`, `_PrevNonJitteredViewNoTransProjMatrix`, and
+  `unity_MotionVectorsParamsInternal`, so skinned/deformed vertices and the
+  native validity policy are not claimed closed.
   The verifier also pins the remaining source MRT payload: `Target2.x/y/z/w`
   carry the sampled MRO/porosity/packed-flag lanes, `Target3.z/w` carry the
   sampled mask and low packed flags beside octahedral normal xy, and
@@ -258,9 +264,9 @@ NPC archetypes are imported as labeled source kits.
   source equations are now evidence-closed. The maintained
   `verify_deferred_gbuffer_payload_contract.py` gate passes all nine producer,
   sidecar, alias, and material checks and reports the remaining three open
-  boundaries explicitly: live motion history, packed-flag inputs, and retail
-  pass-0 publication. The runtime sidecar still does not publish these lanes
-  through the retail deferred resolver.
+  boundaries explicitly: native motion-validity/deformation inputs,
+  packed-flag inputs, and retail pass-0 publication. The runtime sidecar still
+  does not publish these lanes through the retail deferred resolver.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count
   publisher verified bit-for-bit on D3D11/D3D12. Its unique native

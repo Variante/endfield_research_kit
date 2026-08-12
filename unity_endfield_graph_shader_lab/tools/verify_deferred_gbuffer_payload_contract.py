@@ -3,8 +3,8 @@
 
 This is a source-contract gate, not a retail-parity claim.  It checks the
 selected fragment's five original MRT lanes against the source-shaped Unity
-sidecar and records the deliberately open runtime boundary (neutral motion,
-neutral packed flags, and no pass-0 presentation).
+sidecar and records the deliberately open runtime boundary (native per-object
+motion validity/deformation, packed flags, and no pass-0 presentation).
 """
 
 from __future__ import annotations
@@ -184,6 +184,12 @@ def validate_payload_contract(
             "float4 gBufferA : SV_Target2;",
             "float4 gBufferB : SV_Target3;",
             "float4 gBufferC : SV_Target4;",
+            "float4x4 _EndfieldRecoveredDeferredPreviousGpuViewProjection;",
+            "float4x4 _EndfieldRecoveredDeferredPreviousObjectToWorld;",
+            "float4 previousPositionWS = mul(",
+            "output.currentClipXYW = currentClip.xyw;",
+            "output.previousClipXYW = previousClip.xyw;",
+            "float motionValid = saturate(_EndfieldRecoveredDeferredMotionValid);",
         ),
     )
     _check_count(
@@ -225,6 +231,12 @@ def validate_payload_contract(
             "command.SetGlobalTexture(ResolverSourceTextureT23Id, gBufferA)",
             "command.SetGlobalTexture(ResolverSourceTextureT24Id, gBufferB)",
             "command.SetGlobalTexture(ResolverSourceTextureT25Id, gBufferC)",
+            "PreviousGpuViewProjectionId,",
+            "PreviousObjectToWorldId,",
+            "MotionValidId,",
+            "previousCameraInstanceId == camera.GetInstanceID()",
+            "previousRendererInstanceId == renderer.GetInstanceID()",
+            "previousFrame == Time.frameCount - 1",
             "pass0ConsumerEnabled=false",
         ),
     )
@@ -247,9 +259,9 @@ def validate_payload_contract(
     known_gaps = [
         {
             "check": "sidecar.scene_motion",
-            "status": "open",
-            "evidence": "sidecar uses neutral float4(0.5, 0.5, 0.0, 0.0)",
-            "meaning": "source motion equation is pinned, but live camera/deformation history is not",
+            "status": "partial",
+            "evidence": "sidecar transports previous camera clip history and evaluates the source signed fourth-root equation; first samples and discontinuities remain neutral",
+            "meaning": "static sidecar camera history is closed, but native per-object validity/deformation history is not",
         },
         {
             "check": "sidecar.packed_flags",
