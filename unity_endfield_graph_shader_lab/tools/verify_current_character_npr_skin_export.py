@@ -36,6 +36,10 @@ BYTECODE_ROOT = Path(str(SHADER_EXPORT) + ".bytecode")
 DECOMPILED_SPV_GLSL = (
     REPO_ROOT / "scratch/animestudio/body_skin_sidecar_refresh/skin_body_forward.spv.glsl"
 )
+PREG_BUFFER_DECOMPILED_HLSL = (
+    REPO_ROOT / "scratch/character_recovery/pregbuffer_decomp/skin_1261.hlsl"
+)
+PREG_BUFFER_SIDECAR = BYTECODE_ROOT / "1261_endfield_dxbc_1.dxbc"
 
 EXPECTED_SHADER_MAP = {
     "name": "HGRP/CharacterNPR_Skin",
@@ -52,6 +56,14 @@ EXPECTED_SHADER_EXPORT = {
 EXPECTED_DECOMPILED_SPV_GLSL = {
     "size": 97085,
     "sha256": "70022f422f83b698b28f30bed89c08502d25e26dd9c30e6d9372cd92c77040a1",
+}
+EXPECTED_PREG_BUFFER_SIDECAR = {
+    "size": 2816,
+    "sha256": "4d081d6dc8f5bd141d69ecb4a9c0b33ac48c6fddc1e544bca1af7a7a35370c13",
+}
+EXPECTED_PREG_BUFFER_DECOMPILED_HLSL = {
+    "size": 7299,
+    "sha256": "597b675391e99509c443c327460e9f55b414f1d460d1278ce823905568ceb4c8",
 }
 
 EXPECTED_MATERIALS = {
@@ -348,6 +360,100 @@ def verify_decompiled_consumer() -> dict[str, Any]:
     }
 
 
+def verify_pregbuffer_contract() -> dict[str, Any]:
+    """Pin the current Skin PreGBuffer pass without claiming full GBuffer parity.
+
+    The source pass writes five MRT lanes.  The maintained lab deliberately
+    consumes only the selector/normal pair for its default-off screen-shadow
+    diagnostic; motion vectors and material/color GBuffer lanes remain open.
+    """
+
+    require_file(
+        PREG_BUFFER_SIDECAR,
+        EXPECTED_PREG_BUFFER_SIDECAR["size"],
+        EXPECTED_PREG_BUFFER_SIDECAR["sha256"],
+        "current Skin PreGBuffer DXBC sidecar",
+    )
+    metadata_path = Path(str(PREG_BUFFER_SIDECAR) + ".metadata.json")
+    if not metadata_path.is_file():
+        raise AssertionError(f"missing PreGBuffer metadata: {metadata_path}")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    expected_keywords = ["HG_ENABLE_PER_OBJECT_MV", "SRP_INSTANCING_ON"]
+    if metadata.get("SourcePassName") != "PreGBuffer":
+        raise AssertionError(
+            "current Skin PreGBuffer pass mismatch: "
+            f"expected=PreGBuffer actual={metadata.get('SourcePassName')}"
+        )
+    if metadata.get("SourcePassIndex") != 3:
+        raise AssertionError(
+            "current Skin PreGBuffer pass index mismatch: "
+            f"expected=3 actual={metadata.get('SourcePassIndex')}"
+        )
+    if metadata.get("SourceCompiledKeywords") != expected_keywords:
+        raise AssertionError(
+            "current Skin PreGBuffer keyword mismatch: "
+            f"expected={expected_keywords} actual={metadata.get('SourceCompiledKeywords')}"
+        )
+    if metadata.get("SourceSerializedProgramStage") != "vertex":
+        raise AssertionError(
+            "current Skin PreGBuffer serialized stage mismatch: "
+            f"expected=vertex actual={metadata.get('SourceSerializedProgramStage')}"
+        )
+    if metadata.get("DecodedProgramStage") != "fragment":
+        raise AssertionError(
+            "current Skin PreGBuffer decoded stage mismatch: "
+            f"expected=fragment actual={metadata.get('DecodedProgramStage')}"
+        )
+    if metadata.get("DecodedProgramEncoding") != "DXBC":
+        raise AssertionError(
+            "current Skin PreGBuffer encoding mismatch: "
+            f"expected=DXBC actual={metadata.get('DecodedProgramEncoding')}"
+        )
+
+    require_file(
+        PREG_BUFFER_DECOMPILED_HLSL,
+        EXPECTED_PREG_BUFFER_DECOMPILED_HLSL["size"],
+        EXPECTED_PREG_BUFFER_DECOMPILED_HLSL["sha256"],
+        "current Skin PreGBuffer decompilation",
+    )
+    text = PREG_BUFFER_DECOMPILED_HLSL.read_text(encoding="utf-8")
+    required = {
+        "five_mrt_outputs": "float4 SV_Target_4 : SV_Target4;",
+        "target0_zero": "SV_Target.x = 0.0f;",
+        "target1_motion_vector": "SV_Target_1.z = 1.0f;",
+        "target1_motion_confidence": "SV_Target_1.w = 0.4000000059604644775390625f;",
+        "target2_selector": "SV_Target_2.x = _65(_168 & 1023u)",
+        "target3_oct_normal": "SV_Target_3.x = mad(_229 ?",
+        "target4_material_color": "SV_Target_4.x = mad(asfloat(_308.x), _301, _302)",
+    }
+    for label, needle in required.items():
+        if needle not in text:
+            raise AssertionError(
+                f"current Skin PreGBuffer decompilation anchor missing: "
+                f"label={label} needle={needle!r}"
+            )
+    return {
+        "pass": "PreGBuffer",
+        "light_mode": "DepthCharacterOnly",
+        "stencil": {"ref": 36, "comp": "Always", "pass": "Replace"},
+        "compiled_keywords": expected_keywords,
+        "mrt_count": 5,
+        "outputs": {
+            "target0": "zero/unused scene lane",
+            "target1": "motion-vector payload (xy), z=1, w=0.4",
+            "target2": "packed 10-bit selector bits",
+            "target3": "octahedral world normal, z=0, w=0.4",
+            "target4": "material/color payload",
+        },
+        "lab_consumption": {
+            "selector_normal_pair": "diagnostic A/B only",
+            "motion_vector": "not published",
+            "material_color": "not published",
+        },
+        "retail_frame_parity": "not asserted",
+    }
+
+
 def verify_current_boundary() -> dict[str, Any]:
     entries = load_map_entries()
     result = {
@@ -356,6 +462,7 @@ def verify_current_boundary() -> dict[str, Any]:
         "materials": verify_materials(entries),
         "compiled_variants": verify_sidecars(),
         "binary_consumer": verify_decompiled_consumer(),
+        "pregbuffer": verify_pregbuffer_contract(),
         "interpretation": {
             "current_forward_lit_policy": "all current ForwardLit keyword sets include HG_ENABLE_SCREEN_SPACE_SHADOW_MASK",
             "older_no_screen_sidecars": "not evidence for this export",

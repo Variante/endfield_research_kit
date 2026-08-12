@@ -29,6 +29,15 @@ class CurrentCharacterNprSkinExportTests(unittest.TestCase):
             result["binary_consumer"]["shadow_equations"]["character_shadow_minimum"],
             "min(G, alpha, material-shadow-sample)",
         )
+        self.assertEqual(result["pregbuffer"]["mrt_count"], 5)
+        self.assertEqual(
+            result["pregbuffer"]["outputs"]["target2"],
+            "packed 10-bit selector bits",
+        )
+        self.assertEqual(
+            result["pregbuffer"]["lab_consumption"]["material_color"],
+            "not published",
+        )
         self.assertEqual(result["interpretation"]["retail_frame_parity"], "not asserted")
 
     def test_missing_artifact_reports_path_and_expected_size(self) -> None:

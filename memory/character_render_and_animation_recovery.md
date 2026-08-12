@@ -67,6 +67,17 @@ NPC archetypes are imported as labeled source kits.
   source and generated-material checks, including the installed
   `DepthCharacterOnly` state and owner-before-opaque chronology. This remains
   a fail-closed diagnostic path; it does not claim live retail frame parity.
+- The refreshed Skin `PreGBuffer` DXBC fragment is now decompiled through the
+  repo-local Ruri tool and pins the source MRT boundary: `Target0` is zero,
+  `Target1` carries motion-vector data (`z=1`, `w=0.4`), `Target2` carries
+  packed 10-bit selector bits, `Target3` carries octahedral world normal
+  (`z=0`, `w=0.4`), and `Target4` carries the material/color payload. The
+  pass is `DepthCharacterOnly` with stencil `Ref 36 / Always / Replace` and
+  the `HG_ENABLE_PER_OBJECT_MV` + `SRP_INSTANCING_ON` variant. The maintained
+  lab intentionally publishes only the selector/normal A/B pair for its
+  default-off screen-shadow diagnostic; motion vectors and material/color
+  GBuffer lanes remain unbound and are not claimed as recovered. The current
+  export audit now reports this five-MRT contract and the explicit subset.
 - The default-off screen/direct same-owner audit also passes its Skin/Cloth/Hair
   shader and pipeline chronology checks, including canonical forward depth and
   the separate PreG D32S8 sidecar.
