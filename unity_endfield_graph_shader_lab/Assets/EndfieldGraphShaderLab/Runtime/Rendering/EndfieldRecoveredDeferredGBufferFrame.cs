@@ -71,6 +71,9 @@ namespace EndfieldGraphShaderLab
                 "_EndfieldRecoveredDeferredPreviousObjectToWorld");
         private static readonly int MotionValidId =
             Shader.PropertyToID("_EndfieldRecoveredDeferredMotionValid");
+        private static readonly int MotionVectorsParamsId =
+            Shader.PropertyToID(
+                "_EndfieldRecoveredDeferredMotionVectorsParams");
 
         private static readonly Color SceneColorClear =
             new Color(0.025f, 0.07f, 0.19f, 0.0f);
@@ -193,6 +196,8 @@ namespace EndfieldGraphShaderLab
                 Matrix4x4 previousObjectTransform = motionHistoryValid
                     ? previousObjectToWorld
                     : objectToWorld;
+                Vector4 motionVectorsParams =
+                    GetMotionVectorsParams(renderer);
                 command.SetRenderTarget(sceneColor);
                 command.ClearRenderTarget(false, true, SceneColorClear);
                 command.SetRenderTarget(sceneMV);
@@ -238,6 +243,9 @@ namespace EndfieldGraphShaderLab
                 command.SetGlobalFloat(
                     MotionValidId,
                     motionHistoryValid ? 1.0f : 0.0f);
+                command.SetGlobalVector(
+                    MotionVectorsParamsId,
+                    motionVectorsParams);
                 command.DrawRenderer(renderer, material, 0, passIndex);
 
                 command.SetGlobalTexture(SceneColorId, sceneColor);
@@ -737,6 +745,30 @@ namespace EndfieldGraphShaderLab
             previousFrame = -1;
             previousWidth = 0;
             previousHeight = 0;
+        }
+
+        private static Vector4 GetMotionVectorsParams(Renderer renderer)
+        {
+            // Unity's built-in DOTS fallback and the HDRP per-draw producer
+            // use (x=deformation, y=allow motion, z=z bias, w=object/camera
+            // history). SphereOutside is a static MeshRenderer with the
+            // serialized Object mode, so its source-closed value is
+            // (0,1,0,1). Keep the other managed modes explicit so a future
+            // recovered source renderer cannot silently inherit object
+            // history or publish a false motion sample.
+            if (renderer == null)
+                return new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+
+            switch (renderer.motionVectorGenerationMode)
+            {
+                case MotionVectorGenerationMode.ForceNoMotion:
+                    return new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+                case MotionVectorGenerationMode.Camera:
+                    return new Vector4(0.0f, 1.0f, 0.0f, 0.0f);
+                case MotionVectorGenerationMode.Object:
+                default:
+                    return new Vector4(0.0f, 1.0f, 0.0f, 1.0f);
+            }
         }
 
         private static void ReleaseTexture(RenderTexture texture)

@@ -226,6 +226,10 @@ Shader "Hidden/Endfield/Recovered/CharInfo/HGRPLitUnavailable"
             float4x4 _EndfieldRecoveredDeferredPreviousGpuViewProjection;
             float4x4 _EndfieldRecoveredDeferredPreviousObjectToWorld;
             float _EndfieldRecoveredDeferredMotionValid;
+            // Unity HDRP's UnityPerDraw motion-vector contract:
+            // x=previous/deformed positions, y=allow motion, z=clip-space
+            // depth bias, w=object-history (1) versus camera-only (0).
+            float4 _EndfieldRecoveredDeferredMotionVectorsParams;
 
             struct SphereOutsideAttributes
             {
@@ -279,8 +283,12 @@ Shader "Hidden/Endfield/Recovered/CharInfo/HGRPLitUnavailable"
                 float4 currentClip = mul(
                     _EndfieldRecoveredDeferredGpuViewProjection,
                     positionWS);
+                bool cameraOnlyMotion =
+                    _EndfieldRecoveredDeferredMotionVectorsParams.w <= 0.0;
                 float4 previousPositionWS = mul(
-                    _EndfieldRecoveredDeferredPreviousObjectToWorld,
+                    cameraOnlyMotion
+                        ? unity_ObjectToWorld
+                        : _EndfieldRecoveredDeferredPreviousObjectToWorld,
                     input.positionOS);
                 float4 previousClip = mul(
                     _EndfieldRecoveredDeferredPreviousGpuViewProjection,
@@ -322,7 +330,20 @@ Shader "Hidden/Endfield/Recovered/CharInfo/HGRPLitUnavailable"
                 float encodedMotionY =
                     (deltaY > 0.0 ? 1.0 : (deltaY < 0.0 ? -1.0 : 0.0)) *
                     sqrt(sqrt(abs(deltaY * 0.5))) + 0.5;
-                float motionValid = saturate(_EndfieldRecoveredDeferredMotionValid);
+                // SphereOutside is a static MeshRenderer, so x=0 is the
+                // source-closed non-deformed path. If a future caller sends
+                // x>0 without a previous skinned-position stream, fail
+                // closed instead of turning object history into a false
+                // deformation vector. y=0 is Unity's ForceNoMotion mode.
+                float hasDeformation = step(
+                    0.5,
+                    _EndfieldRecoveredDeferredMotionVectorsParams.x);
+                float allowMotion = step(
+                    0.5,
+                    _EndfieldRecoveredDeferredMotionVectorsParams.y);
+                float motionValid = saturate(
+                    _EndfieldRecoveredDeferredMotionValid) *
+                    allowMotion * (1.0 - hasDeformation);
                 output.sceneMotion = float4(
                     mad(motionValid, 0.5 - encodedMotionX, encodedMotionX),
                     mad(motionValid, 0.5 - encodedMotionY, encodedMotionY),
