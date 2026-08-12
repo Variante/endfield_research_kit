@@ -506,6 +506,15 @@ NPC archetypes are imported as labeled source kits.
   channel 2/resource `+0xd0`; keep the GPU edge fail-closed. Details are in
   `packed_flags_producer_recovery.json` under
   `factory_per_draw_shared_payload_evidence`.
+  The factory producer is broader than the Vector4 path alone. Static
+  GameAssembly bodies show `SetPosition` (`0x1834a3ce0`, offset `0x50`, 12
+  bytes), `SetRotation` (`0x183e21230`, offset `0x60`, 16 bytes), and the
+  float `SetCustomPerDrawData` instantiation (`0x1840f30e0`, 4 bytes) using
+  the same 80-byte shared record and dirty-state mechanism; the Vector4
+  writer remains `0x1834a3d60` with the caller-supplied offset plus 16-byte
+  guard. This closes a coherent CPU-side writer family, while all paths still
+  terminate at the dynamically dispatched factory service rather than a
+  statically named `_UploadBuffer`, shader bind, or compute dispatch.
   A direct GameAssembly bridge now closes the caller-side entry into that
   factory path. The generated/native range `0x180471cd8..0x180471d27` calls
   `ApplyPerDrawRender` at `0x1869d8488` (`rsi`/`rdi`/`ebx` preserve
