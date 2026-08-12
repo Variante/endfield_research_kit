@@ -1611,6 +1611,11 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(profile["role"], "controlOnly")
         self.assertEqual(profile["operationTypesHex"], ["0x3100"])
         self.assertEqual(profile["operationLabels"], ["operation0x3100"])
+        self.assertEqual(profile["operationRows"], [{
+            "operationType": 0x3100,
+            "operationTypeHex": "0x3100",
+            "operationLabels": ["operation0x3100"],
+        }])
 
     def test_complete_zero_action_event_is_known_empty_library_definition(self) -> None:
         event_name = "au_global_fixture_empty"
@@ -2770,6 +2775,217 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertIn("au_music_fixture", contexts)
             self.assertNotIn("#0xfffffffe", contexts)
 
+    def test_mono_behaviour_audio_id_fields_are_exact_authored_contexts(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            index = (
+                root / "recovered/AnimeStudio-cli/StreamingAssets/object_index/parts"
+                / "StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl"
+            )
+            index.parent.mkdir(parents=True)
+            rows = [{
+                "recordType": "object",
+                "object": {
+                    "serializedFile": "CAB-test", "source": "VFS/test.chk",
+                    "sourceOffset": 42, "pathId": 99,
+                },
+                "name": "FixtureComponent",
+                "schemaId": "schema-test",
+                "typeTreeSource": "serializedType",
+                "scalars": [
+                    ["$._spawnAudioEvent._id", "i", -2],
+                    ["$._onHitAudioRtpc._id", "i", 123],
+                    ["$.genericValue", "i", 456],
+                ],
+                "script": {"pathId": 7, "fullName": "Fixture.AudioComponent"},
+                "sceneContext": {
+                    "gameObjectName": "Audio Fixture",
+                    "hierarchyPath": ["Root", "Audio Fixture"],
+                    "worldPosition": {"x": 1, "y": 2, "z": 3},
+                    "worldPositionStatus": "exact_transform_hierarchy",
+                },
+            }, {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-managed", "pathId": 100},
+                "name": "ManagedFixture",
+                "scalars": [
+                    ["$.references.RefIds[0].type.class", "s", "PlaySingleSound"],
+                    ["$.references.RefIds[0].type.ns", "s", "Beyond.Gameplay"],
+                    ["$.references.RefIds[0].data.layout", "s", "Beyond.Gameplay.PlaySingleSound"],
+                    ["$.references.RefIds[0].data.soundBase.soundSpawn.hex", "s", "0x12345678"],
+                ],
+            }, {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-absent", "pathId": 101},
+                "scalars": [["$._finishAudioEvent._id", "i", 111]],
+            }, {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-state", "pathId": 102},
+                "name": "StateAudioFixture",
+                "scalars": [
+                    ["$.stateList[0].stateName", "s", "active"],
+                    ["$.stateList[0].audioPlayConfigs[0].isDirectlyPlay", "i", 1],
+                    ["$.stateList[0].audioPlayConfigs[0].normalAudiId._id", "i", 0x87654321],
+                    ["$.stateList[0].disableAudio", "i", 1],
+                ],
+            }]
+            index.write_text(
+                "".join(json.dumps(row) + "\n" for row in rows),
+                encoding="utf-8",
+            )
+
+            result = audio_semantics.collect_mono_behaviour_audio_id_contexts(
+                root,
+                {0xFFFFFFFE, 0x12345678, 0x87654321},
+            )
+
+            self.assertEqual(result["stats"]["distinctEventHashes"], 3)
+            self.assertEqual(result["stats"]["eventContextOccurrences"], 3)
+            spawn = result["eventContexts"]["#0xfffffffe"][0]
+            self.assertEqual(spawn["authoredFieldRole"], "_spawnAudioEvent")
+            self.assertEqual(spawn["gameObjectName"], "Audio Fixture")
+            self.assertEqual(spawn["runtimeActivationStatus"], "monoBehaviourComponentExecutionNotObserved")
+            managed = result["eventContexts"]["#0x12345678"][0]
+            self.assertEqual(managed["managedReferenceClass"], "PlaySingleSound")
+            self.assertEqual(managed["managedReferenceLayout"], "Beyond.Gameplay.PlaySingleSound")
+            state = result["eventContexts"]["#0x87654321"][0]
+            self.assertEqual(state["serializedPlaybackControls"], {
+                "stateName": "active",
+                "isDirectlyPlay": 1,
+                "disableAudioOnState": 1,
+            })
+            self.assertNotIn("#0x0000007b", result["eventContexts"])
+            self.assertNotIn("#0x0000006f", result["eventContexts"])
+
+    def test_mono_behaviour_audio_id_context_is_exposed_as_static_trigger(self) -> None:
+        rows = audio_semantics._build_mono_behaviour_audio_id_trigger_contexts([{
+            "id": "hashed-event:0x12345678",
+            "hash": 0x12345678,
+            "category": "unknown",
+            "foundInWwise": True,
+            "possibleMediaCount": 2,
+            "media": [],
+            "contexts": [{
+                "kind": "monoBehaviourAudioIdField",
+                "authoredFieldRole": "_onHitAudioEvent",
+                "serializedFieldPath": "$._onHitAudioEvent._id",
+                "serializedFile": "CAB-test",
+                "pathId": 5,
+                "gameObjectName": "Hit FX",
+                "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+                "evidence": "exactSerializedMonoBehaviourAudioIdFieldAndCurrentWwiseEvent",
+            }],
+        }])
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["semanticKind"], "monoBehaviourAudioIdField")
+        self.assertEqual(rows[0]["triggerRole"], "_onHitAudioEvent")
+        self.assertEqual(
+            rows[0]["runtimeActivationStatus"],
+            "monoBehaviourComponentExecutionNotObserved",
+        )
+
+    def test_collects_typed_play_line_sound_managed_reference_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            index = (
+                root / "recovered/AnimeStudio-cli/StreamingAssets/object_index/parts"
+                / "StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl"
+            )
+            index.parent.mkdir(parents=True)
+            prefix = "$.references.RefIds[1]"
+            index.write_text(json.dumps({
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-line", "pathId": 101},
+                "name": "Line Audio FX",
+                "scalars": [
+                    [prefix + ".type.class", "s", "PlayLineSound"],
+                    [prefix + ".type.ns", "s", "Beyond.Gameplay"],
+                    [prefix + ".type.asm", "s", "Gameplay.Beyond"],
+                    [prefix + ".data.layout", "s", "Beyond.Gameplay.PlayLineSound"],
+                    *[
+                        [prefix + f".data.rawWords[{word_index}].hex", "s", value]
+                        for word_index, value in enumerate((
+                            "0x12345678", "0x87654321", "0x00000000",
+                            "0x00000000", "0x00000001", "0x00000034",
+                        ))
+                    ],
+                ],
+                "sceneContext": {
+                    "gameObjectName": "Line FX",
+                    "hierarchyPath": ["Root", "Line FX"],
+                },
+            }) + "\n", encoding="utf-8")
+
+            result = audio_semantics.collect_mono_behaviour_audio_id_contexts(
+                root,
+                {0x12345678, 0x87654321},
+            )
+
+            self.assertEqual(result["stats"]["eventContextOccurrences"], 2)
+            self.assertEqual(result["stats"]["distinctEventHashes"], 2)
+            spawn = result["eventContexts"]["#0x12345678"][0]
+            self.assertEqual(spawn["authoredFieldRole"], "soundSpawn")
+            self.assertEqual(spawn["managedReferenceClass"], "PlayLineSound")
+            self.assertEqual(spawn["managedReferencePayloadLength"], 24)
+            self.assertEqual(spawn["gameObjectName"], "Line FX")
+            finish = result["eventContexts"]["#0x87654321"][0]
+            self.assertEqual(finish["authoredFieldRole"], "soundFinish")
+            self.assertEqual(
+                finish["evidence"],
+                "exactSerializedPlayLineSoundPayloadAndCurrentWwiseEvent",
+            )
+            structured = list(audio_semantics._mono_play_line_sound_event_scalars({
+                prefix + ".type.class": "PlayLineSound",
+                prefix + ".type.ns": "Beyond.Gameplay",
+                prefix + ".type.asm": "Gameplay.Beyond",
+                prefix + ".data.layout": "Beyond.Gameplay.PlayLineSound",
+                prefix + ".data.soundSpawn.hex": "0x12345678",
+                prefix + ".data.soundFinish.hex": "0x87654321",
+            }))
+            self.assertEqual([row[2] for row in structured], ["soundSpawn", "soundFinish"])
+            self.assertTrue(all(
+                row[3]["managedReferenceDecodeStatus"] == "strictStructuredDecoder"
+                for row in structured
+            ))
+
+    def test_audio_global_config_context_is_exposed_as_static_trigger(self) -> None:
+        rows = audio_semantics._build_audio_global_config_trigger_contexts([{
+            "id": "hashed-event:0x12345678",
+            "hash": 0x12345678,
+            "category": "unknown",
+            "foundInWwise": True,
+            "playbackRole": "mixedPlaybackAndControl",
+            "possibleMediaCount": 0,
+            "media": [],
+            "contexts": [{
+                "kind": "audioGlobalConfigEventHash",
+                "semanticRole": "audioStateTransitionEvent",
+                "path": "audioStatesIn._valueData[0]._ids[0]",
+                "stateDirection": "enter",
+                "audioStateMask": 512,
+                "sourceRoot": "Persistent",
+                "serializedFile": "CAB-global",
+                "pathId": 77,
+                "source": "recovered/object-index.jsonl",
+                "evidence": "exactSerializedAudioGlobalConfigObjectIndexScalar",
+                "triggerRequestEvidence": ["serializedGlobalAudioPolicy"],
+            }],
+        }])
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["semanticKind"], "audioGlobalConfigEventHash")
+        self.assertEqual(rows[0]["situation"]["stateDirection"], "enter")
+        self.assertEqual(rows[0]["situation"]["audioStateMask"], 512)
+        self.assertEqual(
+            rows[0]["selection"]["triggerBindingStatus"],
+            "exactSerializedGlobalAudioPolicyAudioId",
+        )
+        self.assertEqual(
+            rows[0]["runtimeActivationStatus"],
+            "runtimeLifecycleConditionRequired",
+        )
+
     def test_collects_interactive_lifecycle_and_global_policy_events(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
@@ -2882,6 +3098,50 @@ class AudioSemanticDataTests(unittest.TestCase):
             custom_component = component_contexts["au_int_fixture_open"][0]
             self.assertEqual(custom_component["triggerCustomState"], "panel_open")
             self.assertEqual(custom_component["componentIndex"], 2)
+
+    def test_global_audio_policy_falls_back_to_object_index_scalars(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            index_path = (
+                root / "recovered/AnimeStudio-cli/Persistent/object_index/parts"
+                / "Persistent_animestudio_json_by_type_MonoBehaviour.jsonl"
+            )
+            index_path.parent.mkdir(parents=True)
+            index_path.write_text(json.dumps({
+                "recordType": "object",
+                "object": {
+                    "serializedFile": "CAB-global",
+                    "pathId": 77,
+                },
+                "name": "AudioGlobalConfig",
+                "script": {
+                    "fullName": "Beyond.Gameplay.Audio.AudioGlobalConfig",
+                },
+                "scalars": [
+                    ["$.gameplayMusicStartEvent", "s", "au_music_main"],
+                    ["$.globalEventLeaveMainGame._id", "i", -2],
+                    ["$.audioStatesIn._keyData[0]", "i", 512],
+                    ["$.audioStatesIn._valueData[0]._ids[0]._id", "i", 123],
+                    ["$.charInitEvent._keyData[0]", "s", "chr_test"],
+                    ["$.charInitEvent._valueData[0]._id", "i", 456],
+                ],
+                "scalarsTruncated": True,
+            }) + "\n", encoding="utf-8")
+
+            contexts = audio_semantics.collect_table_contexts(root)
+
+            music = contexts["au_music_main"][0]
+            self.assertEqual(music["semanticRole"], "gameplayMusicStartEvent")
+            leave = contexts["#0xfffffffe"][0]
+            self.assertEqual(leave["semanticRole"], "leaveMainGameEvent")
+            self.assertEqual(leave["serializedFile"], "CAB-global")
+            self.assertTrue(leave["scalarsTruncated"])
+            state = contexts["#0x0000007b"][0]
+            self.assertEqual(state["stateDirection"], "enter")
+            self.assertEqual(state["audioStateMask"], 512)
+            owner = contexts["#0x000001c8"][0]
+            self.assertEqual(owner["ownerKind"], "character")
+            self.assertEqual(owner["ownerId"], "chr_test")
 
     def test_interactive_table_mirror_conflict_keeps_component_owner_unresolved(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

@@ -1222,7 +1222,7 @@ def match_levelscript_native_reading_popup_record(
         return None
     reading_popup_id = reading_popup_ids[0]
     try:
-        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+        reading_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
         return None
     if not isinstance(reading_rows, dict):
@@ -1271,7 +1271,7 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
     if not targets or not levelscript_root.is_dir():
         return {}
     try:
-        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+        reading_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
         return {}
     if not isinstance(reading_rows, dict):
@@ -6854,7 +6854,7 @@ def build_entity_tracking_world_interactive_dialog_contexts(
                     })
 
     try:
-        registry = json.loads(world_entity_registry_path.read_text(encoding="utf-8"))
+        registry = read_json_cached(world_entity_registry_path)
     except (OSError, json.JSONDecodeError):
         return []
     raw_briefs = (
@@ -7705,7 +7705,7 @@ def build_levelscript_interactive_narrative_story_contexts(
     ):
         return list(_LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE[cache_key])
     try:
-        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+        reading_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
         reading_rows = {}
     if not isinstance(reading_rows, dict):
@@ -8211,7 +8211,7 @@ def build_leveldata_interactive_narrative_story_contexts(
     ):
         return list(_LEVELDATA_INTERACTIVE_NARRATIVE_CACHE[cache_key])
     try:
-        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+        reading_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
         reading_rows = {}
     if not isinstance(reading_rows, dict):
@@ -9013,7 +9013,7 @@ def build_level_interactive_narrative_mission_story_contexts(
     Story ownership, quest causality, or chronology.
     """
     try:
-        reading_popup_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+        reading_popup_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
         return []
     if not isinstance(reading_popup_rows, dict):
@@ -10069,7 +10069,7 @@ def build_npc_patrol_checkpoint_mission_contexts(
     producers remain visible as evidence rather than activation claims.
     """
     try:
-        registry_raw = json.loads(registry_path.read_text(encoding="utf-8"))
+        registry_raw = read_json_cached(registry_path)
     except (OSError, json.JSONDecodeError):
         return []
     registry_briefs = (
@@ -10561,7 +10561,7 @@ def build_mission_tracked_world_entity_levelscript_contexts(
     if receiver_family not in {"leader", "stage"}:
         return []
     try:
-        registry_raw = json.loads(registry_path.read_text(encoding="utf-8"))
+        registry_raw = read_json_cached(registry_path)
     except (OSError, json.JSONDecodeError):
         return []
     registry_briefs = (
@@ -11429,7 +11429,7 @@ def build_npc_proxy_segment_script_host_index(
 
     registry_path = GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json"
     try:
-        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+        registry = read_json_cached(registry_path)
     except (OSError, json.JSONDecodeError):
         return {}
     brief_infos = (

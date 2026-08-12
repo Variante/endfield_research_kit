@@ -230,6 +230,34 @@ when a Timeline, Lua, animation, table, or other typed trigger is already known.
 Pure control Events are also separate from playback gaps: exact Wwise actions
 such as `setState` establish their library-side role, while the still-missing
 external caller remains visible as an unresolved placement.
+The v150 Action classifier also treats Pause, Resume, Mute, Unmute, Stop,
+Game Parameter, Switch, Trigger, and any other completely typed non-Play Action
+as library control. A complete zero-Action Event is a separate empty definition.
+Neither state becomes a known caller or observed execution. Event details show
+the exact operation types and the current collection surfaces that supplied an
+authored name; stale names present only in an earlier generated index are not
+retained as unresolved requests.
+Exact serialized MonoBehaviour `AudioId` fields are a separate authored-config
+context. The builder prefilters TypeTree schemas in the StreamingAssets and
+Persistent object indexes, opens only their exact raw PathID objects when the
+compact scalar index omitted a value, and accepts hashes present in the current
+Wwise Event inventory. Event details expose the field role, component,
+GameObject hierarchy/position when available, and serialized source. This
+identifies a component/state/effect placement but does not claim component
+instantiation, callback/state execution, Event posting, selected media, or
+audibility. RTPCs, generic integers, PathIDs/raw words, tone-selection rows,
+and responsive-choice membership are excluded. The sole typed raw-word
+compatibility path is the current IL2CPP-validated six-field/24-byte
+`Beyond.Gameplay.PlayLineSound` managed-reference payload; it requires exact
+class, namespace, assembly, layout, and length identity. A future exporter
+output with named `soundSpawn`/`soundFinish` fields uses the same evidence
+contract.
+`AudioGlobalConfig` lifecycle `AudioId` values use the same exact-identity
+boundary. When its raw MonoBehaviour JSON is absent from a Story-focused
+export, the builder reconstructs only the scalar paths retained by the complete
+object index. The trigger surface keeps state direction/mask, entity kind/id,
+and serialized identity, but does not claim that the lifecycle condition ran,
+the Event was posted, or a Wwise media leaf played.
 Anonymous Events may also show an exact shared Play-target-set relation when a
 named authored-context Event in the same bank reaches the identical complete
 set of Wwise targets. This can recover the broad output category and avoid

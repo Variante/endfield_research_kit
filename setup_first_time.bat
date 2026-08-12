@@ -127,11 +127,17 @@ if errorlevel 1 goto :failed
 
 echo.
 echo [setup 5/6] Exporting Story and Text Tables data from the installed game...
-call .\export.bat --from-game --game-root "%GAME_ROOT%"
+echo [setup] Building Story and Mission Pipeline views only; the other semantic
+echo [setup] views are a separate run so first-time setup reaches a browsable
+echo [setup] WebUI sooner.
+call .\export.bat --from-game --mission-pipeline-only --animestudio-story-monobehaviour-names --game-root "%GAME_ROOT%"
 if errorlevel 1 goto :failed
 
 echo.
 echo [setup 6/6] Optional follow-up steps for a fuller WebUI experience...
+echo [setup] Characters, Gameplay, and the source graph were skipped by step 5.
+echo [setup] Build them from the export you just made (no re-export needed):
+echo [setup]   .\export.bat
 echo [setup] Asset media and CN audio export is optional and can take several hours.
 echo [setup] Run this later when you want Assets tab media and playable CN audio:
 echo [setup]   .\export_assets.bat --from-game
@@ -210,15 +216,17 @@ echo   1. check Git, Python, and PowerShell
 echo   2. initialize tools\AnimeStudio
 echo   3. build the AnimeStudio CLI
 echo   4. verify AnimeStudio VFS/audio commands
-echo   5. run export.bat --from-game
-echo   6. print optional export_assets/build_updates follow-up commands
+echo   5. run export.bat --from-game --mission-pipeline-only with the lean
+echo      Story MonoBehaviour name filter
+echo   6. print the follow-up commands for the remaining views and media
 echo   7. start python serve.py, unless a default server is already running
 echo.
 echo Options:
 echo   --game-root PATH        Installed Endfield_Data folder. Defaults to
 echo                           endfield_paths.bat / ENDFIELD_GAME_ROOT, then:
 echo                           %DEFAULT_GAME_ROOT%
-echo   --no-serve             Build Story/Text Tables, but do not start the WebUI server.
+echo   --no-serve             Build Story/Mission Pipeline data, but do not start
+echo                          the WebUI server.
 echo   --help                 Show this help text.
 echo.
 echo Examples:

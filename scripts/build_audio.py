@@ -9182,9 +9182,12 @@ def build_audio(args: argparse.Namespace) -> int:
     conv_dir = args.webui_root / "data" / "lang" / language / "conv"
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
-    event_names = collect_audio_event_names(conv_dir, args.export_root)
-    event_names.update(collect_table_audio_event_names(args.export_root))
-    event_names.update(lua_post_event_names)
+    event_name_source_sets: dict[str, set[str]] = {
+        "storyOrCoreAudioTable": collect_audio_event_names(conv_dir, args.export_root),
+        "typedAudioTableOrConfig": collect_table_audio_event_names(args.export_root),
+        "luaPostEvent": set(lua_post_event_names),
+    }
+    event_names = set().union(*event_name_source_sets.values())
     metadata_path = args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
     if not metadata_path.is_file():
         cached_metadata_path = args.export_root / "recovered" / "il2cpp" / "global-metadata.dat"
@@ -9195,6 +9198,7 @@ def build_audio(args: argparse.Namespace) -> int:
     }
 
 
+    event_name_source_sets["managedStringLiteral"] = set(binary_managed_event_names)
     event_names.update(binary_managed_event_names)
     fmv_attach_overrides = load_narrative_video_attach_overrides(args.webui_root)
     audio_source_overrides = load_narrative_video_audio_source_overrides(args.webui_root)
@@ -9213,14 +9217,22 @@ def build_audio(args: argparse.Namespace) -> int:
         conv_dir,
         audio_source_overrides,
     )
-    for events in cutscene_audio_events.values():
-        event_names.update(str(event or "").strip() for event in events if str(event or "").strip())
+    cutscene_event_names = {
+        str(event or "").strip()
+        for events in cutscene_audio_events.values()
+        for event in events
+        if str(event or "").strip()
+    }
+    event_name_source_sets["cutsceneTimeline"] = cutscene_event_names
+    event_names.update(cutscene_event_names)
     gameplay_audio_references = collect_gameplay_audio_references(
         args.webui_root,
         args.export_root,
         language,
     )
-    event_names.update(gameplay_audio_references.get("eventNames") or set())
+    gameplay_event_names = set(gameplay_audio_references.get("eventNames") or set())
+    event_name_source_sets["gameplayReference"] = gameplay_event_names
+    event_names.update(gameplay_event_names)
     projectile_event_hashes = projectile_sound_hashes(args.webui_root)
     table_event_hashes = collect_table_audio_event_hashes(args.export_root)
     explicit_event_hashes = projectile_event_hashes | table_event_hashes
@@ -9315,6 +9327,13 @@ def build_audio(args: argparse.Namespace) -> int:
     event_names.update(
         str(row["name"]) for row in recovered_alias_rows
     )
+    event_name_source_sets["recoveredCurrentWwiseAlias"] = {
+        str(row["name"]) for row in recovered_alias_rows
+    }
+    event_name_sources: dict[str, list[str]] = defaultdict(list)
+    for source_kind, names in event_name_source_sets.items():
+        for name in names:
+            event_name_sources[str(name).strip().lower()].append(source_kind)
     for row in wwise_event_inventory:
         if (
             isinstance(row, dict)
@@ -9429,6 +9448,10 @@ def build_audio(args: argparse.Namespace) -> int:
             **link_stats,
         },
         "eventNames": sorted(event_names),
+        "eventNameSources": {
+            name: sorted(set(sources))
+            for name, sources in sorted(event_name_sources.items())
+        },
         "projectileEventHashes": sorted(projectile_event_hashes),
         "tableEventHashes": sorted(table_event_hashes),
         "explicitEventHashes": sorted(explicit_event_hashes),

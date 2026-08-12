@@ -63,7 +63,7 @@ class TimelineBlackAttachmentTests(unittest.TestCase):
                     ],
                 },
             )
-            write_record(
+            group_path = write_record(
                 "Common",
                 group_id,
                 {
@@ -168,6 +168,30 @@ class TimelineBlackAttachmentTests(unittest.TestCase):
                 fallback_rows[0]["monoBehaviourSourceMode"],
             )
             self.assertEqual(full_mono_dir.as_posix(), fallback_rows[0]["monoBehaviourSource"])
+
+            validation_report = root / "timeline_parent_validation.json"
+            moved_group_path = full_mono_dir / group_path.name
+            moved_group_path.unlink()
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"timeline_parent_chain_export_coverage failed: 1 .*"
+                r"sourceFile='CAB-test' pathId=303",
+            ):
+                recover_timeline_text_attachments(
+                    str(line_orders_path),
+                    str(extract_dir),
+                    str(registry_path),
+                    line_id_to_story_key={"black_e5m1_1_001": "scene_general"},
+                    playable_asset_type_names=("DialogCenterTextPlayableAsset",),
+                    validation_report_path_str=str(validation_report),
+                )
+            validation = json.loads(validation_report.read_text(encoding="utf-8"))
+            self.assertEqual("validation_failed", validation["status"])
+            self.assertEqual(1, validation["actualMissingCount"])
+            self.assertEqual(
+                {"sourceFile": "CAB-test", "pathId": 303},
+                validation["failures"][0],
+            )
 
 
 if __name__ == "__main__":

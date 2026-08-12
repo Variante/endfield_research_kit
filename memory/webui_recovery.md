@@ -69,29 +69,51 @@ hash, leaving 10,829 hashes without a recovered authored identity and no
 duplicate named/hash-only Event rows.
 These use stable hash identities and a separate recovery state rather than
 being conflated with authored references absent from Wwise. Event purpose is
-now ranked independently: 10,321 rows have no recovered consumer context and
-281 have identity/definition evidence only, so all 10,602 sort ahead of the
-10,256 Events with authored playback context. Another 527 pure Wwise control
-Events have exact library operations but unknown external callers and sort at
-secondary priority; this includes `au_music_exploring_state_dlg_in/out`, whose
-sole actions are exact `setState` operations rather than media playback. Of the
-10,829 anonymous Wwise Event hashes, 514 are such control-only objects; the
-rest remain highest priority. The 163 managed-string-only identities keep
-unknown placement. The 261 authored/hash requests missing from the scanned
-bank set all have a bounded trigger context and are not mislabeled unknown-use.
-Within the highest-priority set, 85 Events share an exact same-bank complete
+now ranked independently. Complete Wwise v150 Action lists distinguish 17,574
+playback, 942 mixed playback/control, 2,138 control-only, and 470 empty Event
+definitions; another 267 authored requests absent from current banks remain
+role-unresolved. The current Story-focused export leaves 881 consumer-unresolved
+control Events and 140 consumer-unresolved empty definitions at secondary
+priority. All 10,335 highest-priority rows contain Play/Post Event,
+so pause/resume, mute/unmute, RTPC/Switch/State/Trigger control, Stop, and empty
+definitions no longer pollute the unknown-audio queue. Details show exact
+operation labels/types and name-collection provenance while preserving the
+unknown external caller.
+Schema 51 adds 502 exact serialized MonoBehaviour `AudioId` placements across
+61 current Event hashes. The Audio detail/search surface labels the field role,
+component, GameObject/hierarchy/position when available, serialized object and
+source evidence, and the explicit unobserved component/state-execution
+boundary. All 61 Events newly leave the unknown-purpose queue; no RTPC,
+generic integer, PathID/raw word, voice-tone selection, or responsive-choice
+membership is promoted by this pass.
+Schema 52 restores `AudioGlobalConfig` from exact object-index scalars when the
+Story-focused export omits its raw MonoBehaviour JSON. Audio now exposes 66
+global lifecycle placements across 58 Event hashes, including entity init,
+state enter/exit, persistent preparation, local/remote, and leave-main-game
+roles. Eleven mixed Play/control Events leave `unknownUse`. The unified trigger
+catalog retains state direction/mask and entity kind/id while labeling runtime
+lifecycle activation, Event posting, and media selection as unobserved.
+Schema 53 adds the current IL2CPP-validated 24-byte
+`Beyond.Gameplay.PlayLineSound` managed-reference layout. Two exact effect
+objects bind `soundSpawn=0x33952647` and `soundFinish=0x518abe42`; this moves one
+playback Event out of the highest unknown-use queue and gives the control Event
+an authored purpose. The object index keeps the managed type, GameObject,
+PathID, field role, and decode status visible. Component/state execution and
+actual Event posting remain unobserved. The current MonoBehaviour total is 506
+placements across 63 Event hashes.
+Within the highest-priority set, 82 Events share an exact same-bank complete
 Wwise Play-target set with a named authored-context Event. Their library output
-is classified as 55 UI, 29 SFX, and one voice, while their external caller and
+is classified as 55 UI, 26 SFX, and one voice, while their external caller and
 trigger placement remain unknown/highest priority. Event details and the source
 graph expose this as library-output equivalence rather than a trigger edge.
-Another 126 highest-priority Events share an exact complete Wwise media-ID set
-with an authored-context Event in the same PCK after excluding the 85 stronger
+Another 122 highest-priority Events share an exact complete Wwise media-ID set
+with an authored-context Event in the same PCK after excluding the 82 stronger
 Play-target matches. Audio details expose this as media-leaf equivalence only:
-113 remain `unknownUse`, 13 remain `identityOnlyNoConsumer`, and none inherit
+109 remain `unknownUse`, 13 remain `identityOnlyNoConsumer`, and none inherit
 the matched Event's category, trigger, owner, placement, or resolved-purpose
-state. The source graph records 146 such forward edges and no contextual edge.
+state. The source graph records 142 such forward edges and no contextual edge.
 As a result,
-20,095 decoded media are Event-related with authored placement unknown, 39,016
+20,295 decoded media are Event-related with authored placement unknown, 38,816
 have a recovered authored Event context, and one remains without a recovered
 playback location. That CN External Source file has the uniquely recovered authored
 identity `au_voice_c35m3_3_001`, but no current AudioDialog row, speaker,

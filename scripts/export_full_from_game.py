@@ -248,6 +248,20 @@ ANIMESTUDIO_JSON_MAP_FILTER_TYPES = frozenset({
     "TextAsset",
 })
 
+# Story consumers discover MonoBehaviour JSON through the Timeline carrier
+# names, authored dialog/cutscene prefixes, FMV definitions, and a small set of
+# exact generic parent names. Keep this vocabulary aligned with the globs in
+# story_builder/anime_assets.py, timeline_action_evidence.py, and
+# video_bindings.py. The load remains broad, so MonoScript names and PPtr
+# targets still resolve; only the files written to json_by_type shrink.
+ANIMESTUDIO_STORY_MONOBEHAVIOUR_NAME_FILTER = (
+    "Track|Trunk|(?:LeftSubtitle|DialogCenterText|BeyondFMV|AudioMusic|"
+    "AudioEvent)Playable(?:Asset)?|^(?:dlg_|env_|misc_|sns_|black_|radio_|"
+    "remotecomm_|dlgtl_|f_dlgtl_|m_dlgtl_|cs_|f_cs_|m_cs_|cutscene_|"
+    "f_cutscene_|m_cutscene_|fmv_|fm_cutscene_)|^(?:Common|BGM|VO|FMV|"
+    "Misc|Subtitle|SFX|Music|Voice)$"
+)
+
 ANIMESTUDIO_ASSET_MAP_FILTER_UNSAFE_TYPES = frozenset({
     # Animator FBX export can need related GameObject, Mesh, Material, and
     # Texture2D objects that a strict Animator-only map slice would not load.
@@ -2096,6 +2110,35 @@ def animestudio_json_map_filter_applies(
     return animestudio_map_filter_is_safe(type_specs)
 
 
+def animestudio_story_name_filter_applies(
+    stage: str,
+    options: dict[str, Any],
+    type_specs: tuple[str, ...],
+) -> bool:
+    """Whether this job may export only the story-globbed MonoBehaviour names.
+
+    ``--names`` applies to the whole CLI call, so the job must be
+    MonoBehaviour-only: a merged job would silently filter its other types too.
+    """
+    if stage != "json_by_type" or not options.get("story_monobehaviour_names"):
+        return False
+    if not type_specs:
+        return False
+    names = tuple(animestudio_type_name(spec) for spec in type_specs)
+    return all(name == "MonoBehaviour" for name in names)
+
+
+def animestudio_effective_names(
+    stage: str,
+    options: dict[str, Any],
+    type_specs: tuple[str, ...],
+) -> str | Path | None:
+    """Resolve the CLI ``--names`` value for one isolated stage job."""
+    if animestudio_story_name_filter_applies(stage, options, type_specs):
+        return str(options["story_monobehaviour_names"])
+    return options.get("names")
+
+
 def animestudio_map_filter_is_safe(types: tuple[str, ...]) -> bool:
     return all(animestudio_type_name(type_spec) not in ANIMESTUDIO_ASSET_MAP_FILTER_UNSAFE_TYPES for type_spec in types)
 
@@ -2108,7 +2151,11 @@ def build_animestudio_stage_signature(stage: str, options: dict[str, Any], type_
         "map_op": options.get("map_op"),
         "map_type": options.get("map_type"),
         "map_name": options.get("map_name"),
-        "names": options.get("names"),
+        "names": animestudio_effective_names(
+            stage,
+            options,
+            (type_spec,) if type_spec is not None else (),
+        ),
         "containers": options.get("containers"),
         "filter_data": options.get("filter_data"),
         "asset_map_filter": bool(options.get("asset_map_filter")),
@@ -2462,6 +2509,22 @@ def parse_args() -> argparse.Namespace:
             f"The default {ANIMESTUDIO_DEFAULT_SHARDS} keeps per-process asset slices small; "
             f"the shared --animestudio-jobs pool consumes those shards. "
             "Use 0 to shard by --animestudio-jobs."
+        ),
+    )
+    parser.add_argument(
+        "--animestudio-story-monobehaviour-names",
+        nargs="?",
+        const=ANIMESTUDIO_STORY_MONOBEHAVIOUR_NAME_FILTER,
+        default=None,
+        metavar="REGEX",
+        help=(
+            "Export only MonoBehaviour objects whose name matches REGEX "
+            f"(default: {ANIMESTUDIO_STORY_MONOBEHAVIOUR_NAME_FILTER}). The "
+            "load stays broad, so names and PPtr targets still resolve; only "
+            "the written set shrinks -- about 6%% of objects for a story "
+            "export. Story consumers glob these files by name, but "
+            "parent-chain lookups resolve by PathID and are not covered, so "
+            "verify a run reports no unresolved parents before relying on it."
         ),
     )
     parser.add_argument(
@@ -4656,6 +4719,12 @@ def run_animestudio_stage_plan(
                 f"  animestudio {stage} for {source}: map-filtered load for "
                 f"{', '.join(item_names)}"
             )
+        names = animestudio_effective_names(stage, options, type_specs)
+        if animestudio_story_name_filter_applies(stage, options, type_specs):
+            log(
+                f"  animestudio {stage} for {source}: exporting only "
+                f"story-globbed MonoBehaviour names ({names})"
+            )
         return {
             "source": source,
             "input_root": input_root,
@@ -4669,7 +4738,7 @@ def run_animestudio_stage_plan(
             "map_op": map_op,
             "map_type": map_type,
             "map_name": map_name,
-            "names": options.get("names"),
+            "names": names,
             "containers": options.get("containers"),
             "filter_data": options.get("filter_data"),
             "types": type_specs,
@@ -5697,6 +5766,13 @@ def main() -> int:
                 options["asset_shards"] = args.animestudio_shards
                 if stage == "maps":
                     options["map_name"] = f"endfield_{source.lower()}_assets"
+                if (
+                    stage == "json_by_type"
+                    and args.animestudio_story_monobehaviour_names
+                ):
+                    options["story_monobehaviour_names"] = (
+                        args.animestudio_story_monobehaviour_names
+                    )
                 if (
                     stage == "json_by_type"
                     and not options.get("asset_map_filter")

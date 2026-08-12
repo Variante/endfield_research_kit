@@ -3491,6 +3491,8 @@ class SourceGraphBuilder:
             self.commit_step("externalAudioMediaIdentities")
             self.ingest_audio_event_library_relations()
             self.commit_step("audioEventLibraryRelations")
+            self.ingest_audio_event_library_roles()
+            self.commit_step("audioEventLibraryRoles")
             self.ingest_audio_trigger_contexts()
             self.commit_step("audioTriggerContexts")
             self.ingest_hotfix_audio_event_audit()
@@ -24794,13 +24796,15 @@ class SourceGraphBuilder:
                         "radioId", "envTalkId", "envTalkVariant", "mission", "remoteCommonId", "singleId", "middleId",
                         "index", "autoPlay", "autoPlayTime", "levelScriptId", "timelineStartSec",
                         "timelineDurationSec", "timelineEndSec", "contextKind",
+                        "componentName", "gameObjectName", "serializedFieldPath",
+                        "stateDirection", "audioStateMask", "ownerKind", "ownerId",
                     ),
                 ),
                 "meaning": scalar_summary(
                     meaning,
                     (
                         "id", "eventId", "audio", "category", "foundInWwise", "possibleMediaCount",
-                        "playRootCount", "authoredTimelineKeyStatus",
+                        "playRootCount", "authoredTimelineKeyStatus", "playbackRole",
                     ),
                 ),
                 "action": scalar_summary(
@@ -24821,6 +24825,12 @@ class SourceGraphBuilder:
                         "audioMusicActionType", "audioMusicActionTypeLabel",
                         "audioMusicTriggerOnSkip", "audioMusicTriggerOnSkipLabel",
                         "runtimeCarrierStatus",
+                        "sourceRoot", "serializedFile", "sourceAssetFile", "sourceOffset",
+                        "pathId", "componentName", "scriptPathId", "scriptFullName",
+                        "gameObjectName", "worldPositionStatus", "managedReferenceClass",
+                        "managedReferenceNamespace", "managedReferenceAssembly",
+                        "managedReferenceLayout", "managedReferencePayloadLength",
+                        "managedReferenceDecodeStatus",
                     ),
                 ),
                 "selection": scalar_summary(
@@ -24862,8 +24872,12 @@ class SourceGraphBuilder:
                     reverse_edge_kind="audio_used_by_audio_trigger_context",
                 )
 
+            seen_event_keys: set[str] = set()
             for event_index, event_id in enumerate((situation.get("eventId"), meaning.get("eventId"))):
                 event_key = safe_key(event_id)
+                if not event_key or event_key in seen_event_keys:
+                    continue
+                seen_event_keys.add(event_key)
                 if event_key and self.node_exists("wwise_event", event_key):
                     event_node = self.node_id("wwise_event", event_key)
                     evidence = "situation.eventId" if event_index == 0 else "meaning.eventId"
@@ -24880,6 +24894,16 @@ class SourceGraphBuilder:
                         "wwise_event_has_audio_trigger_context",
                         source=source,
                         evidence=evidence,
+                    )
+                elif event_key:
+                    evidence = "situation.eventId" if event_index == 0 else "meaning.eventId"
+                    self.add_audio_target_edge(
+                        context_node,
+                        event_key,
+                        edge_kind="audio_trigger_context_targets_audio_event",
+                        source=source,
+                        evidence=evidence,
+                        reverse_edge_kind="audio_event_has_audio_trigger_context",
                     )
 
             for key in (situation.get("dialogId"), situation.get("dialogKey"), situation.get("storyKey")):
@@ -25419,6 +25443,107 @@ class SourceGraphBuilder:
                     equivalent_node,
                     event_node,
                     "wwise_event_media_leaf_set_shared_by",
+                    source=source,
+                    evidence=evidence,
+                )
+
+    def ingest_audio_event_library_roles(self) -> None:
+        """Expose exact non-playback Event roles without inventing callers."""
+        path = (
+            self.root
+            / "webui"
+            / "data"
+            / "lang"
+            / safe_key(self.language).upper()
+            / "audio"
+            / "events.json"
+        )
+        payload = read_json(path, {})
+        rows = payload.get("events") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            return
+        role_rows = [
+            row for row in rows
+            if isinstance(row, dict)
+            and row.get("playbackRole") in {"controlOnly", "emptyEventDefinition"}
+        ]
+        if not role_rows:
+            return
+        source = f"webui/audio/{safe_key(self.language).upper()}"
+        role_counts = Counter(safe_key(row.get("playbackRole")) for row in role_rows)
+        dataset = self.add_node(
+            "dataset",
+            f"audio_event_library_roles:{safe_key(self.language).upper()}",
+            name=f"Audio Event library roles ({safe_key(self.language).upper()})",
+            source=source,
+            path=slash(path),
+            data={
+                "schemaVersion": payload.get("schemaVersion"),
+                "language": payload.get("language"),
+                "count": len(role_rows),
+                "roleCounts": dict(sorted(role_counts.items())),
+                "evidenceBoundary": "complete typed Wwise v150 Event Action lists only; external caller and runtime execution remain unresolved",
+            },
+        )
+        self.add_file(slash(path), kind="generated_audio_events", source=source)
+        for row in role_rows:
+            event_key = safe_key(row.get("id"))
+            event_node = self.add_wwise_event_node(event_key, source=source)
+            if not event_node:
+                continue
+            role = safe_key(row.get("playbackRole"))
+            evidence = (
+                "exactCompleteWwiseV150ZeroActionList"
+                if role == "emptyEventDefinition"
+                else "exactCompleteWwiseV150TypedNonPlaybackActionList"
+            )
+            self.update_node_details(
+                event_node,
+                data=compact_payload(
+                    {
+                        "playbackRole": role,
+                        "wwiseActionOperationTypes": row.get("wwiseActionOperationTypes"),
+                        "wwiseActionOperationTypesHex": row.get("wwiseActionOperationTypesHex"),
+                        "wwiseActionOperations": row.get("wwiseActionOperations"),
+                        "wwiseActionOperationRows": row.get("wwiseActionOperationRows"),
+                        "purposeKnowledgeStatus": row.get("purposeKnowledgeStatus"),
+                        "purposeInvestigationPriority": row.get("purposeInvestigationPriority"),
+                        "playbackLocationStatus": row.get("playbackLocationStatus"),
+                        "evidenceBoundary": "library role only; external caller and execution remain unresolved",
+                    },
+                    depth=3,
+                ),
+            )
+            self.add_edge(
+                dataset,
+                event_node,
+                "has_audio_event_library_role",
+                source=source,
+                evidence=evidence,
+            )
+            for operation_row in row.get("wwiseActionOperationRows") or []:
+                if not isinstance(operation_row, dict):
+                    continue
+                operation_key = safe_key(operation_row.get("operationTypeHex"))
+                operation_labels = [
+                    safe_key(value) for value in operation_row.get("operationLabels") or []
+                    if safe_key(value)
+                ]
+                operation_node = self.add_node(
+                    "wwise_action_operation",
+                    operation_key,
+                    name=(operation_labels or [operation_key])[0],
+                    source=source,
+                    data={
+                        "operationType": operation_row.get("operationType"),
+                        "operationTypeHex": operation_key,
+                        "operations": operation_labels,
+                    },
+                )
+                self.add_edge(
+                    event_node,
+                    operation_node,
+                    "wwise_event_has_nonplayback_action_operation",
                     source=source,
                     evidence=evidence,
                 )
