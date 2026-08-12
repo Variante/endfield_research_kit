@@ -291,6 +291,16 @@ NPC archetypes are imported as labeled source kits.
   stale vertex copy, so channel 2 to `cb3[0].w` is not yet a proven
   shader-register binding. The durable audit is
   `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`.
+  Installed metadata also closes the producer's packed layout: controller type
+  values 8/16/24/32 (rain, wet, wet-global, snow) quantize into byte lanes at
+  bits 8/16/24/32 (`CHANNELS_PER_PARAM=4`, bias 8), while type 1 and type 3
+  write `customPerDrawData0.y/w`; type >=4 writes the reinterpreted packed word
+  to `customPerDrawData0.x` before forwarding channel 2. Native offsets are
+  controller field `m_characterEnvironmentEffectPackedValue +0x18` and
+  renderer-info `customPerDrawData0 +0x48`, with quantizer `0x182f3ea70`.
+  This is stronger producer/layout evidence, but it does not resolve the
+  observed native `.x` versus HGRP consumer `.w` component binding; keep that
+  remap open and fail closed.
   Do not substitute `_ShadingModel`, UnityPerDraw, channel 2, or zero/default
   values; the sidecar remains neutral and fail-closed until that binding or an
   authorized target-frame upload is recovered.

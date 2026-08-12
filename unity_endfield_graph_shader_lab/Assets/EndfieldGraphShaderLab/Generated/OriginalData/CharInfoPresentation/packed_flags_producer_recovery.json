@@ -106,7 +106,47 @@
           "native_pointer": "0x183e6e280",
           "observed": "Native renderer upload endpoint reached by the channel utility; the original HGRP shader consumes a separate register(b3) vector."
         }
-      ]
+      ],
+      "character_params_layout": {
+        "source": "Installed IL2CPP metadata field defaults plus GameAssembly native CustomPerDrawDataController.SetFloatToCustomPerDraw disassembly.",
+        "metadata_fields": {
+          "CHARACTER_PARAMS_INDEX": 2,
+          "CHARACTER_ENVIRONMENT_EFFECT_INTENSITY_CHANNEL": 0,
+          "CHARACTER_WET_EFFECT_WORLD_SPACE_HEIGHT_CHANNEL": 1,
+          "CHARACTER_DISSOLVE_SCHEDULE_OFFSET_CHANNEL": 3,
+          "CHARACTER_RAIN_EFFECT_INTENSITY_CHANNEL_BIT": 8,
+          "CHARACTER_WET_EFFECT_INTENSITY_CHANNEL_BIT": 16,
+          "CHARACTER_WET_EFFECT_GLOBAL_INTENSITY_CHANNEL_BIT": 24,
+          "CHARACTER_SNOW_EFFECT_INTENSITY_CHANNEL_BIT": 32,
+          "CHARACTER_PARAMS_CHANNEL_BIT_BIAS": 8,
+          "CHANNELS_PER_PARAM": 4
+        },
+        "vector_components": {
+          "type_0": "customPerDrawData0.x",
+          "type_1": "customPerDrawData0.y (WetEffectWorldSpaceHeight)",
+          "type_2": "customPerDrawData0.z",
+          "type_3": "customPerDrawData0.w (CharacterDissolveScheduleOffset)",
+          "type_ge_4": "customPerDrawData0.x receives the packed environment word"
+        },
+        "environment_types": {
+          "RainEffectIntensity": 8,
+          "WetEffectIntensity": 16,
+          "WetEffectGlobalIntensity": 24,
+          "SnowEffectIntensity": 32
+        },
+        "native": {
+          "controller_method_pointer": "0x18323af90",
+          "controller_method_body_size_bytes": 992,
+          "packed_field": "m_characterEnvironmentEffectPackedValue",
+          "packed_field_native_offset": "0x18",
+          "renderer_info_field": "customPerDrawData0",
+          "renderer_info_field_native_offset": "0x48",
+          "float_to_int_quantizer_pointer": "0x182f3ea70",
+          "operation": "Clamp value to [0,1], quantize to an 8-bit value, clear byte ((type - 8) & 31) in the packed word, OR the quantized value shifted to that byte, then reinterpret the uint bits as float.",
+          "propagation": "The packed word is written to customPerDrawData0.x and the Vector4 is forwarded through RendererInfo.TrySetCharacterPerDrawData to custom-per-draw channel 2."
+        },
+        "component_binding_gap": "The native producer writes customPerDrawData0.x while the closed HGRP/Lit HGBuffer consumer reads cb3[0].w; no Unity/HGRP reflection or target-frame capture currently proves the component/register remap."
+      }
     },
     "binding_gap": {
       "status": "open",
