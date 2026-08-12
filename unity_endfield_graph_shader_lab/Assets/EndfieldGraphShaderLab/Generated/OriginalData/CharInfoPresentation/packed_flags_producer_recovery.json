@@ -117,6 +117,53 @@
             "0x1810ccd20 copies two 0x80-byte blocks between resolved resource records; it is called by renderer-list/resource-record preparation and has no custom-channel or GPU descriptor identity.",
             "0x1810d2fc4/0x1810d2fd9 perform the same generic block-copy pattern for paired records."
           ],
+          "secondary_callsite_followup": {
+            "status": "sampled-secondary-resolver-callers-classified-no-upload-edge",
+            "callsite_groups": [
+              {
+                "functions": [
+                  "0x18051304f",
+                  "0x18051c938",
+                  "0x18051d3e0"
+                ],
+                "role": "renderer-list/material-record metadata updates",
+                "observed": "The resolved pointer is followed by writes to record metadata such as +0x4c, +0x50, and +0x54, plus generic state helpers; no read of resource +0xd0 and no descriptor/constant-buffer API call occurs on the inspected paths."
+              },
+              {
+                "functions": [
+                  "0x1810417fa",
+                  "0x181041870",
+                  "0x181041920",
+                  "0x1810419d0"
+                ],
+                "role": "small renderer-record constructors",
+                "observed": "These callers initialize fixed four-vector record payloads and flags after resolver lookup; the writes stay within record offsets 0..+0x30 and do not consume the custom five-slot array."
+              },
+              {
+                "functions": [
+                  "0x180bcb760",
+                  "0x180bccb60",
+                  "0x180bcd7ab",
+                  "0x1810d00aa"
+                ],
+                "role": "lighting/material and renderer-list record preparation",
+                "observed": "The resolved pointers feed ordinary record vectors, flags, and material-derived values; inspected bodies do not read resource +0xd0 or call a descriptor/constant-buffer upload primitive."
+              }
+            ],
+            "explicit_api_separation": {
+              "material_property_block": {
+                "SetBufferImpl": "0x1800be830 -> 0x1805d5280",
+                "SetConstantBufferImpl": "0x1800befb0 -> 0x1805d5870",
+                "SetConstantBufferImpl0": "0x1800bf780 -> 0x1805d5850"
+              },
+              "shader_global": {
+                "SetGlobalBufferImpl": "0x18011ba30 -> 0x1804b5960",
+                "SetGlobalConstantBufferImpl": "0x18011c7c0 -> 0x1804b59a0"
+              },
+              "observed": "These explicit managed buffer/property APIs resolve their own object handles and dispatch through separate command/property paths. No call edge from SetCustomPerDrawData_Injected, its refresh path, or resolver 0x1804255f0 reaches these wrappers."
+            },
+            "negative_result": "The expanded resolver-callsite sample closes additional false-positive record writers and explicit MPB/global-buffer routes, but still finds no resource +0xd0 to GPU descriptor upload edge."
+          },
           "negative_result": "No inspected UnityPlayer path reads resource +0xd0 (or a proven equivalent vector lane) into a constant-buffer/descriptor binding, and no direct call edge names set 0/binding 33. Keep the channel-to-resource-to-GPU edge open."
         },
         "gpu_driven_binding_census": {

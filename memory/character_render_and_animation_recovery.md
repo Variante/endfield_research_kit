@@ -335,6 +335,21 @@ NPC archetypes are imported as labeled source kits.
   of the custom five-slot array. The related renderer-list helpers
   `0x1810ccd20` and `0x1810d2fc4/0x1810d2fd9` copy generic 0x80-byte resource
   blocks between records but expose no custom-channel or descriptor identity.
+  A follow-up sample of the remaining resolver callers separates more false
+  positives: `0x18051304f/0x18051c938/0x18051d3e0` only update renderer-list
+  metadata (`+0x4c/+0x50/+0x54`), `0x1810417fa` and its sibling constructors
+  initialize fixed four-vector records, and
+  `0x180bcb760/0x180bccb60/0x180bcd7ab/0x1810d00aa` prepare ordinary
+  lighting/material records. None of the inspected bodies reads resource
+  `+0xd0` or calls a descriptor/constant-buffer upload primitive. The explicit
+  `MaterialPropertyBlock` routes (`0x1800be830 -> 0x1805d5280`,
+  `0x1800befb0 -> 0x1805d5870`, `0x1800bf780 -> 0x1805d5850`) and global
+  buffer routes (`0x18011ba30 -> 0x1804b5960`,
+  `0x18011c7c0 -> 0x1804b59a0`) likewise have no call edge from
+  `SetCustomPerDrawData_Injected`, its refresh path, or resolver
+  `0x1804255f0`. This closes additional false-positive writers; the structured
+  details are in `packed_flags_producer_recovery.json` under
+  `secondary_callsite_followup`.
   No inspected UnityPlayer path reads `resource +0xd0` (or an equivalent vector
   lane) into a constant-buffer/descriptor binding, and no direct call edge names
   Vulkan set 0/binding 33. Keep the channel-to-resource-to-GPU edge open.
