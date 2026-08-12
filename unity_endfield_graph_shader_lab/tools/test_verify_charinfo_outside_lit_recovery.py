@@ -132,6 +132,14 @@ class DeferredGBufferFrameContractTests(unittest.TestCase):
             )
 
 
+class HGBuffermotionContractTests(unittest.TestCase):
+    def test_source_hgbuffer_motion_varyings_and_encoding_are_pinned(self) -> None:
+        recovery = json.loads(
+            verifier.RECOVERY_PATH.read_text(encoding="utf-8")
+        )
+        verifier.verify_hgbuffer(recovery)
+
+
 class DeferredTransformVariablesContractTests(unittest.TestCase):
     @staticmethod
     def load_current_report(

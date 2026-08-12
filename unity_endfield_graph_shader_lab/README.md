@@ -2257,6 +2257,14 @@ being replaced with a camera-only approximation. C is not yet consumed by
 retail deferred lighting, so this evidence closes one producer input without
 claiming a complete retail GBuffer.
 
+The independent source `HGRP/Lit` `HGBuffer` audit now pins the same history
+shape in the deferred character path: current clip x/y/w is carried through
+`TEXCOORD_5`, previous clip x/y/w through `TEXCOORD_6`, and `Target1.xy` uses
+the signed fourth-root delta blended by the source motion-validity mask in
+`Target1.z/w`. The current SphereOutside frame sidecar intentionally keeps a
+neutral SceneMV and remains non-presented until previous deformation and
+target-frame state are recovered.
+
 The separate canonical-depth owner is also default-off. Unlike the sidecar, it
 binds two exact `A2B10G10R10_UNormPack32` PreG colors together with the same
 stencil-bearing camera depth attachment consumed by the immediately following

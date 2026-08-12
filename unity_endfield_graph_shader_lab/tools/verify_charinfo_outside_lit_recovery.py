@@ -2133,6 +2133,25 @@ def verify_hgbuffer(recovery: dict[str, object]) -> None:
         record = selected[stage]
         require_hash(repo_path(record["repo_path"]), record["sha256"])
 
+    vertex = repo_path(selected["decompiled_vertex"]["repo_path"])
+    require_tokens(
+        vertex,
+        [
+            # HGBuffer carries both current and previous clip positions to the
+            # fragment; a camera-only previous matrix is not the full source
+            # contract because the vertex path also resolves prior skin/object
+            # deformation before these varyings are written.
+            "float4 TEXCOORD_3 : TEXCOORD3;",
+            "float4 TEXCOORD_4_1 : TEXCOORD4;",
+            "TEXCOORD_5.x = _826;",
+            "TEXCOORD_5.y = _827;",
+            "TEXCOORD_5.z = _829;",
+            "TEXCOORD_6.x = mad(",
+            "TEXCOORD_6.y = mad(",
+            "TEXCOORD_6.z = mad(",
+        ],
+    )
+
     fragment = repo_path(selected["decompiled_fragment"]["repo_path"])
     require_tokens(
         fragment,
@@ -2143,6 +2162,14 @@ def verify_hgbuffer(recovery: dict[str, object]) -> None:
             "float4 SV_Target_3 : SV_Target3;",
             "float4 SV_Target_4 : SV_Target4;",
             "SV_Target.w = 0.5f;",
+            "float _116 = max(TEXCOORD_5.z, 9.9999999392252902907785028219223e-09f);",
+            "float _126 = max(TEXCOORD_6.z, 9.9999999392252902907785028219223e-09f);",
+            "float _133 = (TEXCOORD_5.x / _116) - (TEXCOORD_6.x / _126);",
+            "float _135 = _132 - _123;",
+            "SV_Target_1.x = mad(_195, 0.5f - _160, _160);",
+            "SV_Target_1.y = mad(_195, 0.5f - _161, _161);",
+            "SV_Target_1.w = _195 * 0.699999988079071044921875f;",
+            "SV_Target_1.z = (_195 > 0.0f) ? 1.0f : _26_m0[7u].x;",
             "SV_Target_3.x = mad(",
             "SV_Target_4.w = 0.0f;",
         ],
