@@ -518,7 +518,18 @@
           "metadata_method_index": 455195,
           "native_catalog_index": 280686,
           "native_pointer": "0x18323af00",
-          "observed": "Copies the incoming param0 Vector4 unchanged, passes channel index 2, and calls the renderer custom-per-draw injected setter through a lazy native slot."
+          "observed": "Copies the incoming param0 Vector4 unchanged, passes channel index 2, and calls the renderer custom-per-draw injected setter through a lazy native slot.",
+          "body_contract": {
+            "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+            "native_pointer": "0x18323af00",
+            "incoming_vector_copy": "movups xmm0,[param0]; movaps [rsp+0x20],xmm0",
+            "channel_argument": "edx=2",
+            "renderer_argument": "rcx=affectRenderer",
+            "vector_argument": "r8=&stack_vector_16_bytes",
+            "lazy_call_slot": "GameAssembly .bss slot at 0x18f36f578, called indirectly after a null check",
+            "slot_alias": "The slot is the same lazy target read by UnityEngine.Renderer.SetCustomPerDrawData_Injected wrapper 0x183e6e280, which forwards rcx/edx/r8 to the resolved UnityPlayer internal call.",
+            "observed_call": "The body performs no shader dispatch, buffer bind, or resource +0xd0 access; it terminates at the indirect renderer custom-per-draw setter."
+          }
         },
         {
           "type": "Beyond.Rendering.EntityRenderHelperMaterialController+RendererInfo",
