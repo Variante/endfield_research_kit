@@ -18,11 +18,21 @@ import hashlib
 import json
 import math
 import struct
+import sys
 from pathlib import Path
 from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file,
+)
+
 DEFAULT_FACBONE_BIN = (
     ROOT
     / "tmp"
@@ -37,10 +47,10 @@ DEFAULT_FACBONE_BIN = (
 DEFAULT_VFS_INDEX = (
     ROOT / "tmp" / "story" / "extend_data_inventory" / "current.json"
 )
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_METADATA = Path(
-    r"D:\Program Files\Endfield Game\Endfield_Data"
-    r"\il2cpp_data\Metadata\global-metadata.dat"
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
+DEFAULT_GAMEASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
+DEFAULT_METADATA = (
+    DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_OUT = (
     ROOT / "reports" / "story" / "recovery" / "facbone_trs_story_audit.json"
@@ -101,12 +111,6 @@ def rel_path(path: Path) -> str:
         return path.resolve().as_posix()
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def write_json(path: Path, payload: Any) -> None:

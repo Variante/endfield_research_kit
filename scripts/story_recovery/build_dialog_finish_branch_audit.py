@@ -25,6 +25,15 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from scripts.common import (  # noqa: E402
+    NATIVE_EVIDENCE_MISSING,
+    NativeEvidenceUnavailable,
+    check_installed_native_inputs,
+    native_evidence_required,
+    native_evidence_skip_message,
+    resolve_installed_game_data_root,
+    sha256_file,
+)
 from scripts.story_builder.dialog_tree_option_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_option_routes,
@@ -151,10 +160,10 @@ DEFAULT_SUBGAME_TABLE = next(
     (path for path in reversed(DEFAULT_SUBGAME_TABLES) if path.is_file()),
     DEFAULT_SUBGAME_TABLES[0],
 )
-DEFAULT_GAME_ASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_METADATA = Path(
-    r"D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata"
-    r"\global-metadata.dat"
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
+DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
+DEFAULT_METADATA = (
+    DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_JSON = (
     ROOT / "reports" / "story" / "recovery" / "dialog_finish_branch_audit.json"
@@ -373,12 +382,45 @@ class AuditValidationError(RuntimeError):
     """Fail-closed audit error with a stable, actionable diagnostic."""
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+class NativeContractUnavailable(AuditValidationError, NativeEvidenceUnavailable):
+    """The installed client cannot back this audit's recorded native contract.
+
+    It is both: an audit validation failure with the usual bounded gate
+    diagnostic, and the signal that lets a build-independent caller skip this
+    audit instead of failing.
+    """
+
+
+def _native_gate_diagnostic(validator: str, native: Any) -> str:
+    """Render the gate result in this repo's expected-versus-actual style."""
+    if native.status == NATIVE_EVIDENCE_MISSING:
+        absent = [
+            path
+            for path in (native.gameassembly, native.metadata)
+            if not path.is_file()
+        ]
+        sources = ", ".join(source_label(path) for path in absent)
+        return (
+            f"validator={validator} gate=sourceExists expected=file "
+            f"actual=missing source={sources}"
+        )
+    drifted = [
+        (path, actual, expected)
+        for path, actual, expected in (
+            (
+                native.gameassembly,
+                native.gameassembly_sha256,
+                EXPECTED_GAME_ASSEMBLY_SHA256,
+            ),
+            (native.metadata, native.metadata_sha256, EXPECTED_METADATA_SHA256),
+        )
+        if actual.casefold() != expected.casefold()
+    ]
+    return "; ".join(
+        f"validator={validator} gate=sourceSha256 source={source_label(path)} "
+        f"expected={expected} actual={actual}"
+        for path, actual, expected in drifted
+    )
 
 
 def source_label(path: Path) -> str:
@@ -421,22 +463,24 @@ def validate_native_contract(
     game_assembly: Path = DEFAULT_GAME_ASSEMBLY,
     metadata: Path = DEFAULT_METADATA,
 ) -> dict[str, Any]:
+    """Bind the recorded native contract to the installed binaries.
+
+    Raises ``NativeEvidenceUnavailable`` when the client is absent or is a
+    different build, so callers can skip this audit instead of failing a
+    pipeline that is otherwise build-independent.
+    """
     validator = "dialog_finish_native_contract"
-    for label, path, expected in (
-        ("GameAssembly.dll", game_assembly, EXPECTED_GAME_ASSEMBLY_SHA256),
-        ("global-metadata.dat", metadata, EXPECTED_METADATA_SHA256),
-    ):
-        if not path.is_file():
-            raise AuditValidationError(
-                f"validator={validator} gate=sourceExists expected=file "
-                f"actual=missing source={path}"
-            )
-        actual = sha256_file(path)
-        if actual != expected:
-            raise AuditValidationError(
-                f"validator={validator} gate=sourceSha256 source={path} "
-                f"expected={expected} actual={actual}"
-            )
+    native = check_installed_native_inputs(
+        EXPECTED_GAME_ASSEMBLY_SHA256,
+        EXPECTED_METADATA_SHA256,
+        gameassembly=game_assembly,
+        metadata=metadata,
+    )
+    if not native.validated:
+        raise NativeContractUnavailable(
+            native,
+            _native_gate_diagnostic(validator, native),
+        )
     mapper = _load_mapper()
     pe = mapper.PeImage(game_assembly)
     methods: list[dict[str, Any]] = []
@@ -4455,7 +4499,17 @@ def main() -> int:
     args = parser.parse_args()
     index_path = args.pipeline_root / "index.json"
     index = read_json(index_path)
-    native = validate_native_contract(args.game_assembly, args.metadata)
+    try:
+        native = validate_native_contract(args.game_assembly, args.metadata)
+    except NativeEvidenceUnavailable as exc:
+        required = native_evidence_required()
+        print(
+            native_evidence_skip_message(
+                "dialog-finish-branch", exc.result, required=required
+            ),
+            file=sys.stderr,
+        )
+        return 1 if required else 0
     report, payloads = build_report(
         index,
         args.pipeline_root,

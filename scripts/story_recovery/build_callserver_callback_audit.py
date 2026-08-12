@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import sys
@@ -14,6 +13,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import sha256_file as shared_sha256_file  # noqa: E402
+
 for search_path in (ROOT / "scripts", ROOT / "scripts" / "story_recovery"):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
@@ -58,11 +63,7 @@ DEFAULT_MARKDOWN = STORY_RECOVERY_REPORTS_DIR / "levelscript_callserver_callback
 
 
 def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest().upper()
+    return shared_sha256_file(path).upper()
 
 
 def load_native_contract(path: Path) -> dict[str, Any]:

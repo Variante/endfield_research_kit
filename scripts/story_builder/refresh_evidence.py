@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(ROOT / "scripts"))
 
+from common import is_native_evidence_skip  # noqa: E402
 from story_builder.mission_assets import (  # noqa: E402
     select_complete_mission_runtime_root,
 )
@@ -106,7 +107,12 @@ def main() -> int:
         for future in as_completed(future_to_step):
             result = future.result()
             results_by_name[result.step.name] = result
-            status = "ok" if result.returncode == 0 else f"failed ({result.returncode})"
+            if result.returncode != 0:
+                status = f"failed ({result.returncode})"
+            elif is_native_evidence_skip(result.stderr):
+                status = "skipped"
+            else:
+                status = "ok"
             print(f"[story-evidence] {result.step.name}: {status} in {result.seconds:.3f}s")
 
     failed = False

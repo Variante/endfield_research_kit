@@ -29,21 +29,36 @@ TOOLS = ROOT / "tools" / "endfield-il2cpp"
 for import_root in (ROOT, ROOT / "scripts"):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
+
+from common import (  # noqa: E402
+    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+    RECORDED_NATIVE_METADATA_SHA256,
+    NativeEvidenceUnavailable,
+    check_installed_native_inputs,
+    native_evidence_required,
+    native_evidence_skip_message,
+    resolve_installed_game_data_root,
+    sha256_file as sha256_path,
+)
+
+
+class TimelineNativeUnavailable(NativeEvidenceUnavailable):
+    """The installed client cannot back this audit's recorded runtime facts.
+
+    Defined here so a caller catches the exact class this module raises even
+    when both modules reach ``common`` under different import names.
+    """
+
+
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
+DEFAULT_GAMEASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = (
-    Path(r"D:\Program Files\Endfield Game\Endfield_Data")
-    / "il2cpp_data" / "Metadata" / "global-metadata.dat"
+    DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_STORY_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_EXTRACT_DIR = (
     DEFAULT_OUTPUT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_extract"
-)
-DEFAULT_GAME_ROOT = Path(
-    os.environ.get(
-        "ENDFIELD_GAME_ROOT",
-        r"D:\Program Files\Endfield Game\Endfield_Data",
-    )
 )
 DEFAULT_ANIMESTUDIO_CLI = (
     ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin"
@@ -85,12 +100,6 @@ def load_module(name: str, path: Path) -> Any:
     return module
 
 
-def sha256_path(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def repo_path(path: Path) -> str:
@@ -2674,7 +2683,20 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def build_default_report() -> dict[str, Any]:
-    """Build the canonical current-install audit for pipeline integration."""
+    """Build the canonical current-install audit for pipeline integration.
+
+    The recorded code-registration address and runtime contracts describe one
+    client build, so an absent or different install raises
+    ``TimelineNativeUnavailable`` for the caller to skip on.
+    """
+    native = check_installed_native_inputs(
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        gameassembly=DEFAULT_GAMEASSEMBLY,
+        metadata=DEFAULT_METADATA,
+    )
+    if not native.validated:
+        raise TimelineNativeUnavailable(native)
     return build_report(SimpleNamespace(
         gameassembly=DEFAULT_GAMEASSEMBLY,
         metadata=DEFAULT_METADATA,
@@ -2698,6 +2720,21 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    native = check_installed_native_inputs(
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        gameassembly=args.gameassembly,
+        metadata=args.metadata,
+    )
+    if not native.validated:
+        required = native_evidence_required()
+        print(
+            native_evidence_skip_message(
+                "timeline-embedded-runtime", native, required=required
+            ),
+            file=sys.stderr,
+        )
+        return 1 if required else 0
     report = build_report(args)
     args.json.parent.mkdir(parents=True, exist_ok=True)
     args.json.write_text(

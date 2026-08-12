@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-import hashlib
 import json
 from pathlib import Path
 import sys
@@ -31,7 +30,11 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(ROOT / "scripts"))
 
-from common import write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    sha256_file as _sha256,
+    write_report_json,
+    write_text_if_changed,
+)
 from story_builder.level_bindings import (  # noqa: E402
     _levelscript_native_control_paths_to_record,
     _prepare_levelscript_native_control_context,
@@ -111,14 +114,6 @@ def repo_rel(path: Path | str) -> str:
         return candidate.resolve().relative_to(ROOT.resolve()).as_posix()
     except (OSError, ValueError):
         return str(path).replace("\\", "/")
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _is_constant_param(param: dict[str, Any]) -> bool:

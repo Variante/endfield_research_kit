@@ -28,12 +28,20 @@ for _path in (_REPO_ROOT / "scripts",):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    ROOT,
+    md_escape,
+    resolve_installed_game_data_root,
+    write_report_json,
+    write_text_if_changed,
+)
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
 CATALOG_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 BODY_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
+DEFAULT_GAMEASSEMBLY = (
+    resolve_installed_game_data_root().parent / "GameAssembly.dll"
+)
 DEFAULT_CATALOG_TMP = ROOT / "tmp" / "story" / "mission_order" / "levelscript_action_body_catalog.json"
 
 RUNTIME_EXACT_NAMES = {

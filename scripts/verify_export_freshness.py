@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from common import ROOT, read_json, rel_path as slash
+from common import ROOT, native_evidence_required, read_json, rel_path as slash
 
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
@@ -259,7 +259,17 @@ def main(argv: list[str] | None = None) -> int:
     game_root = (args.game_root or Path(summary_game_root or DEFAULT_GAME_ROOT)).resolve()
     output_root = (args.output or Path(summary_output_root or DEFAULT_OUTPUT)).resolve()
     if not game_root.exists():
-        raise SystemExit(f"Game root not found: {game_root}")
+        # Rebuilding from an existing export_full does not need the client, so
+        # only the freshness comparison itself is lost here.
+        if native_evidence_required():
+            raise SystemExit(f"Game root not found: {game_root}")
+        print(
+            "[verify_export_freshness] skipped: installed game data not found "
+            f"at {game_root}; cannot compare export_full against the client. "
+            "Point endfield_paths.bat or ENDFIELD_GAME_ROOT at the install.",
+            file=sys.stderr,
+        )
+        return 0
     report = build_report(
         game_root=game_root,
         output_root=output_root,

@@ -23,6 +23,15 @@ wrappers for normal work; call Python builders directly for focused iteration.
 Root wrappers load repeated local defaults from `endfield_paths.bat`; explicit
 path flags override them for one run.
 
+Builders resolve the installed client through `common.resolve_installed_*`:
+`ENDFIELD_GAME_ROOT` first, then `endfield_paths.bat`, then the export
+summary's `game_root`, then the historical default, preferring the first that
+exists. Steps carrying recorded native facts (method addresses, body hashes,
+field offsets) additionally gate on `common.check_installed_native_inputs`; an
+absent or different client build skips only that step with a one-line reason on
+stderr. Set `ENDFIELD_REQUIRE_NATIVE_EVIDENCE=1` to make those steps fail
+instead, when auditing the build the facts were recorded on.
+
 ## Export rules
 
 - `export.bat` reuses and freshness-checks `export_full/` by default.
@@ -251,6 +260,11 @@ Wwise v150 traversal follows typed Event/Action/container/Sound edges and can
 yield multiple possible media leaves. Play roots, selector/layer relations,
 partial traversal, and decoded-content equivalence remain separate; unresolved
 runtime selection is never labeled as a set of equivalent choices.
+Gameplay animation-audio recovery scans exported `AnimationClip`,
+`AnimatorController`, and `AnimatorOverrideController` data under both
+StreamingAssets and Persistent. PathID joins are scoped to their VFS storage
+root; a Persistent controller cannot make a same-numbered StreamingAssets clip
+look reachable.
 Event-bank discovery enumerates both StreamingAssets and Persistent VFS
 indexes, deduplicates identical payloads, and includes normal `*banks.pck` plus
 HotfixAudio `hotfix*.pck`. The generated HIRC summary fingerprints every PCK
@@ -304,6 +318,7 @@ python scripts\story_recovery\build_voice_response_audio_event_audit.py
 python scripts\story_recovery\build_voice_table_audio_event_audit.py
 python scripts\story_recovery\build_typed_ui_audio_event_audit.py
 python scripts\story_recovery\build_skill_id_audio_event_audit.py
+python scripts\story_recovery\build_audio_dialog_external_copy_audit.py
 ```
 
 `build_audio.py` also refreshes the Audio view. Run
@@ -337,6 +352,10 @@ builder hashes only same-storage, same-id, same-size candidates and suppresses
 an unknown occurrence from the generated index only when its bytes exactly
 match a stronger categorized copy. It leaves files on disk and preserves
 different-byte or cross-storage collisions.
+AudioDialog External Source deduplication separately requires exact 64-bit
+FNV-1a equality for `voice/<language>/<AudioDialog.path lowercase>` plus
+identical SHA-256 bytes. Its audit keeps current-table gaps visible and never
+uses audio similarity to assign a trigger.
 The HIRC summary also retains decoded type-2 Sound definitions that no scanned
 Event reaches. Semantic Media rows expose this as a definition-only library
 resolution without upgrading playback placement. HotfixAudio different-byte

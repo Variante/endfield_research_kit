@@ -8,7 +8,6 @@ validates the complete metadata image set, and atomically publishes tools/DummyD
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -22,7 +21,20 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_GAME_DATA = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import sha256_file  # noqa: E402
+
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    DEFAULT_INSTALLED_GAME_DATA_ROOT as DEFAULT_GAME_DATA,
+    resolve_installed_game_data_root,
+)
 DEFAULT_CPP2IL_SOURCE = ROOT / "tools" / "Cpp2IL-src-2022.0.7"
 DEFAULT_OUTPUT = ROOT / "tools" / "DummyDll"
 CPP2IL_REPOSITORY = "https://github.com/SamboyCoding/Cpp2IL.git"
@@ -51,12 +63,6 @@ def load_module(name: str, path: Path) -> Any:
     return module
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def parse_int(value: str) -> int:
@@ -64,19 +70,8 @@ def parse_int(value: str) -> int:
 
 
 def configured_game_root() -> Path:
-    env_value = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
-    if env_value:
-        return Path(env_value.strip('"'))
-    config = ROOT / "endfield_paths.bat"
-    if config.is_file():
-        match = re.search(
-            r'^\s*set\s+"ENDFIELD_GAME_ROOT=([^"\r\n]+)"',
-            config.read_text(encoding="utf-8-sig", errors="replace"),
-            re.IGNORECASE | re.MULTILINE,
-        )
-        if match:
-            return Path(match.group(1))
-    return DEFAULT_GAME_DATA
+    """Resolve the installed Endfield_Data root shared by every builder."""
+    return resolve_installed_game_data_root()
 
 
 def resolve_game_paths(game_root: Path) -> tuple[Path, Path, Path, str]:

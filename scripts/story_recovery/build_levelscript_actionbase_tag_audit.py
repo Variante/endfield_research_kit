@@ -18,7 +18,6 @@ Output:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import json
 import re
@@ -33,13 +32,22 @@ for _path in (_REPO_ROOT / "scripts",):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    md_escape,
+    resolve_installed_game_data_root,
+    ROOT,
+    sha256_file as shared_sha256_file,
+    write_report_json,
+    write_text_if_changed,
+)
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DEFAULT_NAME_CONTRACT = REPORT_DIR / "levelscript_actionbase_formatter_names.json"
 CATALOG_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 BODY_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
+DEFAULT_GAMEASSEMBLY = (
+    resolve_installed_game_data_root().parent / "GameAssembly.dll"
+)
 DEFAULT_CODE_REGISTRATION = "0x18b9217d0"
 ACTIONBASE_FORMATTER_TYPE = (
     "Beyond_Gameplay_Actions_ActionBaseForMemoryPack+"
@@ -112,11 +120,7 @@ def repo_rel(path: Path | str) -> str:
 
 
 def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
+    return shared_sha256_file(path).upper()
 
 
 def load_module(path: Path, module_name: str) -> Any:

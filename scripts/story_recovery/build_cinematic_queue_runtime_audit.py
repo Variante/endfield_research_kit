@@ -9,7 +9,6 @@ it does not contain a list of Story ids or per-object exceptions.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import json
 import re
@@ -21,8 +20,19 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as sha256_path,
+)
+
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
+DEFAULT_GAMEASSEMBLY = (
+    resolve_installed_game_data_root().parent / "GameAssembly.dll"
+)
 DEFAULT_JSON = ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.json"
 DEFAULT_MD = ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.md"
 
@@ -37,12 +47,6 @@ def load_module(name: str, path: Path) -> Any:
     return module
 
 
-def sha256_path(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def method_signature(row: dict[str, Any]) -> dict[str, Any]:

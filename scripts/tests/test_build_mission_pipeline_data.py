@@ -2,6 +2,7 @@ import base64
 import hashlib
 import json
 import struct
+import sys
 import subprocess
 import tempfile
 import unittest
@@ -11,6 +12,35 @@ from unittest.mock import patch
 
 from scripts import build_mission_pipeline_data as pipeline
 from scripts.story_builder import level_bindings, mission_flow, source_links
+
+
+class NativeEvidenceSkipWiringTests(unittest.TestCase):
+    """The pipeline must actually catch what the dialog-finish audit raises.
+
+    Both modules can end up importing ``common`` under different names, which
+    yields same-named but non-identical exception classes; catching the audit's
+    own class is what keeps a different client build a skip instead of a crash.
+    """
+
+    def test_pipeline_guards_catch_what_the_audits_actually_raise(self) -> None:
+        for report_builder, raised, caught in (
+            (
+                pipeline.build_dialog_finish_branch_audit_report,
+                "NativeContractUnavailable",
+                pipeline.DialogFinishNativeUnavailable,
+            ),
+            (
+                pipeline.build_timeline_embedded_runtime_report,
+                "TimelineNativeUnavailable",
+                pipeline.TimelineNativeUnavailable,
+            ),
+        ):
+            with self.subTest(step=report_builder.__name__):
+                # Compare against the module the call really goes through: the
+                # same file imported under a second name would define a
+                # same-named class that is not identical.
+                audit = sys.modules[report_builder.__module__]
+                self.assertTrue(issubclass(getattr(audit, raised), caught))
 
 
 class LevelScriptSourceEvidenceTests(unittest.TestCase):

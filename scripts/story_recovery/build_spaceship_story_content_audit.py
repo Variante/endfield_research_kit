@@ -8,15 +8,16 @@ Two original-data producer shapes are accepted:
 * complete ``sim_talk`` buckets mirrored by CharacterTable ``profileVoice``
   rows, with an exact pair of profile/dialog AudioDialog records.
 
-The installed GameAssembly/global-metadata hashes pin the reviewed consumers.
-No filename prefix alone admits a Story key, and no mission ownership or
-cross-file chronology is emitted.
+The installed GameAssembly/global-metadata hashes pin the reviewed consumers;
+an absent or different client build skips this audit rather than publishing
+classifications its recorded native facts cannot back. No filename prefix alone
+admits a Story key, and no mission ownership or cross-file chronology is
+emitted.
 """
 from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -30,10 +31,15 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from common import (  # noqa: E402
+    InstalledNativeInputs,
+    check_installed_native_inputs,
     md_escape,
+    native_evidence_required,
+    native_evidence_skip_message,
     read_json,
     rel_path,
     safe_key,
+    sha256_file,
     write_report_json,
     write_text_if_changed,
 )
@@ -49,11 +55,6 @@ DEFAULT_TABLE_ROOT = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
 )
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_METADATA = Path(
-    r"D:\Program Files\Endfield Game\Endfield_Data"
-    r"\il2cpp_data\Metadata\global-metadata.dat"
-)
 
 EXPECTED_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -122,12 +123,8 @@ class AuditError(RuntimeError):
     pass
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
+def _source_sha256(path: Path) -> str:
+    return sha256_file(path).upper()
 
 
 def story_key_for_line(line_id: str) -> str:
@@ -454,14 +451,13 @@ def _source_row(path: Path) -> dict[str, Any]:
     return {
         "path": rel_path(path),
         "bytes": path.stat().st_size,
-        "sha256": sha256_file(path),
+        "sha256": _source_sha256(path),
     }
 
 
 def build_report(
     table_root: Path,
-    gameassembly: Path,
-    metadata: Path,
+    native: InstalledNativeInputs,
 ) -> dict[str, Any]:
     table_paths = {
         name: table_root / f"{name}.json"
@@ -470,14 +466,12 @@ def build_report(
     missing = [str(path) for path in table_paths.values() if not path.is_file()]
     if missing:
         raise AuditError("missing required table(s): " + ", ".join(missing))
-    if not gameassembly.is_file() or not metadata.is_file():
-        raise AuditError("installed GameAssembly.dll/global-metadata.dat is missing")
-    game_hash = sha256_file(gameassembly)
-    metadata_hash = sha256_file(metadata)
-    if game_hash != EXPECTED_GAMEASSEMBLY_SHA256:
-        raise AuditError("GameAssembly hash changed; revalidate spaceship consumers")
-    if metadata_hash != EXPECTED_METADATA_SHA256:
-        raise AuditError("global-metadata hash changed; revalidate spaceship consumers")
+    if not native.validated:
+        raise AuditError(native.detail)
+    gameassembly = native.gameassembly
+    metadata = native.metadata
+    game_hash = native.gameassembly_sha256.upper()
+    metadata_hash = native.metadata_sha256.upper()
 
     audio_rows = read_json(table_paths["AudioDialog"], {})
     character_rows = read_json(table_paths["CharacterTable"], {})
@@ -586,8 +580,8 @@ def render_markdown(report: dict[str, Any]) -> str:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--table-root", type=Path, default=DEFAULT_TABLE_ROOT)
-    parser.add_argument("--gameassembly", type=Path, default=DEFAULT_GAMEASSEMBLY)
-    parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
+    parser.add_argument("--gameassembly", type=Path)
+    parser.add_argument("--metadata", type=Path)
     parser.add_argument(
         "--out",
         type=Path,
@@ -603,8 +597,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    native = check_installed_native_inputs(
+        EXPECTED_GAMEASSEMBLY_SHA256,
+        EXPECTED_METADATA_SHA256,
+        gameassembly=args.gameassembly,
+        metadata=args.metadata,
+    )
+    if not native.validated:
+        required = native_evidence_required()
+        print(
+            native_evidence_skip_message(
+                "spaceship-story-content", native, required=required
+            ),
+            file=sys.stderr,
+        )
+        # The published report stays as it is: its own source hashes decide
+        # whether the recorded classifications still describe current tables.
+        return 1 if required else 0
     try:
-        report = build_report(args.table_root, args.gameassembly, args.metadata)
+        report = build_report(args.table_root, native)
     except AuditError as exc:
         print(f"[spaceship-story-content] {exc}", file=sys.stderr)
         return 1

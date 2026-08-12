@@ -12,9 +12,7 @@ not create mission ownership or chronology.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
 import sys
 import tempfile
 from collections import Counter, defaultdict
@@ -25,6 +23,15 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as shared_sha256_file,
+)
 
 import build_animestudio_story_carrier_audit as carrier  # noqa: E402
 import build_animestudio_story_gameobject_audit as gameobjects  # noqa: E402
@@ -46,12 +53,7 @@ DEFAULT_CLI = (
     / "net9.0-windows"
     / "AnimeStudio.CLI.exe"
 )
-DEFAULT_GAME_ROOT = Path(
-    os.environ.get(
-        "ENDFIELD_GAME_ROOT",
-        r"D:\Program Files\Endfield Game\Endfield_Data",
-    )
-)
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 EXPECTED_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
@@ -77,11 +79,7 @@ def write_json(path: Path, payload: Any) -> None:
 
 
 def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
+    return shared_sha256_file(path).upper()
 
 
 def object_key(source: str, row: dict[str, Any]) -> tuple[str, str, int]:

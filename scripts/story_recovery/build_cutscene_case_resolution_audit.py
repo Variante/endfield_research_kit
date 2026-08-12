@@ -12,10 +12,8 @@ the native chain is reviewed again.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -23,8 +21,17 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as sha256_path,
+)
+
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
-DEFAULT_GAME_ROOT = Path(os.environ.get("ENDFIELD_GAME_ROOT", r"D:\Program Files\Endfield Game"))
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root().parent
 DEFAULT_GAMEASSEMBLY = DEFAULT_GAME_ROOT / "GameAssembly.dll"
 DEFAULT_METADATA = (
     DEFAULT_GAME_ROOT
@@ -127,12 +134,6 @@ CALL_EDGES = (
 )
 
 
-def sha256_path(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def load_json(path: Path) -> dict[str, Any]:

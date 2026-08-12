@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 import gzip
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -30,7 +29,18 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from common import md_escape, read_json, safe_key, write_report_json, write_text_if_changed  # noqa: E402
+from common import (  # noqa: E402
+    NativeEvidenceUnavailable,
+    check_installed_native_inputs,
+    md_escape,
+    native_evidence_required,
+    native_evidence_skip_message,
+    read_json,
+    safe_key,
+    sha256_file,
+    write_report_json,
+    write_text_if_changed,
+)
 from export_full_from_game import (  # noqa: E402
     animestudio_object_index_dir,
     load_animestudio_object_index_summary,
@@ -302,24 +312,15 @@ def scan_source(
     }
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
+def resolve_gameassembly(explicit_path: Path | None) -> Path | None:
+    """Return an explicit binary, or ``None`` to let the shared gate resolve.
 
-def resolve_gameassembly(
-    explicit_path: Path | None,
-    export_summary: dict[str, Any],
-) -> Path:
-    if explicit_path is not None:
-        return explicit_path.resolve()
-    game_root = Path(safe_key(export_summary.get("game_root")))
-    if not game_root:
-        raise AuditError("export summary has no game root")
-    return game_root.parent / "GameAssembly.dll"
+    The gate already considers the export summary's ``game_root`` alongside
+    ENDFIELD_GAME_ROOT and endfield_paths.bat, so this keeps one precedence
+    order for every recovery step.
+    """
+    return explicit_path.resolve() if explicit_path is not None else None
 
 
 def build_report(
@@ -331,15 +332,15 @@ def build_report(
     export_summary = read_json(export_summary_path, {})
     if not isinstance(export_summary, dict):
         raise AuditError(f"{export_summary_path}: invalid export summary")
-    gameassembly_path = resolve_gameassembly(gameassembly, export_summary)
-    if not gameassembly_path.is_file():
-        raise AuditError(f"GameAssembly not found: {gameassembly_path}")
-    gameassembly_sha256 = _sha256(gameassembly_path)
-    if gameassembly_sha256 != EXPECTED_GAMEASSEMBLY_SHA256:
-        raise AuditError(
-            "GameAssembly hash changed; revalidate "
-            "FacSetInteractLockedState.Execute before publishing classifications"
-        )
+    gameassembly_path = resolve_gameassembly(gameassembly)
+    native = check_installed_native_inputs(
+        EXPECTED_GAMEASSEMBLY_SHA256,
+        gameassembly=gameassembly_path,
+        require_metadata=False,
+    )
+    if not native.validated:
+        raise NativeEvidenceUnavailable(native)
+    gameassembly_sha256 = native.gameassembly_sha256.upper()
 
     source_rows = [
         scan_source(output_root, source, export_summary)
@@ -556,6 +557,15 @@ def main(argv: list[str] | None = None) -> int:
             args.export_summary.resolve(),
             args.gameassembly,
         )
+    except NativeEvidenceUnavailable as exc:
+        required = native_evidence_required()
+        print(
+            native_evidence_skip_message(
+                "animestudio-story-guide-consumer", exc.result, required=required
+            ),
+            file=sys.stderr,
+        )
+        return 1 if required else 0
     except (AuditError, ValueError) as exc:
         raise SystemExit(
             f"AnimeStudio Story guide consumer audit failed: {exc}"

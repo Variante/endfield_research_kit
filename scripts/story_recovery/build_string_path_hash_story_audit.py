@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import hashlib
 import json
 import struct
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +26,15 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as sha256,
+)
+
 DEFAULT_HASH_BIN = (
     ROOT
     / "tmp"
@@ -48,7 +57,7 @@ DEFAULT_INITIAL_HASH_BIN = (
 )
 DEFAULT_STRUCTURED_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets"
 DEFAULT_NATIVE_BINARIES = (
-    Path(r"D:\Program Files\Endfield Game\GameAssembly.dll"),
+    resolve_installed_game_data_root().parent / "GameAssembly.dll",
 )
 DEFAULT_OBJECT_INDEXES = (
     ROOT
@@ -115,12 +124,6 @@ def display_path(path: Path) -> str:
         return str(path.resolve())
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def parse_string_path_hash(path: Path) -> tuple[dict[str, Any], list[HashPath]]:

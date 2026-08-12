@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import json
 import struct
@@ -13,10 +12,19 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_METADATA = Path(
-    r"D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata"
-    r"\global-metadata.dat"
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import (  # noqa: E402
+    resolve_installed_game_data_root,
+    sha256_file as shared_sha256_file,
+)
+
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
+DEFAULT_GAMEASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
+DEFAULT_METADATA = (
+    DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_OUT = (
     ROOT
@@ -38,11 +46,7 @@ ACTIONBASE_SET_WAIT_VA = 0x1875F1180
 
 
 def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest().upper()
+    return shared_sha256_file(path).upper()
 
 
 def load_pe_image_type() -> Any:

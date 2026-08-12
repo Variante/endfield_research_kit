@@ -5,14 +5,20 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import hashlib
 import json
 from collections import Counter
+import sys
 from pathlib import Path
 from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from common import sha256_file as sha256  # noqa: E402
+
 DEFAULT_INDEX_ROOT = ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
 DEFAULT_PIPELINE = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_JSON = ROOT / "reports" / "story" / "recovery" / "timeline_level_event_marker_audit.json"
@@ -23,12 +29,6 @@ TRACK_SCRIPT = "UnityEngine.Timeline.MarkerTrack"
 TIMELINE_SCRIPT = "UnityEngine.Timeline.TimelineAsset"
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def display_path(path: Path) -> str:

@@ -22,6 +22,7 @@ from pack_webui import (
     normalize_inline_image_id,
     resolve_env_emoji_prefab_key,
 )
+from common import resolve_installed_game_data_root
 from animestudio_object_index import (
     MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
     PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
@@ -32,7 +33,7 @@ from animestudio_object_index import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_OUTPUT = ROOT / "export_full"
 DEFAULT_REPORTS = ROOT / "reports" / "export"
 DEFAULT_REPORT_RUNS_TO_KEEP = 5

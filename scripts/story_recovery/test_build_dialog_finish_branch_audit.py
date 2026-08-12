@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,12 @@ try:
     import build_dialog_finish_branch_audit as audit
 except ModuleNotFoundError:
     from scripts.story_recovery import build_dialog_finish_branch_audit as audit
+
+# Bind to the exact common module the audit imported: loading it under a
+# second name would give same-named classes that are not identical.
+_common = sys.modules[audit.NativeEvidenceUnavailable.__module__]
+NATIVE_EVIDENCE_MISMATCHED = _common.NATIVE_EVIDENCE_MISMATCHED
+NativeEvidenceUnavailable = _common.NativeEvidenceUnavailable
 
 
 def text_asset(nodes: list[dict], connections: list[dict], name: str = "dlg_fixture") -> dict:
@@ -1347,18 +1354,42 @@ class NativeContractTests(unittest.TestCase):
             self.assertEqual(result["status"], "validated")
             self.assertEqual(result["methods"][0]["symbol"], "Fixture.Method")
 
+    def _other_client(self) -> tuple[Path, Path]:
+        """Paths for a client that is not the build the contract was recorded on."""
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name)
+        metadata = root / "global-metadata.dat"
+        metadata.write_bytes(b"metadata")
+        return root / "GameAssembly.dll", metadata
+
     def test_native_validator_reports_bounded_hash_failure(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            game = root / "GameAssembly.dll"
-            metadata = root / "global-metadata.dat"
-            game.write_bytes(b"drifted")
-            metadata.write_bytes(b"metadata")
-            with self.assertRaisesRegex(
-                audit.AuditValidationError,
-                r"validator=dialog_finish_native_contract gate=sourceSha256 .*expected=.* actual=.*",
-            ):
-                audit.validate_native_contract(game, metadata)
+        game, metadata = self._other_client()
+        game.write_bytes(b"drifted")
+
+        with self.assertRaises(NativeEvidenceUnavailable) as caught:
+            audit.validate_native_contract(game, metadata)
+        # Build-independent callers skip on this, while the audit itself still
+        # fails closed with the usual bounded gate diagnostic.
+        self.assertIsInstance(caught.exception, audit.AuditValidationError)
+        self.assertEqual(
+            NATIVE_EVIDENCE_MISMATCHED, caught.exception.result.status
+        )
+        self.assertRegex(
+            str(caught.exception),
+            r"validator=dialog_finish_native_contract gate=sourceSha256 "
+            r".*expected=.* actual=.*",
+        )
+
+    def test_native_validator_reports_bounded_missing_source(self) -> None:
+        game, metadata = self._other_client()
+
+        with self.assertRaisesRegex(
+            audit.AuditValidationError,
+            r"validator=dialog_finish_native_contract gate=sourceExists "
+            r"expected=file actual=missing source=.*",
+        ):
+            audit.validate_native_contract(game, metadata)
 
 
 if __name__ == "__main__":

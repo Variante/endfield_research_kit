@@ -26,10 +26,19 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
+try:
+    from common import resolve_installed_game_data_root, sha256_file as file_sha256
+except ImportError:  # Imported as scripts.build_audio_semantics from root tests.
+    from scripts.common import (
+        resolve_installed_game_data_root,
+        sha256_file as file_sha256,
+    )
+
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
-DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
+DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_METADATA_REL = Path("il2cpp_data/Metadata/global-metadata.dat")
 METADATA_HELPER = ROOT / "tools/endfield-il2cpp/catalog_option_flow_metadata.py"
 RUNTIME_CACHE_REL = Path("recovered/audio_semantics/runtime_metadata.json")
@@ -54,6 +63,7 @@ EVENT_CATEGORY_PREFIXES = (
     ("au_env_", "ambience"),
     ("au_fac_amb_", "ambience"),
     ("au_ui_", "ui"),
+    ("au_ul_", "ui"),
     ("au_vo_", "voice"),
     ("au_voice_", "voice"),
     ("au_radio_", "voice"),
@@ -66,6 +76,7 @@ EVENT_CATEGORY_PREFIXES = (
     ("au_vibration_", "control"),
     ("bark_", "voice"),
     ("radio_", "voice"),
+    ("player_fol_", "sfx"),
     ("projectile-event:", "sfx"),
 )
 
@@ -125,7 +136,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 44
+AUDIO_SEMANTIC_SCHEMA_VERSION = 50
 TRIGGER_CONTEXT_SCHEMA_VERSION = 5
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
 RADIO_MEDIA_CONTEXT_LIMIT = 64
@@ -2904,14 +2915,6 @@ def load_json(path: Path, fallback: Any) -> Any:
         return fallback
 
 
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while chunk := handle.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def collect_metadata_audio_literals(metadata_path: Path | None) -> list[str]:
     """Recover complete audio-like managed string literals from IL2CPP v29+.
 
@@ -2964,10 +2967,170 @@ def collect_metadata_audio_literals(metadata_path: Path | None) -> list[str]:
 
 def event_category(event_id: Any) -> str:
     value = str(event_id or "").strip().lower()
+    # Preserve the authored id verbatim elsewhere, but tolerate a serialized
+    # Timeline display-name delimiter when assigning the broad audio category.
+    value = value.lstrip(":")
     for prefix, category in EVENT_CATEGORY_PREFIXES:
         if value.startswith(prefix):
             return category
     return "unknown"
+
+
+def has_authored_playback_context(contexts: Iterable[dict[str, Any]]) -> bool:
+    """Return whether a context says more than identity/definition alone."""
+    return any(
+        str(row.get("playbackPlacementStatus") or "")
+        not in {
+            "definitionOnly",
+            "selectionTransformOnly",
+            "identityOnlyManagedStringLiteral",
+        }
+        for row in contexts
+        if isinstance(row, dict)
+    )
+
+
+def wwise_play_target_signatures(event: dict[str, Any]) -> list[tuple[str, tuple[int, ...]]]:
+    """Return exact per-bank sets of Wwise targets reached by Play Actions."""
+    signatures: list[tuple[str, tuple[int, ...]]] = []
+    for evidence in event.get("evidence") or []:
+        if not isinstance(evidence, dict):
+            continue
+        targets = tuple(sorted({
+            int(action["targetId"])
+            for action in evidence.get("actionEvidence") or []
+            if isinstance(action, dict)
+            and action.get("operation") == "play"
+            and isinstance(action.get("targetId"), int)
+        }))
+        if targets:
+            signatures.append((str(evidence.get("bank") or ""), targets))
+    return signatures
+
+
+def annotate_shared_wwise_play_targets(events: list[dict[str, Any]]) -> int:
+    """Attach library-output equivalence without inventing a shared trigger.
+
+    Different Wwise Event objects may contain different Action objects that
+    reach the exact same complete Play-target set.  A named Event with an
+    authored consumer can then classify the anonymous Event's library output,
+    but cannot identify who posts the anonymous Event.
+    """
+    known_by_signature: dict[tuple[str, tuple[int, ...]], list[dict[str, Any]]] = defaultdict(list)
+    for event in events:
+        event_id = str(event.get("id") or "")
+        if (
+            event.get("purposeKnowledgeStatus") != "authoredContextKnown"
+            or event_id.startswith("hashed-event:0x")
+            or event.get("category") == "unknown"
+        ):
+            continue
+        for signature in wwise_play_target_signatures(event):
+            known_by_signature[signature].append(event)
+
+    annotated = 0
+    for event in events:
+        if event.get("purposeInvestigationPriority") != "highest":
+            continue
+        matches: dict[str, dict[str, Any]] = {}
+        matched_signatures: set[tuple[str, tuple[int, ...]]] = set()
+        for signature in wwise_play_target_signatures(event):
+            rows = known_by_signature.get(signature) or []
+            if rows:
+                matched_signatures.add(signature)
+            for row in rows:
+                matches[str(row.get("id") or "")] = row
+        matches.pop(str(event.get("id") or ""), None)
+        if not matches:
+            continue
+        categories = sorted({str(row.get("category") or "") for row in matches.values()} - {"", "unknown"})
+        event["audioLibraryPlaybackTargetStatus"] = "exactSharedPlayTargetSetWithAuthoredEvent"
+        event["audioLibraryEquivalentEventIds"] = sorted(matches)[:24]
+        event["audioLibraryEquivalentEventCount"] = len(matches)
+        event["audioLibraryEquivalentCategories"] = categories
+        event["audioLibrarySharedPlayTargetSets"] = [
+            {
+                "bank": bank,
+                "targetIds": list(targets),
+                "targetIdsHex": [f"0x{target:08x}" for target in targets],
+            }
+            for bank, targets in sorted(matched_signatures)
+        ][:8]
+        event["audioLibraryPurposeHintStatus"] = "libraryOutputEquivalentOnlyExternalTriggerUnknown"
+        if event.get("category") == "unknown" and len(categories) == 1:
+            event["category"] = categories[0]
+            event["categoryEvidence"] = "exactSharedWwisePlayTargetSet"
+        annotated += 1
+    return annotated
+
+
+def wwise_media_leaf_signature(event: dict[str, Any]) -> tuple[tuple[str, int], ...]:
+    """Return the complete decoded Wwise media-ID set, scoped by PCK."""
+    leaves: set[tuple[str, int]] = set()
+    for media in event.get("media") or []:
+        if not isinstance(media, dict):
+            continue
+        media_id = media.get("mediaId")
+        if not isinstance(media_id, int):
+            continue
+        bank = Path(str(media.get("bank") or "")).name.lower()
+        if not bank:
+            evidence = next((
+                row for row in media.get("wwiseMediaEvidence") or []
+                if isinstance(row, dict) and row.get("bankPackage")
+            ), {})
+            bank = str(evidence.get("bankPackage") or "").lower()
+        leaves.add((bank, media_id))
+    return tuple(sorted(leaves))
+
+
+def annotate_shared_wwise_media_leaves(events: list[dict[str, Any]]) -> int:
+    """Record exact final-media equivalence while leaving trigger purpose open.
+
+    Matching every decoded Wwise media ID inside the same PCK proves that two
+    Events can reach the same final audio leaves.  It does not prove that their
+    intervening containers, conditions, timing, ownership, or callers match.
+    """
+    known_by_signature: dict[tuple[tuple[str, int], ...], list[dict[str, Any]]] = defaultdict(list)
+    for event in events:
+        event_id = str(event.get("id") or "")
+        signature = wwise_media_leaf_signature(event)
+        if (
+            not signature
+            or event.get("purposeKnowledgeStatus") != "authoredContextKnown"
+            or event_id.startswith("hashed-event:0x")
+        ):
+            continue
+        known_by_signature[signature].append(event)
+
+    annotated = 0
+    for event in events:
+        if (
+            event.get("purposeInvestigationPriority") != "highest"
+            or event.get("audioLibraryPlaybackTargetStatus")
+        ):
+            continue
+        signature = wwise_media_leaf_signature(event)
+        matches = {
+            str(row.get("id") or ""): row
+            for row in known_by_signature.get(signature, [])
+        } if signature else {}
+        matches.pop(str(event.get("id") or ""), None)
+        if not matches:
+            continue
+        event["audioLibraryMediaLeafStatus"] = "exactCompleteWwiseMediaIdSetWithAuthoredEvent"
+        event["audioLibraryMediaEquivalentEventIds"] = sorted(matches)[:24]
+        event["audioLibraryMediaEquivalentEventCount"] = len(matches)
+        event["audioLibraryMediaEquivalentCategories"] = sorted({
+            str(row.get("category") or "") for row in matches.values()
+        } - {"", "unknown"})
+        event["audioLibrarySharedMediaIds"] = [media_id for _bank, media_id in signature][:64]
+        event["audioLibrarySharedMediaPackages"] = sorted({bank for bank, _media_id in signature if bank})
+        event["audioLibraryMediaPurposeHintStatus"] = (
+            "completeMediaLeafSetEquivalentOnlyContainersAndExternalTriggerUnknown"
+        )
+        annotated += 1
+    return annotated
 
 
 def hashed_event_key(event_hash: int) -> str:
@@ -2987,9 +3150,13 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
         "id", "mediaId", "rel", "src", "format", "bytes", "storageRoot",
         "audioScope", "audioCategory", "audioCategoryDetail", "sourceBlock",
         "sourceBlockLabel", "sourceLanguage", "sourceBank", "bankId", "bank",
-        "audioDialogKey", "audioDialogPath", "speakerChannel", "voType", "duration",
+        "audioDialogKey", "audioDialogPath", "speakerChannel", "voType", "duration", "bitrate",
+        "storyLineBindingCount", "purposeKnowledgeStatus",
         "wwiseMediaEvidence", "contentSha256",
         "hotfixMediaReplacement", "mediaResolutionEvidence",
+        "externalMediaIdentityStatus", "externalAuthoredAudioId",
+        "externalAuthoredPath", "externalIdentityEvidence",
+        "identityOnlyPlaybackPlacementStatus",
     )
     compact = {key: entry[key] for key in keys if entry.get(key) not in (None, "", [])}
     if compact.get("wwiseMediaEvidence"):
@@ -4678,6 +4845,7 @@ def collect_levelscript_audio_semantics(
     dynamic_event_bindings: list[dict[str, Any]] = []
     resolved_dynamic_event_bindings: list[dict[str, Any]] = []
     radio_invocations: list[dict[str, Any]] = []
+    voice_invocations: list[dict[str, Any]] = []
     dynamic_radio_bindings: list[dict[str, Any]] = []
     resolved_dynamic_radio_bindings: list[dict[str, Any]] = []
     control_actions: list[dict[str, Any]] = []
@@ -4773,6 +4941,24 @@ def collect_levelscript_audio_semantics(
                     "eventName": str(binding["eventName"]),
                     "triggerRole": str(binding.get("role") or "play"),
                     "sourceField": str(binding.get("sourceField") or ""),
+                })
+            for binding in action.get("voiceBindings") or []:
+                if not isinstance(binding, dict):
+                    continue
+                voice_id = str(binding.get("voiceId") or "").strip()
+                if not voice_id:
+                    continue
+                voice_invocations.append({
+                    **common,
+                    "kind": "levelScriptVoiceTrigger",
+                    "semanticRole": "authoredLevelScriptVoiceSelection",
+                    "voiceId": voice_id,
+                    "triggerRole": str(binding.get("role") or "voice"),
+                    "sourceField": str(binding.get("sourceField") or "_voId"),
+                    "voiceIdentityKind": str(
+                        binding.get("identityKind") or "AudioDialogPathStem"
+                    ),
+                    "wwiseEventStatus": "notApplicable",
                 })
             for binding in action.get("cueBindings") or []:
                 if not isinstance(binding, dict) or not str(binding.get("cueName") or ""):
@@ -5051,6 +5237,7 @@ def collect_levelscript_audio_semantics(
         "dynamicEventBindings": dynamic_event_bindings,
         "resolvedDynamicEventBindings": resolved_dynamic_event_bindings,
         "radioInvocations": radio_invocations,
+        "voiceInvocations": voice_invocations,
         "dynamicRadioBindings": dynamic_radio_bindings,
         "resolvedDynamicRadioBindings": resolved_dynamic_radio_bindings,
         "controlActions": control_actions,
@@ -5073,6 +5260,7 @@ def collect_levelscript_audio_semantics(
             "resolvedDynamicEventBindings": len(resolved_dynamic_event_bindings),
             "radioActionRecords": sum(radio_action_counts.values()),
             "constantRadioBindings": len(radio_invocations),
+            "constantVoiceBindings": len(voice_invocations),
             "dynamicRadioBindings": len(dynamic_radio_bindings),
             "resolvedDynamicRadioBindings": len(
                 resolved_dynamic_radio_bindings
@@ -5093,6 +5281,8 @@ def collect_levelscript_audio_semantics(
         },
         "evidenceBoundary": (
             "Exact union/member-count fields prove authored LevelScript requests and routing. "
+            "PlayVoice/PlayVoiceNarrative _voId values are AudioDialog path-stem selections, "
+            "not Wwise Events; an exact stem join proves the selected voice media identity. "
             "Constant Event parameters and cue names joined through the native AudioHashGenerator and exact "
             "AudioCue behavior expressions become Event contexts. Cue handler/condition evaluation, action "
             "execution, unresolved dynamic Param values, state/variable writes, playback handles, and "
@@ -7927,12 +8117,95 @@ def _build_lua_post_event_trigger_contexts(
     return contexts
 
 
+def _build_levelscript_voice_trigger_contexts(
+    media_rows: Iterable[dict[str, Any]],
+    invocations: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Join PlayVoice* ``_voId`` values to AudioDialog media identities.
+
+    The native actions route this field through the voice player.  It is an
+    AudioDialog path-stem selection id, not a Wwise Event name, so keep this
+    evidence out of the authored Event universe.
+    """
+
+    media_by_id = {
+        str(row.get("id") or "").strip().casefold(): row
+        for row in media_rows
+        if isinstance(row, dict) and str(row.get("id") or "").strip()
+    }
+    contexts: list[dict[str, Any]] = []
+    for invocation_index, invocation in enumerate(invocations):
+        if not isinstance(invocation, dict):
+            continue
+        voice_id = str(invocation.get("voiceId") or "").strip()
+        if not voice_id:
+            continue
+        media = media_by_id.get(voice_id.casefold(), {})
+        media_ref = _trigger_media_ref(media, fallback_id=voice_id)
+        story_line_count = int(media.get("storyLineBindingCount") or 0)
+        contexts.append({
+            "triggerId": (
+                f"levelScriptVoice:{invocation.get('levelScriptId') or 'unknown'}:"
+                f"{invocation.get('recordStart') or 0}:{invocation_index}:{voice_id}"
+            ),
+            "semanticKind": "levelScriptVoice",
+            "triggerRole": str(invocation.get("triggerRole") or "voice"),
+            "situation": {
+                "voiceId": voice_id,
+                "voiceIdentityKind": "AudioDialogPathStem",
+                "levelScriptId": invocation.get("levelScriptId"),
+            },
+            "meaning": {
+                "audioCategory": media.get("audioCategory"),
+                "audioDialogPath": media.get("audioDialogPath"),
+                "storyLineBindingCount": story_line_count,
+                "purposeKnowledgeStatus": media.get("purposeKnowledgeStatus"),
+            },
+            "action": _compact_trigger_action(invocation),
+            "owner": {
+                "levelScriptId": invocation.get("levelScriptId"),
+                "sourcePath": invocation.get("sourcePath"),
+                "ownerStatus": "exactLevelScriptActionRecord",
+            },
+            "selection": {
+                "voiceSelectionStatus": (
+                    "exactAudioDialogPathStem" if media else "audioDialogPathStemMissing"
+                ),
+                "mediaSelectionStatus": (
+                    "exactDecodedAudioDialogMedia" if media_ref.get("src")
+                    else "decodedMediaMissing"
+                ),
+                "wwiseEventStatus": "notApplicable",
+            },
+            "mediaRefs": [media_ref] if media_ref else [],
+            "evidence": {
+                "definition": "exactLevelScriptPlayVoiceUnionAndVoIdField",
+                "owner": "exactLevelScriptActionRecord",
+                "media": (
+                    "exactAudioDialogPathStem" if media else "audioDialogPathStemMissing"
+                ),
+                "runtimeExecution": "levelScriptActionExecutionNotObserved",
+            },
+            "runtimeActivationStatus": "levelScriptActionExecutionNotObserved",
+            "sourceRefs": [
+                value for value in (
+                    invocation.get("sourcePath"),
+                    invocation.get("levelScriptId"),
+                    voice_id,
+                    media.get("audioDialogPath") if media else "",
+                ) if value
+            ],
+        })
+    return contexts
+
+
 def build_trigger_context_catalog(
     event_rows: Iterable[dict[str, Any]],
     media_rows: Iterable[dict[str, Any]],
     webui_root: Path,
     language: str,
     export_root: Path | None = None,
+    levelscript_semantics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build one navigable trigger -> situation -> media surface.
 
@@ -7962,6 +8235,10 @@ def build_trigger_context_catalog(
             media_rows,
         ),
         "dialogLifecycle": _build_dialog_lifecycle_trigger_contexts(event_rows),
+        "levelScriptVoice": _build_levelscript_voice_trigger_contexts(
+            media_rows,
+            (levelscript_semantics or {}).get("voiceInvocations") or [],
+        ),
         "timelineAudio": _build_timeline_trigger_contexts(event_rows),
         "luaPostEvent": _build_lua_post_event_trigger_contexts(event_rows),
     }
@@ -8029,6 +8306,17 @@ def build_trigger_context_catalog(
                 if isinstance(row, dict)
             ).items())),
             "runtimeConsumer": DIALOG_LIFECYCLE_RUNTIME_CONSUMER,
+        },
+        "levelScriptVoice": {
+            "source": "LevelScript PlayVoice/PlayVoiceNarrative constant _voId",
+            "storedTriggerContextRows": len(grouped["levelScriptVoice"]),
+            "rowsWithExactAudioDialogMedia": sum(
+                row.get("selection", {}).get("voiceSelectionStatus")
+                == "exactAudioDialogPathStem"
+                for row in grouped["levelScriptVoice"]
+                if isinstance(row, dict)
+            ),
+            "wwiseEventStatus": "notApplicable",
         },
         "timelineAudio": {
             "source": (
@@ -9982,6 +10270,8 @@ def collect_webui_cutscene_events(webui_root: Path, language: str) -> dict[str, 
 
 def managed_literal_contexts(
     metadata_path: Path | None,
+    *,
+    current_wwise_event_hashes: set[int] | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[str]]:
     names = [
         name for name in collect_metadata_audio_literals(metadata_path)
@@ -9990,11 +10280,21 @@ def managed_literal_contexts(
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     for name in names:
+        event_hash = audio_hash_generator_compute(name)
+        if (
+            current_wwise_event_hashes is not None
+            and event_hash not in current_wwise_event_hashes
+        ):
+            continue
         _append_context(contexts, seen, name, {
             "kind": "binaryManagedLiteral",
             "literal": name,
+            "eventHash": event_hash,
+            "eventHashHex": f"0x{event_hash:08x}",
             "source": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat:stringLiteral",
-            "evidence": "exactManagedStringLiteral",
+            "evidence": "exactManagedStringLiteralAndCurrentWwiseEventHash",
+            "playbackPlacementStatus": "identityOnlyManagedStringLiteral",
+            "runtimeConsumerStatus": "consumerCallsiteUnresolved",
         })
     return dict(contexts), names
 
@@ -10006,40 +10306,68 @@ def _evidence_object_types(evidence: dict[str, Any]) -> dict[str, int]:
     return {}
 
 
-def wwise_event_playback_role(evidence_rows: list[dict[str, Any]]) -> str:
-    """Classify typed root Actions without treating control Events as missing media."""
-    playback_operations = {"play", "playEvent"}
-    control_operations = {
-        "stop", "pause", "resume", "break", "seek",
-        "setState", "resetGameParameter",
-    }
-    operations: list[str] = []
+def wwise_event_action_profile(evidence_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Classify complete current-bank Action objects by playback effect.
+
+    Wwise v150 Play and Post Event are the only operations that introduce a
+    downward playback edge. Every other typed Action is library control even
+    when its exact family label has not yet been recovered. An Event with a
+    completely parsed zero-length Action list is an inert library definition,
+    not unknown audio playback.
+    """
+    playback_operation_types = {0x0400, 0x2100}
+    operation_types: list[int] = []
+    operation_labels: list[str] = []
+    untyped_action_count = 0
     for evidence in evidence_rows:
         for action in evidence.get("actionEvidence") or []:
             if not isinstance(action, dict):
                 continue
-            operation = str(action.get("operation") or "")
+            operation_label = str(action.get("operation") or "")
             try:
                 operation_type = int(action.get("actionType")) & 0xFF00
             except (TypeError, ValueError):
-                operation_type = -1
-            if operation_type == 0x1200:
-                operation = "setState"
-            elif operation_type == 0x1400:
-                operation = "resetGameParameter"
-            if operation:
-                operations.append(operation)
-    has_playback = any(value in playback_operations for value in operations) or any(
+                untyped_action_count += 1
+                if operation_label:
+                    operation_labels.append(operation_label)
+                continue
+            operation_types.append(operation_type)
+            operation_labels.append(operation_label or f"operation0x{operation_type:04x}")
+    has_playback = any(value in playback_operation_types for value in operation_types) or any(
         int(evidence.get("rootPlayActionCount") or 0) > 0 for evidence in evidence_rows
     )
-    has_control = any(value in control_operations for value in operations)
+    has_control = any(value not in playback_operation_types for value in operation_types)
     if has_playback and has_control:
-        return "mixedPlaybackAndControl"
-    if has_playback:
-        return "playback"
-    if has_control and operations and all(value in control_operations for value in operations):
-        return "controlOnly"
-    return "unresolved"
+        role = "mixedPlaybackAndControl"
+    elif has_playback:
+        role = "playback"
+    elif has_control and untyped_action_count == 0:
+        role = "controlOnly"
+    else:
+        complete_empty_definition = bool(evidence_rows) and all(
+            str(evidence.get("traversalStatus") or "") == "complete"
+            and isinstance(evidence.get("actionDispatchEvidence"), dict)
+            and isinstance(
+                (evidence.get("actionDispatchEvidence") or {}).get("serializedActionCount"),
+                int,
+            )
+            and int((evidence.get("actionDispatchEvidence") or {})["serializedActionCount"]) == 0
+            and not (evidence.get("actionEvidence") or [])
+            for evidence in evidence_rows
+        )
+        role = "emptyEventDefinition" if complete_empty_definition else "unresolved"
+    return {
+        "role": role,
+        "operationTypes": sorted(set(operation_types)),
+        "operationTypesHex": [f"0x{value:04x}" for value in sorted(set(operation_types))],
+        "operationLabels": sorted(set(operation_labels)),
+        "untypedActionCount": untyped_action_count,
+    }
+
+
+def wwise_event_playback_role(evidence_rows: list[dict[str, Any]]) -> str:
+    """Compatibility wrapper for callers that only need the role."""
+    return str(wwise_event_action_profile(evidence_rows)["role"])
 
 
 def build_event_rows(
@@ -10129,11 +10457,53 @@ def build_event_rows(
             bank["selectionEventIds"].add(key)
         bank["visitedObjectTypeOccurrences"].update(object_types)
 
-    # The authored-name index is intentionally incomplete: Wwise banks also
-    # contain Event objects whose uint32 identity has no recovered string or
-    # gameplay callsite yet. Keep those objects visible under a stable hash
-    # key and use their typed HIRC traversal to recover media relations without
-    # inventing a trigger name or ownership location.
+    current_wwise_event_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in audio_index.get("wwiseEventInventory") or []
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    binary_managed_literal_keys = {
+        str(value or "").strip().lower()
+        for value in audio_index.get("binaryManagedEventNames") or []
+        if str(value or "").strip()
+    }
+    managed_literals_without_event_or_consumer = {
+        key
+        for key in binary_managed_literal_keys
+        if audio_hash_generator_compute(key) not in current_wwise_event_hashes
+        and key not in contexts
+        and key not in candidates
+        and key not in evidence_by_event
+    }
+
+    # Seed every authored Event name before consuming the compact raw HIRC
+    # inventory.  ``audio_index.events`` contains only Event/media rows, so an
+    # authored control Event or an Event whose decoded leaves are absent may
+    # otherwise exist twice: once under its authored name as falsely missing,
+    # and once under ``hashed-event:0x...`` as a resolved Wwise object.
+    for value in audio_index.get("eventNames") or []:
+        display = str(value or "").strip()
+        if not display:
+            continue
+        key = display.lower()
+        if key in managed_literals_without_event_or_consumer:
+            continue
+        hashes.setdefault(key, audio_hash_generator_compute(display))
+    for value in contexts:
+        display = str(value or "").strip()
+        if (
+            not display
+            or display.startswith("#0x")
+            or display.lower().startswith("hashed-event:0x")
+        ):
+            continue
+        key = display.lower()
+        hashes.setdefault(key, audio_hash_generator_compute(display))
+
+    # Wwise banks also contain Event objects whose uint32 identity has no
+    # recovered string or gameplay callsite yet. Keep those objects visible
+    # under a stable hash key and use their typed HIRC traversal to recover
+    # media relations without inventing a trigger name or ownership location.
     known_key_by_hash = {event_hash: key for key, event_hash in hashes.items()}
     authored_inventory_hashes = set(known_key_by_hash)
     for alias in exact_wwise_event_aliases(audio_index):
@@ -10149,6 +10519,43 @@ def build_event_rows(
         key = event_name.lower()
         known_key_by_hash.setdefault(event_hash, key)
         hashes[key] = event_hash
+
+    # Older/base audio indexes may already contain a hash-only Event evidence
+    # row before LevelScript, Timeline, or table semantics recover its exact
+    # authored name. Move that evidence and any media candidates onto the
+    # canonical named key so one uint32 Wwise Event is emitted only once.
+    for old_key in list(hashes):
+        if not old_key.startswith("hashed-event:0x"):
+            continue
+        event_hash = hashes.get(old_key)
+        target_key = known_key_by_hash.get(event_hash) if event_hash is not None else None
+        if not target_key or target_key == old_key:
+            continue
+        for evidence in evidence_by_event.pop(old_key, []):
+            marker = (
+                str(evidence.get("bank") or ""),
+                int(evidence.get("bankId") or 0),
+            )
+            if any(
+                (
+                    str(existing.get("bank") or ""),
+                    int(existing.get("bankId") or 0),
+                ) == marker
+                for existing in evidence_by_event.get(target_key, [])
+            ):
+                continue
+            evidence_by_event[target_key].append(evidence)
+        for candidate in candidates.pop(old_key, []):
+            marker = (
+                str(candidate.get("mediaId") or candidate.get("id") or ""),
+                str(candidate.get("src") or ""),
+            )
+            if marker in candidate_seen[target_key]:
+                continue
+            candidate_seen[target_key].add(marker)
+            candidates[target_key].append(candidate)
+        candidate_seen.pop(old_key, None)
+        hashes.pop(old_key, None)
     entry_by_media_id: dict[int, dict[str, Any]] = {}
     hotfix_entries_by_media_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for entry in audio_index.get("entries") or []:
@@ -10171,8 +10578,6 @@ def build_event_rows(
         try:
             event_hash = int(inventory.get("eventHash")) & 0xFFFFFFFF
         except (TypeError, ValueError):
-            continue
-        if event_hash in authored_inventory_hashes:
             continue
         key = known_key_by_hash.setdefault(event_hash, hashed_event_key(event_hash))
         hashes[key] = event_hash
@@ -10209,7 +10614,18 @@ def build_event_rows(
             ),
             "eventIdentityStatus": "wwiseObjectWithoutRecoveredTriggerName",
         }
-        evidence_by_event[key].append(compact_evidence)
+        evidence_marker = (
+            str(compact_evidence.get("bank") or ""),
+            int(compact_evidence.get("bankId") or 0),
+        )
+        if not any(
+            (
+                str(existing.get("bank") or ""),
+                int(existing.get("bankId") or 0),
+            ) == evidence_marker
+            for existing in evidence_by_event.get(key, [])
+        ):
+            evidence_by_event[key].append(compact_evidence)
         root_action_ids = sorted({
             int(row.get("rootActionId"))
             for row in inventory.get("actionEvidence") or []
@@ -10269,8 +10685,12 @@ def build_event_rows(
     display_names: dict[str, str] = {}
     for value in audio_index.get("eventNames") or []:
         display = str(value or "").strip()
-        if display:
-            display_names.setdefault(display.lower(), display)
+        if not display:
+            continue
+        key = display.lower()
+        if key in managed_literals_without_event_or_consumer:
+            continue
+        display_names.setdefault(key, display)
     for alias in exact_wwise_event_aliases(audio_index):
         if not isinstance(alias, dict):
             continue
@@ -10281,8 +10701,20 @@ def build_event_rows(
         if not isinstance(entry, dict):
             continue
         display = str(entry.get("eventId") or entry.get("id") or "").strip()
-        if display:
-            display_names.setdefault(display.lower(), display)
+        if not display:
+            continue
+        key = display.lower()
+        try:
+            event_hash = int(entry.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            event_hash = None
+        if (
+            key.startswith("hashed-event:0x")
+            and event_hash is not None
+            and known_key_by_hash.get(event_hash, key) != key
+        ):
+            continue
+        display_names.setdefault(key, display)
     exact_alias_by_hash = {
         int(alias.get("eventHash")) & 0xFFFFFFFF: alias
         for alias in exact_wwise_event_aliases(audio_index)
@@ -10291,7 +10723,20 @@ def build_event_rows(
     all_names = set(display_names)
     all_names.update(candidates)
     all_names.update(evidence_by_event)
-    all_names.update(key for key in contexts if not key.startswith("#0x"))
+    for context_key in contexts:
+        if context_key.startswith("#0x"):
+            continue
+        if context_key.startswith("hashed-event:0x"):
+            try:
+                context_hash = int(context_key.rsplit("0x", 1)[1], 16) & 0xFFFFFFFF
+            except ValueError:
+                context_hash = None
+            if (
+                context_hash is not None
+                and known_key_by_hash.get(context_hash, context_key) != context_key
+            ):
+                continue
+        all_names.add(context_key)
     # Numeric contexts attach to whichever named or hash-only Event already
     # owns that uint32.  Emit a synthetic row only for an authored hash absent
     # from every available bank, rather than duplicating it as a #0x... row.
@@ -10378,8 +10823,12 @@ def build_event_rows(
         )
         if event_hash is not None:
             event_contexts.extend(contexts.get(event_hash_context_key(event_hash), []))
+            hash_only_key = hashed_event_key(event_hash)
+            if hash_only_key != key:
+                event_contexts.extend(contexts.get(hash_only_key, []))
         evidence_rows = evidence_by_event.get(key, [])
-        playback_role = wwise_event_playback_role(evidence_rows)
+        action_profile = wwise_event_action_profile(evidence_rows)
+        playback_role = str(action_profile["role"])
         identity_alias = exact_alias_by_hash.get(event_hash) if event_hash is not None else None
         character_animation_owner_ids = sorted({
             str(context.get("ownerId") or "")
@@ -10441,6 +10890,8 @@ def build_event_rows(
             runtime_selection = "unresolved"
         category = event_category(key)
         category_evidence = "namePrefix" if category != "unknown" else "unclassified"
+        if category != "unknown" and str(key).lstrip().startswith(":"):
+            category_evidence = "normalizedNamePrefix"
         if category == "unknown" and (identity_alias or {}).get("dictionaryKind") == "skill_id":
             category = "sfx"
             category_evidence = "exactSkillIdDictionaryEventIdentity"
@@ -10512,6 +10963,14 @@ def build_event_rows(
                 )
                 else "exactAudioDialogVoiceIdentity"
             )
+        if category == "unknown" and any(
+            context.get("kind") == "tableEventHash"
+            and context.get("table") == "AudioDialogCustomEventTable"
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "control"
+            category_evidence = "exactAudioDialogLifecycleEventField"
         if key.startswith("hashed-event:0x"):
             event_identity_status = (
                 "authoredHashMatchedWwiseObject"
@@ -10520,6 +10979,25 @@ def build_event_rows(
             )
         else:
             event_identity_status = "recoveredAuthoredName"
+        has_purpose_context = has_authored_playback_context(event_contexts)
+        if has_purpose_context:
+            purpose_knowledge_status = "authoredContextKnown"
+            purpose_investigation_priority = "resolved"
+            playback_location_status = "authoredContext"
+        elif playback_role == "controlOnly":
+            purpose_knowledge_status = "audioLibraryControlKnown"
+            purpose_investigation_priority = "secondary"
+            playback_location_status = "libraryControlOnlyExternalCallerUnknown"
+        elif playback_role == "emptyEventDefinition":
+            purpose_knowledge_status = "audioLibraryEmptyEventKnown"
+            purpose_investigation_priority = "secondary"
+            playback_location_status = "libraryEmptyEventExternalCallerUnknown"
+        else:
+            purpose_knowledge_status = (
+                "identityOnlyNoConsumer" if event_contexts else "unknownUse"
+            )
+            purpose_investigation_priority = "highest"
+            playback_location_status = "unknown"
         rows.append({
             "id": key,
             "name": display_names.get(key, key),
@@ -10544,6 +11022,10 @@ def build_event_rows(
             "identityTableSources": (identity_alias or {}).get("tableSources") or [],
             "identitySkillDataSources": (identity_alias or {}).get("skillDataSources") or [],
             "playbackRole": playback_role,
+            "wwiseActionOperationTypes": action_profile["operationTypes"],
+            "wwiseActionOperationTypesHex": action_profile["operationTypesHex"],
+            "wwiseActionOperations": action_profile["operationLabels"],
+            "wwiseUntypedActionCount": action_profile["untypedActionCount"],
             "authoredEventHash": authored_event_hash,
             "authoredEventHashHex": f"0x{authored_event_hash:08x}",
             "scannedBankPackageCount": bank_package_count,
@@ -10563,6 +11045,9 @@ def build_event_rows(
             "traversalStatus": traversal_status,
             "unresolvedNodeCount": sum(len(row.get("unresolvedNodes") or []) for row in evidence_rows),
             "contextCount": len(event_contexts),
+            "playbackLocationStatus": playback_location_status,
+            "purposeKnowledgeStatus": purpose_knowledge_status,
+            "purposeInvestigationPriority": purpose_investigation_priority,
             "contextStoredCount": len(event_contexts),
             "contextsTruncated": False,
             "playableCharacterAnimationOwnerCount": len(character_animation_owner_ids),
@@ -10598,10 +11083,27 @@ def build_event_rows(
     return rows, media_to_events, banks
 
 
-def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, list[str]]) -> list[dict[str, Any]]:
+def build_media_rows(
+    audio_index: dict[str, Any],
+    media_to_events: dict[str, list[str]],
+    event_categories: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    event_categories = event_categories or {}
     seen: set[tuple[str, str]] = set()
     definition_evidence_by_media_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    authored_event_ids_by_bank: dict[tuple[str, int], set[str]] = defaultdict(set)
+    for inventory in audio_index.get("wwiseEventInventory") or []:
+        if not isinstance(inventory, dict):
+            continue
+        event_id = str(inventory.get("eventId") or "").strip()
+        bank = str(inventory.get("bank") or "").strip()
+        try:
+            bank_id = int(inventory.get("bankId"))
+        except (TypeError, ValueError):
+            continue
+        if event_id and bank and not event_id.lower().startswith("hashed-event:"):
+            authored_event_ids_by_bank[(bank, bank_id)].add(event_id)
     for evidence in (audio_index.get("hircSummary") or {}).get("definitionOnlyDecodedSoundObjects") or []:
         if not isinstance(evidence, dict):
             continue
@@ -10625,6 +11127,10 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
         compact["eventCount"] = len(event_ids)
         if event_ids:
             compact["eventIds"] = event_ids
+            compact["relatedEventCategories"] = sorted({
+                str(event_categories.get(event_id) or "unknown")
+                for event_id in event_ids
+            })
         try:
             media_id = int(compact.get("mediaId") or compact.get("id"))
         except (TypeError, ValueError):
@@ -10633,6 +11139,17 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
         if definition_evidence and not event_ids:
             compact["audioLibraryObjectStatus"] = "wwiseSoundDefinitionWithoutEventPath"
             compact["wwiseDefinitionEvidence"] = definition_evidence
+            bank_event_ids = sorted({
+                event_id
+                for evidence in definition_evidence
+                for event_id in authored_event_ids_by_bank.get((
+                    str(evidence.get("bank") or ""),
+                    int(evidence.get("bankId") or 0),
+                ), set())
+            })
+            if bank_event_ids:
+                compact["audioLibraryBankEventIds"] = bank_event_ids
+                compact["purposeHintStatus"] = "authoredEventBankColocationOnly"
         rows.append(compact)
     rows.sort(key=lambda row: (
         str(row.get("audioCategory") or "unknown"),
@@ -10653,11 +11170,7 @@ def annotate_media_playback_locations(
         context_rows = [
             row for row in event.get("contexts") or [] if isinstance(row, dict)
         ]
-        has_context = any(
-            str(row.get("playbackPlacementStatus") or "")
-            not in {"definitionOnly", "selectionTransformOnly"}
-            for row in context_rows
-        )
+        has_context = has_authored_playback_context(context_rows)
         if not context_rows:
             has_context = bool(int(event.get("contextCount") or 0))
         for value in (event.get("id"), event.get("eventId"), event.get("name")):
@@ -10681,6 +11194,18 @@ def annotate_media_playback_locations(
         else:
             status = "unknown"
         row["playbackLocationStatus"] = status
+        if int(row.get("storyLineBindingCount") or 0) > 0:
+            row["purposeKnowledgeStatus"] = "exactStoryLineBinding"
+            row["purposeInvestigationPriority"] = "resolvedTerminal"
+        elif status == "unknown":
+            row["purposeKnowledgeStatus"] = "unknownUse"
+            row["purposeInvestigationPriority"] = "highest"
+        elif status == "eventRelationOnly":
+            row["purposeKnowledgeStatus"] = "eventGraphOnly"
+            row["purposeInvestigationPriority"] = "secondary"
+        else:
+            row["purposeKnowledgeStatus"] = "authoredContextKnown"
+            row["purposeInvestigationPriority"] = "resolved"
         counts[status] += 1
     return counts
 
@@ -10885,12 +11410,22 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "audioLibraryResolutionStatus", "eventIdentityStatus", "eventNameEvidence",
         "eventNameSourceKind", "identityOnlyPlaybackPlacementStatus",
         "identityNumericSkillIds", "identityTableSources", "identitySkillDataSources", "playbackRole",
+        "wwiseActionOperationTypes", "wwiseActionOperationTypesHex",
+        "wwiseActionOperations", "wwiseUntypedActionCount",
         "authoredEventHash", "authoredEventHashHex",
         "scannedBankPackageCount", "scannedBankPackageFingerprint",
         "possibleMediaCount", "candidateCount", "uniqueDecodedContentCount",
         "contentEquivalentLeafCount", "playRootCount", "playRootActionIds",
         "runtimeSelection", "mediaRelationTypes", "selectionContainerTypes",
         "traversalStatus", "unresolvedNodeCount", "contextCount",
+        "playbackLocationStatus", "purposeKnowledgeStatus", "purposeInvestigationPriority",
+        "audioLibraryPlaybackTargetStatus", "audioLibraryEquivalentEventIds",
+        "audioLibraryEquivalentEventCount", "audioLibraryEquivalentCategories",
+        "audioLibrarySharedPlayTargetSets", "audioLibraryPurposeHintStatus",
+        "audioLibraryMediaLeafStatus", "audioLibraryMediaEquivalentEventIds",
+        "audioLibraryMediaEquivalentEventCount", "audioLibraryMediaEquivalentCategories",
+        "audioLibrarySharedMediaIds", "audioLibrarySharedMediaPackages",
+        "audioLibraryMediaPurposeHintStatus",
         "contextStoredCount", "contextsTruncated",
         "playableCharacterAnimationOwnerCount", "enemyAnimationOwnerCount",
         "animationContextScope", "animationFunctions", "customFootstepOccurrenceCount",
@@ -10959,7 +11494,15 @@ def build_audio_semantic_data(
 ) -> dict[str, Any]:
     language = language.upper()
     runtime_model = build_runtime_model(metadata_path, export_root)
-    literal_context_index, managed_literal_names = managed_literal_contexts(metadata_path)
+    current_wwise_event_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in audio_index.get("wwiseEventInventory") or []
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    literal_context_index, managed_literal_names = managed_literal_contexts(
+        metadata_path,
+        current_wwise_event_hashes=current_wwise_event_hashes,
+    )
     cue_semantics = collect_audio_cue_semantics(export_root)
     global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
     spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
@@ -11119,7 +11662,17 @@ def build_audio_semantic_data(
         }
     )
     events, media_to_events, banks = build_event_rows(audio_index, contexts)
-    media = build_media_rows(audio_index, media_to_events)
+    shared_play_target_event_count = annotate_shared_wwise_play_targets(events)
+    shared_media_leaf_event_count = annotate_shared_wwise_media_leaves(events)
+    media = build_media_rows(
+        audio_index,
+        media_to_events,
+        {
+            str(event.get("id") or ""): str(event.get("category") or "unknown")
+            for event in events
+            if event.get("id")
+        },
+    )
     radio_catalog = attach_levelscript_radio_contexts(
         media,
         export_root,
@@ -11131,6 +11684,7 @@ def build_audio_semantic_data(
         webui_root,
         language,
         export_root=export_root,
+        levelscript_semantics=levelscript_semantics,
     )
     media_playback_location_counts = annotate_media_playback_locations(media, events)
     custom_footstep_model = build_custom_footstep_model(events, webui_root, language)
@@ -11332,6 +11886,11 @@ def build_audio_semantic_data(
             "wwiseEventsWithUnresolvedActionRole": sum(
                 row.get("playbackRole") == "unresolved" for row in events
             ),
+            "wwiseEmptyEventDefinitions": sum(
+                row.get("playbackRole") == "emptyEventDefinition" for row in events
+            ),
+            "eventsWithAuthoredSharedPlayTargetSet": shared_play_target_event_count,
+            "eventsWithAuthoredSharedMediaLeafSet": shared_media_leaf_event_count,
             "audioDialogWwiseEventAliases": len(
                 audio_index.get("audioDialogWwiseEventAliases") or []
             ),
@@ -11372,6 +11931,10 @@ def build_audio_semantic_data(
             "mediaPlaybackLocationUnknown": media_playback_location_counts.get("unknown", 0),
             "definitionOnlyDecodedMedia": sum(
                 row.get("audioLibraryObjectStatus") == "wwiseSoundDefinitionWithoutEventPath"
+                for row in media
+            ),
+            "recoveredOrphanExternalMediaIdentities": sum(
+                row.get("externalMediaIdentityStatus") == "recoveredAuthoredPathHash"
                 for row in media
             ),
             "mediaWithEventRelationOnly": media_playback_location_counts.get("eventRelationOnly", 0),

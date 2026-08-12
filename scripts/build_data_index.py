@@ -24,7 +24,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from common import OUT_DIR, ROOT, normalize_posix, write_json
+from common import (
+    normalize_posix,
+    OUT_DIR,
+    ROOT,
+    sha256_file as file_sha256,
+    write_json,
+)
 from story_builder.levelscript_binary import (
     decode_levelscript_action_map_details,
     decode_levelscript_action_map_header,
@@ -968,12 +974,6 @@ def hex_signature(data: bytes, length: int = 8) -> str:
 
 
 
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 def read_header(path: Path) -> bytes:
     try:
         with path.open("rb") as fh:
