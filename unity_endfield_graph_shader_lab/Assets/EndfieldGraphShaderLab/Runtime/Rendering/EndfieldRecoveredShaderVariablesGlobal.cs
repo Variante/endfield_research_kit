@@ -109,6 +109,8 @@ namespace EndfieldGraphShaderLab
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
         }
 
+        internal ComputeBuffer CurrentBuffer => buffer;
+
         public void Dispose()
         {
             if (disposed)

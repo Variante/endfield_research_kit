@@ -2690,9 +2690,11 @@ For an isolated D3D11 exact-consumer attempt, use
 submits the selected original DXBC into a private target and never presents it.
 The current MainCamera frame proves exact execution (`exactBound=1`) and a
 complete `t0..t25` SRV mask (`0x3ffffff`, no resource failures); the readback
-contains 7,372,800 bytes with 6,430,845 nonzero bytes. The output remains
-private and non-presented, so this command does not enable retail pass 0 or
-claim numeric lighting parity.
+contains 7,372,800 bytes with 6,430,845 nonzero bytes. The exact b0–b8 bridge
+also reports `constantBufferMask=0x1ff`; the current RGBA-float oracle hash is
+`b0130f5a0f67f714181847413757e81fbeebe59af0428abecdc9b33e67d2cb83`. The
+output remains private and non-presented, so this command does not enable
+retail pass 0 or claim numeric lighting parity.
 
 The selected original pass-0 `_TransformVariables` b30 reads are now closed for
 the physical camera's view matrix, inverse view, inverse GPU view-projection,

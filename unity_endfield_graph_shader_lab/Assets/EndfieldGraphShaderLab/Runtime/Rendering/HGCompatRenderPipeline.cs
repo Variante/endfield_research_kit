@@ -1472,6 +1472,17 @@ namespace EndfieldGraphShaderLab
                 renderHeight,
                 recoveredDeferredGBufferFrame,
                 recoveredDeferredResolverResources,
+                recoveredDeferredTransformVariables,
+                recoveredShaderVariablesGlobal,
+                recoveredReflectionProbeFallback,
+                recoveredLightBinning,
+                recoveredVisibilitySHConstants,
+                recoveredDeferredLightData,
+                recoveredDeferredShadowData,
+                recoveredDeferredTransformsReady,
+                recoveredShaderVariablesGlobalReady,
+                recoveredDeferredLightDataReady,
+                recoveredDeferredShadowDataReady,
                 canonicalColorTarget,
                 canonicalDepthTarget);
 

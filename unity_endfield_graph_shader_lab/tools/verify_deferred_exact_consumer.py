@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
 
@@ -17,6 +18,7 @@ SUBMITTED_RE = re.compile(
     r"resourceMask=0x(?P<mask>[0-9a-f]+),\s*"
     r"resourceFailureMask=0x(?P<resource_failures>[0-9a-f]+),\s*"
     r"resourceFailureResults=(?P<resource_results>[^,]+),\s*"
+    r"constantBufferMask=0x(?P<cb_mask>[0-9a-f]+),\s*"
     r"failureCount=(?P<failures>\d+),\s*"
     r"presented=(?P<presented>true|false),\s*"
     r"retailPass0=(?P<pass0>true|false),\s*"
@@ -33,6 +35,12 @@ READBACK_RE = re.compile(
     r"resourceMask=0x(?P<mask>[0-9a-f]+),\s*"
     r"resourceFailureMask=0x(?P<resource_failures>[0-9a-f]+),\s*"
     r"resourceFailureResults=(?P<resource_results>[^,]+),\s*"
+    r"constantBufferMask=0x(?P<cb_mask>[0-9a-f]+),\s*"
+    r"rgbaFloatSha256=(?P<sha>[0-9a-f]{64}),\s*"
+    r"finiteFloats=(?P<finite>\d+),\s*"
+    r"nonFiniteFloats=(?P<nonfinite>\d+),\s*"
+    r"min=(?P<minimum>[^,]+),\s*"
+    r"max=(?P<maximum>[^,]+),\s*"
     r"failureCount=(?P<failures>\d+),\s*"
     r"presented=(?P<presented>true|false),\s*"
     r"retailPass0=(?P<pass0>true|false)\.",
@@ -76,6 +84,7 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
             "resourceMask": int(match["mask"], 16),
             "resourceFailureMask": int(match["resource_failures"], 16),
             "resourceFailureResults": match["resource_results"],
+            "constantBufferMask": int(match["cb_mask"], 16),
             "failureCount": int(match["failures"]),
             "presented": match["presented"].lower() == "true",
             "retailPass0": match["pass0"].lower() == "true",
@@ -110,6 +119,12 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
             "resourceMask": int(match["mask"], 16),
             "resourceFailureMask": int(match["resource_failures"], 16),
             "resourceFailureResults": match["resource_results"],
+            "constantBufferMask": int(match["cb_mask"], 16),
+            "rgbaFloatSha256": match["sha"],
+            "finiteFloats": int(match["finite"]),
+            "nonFiniteFloats": int(match["nonfinite"]),
+            "min": match["minimum"],
+            "max": match["maximum"],
             "failureCount": int(match["failures"]),
             "presented": match["presented"].lower() == "true",
             "retailPass0": match["pass0"].lower() == "true",
@@ -126,6 +141,9 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
         )
         require("readback_resource_failure_mask", readback["resourceFailureMask"], 0)
         require("readback_resource_failure_results", readback["resourceFailureResults"], "none")
+        require("readback_constant_buffer_mask_all_b0_b8", readback["constantBufferMask"], 0x1FF)
+        require("readback_finite_float_count", readback["finiteFloats"], 640 * 720 * 4)
+        require("readback_nonfinite_float_count", readback["nonFiniteFloats"], 0)
         require("readback_native_failures", readback["failureCount"], 0)
         require("readback_presented", readback["presented"], False)
         require("readback_retail_pass0", readback["retailPass0"], False)
@@ -143,9 +161,16 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", required=True, type=Path)
+    parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     text = args.log.read_text(encoding="utf-8", errors="replace")
     report = validate_log(text, args.log)
+    if args.report is not None:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     if report["valid"]:
         print("VALID: exact deferred resolver consumer")
         return 0
