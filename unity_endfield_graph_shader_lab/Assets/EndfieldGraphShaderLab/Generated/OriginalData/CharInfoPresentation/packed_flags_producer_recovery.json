@@ -176,6 +176,17 @@
               },
               "observed": "These explicit managed buffer/property APIs resolve their own object handles and dispatch through separate command/property paths. No call edge from SetCustomPerDrawData_Injected, its refresh path, or resolver 0x1804255f0 reaches these wrappers."
             },
+            "indirect_lifecycle_followup": {
+              "status": "renderer-lifecycle-virtuals-audited-no-upload-edge",
+              "functions": [
+                "0x18042c910..0x18042cb01",
+                "0x18042d530..0x18042d75e",
+                "0x18042f3d0..0x18042f4ed"
+              ],
+              "observed": "The renderer registration/rebuild path calls virtual slots +0x128 and +0x130, refreshes the resolved resource, invokes the +0x120/+0xf0 lifecycle hooks, then prepares the ordinary renderer record through 0x18042a130. Teardown calls +0x128/+0x80/+0xe8/+0xf8 and clears the resolved component record. The inspected bodies contain no resource +0xd0 read, constant-buffer/descriptor API, or direct call into the mapped GPU-driven entrypoints.",
+              "call_graph_scope": "All 21 resolver call sites with recorded memory accesses were checked for direct calls and one-level child calls into the known GPU-driven/command-binding address range; none reached a command encoder or explicit buffer/property API.",
+              "negative_result": "These virtual lifecycle slots remain an unresolved dynamic implementation boundary, but their visible registration, refresh, record-preparation, and teardown bodies do not identify the missing channel-2 resource-to-GPU upload. Keep the edge fail-closed."
+            },
             "negative_result": "The expanded resolver-callsite sample closes additional false-positive record writers and explicit MPB/global-buffer routes, but still finds no resource +0xd0 to GPU descriptor upload edge."
           },
           "negative_result": "No inspected UnityPlayer path reads resource +0xd0 (or a proven equivalent vector lane) into a constant-buffer/descriptor binding, and no direct call edge names set 0/binding 33. Keep the channel-to-resource-to-GPU edge open."

@@ -380,6 +380,19 @@ NPC archetypes are imported as labeled source kits.
   entrypoint/candidate audit is recorded in
   `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`;
   the resource-to-descriptor edge remains fail-closed.
+  A follow-up call-graph audit covered all 21 resolver call sites that had
+  recorded memory accesses, plus their direct and one-level child calls. The
+  renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
+  virtual lifecycle slots `+0x128`/`+0x130`, refreshes the resolved resource,
+  invokes `+0x120`/`+0xf0`, and prepares the ordinary renderer record through
+  `0x18042a130`; teardown (`0x18042f3d0..0x18042f4ed`) uses `+0x128`/`+0x80`
+  /`+0xe8`/`+0xf8` and clears the component record. None of these visible
+  bodies reads `resource +0xd0`, calls an explicit buffer/property API, or
+  reaches the mapped GPU-driven entrypoints. The virtual implementations are
+  still a dynamic boundary, so this is a bounded negative audit rather than
+  proof that the upload does not exist; keep the channel-2 resource-to-GPU
+  edge fail-closed. Structured details are in
+  `packed_flags_producer_recovery.json` under `indirect_lifecycle_followup`.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with
