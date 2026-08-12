@@ -288,8 +288,14 @@ NPC archetypes are imported as labeled source kits.
   VFX alpha use index 4, and Houdini/UV/trail scan use index 3. This recovers a
   source-backed character per-draw producer and proves the runtime slot ABI,
   but the original DXBC has no RDEF and the shipped fragment metadata is a
-  stale vertex copy, so channel 2 to `cb3[0].w` is not yet a proven
-  shader-register binding. The durable audit is
+  stale vertex copy. A refreshed targeted AnimeStudio export with bytecode
+  sidecars now closes the shader-side half independently: the raw Vulkan
+  HGBuffer fragment declares the equivalent uniform at descriptor set 0,
+  binding 33 as a four-float block and accesses member index 3 (`w`) before
+  the packed-bit extraction. The D3D11 fragment sidecar is stage-confirmed
+  but still RDEF-less; the binary Vulkan descriptor/access chain is the
+  authoritative cross-platform reflection. The remaining gap is channel 2
+  into Unity's resource binding, not the cb3 component itself. The durable audit is
   `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`.
   Installed metadata also closes the producer's packed layout: controller type
   values 8/16/24/32 (rain, wet, wet-global, snow) quantize into byte lanes at
@@ -309,9 +315,11 @@ NPC archetypes are imported as labeled source kits.
   `+0xb0 + 0x10*index` (channel 2 `+0xd0`). `GetCustomPerDrawData_Injected`
   reads the same renderer formula. This proves the channel-2 native
   storage/resource layout rather than merely the managed forwarding path, but
-  the resource's GPU constant-buffer component mapping is still not exposed;
-  the observed native `.x` versus HGRP consumer `.w` remap therefore remains
-  open and fail closed.
+  the resource-to-descriptor upload remains open. Do not treat the sidecar
+  metadata label `_TerrainSubsurfaceConstants` as a recovered source name: it
+  is inherited from the serialized parameter record, while raw Vulkan binding
+  33/member 3 is the stable fact. Keep this channel-to-resource edge fail
+  closed.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with

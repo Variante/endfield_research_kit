@@ -2,7 +2,7 @@
   "schema": "endfield.charinfo.hgrp-packed-flags-producer-recovery.v1",
   "shader": "HGRP/Lit",
   "pass": "HGBuffer",
-  "status": "consumer-closed-producer-recovered-native-layout-binding-abi-partial",
+  "status": "consumer-closed-producer-recovered-native-layout-component-closed-channel-map-open",
   "consumer": {
     "source_hlsl": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/hgbuffer_fragment.hlsl",
     "fragment_dxbc": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/HGRPLitHGBuffer.fragment.dxbc.bytes",
@@ -11,7 +11,25 @@
       "target2_w": "((uint)asfloat(asuint(cb3[0].w)) >> 2) / 3",
       "target3_w": "((uint)asfloat(asuint(cb3[0].w)) & 3) / 3"
     },
-    "independent_dxbc_export": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_Lit_p49E2B3F8CF6DB5CE.shader"
+    "independent_dxbc_export": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_Lit_p49E2B3F8CF6DB5CE.shader",
+    "cross_platform_reflection": {
+      "status": "source-closed-component-binding",
+      "source": "Refreshed installed Persistent HGRP/Lit Shader JSON plus AnimeStudio bytecode sidecars; the D3D11 fragment has no RDEF, so the Vulkan fragment is the independent binding witness.",
+      "fragment_spirv_sha256": "D7A4C92C48760E09DE515E97FB99B234044A0596BFF0901A97A7365691DD7EE0",
+      "fragment_spirv_decoded_stage": "fragment",
+      "descriptor_set": 0,
+      "binding": 33,
+      "uniform_block_shape": "struct { float; float; float; float; }",
+      "packed_flag_member": {
+        "access_chain_member_index": 3,
+        "vector_component": "w",
+        "observed": "The raw SPIR-V fragment declares the block variable at descriptor set 0/binding 33 and emits OpAccessChain on that variable with constant member index 3 before the integer bit extraction path."
+      },
+      "sidecar_metadata_name": "_TerrainSubsurfaceConstants",
+      "sidecar_metadata_boundary": "The sidecar metadata name is inherited from the serialized parameter record and is not used to rename the anonymous HLSL cb3; the binary descriptor set/binding and member access are the authoritative cross-platform facts.",
+      "d3d11_fragment_sha256": "D026DF140232DE4A5C281108C068CE77D90186FE8152D73041C58042C8A142D6",
+      "binding_interpretation": "Vulkan set 0/binding 33 is the cross-platform descriptor equivalent of the D3D11 one-vector b3 resource for this HGBuffer fragment; member 3 independently confirms cb3[0].w."
+    }
   },
   "producer_audit": {
     "installed_metadata_sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
@@ -188,7 +206,7 @@
           "operation": "Clamp value to [0,1], quantize to an 8-bit value, clear byte ((type - 8) & 31) in the packed word, OR the quantized value shifted to that byte, then reinterpret the uint bits as float.",
           "propagation": "The packed word is written to customPerDrawData0.x and the Vector4 is forwarded through RendererInfo.TrySetCharacterPerDrawData to custom-per-draw channel 2."
         },
-        "component_binding_gap": "The native producer now has a closed storage/resource ABI for channel 2 (renderer +0x68 and resource +0xd0), but the closed HGRP/Lit HGBuffer consumer reads cb3[0].w; no Unity/HGRP reflection or target-frame capture currently proves the resource-to-register/component remap."
+        "component_binding_gap": "The shader component is now closed independently by the Vulkan fragment (set 0/binding 33, member 3 = w), while the native producer still lacks a proven channel-2-to-resource-binding edge; keep only that resource-to-channel map open."
       },
       "global_character_params10_producer": {
         "status": "source-closed-independent-global-carrier-hgrp-binding-still-open",
@@ -268,9 +286,9 @@
       }
     },
     "binding_gap": {
-      "status": "open",
-      "reason": "The original fragment DXBC has no RDEF chunk, and its shipped fragment metadata is a stale byte-identical copy of the vertex metadata; neither names the b3 buffer. Static evidence therefore proves the character channel-2 producer but not the final channel-2-to-register(b3) binding ABI for HGRP/Lit HGBuffer.",
-      "required_evidence": "A compatible Unity/HGRP reflection record or an authorized target-frame capture showing the renderer/resource custom-per-draw channel mapped to cb3[0].w."
+      "status": "channel-to-resource-binding-open",
+      "reason": "The original fragment DXBC still has no RDEF and the shipped fragment metadata remains a stale vertex copy, but the refreshed Vulkan fragment independently closes descriptor set 0/binding 33 and member 3 (the cb3 vector w component). Static evidence now proves the shader resource/component; it does not yet prove that Unity's channel-2 renderer/resource slot feeds that binding.",
+      "required_evidence": "A compatible Unity native resource-to-descriptor upload path or an authorized target-frame capture showing custom-per-draw channel 2 bound to descriptor set 0/binding 33."
     },
     "observed": [
       "GBufferPassConstructor builds renderer-list descriptions and submits the HGBuffer renderer list; it does not write b3.",
@@ -310,7 +328,7 @@
       ],
       "boundary": "Static native evidence now separates the known cloth/proxy/skin-capture routes from the missing previous-deformed-position producer. The IFix-patched cloth wrapper and the renderer-side history state still require compatible patch-body or target-frame evidence before publication."
     },
-    "conclusion": "The source-backed producer and Unity native storage/resource ABI for the character custom per-draw channel are recovered (CHARACTER_PARAMS_INDEX=2; renderer +0x68; resource +0xd0), while the final channel-2-to-cb3[0].w binding remains open. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the binding-compatible upload or an authorized target-frame capture is recovered."
+    "conclusion": "The source-backed producer and Unity native storage/resource ABI for the character custom per-draw channel are recovered (CHARACTER_PARAMS_INDEX=2; renderer +0x68; resource +0xd0), and refreshed Vulkan reflection closes the HGRP/Lit b3 equivalent at descriptor set 0/binding 33, vector member w. The remaining open edge is channel 2 into that resource binding. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the channel-to-resource upload or an authorized target-frame capture is recovered."
   },
   "activation_policy": "default-off-fail-closed"
 }
