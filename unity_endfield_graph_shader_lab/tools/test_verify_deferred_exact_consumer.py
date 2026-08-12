@@ -16,8 +16,8 @@ validate_log = MODULE.validate_log
 
 GOOD_LOG = """
 Exiting batchmode successfully now!
-Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3fffffe, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
-Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=1200, exactBound=1, resourceMask=0x3fffffe, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false.
+Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
+Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, failureCount=0, presented=false, retailPass0=false.
 """
 
 
@@ -33,6 +33,17 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         )
         self.assertFalse(report["valid"])
         self.assertTrue(any("exact_shader_bound" in failure for failure in report["failures"]))
+
+    def test_reports_incomplete_resource_mask(self):
+        report = validate_log(
+            GOOD_LOG.replace("resourceMask=0x3ffffff", "resourceMask=0x3fff5f"),
+            Path("fixture.log"),
+        )
+        self.assertFalse(report["valid"])
+        self.assertTrue(
+            any("readback_resource_mask_all_t0_t25" in failure
+                for failure in report["failures"])
+        )
 
 
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ READBACK_RE = re.compile(
     r"retailPass0=(?P<pass0>true|false)\.",
     re.IGNORECASE,
 )
+EXPECTED_RESOURCE_MASK = (1 << 26) - 1
 
 
 def validate_log(text: str, source: Path) -> dict[str, object]:
@@ -118,7 +119,11 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
         require("readback_bytes", readback["bytes"], 640 * 720 * 16)
         require("readback_nonzero", readback["nonzeroBytes"] > 0, True)
         require("readback_exact_shader_bound", readback["exactBound"], 1)
-        require("readback_resource_mask_nonzero", readback["resourceMask"] != 0, True)
+        require(
+            "readback_resource_mask_all_t0_t25",
+            readback["resourceMask"],
+            EXPECTED_RESOURCE_MASK,
+        )
         require("readback_resource_failure_mask", readback["resourceFailureMask"], 0)
         require("readback_resource_failure_results", readback["resourceFailureResults"], "none")
         require("readback_native_failures", readback["failureCount"], 0)

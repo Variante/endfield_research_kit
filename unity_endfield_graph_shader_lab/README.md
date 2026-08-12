@@ -2688,10 +2688,11 @@ remains explicitly invalid and pass 0 stays disabled.
 For an isolated D3D11 exact-consumer attempt, use
 `verify_recovered_deferred_gbuffer_frame.bat --exact-consumer-d3d11`. This
 submits the selected original DXBC into a private target and never presents it.
-The current frame proves exact execution and raw `t0`/D16 `t6` SRV creation;
-typed/array/MRT `t5/t7/t22/t23/t24/t25` SRV views still fail closed with
-bounded `E_INVALIDARG` diagnostics, so this command does not enable retail
-pass 0 or claim numeric lighting parity.
+The current MainCamera frame proves exact execution (`exactBound=1`) and a
+complete `t0..t25` SRV mask (`0x3ffffff`, no resource failures); the readback
+contains 7,372,800 bytes with 6,430,845 nonzero bytes. The output remains
+private and non-presented, so this command does not enable retail pass 0 or
+claim numeric lighting parity.
 
 The selected original pass-0 `_TransformVariables` b30 reads are now closed for
 the physical camera's view matrix, inverse view, inverse GPU view-projection,

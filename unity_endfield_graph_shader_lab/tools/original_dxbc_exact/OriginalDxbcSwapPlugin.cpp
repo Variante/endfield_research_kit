@@ -186,6 +186,26 @@ DXGI_FORMAT ShaderResourceFormat(DXGI_FORMAT format)
 {
     switch (format)
     {
+        case DXGI_FORMAT_R8_TYPELESS:
+            return DXGI_FORMAT_R8_UNORM;
+        case DXGI_FORMAT_R8G8_TYPELESS:
+            return DXGI_FORMAT_R8G8_UNORM;
+        case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+            return DXGI_FORMAT_R8G8B8A8_UNORM;
+        case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+            return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case DXGI_FORMAT_R16_TYPELESS:
+            return DXGI_FORMAT_R16_UNORM;
+        case DXGI_FORMAT_R16G16_TYPELESS:
+            return DXGI_FORMAT_R16G16_UNORM;
+        case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+            return DXGI_FORMAT_R16G16B16A16_FLOAT;
+        case DXGI_FORMAT_R10G10B10A2_TYPELESS:
+            return DXGI_FORMAT_R10G10B10A2_UNORM;
+        case DXGI_FORMAT_R32G32_TYPELESS:
+            return DXGI_FORMAT_R32G32_FLOAT;
+        case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+            return DXGI_FORMAT_R32G32B32A32_FLOAT;
         case DXGI_FORMAT_D16_UNORM:
             return DXGI_FORMAT_R16_UNORM;
         case DXGI_FORMAT_D24_UNORM_S8_UINT:
@@ -194,8 +214,6 @@ DXGI_FORMAT ShaderResourceFormat(DXGI_FORMAT format)
             return DXGI_FORMAT_R32_FLOAT;
         case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
             return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
-        case DXGI_FORMAT_R16_TYPELESS:
-            return DXGI_FORMAT_R16_UNORM;
         case DXGI_FORMAT_R32_TYPELESS:
             return DXGI_FORMAT_R32_FLOAT;
         case DXGI_FORMAT_R24G8_TYPELESS:
@@ -374,7 +392,14 @@ void DrawExactRuntimeShader()
     // buffers, SRVs, and samplers. Draw from this plugin event so Unity cannot
     // overwrite the exact stages with the shell material between installation
     // and the draw call.
+    // Unity's shell draw has already created the authoritative SRVs for these
+    // RenderTextures. Reuse those views first: a RenderTexture may be
+    // render-target-only at the raw resource level even though Unity owns a
+    // compatible internal SRV for the material binding. Recreating a view
+    // from the ID3D11Resource would incorrectly turn that valid binding into
+    // E_INVALIDARG for typed, array, and MRT formats.
     ID3D11ShaderResourceView* resources[kTextureSlotCount] = {};
+    context->PSGetShaderResources(0, kTextureSlotCount, resources);
     std::uint32_t resourceMask = 0;
     const std::uint32_t textureCount =
         g_texturePointerCount.load(std::memory_order_acquire);
@@ -382,6 +407,11 @@ void DrawExactRuntimeShader()
          slot < textureCount && slot < kTextureSlotCount;
          ++slot)
     {
+        if (resources[slot] != nullptr)
+        {
+            resourceMask |= 1u << slot;
+            continue;
+        }
         if (g_texturePointers[slot] == 0)
             continue;
         ID3D11Resource* resource = reinterpret_cast<ID3D11Resource*>(
@@ -407,6 +437,14 @@ void DrawExactRuntimeShader()
     context->VSSetShader(g_runtimeVertexShader, nullptr, 0);
     context->PSSetShader(g_runtimePixelShader, nullptr, 0);
     context->Draw(3, 0);
+    for (std::uint32_t slot = 0; slot < kTextureSlotCount; ++slot)
+    {
+        if (resources[slot] != nullptr)
+        {
+            resources[slot]->Release();
+            resources[slot] = nullptr;
+        }
+    }
 
     ID3D11VertexShader* vertex = nullptr;
     ID3D11PixelShader* pixel = nullptr;
@@ -425,8 +463,30 @@ void DrawExactRuntimeShader()
     g_renderEventCount.fetch_add(1, std::memory_order_relaxed);
 }
 
+void ArmDiagnosticOnRenderThread()
+{
+    if (g_armed.load(std::memory_order_acquire))
+        return;
+    std::uintptr_t pointers[kTextureSlotCount] = {};
+    const std::uint32_t pointerCount =
+        g_texturePointerCount.load(std::memory_order_acquire);
+    std::memcpy(pointers, g_texturePointers, sizeof(pointers));
+    ResetDiagnosticState();
+    std::memcpy(g_texturePointers, pointers, sizeof(pointers));
+    g_texturePointerCount.store(pointerCount, std::memory_order_release);
+    g_armed.store(true, std::memory_order_release);
+}
+
 void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
 {
+    if (eventId == 3)
+    {
+        // The Unity shell draw must execute while disarmed so its own SRVs
+        // remain authoritative. Arm the exact native event only after that
+        // draw has completed on the render thread.
+        ArmDiagnosticOnRenderThread();
+        return;
+    }
     if (!g_armed.load(std::memory_order_acquire))
         return;
 
