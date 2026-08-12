@@ -281,10 +281,15 @@ NPC archetypes are imported as labeled source kits.
   `Beyond.Rendering.CustomPerDrawDataChannelUtils.SetPerDrawData_CharacterParams`
   copies a Vector4 unchanged into renderer custom-per-draw channel
   `CHARACTER_PARAMS_INDEX=2`, and `EntityRenderHelperMaterialController` has
-  matching `TrySetCharacterPerDrawData`/controller forwarding. This recovers a
-  source-backed character per-draw producer, but the original DXBC has no RDEF
-  and the shipped fragment metadata is a stale vertex copy, so channel 2 to
-  `cb3[0].w` is not yet a proven binding ABI. The durable audit is
+  matching `TrySetCharacterPerDrawData`/controller forwarding. The recovered
+  Unity API contract is `Renderer.SetCustomPerDrawData(int, Vector4)`, with a
+  logical typed index; native producer disassembly independently confirms
+  character params and lit emissive use index 2, emissive-albedo/dissolve and
+  VFX alpha use index 4, and Houdini/UV/trail scan use index 3. This recovers a
+  source-backed character per-draw producer and proves the runtime slot ABI,
+  but the original DXBC has no RDEF and the shipped fragment metadata is a
+  stale vertex copy, so channel 2 to `cb3[0].w` is not yet a proven
+  shader-register binding. The durable audit is
   `Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json`.
   Do not substitute `_ShadingModel`, UnityPerDraw, channel 2, or zero/default
   values; the sidecar remains neutral and fail-closed until that binding or an
