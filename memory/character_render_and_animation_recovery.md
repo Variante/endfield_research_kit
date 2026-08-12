@@ -458,7 +458,15 @@ NPC archetypes are imported as labeled source kits.
   that property to the character resource `+0xd0` or to `UploadPerDrawParams`
   kernel 7. This closes the kernel-index/binding-record ABI while keeping the
   channel-2 resource-to-descriptor and upload-dispatch edges fail-closed;
-  details are recorded under `gpu_driven_binding_path_evidence`. The helper's
+  details are recorded under `gpu_driven_binding_path_evidence`. A full current
+  UnityPlayer image census tightens that boundary: the only
+  `_RTPerDrawParamsBuffer` string is the registry entry at file offset
+  `0x1e2d280`, referenced by the initializer at `0x18121f467` (file offset
+  `0x121ea67`) and interned through `0x180627040`. The image has zero
+  `_UploadBuffer`, `GpuSceneDirtyUpdateCS`, or `UploadPerDrawParams` strings
+  and no direct text reference to the property outside that registry site.
+  This is positive evidence for property registration only, not for a runtime
+  producer or dispatch; keep the shared-payload-to-GPU edge fail-closed. The helper's
   valid-index path is now explicit: `0x1805f84a0` gates
   `kernelIdx < [bindingState+0xd0]`, takes the selected metadata slot's first
   dword as a binding-record key, and updates

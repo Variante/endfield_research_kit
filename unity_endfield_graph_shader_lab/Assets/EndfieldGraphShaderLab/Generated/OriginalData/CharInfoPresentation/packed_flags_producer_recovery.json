@@ -1102,7 +1102,26 @@
           "property_name": "_RTPerDrawParamsBuffer",
           "property_name_va": "0x181e2e680",
           "field_offset": "0x130c",
-          "observed": "The current Shader.PropertyToID registry initializes this name into the shared property-ID table; binding cores load property IDs from their per-shader metadata records."
+          "observed": "The current Shader.PropertyToID registry initializes this name into the shared property-ID table; binding cores load property IDs from their per-shader metadata records.",
+          "unityplayer_shader_property_xref_audit": {
+            "status": "shader-property-registry-only-runtime-edge-open",
+            "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+            "property_name_file_offset": "0x1e2d280",
+            "registration_xref": "0x18121f467",
+            "registration_xref_file_offset": "0x121ea67",
+            "registration_call": "0x180627040",
+            "full_image_string_occurrences": {
+              "_RTPerDrawParamsBuffer": 1,
+              "_UploadBuffer": 0,
+              "GpuSceneDirtyUpdateCS": 0,
+              "UploadPerDrawParams": 0
+            },
+            "direct_text_rip_xrefs": {
+              "_RTPerDrawParamsBuffer": ["0x18121f467"],
+              "outside_registry_initializer": 0
+            },
+            "boundary": "The native image contains only the property-name registration for _RTPerDrawParamsBuffer. No additional text reference or named upload/compute literal identifies a runtime producer, shader bind, _UploadBuffer population, or UploadPerDrawParams kernel-7 dispatch; keep the factory shared-payload-to-GPU edge fail-closed."
+          }
         },
         "boundary": "This closes the managed kernel argument flow and the native immediate/command binding-record ABI. No static edge yet identifies GpuSceneDirtyUpdateCS as the shader object passed to these bind cores, proves kernel 7 is selected by a live producer, or maps the character resource +0xd0 into _RTPerDrawParamsBuffer/binding 33."
       }
