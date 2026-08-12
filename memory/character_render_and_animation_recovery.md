@@ -286,8 +286,18 @@ NPC archetypes are imported as labeled source kits.
   logical typed index; native producer disassembly independently confirms
   character params and lit emissive use index 2, emissive-albedo/dissolve and
   VFX alpha use index 4, and Houdini/UV/trail scan use index 3. This recovers a
-  source-backed character per-draw producer and proves the runtime slot ABI,
-  but the original DXBC has no RDEF and the shipped fragment metadata is a
+  source-backed character per-draw producer and proves the runtime slot ABI.
+  A current GameAssembly body audit tightens that producer contract:
+  `SetPerDrawData_CharacterParams` at `0x18323af00` copies the incoming
+  Vector4 to a 16-byte stack temporary, passes `edx=2`, `rcx=affectRenderer`,
+  and `r8=&temporary` to a lazy indirect renderer setter slot (`0x18f36f578`).
+  That slot is the same one read by the generated
+  `Renderer.SetCustomPerDrawData_Injected` wrapper (`0x183e6e280`), which
+  forwards `rcx/edx/r8` to UnityPlayer's registered internal call.
+  The body has no compute dispatch, buffer bind, or resource `+0xd0` access;
+  it ends at the renderer custom-per-draw API. This confirms the channel-2
+  producer boundary while leaving the resource-to-GPU upload edge open.
+  The original DXBC has no RDEF and the shipped fragment metadata is a
   stale vertex copy. A refreshed targeted AnimeStudio export with bytecode
   sidecars now closes the shader-side half independently: the raw Vulkan
   HGBuffer fragment declares the equivalent uniform at descriptor set 0,
