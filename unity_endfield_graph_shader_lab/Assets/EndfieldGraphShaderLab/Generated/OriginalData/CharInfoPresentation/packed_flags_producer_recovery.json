@@ -916,7 +916,18 @@
             "allocates and initializes a 0x3c-byte batch object through 0x180303ec0 and 0x180a34960",
             "passes the object through 0x180763670",
             "tail-jumps through the resulting object's vtable slot +0x28"
-          ]
+          ],
+          "batch_object_layout": {
+            "initializer": "0x180a34960",
+            "visible_fields": [
+              "+0x00 vtable pointer",
+              "+0x38/+0x48, +0x58/+0x68, and +0x78/+0x88 paired handle/state fields",
+              "+0x40/+0x60/+0x80/+0xa8 small kind/count or sentinel fields",
+              "+0x50/+0x70/+0x90 flag/state bytes or words"
+            ],
+            "handoff": "0x180763670 returns a resolved object; 0x180a377f4 jumps through [object+0x00]+0x28",
+            "dynamic_target": "The +0x28 implementation is selected from the resolved object's runtime vtable; no static target in the installed UnityPlayer image exposes a GPU upload operation."
+          }
         },
         "missing_static_operations": [
           "no _RTPerDrawParamsBuffer reference",
@@ -924,7 +935,7 @@
           "no visible ComputeBuffer/InternalSetData call",
           "no shader-property bind or compute dispatch"
         ],
-        "interpretation": "This is a real native factory/VAT batch call surface, but its visible implementation is an indirect object/vtable handoff over a 0x3c-byte batch object. It does not statically connect the five-Vector4 factory shared record to _UploadBuffer, kernel 7, or channel-2 resource +0xd0; keep the upload edge fail-closed."
+        "interpretation": "This is a real native factory/VAT batch call surface, but its visible implementation is an indirect object/vtable handoff over a 0x3c-byte batch object with paired handle/state fields. The resolved vtable +0x28 target remains runtime-selected; the installed image does not statically connect it to the five-Vector4 factory shared record, _UploadBuffer, kernel 7, or channel-2 resource +0xd0. Keep the upload edge fail-closed."
       },
       "managed_frame_update_evidence": {
         "status": "factory-frame-update-stub-noop",
