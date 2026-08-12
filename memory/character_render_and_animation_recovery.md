@@ -110,6 +110,13 @@ NPC archetypes are imported as labeled source kits.
   the export/decompilation hashes and these equations. This establishes the
   G producer semantics, but the lab still keeps publication disabled until
   the runtime character atlas upload and target-frame state are validated.
+- The lab screen-shadow resolve now mirrors that producer shape: it receives
+  the same-frame PreGBuffer selector/normal lanes and character shadow frame,
+  chooses scalar or 15-slot atlas transforms, applies the original
+  light-facing bias, and performs the 16-tap `GatherRed` depth filter into G.
+  The producer validates camera/atlas/GBuffer ownership before drawing, but
+  `contentValid` remains false and Eye/Skin keywords stay disabled because the
+  complete retail scene-R publication and frame parity are still open.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.

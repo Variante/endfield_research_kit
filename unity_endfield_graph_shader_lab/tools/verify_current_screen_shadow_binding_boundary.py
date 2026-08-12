@@ -31,6 +31,11 @@ SKIN_SHADER = (
     / "Assets/EndfieldGraphShaderLab/Shaders/Recovered/"
     / "EndfieldCharacterSkinRecovered.shader"
 )
+RESOLVE_SHADER = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Resources/"
+    / "EndfieldRecoveredScreenShadowResolve.shader"
+)
 
 
 def read_source(path: Path, label: str) -> str:
@@ -50,11 +55,18 @@ def verify_current_boundary() -> dict[str, Any]:
     producer = read_source(PRODUCER, "screen-shadow producer")
     include = read_source(LIGHTING_INCLUDE, "HGRP lighting include")
     skin = read_source(SKIN_SHADER, "recovered Skin shader")
+    resolve = read_source(RESOLVE_SHADER, "screen-shadow resolve shader")
 
     for needle in (
         'Shader.PropertyToID("_ScreenSpaceShadowMask")',
         "GraphicsFormat.R8G8_UNorm",
         "commandBuffer.SetRenderTarget(resources.mask, sceneDepth);",
+        "EndfieldRecoveredCharacterShadowFrame characterShadowFrame",
+        "preGBufferFrame.gBufferA",
+        "preGBufferFrame.gBufferB",
+        "characterShadowFrame.atlasIdentifier",
+        "PreGBufferAId",
+        "PreGBufferBId",
         "bool contentValid = false;",
         "if (contentValid)",
         "commandBuffer.EnableShaderKeyword(EyeConsumerKeyword);",
@@ -62,6 +74,19 @@ def verify_current_boundary() -> dict[str, Any]:
         "commandBuffer.DisableShaderKeyword(SkinConsumerKeyword);",
     ):
         require(producer, needle, "current screen-shadow producer")
+
+    for needle in (
+        "Texture2D<float4>\n            _EndfieldRecoveredPreGBufferA;",
+        "Texture2D<float4>\n            _EndfieldRecoveredPreGBufferB;",
+        "Texture2D<float>\n            _EndfieldCharacterShadowMap;",
+        "float EndfieldResolveCharacterShadowG(uint2 fullPixel)",
+        "_EndfieldRecoveredPreGBufferA.Load(int3(fullPixel, 0))",
+        "_EndfieldRecoveredPreGBufferB.Load(int3(fullPixel, 0))",
+        "_EndfieldCharacterShadowMap.GatherRed(",
+        "poissonIndex < 16u",
+        "ResolveRecoveredCharacterShadow",
+    ):
+        require(resolve, needle, "current screen-shadow resolve shader")
 
     for needle in (
         "Texture2D<float2> _ScreenSpaceShadowMask;",
@@ -109,6 +134,7 @@ def verify_current_boundary() -> dict[str, Any]:
             "content_valid": content_valid,
             "eye_keyword_gate": "EyeConsumerKeyword" in producer,
             "skin_keyword_gate": producer_skin_gate,
+            "character_g_source_bridge": True,
         },
         "skin_consumer": {
             "diagnostic_branch": True,
