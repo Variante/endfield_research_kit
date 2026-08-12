@@ -231,6 +231,32 @@
                 "mapped_gpu_driven_direct_calls": 0,
                 "explicit_buffer_property_calls": 0,
                 "note": "The concrete table entries close the previously dynamic lifecycle slots for the visible renderer object. Their bodies and direct callees still contain no resource +0xd0-to-descriptor upload. This is a bounded negative result, not proof against another indirect or table-dispatched consumer."
+              },
+              "inlined_lookup_followup": {
+                "status": "exact-component18-lookups-classified-no-gpu-upload",
+                "source": "UnityPlayer exact component18 lookup scan over the current installed binary; three lookup sites were recovered.",
+                "sites": [
+                  {
+                    "function": "0x1804256db",
+                    "lookup": "0x18042571e",
+                    "role": "canonical component18 resolver",
+                    "observed": "Computes and returns the component pointer; no post-lookup field read occurs in this resolver body."
+                  },
+                  {
+                    "function": "0x180ba0d40",
+                    "lookup": "0x180ba1457",
+                    "role": "generic allocation/copy path",
+                    "observed": "Uses the computed pointer as an argument to generic helper 0x181c9f9a0; no custom resource +0xd0 read or descriptor/constant-buffer API is present."
+                  },
+                  {
+                    "function": "0x1811497c1",
+                    "lookup": "0x18114987d",
+                    "role": "generic component-initialization writer",
+                    "observed": "After the exact component18 lookup, source pointer [rbp+0x300] is read at +0xd0/+0xe0/+0xf0/+0x100 and four vectors are written to the resolved destination component. The same source record is then mutated at +0x40..+0x70 before generic helper 0x1801d3660; no custom-per-draw resource identity, descriptor API, or constant-buffer upload is present.",
+                    "classification": "equal +0xd0 displacement is a generic source-record field, not the custom resource-to-GPU consumer"
+                  }
+                ],
+                "negative_result": "The only exact inlined component18 lookups outside the canonical resolver are generic allocation or initialization paths. They close another false-positive +0xd0 match but do not recover the channel-2 resource-to-descriptor edge."
               }
             },
             "negative_result": "The expanded resolver-callsite sample closes additional false-positive record writers and explicit MPB/global-buffer routes, but still finds no resource +0xd0 to GPU descriptor upload edge."

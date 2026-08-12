@@ -407,6 +407,15 @@ NPC archetypes are imported as labeled source kits.
   closes the visible vtable indirection but remains a bounded negative result;
   an indirect or table-dispatched upload consumer is still open. Details are
   in `packed_flags_producer_recovery.json` under `concrete_vtable_followup`.
+  An exact inlined component18 lookup scan found only three sites: the
+  canonical resolver (`0x1804256db`), a generic allocation/copy path
+  (`0x180ba0d40`), and a generic component-initialization writer
+  (`0x1811497c1`). The last reads its separate source record at
+  `+0xd0/+0xe0/+0xf0/+0x100` and writes four vectors to the resolved
+  component; it does not read the custom resource or call a descriptor/
+  constant-buffer upload primitive. This closes another equal-displacement
+  false positive while leaving the channel-2 resource-to-GPU edge open. The
+  structured result is recorded under `inlined_lookup_followup`.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with
