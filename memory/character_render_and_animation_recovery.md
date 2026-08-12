@@ -76,8 +76,15 @@ NPC archetypes are imported as labeled source kits.
   the `HG_ENABLE_PER_OBJECT_MV` + `SRP_INSTANCING_ON` variant. The maintained
   lab now also writes the source-shaped material/color payload into a
   default-off `R8G8B8A8_SRGB` GBuffer C sidecar and validates its readback;
-  motion vectors remain unbound. The C sidecar is not consumed by the retail
-  resolver yet, so this closes a producer input without claiming full deferred
+  motion vectors remain unbound. The paired source vertex DXBC now closes the
+  producer-side history boundary: `TEXCOORD_3` is current clip x/y/w,
+  `TEXCOORD_4_1` is previous skinned/object clip x/y/w, and the variant
+  consumes `_NonJitteredViewNoTransProjMatrix`,
+  `_PrevNonJitteredViewNoTransProjMatrix`, `_PrevCamPosRWS_Internal`, and
+  `unity_MatrixPreviousM`. This is more than a camera-only delta: the previous
+  skinned/object path is separately generated, so the lab does not publish a
+  guessed motion lane. The C sidecar is not consumed by the retail resolver
+  yet, so this closes a producer input without claiming full deferred
   publication. The current export audit reports the five-MRT contract and
   this explicit subset.
 - The default-off screen/direct same-owner audit also passes its Skin/Cloth/Hair
