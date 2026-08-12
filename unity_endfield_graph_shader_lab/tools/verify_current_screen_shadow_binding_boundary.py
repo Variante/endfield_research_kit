@@ -76,6 +76,12 @@ def verify_current_boundary() -> dict[str, Any]:
         require(producer, needle, "current screen-shadow producer")
 
     for needle in (
+        'Name "ScreenSpaceShadowResolve_SceneDirectionalDiagnostic"',
+        'Name "ScreenSpaceShadowResolve_CharacterGDiagnostic"',
+        "Ref 4",
+        "ReadMask 7",
+        "Comp NotEqual",
+        "Comp Equal",
         "Texture2D<float4>\n            _EndfieldRecoveredPreGBufferA;",
         "Texture2D<float4>\n            _EndfieldRecoveredPreGBufferB;",
         "Texture2D<float>\n            _EndfieldCharacterShadowMap;",
@@ -141,6 +147,11 @@ def verify_current_boundary() -> dict[str, Any]:
             "retail_global_keyword": retail_skin_keyword,
             "direct_global_load": direct_skin_global_load,
             "runtime_enabled": content_valid and producer_skin_gate,
+        },
+        "resolve_consumer": {
+            "scene_stencil": {"ref": 4, "read_mask": 7, "comp": "NotEqual"},
+            "character_stencil": {"ref": 4, "read_mask": 7, "comp": "Equal"},
+            "character_g_source_bridge": True,
         },
         "binary_evidence": {
             "retail_skin_load": True,
