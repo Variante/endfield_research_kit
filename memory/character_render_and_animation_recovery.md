@@ -350,6 +350,13 @@ NPC archetypes are imported as labeled source kits.
   `0x1804255f0`. This closes additional false-positive writers; the structured
   details are in `packed_flags_producer_recovery.json` under
   `secondary_callsite_followup`.
+  A broader fixed-offset scan also found `0x1810d26bf` writing a generic
+  destination record at `+0xb0..+0xf0`, including `+0xd0`. Its source is a
+  separate `0x8c`-stride component array with flags at `+0x70`; the body only
+  stages paired generic records and has no custom-per-draw setter/refresh,
+  resource identity, or descriptor/constant-buffer edge. The equal
+  displacement is therefore a negative audit result, not a newly recovered
+  channel-2 binding.
   No inspected UnityPlayer path reads `resource +0xd0` (or an equivalent vector
   lane) into a constant-buffer/descriptor binding, and no direct call edge names
   Vulkan set 0/binding 33. Keep the channel-to-resource-to-GPU edge open.
