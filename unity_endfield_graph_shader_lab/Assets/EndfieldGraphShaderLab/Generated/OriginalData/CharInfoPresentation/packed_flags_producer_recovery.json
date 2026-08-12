@@ -1,0 +1,33 @@
+{
+  "schema": "endfield.charinfo.hgrp-packed-flags-producer-recovery.v1",
+  "shader": "HGRP/Lit",
+  "pass": "HGBuffer",
+  "status": "consumer-closed-producer-open",
+  "consumer": {
+    "source_hlsl": "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_outside_lit/hgbuffer_fragment.hlsl",
+    "fragment_dxbc": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/HGRPLitHGBuffer.fragment.dxbc.bytes",
+    "buffer": "register(b3), one float4, read at cb3[0].w",
+    "equations": {
+      "target2_w": "((uint)asfloat(asuint(cb3[0].w)) >> 2) / 3",
+      "target3_w": "((uint)asfloat(asuint(cb3[0].w)) & 3) / 3"
+    },
+    "independent_dxbc_export": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_Lit_p49E2B3F8CF6DB5CE.shader"
+  },
+  "producer_audit": {
+    "installed_metadata_sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "native_scope": [
+      "HG.Rendering.Runtime.GBufferPassConstructor",
+      "HG.Rendering.Runtime.HGRendererListUtils",
+      "HG.Rendering.Runtime.GpuClothManager._SetPerDrawData",
+      "HG.Rendering.Runtime.SkinnedMeshCaptureManager.SetCaptureDataForPropertyBlock"
+    ],
+    "observed": [
+      "GBufferPassConstructor builds renderer-list descriptions and submits the HGBuffer renderer list; it does not write b3.",
+      "GpuClothManager._SetPerDrawData writes cloth ECS/per-draw data, with no b3 or packed-flag property evidence.",
+      "SkinnedMeshCaptureManager uploads BAKE_SKIN_MATRICES_CB through MaterialPropertyBlock.SetConstantBuffer; it is unrelated to the b3 scalar and does not identify cb3[0].w.",
+      "The generated ShaderLab has no named material property for cb3[0].w; _ShadingModel is consumed from cb2 and is not the packed flag word."
+    ],
+    "conclusion": "No source-backed producer for cb3[0].w is recovered in the current installed binary. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, or zero/default values. Keep Target2.w and Target3.w neutral until the native/material capture or an exact per-renderer upload is recovered."
+  },
+  "activation_policy": "default-off-fail-closed"
+}
