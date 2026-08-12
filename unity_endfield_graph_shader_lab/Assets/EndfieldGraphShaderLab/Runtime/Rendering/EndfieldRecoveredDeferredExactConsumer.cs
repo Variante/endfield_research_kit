@@ -116,13 +116,11 @@ namespace EndfieldGraphShaderLab
             {
                 name = "Recovered exact deferred resolver consumer"
             };
-            bool armed = false;
             bool eventQueued = false;
             try
             {
-                if (!TryArmNative(out string nativeFailure))
+                if (!TryPrepareNative(out string nativeFailure))
                     return FailClosed(nativeFailure);
-                armed = true;
 
                 command.SetGlobalBuffer(BufferT0Id, resources.t0Binning);
                 pointers[0] = NativeBufferPointer(resources.t0Binning);
@@ -165,6 +163,10 @@ namespace EndfieldGraphShaderLab
                 IntPtr renderEvent = Native.GetRenderEventFunc();
                 if (renderEvent == IntPtr.Zero)
                     return FailClosed("exact consumer native render event is unavailable");
+                // Keep the shell draw disarmed so Unity's own SRVs are bound
+                // from the shell reflection metadata. Event 3 arms the
+                // native exact draw only after that shell draw completes.
+                command.IssuePluginEvent(renderEvent, 3);
                 command.IssuePluginEvent(renderEvent, 0);
                 RequestReadback(command, camera.name, width, height);
                 // The native event clears armed state and pointer ownership on
@@ -206,8 +208,7 @@ namespace EndfieldGraphShaderLab
                 if (!eventQueued)
                 {
                     Native.SetDiagnosticTexturePointers(null, 0);
-                    if (armed)
-                        Native.SetDiagnosticArmed(0);
+                    Native.SetDiagnosticArmed(0);
                 }
                 command.Release();
             }
@@ -238,7 +239,7 @@ namespace EndfieldGraphShaderLab
             material = null;
         }
 
-        private bool TryArmNative(out string failure)
+        private bool TryPrepareNative(out string failure)
         {
             failure = string.Empty;
             try
@@ -257,11 +258,6 @@ namespace EndfieldGraphShaderLab
                 if (Native.GetDiagnosticArmed() != 0)
                 {
                     failure = "exact consumer native plugin was already armed";
-                    return false;
-                }
-                if (Native.SetDiagnosticArmed(1) != 1)
-                {
-                    failure = "exact consumer native arm request failed";
                     return false;
                 }
                 return true;

@@ -248,14 +248,13 @@ NPC archetypes are imported as labeled source kits.
 - An explicit `ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1` D3D11-only bridge
   now submits the selected original resolver DXBC against the same-frame
   resources into a private, non-presented output. The MainCamera readback
-  proves exact shader execution (`exactBound=1`, 7,372,800 bytes, nonzero
-  output), and the native bridge now creates the raw `t0` and D16 `t6` SRVs
-  successfully. The remaining typed/array/MRT resources `t5`, `t7`, `t22`,
-  `t23`, `t24`, and `t25` return bounded `E_INVALIDARG` SRV-creation
-  diagnostics; the run therefore fails closed and does not claim full
-  consumer resource parity. The next boundary is exact DXGI view compatibility
-  for those physical RenderTextures, followed by numeric lighting comparison;
-  retail pass 0 remains disabled.
+  proves exact shader execution (`exactBound=1`, 7,372,800 bytes, 6,430,845
+  nonzero bytes). The render-thread arm boundary preserves Unity's shell SRVs,
+  and the native bridge's complete resource mask is now `0x3ffffff`: every
+  `t0` through `t25` source view binds with `resourceFailureMask=0x0`. This
+  closes exact same-frame resource transport, but the output is still private
+  diagnostic data; numeric lighting comparison and retail pass-0 activation
+  remain open.
 - A default-off SphereOutside sidecar now uses the source CharInfo camera and
   transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
   A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and
