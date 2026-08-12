@@ -197,6 +197,18 @@ NPC archetypes are imported as labeled source kits.
   retail target-frame resource ownership and numeric parity remain open.
   This proves exact bytecode execution in the disposable D3D11 fixture only,
   not retail resolver activation or frame parity.
+- The deferred resolver input boundary is now exercised by the actual
+  same-camera D3D12 compatibility frame, not only by source gates. The GBuffer
+  producer stamps camera instance, `Time.frameCount`, extent, and a monotonic
+  publication serial; the consumer rejects stale or cross-camera resources
+  with an actionable fail-closed reason. The D3D12 run reached the recovered
+  punctual shadow producer (D16 atlas `6144x4096`, 23 caster draws), published
+  b34, consumed `_62/_61/_60` as `t23/t24/t25`, and read back `7,372,800`
+  bytes with `5,524,150` nonzero bytes (`publicationSerial=1`). This remains
+  input-order evidence only: the probe is non-presented and retail pass 0 is
+  disabled; full numeric lighting parity and retail survivor ownership remain
+  open. The run's legacy beauty-image hash check drifted independently and is
+  not used as resolver evidence.
 - The selected pass-0 contract now carries a high-confidence D3D11 register
   bridge for the core frame resources: `t0` binning, `t1` camera depth, `t5`
   reflection-probe array, `t6` punctual shadow comparison, `t7` low-res

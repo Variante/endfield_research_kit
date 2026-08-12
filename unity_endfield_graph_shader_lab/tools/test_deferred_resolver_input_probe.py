@@ -49,6 +49,31 @@ class DeferredResolverInputProbeTests(unittest.TestCase):
         self.assertIn("Texture2D<float4> _61 : register(t24)", shader)
         self.assertIn("Texture2D<float4> _60 : register(t25)", shader)
 
+    def test_probe_requires_current_camera_frame_publication(self) -> None:
+        producer = (
+            RUNTIME / "EndfieldRecoveredDeferredGBufferFrame.cs"
+        ).read_text(encoding="utf-8")
+        probe = (
+            RUNTIME / "EndfieldRecoveredDeferredResolverInputProbe.cs"
+        ).read_text(encoding="utf-8")
+        for token in (
+            "publicationValid",
+            "publishedFrame",
+            "publishedCameraInstanceId",
+            "publishedWidth",
+            "publishedHeight",
+            "PublishFrame(camera, width, height)",
+            "InvalidatePublication();",
+            "publication stamp mismatch",
+            "camera,\n            int width,\n            int height",
+        ):
+            self.assertIn(token, producer, token)
+        self.assertIn(
+            "out resolverPublicationSerial",
+            probe,
+        )
+        self.assertIn("publicationSerial=", probe)
+
     def test_existing_publishers_opt_into_probe_policy(self) -> None:
         paths = (
             "EndfieldRecoveredLightBinning.cs",
@@ -65,6 +90,23 @@ class DeferredResolverInputProbeTests(unittest.TestCase):
                 source,
                 name,
             )
+
+    def test_punctual_shadow_admits_recovered_desktop_proxy_material(self) -> None:
+        producer = (
+            RUNTIME / "EndfieldRecoveredPunctualShadowProducer.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'CharacterShadowProxyShaderName =',
+            producer,
+        )
+        self.assertIn(
+            '"Hidden/Endfield/Recovered/CharacterShadowProxy"',
+            producer,
+        )
+        self.assertIn(
+            "CharacterShadowProxyShaderName\n            }",
+            producer,
+        )
 
     def test_exact_constant_aliases_are_published(self) -> None:
         binning = (RUNTIME / "EndfieldRecoveredLightBinning.cs").read_text(
