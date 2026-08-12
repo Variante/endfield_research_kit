@@ -187,6 +187,13 @@ NPC archetypes are imported as labeled source kits.
   prerequisites fail closed. It is deliberately non-presented: canonical
   render-graph lifetime and pass 0 remain open. The current installed
   `RenderWithAlpha=false` route submits no WriteAlpha draw.
+- The source `HGRP/Lit` `HGBuffer` motion lane is now pinned independently of
+  the Skin PreGBuffer audit: vertex `TEXCOORD_5` carries current clip x/y/w and
+  `TEXCOORD_6` carries the separately generated previous clip x/y/w; the
+  fragment computes the same signed fourth-root deltas, then blends them with
+  the source motion-validity mask (`Target1.z/w`). The current SphereOutside
+  sidecar still emits neutral SceneMV and remains non-presented; publishing
+  motion requires the original previous deformation/target-frame state.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count
   publisher verified bit-for-bit on D3D11/D3D12. Its unique native
