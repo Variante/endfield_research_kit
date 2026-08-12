@@ -565,5 +565,390 @@
     });
   }
 
-  Object.assign(WebUI, { createMediaPlayer, enhanceMediaPlayers, renderAudioWaveform });
+  function mediaSource(media) {
+    return String(media?.currentSrc || media?.src || media?.querySelector?.("source")?.src || "");
+  }
+
+  function mediaFileName(media) {
+    const src = mediaSource(media);
+    if (!src) return "Untitled media";
+    const tail = new URL(src, window.location.href).pathname.split("/").filter(Boolean).pop() || src;
+    try {
+      return decodeURIComponent(tail);
+    } catch (_error) {
+      return tail;
+    }
+  }
+
+  function activePageMedia() {
+    const page = document.querySelector(".page-view.is-active:not([hidden])")
+      || Array.from(document.querySelectorAll(".page-view[data-view]")).find(
+        (candidate) => candidate.dataset.view === document.body.dataset.activeView && !candidate.hidden
+      );
+    if (!page) return [];
+    return Array.from(page.querySelectorAll("audio, video")).filter((media) => {
+      if (!mediaSource(media) || media.hidden || media.closest("[hidden]")) return false;
+      return media.getAttribute("aria-hidden") !== "true";
+    });
+  }
+
+  function exactDurationAudioDefaults(mediaItems) {
+    const durationGroups = new Map();
+    mediaItems.forEach((media) => {
+      if (media.tagName.toLowerCase() !== "audio") return;
+      const duration = Number(media.duration);
+      if (!Number.isFinite(duration) || duration <= 0) return;
+      if (!durationGroups.has(duration)) durationGroups.set(duration, []);
+      durationGroups.get(duration).push(media);
+    });
+    return new Set(Array.from(durationGroups.values()).filter((group) => group.length > 1).flat());
+  }
+
+  const MULTI_MEDIA_TEXT = {
+    en: {
+      trigger: "Play together",
+      panelLabel: "Play multiple media files",
+      heading: "Play files together",
+      close: "Close",
+      audio: "audio",
+      video: "video",
+      durationLoading: "duration loading",
+      selected: (selected, total) => `${selected} of ${total} selected`,
+      stopped: "Playback stopped.",
+      playing: (count) => `${count} files playing together.`,
+      failed: (playing, failed) => `${playing} playing; ${failed} could not start.`,
+      sequencePlaying: (current, total) => `Playing ${current} of ${total} in sequence.`,
+      sequenceFinished: "Sequential playback finished.",
+      sequenceFailed: (failed) => `Sequence finished; ${failed} files could not start.`,
+      selectAllAudio: "Select all audio",
+      unselectAllAudio: "Unselect all audio",
+      stop: "Stop all",
+      sequence: "Play in sequence",
+      play: "Play selected",
+    },
+    zh: {
+      trigger: "\u540c\u65f6\u64ad\u653e",
+      panelLabel: "\u540c\u65f6\u64ad\u653e\u591a\u4e2a\u5a92\u4f53\u6587\u4ef6",
+      heading: "\u540c\u65f6\u64ad\u653e\u6587\u4ef6",
+      close: "\u5173\u95ed",
+      audio: "\u97f3\u9891",
+      video: "\u89c6\u9891",
+      durationLoading: "\u6b63\u5728\u8bfb\u53d6\u65f6\u957f",
+      selected: (selected, total) => `\u5df2\u9009\u62e9 ${selected} / ${total}`,
+      stopped: "\u5df2\u505c\u6b62\u5168\u90e8\u64ad\u653e\u3002",
+      playing: (count) => `${count} \u4e2a\u6587\u4ef6\u6b63\u5728\u540c\u65f6\u64ad\u653e\u3002`,
+      failed: (playing, failed) => `${playing} \u4e2a\u6b63\u5728\u64ad\u653e\uff1b${failed} \u4e2a\u65e0\u6cd5\u542f\u52a8\u3002`,
+      sequencePlaying: (current, total) => `\u6b63\u5728\u4f9d\u6b21\u64ad\u653e ${current} / ${total}\u3002`,
+      sequenceFinished: "\u4f9d\u6b21\u64ad\u653e\u5df2\u5b8c\u6210\u3002",
+      sequenceFailed: (failed) => `\u4f9d\u6b21\u64ad\u653e\u5df2\u5b8c\u6210\uff1b${failed} \u4e2a\u6587\u4ef6\u65e0\u6cd5\u542f\u52a8\u3002`,
+      selectAllAudio: "\u9009\u62e9\u5168\u90e8\u97f3\u9891",
+      unselectAllAudio: "\u53d6\u6d88\u9009\u62e9\u5168\u90e8\u97f3\u9891",
+      stop: "\u505c\u6b62\u5168\u90e8",
+      sequence: "\u4f9d\u6b21\u64ad\u653e",
+      play: "\u64ad\u653e\u6240\u9009",
+    },
+  };
+
+  function multiMediaStrings() {
+    const locale = String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "en").toLowerCase();
+    return locale.startsWith("zh") ? MULTI_MEDIA_TEXT.zh : MULTI_MEDIA_TEXT.en;
+  }
+
+  function installMultiMediaControl() {
+    if (document.querySelector("[data-multi-media-control]")) return;
+
+    const control = document.createElement("div");
+    control.className = "multi-media-control";
+    control.dataset.multiMediaControl = "1";
+    control.hidden = true;
+    control.innerHTML = `
+      <button class="multi-media-trigger" type="button" aria-expanded="false" aria-controls="multi-media-panel">
+        <span class="multi-media-trigger-label"></span> <span class="multi-media-count"></span>
+      </button>
+      <section id="multi-media-panel" class="multi-media-panel" hidden>
+        <header>
+          <strong class="multi-media-heading"></strong>
+          <button class="multi-media-close" type="button">&times;</button>
+        </header>
+        <div class="multi-media-selection-actions">
+          <button class="multi-media-audio-toggle" type="button"></button>
+        </div>
+        <div class="multi-media-list"></div>
+        <footer>
+          <span class="multi-media-status" aria-live="polite"></span>
+          <button class="multi-media-stop" type="button"></button>
+          <button class="multi-media-sequence" type="button"></button>
+          <button class="multi-media-play" type="button"></button>
+        </footer>
+      </section>`;
+    document.body.appendChild(control);
+
+    const trigger = control.querySelector(".multi-media-trigger");
+    const triggerLabel = control.querySelector(".multi-media-trigger-label");
+    const count = control.querySelector(".multi-media-count");
+    const panel = control.querySelector(".multi-media-panel");
+    const heading = control.querySelector(".multi-media-heading");
+    const audioToggleButton = control.querySelector(".multi-media-audio-toggle");
+    const list = control.querySelector(".multi-media-list");
+    const status = control.querySelector(".multi-media-status");
+    const playButton = control.querySelector(".multi-media-play");
+    const sequenceButton = control.querySelector(".multi-media-sequence");
+    const stopButton = control.querySelector(".multi-media-stop");
+    const closeButton = control.querySelector(".multi-media-close");
+    let candidates = [];
+    let selected = new Set();
+    let playing = new Set();
+    let selectionTouched = false;
+    let candidateSignature = "";
+    let refreshFrame = 0;
+    let sequenceRunId = 0;
+    let statusState = { kind: "selection", selected: 0, total: 0 };
+
+    function renderStatus() {
+      const strings = multiMediaStrings();
+      if (statusState.kind === "stopped") status.textContent = strings.stopped;
+      else if (statusState.kind === "playing") status.textContent = strings.playing(statusState.count);
+      else if (statusState.kind === "failed") status.textContent = strings.failed(statusState.playing, statusState.failed);
+      else if (statusState.kind === "sequencePlaying") status.textContent = strings.sequencePlaying(statusState.current, statusState.total);
+      else if (statusState.kind === "sequenceFinished") status.textContent = strings.sequenceFinished;
+      else if (statusState.kind === "sequenceFailed") status.textContent = strings.sequenceFailed(statusState.failed);
+      else status.textContent = strings.selected(statusState.selected, statusState.total);
+    }
+
+    function applyLocalization() {
+      const strings = multiMediaStrings();
+      triggerLabel.textContent = strings.trigger;
+      panel.setAttribute("aria-label", strings.panelLabel);
+      heading.textContent = strings.heading;
+      closeButton.setAttribute("aria-label", strings.close);
+      closeButton.title = strings.close;
+      stopButton.textContent = strings.stop;
+      sequenceButton.textContent = strings.sequence;
+      playButton.textContent = strings.play;
+      renderList(true);
+      renderStatus();
+    }
+
+    function stopPlaying() {
+      sequenceRunId += 1;
+      playing.forEach((media) => media.pause());
+      playing.clear();
+      statusState = { kind: "stopped" };
+      renderStatus();
+    }
+
+    function closePanel() {
+      panel.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.focus({ preventScroll: true });
+    }
+
+    function renderList(preserveStatus = false) {
+      if (panel.hidden) return;
+      const strings = multiMediaStrings();
+      if (!selectionTouched) selected = exactDurationAudioDefaults(candidates);
+      list.replaceChildren();
+      candidates.forEach((media, index) => {
+        const row = document.createElement("label");
+        row.className = "multi-media-option";
+        row.title = mediaSource(media);
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = selected.has(media);
+        checkbox.addEventListener("change", () => {
+          selectionTouched = true;
+          if (checkbox.checked) selected.add(media);
+          else selected.delete(media);
+          syncSelectionStatus();
+        });
+        const description = document.createElement("span");
+        const type = media.tagName.toLowerCase() === "video" ? strings.video : strings.audio;
+        const duration = Number(media.duration);
+        const durationText = Number.isFinite(duration) && duration > 0
+          ? formatMediaTime(duration) + ` (${duration.toFixed(3)}s)`
+          : strings.durationLoading;
+        description.innerHTML = `<b>${WebUI.escapeHtml(mediaFileName(media))}</b><small>${type} ${index + 1} · ${durationText}</small>`;
+        row.append(checkbox, description);
+        list.appendChild(row);
+      });
+      if (preserveStatus) renderStatus();
+      else syncSelectionStatus();
+      updateAudioToggle();
+    }
+
+    function updateAudioToggle() {
+      const strings = multiMediaStrings();
+      const audioItems = candidates.filter((media) => media.tagName.toLowerCase() === "audio");
+      const allSelected = audioItems.length > 0 && audioItems.every((media) => selected.has(media));
+      audioToggleButton.disabled = audioItems.length === 0;
+      audioToggleButton.textContent = allSelected ? strings.unselectAllAudio : strings.selectAllAudio;
+      audioToggleButton.setAttribute("aria-pressed", allSelected ? "true" : "false");
+    }
+
+    function syncSelectionStatus() {
+      const selectedCount = candidates.filter((media) => selected.has(media)).length;
+      statusState = { kind: "selection", selected: selectedCount, total: candidates.length };
+      renderStatus();
+      playButton.disabled = selectedCount < 2;
+      sequenceButton.disabled = selectedCount < 2;
+      updateAudioToggle();
+    }
+
+    function probeCandidateDurations() {
+      candidates.forEach((media) => {
+        const duration = Number(media.duration);
+        if (Number.isFinite(duration) && duration > 0) return;
+        media.addEventListener("loadedmetadata", renderList, { once: true });
+        if (media.preload === "none") media.preload = "metadata";
+        try {
+          if (media.readyState < 1) media.load();
+        } catch (_error) {}
+      });
+    }
+
+    function refresh() {
+      refreshFrame = 0;
+      const next = activePageMedia();
+      const nextSignature = next.map((media) => mediaSource(media)).join("\n");
+      const changed = nextSignature !== candidateSignature
+        || next.length !== candidates.length
+        || next.some((media, index) => media !== candidates[index]);
+      candidates = next;
+      control.hidden = candidates.length < 2;
+      count.textContent = candidates.length ? `(${candidates.length})` : "";
+      if (changed) {
+        sequenceRunId += 1;
+        candidateSignature = nextSignature;
+        selectionTouched = false;
+        selected = new Set();
+        Array.from(playing).forEach((media) => {
+          if (!candidates.includes(media)) {
+            media.pause();
+            playing.delete(media);
+          }
+        });
+      }
+      if (control.hidden && !panel.hidden) closePanel();
+      renderList();
+      if (!panel.hidden && changed) probeCandidateDurations();
+    }
+
+    function scheduleRefresh() {
+      if (refreshFrame) return;
+      refreshFrame = window.requestAnimationFrame(refresh);
+    }
+
+    trigger.addEventListener("click", () => {
+      const opening = panel.hidden;
+      panel.hidden = !opening;
+      trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+      if (!opening) return;
+      renderList();
+      probeCandidateDurations();
+      const first = list.querySelector("input");
+      if (first) first.focus({ preventScroll: true });
+    });
+    closeButton.addEventListener("click", closePanel);
+    audioToggleButton.addEventListener("click", () => {
+      const audioItems = candidates.filter((media) => media.tagName.toLowerCase() === "audio");
+      if (!audioItems.length) return;
+      selectionTouched = true;
+      const allSelected = audioItems.every((media) => selected.has(media));
+      audioItems.forEach((media) => {
+        if (allSelected) selected.delete(media);
+        else selected.add(media);
+      });
+      renderList();
+    });
+    stopButton.addEventListener("click", stopPlaying);
+    sequenceButton.addEventListener("click", () => {
+      const chosen = candidates.filter((media) => selected.has(media));
+      if (chosen.length < 2) return;
+      const runId = ++sequenceRunId;
+      playing.forEach((media) => media.pause());
+      playing = new Set(chosen);
+      chosen.forEach((media) => {
+        media.pause();
+        try { media.currentTime = 0; } catch (_error) {}
+      });
+      let failures = 0;
+      const playNext = (index) => {
+        if (runId !== sequenceRunId) return;
+        if (index >= chosen.length) {
+          playing.clear();
+          statusState = failures
+            ? { kind: "sequenceFailed", failed: failures }
+            : { kind: "sequenceFinished" };
+          renderStatus();
+          return;
+        }
+        const media = chosen[index];
+        statusState = { kind: "sequencePlaying", current: index + 1, total: chosen.length };
+        renderStatus();
+        const advance = () => {
+          if (runId === sequenceRunId) playNext(index + 1);
+        };
+        media.addEventListener("ended", advance, { once: true });
+        const result = media.play();
+        if (result && typeof result.catch === "function") {
+          result.catch(() => {
+            media.removeEventListener("ended", advance);
+            failures += 1;
+            advance();
+          });
+        }
+      };
+      playNext(0);
+    });
+    playButton.addEventListener("click", () => {
+      const chosen = candidates.filter((media) => selected.has(media));
+      if (chosen.length < 2) return;
+      sequenceRunId += 1;
+      playing.forEach((media) => media.pause());
+      playing = new Set(chosen);
+      chosen.forEach((media) => {
+        media.pause();
+        try { media.currentTime = 0; } catch (_error) {}
+      });
+      Promise.allSettled(chosen.map((media) => media.play())).then((results) => {
+        const failed = results.filter((result) => result.status === "rejected").length;
+        statusState = failed
+          ? { kind: "failed", playing: chosen.length - failed, failed }
+          : { kind: "playing", count: chosen.length };
+        renderStatus();
+      });
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !panel.hidden) closePanel();
+    });
+
+    const observer = new MutationObserver((mutations) => {
+      const relevant = mutations.some((mutation) => {
+        if (control.contains(mutation.target)) return false;
+        if (mutation.target.closest?.(".media-player")) return false;
+        if (mutation.type === "childList") return true;
+        if (mutation.attributeName === "src" || mutation.attributeName === "hidden") return true;
+        if (mutation.attributeName === "data-active-view") return true;
+        return mutation.attributeName === "class" && mutation.target.matches?.(".page-view");
+      });
+      if (relevant) scheduleRefresh();
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["class", "hidden", "src", "data-active-view"],
+    });
+    window.addEventListener("webui:ui-locale-changed", applyLocalization);
+    applyLocalization();
+    refresh();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", installMultiMediaControl, { once: true });
+  } else {
+    installMultiMediaControl();
+  }
+
+  Object.assign(WebUI, { createMediaPlayer, enhanceMediaPlayers, renderAudioWaveform, installMultiMediaControl });
 })();

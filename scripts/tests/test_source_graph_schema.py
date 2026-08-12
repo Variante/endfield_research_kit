@@ -8,6 +8,7 @@ from pathlib import Path
 from tools.endfield_source_graph import (
     SourceGraphBuilder,
     classify_story_audio_reference,
+    story_line_audio_candidates,
 )
 
 
@@ -155,6 +156,314 @@ class SourceGraphSchemaTests(unittest.TestCase):
                     linked_path,
                     "v1d0/Narrating/SubChar/fixture/au_fixture.wem",
                 )
+            finally:
+                builder.close()
+
+    def test_audio_table_payload_merges_persistent_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            export_root = Path(temp_dir) / "export"
+            for layer in ("StreamingAssets", "Persistent"):
+                (export_root / "structured" / layer / "Table").mkdir(parents=True)
+            (export_root / "structured" / "StreamingAssets" / "Table" / "AudioDialog.json").write_text(
+                json.dumps(
+                    {
+                        "stream_only": {"path": "stream/stream_only.wem"},
+                        "shared": {"path": "stream/shared.wem"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (export_root / "structured" / "Persistent" / "Table" / "AudioDialog.json").write_text(
+                json.dumps(
+                    {
+                        "shared": {"path": "persistent/shared.wem"},
+                        "persistent_only": {"path": "persistent/persistent_only.wem"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=Path(temp_dir) / "graph.sqlite",
+                export_root=export_root,
+            )
+            payload, sources = builder.structured_table_payload(
+                "AudioDialog.json",
+                include_persistent=True,
+            )
+            self.assertEqual(payload["shared"]["path"], "persistent/shared.wem")
+            self.assertEqual(sorted(payload), ["persistent_only", "shared", "stream_only"])
+            self.assertEqual([layer for layer, _path in sources], ["StreamingAssets", "Persistent"])
+            self.assertEqual(
+                builder.audio_dialog_rows()["persistent_only"]["path"],
+                "persistent/persistent_only.wem",
+            )
+
+    def test_story_line_keeps_remote_event_and_voice_id_as_separate_candidates(self) -> None:
+        line = {
+            "id": "remotecomm_fixture_001",
+            "actor": "Fixture",
+            "aid": "fixture_actor",
+            "audio": "au_sfx_remotecomm_fixture",
+            "_debug": {
+                "source": {
+                    "audioOverride": "au_sfx_remotecomm_fixture",
+                    "voiceId": "au_remotecomm_fixture_001",
+                }
+            },
+        }
+        self.assertEqual(
+            story_line_audio_candidates(line),
+            [
+                ("au_sfx_remotecomm_fixture", "line.audio"),
+                ("au_remotecomm_fixture_001", "line._debug.source.voiceId"),
+            ],
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            builder = SourceGraphBuilder(db_path=Path(temp_dir) / "graph.sqlite")
+            builder.open()
+            try:
+                story_node = builder.add_story_node("remotecomm_fixture", {"lines": [line]})
+                builder.add_lines_and_options(
+                    {"key": "remotecomm_fixture", "lines": [line]},
+                    story_node,
+                )
+                voice_row_node = builder.add_node(
+                    "table_row",
+                    "AudioDialog:remotecomm_fixture",
+                    source="AudioDialog",
+                )
+                builder.add_structured_row_edges(
+                    "AudioDialog",
+                    "remotecomm_fixture",
+                    {"path": "v1d0/Narrating/Fixture/au_remotecomm_fixture_001.wem"},
+                    voice_row_node,
+                )
+                line_node = builder.node_id("line", "remotecomm_fixture_001")
+                rows = builder.db.execute(
+                    """
+                    SELECT audio.name, audio.path, edge.evidence
+                    FROM edges AS edge
+                    JOIN nodes AS audio ON audio.id = edge.dst
+                    WHERE edge.src = ? AND edge.kind = 'uses_audio'
+                    ORDER BY audio.name
+                    """,
+                    (line_node,),
+                ).fetchall()
+                self.assertEqual(
+                    [(row[0], row[1], row[2]) for row in rows],
+                    [
+                        ("au_remotecomm_fixture_001", "v1d0/Narrating/Fixture/au_remotecomm_fixture_001.wem", "line._debug.source.voiceId"),
+                        ("au_sfx_remotecomm_fixture", None, "line.audio"),
+                    ],
+                )
+            finally:
+                builder.close()
+
+    def test_audio_trigger_contexts_add_static_context_edges(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            context_path = root / "webui" / "data" / "lang" / "CN" / "audio" / "trigger_contexts.json"
+            context_path.parent.mkdir(parents=True)
+            context_path.write_text(
+                json.dumps(
+                    {
+                        "schema": 4,
+                        "language": "CN",
+                        "counts": {"total": 1},
+                        "contexts": [
+                            {
+                                "triggerId": "radio:fixture",
+                                "semanticKind": "radio",
+                                "triggerRole": "play",
+                                "situation": {
+                                    "radioId": "radio_fixture",
+                                    "lineId": "radio_fixture_001",
+                                    "levelScriptId": "level_fixture",
+                                },
+                                "meaning": {
+                                    "id": "radio_fixture_001",
+                                    "audio": "au_fixture",
+                                    "eventId": "au_sfx_fixture",
+                                },
+                                "action": {"levelScriptId": "level_fixture"},
+                                "selection": {"mediaSelectionStatus": "playable"},
+                                "mediaRefs": [{"id": "au_fixture"}],
+                                "runtimeActivationStatus": "unobserved",
+                                "sourceRefs": ["fixture.json"],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                for kind, key in (
+                    ("audio", "au_fixture"),
+                    ("wwise_event", "au_sfx_fixture"),
+                    ("radio", "radio_fixture"),
+                    ("line", "radio_fixture_001"),
+                    ("level_script", "level_fixture"),
+                ):
+                    builder.add_node(kind, key, source="fixture")
+                builder.ingest_audio_trigger_contexts()
+                context_node = builder.node_id("audio_trigger_context", "radio:fixture")
+                self.assertTrue(builder.node_exists("audio_trigger_context", "radio:fixture"))
+                edges = {
+                    row[0]
+                    for row in builder.db.execute(
+                        "SELECT kind FROM edges WHERE src = ?",
+                        (context_node,),
+                    )
+                }
+                self.assertIn("audio_trigger_context_uses_audio", edges)
+                self.assertIn("audio_trigger_context_targets_wwise_event", edges)
+                self.assertIn("audio_trigger_context_for_radio", edges)
+                self.assertIn("audio_trigger_context_for_line", edges)
+                self.assertIn("audio_trigger_context_for_level_script", edges)
+                boundary = json.loads(
+                    builder.db.execute(
+                        "SELECT data FROM nodes WHERE id = ?",
+                        (context_node,),
+                    ).fetchone()[0]
+                )["evidenceBoundary"]
+                self.assertIn("not runtime ownership", boundary)
+            finally:
+                builder.close()
+
+    def test_audio_trigger_contexts_link_remote_common_auto_play_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            context_path = root / "webui" / "data" / "lang" / "CN" / "audio" / "trigger_contexts.json"
+            context_path.parent.mkdir(parents=True)
+            context_path.write_text(
+                json.dumps({
+                    "schema": 4,
+                    "language": "CN",
+                    "counts": {"total": 1},
+                    "contexts": [{
+                        "triggerId": "remoteCommonAudio:fixture:fixture_001:au_sfx_fixture",
+                        "semanticKind": "remoteCommonAudio",
+                        "triggerRole": "RemoteCommonTableAutoPlay",
+                        "situation": {
+                            "remoteCommonId": "remote_common_fixture",
+                            "singleId": "remote_common_fixture_001",
+                            "eventId": "au_sfx_fixture",
+                            "autoPlay": True,
+                        },
+                        "meaning": {
+                            "id": "remote_common_fixture_001",
+                            "audio": "au_sfx_fixture",
+                            "eventId": "au_sfx_fixture",
+                        },
+                        "mediaRefs": [{"id": "au_sfx_fixture"}],
+                        "sourceRefs": ["structured/Persistent/Table/RemoteCommonTable.json"],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                for kind, key in (
+                    ("audio", "au_sfx_fixture"),
+                    ("wwise_event", "au_sfx_fixture"),
+                    ("remote_common", "remote_common_fixture"),
+                    ("remote_common_line", "remote_common_fixture_001"),
+                ):
+                    builder.add_node(kind, key, source="fixture")
+                builder.ingest_audio_trigger_contexts()
+                context_node = builder.node_id(
+                    "audio_trigger_context",
+                    "remoteCommonAudio:fixture:fixture_001:au_sfx_fixture",
+                )
+                edges = {
+                    row[0]
+                    for row in builder.db.execute(
+                        "SELECT kind FROM edges WHERE src = ?",
+                        (context_node,),
+                    )
+                }
+                self.assertIn("audio_trigger_context_for_remote_common", edges)
+                self.assertIn("audio_trigger_context_for_remote_common_line", edges)
+            finally:
+                builder.close()
+
+    def test_audio_trigger_contexts_preserve_timeline_runtime_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            context_path = root / "webui" / "data" / "lang" / "CN" / "audio" / "trigger_contexts.json"
+            context_path.parent.mkdir(parents=True)
+            context_path.write_text(json.dumps({
+                "schema": 4,
+                "language": "CN",
+                "counts": {"total": 1},
+                "contexts": [{
+                    "triggerId": "timeline:fixture",
+                    "semanticKind": "timelineAudio",
+                    "triggerRole": "TimelineAssetPlayback",
+                    "situation": {"eventId": "au_music_fixture", "contextKind": "levelSequenceAudio"},
+                    "meaning": {"eventId": "au_music_fixture", "audio": "au_music_fixture"},
+                    "owner": {
+                        "timelineAssetName": "levelseq_fixture_Audio",
+                        "audioPlayableType": "AudioMusicPlayable",
+                        "audioPlayableRuntimeContractId": "timelineMusicEventKey.audioMusic",
+                        "audioPlayableKeyStatus": "exactAudioEventPlayableScalar",
+                        "audioMusicActionType": 1,
+                        "audioMusicActionTypeLabel": "NORMAL_MUSIC",
+                        "audioMusicTriggerOnSkip": 0,
+                        "audioMusicTriggerOnSkipLabel": "notTriggeredOnSkip",
+                        "runtimeCarrierStatus": "serializedPlayableCarrier",
+                    },
+                    "selection": {
+                        "triggerBindingStatus": "timelineParentNotLevelSequence",
+                        "audioSelectionStatus": "exactTimelineAudioEventKey",
+                        "runtimeSelectionStatus": "unobserved",
+                    },
+                    "sourceRefs": ["fixture.json"],
+                }],
+            }), encoding="utf-8")
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                builder.ingest_audio_trigger_contexts()
+                context_node = builder.node_id("audio_trigger_context", "timeline:fixture")
+                data = json.loads(
+                    builder.db.execute(
+                        "SELECT data FROM nodes WHERE id = ?",
+                        (context_node,),
+                    ).fetchone()[0]
+                )
+                self.assertEqual(data["owner"]["audioPlayableType"], "AudioMusicPlayable")
+                self.assertEqual(
+                    data["owner"]["audioPlayableRuntimeContractId"],
+                    "timelineMusicEventKey.audioMusic",
+                )
+                self.assertEqual(data["owner"]["audioMusicActionType"], 1)
+                self.assertEqual(data["owner"]["audioMusicActionTypeLabel"], "NORMAL_MUSIC")
+                self.assertEqual(data["owner"]["audioMusicTriggerOnSkip"], 0)
+                self.assertEqual(data["owner"]["audioMusicTriggerOnSkipLabel"], "notTriggeredOnSkip")
+                self.assertEqual(data["owner"]["runtimeCarrierStatus"], "serializedPlayableCarrier")
+                self.assertEqual(data["selection"]["audioSelectionStatus"], "exactTimelineAudioEventKey")
             finally:
                 builder.close()
 

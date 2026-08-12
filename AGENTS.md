@@ -42,6 +42,10 @@ python serve.py
 python serve.py 9000
 ```
 
+Export and rebuild commands are generally long-running. Give them an
+appropriately long timeout and wait patiently for completion; do not poll or
+check their results frequently while they are still running.
+
 Before starting a WebUI server, check whether the default
 `http://127.0.0.1:8765/` server is already running. Reuse the existing default
 server instead of starting another `serve.py` process on `8765` or a custom

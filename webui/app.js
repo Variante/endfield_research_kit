@@ -657,6 +657,106 @@ function loadStoryMediaPayload() {
   return STATE.storyMediaPromise;
 }
 
+const STORY_FILE_IMAGE_PREFIXES = ["cg_image_", "dlg_biglogo_", "remotecomm_image_"];
+
+function storyFileImageFamily(stem) {
+  return STORY_FILE_IMAGE_PREFIXES.find((prefix) => String(stem || "").startsWith(prefix)) || "";
+}
+
+function storyFileImageGender(stem) {
+  const parts = String(stem || "").split("_");
+  const index = parts.findIndex((part) => part === "f" || part === "m");
+  if (index < 0) return { gender: "", groupStem: String(stem || "") };
+  const gender = parts[index];
+  parts.splice(index, 1);
+  return { gender, groupStem: parts.join("_") };
+}
+
+function storyFileImageAssetDescriptor(raw) {
+  if (!raw || raw.k !== "image" || !raw.r) return null;
+  const rel = String(raw.r).replace(/\\/g, "/");
+  const stemInfo = storyMediaLookupStem(rel);
+  const family = stemInfo ? storyFileImageFamily(stemInfo.stem) : "";
+  if (!stemInfo || !family || stemInfo.stem === "cg_image_e2m6_1_m") return null;
+
+  const logicalStem = stemInfo.stem;
+  const { gender, groupStem } = storyFileImageGender(logicalStem);
+  return { raw, rel, stemInfo, logicalStem, groupStem, gender, family };
+}
+
+function cgStoryFileDescriptor(assets) {
+  if (!Array.isArray(assets) || !assets.length) return null;
+  const primary = assets[0];
+  const { stemInfo, groupStem } = primary;
+  const variants = {};
+  for (const asset of assets) {
+    if (asset.gender) variants[asset.gender] = asset.stemInfo.rawStem;
+  }
+  const neutralVariant = assets.find((asset) => !asset.gender);
+  // A small authored BigLogo subset uses an unsuffixed default/female image
+  // beside an explicit `_m` sibling (e7m3 b1/b2).
+  if (neutralVariant && variants.m && !variants.f) variants.f = neutralVariant.stemInfo.rawStem;
+  if (neutralVariant && variants.f && !variants.m) variants.m = neutralVariant.stemInfo.rawStem;
+  const availableGenders = Object.keys(variants).sort();
+  const selectedImage = variants[resolveGenderVariant()]
+    || variants.f
+    || variants.m
+    || stemInfo.rawStem;
+  const variantNote = availableGenders.length === 1
+    ? ` · ${availableGenders[0] === "f" ? "Female" : "Male"} Endministrator`
+    : (availableGenders.length === 2 ? " · Female / Male Endministrator" : "");
+
+  const suffix = groupStem.slice(primary.family.length);
+  const missionMatch = suffix.match(/^(sm\d+l\d+m\d+|[acefm]\d+m\d+(?:d\d+)?|c\d+m\d+(?:d\d+)?)(?:_|$)/i);
+  const mission = missionMatch ? missionMatch[1].toLowerCase() : "";
+  const remainder = missionMatch ? suffix.slice(missionMatch[0].length) : suffix;
+  const sceneMatch = remainder.match(/^(\d+)/);
+  const scene = sceneMatch ? Number(sceneMatch[1]) : 0;
+  const typeMatch = mission.match(/^([a-z]+)(\d+)?/i);
+  const type = typeMatch ? typeMatch[1].toLowerCase() : "other";
+  const act = typeMatch && typeMatch[2] ? Number(typeMatch[2]) : 0;
+  const key = `cg_${groupStem}`;
+  const cgFiles = assets.map((asset) => ({
+    rel: asset.rel,
+    stem: asset.logicalStem,
+    rawStem: asset.stemInfo.rawStem,
+    pathId: asset.stemInfo.pathId || "",
+    gender: asset.gender,
+  }));
+
+  return {
+    entry: {
+      k: key, d: primary.family === "remotecomm_image_" ? "remotecomm" : "cg", m: mission, s: scene, t: type, a: act,
+      c: [], n: 1, p: `${groupStem}${variantNote}`, title: groupStem,
+      tags: ["mediaImage", "cgFile"], cgFiles, cgGenders: availableGenders,
+    },
+    conv: {
+      key, kind: primary.family === "remotecomm_image_" ? "remotecomm" : "cg", mission, scene, title: groupStem,
+      lines: [{ id: groupStem, image: selectedImage, imageVariants: variants, text: "" }],
+      cgFiles, cgGenders: availableGenders,
+      _debug: { source: { table: "Story media index", rowId: cgFiles.map((file) => file.rel).join(" | ") } },
+    },
+  };
+}
+
+function cgStoryFileDescriptors(payload) {
+  const groups = new Map();
+  for (const raw of storyMediaEntries(payload, "image")) {
+    const asset = storyFileImageAssetDescriptor(raw);
+    if (!asset) continue;
+    if (!groups.has(asset.groupStem)) groups.set(asset.groupStem, []);
+    const group = groups.get(asset.groupStem);
+    const duplicate = group.findIndex((item) => item.logicalStem === asset.logicalStem);
+    if (duplicate < 0 || scoreInlineImageAsset(asset.rel, asset.logicalStem) > scoreInlineImageAsset(group[duplicate].rel, group[duplicate].logicalStem)) {
+      if (duplicate >= 0) group.splice(duplicate, 1, asset);
+      else group.push(asset);
+    }
+  }
+  return Array.from(groups.values())
+    .map(cgStoryFileDescriptor)
+    .sort((a, b) => a.entry.k.localeCompare(b.entry.k));
+}
+
 function loadStoryOrderOverridePayload() {
   if (STATE.storyOrderOverridePayload) return Promise.resolve(STATE.storyOrderOverridePayload);
   if (STATE.storyOrderOverridePromise) return STATE.storyOrderOverridePromise;
@@ -2508,6 +2608,9 @@ function ensureInlineImageAssetLookup() {
 
         const candidate = { rel, name, stem, rawStem: stemInfo.rawStem, pathId: stemInfo.pathId, score };
         rememberBestInlineImageAsset(byStem, stem, candidate);
+        // Let a CG file row address its exact PathID-suffixed export instead
+        // of collapsing duplicate logical stems to one preferred asset.
+        if (stemInfo.rawStem !== stem) rememberBestInlineImageAsset(byStem, stemInfo.rawStem, candidate);
 
         const numberKey = inlineImageNumberKey(stem);
         if (numberKey && isSnsInlineImageStem(stem)) {
@@ -3343,9 +3446,10 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
     if (token !== STATE.indexRequestToken) return;
 
     window.WebUI.updateLoader("story", 0.6);
-    const [actorsPayload, missionsPayload] = await Promise.all([
+    const [actorsPayload, missionsPayload, storyMediaPayload] = await Promise.all([
       loadLanguageSidecar(index, "actors", info.code),
       loadLanguageSidecar(index, "missions", info.code),
+      loadStoryMediaPayload().catch(() => ({ entries: [] })),
     ]);
     if (token !== STATE.indexRequestToken) return;
     window.WebUI.updateLoader("story", 0.8);
@@ -3353,7 +3457,9 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
     STATE.index = index;
     STATE.actorNames = normalizeActorNames(actorsPayload.actorNames || {});
     STATE.missionNames = missionsPayload.missionNames || {};
-    STATE.entries = normalizeLoadedEntries(index.entries || []);
+    const cgFiles = cgStoryFileDescriptors(storyMediaPayload);
+    STATE.entries = normalizeLoadedEntries([...(index.entries || []), ...cgFiles.map((item) => item.entry)]);
+    for (const item of cgFiles) STATE.convCache.set(item.entry.k, item.conv);
     STATE.characterNames = computeCharacterNames(STATE.entries);
     applyStoryOrderGroupingOverridesToEntries(STATE.entries);
     applyOptionOverrideFlagsToEntries(await loadOptionOverridePayload(), STATE.entries);
@@ -4324,6 +4430,10 @@ function loopMarkersForPlacement(markers, lineId) {
 }
 
 function renderOptionJumpTags(option, group, conv, outcomesByOptionId) {
+  if (String(group && group.optionBranchRisk && group.optionBranchRisk.code || "")
+      === "sequentialDialogTreeOptionNodes") {
+    return null;
+  }
   const jumpInfo = firstOptionJumpInfo(option, group, conv, outcomesByOptionId);
   const jumpLineId = String(jumpInfo.lineId || "");
   if (!jumpLineId) return null;
@@ -6961,7 +7071,7 @@ function renderConv(conv) {
     const row = document.createElement("div");
     row.className = "line"
       + (options.branchColumn ? " branch-flow-line" : "")
-      + (ln.text ? "" : " empty")
+      + (ln.text || lineMediaIds(ln).length ? "" : " empty")
       + (ln.id && uncoveredLineIdSet.has(ln.id) ? " line-uncovered" : "")
       + (ln.id && duplicateTimestampLineIdSet.has(ln.id) ? " line-duplicate-timestamp" : "");
     setLineAnchor(row, conv.key, ln.id);
@@ -7018,7 +7128,20 @@ function renderConv(conv) {
 
   const optionListForGroup = (grp) => {
     const opts = grp && grp.options ? grp.options : [];
-    return Array.isArray(opts) ? opts : (opts ? [opts] : []);
+    const list = Array.isArray(opts) ? opts : (opts ? [opts] : []);
+    const risk = grp && grp.optionBranchRisk && typeof grp.optionBranchRisk === "object"
+      ? grp.optionBranchRisk
+      : null;
+    if (!risk || risk.code !== "sequentialDialogTreeOptionNodes") return list;
+    const sequence = Array.isArray(risk.promptSequenceOptionIds)
+      ? risk.promptSequenceOptionIds.map((optionId) => String(optionId || ""))
+      : [];
+    if (sequence.length !== list.length) return list;
+    const order = new Map(sequence.map((optionId, index) => [optionId, index]));
+    if (list.some((option) => !order.has(String(option && option.id || "")))) return list;
+    return list.slice().sort((left, right) => (
+      order.get(String(left && left.id || "")) - order.get(String(right && right.id || ""))
+    ));
   };
 
   const optionPathLineIds = (opt) => {
@@ -7161,6 +7284,19 @@ function renderConv(conv) {
   const branchDisplayModelForGroup = (grp) => {
     if (branchDisplayModelByGroup.has(grp)) return branchDisplayModelByGroup.get(grp);
     const opts = optionListForGroup(grp);
+    const risk = grp && grp.optionBranchRisk && typeof grp.optionBranchRisk === "object"
+      ? grp.optionBranchRisk
+      : null;
+    if (risk && risk.code === "sharedTimelineContinuation") {
+      const optionLineIds = new WeakMap();
+      for (const opt of opts) optionLineIds.set(opt, []);
+      const commonLineIds = lineOrderUniqueList(
+        risk.commonContinuationLineIds || [risk.commonContinuationLineId]
+      ).filter((lineId) => lineIdSet.has(lineId));
+      const model = { optionLineIds, commonLineIds };
+      branchDisplayModelByGroup.set(grp, model);
+      return model;
+    }
     if (optionGroupHasTimelineRouteBranches(grp)) {
       const commonLineIds = sharedRouteSuffixLineIds(opts, grp);
       const commonCount = commonLineIds.length;
@@ -7390,22 +7526,45 @@ function renderConv(conv) {
     }
 
     const opts = optionListForGroup(grp);
-    const multi = opts.length >= 2;
+    // Same-prefix rows can be authored as multiple one-option nodes along one
+    // DialogTree path. They are sequential prompts, not columns of one fork.
+    const sequentialPrompts = String(
+      grp && grp.optionBranchRisk && grp.optionBranchRisk.code || ""
+    ) === "sequentialDialogTreeOptionNodes";
+    const multi = opts.length >= 2 && !sequentialPrompts;
     const branchModel = branchDisplayModelForGroup(grp);
     const showBranchContent = optionGroupHasBranchContent(grp)
       || opts.some((opt) => (branchModel.optionLineIds.get(opt) || []).length)
       || branchModel.commonLineIds.length;
 
     if (!multi) {
+      if (sequentialPrompts) g.classList.add("opt-group-sequential-prompts");
       const singleOutcomeTargets = findOutcomeMenuTargetGroups(grp, conv, outcomesByOptionId);
       const singleRenderedBranchLineIds = new Set();
       const singlePathLineFragments = [];
-      for (const opt of opts) {
+      for (let optionIndex = 0; optionIndex < opts.length; optionIndex += 1) {
+        const opt = opts[optionIndex];
+        if (sequentialPrompts && optionIndex > 0) {
+          const separator = document.createElement("div");
+          separator.className = "opt-sequential-arrow";
+          separator.textContent = "↓";
+          separator.setAttribute("aria-hidden", "true");
+          g.appendChild(separator);
+        }
         const o = document.createElement("div");
-        o.className = "option";
+        o.className = sequentialPrompts ? "option opt-sequential-prompt" : "option";
+        if (sequentialPrompts) {
+          const step = document.createElement("span");
+          step.className = "opt-sequential-step-label";
+          step.textContent = `${optionIndex + 1}/${opts.length}`;
+          o.appendChild(step);
+        }
         const icon = opt.icon && opt.icon !== "Default"
           ? ` <span class="opt-icon">[${escapeHtml(opt.icon)}]</span>` : "";
-        o.innerHTML = `- ${highlight(opt.text || "(empty)", STATE.filters.q)}${icon}`;
+        o.insertAdjacentHTML(
+          "beforeend",
+          `- ${highlight(opt.text || "(empty)", STATE.filters.q)}${icon}`
+        );
         const loopMarkers = optionLoopMarkers(opt, grp, conv, outcomesByOptionId, lineOrderIndexById);
         const branchLineIds = renderCtx.branchColumn
           ? branchColumnLineIdsForOption(grp, opt)
@@ -7420,7 +7579,7 @@ function renderConv(conv) {
           opt,
           conv,
           outcomesByOptionId,
-          { ...chipOptions, hideSelfMenu: loopMarkers.length > 0 }
+          { ...chipOptions, hideSelfMenu: loopMarkers.length > 0 || sequentialPrompts }
         );
         if (targetChips) o.appendChild(targetChips);
         const jumpTags = renderOptionJumpTags(opt, grp, conv, outcomesByOptionId);
@@ -7521,6 +7680,14 @@ function renderConv(conv) {
         absorbedFollowupGroups.add(group);
       } else {
         followupGroupsToRender.push(group);
+      }
+    }
+    // A group anchored on shared continuation belongs below the shared trunk,
+    // not inside either option column. Neither branch owns that anchor.
+    for (const group of branchAnchoredFollowupGroups) {
+      const targetAnchor = String(group && group.after || "");
+      if (commonLineIdSet.has(targetAnchor) && !absorbedFollowupGroups.has(group)) {
+        if (!followupGroupsToRender.includes(group)) followupGroupsToRender.push(group);
       }
     }
 
@@ -7705,7 +7872,7 @@ function renderConv(conv) {
       row.className = "line"
         + (conv.kind === "radio" ? " radio-line" : "")
         + (conv.kind === "cutscene" ? " cutscene-line" : "")
-        + (ln.text ? "" : " empty")
+        + (ln.text || lineMediaIds(ln).length ? "" : " empty")
         + (ln.id && uncoveredLineIdSet.has(ln.id) ? " line-uncovered" : "")
         + (ln.id && duplicateTimestampLineIdSet.has(ln.id) ? " line-duplicate-timestamp" : "");
       if (conv.kind === "cutscene" && (ln.gender === "F" || ln.gender === "M")) {
@@ -9427,12 +9594,18 @@ function isInlineSnsMediaImageId(rawId, normalized, asset = null) {
   return (
     raw.startsWith("sns_")
     || raw.startsWith("cg_image_")
+    || raw.startsWith("dlg_biglogo_")
+    || raw.startsWith("remotecomm_image_")
     || stem.startsWith("sns_")
     || stem.startsWith("cg_image_")
+    || stem.startsWith("dlg_biglogo_")
+    || stem.startsWith("remotecomm_image_")
     || stem.startsWith("deco_sns_tweet_decorate_")
     || stem.startsWith("bg_sns_tweet_decorate_")
     || rel.includes("/sns_")
     || rel.includes("/cg_image_")
+    || rel.includes("/dlg_biglogo_")
+    || rel.includes("/remotecomm_image_")
     || rel.includes("/deco_sns_tweet_decorate_")
     || rel.includes("/bg_sns_tweet_decorate_")
   );
@@ -9444,6 +9617,8 @@ function isStandaloneSnsMediaId(value) {
     normalized.startsWith("sns_image_")
     || normalized.startsWith("sns_sticker_")
     || normalized.startsWith("cg_image_")
+    || normalized.startsWith("dlg_biglogo_")
+    || normalized.startsWith("remotecomm_image_")
     || normalized.startsWith("deco_sns_tweet_decorate_")
     || normalized.startsWith("bg_sns_tweet_decorate_")
   );
@@ -9532,6 +9707,12 @@ function lineMediaIds(line) {
   };
   if (line && Array.isArray(line.images)) {
     for (const imageId of line.images) push(imageId);
+  }
+  if (line && line.imageVariants && typeof line.imageVariants === "object") {
+    const preferred = line.imageVariants[resolveGenderVariant()];
+    if (preferred) push(preferred);
+    else for (const imageId of Object.values(line.imageVariants)) push(imageId);
+    if (ids.length) return ids;
   }
   if (line && line.image) push(line.image);
   if (line && line.emoji) push(line.emoji);
@@ -9629,6 +9810,7 @@ function createLineMediaImageNode(mediaId, asset) {
 
   if (isInlineSnsMediaImageId(mediaId, normalized, asset)) node.classList.add("is-sns-image");
   if (isInlineContentImageId(mediaId, normalized, asset)) node.classList.add("is-content-image");
+  if (storyFileImageFamily(normalized)) node.classList.add("is-cg-image");
 
   const img = document.createElement("img");
   img.className = "inline-image-thumb";

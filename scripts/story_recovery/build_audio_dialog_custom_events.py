@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Catalog AudioDialogCustomEventTable entries by mission and signature.
+"""Catalog AudioDialogCustomEventTable entries by lifecycle phase/signature.
 
 This is an evidence-classification audit: `AudioDialogCustomEventTable.json`
-maps a small set of `dlg_*` IDs to Wwise event hashes for `preEnterEvents`,
-`preExitEvents`, and `preloadEvents`. The hashes are runtime Wwise IDs (not
-FNV-1, FNV-1A, CRC32, or Murmur3 of any `au_*` event name string found in
-`global-metadata.dat`), so they cannot be reversed without reaching into
-`GameAssembly.dll` directly.
+maps `dlg_*` IDs to Wwise event hashes in five authored lifecycle arrays:
+`preloadEvents`, `preEnterEvents`, `postEnterEvents`, `preExitEvents`, and
+`postExitEvents`. The hashes are runtime Wwise IDs (not FNV-1, FNV-1A, CRC32,
+or Murmur3 of any `au_*` event name string found in `global-metadata.dat`), so
+they cannot be reversed without reaching into `GameAssembly.dll` directly.
 
-The audit's verdict is therefore: this table is a per-dialog *presence flag*
-for "this dialog plays with custom Wwise audio enter/exit hooks", not a
-mission-order or option-response source. The shared-signature group hints at
-which dialogs share an audio profile, but the IDs themselves do not name
-chronology.
+The table is a per-dialog lifecycle-hook definition, not a mission-order or
+option-response source. Static IL2CPP metadata for
+`Beyond.Gameplay.Audio.AudioGameplayStatusSystem` supplies the matching
+pre/post-enter/exit handlers, event scheduler, preload, and pending-event
+flush methods. This proves the authored request/scheduling contract, but not
+that a dialog ran, a branch was selected, or an audible Wwise leaf played.
+The shared-signature group hints at which dialogs share an audio profile, but
+the IDs themselves do not name chronology.
 
 Outputs:
 
@@ -41,6 +44,63 @@ TABLE_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
 CUSTOM_EVENT_TABLE_PATH = TABLE_ROOT / "AudioDialogCustomEventTable.json"
 AUDIO_DIALOG_TABLE_PATH = TABLE_ROOT / "AudioDialog.json"
 MISSION_RE = re.compile(r"^dlg_([a-z]+\d+m\d+(?:d\d+)?)_", re.I)
+LIFECYCLE_FIELDS = (
+    "preloadEvents",
+    "preEnterEvents",
+    "postEnterEvents",
+    "preExitEvents",
+    "postExitEvents",
+)
+RUNTIME_METADATA_SOURCE = (
+    "reports/story/recovery/options/option_flow_runtime_metadata.json"
+)
+RUNTIME_CONSUMER = {
+    "type": "Beyond.Gameplay.Audio.AudioGameplayStatusSystem",
+    "image": "Gameplay.Beyond.dll",
+    "typeToken": "0x02001a6f",
+    "source": RUNTIME_METADATA_SOURCE,
+    "fields": [
+        "m_currentDialogId",
+        "m_dialogEventStatus",
+        "m_pendingDialogAudioEventIds",
+        "m_pinnedDialogAudioEventIds",
+    ],
+    "methods": {
+        "preloadEvents": {
+            "name": "_StartDialogEventPreload",
+            "token": "0x060099ec",
+        },
+        "preEnterEvents": {
+            "name": "_OnPreEnterDialog",
+            "token": "0x060099e7",
+        },
+        "postEnterEvents": {
+            "name": "_OnPostEnterDialog",
+            "token": "0x060099e8",
+        },
+        "preExitEvents": {
+            "name": "_OnPreExitDialog",
+            "token": "0x060099e9",
+        },
+        "postExitEvents": {
+            "name": "_OnPostExitDialog",
+            "token": "0x060099ea",
+        },
+        "schedule": {
+            "name": "_ScheduleDialogAudioEvent",
+            "token": "0x060099eb",
+        },
+        "preloadCompleted": {
+            "name": "_OnDialogEventPreloadCompleted",
+            "token": "0x060099ed",
+        },
+        "triggerPending": {
+            "name": "_TriggerAllPendingDialogAudioEvents",
+            "token": "0x060099ee",
+        },
+    },
+    "evidenceBoundary": "staticTypeAndMethodMetadataOnly",
+}
 
 
 def mission_for_dialog(dlg_id: str) -> str:
@@ -48,17 +108,13 @@ def mission_for_dialog(dlg_id: str) -> str:
     return match.group(1) if match else ""
 
 
-def signature_tuple(row: dict[str, Any]) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+def signature_tuple(row: dict[str, Any]) -> tuple[tuple[int, ...], ...]:
     def normalize(values: Any) -> tuple[int, ...]:
         if not isinstance(values, list):
             return ()
         return tuple(sorted(int(v) for v in values if isinstance(v, (int, float))))
 
-    return (
-        normalize(row.get("preEnterEvents")),
-        normalize(row.get("preExitEvents")),
-        normalize(row.get("preloadEvents")),
-    )
+    return tuple(normalize(row.get(field)) for field in LIFECYCLE_FIELDS)
 
 
 def collect_audio_dialog_paths(dialog_ids: list[str]) -> dict[str, list[str]]:
@@ -93,7 +149,10 @@ def build_report() -> dict[str, Any]:
     sig_groups: dict[tuple, list[str]] = defaultdict(list)
     per_mission: Counter[str] = Counter()
     all_event_ids: set[int] = set()
-    preload_event_ids: set[int] = set()
+    event_ids_by_phase: dict[str, set[int]] = {
+        field: set() for field in LIFECYCLE_FIELDS
+    }
+    value_counts_by_phase: Counter[str] = Counter()
 
     for dlg_id, row in sorted(table.items()):
         if not isinstance(row, dict):
@@ -102,18 +161,19 @@ def build_report() -> dict[str, Any]:
         sig = signature_tuple(row)
         sig_groups[sig].append(dlg_id)
         per_mission[mission or "?"] += 1
-        for kind in ("preEnterEvents", "preExitEvents", "preloadEvents"):
+        for kind in LIFECYCLE_FIELDS:
             for ev in row.get(kind) or []:
                 ev_int = int(ev)
-                all_event_ids.add(ev_int)
-                if kind == "preloadEvents":
-                    preload_event_ids.add(ev_int)
+                all_event_ids.add(ev_int & 0xFFFFFFFF)
+                event_ids_by_phase[kind].add(ev_int & 0xFFFFFFFF)
+                value_counts_by_phase[kind] += 1
         entries.append({
             "dialogId": dlg_id,
             "mission": mission,
-            "preEnterEvents": list(row.get("preEnterEvents") or []),
-            "preExitEvents": list(row.get("preExitEvents") or []),
-            "preloadEvents": list(row.get("preloadEvents") or []),
+            **{
+                field: list(row.get(field) or [])
+                for field in LIFECYCLE_FIELDS
+            },
         })
 
     audio_paths = collect_audio_dialog_paths([entry["dialogId"] for entry in entries])
@@ -124,9 +184,10 @@ def build_report() -> dict[str, Any]:
     unique_signatures = []
     for sig, dlgs in sig_groups.items():
         record = {
-            "preEnterEvents": list(sig[0]),
-            "preExitEvents": list(sig[1]),
-            "preloadEvents": list(sig[2]),
+            **{
+                field: list(sig[index])
+                for index, field in enumerate(LIFECYCLE_FIELDS)
+            },
             "dialogIds": sorted(dlgs),
             "missions": sorted({mission_for_dialog(d) for d in dlgs if mission_for_dialog(d)}),
         }
@@ -143,7 +204,12 @@ def build_report() -> dict[str, Any]:
         "summary": {
             "dialogCount": len(entries),
             "distinctEventIds": len(all_event_ids),
-            "distinctPreloadEventIds": len(preload_event_ids),
+            "eventValueCountsByPhase": dict(
+                (field, value_counts_by_phase[field]) for field in LIFECYCLE_FIELDS
+            ),
+            "distinctEventIdsByPhase": {
+                field: len(event_ids_by_phase[field]) for field in LIFECYCLE_FIELDS
+            },
             "sharedSignatureCount": len(shared_signatures),
             "uniqueSignatureCount": len(unique_signatures),
             "perMissionCounts": dict(per_mission.most_common()),
@@ -155,18 +221,24 @@ def build_report() -> dict[str, Any]:
                 "CRC32, or Murmur3 transform of any au_* string discovered in "
                 "global-metadata.dat hashes to the target IDs, so the table is "
                 "not reversible to ordered Wwise event names from metadata.dat "
-                "alone. The table is a per-dialog presence flag for custom "
-                "audio enter/exit hooks, not a chronology source."
+                "alone. The five arrays are exact authored dialog lifecycle "
+                "hooks, not a chronology source; static runtime metadata does "
+                "not prove handler execution or audible playback."
             ),
             "usableSignals": [
-                "presenceFlag: tags 41 dialogs (mostly chapter e8) as carrying "
-                "custom Wwise audio enter/exit hooks; useful as a dialog-type "
-                "label but does not order scene files.",
-                "sharedSignatureGrouping: 6 dialogs share the default enter/"
-                "exit signature, suggesting a shared audio profile. Authored "
-                "co-membership signal at best; not a chronology edge.",
+                "lifecyclePhase: preserves the exact dialog ID, phase array, "
+                "array index, signed authored value, and normalized uint32 "
+                "event hash for each hook.",
+                "runtimeConsumerShape: AudioGameplayStatusSystem exposes the "
+                "matching pre/post-enter/exit handlers, preload, scheduler, "
+                "and pending-event flush methods; this is a static request "
+                "contract, not an execution trace.",
+                "sharedSignatureGrouping: dialogs that share a complete five-field "
+                "signature suggest a shared audio profile. Authored co-membership "
+                "signal at best; not a chronology edge.",
             ],
         },
+        "runtimeConsumer": RUNTIME_CONSUMER,
         "sharedSignatures": shared_signatures,
         "uniqueSignatures": unique_signatures,
         "entries": entries,
@@ -185,7 +257,9 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "## Summary",
         "",
         f"- Dialogs in table: `{s['dialogCount']}`",
-        f"- Distinct event IDs: `{s['distinctEventIds']}` ({s['distinctPreloadEventIds']} preload)",
+        f"- Distinct event IDs: `{s['distinctEventIds']}`",
+        f"- Event values by phase: `{s['eventValueCountsByPhase']}`",
+        f"- Distinct event IDs by phase: `{s['distinctEventIdsByPhase']}`",
         f"- Shared signatures: `{s['sharedSignatureCount']}`",
         f"- Unique signatures: `{s['uniqueSignatureCount']}`",
         "",
@@ -212,16 +286,17 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "",
         "## Shared Signatures",
         "",
-        "Dialogs that share the exact same (preEnter, preExit, preload) event "
-        "signature. Indicates a shared audio profile.",
+        "Dialogs that share the exact same five-field lifecycle signature. "
+        "Indicates a shared authored audio profile.",
         "",
-        "| signature (preEnter / preExit / preload) | dialog count | missions | dialogs |",
+        "| signature (preload / preEnter / postEnter / preExit / postExit) | dialog count | missions | dialogs |",
         "| --- | ---: | --- | --- |",
     ])
     if payload["sharedSignatures"]:
         for sig in payload["sharedSignatures"]:
             lines.append(
-                f"| `{sig['preEnterEvents']} / {sig['preExitEvents']} / {sig['preloadEvents']}` "
+                f"| `{sig['preloadEvents']} / {sig['preEnterEvents']} / {sig['postEnterEvents']} / "
+                f"{sig['preExitEvents']} / {sig['postExitEvents']}` "
                 f"| {len(sig['dialogIds'])} "
                 f"| `{', '.join(sig['missions'])}` "
                 f"| `{', '.join(sig['dialogIds'])}` |"
@@ -235,8 +310,8 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "",
         "Dialogs with bespoke per-dialog Wwise audio enter/exit hooks.",
         "",
-        "| dialog | mission | preEnter | preExit | preload | audio dialog paths |",
-        "| --- | --- | ---: | ---: | ---: | --- |",
+        "| dialog | mission | preload | preEnter | postEnter | preExit | postExit | audio dialog paths |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     entries_by_id = {e["dialogId"]: e for e in payload["entries"]}
     for sig in payload["uniqueSignatures"]:
@@ -249,9 +324,11 @@ def markdown_report(payload: dict[str, Any]) -> str:
         lines.append(
             f"| `{md_escape(dlg_id)}` "
             f"| `{md_escape(entry.get('mission') or '')}` "
-            f"| {sig['preEnterEvents']} "
-            f"| {sig['preExitEvents']} "
             f"| {sig['preloadEvents']} "
+            f"| {sig['preEnterEvents']} "
+            f"| {sig['postEnterEvents']} "
+            f"| {sig['preExitEvents']} "
+            f"| {sig['postExitEvents']} "
             f"| {path_text or '_(none)_'} |"
         )
 
@@ -260,8 +337,10 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "## Conclusion",
         "",
         "AudioDialogCustomEventTable is not a scene-order or option-response "
-        "evidence source. Treat it as a dialog metadata tag (custom-audio "
-        "presence flag) and ignore for ordering promotions.",
+        "evidence source. Treat each row as an exact dialog lifecycle hook. "
+        "The AudioGameplayStatusSystem metadata explains how the engine can "
+        "schedule/preload/flush those IDs, but this report cannot claim that "
+        "the dialog ran or that a Wwise event reached an audible media leaf.",
     ])
 
     return "\n".join(lines) + "\n"

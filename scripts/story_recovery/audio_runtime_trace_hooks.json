@@ -1,0 +1,294 @@
+{
+  "schema": "audioRuntimeTrace.hooks.v1",
+  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "processName": "Endfield.exe",
+  "moduleName": "GameAssembly.dll",
+  "language": "CN",
+  "files": {
+    "executable": {
+      "relativePath": "Endfield.exe",
+      "bytes": 827448,
+      "sha256": "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99"
+    },
+    "gameAssembly": {
+      "relativePath": "GameAssembly.dll",
+      "bytes": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "metadata": {
+      "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "bytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "hooks": [
+    {
+      "name": "AudioAdapter.PostEvent(string)",
+      "sourceKind": "adapterStringPostEvent",
+      "mode": "request",
+      "token": "0x06000008",
+      "methodIndex": 479923,
+      "rva": "0x46d3f80",
+      "args": {
+        "eventKey": {"index": 0, "kind": "string"}
+      },
+      "returnKind": "u32"
+    },
+    {
+      "name": "AudioAdapter._PostEvent",
+      "sourceKind": "adapterPostEvent",
+      "mode": "request",
+      "token": "0x0600005f",
+      "methodIndex": 480010,
+      "rva": "0x328a690",
+      "args": {
+        "eventId": {"index": 0, "kind": "u32"},
+        "audioObjectId": {"index": 1, "kind": "u64"},
+        "callbackType": {"index": 2, "kind": "u32"},
+        "originCallback": {"index": 3, "kind": "u64"},
+        "originCookie": {"index": 4, "kind": "u64"}
+      },
+      "returnKind": "u32"
+    },
+    {
+      "name": "AudioAdapter._OnEventPreparedDoPostEvent",
+      "sourceKind": "adapterPreparedPostEvent",
+      "mode": "request",
+      "token": "0x0600005c",
+      "methodIndex": 480007,
+      "rva": "0x328c670",
+      "args": {
+        "eventId": {"index": 0, "kind": "u32"},
+        "arg1": {"index": 1, "kind": "u64"},
+        "preparationResult": {"index": 2, "kind": "u32"},
+        "cookie": {"index": 3, "kind": "u64"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AudioAdapter._ExecuteActionOnPlayingId",
+      "sourceKind": "adapterPlayingIdControl",
+      "mode": "control",
+      "token": "0x06000061",
+      "methodIndex": 480012,
+      "rva": "0x3870420",
+      "args": {
+        "actionType": {"index": 0, "kind": "u32"},
+        "playingId": {"index": 1, "kind": "u32"},
+        "durationMs": {"index": 2, "kind": "i32"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AudioAdapter.StopByPlayingId",
+      "sourceKind": "adapterStopRequest",
+      "mode": "control",
+      "token": "0x06000012",
+      "methodIndex": 479933,
+      "rva": "0x635bbd0",
+      "args": {
+        "playingId": {"index": 0, "kind": "u32"},
+        "fadeTimeMs": {"index": 1, "kind": "i32"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AudioAdapter.PauseByPlayingId",
+      "sourceKind": "adapterPauseRequest",
+      "mode": "control",
+      "token": "0x06000013",
+      "methodIndex": 479934,
+      "rva": "0x635a480",
+      "args": {
+        "playingId": {"index": 0, "kind": "u32"},
+        "fadeTimeMs": {"index": 1, "kind": "i32"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AudioAdapter.ResumeByPlayingId",
+      "sourceKind": "adapterResumeRequest",
+      "mode": "control",
+      "token": "0x06000014",
+      "methodIndex": 479935,
+      "rva": "0x635af50",
+      "args": {
+        "playingId": {"index": 0, "kind": "u32"},
+        "fadeTimeMs": {"index": 1, "kind": "i32"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AudioAdapter.SeekOnEvent(eventId)",
+      "sourceKind": "adapterSeekRequest",
+      "mode": "control",
+      "token": "0x0600002f",
+      "methodIndex": 479962,
+      "rva": "0x635b094",
+      "args": {
+        "eventId": {"index": 0, "kind": "u32"},
+        "audioObjectId": {"index": 1, "kind": "u64"},
+        "timeMs": {"index": 2, "kind": "i32"},
+        "toNearestMarker": {"index": 3, "kind": "bool"},
+        "playingId": {"index": 4, "kind": "u32"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "PlaySoundAction.ExecuteInternal",
+      "sourceKind": "playSoundAction",
+      "mode": "carrier",
+      "instance": true,
+      "token": "0x0600df02",
+      "methodIndex": 57089,
+      "rva": "0x3b84de0",
+      "args": {
+        "targetHandle": {"index": 1, "kind": "u64"}
+      },
+      "returnKind": "bool"
+    },
+    {
+      "name": "PlaySoundAction._DoPlaySound",
+      "sourceKind": "playSoundAction",
+      "mode": "carrier",
+      "instance": true,
+      "token": "0x0600df03",
+      "methodIndex": 57090,
+      "rva": "0x3b85950",
+      "args": {
+        "targetWrapper": {"index": 1, "kind": "u64"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "PlaySoundAction._DoPostEvent",
+      "sourceKind": "playSoundActionObject",
+      "mode": "carrier",
+      "instance": true,
+      "token": "0x0600df05",
+      "methodIndex": 57092,
+      "rva": "0x3b87700",
+      "args": {
+        "audioObjectId": {"index": 1, "kind": "u64"},
+        "target": {"index": 2, "kind": "u64"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "PlaySoundAction._DoPostEventAtPosition",
+      "sourceKind": "playSoundActionPosition",
+      "mode": "carrier",
+      "instance": true,
+      "token": "0x0600df06",
+      "methodIndex": 57093,
+      "rva": "0x3b879b0",
+      "args": {
+        "position": {"index": 1, "kind": "u64"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "GameAction.PlayAudio(string, gameObject)",
+      "sourceKind": "levelScriptAudioAction",
+      "mode": "carrier",
+      "stringArgs": {"0": "eventKey"},
+      "token": "0x06007f76",
+      "methodIndex": 32629,
+      "rva": "0x3d40600",
+      "args": {
+        "eventKey": {"index": 0, "kind": "string"},
+        "gameObject": {"index": 1, "kind": "u64"}
+      },
+      "returnKind": "bool"
+    },
+    {
+      "name": "GameAction.PlayAudio(eventId, gameObject)",
+      "sourceKind": "levelScriptAudioActionNumeric",
+      "mode": "carrier",
+      "token": "0x06007f77",
+      "methodIndex": 32630,
+      "rva": "0x75e6738",
+      "args": {
+        "eventId": {"index": 0, "kind": "u32"},
+        "gameObject": {"index": 1, "kind": "u64"}
+      },
+      "returnKind": "bool"
+    },
+    {
+      "name": "GameAction.PlayAudioAtPosition",
+      "sourceKind": "levelScriptAudioActionPosition",
+      "mode": "carrier",
+      "stringArgs": {"0": "eventKey"},
+      "token": "0x06007f7b",
+      "methodIndex": 32634,
+      "rva": "0x75e6220",
+      "args": {
+        "eventKey": {"index": 0, "kind": "string"},
+        "position": {"index": 1, "kind": "u64"},
+        "callbackType": {"index": 2, "kind": "u32"}
+      },
+      "returnKind": "bool"
+    },
+    {
+      "name": "GameAction.PlayAudioOnTarget",
+      "sourceKind": "levelScriptAudioActionTarget",
+      "mode": "carrier",
+      "stringArgs": {"1": "eventKey"},
+      "token": "0x06007f7c",
+      "methodIndex": 32635,
+      "rva": "0x75e6660",
+      "args": {
+        "entity": {"index": 0, "kind": "u64"},
+        "eventKey": {"index": 1, "kind": "string"},
+        "callbackType": {"index": 2, "kind": "u32"}
+      },
+      "returnKind": "bool"
+    },
+    {
+      "name": "AudioDlgEventPlayableBehaviour._DoPlayEvent",
+      "sourceKind": "timelineAudioPlay",
+      "mode": "carrier",
+      "instance": true,
+      "token": "0x06000619",
+      "methodIndex": 1560,
+      "rva": "0x73762ec",
+      "args": {
+        "info": {"index": 1, "kind": "u64"}
+      },
+      "returnKind": "bool"
+    },
+    {
+      "name": "AudioEventPlayableBehaviour._DoPlayEvent",
+      "sourceKind": "timelineAudioPlay",
+      "mode": "carrier",
+      "instance": true,
+      "token": "0x06000632",
+      "methodIndex": 1585,
+      "rva": "0x7377128",
+      "args": {
+        "playable": {"index": 1, "kind": "u64"},
+        "info": {"index": 2, "kind": "u64"}
+      },
+      "returnKind": "bool"
+    },
+    {
+      "name": "AudioCuePlayableBehaviour.OnBehaviourPlay",
+      "sourceKind": "timelineAudioCue",
+      "mode": "carrier",
+      "instance": true,
+      "token": "0x06000605",
+      "methodIndex": 1540,
+      "rva": "0x737559c",
+      "args": {
+        "playable": {"index": 1, "kind": "u64"},
+        "info": {"index": 2, "kind": "u64"}
+      },
+      "returnKind": "void"
+    }
+  ],
+  "evidenceBoundary": {
+    "classification": "observed_runtime_request",
+    "description": "A carrier hook proves that the managed request or carrier method executed in the attached process; an AudioAdapter hook proves that an integer Event request reached the adapter. Neither alone proves Wwise acceptance, selected media, or audibility.",
+    "eventIdJoin": "eventHash against the current language Audio index is a static name/media candidate join, not an observed Wwise selection."
+  }
+}

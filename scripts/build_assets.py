@@ -306,7 +306,10 @@ def main(argv: list[str] | None = None) -> None:
         "Story media index:",
         ASSET_DIR / "story_media.json",
         (
-            f"({story_media_stats['images']} images from {story_media_stats['imageIds']} ids; "
+            f"({story_media_stats['images']} images from {story_media_stats['imageIds']} ids "
+            f"plus {story_media_stats['storyFileImages']} Story image files "
+            f"({story_media_stats['cgImages']} CG; {story_media_stats['bigLogoImages']} BigLogo; "
+            f"{story_media_stats['remoteCommImages']} remote comm); "
             f"{story_media_stats['videos']} videos from {story_media_stats['videoRefs']} refs)"
         ),
     )

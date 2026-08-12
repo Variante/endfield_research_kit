@@ -105,6 +105,476 @@ def char_interact_fixture(event_id: int) -> bytes:
 
 
 class AudioSemanticDataTests(unittest.TestCase):
+    def test_lua_post_event_contexts_and_trigger_rows_keep_runtime_boundary(self) -> None:
+        audio_index = {
+            "luaAudioReferences": [
+                {
+                    "kind": "luaPostEvent",
+                    "name": "au_ui_fixture",
+                    "hash": 123,
+                    "method": "PostEvent",
+                    "source": "Data/LuaScripts/UI/Fixture.lua",
+                    "line": 17,
+                    "expression": 'AudioAdapter.PostEvent("au_ui_fixture")',
+                },
+                {
+                    "kind": "luaRtpcParameter",
+                    "name": "au_rtpc_fixture",
+                    "hash": 456,
+                },
+            ]
+        }
+
+        contexts = audio_semantics.lua_audio_contexts(audio_index)
+        self.assertEqual(list(contexts), ["au_ui_fixture"])
+        self.assertEqual(contexts["au_ui_fixture"][0]["line"], 17)
+        self.assertEqual(
+            contexts["au_ui_fixture"][0]["runtimeActivationStatus"],
+            "luaBranchExecutionNotObserved",
+        )
+
+        event = {
+            "id": "au_ui_fixture",
+            "foundInWwise": True,
+            "contexts": contexts["au_ui_fixture"],
+            "media": [{"mediaId": 9, "src": "/fixture.flac"}],
+        }
+        rows = audio_semantics._build_lua_post_event_trigger_contexts([event])
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["semanticKind"], "luaPostEvent")
+        self.assertEqual(rows[0]["owner"]["ownerStatus"], "exactLuaFileAndLine")
+        self.assertEqual(rows[0]["runtimeActivationStatus"], "luaBranchExecutionNotObserved")
+
+    def test_trigger_context_catalog_keeps_radio_envtalk_and_timeline_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root) / "webui"
+            conv_root = webui_root / "data/lang/CN/conv"
+            conv_root.mkdir(parents=True)
+            (conv_root / "radio_fixture.json").write_text(
+                json.dumps({
+                    "kind": "radio",
+                    "title": "radio_fixture",
+                    "lines": [{
+                        "id": "radio_fixture_001",
+                        "actor": "Radio NPC",
+                        "text": "fixture radio line",
+                        "audio": "au_radio_fixture_001",
+                        "cid": 1,
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            (conv_root / "env_envTalk_fixture.json").write_text(
+                json.dumps({
+                    "kind": "env",
+                    "title": "envTalk_fixture",
+                    "cooldown": 10.0,
+                    "lines": [{
+                        "id": "envTalk_fixture",
+                        "cid": 1,
+                        "aid": "npc_slot",
+                        "actor": "Slot NPC",
+                        "text": "fixture env line",
+                        "audio": "au_envtalk_fixture_001",
+                        "slot": 2,
+                        "_debug": {
+                            "table": "EnvTalkTable.envTalkDataList",
+                            "source": {"envTalkId": "envTalk_fixture"},
+                            "speakerHints": [{
+                                "proxyId": "proxy_fixture",
+                                "source": {
+                                    "fields": {
+                                        "proxyId": "proxy_fixture",
+                                        "levelId": "map01_lv001",
+                                    },
+                                },
+                                "proxyInfoData": {
+                                    "npcId": "npc_fixture",
+                                    "npcNameId": "npc_fixture_name",
+                                    "npcProxyType": "NpcProxy",
+                                },
+                            }],
+                        },
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            media_rows = [
+                {
+                    "id": "au_radio_fixture_001",
+                    "src": "/audio/radio.flac",
+                    "duration": 1.0,
+                    "audioCategory": "story_voice",
+                    "radioTriggerContexts": [{
+                        "levelScriptId": "map01_lv001",
+                        "action": "PlayRadioAndWait",
+                        "triggerRole": "LevelScriptRadioAction",
+                        "radioId": "radio_fixture",
+                        "recordUid": "uid-radio",
+                        "recordStart": 100,
+                        "sourcePath": "Persistent/fixture_level_script.json",
+                        "fields": {"onlyOnce": True},
+                        "audioDialogMatchEvidence": "exactAudioDialogPath",
+                        "radioLine": {
+                            "lineId": "radio_fixture_001",
+                            "radioId": "radio_fixture",
+                            "lineOrdinal": 0,
+                            "source": "RadioTable/radio_fixture.json",
+                        },
+                    }],
+                },
+                {
+                    "id": "au_envtalk_fixture_001",
+                    "src": "/audio/env.flac",
+                    "duration": 2.0,
+                    "speakerChannel": "man_fixture",
+                    "audioCategory": "story_voice",
+                },
+                {
+                    "id": "au_timeline_fixture",
+                    "src": "/audio/timeline.flac",
+                    "duration": 3.0,
+                    "audioCategory": "sfx",
+                    "audioDialogPath": "AudioDialog/au_timeline_fixture",
+                },
+            ]
+            event_rows = [{
+                "id": "au_timeline_fixture",
+                "category": "sfx",
+                "runtimeSelection": "singlePossibleMedia",
+                "mediaRelationTypes": ["directSound"],
+                "media": [{"id": "au_timeline_fixture", "src": "/audio/timeline.flac"}],
+                "contexts": [{
+                    "kind": "levelSequenceAudio",
+                    "triggerRole": "TimelineAssetPlayback",
+                    "confidence": "inferred",
+                    "timelineAssetName": "fixture_Audio",
+                    "timelineAssetSerializedFile": "CAB-fixture",
+                    "timelineAssetPathId": 7,
+                    "audioPlayablePathId": 8,
+                    "timelineTrackName": "Audio Track",
+                    "timelineClipIndex": 0,
+                    "triggerBindingStatus": "timelineParentNotLevelSequence",
+                    "ownershipEvidenceLevel": "exactSerializedTimelineCarrier",
+                    "triggerEvidenceLevel": "inferred",
+                    "runtimeActivationStatus": "audioEventRuntimePlaybackUnobserved",
+                    "timelineAssetSource": "VFS/fixture.chk",
+                    "timelineTrackSource": "VFS/fixture.chk",
+                }],
+            }]
+
+            catalog = audio_semantics.build_trigger_context_catalog(
+                event_rows,
+                media_rows,
+                webui_root,
+                "CN",
+            )
+
+            self.assertEqual(
+                {"radio": 1, "envTalk": 1, "timelineAudio": 1},
+                catalog["counts"]["bySemanticKind"],
+            )
+            self.assertEqual(3, catalog["counts"]["total"])
+            self.assertEqual(0, catalog["counts"]["runtimeExecutionObserved"])
+            self.assertEqual(3, catalog["counts"]["runtimeExecutionUnobserved"])
+            by_kind = {
+                row["semanticKind"]: row for row in catalog["contexts"]
+            }
+            radio = by_kind["radio"]
+            self.assertEqual("radio_fixture_001", radio["situation"]["lineId"])
+            self.assertEqual("fixture radio line", radio["meaning"]["text"])
+            self.assertEqual("exactRadioTableLine", radio["evidence"]["owner"])
+            self.assertEqual("/audio/radio.flac", radio["mediaRefs"][0]["src"])
+
+            envtalk = by_kind["envTalk"]
+            self.assertEqual(["proxy_fixture"], envtalk["situation"]["proxyIds"])
+            self.assertEqual("map01_lv001", envtalk["situation"]["levelIds"][0])
+            self.assertEqual("npc_slot", envtalk["owner"]["slotActorId"])
+            self.assertEqual("proxyHintDoesNotMatchLineActor", envtalk["owner"]["slotActorMatchStatus"])
+            self.assertEqual("man_fixture", envtalk["owner"]["speakerChannel"])
+            self.assertEqual("runtimeSlotSelectionUnobserved", envtalk["selection"]["slotSelectionStatus"])
+            self.assertEqual("fixture env line", envtalk["meaning"]["text"])
+
+            timeline = by_kind["timelineAudio"]
+            self.assertEqual("fixture_Audio", timeline["situation"]["timelineAssetName"])
+            self.assertEqual("timelineParentNotLevelSequence", timeline["selection"]["triggerBindingStatus"])
+            self.assertEqual("audioEventRuntimePlaybackUnobserved", timeline["runtimeActivationStatus"])
+            self.assertEqual("/audio/timeline.flac", timeline["mediaRefs"][0]["src"])
+
+    def test_trigger_context_catalog_includes_cutscene_timeline_media_context(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root) / "webui"
+            catalog = audio_semantics.build_trigger_context_catalog(
+                [{
+                    "id": "au_cutscene_fixture",
+                    "category": "sfx",
+                    "runtimeSelection": "singlePossibleMedia",
+                    "media": [{"id": "au_cutscene_fixture", "src": "/audio/cutscene.flac"}],
+                    "contexts": [{
+                        "kind": "cutsceneTimeline",
+                        "storyKey": "cutscene_fixture",
+                        "evidence": "authoredTimelineOrLevelSequence",
+                    }],
+                }],
+                [],
+                webui_root,
+                "CN",
+            )
+            self.assertEqual({"timelineAudio": 1}, catalog["counts"]["bySemanticKind"])
+            row = catalog["contexts"][0]
+            self.assertEqual("cutscene_fixture", row["situation"]["storyKey"])
+            self.assertEqual("CutsceneTimelineAudio", row["triggerRole"])
+            self.assertEqual("authoredTimelineOrLevelSequence", row["evidence"]["owner"])
+            self.assertEqual("cutsceneTimelineRuntimeExecutionNotObserved", row["runtimeActivationStatus"])
+            self.assertEqual("storyCutsceneAudioReferenceOnly", row["owner"]["runtimeCarrierStatus"])
+            self.assertEqual(["storyCutsceneAudioEventList"], row["evidence"]["requestEvidence"])
+            self.assertEqual("/audio/cutscene.flac", row["mediaRefs"][0]["src"])
+
+    def test_cutscene_audio_reference_marks_event_id_carrier_match_without_claiming_exact_join(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root) / "webui"
+            catalog = audio_semantics.build_trigger_context_catalog(
+                [{
+                    "id": "au_cutscene_match_fixture",
+                    "category": "music",
+                    "foundInWwise": True,
+                    "media": [],
+                    "contexts": [
+                        {
+                            "kind": "cutsceneTimeline",
+                            "storyKey": "cutscene_match_fixture",
+                            "evidence": "authoredTimelineOrLevelSequence",
+                        },
+                        {
+                            "kind": "levelSequenceAudio",
+                            "timelineAssetName": "cutscene_match_fixture_Audio",
+                            "timelineAssetPathId": 10,
+                            "timelineTrackPathId": 11,
+                            "audioPlayableRuntimeContractId": "timelineMusicEventKey.audioMusic",
+                            "audioPlayableType": "AudioMusicPlayable",
+                            "evidence": "exactSerializedTimelineCarrier",
+                        },
+                    ],
+                }],
+                [],
+                webui_root,
+                "CN",
+            )
+            rows = catalog["contexts"]
+            generic = next(row for row in rows if row["situation"]["contextKind"] == "cutsceneTimeline")
+            self.assertEqual(
+                "eventIdAlsoHasSerializedTimelineCarrier",
+                generic["owner"]["runtimeCarrierStatus"],
+            )
+            self.assertEqual(["storyCutsceneAudioEventList"], generic["evidence"]["requestEvidence"])
+            self.assertEqual(
+                {
+                    "eventIdAlsoHasSerializedTimelineCarrier": 1,
+                    "serializedPlayableCarrier": 1,
+                },
+                catalog["coverage"]["timelineAudio"]["rowsByCarrierEvidence"],
+            )
+
+    def test_trigger_context_catalog_keeps_greet_envtalk_as_separate_kind(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root) / "webui"
+            conv_root = webui_root / "data/lang/CN/conv"
+            conv_root.mkdir(parents=True)
+            (conv_root / "env_greetEnvTalk_fixture.json").write_text(
+                json.dumps({
+                    "kind": "misc",
+                    "title": "greetEnvTalk_fixture",
+                    "mission": "greet",
+                    "lines": [{
+                        "id": "greetEnvTalk_fixture",
+                        "audio": "au_greetEnvTalk_fixture",
+                        "duration": 5.0,
+                        "slot": 1,
+                    }, {
+                        "id": "greetEnvTalk_fixture",
+                        "audio": "au_greetEnvTalk_fixture",
+                        "duration": 5.0,
+                        "slot": 1,
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            catalog = audio_semantics.build_trigger_context_catalog(
+                [],
+                [{
+                    "id": "au_greetEnvTalk_fixture",
+                    "src": "/audio/greet.flac",
+                    "speakerChannel": "fixture",
+                }],
+                webui_root,
+                "CN",
+            )
+            self.assertEqual({"envTalkGreeting": 2}, catalog["counts"]["bySemanticKind"])
+            self.assertEqual(2, len({row["triggerId"] for row in catalog["contexts"]}))
+            row = catalog["contexts"][0]
+            self.assertEqual("envTalkGreeting", row["semanticKind"])
+            self.assertEqual("greetEnvTalk", row["situation"]["envTalkVariant"])
+            self.assertEqual("exactEnvTalkTableGreeting", row["evidence"]["definition"])
+            self.assertEqual("/audio/greet.flac", row["mediaRefs"][0]["src"])
+
+    def test_trigger_context_catalog_recovers_remote_common_auto_play_event(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            webui_root = root / "webui"
+            table_path = root / "export_full/structured/Persistent/Table/RemoteCommonTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(
+                json.dumps({
+                    "remotecomm_fixture": {
+                        "autoPlay": True,
+                        "startAudioEvent": "",
+                        "endAudioEvent": "",
+                        "remoteCommSingleDataList": [{
+                            "singleId": "remotecomm_fixture_001",
+                            "index": 1,
+                            "middleId": "npc_fixture",
+                            "actorList": ["npc_fixture"],
+                            "audioId": "au_sfx_remotecomm_fixture",
+                            "voiceId": "au_remotecomm_fixture_001",
+                            "autoPlayTime": -1.0,
+                        }],
+                    },
+                }),
+                encoding="utf-8",
+            )
+            catalog = audio_semantics.build_trigger_context_catalog(
+                [{
+                    "id": "au_sfx_remotecomm_fixture",
+                    "hash": 123,
+                    "category": "sfx",
+                    "foundInWwise": True,
+                    "possibleMediaCount": 1,
+                    "playRootCount": 1,
+                    "runtimeSelection": "singlePossibleMedia",
+                    "mediaRelationTypes": ["directSound"],
+                    "media": [{
+                        "id": "au_sfx_remotecomm_fixture",
+                        "src": "/audio/remote.flac",
+                    }],
+                }],
+                [],
+                webui_root,
+                "CN",
+                export_root=root / "export_full",
+            )
+            self.assertEqual({"remoteCommonAudio": 1}, catalog["counts"]["bySemanticKind"])
+            row = catalog["contexts"][0]
+            self.assertEqual("remotecomm_fixture", row["situation"]["remoteCommonId"])
+            self.assertEqual("remotecomm_fixture_001", row["situation"]["singleId"])
+            self.assertEqual("au_sfx_remotecomm_fixture", row["meaning"]["eventId"])
+            self.assertEqual("au_remotecomm_fixture_001", row["owner"]["voiceId"])
+            self.assertEqual("separateRemoteCommonVoiceId", row["owner"]["voiceLinkStatus"])
+            self.assertEqual("/audio/remote.flac", row["mediaRefs"][0]["src"])
+            self.assertEqual("exactRemoteCommonAudioId", row["selection"]["audioSelectionStatus"])
+            self.assertEqual("remoteCommonAutoPlayExecutionNotObserved", row["runtimeActivationStatus"])
+
+    def test_trigger_context_catalog_includes_dialog_timeline_voice_schedule(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root) / "webui"
+            conv_root = webui_root / "data/lang/CN/conv"
+            conv_root.mkdir(parents=True)
+            (conv_root / "dlg_fixture.json").write_text(
+                json.dumps({
+                    "kind": "dlg",
+                    "key": "dlg_fixture",
+                    "_debug": {
+                        "lineOrder": {
+                            "mode": "dialogTimeline",
+                            "sources": [{
+                                "kind": "dialogTimeline",
+                                "sourceKey": "dlgtl_fixture_sub_1",
+                                "file": "export_full/recovered/fixture",
+                            }],
+                        },
+                    },
+                    "lines": [{
+                        "id": "dlg_fixture_001",
+                        "aid": "npc_fixture",
+                        "actor": "Fixture NPC",
+                        "text": "fixture dialog line",
+                        "audio": "au_dlg_fixture_001",
+                        "duration": -1.0,
+                        "_debug": {
+                            "table": "DialogTable.dialogDataList",
+                            "timelineTiming": {
+                                "timeline": "dlgtl_fixture_sub_1",
+                                "start": 4.5,
+                                "duration": 2.75,
+                            },
+                        },
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            catalog = audio_semantics.build_trigger_context_catalog(
+                [],
+                [{
+                    "id": "au_dlg_fixture_001",
+                    "src": "/audio/dialog.flac",
+                    "duration": 2.5,
+                    "speakerChannel": "npc_fixture",
+                    "audioCategory": "story_voice",
+                }],
+                webui_root,
+                "CN",
+            )
+            self.assertEqual({"dialogTimeline": 1}, catalog["counts"]["bySemanticKind"])
+            row = catalog["contexts"][0]
+            self.assertEqual("dlg_fixture", row["situation"]["dialogKey"])
+            self.assertEqual("dlgtl_fixture_sub_1", row["situation"]["timelineId"])
+            self.assertEqual(4.5, row["selection"]["timelineStartSec"])
+            self.assertEqual("npc_fixture", row["owner"]["speakerActorId"])
+            self.assertEqual("exactDialogTimelineTiming", row["selection"]["lineScheduleStatus"])
+            self.assertEqual("/audio/dialog.flac", row["mediaRefs"][0]["src"])
+            self.assertEqual("dialogTimelineRuntimeExecutionNotObserved", row["runtimeActivationStatus"])
+
+    def test_trigger_context_catalog_includes_dialog_lifecycle_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root) / "webui"
+            catalog = audio_semantics.build_trigger_context_catalog(
+                [{
+                    "id": "hashed-event:0x4cd598ce",
+                    "name": "hashed-event:0x4cd598ce",
+                    "hash": 0x4CD598CE,
+                    "category": "unknown",
+                    "foundInWwise": True,
+                    "possibleMediaCount": 0,
+                    "playRootCount": 0,
+                    "runtimeSelection": "unresolved",
+                    "mediaRelationTypes": [],
+                    "traversalStatus": "complete",
+                    "media": [],
+                    "contexts": [{
+                        "kind": "tableEventHash",
+                        "table": "AudioDialogCustomEventTable",
+                        "path": "dlg_fixture.postEnterEvents[0]",
+                        "source": "structured/Persistent/Table/AudioDialogCustomEventTable.json",
+                        "signedValue": 1289066702,
+                        "eventHash": 0x4CD598CE,
+                        "evidence": "authoredUint32EventId",
+                    }],
+                }],
+                [],
+                webui_root,
+                "CN",
+            )
+            self.assertEqual({"dialogLifecycle": 1}, catalog["counts"]["bySemanticKind"])
+            self.assertEqual(1, catalog["counts"]["dialogLifecycleRowsWithNoDecodedMediaLeaf"])
+            row = catalog["contexts"][0]
+            self.assertEqual("dlg_fixture", row["situation"]["dialogId"])
+            self.assertEqual("postEnterEvents", row["situation"]["lifecyclePhase"])
+            self.assertEqual("DialogPostEnterAudioEvent", row["triggerRole"])
+            self.assertEqual("_OnPostEnterDialog", row["action"]["runtimeMethod"])
+            self.assertEqual("0x060099e8", row["action"]["runtimeMethodToken"])
+            self.assertEqual("wwiseEventHasNoDecodedMedia", row["selection"]["mediaSelectionStatus"])
+            self.assertEqual("dialogLifecycleRuntimeExecutionNotObserved", row["runtimeActivationStatus"])
+            self.assertEqual([], row["mediaRefs"])
+
     def test_levelsequence_id_normalization_requires_exact_audio_suffix(self) -> None:
         self.assertEqual(
             audio_semantics.normalize_levelsequence_audio_id("levelseq_fixture_Audio"),
@@ -255,6 +725,165 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(result["stats"]["exactTimelineCarriers"], 1)
             self.assertEqual(result["stats"]["exactPlayableDirectorLinks"], 1)
 
+    def test_timeline_raw_json_adds_clip_timing_and_playable_controls(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            export_root.mkdir()
+            mono_path = export_root / "mono.jsonl"
+            director_path = export_root / "director.jsonl"
+            raw_dir = (
+                export_root / "recovered" / "AnimeStudio-cli" / "Persistent"
+                / "json_by_type" / "MonoBehaviour"
+            )
+            raw_dir.mkdir(parents=True)
+
+            def object_row(path_id, name, scalars=None, pptrs=None):
+                return {
+                    "recordType": "object",
+                    "object": {
+                        "serializedFile": "CAB-raw-fixture",
+                        "source": "fixture.chk",
+                        "sourceOffset": 100,
+                        "pathId": path_id,
+                    },
+                    "type": "MonoBehaviour",
+                    "name": name,
+                    "scalars": scalars or [],
+                    "pptrs": pptrs or [],
+                }
+
+            playable = object_row(
+                101,
+                "AudioDlgEventPlayable",
+                [["$._audioEventKey", "s", "au_raw_fixture"]],
+            )
+            track = object_row(
+                102,
+                "Audio Track",
+                [["$.m_Clips[0].m_DisplayName", "s", "au_raw_fixture"]],
+                [
+                    {
+                        "path": "$.m_Parent",
+                        "target": {
+                            "serializedFile": "CAB-raw-fixture",
+                            "pathId": 201,
+                            "source": "fixture.chk",
+                            "sourceOffset": 100,
+                            "name": "dlgtl_raw_fixture_Audio",
+                        },
+                    },
+                    {
+                        "path": "$.m_Clips[0].m_Asset",
+                        "target": {
+                            "serializedFile": "CAB-raw-fixture",
+                            "pathId": 101,
+                            "name": "AudioDlgEventPlayable",
+                        },
+                    },
+                ],
+            )
+            mono_path.write_text(
+                "".join(json.dumps(row) + "\n" for row in [playable, track]),
+                encoding="utf-8",
+            )
+            director_path.write_text("", encoding="utf-8")
+
+            def raw_path(path_id, name):
+                suffix = f"{path_id & ((1 << 64) - 1):016X}"
+                return raw_dir / f"{name}_p{suffix}.json"
+
+            raw_path(102, "Audio Track").write_text(
+                json.dumps({
+                    "$animestudio": {
+                        "pathId": 102,
+                        "sourceFile": "CAB-raw-fixture",
+                    },
+                    "m_Clips": [{
+                        "m_Start": 12.5,
+                        "m_Duration": 3.25,
+                        "m_ClipIn": 0.25,
+                        "m_TimeScale": 1.0,
+                        "m_EaseInDuration": 0.1,
+                        "m_EaseOutDuration": 0.2,
+                        "m_DisplayName": "au_raw_fixture",
+                        "optionIndex": 4,
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            raw_path(101, "AudioDlgEventPlayable").write_text(
+                json.dumps({
+                    "$animestudio": {
+                        "pathId": 101,
+                        "sourceFile": "CAB-raw-fixture",
+                    },
+                    "_audioEventKey": "au_raw_fixture",
+                    "_isCue": 0,
+                    "_stopEventAtClipEnd": 1,
+                    "_fadeOutTime": 500,
+                    "_enableSeek": 1,
+                    "_useBindingObj": 0,
+                    "_is2D": 1,
+                }),
+                encoding="utf-8",
+            )
+
+            ownership = audio_semantics.collect_timeline_audio_ownership(
+                export_root,
+                event_ids=["au_raw_fixture"],
+                mono_path=mono_path,
+                director_path=director_path,
+            )
+            enriched = audio_semantics.enrich_timeline_audio_ownership_from_raw_json(
+                export_root,
+                ownership,
+            )
+            occurrence = enriched["occurrencesByEvent"]["au_raw_fixture"][0]
+            self.assertEqual(occurrence["timelineClipStartSec"], 12.5)
+            self.assertEqual(occurrence["timelineClipEndSec"], 15.75)
+            self.assertEqual(occurrence["timelineClipOptionIndex"], 4)
+            self.assertEqual(occurrence["audioPlayableStopEventAtClipEnd"], 1)
+            self.assertEqual(occurrence["audioPlayableFadeOutMs"], 500)
+            self.assertEqual(
+                occurrence["audioPlayableRuntimeContractId"],
+                "timelineStringEventKey.audioDlg",
+            )
+            self.assertEqual(
+                occurrence["timelineClipTimingEvidence"],
+                "exactSerializedTimelineClip",
+            )
+            self.assertEqual(
+                occurrence["audioPlayableControlEvidence"],
+                "exactSerializedAudioPlayableFields",
+            )
+            self.assertEqual(enriched["stats"]["timelineRawClipTimings"], 1)
+            self.assertEqual(enriched["stats"]["timelineRawPlayableControls"], 1)
+
+    def test_timeline_runtime_contract_normalizes_clone_suffix(self) -> None:
+        self.assertEqual(
+            audio_semantics._timeline_audio_runtime_contract_id(
+                "AudioDlgEventPlayable(Clone)(Clone)"
+            ),
+            "timelineStringEventKey.audioDlg",
+        )
+        self.assertEqual(
+            audio_semantics._timeline_audio_runtime_contract_id(
+                "AudioEventPlayable"
+            ),
+            "timelineStringEventKey.audioEvent",
+        )
+        self.assertEqual(
+            audio_semantics._timeline_audio_runtime_contract_id(
+                "AudioMusicPlayable(Clone)(Clone)"
+            ),
+            "timelineMusicEventKey.audioMusic",
+        )
+        self.assertIsNone(
+            audio_semantics._timeline_audio_runtime_contract_id(
+                "AudioCuePlayable"
+            )
+        )
+
     def test_timeline_audio_cue_playable_keeps_cue_namespace_separate(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root) / "export_full"
@@ -332,6 +961,11 @@ class AudioSemanticDataTests(unittest.TestCase):
             export_root.mkdir()
             mono_path = export_root / "mono.jsonl"
             director_path = export_root / "director.jsonl"
+            raw_dir = (
+                export_root / "recovered" / "AnimeStudio-cli" / "Persistent"
+                / "json_by_type" / "MonoBehaviour"
+            )
+            raw_dir.mkdir(parents=True)
 
             def object_row(path_id, name, scalars=None, pptrs=None):
                 return {
@@ -365,6 +999,18 @@ class AudioSemanticDataTests(unittest.TestCase):
                 encoding="utf-8",
             )
             director_path.write_text("", encoding="utf-8")
+            (raw_dir / "AudioMusicPlayable_p0000000000000065.json").write_text(
+                json.dumps({
+                    "$animestudio": {
+                        "pathId": 101,
+                        "sourceFile": "CAB-music",
+                    },
+                    "_audioEventKey": "au_music_fixture",
+                    "musicActionType": 2,
+                    "triggerOnSkip": 1,
+                }),
+                encoding="utf-8",
+            )
 
             result = audio_semantics.collect_timeline_audio_ownership(
                 export_root,
@@ -381,6 +1027,14 @@ class AudioSemanticDataTests(unittest.TestCase):
                 result["stats"]["timelineCarrierMusicDisplayNameMismatchAccepted"],
                 1,
             )
+            enriched = audio_semantics.enrich_timeline_audio_ownership_from_raw_json(
+                export_root, result
+            )
+            occurrence = enriched["occurrencesByEvent"]["au_music_fixture"][0]
+            self.assertEqual(occurrence["audioMusicActionType"], 2)
+            self.assertEqual(occurrence["audioMusicActionTypeLabel"], "CUSTOM_MUSIC")
+            self.assertEqual(occurrence["audioMusicTriggerOnSkip"], 1)
+            self.assertEqual(occurrence["audioMusicTriggerOnSkipLabel"], "triggeredOnSkip")
 
     def test_levelsequence_play_action_helper_keeps_active_overlay_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -458,6 +1112,452 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertEqual(summary["nonMediaSourceCount"], 1)
         self.assertIn("Wwise External Source", summary["contextSearch"])
+
+    def test_media_playback_location_statuses_keep_evidence_boundaries(self) -> None:
+        media = [
+            {"id": "dialog", "audioDialogPath": "dialog/path"},
+            {"id": "placed", "eventIds": ["au_placed"]},
+            {"id": "event_only", "eventIds": ["au_contextless"]},
+            {"id": "unknown"},
+        ]
+        events = [
+            {"id": "au_placed", "contexts": [{"kind": "table"}]},
+            {"id": "au_contextless", "contexts": []},
+        ]
+
+        counts = audio_semantics.annotate_media_playback_locations(media, events)
+
+        self.assertEqual(
+            [row["playbackLocationStatus"] for row in media],
+            ["directDialogMedia", "authoredEventContext", "eventRelationOnly", "unknown"],
+        )
+        self.assertEqual(counts, {
+            "directDialogMedia": 1,
+            "authoredEventContext": 1,
+            "eventRelationOnly": 1,
+            "unknown": 1,
+        })
+
+    def test_unresolved_event_records_scanned_bank_fingerprint_and_exact_hash(self) -> None:
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": ["Au_Sfx_Fixture_Missing"],
+            "events": [],
+            "eventEvidence": [],
+            "hircSummary": {
+                "packageCount": 5,
+                "packageFingerprint": "a" * 64,
+            },
+        }, {"au_sfx_fixture_missing": [{"kind": "table"}]})
+
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["audioLibraryResolutionStatus"], "eventHashAbsentFromScannedBankSet")
+        self.assertEqual(row["authoredEventHash"], audio_semantics.audio_hash_generator_compute("Au_Sfx_Fixture_Missing"))
+        self.assertEqual(row["scannedBankPackageCount"], 5)
+        self.assertEqual(row["scannedBankPackageFingerprint"], "a" * 64)
+
+    def test_unnamed_wwise_event_inventory_recovers_media_without_inventing_trigger(self) -> None:
+        inventory_row = {
+            "eventHash": 0x1EFEFA3C,
+            "eventIdentityStatus": "wwiseObjectWithoutRecoveredTriggerName",
+            "bankId": 7,
+            "bankVersion": 150,
+            "bank": "vfs/StreamingAssets/Audio/default_banks.pck",
+            "actionIds": [9],
+            "actionEvidence": [{"rootActionId": 9, "operation": "play"}],
+            "rootPlayActionCount": 1,
+            "mediaIds": [212418017],
+            "mediaRelationTypes": ["layerChild"],
+            "traversalStatus": "complete",
+            "selectionObjectTypes": [9],
+        }
+        rows, _, banks = audio_semantics.build_event_rows({
+            "eventNames": [],
+            "events": [],
+            "eventEvidence": [],
+            "entries": [{
+                "id": "212418017",
+                "rel": "wwise/unknown/212418017.flac",
+                "src": "/export_full/structured/Audio/shared/wwise/unknown/212418017.flac",
+                "format": "flac",
+                "bytes": 123,
+                "storageRoot": "shared",
+            }],
+            "wwiseEventInventory": [inventory_row, {**inventory_row, "bankId": 8}],
+        }, {})
+
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["id"], "hashed-event:0x1efefa3c")
+        self.assertTrue(row["foundInWwise"])
+        self.assertEqual(
+            row["eventIdentityStatus"],
+            "wwiseObjectWithoutRecoveredTriggerName",
+        )
+        self.assertEqual(row["possibleMediaCount"], 1)
+        self.assertEqual(row["media"][0]["mediaId"], 212418017)
+        self.assertEqual(row["mediaRelationTypes"], ["layerChild"])
+        self.assertEqual(len(row["evidence"]), 2)
+        self.assertEqual(len(banks), 2)
+        self.assertEqual([bank["namedEventCount"] for bank in banks], [0, 0])
+
+    def test_hotfix_same_media_id_replacement_inherits_exact_event_relation(self) -> None:
+        event_name = "au_music_main"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        base_src = "/export_full/structured/Audio/shared/wwise/music/291650974.flac"
+        hotfix_src = "/export_full/structured/Audio/shared/wwise/unknown/291650974.flac"
+        audio_index = {
+            "eventNames": [event_name],
+            "events": [{
+                "id": event_name,
+                "eventId": event_name,
+                "eventHash": event_hash,
+                "mediaId": 291650974,
+                "rel": "wwise/music/291650974.flac",
+                "src": base_src,
+                "bytes": 100,
+                "storageRoot": "shared",
+                "sourceBlock": "audit",
+                "wwiseMediaEvidence": [{"rootActionIds": [7], "relationTypes": ["musicTrackSource"]}],
+            }],
+            "eventEvidence": [{
+                "eventId": event_name,
+                "eventHash": event_hash,
+                "bankId": 1,
+                "bank": "audit_banks.pck",
+                "mediaIds": [291650974],
+                "rootPlayActionCount": 1,
+            }],
+            "entries": [{
+                "id": "291650974",
+                "rel": "wwise/music/291650974.flac",
+                "src": base_src,
+                "bytes": 100,
+                "storageRoot": "shared",
+                "sourceBlock": "audit",
+            }, {
+                "id": "291650974",
+                "rel": "wwise/unknown/291650974.flac",
+                "src": hotfix_src,
+                "bytes": 120,
+                "storageRoot": "shared",
+                "sourceBlock": "hotfix-audio",
+                "sourceBlockLabel": "HotfixAudio",
+            }],
+        }
+
+        events, media_to_events, _ = audio_semantics.build_event_rows(
+            audio_index, {event_name: [{"kind": "typedTableEvent"}]}
+        )
+        media = audio_semantics.build_media_rows(audio_index, media_to_events)
+        counts = audio_semantics.annotate_media_playback_locations(media, events)
+
+        self.assertEqual(len(events[0]["media"]), 2)
+        replacement = next(row for row in events[0]["media"] if row.get("hotfixMediaReplacement"))
+        self.assertEqual(replacement["src"], hotfix_src)
+        self.assertEqual(
+            replacement["mediaResolutionEvidence"],
+            "hotfixPackageMediaIdReplacesBaseMediaId",
+        )
+        self.assertEqual(media_to_events[hotfix_src], [event_name])
+        self.assertEqual(counts["authoredEventContext"], 2)
+        self.assertNotIn("unknown", counts)
+
+    def test_definition_only_sound_object_stays_unknown_but_resolves_library_object(self) -> None:
+        audio_index = {
+            "entries": [{
+                "id": "30151934",
+                "rel": "wwise/unknown/30151934.flac",
+                "src": "/export_full/structured/Audio/shared/wwise/unknown/30151934.flac",
+                "storageRoot": "shared",
+            }],
+            "hircSummary": {"definitionOnlyDecodedSoundObjects": [{
+                "mediaId": 30151934,
+                "soundObjectId": 10,
+                "parentObjectId": 20,
+                "parentObjectType": 5,
+                "evidence": "exactTypedWwiseSoundCodecMediaObject",
+            }]},
+        }
+
+        media = audio_semantics.build_media_rows(audio_index, {})
+        counts = audio_semantics.annotate_media_playback_locations(media, [])
+
+        self.assertEqual(counts["unknown"], 1)
+        self.assertEqual(
+            media[0]["audioLibraryObjectStatus"],
+            "wwiseSoundDefinitionWithoutEventPath",
+        )
+        self.assertEqual(media[0]["wwiseDefinitionEvidence"][0]["soundObjectId"], 10)
+
+    def test_control_only_event_role_uses_serialized_action_type(self) -> None:
+        event_name = "au_ui_fixture_control"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": [event_name],
+            "events": [],
+            "eventEvidence": [],
+            "typedUiTableWwiseEventAliases": [{
+                "eventHash": event_hash,
+                "name": event_name,
+            }],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": 7,
+                "bank": "default_banks.pck",
+                "actionEvidence": [
+                    {"actionType": 0x1204, "operation": "operation0x1200"},
+                    {"actionType": 0x1402, "operation": "operation0x1400"},
+                ],
+                "rootPlayActionCount": 0,
+                "mediaIds": [],
+                "traversalStatus": "complete",
+            }],
+        }, {})
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["playbackRole"], "controlOnly")
+        summary = audio_semantics.event_summary_row(rows[0], "event_details/00.json")
+        self.assertEqual(summary["playbackRole"], "controlOnly")
+
+    def test_audio_dialog_alias_names_raw_wwise_inventory_without_duplicate_hash_row(self) -> None:
+        event_name = "eny_fixture_combat_taunt_sv"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        rows, _, banks = audio_semantics.build_event_rows({
+            "eventNames": [event_name],
+            "events": [],
+            "eventEvidence": [],
+            "audioDialogWwiseEventAliases": [{
+                "eventHash": event_hash,
+                "name": event_name,
+                "voiceId": event_hash,
+            }],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": 7,
+                "bankVersion": 150,
+                "bank": "default_chinese_banks.pck",
+                "mediaIds": [],
+                "traversalStatus": "complete",
+            }],
+        }, {event_name: [{"kind": "responsiveDialogVoice"}]})
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["id"], event_name)
+        self.assertEqual(rows[0]["name"], event_name)
+        self.assertTrue(rows[0]["foundInWwise"])
+        self.assertEqual(rows[0]["eventIdentityStatus"], "recoveredAuthoredName")
+        self.assertEqual(rows[0]["contexts"][0]["kind"], "responsiveDialogVoice")
+        self.assertEqual(banks[0]["namedEventCount"], 1)
+
+    def test_voice_table_alias_names_inventory_and_preserves_unobserved_route(self) -> None:
+        event_name = "vo_fixture_narrating"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        alias = {
+            "eventHash": event_hash,
+            "eventHashHex": f"0x{event_hash:08x}",
+            "name": event_name,
+            "evidence": "typedVoiceTableEventFieldHashEqualsCurrentWwiseEventId",
+            "usages": [{
+                "table": "AudioDialogChannel.json",
+                "field": "narratingWwiseEvent",
+                "routeKind": "narratingChannelEvent",
+                "runtimeRoute": "SelectWwiseEvent -> PlayVoice",
+                "occurrenceCount": 3,
+                "rowPathSamples": ["a", "b", "c"],
+                "sources": ["StreamingAssets/AudioDialogChannel.json"],
+            }],
+        }
+        audio_index = {
+            "eventNames": [],
+            "events": [],
+            "eventEvidence": [],
+            "voiceTableWwiseEventAliases": [alias],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": 7,
+                "bankVersion": 150,
+                "bank": "default_banks.pck",
+                "mediaIds": [],
+                "traversalStatus": "complete",
+            }],
+        }
+        contexts = audio_semantics.voice_table_event_contexts(audio_index)
+        rows, _, banks = audio_semantics.build_event_rows(audio_index, contexts)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["id"], event_name)
+        self.assertEqual(rows[0]["eventIdentityStatus"], "recoveredAuthoredName")
+        self.assertEqual(rows[0]["categoryEvidence"], "exactTypedVoiceTableWwiseEventField")
+        self.assertEqual(rows[0]["contexts"][0]["kind"], "voiceNarratingChannelEvent")
+        self.assertEqual(rows[0]["contexts"][0]["occurrenceCount"], 3)
+        self.assertEqual(
+            rows[0]["contexts"][0]["runtimeSelectionStatus"],
+            "authoredRoutePresentLiveVoiceAndBranchSelectionUnobserved",
+        )
+        self.assertEqual(banks[0]["namedEventCount"], 1)
+
+    def test_cross_source_exact_alias_conflict_fails_closed(self) -> None:
+        rows = audio_semantics.exact_wwise_event_aliases({
+            "audioDialogWwiseEventAliases": [{"eventHash": 123, "name": "vo_fixture_a"}],
+            "voiceTableWwiseEventAliases": [{"eventHash": 123, "name": "vo_fixture_b"}],
+        })
+        self.assertEqual(rows, [])
+
+    def test_typed_ui_table_context_preserves_lua_execution_boundary(self) -> None:
+        event_name = "au_ui_fixture_video"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        audio_index = {"typedUiTableWwiseEventAliases": [{
+            "eventHash": event_hash,
+            "eventHashHex": f"0x{event_hash:08x}",
+            "name": event_name,
+            "evidence": "typedTableGetterAndLuaAudioConsumerHashEqualsCurrentWwiseEventId",
+            "usages": [{
+                "table": "GachaCharPoolTable.json",
+                "field": "videoAudioKey",
+                "routeKind": "uiVideoAudioEvent",
+                "runtimeRoute": "VideoPlayer.PlayAudio -> AudioAdapter.PostEvent",
+                "consumerEvidence": ["GachaPoolVideoCtrl.lua:93"],
+                "occurrenceCount": 2,
+                "rowPathSamples": ["pool_a", "pool_b"],
+                "sources": ["GachaCharPoolTable.json"],
+            }],
+        }]}
+
+        contexts = audio_semantics.typed_ui_table_event_contexts(audio_index)[event_name]
+
+        self.assertEqual(contexts[0]["kind"], "uiVideoAudioEvent")
+        self.assertEqual(contexts[0]["occurrenceCount"], 2)
+        self.assertEqual(contexts[0]["consumerEvidence"], ["GachaPoolVideoCtrl.lua:93"])
+        self.assertEqual(
+            contexts[0]["runtimeExecutionStatus"],
+            "authoredLuaAudioCallsiteBranchExecutionUnobserved",
+        )
+        self.assertEqual(contexts[0]["playbackPlacementStatus"], "authoredPossibleTrigger")
+
+    def test_typed_ui_alias_names_raw_inventory_without_hash_duplicate(self) -> None:
+        event_name = "au_ui_fixture_open"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": [],
+            "events": [],
+            "eventEvidence": [],
+            "typedUiTableWwiseEventAliases": [{"eventHash": event_hash, "name": event_name}],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": 1,
+                "bankVersion": 150,
+                "bank": "default_banks.pck",
+                "mediaIds": [],
+                "traversalStatus": "complete",
+            }],
+        }, {event_name: [{"kind": "uiAnimationOpenEvent"}]})
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["id"], event_name)
+        self.assertEqual(rows[0]["eventIdentityStatus"], "recoveredAuthoredName")
+
+    def test_sns_voice_context_preserves_click_and_stop_boundary(self) -> None:
+        event_name = "au_ui_event_sns_fixture_voice"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        contexts = audio_semantics.sns_voice_event_contexts({
+            "snsVoiceWwiseEventAliases": [{
+                "eventHash": event_hash,
+                "eventHashHex": f"0x{event_hash:08x}",
+                "name": event_name,
+                "usages": [{
+                    "table": "SNSDialogTable.json",
+                    "dialogId": "dialog_fixture",
+                    "contentId": 1,
+                    "contentType": 5,
+                    "contentTypeName": "Voice",
+                    "contentParamIndex": 0,
+                    "speaker": "fixture",
+                    "durationSeconds": "4",
+                    "sources": ["SNSDialogTable.json"],
+                }],
+            }],
+        })[event_name]
+        self.assertEqual(contexts[0]["kind"], "snsVoiceMessageEvent")
+        self.assertIn("AudioAdapter.PostEvent", contexts[0]["runtimeRoute"])
+        self.assertIn("StopByPlayingId", contexts[0]["runtimeRoute"])
+        self.assertEqual(contexts[0]["runtimeExecutionStatus"], "authoredClickHandlerExecutionUnobserved")
+        self.assertEqual(contexts[0]["playbackPlacementStatus"], "authoredPossibleTrigger")
+
+    def test_skill_id_dictionary_alias_names_event_without_trigger_context(self) -> None:
+        event_name = "eny_fixture_skill_audio_identity"
+        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": [],
+            "events": [],
+            "eventEvidence": [],
+            "skillIdDictionaryWwiseEventAliases": [{
+                "eventHash": event_hash,
+                "name": event_name,
+                "dictionaryKind": "skill_id",
+                "numericSkillIds": ["7"],
+                "tableSources": ["NumIdStrTable.json"],
+                "skillDataSources": [f"SkillData/{event_name}.json"],
+                "evidence": "skillIdDictionaryNameAndSkillDataFileHashEqualsCurrentWwiseEventId",
+                "playbackPlacementStatus": "identityOnlyNoAudioConsumer",
+            }],
+            "wwiseEventInventory": [{
+                "eventHash": event_hash,
+                "bankId": 1,
+                "bank": "default_banks.pck",
+                "mediaIds": [],
+                "rootPlayActionCount": 1,
+                "actionEvidence": [{"operation": "play"}],
+                "traversalStatus": "complete",
+            }],
+        }, {})
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["name"], event_name)
+        self.assertEqual(rows[0]["category"], "sfx")
+        self.assertEqual(rows[0]["categoryEvidence"], "exactSkillIdDictionaryEventIdentity")
+        self.assertEqual(rows[0]["contexts"], [])
+        self.assertEqual(rows[0]["identityOnlyPlaybackPlacementStatus"], "identityOnlyNoAudioConsumer")
+        self.assertEqual(rows[0]["identityNumericSkillIds"], ["7"])
+
+    def test_responsive_voice_contexts_preserve_trigger_and_tone_selection_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            event_name = "eny_fixture_combat_taunt_sv"
+            event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+            signed_hash = event_hash if event_hash < (1 << 31) else event_hash - (1 << 32)
+            (table_root / "ResponsiveDialog.json").write_text(json.dumps({
+                "1": {"speakers": {"eny_fixture": {"triggers": {
+                    "combat_taunt": {
+                        "response": [signed_hash],
+                        "triggerTypeId": 149,
+                        "weight": [100],
+                    }
+                }}}}
+            }), encoding="utf-8")
+            (table_root / "AudioVoTone.json").write_text(json.dumps({
+                str(signed_hash): {"toneList": [signed_hash]}
+            }), encoding="utf-8")
+            contexts = audio_semantics.collect_responsive_voice_contexts(
+                export_root,
+                {"audioDialogWwiseEventAliases": [{
+                    "eventHash": event_hash,
+                    "voiceId": signed_hash,
+                    "name": event_name,
+                    "sources": ["AudioDialog.json"],
+                }]},
+            )[event_name]
+
+            self.assertEqual(
+                {row["kind"] for row in contexts},
+                {"audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant"},
+            )
+            response = next(row for row in contexts if row["kind"] == "responsiveDialogVoice")
+            self.assertEqual(response["triggerKey"], "combat_taunt")
+            self.assertEqual(response["speakerId"], "eny_fixture")
+            self.assertEqual(response["responseWeight"], 100)
+            self.assertEqual(response["playbackPlacementStatus"], "authoredPossibleTrigger")
+            tone = next(row for row in contexts if row["kind"] == "voiceToneVariant")
+            self.assertEqual(tone["playbackPlacementStatus"], "selectionTransformOnly")
 
     def test_levelscript_dynamic_property_resolution_becomes_authored_event_context(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -1167,6 +2267,44 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(set(contexts), {"au_sfx_radio_transition"})
             self.assertEqual(len(contexts["au_sfx_radio_transition"]), 1)
             self.assertIn("Persistent", contexts["au_sfx_radio_transition"][0]["source"])
+
+    def test_remote_common_audio_id_is_event_context_not_timeline_gap(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_path = root / "structured/Persistent/Table/RemoteCommonTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(json.dumps({
+                "remotecomm_fixture": {
+                    "autoPlay": True,
+                    "remoteCommSingleDataList": [{
+                        "singleId": "remotecomm_fixture_001",
+                        "middleId": "npc_fixture",
+                        "actorList": ["npc_fixture"],
+                        "audioId": "au_sfx_remotecomm_fixture",
+                        "voiceId": "au_remotecomm_fixture_001",
+                        "autoPlayTime": -1.0,
+                    }],
+                },
+            }), encoding="utf-8")
+
+            contexts = audio_semantics.collect_table_contexts(root)
+            self.assertEqual(set(contexts), {"au_sfx_remotecomm_fixture"})
+            authored = contexts["au_sfx_remotecomm_fixture"][0]
+            self.assertEqual(authored["kind"], "remoteCommonAudio")
+            self.assertEqual(authored["triggerBindingStatus"], "exactRemoteCommonAudioId")
+            self.assertEqual(authored["voiceLinkStatus"], "separateRemoteCommonVoiceId")
+            self.assertEqual(authored["voiceId"], "au_remotecomm_fixture_001")
+
+            rows, _, _ = audio_semantics.build_event_rows({
+                "eventNames": ["au_sfx_remotecomm_fixture"],
+                "events": [],
+                "eventEvidence": [],
+            }, contexts)
+            summary = audio_semantics.event_summary_row(rows[0], "event_details/00.json")
+            self.assertEqual(summary["contextKinds"], ["remoteCommonAudio"])
+            self.assertEqual(summary["contextGroups"], ["authoredConfig"])
+            self.assertEqual(summary["triggerBindingStatuses"], ["exactRemoteCommonAudioId"])
+            self.assertNotIn("timelineOwnershipGapCount", summary)
 
     def test_audio_cue_separates_behavior_events_from_control_operands(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -2349,6 +3487,91 @@ class AudioSemanticDataTests(unittest.TestCase):
                 catalog["dynamicRadioBindings"]["items"][0]["binding"]["idRef"],
                 1,
             )
+
+    def test_resolves_dynamic_radio_string_list_candidates_without_selecting_one(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            script_path = (
+                export_root
+                / "structured/Persistent/Data/Json/LevelScriptData/map/1001.json"
+            )
+            script_path.parent.mkdir(parents=True)
+            script_path.write_bytes(b"dynamic-radio-fixture")
+
+            def decode_file(_path: Path, _data: bytes) -> dict:
+                return {
+                    "targetCount": 1,
+                    "rows": [{
+                        "record": {
+                            "start": 84,
+                            "uid": "radio-action",
+                            "localId": 2,
+                            "unionTag": 0x0363,
+                            "serializedMemberCount": 0x0D,
+                        },
+                        "actionMapRole": "actionList#2 root",
+                        "audioAction": {
+                            "action": "PlayRadio",
+                            "fields": {"radioId": {
+                                "sourceField": "_radioId",
+                                "bindingKind": "dynamic",
+                                "idRef": 1,
+                                "paramSource": -1,
+                            }},
+                        },
+                    }],
+                    "stringListGetters": {1: {
+                        "record": {"localId": 1, "uid": "radio-getter"},
+                        "actionMapRole": "getterList#1",
+                        "getter": {
+                            "index": {
+                                "bindingKind": "localGetterRef",
+                                "getterLocalId": 0,
+                            },
+                            "list": {
+                                "bindingKind": "dynamic",
+                                "idRef": -1,
+                                "paramSource": 200,
+                                "path": "RandomLines",
+                            },
+                        },
+                    }},
+                }
+
+            brief = {
+                "properties": [{
+                    "name": "RandomLines",
+                    "value": {
+                        "valueType": 8,
+                        "atomCount": 2,
+                        "atoms": [
+                            {"valueBit64": 0, "text": "radio_a"},
+                            {"valueBit64": 0, "text": "radio_b"},
+                        ],
+                    },
+                }],
+            }
+            with patch.object(
+                audio_semantics,
+                "_load_levelscript_brief_property_sources",
+                return_value=(brief, "structured/Persistent/Data/Json/LevelData/map.json"),
+            ):
+                semantics = audio_semantics.collect_levelscript_audio_semantics(
+                    export_root,
+                    decode_file=decode_file,
+                    cue_semantics={"cueDefinitions": {}},
+                )
+
+            self.assertEqual(1, semantics["stats"]["dynamicRadioBindings"])
+            self.assertEqual(1, semantics["stats"]["resolvedDynamicRadioBindings"])
+            row = semantics["dynamicRadioBindings"][0]
+            self.assertEqual(
+                "resolvedRadioCandidateSetRuntimeIndexUnobserved",
+                row["resolutionStatus"],
+            )
+            self.assertEqual(["radio_a", "radio_b"], row["candidateRadioIds"])
+            self.assertEqual("runtimeListIndexUnobserved", row["selectionStatus"])
+            self.assertNotIn("radioId", row)
 
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

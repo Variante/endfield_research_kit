@@ -1436,6 +1436,7 @@ namespace EndfieldGraphShaderLab
                 canonicalColorTarget,
                 canonicalDepthTarget,
                 preGBufferFrame,
+                characterShadowFrame,
                 recoveredLowResDirectionalShadowReady,
                 recoveredContactShadowFrame.ready);
 
@@ -3389,6 +3390,13 @@ namespace EndfieldGraphShaderLab
             commandBuffer.SetGlobalVector(
                 CharacterShadowMultiAtlasParamsId,
                 Vector4.zero);
+            commandBuffer.SetGlobalVector(
+                CharacterShadowAtlasTexelSizeId,
+                new Vector4(
+                    1.0f / resolution,
+                    1.0f / resolution,
+                    resolution,
+                    resolution));
             commandBuffer.SetGlobalTexture(
                 CharacterShadowMapId,
                 new RenderTargetIdentifier(CharacterShadowMapId));

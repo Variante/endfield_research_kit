@@ -459,6 +459,18 @@ textarea:focus-visible,
   font-size: 12px;
 }
 
+.construction-banner {
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(174, 119, 22, 0.34);
+  background: linear-gradient(90deg, rgba(255, 199, 73, 0.22), rgba(255, 199, 73, 0.08));
+  color: #79520d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .shell-status[data-tone="error"] {
   border-left-color: var(--accent);
 }
@@ -2374,6 +2386,157 @@ a.opt-target-chip { cursor: pointer; }
   padding: 10px 16px 14px;
   background: linear-gradient(180deg, rgba(var(--fg-rgb), 0), rgba(var(--fg-rgb), 0.22));
 }
+
+.multi-media-control {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1200;
+}
+.multi-media-trigger,
+.multi-media-panel button {
+  font: inherit;
+}
+.multi-media-trigger {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid rgba(var(--accent-rgb), 0.55);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 8px 24px rgba(var(--fg-rgb), 0.25);
+  cursor: pointer;
+  font-weight: 700;
+}
+.multi-media-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: min(440px, calc(100vw - 24px));
+  max-height: min(620px, calc(100vh - 90px));
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-2);
+  box-shadow: 0 16px 48px rgba(var(--fg-rgb), 0.32);
+  color: var(--text);
+}
+.multi-media-panel header,
+.multi-media-panel footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.multi-media-panel header strong {
+  flex: 1 1 auto;
+}
+.multi-media-close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 22px;
+}
+.multi-media-selection-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 0;
+}
+.multi-media-audio-toggle {
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+}
+.multi-media-audio-toggle:hover,
+.multi-media-audio-toggle:focus-visible {
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+.multi-media-audio-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.multi-media-list {
+  display: grid;
+  gap: 4px;
+  max-height: min(420px, calc(100vh - 250px));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.multi-media-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: var(--bg-3);
+  cursor: pointer;
+}
+.multi-media-option:hover,
+.multi-media-option:focus-within {
+  background: rgba(var(--accent-rgb), 0.12);
+}
+.multi-media-option b,
+.multi-media-option small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.multi-media-option small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.multi-media-panel footer {
+  margin-top: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.multi-media-status {
+  flex: 1 1 100%;
+  color: var(--muted);
+  font-size: 11px;
+}
+.multi-media-stop,
+.multi-media-sequence,
+.multi-media-play {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--text);
+  cursor: pointer;
+}
+.multi-media-play {
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.18);
+}
+.multi-media-play:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.multi-media-sequence:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (max-width: 640px) {
+  .multi-media-control {
+    right: 12px;
+    bottom: 12px;
+  }
+}
 .wiki-video-file {
   display: flex;
   align-items: center;
@@ -3277,6 +3440,29 @@ button.story-order-key-button:hover,
   font-family: ui-monospace, Consolas, monospace;
 }
 
+/* Multiple authored one-option nodes on one directed DialogTree path are
+   consecutive prompts. Keep their ordering visually distinct from a fork. */
+.opt-group.opt-group-sequential-prompts { border-left-color: var(--good); }
+.opt-block .opt-sequential-prompt {
+  padding: 6px 8px;
+  background: var(--bg-2);
+  border-radius: 3px;
+}
+.opt-sequential-step-label {
+  display: inline-block;
+  min-width: 24px;
+  margin-right: 6px;
+  color: var(--muted);
+  font: 10px/1.4 ui-monospace, Consolas, monospace;
+}
+.opt-sequential-arrow {
+  height: 18px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 14px;
+  line-height: 18px;
+}
+
 /* Multi-option groups render each option as a parallel branch column so the
    reader can see both paths before the story merges back below. */
 .opt-group.opt-group-branches { border-left-color: var(--accent-2); }
@@ -3633,6 +3819,13 @@ mark { background: rgba(var(--fg-rgb), 0.08); color: var(--text); padding: 0 2px
 .line-media .inline-image-tag.is-sns-image .inline-image-thumb {
   width: min(360px, 70vw);
   max-height: min(320px, 52vh);
+}
+
+.inline-image-tag.is-cg-image,
+.inline-image-tag.is-cg-image .inline-image-thumb,
+.inline-image-tag.is-cg-image .inline-image-popover,
+.inline-image-tag.is-cg-image .inline-image-popover img {
+  opacity: 1;
 }
 
 .inline-image-tag.is-content-image {
@@ -7711,13 +7904,9 @@ body:not(.show-debug) .story-order-remove-from-mission {
   color: var(--text);
 }
 
-/* Give the nav its own full-width row whenever it cannot sit comfortably
-   beside the brand and the language/debug controls:
-     - below 1280px, at any tab count;
-     - whenever the debug switch is on, which adds 7 more tabs (13 total,
-       ~1200px of chips) and does not fit inline even at 1920px.
-   Without this the rail wrapped raggedly AND .topbar-actions stacked into
-   two or three rows (topbar was 132px tall at 1100px). */
+/* Give the nav its own full-width row below 1280px, where it cannot sit
+   comfortably beside the brand and the language/debug controls. Debug mode
+   must not otherwise reposition the navigation rail. */
 @media (max-width: 1280px) {
   #topbar {
     flex-wrap: wrap;
@@ -7733,21 +7922,6 @@ body:not(.show-debug) .story-order-remove-from-mission {
   .topbar-actions {
     margin-left: auto;
   }
-}
-
-body.show-debug #topbar {
-  flex-wrap: wrap;
-  row-gap: 8px;
-}
-
-body.show-debug #view-tabs {
-  order: 3;
-  flex: 1 0 100%;
-  min-width: 0;
-}
-
-body.show-debug .topbar-actions {
-  margin-left: auto;
 }
 
 /* ------- 2. Focus visibility -------

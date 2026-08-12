@@ -415,6 +415,39 @@ def is_ignored_game_update_path(path: str) -> bool:
     return any(lower.startswith(prefix) for prefix in IGNORED_GAME_PATH_PREFIXES)
 
 
+def relocated_structured_counterpart(path: str) -> str | None:
+    """Return the same structured path under the other VFS source root."""
+    normalized = normalize_posix(path)
+    parts = normalized.split("/")
+    if len(parts) < 3 or parts[0].lower() != "structured":
+        return None
+    source = parts[1].lower()
+    if source == "streamingassets":
+        parts[1] = "Persistent"
+    elif source == "persistent":
+        parts[1] = "StreamingAssets"
+    else:
+        return None
+    return "/".join(parts)
+
+
+def is_structured_source_relocation(
+    status: str,
+    path: str,
+    *,
+    game_root: Path,
+    previous_game_root: Path | None,
+) -> bool:
+    counterpart = relocated_structured_counterpart(path)
+    if counterpart is None or previous_game_root is None:
+        return False
+    if status == "added":
+        return (previous_game_root / counterpart).is_file()
+    if status == "deleted":
+        return (game_root / counterpart).is_file()
+    return False
+
+
 def normalized_entry(status: str, raw: dict[str, Any], *, domain: str = "game") -> dict[str, Any]:
     path = normalize_posix(str(raw.get("path") or ""))
     extension = str(raw.get("extension") or "")
@@ -601,6 +634,8 @@ def filtered_game_entries(
     samples: dict[str, Any],
     *,
     suppress_changes: bool,
+    game_root: Path,
+    previous_game_root: Path | None,
     domain: str = "game",
 ) -> tuple[list[dict[str, Any]], Counter[str]]:
     entries: list[dict[str, Any]] = []
@@ -613,6 +648,15 @@ def filtered_game_entries(
                 continue
             if is_ignored_game_update_path(str(raw_entry.get("path") or "")):
                 ignored_counts[status] += 1
+                continue
+            if is_structured_source_relocation(
+                status,
+                str(raw_entry.get("path") or ""),
+                game_root=game_root,
+                previous_game_root=previous_game_root,
+            ):
+                ignored_counts[status] += 1
+                ignored_counts[f"{status}_structured_source_relocation"] += 1
                 continue
             entries.append(normalized_entry(status, raw_entry, domain=domain))
     return entries, ignored_counts
@@ -952,6 +996,22 @@ def asset_is_modified(old_asset: dict[str, Any], new_asset: dict[str, Any]) -> b
     return True
 
 
+def relocated_asset_counterpart(rel_path: str) -> str | None:
+    normalized = normalize_posix(rel_path)
+    source_swaps = (
+        ("StreamingAssets/", "Persistent/"),
+        ("StreamingAssets-maps/", "Persistent-maps/"),
+        ("StreamingAssets-structured/", "Persistent-structured/"),
+        ("Persistent/", "StreamingAssets/"),
+        ("Persistent-maps/", "StreamingAssets-maps/"),
+        ("Persistent-structured/", "StreamingAssets-structured/"),
+    )
+    for source, counterpart in source_swaps:
+        if normalized.startswith(source):
+            return counterpart + normalized[len(source) :]
+    return None
+
+
 def build_asset_diff(
     old_assets: dict[str, dict[str, Any]],
     new_assets: dict[str, dict[str, Any]],
@@ -964,10 +1024,22 @@ def build_asset_diff(
 
     old_paths = set(old_assets)
     new_paths = set(new_assets)
+    added_paths = new_paths - old_paths
+    deleted_paths = old_paths - new_paths
+    relocated_added_paths = {
+        rel_path
+        for rel_path in added_paths
+        if (relocated_asset_counterpart(rel_path) or "") in old_paths
+    }
+    relocated_deleted_paths = {
+        rel_path
+        for rel_path in deleted_paths
+        if (relocated_asset_counterpart(rel_path) or "") in new_paths
+    }
 
-    for rel_path in sorted(new_paths - old_paths):
+    for rel_path in sorted(added_paths - relocated_added_paths):
         added.append(asset_update_entry("added", new_assets[rel_path]))
-    for rel_path in sorted(old_paths - new_paths):
+    for rel_path in sorted(deleted_paths - relocated_deleted_paths):
         old_asset = old_assets[rel_path]
         deleted.append(asset_update_entry("deleted", old_asset, old_asset))
     for rel_path in sorted(old_paths & new_paths):
@@ -998,6 +1070,10 @@ def build_asset_diff(
         "breakdown": {
             "byKind": dict(kinds.most_common()),
             "byExtension": dict(extensions.most_common()),
+        },
+        "ignoredStructuredSourceRelocations": {
+            "added": len(relocated_added_paths),
+            "deleted": len(relocated_deleted_paths),
         },
     }
 
@@ -1166,6 +1242,8 @@ def build_update_payload(
     entries, ignored_counts = filtered_game_entries(
         samples,
         suppress_changes=suppress_changes,
+        game_root=game_root,
+        previous_game_root=previous_game_root,
         domain=entry_domain,
     )
 
@@ -1206,6 +1284,10 @@ def build_update_payload(
         "sampleLimit": sample_limit,
         "truncated": truncated,
         "ignoredVolatileChanges": dict(ignored_counts),
+        "ignoredStructuredSourceRelocations": {
+            status: int(ignored_counts.get(f"{status}_structured_source_relocation") or 0)
+            for status in ("added", "deleted")
+        },
         "ignoredVolatilePathPrefixes": list(IGNORED_GAME_PATH_PREFIXES),
         "suppressedInitialAdded": int(changes.get("added") or 0) if baseline_initialized else 0,
         "suppressedBaselineOnly": {
@@ -1368,6 +1450,7 @@ def attach_asset_updates(
             "totals": asset_totals,
             "truncated": diff["truncated"],
             "breakdown": diff["breakdown"],
+            "ignoredStructuredSourceRelocations": diff["ignoredStructuredSourceRelocations"],
         }
         payload.setdefault("entries", []).extend(asset_entries)
         payload["entries"].sort(key=lambda entry: (

@@ -33,11 +33,67 @@ from scripts.story_builder.level_bindings import (
     parse_levelscript_interactive_narrative_maps,
     parse_levelscript_brief_data_entry,
     resolve_levelscript_dynamic_property_string,
+    resolve_levelscript_dynamic_property_string_list,
     match_levelscript_native_reading_popup_record,
 )
 
 
 class LevelDataScriptHostTests(unittest.TestCase):
+    def test_dynamic_audio_property_list_join_preserves_runtime_selection(self) -> None:
+        brief = {
+            "properties": [{
+                "name": "RandomLines",
+                "value": {
+                    "valueType": 8,
+                    "atomCount": 3,
+                    "atoms": [
+                        {"valueBit64": 0, "text": "radio_a"},
+                        {"valueBit64": 0, "text": "radio_b"},
+                        {"valueBit64": 0, "text": "radio_c"},
+                    ],
+                },
+            }],
+        }
+        binding = {
+            "bindingKind": "dynamic",
+            "paramSource": 200,
+            "idRef": -1,
+            "path": "RandomLines",
+        }
+        resolved = resolve_levelscript_dynamic_property_string_list(brief, binding)
+        self.assertEqual(
+            ["radio_a", "radio_b", "radio_c"],
+            resolved["values"],
+        )
+        self.assertEqual("runtimeListIndexUnobserved", resolved["selectionStatus"])
+        self.assertEqual(
+            "exact_levelscript_brief_property_string_list",
+            resolved["resolutionMode"],
+        )
+
+        for invalid in (
+            {**binding, "paramSource": 100},
+            {**brief, "properties": [{
+                **brief["properties"][0],
+                "value": {
+                    **brief["properties"][0]["value"],
+                    "valueType": 7,
+                },
+            }]},
+            {**brief, "properties": [
+                brief["properties"][0],
+                brief["properties"][0],
+            ]},
+        ):
+            invalid_brief = brief if "paramSource" in invalid else invalid
+            invalid_binding = invalid if "paramSource" in invalid else binding
+            self.assertIsNone(
+                resolve_levelscript_dynamic_property_string_list(
+                    invalid_brief,
+                    invalid_binding,
+                )
+            )
+
     def test_dynamic_audio_property_join_requires_exact_brief_string_shape(self) -> None:
         brief = {
             "properties": [{

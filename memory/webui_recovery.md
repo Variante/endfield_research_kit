@@ -3,8 +3,9 @@
 ## Current status
 
 The static WebUI is the primary project surface. Normal navigation exposes
-Story, Characters, Gameplay, Assets, Text, and Updates. Mission Pipeline is
-experimental and appears only with `Show debug info`.
+Story, Characters, Gameplay, Assets, Text, and Updates. Mission Pipeline
+appears only with `Show debug info`; Mission Pipeline and Audio carry visible
+under-construction banners.
 
 Story, localized reference data, character identities, gameplay semantics,
 assets, and update comparisons build reproducibly from `export_full/`.
@@ -18,6 +19,75 @@ The Audio tab is a normal public semantic view (`debugOnly:false`), while raw
 identities remain behind its debug toggle. Gameplay sound cards use one flat
 event stream with all decoded candidates listed together; shared animation
 events are labeled as global Wwise graphs rather than character-owned files.
+Audio players are expanded by default; a playback-root/relation group starts
+collapsed only when it has more than 20 bound media candidates. Authored Event
+references unresolved to Wwise objects and playable media with unknown playback
+locations are separate visible states; neither is promoted into a runtime edge.
+They are also first-class recovery-status filters and overview counts. Media
+placement uses four mutually exclusive generated states: direct dialog,
+authored Event context, Event relation only, and unknown.
+The Audio HIRC inventory now exposes the SHA-256-locked nine-PCK scan set and
+per-package Event-object coverage, including Persistent HotfixAudio. Unresolved
+Event details carry the exact authored hash and scanned-set fingerprint. The
+normal shared-media inventory now includes all 402 decoded Hotfix ids and keeps
+their HotfixAudio provenance even when a patch replaces a base-package media
+id. Nineteen lack a Hotfix-local Event; 12 are recovered through named Events
+in other scanned banks, while the final seven are reached through four unnamed
+base-bank Event hashes. All 402 now have an exact Event-object relation. The 165 unnamed
+Hotfix Events are separately labeled as media-playback, control-only, partial
+object graph, or no-media-leaf roles.
+Exact decrypted Lua `PostEvent` callsites now appear as their own authored
+runtime-context family with source line and expression. RTPC, AudioCue, and
+indirect literals stay distinct, and every Lua row preserves the unobserved
+runtime-branch boundary.
+The Audio view now includes every raw Wwise Event object: 21,712 occurrences,
+21,124 unique hashes. Exact `AudioDialog` path-hash/voice-id/Event-id equality
+recovers 1,213 aliases, including 1,199 names that were previously missing;
+typed `AudioDialogConfigs`, `AudioDialogChannel`, `AudioDialog`, and
+`ResponsiveTriggers` Wwise Event fields recover another 1,397 exact aliases,
+including 1,393 previously missing names. Current metadata getters plus exact
+decrypted-Lua consumers recover 21 more Events for activity BGM, panel-open
+audio, synchronized UI video audio, region switching, and domain-upgrade
+animation stages. Two additional SNS Voice nodes recover their exact Events from
+metadata `Voice=5`, `contentParam[0]`, and the decrypted-Lua click handler,
+and six exact `skill_id.dic`/same-name `SkillData`/current-Wwise-hash matches
+recover Event identity without inventing a skill playback route. This leaves
+12,183 hashes without a recovered authored identity.
+These use stable hash identities and a separate recovery state rather than
+being conflated with authored references absent from Wwise. As a result,
+20,329 decoded media are Event-related with authored placement unknown, 38,775
+have a recovered authored Event context, and 615 remain without a recovered
+playback location. Of those, seven shared files resolve to exact typed Wwise
+Sound codec-media objects but no scanned Event reaches their three parent
+container branches; the other 608 are language External Source files.
+recovered playback relation. The builder suppresses 2,237 byte-identical
+`wwise/unknown` occurrences when a stronger same-storage categorized copy is
+already indexed, without deleting either file. Two same-id music collisions
+have different bytes and remain visible as Hotfix replacements under
+`au_music_main`, rather than being mislabeled unknown. The view exposes
+1,084 responsive-voice Events
+across 4,020 authored response positions and 81 tone variants. Response
+membership is a possible trigger family, tone membership is a selection
+transform, and neither is shown as observed runtime playback. The newly named
+channel/default/override/template Events are also shown as authored routes with
+live branch selection unobserved; 1,396 use Wwise External Source and therefore
+do not invent decoded media links or change the media-placement totals.
+The typed UI routes move 22 decoded media from Event-relation-only to authored
+context. Video routes retain all possible Wwise leaves and show the
+`PostEvent`/playing-id stop/seek contract without claiming which video ran;
+three music-control Events contain only typed Set State / Reset Game Parameter
+Actions and are shown as control Events rather than missing-media playback.
+Across the complete inventory, typed root Actions classify 17,828 Events as
+playback, 688 as mixed playback/control, and 1,727 as control-only; 2,530 remain
+unresolved instead of being guessed.
+The two SNS voice messages each bind one decoded leaf to the exact dialog,
+content node, speaker, authored four-second duration, click-to-PostEvent route,
+timer/disable stop-by-playing-id behavior, and an unobserved-click boundary.
+Audio's runtime panel now exposes compact authored trigger-context coverage,
+including the separate greeting EnvTalk and RemoteCommon auto-play routes;
+it also surfaces scalar Timeline runtime-contract counts while keeping the
+detail shard lazy, including serialized AudioMusic action/skip-policy counts.
+All rows retain the static/runtime evidence boundary.
 
 ## Build and serve
 
@@ -92,13 +162,30 @@ Runtime overrides:
 
 ## Stable frontend behavior
 
+- Views with multiple rendered audio/video files expose one shared simultaneous
+  playback chooser. Exact equal-duration audio groups are selected by default,
+  while users may select any active-view media for simultaneous or sequential
+  playback. An audio-only toggle selects or unselects every audio clip while
+  preserving video choices; every visible label and playback status follows the
+  shared zh/en UI locale.
 - Recovery issue/method filters remain visible in normal and debug modes.
 - Story source panels, manual order controls, and Characters name/identity
   override controls stay behind debug mode.
 - Reset restores Story sort while preserving expanded mission groups.
+- Enabling debug does not reposition the top navigation bar.
 - Disabling debug from Mission Pipeline returns to a visible page and URL.
 - `sns_emoji_*` stays small and inline without hover/modal behavior;
   non-emoji SNS media preserves normal proportions and bounded previews.
+- The compact Story media index imports one preferred Sprite per logical
+  `cg_image_*`; the duplicate Texture2D export is byte-identical but has its
+  own Unity PathID. The frontend groups `_f`/`_m` variants into one selectable
+  `CG Image` / `剧情CG` row driven by the shared Endministrator gender selector,
+  while single-gender rows stay visibly labeled and CG media remains opaque.
+- The Story file-image families are `cg_image_*`, `dlg_biglogo_*`, and
+  `remotecomm_image_*`. A full-name audit found no additional BigLogo or
+  remote-communication image prefix. `cg_image_e2m6_1_m` is intentionally
+  excluded in favor of the authored `dlg_biglogo_e2m6_14_f/m` pair. The two
+  `e7m3` BigLogo default-plus-`_m` pairs are also treated as female/male pairs.
 - Story and Gameplay share one persisted female/male segmented selector.
   Story gender-authored text, voice, images, video, and gender-only cutscene
   lines update together when it changes.

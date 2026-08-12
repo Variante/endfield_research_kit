@@ -70,6 +70,25 @@ def object_row(*, owner: bool = False) -> dict:
 
 
 class GuideConsumerAuditTests(unittest.TestCase):
+    def test_boolean_scalar_is_accepted_by_object_index_contract(self) -> None:
+        row = object_row()
+        row["scalars"].append(["$.enabled", "b", True])
+
+        rows = audit.audit_object_row(row, "StreamingAssets")
+
+        self.assertEqual(len(rows), 1)
+        self.assertTrue(rows[0]["accepted"])
+
+    def test_malformed_scalar_reports_object_and_expected_type_contract(self) -> None:
+        row = object_row()
+        row["scalars"].append(["$.enabled", "b", 1])
+
+        with self.assertRaisesRegex(
+            audit.AuditError,
+            r"source='VFS/test\.chk'.*pathId=456 index=11; expected .*b:boolean",
+        ):
+            audit.audit_object_row(row, "StreamingAssets")
+
     def test_exact_typed_factory_guide_action_is_accepted(self) -> None:
         rows = audit.audit_object_row(object_row(), "StreamingAssets")
         self.assertEqual(len(rows), 1)

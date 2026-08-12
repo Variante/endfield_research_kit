@@ -58,6 +58,55 @@ _STORY_TEXT_KEY_RE = re.compile(
 )
 
 
+def dialog_tree_option_prompt_sequence(
+    group_option_ids: list[str],
+    layouts_by_option: dict[str, list[dict]],
+) -> list[str]:
+    """Order separate option nodes by exact reachability from the tree prime."""
+    return sorted(
+        group_option_ids,
+        key=lambda option_id: min(
+            (
+                int(layout["distanceFromPrime"])
+                for layout in layouts_by_option.get(option_id, [])
+                if layout.get("reachableFromPrime")
+                and isinstance(layout.get("distanceFromPrime"), int)
+            ),
+            default=10**9,
+        ),
+    )
+
+
+def dialog_tree_option_nodes_form_sequence(
+    prompt_sequence: list[str],
+    layouts_by_option: dict[str, list[dict]],
+) -> bool:
+    """Require each separate option node to reach the next authored prompt."""
+    if len(prompt_sequence) < 2:
+        return False
+    for source_option_id, target_option_id in zip(
+        prompt_sequence,
+        prompt_sequence[1:],
+    ):
+        source_layouts = layouts_by_option.get(source_option_id, [])
+        target_layouts = layouts_by_option.get(target_option_id, [])
+        if not any(
+            str(target_layout.get("nodeId") or "")
+            in {
+                str(node_id)
+                for node_id in (source_layout.get("reachableNodeIds") or [])
+            }
+            for source_layout in source_layouts
+            for target_layout in target_layouts
+            if (
+                source_layout.get("sourceKey") == target_layout.get("sourceKey")
+                and source_layout.get("file") == target_layout.get("file")
+            )
+        ):
+            return False
+    return True
+
+
 def story_text_key_parts(text_key: str) -> tuple[str, str] | None:
     """Split mission- and map-scoped reading-popup content ids for Story."""
     match = _STORY_TEXT_KEY_RE.match(str(text_key or ""))
@@ -4147,17 +4196,41 @@ def build_language_bundle(
                 *node_ids_by_option.values()
             )
             if not shared_node_ids:
+                prompt_sequence = dialog_tree_option_prompt_sequence(
+                    group_opt_ids,
+                    layouts_by_option,
+                )
+                is_prompt_sequence = dialog_tree_option_nodes_form_sequence(
+                    prompt_sequence,
+                    layouts_by_option,
+                )
                 return {
-                    "code": "separateDialogTreeOptionNodes",
-                    "reason": "distinctAuthoredOptionNodes",
+                    "code": (
+                        "sequentialDialogTreeOptionNodes"
+                        if is_prompt_sequence
+                        else "separateDialogTreeOptionNodes"
+                    ),
+                    "reason": (
+                        "reachableAuthoredOptionNodeSequence"
+                        if is_prompt_sequence
+                        else "distinctAuthoredOptionNodes"
+                    ),
                     "detail": (
                         "The same-prefix table ids are authored on distinct "
-                        "DialogTree option nodes. They are separate conditional "
-                        "prompts, not arms of one runtime choice fork."
+                        "DialogTree option nodes connected by a directed path. "
+                        "They are consecutive single-option prompts, not arms "
+                        "of one runtime choice fork."
+                        if is_prompt_sequence
+                        else
+                        "The same-prefix table ids are authored on distinct "
+                        "DialogTree option nodes without a complete directed "
+                        "prompt chain. They are not proven arms of one runtime "
+                        "choice fork or one sequential prompt list."
                     ),
                     "after": after_id,
                     "optionIds": group_opt_ids,
                     "source": "dialogTree",
+                    "promptSequenceOptionIds": prompt_sequence,
                     "optionNodeLayouts": layouts_by_option,
                 }
             shared_layouts = [
@@ -4510,6 +4583,7 @@ def build_language_bundle(
                     "candidateLineIds": [],
                     "candidateWindowLineIds": candidate_line_ids,
                     "commonContinuationLineId": candidate_line_ids[0],
+                    "commonContinuationLineIds": candidate_line_ids,
                     "source": "dialogTimeline",
                     "optionIndex": option_indices,
                     "candidateLineClipOptionIndex": candidate_clip_indices,
@@ -6146,11 +6220,11 @@ def build_language_bundle(
                     add("optionBranch:runtimeClipOptionIndex")
                 elif branch_risk.get("code") == "siblingSceneTextBranches":
                     add("optionBranch:siblingSceneText")
-                elif (
-                    branch_risk.get("code")
-                    == "separateDialogTreeOptionNodes"
-                ):
-                    add("optionBranch:separateDialogTreeOptionNodes")
+                elif branch_risk.get("code") in {
+                    "separateDialogTreeOptionNodes",
+                    "sequentialDialogTreeOptionNodes",
+                }:
+                    add(f"optionBranch:{branch_risk['code']}")
                 elif (
                     branch_risk.get("code")
                     == "orphanDialogTreeOptionDefinitions"
