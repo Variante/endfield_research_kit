@@ -36,6 +36,11 @@ RESOLVE_SHADER = (
     / "Assets/EndfieldGraphShaderLab/Resources/"
     / "EndfieldRecoveredScreenShadowResolve.shader"
 )
+CSM_PRODUCER = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
+    / "EndfieldRecoveredDirectionalCSMProducer.cs"
+)
 
 
 def read_source(path: Path, label: str) -> str:
@@ -56,6 +61,7 @@ def verify_current_boundary() -> dict[str, Any]:
     include = read_source(LIGHTING_INCLUDE, "HGRP lighting include")
     skin = read_source(SKIN_SHADER, "recovered Skin shader")
     resolve = read_source(RESOLVE_SHADER, "screen-shadow resolve shader")
+    csm_producer = read_source(CSM_PRODUCER, "directional CSM producer")
 
     for needle in (
         'Shader.PropertyToID("_ScreenSpaceShadowMask")',
@@ -91,8 +97,18 @@ def verify_current_boundary() -> dict[str, Any]:
         "_EndfieldCharacterShadowMap.GatherRed(",
         "poissonIndex < 16u",
         "ResolveRecoveredCharacterShadow",
+        "_EndfieldRecoveredDirectionalShadowStrength",
+        "saturate(_EndfieldRecoveredDirectionalShadowStrength)",
     ):
         require(resolve, needle, "current screen-shadow resolve shader")
+
+    for needle in (
+        "DiagnosticShadowStrengthId",
+        "_EndfieldRecoveredDirectionalShadowStrength",
+        "CharInfoCsmIntensity",
+        "csmIntensity=1.0",
+    ):
+        require(csm_producer, needle, "directional CSM producer")
 
     for needle in (
         "Texture2D<float2> _ScreenSpaceShadowMask;",
@@ -152,6 +168,7 @@ def verify_current_boundary() -> dict[str, Any]:
             "scene_stencil": {"ref": 4, "read_mask": 7, "comp": "NotEqual"},
             "character_stencil": {"ref": 4, "read_mask": 7, "comp": "Equal"},
             "character_g_source_bridge": True,
+            "scene_r_shadow_strength": "CharInfo csmIntensity=1.0",
         },
         "binary_evidence": {
             "retail_skin_load": True,

@@ -19,6 +19,10 @@ class CurrentScreenShadowBindingBoundaryTests(unittest.TestCase):
             result["resolve_consumer"]["character_stencil"]["comp"],
             "Equal",
         )
+        self.assertEqual(
+            result["resolve_consumer"]["scene_r_shadow_strength"],
+            "CharInfo csmIntensity=1.0",
+        )
         self.assertTrue(result["skin_consumer"]["retail_global_keyword"])
         self.assertTrue(result["skin_consumer"]["direct_global_load"])
         self.assertFalse(result["skin_consumer"]["runtime_enabled"])

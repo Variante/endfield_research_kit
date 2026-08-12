@@ -121,6 +121,14 @@ NPC archetypes are imported as labeled source kits.
   `contentValid` remains false and Eye/Skin keywords stay disabled because the
   complete retail scene-R publication, full deferred-GBuffer ownership, and
   frame parity are still open.
+- The source-shaped scene-R path now carries the recovered final directional
+  strength gate for the installed CharInfo environment: the CSM producer
+  publishes the serialized `csmIntensity=1.0` value copied into
+  `DirectionalShadowParams.x`, and resolve applies it after CSM composition as
+  the original `lerp(1, min(sceneShadow, 1), DirectionalShadowParams.x)`.
+  This is still diagnostic-only and does not assert that the lab's
+  CSM/ASM/cloud state equals a retail frame; Unity `Light.shadowStrength` is a
+  separate field and is not substituted here.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
