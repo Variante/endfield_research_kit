@@ -157,6 +157,13 @@
                 "observed": "This Burst/job-shaped body resolves paired generic component records, copies source record bytes, and writes the destination record at +0xb0..+0xf0 including a +0xd0 lane. Its source records are indexed from a separate array with 0x8c-byte stride and flag words at +0x70; no custom-per-draw setter/refresh input, resource identity, or descriptor/constant-buffer API reaches this path. Treat the matching +0xd0 displacement as a generic output lane, not evidence for the channel-2 GPU binding."
               }
             ],
+            "burst_table_followup": {
+              "status": "table-dispatched-generic-job-no-upload-edge",
+              "function": "0x1810d26bf",
+              "extent": "0x1810d26bf..0x1810d3189",
+              "observed": "The function RVA 0x10d26bf is present only as a paired 32-bit RVA record with metadata RVA 0x204a398 in the installed .rdata table at 0x18204a3d8/0x18204a3e8 and the matching .tvm0 table at 0x1824d1058/0x1824d1060. The records are adjacent to neighboring generic job/function RVAs; no direct call or RIP reference to the function or either table record was found in UnityPlayer .text. This is consistent with table-driven Burst/job dispatch, but it does not identify the custom-per-draw resource or a GPU descriptor consumer.",
+              "negative_result": "The table-dispatched function remains a generic component-record staging path. Its paired RVA metadata provides no channel-2, resource +0xd0, constant-buffer, or descriptor binding edge."
+            },
             "explicit_api_separation": {
               "material_property_block": {
                 "SetBufferImpl": "0x1800be830 -> 0x1805d5280",

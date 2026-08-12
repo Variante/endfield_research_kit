@@ -357,6 +357,13 @@ NPC archetypes are imported as labeled source kits.
   resource identity, or descriptor/constant-buffer edge. The equal
   displacement is therefore a negative audit result, not a newly recovered
   channel-2 binding.
+  The same function RVA appears only as paired 32-bit function/metadata records
+  (`0x10d26bf` / `0x204a398`) in the installed `.rdata` and matching `.tvm0`
+  tables (`0x18204a3d8/0x18204a3e8` and `0x1824d1058/0x1824d1060`); no direct
+  UnityPlayer `.text` call or RIP reference targets it or those records. This
+  is consistent with table-driven Burst/job dispatch, but adds no
+  custom-resource or GPU descriptor identity. The durable details are recorded
+  in `packed_flags_producer_recovery.json` under `burst_table_followup`.
   No inspected UnityPlayer path reads `resource +0xd0` (or an equivalent vector
   lane) into a constant-buffer/descriptor binding, and no direct call edge names
   Vulkan set 0/binding 33. Keep the channel-to-resource-to-GPU edge open.
