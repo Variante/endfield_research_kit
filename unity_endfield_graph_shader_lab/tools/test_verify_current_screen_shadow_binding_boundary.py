@@ -15,6 +15,10 @@ class CurrentScreenShadowBindingBoundaryTests(unittest.TestCase):
         self.assertFalse(result["producer"]["content_valid"])
         self.assertTrue(result["producer"]["skin_keyword_gate"])
         self.assertTrue(result["producer"]["character_g_source_bridge"])
+        self.assertEqual(
+            result["resolve_consumer"]["character_stencil"]["comp"],
+            "Equal",
+        )
         self.assertTrue(result["skin_consumer"]["retail_global_keyword"])
         self.assertTrue(result["skin_consumer"]["direct_global_load"])
         self.assertFalse(result["skin_consumer"]["runtime_enabled"])

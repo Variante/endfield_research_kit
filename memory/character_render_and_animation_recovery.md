@@ -114,9 +114,13 @@ NPC archetypes are imported as labeled source kits.
   the same-frame PreGBuffer selector/normal lanes and character shadow frame,
   chooses scalar or 15-slot atlas transforms, applies the original
   light-facing bias, and performs the 16-tap `GatherRed` depth filter into G.
+  Its two attachment passes now also preserve the original stencil ownership:
+  scene resolve `Ref 4/ReadMask 7/NotEqual`, character resolve
+  `Ref 4/ReadMask 7/Equal`.
   The producer validates camera/atlas/GBuffer ownership before drawing, but
   `contentValid` remains false and Eye/Skin keywords stay disabled because the
-  complete retail scene-R publication and frame parity are still open.
+  complete retail scene-R publication, full deferred-GBuffer ownership, and
+  frame parity are still open.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
