@@ -309,7 +309,9 @@ NPC archetypes are imported as labeled source kits.
   `UnityEngine.Renderer::SetCustomPerDrawData_Injected` to native
   `0x1800fe590` (UnityPlayer SHA-256
   `b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2`).
-  The body accepts only indices `0..4`, writes the Vector4 to
+  That registration target is a lazy/error-handling stub whose successful path
+  calls implementation body `0x180430680`. The body accepts only indices
+  `0..4`, writes the Vector4 to
   `nativeRenderer + 0x28 + 0x20*index` (channel 2 therefore `+0x68`), then
   conditionally mirrors it to the returned per-draw resource at
   `+0xb0 + 0x10*index` (channel 2 `+0xd0`). `GetCustomPerDrawData_Injected`
@@ -326,6 +328,14 @@ NPC archetypes are imported as labeled source kits.
   is inherited from the serialized parameter record, while raw Vulkan binding
   33/member 3 is the stable fact. Keep this channel-to-resource edge fail
   closed.
+  An exhaustive direct-call census for UnityPlayer resolver `0x1804255f0`
+  (26 call sites) found only the setter and refresh paths as confirmed writers
+  of the custom five-slot array. The related renderer-list helpers
+  `0x1810ccd20` and `0x1810d2fc4/0x1810d2fd9` copy generic 0x80-byte resource
+  blocks between records but expose no custom-channel or descriptor identity.
+  No inspected UnityPlayer path reads `resource +0xd0` (or an equivalent vector
+  lane) into a constant-buffer/descriptor binding, and no direct call edge names
+  Vulkan set 0/binding 33. Keep the channel-to-resource-to-GPU edge open.
   The upstream `HG.Rendering.Runtime.HGCharacterVolume.GetPackedEnvironmentEffectIntensity`
   body is also recovered at native `0x183523ad0`: it quantizes two
   environment getter results (from `this+0x180` and `this+0x178`) together with
