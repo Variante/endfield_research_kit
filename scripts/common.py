@@ -54,6 +54,25 @@ def read_bytes_cached(path: str | Path) -> bytes:
     return _read_bytes_cached_absolute(normalized)
 
 
+@lru_cache(maxsize=512)
+def _read_json_cached_absolute(path_text: str) -> Any:
+    return json.loads(Path(path_text).read_text(encoding="utf-8"))
+
+
+def read_json_cached(path: str | Path) -> Any:
+    """Parse one immutable build input once per Python process.
+
+    Caching is limited to ``export_full/`` for the same reason as
+    ``read_bytes_cached``: the export is fixed for the duration of a build.
+    The parsed object is shared between callers, so treat it as read-only.
+    """
+    normalized = os.path.normcase(os.path.abspath(os.fspath(path)))
+    export_root = os.path.normcase(os.path.abspath(os.fspath(EXPORT_ROOT)))
+    if normalized != export_root and not normalized.startswith(export_root + os.sep):
+        return json.loads(Path(normalized).read_text(encoding="utf-8"))
+    return _read_json_cached_absolute(normalized)
+
+
 @lru_cache(maxsize=1)
 def _win32_find_api():
     """Initialize the Win32 filename-search bindings once per process."""

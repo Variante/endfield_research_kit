@@ -482,6 +482,196 @@ class SourceGraphSchemaTests(unittest.TestCase):
             finally:
                 builder.close()
 
+    def test_audio_trigger_contexts_link_anonymous_event_to_audio_node(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            context_path = root / "webui/data/lang/CN/audio/trigger_contexts.json"
+            context_path.parent.mkdir(parents=True)
+            context_path.write_text(json.dumps({
+                "schemaVersion": 6,
+                "language": "CN",
+                "counts": {"total": 1},
+                "contexts": [{
+                    "triggerId": "mono:fixture",
+                    "semanticKind": "monoBehaviourAudioIdField",
+                    "situation": {"eventId": "hashed-event:0x12345678"},
+                    "meaning": {"eventId": "hashed-event:0x12345678", "foundInWwise": True},
+                    "owner": {
+                        "serializedFile": "CAB-fixture",
+                        "pathId": 7,
+                        "managedReferenceClass": "PlayLineSound",
+                        "managedReferenceAssembly": "Gameplay.Beyond",
+                        "managedReferencePayloadLength": 24,
+                        "managedReferenceDecodeStatus": "strictStructuredDecoder",
+                    },
+                    "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+                    "sourceRefs": ["fixture.json"],
+                }],
+            }), encoding="utf-8")
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                builder.ingest_audio_trigger_contexts()
+                context_node = builder.node_id("audio_trigger_context", "mono:fixture")
+                audio_node = builder.node_id("audio", "hashed-event:0x12345678")
+                edges = {
+                    (row[0], row[1])
+                    for row in builder.db.execute(
+                        "SELECT kind, dst FROM edges WHERE src = ?",
+                        (context_node,),
+                    )
+                }
+                self.assertIn(
+                    ("audio_trigger_context_targets_audio_event", audio_node),
+                    edges,
+                )
+                data = json.loads(builder.db.execute(
+                    "SELECT data FROM nodes WHERE id = ?", (context_node,),
+                ).fetchone()[0])
+                self.assertEqual(data["owner"]["managedReferenceClass"], "PlayLineSound")
+                self.assertEqual(data["owner"]["managedReferenceAssembly"], "Gameplay.Beyond")
+                self.assertEqual(data["owner"]["managedReferencePayloadLength"], 24)
+                self.assertEqual(
+                    data["owner"]["managedReferenceDecodeStatus"],
+                    "strictStructuredDecoder",
+                )
+                forbidden = {
+                    kind for kind, _dst in edges
+                    if any(token in kind for token in ("story", "line", "actor", "execut"))
+                }
+                self.assertEqual(forbidden, set())
+            finally:
+                builder.close()
+
+    def test_audio_global_context_keeps_lifecycle_state_without_execution_edge(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            context_path = root / "webui/data/lang/CN/audio/trigger_contexts.json"
+            context_path.parent.mkdir(parents=True)
+            context_path.write_text(json.dumps({
+                "schemaVersion": 7,
+                "language": "CN",
+                "counts": {"total": 1},
+                "contexts": [{
+                    "triggerId": "global:fixture",
+                    "semanticKind": "audioGlobalConfigEventHash",
+                    "triggerRole": "audioStateTransitionEvent",
+                    "situation": {
+                        "eventId": "hashed-event:0x12345678",
+                        "serializedFieldPath": "audioStatesIn._valueData[0]._ids[0]",
+                        "stateDirection": "enter",
+                        "audioStateMask": 512,
+                    },
+                    "meaning": {
+                        "eventId": "hashed-event:0x12345678",
+                        "foundInWwise": True,
+                        "playbackRole": "mixedPlaybackAndControl",
+                    },
+                    "runtimeActivationStatus": "runtimeLifecycleConditionRequired",
+                }],
+            }), encoding="utf-8")
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                builder.ingest_audio_trigger_contexts()
+                context_node = builder.node_id("audio_trigger_context", "global:fixture")
+                data = json.loads(builder.db.execute(
+                    "SELECT data FROM nodes WHERE id = ?", (context_node,),
+                ).fetchone()[0])
+                self.assertEqual(data["situation"]["stateDirection"], "enter")
+                self.assertEqual(data["situation"]["audioStateMask"], 512)
+                self.assertEqual(data["meaning"]["playbackRole"], "mixedPlaybackAndControl")
+                edges = builder.db.execute(
+                    "SELECT kind FROM edges WHERE src = ?", (context_node,),
+                ).fetchall()
+                self.assertFalse(any("execut" in kind for (kind,) in edges))
+            finally:
+                builder.close()
+
+    def test_audio_event_library_roles_keep_control_and_empty_events_noncontextual(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            events_path = root / "webui" / "data" / "lang" / "CN" / "audio" / "events.json"
+            events_path.parent.mkdir(parents=True)
+            events_path.write_text(
+                json.dumps({
+                    "schemaVersion": 50,
+                    "language": "CN",
+                    "events": [
+                        {
+                            "id": "hashed-event:0x12345678",
+                            "playbackRole": "controlOnly",
+                            "wwiseActionOperationTypes": [0x0200],
+                            "wwiseActionOperationTypesHex": ["0x0200"],
+                            "wwiseActionOperations": ["pause"],
+                            "wwiseActionOperationRows": [{
+                                "operationType": 0x0200,
+                                "operationTypeHex": "0x0200",
+                                "operationLabels": ["pause"],
+                            }],
+                            "purposeKnowledgeStatus": "audioLibraryControlKnown",
+                            "purposeInvestigationPriority": "secondary",
+                            "playbackLocationStatus": "libraryControlOnlyExternalCallerUnknown",
+                        },
+                        {
+                            "id": "hashed-event:0x87654321",
+                            "playbackRole": "emptyEventDefinition",
+                            "wwiseActionOperationTypes": [],
+                            "wwiseActionOperationTypesHex": [],
+                            "wwiseActionOperations": [],
+                            "wwiseActionOperationRows": [],
+                            "purposeKnowledgeStatus": "audioLibraryEmptyEventKnown",
+                            "purposeInvestigationPriority": "secondary",
+                            "playbackLocationStatus": "libraryEmptyEventExternalCallerUnknown",
+                        },
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export_full",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                builder.ingest_audio_event_library_roles()
+                control_node = builder.node_id("wwise_event", "hashed-event:0x12345678")
+                empty_node = builder.node_id("wwise_event", "hashed-event:0x87654321")
+                operation_node = builder.node_id("wwise_action_operation", "0x0200")
+                edges = builder.db.execute(
+                    "SELECT src, kind, dst FROM edges ORDER BY src, kind, dst"
+                ).fetchall()
+                self.assertIn(
+                    (control_node, "wwise_event_has_nonplayback_action_operation", operation_node),
+                    edges,
+                )
+                self.assertTrue(any(
+                    kind == "has_audio_event_library_role" and dst == empty_node
+                    for _src, kind, dst in edges
+                ))
+                self.assertFalse(any(
+                    marker in kind
+                    for _src, kind, _dst in edges
+                    for marker in ("trigger", "story", "line", "speaker")
+                ))
+            finally:
+                builder.close()
+
     def test_audio_trigger_contexts_link_remote_common_auto_play_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

@@ -21,6 +21,7 @@ placement.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -47,6 +48,9 @@ DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
 DEFAULT_EXTRACT_DIR = DEFAULT_RECOVERY_ROOT / "timeline_extract"
 DEFAULT_ORDER_OUT = DEFAULT_RECOVERY_ROOT / "timeline_line_orders.json"
 DEFAULT_DIALOG_REGISTRY = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
+DEFAULT_PARENT_VALIDATION_REPORT = (
+    ROOT / "reports" / "story" / "build" / "timeline_parent_chain_validation.json"
+)
 
 TIMELINE_CONTAINER_RE = re.compile(r"(?:^|/)timeline/(?P<stem>(?:[fm]_)?dlgtl_[^/]+)(?:/|$)", re.IGNORECASE)
 TIMELINE_STEM_RE = re.compile(r"^(?:[fm]_)?dlgtl_.+(?:_sub_\d+|_\d+)$", re.IGNORECASE)
@@ -1964,6 +1968,7 @@ def recover_timeline_text_attachments(
         "LeftSubtitlePlayableAsset",
         "DialogCenterTextPlayableAsset",
     ),
+    validation_report_path_str: str | None = None,
 ) -> list[dict]:
     """Recover exact Story-line -> dialog Timeline containment.
 
@@ -2075,6 +2080,9 @@ def recover_timeline_text_attachments(
             ))
 
     recovered: list[dict] = []
+    # Parent lookups resolve by PathID; a name-filtered MonoBehaviour export
+    # cannot be trusted while this is non-empty.
+    unresolved_parents: set[tuple[str, int]] = set()
     for source, mono_dir, mono_source_mode in source_scan_pairs:
         try:
             mono_dir_key = str(mono_dir.resolve()).lower()
@@ -2115,6 +2123,10 @@ def recover_timeline_text_attachments(
             # Parent chains touch only a few dozen exact objects.  Ask NTFS for
             # the serialized PathID suffix lazily instead of materializing an
             # index for every MonoBehaviour in the source directory.
+            #
+            # These lookups resolve by PathID, not by name, so an export that
+            # filtered MonoBehaviour output by name can silently lose them.
+            # Record the misses instead of dropping the attachment quietly.
             suffix = path_id_suffix(path_id)
             patterns = [f"*_p{suffix}.json"]
             if sys.platform != "win32" and suffix.lower() != suffix:
@@ -2131,7 +2143,9 @@ def recover_timeline_text_attachments(
                     and candidate_meta.get("pathId") == path_id
                     and candidate_meta.get("sourceFile") == source_file
                 ):
+                    unresolved_parents.discard((source_file, path_id))
                     return candidate
+            unresolved_parents.add((source_file, path_id))
             return None
 
         black_assets: dict[tuple[str, int], dict] = {}
@@ -2321,6 +2335,56 @@ def recover_timeline_text_attachments(
                         } if dialog_key and join_kind == "dialog_id_table_used_timeline" else {}),
                     })
 
+    validation_report_path = (
+        Path(validation_report_path_str)
+        if validation_report_path_str
+        else None
+    )
+    failures = [
+        {"sourceFile": source_file, "pathId": path_id}
+        for source_file, path_id in sorted(unresolved_parents)
+    ]
+    validation = {
+        "schemaVersion": 1,
+        "validator": "timeline_parent_chain_export_coverage",
+        "status": "validation_failed" if failures else "validated",
+        "failedCheck": "source_file_path_id_exists" if failures else "",
+        "expected": "one exported MonoBehaviour with the exact sourceFile and pathId",
+        "actualMissingCount": len(failures),
+        "failures": failures[:100],
+        "failuresTruncated": len(failures) > 100,
+        "sources": [
+            {
+                "path": str(path),
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+            for path in (line_orders_path, dialog_registry_path)
+            if path.is_file()
+        ],
+    }
+    if validation_report_path is not None:
+        if not validation_report_path.is_absolute():
+            validation_report_path = ROOT / validation_report_path
+        validation_report_path.parent.mkdir(parents=True, exist_ok=True)
+        validation_report_path.write_text(
+            json.dumps(validation, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    if failures:
+        first = failures[0]
+        report_hint = (
+            f"; report={validation_report_path}"
+            if validation_report_path is not None
+            else ""
+        )
+        message = (
+            "timeline_parent_chain_export_coverage failed: "
+            f"{len(failures)} exact MonoBehaviour parent lookup(s) are missing; "
+            f"first sourceFile={first['sourceFile']!r} pathId={first['pathId']}"
+            f"{report_hint}"
+        )
+        print(f"  {message}")
+        raise RuntimeError(message)
     deduped: dict[tuple, dict] = {}
     for row in recovered:
         identity = (
@@ -2352,10 +2416,21 @@ def recover_black_timeline_attachments(
     dialog_registry_path_str: str = str(DEFAULT_DIALOG_REGISTRY),
 ) -> list[dict]:
     """Compatibility wrapper for black-screen Timeline containment."""
+    production_inputs = (
+        Path(line_orders_path_str).resolve() == DEFAULT_ORDER_OUT.resolve()
+        and Path(extract_dir_str).resolve() == DEFAULT_EXTRACT_DIR.resolve()
+        and Path(dialog_registry_path_str).resolve()
+        == DEFAULT_DIALOG_REGISTRY.resolve()
+    )
     return recover_timeline_text_attachments(
         line_orders_path_str,
         extract_dir_str,
         dialog_registry_path_str,
+        validation_report_path_str=(
+            str(DEFAULT_PARENT_VALIDATION_REPORT)
+            if production_inputs
+            else None
+        ),
     )
 
 

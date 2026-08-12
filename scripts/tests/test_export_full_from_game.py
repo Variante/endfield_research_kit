@@ -696,5 +696,71 @@ class WorldSceneChunkExportTests(unittest.TestCase):
         self.assertEqual([step["name"] for step in persistent_steps], ["required"])
 
 
+class StoryMonoBehaviourNameFilterTests(unittest.TestCase):
+    """--names shrinks only what is written, so it must never reach a job that
+    also carries a type whose consumers do not glob by name."""
+
+    BASE = {"export_type": "JSON", "story_monobehaviour_names": "Track|Trunk"}
+
+    def applies(self, types, stage="json_by_type", **overrides):
+        options = dict(self.BASE)
+        options.update(overrides)
+        return export_full_from_game.animestudio_story_name_filter_applies(
+            stage, options, tuple(types)
+        )
+
+    def test_monobehaviour_only_job_is_filtered(self) -> None:
+        self.assertTrue(self.applies(["MonoBehaviour"]))
+        self.assertTrue(self.applies(["MonoBehaviour:Both"]))
+
+    def test_merged_job_keeps_every_other_type_complete(self) -> None:
+        # --names applies to the whole CLI call, so a merged job would filter
+        # TextAsset by a MonoBehaviour vocabulary and silently lose Story text.
+        self.assertFalse(self.applies(["TextAsset", "MonoBehaviour"]))
+        self.assertFalse(self.applies(["TextAsset"]))
+        self.assertFalse(self.applies(["PlayableDirector", "MonoBehaviour"]))
+
+    def test_off_unless_requested_for_this_stage(self) -> None:
+        self.assertFalse(self.applies(["MonoBehaviour"], story_monobehaviour_names=None))
+        self.assertFalse(self.applies(["MonoBehaviour"], stage="maps"))
+        self.assertFalse(self.applies([]))
+
+    def test_default_vocabulary_covers_the_story_globs(self) -> None:
+        # Keep representative names from every Story/video discovery family.
+        import re
+
+        pattern = re.compile(
+            export_full_from_game.ANIMESTUDIO_STORY_MONOBEHAVIOUR_NAME_FILTER,
+            re.IGNORECASE,
+        )
+        for asset_name in (
+            "Animation Track",
+            "activation track (2)",
+            "Trunk",
+            "LeftSubtitlePlayableAsset",
+            "DialogCenterTextPlayableAsset(Clone)",
+            "BeyondFMVPlayableAsset",
+            "AudioMusicPlayable",
+            "dlg_sm2l5m2_3_npc_chr_0004_pelica_0",
+            "f_cutscene_e11m7_1",
+            "fm_cutscene_e0m0_11111_actor",
+            "cs_video_e6m3_2",
+            "SFX",
+        ):
+            self.assertRegex(asset_name, pattern)
+
+    def test_effective_names_are_part_of_the_stage_signature(self) -> None:
+        options = dict(self.BASE)
+        signature = export_full_from_game.build_animestudio_stage_signature(
+            "json_by_type", options, "MonoBehaviour:Both"
+        )
+        self.assertEqual(signature["names"], "Track|Trunk")
+
+        text_signature = export_full_from_game.build_animestudio_stage_signature(
+            "json_by_type", options, "TextAsset:Both"
+        )
+        self.assertIsNone(text_signature["names"])
+
+
 if __name__ == "__main__":
     unittest.main()

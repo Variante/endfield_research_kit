@@ -68,6 +68,7 @@ from common import (
     path_id_export_base_stem,
     path_id_export_path_id,
     read_bytes_cached,
+    read_json_cached,
     rel_path as repo_rel,
     rel_requires_path_id_export_name,
     unique_preserve as _unique_preserve,

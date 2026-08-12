@@ -152,6 +152,7 @@
       contextCharacterInteraction: "Character interaction perform",
       contextPhysicsEnvironment: "Physics / environment",
       contextModelViewState: "ModelView state behavior",
+      contextComponentAudioId: "Serialized component AudioId",
       contextInteractiveTrigger: "Interactive object trigger",
       contextGlobalLifecycle: "Global audio lifecycle",
       contextDialogLifecycle: "Dialog lifecycle hook",
@@ -364,6 +365,7 @@
       contextCharacterInteraction: "\u89d2\u8272\u4ea4\u4e92\u8868\u6f14",
       contextPhysicsEnvironment: "\u7269\u7406 / \u73af\u5883",
       contextModelViewState: "ModelView \u72b6\u6001\u884c\u4e3a",
+      contextComponentAudioId: "\u5e8f\u5217\u5316\u7ec4\u4ef6 AudioId",
       contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
       contextDialogLifecycle: "\u5bf9\u8bdd\u751f\u547d\u5468\u671f\u94a9\u5b50",
@@ -603,6 +605,7 @@
     characterInteraction: "contextCharacterInteraction",
     physicsEnvironment: "contextPhysicsEnvironment",
     modelViewState: "contextModelViewState",
+    componentAudioId: "contextComponentAudioId",
     interactiveTrigger: "contextInteractiveTrigger",
     globalLifecycle: "contextGlobalLifecycle",
     dialogLifecycle: "contextDialogLifecycle",
@@ -653,6 +656,7 @@
   function playbackLocationLabel(value) {
     return t({
       directDialogMedia: "locationDirectDialogMedia",
+      authoredContext: "locationAuthoredEventContext",
       authoredEventContext: "locationAuthoredEventContext",
       eventRelationOnly: "locationEventRelationOnly",
       unknown: "locationUnknown",
@@ -685,7 +689,7 @@
     if (kind === "timelineAudioCueBehaviorEvent") return "timeline";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
-    if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "monoBehaviourAudioIdField", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     if (kind === "luaPostEvent") return "luaRuntime";
     return "";
@@ -703,6 +707,7 @@
       if (contextKind === "charInteractAudioEvent") tags.add("characterInteraction");
       if (contextKind === "physicsAudioComponentEvent") tags.add("physicsEnvironment");
       if (["modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"].includes(contextKind)) tags.add("modelViewState");
+      if (contextKind === "monoBehaviourAudioIdField") tags.add("componentAudioId");
       if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent", "timelineAudioCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
@@ -750,7 +755,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "timeline", "animation", "scripted", "authoredConfig", "managedRuntime", "luaRuntime", "wwiseObjectOnly",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger", "snsVoice",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "componentAudioId", "interactiveTrigger", "globalLifecycle", "audioCueTrigger", "snsVoice",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -860,6 +865,10 @@
         context.semanticRole, context.confidence, context.animationOwnershipScope, context.possibleMediaScope,
         context.modelId, context.subTemplateId, context.triggerStateId, context.triggerStateName,
         context.triggerCustomState, context.ownerKind, context.stateDirection, context.audioStateMask, context.description,
+        context.authoredFieldRole, context.serializedFieldPath, context.componentName,
+        context.gameObjectName, ...asArray(context.hierarchyPath), context.serializedFile,
+        context.objectIndexSource, context.rawJsonSource, context.sourceAssetFile,
+        ...Object.entries(context.serializedPlaybackControls || {}).flat(),
         context.componentIndex, context.sourceOffset, context.sourceFingerprint, ...asArray(context.sourcePaths),
         context.authoredEventId, context.spawnerConfigId, context.enemyLibraryIndex, context.enemyId,
         context.bornTemplateId, context.enemyLevel, context.spawnerEnemyKey, context.preWarnTime,
@@ -2385,6 +2394,31 @@
       if (context?.expression) parts.push(context.expression);
       parts.push("runtime branch execution unobserved");
     }
+    if (kind === "monoBehaviourAudioIdField") {
+      if (context?.authoredFieldRole) parts.push(`AudioId role ${humanize(context.authoredFieldRole)}`);
+      if (context?.serializedFieldPath) parts.push(context.serializedFieldPath);
+      if (context?.componentName) parts.push(`component ${context.componentName}`);
+      if (context?.gameObjectName) parts.push(`GameObject ${context.gameObjectName}`);
+      const hierarchy = asArray(context?.hierarchyPath).filter(Boolean);
+      if (hierarchy.length) parts.push(`hierarchy ${hierarchy.join(" / ")}`);
+      if (context?.worldPosition && typeof context.worldPosition === "object") {
+        const { x, y, z } = context.worldPosition;
+        parts.push(`world position ${x ?? "?"}, ${y ?? "?"}, ${z ?? "?"} / ${humanize(context.worldPositionStatus || "status unknown")}`);
+      }
+      if (context?.serializedFile || context?.pathId !== undefined) parts.push(`object ${context.serializedFile || "?"} / PathID ${context.pathId ?? "?"}`);
+      if (context?.managedReferenceClass) parts.push(`managed ${context.managedReferenceNamespace ? `${context.managedReferenceNamespace}.` : ""}${context.managedReferenceClass}`);
+      if (context?.managedReferenceLayout) parts.push(`managed layout ${context.managedReferenceLayout}`);
+      if (context?.managedReferencePayloadLength !== undefined) parts.push(`managed payload ${context.managedReferencePayloadLength} bytes`);
+      if (context?.managedReferenceDecodeStatus) parts.push(humanize(context.managedReferenceDecodeStatus));
+      const controls = context?.serializedPlaybackControls && typeof context.serializedPlaybackControls === "object"
+        ? context.serializedPlaybackControls
+        : {};
+      const controlSummary = Object.entries(controls).map(([key, value]) => `${humanize(key)} ${String(value)}`);
+      if (controlSummary.length) parts.push(`serialized controls ${controlSummary.join(" / ")}`);
+      if (context?.objectIndexSource) parts.push(context.objectIndexSource);
+      if (context?.rawJsonSource) parts.push(context.rawJsonSource);
+      parts.push("component/state execution unobserved");
+    }
     if (["audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant"].includes(kind)) {
       if (context?.audioDialogPath) parts.push(`AudioDialog ${context.audioDialogPath}`);
       if (context?.voiceId !== undefined) parts.push(`voice id ${context.voiceId}`);
@@ -3075,6 +3109,7 @@
           ["Event identity", humanize(raw.eventIdentityStatus || "")],
           ["Event name evidence", humanize(raw.eventNameEvidence || "")],
           ["Event name source", humanize(raw.eventNameSourceKind || "")],
+          ["Event collection sources", asArray(raw.eventNameCollectionSources).map(humanize).join(" / ")],
           ["Library output relation", humanize(raw.audioLibraryPlaybackTargetStatus || "")],
           ["Equivalent authored Events", asArray(raw.audioLibraryEquivalentEventIds).join(" / ")],
           ["Equivalent output categories", asArray(raw.audioLibraryEquivalentCategories).map(categoryLabel).join(" / ")],

@@ -93,6 +93,17 @@ The normal type-job mode is `auto`: broad Story JSON types run in isolated
 processes while map-filtered asset conversion remains sharded. Reduce
 `--animestudio-jobs` when RAM is constrained.
 
+First-time setup uses the opt-in
+`--animestudio-story-monobehaviour-names` filter. It still loads all bundles so
+MonoScript names and external PPtrs resolve, but writes only the Timeline,
+dialog/cutscene, FMV, and exact generic-parent name families consumed by the
+Story/video builders. On the current StreamingAssets map this selects 92,266
+of 1,205,964 MonoBehaviours (7.65%); the measured worker completed in 455s.
+Persistent wrote 7,198 more objects. The Story build validates parent-chain
+lookups by exact source file and PathID and writes
+`reports/story/build/timeline_parent_chain_validation.json`; any miss fails
+closed with a bounded source/hash diagnostic.
+
 Endfield-native HGGraphics class IDs recovered from the installed UnityPlayer
 are named directly (`HGTree`, `HGTreeData`, `HGMeshRenderer`, and
 `HGMeshRendererData`). An explicitly selected export-enabled generic TypeTree
@@ -103,6 +114,10 @@ omitted, so normal production map scope does not widen.
 
 - Combined Story+asset export must keep Story JSON broad; asset-map filtering
   can omit valid DialogTree sources.
+- The first-time MonoBehaviour name filter reduces serialization and file
+  creation, not bundle loading. Keep it scoped to a MonoBehaviour-only job;
+  `--names` filters every type in one CLI call. Normal `export.bat --from-game`
+  remains broad unless the flag is passed.
 - PPtr identity is source/CAB scoped.
 - `$partial` objects remain queryable and visibly incomplete.
 - Material JSON preserves keywords, queues, tags, instancing, and disabled

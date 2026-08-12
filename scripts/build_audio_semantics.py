@@ -18,7 +18,9 @@ import json
 import math
 import os
 import re
+import shutil
 import struct
+import subprocess
 import sys
 import time
 from collections import Counter, defaultdict
@@ -136,8 +138,24 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 50
-TRIGGER_CONTEXT_SCHEMA_VERSION = 5
+AUDIO_SEMANTIC_SCHEMA_VERSION = 53
+TRIGGER_CONTEXT_SCHEMA_VERSION = 7
+
+MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
+    "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
+    "_onStartMoveAudioEvent", "_onStopMoveAudioEvent",
+    "_onRotationGroundOneShotAudioEvent", "_onEnableLoopAudioEvent",
+    "normalAudiId", "audioKey", "_audioKey", "soundEvent",
+    "enterSoundName", "exitSoundName", "startHitEvent", "endShootSoundName",
+    "shootIsHitSoundName", "shootNotHitSoundName", "aimableSoundEvent",
+    "notAimableSoundEvent", "capacityCountLowEvent", "enterWaterSfx",
+    "exitWaterSfx", "splashSfx",
+})
+MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
+    {f"{name}._id" for name in MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES}
+    | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
+))
+MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
@@ -6094,6 +6112,593 @@ def _timeline_raw_mono_payloads(
     return cache
 
 
+def _iter_mono_audio_object_index_rows(path: Path) -> Iterable[dict[str, Any]]:
+    """Yield only object-index rows containing a maintained AudioId field.
+
+    The current StreamingAssets MonoBehaviour index is several gigabytes.  Use
+    ripgrep as a byte-level prefilter when available, while retaining a small
+    stdlib fallback for tests and environments without rg.
+    """
+
+    if not path.is_file():
+        return
+    rg = shutil.which("rg")
+    def matching_rows(patterns: Iterable[str]) -> Iterable[dict[str, Any]]:
+        text_patterns = tuple(patterns)
+        if rg:
+            command = [rg, "--no-filename", "--no-line-number", "--fixed-strings"]
+            for pattern in text_patterns:
+                command.extend(("-e", pattern))
+            command.append(str(path))
+            process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            assert process.stdout is not None
+            for line in process.stdout:
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(row, dict):
+                    yield row
+            process.stdout.close()
+            error = process.stderr.read() if process.stderr is not None else ""
+            if process.stderr is not None:
+                process.stderr.close()
+            return_code = process.wait()
+            if return_code not in (0, 1):
+                raise RuntimeError(
+                    f"rg MonoBehaviour AudioId prefilter failed for {path}: "
+                    f"{error.strip() or f'exit {return_code}'}"
+                )
+            return
+        byte_patterns = tuple(value.encode("utf-8") for value in text_patterns)
+        with path.open("rb") as handle:
+            for raw_line in handle:
+                if not any(pattern in raw_line for pattern in byte_patterns):
+                    continue
+                try:
+                    row = json.loads(raw_line)
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    continue
+                if isinstance(row, dict):
+                    yield row
+
+    schema_ids: set[str] = set()
+    seen_objects: set[tuple[str, int]] = set()
+    for row in matching_rows(MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS):
+        if row.get("recordType") == "schema" and row.get("schemaId"):
+            schema_ids.add(str(row["schemaId"]))
+            continue
+        if row.get("recordType") != "object":
+            continue
+        object_row = row.get("object") if isinstance(row.get("object"), dict) else {}
+        identity = (str(object_row.get("serializedFile") or ""), int(object_row.get("pathId") or 0))
+        if identity not in seen_objects:
+            seen_objects.add(identity)
+            yield row
+    if not schema_ids:
+        return
+    schema_patterns = [f'\"schemaId\":\"{schema_id}\"' for schema_id in sorted(schema_ids)]
+    for row in matching_rows(schema_patterns):
+        if row.get("recordType") != "object":
+            continue
+        object_row = row.get("object") if isinstance(row.get("object"), dict) else {}
+        identity = (str(object_row.get("serializedFile") or ""), int(object_row.get("pathId") or 0))
+        if identity in seen_objects:
+            continue
+        seen_objects.add(identity)
+        yield row
+
+
+def _mono_audio_event_scalar(path: Any, value: Any) -> tuple[int, str] | None:
+    """Return a typed uint32 Event and authored role for a scalar path."""
+
+    scalar_path = str(path or "")
+    role = ""
+    if scalar_path.endswith((".soundBase.soundSpawn.value", ".soundBase.soundSpawn.hex")):
+        role = "soundSpawn"
+    elif scalar_path.endswith((".soundBase.soundFinish.value", ".soundBase.soundFinish.hex")):
+        role = "soundFinish"
+    elif scalar_path.endswith("._id"):
+        candidate = scalar_path.rsplit(".", 2)[-2]
+        if candidate in MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES:
+            role = candidate
+    if not role:
+        return None
+    try:
+        numeric = int(value, 0) if isinstance(value, str) else int(value)
+    except (TypeError, ValueError):
+        return None
+    event_hash = numeric & 0xFFFFFFFF
+    if event_hash == 0:
+        return None
+    return event_hash, role
+
+
+def _mono_play_line_sound_event_scalars(
+    scalar_values: dict[str, Any],
+) -> Iterable[tuple[str, int, str, dict[str, Any]]]:
+    """Recover the exact two AudioIds from a 24-byte PlayLineSound payload."""
+
+    suffix = ".type.class"
+    for class_path, class_name in scalar_values.items():
+        if class_name != "PlayLineSound" or not class_path.endswith(suffix):
+            continue
+        prefix = class_path[:-len(suffix)]
+        if (
+            scalar_values.get(prefix + ".type.ns") != "Beyond.Gameplay"
+            or scalar_values.get(prefix + ".type.asm") != "Gameplay.Beyond"
+            or scalar_values.get(prefix + ".data.layout") != "Beyond.Gameplay.PlayLineSound"
+        ):
+            continue
+        decoded_paths = {
+            "soundSpawn": prefix + ".data.soundSpawn.hex",
+            "soundFinish": prefix + ".data.soundFinish.hex",
+        }
+        if all(path in scalar_values for path in decoded_paths.values()):
+            for role, scalar_path in decoded_paths.items():
+                try:
+                    event_hash = int(str(scalar_values[scalar_path]), 0) & 0xFFFFFFFF
+                except (TypeError, ValueError):
+                    continue
+                if event_hash == 0:
+                    continue
+                yield scalar_path, event_hash, role, {
+                    "managedReferenceClass": "PlayLineSound",
+                    "managedReferenceNamespace": "Beyond.Gameplay",
+                    "managedReferenceAssembly": "Gameplay.Beyond",
+                    "managedReferenceLayout": "Beyond.Gameplay.PlayLineSound",
+                    "managedReferencePayloadLength": 24,
+                    "managedReferenceDecodeStatus": "strictStructuredDecoder",
+                }
+            continue
+        word_paths = [prefix + f".data.rawWords[{index}].hex" for index in range(6)]
+        if not all(path in scalar_values for path in word_paths):
+            continue
+        if prefix + ".data.rawWords[6].hex" in scalar_values:
+            continue
+        for word_index, role in ((0, "soundSpawn"), (1, "soundFinish")):
+            scalar_path = word_paths[word_index]
+            try:
+                event_hash = int(str(scalar_values[scalar_path]), 0) & 0xFFFFFFFF
+            except (TypeError, ValueError):
+                continue
+            if event_hash == 0:
+                continue
+            yield scalar_path, event_hash, role, {
+                "managedReferenceClass": "PlayLineSound",
+                "managedReferenceNamespace": "Beyond.Gameplay",
+                "managedReferenceAssembly": "Gameplay.Beyond",
+                "managedReferenceLayout": "Beyond.Gameplay.PlayLineSound",
+                "managedReferencePayloadLength": 24,
+                "managedReferenceDecodeStatus": "metadataValidatedLegacyRawWordFallback",
+            }
+
+
+def _iter_json_leaf_scalars(value: Any, path: str = "$") -> Iterable[tuple[str, Any]]:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key == "$animestudio":
+                continue
+            yield from _iter_json_leaf_scalars(child, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from _iter_json_leaf_scalars(child, f"{path}[{index}]")
+    elif isinstance(value, (str, int)) and not isinstance(value, bool):
+        yield path, value
+
+
+def _mono_audio_raw_json_paths(root: Path) -> Iterable[Path]:
+    """Locate the bounded raw objects whose JSON contains maintained fields."""
+
+    directories = [
+        root / source / "json_by_type" / "MonoBehaviour"
+        for source in ("StreamingAssets", "Persistent")
+        if (root / source / "json_by_type" / "MonoBehaviour").is_dir()
+    ]
+    if not directories:
+        return
+    rg = shutil.which("rg")
+    if rg:
+        command = [rg, "--files-with-matches", "--fixed-strings", "--glob", "*.json"]
+        for pattern in MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS:
+            command.extend(("-e", pattern.split("._id", 1)[0]))
+        command.extend(str(path) for path in directories)
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert process.stdout is not None
+        for line in process.stdout:
+            candidate = Path(line.strip())
+            if candidate.is_file():
+                yield candidate
+        process.stdout.close()
+        error = process.stderr.read() if process.stderr is not None else ""
+        if process.stderr is not None:
+            process.stderr.close()
+        return_code = process.wait()
+        if return_code not in (0, 1):
+            raise RuntimeError(
+                f"rg raw MonoBehaviour AudioId prefilter failed: "
+                f"{error.strip() or f'exit {return_code}'}"
+            )
+        return
+    patterns = tuple(value.encode("utf-8") for value in MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS)
+    for directory in directories:
+        for path in directory.glob("*.json"):
+            try:
+                data = path.read_bytes()
+            except OSError:
+                continue
+            if any(pattern in data for pattern in patterns):
+                yield path
+
+
+def collect_mono_behaviour_audio_id_contexts(
+    export_root: Path,
+    current_wwise_event_hashes: set[int],
+) -> dict[str, Any]:
+    """Recover exact serialized component AudioId fields for current Events.
+
+    This closes a purpose gap for components, effects, state machines, and
+    WaterDrone configs without claiming that their GameObjects instantiated or
+    that the configured callback/state executed.
+    """
+
+    root = export_root / "recovered" / "AnimeStudio-cli"
+    index_paths = [
+        root / source / "object_index" / "parts"
+        / f"{source}_animestudio_json_by_type_MonoBehaviour.jsonl"
+        for source in ("StreamingAssets", "Persistent")
+    ]
+    source_fingerprint = [{
+        "path": normalize_posix(path.relative_to(export_root)),
+        "size": path.stat().st_size,
+        "mtimeNs": path.stat().st_mtime_ns,
+    } for path in index_paths if path.is_file()]
+    source_fingerprint.extend({
+        "path": normalize_posix(path.relative_to(export_root)),
+        "kind": "directory",
+        "mtimeNs": path.stat().st_mtime_ns,
+    } for path in (
+        root / source / "json_by_type" / "MonoBehaviour"
+        for source in ("StreamingAssets", "Persistent")
+    ) if path.is_dir())
+    event_hash_fingerprint = hashlib.sha256(
+        "\n".join(f"{value & 0xFFFFFFFF:08x}" for value in sorted(current_wwise_event_hashes)).encode("ascii")
+    ).hexdigest()
+    cache_path = export_root / "recovered" / "audio_semantics" / "mono_behaviour_audio_id_contexts.json"
+    cached = load_json(cache_path, {})
+    if (
+        isinstance(cached, dict)
+        and cached.get("cacheSchemaVersion") == MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION
+        and cached.get("audioSemanticSchemaVersion") == AUDIO_SEMANTIC_SCHEMA_VERSION
+        and cached.get("sourceFingerprint") == source_fingerprint
+        and cached.get("eventHashFingerprint") == event_hash_fingerprint
+        and isinstance(cached.get("result"), dict)
+    ):
+        result = dict(cached["result"])
+        result["stats"] = {**(result.get("stats") or {}), "cacheStatus": "hit"}
+        return result
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    source_paths: list[str] = []
+    candidate_objects = 0
+    accepted_occurrences = 0
+    raw_candidate_files = 0
+    raw_fallback_occurrences = 0
+    role_counts: Counter[str] = Counter()
+    occurrence_keys: set[tuple[str, str, int, str, int]] = set()
+    raw_object_candidates: set[tuple[str, str, int]] = set()
+    for source_root in ("StreamingAssets", "Persistent"):
+        path = (
+            root / source_root / "object_index" / "parts"
+            / f"{source_root}_animestudio_json_by_type_MonoBehaviour.jsonl"
+        )
+        if not path.is_file():
+            continue
+        source_paths.append(normalize_posix(path.relative_to(export_root)))
+        for row in _iter_mono_audio_object_index_rows(path):
+            candidate_objects += 1
+            scalars = [
+                scalar for scalar in row.get("scalars") or []
+                if isinstance(scalar, list) and len(scalar) >= 3
+            ]
+            object_row = row.get("object") if isinstance(row.get("object"), dict) else {}
+            try:
+                candidate_path_id = int(object_row.get("pathId") or 0)
+            except (TypeError, ValueError):
+                candidate_path_id = 0
+            raw_object_candidates.add((
+                source_root,
+                str(row.get("name") or ""),
+                candidate_path_id,
+            ))
+            scene = row.get("sceneContext") if isinstance(row.get("sceneContext"), dict) else {}
+            script = row.get("script") if isinstance(row.get("script"), dict) else {}
+            scalar_values = {
+                str(scalar[0]): scalar[2]
+                for scalar in scalars
+                if isinstance(scalar[0], str)
+            }
+            for scalar_path, _scalar_type, scalar_value in scalars:
+                parsed = _mono_audio_event_scalar(scalar_path, scalar_value)
+                if parsed is None:
+                    continue
+                event_hash, authored_role = parsed
+                if event_hash not in current_wwise_event_hashes:
+                    continue
+                normalized_scalar_path = str(scalar_path)
+                if authored_role in {"soundSpawn", "soundFinish"}:
+                    normalized_scalar_path = normalized_scalar_path.rsplit(".", 1)[0]
+                occurrence_key = (
+                    source_root,
+                    str(object_row.get("serializedFile") or ""),
+                    int(object_row.get("pathId") or 0),
+                    normalized_scalar_path,
+                    event_hash,
+                )
+                if occurrence_key in occurrence_keys:
+                    continue
+                occurrence_keys.add(occurrence_key)
+                accepted_occurrences += 1
+                role_counts[authored_role] += 1
+                context: dict[str, Any] = {
+                    "kind": "monoBehaviourAudioIdField",
+                    "semanticRole": "authoredSerializedComponentAudioEvent",
+                    "authoredFieldRole": authored_role,
+                    "serializedFieldPath": scalar_path,
+                    "signedValue": scalar_value if isinstance(scalar_value, int) else None,
+                    "eventHash": event_hash,
+                    "eventHex": f"0x{event_hash:08x}",
+                    "sourceRoot": source_root,
+                    "objectIndexSource": normalize_posix(path.relative_to(export_root)),
+                    "serializedFile": object_row.get("serializedFile"),
+                    "sourceAssetFile": object_row.get("source"),
+                    "sourceOffset": object_row.get("sourceOffset"),
+                    "pathId": object_row.get("pathId"),
+                    "componentName": row.get("name"),
+                    "schemaId": row.get("schemaId"),
+                    "typeTreeSource": row.get("typeTreeSource"),
+                    "scriptPathId": script.get("pathId"),
+                    "scriptFullName": script.get("fullName"),
+                    "gameObjectName": scene.get("gameObjectName"),
+                    "hierarchyPath": scene.get("hierarchyPath") or [],
+                    "worldPosition": scene.get("worldPosition"),
+                    "worldPositionStatus": scene.get("worldPositionStatus"),
+                    "confidence": "direct",
+                    "playbackPlacementStatus": "authoredComponentAudioField",
+                    "triggerBindingStatus": "exactSerializedAudioIdField",
+                    "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+                    "evidence": "exactSerializedMonoBehaviourAudioIdFieldAndCurrentWwiseEvent",
+                    "triggerRequestEvidence": [
+                        "exactSerializedMonoBehaviourAudioIdField",
+                        "exactCurrentWwiseEventHash",
+                    ],
+                    "triggerRuntimeActivationStatuses": [
+                        "componentInstantiationNotObserved",
+                        "componentStateOrCallbackExecutionNotObserved",
+                    ],
+                }
+                if authored_role in {"soundSpawn", "soundFinish"}:
+                    prefix = str(scalar_path).rsplit(".data.soundBase.", 1)[0]
+                    context["managedReferenceClass"] = scalar_values.get(prefix + ".type.class")
+                    context["managedReferenceNamespace"] = scalar_values.get(prefix + ".type.ns")
+                    context["managedReferenceLayout"] = scalar_values.get(prefix + ".data.layout")
+                elif authored_role == "normalAudiId":
+                    config_prefix = str(scalar_path).rsplit(".normalAudiId._id", 1)[0]
+                    state_prefix = config_prefix.split(".audioPlayConfigs[", 1)[0]
+                    controls = {
+                        "stateName": scalar_values.get(state_prefix + ".stateName"),
+                        "animationEventName": scalar_values.get(config_prefix + ".animationEventName"),
+                        "isEvent": scalar_values.get(config_prefix + ".isEvent"),
+                        "isDirectlyPlay": scalar_values.get(config_prefix + ".isDirectlyPlay"),
+                        "canLoopActive": scalar_values.get(config_prefix + ".canLoopActive"),
+                        "eAudioTriggerState": scalar_values.get(config_prefix + ".eAudioTriggerState"),
+                        "disableAudioOnState": scalar_values.get(state_prefix + ".disableAudio"),
+                    }
+                    context["serializedPlaybackControls"] = {
+                        key: value for key, value in controls.items() if value not in (None, "")
+                    }
+                _append_context(
+                    contexts,
+                    seen,
+                    event_hash_context_key(event_hash),
+                    {key: value for key, value in context.items() if value not in (None, "", [])},
+                )
+            for scalar_path, event_hash, authored_role, managed_details in (
+                _mono_play_line_sound_event_scalars(scalar_values)
+            ):
+                if event_hash not in current_wwise_event_hashes:
+                    continue
+                occurrence_key = (
+                    source_root,
+                    str(object_row.get("serializedFile") or ""),
+                    int(object_row.get("pathId") or 0),
+                    scalar_path,
+                    event_hash,
+                )
+                if occurrence_key in occurrence_keys:
+                    continue
+                occurrence_keys.add(occurrence_key)
+                accepted_occurrences += 1
+                role_counts[authored_role] += 1
+                context = {
+                    "kind": "monoBehaviourAudioIdField",
+                    "semanticRole": "authoredSerializedComponentAudioEvent",
+                    "authoredFieldRole": authored_role,
+                    "serializedFieldPath": scalar_path,
+                    "eventHash": event_hash,
+                    "eventHex": f"0x{event_hash:08x}",
+                    "sourceRoot": source_root,
+                    "objectIndexSource": normalize_posix(path.relative_to(export_root)),
+                    "serializedFile": object_row.get("serializedFile"),
+                    "sourceAssetFile": object_row.get("source"),
+                    "sourceOffset": object_row.get("sourceOffset"),
+                    "pathId": object_row.get("pathId"),
+                    "componentName": row.get("name"),
+                    "schemaId": row.get("schemaId"),
+                    "typeTreeSource": row.get("typeTreeSource"),
+                    "scriptPathId": script.get("pathId"),
+                    "scriptFullName": script.get("fullName"),
+                    "gameObjectName": scene.get("gameObjectName"),
+                    "hierarchyPath": scene.get("hierarchyPath") or [],
+                    "worldPosition": scene.get("worldPosition"),
+                    "worldPositionStatus": scene.get("worldPositionStatus"),
+                    "confidence": "direct",
+                    "playbackPlacementStatus": "authoredComponentAudioField",
+                    "triggerBindingStatus": "exactSerializedAudioIdField",
+                    "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+                    "evidence": "exactSerializedPlayLineSoundPayloadAndCurrentWwiseEvent",
+                    "triggerRequestEvidence": [
+                        "exactSerializedManagedReferenceType",
+                        "exactPlayLineSound24ByteFieldLayout",
+                        "exactCurrentWwiseEventHash",
+                    ],
+                    "triggerRuntimeActivationStatuses": [
+                        "componentInstantiationNotObserved",
+                        "managedReferenceExecutionNotObserved",
+                    ],
+                    **managed_details,
+                }
+                _append_context(
+                    contexts,
+                    seen,
+                    event_hash_context_key(event_hash),
+                    {key: value for key, value in context.items() if value not in (None, "", [])},
+                )
+    raw_paths: set[Path] = set()
+    for source_root, object_name, candidate_path_id in raw_object_candidates:
+        if not object_name:
+            continue
+        raw_path = (
+            root / source_root / "json_by_type" / "MonoBehaviour"
+            / f"{object_name}_p{candidate_path_id & ((1 << 64) - 1):016X}.json"
+        )
+        if raw_path.is_file():
+            raw_paths.add(raw_path)
+    raw_paths.update(_mono_audio_raw_json_paths(root))
+    for raw_path in sorted(raw_paths):
+        raw_candidate_files += 1
+        payload = load_json(raw_path, {})
+        if not isinstance(payload, dict):
+            continue
+        metadata = payload.get("$animestudio")
+        metadata = metadata if isinstance(metadata, dict) else {}
+        try:
+            source_root = raw_path.relative_to(root).parts[0]
+        except (ValueError, IndexError):
+            source_root = "unknown"
+        serialized_file = str(metadata.get("sourceFile") or "")
+        try:
+            path_id = int(metadata.get("pathId") or 0)
+        except (TypeError, ValueError):
+            path_id = 0
+        for scalar_path, scalar_value in _iter_json_leaf_scalars(payload):
+            parsed = _mono_audio_event_scalar(scalar_path, scalar_value)
+            if parsed is None:
+                continue
+            event_hash, authored_role = parsed
+            if event_hash not in current_wwise_event_hashes:
+                continue
+            normalized_scalar_path = str(scalar_path)
+            if authored_role in {"soundSpawn", "soundFinish"}:
+                normalized_scalar_path = normalized_scalar_path.rsplit(".", 1)[0]
+            occurrence_key = (
+                source_root, serialized_file, path_id, normalized_scalar_path, event_hash,
+            )
+            if occurrence_key in occurrence_keys:
+                continue
+            occurrence_keys.add(occurrence_key)
+            accepted_occurrences += 1
+            raw_fallback_occurrences += 1
+            role_counts[authored_role] += 1
+            context = {
+                "kind": "monoBehaviourAudioIdField",
+                "semanticRole": "authoredSerializedComponentAudioEvent",
+                "authoredFieldRole": authored_role,
+                "serializedFieldPath": scalar_path,
+                "signedValue": scalar_value if isinstance(scalar_value, int) else None,
+                "eventHash": event_hash,
+                "eventHex": f"0x{event_hash:08x}",
+                "sourceRoot": source_root,
+                "rawJsonSource": normalize_posix(raw_path.relative_to(export_root)),
+                "serializedFile": serialized_file,
+                "sourceOriginalPath": metadata.get("sourceOriginalPath"),
+                "sourceOffset": metadata.get("sourceOffset"),
+                "pathId": path_id,
+                "componentName": metadata.get("name"),
+                "typeTreeSource": metadata.get("typeTreeSource"),
+                "rawDataSha256": metadata.get("rawDataSha256"),
+                "confidence": "direct",
+                "playbackPlacementStatus": "authoredComponentAudioField",
+                "triggerBindingStatus": "exactSerializedAudioIdField",
+                "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+                "evidence": "exactSerializedMonoBehaviourAudioIdFieldAndCurrentWwiseEvent",
+                "triggerRequestEvidence": [
+                    "exactSerializedMonoBehaviourAudioIdField",
+                    "exactCurrentWwiseEventHash",
+                ],
+                "triggerRuntimeActivationStatuses": [
+                    "componentInstantiationNotObserved",
+                    "componentStateOrCallbackExecutionNotObserved",
+                ],
+            }
+            _append_context(
+                contexts,
+                seen,
+                event_hash_context_key(event_hash),
+                {key: value for key, value in context.items() if value not in (None, "", [])},
+            )
+    boundary = (
+        "Exact serialized MonoBehaviour AudioId field paths joined to current Wwise Event "
+        "hashes prove authored component/config playback placement. SceneContext, when present, "
+        "proves the serialized GameObject and transform hierarchy only. Component instantiation, "
+        "state/callback execution, Event posting, Wwise acceptance, selected media, and audibility "
+        "were not observed. The one raw-word exception is an exact typed PlayLineSound "
+        "managed-reference payload whose six-field/24-byte layout is fixed by current IL2CPP "
+        "metadata and complete payload consumption. RTPC fields, generic integers, PathIDs, "
+        "untyped raw words, AudioVoTone selection rows, and ResponsiveDialog membership are excluded."
+    )
+    result = {
+        "eventContexts": dict(contexts),
+        "stats": {
+            "status": "complete" if source_paths else "unavailable",
+            "objectIndexSources": source_paths,
+            "prefilteredObjectRows": candidate_objects,
+            "prefilteredRawJsonFiles": raw_candidate_files,
+            "eventContextOccurrences": accepted_occurrences,
+            "rawJsonFallbackOccurrences": raw_fallback_occurrences,
+            "distinctEventHashes": len(contexts),
+            "fieldRoleCounts": dict(sorted(role_counts.items())),
+            "runtimeExecutionObserved": 0,
+            "cacheStatus": "refreshed",
+            "evidenceBoundary": boundary,
+        },
+        "evidenceBoundary": boundary,
+    }
+    json_dump(cache_path, {
+        "cacheSchemaVersion": MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION,
+        "audioSemanticSchemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
+        "sourceFingerprint": source_fingerprint,
+        "eventHashFingerprint": event_hash_fingerprint,
+        "result": result,
+    })
+    return result
+
+
 def enrich_timeline_audio_ownership_from_raw_json(
     export_root: Path,
     ownership: dict[str, Any],
@@ -8199,6 +8804,176 @@ def _build_levelscript_voice_trigger_contexts(
     return contexts
 
 
+def _build_mono_behaviour_audio_id_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row)
+                for row in event.get("media") or []
+                if isinstance(row, dict)
+            )
+            if ref
+        ]
+        for occurrence_index, context in enumerate(event.get("contexts") or []):
+            if not isinstance(context, dict) or context.get("kind") != "monoBehaviourAudioIdField":
+                continue
+            serialized_file = str(context.get("serializedFile") or "unknown")
+            path_id = context.get("pathId")
+            field_path = str(context.get("serializedFieldPath") or "")
+            trigger_id = ":".join((
+                "mono-behaviour-audio-id",
+                event_id,
+                str(context.get("sourceRoot") or "unknown"),
+                serialized_file,
+                str(path_id if path_id is not None else occurrence_index),
+                hashlib.sha1(field_path.encode("utf-8")).hexdigest()[:12],
+            ))
+            contexts.append({
+                "triggerId": trigger_id,
+                "semanticKind": "monoBehaviourAudioIdField",
+                "triggerRole": context.get("authoredFieldRole"),
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "componentName": context.get("componentName"),
+                    "gameObjectName": context.get("gameObjectName"),
+                    "serializedFieldPath": field_path,
+                },
+                "meaning": {
+                    "eventId": event_id,
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                },
+                "action": {
+                    "triggerRole": context.get("authoredFieldRole"),
+                    "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                },
+                "owner": {
+                    key: context[key]
+                    for key in (
+                        "sourceRoot", "serializedFile", "sourceAssetFile", "sourceOffset",
+                        "pathId", "componentName", "scriptPathId", "scriptFullName",
+                        "gameObjectName", "worldPositionStatus", "managedReferenceClass",
+                        "managedReferenceNamespace", "managedReferenceAssembly",
+                        "managedReferenceLayout", "managedReferencePayloadLength",
+                        "managedReferenceDecodeStatus",
+                    )
+                    if context.get(key) not in (None, "", [])
+                },
+                "selection": {
+                    "triggerBindingStatus": "exactSerializedAudioIdField",
+                    "mediaSelectionStatus": "wwiseSelectionUnobserved",
+                    "runtimeSelectionStatus": "componentStateOrCallbackExecutionNotObserved",
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("evidence"),
+                    "owner": "exactSerializedMonoBehaviourAndSceneContext",
+                    "media": "wwiseEventMediaCandidate",
+                    "runtimeExecution": "monoBehaviourComponentExecutionNotObserved",
+                    "requestEvidence": context.get("triggerRequestEvidence") or [],
+                },
+                "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+                "sourceRefs": [
+                    value for value in (
+                        context.get("objectIndexSource"),
+                        context.get("sourceAssetFile"),
+                        field_path,
+                    ) if isinstance(value, str) and value
+                ],
+            })
+    return contexts
+
+
+def _build_audio_global_config_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose exact global lifecycle AudioId placements in the trigger catalog."""
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row)
+                for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for occurrence_index, context in enumerate(event.get("contexts") or []):
+            if not isinstance(context, dict) or context.get("kind") != "audioGlobalConfigEventHash":
+                continue
+            field_path = str(context.get("path") or "")
+            contexts.append({
+                "triggerId": ":".join((
+                    "audio-global-config",
+                    event_id,
+                    str(context.get("sourceRoot") or "unknown"),
+                    str(context.get("pathId") or occurrence_index),
+                    hashlib.sha1(field_path.encode("utf-8")).hexdigest()[:12],
+                )),
+                "semanticKind": "audioGlobalConfigEventHash",
+                "triggerRole": context.get("semanticRole"),
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "serializedFieldPath": field_path,
+                    "stateDirection": context.get("stateDirection"),
+                    "audioStateMask": context.get("audioStateMask"),
+                    "ownerKind": context.get("ownerKind"),
+                    "ownerId": context.get("ownerId"),
+                },
+                "meaning": {
+                    "eventId": event_id,
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "playbackRole": event.get("playbackRole"),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                },
+                "action": {
+                    "triggerRole": context.get("semanticRole"),
+                    "runtimeActivationStatus": "runtimeLifecycleConditionRequired",
+                },
+                "owner": {
+                    key: context[key]
+                    for key in ("sourceRoot", "serializedFile", "pathId", "table")
+                    if context.get(key) not in (None, "", [])
+                },
+                "selection": {
+                    "triggerBindingStatus": "exactSerializedGlobalAudioPolicyAudioId",
+                    "mediaSelectionStatus": "wwiseSelectionUnobserved",
+                    "runtimeSelectionStatus": "runtimeLifecycleConditionRequired",
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("evidence"),
+                    "owner": "exactSerializedAudioGlobalConfigField",
+                    "media": "wwiseEventMediaCandidate",
+                    "runtimeExecution": "runtimeLifecycleConditionRequired",
+                    "requestEvidence": context.get("triggerRequestEvidence") or [],
+                },
+                "runtimeActivationStatus": "runtimeLifecycleConditionRequired",
+                "sourceRefs": [
+                    value for value in (context.get("source"), field_path)
+                    if isinstance(value, str) and value
+                ],
+            })
+    return contexts
+
+
 def build_trigger_context_catalog(
     event_rows: Iterable[dict[str, Any]],
     media_rows: Iterable[dict[str, Any]],
@@ -8206,6 +8981,7 @@ def build_trigger_context_catalog(
     language: str,
     export_root: Path | None = None,
     levelscript_semantics: dict[str, Any] | None = None,
+    mono_behaviour_audio_id_contexts: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     """Build one navigable trigger -> situation -> media surface.
 
@@ -8221,6 +8997,20 @@ def build_trigger_context_catalog(
         language,
         kinds=frozenset({"radio"}),
     )
+    mono_event_rows: list[dict[str, Any]] = []
+    events_by_hash = {
+        int(event["hash"]) & 0xFFFFFFFF: event
+        for event in event_rows
+        if isinstance(event, dict) and isinstance(event.get("hash"), int)
+    }
+    for context_key, rows in (mono_behaviour_audio_id_contexts or {}).items():
+        match = re.fullmatch(r"#0x([0-9a-fA-F]{8})", str(context_key))
+        if not match:
+            continue
+        event = events_by_hash.get(int(match.group(1), 16))
+        if not isinstance(event, dict):
+            continue
+        mono_event_rows.append({**event, "contexts": list(rows or [])})
     grouped = {
         "radio": _build_radio_trigger_contexts(media_rows, line_meanings),
         "envTalk": _build_envtalk_trigger_contexts(webui_root, language, media_rows),
@@ -8241,6 +9031,10 @@ def build_trigger_context_catalog(
         ),
         "timelineAudio": _build_timeline_trigger_contexts(event_rows),
         "luaPostEvent": _build_lua_post_event_trigger_contexts(event_rows),
+        "monoBehaviourAudioId": _build_mono_behaviour_audio_id_trigger_contexts(
+            mono_event_rows or event_rows
+        ),
+        "audioGlobalConfig": _build_audio_global_config_trigger_contexts(event_rows),
     }
     contexts = [row for rows in grouped.values() for row in rows]
     contexts.sort(key=lambda row: (str(row.get("semanticKind") or ""), str(row.get("triggerId") or "")))
@@ -8277,6 +9071,16 @@ def build_trigger_context_catalog(
         "luaPostEvent": {
             "source": "decrypted VFS Lua AudioAdapter/AudioManager.PostEvent string literals",
             "storedTriggerContextRows": len(grouped["luaPostEvent"]),
+            "runtimeExecutionObserved": 0,
+        },
+        "monoBehaviourAudioId": {
+            "source": "AnimeStudio MonoBehaviour object-index exact AudioId scalar paths",
+            "storedTriggerContextRows": len(grouped["monoBehaviourAudioId"]),
+            "runtimeExecutionObserved": 0,
+        },
+        "audioGlobalConfig": {
+            "source": "AudioGlobalConfig raw JSON or complete MonoBehaviour object index",
+            "storedTriggerContextRows": len(grouped["audioGlobalConfig"]),
             "runtimeExecutionObserved": 0,
         },
         "dialogTimeline": {
@@ -8417,6 +9221,123 @@ def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None
         matches = sorted((root / source_root / "json_by_type/MonoBehaviour").glob(f"{stem}_p*.json"))
         if matches:
             return matches[0]
+    return None
+
+
+def _inflate_object_index_scalars(scalars: Iterable[Any]) -> dict[str, Any]:
+    """Rebuild the represented portion of a compact object-index scalar tree."""
+
+    root: dict[str, Any] = {}
+    for scalar in scalars:
+        if not isinstance(scalar, list) or len(scalar) < 3:
+            continue
+        scalar_path = str(scalar[0] or "")
+        if not scalar_path.startswith("$."):
+            continue
+        tokens: list[str | int] = []
+        for field, index in re.findall(r"([^.\[\]]+)|\[(\d+)\]", scalar_path[2:]):
+            tokens.append(int(index) if index else field)
+        if not tokens:
+            continue
+        current: Any = root
+        valid = True
+        for token_index, token in enumerate(tokens):
+            is_last = token_index == len(tokens) - 1
+            next_is_index = not is_last and isinstance(tokens[token_index + 1], int)
+            if isinstance(token, str):
+                if not isinstance(current, dict):
+                    valid = False
+                    break
+                if is_last:
+                    current[token] = scalar[2]
+                    break
+                expected_type = list if next_is_index else dict
+                child = current.get(token)
+                if not isinstance(child, expected_type):
+                    child = expected_type()
+                    current[token] = child
+                current = child
+                continue
+            if not isinstance(current, list) or token < 0:
+                valid = False
+                break
+            while len(current) <= token:
+                current.append(None)
+            if is_last:
+                current[token] = scalar[2]
+                break
+            expected_type = list if next_is_index else dict
+            child = current[token]
+            if not isinstance(child, expected_type):
+                child = expected_type()
+                current[token] = child
+            current = child
+        if not valid:
+            continue
+    return root
+
+
+def _audio_global_config_from_object_index(
+    export_root: Path,
+) -> tuple[dict[str, Any], str, dict[str, Any]] | None:
+    """Recover retained AudioGlobalConfig scalars when raw JSON was not exported."""
+
+    root = export_root / "recovered/AnimeStudio-cli"
+    for source_root in ("Persistent", "StreamingAssets"):
+        path = (
+            root / source_root / "object_index" / "parts"
+            / f"{source_root}_animestudio_json_by_type_MonoBehaviour.jsonl"
+        )
+        if not path.is_file():
+            continue
+        rows: Iterable[str]
+        rg = shutil.which("rg")
+        if rg:
+            process = subprocess.run(
+                [
+                    rg, "--no-filename", "--no-line-number", "--fixed-strings",
+                    "Beyond.Gameplay.Audio.AudioGlobalConfig", str(path),
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            if process.returncode not in (0, 1):
+                raise RuntimeError(
+                    f"rg AudioGlobalConfig object-index lookup failed for {path}: "
+                    f"{process.stderr.strip() or f'exit {process.returncode}'}"
+                )
+            rows = process.stdout.splitlines()
+        else:
+            rows = path.open("r", encoding="utf-8", errors="replace")
+        try:
+            for line in rows:
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                script = row.get("script") if isinstance(row.get("script"), dict) else {}
+                if (
+                    row.get("recordType") != "object"
+                    or script.get("fullName") != "Beyond.Gameplay.Audio.AudioGlobalConfig"
+                ):
+                    continue
+                payload = _inflate_object_index_scalars(row.get("scalars") or [])
+                if not payload:
+                    continue
+                obj = row.get("object") if isinstance(row.get("object"), dict) else {}
+                provenance = {
+                    "sourceRoot": source_root,
+                    "serializedFile": obj.get("serializedFile"),
+                    "pathId": obj.get("pathId"),
+                    "scalarsTruncated": bool(row.get("scalarsTruncated")),
+                }
+                return payload, normalize_posix(path.relative_to(export_root)), provenance
+        finally:
+            if not rg and hasattr(rows, "close"):
+                rows.close()
     return None
 
 
@@ -9477,8 +10398,29 @@ def collect_authored_runtime_config_contexts(
 
     global_path = _first_recovered_mono_behaviour(export_root, "AudioGlobalConfig")
     global_config = load_json(global_path, {}) if global_path else {}
-    if isinstance(global_config, dict) and global_path is not None:
+    global_provenance: dict[str, Any] = {}
+    global_evidence = "exactSerializedAudioGlobalConfig"
+    if not isinstance(global_config, dict) or global_path is None:
+        indexed_global_config = _audio_global_config_from_object_index(export_root)
+        if indexed_global_config is not None:
+            global_config, source, global_provenance = indexed_global_config
+            global_evidence = "exactSerializedAudioGlobalConfigObjectIndexScalar"
+        else:
+            global_config = {}
+            source = ""
+    else:
         source = normalize_posix(global_path.relative_to(export_root))
+    if isinstance(global_config, dict) and source:
+
+        def global_context_base() -> dict[str, Any]:
+            return {
+                "source": source,
+                "evidence": global_evidence,
+                **{
+                    key: value for key, value in global_provenance.items()
+                    if value not in (None, "", [])
+                },
+            }
 
         def append_named(value: Any, path: str, semantic_role: str) -> None:
             event_name = str(value or "").strip()
@@ -9489,8 +10431,7 @@ def collect_authored_runtime_config_contexts(
                 "table": "AudioGlobalConfig",
                 "semanticRole": semantic_role,
                 "path": path,
-                "source": source,
-                "evidence": "exactSerializedAudioGlobalConfig",
+                **global_context_base(),
                 "triggerRequestEvidence": ["serializedGlobalAudioPolicy"],
                 "triggerRuntimeActivationStatuses": ["runtimeLifecycleConditionRequired"],
             })
@@ -9505,10 +10446,9 @@ def collect_authored_runtime_config_contexts(
                 "table": "AudioGlobalConfig",
                 "semanticRole": semantic_role,
                 "path": path,
-                "source": source,
                 "signedValue": raw,
                 "eventHash": event_hash,
-                "evidence": "exactSerializedAudioId",
+                **global_context_base(),
                 "triggerRequestEvidence": ["serializedGlobalAudioPolicy"],
                 "triggerRuntimeActivationStatuses": ["runtimeLifecycleConditionRequired"],
             }
@@ -10318,6 +11258,7 @@ def wwise_event_action_profile(evidence_rows: list[dict[str, Any]]) -> dict[str,
     playback_operation_types = {0x0400, 0x2100}
     operation_types: list[int] = []
     operation_labels: list[str] = []
+    operation_labels_by_type: dict[int, set[str]] = defaultdict(set)
     untyped_action_count = 0
     for evidence in evidence_rows:
         for action in evidence.get("actionEvidence") or []:
@@ -10332,7 +11273,9 @@ def wwise_event_action_profile(evidence_rows: list[dict[str, Any]]) -> dict[str,
                     operation_labels.append(operation_label)
                 continue
             operation_types.append(operation_type)
-            operation_labels.append(operation_label or f"operation0x{operation_type:04x}")
+            resolved_label = operation_label or f"operation0x{operation_type:04x}"
+            operation_labels.append(resolved_label)
+            operation_labels_by_type[operation_type].add(resolved_label)
     has_playback = any(value in playback_operation_types for value in operation_types) or any(
         int(evidence.get("rootPlayActionCount") or 0) > 0 for evidence in evidence_rows
     )
@@ -10361,6 +11304,14 @@ def wwise_event_action_profile(evidence_rows: list[dict[str, Any]]) -> dict[str,
         "operationTypes": sorted(set(operation_types)),
         "operationTypesHex": [f"0x{value:04x}" for value in sorted(set(operation_types))],
         "operationLabels": sorted(set(operation_labels)),
+        "operationRows": [
+            {
+                "operationType": value,
+                "operationTypeHex": f"0x{value:04x}",
+                "operationLabels": sorted(operation_labels_by_type[value]),
+            }
+            for value in sorted(operation_labels_by_type)
+        ],
         "untypedActionCount": untyped_action_count,
     }
 
@@ -10375,6 +11326,11 @@ def build_event_rows(
     contexts: dict[str, list[dict[str, Any]]],
 ) -> tuple[list[dict[str, Any]], dict[str, list[str]], list[dict[str, Any]]]:
     candidates: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    event_name_sources = {
+        str(key).strip().lower(): sorted({str(value) for value in values if str(value)})
+        for key, values in (audio_index.get("eventNameSources") or {}).items()
+        if str(key).strip() and isinstance(values, list)
+    }
     candidate_seen: dict[str, set[tuple[str, str]]] = defaultdict(set)
     hashes: dict[str, int] = {}
     for entry in audio_index.get("events") or []:
@@ -11017,6 +11973,7 @@ def build_event_rows(
                 if (identity_alias or {}).get("dictionaryKind") == "skill_id"
                 else None
             ),
+            "eventNameCollectionSources": event_name_sources.get(key, []),
             "identityOnlyPlaybackPlacementStatus": (identity_alias or {}).get("playbackPlacementStatus"),
             "identityNumericSkillIds": (identity_alias or {}).get("numericSkillIds") or [],
             "identityTableSources": (identity_alias or {}).get("tableSources") or [],
@@ -11025,6 +11982,7 @@ def build_event_rows(
             "wwiseActionOperationTypes": action_profile["operationTypes"],
             "wwiseActionOperationTypesHex": action_profile["operationTypesHex"],
             "wwiseActionOperations": action_profile["operationLabels"],
+            "wwiseActionOperationRows": action_profile["operationRows"],
             "wwiseUntypedActionCount": action_profile["untypedActionCount"],
             "authoredEventHash": authored_event_hash,
             "authoredEventHashHex": f"0x{authored_event_hash:08x}",
@@ -11236,7 +12194,7 @@ def semantic_context_group(kind: Any) -> str:
         "domainRegionSwitchEvent", "domainUpgradeAnimationEvent",
         "typedUiTableWwiseEvent", "snsVoiceMessageEvent",
         "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent",
-        "remoteCommonAudio",
+        "remoteCommonAudio", "monoBehaviourAudioIdField",
     }:
         return "authoredConfig"
     if value == "binaryManagedLiteral":
@@ -11411,8 +12369,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "eventNameSourceKind", "identityOnlyPlaybackPlacementStatus",
         "identityNumericSkillIds", "identityTableSources", "identitySkillDataSources", "playbackRole",
         "wwiseActionOperationTypes", "wwiseActionOperationTypesHex",
-        "wwiseActionOperations", "wwiseUntypedActionCount",
+        "wwiseActionOperations", "wwiseActionOperationRows", "wwiseUntypedActionCount",
         "authoredEventHash", "authoredEventHashHex",
+        "eventNameCollectionSources",
         "scannedBankPackageCount", "scannedBankPackageFingerprint",
         "possibleMediaCount", "candidateCount", "uniqueDecodedContentCount",
         "contentEquivalentLeafCount", "playRootCount", "playRootActionIds",
@@ -11499,6 +12458,10 @@ def build_audio_semantic_data(
         for row in audio_index.get("wwiseEventInventory") or []
         if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
     }
+    mono_behaviour_audio_id_semantics = collect_mono_behaviour_audio_id_contexts(
+        export_root,
+        current_wwise_event_hashes,
+    )
     literal_context_index, managed_literal_names = managed_literal_contexts(
         metadata_path,
         current_wwise_event_hashes=current_wwise_event_hashes,
@@ -11536,6 +12499,7 @@ def build_audio_semantic_data(
         char_interact_semantics.get("eventContexts") or {},
         physics_audio_semantics.get("eventContexts") or {},
         model_view_semantics.get("eventContexts") or {},
+        mono_behaviour_audio_id_semantics.get("eventContexts") or {},
         levelscript_semantics.get("eventContexts") or {},
         collect_table_contexts(
             export_root,
@@ -11685,6 +12649,9 @@ def build_audio_semantic_data(
         language,
         export_root=export_root,
         levelscript_semantics=levelscript_semantics,
+        mono_behaviour_audio_id_contexts=(
+            mono_behaviour_audio_id_semantics.get("eventContexts") or {}
+        ),
     )
     media_playback_location_counts = annotate_media_playback_locations(media, events)
     custom_footstep_model = build_custom_footstep_model(events, webui_root, language)
@@ -12206,6 +13173,7 @@ def build_audio_semantic_data(
                 "definitions": physics_audio_semantics.get("definitions") or [],
             },
             "modelViewStateAudio": model_view_semantics.get("stats") or {},
+            "monoBehaviourAudioId": mono_behaviour_audio_id_semantics.get("stats") or {},
             "levelScriptAudio": levelscript_semantics.get("stats") or {},
             "levelSequenceAudio": {
                 **(levelsequence_play_actions.get("stats") or {}),
@@ -12324,6 +13292,7 @@ def build_audio_semantic_data(
             "charInteractAudio": (char_interact_semantics.get("stats") or {}).get("evidenceBoundary") or "",
             "physicsAudio": physics_audio_semantics.get("evidenceBoundary") or "",
             "modelViewStateAudio": model_view_semantics.get("evidenceBoundary") or "",
+            "monoBehaviourAudioId": mono_behaviour_audio_id_semantics.get("evidenceBoundary") or "",
             "levelScriptAudio": levelscript_semantics.get("evidenceBoundary") or "",
             "levelSequenceAudio": (
                 (levelsequence_semantics.get("evidenceBoundary") or "")

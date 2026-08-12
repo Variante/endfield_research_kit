@@ -9366,8 +9366,14 @@ def current_report_status(
     report_path: Path,
     metadata_path: Path,
     gameassembly_path: Path,
+    *,
+    measured_hashes: dict[str, str] | None = None,
 ) -> tuple[bool, str]:
-    """Fail closed unless a report describes these exact original inputs."""
+    """Fail closed unless a report describes these exact original inputs.
+
+    ``measured_hashes`` lets a caller that already hashed the installed client
+    reuse those digests instead of re-reading ~340 MB of binaries.
+    """
     if not report_path.is_file():
         return False, "report missing"
     try:
@@ -9493,7 +9499,7 @@ def current_report_status(
         if not source_path.is_file():
             return False, f"source missing: {source_path}"
         expected = str(source.get(hash_key) or "").lower()
-        actual = file_sha256(source_path)
+        actual = (measured_hashes or {}).get(hash_key) or file_sha256(source_path)
         if actual != expected:
             return False, f"{hash_key} differs: expected={expected!r} actual={actual!r}"
     return True, "validated report hashes match original inputs"
@@ -9523,6 +9529,10 @@ def main() -> int:
             args.json_output,
             args.metadata,
             args.gameassembly,
+            measured_hashes={
+                "metadataSha256": native.metadata_sha256,
+                "gameAssemblySha256": native.gameassembly_sha256,
+            },
         )
         if is_current:
             existing_report = json.loads(

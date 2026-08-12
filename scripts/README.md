@@ -64,6 +64,14 @@ instead, when auditing the build the facts were recorded on.
   (lost MonoScript class names) and dropped 2,709 external PPtr targets.
   Diff the bytes both ways before adding a type;
   `--no-animestudio-json-map-filter` forces the broad path.
+- `--animestudio-story-monobehaviour-names [REGEX]` exports only the
+  MonoBehaviour objects whose name matches, while the load stays broad, so
+  class names and PPtr targets still resolve. The default covers the Story and
+  video builders' Timeline, dialog, cutscene, FMV, and exact parent-name
+  discovery vocabulary while writing about 8% of StreamingAssets
+  MonoBehaviours. `setup_first_time.bat` enables it for the lean first build.
+  The job must be MonoBehaviour-only because `--names` applies to the whole CLI
+  call; other installed-game exports remain broad unless the flag is passed.
 - Broad Story JSON is the export's long pole. Sharding it does not help and
   was rejected by measurement: on identical object sets `Convert` Texture2D
   scales 4.03x across 8 shards, while `JSON` Material runs 0.92-0.95x. Convert

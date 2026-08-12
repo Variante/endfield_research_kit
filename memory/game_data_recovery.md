@@ -499,26 +499,91 @@ controls are exact `AudioDialogCustomEventTable` post-enter/pre-exit fields;
 the remaining formerly `unknown` labels were only prefix edge cases (a leading
 `:` on one Timeline music key, `au_ul_` UI spelling, and `player_fol_`
 animation Foley). Runtime execution and missing bank objects remain unresolved.
-Purpose-first Event triage also separates 527 current Wwise control-only Events
-from unknown playback use. Their exact Action operation is known while the
-external caller is not; for example, `au_music_exploring_state_dlg_in/out`
-contain one `setState` Action each and no Play, Stop, or media leaf.
+Purpose-first Event triage now classifies every complete Wwise v150 Event
+Action list by serialized operation type. The full inventory contains 17,574
+playback Events, 942 mixed playback/control Events, 2,138 control-only Events,
+470 complete zero-Action Event definitions, and 267 unresolved roles belonging
+to authored requests absent from the scanned bank set. Pause, resume, mute,
+unmute, Set State, Set/Reset Game Parameter, Set Switch, Trigger, Stop, and the
+remaining typed non-Play operations no longer masquerade as unknown audio use.
+Of these library roles, 881 control-only and 140 empty definitions have no
+authored consumer and move to secondary priority while retaining an unknown
+external caller. The highest-priority queue is now 10,335 Events, all of which
+contain an exact Play/Post Event action. Event
+details expose operation names and uint16 operation types. The source graph
+records 2,608 library-role edges and 2,217 Event-to-operation edges, but adds
+no caller or execution claim.
+
+The schema-51 purpose pass also scans the complete StreamingAssets/Persistent
+MonoBehaviour object indexes for explicit serialized `AudioId` fields and can
+open the bounded raw JSON candidates omitted by the compact scalar policy when
+the active export retains them. The current Story-focused export proves 502
+authored component/config occurrences across 61 current Wwise Event hashes:
+spawn/finish, hit/move/rotation/loop, animation-state `normalAudiId`, and
+entry `soundEvent` roles. All 61 newly become purpose-resolved: 60 formerly
+highest-priority playback/mixed rows and one consumer-unknown control Event.
+TypeTree field
+paths and current Event-hash equality are exact, and available object rows keep
+their GameObject hierarchy/position. Component instantiation, state/callback
+execution, Event posting, selected media, and audibility remain unobserved.
+RTPC fields, generic integers, PathIDs/raw words, `AudioVoTone` selection, and
+`ResponsiveDialog` membership are excluded. The generated trigger-context
+catalog stores all 502 rows without promoting a runtime-execution edge. The
+small cached result is invalidated by object-index, raw-directory, current
+Event-hash, or semantic-schema changes, so a later broader export can recover
+additional retained raw fields without reusing stale evidence.
+Schema 52 also closes a Story-focused-export regression for
+`AudioGlobalConfig`. When its raw MonoBehaviour JSON is absent, the builder now
+reconstructs the represented config surface from exact compact object-index
+scalars. The current config yields 66 authored occurrences across 58 Event
+hashes: 33 entity-init, 21 audio-state transition, nine persistent-prepared,
+and one each for local, remote, and leave-main-game lifecycle roles. Eleven
+distinct mixed Play/control Events (15 occurrences because four are also in
+the prepared list) leave `unknownUse`; the remaining rows are control/empty or
+already context-known. The generated trigger catalog retains the lifecycle
+direction, state mask, entity kind/id, serialized file/PathID, and explicit
+`runtimeLifecycleConditionRequired` boundary. Scalar truncation means fields
+not represented in the compact index remain unknown; no lifecycle transition,
+Event posting, media selection, or audibility is claimed.
+Schema 53 adds one deliberately narrow managed-reference exception to the
+generic raw-word exclusion. Current IL2CPP metadata proves
+`Beyond.Gameplay.PlayLineSound` is exactly 24 serialized bytes in this order:
+`soundSpawn`, `soundFinish`, two mount-point booleans, `sourceMount`, and
+`targetMount`. A targeted AnimeStudio export of both current objects confirms
+the named layout. The production compact index still carries the same six
+words, so the builder accepts them only when class, namespace, assembly,
+layout, and exact six-word length all match. The two objects
+`P_fxbat_lbshamman_line_changeflow_re` and
+`P_fxbat_lbshamman_line_changeflow` bind playback Event `0x33952647` as
+`soundSpawn` and control Event `0x518abe42` as `soundFinish`. This raises the
+MonoBehaviour inventory to 506 occurrences across 63 hashes, reduces
+`unknownUse` to 10,065 and highest priority to 10,335, and records no runtime
+execution edge.
 Exact Wwise output topology now reduces a separate anonymous-library gap. For
-85 highest-priority Events, a different authored Event in the same bank reaches
+82 highest-priority Events, a different authored Event in the same bank reaches
 the identical complete set of Play Action targets: 55 classify as UI output,
-29 as SFX, and one as voice. The source graph records 124 directed equivalence
+26 as SFX, and one as voice. The source graph records 121 directed equivalence
 edges because some target sets have several authored Event entry points. This
-proves library-output equivalence only; all 85 retain unknown external callers
+proves library-output equivalence only; all 82 retain unknown external callers
 and highest trigger-investigation priority. Partial target overlap is rejected.
-For another 126 highest-priority Events, the complete decoded Wwise media-ID
+For another 122 highest-priority Events, the complete decoded Wwise media-ID
 set exactly matches an authored-context Event within the same PCK. These create
-146 source-graph media-leaf equivalence edges. This weaker relation is useful
+142 source-graph media-leaf equivalence edges. This weaker relation is useful
 for grouping final library output, but deliberately copies neither category nor
 purpose: different Event/Action/container paths can reach the same media. All
-126 remain highest priority (113 `unknownUse`, 13 `identityOnlyNoConsumer`),
+122 remain highest priority (109 `unknownUse`, 13 `identityOnlyNoConsumer`),
 and partial media-set overlap is rejected. The combined library-relation
-dataset contains 211 source Events and has no trigger, Story, line, or speaker
+dataset contains 204 source Events and has no trigger, Story, line, or speaker
 edges introduced by either equivalence rule.
+
+The audio index now records the exact collection surface for each of its 7,622
+authored Event names: Story/core audio tables, typed table/config contexts,
+Lua PostEvent, managed string literals, cutscene Timeline, Gameplay references,
+or a current-Wwise exact alias. Rebuilding this provenance removed 313 names
+that survived only in the prior generated index. In particular,
+`au_music_cs_tundra_003_see_angel` and `au_sfx_csv_e5m2_3` were stale names,
+not current unresolved requests; neither occurs in current binary metadata,
+structured inputs, current PCK Event objects, or the rebuilt name-source map.
 
 A bounded current-build native constant scan tested all 10,233 high-priority
 playback Event hashes against the 280 MB `GameAssembly.dll`. The `.text`
