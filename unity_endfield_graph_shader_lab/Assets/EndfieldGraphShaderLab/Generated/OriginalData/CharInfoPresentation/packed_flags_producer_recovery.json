@@ -749,6 +749,51 @@
         "matching_contract": "The guarded 80-byte shared payload is the same five-Vector4 width written by GpuSceneDirtyUpdateCS.UploadPerDrawParams.",
         "boundary": "This closes the strongest CPU-side generic factory producer into a shared per-draw payload and its dirty flag. SetEntitySharedDataPartial's native body remains dynamically dispatched; no file-backed edge yet proves that this payload becomes _UploadBuffer or that a dispatch selects kernel 7/channel 2/resource +0xd0."
       },
+      "apply_per_draw_render_bridge": {
+        "status": "native-wrapper-to-burst-perdraw-call-closed-binder-apply-edge-open",
+        "source": "Current GameAssembly.dll code-registration mapping, PData-scoped x64 disassembly, and the installed global-metadata method catalog.",
+        "managed_methods": {
+          "apply_per_draw_render": {
+            "type": "Beyond.Gameplay.Factory.UnsafeJobFuncPointers",
+            "method": "ApplyPerDrawRender",
+            "metadata_method_index": 395416,
+            "native_pointer": "0x1869d8488",
+            "parameters": ["binderPtr", "perDrawConfigs", "length"]
+          },
+          "apply_per_draw_render_burst_managed": {
+            "type": "Beyond.Gameplay.Factory.UnsafeJobFuncPointers",
+            "method": "ApplyPerDrawRender$BurstManaged",
+            "metadata_method_index": 395426,
+            "native_pointer": "0x1869d8434",
+            "parameters": ["binderPtr", "perDrawConfigs", "length"]
+          }
+        },
+        "native_wrapper": {
+          "gameassembly_range": "0x180471cd8..0x180471d27",
+          "callsite": "0x180471d07",
+          "target": "0x1869d8488",
+          "argument_flow": {
+            "rcx": "preserved incoming binderPtr via rsi",
+            "rdx": "preserved incoming perDrawConfigs via rdi",
+            "r8d": "preserved incoming length via ebx",
+            "r9d": "explicitly cleared to 0"
+          },
+          "marshalling_helpers": ["0x18002e0b0", "0x18002ead0"],
+          "identity_boundary": "The code range is a generated/native bridge and has no ordinary IL2CPP code-registration method pointer in the current mapping; do not assign it an unverified managed owner."
+        },
+        "downstream_apply_chain": {
+          "per_draw_global_setting_apply": {
+            "native_pointer": "0x1869d5d30",
+            "observed": "Loops over the supplied perDrawConfigs and calls PerDrawConfig.Apply at 0x1869f3654."
+          },
+          "per_draw_config_apply": {
+            "native_pointer": "0x1869f3654",
+            "observed": "Reads the config kind/index and Vector4 payload, then calls the concrete HGFactoryRendererBinderComponent.SetCustomPerDrawData instantiation for the binder."
+          },
+          "shared_payload_endpoint": "HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4> at 0x1834a3d60"
+        },
+        "boundary": "This closes a concrete native/GameAssembly entry into the Burst per-draw configuration path and its binder Vector4 writer. It still ends at the generic factory shared-data/dirty-flag producer: no static edge from this bridge proves _UploadBuffer population, UploadPerDrawParams kernel 7 selection, or channel-2 resource +0xd0 consumption."
+      },
       "native_partial_endpoint_evidence": {
         "status": "registered-native-factory-service-bridge-upload-unresolved",
         "source": "Installed UnityPlayer.dll HyperGryph internal-call name/pointer tables and PData-scoped x64 disassembly.",
