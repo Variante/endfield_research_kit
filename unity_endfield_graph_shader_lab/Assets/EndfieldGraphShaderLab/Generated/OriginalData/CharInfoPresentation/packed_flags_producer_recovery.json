@@ -355,6 +355,42 @@
           },
           "boundary": "This is the first source-closed GPU consumer for a five-vector per-draw record, and it materially narrows the GPU scene carrier. The shader contains no Unity renderer object, custom-per-draw channel index, resource +0xd0 address, or binding-33 identity; no native call edge from SetCustomPerDrawData_Injected/0x18042f750 to the upload-buffer producer or this dispatch has been recovered. Therefore it closes the generic per-draw-buffer copy contract only; it does not authorize mapping channel 2 to any one of the five lanes."
         },
+        "gpu_scene_setup_wiring": {
+          "status": "managed-compute-shader-initialization-closed-dispatch-edge-open",
+          "managed_method": {
+            "type": "UnityEngine.HyperGryph.HGShadingStateSystem",
+            "method": "SetupGpuSceneUploadCs",
+            "metadata_method_index": 477986,
+            "signature": "System.Void(UnityEngine.ComputeShader)",
+            "method_flags_hex": "0x0096",
+            "observed": "The current global-metadata declaration is a public static internal-call wrapper taking one ComputeShader argument; it does not expose upload-buffer or per-draw field names."
+          },
+          "gameassembly_wrapper": {
+            "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+            "code_registration": "0x18b9217d0",
+            "wrapper_pointer": "0x1839454d0",
+            "wrapper_rva": "0x39454d0",
+            "lazy_internal_call_string": "0x18b9015e0",
+            "lazy_internal_call_name": "UnityEngine.HyperGryph.HGShadingStateSystem::SetupGpuSceneUploadCs(UnityEngine.ComputeShader)",
+            "observed": "The IL2CPP wrapper caches the internal-call target in a global slot, resolves it from the exact managed signature string when empty, forwards the ComputeShader argument in rcx, and tail-jumps to the resolved target."
+          },
+          "render_pipeline_constructor_callsite": {
+            "type": "HG.Rendering.Runtime.HGRenderPipeline",
+            "method": ".ctor",
+            "metadata_method_index": 284093,
+            "native_pointer": "0x183947230",
+            "callsite": "0x183948786",
+            "argument_provenance": "After HGRenderPipeline setup calls 0x183104af0, the callsite loads [returned_object + 0x18], then [that_object + 0x638] into rcx, clears edx, and calls the wrapper 0x1839454d0.",
+            "observed": "This closes a concrete managed constructor edge that registers the GPU-scene upload ComputeShader once during HGRenderPipeline construction. Neighboring calls initialize VAT BLAS, ray-tracing scene, and cloth compute services; the constructor contains no UploadPerDrawParams dispatch or custom-per-draw channel read."
+          },
+          "unityplayer_native_setup": {
+            "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+            "internal_call_implementation": "0x1801ee4c0",
+            "parallel_managed_registration": "UnityEngine.HyperGryph.HGRayTracingScene::SetupGpuSceneUploadCs(UnityEngine.ComputeShader) uses the same UnityPlayer implementation 0x1801ee4c0.",
+            "observed": "The native body forwards the ComputeShader handle through four indirect helper calls, consults RuntimeInitializeOnLoadManager through 0x180fc5e60, and conditionally extracts the native object handle through 0x180769270. The indirect targets are encoded in the installed function table and remain unresolved by static file bytes; none is identified as ComputeShader.Dispatch or an upload-buffer producer."
+          },
+          "boundary": "This is positive initialization/wiring evidence for GpuSceneDirtyUpdateCS, not proof of its dispatch schedule or of a custom-per-draw resource upload. No native call edge from SetCustomPerDrawData_Injected, renderer refresh 0x18042f750, resource +0xd0, or the five-slot resolver reaches UploadPerDrawParams. Keep channel 2 to GPU descriptor binding fail-closed."
+        },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
           "function_pointer": "0x1800fedc0",

@@ -392,6 +392,22 @@ NPC archetypes are imported as labeled source kits.
   the carrier without mapping channel 2 to a lane; structured source/hash and
   offsets are recorded under `gpu_scene_upload_kernel_evidence` in the packed-
   flag audit. Keep the channel-2 resource-to-GPU edge fail-closed.
+  The managed/native initialization chain for that GPU carrier is now also
+  closed. Installed metadata identifies the public static
+  `HGShadingStateSystem.SetupGpuSceneUploadCs(ComputeShader)` method (index
+  477986); its IL2CPP wrapper is `GameAssembly!0x1839454d0`, and the
+  `HGRenderPipeline` constructor (native `0x183947230`, callsite
+  `0x183948786`) loads a ComputeShader from the object chain
+  `[returned+0x18]+0x638` before calling it. UnityPlayer internal-call
+  implementation `0x1801ee4c0` forwards the handle through four indirect
+  setup helpers, consults the runtime initialization service, and conditionally
+  extracts the native shader handle. `HGRayTracingScene.SetupGpuSceneUploadCs`
+  shares that native implementation. This proves concrete one-time GPU-scene
+  ComputeShader setup, but not dispatch timing or upload-buffer production:
+  the indirect targets are encoded in the installed function table, and no
+  edge from custom-per-draw channel 2/resource `+0xd0` to `UploadPerDrawParams`
+  has been recovered. Structured hashes, addresses, and the fail-closed
+  boundary are recorded under `gpu_scene_setup_wiring` in the packed-flag audit.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
