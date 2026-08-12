@@ -2129,6 +2129,77 @@ def verify_hgbuffer(recovery: dict[str, object]) -> None:
         record = selected[stage]
         require_hash(SOURCE_ROOT / record["path"], record["sha256"])
 
+    vertex_metadata_path = (
+        SOURCE_ROOT / "ShaderEvidence/HGRPLitHGBuffer.vertex.metadata.json"
+    )
+    if not vertex_metadata_path.is_file():
+        raise AssertionError(f"missing HGRPLit HGBuffer vertex metadata: {vertex_metadata_path}")
+    vertex_metadata = json.loads(vertex_metadata_path.read_text(encoding="utf-8"))
+    if vertex_metadata.get("SourcePassName") != "HGBuffer":
+        raise AssertionError(
+            "HGRPLit HGBuffer vertex pass mismatch: "
+            f"actual={vertex_metadata.get('SourcePassName')}"
+        )
+    if vertex_metadata.get("SourceSerializedProgramStage") != "vertex":
+        raise AssertionError(
+            "HGRPLit HGBuffer vertex stage mismatch: "
+            f"actual={vertex_metadata.get('SourceSerializedProgramStage')}"
+        )
+    if vertex_metadata.get("SourceCompiledKeywords") != [
+        "HG_ENABLE_MV",
+        "SRP_INSTANCING_ON",
+    ]:
+        raise AssertionError(
+            "HGRPLit HGBuffer vertex keyword mismatch: "
+            f"actual={vertex_metadata.get('SourceCompiledKeywords')}"
+        )
+    global_parameters = next(
+        (
+            item
+            for item in (vertex_metadata.get("ConstantBufferParameters") or [])
+            if isinstance(item, dict) and item.get("Name") == "ShaderVariablesGlobal"
+        ),
+        None,
+    )
+    if not isinstance(global_parameters, dict):
+        raise AssertionError("HGRPLit HGBuffer ShaderVariablesGlobal metadata missing")
+    history_names = {
+        str(parameter.get("Name"))
+        for parameter in (global_parameters.get("MatrixParameters") or [])
+        + (global_parameters.get("VectorParameters") or [])
+        if isinstance(parameter, dict)
+    }
+    expected_history_names = {
+        "_NonJitteredViewNoTransProjMatrix",
+        "_PrevNonJitteredViewNoTransProjMatrix",
+        "_PrevCamPosRWS_Internal",
+    }
+    if not expected_history_names.issubset(history_names):
+        raise AssertionError(
+            "HGRPLit HGBuffer history metadata mismatch: "
+            f"expected={sorted(expected_history_names)} actual={sorted(history_names)}"
+        )
+    per_draw = next(
+        (
+            item
+            for item in (vertex_metadata.get("ConstantBufferParameters") or [])
+            if isinstance(item, dict)
+            and item.get("Name") == "UnityInstancing_SRP_UnityPerDraw"
+        ),
+        None,
+    )
+    per_draw_members = {
+        str(member.get("Name"))
+        for struct in (per_draw or {}).get("StructParameters", [])
+        if isinstance(struct, dict)
+        for member in (struct.get("MatrixMembers") or [])
+        if isinstance(member, dict)
+    }
+    if "unity_MatrixPreviousM" not in per_draw_members:
+        raise AssertionError(
+            "HGRPLit HGBuffer previous-object matrix metadata missing"
+        )
+
     for stage in ("decompiled_vertex", "decompiled_fragment"):
         record = selected[stage]
         require_hash(repo_path(record["repo_path"]), record["sha256"])
