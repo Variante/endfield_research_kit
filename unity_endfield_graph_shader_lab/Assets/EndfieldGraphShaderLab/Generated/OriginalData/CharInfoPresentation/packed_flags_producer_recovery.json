@@ -1067,6 +1067,36 @@
         ],
         "bounded_result": "The current, additive-material, and obsolete factory update entries plus their concrete record helpers contain no direct ComputeBuffer upload, shader buffer/property bind, CommandBuffer GPUDriven recording, or compute dispatch edge. This is positive CPU-record-consumer evidence, not proof that an indirect/dynamically registered render stage cannot consume the array later; keep the shared-record-to-GPU edge fail-closed."
       },
+      "native_unityplayer_record_shape_scan": {
+        "status": "bounded-0x8c-record-shape-census-no-direct-gpu-edge",
+        "source": "Full installed UnityPlayer.dll PData-scoped x64 scan; candidate functions required both an immediate 0x8c/140 record-shape operand and a +0x38 memory-field access, then their direct calls were checked against the installed ComputeBuffer, ComputeShader, CommandBuffer, and GPUDriven entrypoints.",
+        "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+        "scan_counts": {
+          "pdata_functions": 113390,
+          "decoded_functions": 113388,
+          "record_shape_candidates": 39,
+          "candidates_with_direct_gpu_edges": 0,
+          "candidates_with_optimized_memcpy_edges": 6
+        },
+        "known_gpu_entrypoints_checked": [
+          "ComputeBuffer.InternalSetNativeData 0x1800906c0",
+          "ComputeBuffer.InternalSetData 0x180091050",
+          "ComputeBuffer.InternalGetData 0x180091d70",
+          "ComputeShader.Internal_SetBuffer 0x1801153f0",
+          "ComputeShader.Internal_HGSetBuffer 0x180116c10",
+          "ComputeShader.SetConstantComputeBuffer 0x180117130",
+          "ComputeShader.Dispatch 0x180119af0",
+          "CommandBuffer.Add_GPUDriven_PopulatePerFrameData 0x180065ff0",
+          "CommandBuffer.Add_GPUDriven_DrawRendererList 0x180066360",
+          "GPUDrivenRendererV1/V2 binding and dispatch entries 0x1801e9200..0x1801e9c90"
+        ],
+        "record_helper_hits": [
+          "0x1810d93a0 current UpdateRegularEntity helper",
+          "0x1810d97f0 obsolete UpdateRegularEntity helper",
+          "0x1810ce0be..0x1810cf261 adjacent factory record helpers"
+        ],
+        "bounded_result": "Across the complete decoded UnityPlayer PData set, no function matching the 0x8c/+0x38 factory-record shape directly calls a checked GPU upload, shader-buffer/property bind, CommandBuffer GPUDriven recorder, or compute dispatch. This broadens the static CPU-record negative evidence beyond the three registered update entries, but cannot exclude an indirect function-pointer or dynamically registered render-stage consumer; keep the shared-record-to-GPU edge fail-closed."
+      },
       "native_factory_batch_vat_evidence": {
         "status": "native-batch-vat-registry-finalizer-negative-upload-edge-open",
         "source": "Installed UnityPlayer.dll HyperGryph internal-call surface and PData-scoped x64 disassembly.",
