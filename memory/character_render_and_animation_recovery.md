@@ -529,6 +529,17 @@ NPC archetypes are imported as labeled source kits.
   implemented; it does not prove shared payload → `_UploadBuffer` or GPU
   dispatch. The bounded registration/body evidence is recorded under
   `native_partial_endpoint_evidence`; keep the upload edge fail-closed.
+  The dynamic service side is now bounded one step further: UnityPlayer helper
+  `0x180776410` calls registry accessor `0x18030f100`, whose table is at
+  `0x182168800`; the partial endpoint requests slot `5`. Constructor
+  `0x18076ff30..0x180770173` registers its approximately `0x368`-byte service
+  object into that slot at `0x18077011a` and initializes the record-container
+  field `+0x1c8`. The partial body reads `[slot5+0x1c8]`, selects a record using
+  the global index at `0x180155417`, and walks the wrapper `+0xb0` result through
+  `0x180769da0`/`0x180760900`. This is concrete factory-service/record evidence,
+  not GPU identity: the incoming `data`, `offset`, and `size` registers still do
+  not reach a visible copy, buffer API, command recording, or dispatch, so the
+  shared-payload-to-`_UploadBuffer` edge remains fail-closed.
   The managed `HGFactoryRenderManager.FrameUpdateEntities` entry is an
   additional bounded negative: metadata method `477917` resolves through the
   current code-registration pair to `GameAssembly 0x1841e1670`, whose body is
