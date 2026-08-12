@@ -811,6 +811,104 @@
           "0x189ea513e"
         ],
         "interpretation": "This specific managed factory per-frame entry cannot be credited as a shared-payload to _UploadBuffer or GPU-dispatch producer in the current build. The result does not disprove a dynamically initialized native factory service, IFix-patched code, or unrelated GPU-driven ECS work; those remain separate boundaries and the channel-2 upload edge stays fail-closed."
+      },
+      "gpu_driven_binding_path_evidence": {
+        "status": "kernel-index-and-binding-record-abi-closed-upload-dispatch-edge-open",
+        "source": "Current UnityPlayer.dll GPUDrivenRendererV1/V2 internal-call implementations, current GameAssembly.dll wrapper bodies, and the current UnityPlayer shader-property registry initializer.",
+        "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+        "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+        "managed_wrapper_contract": [
+          {
+            "type": "UnityEngine.HyperGryph.GPUDrivenRendererV1",
+            "method": "BindBuffersForCulling",
+            "metadata_method_index": 477875,
+            "gameassembly_wrapper": "0x18b3f7d94",
+            "unityplayer_native_core": "0x1810eece0",
+            "kernel_argument_flow": "incoming r8d is saved and forwarded unchanged as native r9d; no wrapper-side constant"
+          },
+          {
+            "type": "UnityEngine.HyperGryph.GPUDrivenRendererV2",
+            "method": "BindBuffersForCulling",
+            "metadata_method_index": 477889,
+            "gameassembly_wrapper": "0x18b3f83d0",
+            "unityplayer_native_core": "0x1810fb5a0",
+            "kernel_argument_flow": "incoming r8d is saved and forwarded unchanged as native r9d; no wrapper-side constant"
+          }
+        ],
+        "native_binding_contract": {
+          "v1_core": {
+            "function": "0x1810eece0",
+            "kernel_index_register": "r9d -> esi -> edx on each binding-record helper call",
+            "immediate_helper": "0x1805f84a0",
+            "command_helper": "0x1804cb1a0",
+            "command_opcode": "0xd",
+            "metadata_payload_offsets": [
+              "0x8c",
+              "0x88",
+              "0x90",
+              "0x98",
+              "0x9c",
+              "0xa0",
+              "0xa4",
+              "0xa8",
+              "0xac",
+              "0xb0"
+            ]
+          },
+          "v2_core": {
+            "function": "0x1810fb5a0",
+            "kernel_index_register": "r9d -> esi -> edx on each binding-record helper call",
+            "immediate_helper": "0x1805f84a0",
+            "command_helper": "0x1804cb1a0",
+            "command_opcode": "0xd",
+            "metadata_payload_offsets": [
+              "0xa4",
+              "0xa0",
+              "0xa8",
+              "0xac",
+              "0xb4",
+              "0xb8",
+              "0xc0",
+              "0xc4",
+              "0xbc",
+              "0xc8",
+              "0xcc",
+              "0xd0"
+            ]
+          },
+          "interpretation": "The cores implement a kernel-indexed shader binding-record path. Their +0xd0 (V2) and neighboring offsets are fields in the GPUDriven shader metadata record; they are not evidence that the character custom-per-draw resource +0xd0 is read."
+        },
+        "known_native_callers": [
+          {
+            "function": "0x18127c730",
+            "routes": [
+              "V1/V2 BindFrameConstantsBuffer",
+              "V1/V2 BindBuffersForCulling",
+              "V1/V2 BindBuffersForRendering",
+              "V1/V2 dispatch bucket/meshlet setup"
+            ],
+            "kernel_argument": "xor r9d,r9d",
+            "interpretation": "Known native GPUDriven route selects kernel 0."
+          },
+          {
+            "function": "0x181280530",
+            "routes": [
+              "V1/V2 frame/buffer binding",
+              "V1/V2 dispatch setup"
+            ],
+            "kernel_argument": "xor r9d,r9d",
+            "interpretation": "Known native GPUDriven route selects kernel 0."
+          }
+        ],
+        "shader_property_registry": {
+          "initializer": "0x181217db0",
+          "table_root": "0x1821ed7b0",
+          "property_name": "_RTPerDrawParamsBuffer",
+          "property_name_va": "0x181e2e680",
+          "field_offset": "0x130c",
+          "observed": "The current Shader.PropertyToID registry initializes this name into the shared property-ID table; binding cores load property IDs from their per-shader metadata records."
+        },
+        "boundary": "This closes the managed kernel argument flow and the native immediate/command binding-record ABI. No static edge yet identifies GpuSceneDirtyUpdateCS as the shader object passed to these bind cores, proves kernel 7 is selected by a live producer, or maps the character resource +0xd0 into _RTPerDrawParamsBuffer/binding 33."
       }
     },
     "binding_gap": {

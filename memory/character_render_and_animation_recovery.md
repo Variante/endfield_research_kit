@@ -443,6 +443,22 @@ NPC archetypes are imported as labeled source kits.
   field identity, and the fail-closed boundary are recorded under
   `gpu_scene_setup_wiring`, `gpu_scene_upload_kernel_evidence`, and
   `gpu_dispatch_bridge_evidence` in the packed-flag audit.
+  The current UnityPlayer binding path is now bounded as a separate edge:
+  V1 `BindBuffersForCulling` (`0x1810eece0`) and V2
+  `BindBuffersForCulling` (`0x1810fb5a0`) preserve the managed caller's
+  `kernelIdx` from `r9d`, then pass it as `edx` to the per-kernel binding-record
+  helper `0x1805f84a0` (immediate path) or record command opcode `0xd` through
+  `0x1804cb1a0`. The corresponding GameAssembly internal-call wrappers preserve
+  `r8d` unchanged; no wrapper-side kernel constant is present. V1/V2 native
+  GPUDriven callers `0x18127c730` and `0x181280530` pass zero for this index,
+  so their known culling/binding routes still select kernel 0. The global
+  Shader.PropertyToID registry initializes `_RTPerDrawParamsBuffer` at field
+  `+0x130c` of the table rooted at `0x1821ed7b0`; the binding cores consume
+  per-shader property IDs and fixed payload offsets, but no static edge ties
+  that property to the character resource `+0xd0` or to `UploadPerDrawParams`
+  kernel 7. This closes the kernel-index/binding-record ABI while keeping the
+  channel-2 resource-to-descriptor and upload-dispatch edges fail-closed;
+  details are recorded under `gpu_driven_binding_path_evidence`.
   `HGConstantBufferPool.ApplyPendingUpload` is a separate generic upload
   candidate: `GameAssembly 0x189b6a7c0` updates `this+0x10` through
   `ComputeBuffer.SetData` (`0x187af05e0`), but its visible body has no
