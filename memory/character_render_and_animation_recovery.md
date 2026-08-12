@@ -514,6 +514,15 @@ NPC archetypes are imported as labeled source kits.
   channel 2/resource `+0xd0`; keep the GPU edge fail-closed. Details are in
   `packed_flags_producer_recovery.json` under
   `factory_per_draw_shared_payload_evidence`.
+  A current-build slot cross-check removes the remaining endpoint ambiguity:
+  the Vector4 binder body loads the runtime function pointer from
+  `0x18f370720` at `0x1834a3dc9`, and `SetEntitySharedDataPartial` loads the
+  same slot at `0x183d689d4`; the float wrapper at `0x183d68850` reaches that
+  partial wrapper directly. The primary AddInternalCall mapping resolves the
+  slot's endpoint to UnityPlayer `0x1801eb9a0`, whose body is the
+  `manager[+0x38] + index*0x8c + offset` CPU memcpy path. The old
+  `0x180155300` value is only the alternate pointer-table surface, not the
+  current registered endpoint. The payload-to-GPU edge remains fail-closed.
   The factory producer is broader than the Vector4 path alone. Static
   GameAssembly bodies show `SetPosition` (`0x1834a3ce0`, offset `0x50`, 12
   bytes), `SetRotation` (`0x183e21230`, offset `0x60`, 16 bytes), and the

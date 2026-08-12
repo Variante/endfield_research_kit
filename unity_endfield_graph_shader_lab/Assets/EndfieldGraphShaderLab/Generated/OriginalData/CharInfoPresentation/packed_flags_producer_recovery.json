@@ -735,7 +735,13 @@
           "lazy_slot": "0x18f370720",
           "managed_wrapper": "HGFactoryRenderManager.SetEntitySharedDataPartial at 0x183d689c0",
           "abi": "ecx=sharedDataIndex, rdx=&Vector4, r8d=offset, r9d=16",
-          "unityplayer_internal_call_target": "0x180155300"
+          "unityplayer_internal_call_target": "0x1801eb9a0 (primary AddInternalCall entry 206; legacy pointer-table value 0x180155300 is alternate evidence only)"
+        },
+        "lazy_slot_cross_check": {
+          "binder_load": "0x1834a3dc9 loads [0x18f370720] before the indirect (index, data, offset, 16) call",
+          "partial_wrapper_load": "0x183d689d4 loads [0x18f370720] before forwarding the same four-argument ABI",
+          "float_wrapper_cross_check": "SetEntitySharedData<float> at 0x183d68850 calls SetEntitySharedDataPartial at 0x183d68885, which uses the same slot",
+          "interpretation": "The current GameAssembly confirms one runtime-populated factory partial-update slot shared by Vector4, float, and direct partial writers; static image bytes at the slot are not a callable address, so endpoint identity is taken from the primary UnityPlayer AddInternalCall registration and remains CPU-record-only."
         },
         "dirty_flag": {
           "tail": "mov dl,1; jmp HGFactoryRendererBinderComponent.SetDirtyFlag (0x1834a3fa0)",
