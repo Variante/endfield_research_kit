@@ -876,6 +876,14 @@
               "0xd0"
             ]
           },
+          "binding_record_entry_abi": {
+            "helper": "0x1805f84a0",
+            "valid_index_gate": "edx(kernelIdx) < qword ptr [rcx+0xd0]",
+            "descriptor_pointer": "r8 points at the selected metadata slot; the first dword [r8] is copied as the binding-record key",
+            "record_table": "valid-index path computes [rcx+0xc0] + 0x818 + kernelIdx * 0x880, then updates the keyed record through 0x1805f8630",
+            "record_payload": "the helper supplies a 12-byte record from stack offsets +0x20/+0x24/+0x28, including the incoming r9d value; this is a binding-record/cache ABI, not a proven Unity ComputeShader.SetBuffer call",
+            "interpretation": "The descriptor key is recovered, but its semantic identity is not named by the available reflection and is not statically tied to _RTPerDrawParamsBuffer or the character resource slot."
+          },
           "interpretation": "The cores implement a kernel-indexed shader binding-record path. Their +0xd0 (V2) and neighboring offsets are fields in the GPUDriven shader metadata record; they are not evidence that the character custom-per-draw resource +0xd0 is read."
         },
         "known_native_callers": [
@@ -900,6 +908,29 @@
             "interpretation": "Known native GPUDriven route selects kernel 0."
           }
         ],
+        "dispatch_core_xref_census": {
+          "V1_DispatchComputeMeshletInstanceCount": {
+            "core": "0x1810f1890",
+            "managed_wrapper_callsite": "0x1801e958d",
+            "native_callsite": "0x181280849"
+          },
+          "V1_DispatchComputeDrawBucketCount": {
+            "core": "0x1810f17e0",
+            "managed_wrapper_callsite": "0x1801e966d",
+            "native_callsite": "0x18127c7b4"
+          },
+          "V2_DispatchComputeMeshletInstanceCount": {
+            "core": "0x1810fe040",
+            "managed_wrapper_callsite": "0x1801e9c7d",
+            "native_callsite": "0x1812808ac"
+          },
+          "V2_DispatchComputeDrawBucketCount": {
+            "core": "0x1810fdf90",
+            "managed_wrapper_callsite": "0x1801e9d5d",
+            "native_callsite": "0x18127c814"
+          },
+          "native_kernel_argument": "All four known native callsites zero r9d before entering their core; no additional direct E8 producer was found in the current UnityPlayer text."
+        },
         "shader_property_registry": {
           "initializer": "0x181217db0",
           "table_root": "0x1821ed7b0",
