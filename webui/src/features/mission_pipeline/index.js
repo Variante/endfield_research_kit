@@ -33,7 +33,8 @@
   const TEXT = {
     en: {
       relationQuestProgressLockedInteractive: "every playback occurrence is rooted at an exact interactive entity whose typed progress lock waits for this quest to be Completed (local context, not Story ownership or quest activation/playback/completion causality)",
-      eyebrow: "EXPERIMENTAL · CLIENT / SERVER EVIDENCE",
+      underConstruction: "Under construction",
+      eyebrow: "CLIENT / SERVER EVIDENCE",
       title: "Mission Pipeline",
       scope: "Authored quest structure with an explicit native client/server boundary.",
       warning: "Predecessor arrows are client-visible prerequisites. The server still decides which quest state to synchronize next.",
@@ -1259,7 +1260,8 @@
       subGameLifecycleHint: "WorldChallengeGame.SendQuit：bindScriptId @ +0x50 → TryGetLevelScript → ManualEnd → 停止请求",
       noStoryBinding: "新增剧情绑定：0",
       evidencePolicy: "证据政策",
-      eyebrow: "实验视图 · 客户端 / 服务器证据",
+      underConstruction: "建设中",
+      eyebrow: "客户端 / 服务器证据",
       title: "任务流程",
       scope: "展示任务节点结构，并明确标出原生客户端与服务器之间的边界。",
       warning: "前置箭头只表示客户端可见的条件关系；下一个同步到客户端的任务状态仍由服务器决定。",
@@ -2526,10 +2528,11 @@
     state.initialized = true;
     app().innerHTML = `
       <div class="mp-shell">
+        <div id="mp-construction-banner" class="construction-banner" role="note"></div>
         <header class="mp-hero">
           <div class="mp-hero-copy">
             <p id="mp-eyebrow" class="mp-eyebrow"></p>
-            <div class="mp-title-line"><h1 id="mp-title"></h1><span class="mp-experimental">EXPERIMENTAL</span></div>
+            <div class="mp-title-line"><h1 id="mp-title"></h1></div>
             <p id="mp-scope" class="mp-scope"></p>
           </div>
           <div id="mp-corpus" class="mp-corpus" role="status" aria-live="polite"></div>
@@ -2663,7 +2666,7 @@
 
   function applyUiText() {
     const values = {
-      "mission-pipeline-tab": t("title"),
+      "mission-pipeline-tab": t("title"), "mp-construction-banner": t("underConstruction"),
       "mp-eyebrow": t("eyebrow"), "mp-title": t("title"), "mp-scope": t("scope"),
       "mp-warning": t("warning"), "mp-search-label": t("search"), "mp-structure-label": t("structure"),
       "mp-definition-recovery": t("definitionRecoveryScope"),

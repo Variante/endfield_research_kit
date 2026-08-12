@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 import subprocess
+import tempfile
 import time
 from collections import Counter, defaultdict, deque
 from pathlib import Path, PurePosixPath
@@ -28,6 +29,7 @@ try:
         collect_metadata_audio_literals,
         collect_table_audio_event_hashes,
         collect_table_audio_event_names,
+        audio_hash_generator_compute,
         hashed_event_key,
         is_rtpc_parameter_name,
     )
@@ -39,6 +41,7 @@ except ImportError:  # Imported as scripts.build_audio from repository-root test
         collect_metadata_audio_literals,
         collect_table_audio_event_hashes,
         collect_table_audio_event_names,
+        audio_hash_generator_compute,
         hashed_event_key,
         is_rtpc_parameter_name,
     )
@@ -51,6 +54,14 @@ DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
 DEFAULT_AUDIO_ROOT = DEFAULT_EXPORT_ROOT / "structured" / "Audio"
+LUA_AUDIO_REFERENCE_CACHE_REL = Path("recovered/audio/lua_audio_references.json")
+LUA_AUDIO_REFERENCE_SCHEMA_VERSION = 1
+LUA_AUDIO_NAME_RE = re.compile(r"(?i)\bau_[a-z0-9_]+")
+LUA_FILE_REGEX = r"(?i)\.lua(?:\.enc)*$"
+LUA_AUDIO_CALL_RE = re.compile(
+    r"(?i)\b(?:AudioAdapter|AudioManager)\s*\.\s*"
+    r"(?P<method>PostEvent|SetRtpc|PostAudioCue)\s*\("
+)
 NARRATIVE_VIDEO_OVERRIDES_NAME = "narrative_videos.json"
 PROJECTILE_DATA_REL = Path("data/gameplay/projectiles.json")
 PROJECTILE_EVENT_PREFIX = "projectile-event:"
@@ -166,8 +177,9 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-japanese",
     "audio-korean",
 )
-EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 15
+EVENT_BANK_FILE_REGEX = r"(^|[\\/])(?:[^\\/]*banks|hotfix[^\\/]*)\.pck$"
+EVENT_EVIDENCE_SCHEMA_VERSION = 24
+HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECASE)
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -176,6 +188,8 @@ EVENT_EVIDENCE_SCHEMA_VERSION = 15
 HIRC_ACTION_OPERATION_LABELS = {
     0x0100: "stop",
     0x0400: "play",
+    0x1200: "setState",
+    0x1400: "resetGameParameter",
     0x2100: "playEvent",
 }
 HIRC_PLAYBACK_ACTION_OPERATIONS = frozenset({0x0400, 0x2100})
@@ -3186,6 +3200,192 @@ def display_path(path: Path) -> str:
     return normalize_posix(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def lua_audio_source_fingerprints(args: argparse.Namespace) -> list[dict[str, Any]]:
+    rows = []
+    for source, root in (
+        ("Persistent", args.fallback_assets),
+        ("StreamingAssets", args.streaming_assets),
+    ):
+        if root is None:
+            continue
+        path = root / "index_main.json"
+        if not path.is_file():
+            continue
+        rows.append({
+            "source": source,
+            "path": display_path(path),
+            "bytes": path.stat().st_size,
+            "sha256": file_sha256(path),
+        })
+    return rows
+
+
+def collect_lua_audio_references(
+    lua_root: Path,
+    source_root: str = "",
+    include_rel_paths: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    references: list[dict[str, Any]] = []
+    if not lua_root.exists():
+        return references
+    for path in sorted(lua_root.rglob("*")):
+        if not path.is_file() or path.suffix.lower() != ".lua":
+            continue
+        rel_source = normalize_posix(path.relative_to(lua_root))
+        if include_rel_paths is not None and rel_source not in include_rel_paths:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        source = (
+            normalize_posix(PurePosixPath("structured", source_root, "Lua", rel_source))
+            if source_root
+            else rel_source
+        )
+        for line_number, line in enumerate(text.splitlines(), 1):
+            names = list(LUA_AUDIO_NAME_RE.finditer(line))
+            if not names:
+                continue
+            call = LUA_AUDIO_CALL_RE.search(line)
+            method = call.group("method") if call else "Literal"
+            kind = {
+                "postevent": "luaPostEvent",
+                "setrtpc": "luaRtpcParameter",
+                "postaudiocue": "luaAudioCue",
+            }.get(method.lower(), "luaAudioLiteral")
+            for match in names:
+                name = match.group(0).lower().rstrip("_")
+                row = {
+                    "kind": kind,
+                    "name": name,
+                    "hash": fnv1_32(name),
+                    "hashHex": f"0x{fnv1_32(name):08x}",
+                    "method": method,
+                    "source": source,
+                    "line": line_number,
+                    "expression": line.strip()[:500],
+                    "evidence": (
+                        "exactLuaAudioCallLiteral"
+                        if call
+                        else "luaAudioLiteralWithoutDirectCallProof"
+                    ),
+                }
+                references.append(row)
+    return references
+
+
+def summarize_lua_audio_references(references: list[dict[str, Any]]) -> dict[str, Any]:
+    by_kind = Counter(str(row.get("kind") or "unknown") for row in references)
+    names_by_kind: dict[str, set[str]] = defaultdict(set)
+    for row in references:
+        names_by_kind[str(row.get("kind") or "unknown")].add(str(row.get("name") or ""))
+    return {
+        "references": len(references),
+        "sourceFiles": len({str(row.get("source") or "") for row in references}),
+        "byKind": dict(sorted(by_kind.items())),
+        "uniqueNamesByKind": {
+            kind: len(names)
+            for kind, names in sorted(names_by_kind.items())
+        },
+    }
+
+
+def refresh_lua_audio_reference_cache(args: argparse.Namespace) -> dict[str, Any]:
+    if not args.audio_dumper.is_file():
+        raise SystemExit(f"audio dumper not found for Lua audio refresh: {args.audio_dumper}")
+    with tempfile.TemporaryDirectory(prefix="endfield_audio_lua_") as raw_temp:
+        temp_root = Path(raw_temp)
+        outputs: dict[str, Path] = {}
+        for source_root, primary, fallback in (
+            ("StreamingAssets", args.streaming_assets, args.fallback_assets),
+            ("Persistent", args.fallback_assets, args.streaming_assets),
+        ):
+            if primary is None or not primary.exists():
+                continue
+            output = temp_root / source_root
+            command = [
+                str(args.audio_dumper),
+                "dump",
+                "--streaming-assets",
+                str(primary),
+                "--output",
+                str(output),
+                "--block-type",
+                "lua",
+                "--file-regex",
+                LUA_FILE_REGEX,
+            ]
+            if fallback and fallback.exists():
+                command.extend(["--fallback-assets", str(fallback)])
+            print(f"Running [{source_root} Lua audio references]:", " ".join(
+                f'"{part}"' if " " in part else part for part in command
+            ))
+            subprocess.run(command, cwd=ROOT, check=True)
+            outputs[source_root] = output / "Lua"
+
+        selected_source_by_rel: dict[str, str] = {}
+        for source_root in ("StreamingAssets", "Persistent"):
+            lua_root = outputs.get(source_root)
+            if lua_root is None:
+                continue
+            for path in lua_root.rglob("*.lua"):
+                selected_source_by_rel[normalize_posix(path.relative_to(lua_root))] = source_root
+        references = []
+        for source_root, lua_root in outputs.items():
+            include = {
+                rel for rel, selected_source in selected_source_by_rel.items()
+                if selected_source == source_root
+            }
+            references.extend(collect_lua_audio_references(lua_root, source_root, include))
+    payload = {
+        "schemaVersion": LUA_AUDIO_REFERENCE_SCHEMA_VERSION,
+        "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "sourceFingerprints": lua_audio_source_fingerprints(args),
+        "summary": summarize_lua_audio_references(references),
+        "references": references,
+        "evidenceBoundary": (
+            "Exact decrypted Lua string literals and callsite lines; they do not prove that the Lua branch ran. "
+            "Only luaPostEvent rows are promoted to Wwise Event-name candidates."
+        ),
+    }
+    cache_path = args.export_root / LUA_AUDIO_REFERENCE_CACHE_REL
+    json_dump(cache_path, payload)
+    print(
+        "Lua audio references:"
+        f" {payload['summary']['references']:,} occurrences from"
+        f" {payload['summary']['sourceFiles']:,} files"
+    )
+    return payload
+
+
+def load_lua_audio_reference_cache(
+    args: argparse.Namespace,
+    *,
+    refresh: bool = False,
+) -> dict[str, Any]:
+    if refresh:
+        return refresh_lua_audio_reference_cache(args)
+    cache_path = args.export_root / LUA_AUDIO_REFERENCE_CACHE_REL
+    payload = load_json(cache_path, {})
+    if not isinstance(payload, dict) or int(payload.get("schemaVersion") or 0) != LUA_AUDIO_REFERENCE_SCHEMA_VERSION:
+        return {}
+    current = lua_audio_source_fingerprints(args)
+    cached = payload.get("sourceFingerprints") or []
+    if current and cached != current:
+        print(
+            "Lua audio references: cached installed-source fingerprints are stale; "
+            "rerun without --skip-decode or pass --refresh-lua-audio"
+        )
+        return {}
+    return payload
+
+
 def same_resolved_path(left: Path, right: Path) -> bool:
     try:
         return left.resolve() == right.resolve()
@@ -3767,6 +3967,55 @@ def hirc_sound_media_id(data: bytes) -> int | None:
     if not source or source.get("sourceKind") != "codecMedia":
         return None
     return int(source["sourceId"])
+
+
+def collect_hirc_decoded_sound_definitions(
+    objects: dict[int, dict[str, Any]],
+    decoded_media_ids: set[int],
+    *,
+    bank_name: str,
+    bank_id: int,
+    bank_version: int | None,
+) -> list[dict[str, Any]]:
+    """Keep exact decoded Sound objects even when no Event reaches them."""
+
+    rows: list[dict[str, Any]] = []
+    for object_id, obj in objects.items():
+        if int(obj.get("type") or 0) != 2:
+            continue
+        data = obj.get("data") or b""
+        source = hirc_v150_sound_source(data)
+        if not source or source.get("sourceKind") != "codecMedia":
+            continue
+        try:
+            media_id = int(source.get("sourceId") or 0)
+        except (TypeError, ValueError):
+            continue
+        if media_id not in decoded_media_ids:
+            continue
+        parent_id = hirc_object_parent_id(2, data)
+        parent = objects.get(parent_id) if parent_id is not None else None
+        parent_type = int((parent or {}).get("type") or 0)
+        rows.append({
+            "mediaId": media_id,
+            "soundObjectId": int(object_id),
+            "parentObjectId": parent_id,
+            "parentObjectType": parent_type or None,
+            "parentObjectTypeLabel": (
+                HIRC_OBJECT_TYPE_LABELS.get(parent_type, f"type{parent_type}")
+                if parent_type else None
+            ),
+            "bank": bank_name,
+            "bankId": int(bank_id),
+            "bankVersion": bank_version,
+            "sourceParserStatus": source.get("sourceParserStatus"),
+            "pluginIdHex": source.get("pluginIdHex"),
+            "pluginName": source.get("pluginName"),
+            "streamType": source.get("streamType"),
+            "streamTypeLabel": source.get("streamTypeLabel"),
+            "evidence": "exactTypedWwiseSoundCodecMediaObject",
+        })
+    return rows
 
 
 def _hirc_v150_u32(data: bytes, offset: int) -> tuple[int, int]:
@@ -5811,6 +6060,17 @@ def audio_rel_for_dialog_path(dialog_path: str, extension: str) -> str:
     )
 
 
+def audio_dialog_external_media_id(dialog_path: str, dumper_language: str) -> int:
+    """Return the AKPK externals-sector id for an authored voice path."""
+
+    value = f"voice/{dumper_language}/{dialog_path}".replace("\\", "/").lower()
+    result = 0xCBF29CE484222325
+    for byte in value.encode("utf-8"):
+        result = (result * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
+        result ^= byte
+    return result
+
+
 def storage_root_for_block(block: str, language: str) -> str:
     if block in SHARED_AUDIO_STORAGE_BLOCKS:
         return SHARED_AUDIO_STORAGE
@@ -5854,7 +6114,7 @@ def has_decoded_audio_in_roots(*roots: Path) -> bool:
 
 def selected_audio_blocks(block_mode: str) -> tuple[str, ...]:
     if block_mode == "all":
-        return SPLIT_AUDIO_BLOCKS
+        return (*SPLIT_AUDIO_BLOCKS, *OPTIONAL_SHARED_AUDIO_BLOCKS)
     return (block_mode,)
 
 
@@ -6228,6 +6488,574 @@ def build_dialog_audio_index(
             apply_audio_category(entry)
             out[audio_id] = entry
     return out
+
+
+def collect_audio_dialog_wwise_event_aliases(
+    audio_dialog_paths: list[Path],
+    wwise_event_inventory: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Recover Wwise Event names from exact AudioDialog voice identities.
+
+    ``AudioDialog`` keys are signed voice ids, while ``path`` is the authored
+    voice identity.  A path is promoted only when its exact current-build
+    ``AudioHashGenerator`` value equals both that row id and a type-4 Event id
+    in the complete Wwise inventory.  This three-way equality avoids treating
+    the many external-only AudioDialog paths as bank Event names.
+    """
+
+    event_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in wwise_event_inventory
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    candidates: dict[int, dict[str, Any]] = {}
+    conflicts: set[int] = set()
+    for path in audio_dialog_paths:
+        payload = load_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        source = display_path(path)
+        for raw_voice_id, value in payload.items():
+            if not isinstance(value, dict):
+                continue
+            name = str(value.get("path") or "").strip()
+            try:
+                signed_voice_id = int(raw_voice_id)
+            except (TypeError, ValueError):
+                continue
+            event_hash = signed_voice_id & 0xFFFFFFFF
+            if (
+                not name
+                or event_hash not in event_hashes
+                or audio_hash_generator_compute(name) != event_hash
+            ):
+                continue
+            row = candidates.get(event_hash)
+            if row is not None and str(row.get("name") or "").casefold() != name.casefold():
+                conflicts.add(event_hash)
+                continue
+            if row is None:
+                row = {
+                    "eventHash": event_hash,
+                    "eventHashHex": f"0x{event_hash:08x}",
+                    "voiceId": signed_voice_id,
+                    "name": name,
+                    "codec": value.get("codec"),
+                    "speakerChannel": value.get("speakerChannel") or "",
+                    "voType": value.get("voType"),
+                    "overrideWwiseEvent": value.get("overrideWwiseEvent") or "",
+                    "sources": [],
+                    "evidence": "audioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+                }
+                candidates[event_hash] = row
+            if source not in row["sources"]:
+                row["sources"].append(source)
+    for event_hash in conflicts:
+        candidates.pop(event_hash, None)
+    rows = list(candidates.values())
+    for row in rows:
+        row["sources"].sort()
+    rows.sort(key=lambda row: (str(row.get("name") or ""), int(row["eventHash"])))
+    return rows
+
+
+VOICE_TABLE_WWISE_EVENT_FIELDS = {
+    "AudioDialogConfigs.json": {
+        "charMonoOverrideEvent": (
+            "voiceDefaultEvent",
+            "AudioDialogConfigs.charMonoOverrideEvent -> VoicePlayer.SetDefaultEvent/PlayVoice",
+        ),
+        "defaultWwiseEvent": (
+            "voiceDefaultEvent",
+            "AudioDialogConfigs.defaultWwiseEvent -> VoicePlayer.SetDefaultEvent/PlayVoice",
+        ),
+    },
+    "AudioDialogChannel.json": {
+        "narratingWwiseEvent": (
+            "narratingChannelEvent",
+            "SpeakerChannelData.narratingWwiseEvent -> VoiceUtilsInternal.SelectWwiseEvent -> VoicePlayer.PlayVoice",
+        ),
+        "radioWwiseEvent": (
+            "radioChannelEvent",
+            "SpeakerChannelData.radioWwiseEvent -> VoiceUtilsInternal.SelectWwiseEvent -> VoicePlayer.PlayVoice",
+        ),
+    },
+    "AudioDialog.json": {
+        "overrideWwiseEvent": (
+            "voiceDefinitionOverrideEvent",
+            "VoiceData.overrideWwiseEvent -> RuntimeVoiceData.overrideWwiseEvent -> VoiceUtilsInternal.SelectWwiseEvent -> VoicePlayer.PlayVoice",
+        ),
+    },
+    "ResponsiveTriggers.json": {
+        "eventTemplate": (
+            "responsiveVoiceEventTemplate",
+            "ResponsiveDialogTriggerData.eventTemplate -> response selection -> VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice",
+        ),
+    },
+}
+
+
+TYPED_UI_TABLE_WWISE_EVENT_FIELDS = {
+    "ActivityStaminaRefundBgStateTable.json": {
+        "audioOnOpen": (
+            "uiAnimationOpenEvent",
+            "ActivityStaminaDiscountCtrl._GetAudioOnOpen -> UIAnimationWrapper.SetAudioOnOpen/PlayOpenAudio -> AudioUIUtil.PostUIEvent",
+            [
+                "Data/LuaScripts/UI/Panels/ActivityStaminaDiscount/ActivityStaminaDiscountCtrl.lua:70-81",
+                "GameAssembly:UIAnimationWrapper.PlayOpenAudio -> AudioUIUtil.PostUIEvent",
+            ],
+        ),
+    },
+    "ActivityPushPopupTable.json": {
+        "bgm": (
+            "activityPushPopupBgmEvent",
+            "ActivityPushPopupCtrl._UpdateBgm -> AudioManager.PostEvent",
+            ["Data/LuaScripts/UI/Panels/ActivityPushPopup/ActivityPushPopupCtrl.lua:51-56"],
+        ),
+    },
+    "ActivityTable.json": {
+        "bgm": (
+            "activityCenterBgmEvent",
+            "PhaseActivityCenter phase transition/selection -> AudioManager.PostEvent",
+            ["Data/LuaScripts/Phase/ActivityCenter/PhaseActivityCenter.lua:119-126,192-198"],
+        ),
+    },
+    "ActivitySkipChapterTable.json": {
+        "videoAudioKey": (
+            "uiVideoAudioEvent",
+            "ActivitySkipChapter1Ctrl._StartPlayVideo -> VideoPlayer.PlayAudio -> AudioAdapter.PostEvent",
+            [
+                "Data/LuaScripts/UI/Panels/ActivitySkipChapter1/ActivitySkipChapter1Ctrl.lua:46-77",
+                "Data/LuaScripts/UI/Widgets/VideoPlayer.lua:414-460",
+            ],
+        ),
+    },
+    "GachaCharPoolTable.json": {
+        "videoAudioKey": (
+            "uiVideoAudioEvent",
+            "GachaPoolVideoCtrl._StartPlayVideo/_ReplayVideo -> VideoPlayer.PlayAudio -> AudioAdapter.PostEvent",
+            [
+                "Data/LuaScripts/UI/Panels/GachaPoolVideo/GachaPoolVideoCtrl.lua:49-106",
+                "Data/LuaScripts/UI/Widgets/VideoPlayer.lua:414-460",
+            ],
+        ),
+    },
+    "DomainDataTable.json": {
+        "audKeySwitchRegionPopup": (
+            "domainRegionSwitchEvent",
+            "SettlementSwitchRegionPopupCtrl region-button listener -> AudioManager.PostEvent",
+            ["Data/LuaScripts/UI/Panels/SettlementSwitchRegionPopup/SettlementSwitchRegionPopupCtrl.lua:112-118"],
+        ),
+        "audKeyUpToastLevelUpAfterEnhance": (
+            "domainUpgradeAnimationEvent",
+            "DomainUpgradeCtrl._StartPlayUpgradeAni non-level-up entry -> AudioAdapter.PostEvent",
+            ["Data/LuaScripts/UI/Panels/DomainUpgrade/DomainUpgradeCtrl.lua:163-167"],
+        ),
+        "audKeyUpToastLevelUpMoment": (
+            "domainUpgradeAnimationEvent",
+            "DomainUpgradeCtrl progress tween completion -> AudioAdapter.PostEvent",
+            ["Data/LuaScripts/UI/Panels/DomainUpgrade/DomainUpgradeCtrl.lua:187-193"],
+        ),
+        "audKeyUpToastLevelUpPreEnhance": (
+            "domainUpgradeAnimationEvent",
+            "DomainUpgradeCtrl._StartPlayUpgradeAni level-up entry -> AudioAdapter.PostEvent",
+            ["Data/LuaScripts/UI/Panels/DomainUpgrade/DomainUpgradeCtrl.lua:163-167"],
+        ),
+        "audKeyUpToastNotLevelUpEnhance": (
+            "domainUpgradeAnimationEvent",
+            "DomainUpgradeCtrl progress animation start -> AudioAdapter.PostEvent",
+            ["Data/LuaScripts/UI/Panels/DomainUpgrade/DomainUpgradeCtrl.lua:184-190"],
+        ),
+    },
+}
+
+
+def collect_voice_table_wwise_event_aliases(
+    export_root: Path,
+    wwise_event_inventory: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Recover exact Wwise Event names from typed voice-table Event fields.
+
+    These fields are named Event/override/template getters in current IL2CPP
+    metadata and feed ``VoiceUtilsInternal.SelectWwiseEvent`` or the response
+    voice route.  A string is accepted only when its exact game hash is a
+    current type-4 Event id. Conflicting strings for one uint32 fail closed.
+    Duplicate StreamingAssets/Persistent rows are collapsed while retaining
+    both sources and bounded row-path samples.
+    """
+
+    event_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in wwise_event_inventory
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    candidates: dict[int, dict[str, Any]] = {}
+    conflicts: set[int] = set()
+
+    def add_value(
+        *,
+        name: str,
+        table: str,
+        field: str,
+        route_kind: str,
+        runtime_route: str,
+        row_path: tuple[str, ...],
+        source: str,
+    ) -> None:
+        event_hash = audio_hash_generator_compute(name)
+        if event_hash not in event_hashes:
+            return
+        row = candidates.get(event_hash)
+        if row is not None and str(row.get("name") or "").casefold() != name.casefold():
+            conflicts.add(event_hash)
+            return
+        if row is None:
+            row = {
+                "eventHash": event_hash,
+                "eventHashHex": f"0x{event_hash:08x}",
+                "name": name,
+                "usages": {},
+                "evidence": "typedVoiceTableEventFieldHashEqualsCurrentWwiseEventId",
+            }
+            candidates[event_hash] = row
+        usage_key = (table, field, route_kind, runtime_route)
+        usage = row["usages"].setdefault(usage_key, {
+            "table": table,
+            "field": field,
+            "routeKind": route_kind,
+            "runtimeRoute": runtime_route,
+            "rowPaths": set(),
+            "sources": set(),
+        })
+        usage["rowPaths"].add("/".join(row_path) if row_path else "<root>")
+        usage["sources"].add(source)
+
+    def visit(
+        value: Any,
+        *,
+        table: str,
+        fields: dict[str, tuple[str, str]],
+        row_path: tuple[str, ...],
+        source: str,
+    ) -> None:
+        if isinstance(value, dict):
+            for raw_field, child in value.items():
+                field = str(raw_field)
+                spec = fields.get(field)
+                if spec is not None and isinstance(child, str) and child.strip():
+                    add_value(
+                        name=child.strip(),
+                        table=table,
+                        field=field,
+                        route_kind=spec[0],
+                        runtime_route=spec[1],
+                        row_path=row_path,
+                        source=source,
+                    )
+                visit(
+                    child,
+                    table=table,
+                    fields=fields,
+                    row_path=row_path + (field,),
+                    source=source,
+                )
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                visit(
+                    child,
+                    table=table,
+                    fields=fields,
+                    row_path=row_path + (str(index),),
+                    source=source,
+                )
+
+    for source_root in ("StreamingAssets", "Persistent"):
+        table_root = export_root / "structured" / source_root / "Table"
+        for table, fields in VOICE_TABLE_WWISE_EVENT_FIELDS.items():
+            path = table_root / table
+            if not path.is_file():
+                continue
+            payload = load_json(path, {})
+            if not isinstance(payload, (dict, list)):
+                continue
+            visit(
+                payload,
+                table=table,
+                fields=fields,
+                row_path=(),
+                source=display_path(path),
+            )
+
+    for event_hash in conflicts:
+        candidates.pop(event_hash, None)
+    rows: list[dict[str, Any]] = []
+    for row in candidates.values():
+        usages = []
+        for usage in row.pop("usages").values():
+            paths = sorted(usage.pop("rowPaths"))
+            sources = sorted(usage.pop("sources"))
+            usages.append({
+                **usage,
+                "occurrenceCount": len(paths),
+                "rowPathSamples": paths[:20],
+                "rowPathsTruncated": len(paths) > 20,
+                "sources": sources,
+            })
+        usages.sort(key=lambda usage: (usage["table"], usage["field"], usage["routeKind"]))
+        row["usages"] = usages
+        rows.append(row)
+    rows.sort(key=lambda row: (str(row.get("name") or "").casefold(), int(row["eventHash"])))
+    return rows
+
+
+def collect_typed_ui_table_wwise_event_aliases(
+    export_root: Path,
+    wwise_event_inventory: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Recover Event names from metadata-typed fields with exact Lua consumers.
+
+    Generic string/hash matches are deliberately excluded. Each admitted field
+    has a current metadata getter and a current decrypted-Lua path to an audio
+    API; the exact string hash must also be a current type-4 Event id.
+    Duplicate StreamingAssets/Persistent logical rows are collapsed.
+    """
+
+    event_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in wwise_event_inventory
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    candidates: dict[int, dict[str, Any]] = {}
+    conflicts: set[int] = set()
+
+    def visit(
+        value: Any,
+        *,
+        table: str,
+        fields: dict[str, tuple[str, str, list[str]]],
+        row_path: tuple[str, ...],
+        source: str,
+    ) -> None:
+        if isinstance(value, dict):
+            for raw_field, child in value.items():
+                field = str(raw_field)
+                spec = fields.get(field)
+                if spec is not None and isinstance(child, str) and child.strip():
+                    name = child.strip()
+                    event_hash = audio_hash_generator_compute(name)
+                    if event_hash in event_hashes:
+                        row = candidates.get(event_hash)
+                        if row is not None and str(row.get("name") or "").casefold() != name.casefold():
+                            conflicts.add(event_hash)
+                        else:
+                            if row is None:
+                                row = {
+                                    "eventHash": event_hash,
+                                    "eventHashHex": f"0x{event_hash:08x}",
+                                    "name": name,
+                                    "usages": {},
+                                    "evidence": "typedTableGetterAndLuaAudioConsumerHashEqualsCurrentWwiseEventId",
+                                }
+                                candidates[event_hash] = row
+                            usage_key = (table, field, spec[0], spec[1])
+                            usage = row["usages"].setdefault(usage_key, {
+                                "table": table,
+                                "field": field,
+                                "routeKind": spec[0],
+                                "runtimeRoute": spec[1],
+                                "consumerEvidence": list(spec[2]),
+                                "rowPaths": set(),
+                                "sources": set(),
+                            })
+                            usage["rowPaths"].add("/".join(row_path) if row_path else "<root>")
+                            usage["sources"].add(source)
+                visit(child, table=table, fields=fields, row_path=row_path + (field,), source=source)
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                visit(child, table=table, fields=fields, row_path=row_path + (str(index),), source=source)
+
+    for source_root in ("StreamingAssets", "Persistent"):
+        table_root = export_root / "structured" / source_root / "Table"
+        for table, fields in TYPED_UI_TABLE_WWISE_EVENT_FIELDS.items():
+            path = table_root / table
+            if not path.is_file():
+                continue
+            payload = load_json(path, {})
+            if isinstance(payload, (dict, list)):
+                visit(payload, table=table, fields=fields, row_path=(), source=display_path(path))
+
+    for event_hash in conflicts:
+        candidates.pop(event_hash, None)
+    rows: list[dict[str, Any]] = []
+    for row in candidates.values():
+        usages = []
+        for usage in row.pop("usages").values():
+            paths = sorted(usage.pop("rowPaths"))
+            sources = sorted(usage.pop("sources"))
+            usages.append({
+                **usage,
+                "occurrenceCount": len(paths),
+                "rowPathSamples": paths[:20],
+                "rowPathsTruncated": len(paths) > 20,
+                "sources": sources,
+            })
+        usages.sort(key=lambda usage: (usage["table"], usage["field"], usage["routeKind"]))
+        row["usages"] = usages
+        rows.append(row)
+    rows.sort(key=lambda row: (str(row.get("name") or "").casefold(), int(row["eventHash"])))
+    return rows
+
+
+def collect_sns_voice_wwise_event_aliases(
+    export_root: Path,
+    wwise_event_inventory: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Recover SNS Voice-node Event names from the typed content payload.
+
+    Current metadata fixes ``SNSDialogContentType.Voice`` at value 5. The
+    decrypted Lua Voice widget reads ``contentParam[0]`` as ``voiceId`` and
+    passes it directly to ``AudioAdapter.PostEvent``. Other positional SNS
+    parameters remain excluded.
+    """
+
+    event_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in wwise_event_inventory
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    candidates: dict[int, dict[str, Any]] = {}
+    conflicts: set[int] = set()
+    for source_root in ("StreamingAssets", "Persistent"):
+        path = export_root / "structured" / source_root / "Table" / "SNSDialogTable.json"
+        payload = load_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        for raw_dialog_id, raw_dialog in payload.items():
+            if not isinstance(raw_dialog, dict):
+                continue
+            dialog_id = str(raw_dialog.get("dialogId") or raw_dialog_id)
+            contents = raw_dialog.get("dialogContentData")
+            if not isinstance(contents, dict):
+                continue
+            for raw_content_id, content in contents.items():
+                if not isinstance(content, dict) or content.get("contentType") != 5:
+                    continue
+                params = content.get("contentParam")
+                if not isinstance(params, list) or not params or not isinstance(params[0], str):
+                    continue
+                name = params[0].strip()
+                if not name:
+                    continue
+                event_hash = audio_hash_generator_compute(name)
+                if event_hash not in event_hashes:
+                    continue
+                previous = candidates.get(event_hash)
+                if previous is not None and str(previous.get("name") or "").casefold() != name.casefold():
+                    conflicts.add(event_hash)
+                    continue
+                if previous is None:
+                    previous = {
+                        "eventHash": event_hash,
+                        "eventHashHex": f"0x{event_hash:08x}",
+                        "name": name,
+                        "usages": {},
+                        "evidence": "snsVoiceContentTypeAndLuaPostEventHashEqualsCurrentWwiseEventId",
+                    }
+                    candidates[event_hash] = previous
+                logical_key = (dialog_id, str(content.get("contentId") or raw_content_id))
+                usage = previous["usages"].setdefault(logical_key, {
+                    "table": "SNSDialogTable.json",
+                    "dialogId": dialog_id,
+                    "contentId": content.get("contentId", raw_content_id),
+                    "contentType": 5,
+                    "contentTypeName": "Voice",
+                    "contentParamIndex": 0,
+                    "speaker": content.get("speaker"),
+                    "durationSeconds": params[1] if len(params) > 1 else None,
+                    "sources": set(),
+                })
+                usage["sources"].add(display_path(path))
+    for event_hash in conflicts:
+        candidates.pop(event_hash, None)
+    rows: list[dict[str, Any]] = []
+    for row in candidates.values():
+        usages = []
+        for usage in row.pop("usages").values():
+            usage["sources"] = sorted(usage["sources"])
+            usages.append(usage)
+        usages.sort(key=lambda usage: (str(usage["dialogId"]), str(usage["contentId"])))
+        row["usages"] = usages
+        rows.append(row)
+    rows.sort(key=lambda row: (str(row.get("name") or "").casefold(), int(row["eventHash"])))
+    return rows
+
+
+def collect_skill_id_dictionary_wwise_event_aliases(
+    export_root: Path,
+    wwise_event_inventory: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Recover identity-only Event names from the exact ``skill_id`` map.
+
+    The string must hash to a current type-4 Wwise Event and have a matching
+    exported SkillData binary. This proves the authored Event name and its SFX
+    naming domain, but deliberately emits no playback/ownership context: the
+    dictionary is an identifier map, not an audio consumer.
+    """
+
+    event_hashes = {
+        int(row.get("eventHash")) & 0xFFFFFFFF
+        for row in wwise_event_inventory
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    candidates: dict[int, dict[str, Any]] = {}
+    conflicts: set[int] = set()
+    for source_root in ("StreamingAssets", "Persistent"):
+        table_path = export_root / "structured" / source_root / "Table" / "NumIdStrTable.json"
+        payload = load_json(table_path, {})
+        skill_map = ((payload.get("skill_id") or {}).get("dic") or {}) if isinstance(payload, dict) else {}
+        if not isinstance(skill_map, dict):
+            continue
+        skill_root = export_root / "structured" / source_root / "Data" / "Json" / "SkillData"
+        for raw_numeric_id, raw_name in skill_map.items():
+            if not isinstance(raw_name, str) or not raw_name.strip():
+                continue
+            name = raw_name.strip()
+            event_hash = audio_hash_generator_compute(name)
+            if event_hash not in event_hashes:
+                continue
+            skill_path = skill_root / f"{name}.json"
+            if not skill_path.is_file():
+                continue
+            previous = candidates.get(event_hash)
+            if previous is not None and str(previous.get("name") or "").casefold() != name.casefold():
+                conflicts.add(event_hash)
+                continue
+            if previous is None:
+                previous = {
+                    "eventHash": event_hash,
+                    "eventHashHex": f"0x{event_hash:08x}",
+                    "name": name,
+                    "dictionaryKind": "skill_id",
+                    "numericSkillIds": set(),
+                    "tableSources": set(),
+                    "skillDataSources": set(),
+                    "evidence": "skillIdDictionaryNameAndSkillDataFileHashEqualsCurrentWwiseEventId",
+                    "playbackPlacementStatus": "identityOnlyNoAudioConsumer",
+                }
+                candidates[event_hash] = previous
+            previous["numericSkillIds"].add(str(raw_numeric_id))
+            previous["tableSources"].add(display_path(table_path))
+            previous["skillDataSources"].add(display_path(skill_path))
+    for event_hash in conflicts:
+        candidates.pop(event_hash, None)
+    rows: list[dict[str, Any]] = []
+    for row in candidates.values():
+        row["numericSkillIds"] = sorted(row["numericSkillIds"], key=lambda value: (not value.isdigit(), int(value) if value.isdigit() else value))
+        row["tableSources"] = sorted(row["tableSources"])
+        row["skillDataSources"] = sorted(row["skillDataSources"])
+        rows.append(row)
+    rows.sort(key=lambda row: (str(row.get("name") or "").casefold(), int(row["eventHash"])))
+    return rows
 
 
 def collect_audio_event_names(conv_dir: Path, export_root: Path) -> set[str]:
@@ -6630,7 +7458,14 @@ def event_bank_payloads_from_vfs(args: argparse.Namespace) -> list[tuple[str, by
     payloads: list[tuple[str, bytes]] = []
     seen_payloads: set[tuple[str, str, int, bytes, bytes]] = set()
     stream_failed = False
-    for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args):
+    sources = list(audio_vfs_sources(args))
+    if (
+        args.fallback_assets
+        and args.fallback_assets.exists()
+        and not same_resolved_path(args.streaming_assets, args.fallback_assets)
+    ):
+        sources.append(("Persistent", args.fallback_assets, args.streaming_assets))
+    for source_label, streaming_assets, fallback_assets in sources:
         command = [
             str(args.audio_dumper),
             "stream",
@@ -6696,6 +7531,7 @@ def collect_event_audio_index(
     explicit_event_hashes: set[int] | None = None,
     explicit_event_names_by_hash: dict[int, str] | None = None,
     hirc_summary: dict[str, Any] | None = None,
+    wwise_event_inventory: list[dict[str, Any]] | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
     explicit_event_hashes = {
         int(value) & 0xFFFFFFFF
@@ -6707,7 +7543,9 @@ def collect_event_audio_index(
 
     wanted_by_hash: dict[int, str] = {}
     for name in sorted(event_names, key=lambda value: (value.lower(), value)):
-        wanted_by_hash.setdefault(fnv1_32(name.lower()), name)
+        synthetic = HASHED_EVENT_KEY_RE.fullmatch(name.strip())
+        event_hash = int(synthetic.group(1), 16) if synthetic else fnv1_32(name.lower())
+        wanted_by_hash.setdefault(event_hash, name)
     for event_hash in explicit_event_hashes:
         wanted_by_hash.setdefault(
             event_hash,
@@ -6722,7 +7560,7 @@ def collect_event_audio_index(
         return {}, []
 
     event_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    event_evidence: dict[tuple[str, int], dict[str, Any]] = {}
+    event_evidence: dict[tuple[str, str, int], dict[str, Any]] = {}
     linked_by_key: dict[tuple[str, str], dict[str, Any]] = {}
     content_hash_by_path: dict[str, str] = {}
 
@@ -6748,31 +7586,68 @@ def collect_event_audio_index(
     summary_bank_versions: Counter[int] = Counter()
     embedded_bank_count = 0
     hirc_object_count = 0
+    package_inventory: list[dict[str, Any]] = []
+    decoded_sound_definitions: list[dict[str, Any]] = []
+    event_reached_media_ids: set[int] = set()
     for bank_name, bank_data in package_payloads:
+        package_row: dict[str, Any] = {
+            "source": bank_name,
+            "fileName": PurePosixPath(bank_name.replace("\\", "/")).name,
+            "bytes": len(bank_data),
+            "sha256": hashlib.sha256(bank_data).hexdigest(),
+            "embeddedBankCount": 0,
+            "hircObjectCount": 0,
+            "eventObjectCount": 0,
+            "bankVersions": {},
+            "parseStatus": "complete",
+        }
+        source_parts = PurePosixPath(bank_name.replace("\\", "/")).parts
+        if len(source_parts) >= 4 and source_parts[0] == "vfs":
+            package_row["vfsSource"] = source_parts[1]
+            package_row["blockType"] = source_parts[2]
         try:
             bank_payloads = iter_akpk_bank_payloads_from_bytes(bank_data, bank_name)
-        except ValueError:
+        except ValueError as exc:
+            package_row["parseStatus"] = "invalidAkpk"
+            package_row["diagnostic"] = str(exc)
+            package_inventory.append(package_row)
             continue
         for bank_id, bank_payload in bank_payloads:
             embedded_bank_count += 1
+            package_row["embeddedBankCount"] += 1
             bank_version: int | None = None
             for tag, body in iter_bnk_sections(bank_payload):
                 if tag == b"BKHD" and len(body) >= 4:
                     bank_version = unpack_from("<I", body, 0)[0]
                     summary_bank_versions[bank_version] += 1
+                    versions = package_row["bankVersions"]
+                    versions[str(bank_version)] = int(versions.get(str(bank_version)) or 0) + 1
                     break
             objects = parse_hirc_objects(bank_payload)
             if not objects:
                 continue
             hirc_object_count += len(objects)
+            package_row["hircObjectCount"] += len(objects)
+            package_row["eventObjectCount"] += sum(
+                int(obj.get("type") or 0) == 4 for obj in objects.values()
+            )
             summary_type_counts.update(
                 int(obj.get("type") or 0) for obj in objects.values()
             )
-            for event_hash in sorted(set(objects).intersection(wanted_by_hash)):
-                event_name = wanted_by_hash[event_hash]
-                event_object = objects[event_hash]
-                if not event_object or event_object.get("type") != 4:
-                    continue
+            decoded_sound_definitions.extend(collect_hirc_decoded_sound_definitions(
+                objects,
+                numeric_audio_ids,
+                bank_name=bank_name,
+                bank_id=bank_id,
+                bank_version=bank_version,
+            ))
+            event_hashes = sorted(
+                object_id
+                for object_id, obj in objects.items()
+                if int(obj.get("type") or 0) == 4
+            )
+            for event_hash in event_hashes:
+                event_name = wanted_by_hash.get(event_hash) or hashed_event_key(event_hash)
                 traversal = traverse_hirc_event(
                     event_hash,
                     objects,
@@ -6782,11 +7657,55 @@ def collect_event_audio_index(
                 action_ids = traversal["actionIds"]
                 visited = set(traversal["visitedObjectIds"])
                 media_ids = traversal["mediaIds"]
+                event_reached_media_ids.update(
+                    int(media_id) for media_id in traversal["sourceMediaIds"]
+                )
 
-                evidence_key = (event_name.lower(), bank_id)
+                evidence_key = (event_name.lower(), bank_name, bank_id)
                 object_type_counts, object_type_labels, selection_object_types = (
                     summarize_hirc_object_types(objects, visited)
                 )
+                if wwise_event_inventory is not None:
+                    wwise_event_inventory.append({
+                        "schemaVersion": 1,
+                        "eventId": event_name,
+                        "eventHash": event_hash,
+                        "eventHashHex": f"0x{event_hash:08x}",
+                        "eventIdentityStatus": (
+                            "recoveredAuthoredIdentity"
+                            if event_hash in wanted_by_hash
+                            else "wwiseObjectWithoutRecoveredTriggerName"
+                        ),
+                        "bankId": bank_id,
+                        "bankVersion": bank_version,
+                        "bank": bank_name,
+                        "actionIds": action_ids,
+                        "actionEvidence": traversal["actionEvidence"],
+                        "actionDispatchEvidence": traversal["actionDispatchEvidence"],
+                        "rootPlayActionCount": traversal["rootPlayActionCount"],
+                        "rootStopActionCount": traversal["rootStopActionCount"],
+                        "visitedObjectCount": len(visited),
+                        "objectTypeCounts": object_type_counts,
+                        "objectTypeLabels": object_type_labels,
+                        "selectionObjectTypes": selection_object_types,
+                        "mediaRelationTypes": sorted({
+                            str(relation)
+                            for row in traversal["mediaEvidence"]
+                            for relation in row.get("relationTypes") or []
+                            if str(relation)
+                        }),
+                        "sourceObjectSummary": traversal["sourceObjectSummary"],
+                        "nonMediaSourceEvidence": traversal["nonMediaSourceEvidence"],
+                        "sourceMediaIds": traversal["sourceMediaIds"],
+                        "mediaIds": media_ids,
+                        "resolvedMediaCount": len(media_ids),
+                        "unresolvedNodeCount": len(traversal["unresolvedNodes"]),
+                        "unresolvedNodeSamples": traversal["unresolvedNodes"][:20],
+                        "traversalStatus": traversal["traversalStatus"],
+                        "source": "wwiseHircObjectInventory",
+                    })
+                if event_hash not in wanted_by_hash:
+                    continue
                 event_evidence[evidence_key] = {
                     "schemaVersion": EVENT_EVIDENCE_SCHEMA_VERSION,
                     "eventId": event_name,
@@ -6862,14 +7781,37 @@ def collect_event_audio_index(
                     }
                     event_links[event_name.lower()].append(linked)
                     linked_by_key[link_key] = linked
+        package_inventory.append(package_row)
 
     if hirc_summary is not None:
+        definition_only_media_objects = [
+            row for row in decoded_sound_definitions
+            if int(row.get("mediaId") or 0) not in event_reached_media_ids
+        ]
         hirc_summary.clear()
         hirc_summary.update({
             "source": "wwiseBankHircInventory",
             "packageCount": len(package_payloads),
+            "packageInventorySchemaVersion": 1,
+            "packageInventory": package_inventory,
+            "packageFingerprint": hashlib.sha256(
+                json.dumps(
+                    [
+                        {key: row.get(key) for key in ("source", "bytes", "sha256")}
+                        for row in package_inventory
+                    ],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest(),
             "embeddedBankCount": embedded_bank_count,
             "hircObjectCount": hirc_object_count,
+            "decodedSoundDefinitionCount": len(decoded_sound_definitions),
+            "definitionOnlyDecodedSoundObjectCount": len(definition_only_media_objects),
+            "definitionOnlyDecodedMediaCount": len({
+                int(row["mediaId"]) for row in definition_only_media_objects
+            }),
+            "definitionOnlyDecodedSoundObjects": definition_only_media_objects,
             "bankVersions": {
                 str(version): count
                 for version, count in sorted(summary_bank_versions.items())
@@ -6982,6 +7924,30 @@ def _audio_entry_file_exists(audio_root: Path, language: str, entry: dict[str, A
     path = entry_audio_path(audio_root, language, entry)
     return bool(str(path)) and path.is_file()
 
+
+def event_media_inventory_fingerprint(
+    audio_by_id: dict[str, dict[str, Any]],
+) -> str:
+    """Fingerprint decoded numeric media occurrences used by HIRC traversal."""
+    rows = []
+    for lookup_key, entry in audio_by_id.items():
+        media_id = str(entry.get("id") or lookup_key).strip().lower()
+        if not media_id.isdigit():
+            continue
+        rows.append({
+            "id": media_id,
+            "storageRoot": str(entry.get("storageRoot") or ""),
+            "rel": normalize_posix(str(entry.get("rel") or "")).lower(),
+            "bytes": int(entry.get("bytes") or 0),
+        })
+    encoded = json.dumps(
+        sorted(rows, key=lambda row: (row["id"], row["storageRoot"], row["rel"])),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def load_cached_event_audio_index(
     language_root: Path,
     event_names: set[str],
@@ -6990,6 +7956,7 @@ def load_cached_event_audio_index(
     language: str,
     explicit_event_hashes: set[int] | None = None,
     expected_format: str | None = None,
+    expected_media_inventory_fingerprint: str | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]] | None:
     """Reuse event-to-media links from the last audio index when complete."""
     payload = load_json(language_root / "index.json", {})
@@ -6998,6 +7965,22 @@ def load_cached_event_audio_index(
     if expected_format and str(payload.get("format") or "").lower() != expected_format.lower():
         return None
     if int(payload.get("eventEvidenceSchemaVersion") or 0) < EVENT_EVIDENCE_SCHEMA_VERSION:
+        return None
+    raw_inventory = payload.get("wwiseEventInventory")
+    expected_inventory_count = int(
+        (payload.get("counts") or {}).get("wwiseEventObjectOccurrences") or 0
+    )
+    if (
+        not isinstance(raw_inventory, list)
+        or expected_inventory_count <= 0
+        or len(raw_inventory) != expected_inventory_count
+    ):
+        return None
+    if (
+        expected_media_inventory_fingerprint
+        and str(payload.get("eventMediaInventoryFingerprint") or "")
+        != expected_media_inventory_fingerprint
+    ):
         return None
     wanted_names = {
         str(name or "").strip().lower()
@@ -7123,18 +8106,46 @@ def run_audio_dumper(
 
     source_by_rel: dict[tuple[str, str], dict[str, str]] = {}
     block = args.block
-    storages = (
+    all_storages = (
         (SHARED_AUDIO_STORAGE, language)
         if block == "all"
         else (storage_root_for_block(block, language),)
     )
-    for storage_root in storages:
+    for storage_root in all_storages:
         (args.audio_root / storage_root).mkdir(parents=True, exist_ok=True)
 
-    output_root = args.audio_root / language if block in {"all", "voice"} else args.audio_root / SHARED_AUDIO_STORAGE
-    shared_output_root = args.audio_root / SHARED_AUDIO_STORAGE if block == "all" else None
-    dumper_language_info = language_info if block in {"all", "voice"} else LANGUAGES[SHARED_AUDIO_LANGUAGE]
-    for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args):
+    persistent = args.fallback_assets if args.fallback_assets and args.fallback_assets.exists() else None
+    if block == "all":
+        decode_passes = [("all", "StreamingAssets", args.streaming_assets, persistent)]
+        if persistent is not None and not same_resolved_path(persistent, args.streaming_assets):
+            decode_passes.append(
+                ("hotfix-audio", "Persistent HotfixAudio", persistent, args.streaming_assets)
+            )
+    elif block == "hotfix-audio" and persistent is not None:
+        decode_passes = [(block, "Persistent HotfixAudio", persistent, args.streaming_assets)]
+    else:
+        decode_passes = [
+            (block, source_label, streaming_assets, fallback_assets)
+            for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args)
+        ]
+
+    for pass_block, source_label, streaming_assets, fallback_assets in decode_passes:
+        storages = (
+            (SHARED_AUDIO_STORAGE, language)
+            if pass_block == "all"
+            else (storage_root_for_block(pass_block, language),)
+        )
+        output_root = (
+            args.audio_root / language
+            if pass_block in {"all", "voice"}
+            else args.audio_root / SHARED_AUDIO_STORAGE
+        )
+        shared_output_root = args.audio_root / SHARED_AUDIO_STORAGE if pass_block == "all" else None
+        dumper_language_info = (
+            language_info
+            if pass_block in {"all", "voice"}
+            else LANGUAGES[SHARED_AUDIO_LANGUAGE]
+        )
         before_by_storage = {
             storage_root: snapshot_audio_file_stats(args.audio_root / storage_root)
             for storage_root in storages
@@ -7143,7 +8154,7 @@ def run_audio_dumper(
             args,
             dumper_language_info,
             output_root,
-            block,
+            pass_block,
             shared_output_root,
             source_label,
             streaming_assets,
@@ -7157,15 +8168,15 @@ def run_audio_dumper(
                     continue
                 metadata_block = (
                     combined_decode_source_block(storage_root, language, rel)
-                    if block == "all"
-                    else block
+                    if pass_block == "all"
+                    else pass_block
                 )
                 metadata = audio_source_metadata(metadata_block, language, language_info)
                 metadata["storageRoot"] = storage_root
                 source_by_rel[(storage_root, rel)] = metadata
                 changed += 1
             summary_block = "voice" if storage_root == language else (
-                "audio" if block == "all" else block
+                "audio" if pass_block == "all" else pass_block
             )
             summary_metadata = audio_source_metadata(summary_block, language, language_info)
             print(
@@ -7708,6 +8719,108 @@ def regroup_unmapped_by_category(
     return moved
 
 
+def suppress_redundant_unknown_audio_occurrences(
+    audio_root: Path,
+    generic_audio: dict[str, dict[str, Any]],
+    dialog_audio: dict[str, dict[str, Any]],
+    language: str,
+) -> dict[str, int]:
+    """Drop byte-identical pre-category copies from the generated index.
+
+    Repeated decode runs may recreate ``wwise/unknown/<mediaId>`` after an
+    earlier run filed the same bytes under a resolved category or AudioDialog
+    path. Keep the files recoverable on disk, but index one logical media
+    occurrence. Same-id rows with different bytes, storage roots, or no
+    stronger categorized/authored peer are preserved as real collisions.
+    """
+
+    grouped: dict[tuple[str, str], list[tuple[str, dict[str, Any], bool]]] = defaultdict(list)
+    for key, entry in generic_audio.items():
+        grouped[(entry_storage_root(entry, language), str(entry.get("id") or ""))].append((key, entry, False))
+    for key, entry in dialog_audio.items():
+        grouped[(entry_storage_root(entry, language), str(entry.get("id") or ""))].append((key, entry, True))
+    digest_cache: dict[Path, str] = {}
+
+    def digest(entry: dict[str, Any], storage: str) -> str:
+        path = audio_file_path(audio_root, storage, normalize_posix(str(entry.get("rel") or "")))
+        if not path.is_file():
+            return ""
+        if path not in digest_cache:
+            digest_cache[path] = file_sha256(path)
+        return digest_cache[path]
+
+    suppressed = 0
+    compared = 0
+    for (storage, _media_id), rows in grouped.items():
+        if len(rows) < 2:
+            continue
+        preferred = [
+            row for row in rows
+            if row[2]
+            or str(row[1].get("audioCategory") or "unknown") != "unknown"
+            or "/unknown/" not in f"/{normalize_posix(str(row[1].get('rel') or '')).lower()}"
+        ]
+        if not preferred:
+            continue
+        preferred.sort(key=lambda row: (
+            not row[2],
+            str(row[1].get("audioCategory") or "unknown") == "unknown",
+            normalize_posix(str(row[1].get("rel") or "")),
+        ))
+        reference = preferred[0][1]
+        reference_bytes = int(reference.get("bytes") or -1)
+        reference_digest = ""
+        for key, entry, is_dialog in rows:
+            if is_dialog or entry is reference:
+                continue
+            rel = f"/{normalize_posix(str(entry.get('rel') or '')).lower()}"
+            if str(entry.get("audioCategory") or "unknown") != "unknown" or "/unknown/" not in rel:
+                continue
+            if int(entry.get("bytes") or -2) != reference_bytes:
+                continue
+            compared += 1
+            if not reference_digest:
+                reference_digest = digest(reference, storage)
+            if not reference_digest or digest(entry, storage) != reference_digest:
+                continue
+            if key in generic_audio:
+                generic_audio.pop(key)
+                suppressed += 1
+    external_dialog_compared = 0
+    external_dialog_suppressed = 0
+    dialog_by_external_id: dict[tuple[str, int], dict[str, Any]] = {}
+    dumper_language = str(LANGUAGES.get(language, {}).get("dumper") or language.lower())
+    for entry in dialog_audio.values():
+        dialog_path = str(entry.get("audioDialogPath") or "").strip()
+        if not dialog_path:
+            continue
+        storage = entry_storage_root(entry, language)
+        dialog_by_external_id[(storage, audio_dialog_external_media_id(dialog_path, dumper_language))] = entry
+    for key, entry in list(generic_audio.items()):
+        if str(entry.get("sourceBank") or "") != "external":
+            continue
+        raw_id = str(entry.get("id") or "")
+        if not raw_id.isdigit():
+            continue
+        storage = entry_storage_root(entry, language)
+        reference = dialog_by_external_id.get((storage, int(raw_id)))
+        if reference is None:
+            continue
+        if int(entry.get("bytes") or -1) != int(reference.get("bytes") or -2):
+            continue
+        external_dialog_compared += 1
+        if digest(entry, storage) != digest(reference, storage):
+            continue
+        generic_audio.pop(key, None)
+        external_dialog_suppressed += 1
+    return {
+        "contentIdenticalDuplicateOccurrencesCompared": compared,
+        "contentIdenticalUnknownOccurrencesSuppressed": suppressed,
+        "audioDialogExternalCopiesCompared": external_dialog_compared,
+        "audioDialogExternalCopiesSuppressed": external_dialog_suppressed,
+    }
+
+
 def build_audio(args: argparse.Namespace) -> int:
     args.export_root = args.export_root.resolve()
     args.webui_root = args.webui_root.resolve()
@@ -7726,6 +8839,20 @@ def build_audio(args: argparse.Namespace) -> int:
     language_root.mkdir(parents=True, exist_ok=True)
 
     started = time.time()
+    lua_audio_payload = load_lua_audio_reference_cache(
+        args,
+        refresh=bool(args.refresh_lua_audio or not args.skip_decode),
+    )
+    lua_audio_references = [
+        row
+        for row in lua_audio_payload.get("references") or []
+        if isinstance(row, dict)
+    ]
+    lua_post_event_names = {
+        str(row.get("name") or "").strip().lower()
+        for row in lua_audio_references
+        if row.get("kind") == "luaPostEvent" and str(row.get("name") or "").strip()
+    }
     prior_source_by_rel = prior_source_metadata_by_rel(language_root, language, output_format)
     decoded_source_by_rel = run_audio_dumper(args, language, language_info)
     convert_audio_for_webui(args, language, output_format)
@@ -7787,12 +8914,14 @@ def build_audio(args: argparse.Namespace) -> int:
         "." + output_format.lower(),
     )
     audio_by_id = {**generic_audio, **dialog_audio}
+    media_inventory_fingerprint = event_media_inventory_fingerprint(audio_by_id)
 
     conv_dir = args.webui_root / "data" / "lang" / language / "conv"
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
     event_names = collect_audio_event_names(conv_dir, args.export_root)
     event_names.update(collect_table_audio_event_names(args.export_root))
+    event_names.update(lua_post_event_names)
     metadata_path = args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
     if not metadata_path.is_file():
         cached_metadata_path = args.export_root / "recovered" / "il2cpp" / "global-metadata.dat"
@@ -7801,6 +8930,8 @@ def build_audio(args: argparse.Namespace) -> int:
         name for name in collect_metadata_audio_literals(metadata_path)
         if not is_rtpc_parameter_name(name)
     }
+
+
     event_names.update(binary_managed_event_names)
     fmv_attach_overrides = load_narrative_video_attach_overrides(args.webui_root)
     audio_source_overrides = load_narrative_video_audio_source_overrides(args.webui_root)
@@ -7847,16 +8978,20 @@ def build_audio(args: argparse.Namespace) -> int:
             language,
             explicit_event_hashes,
             expected_format=output_format,
+            expected_media_inventory_fingerprint=media_inventory_fingerprint,
         )
         if args.skip_decode
         else None
     )
     hirc_summary: dict[str, Any] = {}
+    wwise_event_inventory: list[dict[str, Any]] = []
     if cached_event_index is not None:
         event_audio_by_id, event_evidence = cached_event_index
         prior_index = load_json(language_root / "index.json", {})
         if isinstance(prior_index, dict) and isinstance(prior_index.get("hircSummary"), dict):
             hirc_summary = dict(prior_index["hircSummary"])
+        if isinstance(prior_index, dict) and isinstance(prior_index.get("wwiseEventInventory"), list):
+            wwise_event_inventory = list(prior_index["wwiseEventInventory"])
         print("Audio events: reused existing event-media index")
     else:
         event_audio_by_id, event_evidence = collect_event_audio_index(
@@ -7866,7 +9001,75 @@ def build_audio(args: argparse.Namespace) -> int:
             explicit_event_hashes,
             explicit_event_names_by_hash,
             hirc_summary,
+            wwise_event_inventory,
         )
+    audio_dialog_wwise_event_aliases = collect_audio_dialog_wwise_event_aliases(
+        audio_dialog_paths,
+        wwise_event_inventory,
+    )
+    voice_table_wwise_event_aliases = collect_voice_table_wwise_event_aliases(
+        args.export_root,
+        wwise_event_inventory,
+    )
+    typed_ui_table_wwise_event_aliases = collect_typed_ui_table_wwise_event_aliases(
+        args.export_root,
+        wwise_event_inventory,
+    )
+    sns_voice_wwise_event_aliases = collect_sns_voice_wwise_event_aliases(
+        args.export_root,
+        wwise_event_inventory,
+    )
+    skill_id_dictionary_wwise_event_aliases = collect_skill_id_dictionary_wwise_event_aliases(
+        args.export_root,
+        wwise_event_inventory,
+    )
+    recovered_alias_rows = [
+        *audio_dialog_wwise_event_aliases,
+        *voice_table_wwise_event_aliases,
+        *typed_ui_table_wwise_event_aliases,
+        *sns_voice_wwise_event_aliases,
+        *skill_id_dictionary_wwise_event_aliases,
+    ]
+    audio_dialog_alias_hashes = {
+        int(row["eventHash"]) for row in audio_dialog_wwise_event_aliases
+    }
+    recovered_alias_hashes = set(audio_dialog_alias_hashes)
+    recovered_alias_hashes.update(
+        int(row["eventHash"]) for row in voice_table_wwise_event_aliases
+    )
+    typed_ui_alias_hashes = {
+        int(row["eventHash"]) for row in typed_ui_table_wwise_event_aliases
+    }
+    recovered_alias_hashes.update(typed_ui_alias_hashes)
+    sns_voice_alias_hashes = {
+        int(row["eventHash"]) for row in sns_voice_wwise_event_aliases
+    }
+    recovered_alias_hashes.update(sns_voice_alias_hashes)
+    skill_id_dictionary_alias_hashes = {
+        int(row["eventHash"]) for row in skill_id_dictionary_wwise_event_aliases
+    }
+    recovered_alias_hashes.update(skill_id_dictionary_alias_hashes)
+    event_names.update(
+        str(row["name"]) for row in recovered_alias_rows
+    )
+    for row in wwise_event_inventory:
+        if (
+            isinstance(row, dict)
+            and isinstance(row.get("eventHash"), int)
+            and (int(row["eventHash"]) & 0xFFFFFFFF) in recovered_alias_hashes
+        ):
+            event_hash = int(row["eventHash"]) & 0xFFFFFFFF
+            row["eventIdentityStatus"] = (
+                "audioDialogPathNameRecovered"
+                if event_hash in audio_dialog_alias_hashes
+                else "typedUiTableEventNameRecovered"
+                if event_hash in typed_ui_alias_hashes
+                else "snsVoiceEventNameRecovered"
+                if event_hash in sns_voice_alias_hashes
+                else "skillIdDictionaryEventNameRecovered"
+                if event_hash in skill_id_dictionary_alias_hashes
+                else "typedVoiceTableEventNameRecovered"
+            )
     event_entries = [
         entry
         for entries in event_audio_by_id.values()
@@ -7887,7 +9090,41 @@ def build_audio(args: argparse.Namespace) -> int:
         args.audio_root, args.webui_root, audio_by_id, event_entries, language
     )
     if category_moved:
-        print(f"Audio layout [{language}]: {category_moved:,} Wwise files filed under event-category folders")
+        print(f"Audio layout: {category_moved:,} Wwise files filed under event-category folders")
+    duplicate_suppression_stats = suppress_redundant_unknown_audio_occurrences(
+        args.audio_root,
+        generic_audio,
+        dialog_audio,
+        language,
+    )
+    if duplicate_suppression_stats["contentIdenticalUnknownOccurrencesSuppressed"]:
+        print(
+            "Audio index: suppressed "
+            f"{duplicate_suppression_stats['contentIdenticalUnknownOccurrencesSuppressed']:,} "
+            "byte-identical unknown-path duplicates"
+        )
+    if duplicate_suppression_stats["audioDialogExternalCopiesSuppressed"]:
+        print(
+            "Audio index: suppressed "
+            f"{duplicate_suppression_stats['audioDialogExternalCopiesSuppressed']:,} "
+            "exact AudioDialog external-id path copies"
+        )
+    # The suppression pass mutates generic_audio. Rebuild the combined lookup
+    # so conversation/gameplay links and the emitted index see the same set.
+    audio_by_id = {**generic_audio, **dialog_audio}
+    audio_by_id.update({
+        str(entry.get("eventId") or entry.get("id") or "").lower(): entry
+        for entry in event_entries
+        if entry.get("eventId") or entry.get("id")
+    })
+    # Category filing mutates canonical generic entries and their paths. Store
+    # the post-layout fingerprint so the next --skip-decode run does not
+    # invalidate an otherwise complete Event cache merely because this same
+    # build moved a media occurrence to its recovered category.
+    media_inventory_fingerprint = event_media_inventory_fingerprint({
+        **generic_audio,
+        **dialog_audio,
+    })
     source_summary = summarize_audio_sources(list(generic_audio.values()))
     link_stats = link_conversation_audio(conv_dir, audio_by_id, event_audio_by_id, cutscene_audio_events)
     projectile_link_stats = link_projectile_audio(args.webui_root, event_audio_by_id, event_evidence)
@@ -7906,6 +9143,7 @@ def build_audio(args: argparse.Namespace) -> int:
         "dumperLanguage": language_info["dumper"],
         "format": output_format,
         "eventEvidenceSchemaVersion": EVENT_EVIDENCE_SCHEMA_VERSION,
+        "eventMediaInventoryFingerprint": media_inventory_fingerprint,
         "sourceFormat": args.format,
         "block": args.block,
         "decodeBlocks": list(selected_audio_blocks(args.block)),
@@ -7921,6 +9159,34 @@ def build_audio(args: argparse.Namespace) -> int:
             "eventNames": len(event_names),
             "eventAudio": len(event_entries),
             "eventEvidence": len(event_evidence),
+            "wwiseEventObjectOccurrences": len(wwise_event_inventory),
+            "wwiseEventObjectHashes": len({
+                int(row.get("eventHash") or 0)
+                for row in wwise_event_inventory
+                if int(row.get("eventHash") or 0)
+            }),
+            "wwiseEventObjectsWithoutRecoveredTriggerName": len({
+                int(row.get("eventHash") or 0)
+                for row in wwise_event_inventory
+                if row.get("eventIdentityStatus") == "wwiseObjectWithoutRecoveredTriggerName"
+                and int(row.get("eventHash") or 0)
+            }),
+            "audioDialogWwiseEventAliases": len(audio_dialog_wwise_event_aliases),
+            "voiceTableWwiseEventAliases": len(voice_table_wwise_event_aliases),
+            "typedUiTableWwiseEventAliases": len(typed_ui_table_wwise_event_aliases),
+            "snsVoiceWwiseEventAliases": len(sns_voice_wwise_event_aliases),
+            "skillIdDictionaryWwiseEventAliases": len(skill_id_dictionary_wwise_event_aliases),
+            **duplicate_suppression_stats,
+            "luaPostEventNames": len(lua_post_event_names),
+            "luaPostEventContexts": sum(
+                row.get("kind") == "luaPostEvent" for row in lua_audio_references
+            ),
+            "luaRtpcParameterContexts": sum(
+                row.get("kind") == "luaRtpcParameter" for row in lua_audio_references
+            ),
+            "luaAudioCueContexts": sum(
+                row.get("kind") == "luaAudioCue" for row in lua_audio_references
+            ),
             **projectile_link_stats,
             **gameplay_link_stats,
             **link_stats,
@@ -7930,8 +9196,16 @@ def build_audio(args: argparse.Namespace) -> int:
         "tableEventHashes": sorted(table_event_hashes),
         "explicitEventHashes": sorted(explicit_event_hashes),
         "binaryManagedEventNames": sorted(binary_managed_event_names),
+        "audioDialogWwiseEventAliases": audio_dialog_wwise_event_aliases,
+        "voiceTableWwiseEventAliases": voice_table_wwise_event_aliases,
+        "typedUiTableWwiseEventAliases": typed_ui_table_wwise_event_aliases,
+        "snsVoiceWwiseEventAliases": sns_voice_wwise_event_aliases,
+        "skillIdDictionaryWwiseEventAliases": skill_id_dictionary_wwise_event_aliases,
+        "luaAudioReferenceSummary": lua_audio_payload.get("summary") or {},
+        "luaAudioReferences": lua_audio_references,
         "hircSummary": hirc_summary,
         "eventEvidence": event_evidence,
+        "wwiseEventInventory": wwise_event_inventory,
         "events": sorted(event_entries, key=lambda item: (str(item.get("eventId") or ""), int(item.get("mediaId") or 0))),
         "entries": sorted(audio_by_id.values(), key=lambda item: (str(item.get("id") or ""), str(item.get("rel") or ""))),
     }
@@ -7991,6 +9265,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="all",
     )
     parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
+    parser.add_argument(
+        "--refresh-lua-audio",
+        action="store_true",
+        help="Refresh decrypted Lua audio-call evidence even when --skip-decode is used.",
+    )
     parser.add_argument(
         "--audio-dumper",
         type=Path,

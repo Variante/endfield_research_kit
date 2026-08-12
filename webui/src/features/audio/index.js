@@ -5,11 +5,13 @@
   const PANE_STORAGE_KEY = "webui_audio_splitter_width";
   const FILTER_HEIGHT_STORAGE_KEY = "webui_filter_splitter_height_audio";
   const FILTER_PANEL_STORAGE_KEY = "audio_browser_filters_collapsed";
+  const PLAYER_COLLAPSE_THRESHOLD = 20;
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
 
   const TEXT = {
     en: {
       title: "Audio System",
+      underConstruction: "Under construction",
       countLabel: "records",
       events: "Events",
       media: "Media",
@@ -21,6 +23,7 @@
       category: "Category",
       context: "Context",
       relation: "Media relation",
+      recovery: "Recovery status",
       scope: "Scope",
       source: "Source",
       shown: "shown",
@@ -66,6 +69,22 @@
       overview: "Overview",
       details: "Details",
       playableMedia: "Playable media",
+      playbackLocation: "Playback location",
+      locationDirectDialogMedia: "Direct dialog media",
+      locationAuthoredEventContext: "Recovered authored Event context",
+      locationEventRelationOnly: "Event relation recovered; playback location unknown",
+      locationUnknown: "Unknown",
+      recoveryLibraryResolved: "Resolved to a Wwise Event object",
+      recoveryLibraryUnresolved: "Unresolved to an audio-library object",
+      recoveryTriggerNameUnknown: "Wwise Event object; authored trigger unknown",
+      scannedBankSet: "Scanned bank set",
+      recoveryBoundary: "Recovery coverage",
+      unresolvedEventBoundary: "This authored Event reference has a recovered trigger context, but no matching Wwise Event object was found in the current audio-library index. No media or playback branch is inferred.",
+      unknownLocationBoundary: "This decoded file is browser-playable, but no authored Event relation or direct dialog placement was recovered. Its presence in an audio package does not identify where the game plays it.",
+      eventOnlyLocationBoundary: "This decoded file is reachable from a Wwise Event, but that Event has no recovered authored trigger context. The Event relation does not identify a gameplay, story, animation, or level placement.",
+      unknownTriggerBoundary: "This hash is an exact Wwise Event object from the scanned banks, but no authored name, numeric trigger field, or trigger callsite has been recovered. Its typed playback graph and possible media are real library relations; gameplay or story ownership remains unknown.",
+      identityOnlyBoundary: "The authored Event name is recovered by exact skill-id dictionary and SkillData-file identity, and its hash resolves to this Wwise Event object. No audio consumer or Event-hash field was found in the SkillData payload, so the skill is not claimed as its playback trigger or owner.",
+      definitionOnlyMediaBoundary: "This decoded file resolves to an exact typed Wwise Sound codec-media object, but no Event in the scanned bank set reaches that Sound/container branch. The audio-library definition is real; its authored playback trigger and runtime location remain unknown.",
       expandToLoadPlayer: "expand to load player",
       noPlayableMedia: "No browser-playable media path is attached to this record.",
       mediaIds: "Media IDs",
@@ -74,7 +93,8 @@
       recordType: "Record type",
       playbackEvent: "Playback event",
       wwiseEvent: "Wwise Event",
-      authoredEventReference: "Authored Event reference (bank object unresolved)",
+      unnamedWwiseEvent: "Wwise Event (authored trigger unknown)",
+      authoredEventReference: "Event unresolved to an audio-library object",
       controlEvent: "Control event",
       decodedMedia: "Decoded media",
       contextGroups: "Semantic contexts",
@@ -83,11 +103,13 @@
       contextCutscene: "Cutscene / story",
       contextTimeline: "Timeline / LevelSequence",
       levelSequenceAudioCatalog: "LevelSequence audio ownership",
+      dialogLifecycleAudioCatalog: "Dialog lifecycle audio hooks",
       levelSequenceTimelineContexts: "Timeline contexts",
       levelSequenceExactContexts: "Exact Timeline + LevelScript joins",
       levelSequenceInferredContexts: "Inferred trigger contexts",
       levelSequenceGapContexts: "Ownership gaps",
       levelSequenceRuntimeBoundary: "Timeline runtime boundary",
+      audioTriggerContextCatalog: "Authored trigger-context coverage",
       contextAnimation: "Animation",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
@@ -109,20 +131,29 @@
       contextModelViewState: "ModelView state behavior",
       contextInteractiveTrigger: "Interactive object trigger",
       contextGlobalLifecycle: "Global audio lifecycle",
+      contextDialogLifecycle: "Dialog lifecycle hook",
+      contextResponsiveVoice: "Responsive voice route",
+      contextVoiceEventRoute: "Voice Event template / override",
+      contextTypedUiEvent: "UI / activity audio route",
+      contextSnsVoice: "SNS voice message",
       contextAudioCueTrigger: "Audio cue behavior Event",
       contextAuthoredConfig: "Authored config",
       contextManagedRuntime: "Managed-code literal",
+      contextLuaRuntime: "Lua PostEvent callsite",
+      contextWwiseObjectOnly: "Wwise Event object; authored trigger unknown",
       contextDialogMedia: "Dialog media",
-      contextNone: "No linked authored context",
+      contextEventRelationOnly: "Event relation only; authored placement unknown",
+      contextNone: "Playback location unknown",
       relationRuntimeSelected: "Typed runtime-selected branches",
       relationMultipleUnknown: "Multiple possible files; relation unresolved",
       relationSingle: "Single possible file",
       relationSingleTopology: "Single decoded leaf by complete topology (runtime branch unobserved)",
       relationNoDecodedMedia: "Wwise event; no decoded media leaf",
-      relationUnresolvedEvent: "Event unresolved in Wwise",
+      relationControlOnly: "Wwise control event; no media playback action",
+      relationUnresolvedEvent: "No matching Wwise Event object",
       relationEventCandidate: "Wwise event media leaf",
       relationDirectDialogMedia: "Direct dialog media",
-      relationUnlinkedMedia: "No recovered event relation",
+      relationUnlinkedMedia: "Playback event unknown",
       relationPartialGraph: "Partial typed graph",
       relationMultipleRoots: "Multiple Play roots",
       relationRandom: "Random alternatives",
@@ -153,6 +184,7 @@
       fadeCurve: "fade curve",
       uniqueContent: "Unique decoded content",
       equivalentContent: "Content-equivalent leaves",
+      hotfixMediaReplacement: "Hotfix media-ID replacement",
       rawRecord: "Raw record",
       id: "ID",
       hash: "Hash",
@@ -166,6 +198,7 @@
     },
     zh: {
       title: "\u97f3\u9891\u7cfb\u7edf",
+      underConstruction: "\u5efa\u8bbe\u4e2d",
       countLabel: "\u6761\u8bb0\u5f55",
       events: "\u4e8b\u4ef6",
       media: "\u5a92\u4f53",
@@ -177,6 +210,7 @@
       category: "\u5206\u7c7b",
       context: "\u4e0a\u4e0b\u6587",
       relation: "\u5a92\u4f53\u5173\u7cfb",
+      recovery: "\u6062\u590d\u72b6\u6001",
       scope: "\u8303\u56f4",
       source: "\u6765\u6e90",
       shown: "\u5df2\u663e\u793a",
@@ -222,6 +256,22 @@
       overview: "\u6982\u89c8",
       details: "\u8be6\u7ec6\u4fe1\u606f",
       playableMedia: "\u53ef\u64ad\u653e\u5a92\u4f53",
+      playbackLocation: "\u64ad\u653e\u4f4d\u7f6e",
+      locationDirectDialogMedia: "\u76f4\u63a5\u5bf9\u8bdd\u5a92\u4f53",
+      locationAuthoredEventContext: "\u5df2\u6062\u590d\u521b\u4f5c Event \u4e0a\u4e0b\u6587",
+      locationEventRelationOnly: "\u5df2\u6062\u590d Event \u5173\u7cfb\uff0c\u4f46\u4e0d\u77e5\u9053\u64ad\u653e\u4f4d\u7f6e",
+      locationUnknown: "\u4e0d\u77e5\u9053\u64ad\u653e\u4f4d\u7f6e",
+      recoveryLibraryResolved: "\u5df2\u89e3\u6790\u5230 Wwise Event \u5bf9\u8c61",
+      recoveryLibraryUnresolved: "\u672a\u89e3\u6790\u5230\u97f3\u9891\u5e93\u5bf9\u8c61",
+      recoveryTriggerNameUnknown: "Wwise Event \u5bf9\u8c61\u5b58\u5728\uff0c\u521b\u4f5c\u89e6\u53d1\u672a\u77e5",
+      scannedBankSet: "\u5df2\u626b\u63cf bank \u96c6\u5408",
+      recoveryBoundary: "\u6062\u590d\u8986\u76d6",
+      unresolvedEventBoundary: "\u8be5\u521b\u4f5c Event \u5f15\u7528\u6709\u5df2\u6062\u590d\u7684\u89e6\u53d1\u4e0a\u4e0b\u6587\uff0c\u4f46\u5f53\u524d\u97f3\u9891\u5e93\u7d22\u5f15\u4e2d\u6ca1\u6709\u627e\u5230\u5bf9\u5e94\u7684 Wwise Event \u5bf9\u8c61\u3002\u4e0d\u4f1a\u56e0\u6b64\u63a8\u65ad\u5a92\u4f53\u6216\u64ad\u653e\u5206\u652f\u3002",
+      unknownLocationBoundary: "\u8be5\u6587\u4ef6\u5df2\u89e3\u7801\u4e14\u53ef\u5728\u6d4f\u89c8\u5668\u4e2d\u64ad\u653e\uff0c\u4f46\u6ca1\u6709\u6062\u590d\u51fa\u521b\u4f5c Event \u5173\u7cfb\u6216\u76f4\u63a5\u5bf9\u8bdd\u4f4d\u7f6e\u3002\u6587\u4ef6\u5b58\u5728\u4e8e\u97f3\u9891\u5305\u4e2d\u4e0d\u80fd\u8bf4\u660e\u6e38\u620f\u5728\u54ea\u91cc\u64ad\u653e\u5b83\u3002",
+      eventOnlyLocationBoundary: "\u8be5\u6587\u4ef6\u53ef\u4ece Wwise Event \u5230\u8fbe\uff0c\u4f46\u8be5 Event \u6ca1\u6709\u5df2\u6062\u590d\u7684\u521b\u4f5c\u89e6\u53d1\u4e0a\u4e0b\u6587\u3002Event \u5173\u7cfb\u4e0d\u80fd\u786e\u5b9a\u5176\u73a9\u6cd5\u3001\u5267\u60c5\u3001\u52a8\u753b\u6216\u5173\u5361\u4f4d\u7f6e\u3002",
+      unknownTriggerBoundary: "\u8be5\u54c8\u5e0c\u662f\u5df2\u626b\u63cf bank \u4e2d\u7684\u7cbe\u786e Wwise Event \u5bf9\u8c61\uff0c\u4f46\u5c1a\u672a\u6062\u590d\u521b\u4f5c\u540d\u79f0\u3001\u6570\u503c\u89e6\u53d1\u5b57\u6bb5\u6216\u89e6\u53d1\u8c03\u7528\u4f4d\u7f6e\u3002\u7c7b\u578b\u5316\u64ad\u653e\u56fe\u548c\u53ef\u80fd\u5a92\u4f53\u662f\u771f\u5b9e\u97f3\u9891\u5e93\u5173\u7cfb\uff0c\u73a9\u6cd5\u6216\u5267\u60c5\u5f52\u5c5e\u4ecd\u672a\u77e5\u3002",
+      identityOnlyBoundary: "\u5df2\u901a\u8fc7\u7cbe\u786e\u7684 skill_id \u5b57\u5178\u548c\u540c\u540d SkillData \u6587\u4ef6\u6062\u590d Event \u540d\u79f0\uff0c\u4e14\u54c8\u5e0c\u6307\u5411\u8be5 Wwise Event \u5bf9\u8c61\u3002SkillData \u8f7d\u8377\u4e2d\u672a\u627e\u5230\u97f3\u9891\u6d88\u8d39\u8005\u6216 Event \u54c8\u5e0c\u5b57\u6bb5\uff0c\u56e0\u6b64\u4e0d\u4f1a\u5c06\u8be5\u6280\u80fd\u58f0\u79f0\u4e3a\u64ad\u653e\u89e6\u53d1\u5668\u6216\u6240\u6709\u8005\u3002",
+      definitionOnlyMediaBoundary: "\u8be5\u89e3\u7801\u6587\u4ef6\u5df2\u7cbe\u786e\u89e3\u6790\u5230\u7c7b\u578b\u5316 Wwise Sound \u7f16\u89e3\u7801\u5a92\u4f53\u5bf9\u8c61\uff0c\u4f46\u5df2\u626b\u63cf bank \u4e2d\u6ca1\u6709 Event \u5230\u8fbe\u8be5 Sound / \u5bb9\u5668\u5206\u652f\u3002\u97f3\u9891\u5e93\u5b9a\u4e49\u662f\u771f\u5b9e\u7684\uff0c\u5176\u521b\u4f5c\u64ad\u653e\u89e6\u53d1\u548c\u8fd0\u884c\u65f6\u4f4d\u7f6e\u4ecd\u672a\u77e5\u3002",
       expandToLoadPlayer: "\u5c55\u5f00\u540e\u52a0\u8f7d\u64ad\u653e\u5668",
       noPlayableMedia: "\u8be5\u8bb0\u5f55\u672a\u9644\u52a0\u6d4f\u89c8\u5668\u53ef\u64ad\u653e\u7684\u5a92\u4f53\u8def\u5f84\u3002",
       mediaIds: "\u5a92\u4f53 ID",
@@ -230,7 +280,8 @@
       recordType: "\u8bb0\u5f55\u7c7b\u578b",
       playbackEvent: "\u64ad\u653e\u4e8b\u4ef6",
       wwiseEvent: "Wwise Event",
-      authoredEventReference: "\u521b\u4f5c Event \u5f15\u7528\uff08\u672a\u89e3\u6790\u5230\u97f3\u9891\u5e93\u5bf9\u8c61\uff09",
+      unnamedWwiseEvent: "Wwise Event\uff08\u521b\u4f5c\u89e6\u53d1\u672a\u77e5\uff09",
+      authoredEventReference: "\u672a\u89e3\u6790\u5230\u97f3\u9891\u5e93\u5bf9\u8c61\u7684\u4e8b\u4ef6",
       controlEvent: "\u63a7\u5236\u4e8b\u4ef6",
       decodedMedia: "\u5df2\u89e3\u7801\u5a92\u4f53",
       contextGroups: "\u8bed\u4e49\u4e0a\u4e0b\u6587",
@@ -239,11 +290,13 @@
       contextCutscene: "\u8fc7\u573a / \u5267\u60c5",
       contextTimeline: "Timeline / LevelSequence",
       levelSequenceAudioCatalog: "LevelSequence \u97f3\u9891\u5f52\u5c5e",
+      dialogLifecycleAudioCatalog: "\u5bf9\u8bdd\u751f\u547d\u5468\u671f\u97f3\u9891\u94a9\u5b50",
       levelSequenceTimelineContexts: "Timeline \u4e0a\u4e0b\u6587",
       levelSequenceExactContexts: "\u7cbe\u786e Timeline + LevelScript \u8fde接",
       levelSequenceInferredContexts: "\u63a8断触发\u4e0a\u4e0b\u6587",
       levelSequenceGapContexts: "\u5f52属缺口",
       levelSequenceRuntimeBoundary: "Timeline \u8fd0行时证据边界",
+      audioTriggerContextCatalog: "音频触发情境覆盖",
       contextAnimation: "\u52a8\u753b",
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
@@ -265,20 +318,29 @@
       contextModelViewState: "ModelView \u72b6\u6001\u884c\u4e3a",
       contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
+      contextDialogLifecycle: "\u5bf9\u8bdd\u751f\u547d\u5468\u671f\u94a9\u5b50",
+      contextResponsiveVoice: "\u54cd\u5e94\u8bed\u97f3\u89e6\u53d1\u94fe",
+      contextVoiceEventRoute: "\u8bed\u97f3 Event \u6a21\u677f / \u8986\u76d6\u8def\u7531",
+      contextTypedUiEvent: "UI / \u6d3b\u52a8\u97f3\u9891\u8def\u7531",
+      contextSnsVoice: "SNS \u8bed\u97f3\u6d88\u606f",
       contextAudioCueTrigger: "Audio Cue \u884c\u4e3a Event",
       contextAuthoredConfig: "\u914d\u7f6e\u8868",
       contextManagedRuntime: "\u6258\u7ba1\u4ee3\u7801\u5b57\u9762\u91cf",
+      contextLuaRuntime: "Lua PostEvent \u8c03\u7528\u4f4d\u7f6e",
+      contextWwiseObjectOnly: "Wwise Event \u5bf9\u8c61\uff0c\u521b\u4f5c\u89e6\u53d1\u672a\u77e5",
       contextDialogMedia: "\u5bf9\u8bdd\u5a92\u4f53",
-      contextNone: "\u65e0\u5df2\u94fe\u63a5\u7684\u521b\u4f5c\u4e0a\u4e0b\u6587",
+      contextEventRelationOnly: "\u5df2\u6062\u590d Event \u5173\u7cfb\uff0c\u521b\u4f5c\u89e6\u53d1\u4f4d\u7f6e\u672a\u77e5",
+      contextNone: "\u4e0d\u77e5\u9053\u64ad\u653e\u4f4d\u7f6e",
       relationRuntimeSelected: "\u7c7b\u578b\u5316\u8fd0\u884c\u65f6\u5206\u652f",
       relationMultipleUnknown: "\u591a\u4e2a\u53ef\u80fd\u6587\u4ef6\uff0c\u5173\u7cfb\u672a\u89e3\u6790",
       relationSingle: "\u5355\u4e00\u53ef\u80fd\u6587\u4ef6",
       relationSingleTopology: "\u5b8c\u6574\u62d3\u6251\u4e2d\u4ec5\u6709\u4e00\u4e2a\u89e3\u7801\u53f6\uff08\u8fd0\u884c\u65f6\u5206\u652f\u4ecd\u672a\u89c2\u6d4b\uff09",
       relationNoDecodedMedia: "Wwise \u4e8b\u4ef6\uff0c\u65e0\u5df2\u89e3\u7801\u5a92\u4f53\u53f6",
-      relationUnresolvedEvent: "\u4e8b\u4ef6\u672a\u5728 Wwise \u4e2d\u89e3\u6790",
+      relationControlOnly: "Wwise \u63a7\u5236\u4e8b\u4ef6\uff0c\u65e0\u5a92\u4f53\u64ad\u653e\u52a8\u4f5c",
+      relationUnresolvedEvent: "\u672a\u627e\u5230\u5bf9\u5e94\u7684 Wwise Event \u5bf9\u8c61",
       relationEventCandidate: "Wwise \u4e8b\u4ef6\u5a92\u4f53\u53f6",
       relationDirectDialogMedia: "\u76f4\u63a5\u5bf9\u8bdd\u5a92\u4f53",
-      relationUnlinkedMedia: "\u65e0\u5df2\u6062\u590d\u4e8b\u4ef6\u5173\u7cfb",
+      relationUnlinkedMedia: "\u4e0d\u77e5\u9053\u7531\u54ea\u4e2a\u4e8b\u4ef6\u64ad\u653e",
       relationPartialGraph: "\u90e8\u5206\u7c7b\u578b\u5316\u56fe",
       relationMultipleRoots: "\u591a\u4e2a Play \u6839",
       relationRandom: "\u968f\u673a\u5907\u9009",
@@ -309,6 +371,7 @@
       fadeCurve: "\u6de1\u5165\u66f2\u7ebf",
       uniqueContent: "\u552f\u4e00\u89e3\u7801\u5185\u5bb9",
       equivalentContent: "\u5185\u5bb9\u7b49\u4ef7\u53f6",
+      hotfixMediaReplacement: "Hotfix \u540c media ID \u66ff\u6362",
       rawRecord: "\u539f\u59cb\u8bb0\u5f55",
       id: "ID",
       hash: "\u54c8\u5e0c",
@@ -339,7 +402,7 @@
     rows: [],
     selected: null,
     query: "",
-    filters: { categories: new Set(), contexts: new Set(), relations: new Set(), scopes: new Set(), sources: new Set() },
+    filters: { categories: new Set(), contexts: new Set(), relations: new Set(), recovery: new Set(), scopes: new Set(), sources: new Set() },
     eventTaxonomyById: new Map(),
     eventDetailCache: new Map(),
     eventDetailPromises: new Map(),
@@ -438,10 +501,18 @@
     modelViewState: "contextModelViewState",
     interactiveTrigger: "contextInteractiveTrigger",
     globalLifecycle: "contextGlobalLifecycle",
+    dialogLifecycle: "contextDialogLifecycle",
+    responsiveVoice: "contextResponsiveVoice",
+    voiceEventRoute: "contextVoiceEventRoute",
+    typedUiEvent: "contextTypedUiEvent",
+    snsVoice: "contextSnsVoice",
     audioCueTrigger: "contextAudioCueTrigger",
     authoredConfig: "contextAuthoredConfig",
     managedRuntime: "contextManagedRuntime",
+    luaRuntime: "contextLuaRuntime",
+    wwiseObjectOnly: "contextWwiseObjectOnly",
     dialogMedia: "contextDialogMedia",
+    eventRelationOnly: "contextEventRelationOnly",
     none: "contextNone",
   };
 
@@ -451,6 +522,7 @@
     single: "relationSingle",
     singleTopology: "relationSingleTopology",
     noDecodedMedia: "relationNoDecodedMedia",
+    controlOnly: "relationControlOnly",
     unresolvedEvent: "relationUnresolvedEvent",
     eventCandidate: "relationEventCandidate",
     directDialogMedia: "relationDirectDialogMedia",
@@ -474,9 +546,31 @@
     return t(CONTEXT_LABEL_KEYS[value] || RELATION_LABEL_KEYS[value] || value);
   }
 
+  function playbackLocationLabel(value) {
+    return t({
+      directDialogMedia: "locationDirectDialogMedia",
+      authoredEventContext: "locationAuthoredEventContext",
+      eventRelationOnly: "locationEventRelationOnly",
+      unknown: "locationUnknown",
+    }[normalize(value)] || "locationUnknown");
+  }
+
+  function recoveryLabel(value) {
+    return t({
+      libraryResolved: "recoveryLibraryResolved",
+      libraryUnresolved: "recoveryLibraryUnresolved",
+      triggerNameUnknown: "recoveryTriggerNameUnknown",
+      directDialogMedia: "locationDirectDialogMedia",
+      authoredEventContext: "locationAuthoredEventContext",
+      eventRelationOnly: "locationEventRelationOnly",
+      unknown: "locationUnknown",
+    }[normalize(value)] || value);
+  }
+
   function recordType(record, kind) {
     if (kind === "media") return "decodedMedia";
-    if (recordCategory(record) === "control") return "controlEvent";
+    if (record?.playbackRole === "controlOnly" || recordCategory(record) === "control") return "controlEvent";
+    if (record?.eventIdentityStatus === "wwiseObjectWithoutRecoveredTriggerName") return "unnamedWwiseEvent";
     return record?.foundInWwise ? "wwiseEvent" : "authoredEventReference";
   }
 
@@ -487,13 +581,15 @@
     if (kind === "timelineAudioCueBehaviorEvent") return "timeline";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
-    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
+    if (kind === "luaPostEvent") return "luaRuntime";
     return "";
   }
 
   function recordContextTags(record, kind) {
     const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
+    if (record?.eventIdentityStatus === "wwiseObjectWithoutRecoveredTriggerName") tags.add("wwiseObjectOnly");
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
       if (contextKind === "levelSequenceAudio") tags.add("timeline");
@@ -506,9 +602,15 @@
       if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent", "timelineAudioCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
+      if (contextKind === "dialogLifecycle") tags.add("dialogLifecycle");
+      if (["audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent"].includes(contextKind)) tags.add("responsiveVoice");
+      if (["voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent"].includes(contextKind)) tags.add("voiceEventRoute");
+      if (["uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent"].includes(contextKind)) tags.add("typedUiEvent");
+      if (contextKind === "snsVoiceMessageEvent") tags.add("snsVoice");
       if (contextKind === "animationCallbackOwnerUnresolved") tags.add("ownerUnresolvedAnimation");
       if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(contextKind)) tags.add("levelScriptTrigger");
       if (contextKind === "levelScriptRadioTrigger") tags.add("radioTrigger");
+      if (contextKind === "luaPostEvent") tags.add("luaRuntime");
     };
     for (const contextKind of asArray(record?.contextKinds)) addContextKindTags(contextKind);
     for (const status of asArray(record?.triggerBindingStatuses)) {
@@ -543,14 +645,16 @@
     if (kind === "media") {
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
-        "gameplay", "cutscene", "timeline", "animation", "scripted", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
+        "gameplay", "cutscene", "timeline", "animation", "scripted", "authoredConfig", "managedRuntime", "luaRuntime", "wwiseObjectOnly",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "interactiveTrigger", "globalLifecycle", "audioCueTrigger", "snsVoice",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
           if (inheritedMediaTags.has(tag)) tags.add(tag);
         }
       }
+      if (record?.playbackLocationStatus === "unknown") tags.add("none");
+      else if (record?.playbackLocationStatus === "eventRelationOnly") tags.add("eventRelationOnly");
     }
     if (!tags.size) tags.add("none");
     return [...tags];
@@ -575,7 +679,7 @@
     if (sourceKinds.has("externalSourceCodec")) tags.push("externalSource");
     if (sourceKinds.has("synthesizedSource")) tags.push("synthesizedSource");
     if (!candidates) {
-      tags.push("noDecodedMedia");
+      tags.push(record?.playbackRole === "controlOnly" ? "controlOnly" : "noDecodedMedia");
       return [...new Set(tags)];
     }
     if (record?.traversalStatus === "partial") tags.push("partialGraph");
@@ -596,7 +700,7 @@
 
   function recordMeta(record, kind = state.mode, taxonomy = {}) {
     const parts = [t(taxonomy.objectType || recordType(record, kind)), recordCategory(record)];
-    const contexts = asArray(taxonomy.contextTags).filter((value) => value !== "none");
+    const contexts = asArray(taxonomy.contextTags);
     if (contexts.length) parts.push(contexts.map(taxonomyLabel).join(" + "));
     const relations = asArray(taxonomy.relationTags);
     if (relations.length) parts.push(relations.slice(0, 2).map(taxonomyLabel).join(" + "));
@@ -673,6 +777,12 @@
     const relationTags = recordRelationTags(raw, kind);
     const objectType = recordType(raw, kind);
     const taxonomy = { contextTags, relationTags, objectType };
+    const recoveryTags = kind === "events"
+      ? [
+          raw.foundInWwise ? "libraryResolved" : "libraryUnresolved",
+          ...(raw.eventIdentityStatus === "wwiseObjectWithoutRecoveredTriggerName" ? ["triggerNameUnknown"] : []),
+        ]
+      : [normalize(raw.playbackLocationStatus) || "unknown"];
     return {
       raw,
       kind,
@@ -683,6 +793,7 @@
       source: recordSource(raw),
       contextTags,
       relationTags,
+      recoveryTags,
       objectType,
       meta: recordMeta(raw, kind, taxonomy),
       search: searchText(raw, kind, taxonomy),
@@ -884,6 +995,14 @@
         renderDetail();
         await ensureDataset("events", { token, force, progressBase: 0.25, progressSpan: 0.75 });
         if (token !== state.loadToken) return null;
+        const requestedKind = requestedSelectionKind();
+        if (requestedKind === "media") {
+          state.mode = "media";
+          syncModeButtons();
+          renderLoadingList();
+          await ensureDataset("media", { token, force, progressBase: 0.25, progressSpan: 0.75 });
+          if (token !== state.loadToken) return null;
+        }
         buildFilterChips();
         applyFilters({ resetScroll: true });
         applyRequestedSelection();
@@ -938,7 +1057,9 @@
   function renderShell() {
     if (!state.container) return;
     state.container.innerHTML = `
-      <div class="audio-shell">
+      <div class="audio-page-shell">
+        <div id="audio-construction-banner" class="construction-banner" role="note"></div>
+        <div class="audio-shell">
         <aside id="audio-left">
           <header>
             <h1 id="audio-title"></h1>
@@ -971,6 +1092,10 @@
               <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-relation-filter-body"><span id="audio-relation-label"></span></button>
               <div id="audio-relation-filter-body" class="filter-section-body" hidden><div id="audio-relation-filter" class="chips" data-multi="1"></div></div>
             </section>
+            <section class="filter-section is-collapsed" data-filter-section="audio-recovery" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-recovery-filter-body"><span id="audio-recovery-label"></span></button>
+              <div id="audio-recovery-filter-body" class="filter-section-body" hidden><div id="audio-recovery-filter" class="chips" data-multi="1"></div></div>
+            </section>
             <section class="filter-section is-collapsed" data-filter-section="audio-scope" data-default-collapsed="1">
               <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-scope-filter-body"><span id="audio-scope-label"></span></button>
               <div id="audio-scope-filter-body" class="filter-section-body" hidden><div id="audio-scope-filter" class="chips" data-multi="1"></div></div>
@@ -993,6 +1118,7 @@
           </header>
           <div id="audio-detail-body"></div>
         </main>
+        </div>
       </div>`;
     bindShellEvents();
     bindFilterSections();
@@ -1155,9 +1281,9 @@
 
   function applyUiText() {
     const pairs = {
-      "audio-title": "title", "audio-count-label": "countLabel", "audio-filter-toggle": state.filterPanel?.collapsed ? "showFilters" : "hideFilters",
+      "audio-construction-banner": "underConstruction", "audio-title": "title", "audio-count-label": "countLabel", "audio-filter-toggle": state.filterPanel?.collapsed ? "showFilters" : "hideFilters",
       "audio-reset": "reset", "audio-events-mode": "events", "audio-media-mode": "media", "audio-basic-filter-label": "basicFilters",
-      "audio-category-label": "category", "audio-context-label": "context", "audio-relation-label": "relation",
+      "audio-category-label": "category", "audio-context-label": "context", "audio-relation-label": "relation", "audio-recovery-label": "recovery",
       "audio-scope-label": "scope", "audio-source-label": "source", "audio-shown-label": "shown",
     };
     for (const [id, key] of Object.entries(pairs)) {
@@ -1211,6 +1337,7 @@
     state.filters.categories.clear();
     state.filters.contexts.clear();
     state.filters.relations.clear();
+    state.filters.recovery.clear();
     state.filters.scopes.clear();
     state.filters.sources.clear();
     const search = $("#audio-q", state.container);
@@ -1237,6 +1364,7 @@
       ["#audio-category-filter", "category", state.filters.categories, null],
       ["#audio-context-filter", "contextTags", state.filters.contexts, taxonomyLabel],
       ["#audio-relation-filter", "relationTags", state.filters.relations, taxonomyLabel],
+      ["#audio-recovery-filter", "recoveryTags", state.filters.recovery, recoveryLabel],
       ["#audio-scope-filter", "scope", state.filters.scopes, null],
       ["#audio-source-filter", "source", state.filters.sources, null],
     ];
@@ -1259,6 +1387,7 @@
       "audio-category": state.filters.categories.size,
       "audio-context": state.filters.contexts.size,
       "audio-relation": state.filters.relations.size,
+      "audio-recovery": state.filters.recovery.size,
       "audio-scope": state.filters.scopes.size,
       "audio-source": state.filters.sources.size,
     });
@@ -1272,6 +1401,7 @@
       if (state.filters.categories.size && !state.filters.categories.has(record.category)) return false;
       if (state.filters.contexts.size && !record.contextTags.some((value) => state.filters.contexts.has(value))) return false;
       if (state.filters.relations.size && !record.relationTags.some((value) => state.filters.relations.has(value))) return false;
+      if (state.filters.recovery.size && !record.recoveryTags.some((value) => state.filters.recovery.has(value))) return false;
       if (state.filters.scopes.size && !state.filters.scopes.has(record.scope)) return false;
       if (state.filters.sources.size && !state.filters.sources.has(record.source)) return false;
       return true;
@@ -1357,10 +1487,16 @@
     return normalize(params.get("audio"));
   }
 
+  function requestedSelectionKind() {
+    const params = new URLSearchParams(window.location.search || "");
+    return params.get("audioKind") === "media" ? "media" : "events";
+  }
+
   function applyRequestedSelection() {
     const requested = requestedSelection();
-    if (!requested || state.mode !== "events") return;
-    const record = (state.datasets.events || []).find((candidate) => candidate.key === requested || recordId(candidate.raw, "events") === requested);
+    const kind = requestedSelectionKind();
+    if (!requested || state.mode !== kind) return;
+    const record = (state.datasets[kind] || []).find((candidate) => candidate.key === requested || recordId(candidate.raw, kind) === requested);
     if (record) selectRecord(record, { updateUrl: false });
   }
 
@@ -1392,7 +1528,7 @@
     subtitle.textContent = selected ? selected.meta : indexSubtitle();
     body.replaceChildren();
     if (selected) {
-      body.append(recordPanel(selected), runtimePanel());
+      body.appendChild(recordPanel(selected));
     } else {
       body.appendChild(runtimePanel());
       const empty = document.createElement("p");
@@ -1435,6 +1571,23 @@
       for (const [label, value] of statEntries) grid.appendChild(statNode(humanize(label), typeof value === "number" ? formatNumber(value) : value));
       panel.appendChild(grid);
     }
+    const recoveryCounts = state.index?.counts || {};
+    const recoveryStats = [
+      [t("recoveryLibraryUnresolved"), recoveryCounts.authoredEventsUnresolvedToWwise],
+      [t("recoveryTriggerNameUnknown"), recoveryCounts.wwiseEventObjectsWithoutRecoveredAuthoredTrigger],
+      [t("locationUnknown"), recoveryCounts.mediaPlaybackLocationUnknown],
+      [t("locationEventRelationOnly"), recoveryCounts.mediaWithEventRelationOnly],
+      [t("locationAuthoredEventContext"), recoveryCounts.mediaWithAuthoredEventContext],
+      [t("locationDirectDialogMedia"), recoveryCounts.directDialogMedia],
+    ].filter(([, value]) => Number.isFinite(Number(value)));
+    if (recoveryStats.length) {
+      const heading = document.createElement("h3");
+      heading.textContent = t("recoveryBoundary");
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [label, value] of recoveryStats) grid.appendChild(statNode(label, formatNumber(value)));
+      panel.append(heading, grid);
+    }
 
     const components = asArray(runtime.components ?? runtime.layers).map((value) => typeof value === "object" ? (value.name ?? value.id ?? value.type) : value).filter(Boolean);
     if (components.length) panel.appendChild(chipSection(t("runtimeComponents"), components));
@@ -1450,6 +1603,10 @@
     if (levelScriptRadioCatalog && typeof levelScriptRadioCatalog === "object") panel.appendChild(levelScriptRadioCatalogSection(levelScriptRadioCatalog));
     const levelSequenceAudioCatalog = state.index?.triggerCatalog?.levelSequenceAudio;
     if (levelSequenceAudioCatalog && typeof levelSequenceAudioCatalog === "object") panel.appendChild(levelSequenceAudioCatalogSection(levelSequenceAudioCatalog));
+    const dialogLifecycleCoverage = state.index?.triggerContexts?.coverage?.dialogLifecycle;
+    if (dialogLifecycleCoverage && typeof dialogLifecycleCoverage === "object") panel.appendChild(dialogLifecycleCatalogSection(dialogLifecycleCoverage));
+    const triggerContextCatalog = state.index?.triggerContexts;
+    if (triggerContextCatalog && typeof triggerContextCatalog === "object") panel.appendChild(triggerContextCatalogSection(triggerContextCatalog));
     const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
     if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
     const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
@@ -1482,12 +1639,21 @@
       ["Embedded banks", hirc.embeddedBankCount],
       ["HIRC objects", hirc.hircObjectCount],
       ["Bank versions", versions],
+      [t("scannedBankSet"), hirc.packageFingerprint ? `${hirc.packageCount || 0} PCK / ${String(hirc.packageFingerprint).slice(0, 16)}…` : ""],
     ];
     for (const [label, value] of facts) if (value !== undefined && value !== null && value !== "") grid.appendChild(statNode(label, typeof value === "number" ? formatNumber(value) : value));
     section.append(heading, grid);
     const labels = hirc.objectTypeLabels || {};
     const typeCounts = Object.entries(hirc.objectTypeCounts || {}).map(([type, count]) => `${labels[type] || `type${type}`} (${type}): ${formatNumber(count)}`);
     if (typeCounts.length) section.appendChild(chipSection("Object families", typeCounts));
+    const packages = asArray(hirc.packageInventory).map((row) => [
+      row.blockType || row.vfsSource || "export",
+      row.fileName || row.source,
+      `${formatNumber(row.embeddedBankCount || 0)} banks`,
+      `${formatNumber(row.eventObjectCount || 0)} Events`,
+      row.sha256 ? String(row.sha256).slice(0, 16) : "",
+    ].filter(Boolean).join(" / "));
+    if (packages.length) section.appendChild(chipSection(t("scannedBankSet"), packages));
     if (hirc.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), hirc.evidenceBoundary));
     return section;
   }
@@ -1667,6 +1833,118 @@
       catalog.timelineOwnershipEvidenceBoundary,
     ].filter(Boolean).join(" ");
     if (boundary) section.appendChild(noteSection(t("levelSequenceRuntimeBoundary"), boundary));
+    return section;
+  }
+
+  function dialogLifecycleCatalogSection(coverage) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("dialogLifecycleAudioCatalog");
+    section.appendChild(heading);
+    const facts = [
+      ["Stored hooks", coverage.storedTriggerContextRows],
+      ["Current Wwise events", coverage.rowsWithCurrentWwiseEvent],
+      ["No decoded media leaf", coverage.rowsWithNoDecodedMediaLeaf],
+    ].filter(([, value]) => value !== undefined && value !== null);
+    if (facts.length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
+      section.appendChild(grid);
+    }
+    const phaseCounts = coverage.phaseCounts && typeof coverage.phaseCounts === "object"
+      ? Object.entries(coverage.phaseCounts).map(([phase, count]) => `${phase}: ${formatNumber(count)}`)
+      : [];
+    if (phaseCounts.length) section.appendChild(chipSection("Lifecycle phases", phaseCounts));
+    const consumer = coverage.runtimeConsumer && typeof coverage.runtimeConsumer === "object" ? coverage.runtimeConsumer : {};
+    const methods = consumer.methods && typeof consumer.methods === "object"
+      ? Object.values(consumer.methods).map((method) => {
+        if (!method || typeof method !== "object") return "";
+        return [method.name, method.token].filter(Boolean).join(" ");
+      }).filter(Boolean)
+      : [];
+    if (consumer.type || methods.length) {
+      const details = document.createElement("details");
+      details.className = "audio-runtime-system";
+      const summary = document.createElement("summary");
+      summary.textContent = consumer.type || "AudioGameplayStatusSystem";
+      const values = document.createElement("div");
+      values.className = "audio-chip-list";
+      for (const method of methods) {
+        const chip = document.createElement("span");
+        chip.textContent = method;
+        values.appendChild(chip);
+      }
+      details.append(summary, values);
+      section.appendChild(details);
+    }
+    section.appendChild(noteSection(t("runtimeBoundary"), "Dialog lifecycle dispatch and Wwise PostEvent execution were not observed; these rows are authored hooks only."));
+    return section;
+  }
+
+  function triggerContextCatalogSection(catalog) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("audioTriggerContextCatalog");
+    section.appendChild(heading);
+    const counts = catalog.counts && typeof catalog.counts === "object" ? catalog.counts : {};
+    const facts = [
+      ["Total contexts", counts.total],
+      ["Playable media", counts.withPlayableMedia],
+      ["Runtime observed", counts.runtimeExecutionObserved],
+      ["Runtime unobserved", counts.runtimeExecutionUnobserved],
+    ].filter(([, value]) => value !== undefined && value !== null);
+    if (facts.length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
+      section.appendChild(grid);
+    }
+    const coverage = catalog.coverage && typeof catalog.coverage === "object" ? catalog.coverage : {};
+    for (const [kind, row] of Object.entries(coverage)) {
+      if (!row || typeof row !== "object") continue;
+      const details = document.createElement("details");
+      details.className = "audio-runtime-system";
+      const summary = document.createElement("summary");
+      const stored = row.storedTriggerContextRows;
+      summary.textContent = `${humanize(kind)}${stored !== undefined ? ` (${formatNumber(stored)})` : ""}`;
+      const values = document.createElement("div");
+      values.className = "audio-chip-list";
+      for (const [key, value] of Object.entries(row)) {
+        if (key === "source" || value === null || value === undefined) continue;
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          const scalarEntries = Object.entries(value).filter(([, nested]) => (
+            nested !== null
+            && nested !== undefined
+            && ["string", "number", "boolean"].includes(typeof nested)
+          ));
+          for (const [nestedKey, nestedValue] of scalarEntries) {
+            const chip = document.createElement("span");
+            chip.textContent = `${humanize(key)} / ${humanize(nestedKey)}: ${typeof nestedValue === "number" ? formatNumber(nestedValue) : String(nestedValue)}`;
+            values.appendChild(chip);
+          }
+          continue;
+        }
+        if (typeof value === "object") continue;
+        const chip = document.createElement("span");
+        chip.textContent = `${humanize(key)}: ${typeof value === "number" ? formatNumber(value) : String(value)}`;
+        values.appendChild(chip);
+      }
+      if (row.source) {
+        const source = document.createElement("p");
+        source.className = "audio-detail-note";
+        source.textContent = String(row.source);
+        details.append(summary, values, source);
+      } else {
+        details.append(summary, values);
+      }
+      section.appendChild(details);
+    }
+    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
     return section;
   }
 
@@ -1920,6 +2198,60 @@
     if (context?.storyKey) parts.push(context.storyKey);
     if (context?.table) parts.push(context.table);
     if (context?.path) parts.push(context.path);
+    if (kind === "luaPostEvent") {
+      if (context?.source) parts.push(context.source);
+      if (context?.line !== undefined) parts.push(`line ${context.line}`);
+      if (context?.expression) parts.push(context.expression);
+      parts.push("runtime branch execution unobserved");
+    }
+    if (["audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant"].includes(kind)) {
+      if (context?.audioDialogPath) parts.push(`AudioDialog ${context.audioDialogPath}`);
+      if (context?.voiceId !== undefined) parts.push(`voice id ${context.voiceId}`);
+      if (context?.speakerId || context?.speakerChannel) parts.push(`speaker ${context.speakerId || context.speakerChannel}`);
+      if (context?.triggerKey) parts.push(`trigger ${context.triggerKey}`);
+      if (context?.sentenceType) parts.push(`sentence type ${context.sentenceType}`);
+      if (context?.triggerTypeId !== undefined) parts.push(`trigger type ${context.triggerTypeId}`);
+      if (context?.responseIndex !== undefined) parts.push(`response ${context.responseIndex}`);
+      if (context?.baseVoiceId !== undefined) parts.push(`base voice ${context.baseVoiceId}`);
+      if (context?.variantIndex !== undefined) parts.push(`tone variant ${context.variantIndex}`);
+      if (context?.runtimeRoute) parts.push(context.runtimeRoute);
+      if (context?.runtimeSelectionStatus) parts.push(humanize(context.runtimeSelectionStatus));
+      if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
+    }
+    if (["voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent"].includes(kind)) {
+      if (context?.field) parts.push(`field ${context.field}`);
+      if (context?.routeKind) parts.push(humanize(context.routeKind));
+      if (context?.occurrenceCount !== undefined) parts.push(`${formatNumber(context.occurrenceCount)} authored row${Number(context.occurrenceCount) === 1 ? "" : "s"}`);
+      const rowPaths = asArray(context?.rowPathSamples).filter(Boolean);
+      if (rowPaths.length) parts.push(`rows ${rowPaths.join(" / ")}${context?.rowPathsTruncated ? " / ..." : ""}`);
+      if (context?.runtimeRoute) parts.push(context.runtimeRoute);
+      if (context?.runtimeSelectionStatus) parts.push(humanize(context.runtimeSelectionStatus));
+      if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
+    }
+    if (["uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent"].includes(kind)) {
+      if (context?.field) parts.push(`field ${context.field}`);
+      if (context?.routeKind) parts.push(humanize(context.routeKind));
+      if (context?.occurrenceCount !== undefined) parts.push(`${formatNumber(context.occurrenceCount)} authored row${Number(context.occurrenceCount) === 1 ? "" : "s"}`);
+      const rowPaths = asArray(context?.rowPathSamples).filter(Boolean);
+      if (rowPaths.length) parts.push(`rows ${rowPaths.join(" / ")}${context?.rowPathsTruncated ? " / ..." : ""}`);
+      if (context?.runtimeRoute) parts.push(context.runtimeRoute);
+      const consumers = asArray(context?.consumerEvidence).filter(Boolean);
+      if (consumers.length) parts.push(`consumers ${consumers.join(" / ")}`);
+      if (context?.runtimeExecutionStatus) parts.push(humanize(context.runtimeExecutionStatus));
+      if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
+    }
+    if (kind === "snsVoiceMessageEvent") {
+      if (context?.dialogId) parts.push(`dialog ${context.dialogId}`);
+      if (context?.contentId !== undefined) parts.push(`content ${context.contentId}`);
+      if (context?.speaker) parts.push(`speaker ${context.speaker}`);
+      if (context?.durationSeconds !== undefined) parts.push(`authored duration ${context.durationSeconds}s`);
+      if (context?.contentTypeName || context?.contentType !== undefined) parts.push(`content type ${context.contentTypeName || context.contentType}`);
+      if (context?.runtimeRoute) parts.push(context.runtimeRoute);
+      const consumers = asArray(context?.consumerEvidence).filter(Boolean);
+      if (consumers.length) parts.push(`consumers ${consumers.join(" / ")}`);
+      if (context?.runtimeExecutionStatus) parts.push(humanize(context.runtimeExecutionStatus));
+      if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
+    }
     if (context?.semanticRole) parts.push(humanize(context.semanticRole));
     if (context?.confidence) parts.push(context.confidence);
     if (context?.modelId) parts.push(`model ${context.modelId}`);
@@ -1940,8 +2272,22 @@
       if (context?.timelineTrackName || context?.timelineClipIndex !== undefined) {
         parts.push(`track ${context.timelineTrackName || "?"} / clip ${context.timelineClipIndex ?? "?"}`);
       }
+      if (context?.timelineClipStartSec !== undefined || context?.timelineClipDurationSec !== undefined) {
+        const start = context.timelineClipStartSec !== undefined ? formatNumber(context.timelineClipStartSec) : "?";
+        const duration = context.timelineClipDurationSec !== undefined ? formatNumber(context.timelineClipDurationSec) : "?";
+        parts.push(`clip time ${start}s / ${duration}s`);
+      }
       if (context?.audioPlayableType) parts.push(`playable ${context.audioPlayableType}`);
+      if (context?.audioPlayableRuntimeContractId) {
+        parts.push(`runtime contract ${context.audioPlayableRuntimeContractId} (static metadata)`);
+      }
       if (context?.audioPlayableKeyStatus) parts.push(humanize(context.audioPlayableKeyStatus));
+      if (context?.audioPlayableIsCue !== undefined) parts.push(`isCue ${context.audioPlayableIsCue ? "yes" : "no"}`);
+      if (context?.audioPlayableStopEventAtClipEnd !== undefined) {
+        parts.push(`stop-at-clip-end ${context.audioPlayableStopEventAtClipEnd ? "yes" : "no"}`);
+      }
+      if (context?.audioPlayableEnableSeek !== undefined) parts.push(`seek ${context.audioPlayableEnableSeek ? "yes" : "no"}`);
+      if (context?.audioPlayableIs2D !== undefined) parts.push(`2D ${context.audioPlayableIs2D ? "yes" : "no"}`);
       if (context?.playableDirectorCount !== undefined) {
         parts.push(`${formatNumber(context.playableDirectorCount)} PlayableDirector${Number(context.playableDirectorCount) === 1 ? "" : "s"}`);
       }
@@ -2539,6 +2885,16 @@
       ? [
           [t("recordType"), t(record.objectType)], [t("id"), raw.eventId ?? raw.id], [t("hash"), raw.eventHash ?? raw.hash], [t("category"), record.category],
           ["Category evidence", raw.categoryEvidence],
+          ["Library resolution", humanize(raw.audioLibraryResolutionStatus || "")],
+          ["Event identity", humanize(raw.eventIdentityStatus || "")],
+          ["Event name evidence", humanize(raw.eventNameEvidence || "")],
+          ["Event name source", humanize(raw.eventNameSourceKind || "")],
+          ["Identity-only placement", humanize(raw.identityOnlyPlaybackPlacementStatus || "")],
+          ["Numeric skill IDs", asArray(raw.identityNumericSkillIds).join(" / ")],
+          ["Authored Event hash", raw.authoredEventHashHex],
+          [t("scannedBankSet"), raw.scannedBankPackageFingerprint
+            ? `${formatNumber(raw.scannedBankPackageCount || 0)} PCK / ${String(raw.scannedBankPackageFingerprint).slice(0, 16)}…`
+            : ""],
           [t("scope"), record.scope], [t("source"), record.source], [t("bank"), raw.bank ?? raw.sourceBank ?? raw.bankId ?? raw.evidence?.[0]?.bank],
           ["Wwise", raw.foundInWwise], [t("typedTraversal"), raw.traversalStatus], [t("playRoots"), raw.playRootCount],
           [t("possibleMedia"), raw.possibleMediaCount ?? raw.candidateCount], [t("uniqueContent"), raw.uniqueDecodedContentCount],
@@ -2550,7 +2906,10 @@
           [t("recordType"), t(record.objectType)], [t("id"), raw.mediaId ?? raw.id], [t("category"), record.category], [t("scope"), record.scope],
           [t("source"), record.source], [t("path"), raw.rel ?? raw.path ?? raw.src], [t("format"), raw.format],
           [t("bytes"), raw.bytes !== undefined ? formatBytes(raw.bytes) : ""], [t("bank"), raw.bank ?? raw.sourceBank ?? raw.bankId],
+          ["Library object", humanize(raw.audioLibraryObjectStatus || "")],
+          ["Wwise Sound objects", asArray(raw.wwiseDefinitionEvidence).map((row) => row?.soundObjectId).filter((value) => value !== undefined).join(" / ")],
           [t("radioTableLines"), raw.radioTableLineCount],
+          [t("playbackLocation"), playbackLocationLabel(raw.playbackLocationStatus)],
           [t("radioTriggerContextCoverage"), raw.radioTriggerContextCount !== undefined
             ? `${formatNumber(raw.radioTriggerContextStoredCount || 0)} stored / ${formatNumber(raw.radioTriggerContextCount || 0)} total${raw.radioTriggerContextsTruncated ? " / truncated" : ""}`
             : ""],
@@ -2572,6 +2931,19 @@
       panel.appendChild(chipSection(t("customFootstepNativeAnchors"), customFootstepRuntimeSummary()));
       const boundary = state.index?.customFootstepModel?.runtimeSelectorBoundary;
       if (boundary) panel.appendChild(noteSection(t("customFootstepRuntime"), boundary));
+    }
+    if (record.kind === "events" && raw.foundInWwise !== true) {
+      panel.appendChild(noteSection(t("runtimeBoundary"), t("unresolvedEventBoundary")));
+    } else if (record.kind === "events" && raw.eventIdentityStatus === "wwiseObjectWithoutRecoveredTriggerName") {
+      panel.appendChild(noteSection(t("runtimeBoundary"), t("unknownTriggerBoundary")));
+    } else if (record.kind === "events" && raw.identityOnlyPlaybackPlacementStatus === "identityOnlyNoAudioConsumer") {
+      panel.appendChild(noteSection(t("runtimeBoundary"), t("identityOnlyBoundary")));
+    } else if (record.kind === "media" && raw.audioLibraryObjectStatus === "wwiseSoundDefinitionWithoutEventPath") {
+      panel.appendChild(noteSection(t("runtimeBoundary"), t("definitionOnlyMediaBoundary")));
+    } else if (record.kind === "media" && raw.playbackLocationStatus === "unknown") {
+      panel.appendChild(noteSection(t("runtimeBoundary"), t("unknownLocationBoundary")));
+    } else if (record.kind === "media" && raw.playbackLocationStatus === "eventRelationOnly") {
+      panel.appendChild(noteSection(t("runtimeBoundary"), t("eventOnlyLocationBoundary")));
     }
 
     const evidence = asArray(raw.evidence).filter((value) => value && typeof value === "object");
@@ -2615,7 +2987,7 @@
       note.className = "audio-detail-note";
       note.textContent = t("loadingEvents");
       playerSection.appendChild(note);
-    } else if (players.length) renderPlayers(playerSection, players);
+    } else if (players.length) renderPlayers(playerSection, players, { eager: record.kind === "media" });
     else {
       const note = document.createElement("p");
       note.className = "audio-detail-note";
@@ -2670,6 +3042,7 @@
         rootActionIds, relationTypes, soundObjectCount,
         contentSha256: normalize(candidate.contentSha256),
         contentEquivalentCount: Number(candidate.contentEquivalentCount || 0),
+        hotfixMediaReplacement: candidate.hotfixMediaReplacement === true,
       };
     }).filter((candidate) => {
       if (!candidate.src) return false;
@@ -2697,7 +3070,7 @@
     return String(path || "").split("/").filter(Boolean).map(encodeURIComponent).join("/");
   }
 
-  function renderPlayers(parent, players) {
+  function renderPlayers(parent, players, { eager = false } = {}) {
     const list = document.createElement("div");
     list.className = "audio-player-list";
     const groups = new Map();
@@ -2708,6 +3081,7 @@
     }
     for (const candidates of groups.values()) {
       const exemplar = candidates[0];
+      const collapsePlayers = candidates.length > PLAYER_COLLAPSE_THRESHOLD;
       const groupTitle = document.createElement("div");
       groupTitle.className = "audio-fact-label";
       const rootLabel = exemplar.rootActionIds.length
@@ -2731,22 +3105,39 @@
         candidate.bytes !== undefined ? formatBytes(candidate.bytes) : "",
         candidate.soundObjectCount ? `${candidate.soundObjectCount} Sound objects` : "",
         candidate.contentEquivalentCount > 1 ? `${t("equivalentContent")} × ${candidate.contentEquivalentCount}` : "",
+        candidate.hotfixMediaReplacement ? t("hotfixMediaReplacement") : "",
         ...candidate.relationTypes.map(taxonomyLabel),
-        t("expandToLoadPlayer"),
+        collapsePlayers ? t("expandToLoadPlayer") : "",
       ].filter(Boolean).join(" · ");
       head.append(title, meta);
       const playerHost = document.createElement("div");
+      playerHost.className = "audio-player-host";
       let materialized = false;
       card.addEventListener("toggle", () => {
         if (!card.open || materialized) return;
+        materializePlayer();
+      });
+      const materializePlayer = () => {
+        if (materialized) return;
         materialized = true;
         const audio = document.createElement("audio");
         audio.preload = "none";
         audio.controls = true;
         audio.src = candidate.src;
         const player = window.WebUI?.createMediaPlayer ? window.WebUI.createMediaPlayer(audio) : audio;
-        playerHost.appendChild(player);
-      });
+        const sourceLink = document.createElement("a");
+        sourceLink.className = "audio-source-link";
+        sourceLink.href = candidate.src;
+        sourceLink.target = "_blank";
+        sourceLink.rel = "noopener";
+        sourceLink.textContent = candidate.src;
+        sourceLink.title = candidate.src;
+        playerHost.append(player, sourceLink);
+      };
+      if (eager || !collapsePlayers) {
+        card.open = true;
+        materializePlayer();
+      }
       card.append(head, playerHost);
       list.appendChild(card);
       }

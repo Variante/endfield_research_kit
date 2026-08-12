@@ -381,8 +381,12 @@ never promotes an edge.
   `RadioTriggerZoneHandler.OnEnter -> mission gates/once flag ->
   GameAction.PlayRadio` route, but no authored zone instance has yet joined
   that route to these three ids. The complete current LevelScript Radio surface
-  excludes all three, and its only dynamic radio-id binding belongs to
-  `map01_lv006/3500060003`. Streaming/DynamicStreaming/ExtendData contain no
+  excludes all three. Its sole dynamic radio-id binding is
+  `map01_lv006/3500060003: PlayRadio`; the exact getter chain resolves as
+  `ListGetValueString(RandomLines)` against the matching `LevelScriptBriefData`
+  to `radio_e2m7_9`, `_10`, `_11`, and `_16`. Which list index is chosen at
+  runtime remains unobserved, but the bounded candidate set excludes every
+  `e0m0` target. Streaming/DynamicStreaming/ExtendData contain no
   target-id occurrence; JsonData/Lua/Table occurrences are limited to
   RadioTable and AudioDialog definitions. The working
   `9 -> 9d5 -> 10 -> 21 -> tombstone` placement already matches
@@ -396,23 +400,279 @@ never promotes an edge.
   `radio_e0m0_16/_22/_23`. Boss dialogue is event-conditioned partial order,
   not a fixed sequence. Strong local ordering is currently limited to exact
   serialized paths such as `cutscene_e0m0_2 -> radio_e0m0_1`,
-  `cutscene_e0m0_New14 -> radio_e0m0_8d8`; ending cutscenes 6/7/8 have exact
+  `cutscene_e0m0_New14 -> radio_e0m0_8d8`, and the newly recovered
+  `cutscene_e0m0_13 @ 7.75s -> TLCall_Summon_Cannon_1_Step_01 ->
+  indie_dg002/8700040000 header 4 -> StopLevelSequenceAction ->
+  radio_e0m0_8d4`; ending cutscenes 6/7/8 have exact
   individual playback paths but their cross-event 6 -> 7 -> 8 progression is
   still a working sequence, not one serialized control chain. The report lists
   every displayed key, trigger carrier, preload-only case, and definition with
   no current consumer.
-- The next offline `e0m0` radio step is now a concrete object-index join, not a
-  broad string scan. AnimeStudio component rows can retain their exact
-  GameObject, Transform hierarchy, local position, and computed world position;
-  identity-like booleans such as `useRadioTriggerOnce` are also retained in the
-  scalar surface. A current complete Story carrier refresh can therefore test
-  `LevelFunctionAreaData` / nested `RadioTriggerZoneData` instances for
-  `radioId`, trigger id, once flag, mission gates, hierarchy, and world
-  position. Until that complete index exists, `_9d5`, `_10`, and `_21` remain
-  observed playback with a proven generic native route but no recovered
-  authored instance or strict order edge.
+- The current-CLI Story object-index join for the unresolved `e0m0` radios is
+  complete. Hash-validated StreamingAssets and Persistent indexes cover
+  1,394,047 object rows and retain exact component GameObject/Transform scene
+  context plus boolean state fields. Exact scans found zero serialized scalar
+  matches for `radio_e0m0_9d5`, `_10`, or `_21`; a second bounded scan also
+  found zero matches across the three roots, eight line ids, their
+  `au_radio_*` overrides, and `_f/_m` variants (35 exact values total).
+  `RadioTable` still proves each row-to-`audioOverride` binding, and gameplay
+  proves playback, but neither the complete Unity object surface nor the
+  previously audited LevelScript/native constant surface identifies the
+  producer. Keep the working sequence
+  `radio_e0m0_9 -> radio_e0m0_9d5 -> radio_e0m0_10 -> radio_e0m0_21 ->
+  cutscene_e0m0_tombstonecollapseCam`; its middle four relative edges remain
+  manual observations, not serialized strict order.
+- The installed Radio receiver is now decoded end to end. The shipped
+  `Lua/Data/LuaScripts/LuaSystem/RadioSystem.lua` registers
+  `MessageConst.SHOW_RADIO`, accepts a
+  `GameAction.RadioRuntimeData`, looks up its `radioId` in `RadioTable`, and
+  plays `radioSingleDataList` in authored list order; normal voiced rows submit
+  each row's `audioOverride` to `VoiceManager.SpeakNarrative`. This proves the
+  root -> line -> audio execution mechanism and explains why a Radio definition
+  is not itself a trigger. It does not provide the missing root producer.
+  `radio_e0m0_9d5`, `_10`, and `_21` all have equal priority 3 and both
+  continuation flags false; none occurs in `AudioRadioContinueTable`. The
+  receiver therefore cannot turn one of these roots into the next. Hearing all
+  three requires three externally supplied `RadioRuntimeData` values (or an
+  independently proven direct-audio bypass), and does not promote their
+  observed order to a serialized edge.
+- The current indirect playback surface is narrower. The installed XLua
+  `BeyondGameplayActionsGameActionWrap._m_PlayRadio_xlua_st_` reads the Lua
+  string argument and has four decoded direct call paths to the static
+  `GameAction.PlayRadio`; `PlayRadioAndWait`, `PlayRadioOnEntity`, and
+  `FlushAndPlayRadio` wrappers are likewise mapped. The complete 1,290-module
+  shipped Lua corpus contains no target root id and no direct `GameAction`
+  Radio playback call. Its only Lua `SHOW_RADIO` producers use a dynamic
+  factory-interaction `forbidReason.radioId`, with no target literal. The
+  complete current `GameAssembly.dll` direct-call census found exactly seven
+  calls to `RadioRuntimeData..ctor`: the four `GameAction` Radio helpers,
+  `Play3DRadio.GenRadioRuntimeData`, and two `FactoryUtil` building-lock
+  checks. The two factory checks pass the lock-check output string as
+  `radioId`, are gated by `needRadioNotify`, and close the same dynamic factory
+  path seen in Lua; no mission, task, level, or `e0m0` constructor caller was
+  found. This census covered 6,425,224 executable-section `E8` candidates. The
+  same global scan over the five static `GameAction` Radio entry families found
+  35 direct calls across 22 callers. The reproducible closure audit in
+  `reports/story/recovery/radio_producer_closure_audit.md` classifies five XLua
+  wrappers, five typed Action `Execute` methods, four NPC patrol callers, two
+  interactive-narrative callers, one `RadioTriggerZoneHandler`, and five other
+  native systems. Every direct caller now has a bounded current authored/runtime
+  carrier, and none supplies the three target ids. `NarrativeComponent` obtains
+  its content id from an interactive ParamBlackboard; the maintained LevelInteractiveData /
+  ReadingPopUp join already covers that authored carrier, and none of the three
+  target roots occurs in `ReadingPopUpTable`. Across current structured tables,
+  the targets occur only in `RadioTable` and `AudioDialog`. They are also absent
+  from both `StrIdNumTable.radio_id` and `real_radio_id_fixed`, closing the
+  numeric Radio-id mapping as a hidden selector for these rows. A direct-field
+  census of all 3,743 current `Proto.*` types found zero `radioId`, `timelineId`,
+  or `storyId` fields, so normal typed protobuf delivery does not carry these
+  roots; opaque bytes, dynamic maps, and native-private packets remain outside
+  that bound. The 12 CN target voice variants have no Wwise Event bindings
+  (`eventCount=0`), and their signed/unsigned `AudioDialog` integer keys have
+  zero exact retained-scalar matches across the same 1,394,047 Unity objects.
+  Those 12 int32 keys also have zero exact constant hits in the current
+  `GameAssembly.dll` executable sections.
+  The two shipped Lua `SHOW_RADIO` producers are now closed as current offline
+  value sources rather than left as an unspecified `forbidReason` boundary.
+  `Utils.isForbiddenWithReason` returns the base `ForbidParams`; the only
+  subtype with a `radioId` is `ForbidParamsWithRadioReason`, whose current
+  layout is `radioId:string` at `+0x18`. Metadata fixes
+  `ForbidInteractFacBuilding=25`. The subtype string constructor has exactly
+  one direct AOT caller, `ForbidParams.CreateForbidParams`, and its value-25
+  branch passes a null string; the serialized LevelScript `SetForbid` action
+  likewise passes null `forbidParams` to `ForbidSystem.AddForbid`. The complete
+  indexes contain two serialized subtype instances, both in
+  `ForbidByGameplayTagConfig` and both with an empty four-byte string payload;
+  shipped Lua has two readers and zero subtype constructors. None of the 30
+  active Gameplay IFix replacements touches Radio, Forbid, EventManager, or
+  `SendGlobal`. This closes the current direct/native-default, serialized,
+  shipped-Lua, and active-IFix form of that path; indirect runtime mutation or
+  server-provided generic script data remains outside the bound.
+  A normal Timeline/PostEvent bypass and a retained Unity identifier-key
+  carrier are therefore also closed. The direct raw-voice surface is now
+  bounded separately: the full AOT scan finds eight business calls to the two
+  public `VoiceManager.SpeakNarrative` overloads, while all 1,290 shipped Lua
+  modules contain ten calls across six modules. Exact scans of the three roots,
+  eight line/base-audio ids, and 12 resolved voice variants still reach only
+  `RadioTable` and `AudioDialog`. The six Reading/PRTS tables expose 1,628
+  `overrideRadioId` fields but only three non-empty values, all unrelated to
+  `e0m0`; the three native getter stubs have no direct AOT callers. The PRTS
+  uses are Lua UI playback, and `RadioSystem` reaches target audio only after a
+  Radio root was already supplied. The same complete Lua corpus has no dynamic
+  `GameAction[...]`, managed reflection, `GetMethod`, `InvokeMember`,
+  `DynamicInvoke`, or managed `Activator` call pattern. The metadata type
+  `GameActionEnumInvokeMethod` has zero fields and only the standard delegate
+  `.ctor`/`Invoke`/`BeginInvoke`/`EndInvoke` shape, so it is not a method-name
+  dispatcher or authored Radio registry. The current installed
+  `Gameplay.Beyond.patch.bytes` fixes 30 methods but none of the Radio receiver,
+  wrapper, or playback methods. `GameAction.PlayRadio` is
+  static, so there is no interface/virtual slot for this exact entry. The
+  by-value `RadioRuntimeData` surface is now closed independently of its
+  constructor: exact metadata has no other persistent carrier field, four
+  parameter methods and two return methods, including three IFix wrappers.
+  Their direct-E8 census has nine calls from seven callers. The concrete
+  `EventManager.SendGlobal<RadioRuntimeData>` body is reached through one
+  validated 0x38-byte ABI thunk; all eight thunk calls come from the four
+  static GameAction playback helpers and the two Factory building-lock checks.
+  The call sites read `Beyond.PredefinedEventKeys.SHOW_RADIO` at the exact
+  registered field offset `+0x4a4`, closing the native-to-Lua event bridge.
+  `FactoryBuildingPanelLock` has only `radio_e1m2_3d5`, `radio_e1m3_6`, and
+  `radio_e5m2_3d2`, so that second producer family excludes the e0m0 targets.
+  XLua and the current IFix payload are therefore available mechanisms, not
+  producers of these three values; reflection/dynamic construction, a runtime
+  patch or indirect call, server-origin `forbidReason.radioId`, and an
+  indirect/non-indexed raw-audio path remain outside the closed corpus. Exact
+  source-graph queries add only definition, line/audio,
+  mission-grouping, actor, and manual/fallback-order relations for the three
+  targets; they add no trigger or producer edge and therefore do not alter
+  `story_order.json`.
+- The maintained Timeline marker audit now scans both complete AnimeStudio
+  object indexes: 1,394,047 objects contain 91 `RaiseLevelEventMarker`
+  objects, 74 exact MarkerTrack/Timeline owners, and six exact event-name joins
+  to LevelScript Story receivers. Exact `m_Time` values come from each marker
+  object, not object order. Two `TLCall_PlayRadio` markers at 21.7333 seconds
+  belong to `f_cutscene_e11m1_fire_end_Actor` and
+  `m_cutscene_e11m1_fire_end_Actor`; both reach the same
+  `radio_e11m1_22` receiver. This proves one reason a Story file appears many
+  times in spatial/source views: distinct gender or authored Timeline variants
+  can converge on one event receiver, and every occurrence is retained as
+  provenance. It is not evidence that playback repeats. The e0m0 route above
+  is the only current marker-to-Story join in `cutscene_e0m0_13`; Step02-06 and
+  FreeRoam retain their exact 8.15-12.5167 second order but have no Story join.
+  See `reports/story/recovery/timeline_level_event_marker_audit.md`.
 - Project-authored WebUI fixtures are labeled and excluded from original-game
   chronology recovery.
+
+The C35/Liino audio pass provides a useful trigger boundary. For
+`dlg_c35m1_10`, `DialogTrunkPlayableAsset._trunkId` and the recovered
+`dlgtl_c35m1_10_sub_1` Timeline establish an authored voice carrier and exact
+line order; the same Timeline's Audio tracks separately establish authored SFX
+placements. `RadioTable` similarly establishes Radio row -> line ->
+`audioOverride` identity, and LevelScript decodes the generic `PlayRadio*`
+action families. These are strong content/ownership relations, not proof that
+the game reached the Director or executed the action. In particular,
+`mission:c35m1 -> story:dlg_c35m1_10` is a WebUI grouping edge: the raw
+`MissionRuntimeAsset/c35m1.json` has no direct dialog finish or LevelScript
+binding for this scene.
+
+The active Persistent-over-Streaming LevelScript overlay adds a separate C35
+carrier, but not the missing Timeline activation. Four exact files,
+`Persistent/Data/Json/LevelScriptData/map01_lv001/2100710037.json` through
+`2100710040.json`, are each 843 bytes with a two-record control surface. Their
+`actionList#1` root is a current-build `StartDialogAction` (`0x049e`, 15
+serialized members, local id 3) carrying the tagged id `dlg_c35m1_dungeon`.
+Their `headerList#1` is `LevelEvent_OnCustomEvent` (`0x1052`/tag `0x0052`)
+with `nextId=3` and event keys `Enter_c35m1`, `Enter_c35m2`, `Enter_c35m3`,
+and `Enter_c35m4` respectively. This proves the authored local event ->
+StartDialogAction -> dialog-id edge. It does not prove that any of those
+events fired, and an exhaustive structured-export string scan finds no second
+serialized producer for the four `Enter_*` keys. The quest's
+`EntityTrackingInfo.scriptId=710037, entitySlotId=40001` is a useful lead:
+`2100710037 % 100000000 == 710037`, but the current WorldEntityRegistry has no
+matching row, so the maintained resolver cannot yet prove that tracking target
+owns this LevelScript.
+
+The matching Persistent LevelData asset,
+`map01_lv001/map01_lv001_lv_data_sub_c35_1d4.json`, contains one validated
+`LevelScriptBriefData` dictionary covering global ids `2100710037` through
+`2100710041`. The `2100710037` row has `levelScriptType=1`, `maxStage=1`, no
+properties, and no world-entity references; the container has no mission,
+Story, dialog, or Timeline identity. The target LevelScript itself decodes
+`startType=Manual` with zero serialized trigger-volume rows. These fields
+explain why the exported bytes do not yield a player-entered spatial producer:
+they are authored activation configuration, not proof that the runtime invoked
+the script.
+
+No `dlg_c35m1_10` or `dlgtl_c35m1_10_sub_1` identity occurs in these
+LevelScript action fields. Until a `map01_lv001`/LevelScript action, event
+producer, or another native receiver is joined to the Timeline, C35 remains
+`mission-associated/runtime-activation-unresolved`; the four
+`Enter_* -> dlg_c35m1_dungeon` rows should be retained as a distinct
+custom-event dialog route rather than conflated with scene 10. The existing
+dialog index also keeps the distinction explicit: `dlg_c35m1_dungeon` has no
+recovered lines or Timeline, while `dlg_c35m1_10` owns
+`dlgtl_c35m1_10_sub_1`. The existing e11m3 `mission_story_context` chain is
+the comparator for the stronger evidence that is still missing here.
+
+The generated CN audio trigger shard now projects the scene-10 DialogTrunk
+schedule as 19 `dialogTimeline` rows. Each row preserves the exact line id,
+actor, timeline id, start/duration, and existing playable `au_dlg_c35m1_10_*`
+FLAC; all 19 resolve to media, but all remain
+`dialogTimelineRuntimeExecutionNotObserved`. This establishes the authored
+voice placement and media meaning without changing the unresolved mission or
+Timeline activation boundary above.
+
+The same `dlgtl_c35m1_10_sub_1_Audio` asset has six serialized Audio tracks
+with 21 exact clip placements and 18 unique SFX keys. The CN semantic surface
+now exposes each placement's start/duration and the raw `AudioDlgEventPlayable`
+controls; all 18 keys are absent from the current Wwise/Event and media
+indexes, so their rows intentionally have no playable `src`. Their authored
+names describe create/fall/landing, shimmer/wink, flight/whoosh, grass
+footsteps, Liino fly/pat-head/surprise, NPC fear/shake, Endmin landing, and
+lens-zoom light. `au_sfx_dlg_foley_c35m1_10_liino_pathead` is the only
+scene-10 placement marked `isCue=1`; that still does not resolve its cue or
+prove Timeline/Director execution.
+
+The playable-type audit keeps this SFX lane separate from voice: 20 of the 21
+clips use `AudioDlgEventPlayable` and `wink_02` uses `AudioEventPlayable`.
+Both carry `_audioEventKey`-style SFX fields and neither carries a dialog
+`_trunkId` or `playVoice` flag. The voice lane is instead
+`Actor -> Common -> Dialog Trunk`, with 19 `_trunkId` line placements and two
+`DialogLipSyncPlayableAsset` tracks using `playVoice=1`; the serialized Dialog
+Voice Audio Track has no clips. `DialogAudioEventPlayableAsset` found in a
+different timeline extract uses an `audioEvent._id` shape and is not evidence
+for C35. Thus a matching `au_sfx_*` name is a Timeline SFX identity, not a
+voice trigger or a lifecycle hook.
+
+An exact-key audit across the comparable CN Wwise indexes in
+`export_full_1d3d2`, `export_full_1d4`, and the current `export_full` finds
+none of the 18 C35 scene-10 SFX keys. Those historical indexes do contain
+other `au_sfx_dlg_*` names, so this is a C35-key absence rather than a claim
+that the whole dialog-SFX namespace was never exported. The current semantic
+shard therefore keeps these keys as authored Timeline requests with no
+decoded Wwise media, and records the two static playable contract ids
+(`timelineStringEventKey.audioDlg` / `timelineStringEventKey.audioEvent`) for
+the 20/1 carrier split. The remaining missing link is still the runtime
+Timeline evaluation and Wwise request, not a justified synthetic media join.
+
+The C35 scene root also explains how this child audio Timeline is intended to
+enter playback. The root `CutsceneRootComponent` stores
+`_timelineName=dlgtl_c35m1_10_sub_1` and `_director` resolves to root
+PlayableDirector PathID `63140722070379897`, whose TimelineAsset is the root
+Story asset PathID `-2466791841398753755`. Its `Audio` ControlTrack has one
+`ControlPlayableAsset` clip (`0.0s`, `180.583333s`) with
+`autoBindingPath=Audio`, `updateDirector=1`, and `active=1`; this binds the
+child `Audio` GameObject and PlayableDirector PathID `79300700487540089` to
+the SFX TimelineAsset PathID `6744480576528724800`. The root-to-child
+relation is exact serialized composition, while root activation, child
+Director evaluation, and Wwise posting remain unobserved.
+
+The matching current-build native audit now gives the child Timeline a typed
+evaluation contract. For the 20 `AudioDlgEventPlayable` clips,
+`ProcessFrame` calls `ShouldPlay`, `_DoPlayEvent`, and the conditional
+`_TrySeek`/`_TryStop` paths; manual pause calls `_DoPlayStopEvent`, and graph
+stop calls `_TryStop`. The one `AudioEventPlayable` clip has the parallel
+`OnBehaviourPlay -> ShouldPlay` path and graph-stop cleanup including
+`_TryPostExitEvent`. This explains when an already-evaluated clip can request,
+seek, or stop its authored key, but it does not establish root activation,
+Director evaluation, the actual Wwise `PostEvent`, or audible output for C35.
+In the current native body, `_DoPlayEvent` stops at `_GetAudioObjId`, callback
+construction, and IFix/indirect targets rather than a direct `PostEvent` edge;
+`_TryStop` likewise has no direct `StopPlayingID` edge. The remaining cut is
+therefore specifically the IFix/indirect runtime target and live execution, not
+the serialized carrier or the managed Timeline lifecycle.
+The bounded native evidence is recorded in
+`reports/story/recovery/audio/timeline_audio_runtime_gameassembly.md`.
+
+The same scene now has two additional, separate dialog-lifecycle hooks from
+`AudioDialogCustomEventTable`: `dlg_c35m1_10.postEnterEvents[0]` is the exact
+uint32 Event `0x4cd598ce` (authored signed value `1289066702`) and
+`preExitEvents[0]` is `0xcd4ea851` (authored signed value `-850483119`). The
+static `AudioGameplayStatusSystem` metadata connects these fields to
+`_OnPostEnterDialog` and `_OnPreExitDialog`, with pending/preload scheduling
+methods visible in the same type. Both current Wwise Event objects have no
+decoded media leaf, so these hooks do not explain the 18 Timeline SFX keys or
+prove that scene 10 dispatched either lifecycle event during play.
 
 ## Evidence rules
 
@@ -442,11 +702,29 @@ Reject as proof:
 
 ## Highest-value remaining gaps
 
-1. Complete a current-CLI StreamingAssets object-index refresh, then audit
-   `indie_dg002` component rows for `LevelFunctionAreaData` /
-   `RadioTriggerZoneData` instances carrying `radio_e0m0_9d5`, `_10`, or `_21`.
-   Promote only exact serialized instance fields and exact Transform context;
-   do not infer a chain from RadioTable order, code address, or nearby objects.
+1. Continue the three unresolved `e0m0` radios only through an exact producer
+   of the `RadioRuntimeData.radioId` entering `MessageConst.SHOW_RADIO`, or a
+   direct audio submission path. The receiver, complete Unity object index,
+   4,581 active-overlay LevelScripts (including the resolved sole dynamic Radio
+   candidate set), targeted VFS bytes, direct native constants, shipped Lua
+   callers, all 22 direct static-entry callers, all direct AOT
+   `RadioRuntimeData` constructor callers, all six by-value carrier methods,
+   the validated `SendGlobal<RadioRuntimeData>` ABI thunk and its eight calls,
+   the exact `SHOW_RADIO +0x4a4` event-key load, the eight native plus ten shipped-Lua
+   direct `SpeakNarrative` calls, all Reading/PRTS override fields, and the
+   current IFix fixed-method set, and the exact
+   `ForbidInteractFacBuilding -> ForbidParamsWithRadioReason.radioId` native,
+   serialized, Lua, and active-IFix value path are closed for all three
+   root/line/audio identifiers. Continue only through a dynamically
+   constructed/reflected value outside shipped Lua, indirect/native runtime
+   mutation or server-provided generic script data outside the reviewed typed
+   surfaces, or an indirect/non-indexed raw AudioDialog/media submission path.
+   Do not
+   repeat static string, AssetMap, spatial,
+   interface-slot, XLua-registration, current-IFix, direct-constructor,
+   direct-static-entry, fixed-numeric-id, typed-protobuf-radio-id,
+   Unity-object-AudioDialog-key, direct-SpeakNarrative, Reading/PRTS-override,
+   or code-address scans unless the original corpus changes.
 2. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families. Five receiver scripts now have exact level-scoped typed
@@ -486,12 +764,6 @@ Reject as proof:
    routes are structurally classified; revisit them only if a new original
    connection or native fallback appears. Do not repair them with positional
    replication or object-specific exceptions.
-8. Republish the StreamingAssets object-index commit marker only through a
-   current-CLI Story carrier refresh. The surviving merged outputs and worker
-   parts still hash-match their last valid report and the installed-data
-   fingerprint is unchanged, but the current AnimeStudio implementation hashes
-   differ from that producer; copying the old marker would violate provenance.
-
 The current source-only gap queue ranks actionable isolated scenes by mission.
 Use it as a work queue, not as a proposed Story order.
 
@@ -503,6 +775,8 @@ Use it as a work queue, not as a proposed Story order.
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_recovery\build_source_story_gap_queue.py --language CN
 python scripts\story_recovery\build_timeline_embedded_story_runtime_audit.py
+python scripts\story_recovery\build_timeline_level_event_marker_audit.py
+python scripts\story_recovery\build_radio_forbid_producer_audit.py
 python scripts\story_recovery\build_dialog_finish_branch_audit.py --publish
 python tools\endfield_source_graph.py story STORY_KEY
 python tools\endfield_source_graph.py issues --limit 20
@@ -525,6 +799,8 @@ reports/story/recovery/native_receiver_activation_frontier.md
 reports/story/recovery/dialog_finish_branch_audit.md
 reports/story/recovery/protocol_registry_audit.md
 reports/story/recovery/timeline_embedded_story_runtime_audit.md
+reports/story/recovery/timeline_level_event_marker_audit.md
+reports/story/recovery/radio_forbid_producer_audit.md
 ```
 
 Generated reports are the current inventory and hash record. This memory topic

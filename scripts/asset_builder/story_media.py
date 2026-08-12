@@ -9,10 +9,44 @@ from pack_webui import (
     collect_inline_image_ids,
     collect_wiki_media_image_ids,
     collect_wiki_video_refs,
+    media_lookup_stem,
     resolve_exact_image_assets,
     resolve_exact_video_asset,
     resolve_inline_image_assets,
+    score_inline_image_asset,
 )
+
+
+STORY_FILE_IMAGE_PREFIXES = ("cg_image_", "dlg_biglogo_", "remotecomm_image_")
+EXCLUDED_STORY_FILE_IMAGE_STEMS = {"cg_image_e2m6_1_m"}
+
+
+def collect_story_file_images(entries: list[dict]) -> dict[str, dict]:
+    """Return one preferred Sprite export for each logical Story image."""
+    selected_by_stem: dict[str, tuple[int, str, dict]] = {}
+    for raw in entries:
+        if not isinstance(raw, dict) or raw.get("k") != "image" or not raw.get("r"):
+            continue
+        rel = str(raw.get("r") or "").replace("\\", "/").strip("/")
+        stem_info = media_lookup_stem(rel)
+        if not stem_info or not stem_info[0].startswith(STORY_FILE_IMAGE_PREFIXES):
+            continue
+        stem = stem_info[0]
+        if stem in EXCLUDED_STORY_FILE_IMAGE_STEMS:
+            continue
+        entry = dict(raw)
+        entry["k"] = "image"
+        entry["r"] = rel
+        rank = score_inline_image_asset(rel, stem)
+        current = selected_by_stem.get(stem)
+        if current is None or rank > current[0] or (rank == current[0] and rel < current[1]):
+            selected_by_stem[stem] = (rank, rel, entry)
+    return {rel: entry for _rank, rel, entry in selected_by_stem.values()}
+
+
+def collect_cg_story_images(entries: list[dict]) -> dict[str, dict]:
+    """Compatibility wrapper for callers/tests covering Story image import."""
+    return collect_story_file_images(entries)
 
 
 def source_roots_for_entries(
@@ -49,6 +83,13 @@ def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
 
     selected_images: dict[str, dict] = {}
     selected_videos: dict[str, dict] = {}
+
+    # CG illustrations are valid standalone Story media even when no current
+    # conversation payload names them. Import the complete exported family so
+    # direct cg_image_* references can resolve and packaging copies the files.
+    story_file_images = collect_story_file_images(asset_payload.get("entries") or [])
+    selected_images.update(story_file_images)
+    story_file_stems = [media_lookup_stem(rel)[0] for rel in story_file_images]
 
     for image_id in sorted(inline_image_ids):
         for candidate in resolve_inline_image_assets(image_id, by_stem, by_number):
@@ -90,6 +131,10 @@ def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
             "image": len(images),
             "video": len(videos),
             "imageIds": len(inline_image_ids | wiki_image_ids),
+            "storyFileImages": len(story_file_images),
+            "cgImages": sum(stem.startswith("cg_image_") for stem in story_file_stems),
+            "bigLogoImages": sum(stem.startswith("dlg_biglogo_") for stem in story_file_stems),
+            "remoteCommImages": sum(stem.startswith("remotecomm_image_") for stem in story_file_stems),
             "videoRefs": len(video_refs),
         },
         "entries": entries,
@@ -103,6 +148,10 @@ def story_media_stats(payload: dict, story_media_path: Path) -> dict:
         "imageIds": int(counts.get("imageIds") or 0),
         "videoRefs": int(counts.get("videoRefs") or 0),
         "images": int(counts.get("image") or 0),
+        "cgImages": int(counts.get("cgImages") or 0),
+        "bigLogoImages": int(counts.get("bigLogoImages") or 0),
+        "remoteCommImages": int(counts.get("remoteCommImages") or 0),
+        "storyFileImages": int(counts.get("storyFileImages") or 0),
         "videos": int(counts.get("video") or 0),
         "indexBytes": story_media_path.stat().st_size,
     }
@@ -112,5 +161,3 @@ def write_story_media_payload(payload: dict) -> dict:
     story_media_path = ASSET_DIR / "story_media.json"
     write_json(story_media_path, payload)
     return story_media_stats(payload, story_media_path)
-
-

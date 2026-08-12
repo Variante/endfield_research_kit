@@ -1,4 +1,5 @@
 import argparse
+import base64
 import importlib.util
 import json
 import tempfile
@@ -35,6 +36,462 @@ def sound_source_data(
 
 
 class AudioCategoryTests(unittest.TestCase):
+    def test_audio_dialog_external_media_id_matches_game_path_hash(self) -> None:
+        self.assertEqual(
+            build_audio.audio_dialog_external_media_id(
+                "v1d4/Narrating/HS_Part04/c35m3/au_dlg_c35m3_12_025.wem",
+                "chinese",
+            ),
+            10012020101098562764,
+        )
+
+    def test_collect_hirc_decoded_sound_definitions_keeps_exact_orphan_object(self) -> None:
+        objects = {
+            10: {"type": 2, "data": sound_source_data(30151934, 20)},
+            11: {"type": 2, "data": sound_source_data(999, 20)},
+            20: {"type": 5, "data": b""},
+        }
+
+        rows = build_audio.collect_hirc_decoded_sound_definitions(
+            objects,
+            {30151934},
+            bank_name="default_banks.pck",
+            bank_id=7,
+            bank_version=150,
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["mediaId"], 30151934)
+        self.assertEqual(rows[0]["soundObjectId"], 10)
+        self.assertEqual(rows[0]["parentObjectId"], 20)
+        self.assertEqual(rows[0]["parentObjectType"], 5)
+        self.assertEqual(rows[0]["evidence"], "exactTypedWwiseSoundCodecMediaObject")
+
+    def test_suppress_redundant_unknown_audio_occurrences_drops_identical_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            audio_root = Path(raw_root)
+            unknown_path = audio_root / "shared/wwise/unknown/1.flac"
+            resolved_path = audio_root / "shared/wwise/sfx/1.flac"
+            unknown_path.parent.mkdir(parents=True)
+            resolved_path.parent.mkdir(parents=True)
+            unknown_path.write_bytes(b"same decoded media")
+            resolved_path.write_bytes(b"same decoded media")
+            generic = {
+                "1": {
+                    "id": "1", "storageRoot": "shared", "rel": "wwise/sfx/1.flac",
+                    "bytes": resolved_path.stat().st_size, "audioCategory": "sfx",
+                },
+                "1@shared:wwise/unknown/1.flac": {
+                    "id": "1", "storageRoot": "shared", "rel": "wwise/unknown/1.flac",
+                    "bytes": unknown_path.stat().st_size, "audioCategory": "unknown",
+                },
+            }
+
+            stats = build_audio.suppress_redundant_unknown_audio_occurrences(
+                audio_root, generic, {}, "CN"
+            )
+
+            self.assertEqual(stats["contentIdenticalDuplicateOccurrencesCompared"], 1)
+            self.assertEqual(stats["contentIdenticalUnknownOccurrencesSuppressed"], 1)
+            self.assertEqual(list(generic), ["1"])
+            self.assertTrue(unknown_path.is_file())
+
+    def test_suppress_redundant_unknown_audio_occurrences_preserves_different_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            audio_root = Path(raw_root)
+            unknown_path = audio_root / "shared/wwise/unknown/2.flac"
+            resolved_path = audio_root / "shared/wwise/sfx/2.flac"
+            unknown_path.parent.mkdir(parents=True)
+            resolved_path.parent.mkdir(parents=True)
+            unknown_path.write_bytes(b"unknown collision")
+            resolved_path.write_bytes(b"resolved collision")
+            generic = {
+                "2": {
+                    "id": "2", "storageRoot": "shared", "rel": "wwise/sfx/2.flac",
+                    "bytes": resolved_path.stat().st_size, "audioCategory": "sfx",
+                },
+                "2@shared:wwise/unknown/2.flac": {
+                    "id": "2", "storageRoot": "shared", "rel": "wwise/unknown/2.flac",
+                    "bytes": unknown_path.stat().st_size, "audioCategory": "unknown",
+                },
+            }
+
+            stats = build_audio.suppress_redundant_unknown_audio_occurrences(
+                audio_root, generic, {}, "CN"
+            )
+
+            self.assertEqual(stats["contentIdenticalUnknownOccurrencesSuppressed"], 0)
+            self.assertEqual(len(generic), 2)
+
+    def test_suppress_redundant_unknown_audio_occurrences_preserves_cross_storage_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            audio_root = Path(raw_root)
+            shared_path = audio_root / "shared/wwise/sfx/3.flac"
+            language_path = audio_root / "CN/wwise/unknown/3.flac"
+            shared_path.parent.mkdir(parents=True)
+            language_path.parent.mkdir(parents=True)
+            shared_path.write_bytes(b"same id and bytes")
+            language_path.write_bytes(b"same id and bytes")
+            generic = {
+                "3@shared": {
+                    "id": "3", "storageRoot": "shared", "rel": "wwise/sfx/3.flac",
+                    "bytes": shared_path.stat().st_size, "audioCategory": "sfx",
+                },
+                "3@CN": {
+                    "id": "3", "storageRoot": "CN", "rel": "wwise/unknown/3.flac",
+                    "bytes": language_path.stat().st_size, "audioCategory": "unknown",
+                },
+            }
+
+            stats = build_audio.suppress_redundant_unknown_audio_occurrences(
+                audio_root, generic, {}, "CN"
+            )
+
+            self.assertEqual(stats["contentIdenticalDuplicateOccurrencesCompared"], 0)
+            self.assertEqual(stats["contentIdenticalUnknownOccurrencesSuppressed"], 0)
+            self.assertEqual(len(generic), 2)
+
+    def test_suppress_redundant_audio_dialog_external_path_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            audio_root = Path(raw_root)
+            dialog_path = "v1d4/Narrating/HS_Part04/c35m3/au_dlg_fixture.wem"
+            external_id = build_audio.audio_dialog_external_media_id(dialog_path, "chinese")
+            unknown_path = audio_root / f"CN/wwise/unknown/{external_id}.flac"
+            dialog_file = audio_root / "CN/voice/story/hongshan/au_dlg_fixture.flac"
+            unknown_path.parent.mkdir(parents=True)
+            dialog_file.parent.mkdir(parents=True)
+            unknown_path.write_bytes(b"same external voice bytes")
+            dialog_file.write_bytes(b"same external voice bytes")
+            generic = {str(external_id): {
+                "id": str(external_id),
+                "storageRoot": "CN",
+                "rel": f"wwise/unknown/{external_id}.flac",
+                "bytes": unknown_path.stat().st_size,
+                "audioCategory": "unknown",
+                "sourceBank": "external",
+            }}
+            dialog = {"au_dlg_fixture": {
+                "id": "au_dlg_fixture",
+                "storageRoot": "CN",
+                "rel": "voice/story/hongshan/au_dlg_fixture.flac",
+                "bytes": dialog_file.stat().st_size,
+                "audioDialogPath": dialog_path,
+            }}
+
+            stats = build_audio.suppress_redundant_unknown_audio_occurrences(
+                audio_root, generic, dialog, "CN"
+            )
+
+            self.assertEqual(stats["audioDialogExternalCopiesCompared"], 1)
+            self.assertEqual(stats["audioDialogExternalCopiesSuppressed"], 1)
+            self.assertEqual(generic, {})
+            self.assertTrue(unknown_path.is_file())
+
+    def test_suppress_redundant_audio_dialog_external_copy_requires_exact_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            audio_root = Path(raw_root)
+            dialog_path = "v1d4/Narrating/HS_Part04/c35m3/au_dlg_fixture.wem"
+            external_id = build_audio.audio_dialog_external_media_id(dialog_path, "chinese")
+            unknown_path = audio_root / f"CN/wwise/unknown/{external_id}.flac"
+            dialog_file = audio_root / "CN/voice/story/hongshan/au_dlg_fixture.flac"
+            unknown_path.parent.mkdir(parents=True)
+            dialog_file.parent.mkdir(parents=True)
+            unknown_path.write_bytes(b"external bytes A")
+            dialog_file.write_bytes(b"external bytes B")
+            generic = {str(external_id): {
+                "id": str(external_id), "storageRoot": "CN",
+                "rel": f"wwise/unknown/{external_id}.flac", "bytes": 16,
+                "audioCategory": "unknown", "sourceBank": "external",
+            }}
+            dialog = {"au_dlg_fixture": {
+                "id": "au_dlg_fixture", "storageRoot": "CN",
+                "rel": "voice/story/hongshan/au_dlg_fixture.flac", "bytes": 16,
+                "audioDialogPath": dialog_path,
+            }}
+
+            stats = build_audio.suppress_redundant_unknown_audio_occurrences(
+                audio_root, generic, dialog, "CN"
+            )
+
+            self.assertEqual(stats["audioDialogExternalCopiesCompared"], 1)
+            self.assertEqual(stats["audioDialogExternalCopiesSuppressed"], 0)
+            self.assertEqual(len(generic), 1)
+
+    def test_audio_dialog_path_recovers_only_exact_current_wwise_event_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            first = root / "StreamingAssets/AudioDialog.json"
+            second = root / "Persistent/AudioDialog.json"
+            first.parent.mkdir(parents=True)
+            second.parent.mkdir(parents=True)
+            exact_name = "eny_fixture_combat_taunt_sv"
+            exact_hash = build_audio.audio_hash_generator_compute(exact_name)
+            signed_hash = exact_hash if exact_hash < (1 << 31) else exact_hash - (1 << 32)
+            payload = {
+                str(signed_hash): {
+                    "path": exact_name,
+                    "codec": 4,
+                    "speakerChannel": "eny_fixture",
+                    "voType": 2,
+                },
+                "123": {"path": "external_only_voice"},
+            }
+            first.write_text(json.dumps(payload), encoding="utf-8")
+            second.write_text(json.dumps(payload), encoding="utf-8")
+
+            rows = build_audio.collect_audio_dialog_wwise_event_aliases(
+                [first, second],
+                [{"eventHash": exact_hash}, {"eventHash": 123}],
+            )
+
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["name"], exact_name)
+            self.assertEqual(rows[0]["voiceId"], signed_hash)
+            self.assertEqual(rows[0]["eventHash"], exact_hash)
+            self.assertEqual(len(rows[0]["sources"]), 2)
+            self.assertEqual(
+                rows[0]["evidence"],
+                "audioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+            )
+
+    def test_voice_table_event_aliases_accept_only_typed_current_wwise_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            names = {
+                "defaultWwiseEvent": "vo_fixture_default",
+                "narratingWwiseEvent": "vo_fixture_narrating",
+                "radioWwiseEvent": "vo_fixture_radio",
+                "overrideWwiseEvent": "vo_fixture_override",
+                "eventTemplate": "vo_fixture_response_{0}",
+            }
+            payloads = {
+                "AudioDialogConfigs.json": {"config": {
+                    "defaultWwiseEvent": names["defaultWwiseEvent"],
+                    "unrelated": "vo_fixture_unrelated",
+                }},
+                "AudioDialogChannel.json": {"channel": {
+                    "narratingWwiseEvent": names["narratingWwiseEvent"],
+                    "radioWwiseEvent": names["radioWwiseEvent"],
+                }},
+                "AudioDialog.json": {"voice": {
+                    "overrideWwiseEvent": names["overrideWwiseEvent"],
+                }},
+                "ResponsiveTriggers.json": {"trigger": {
+                    "eventTemplate": names["eventTemplate"],
+                    "nested": {"eventTemplate": "not_in_current_inventory"},
+                }},
+            }
+            for source in ("StreamingAssets", "Persistent"):
+                table_root = export_root / "structured" / source / "Table"
+                table_root.mkdir(parents=True)
+                for filename, payload in payloads.items():
+                    (table_root / filename).write_text(json.dumps(payload), encoding="utf-8")
+            event_names = list(names.values()) + ["vo_fixture_unrelated"]
+            inventory = [{"eventHash": build_audio.audio_hash_generator_compute(name)} for name in event_names]
+
+            rows = build_audio.collect_voice_table_wwise_event_aliases(export_root, inventory)
+
+            self.assertEqual({row["name"] for row in rows}, set(names.values()))
+            narrating = next(row for row in rows if row["name"] == names["narratingWwiseEvent"])
+            self.assertEqual(narrating["usages"][0]["routeKind"], "narratingChannelEvent")
+            self.assertEqual(narrating["usages"][0]["occurrenceCount"], 1)
+            self.assertEqual(len(narrating["usages"][0]["sources"]), 2)
+            self.assertEqual(
+                narrating["evidence"],
+                "typedVoiceTableEventFieldHashEqualsCurrentWwiseEventId",
+            )
+
+    def test_voice_table_event_alias_conflicts_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            (table_root / "AudioDialogChannel.json").write_text(json.dumps({
+                "channel": {
+                    "narratingWwiseEvent": "vo_fixture_a",
+                    "radioWwiseEvent": "vo_fixture_b",
+                }
+            }), encoding="utf-8")
+            with mock.patch.object(build_audio, "audio_hash_generator_compute", return_value=123):
+                rows = build_audio.collect_voice_table_wwise_event_aliases(
+                    export_root,
+                    [{"eventHash": 123}],
+                )
+            self.assertEqual(rows, [])
+
+    def test_typed_ui_table_aliases_require_whitelisted_consumer_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            accepted = {
+                "audioOnOpen": "Au_UI_Menu_Test_Open",
+                "videoAudioKey": "Au_UI_Menu_Test_Video",
+            }
+            (table_root / "ActivityStaminaRefundBgStateTable.json").write_text(json.dumps({
+                "activity": {
+                    "audioOnOpen": accepted["audioOnOpen"],
+                    "unrelated": "Au_UI_Menu_Unrelated",
+                }
+            }), encoding="utf-8")
+            (table_root / "GachaCharPoolTable.json").write_text(json.dumps({
+                "pool": {"videoAudioKey": accepted["videoAudioKey"]}
+            }), encoding="utf-8")
+            inventory = [{"eventHash": build_audio.audio_hash_generator_compute(name)} for name in (
+                *accepted.values(), "Au_UI_Menu_Unrelated",
+            )]
+
+            rows = build_audio.collect_typed_ui_table_wwise_event_aliases(export_root, inventory)
+
+            self.assertEqual({row["name"] for row in rows}, set(accepted.values()))
+            video = next(row for row in rows if row["name"] == accepted["videoAudioKey"])
+            self.assertEqual(video["usages"][0]["routeKind"], "uiVideoAudioEvent")
+            self.assertIn("VideoPlayer.PlayAudio", video["usages"][0]["runtimeRoute"])
+            self.assertTrue(video["usages"][0]["consumerEvidence"])
+            self.assertEqual(
+                video["evidence"],
+                "typedTableGetterAndLuaAudioConsumerHashEqualsCurrentWwiseEventId",
+            )
+
+    def test_sns_voice_aliases_require_voice_content_and_first_parameter(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            accepted = "Au_UI_Event_SNS_Fixture_Voice"
+            rejected = "Au_UI_Event_SNS_Fixture_Image"
+            (table_root / "SNSDialogTable.json").write_text(json.dumps({
+                "dialog_fixture": {
+                    "dialogId": "dialog_fixture",
+                    "dialogContentData": {
+                        "1": {"contentId": 1, "contentType": 5, "contentParam": [accepted, "4"], "speaker": "fixture"},
+                        "2": {"contentId": 2, "contentType": 2, "contentParam": [rejected]},
+                    },
+                },
+            }), encoding="utf-8")
+            inventory = [{"eventHash": build_audio.audio_hash_generator_compute(name)} for name in (accepted, rejected)]
+
+            rows = build_audio.collect_sns_voice_wwise_event_aliases(export_root, inventory)
+
+            self.assertEqual([row["name"] for row in rows], [accepted])
+            usage = rows[0]["usages"][0]
+            self.assertEqual(usage["contentTypeName"], "Voice")
+            self.assertEqual(usage["contentParamIndex"], 0)
+            self.assertEqual(usage["durationSeconds"], "4")
+
+    def test_skill_id_dictionary_alias_is_identity_only(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            accepted = "eny_fixture_skill_audio_identity"
+            rejected = "eny_fixture_missing_skill_data"
+            for source_root in ("StreamingAssets", "Persistent"):
+                table_root = export_root / "structured" / source_root / "Table"
+                table_root.mkdir(parents=True)
+                (table_root / "NumIdStrTable.json").write_text(json.dumps({
+                    "skill_id": {"dic": {"7": accepted, "8": rejected}},
+                }), encoding="utf-8")
+                skill_root = export_root / "structured" / source_root / "Data/Json/SkillData"
+                skill_root.mkdir(parents=True)
+                (skill_root / f"{accepted}.json").write_bytes(b"fixture-skill-data")
+            inventory = [{"eventHash": build_audio.audio_hash_generator_compute(name)} for name in (accepted, rejected)]
+
+            rows = build_audio.collect_skill_id_dictionary_wwise_event_aliases(export_root, inventory)
+
+            self.assertEqual([row["name"] for row in rows], [accepted])
+            self.assertEqual(rows[0]["dictionaryKind"], "skill_id")
+            self.assertEqual(rows[0]["numericSkillIds"], ["7"])
+            self.assertEqual(rows[0]["playbackPlacementStatus"], "identityOnlyNoAudioConsumer")
+
+    def test_lua_audio_references_separate_events_rtpc_cues_and_literals(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            path = root / "Data/LuaScripts/Test.lua"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                '\n'.join((
+                    'AudioAdapter.PostEvent(flag and "Au_UI_Test_A" or "au_ui_test_b")',
+                    'AudioAdapter.SetRtpc("au_rtpc_test", value)',
+                    'AudioManager.PostAudioCue("au_cue_test")',
+                    'local fallback = "au_ui_indirect"',
+                )),
+                encoding="utf-8",
+            )
+
+            rows = build_audio.collect_lua_audio_references(root)
+
+            self.assertEqual(len(rows), 5)
+            self.assertEqual(
+                {row["kind"] for row in rows},
+                {"luaPostEvent", "luaRtpcParameter", "luaAudioCue", "luaAudioLiteral"},
+            )
+            post_names = {row["name"] for row in rows if row["kind"] == "luaPostEvent"}
+            self.assertEqual(post_names, {"au_ui_test_a", "au_ui_test_b"})
+            for row in rows:
+                self.assertEqual(row["hash"], build_audio.fnv1_32(row["name"]))
+
+    def test_lua_audio_references_keep_source_root_and_selected_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            selected = root / "Data/Selected.lua"
+            skipped = root / "Data/Skipped.lua"
+            selected.parent.mkdir(parents=True)
+            selected.write_text('AudioAdapter.PostEvent("au_ui_selected")', encoding="utf-8")
+            skipped.write_text('AudioAdapter.PostEvent("au_ui_skipped")', encoding="utf-8")
+
+            rows = build_audio.collect_lua_audio_references(
+                root,
+                "Persistent",
+                {"Data/Selected.lua"},
+            )
+
+            self.assertEqual([row["name"] for row in rows], ["au_ui_selected"])
+            self.assertEqual(
+                rows[0]["source"],
+                "structured/Persistent/Lua/Data/Selected.lua",
+            )
+
+    def test_event_bank_filter_includes_named_banks_and_hotfix_pcks(self) -> None:
+        import re
+
+        pattern = re.compile(build_audio.EVENT_BANK_FILE_REGEX, re.IGNORECASE)
+        self.assertTrue(pattern.search("Data/Audio/PCK/Windows/Main/default_banks.pck"))
+        self.assertTrue(pattern.search("Data/Audio/PCK/Windows/Hotfix/hotfix_main.pck"))
+        self.assertFalse(pattern.search("Data/Audio/PCK/Windows/Main/default_media.pck"))
+
+    def test_event_bank_stream_enumerates_streaming_and_persistent_indexes(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            cli = root / "AnimeStudio.CLI.exe"
+            streaming = root / "StreamingAssets"
+            persistent = root / "Persistent"
+            cli.write_bytes(b"")
+            streaming.mkdir()
+            persistent.mkdir()
+            calls = []
+
+            def run(command, **kwargs):
+                calls.append(command)
+                source = Path(command[command.index("--streaming-assets") + 1]).name
+                data = b"streaming-bank" if source == "StreamingAssets" else b"persistent-hotfix"
+                row = {
+                    "blockType": "audio" if source == "StreamingAssets" else "hotfix-audio",
+                    "fileName": "default_banks.pck" if source == "StreamingAssets" else "hotfix_main.pck",
+                    "dataBase64": base64.b64encode(data).decode("ascii"),
+                }
+                return mock.Mock(stdout=json.dumps(row), stderr="")
+
+            args = argparse.Namespace(
+                audio_dumper=cli,
+                streaming_assets=streaming,
+                fallback_assets=persistent,
+            )
+            with mock.patch.object(build_audio.subprocess, "run", side_effect=run):
+                payloads = build_audio.event_bank_payloads_from_vfs(args)
+
+            self.assertEqual(len(calls), 2)
+            self.assertEqual({Path(call[call.index("--streaming-assets") + 1]).name for call in calls}, {"StreamingAssets", "Persistent"})
+            self.assertEqual({Path(name).name for name, _ in payloads}, {"default_banks.pck", "hotfix_main.pck"})
+
     def test_current_interactive_audio_union_tag_and_complete_rows(self) -> None:
         from scripts import build_data_index
 
@@ -490,6 +947,21 @@ class AudioCategoryTests(unittest.TestCase):
             {("randomAlternative",)},
         )
         self.assertNotIn(unrelated_sound, result["visitedObjectIds"])
+
+    def test_state_and_game_parameter_actions_are_control_only(self) -> None:
+        objects = {
+            1: {"type": 4, "data": bytes([2]) + pack("<II", 2, 3)},
+            2: {"type": 3, "data": pack("<HI", 0x1204, 100)},
+            3: {"type": 3, "data": pack("<HI", 0x1402, 200)},
+        }
+        result = build_audio.traverse_hirc_event(1, objects, set(), bank_version=150)
+        self.assertEqual(
+            [row["operation"] for row in result["actionEvidence"]],
+            ["setState", "resetGameParameter"],
+        )
+        self.assertEqual(result["rootPlayActionCount"], 0)
+        self.assertEqual(result["mediaIds"], [])
+        self.assertTrue(all(not row["traversed"] for row in result["actionEvidence"]))
 
     def test_v150_random_sequence_policy_preserves_playlist_order_weights_and_fail_closed_tail(self) -> None:
         children_offset = 24
@@ -1173,7 +1645,7 @@ class AudioCategoryTests(unittest.TestCase):
 
 
 class AudioDumperTests(unittest.TestCase):
-    def test_all_mode_runs_once_per_vfs_source(self) -> None:
+    def test_all_mode_runs_primary_once_and_adds_persistent_hotfix_pass(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
             executable = root / "AnimeStudio.CLI.exe"
@@ -1196,13 +1668,52 @@ class AudioDumperTests(unittest.TestCase):
             with mock.patch.object(build_audio.subprocess, "run") as run:
                 build_audio.run_audio_dumper(args, "CN", build_audio.LANGUAGES["CN"])
 
+            self.assertEqual(run.call_count, 2)
+            primary = run.call_args_list[0].args[0]
+            hotfix = run.call_args_list[1].args[0]
+            self.assertEqual(primary[primary.index("--block") + 1], "all")
+            self.assertEqual(Path(primary[primary.index("--streaming-assets") + 1]), streaming)
+            self.assertIn("--shared-output", primary)
+            self.assertEqual(hotfix[hotfix.index("--block") + 1], "hotfix-audio")
+            self.assertEqual(Path(hotfix[hotfix.index("--streaming-assets") + 1]), persistent)
+            self.assertNotIn("--shared-output", hotfix)
+
+    def test_explicit_hotfix_mode_uses_persistent_as_primary(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            executable = root / "AnimeStudio.CLI.exe"
+            streaming = root / "StreamingAssets"
+            persistent = root / "Persistent"
+            executable.touch()
+            streaming.mkdir()
+            persistent.mkdir()
+            args = argparse.Namespace(
+                skip_decode=False,
+                audio_dumper=executable,
+                streaming_assets=streaming,
+                fallback_assets=persistent,
+                audio_root=root / "Audio",
+                block="hotfix-audio",
+                format="flac",
+            )
+
+            with mock.patch.object(build_audio.subprocess, "run") as run:
+                build_audio.run_audio_dumper(args, "CN", build_audio.LANGUAGES["CN"])
+
             self.assertEqual(run.call_count, 1)
-            for call in run.call_args_list:
-                command = call.args[0]
-                self.assertEqual(command[1:3], ["audio", "--streaming-assets"])
-                self.assertIn("--block", command)
-                self.assertEqual(command[command.index("--block") + 1], "all")
-                self.assertIn("--shared-output", command)
+            command = run.call_args.args[0]
+            self.assertEqual(command[command.index("--block") + 1], "hotfix-audio")
+            self.assertEqual(Path(command[command.index("--streaming-assets") + 1]), persistent)
+            self.assertEqual(Path(command[command.index("--fallback-assets") + 1]), streaming)
+
+    def test_event_media_inventory_fingerprint_tracks_numeric_media(self) -> None:
+        media = {
+            "42": {"id": "42", "storageRoot": "shared", "rel": "wwise/42.flac", "bytes": 10},
+            "dialog": {"id": "dialog", "storageRoot": "CN", "rel": "voice/dialog.flac", "bytes": 20},
+        }
+        initial = build_audio.event_media_inventory_fingerprint(media)
+        media["42"]["bytes"] = 11
+        self.assertNotEqual(initial, build_audio.event_media_inventory_fingerprint(media))
 
     def test_audio_file_priority_prefers_flac_over_legacy_wav(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

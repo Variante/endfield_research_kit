@@ -16,6 +16,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import os
 import re
 import struct
 import sys
@@ -124,7 +125,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 29
+AUDIO_SEMANTIC_SCHEMA_VERSION = 44
+TRIGGER_CONTEXT_SCHEMA_VERSION = 5
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
@@ -132,6 +134,119 @@ RADIO_CATALOG_ITEM_LIMIT = 64
 MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
     "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 )
+
+# These are static managed-metadata surfaces for the string-key Timeline
+# event carriers.  They describe the methods and serialized controls that can
+# consume a clip; they do not claim that a Director evaluated the clip or that
+# Wwise received a PostEvent.  Keep the full contract in the compact index
+# coverage and attach only the stable id to each occurrence.
+TIMELINE_AUDIO_RUNTIME_CONTRACTS = {
+    "AudioDlgEventPlayable": {
+        "id": "timelineStringEventKey.audioDlg",
+        "type": "Beyond.Audio.AudioDlgEventPlayable",
+        "behaviourType": "Beyond.Audio.AudioDlgEventPlayableBehaviour",
+        "assetToken": "0x02000102",
+        "behaviourToken": "0x02000101",
+        "requestMethods": [
+            {"name": "OnManualFixBehaviourPlay", "token": "0x06000612"},
+            {"name": "ShouldPlay", "token": "0x06000617"},
+            {"name": "_DoPlayEvent", "token": "0x06000619"},
+        ],
+        "stopMethods": [
+            {"name": "OnManualFixBehaviourPause", "token": "0x06000613"},
+            {"name": "OnGraphStop", "token": "0x06000614"},
+            {"name": "_DoPlayStopEvent", "token": "0x0600061a"},
+            {"name": "_TryStop", "token": "0x0600061c"},
+        ],
+        "seekMethods": [
+            {"name": "MarkForStop", "token": "0x0600060f"},
+            {"name": "_TrySeek", "token": "0x06000618"},
+        ],
+        "serializedControls": [
+            "_audioEventKey", "_isCue", "_stopEventAtClipEnd",
+            "_stopEventAtClipEndKey", "_fadeOutTime", "_enableSeek",
+            "_useBindingObj", "_is2D", "_emitter",
+        ],
+        "evidenceBoundary": "staticManagedPlayableMethodMetadataOnly",
+    },
+    "AudioEventPlayable": {
+        "id": "timelineStringEventKey.audioEvent",
+        "type": "Beyond.Audio.AudioEventPlayable",
+        "behaviourType": "Beyond.Audio.AudioEventPlayableBehaviour",
+        "assetToken": "0x02000104",
+        "behaviourToken": "0x02000103",
+        "requestMethods": [
+            {"name": "OnBehaviourPlay", "token": "0x0600062b"},
+            {"name": "ShouldPlay", "token": "0x06000630"},
+            {"name": "_DoPlayEvent", "token": "0x06000632"},
+        ],
+        "stopMethods": [
+            {"name": "OnBehaviourPause", "token": "0x0600062c"},
+            {"name": "OnGraphStop", "token": "0x0600062d"},
+            {"name": "_TryPostExitEvent", "token": "0x06000634"},
+            {"name": "_TryStop", "token": "0x06000635"},
+        ],
+        "seekMethods": [
+            {"name": "MarkSkip", "token": "0x06000628"},
+            {"name": "_TrySeek", "token": "0x06000631"},
+        ],
+        "serializedControls": [
+            "_audioEventKey", "_stopEventAtClipEnd", "_fadeOutWhenStop",
+            "_fadeOutTime", "_enableSeek", "_useBindingObj", "_is2D",
+            "_emitter", "_exitAudioEvent",
+        ],
+        "evidenceBoundary": "staticManagedPlayableMethodMetadataOnly",
+    },
+    "AudioMusicPlayable": {
+        "id": "timelineMusicEventKey.audioMusic",
+        "type": "Beyond.Gameplay.Audio.AudioMusicPlayable",
+        "behaviourType": "Beyond.Gameplay.Audio.AudioMusicPlayableBehaviour",
+        "assetToken": "0x02001abc",
+        "behaviourToken": "0x02001abb",
+        "requestMethods": [
+            {"name": "OnBehaviourPlay", "token": "0x06009c63"},
+            {"name": "_ShouldPlay", "token": "0x06009c66"},
+            {"name": "_TriggerEvent", "token": "0x06009c67"},
+        ],
+        "skipMethods": [
+            {"name": "OnTimelineSkip", "token": "0x06009c62"},
+        ],
+        "serializedControls": [
+            "_audioEventKey", "musicActionType", "triggerOnSkip",
+        ],
+        "behaviourStateFields": [
+            "eventKey", "musicActionType", "triggerOnSkip",
+            "m_isMusicEventTriggered", "m_requiredActions",
+        ],
+        "serializedControlValueLabels": {
+            "musicActionType": {
+                "0": "DIALOG_MUSIC",
+                "1": "NORMAL_MUSIC",
+                "2": "CUSTOM_MUSIC",
+            },
+            "triggerOnSkip": {
+                "0": "notTriggeredOnSkip",
+                "1": "triggeredOnSkip",
+            },
+        },
+        "controlValueEvidence": (
+            "musicActionType labels match the current metadata enum "
+            "Beyond.Gameplay.Core.DialogMusicAction+EDialogMusicActionType; "
+            "triggerOnSkip is serialized as a current bool field"
+        ),
+        "evidenceBoundary": "staticManagedPlayableMethodMetadataOnly",
+    },
+}
+
+AUDIO_MUSIC_ACTION_TYPE_LABELS = {
+    0: "DIALOG_MUSIC",
+    1: "NORMAL_MUSIC",
+    2: "CUSTOM_MUSIC",
+}
+AUDIO_MUSIC_TRIGGER_ON_SKIP_LABELS = {
+    0: "notTriggeredOnSkip",
+    1: "triggeredOnSkip",
+}
 
 LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS = (
     {
@@ -2874,6 +2989,7 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
         "sourceBlockLabel", "sourceLanguage", "sourceBank", "bankId", "bank",
         "audioDialogKey", "audioDialogPath", "speakerChannel", "voType", "duration",
         "wwiseMediaEvidence", "contentSha256",
+        "hotfixMediaReplacement", "mediaResolutionEvidence",
     )
     compact = {key: entry[key] for key in keys if entry.get(key) not in (None, "", [])}
     if compact.get("wwiseMediaEvidence"):
@@ -4437,10 +4553,12 @@ def collect_levelscript_audio_semantics(
     try:
         from story_builder.level_bindings import (
             resolve_levelscript_dynamic_property_string,
+            resolve_levelscript_dynamic_property_string_list,
         )
     except ImportError:
         from scripts.story_builder.level_bindings import (
             resolve_levelscript_dynamic_property_string,
+            resolve_levelscript_dynamic_property_string_list,
         )
 
     if decode_file is None:
@@ -4480,15 +4598,41 @@ def collect_levelscript_audio_semantics(
             records = extract_levelscript_uid_records(data)
             _action_map, memberships = levelscript_action_map_membership(data, records)
             rows: list[dict[str, Any]] = []
+            string_list_getters: dict[int, dict[str, Any]] = {}
             target_count = 0
             non_action_target_count = 0
             non_action_target_roles: Counter[str] = Counter()
             for index, record in enumerate(records):
-                if levelscript_record_semantic_key(record) not in target_keys:
-                    continue
+                semantic_key = levelscript_record_semantic_key(record)
                 action_map_role = str(
                     memberships.get(int(record.get("start") or 0)) or ""
                 )
+                if (
+                    semantic_key == (0x0347, 0x09)
+                    and action_map_role.startswith("getterList")
+                    and isinstance(record.get("localId"), int)
+                ):
+                    next_start = (
+                        int(records[index + 1].get("start") or 0)
+                        if index + 1 < len(records)
+                        else len(data)
+                    )
+                    detail = decode_levelscript_record_payload(
+                        data,
+                        record,
+                        next_start=next_start,
+                        action_map_role=action_map_role,
+                    )
+                    getter = detail.get("listGetValueString")
+                    if isinstance(getter, dict):
+                        string_list_getters[int(record["localId"])] = {
+                            "record": record,
+                            "actionMapRole": action_map_role,
+                            "getter": getter,
+                        }
+                    continue
+                if semantic_key not in target_keys:
+                    continue
                 if not action_map_role.startswith("actionList"):
                     non_action_target_count += 1
                     non_action_target_roles[action_map_role or "unknown"] += 1
@@ -4515,6 +4659,7 @@ def collect_levelscript_audio_semantics(
             return {
                 "targetCount": target_count,
                 "rows": rows,
+                "stringListGetters": string_list_getters,
                 "nonActionTargetCount": non_action_target_count,
                 "nonActionTargetRoles": dict(non_action_target_roles),
             }
@@ -4534,6 +4679,7 @@ def collect_levelscript_audio_semantics(
     resolved_dynamic_event_bindings: list[dict[str, Any]] = []
     radio_invocations: list[dict[str, Any]] = []
     dynamic_radio_bindings: list[dict[str, Any]] = []
+    resolved_dynamic_radio_bindings: list[dict[str, Any]] = []
     control_actions: list[dict[str, Any]] = []
     dynamic_control_bindings: list[dict[str, Any]] = []
     action_counts: Counter[str] = Counter()
@@ -4572,6 +4718,11 @@ def collect_levelscript_audio_semantics(
             decode_failures += 1
             continue
         rows = (decoded.get("rows") or []) if isinstance(decoded, dict) else []
+        string_list_getters = (
+            decoded.get("stringListGetters") or {}
+            if isinstance(decoded, dict)
+            else {}
+        )
         target_records += int(decoded.get("targetCount") or len(rows)) if isinstance(decoded, dict) else len(rows)
         if isinstance(decoded, dict):
             non_action_target_records += int(decoded.get("nonActionTargetCount") or 0)
@@ -4714,7 +4865,7 @@ def collect_levelscript_audio_semantics(
                 action_name in LEVELSCRIPT_RADIO_ACTION_ROLES
                 and radio_field.get("bindingKind") == "dynamic"
             ):
-                dynamic_radio_bindings.append({
+                dynamic_radio_binding = {
                     **common,
                     "kind": "levelScriptDynamicRadioBinding",
                     "semanticRole": "authoredLevelScriptRadioTrigger",
@@ -4724,7 +4875,67 @@ def collect_levelscript_audio_semantics(
                     "resolutionStatus": "runtimeRadioIdParamUnresolved",
                     "radioIdentityKind": "RadioTableDefinitionId",
                     "wwiseEventStatus": "notApplicable",
-                })
+                }
+                getter_local_id = radio_field.get("idRef")
+                getter_row = (
+                    string_list_getters.get(getter_local_id)
+                    if radio_field.get("paramSource") == -1
+                    and isinstance(getter_local_id, int)
+                    else None
+                )
+                getter = (
+                    getter_row.get("getter")
+                    if isinstance(getter_row, dict)
+                    and isinstance(getter_row.get("getter"), dict)
+                    else None
+                )
+                list_binding = (
+                    getter.get("list")
+                    if isinstance(getter, dict)
+                    and isinstance(getter.get("list"), dict)
+                    else None
+                )
+                if isinstance(list_binding, dict):
+                    brief, brief_source_path = _load_levelscript_brief_property_sources(
+                        export_root,
+                        levelscript_id,
+                        source_root,
+                        levelscript_brief_cache,
+                    )
+                    resolution = resolve_levelscript_dynamic_property_string_list(
+                        brief,
+                        list_binding,
+                    )
+                    if resolution:
+                        getter_record = getter_row.get("record") or {}
+                        dynamic_radio_binding.update({
+                            "resolutionStatus": (
+                                "resolvedRadioCandidateSetRuntimeIndexUnobserved"
+                            ),
+                            "candidateRadioIds": resolution["values"],
+                            "selectionStatus": resolution["selectionStatus"],
+                            "getter": getter,
+                            "getterRecordLocalId": getter_record.get("localId"),
+                            "getterRecordUid": str(getter_record.get("uid") or ""),
+                            "getterActionMapRole": str(
+                                getter_row.get("actionMapRole") or ""
+                            ),
+                            "resolution": resolution,
+                            "resolutionSourcePath": brief_source_path,
+                            "triggerRequestEvidence": [
+                                "exactLevelScriptRadioActionUnionAndFields",
+                                "exactListGetValueStringGetterUnionAndFields",
+                                "exactLevelScriptBriefDataStringListProperty",
+                            ],
+                            "triggerRuntimeActivationStatuses": [
+                                "levelScriptActionExecutionNotObserved",
+                                "runtimeListIndexSelectionUnobserved",
+                            ],
+                        })
+                        resolved_dynamic_radio_bindings.append(
+                            dynamic_radio_binding
+                        )
+                dynamic_radio_bindings.append(dynamic_radio_binding)
             control_role = LEVELSCRIPT_AUDIO_CONTROL_ROLES.get(action_name)
             if control_role:
                 control_actions.append({
@@ -4841,6 +5052,7 @@ def collect_levelscript_audio_semantics(
         "resolvedDynamicEventBindings": resolved_dynamic_event_bindings,
         "radioInvocations": radio_invocations,
         "dynamicRadioBindings": dynamic_radio_bindings,
+        "resolvedDynamicRadioBindings": resolved_dynamic_radio_bindings,
         "controlActions": control_actions,
         "dynamicControlBindings": dynamic_control_bindings,
         "stats": {
@@ -4862,6 +5074,9 @@ def collect_levelscript_audio_semantics(
             "radioActionRecords": sum(radio_action_counts.values()),
             "constantRadioBindings": len(radio_invocations),
             "dynamicRadioBindings": len(dynamic_radio_bindings),
+            "resolvedDynamicRadioBindings": len(
+                resolved_dynamic_radio_bindings
+            ),
             "uniqueConstantRadioIds": len({
                 str(row.get("radioId") or "")
                 for row in radio_invocations
@@ -4882,7 +5097,9 @@ def collect_levelscript_audio_semantics(
             "AudioCue behavior expressions become Event contexts. Cue handler/condition evaluation, action "
             "execution, unresolved dynamic Param values, state/variable writes, playback handles, and "
             "placeholder-music ids are not observed. A resolved ParamSource=200 property still proves only "
-            "the authored property-to-action string join, not action execution or Wwise playback."
+            "the authored property-to-action string join, not action execution or Wwise playback. A "
+            "resolved ListGetValueString radio binding proves its authored candidate set, while the "
+            "runtime-selected list index remains unobserved."
         ),
     }
 
@@ -5360,6 +5577,7 @@ def collect_timeline_audio_ownership(
                         continue
                     parent_name = str(parent.get("name") or "")
                     base_id = normalize_levelsequence_audio_id(parent_name)
+                    playable_type = asset_name or "AudioEventPlayable"
                     if not base_id:
                         stats["timelineCarrierNonLevelSequenceParent"] += 1
                     occurrence = {
@@ -5381,7 +5599,10 @@ def collect_timeline_audio_ownership(
                         "timelineTrackPathId": track_identity.get("pathId"),
                         "timelineTrackSource": track_identity.get("source"),
                         "timelineTrackSourceOffset": track_identity.get("sourceOffset"),
-                        "audioPlayableType": asset_name or "AudioEventPlayable",
+                        "audioPlayableType": playable_type,
+                        "audioPlayableRuntimeContractId": (
+                            _timeline_audio_runtime_contract_id(playable_type)
+                        ),
                         "audioPlayableKeyStatus": (
                             "exactAudioEventPlayableScalar"
                             if playable_event_id
@@ -5493,8 +5714,329 @@ def collect_timeline_audio_ownership(
             "AudioEventPlayable scalar keys, Track m_Asset/m_Parent PPtrs, and PlayableDirector "
             "m_PlayableAsset PPtrs are exact serialized-object identity joins. They prove authored "
             "Timeline ownership and Director references, not Director activation, audio posting, or "
-            "Wwise leaf selection."
+            "Wwise leaf selection. The caller may combine the complete StreamingAssets and "
+            "Persistent object-index parts."
         ),
+    }
+
+
+def merge_timeline_audio_ownership(
+    ownership_rows: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Merge exact Timeline carrier results from multiple object-index sources.
+
+    Story Timeline assets occur in both Unity source domains.  Their serialized
+    CAB/path-ID identity is the deduplication key; source proximity or native
+    registration order is never used to collapse occurrences.
+    """
+
+    occurrences_by_event: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    occurrences_by_cue: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen_events: dict[str, set[tuple[Any, ...]]] = defaultdict(set)
+    seen_cues: dict[str, set[tuple[Any, ...]]] = defaultdict(set)
+    stats = Counter()
+
+    def occurrence_marker(row: dict[str, Any]) -> tuple[Any, ...]:
+        return (
+            str(row.get("timelineAssetSerializedFile") or ""),
+            row.get("timelineAssetPathId"),
+            str(row.get("timelineTrackSerializedFile") or ""),
+            row.get("timelineTrackPathId"),
+            row.get("timelineClipIndex"),
+            str(row.get("audioPlayableSerializedFile") or ""),
+            row.get("audioPlayablePathId"),
+            str(row.get("cueName") or ""),
+            str(row.get("cueRole") or ""),
+        )
+
+    for ownership in ownership_rows:
+        if not isinstance(ownership, dict):
+            continue
+        for key, rows in (ownership.get("occurrencesByEvent") or {}).items():
+            event_id = str(key or "").strip().lower()
+            if not event_id:
+                continue
+            for row in rows or []:
+                if not isinstance(row, dict):
+                    continue
+                marker = occurrence_marker(row)
+                if marker in seen_events[event_id]:
+                    continue
+                seen_events[event_id].add(marker)
+                occurrences_by_event[event_id].append(row)
+        for key, rows in (ownership.get("occurrencesByCue") or {}).items():
+            cue_id = str(key or "").strip().casefold()
+            if not cue_id:
+                continue
+            for row in rows or []:
+                if not isinstance(row, dict):
+                    continue
+                marker = occurrence_marker(row)
+                if marker in seen_cues[cue_id]:
+                    continue
+                seen_cues[cue_id].add(marker)
+                occurrences_by_cue[cue_id].append(row)
+        for key, value in (ownership.get("stats") or {}).items():
+            if isinstance(value, bool):
+                stats[key] += int(value)
+            elif isinstance(value, int):
+                stats[key] += value
+
+    stats["timelineCarrierEvents"] = len(occurrences_by_event)
+    stats["timelineCarrierCues"] = len(occurrences_by_cue)
+    parent_keys = {
+        _object_identity_key({
+            "serializedFile": row.get("timelineAssetSerializedFile"),
+            "pathId": row.get("timelineAssetPathId"),
+        })
+        for rows in list(occurrences_by_event.values()) + list(occurrences_by_cue.values())
+        for row in rows
+    }
+    parent_keys.discard(None)
+    stats["timelineParents"] = len(parent_keys)
+    parent_keys_with_director = {
+        _object_identity_key({
+            "serializedFile": row.get("timelineAssetSerializedFile"),
+            "pathId": row.get("timelineAssetPathId"),
+        })
+        for rows in list(occurrences_by_event.values()) + list(occurrences_by_cue.values())
+        for row in rows
+        if row.get("playableDirectors")
+    }
+    parent_keys_with_director.discard(None)
+    stats["timelineParentsWithDirector"] = sum(
+        key in parent_keys_with_director for key in parent_keys
+    )
+    stats["timelineParentsWithoutDirector"] = (
+        stats["timelineParents"] - stats["timelineParentsWithDirector"]
+    )
+    stats["timelineEventsWithDirector"] = sum(
+        any(row.get("playableDirectors") for row in rows)
+        for rows in occurrences_by_event.values()
+    )
+    return {
+        "occurrencesByEvent": dict(occurrences_by_event),
+        "occurrencesByCue": dict(occurrences_by_cue),
+        "stats": dict(stats),
+        "evidenceBoundary": (
+            "Exact AudioEventPlayable scalar keys, Track m_Asset/m_Parent PPtrs, and "
+            "PlayableDirector m_PlayableAsset PPtrs are joined across the complete current "
+            "StreamingAssets and Persistent object indexes. They prove authored Timeline "
+            "ownership and Director references, not Director activation, audio posting, Wwise "
+            "branch selection, or selected media leaf."
+        ),
+    }
+
+
+def _timeline_raw_mono_payloads(
+    export_root: Path,
+    identities: Iterable[tuple[Any, Any]],
+) -> dict[tuple[str, int], tuple[dict[str, Any], Path] | None]:
+    """Bulk-load only requested raw MonoBehaviour identities.
+
+    A per-identity ``Path.glob`` is prohibitively expensive on the large
+    Persistent directory.  Enumerate each source directory once and parse
+    JSON only when its path-ID suffix is one of the requested identities.
+    """
+
+    wanted: set[tuple[str, int]] = set()
+    suffixes: set[str] = set()
+    for serialized_file, path_id in identities:
+        serialized = str(serialized_file or "").strip()
+        try:
+            numeric_path_id = int(path_id)
+        except (TypeError, ValueError):
+            continue
+        if not serialized:
+            continue
+        wanted.add((serialized, numeric_path_id))
+        suffixes.add(f"{numeric_path_id & ((1 << 64) - 1):016X}")
+    cache: dict[tuple[str, int], tuple[dict[str, Any], Path] | None] = {
+        identity: None for identity in wanted
+    }
+    if not wanted:
+        return cache
+    for source in ("StreamingAssets", "Persistent"):
+        raw_root = (
+            export_root / "recovered" / "AnimeStudio-cli" / source
+            / "json_by_type" / "MonoBehaviour"
+        )
+        if not raw_root.is_dir():
+            continue
+        try:
+            entries = os.scandir(raw_root)
+        except OSError:
+            continue
+        with entries:
+            for entry in entries:
+                if not entry.is_file() or not entry.name.lower().endswith(".json"):
+                    continue
+                stem = entry.name[:-5]
+                if "_p" not in stem:
+                    continue
+                suffix = stem.rsplit("_p", 1)[-1].upper()
+                if suffix not in suffixes:
+                    continue
+                try:
+                    unsigned = int(suffix, 16)
+                except ValueError:
+                    continue
+                numeric_path_id = (
+                    unsigned if unsigned < (1 << 63) else unsigned - (1 << 64)
+                )
+                path = Path(entry.path)
+                payload = load_json(path, {})
+                metadata = payload.get("$animestudio") if isinstance(payload, dict) else None
+                if not isinstance(metadata, dict):
+                    continue
+                identity = (
+                    str(metadata.get("sourceFile") or ""),
+                    numeric_path_id,
+                )
+                if identity not in wanted:
+                    continue
+                try:
+                    if int(metadata.get("pathId")) != numeric_path_id:
+                        continue
+                except (TypeError, ValueError):
+                    continue
+                cache[identity] = (payload, path)
+    return cache
+
+
+def enrich_timeline_audio_ownership_from_raw_json(
+    export_root: Path,
+    ownership: dict[str, Any],
+) -> dict[str, Any]:
+    """Attach exact Timeline clip timing and AudioPlayable controls.
+
+    The compact object-index scalar policy keeps identifiers and PPtrs but not
+    every TimelineClip field.  The raw MonoBehaviour JSON is therefore joined
+    only for the already exact Track/Playable identities recovered above.
+    """
+
+    identities: set[tuple[Any, Any]] = set()
+    for rows in list((ownership.get("occurrencesByEvent") or {}).values()) + list(
+        (ownership.get("occurrencesByCue") or {}).values()
+    ):
+        for row in rows or []:
+            if not isinstance(row, dict):
+                continue
+            identities.add((
+                row.get("timelineTrackSerializedFile"),
+                row.get("timelineTrackPathId"),
+            ))
+            identities.add((
+                row.get("audioPlayableSerializedFile"),
+                row.get("audioPlayablePathId"),
+            ))
+    cache = _timeline_raw_mono_payloads(export_root, identities)
+    stats = Counter(ownership.get("stats") or {})
+    enriched_events: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    enriched_cues: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    clip_fields = (
+        ("m_Start", "timelineClipStartSec"),
+        ("m_Duration", "timelineClipDurationSec"),
+        ("m_ClipIn", "timelineClipInSec"),
+        ("m_TimeScale", "timelineClipTimeScale"),
+        ("m_EaseInDuration", "timelineClipEaseInDurationSec"),
+        ("m_EaseOutDuration", "timelineClipEaseOutDurationSec"),
+        ("m_BlendInDuration", "timelineClipBlendInDurationSec"),
+        ("m_BlendOutDuration", "timelineClipBlendOutDurationSec"),
+        ("optionIndex", "timelineClipOptionIndex"),
+    )
+    playable_fields = (
+        ("_isCue", "audioPlayableIsCue"),
+        ("_stopEventAtClipEnd", "audioPlayableStopEventAtClipEnd"),
+        ("_stopEventAtClipEndKey", "audioPlayableStopEventAtClipEndKey"),
+        ("_fadeOutTime", "audioPlayableFadeOutMs"),
+        ("_enableSeek", "audioPlayableEnableSeek"),
+        ("_useBindingObj", "audioPlayableUseBindingObject"),
+        ("_is2D", "audioPlayableIs2D"),
+        ("musicActionType", "audioMusicActionType"),
+        ("triggerOnSkip", "audioMusicTriggerOnSkip"),
+    )
+
+    def enrich(row: dict[str, Any]) -> dict[str, Any]:
+        result = dict(row)
+        track_identity = (
+            str(row.get("timelineTrackSerializedFile") or ""),
+            row.get("timelineTrackPathId"),
+        )
+        track_loaded = cache.get(track_identity)
+        if track_loaded:
+            track_payload, track_path = track_loaded
+            clips = track_payload.get("m_Clips") if isinstance(track_payload, dict) else None
+            try:
+                clip_index = int(row.get("timelineClipIndex"))
+            except (TypeError, ValueError):
+                clip_index = -1
+            clip = clips[clip_index] if isinstance(clips, list) and 0 <= clip_index < len(clips) else None
+            if isinstance(clip, dict):
+                for source_key, output_key in clip_fields:
+                    value = clip.get(source_key)
+                    if value is not None:
+                        result[output_key] = value
+                result["timelineClipTimingEvidence"] = "exactSerializedTimelineClip"
+                result["timelineTrackRawJsonPath"] = normalize_posix(
+                    track_path.relative_to(export_root)
+                )
+                if (
+                    result.get("timelineClipStartSec") is not None
+                    and result.get("timelineClipDurationSec") is not None
+                ):
+                    result["timelineClipEndSec"] = (
+                        float(result["timelineClipStartSec"])
+                        + float(result["timelineClipDurationSec"])
+                    )
+                stats["timelineRawClipTimings"] += 1
+            else:
+                stats["timelineRawClipPayloadMissing"] += 1
+        else:
+            stats["timelineRawTrackPayloadMissing"] += 1
+
+        playable_identity = (
+            str(row.get("audioPlayableSerializedFile") or ""),
+            row.get("audioPlayablePathId"),
+        )
+        playable_loaded = cache.get(playable_identity)
+        if playable_loaded:
+            playable_payload, playable_path = playable_loaded
+            for source_key, output_key in playable_fields:
+                value = playable_payload.get(source_key) if isinstance(playable_payload, dict) else None
+                if value is not None:
+                    result[output_key] = value
+            if isinstance(playable_payload, dict):
+                action_type = playable_payload.get("musicActionType")
+                if isinstance(action_type, int):
+                    result["audioMusicActionTypeLabel"] = (
+                        AUDIO_MUSIC_ACTION_TYPE_LABELS.get(action_type)
+                        or f"unknown({action_type})"
+                    )
+                trigger_on_skip = playable_payload.get("triggerOnSkip")
+                if isinstance(trigger_on_skip, int) and not isinstance(trigger_on_skip, bool):
+                    result["audioMusicTriggerOnSkipLabel"] = (
+                        AUDIO_MUSIC_TRIGGER_ON_SKIP_LABELS.get(trigger_on_skip)
+                        or f"unknown({trigger_on_skip})"
+                    )
+            result["audioPlayableControlEvidence"] = "exactSerializedAudioPlayableFields"
+            result["audioPlayableRawJsonPath"] = normalize_posix(
+                playable_path.relative_to(export_root)
+            )
+            stats["timelineRawPlayableControls"] += 1
+        else:
+            stats["timelineRawPlayablePayloadMissing"] += 1
+        return result
+
+    for key, rows in (ownership.get("occurrencesByEvent") or {}).items():
+        enriched_events[key] = [enrich(row) for row in rows if isinstance(row, dict)]
+    for key, rows in (ownership.get("occurrencesByCue") or {}).items():
+        enriched_cues[key] = [enrich(row) for row in rows if isinstance(row, dict)]
+    return {
+        **ownership,
+        "occurrencesByEvent": dict(enriched_events),
+        "occurrencesByCue": dict(enriched_cues),
+        "stats": dict(stats),
     }
 
 
@@ -5633,9 +6175,38 @@ def build_levelsequence_audio_contexts(
                 "timelineTrackSource": occurrence.get("timelineTrackSource"),
                 "timelineTrackSourceOffset": occurrence.get("timelineTrackSourceOffset"),
                 "audioPlayableType": occurrence.get("audioPlayableType"),
+                "audioPlayableRuntimeContractId": occurrence.get(
+                    "audioPlayableRuntimeContractId"
+                ),
                 "audioPlayableKeyStatus": occurrence.get("audioPlayableKeyStatus"),
                 "audioPlayableSerializedFile": occurrence.get("audioPlayableSerializedFile"),
                 "audioPlayablePathId": occurrence.get("audioPlayablePathId"),
+                "timelineClipDisplayName": occurrence.get("timelineClipDisplayName"),
+                "timelineClipStartSec": occurrence.get("timelineClipStartSec"),
+                "timelineClipDurationSec": occurrence.get("timelineClipDurationSec"),
+                "timelineClipEndSec": occurrence.get("timelineClipEndSec"),
+                "timelineClipInSec": occurrence.get("timelineClipInSec"),
+                "timelineClipTimeScale": occurrence.get("timelineClipTimeScale"),
+                "timelineClipEaseInDurationSec": occurrence.get("timelineClipEaseInDurationSec"),
+                "timelineClipEaseOutDurationSec": occurrence.get("timelineClipEaseOutDurationSec"),
+                "timelineClipBlendInDurationSec": occurrence.get("timelineClipBlendInDurationSec"),
+                "timelineClipBlendOutDurationSec": occurrence.get("timelineClipBlendOutDurationSec"),
+                "timelineClipOptionIndex": occurrence.get("timelineClipOptionIndex"),
+                "timelineClipTimingEvidence": occurrence.get("timelineClipTimingEvidence"),
+                "timelineTrackRawJsonPath": occurrence.get("timelineTrackRawJsonPath"),
+                "audioPlayableIsCue": occurrence.get("audioPlayableIsCue"),
+                "audioPlayableStopEventAtClipEnd": occurrence.get("audioPlayableStopEventAtClipEnd"),
+                "audioPlayableStopEventAtClipEndKey": occurrence.get("audioPlayableStopEventAtClipEndKey"),
+                "audioPlayableFadeOutMs": occurrence.get("audioPlayableFadeOutMs"),
+                "audioPlayableEnableSeek": occurrence.get("audioPlayableEnableSeek"),
+                "audioPlayableUseBindingObject": occurrence.get("audioPlayableUseBindingObject"),
+                "audioPlayableIs2D": occurrence.get("audioPlayableIs2D"),
+                "audioMusicActionType": occurrence.get("audioMusicActionType"),
+                "audioMusicActionTypeLabel": occurrence.get("audioMusicActionTypeLabel"),
+                "audioMusicTriggerOnSkip": occurrence.get("audioMusicTriggerOnSkip"),
+                "audioMusicTriggerOnSkipLabel": occurrence.get("audioMusicTriggerOnSkipLabel"),
+                "audioPlayableControlEvidence": occurrence.get("audioPlayableControlEvidence"),
+                "audioPlayableRawJsonPath": occurrence.get("audioPlayableRawJsonPath"),
                 "playableDirectorCount": len(director_rows),
                 "playableDirectorNames": [
                     str(row.get("playableDirectorName") or "")
@@ -5651,6 +6222,8 @@ def build_levelsequence_audio_contexts(
                 "timelineEvidence": [
                     occurrence.get("evidence"),
                     occurrence.get("audioPlayableKeyStatus"),
+                    occurrence.get("timelineClipTimingEvidence"),
+                    occurrence.get("audioPlayableControlEvidence"),
                 ],
                 "evidence": "exactSerializedTimelineDirectorChain" if has_director else "exactSerializedTimelineCarrier",
                 "evidenceBoundary": (
@@ -6111,6 +6684,10 @@ def attach_levelscript_radio_contexts(
                 "sourcePath", "recordStart", "recordUid", "recordLocalId",
                 "actionMapRole", "unionTag", "serializedMemberCount",
                 "sourceField", "binding", "resolutionStatus",
+                "candidateRadioIds", "selectionStatus", "getter",
+                "getterRecordLocalId", "getterRecordUid", "getterActionMapRole",
+                "resolution", "resolutionSourcePath", "triggerRequestEvidence",
+                "triggerRuntimeActivationStatuses",
                 "radioIdentityKind", "wwiseEventStatus",
             )
             if row.get(key) not in (None, "", [])
@@ -6143,6 +6720,9 @@ def attach_levelscript_radio_contexts(
             ),
             "constantRadioBindings": len(invocations),
             "dynamicRadioBindings": len(dynamic_rows),
+            "resolvedDynamicRadioBindings": sum(
+                bool(row.get("candidateRadioIds")) for row in dynamic_rows
+            ),
             "uniqueConstantRadioIds": len(invocations_by_radio),
             "resolvedConstantRadioBindings": resolved_invocation_count,
             "unresolvedConstantRadioBindings": (
@@ -6176,6 +6756,1369 @@ def attach_levelscript_radio_contexts(
             "identities; an override links to decoded media only by exact audioDialogPath "
             "stem. Neither radioId nor audioOverride is a Wwise Event, and action execution, "
             "line selection, playback, and dynamic radioId values remain unobserved."
+            " A resolved dynamic candidate set still leaves its runtime list index and "
+            "selected radioId unobserved."
+        ),
+    }
+
+
+def _trigger_media_ref(media: dict[str, Any] | None, *, fallback_id: str = "") -> dict[str, Any]:
+    """Return a small media reference for the trigger-context shard.
+
+    The event and media shards remain authoritative for full Wwise evidence.
+    Trigger contexts only carry the identity needed to navigate to that media,
+    plus the small amount of duration/speaker information useful when reading
+    a situation without opening another shard.
+    """
+
+    media = media if isinstance(media, dict) else {}
+    ref: dict[str, Any] = {}
+    for key in (
+        "id", "mediaId", "src", "rel", "format", "duration",
+        "audioDialogPath", "speakerChannel", "audioCategory", "audioScope",
+        "sourceLanguage",
+    ):
+        value = media.get(key)
+        if value not in (None, "", []):
+            ref[key] = value
+    if fallback_id and not ref.get("id"):
+        ref["id"] = fallback_id
+    return ref
+
+
+def _compact_trigger_action(context: dict[str, Any]) -> dict[str, Any]:
+    keys = (
+        "action", "triggerRole", "levelScriptId", "sourceRoot", "sourcePath",
+        "recordIndex", "recordStart", "recordUid", "recordLocalId",
+        "actionMapRole", "unionTag", "serializedMemberCount", "nativeMappingId",
+        "payloadShape", "sourceField", "fields", "runtimeActivationStatus",
+    )
+    return {
+        key: context[key]
+        for key in keys
+        if context.get(key) not in (None, "", [])
+    }
+
+
+DIALOG_LIFECYCLE_PATH_RE = re.compile(
+    r"^(?P<dialogId>[^.]+)\."
+    r"(?P<phase>preloadEvents|preEnterEvents|postEnterEvents|preExitEvents|postExitEvents)"
+    r"\[(?P<index>\d+)\]$"
+)
+DIALOG_LIFECYCLE_PHASES = {
+    "preloadEvents": {
+        "triggerRole": "DialogPreloadAudioEvent",
+        "runtimeMethod": "_StartDialogEventPreload",
+        "runtimeMethodToken": "0x060099ec",
+    },
+    "preEnterEvents": {
+        "triggerRole": "DialogPreEnterAudioEvent",
+        "runtimeMethod": "_OnPreEnterDialog",
+        "runtimeMethodToken": "0x060099e7",
+    },
+    "postEnterEvents": {
+        "triggerRole": "DialogPostEnterAudioEvent",
+        "runtimeMethod": "_OnPostEnterDialog",
+        "runtimeMethodToken": "0x060099e8",
+    },
+    "preExitEvents": {
+        "triggerRole": "DialogPreExitAudioEvent",
+        "runtimeMethod": "_OnPreExitDialog",
+        "runtimeMethodToken": "0x060099e9",
+    },
+    "postExitEvents": {
+        "triggerRole": "DialogPostExitAudioEvent",
+        "runtimeMethod": "_OnPostExitDialog",
+        "runtimeMethodToken": "0x060099ea",
+    },
+}
+DIALOG_LIFECYCLE_RUNTIME_CONSUMER = {
+    "type": "Beyond.Gameplay.Audio.AudioGameplayStatusSystem",
+    "image": "Gameplay.Beyond.dll",
+    "typeToken": "0x02001a6f",
+    "source": "reports/story/recovery/options/option_flow_runtime_metadata.json",
+    "fields": [
+        "m_currentDialogId",
+        "m_dialogEventStatus",
+        "m_pendingDialogAudioEventIds",
+        "m_pinnedDialogAudioEventIds",
+    ],
+    "methods": {
+        "schedule": {
+            "name": "_ScheduleDialogAudioEvent",
+            "token": "0x060099eb",
+        },
+        "preload": {
+            "name": "_StartDialogEventPreload",
+            "token": "0x060099ec",
+        },
+        "preloadCompleted": {
+            "name": "_OnDialogEventPreloadCompleted",
+            "token": "0x060099ed",
+        },
+        "triggerPending": {
+            "name": "_TriggerAllPendingDialogAudioEvents",
+            "token": "0x060099ee",
+        },
+    },
+    "evidenceBoundary": "staticTypeAndMethodMetadataOnly",
+}
+
+
+def _timeline_audio_runtime_contract_id(playable_type: Any) -> str | None:
+    """Return a stable static-contract id for a serialized playable type."""
+
+    normalized = re.sub(r"(?:\(Clone\))+$", "", str(playable_type or "")).strip()
+    contract = TIMELINE_AUDIO_RUNTIME_CONTRACTS.get(normalized)
+    return str(contract.get("id")) if isinstance(contract, dict) else None
+
+
+def _conversation_line_meanings(
+    webui_root: Path,
+    language: str,
+    *,
+    kinds: frozenset[str],
+) -> dict[str, dict[str, Any]]:
+    meanings: dict[str, dict[str, Any]] = {}
+    conv_root = webui_root / f"data/lang/{language.upper()}/conv"
+    if not conv_root.is_dir():
+        return meanings
+    for path in sorted(conv_root.glob("*.json")):
+        payload = load_json(path, {})
+        if not isinstance(payload, dict) or str(payload.get("kind") or "") not in kinds:
+            continue
+        for line in payload.get("lines") or []:
+            if not isinstance(line, dict):
+                continue
+            line_id = str(line.get("id") or "").strip()
+            if not line_id:
+                continue
+            meanings.setdefault(line_id, {
+                key: line[key]
+                for key in ("id", "actor", "aid", "text", "slot", "cid", "audio", "duration")
+                if line.get(key) not in (None, "", [])
+            })
+    return meanings
+
+
+def _build_radio_trigger_contexts(
+    media_rows: Iterable[dict[str, Any]],
+    line_meanings: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    for media in media_rows:
+        if not isinstance(media, dict):
+            continue
+        media_ref = _trigger_media_ref(media)
+        for occurrence_index, raw_context in enumerate(
+            media.get("radioTriggerContexts") or []
+        ):
+            if not isinstance(raw_context, dict):
+                continue
+            line = raw_context.get("radioLine")
+            line = line if isinstance(line, dict) else {}
+            radio_id = str(raw_context.get("radioId") or line.get("radioId") or "").strip()
+            line_id = str(line.get("lineId") or "").strip()
+            source_path = str(raw_context.get("sourcePath") or "").strip()
+            record_uid = str(raw_context.get("recordUid") or "").strip()
+            trigger_id = ":".join((
+                "radio",
+                source_path,
+                record_uid or str(raw_context.get("recordStart") or occurrence_index),
+                radio_id,
+                line_id or str(line.get("lineOrdinal") or 0),
+            ))
+            meaning = line_meanings.get(line_id, {})
+            definition = raw_context.get("radioDefinition")
+            definition = definition if isinstance(definition, dict) else {}
+            action = _compact_trigger_action(raw_context)
+            if radio_id and "radioId" not in action:
+                action["radioId"] = radio_id
+            contexts.append({
+                "triggerId": trigger_id,
+                "semanticKind": "radio",
+                "triggerRole": str(
+                    raw_context.get("triggerRole")
+                    or raw_context.get("action")
+                    or "play"
+                ),
+                "situation": {
+                    key: value
+                    for key, value in {
+                        "levelScriptId": raw_context.get("levelScriptId"),
+                        "radioId": radio_id,
+                        "lineId": line_id,
+                        "lineOrdinal": line.get("lineOrdinal"),
+                    }.items()
+                    if value not in (None, "", [])
+                },
+                "meaning": meaning,
+                "action": action,
+                "owner": {
+                    "radioId": radio_id,
+                    "radioDefinition": definition,
+                    "radioLine": line,
+                },
+                "selection": {
+                    "triggerRole": raw_context.get("triggerRole"),
+                    "fields": raw_context.get("fields") or {},
+                    "lineSelectionStatus": "runtimeLineSelectionUnobserved",
+                },
+                "mediaRefs": [media_ref] if media_ref else [],
+                "evidence": {
+                    "definition": "exactLevelScriptRadioAction",
+                    "owner": "exactRadioTableLine",
+                    "media": raw_context.get("audioDialogMatchEvidence")
+                    or "audioDialogMediaUnresolved",
+                    "runtimeExecution": raw_context.get("runtimeActivationStatus")
+                    or "levelScriptActionExecutionNotObserved",
+                },
+                "runtimeActivationStatus": raw_context.get(
+                    "runtimeActivationStatus"
+                ) or "levelScriptActionExecutionNotObserved",
+                "sourceRefs": [
+                    value
+                    for value in (
+                        source_path,
+                        str(line.get("source") or ""),
+                        str(media.get("audioDialogPath") or ""),
+                    )
+                    if value
+                ],
+            })
+    return contexts
+
+
+def _build_envtalk_trigger_contexts(
+    webui_root: Path,
+    language: str,
+    media_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    media_by_id = {
+        str(row.get("id") or "").casefold(): row
+        for row in media_rows
+        if isinstance(row, dict) and str(row.get("id") or "").strip()
+    }
+    contexts: list[dict[str, Any]] = []
+    used_trigger_ids: set[str] = set()
+    conv_root = webui_root / f"data/lang/{language.upper()}/conv"
+    if not conv_root.is_dir():
+        return contexts
+    for path in sorted(conv_root.glob("env_*.json")):
+        payload = load_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        env_id = str(payload.get("title") or payload.get("key") or "").strip()
+        if not env_id:
+            continue
+        is_greeting = env_id.casefold().startswith("greetenvtalk_")
+        if payload.get("kind") != "env" and not is_greeting:
+            continue
+        semantic_kind = "envTalkGreeting" if is_greeting else "envTalk"
+        cooldown = payload.get("cooldown")
+        payload_debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}
+        payload_source = payload_debug.get("source") if isinstance(payload_debug.get("source"), dict) else {}
+        for line_index, line in enumerate(payload.get("lines") or []):
+            if not isinstance(line, dict):
+                continue
+            audio_id = str(line.get("audio") or "").strip()
+            line_debug = line.get("_debug") if isinstance(line.get("_debug"), dict) else {}
+            debug = line_debug or payload_debug
+            source = debug.get("source") if isinstance(debug.get("source"), dict) else {}
+            if not source:
+                source = payload_source
+            hints = debug.get("speakerHints") if isinstance(debug.get("speakerHints"), list) else []
+            if not hints and isinstance(payload_debug.get("speakerHints"), list):
+                hints = payload_debug["speakerHints"]
+            proxy_rows: list[dict[str, Any]] = []
+            for hint in hints:
+                if not isinstance(hint, dict):
+                    continue
+                hint_source = hint.get("source") if isinstance(hint.get("source"), dict) else {}
+                fields = hint_source.get("fields") if isinstance(hint_source.get("fields"), dict) else {}
+                proxy_info = fields.get("proxyInfoData") if isinstance(fields.get("proxyInfoData"), dict) else {}
+                if not proxy_info:
+                    proxy_info = hint.get("proxyInfoData") if isinstance(hint.get("proxyInfoData"), dict) else {}
+                proxy_id = str(hint.get("proxyId") or fields.get("proxyId") or "").strip()
+                if not proxy_id:
+                    continue
+                proxy_row = {
+                    key: value
+                    for key, value in {
+                        "proxyId": proxy_id,
+                        "levelId": fields.get("levelId"),
+                        "npcId": proxy_info.get("npcId"),
+                        "npcNameId": proxy_info.get("npcNameId"),
+                        "npcProxyType": proxy_info.get("npcProxyType"),
+                    }.items()
+                    if value not in (None, "", [])
+                }
+                if proxy_row not in proxy_rows:
+                    proxy_rows.append(proxy_row)
+            media = media_by_id.get(audio_id.casefold(), {})
+            media_ref = _trigger_media_ref(media, fallback_id=audio_id)
+            if not media_ref.get("src") and line.get("audioSrc"):
+                media_ref["src"] = line.get("audioSrc")
+            audio_meta = line.get("audioMeta") if isinstance(line.get("audioMeta"), dict) else {}
+            for key in ("duration", "audioDialogPath", "speakerChannel", "audioCategory"):
+                if media_ref.get(key) in (None, "") and audio_meta.get(key) not in (None, ""):
+                    media_ref[key] = audio_meta[key]
+            proxy_ids = sorted({str(row.get("proxyId")) for row in proxy_rows})
+            level_ids = sorted({
+                str(row.get("levelId"))
+                for row in proxy_rows
+                if str(row.get("levelId") or "")
+            })
+            slot_id = line.get("slot")
+            line_id = str(line.get("id") or env_id).strip()
+            slot_actor_id = str(line.get("aid") or "").strip()
+            slot_actor_match_status = (
+                "exactProxyIdMatch"
+                if slot_actor_id and slot_actor_id.casefold() in {
+                    str(value.get("proxyId") or "").casefold()
+                    for value in proxy_rows
+                }
+                else (
+                    "proxyHintDoesNotMatchLineActor"
+                    if proxy_rows and slot_actor_id
+                    else "lineActorOrProxyOwnerUnresolved"
+                )
+            )
+            base_trigger_id = ":".join((
+                "envTalk",
+                env_id,
+                str(line.get("cid") or line_index + 1),
+                str(slot_id if slot_id is not None else "unknown"),
+                audio_id or line_id,
+            ))
+            trigger_id = base_trigger_id
+            if trigger_id in used_trigger_ids:
+                trigger_id = f"{base_trigger_id}:line{line_index}"
+                suffix = 2
+                while trigger_id in used_trigger_ids:
+                    trigger_id = f"{base_trigger_id}:line{line_index}:{suffix}"
+                    suffix += 1
+            used_trigger_ids.add(trigger_id)
+            owner_status = "exactNpcProxyTableSpeakerHint" if proxy_rows else "envTalkOwnerUnresolved"
+            contexts.append({
+                "triggerId": trigger_id,
+                "semanticKind": semantic_kind,
+                "triggerRole": (
+                    "NpcProxyEnvTalkGreeting"
+                    if is_greeting and proxy_rows
+                    else "EnvTalkGreetingOwnerUnresolved"
+                    if is_greeting
+                    else "NpcProxyEnvTalk"
+                    if proxy_rows
+                    else "EnvTalkOwnerUnresolved"
+                ),
+                "situation": {
+                    "envTalkId": env_id,
+                    "envTalkVariant": "greetEnvTalk" if is_greeting else "envTalk",
+                    "mission": payload.get("mission"),
+                    "levelIds": level_ids,
+                    "proxyIds": proxy_ids,
+                    "cooldown": cooldown,
+                },
+                "meaning": {
+                    key: line[key]
+                    for key in ("id", "actor", "aid", "text", "audio", "slot", "cid", "duration")
+                    if line.get(key) not in (None, "", [])
+                },
+                "action": {
+                    "action": "EnvTalkGreetingRuntimeSelection" if is_greeting else "EnvTalkRuntimeSelection",
+                    "runtimeActivationStatus": "envTalkRuntimeExecutionNotObserved",
+                },
+                "owner": {
+                    "proxyRows": proxy_rows,
+                    "slotActorId": line.get("aid"),
+                    "slotActorMatchStatus": slot_actor_match_status,
+                    "speakerChannel": media_ref.get("speakerChannel") or audio_meta.get("speakerChannel"),
+                },
+                "selection": {
+                    "slotId": slot_id,
+                    "lineIndex": line_index,
+                    "slotSelectionStatus": "runtimeSlotSelectionUnobserved",
+                    "triggerDistanceStatus": "authoredTriggerDistanceNotRecoveredInConversationRow",
+                },
+                "mediaRefs": [media_ref] if media_ref else [],
+                "evidence": {
+                    "definition": (
+                        "exactEnvTalkTableGreeting"
+                        if is_greeting
+                        else str(source.get("envTalkId") or env_id)
+                    ),
+                    "owner": owner_status,
+                    "media": "playable" if media_ref.get("src") else "audioDialogMediaUnresolved",
+                    "runtimeExecution": "envTalkRuntimeExecutionNotObserved",
+                },
+                "runtimeActivationStatus": "envTalkRuntimeExecutionNotObserved",
+                "sourceRefs": [
+                    normalize_posix(path.relative_to(webui_root)),
+                    str(
+                        debug.get("table")
+                        or (source.get("table") if isinstance(source, dict) else "")
+                        or ""
+                    ),
+                    str(source.get("envTalkId") or env_id),
+                ],
+            })
+    return contexts
+
+
+def _build_remote_common_event_contexts(
+    export_root: Path,
+) -> dict[str, list[dict[str, Any]]]:
+    """Expose exact RemoteCommon auto-play Event requests in event rows.
+
+    ``audioId`` is the authored SFX/Wwise Event request. ``voiceId`` is a
+    separate dialogue identity and remains separate from the Event/media
+    route. These low-level contexts prevent an authored RemoteCommon Event
+    from being synthesized as a Timeline ownership gap.
+    """
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    table_paths = [
+        export_root / "structured" / source_root / "Table" / "RemoteCommonTable.json"
+        for source_root in ("Persistent", "StreamingAssets")
+    ]
+    for table_path in table_paths:
+        payload = load_json(table_path, {})
+        if not isinstance(payload, dict):
+            continue
+        try:
+            source_ref = normalize_posix(table_path.relative_to(export_root))
+        except ValueError:
+            source_ref = normalize_posix(table_path)
+        for remote_id, row in sorted(payload.items(), key=lambda item: str(item[0])):
+            if not isinstance(row, dict) or row.get("autoPlay") is not True:
+                continue
+            remote_id = str(remote_id or "").strip()
+            if not remote_id:
+                continue
+            for line_index, line in enumerate(row.get("remoteCommSingleDataList") or []):
+                if not isinstance(line, dict):
+                    continue
+                audio_id = str(line.get("audioId") or "").strip()
+                if not audio_id:
+                    continue
+                single_id = str(line.get("singleId") or f"{remote_id}:{line_index + 1}").strip()
+                _append_context(contexts, seen, audio_id, {
+                    "kind": "remoteCommonAudio",
+                    "semanticRole": "remoteCommonAutoPlayAudioEvent",
+                    "confidence": "exact",
+                    "ownershipEvidenceLevel": "exactRemoteCommonSingleDataListRow",
+                    "triggerEvidenceLevel": "exact",
+                    "triggerBindingStatus": "exactRemoteCommonAudioId",
+                    "triggerRole": "RemoteCommonTableAutoPlay",
+                    "remoteCommonId": remote_id,
+                    "singleId": single_id,
+                    "index": line.get("index", line_index + 1),
+                    "middleId": line.get("middleId"),
+                    "actorList": line.get("actorList") or [],
+                    "voiceId": line.get("voiceId"),
+                    "voiceLinkStatus": "separateRemoteCommonVoiceId",
+                    "authoredEventId": audio_id,
+                    "autoPlay": True,
+                    "autoPlayTime": line.get("autoPlayTime"),
+                    "startAudioEvent": row.get("startAudioEvent"),
+                    "endAudioEvent": row.get("endAudioEvent"),
+                    "source": source_ref,
+                    "sourcePath": source_ref,
+                    "evidence": "exactRemoteCommonTableAutoPlay",
+                    "triggerRequestEvidence": [
+                        "exactRemoteCommonTableAutoPlay",
+                        "exactRemoteCommonAudioId",
+                    ],
+                    "triggerRuntimeActivationStatuses": [
+                        "remoteCommonAutoPlayExecutionNotObserved",
+                    ],
+                    "triggerOwnershipMethods": [
+                        "RemoteCommonTable.remoteCommSingleDataList",
+                    ],
+                    "runtimeActivationStatus": "remoteCommonAutoPlayExecutionNotObserved",
+                    "evidenceBoundary": (
+                        "RemoteCommonTable autoPlay and the exact single-data audioId "
+                        "prove an authored Event request. The row does not prove "
+                        "RemoteCommon selection, execution, PostEvent, or an audible "
+                        "Wwise media leaf; voiceId remains a separate dialogue identity."
+                    ),
+                })
+    return dict(contexts)
+
+
+def _build_remote_common_trigger_contexts(
+    export_root: Path,
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose exact RemoteCommonTable auto-play Event requests.
+
+    ``audioId`` is the SFX/Wwise Event used by the automatic remote-communication
+    surface.  ``voiceId`` is a separate dialogue voice identity and is retained
+    as such; it is never merged into the Event/media candidate.
+    """
+
+    event_by_id = {
+        str(event.get("id") or "").casefold(): event
+        for event in event_rows
+        if isinstance(event, dict) and str(event.get("id") or "").strip()
+    }
+    contexts: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    table_paths = [
+        export_root / "structured" / source_root / "Table" / "RemoteCommonTable.json"
+        for source_root in ("Persistent", "StreamingAssets")
+    ]
+    for table_path in table_paths:
+        payload = load_json(table_path, {})
+        if not isinstance(payload, dict):
+            continue
+        try:
+            source_ref = normalize_posix(table_path.relative_to(export_root))
+        except ValueError:
+            source_ref = normalize_posix(table_path)
+        for remote_id, row in sorted(payload.items(), key=lambda item: str(item[0])):
+            if not isinstance(row, dict) or row.get("autoPlay") is not True:
+                continue
+            remote_id = str(remote_id or "").strip()
+            if not remote_id:
+                continue
+            for line_index, line in enumerate(row.get("remoteCommSingleDataList") or []):
+                if not isinstance(line, dict):
+                    continue
+                audio_id = str(line.get("audioId") or "").strip()
+                if not audio_id:
+                    continue
+                single_id = str(line.get("singleId") or f"{remote_id}:{line_index + 1}").strip()
+                identity = (remote_id.casefold(), single_id.casefold(), audio_id.casefold())
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                event = event_by_id.get(audio_id.casefold(), {})
+                media_refs = [
+                    _trigger_media_ref(media, fallback_id=audio_id)
+                    for media in event.get("media") or []
+                    if isinstance(media, dict)
+                ]
+                media_refs = [media for media in media_refs if media]
+                found_in_wwise = event.get("foundInWwise") is True
+                if media_refs and any(media.get("src") for media in media_refs):
+                    media_status = "directWwiseMediaCandidate"
+                    media_evidence = "exactWwiseEventDirectSound"
+                elif found_in_wwise:
+                    media_status = "wwiseEventHasNoDecodedMedia"
+                    media_evidence = "wwiseEventHasNoDecodedMediaLeaf"
+                else:
+                    media_status = "audioEventUnresolved"
+                    media_evidence = "audioIdMissingFromCurrentWwiseIndex"
+                event_hash = event.get("hash")
+                if isinstance(event_hash, int):
+                    event_hash &= 0xFFFFFFFF
+                event_meaning = {
+                    key: event.get(key)
+                    for key in (
+                        "category", "foundInWwise", "possibleMediaCount", "playRootCount",
+                        "runtimeSelection", "mediaRelationTypes", "traversalStatus",
+                    )
+                    if event.get(key) not in (None, "", [])
+                }
+                if event_hash is not None:
+                    event_meaning["eventHash"] = event_hash
+                contexts.append({
+                    "triggerId": ":".join(("remoteCommonAudio", remote_id, single_id, audio_id)),
+                    "semanticKind": "remoteCommonAudio",
+                    "triggerRole": "RemoteCommonTableAutoPlay",
+                    "situation": {
+                        "remoteCommonId": remote_id,
+                        "singleId": single_id,
+                        "index": line.get("index", line_index + 1),
+                        "middleId": line.get("middleId"),
+                        "autoPlay": True,
+                        "autoPlayTime": line.get("autoPlayTime"),
+                        "startAudioEvent": row.get("startAudioEvent"),
+                        "endAudioEvent": row.get("endAudioEvent"),
+                        "eventId": audio_id,
+                        "eventHash": event_hash,
+                    },
+                    "meaning": {
+                        "id": single_id,
+                        "audio": audio_id,
+                        "eventId": audio_id,
+                        **event_meaning,
+                    },
+                    "action": {
+                        "action": "RemoteCommonAutoPlay",
+                        "triggerRole": "RemoteCommonTableAutoPlay",
+                        "sourcePath": source_ref,
+                        "runtimeActivationStatus": "remoteCommonAutoPlayExecutionNotObserved",
+                    },
+                    "owner": {
+                        "remoteCommonId": remote_id,
+                        "singleId": single_id,
+                        "middleId": line.get("middleId"),
+                        "actorList": line.get("actorList") or [],
+                        "voiceId": line.get("voiceId"),
+                        "voiceLinkStatus": "separateRemoteCommonVoiceId",
+                    },
+                    "selection": {
+                        "autoPlay": True,
+                        "autoPlayTime": line.get("autoPlayTime"),
+                        "audioSelectionStatus": "exactRemoteCommonAudioId",
+                        "mediaSelectionStatus": media_status,
+                        "runtimeSelectionStatus": "remoteCommonAutoPlaySelectionUnobserved",
+                    },
+                    "mediaRefs": media_refs,
+                    "evidence": {
+                        "definition": "exactRemoteCommonTableAutoPlay",
+                        "owner": "exactRemoteCommonSingleDataListRow",
+                        "media": media_evidence,
+                        "runtimeExecution": "remoteCommonAutoPlayExecutionNotObserved",
+                        "voice": "voiceId remains a separate dialogue identity",
+                    },
+                    "runtimeActivationStatus": "remoteCommonAutoPlayExecutionNotObserved",
+                    "sourceRefs": [
+                        source_ref,
+                        remote_id,
+                        single_id,
+                        audio_id,
+                        str(line.get("voiceId") or ""),
+                    ],
+                })
+    return contexts
+
+
+def _build_dialog_timeline_trigger_contexts(
+    webui_root: Path,
+    language: str,
+    media_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose authored DialogTrunk timeline voice placements.
+
+    These rows are deliberately separate from Wwise Event/Timeline carrier
+    rows.  A dialog line can have an exact serialized timeline schedule and a
+    playable AudioDialog file without being a Wwise Event at all.
+    """
+
+    media_by_id = {
+        str(row.get("id") or "").casefold(): row
+        for row in media_rows
+        if isinstance(row, dict) and str(row.get("id") or "").strip()
+    }
+    contexts: list[dict[str, Any]] = []
+    conv_root = webui_root / f"data/lang/{language.upper()}/conv"
+    if not conv_root.is_dir():
+        return contexts
+    for path in sorted(conv_root.glob("dlg_*.json")):
+        payload = load_json(path, {})
+        if not isinstance(payload, dict) or payload.get("kind") != "dlg":
+            continue
+        dialog_key = str(payload.get("key") or path.stem).strip()
+        payload_debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}
+        line_order = payload_debug.get("lineOrder") if isinstance(payload_debug.get("lineOrder"), dict) else {}
+        timeline_sources = [
+            source
+            for source in line_order.get("sources") or []
+            if isinstance(source, dict)
+        ]
+        source_refs = [
+            str(value)
+            for source in timeline_sources
+            for value in (source.get("sourceKey"), source.get("file"))
+            if value
+        ]
+        for line_index, line in enumerate(payload.get("lines") or []):
+            if not isinstance(line, dict):
+                continue
+            line_debug = line.get("_debug") if isinstance(line.get("_debug"), dict) else {}
+            timing = line_debug.get("timelineTiming") if isinstance(line_debug.get("timelineTiming"), dict) else {}
+            timeline_id = str(timing.get("timeline") or line.get("timeline") or "").strip()
+            if not timeline_id:
+                continue
+            line_id = str(line.get("id") or f"{dialog_key}:{line_index}").strip()
+            audio_id = str(line.get("audio") or "").strip()
+            media = media_by_id.get(audio_id.casefold(), {})
+            media_ref = _trigger_media_ref(media, fallback_id=audio_id)
+            if not media_ref.get("src") and line.get("audioSrc"):
+                media_ref["src"] = line.get("audioSrc")
+            audio_meta = line.get("audioMeta") if isinstance(line.get("audioMeta"), dict) else {}
+            for key in (
+                "duration", "audioDialogPath", "speakerChannel", "audioCategory",
+            ):
+                if media_ref.get(key) in (None, "") and audio_meta.get(key) not in (None, ""):
+                    media_ref[key] = audio_meta[key]
+            line_source_refs = list(source_refs)
+            line_source_refs.extend(
+                value
+                for value in (
+                    normalize_posix(path.relative_to(webui_root)),
+                    timeline_id,
+                    str(line_debug.get("table") or ""),
+                )
+                if value
+            )
+            trigger_id = ":".join((
+                "dialogTimeline",
+                dialog_key,
+                timeline_id,
+                line_id,
+            ))
+            contexts.append({
+                "triggerId": trigger_id,
+                "semanticKind": "dialogTimeline",
+                "triggerRole": "DialogTimelineVoice",
+                "situation": {
+                    "dialogKey": dialog_key,
+                    "timelineId": timeline_id,
+                    "lineId": line_id,
+                    "timelineStartSec": timing.get("start"),
+                    "timelineDurationSec": timing.get("duration"),
+                },
+                "meaning": {
+                    key: line[key]
+                    for key in (
+                        "id", "actor", "aid", "text", "audio", "slot", "cid", "duration",
+                    )
+                    if line.get(key) not in (None, "", [])
+                },
+                "action": {
+                    "action": "DialogTimelineVoice",
+                    "timelineId": timeline_id,
+                    "runtimeActivationStatus": "dialogTimelineRuntimeExecutionNotObserved",
+                },
+                "owner": {
+                    "dialogKey": dialog_key,
+                    "timelineId": timeline_id,
+                    "speakerActorId": line.get("aid"),
+                    "speakerChannel": media_ref.get("speakerChannel") or audio_meta.get("speakerChannel"),
+                },
+                "selection": {
+                    "lineIndex": line_index,
+                    "timelineStartSec": timing.get("start"),
+                    "timelineDurationSec": timing.get("duration"),
+                    "lineScheduleStatus": "exactDialogTimelineTiming",
+                    "mediaSelectionStatus": "audioDialogIdentityJoined",
+                },
+                "mediaRefs": [media_ref] if media_ref else [],
+                "evidence": {
+                    "definition": "exactDialogTimelineTiming",
+                    "owner": "exactDialogTimelineSource",
+                    "media": "playable" if media_ref.get("src") else "audioDialogMediaUnresolved",
+                    "runtimeExecution": "dialogTimelineRuntimeExecutionNotObserved",
+                },
+                "runtimeActivationStatus": "dialogTimelineRuntimeExecutionNotObserved",
+                "sourceRefs": sorted(set(line_source_refs)),
+            })
+    return contexts
+
+
+def _build_dialog_lifecycle_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose exact AudioDialogCustomEventTable lifecycle hooks.
+
+    The table binds a dialog id and a phase array slot to a uint32 Wwise Event
+    id.  The event/media shards remain authoritative for Wwise traversal; this
+    catalog only adds the authored dialog-state situation and the static
+    ``AudioGameplayStatusSystem`` method shape.  It deliberately does not
+    claim that the dialog state transition or the Wwise event was executed.
+    """
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            _trigger_media_ref(row)
+            for row in event.get("media") or []
+            if isinstance(row, dict)
+        ]
+        media_refs = [row for row in media_refs if row]
+        found_in_wwise = event.get("foundInWwise") is True
+        if found_in_wwise and media_refs:
+            media_selection_status = "wwiseEventMediaCandidates"
+            media_evidence = "wwiseEventMediaCandidate"
+        elif found_in_wwise:
+            media_selection_status = "wwiseEventHasNoDecodedMedia"
+            media_evidence = "wwiseEventHasNoDecodedMediaLeaf"
+        else:
+            media_selection_status = "authoredEventUnresolved"
+            media_evidence = "authoredEventMissingFromCurrentWwiseIndex"
+        for occurrence_index, raw_context in enumerate(event.get("contexts") or []):
+            if not isinstance(raw_context, dict):
+                continue
+            if raw_context.get("kind") != "tableEventHash":
+                continue
+            if raw_context.get("table") != "AudioDialogCustomEventTable":
+                continue
+            match = DIALOG_LIFECYCLE_PATH_RE.fullmatch(
+                str(raw_context.get("path") or "")
+            )
+            if not match:
+                continue
+            phase = match.group("phase")
+            phase_info = DIALOG_LIFECYCLE_PHASES[phase]
+            dialog_id = match.group("dialogId")
+            array_index = int(match.group("index"))
+            event_hash = raw_context.get("eventHash")
+            if not isinstance(event_hash, int):
+                event_hash = event.get("hash")
+            if isinstance(event_hash, int):
+                event_hash &= 0xFFFFFFFF
+            authored_value = raw_context.get("signedValue")
+            event_key = event_id or (
+                f"0x{event_hash:08x}" if isinstance(event_hash, int) else "unknown"
+            )
+            trigger_id = ":".join((
+                "dialogLifecycle",
+                dialog_id,
+                phase,
+                str(array_index),
+                event_key,
+            ))
+            meaning = {
+                key: event.get(key)
+                for key in (
+                    "id", "name", "hash", "category", "foundInWwise",
+                    "possibleMediaCount", "playRootCount", "runtimeSelection",
+                    "mediaRelationTypes", "traversalStatus", "unresolvedNodeCount",
+                )
+                if event.get(key) not in (None, "", [])
+            }
+            contexts.append({
+                "triggerId": trigger_id,
+                "semanticKind": "dialogLifecycle",
+                "triggerRole": phase_info["triggerRole"],
+                "situation": {
+                    "dialogId": dialog_id,
+                    "lifecyclePhase": phase,
+                    "arrayIndex": array_index,
+                    "eventId": event_id,
+                    "eventHash": event_hash,
+                    "authoredSignedValue": authored_value,
+                    "tablePath": raw_context.get("path"),
+                },
+                "meaning": meaning,
+                "action": {
+                    "action": "DialogLifecycleAudioEvent",
+                    "lifecyclePhase": phase,
+                    "runtimeMethod": phase_info["runtimeMethod"],
+                    "runtimeMethodToken": phase_info["runtimeMethodToken"],
+                    "runtimeActivationStatus": "dialogLifecycleRuntimeExecutionNotObserved",
+                },
+                "owner": {
+                    "dialogId": dialog_id,
+                    "sourceTable": "AudioDialogCustomEventTable",
+                    "lifecycleField": phase,
+                    "ownerStatus": "exactDialogIdAndLifecycleField",
+                },
+                "selection": {
+                    "triggerBindingStatus": "exactAudioDialogCustomEventTable",
+                    "mediaSelectionStatus": media_selection_status,
+                    "runtimeDispatchStatus": "dialogLifecycleDispatchUnobserved",
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": "exactAudioDialogCustomEventTable",
+                    "owner": "exactAudioDialogCustomEventTableDialogIdAndPhase",
+                    "media": media_evidence,
+                    "runtimeExecution": "dialogLifecycleRuntimeExecutionNotObserved",
+                    "requestEvidence": [
+                        "exactAudioDialogCustomEventTableField",
+                        "exactDialogLifecycleRuntimeMethodMetadata",
+                    ],
+                },
+                "runtimeActivationStatus": "dialogLifecycleRuntimeExecutionNotObserved",
+                "sourceRefs": [
+                    value
+                    for value in (
+                        str(raw_context.get("source") or ""),
+                        str(raw_context.get("path") or ""),
+                        event_id,
+                    )
+                    if value
+                ],
+            })
+    return contexts
+
+
+def _build_timeline_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    event_rows = list(event_rows)
+    contexts: list[dict[str, Any]] = []
+    event_ids_with_serialized_carrier = {
+        str(event.get("id") or "").strip()
+        for event in event_rows
+        if isinstance(event, dict)
+        and str(event.get("id") or "").strip()
+        and any(
+            isinstance(context, dict)
+            and context.get("kind") in {"levelSequenceAudio", "cutsceneTimeline"}
+            and context.get("audioPlayableRuntimeContractId")
+            for context in event.get("contexts") or []
+        )
+    }
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            _trigger_media_ref(row)
+            for row in event.get("media") or []
+            if isinstance(row, dict)
+        ]
+        media_refs = [row for row in media_refs if row]
+        for occurrence_index, context in enumerate(event.get("contexts") or []):
+            if not isinstance(context, dict) or context.get("kind") not in {
+                "levelSequenceAudio",
+                "cutsceneTimeline",
+            }:
+                continue
+            context_kind = str(context.get("kind") or "")
+            asset = str(context.get("timelineAssetName") or "")
+            serialized_file = str(context.get("timelineAssetSerializedFile") or "")
+            path_id = context.get("timelineAssetPathId")
+            playable_path_id = context.get("audioPlayablePathId")
+            story_key = str(context.get("storyKey") or "")
+            trigger_id = ":".join((
+                "timeline",
+                event_id,
+                context_kind,
+                serialized_file or "unknown",
+                str(path_id if path_id is not None else occurrence_index),
+                str(playable_path_id if playable_path_id is not None else "unknown"),
+            ))
+            owner = {
+                key: context[key]
+                for key in (
+                    "timelineAssetName", "timelineAssetSerializedFile", "timelineAssetPathId",
+                    "timelineAssetSource", "timelineAssetSourceOffset", "timelineTrackName",
+                    "timelineClipIndex", "timelineClipDisplayName", "timelineClipStartSec",
+                    "timelineClipDurationSec", "timelineClipEndSec", "timelineClipInSec",
+                    "timelineClipTimeScale", "timelineClipEaseInDurationSec",
+                    "timelineClipEaseOutDurationSec", "timelineClipBlendInDurationSec",
+                    "timelineClipBlendOutDurationSec", "timelineClipOptionIndex",
+                    "timelineClipTimingEvidence", "timelineTrackRawJsonPath",
+                    "timelineTrackSerializedFile", "timelineTrackPathId",
+                    "timelineTrackSource", "timelineTrackSourceOffset", "audioPlayableType",
+                    "audioPlayableRuntimeContractId",
+                    "audioPlayableSerializedFile", "audioPlayablePathId", "audioPlayableIsCue",
+                    "audioPlayableStopEventAtClipEnd", "audioPlayableStopEventAtClipEndKey",
+                    "audioPlayableFadeOutMs", "audioPlayableEnableSeek",
+                    "audioPlayableUseBindingObject", "audioPlayableIs2D",
+                    "audioMusicActionType", "audioMusicActionTypeLabel",
+                    "audioMusicTriggerOnSkip", "audioMusicTriggerOnSkipLabel",
+                    "audioPlayableControlEvidence", "audioPlayableRawJsonPath",
+                    "playableDirectorCount",
+                    "playableDirectorNames", "playableDirectorPathIds", "directorEvidence",
+                    "storyKey", "evidence",
+                )
+                if context.get(key) not in (None, "", [])
+            }
+            if context_kind == "cutsceneTimeline" and not context.get(
+                "audioPlayableRuntimeContractId"
+            ):
+                owner["runtimeCarrierStatus"] = (
+                    "eventIdAlsoHasSerializedTimelineCarrier"
+                    if event_id in event_ids_with_serialized_carrier
+                    else "storyCutsceneAudioReferenceOnly"
+                )
+            source_refs = [
+                str(value)
+                for value in (
+                    context.get("timelineAssetSource"),
+                    context.get("timelineTrackSource"),
+                )
+                if value
+            ]
+            contexts.append({
+                "triggerId": trigger_id,
+                "semanticKind": "timelineAudio",
+                "triggerRole": context.get("triggerRole") or (
+                    "CutsceneTimelineAudio"
+                    if context_kind == "cutsceneTimeline"
+                    else "TimelineAssetPlayback"
+                ),
+                "situation": {
+                    "eventId": event_id,
+                    "contextKind": context_kind,
+                    "storyKey": story_key,
+                    "timelineAssetName": asset,
+                    "timelineClipDisplayName": context.get("timelineClipDisplayName"),
+                    "timelineStartSec": context.get("timelineClipStartSec"),
+                    "timelineDurationSec": context.get("timelineClipDurationSec"),
+                    "timelineEndSec": context.get("timelineClipEndSec"),
+                    "timelineParentNameStatus": context.get("timelineParentNameStatus"),
+                    "levelSequenceId": context.get("levelSequenceId"),
+                },
+                "meaning": {
+                    "eventId": event_id,
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "authoredTimelineKeyStatus": (
+                        "matchedCurrentWwiseEvent"
+                        if event.get("foundInWwise")
+                        else "authoredTimelineKeyNotInCurrentWwiseIndex"
+                    ),
+                    "mediaRelationTypes": event.get("mediaRelationTypes") or [],
+                },
+                "action": {
+                    key: context[key]
+                    for key in (
+                        "triggerRole", "levelSequenceId", "levelScriptActionCount",
+                        "levelScriptIds", "levelScriptSourcePaths", "levelSequenceFieldOffsets",
+                    )
+                    if context.get(key) not in (None, "", [])
+                },
+                "owner": owner,
+                "selection": {
+                    "triggerBindingStatus": context.get("triggerBindingStatus"),
+                    "confidence": context.get("confidence"),
+                    "contextKind": context_kind,
+                    "runtimeSelection": event.get("runtimeSelection"),
+                    "mediaSelectionStatus": (
+                        "wwiseSelectionUnobserved"
+                        if event.get("foundInWwise")
+                        else "authoredTimelineMediaUnresolved"
+                    ),
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("triggerEvidenceLevel")
+                    or context.get("evidence")
+                    or "inferred",
+                    "owner": context.get("ownershipEvidenceLevel")
+                    or (
+                        "authoredTimelineOrLevelSequence"
+                        if context_kind == "cutsceneTimeline"
+                        else "exactSerializedTimelineCarrier"
+                    ),
+                    "media": (
+                        "wwiseEventMediaCandidate"
+                        if event.get("foundInWwise")
+                        else "authoredTimelineKeyNotInCurrentWwiseIndex"
+                    ),
+                    "runtimeExecution": context.get("runtimeActivationStatus")
+                        or (
+                        "cutsceneTimelineRuntimeExecutionNotObserved"
+                        if context_kind == "cutsceneTimeline"
+                        else "audioEventRuntimePlaybackUnobserved"
+                    ),
+                    "requestEvidence": [
+                        value
+                        for value in (
+                            (
+                                "exactAudioEventPlayableScalar"
+                                if context.get("audioPlayableKeyStatus")
+                                == "exactAudioEventPlayableScalar"
+                                else "exactTimelineTrackDisplayName"
+                            )
+                            if context.get("audioPlayableKeyStatus")
+                            or context.get("timelineTrackPathId") is not None
+                            else (
+                                "storyCutsceneAudioEventList"
+                                if context_kind == "cutsceneTimeline"
+                                else None
+                            ),
+                            (
+                                "exactTimelineTrackPPtr"
+                                if context.get("timelineTrackPathId") is not None
+                                else None
+                            ),
+                            (
+                                "exactTimelineParentPPtr"
+                                if context.get("timelineAssetPathId") is not None
+                                else None
+                            ),
+                            context.get("timelineClipTimingEvidence"),
+                            context.get("audioPlayableControlEvidence"),
+                        )
+                        if value
+                    ],
+                },
+                "runtimeActivationStatus": context.get(
+                    "runtimeActivationStatus"
+                ) or (
+                    "cutsceneTimelineRuntimeExecutionNotObserved"
+                    if context_kind == "cutsceneTimeline"
+                    else "audioEventRuntimePlaybackUnobserved"
+                ),
+                "sourceRefs": source_refs,
+            })
+    return contexts
+
+
+def _build_lua_post_event_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            _trigger_media_ref(row)
+            for row in event.get("media") or []
+            if isinstance(row, dict)
+        ]
+        media_refs = [row for row in media_refs if row]
+        for occurrence_index, raw_context in enumerate(event.get("contexts") or []):
+            if not isinstance(raw_context, dict) or raw_context.get("kind") != "luaPostEvent":
+                continue
+            source = str(raw_context.get("source") or "")
+            line = int(raw_context.get("line") or 0)
+            contexts.append({
+                "triggerId": f"luaPostEvent:{source}:{line}:{occurrence_index}:{event_id}",
+                "semanticKind": "luaPostEvent",
+                "triggerRole": "scriptedEventRequest",
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": raw_context.get("eventHash"),
+                    "luaSource": source,
+                    "line": line,
+                    "expression": raw_context.get("expression"),
+                },
+                "meaning": {
+                    key: event.get(key)
+                    for key in (
+                        "id", "name", "hash", "category", "foundInWwise",
+                        "possibleMediaCount", "runtimeSelection", "traversalStatus",
+                    )
+                    if event.get(key) not in (None, "", [])
+                },
+                "action": {
+                    "action": "AudioAdapter.PostEvent",
+                    "runtimeActivationStatus": "luaBranchExecutionNotObserved",
+                },
+                "owner": {
+                    "luaSource": source,
+                    "ownerStatus": "exactLuaFileAndLine",
+                },
+                "selection": {
+                    "triggerBindingStatus": "exactDecryptedLuaPostEventLiteral",
+                    "mediaSelectionStatus": (
+                        "wwiseEventMediaCandidates"
+                        if media_refs
+                        else "noDecodedMediaCandidate"
+                    ),
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": "exactDecryptedLuaPostEventLiteral",
+                    "owner": "exactLuaFileAndLine",
+                    "media": (
+                        "wwiseEventMediaCandidate"
+                        if media_refs
+                        else "noDecodedMediaLeaf"
+                    ),
+                    "runtimeExecution": "luaBranchExecutionNotObserved",
+                },
+                "runtimeActivationStatus": "luaBranchExecutionNotObserved",
+                "sourceRefs": [value for value in (source, f"line:{line}", event_id) if value],
+            })
+    return contexts
+
+
+def build_trigger_context_catalog(
+    event_rows: Iterable[dict[str, Any]],
+    media_rows: Iterable[dict[str, Any]],
+    webui_root: Path,
+    language: str,
+    export_root: Path | None = None,
+) -> dict[str, Any]:
+    """Build one navigable trigger -> situation -> media surface.
+
+    This is intentionally a reference layer over the existing event/media
+    shards. It does not merge authored ownership with runtime execution and it
+    does not invent a trigger for a media file that has only a table identity.
+    """
+
+    event_rows = list(event_rows)
+    media_rows = list(media_rows)
+    line_meanings = _conversation_line_meanings(
+        webui_root,
+        language,
+        kinds=frozenset({"radio"}),
+    )
+    grouped = {
+        "radio": _build_radio_trigger_contexts(media_rows, line_meanings),
+        "envTalk": _build_envtalk_trigger_contexts(webui_root, language, media_rows),
+        "remoteCommonAudio": (
+            _build_remote_common_trigger_contexts(export_root, event_rows)
+            if export_root is not None
+            else []
+        ),
+        "dialogTimeline": _build_dialog_timeline_trigger_contexts(
+            webui_root,
+            language,
+            media_rows,
+        ),
+        "dialogLifecycle": _build_dialog_lifecycle_trigger_contexts(event_rows),
+        "timelineAudio": _build_timeline_trigger_contexts(event_rows),
+        "luaPostEvent": _build_lua_post_event_trigger_contexts(event_rows),
+    }
+    contexts = [row for rows in grouped.values() for row in rows]
+    contexts.sort(key=lambda row: (str(row.get("semanticKind") or ""), str(row.get("triggerId") or "")))
+    counts = Counter(str(row.get("semanticKind") or "unknown") for row in contexts)
+    coverage = {
+        "radio": {
+            "source": "media.radioTriggerContexts",
+            "conversationLineIds": len(line_meanings),
+            "storedTriggerContextRows": len(grouped["radio"]),
+            "unresolvedRowsRemainIn": "triggerCatalog.levelScriptRadio.unresolvedRadioLines",
+        },
+        "envTalk": {
+            "source": "conv/env_*.json lines",
+            "storedTriggerContextRows": len(grouped["envTalk"]),
+            "greetingRows": sum(
+                str(row.get("semanticKind") or "") == "envTalkGreeting"
+                for row in grouped["envTalk"]
+                if isinstance(row, dict)
+            ),
+        },
+        "remoteCommonAudio": {
+            "source": "RemoteCommonTable.remoteCommSingleDataList[*].audioId where autoPlay=true",
+            "storedTriggerContextRows": len(grouped["remoteCommonAudio"]),
+            "rowsWithPlayableMedia": sum(
+                any(
+                    isinstance(media_ref, dict) and media_ref.get("src")
+                    for media_ref in row.get("mediaRefs") or []
+                )
+                for row in grouped["remoteCommonAudio"]
+                if isinstance(row, dict)
+            ),
+            "voiceIdKeptSeparate": True,
+        },
+        "luaPostEvent": {
+            "source": "decrypted VFS Lua AudioAdapter/AudioManager.PostEvent string literals",
+            "storedTriggerContextRows": len(grouped["luaPostEvent"]),
+            "runtimeExecutionObserved": 0,
+        },
+        "dialogTimeline": {
+            "source": "conv/dlg_*.json line._debug.timelineTiming",
+            "storedTriggerContextRows": len(grouped["dialogTimeline"]),
+        },
+        "dialogLifecycle": {
+            "source": (
+                "AudioDialogCustomEventTable dialogId + preloadEvents / "
+                "preEnterEvents / postEnterEvents / preExitEvents / postExitEvents"
+            ),
+            "storedTriggerContextRows": len(grouped["dialogLifecycle"]),
+            "rowsWithCurrentWwiseEvent": sum(
+                bool((row.get("meaning") or {}).get("foundInWwise"))
+                for row in grouped["dialogLifecycle"]
+                if isinstance(row, dict)
+            ),
+            "rowsWithNoDecodedMediaLeaf": sum(
+                row.get("selection", {}).get("mediaSelectionStatus")
+                == "wwiseEventHasNoDecodedMedia"
+                for row in grouped["dialogLifecycle"]
+                if isinstance(row, dict)
+            ),
+            "phaseCounts": dict(sorted(Counter(
+                str((row.get("situation") or {}).get("lifecyclePhase") or "unknown")
+                for row in grouped["dialogLifecycle"]
+                if isinstance(row, dict)
+            ).items())),
+            "runtimeConsumer": DIALOG_LIFECYCLE_RUNTIME_CONSUMER,
+        },
+        "timelineAudio": {
+            "source": (
+                "event contexts kind levelSequenceAudio or cutsceneTimeline, including "
+                "Persistent and StreamingAssets serialized Timeline carriers"
+            ),
+            "storedTriggerContextRows": len(grouped["timelineAudio"]),
+            "rowsWithCurrentWwiseEvent": sum(
+                bool((row.get("meaning") or {}).get("foundInWwise"))
+                for row in grouped["timelineAudio"]
+                if isinstance(row, dict)
+            ),
+            "rowsWithAuthoredKeyMissingFromCurrentWwiseIndex": sum(
+                not bool((row.get("meaning") or {}).get("foundInWwise"))
+                for row in grouped["timelineAudio"]
+                if isinstance(row, dict)
+            ),
+            "rowsByRuntimeContract": dict(sorted(Counter(
+                str((row.get("owner") or {}).get("audioPlayableRuntimeContractId") or "unknown")
+                for row in grouped["timelineAudio"]
+                if isinstance(row, dict)
+            ).items())),
+            "rowsByCarrierEvidence": dict(sorted(Counter(
+                (
+                    "serializedPlayableCarrier"
+                    if (row.get("owner") or {}).get("audioPlayableRuntimeContractId")
+                    else (row.get("owner") or {}).get("runtimeCarrierStatus")
+                    or "unresolved"
+                )
+                for row in grouped["timelineAudio"]
+                if isinstance(row, dict)
+            ).items())),
+            "rowsByMusicActionType": dict(sorted(Counter(
+                str((row.get("owner") or {}).get("audioMusicActionTypeLabel") or "unknown")
+                for row in grouped["timelineAudio"]
+                if (row.get("owner") or {}).get("audioPlayableRuntimeContractId")
+                == "timelineMusicEventKey.audioMusic"
+            ).items())),
+            "rowsByMusicSkipPolicy": dict(sorted(Counter(
+                str((row.get("owner") or {}).get("audioMusicTriggerOnSkipLabel") or "unknown")
+                for row in grouped["timelineAudio"]
+                if (row.get("owner") or {}).get("audioPlayableRuntimeContractId")
+                == "timelineMusicEventKey.audioMusic"
+            ).items())),
+            "runtimeContracts": TIMELINE_AUDIO_RUNTIME_CONTRACTS,
+        },
+    }
+    return {
+        "schemaVersion": TRIGGER_CONTEXT_SCHEMA_VERSION,
+        "language": language.upper(),
+        "counts": {
+            "total": len(contexts),
+            "bySemanticKind": dict(sorted(counts.items())),
+            "withPlayableMedia": sum(
+                any(
+                    isinstance(media_ref, dict) and media_ref.get("src")
+                    for media_ref in row.get("mediaRefs") or []
+                )
+                for row in contexts
+            ),
+            "runtimeExecutionObserved": 0,
+            "runtimeExecutionUnobserved": len(contexts),
+            "timelineAudioRowsWithAuthoredKeyMissingFromCurrentWwiseIndex": sum(
+                not bool((row.get("meaning") or {}).get("foundInWwise"))
+                for row in grouped["timelineAudio"]
+                if isinstance(row, dict)
+            ),
+            "timelineAudioRowsWithStaticRuntimeContract": sum(
+                bool((row.get("owner") or {}).get("audioPlayableRuntimeContractId"))
+                for row in grouped["timelineAudio"]
+                if isinstance(row, dict)
+            ),
+            "dialogLifecycleRowsWithNoDecodedMediaLeaf": sum(
+                row.get("selection", {}).get("mediaSelectionStatus")
+                == "wwiseEventHasNoDecodedMedia"
+                for row in grouped["dialogLifecycle"]
+                if isinstance(row, dict)
+            ),
+        },
+        "coverage": coverage,
+        "contexts": contexts,
+        "evidenceBoundary": (
+            "Each row joins an authored trigger/owner/selection surface to zero or more "
+            "media references. Definition, media availability, and runtime execution "
+            "are independent evidence states. The shard never claims that a LevelScript, "
+            "NpcProxy, dialog lifecycle state transition, Timeline Director, Wwise branch, "
+            "RemoteCommon auto-play row, or selected line/slot actually ran. "
+            "AudioDialogCustomEventTable lifecycle rows identify a static request/scheduling "
+            "hook; RemoteCommon voiceId remains separate from its audioId; neither proves "
+            "PostEvent or an audible media leaf."
         ),
     }
 
@@ -7642,6 +9585,13 @@ def collect_table_contexts(
     for event_id, rows in collect_authored_runtime_config_contexts(export_root, runtime_model).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
+    # RemoteCommon audioId is an authored Wwise Event request, unlike the
+    # adjacent voiceId/audioOverride identities that the generic table walker
+    # intentionally leaves out. Keep this route explicit so Event summaries
+    # do not manufacture a Timeline-carrier gap for it.
+    for event_id, rows in _build_remote_common_event_contexts(export_root).items():
+        for row in rows:
+            _append_context(contexts, seen, event_id, row)
     return dict(contexts)
 
 
@@ -7693,6 +9643,323 @@ def cutscene_contexts(cutscene_events: dict[str, list[str]] | None) -> dict[str,
     return dict(contexts)
 
 
+def lua_audio_contexts(audio_index: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """Expose exact decrypted Lua PostEvent literals without claiming execution."""
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    for row in audio_index.get("luaAudioReferences") or []:
+        if not isinstance(row, dict) or row.get("kind") != "luaPostEvent":
+            continue
+        event_id = str(row.get("name") or "").strip().lower()
+        if not event_id:
+            continue
+        _append_context(contexts, seen, event_id, {
+            "kind": "luaPostEvent",
+            "source": row.get("source"),
+            "line": row.get("line"),
+            "expression": row.get("expression"),
+            "method": row.get("method"),
+            "eventHash": row.get("hash"),
+            "evidence": "exactDecryptedLuaPostEventLiteral",
+            "runtimeActivationStatus": "luaBranchExecutionNotObserved",
+        })
+    return dict(contexts)
+
+
+def exact_wwise_event_aliases(audio_index: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return cross-source aliases only when one hash has one exact name."""
+
+    by_hash: dict[int, dict[str, Any]] = {}
+    conflicts: set[int] = set()
+    for source_key in (
+        "audioDialogWwiseEventAliases",
+        "voiceTableWwiseEventAliases",
+        "typedUiTableWwiseEventAliases",
+        "snsVoiceWwiseEventAliases",
+        "skillIdDictionaryWwiseEventAliases",
+    ):
+        for raw_row in audio_index.get(source_key) or []:
+            if not isinstance(raw_row, dict):
+                continue
+            try:
+                event_hash = int(raw_row.get("eventHash")) & 0xFFFFFFFF
+            except (TypeError, ValueError):
+                continue
+            name = str(raw_row.get("name") or "").strip()
+            if not name:
+                continue
+            previous = by_hash.get(event_hash)
+            if previous is not None and str(previous.get("name") or "").casefold() != name.casefold():
+                conflicts.add(event_hash)
+                continue
+            by_hash.setdefault(event_hash, raw_row)
+    for event_hash in conflicts:
+        by_hash.pop(event_hash, None)
+    return sorted(
+        by_hash.values(),
+        key=lambda row: (str(row.get("name") or "").casefold(), int(row.get("eventHash") or 0)),
+    )
+
+
+def voice_table_event_contexts(
+    audio_index: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Expose typed voice Event fields without claiming a live selection."""
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    kind_by_route = {
+        "voiceDefaultEvent": "voiceDefaultWwiseEvent",
+        "narratingChannelEvent": "voiceNarratingChannelEvent",
+        "radioChannelEvent": "voiceRadioChannelEvent",
+        "voiceDefinitionOverrideEvent": "audioDialogOverrideWwiseEvent",
+        "responsiveVoiceEventTemplate": "responsiveVoiceEventTemplate",
+    }
+    for alias in audio_index.get("voiceTableWwiseEventAliases") or []:
+        if not isinstance(alias, dict):
+            continue
+        event_id = str(alias.get("name") or "").strip().lower()
+        if not event_id:
+            continue
+        for usage in alias.get("usages") or []:
+            if not isinstance(usage, dict):
+                continue
+            route_kind = str(usage.get("routeKind") or "")
+            _append_context(contexts, seen, event_id, {
+                "kind": kind_by_route.get(route_kind, "voiceTableWwiseEvent"),
+                "table": usage.get("table"),
+                "field": usage.get("field"),
+                "routeKind": route_kind,
+                "eventHash": alias.get("eventHash"),
+                "eventHashHex": alias.get("eventHashHex"),
+                "occurrenceCount": int(usage.get("occurrenceCount") or 0),
+                "rowPathSamples": usage.get("rowPathSamples") or [],
+                "rowPathsTruncated": bool(usage.get("rowPathsTruncated")),
+                "sources": usage.get("sources") or [],
+                "evidence": alias.get("evidence") or "typedVoiceTableEventFieldHashEqualsCurrentWwiseEventId",
+                "runtimeRoute": usage.get("runtimeRoute"),
+                "runtimeSelectionStatus": "authoredRoutePresentLiveVoiceAndBranchSelectionUnobserved",
+                "playbackPlacementStatus": "authoredPossibleTrigger",
+            })
+    return dict(contexts)
+
+
+def typed_ui_table_event_contexts(
+    audio_index: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Expose exact table-to-Lua audio routes without claiming execution."""
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    kind_by_route = {
+        "uiAnimationOpenEvent": "uiAnimationOpenEvent",
+        "activityPushPopupBgmEvent": "activityPushPopupBgmEvent",
+        "activityCenterBgmEvent": "activityCenterBgmEvent",
+        "uiVideoAudioEvent": "uiVideoAudioEvent",
+        "domainRegionSwitchEvent": "domainRegionSwitchEvent",
+        "domainUpgradeAnimationEvent": "domainUpgradeAnimationEvent",
+    }
+    for alias in audio_index.get("typedUiTableWwiseEventAliases") or []:
+        if not isinstance(alias, dict):
+            continue
+        event_id = str(alias.get("name") or "").strip().lower()
+        if not event_id:
+            continue
+        for usage in alias.get("usages") or []:
+            if not isinstance(usage, dict):
+                continue
+            route_kind = str(usage.get("routeKind") or "")
+            _append_context(contexts, seen, event_id, {
+                "kind": kind_by_route.get(route_kind, "typedUiTableWwiseEvent"),
+                "table": usage.get("table"),
+                "field": usage.get("field"),
+                "routeKind": route_kind,
+                "eventHash": alias.get("eventHash"),
+                "eventHashHex": alias.get("eventHashHex"),
+                "occurrenceCount": int(usage.get("occurrenceCount") or 0),
+                "rowPathSamples": usage.get("rowPathSamples") or [],
+                "rowPathsTruncated": bool(usage.get("rowPathsTruncated")),
+                "sources": usage.get("sources") or [],
+                "consumerEvidence": usage.get("consumerEvidence") or [],
+                "evidence": alias.get("evidence") or "typedTableGetterAndLuaAudioConsumerHashEqualsCurrentWwiseEventId",
+                "runtimeRoute": usage.get("runtimeRoute"),
+                "runtimeExecutionStatus": "authoredLuaAudioCallsiteBranchExecutionUnobserved",
+                "playbackPlacementStatus": "authoredPossibleTrigger",
+            })
+    return dict(contexts)
+
+
+def sns_voice_event_contexts(
+    audio_index: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Expose exact SNS Voice-node click playback without claiming a click."""
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    for alias in audio_index.get("snsVoiceWwiseEventAliases") or []:
+        if not isinstance(alias, dict):
+            continue
+        event_id = str(alias.get("name") or "").strip().lower()
+        if not event_id:
+            continue
+        for usage in alias.get("usages") or []:
+            if not isinstance(usage, dict):
+                continue
+            _append_context(contexts, seen, event_id, {
+                "kind": "snsVoiceMessageEvent",
+                "table": usage.get("table"),
+                "dialogId": usage.get("dialogId"),
+                "contentId": usage.get("contentId"),
+                "contentType": usage.get("contentType"),
+                "contentTypeName": usage.get("contentTypeName"),
+                "contentParamIndex": usage.get("contentParamIndex"),
+                "speaker": usage.get("speaker"),
+                "durationSeconds": usage.get("durationSeconds"),
+                "eventHash": alias.get("eventHash"),
+                "eventHashHex": alias.get("eventHashHex"),
+                "sources": usage.get("sources") or [],
+                "consumerEvidence": [
+                    "SNSDialogContentCoreCell.lua:13-23,216-220",
+                    "SNSContentVoice.lua:48-76",
+                ],
+                "evidence": alias.get("evidence") or "snsVoiceContentTypeAndLuaPostEventHashEqualsCurrentWwiseEventId",
+                "runtimeRoute": "SNS Voice cell click -> contentParam[0] -> AudioAdapter.PostEvent; timer/disable -> StopByPlayingId",
+                "runtimeExecutionStatus": "authoredClickHandlerExecutionUnobserved",
+                "playbackPlacementStatus": "authoredPossibleTrigger",
+            })
+    return dict(contexts)
+
+
+def collect_responsive_voice_contexts(
+    export_root: Path,
+    audio_index: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Attach authored responsive-voice routes to exact Wwise Event aliases.
+
+    Alias rows have already passed the three-way AudioDialog path hash,
+    signed voice-id, and complete type-4 Wwise Event-id equality gate.  The
+    response table proves possible trigger membership; native selection,
+    cooldown, probability, tone replacement, and the actually heard response
+    remain unresolved.
+    """
+
+    aliases = {
+        int(row.get("eventHash")) & 0xFFFFFFFF: row
+        for row in audio_index.get("audioDialogWwiseEventAliases") or []
+        if isinstance(row, dict)
+        and isinstance(row.get("eventHash"), int)
+        and str(row.get("name") or "").strip()
+    }
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    if not aliases:
+        return {}
+
+    for event_hash, alias in sorted(aliases.items()):
+        event_id = str(alias["name"]).strip().lower()
+        _append_context(contexts, seen, event_id, {
+            "kind": "audioDialogVoiceDefinition",
+            "voiceId": alias.get("voiceId"),
+            "eventHash": event_hash,
+            "eventHashHex": f"0x{event_hash:08x}",
+            "audioDialogPath": alias.get("name"),
+            "codec": alias.get("codec"),
+            "speakerChannel": alias.get("speakerChannel") or "",
+            "voType": alias.get("voType"),
+            "sources": alias.get("sources") or [],
+            "evidence": alias.get("evidence") or "audioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+            "playbackPlacementStatus": "definitionOnly",
+        })
+
+    responsive_path = next((
+        export_root / "structured" / source / "Table" / "ResponsiveDialog.json"
+        for source in ("StreamingAssets", "Persistent")
+        if (export_root / "structured" / source / "Table" / "ResponsiveDialog.json").is_file()
+    ), None)
+    if responsive_path is not None:
+        payload = load_json(responsive_path, {})
+        source = normalize_posix(responsive_path.relative_to(export_root))
+        for sentence_type, sentence_row in (payload.items() if isinstance(payload, dict) else []):
+            speakers = sentence_row.get("speakers") if isinstance(sentence_row, dict) else None
+            if not isinstance(speakers, dict):
+                continue
+            for speaker_id, speaker_row in speakers.items():
+                triggers = speaker_row.get("triggers") if isinstance(speaker_row, dict) else None
+                if not isinstance(triggers, dict):
+                    continue
+                for trigger_key, trigger_row in triggers.items():
+                    if not isinstance(trigger_row, dict):
+                        continue
+                    responses = trigger_row.get("response") or []
+                    weights = trigger_row.get("weight") or []
+                    if not isinstance(responses, list):
+                        continue
+                    if not isinstance(weights, list):
+                        weights = []
+                    for response_index, raw_voice_id in enumerate(responses):
+                        if not isinstance(raw_voice_id, int):
+                            continue
+                        event_hash = raw_voice_id & 0xFFFFFFFF
+                        alias = aliases.get(event_hash)
+                        if alias is None:
+                            continue
+                        event_id = str(alias["name"]).strip().lower()
+                        _append_context(contexts, seen, event_id, {
+                            "kind": "responsiveDialogVoice",
+                            "sentenceType": str(sentence_type),
+                            "speakerId": str(speaker_id),
+                            "triggerKey": str(trigger_key),
+                            "triggerTypeId": trigger_row.get("triggerTypeId"),
+                            "responseIndex": response_index,
+                            "responseWeight": weights[response_index] if response_index < len(weights) else None,
+                            "voiceId": raw_voice_id,
+                            "eventHash": event_hash,
+                            "audioDialogPath": alias.get("name"),
+                            "source": source,
+                            "evidence": "exactResponsiveDialogResponseVoiceId",
+                            "runtimeRoute": "VoiceResponseProcessor._HandleSelection -> _QueueResponse -> VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice",
+                            "runtimeSelectionStatus": "probabilityCooldownBandLimitToneAndLiveChoiceUnobserved",
+                            "playbackPlacementStatus": "authoredPossibleTrigger",
+                        })
+
+    tone_path = next((
+        export_root / "structured" / source / "Table" / "AudioVoTone.json"
+        for source in ("StreamingAssets", "Persistent")
+        if (export_root / "structured" / source / "Table" / "AudioVoTone.json").is_file()
+    ), None)
+    if tone_path is not None:
+        payload = load_json(tone_path, {})
+        source = normalize_posix(tone_path.relative_to(export_root))
+        for raw_base_id, tone_row in (payload.items() if isinstance(payload, dict) else []):
+            try:
+                base_voice_id = int(raw_base_id)
+            except (TypeError, ValueError):
+                continue
+            tone_list = tone_row.get("toneList") if isinstance(tone_row, dict) else None
+            for variant_index, raw_voice_id in enumerate(tone_list or []):
+                if not isinstance(raw_voice_id, int):
+                    continue
+                event_hash = raw_voice_id & 0xFFFFFFFF
+                alias = aliases.get(event_hash)
+                if alias is None:
+                    continue
+                event_id = str(alias["name"]).strip().lower()
+                _append_context(contexts, seen, event_id, {
+                    "kind": "voiceToneVariant",
+                    "baseVoiceId": base_voice_id,
+                    "variantVoiceId": raw_voice_id,
+                    "variantIndex": variant_index,
+                    "eventHash": event_hash,
+                    "audioDialogPath": alias.get("name"),
+                    "source": source,
+                    "evidence": "exactAudioVoToneVariantVoiceId",
+                    "runtimeRoute": "VoiceUtilsInternal.ApplyRandomVoiceTone -> TryReplaceVoiceIdWithTone",
+                    "runtimeSelectionStatus": "liveVariantSelectionUnobserved",
+                    "playbackPlacementStatus": "selectionTransformOnly",
+                })
+    return dict(contexts)
+
+
 def collect_webui_cutscene_events(webui_root: Path, language: str) -> dict[str, list[str]]:
     """Reuse authored cutscene event lists already published by Story builds."""
 
@@ -7737,6 +10004,42 @@ def _evidence_object_types(evidence: dict[str, Any]) -> dict[str, int]:
     if isinstance(raw, dict):
         return {str(key): int(value) for key, value in raw.items() if isinstance(value, int)}
     return {}
+
+
+def wwise_event_playback_role(evidence_rows: list[dict[str, Any]]) -> str:
+    """Classify typed root Actions without treating control Events as missing media."""
+    playback_operations = {"play", "playEvent"}
+    control_operations = {
+        "stop", "pause", "resume", "break", "seek",
+        "setState", "resetGameParameter",
+    }
+    operations: list[str] = []
+    for evidence in evidence_rows:
+        for action in evidence.get("actionEvidence") or []:
+            if not isinstance(action, dict):
+                continue
+            operation = str(action.get("operation") or "")
+            try:
+                operation_type = int(action.get("actionType")) & 0xFF00
+            except (TypeError, ValueError):
+                operation_type = -1
+            if operation_type == 0x1200:
+                operation = "setState"
+            elif operation_type == 0x1400:
+                operation = "resetGameParameter"
+            if operation:
+                operations.append(operation)
+    has_playback = any(value in playback_operations for value in operations) or any(
+        int(evidence.get("rootPlayActionCount") or 0) > 0 for evidence in evidence_rows
+    )
+    has_control = any(value in control_operations for value in operations)
+    if has_playback and has_control:
+        return "mixedPlaybackAndControl"
+    if has_playback:
+        return "playback"
+    if has_control and operations and all(value in control_operations for value in operations):
+        return "controlOnly"
+    return "unresolved"
 
 
 def build_event_rows(
@@ -7826,9 +10129,152 @@ def build_event_rows(
             bank["selectionEventIds"].add(key)
         bank["visitedObjectTypeOccurrences"].update(object_types)
 
+    # The authored-name index is intentionally incomplete: Wwise banks also
+    # contain Event objects whose uint32 identity has no recovered string or
+    # gameplay callsite yet. Keep those objects visible under a stable hash
+    # key and use their typed HIRC traversal to recover media relations without
+    # inventing a trigger name or ownership location.
+    known_key_by_hash = {event_hash: key for key, event_hash in hashes.items()}
+    authored_inventory_hashes = set(known_key_by_hash)
+    for alias in exact_wwise_event_aliases(audio_index):
+        if not isinstance(alias, dict):
+            continue
+        try:
+            event_hash = int(alias.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            continue
+        event_name = str(alias.get("name") or "").strip()
+        if not event_name or event_hash in authored_inventory_hashes:
+            continue
+        key = event_name.lower()
+        known_key_by_hash.setdefault(event_hash, key)
+        hashes[key] = event_hash
+    entry_by_media_id: dict[int, dict[str, Any]] = {}
+    hotfix_entries_by_media_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for entry in audio_index.get("entries") or []:
+        if not isinstance(entry, dict):
+            continue
+        raw_id = entry.get("mediaId") or entry.get("id")
+        try:
+            media_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        entry_by_media_id.setdefault(media_id, entry)
+        if (
+            not entry.get("eventId")
+            and str(entry.get("sourceBlock") or "") == "hotfix-audio"
+        ):
+            hotfix_entries_by_media_id[media_id].append(entry)
+    for inventory in audio_index.get("wwiseEventInventory") or []:
+        if not isinstance(inventory, dict):
+            continue
+        try:
+            event_hash = int(inventory.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            continue
+        if event_hash in authored_inventory_hashes:
+            continue
+        key = known_key_by_hash.setdefault(event_hash, hashed_event_key(event_hash))
+        hashes[key] = event_hash
+        object_types = _evidence_object_types(inventory)
+        selection_types = [
+            HIRC_OBJECT_TYPE_LABELS.get(int(type_id), f"type{type_id}")
+            for type_id in inventory.get("selectionObjectTypes") or []
+            if isinstance(type_id, int)
+        ]
+        compact_evidence = {
+            "bankId": inventory.get("bankId"),
+            "bankVersion": inventory.get("bankVersion"),
+            "bank": inventory.get("bank"),
+            "edgeParser": "wwise150TypedCompactObjectInventory",
+            "traversalStatus": inventory.get("traversalStatus") or "unknown",
+            "actionIds": inventory.get("actionIds") or [],
+            "actionEvidence": inventory.get("actionEvidence") or [],
+            "actionDispatchEvidence": inventory.get("actionDispatchEvidence") or {},
+            "rootPlayActionCount": int(inventory.get("rootPlayActionCount") or 0),
+            "rootStopActionCount": int(inventory.get("rootStopActionCount") or 0),
+            "visitedObjectCount": int(inventory.get("visitedObjectCount") or 0),
+            "mediaIds": inventory.get("mediaIds") or [],
+            "objectTypeCounts": object_types,
+            "selectionContainerTypes": selection_types,
+            "sourceObjectSummary": inventory.get("sourceObjectSummary") or {},
+            "nonMediaSourceEvidence": inventory.get("nonMediaSourceEvidence") or [],
+            "unresolvedNodes": inventory.get("unresolvedNodeSamples") or [],
+            "unresolvedNodeCount": int(inventory.get("unresolvedNodeCount") or 0),
+            "source": "wwiseHircObjectInventory",
+            "nestedReferenceConfidence": (
+                "typedExact"
+                if inventory.get("traversalStatus") == "complete"
+                else "typedPartial"
+            ),
+            "eventIdentityStatus": "wwiseObjectWithoutRecoveredTriggerName",
+        }
+        evidence_by_event[key].append(compact_evidence)
+        root_action_ids = sorted({
+            int(row.get("rootActionId"))
+            for row in inventory.get("actionEvidence") or []
+            if isinstance(row, dict) and isinstance(row.get("rootActionId"), int)
+        })
+        relation_types = [
+            str(value)
+            for value in inventory.get("mediaRelationTypes") or []
+            if str(value)
+        ]
+        for media_id in inventory.get("mediaIds") or []:
+            try:
+                media_id = int(media_id)
+            except (TypeError, ValueError):
+                continue
+            entry = entry_by_media_id.get(media_id)
+            if not entry:
+                continue
+            compact = compact_media(entry)
+            compact.update({
+                "id": key,
+                "eventId": key,
+                "eventHash": event_hash,
+                "mediaId": media_id,
+                "bankId": inventory.get("bankId"),
+                "bank": inventory.get("bank"),
+                "source": "wwiseHircObjectInventory",
+                "wwiseMediaEvidence": [{
+                    "mediaId": media_id,
+                    "rootActionIds": root_action_ids,
+                    "relationTypes": relation_types,
+                    "bankId": inventory.get("bankId"),
+                    "bankPackage": PurePosixPath(str(inventory.get("bank") or "").replace("\\", "/")).name,
+                }],
+            })
+            marker = (str(media_id), str(compact.get("src") or ""))
+            if marker in candidate_seen[key]:
+                continue
+            candidate_seen[key].add(marker)
+            candidates[key].append(compact)
+        bank_name = str(inventory.get("bank") or "")
+        bank_id = int(inventory.get("bankId") or 0)
+        bank = bank_rows.setdefault((bank_name, bank_id), {
+            "bank": bank_name,
+            "bankId": bank_id,
+            "eventIds": set(),
+            "mediaIds": set(),
+            "selectionEventIds": set(),
+            "visitedObjectTypeOccurrences": Counter(),
+        })
+        bank["eventIds"].add(key)
+        bank["mediaIds"].update(str(value) for value in inventory.get("mediaIds") or [])
+        if selection_types:
+            bank["selectionEventIds"].add(key)
+        bank["visitedObjectTypeOccurrences"].update(object_types)
+
     display_names: dict[str, str] = {}
     for value in audio_index.get("eventNames") or []:
         display = str(value or "").strip()
+        if display:
+            display_names.setdefault(display.lower(), display)
+    for alias in exact_wwise_event_aliases(audio_index):
+        if not isinstance(alias, dict):
+            continue
+        display = str(alias.get("name") or "").strip()
         if display:
             display_names.setdefault(display.lower(), display)
     for entry in audio_index.get("events") or []:
@@ -7837,6 +10283,11 @@ def build_event_rows(
         display = str(entry.get("eventId") or entry.get("id") or "").strip()
         if display:
             display_names.setdefault(display.lower(), display)
+    exact_alias_by_hash = {
+        int(alias.get("eventHash")) & 0xFFFFFFFF: alias
+        for alias in exact_wwise_event_aliases(audio_index)
+        if isinstance(alias, dict) and isinstance(alias.get("eventHash"), int)
+    }
     all_names = set(display_names)
     all_names.update(candidates)
     all_names.update(evidence_by_event)
@@ -7860,9 +10311,44 @@ def build_event_rows(
         known_hashes.add(event_hash)
     rows: list[dict[str, Any]] = []
     media_to_events: dict[str, list[str]] = defaultdict(list)
+    bank_inventory = audio_index.get("hircSummary") or {}
+    bank_package_count = int(bank_inventory.get("packageCount") or 0)
+    bank_package_fingerprint = str(bank_inventory.get("packageFingerprint") or "")
     for key in sorted(all_names):
+        event_candidates = list(candidates.get(key, []))
+        candidate_sources = {
+            str(candidate.get("src") or candidate.get("rel") or "")
+            for candidate in event_candidates
+        }
+        # A HotfixAudio package replaces media by numeric Wwise media id. If
+        # the replacement bytes differ from the base package, both decoded
+        # occurrences must remain visible, but both inherit the exact Event
+        # relation already proven for that media id. Do this only for typed
+        # HotfixAudio provenance; generic cross-bank id collisions are not
+        # merged.
+        for base_candidate in list(event_candidates):
+            try:
+                media_id = int(base_candidate.get("mediaId") or base_candidate.get("id"))
+            except (TypeError, ValueError):
+                continue
+            for replacement_entry in hotfix_entries_by_media_id.get(media_id, []):
+                replacement = compact_media(replacement_entry)
+                replacement_src = str(replacement.get("src") or replacement.get("rel") or "")
+                if not replacement_src or replacement_src in candidate_sources:
+                    continue
+                replacement.update({
+                    "id": key,
+                    "eventId": key,
+                    "eventHash": hashes.get(key),
+                    "mediaId": media_id,
+                    "hotfixMediaReplacement": True,
+                    "mediaResolutionEvidence": "hotfixPackageMediaIdReplacesBaseMediaId",
+                    "wwiseMediaEvidence": base_candidate.get("wwiseMediaEvidence") or [],
+                })
+                event_candidates.append(replacement)
+                candidate_sources.add(replacement_src)
         event_candidates = sorted(
-            candidates.get(key, []),
+            event_candidates,
             key=lambda row: (int(row.get("mediaId") or 0), str(row.get("src") or "")),
         )
         content_counts = Counter(
@@ -7885,9 +10371,16 @@ def build_event_rows(
                 media_to_events[marker].append(key)
         event_contexts = list(contexts.get(key, []))
         event_hash = hashes.get(key)
+        authored_event_hash = (
+            event_hash
+            if event_hash is not None
+            else audio_hash_generator_compute(display_names.get(key, key))
+        )
         if event_hash is not None:
             event_contexts.extend(contexts.get(event_hash_context_key(event_hash), []))
         evidence_rows = evidence_by_event.get(key, [])
+        playback_role = wwise_event_playback_role(evidence_rows)
+        identity_alias = exact_alias_by_hash.get(event_hash) if event_hash is not None else None
         character_animation_owner_ids = sorted({
             str(context.get("ownerId") or "")
             for context in event_contexts
@@ -7948,6 +10441,9 @@ def build_event_rows(
             runtime_selection = "unresolved"
         category = event_category(key)
         category_evidence = "namePrefix" if category != "unknown" else "unclassified"
+        if category == "unknown" and (identity_alias or {}).get("dictionaryKind") == "skill_id":
+            category = "sfx"
+            category_evidence = "exactSkillIdDictionaryEventIdentity"
         if category == "unknown" and any(
             context.get("kind") == "projectileSoundField"
             for context in event_contexts
@@ -7992,6 +10488,38 @@ def build_event_rows(
         ):
             category = "sfx"
             category_evidence = "exactModelViewStateAudioBehavior"
+        if category == "unknown" and any(
+            context.get("kind") in {
+                "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant",
+                "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent",
+                "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent",
+                "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "snsVoiceMessageEvent",
+            }
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "voice"
+            category_evidence = (
+                "exactTypedVoiceTableWwiseEventField"
+                if any(
+                    context.get("kind") in {
+                        "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent",
+                        "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent",
+                        "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "snsVoiceMessageEvent",
+                    }
+                    for context in event_contexts
+                    if isinstance(context, dict)
+                )
+                else "exactAudioDialogVoiceIdentity"
+            )
+        if key.startswith("hashed-event:0x"):
+            event_identity_status = (
+                "authoredHashMatchedWwiseObject"
+                if event_contexts
+                else "wwiseObjectWithoutRecoveredTriggerName"
+            )
+        else:
+            event_identity_status = "recoveredAuthoredName"
         rows.append({
             "id": key,
             "name": display_names.get(key, key),
@@ -7999,6 +10527,27 @@ def build_event_rows(
             "category": category,
             "categoryEvidence": category_evidence,
             "foundInWwise": bool(evidence_rows),
+            "audioLibraryResolutionStatus": (
+                "resolvedWwiseEventObject"
+                if evidence_rows
+                else "eventHashAbsentFromScannedBankSet"
+            ),
+            "eventIdentityStatus": event_identity_status,
+            "eventNameEvidence": (identity_alias or {}).get("evidence"),
+            "eventNameSourceKind": (
+                "skillIdDictionary"
+                if (identity_alias or {}).get("dictionaryKind") == "skill_id"
+                else None
+            ),
+            "identityOnlyPlaybackPlacementStatus": (identity_alias or {}).get("playbackPlacementStatus"),
+            "identityNumericSkillIds": (identity_alias or {}).get("numericSkillIds") or [],
+            "identityTableSources": (identity_alias or {}).get("tableSources") or [],
+            "identitySkillDataSources": (identity_alias or {}).get("skillDataSources") or [],
+            "playbackRole": playback_role,
+            "authoredEventHash": authored_event_hash,
+            "authoredEventHashHex": f"0x{authored_event_hash:08x}",
+            "scannedBankPackageCount": bank_package_count,
+            "scannedBankPackageFingerprint": bank_package_fingerprint,
             "possibleMediaCount": len(event_candidates),
             "uniqueDecodedContentCount": len(unique_content_keys),
             "contentEquivalentLeafCount": sum(max(0, count - 1) for count in content_counts.values()),
@@ -8032,10 +10581,15 @@ def build_event_rows(
 
     banks = []
     for bank in bank_rows.values():
+        named_event_count = sum(
+            not event_id.startswith("hashed-event:0x")
+            for event_id in bank["eventIds"]
+        )
         banks.append({
             "bank": bank["bank"],
             "bankId": bank["bankId"],
             "eventCount": len(bank["eventIds"]),
+            "namedEventCount": named_event_count,
             "mediaCount": len(bank["mediaIds"]),
             "selectionEventCount": len(bank["selectionEventIds"]),
             "visitedObjectTypeOccurrences": dict(sorted(bank["visitedObjectTypeOccurrences"].items())),
@@ -8047,6 +10601,15 @@ def build_event_rows(
 def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, list[str]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
+    definition_evidence_by_media_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for evidence in (audio_index.get("hircSummary") or {}).get("definitionOnlyDecodedSoundObjects") or []:
+        if not isinstance(evidence, dict):
+            continue
+        try:
+            media_id = int(evidence.get("mediaId"))
+        except (TypeError, ValueError):
+            continue
+        definition_evidence_by_media_id[media_id].append(evidence)
     for entry in audio_index.get("entries") or []:
         if not isinstance(entry, dict) or entry.get("eventId"):
             continue
@@ -8062,6 +10625,14 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
         compact["eventCount"] = len(event_ids)
         if event_ids:
             compact["eventIds"] = event_ids
+        try:
+            media_id = int(compact.get("mediaId") or compact.get("id"))
+        except (TypeError, ValueError):
+            media_id = 0
+        definition_evidence = definition_evidence_by_media_id.get(media_id, [])
+        if definition_evidence and not event_ids:
+            compact["audioLibraryObjectStatus"] = "wwiseSoundDefinitionWithoutEventPath"
+            compact["wwiseDefinitionEvidence"] = definition_evidence
         rows.append(compact)
     rows.sort(key=lambda row: (
         str(row.get("audioCategory") or "unknown"),
@@ -8069,6 +10640,49 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
         str(row.get("rel") or ""),
     ))
     return rows
+
+
+def annotate_media_playback_locations(
+    media: list[dict[str, Any]],
+    events: list[dict[str, Any]],
+) -> Counter[str]:
+    """Classify recovered placement without inventing a runtime playback edge."""
+
+    event_has_context: dict[str, bool] = {}
+    for event in events:
+        context_rows = [
+            row for row in event.get("contexts") or [] if isinstance(row, dict)
+        ]
+        has_context = any(
+            str(row.get("playbackPlacementStatus") or "")
+            not in {"definitionOnly", "selectionTransformOnly"}
+            for row in context_rows
+        )
+        if not context_rows:
+            has_context = bool(int(event.get("contextCount") or 0))
+        for value in (event.get("id"), event.get("eventId"), event.get("name")):
+            key = str(value or "").strip().casefold()
+            if key:
+                event_has_context[key] = event_has_context.get(key, False) or has_context
+
+    counts: Counter[str] = Counter()
+    for row in media:
+        event_ids = [
+            str(value or "").strip().casefold()
+            for value in row.get("eventIds") or []
+            if str(value or "").strip()
+        ]
+        if row.get("audioDialogKey") or row.get("audioDialogPath"):
+            status = "directDialogMedia"
+        elif any(event_has_context.get(event_id, False) for event_id in event_ids):
+            status = "authoredEventContext"
+        elif event_ids:
+            status = "eventRelationOnly"
+        else:
+            status = "unknown"
+        row["playbackLocationStatus"] = status
+        counts[status] += 1
+    return counts
 
 
 def semantic_context_group(kind: Any) -> str:
@@ -8084,15 +10698,26 @@ def semantic_context_group(kind: Any) -> str:
     if value in {"levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"}:
         return "scripted"
     if value in {
-        "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
+        "table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
         "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
         "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "physicsAudioComponentEvent",
+        "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant",
+        "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent",
+        "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent",
+        "responsiveVoiceEventTemplate", "voiceTableWwiseEvent",
+        "uiAnimationOpenEvent", "activityPushPopupBgmEvent",
+        "activityCenterBgmEvent", "uiVideoAudioEvent",
+        "domainRegionSwitchEvent", "domainUpgradeAnimationEvent",
+        "typedUiTableWwiseEvent", "snsVoiceMessageEvent",
         "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent",
+        "remoteCommonAudio",
     }:
         return "authoredConfig"
     if value == "binaryManagedLiteral":
         return "managedRuntime"
+    if value == "luaPostEvent":
+        return "luaRuntime"
     return ""
 
 
@@ -8155,6 +10780,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "authoredEventId", "spawnerConfigId", "enemyLibraryIndex", "enemyId",
             "bornTemplateId", "enemyLevel", "spawnerEnemyKey", "preWarnTime",
             "preWarnEffectKey", "schemaMappingId", "schemaStatus",
+            "remoteCommonId", "singleId", "middleId", "index", "autoPlay",
+            "autoPlayTime", "voiceId", "voiceLinkStatus", "startAudioEvent",
+            "endAudioEvent",
             "patrolId", "patrolIndex", "pointIndex", "patrolSubActionType",
             "subActionUnionTag", "subActionUnionTagHex", "nativeConsumer",
             "charInteractPerformId", "actionPhase", "actionIndex", "logicId",
@@ -8174,11 +10802,19 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "customFootstepOccurrenceCount",
             "levelSequenceId", "timelineAssetName", "timelineAssetNameBase",
             "timelineAssetSerializedFile", "timelineAssetPathId", "timelineTrackName",
-            "timelineTrackPathId", "timelineClipIndex", "audioPlayableType", "audioPlayablePathId",
-            "audioPlayableKeyStatus",
+            "timelineTrackPathId", "timelineClipIndex", "timelineClipDisplayName",
+            "timelineClipStartSec", "timelineClipDurationSec", "timelineClipEndSec",
+            "timelineClipTimingEvidence", "timelineTrackRawJsonPath", "audioPlayableType",
+            "audioPlayableRuntimeContractId", "audioPlayablePathId",
+            "audioPlayableKeyStatus", "audioPlayableIsCue",
+            "audioPlayableStopEventAtClipEnd", "audioPlayableFadeOutMs",
+            "audioPlayableEnableSeek", "audioPlayableUseBindingObject", "audioPlayableIs2D",
+            "audioPlayableControlEvidence", "audioPlayableRawJsonPath",
             "playableDirectorName", "playableDirectorPathId",
             "ownershipEvidenceLevel", "triggerEvidenceLevel", "timelineOwnershipStatus",
             "levelScriptActionCount", "playableDirectorCount", "evidenceBoundary",
+            "lifecyclePhase", "arrayIndex", "runtimeMethod", "runtimeMethodToken",
+            "runtimeDispatchStatus", "mediaSelectionStatus", "ownerStatus",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -8195,6 +10831,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "interactiveTemplateIds", "interactiveTemplatePaths", "interactiveConsumerIds",
             "authoredSkillIds",
             "bornBuffIds", "preWarnEffectFixedRotation",
+            "actorList",
             "playableDirectorNames", "playableDirectorPathIds",
             "levelScriptIds", "levelScriptSourcePaths",
             "levelSequenceFieldOffsets",
@@ -8245,6 +10882,11 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
                     context_search.add(str(source[key]))
     keys = (
         "id", "name", "hash", "category", "categoryEvidence", "foundInWwise",
+        "audioLibraryResolutionStatus", "eventIdentityStatus", "eventNameEvidence",
+        "eventNameSourceKind", "identityOnlyPlaybackPlacementStatus",
+        "identityNumericSkillIds", "identityTableSources", "identitySkillDataSources", "playbackRole",
+        "authoredEventHash", "authoredEventHashHex",
+        "scannedBankPackageCount", "scannedBankPackageFingerprint",
         "possibleMediaCount", "candidateCount", "uniqueDecodedContentCount",
         "contentEquivalentLeafCount", "playRootCount", "playRootActionIds",
         "runtimeSelection", "mediaRelationTypes", "selectionContainerTypes",
@@ -8336,6 +10978,13 @@ def build_audio_semantic_data(
         export_root,
         cue_semantics=cue_semantics,
     )
+    responsive_voice_contexts = collect_responsive_voice_contexts(
+        export_root,
+        audio_index,
+    )
+    voice_table_contexts = voice_table_event_contexts(audio_index)
+    typed_ui_table_contexts = typed_ui_table_event_contexts(audio_index)
+    sns_voice_contexts = sns_voice_event_contexts(audio_index)
     base_contexts = merge_contexts(
         collect_gameplay_contexts(webui_root, language),
         collect_projectile_contexts(webui_root),
@@ -8352,7 +11001,12 @@ def build_audio_semantic_data(
             global_controls=global_controls,
         ),
         cutscene_contexts(cutscene_events),
+        lua_audio_contexts(audio_index),
         literal_context_index,
+        responsive_voice_contexts,
+        voice_table_contexts,
+        typed_ui_table_contexts,
+        sns_voice_contexts,
     )
     candidate_counts: Counter[str] = Counter()
     candidate_hash_contexts: dict[str, set[str]] = defaultdict(set)
@@ -8375,10 +11029,61 @@ def build_audio_semantic_data(
         and not any(key in base_contexts for key in candidate_hash_contexts.get(event_id, set()))
     }
     levelsequence_play_actions = collect_levelsequence_play_actions(export_root)
-    timeline_ownership = collect_timeline_audio_ownership(
-        export_root,
-        event_ids=timeline_target_event_ids,
+    timeline_ownership_parts: list[dict[str, Any]] = []
+    object_index_root = export_root / "recovered" / "AnimeStudio-cli"
+    streaming_mono_index = (
+        object_index_root / "StreamingAssets" / "object_index" / "parts"
+        / "StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl"
     )
+    streaming_director_index = (
+        object_index_root / "StreamingAssets" / "object_index" / "parts"
+        / "StreamingAssets_animestudio_json_by_type_PlayableDirector.jsonl"
+    )
+    if streaming_mono_index.is_file():
+        timeline_ownership_parts.append(collect_timeline_audio_ownership(
+            export_root,
+            event_ids=timeline_target_event_ids,
+            mono_path=streaming_mono_index,
+            director_path=streaming_director_index,
+        ))
+    persistent_mono_index = (
+        object_index_root / "Persistent" / "object_index" / "parts"
+        / "Persistent_animestudio_json_by_type_MonoBehaviour.jsonl"
+    )
+    persistent_director_index = (
+        object_index_root / "Persistent" / "object_index" / "parts"
+        / "Persistent_animestudio_json_by_type_PlayableDirector.jsonl"
+    )
+    if persistent_mono_index.is_file():
+        # Persistent carries the story Timeline assets that are absent from
+        # the StreamingAssets-only semantic pass.  Scan all authored Event
+        # keys so a key missing from the current Wwise index remains visible
+        # as an explicit authored request rather than disappearing.
+        timeline_ownership_parts.append(collect_timeline_audio_ownership(
+            export_root,
+            event_ids=None,
+            mono_path=persistent_mono_index,
+            director_path=persistent_director_index,
+        ))
+    if timeline_ownership_parts:
+        timeline_ownership = merge_timeline_audio_ownership(timeline_ownership_parts)
+        timeline_ownership = enrich_timeline_audio_ownership_from_raw_json(
+            export_root,
+            timeline_ownership,
+        )
+        timeline_ownership["objectIndexSources"] = [
+            source
+            for source, path in (
+                ("StreamingAssets", streaming_mono_index),
+                ("Persistent", persistent_mono_index),
+            )
+            if path.is_file()
+        ]
+    else:
+        timeline_ownership = collect_timeline_audio_ownership(
+            export_root,
+            event_ids=timeline_target_event_ids,
+        )
     timeline_context_event_ids = timeline_target_event_ids | {
         str(event_id or "").strip().lower()
         for event_id in (timeline_ownership.get("occurrencesByEvent") or {})
@@ -8420,6 +11125,14 @@ def build_audio_semantic_data(
         export_root,
         levelscript_semantics,
     )
+    trigger_context_catalog = build_trigger_context_catalog(
+        events,
+        media,
+        webui_root,
+        language,
+        export_root=export_root,
+    )
+    media_playback_location_counts = annotate_media_playback_locations(media, events)
     custom_footstep_model = build_custom_footstep_model(events, webui_root, language)
     spawner_event_rows = [
         row for row in events
@@ -8575,6 +11288,8 @@ def build_audio_semantic_data(
         "language": language,
         "media": media,
     })
+    trigger_context_name = "trigger_contexts.json"
+    json_dump(out_root / trigger_context_name, trigger_context_catalog)
 
     payload = {
         "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
@@ -8588,15 +11303,86 @@ def build_audio_semantic_data(
             "counts": audio_index.get("counts") or {},
         },
         "shards": {"events": events_name, "media": media_name},
+        "triggerContexts": {
+            "shard": trigger_context_name,
+            "schemaVersion": trigger_context_catalog.get("schemaVersion"),
+            "counts": trigger_context_catalog.get("counts") or {},
+            "coverage": trigger_context_catalog.get("coverage") or {},
+            "evidenceBoundary": trigger_context_catalog.get("evidenceBoundary") or "",
+        },
         "eventDetailShardCount": len(event_details),
         "counts": {
             "decodedMedia": len(media),
             "eventRecords": len(events),
             "namedEvents": len(named_event_ids),
             "eventsFoundInWwise": linked_events,
+            "wwiseEventObjectHashes": sum(
+                row.get("foundInWwise") for row in events
+            ),
+            "wwiseEventObjectOccurrences": len(audio_index.get("wwiseEventInventory") or []),
+            "wwiseEventObjectsWithoutRecoveredAuthoredTrigger": sum(
+                row.get("eventIdentityStatus") == "wwiseObjectWithoutRecoveredTriggerName"
+                for row in events
+            ),
+            "wwisePlaybackEvents": sum(row.get("playbackRole") == "playback" for row in events),
+            "wwiseMixedPlaybackAndControlEvents": sum(
+                row.get("playbackRole") == "mixedPlaybackAndControl" for row in events
+            ),
+            "wwiseControlOnlyEvents": sum(row.get("playbackRole") == "controlOnly" for row in events),
+            "wwiseEventsWithUnresolvedActionRole": sum(
+                row.get("playbackRole") == "unresolved" for row in events
+            ),
+            "audioDialogWwiseEventAliases": len(
+                audio_index.get("audioDialogWwiseEventAliases") or []
+            ),
+            "voiceTableWwiseEventAliases": len(
+                audio_index.get("voiceTableWwiseEventAliases") or []
+            ),
+            "typedUiTableWwiseEventAliases": len(
+                audio_index.get("typedUiTableWwiseEventAliases") or []
+            ),
+            "snsVoiceWwiseEventAliases": len(
+                audio_index.get("snsVoiceWwiseEventAliases") or []
+            ),
+            "skillIdDictionaryWwiseEventAliases": len(
+                audio_index.get("skillIdDictionaryWwiseEventAliases") or []
+            ),
+            "snsVoiceMessageEvents": context_kind_event_counts.get("snsVoiceMessageEvent", 0),
+            "voiceNarratingChannelEvents": context_kind_event_counts.get("voiceNarratingChannelEvent", 0),
+            "voiceRadioChannelEvents": context_kind_event_counts.get("voiceRadioChannelEvent", 0),
+            "audioDialogOverrideWwiseEvents": context_kind_event_counts.get("audioDialogOverrideWwiseEvent", 0),
+            "responsiveVoiceEventTemplates": context_kind_event_counts.get("responsiveVoiceEventTemplate", 0),
+            "uiAnimationOpenEvents": context_kind_event_counts.get("uiAnimationOpenEvent", 0),
+            "activityPushPopupBgmEvents": context_kind_event_counts.get("activityPushPopupBgmEvent", 0),
+            "activityCenterBgmEvents": context_kind_event_counts.get("activityCenterBgmEvent", 0),
+            "uiVideoAudioEvents": context_kind_event_counts.get("uiVideoAudioEvent", 0),
+            "domainRegionSwitchEvents": context_kind_event_counts.get("domainRegionSwitchEvent", 0),
+            "domainUpgradeAnimationEvents": context_kind_event_counts.get("domainUpgradeAnimationEvent", 0),
+            "responsiveDialogWwiseEvents": sum(
+                any(context.get("kind") == "responsiveDialogVoice" for context in row.get("contexts") or [])
+                for row in events
+            ),
+            "wwiseVoiceToneVariantEvents": sum(
+                any(context.get("kind") == "voiceToneVariant" for context in row.get("contexts") or [])
+                for row in events
+            ),
+            "authoredEventsUnresolvedToWwise": sum(
+                not row.get("foundInWwise") for row in events
+            ),
+            "mediaPlaybackLocationUnknown": media_playback_location_counts.get("unknown", 0),
+            "definitionOnlyDecodedMedia": sum(
+                row.get("audioLibraryObjectStatus") == "wwiseSoundDefinitionWithoutEventPath"
+                for row in media
+            ),
+            "mediaWithEventRelationOnly": media_playback_location_counts.get("eventRelationOnly", 0),
+            "mediaWithAuthoredEventContext": media_playback_location_counts.get("authoredEventContext", 0),
+            "directDialogMedia": media_playback_location_counts.get("directDialogMedia", 0),
             "eventPossibleMedia": sum(int(row.get("possibleMediaCount") or 0) for row in events),
             "eventMediaCandidates": sum(int(row.get("possibleMediaCount") or 0) for row in events),
-            "banksWithNamedEvents": len(banks),
+            "banksWithIndexedEvents": len(banks),
+            "banksWithNamedEvents": sum(
+                int(bank.get("namedEventCount") or 0) > 0 for bank in banks
+            ),
             "runtimeSelectionUnresolved": selection_events,
             "typedTraversalComplete": sum(row.get("traversalStatus") == "complete" for row in events),
             "typedTraversalPartial": sum(row.get("traversalStatus") == "partial" for row in events),
@@ -8623,6 +11409,16 @@ def build_audio_semantic_data(
             ).get("parameterVariantCount", 0),
             "binaryManagedAudioLiterals": len(managed_literal_names),
             "binaryManagedLiteralWwiseEvents": managed_literal_hirc_matches,
+            "luaPostEventNames": context_kind_event_counts.get("luaPostEvent", 0),
+            "luaPostEventContexts": context_kind_counts.get("luaPostEvent", 0),
+            "luaPostEventNamesFoundInWwise": sum(
+                bool(row.get("foundInWwise"))
+                and any(
+                    isinstance(context, dict) and context.get("kind") == "luaPostEvent"
+                    for context in row.get("contexts") or []
+                )
+                for row in events
+            ),
             "authoredTableEventHashes": len(table_event_hashes),
             "authoredTableEventHashesFound": table_event_hash_matches,
             "runtimeSystems": len(runtime_systems),
@@ -8812,6 +11608,17 @@ def build_audio_semantic_data(
             "inferredSkillConfigOwnerContexts": trigger_status_context_counts.get("inferredSkillConfigOwner", 0),
             "exactEnemyBornBuffTriggerContexts": trigger_status_context_counts.get("exactEnemyBornBuffConfig", 0),
             "runtimeTypesMissing": len(runtime_model.get("missingTypes") or []),
+            "triggerContexts": int(
+                (trigger_context_catalog.get("counts") or {}).get("total") or 0
+            ),
+            "triggerContextsWithPlayableMedia": int(
+                (trigger_context_catalog.get("counts") or {}).get("withPlayableMedia") or 0
+            ),
+            "triggerContextsRuntimeExecutionUnobserved": int(
+                (trigger_context_catalog.get("counts") or {}).get(
+                    "runtimeExecutionUnobserved", 0
+                )
+            ),
         },
         "coverage": {
             "eventCategories": dict(sorted(event_categories.items())),
@@ -8849,6 +11656,12 @@ def build_audio_semantic_data(
                 "timelineCueEvidenceBoundary": timeline_cue_semantics.get("evidenceBoundary") or "",
             },
             "levelScriptRadio": radio_catalog,
+            "triggerContext": {
+                **(trigger_context_catalog.get("counts") or {}),
+                "shard": trigger_context_name,
+                "coverage": trigger_context_catalog.get("coverage") or {},
+                "evidenceBoundary": trigger_context_catalog.get("evidenceBoundary") or "",
+            },
         },
         "controlCatalog": {
             "schemaVersion": 1,
@@ -9004,7 +11817,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(
         "Audio semantic WebUI data:"
-        f" {payload['counts']['namedEvents']:,} events,"
+        f" {payload['counts']['eventRecords']:,} Event records"
+        f" ({payload['counts']['namedEvents']:,} authored names),"
         f" {payload['counts']['decodedMedia']:,} media,"
         f" {payload['counts']['runtimeSystems']:,} runtime systems"
     )

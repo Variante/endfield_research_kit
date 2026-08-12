@@ -79,15 +79,36 @@ class AuditError(RuntimeError):
 def _scalar_map(row: dict[str, Any]) -> dict[str, Any]:
     values: dict[str, Any] = {}
     for index, item in enumerate(row.get("scalars") or []):
-        if (
-            not isinstance(item, list)
-            or len(item) != 3
-            or not isinstance(item[0], str)
-            or item[1] not in {"s", "i"}
-            or isinstance(item[2], bool)
-            or not isinstance(item[2], (str, int))
-        ):
-            raise AuditError(f"malformed scalar row at index {index}")
+        shape_valid = (
+            isinstance(item, list)
+            and len(item) == 3
+            and isinstance(item[0], str)
+            and item[1] in {"s", "i", "b"}
+        )
+        value_valid = bool(
+            shape_valid
+            and (
+                (item[1] == "s" and isinstance(item[2], str))
+                or (
+                    item[1] == "i"
+                    and isinstance(item[2], int)
+                    and not isinstance(item[2], bool)
+                )
+                or (item[1] == "b" and isinstance(item[2], bool))
+            )
+        )
+        if not value_valid:
+            identity = row.get("object")
+            identity = identity if isinstance(identity, dict) else {}
+            raise AuditError(
+                "malformed scalar row: "
+                f"source={identity.get('source')!r} "
+                f"serializedFile={identity.get('serializedFile')!r} "
+                f"pathId={identity.get('pathId')!r} index={index}; "
+                "expected [path, type, value] with "
+                "s:string, i:integer, or b:boolean; "
+                f"actual={item!r}"
+            )
         values[item[0]] = item[2]
     return values
 

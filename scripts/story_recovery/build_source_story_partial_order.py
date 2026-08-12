@@ -1482,6 +1482,7 @@ def collect_dialog_line_option_branches(
                 exclusion_reason = "closedTimelineOptionLayout"
             elif risk_code in {
                 "separateDialogTreeOptionNodes",
+                "sequentialDialogTreeOptionNodes",
                 "orphanDialogTreeOptionDefinitions",
             }:
                 exclusion_reason = "closedDialogTreeOptionLayout"

@@ -382,6 +382,12 @@ function buildKindChips() {
       const bName = kindMeta(b).name || formatStructuredLabel(b);
       return aName.localeCompare(bName, undefined, { numeric: true });
     });
+  const cgIndex = kindKeys.indexOf("cg");
+  const videoIndex = kindKeys.indexOf("video");
+  if (cgIndex >= 0 && videoIndex >= 0) {
+    kindKeys.splice(cgIndex, 1);
+    kindKeys.splice(kindKeys.indexOf("video") + 1, 0, "cg");
+  }
   pruneFilterSet(STATE.filters.kinds, new Set(kindKeys.map(kindFilterToken)));
   const items = kindKeys
     .filter((k) => kindCounts[k])
@@ -1248,6 +1254,7 @@ const KIND_ORDER = {
   sns: 0,
   cutscene: 1,
   video: 1.5,
+  cg: 1.75,
   dlg: 2,
   black: 3,
   remotecomm: 4,

@@ -14,7 +14,17 @@ The tracked `tools/AnimeStudio` fork is a reliable extraction layer. It can:
 - retain useful partial MonoBehaviour output.
 - publish component-level scene context in the opt-in object index: exact
   GameObject/Transform identities, hierarchy path, local position, computed
-  world position, and an explicit hierarchy-resolution status.
+  world position, and an explicit hierarchy-resolution status;
+- publish boolean identifier/state scalars under the same strict scalar
+  contract as strings and integers.
+
+The current installed-data Story indexes are committed and hash-validated.
+StreamingAssets contains 1,218,871 objects and 883 schemas; Persistent contains
+175,176 objects and 326 schemas. Both summaries are complete and have no merge
+errors. Story carrier and guide-consumer validators accept the current
+`s:string`, `i:integer`, and `b:boolean` scalar contract and report source,
+serialized file, PathID, row index, and expected/actual values on malformed
+input.
 
 Remaining work is certification and semantic depth, not basic access.
 
@@ -101,6 +111,53 @@ omitted, so normal production map scope does not widen.
 - AnimationClip fixes must preserve runtime curves and fail visibly on new
   layouts.
 - Audio decoding separates shared media from language voice.
+- AudioDialog mapping must merge the primary Table block with the fallback
+  Persistent Table overlay. The primary loader must retain fallback chunk
+  resolution because Persistent Table metadata can reference audit chunks that
+  exist only in StreamingAssets; a fallback-only pass should skip those absent
+  shared chunks and continue with Persistent-owned chunks. The current overlay
+  adds 639 CN AudioDialog definitions: 607 have real AudioChinese external
+  media and 32 are zero-duration definition rows. After the patched CLI and
+  CN relink pass, the index contains 29,072 AudioDialog definitions, 27,399
+  playable entries, and 1,673 zero-duration/no-media rows. The 607 recovered
+  files now use authored `voice/...` paths and retain `audioDialogPath`
+  metadata; the old `wwise/unknown/<media-id>` placement is only a duplicate
+  inventory artifact, not the canonical Story link.
+- Timeline dialogue audio has two authored lanes. `DialogTrunkPlayableAsset`
+  clips carry voice trunk ids and exact start/duration, while C35's separate
+  Audio tracks carry 21 SFX placements (18 unique `_audioEventKey` values)
+  through `AudioDlgEventPlayable`/`AudioEventPlayable` assets. Track and
+  PlayableDirector PPtrs prove serialized ownership and scheduling, but they
+  do not prove Director activation or a Wwise post. The semantic builder now
+  scans both complete `StreamingAssets` and `Persistent` object-index parts
+  and joins raw Timeline JSON for exact clip timing and playable controls.
+  For `dlgtl_c35m1_10_sub_1_Audio`, the 21 rows are at authored Timeline
+  positions and all 18 unique keys are absent from the current CN Wwise/Event
+  and media indexes (`foundInWwise=false`, no playable media). The names give
+  bounded authored meanings—create/fall/landing, shimmer/wink, flight/whoosh,
+  grass footsteps, Liino fly/pat-head/surprise, NPC fear/shake, Endmin landing,
+  and lens-zoom light—but do not prove that any sound was posted. The sole
+  `isCue=1` row is `au_sfx_dlg_foley_c35m1_10_liino_pathead`; cue/Wwise
+  resolution and runtime execution remain explicit gaps.
+- C35 scene-10 now has an exact serialized root-to-audio activation chain.
+  `Beyond.Gameplay.View.CutsceneRootComponent` on the root GameObject
+  `dlgtl_c35m1_10_sub_1` stores `_timelineName` with that Story key and its
+  `_director` PPtr lands on the root `PlayableDirector` (PathID
+  `63140722070379897`, GameObject `Director`). That Director points to the
+  root TimelineAsset `CAB-448d4024461b89053a057b4bf5604676` / PathID
+  `-2466791841398753755`. Its `Audio` control track has a single
+  `ControlPlayableAsset` clip at `0.0s` for `180.583333s`, with
+  `autoBindingPath=Audio`, `updateDirector=1`, and `active=1`; the binding
+  targets the child GameObject `Audio`, whose `PlayableDirector` (PathID
+  `79300700487540089`) points to the separate Audio TimelineAsset
+  `CAB-00d4a6807b79150b0a99039e79779b68` / PathID `6744480576528724800`.
+  Therefore the 21 SFX placements are a child-Director lane fed by the Story
+  root's ControlTrack, not a direct `_director` target. A second tiny-bundle
+  Director points to the same Audio TimelineAsset but has no current indexed
+  root receiver; it is retained as a duplicate carrier, not activation proof.
+  This chain proves authored binding and scheduling composition only; it does
+  not prove that `CutsceneRoot` called `Play`, that the ControlTrack updated
+  the child Director, or that Wwise posted an event.
 - The CLI defaults to lossless FLAC. It streams vgmstream-decoded PCM into the
   in-process CUETools FLAKE encoder and publishes the completed FLAC atomically,
   without an intermediate WAV file or `ffmpeg`. Explicit `--format wav` and
@@ -150,6 +207,7 @@ export_full/unresolved/manifest_reference_missing.txt
 - Additional converter regression fixtures across Unity variants.
 - Lower peak memory for large broad JSON/export jobs.
 - Clearer object-level diagnostics when dependencies or conversion fail.
-- Republish the current Story object index so Story-carrier audits can consume
-  the new component scene context. The existing incomplete worker `.tmp` is not
-  evidence and must never be accepted without the merged summary commit marker.
+- Reduce broad Story object-index peak memory and merge scratch size without
+  weakening its full-object coverage or transactional summary marker. The
+  current refresh peaked near 12 GB working set and used a roughly 7 GB merge
+  database before publishing the compressed outputs.

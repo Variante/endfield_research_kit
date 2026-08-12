@@ -29,11 +29,21 @@ Normal navigation exposes:
 - **Text:** searchable localized table rows.
 - **Updates:** differences between previous and current exported game data.
 
-**Mission Pipeline** is experimental and appears only with `Show debug info`.
-**Audio** is a normal page. It exposes the current binary-validated runtime
+**Mission Pipeline** appears only with `Show debug info` and carries an under-
+construction banner. **Audio** is a normal page and carries the same banner.
+It exposes the current binary-validated runtime
 model, Wwise HIRC object families, authored event contexts, typed possible
-media leaves, and the physical decoded-media inventory without presenting the
-offline graph as a live playback trace.
+media leaves, the cross-system `trigger_contexts.json` rows, and the physical
+decoded-media inventory without presenting the offline graph as a live
+ playback trace. Trigger contexts keep authored definition, ownership or
+selection, media availability, and runtime execution as separate evidence
+ states. Timeline rows may therefore show an exact serialized clip request
+ with timing and no playable media when its authored key is absent from the
+ current Wwise index.
+The Audio runtime panel also summarizes trigger-context coverage by authored
+route, including `envTalkGreeting` and `remoteCommonAudio`, and shows scalar
+Timeline runtime-contract counts plus `AudioMusicPlayable` action/skip-policy
+counts without eagerly loading the large trigger-context detail shard.
 
 The standalone Progression and Combat & Projectiles pages are retired. Their
 useful player-facing data now appears in Gameplay; raw combat relationships,
@@ -49,7 +59,7 @@ projectile matching evidence, and unresolved ownership remain debug-only.
 - `src/features/characters/`: Characters page and live override editing.
 - `src/features/gameplay/`: Gameplay page and integrations.
 - `src/features/audio/`: lazy, virtualized Audio page.
-- `src/features/mission_pipeline/`: experimental mission evidence view.
+- `src/features/mission_pipeline/`: debug-only mission evidence view.
 
 ## Data contract
 
@@ -64,7 +74,7 @@ data/lang/<LANG>/reference/
 data/lang/<LANG>/characters/index.json
 data/lang/<LANG>/gameplay/index.json
 data/lang/<LANG>/gameplay/sound_effects.json
-data/lang/<LANG>/audio/{index,events,media}.json
+data/lang/<LANG>/audio/{index,events,media,trigger_contexts}.json
 data/gameplay/projectiles.json
 data/mission_pipeline/
 data/assets/index.json
@@ -93,15 +103,88 @@ semantically partial. Do not surface it as observed runtime combat evidence.
 The Audio overview and Event inventory load only when its debug view is opened;
 the larger media inventory remains deferred until the Media mode is selected.
 Both lists are virtualized, and selecting an Event fetches only its keyed detail
-shard before rendering contexts, branch evidence, and players. Playable recovered audio is served from
+shard before rendering contexts, branch evidence, and players. Selected records
+show only record-specific evidence and playable media; corpus-wide runtime
+statistics remain on the unselected Audio overview. Playable recovered audio is served from
 `/export_full/structured/Audio/{shared,<LANG>}/`. AnimeStudio and the normal
 builder default to lossless `.flac` files and write those paths into Story, cutscene, projectile,
 and Gameplay sound payloads; the frontend uses the same native audio control
-for FLAC and WAV links. Legacy WEM files remain indexable for diagnostics but
+for FLAC and WAV links. Event and Media selections are deep-linkable, including
+restoring the Media dataset after a reload, and expanded players expose the
+resolved source file as a direct link. Players stay expanded by default; only
+a playback-root/relation group with more than 20 bound media files starts
+collapsed, bounding unusually large Wwise fan-outs without hiding ordinary
+Event players. Legacy WEM files remain indexable for diagnostics but
 are not a browser-playable output format. Event details list every typed
 possible media leaf together and group it by Play root and Random, Sequence,
 Switch/State, Layer, or direct-Sound evidence. Partial typed graphs and
-byte-identical decoded content under distinct media ids remain explicit.
+byte-identical decoded content under distinct media ids remain explicit. Events
+whose typed root Actions contain only control operations are labeled as control
+Events instead of being presented as playback Events with missing media.
+Authored Event names that do not resolve to a Wwise Event object and decoded
+media whose playback location is unknown remain separate visible states: the
+former retains its authored trigger contexts, while the latter does not imply
+an Event, owner, or runtime trigger that has not been recovered.
+The Audio recovery-status filter exposes Wwise-object resolution for Events and
+placement coverage for Media. Media placement is partitioned into direct dialog
+media, recovered authored Event context, Event relation only, and unknown; the
+overview reports the same generated counts. A byte-identical
+`wwise/unknown/<mediaId>` occurrence is omitted from the logical inventory when
+the same storage root already has a stronger categorized copy. The files remain
+on disk, while different-byte and cross-storage same-id collisions remain
+visible.
+Decoded media can also resolve to a typed Wwise Sound codec-media object while
+no Event reaches its parent container branch. That is shown as a resolved
+library definition with unknown playback location, distinct from both an Event
+relation and a completely unidentified decoded file. HotfixAudio same-ID
+replacements inherit the exact Event relation while retaining separate players
+when their bytes differ.
+SNS Voice message Events retain their exact dialog/content/speaker/duration
+placement and click-to-PostEvent plus stop-by-playing-id route; the static
+handler does not claim that the user clicked the message.
+The HIRC inventory lists the fingerprint-locked scanned PCK set, including
+HotfixAudio packages discovered from the Persistent VFS index. An unresolved
+authored Event shows its exact current AudioHashGenerator hash and means that
+hash is absent from the scanned Event objects; it is not merely a failed
+filename lookup. Hotfix media uses the normal shared browser paths and retains
+its `HotfixAudio` source label, including replacements whose numeric media id
+already existed in the base package.
+Every raw Event object is now represented, including hashes with no recovered
+authored name or trigger. Those records expose exact typed library/media
+relations under stable `hashed-event:0x...` identities and are labeled
+separately from both named Events and authored references absent from Wwise.
+Their media is classified as Event-related with authored placement unknown,
+not as having no playback relation.
+Exact `AudioDialog` path-hash/voice-id/Event-id matches recover voice Event
+names without guessing. The Event detail keeps an `AudioDialog` definition,
+each `ResponsiveDialog` speaker/trigger response, and each `AudioVoTone`
+variant as separate contexts. A response row means the Event is an authored
+possible choice for that trigger family; a tone row is only a possible id
+substitution. Neither is displayed as an observed runtime selection, and a
+definition or tone row alone does not upgrade media to a known playback
+placement.
+Exact `skill_id.dic` names that also have a same-name `SkillData` file and hash
+to a current Wwise Event recover identity only. They are labeled as SFX but do
+not gain a skill trigger, owner, or playback location unless a separate audio
+consumer edge is recovered.
+Typed voice-table fields also recover exact current Wwise names for voice
+defaults, narrating/radio channel selection, per-voice overrides, and response
+templates. Their Event details retain the table field, bounded logical row
+samples, and native selection route while explicitly marking the live voice
+and branch choice unobserved. External Source Events do not acquire a decoded
+player merely because their authored route is now known.
+Activity/UI table Events are promoted only when the field has a current
+metadata getter, the decrypted Lua consumer reaches `PostEvent`, `PlayAudio`,
+or `SetAudioOnOpen`, and the exact hash is a current Wwise Event object. Event
+details distinguish activity and popup BGM, panel-open audio,
+video-synchronized audio, region switching, and domain-upgrade animation
+stages. Video audio retains its possible Wwise leaves and playing-id stop/seek
+contract while marking the selected video and branch execution unobserved.
+Decrypted installed-Lua callsites are shown as a separate runtime-context
+family. Direct `PostEvent` string literals can resolve a Wwise Event name and
+retain their exact VFS source, line, and expression; RTPC, AudioCue, and
+indirect literals are not promoted to playback Events. These rows explicitly
+say that branch execution was not observed.
 Version-150 music Events use the same evidence boundary but additionally show
 typed Music Switch, playlist, segment, track, and track-source nodes; these are
 possible authored paths, not an observed current track.
@@ -159,11 +242,19 @@ flagged source clears that flag.
 - Source panels, mission evidence, Story order editing, and Characters name or
   identity override controls stay behind `Show debug info`.
 - Story reset returns to Story sort while preserving expanded mission groups.
-- Disabling debug while Audio or Mission Pipeline is active moves to Gameplay
-  and normalizes the URL.
+- Enabling debug reveals Mission Pipeline without repositioning the navigation
+  bar. Disabling debug while Mission Pipeline is active moves to Gameplay and
+  normalizes the URL.
 
 ### Story and media
 
+- Every view with at least two rendered audio/video files exposes a shared
+  `Play together` chooser. Users can select any files in the active view and
+  play them simultaneously or sequentially, or stop either playback mode;
+  audio files with exactly equal browser-reported durations are selected by
+  default, and one toggle selects or unselects every audio clip without changing
+  video selections. The chooser follows the shared Chinese or English
+  interface-language switch.
 - Story uses the same persisted female/male segmented selector as Gameplay.
   Gender-authored dialogue text, voice, images, video, and gender-only cutscene
   lines update together, and the selection stays synchronized across both
@@ -173,8 +264,18 @@ flagged source clears that flag.
   response ids, trigger sets, audio paths, and fallback evidence remain in the
   generated payload and debug trace.
 - `sns_emoji_*` renders as small inline emoji with no hover or modal.
-- `sns_image_*`, `sns_sticker_*`, and related non-emoji media preserve normal
-  image proportions.
+- `sns_image_*`, `sns_sticker_*`, `cg_image_*`, and related non-emoji media
+  preserve normal image proportions. The compact index keeps one preferred
+  Sprite export per logical CG; the byte-identical Texture2D wrapper has a
+  different Unity PathID but is not shown as a duplicate Story row. `_f` and
+  `_m` files share one selectable `CG Image` / `剧情CG` row and follow the
+  Endministrator gender selector. Media-only CG rows render at full opacity.
+- `dlg_biglogo_*` uses the same `剧情CG` rows and gender-token grouping;
+  `cg_image_e2m6_1_m` is excluded because `dlg_biglogo_e2m6_14_f/m` are the
+  actual authored gender pair. `remotecomm_image_*` appears as Remote Comm
+  image rows grouped by the mission id encoded in each filename. The two
+  `e7m3` BigLogo pairs use an unsuffixed default/female file plus `_m`; these
+  are grouped as gender variants too.
 - Hover and modal previews remain inside their frame and the viewport.
 - Definition-only rows, non-owning context, exact playback, and mission
   ownership remain visibly distinct.

@@ -9407,6 +9407,72 @@ def resolve_levelscript_dynamic_property_string(
     }
 
 
+def resolve_levelscript_dynamic_property_string_list(
+    brief: dict | None,
+    binding: dict | None,
+) -> dict | None:
+    """Resolve one exact ``Param<List<string>>`` LevelScript property.
+
+    This is the list-valued counterpart of
+    :func:`resolve_levelscript_dynamic_property_string`.  It is intentionally
+    restricted to the current LevelScript property source, one uniquely named
+    value-type-8 property, and a non-empty sequence of text atoms.  The result
+    is an authored candidate set; a runtime list index still has to select one
+    member.
+    """
+    if not isinstance(brief, dict) or not isinstance(binding, dict):
+        return None
+    if (
+        binding.get("bindingKind") != "dynamic"
+        or binding.get("paramSource") != 200
+        or binding.get("idRef") != -1
+        or not isinstance(binding.get("path"), str)
+        or not binding["path"]
+    ):
+        return None
+    property_name = binding["path"]
+    matches = [
+        prop
+        for prop in brief.get("properties") or []
+        if isinstance(prop, dict) and prop.get("name") == property_name
+    ]
+    if len(matches) != 1:
+        return None
+    property_value = matches[0].get("value")
+    if not isinstance(property_value, dict):
+        return None
+    atoms = property_value.get("atoms")
+    if not (
+        property_value.get("valueType") == 8
+        and isinstance(property_value.get("atomCount"), int)
+        and property_value["atomCount"] > 0
+        and isinstance(atoms, list)
+        and len(atoms) == property_value["atomCount"]
+        and all(
+            isinstance(atom, dict)
+            and isinstance(atom.get("text"), str)
+            and bool(atom["text"])
+            and isinstance(atom.get("valueBit64"), int)
+            for atom in atoms
+        )
+    ):
+        return None
+    values = [atom["text"] for atom in atoms]
+    return {
+        "values": values,
+        "propertyName": property_name,
+        "propertyValueType": 8,
+        "propertyAtomCount": len(atoms),
+        "propertyAtomValueBit64s": [atom["valueBit64"] for atom in atoms],
+        "resolutionMode": "exact_levelscript_brief_property_string_list",
+        "selectionStatus": "runtimeListIndexUnobserved",
+        "evidence": (
+            "LevelData/43.member22:LevelScriptBriefData/8.properties "
+            "+ LevelScript ListGetValueString ParamSource=200 path"
+        ),
+    }
+
+
 def _looks_like_npc_patrol_data_start(data: bytes, offset: int) -> bool:
     if offset < 0 or offset + 28 > len(data) or data[offset] != 0x09:
         return False

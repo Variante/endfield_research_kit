@@ -77,6 +77,28 @@ class AnimeStudioStoryCarrierAuditTests(unittest.TestCase):
         )
         self.assertEqual(candidate["edgeStatus"], "no_edge_candidate_only")
 
+    def test_boolean_scalar_is_valid_and_does_not_become_an_identifier(self) -> None:
+        row = object_row([
+            ["$.dialogId", "s", "dlg_e11m1_30"],
+            ["$.missionId", "s", "e11m1"],
+            ["$.useRadioTriggerOnce", "b", True],
+        ])
+
+        result = audit.audit_object_rows([row], self.targets, "StreamingAssets")
+
+        candidate = result["candidates"][0]
+        self.assertEqual(candidate["ownerFields"][0]["value"], "e11m1")
+        self.assertEqual(candidate["runtimeFields"], [])
+
+    def test_malformed_scalar_reports_object_and_expected_type_contract(self) -> None:
+        row = object_row([["$.enabled", "b", 1]])
+
+        with self.assertRaisesRegex(
+            audit.AuditError,
+            r"source='VFS/test\.chk'.*pathId=30 index=0; expected .*b:boolean",
+        ):
+            audit.scalar_rows(row)
+
     def test_exact_scene_context_is_preserved_without_promoting_an_edge(self) -> None:
         scene_context = {
             "gameObjectName": "RadioTriggerZone",

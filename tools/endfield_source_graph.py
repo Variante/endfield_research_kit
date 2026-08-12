@@ -21,7 +21,7 @@ import struct
 import sys
 import time
 from collections import Counter, defaultdict
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
@@ -2958,6 +2958,66 @@ def safe_key(value: Any) -> str:
     return str(value if value is not None else "").strip()
 
 
+def append_story_audio_candidate(
+    candidates: list[tuple[str, str]],
+    seen: set[str],
+    value: Any,
+    evidence: str,
+) -> None:
+    if isinstance(value, (list, tuple, set)):
+        for item in value:
+            append_story_audio_candidate(candidates, seen, item, evidence)
+        return
+    audio_id = PurePosixPath(str(value or "").strip().replace("\\", "/")).stem.lower()
+    if not audio_id or audio_id in {"0", "0.0"} or audio_id in seen:
+        return
+    seen.add(audio_id)
+    candidates.append((audio_id, evidence))
+
+
+def story_line_audio_candidates(line: dict[str, Any]) -> list[tuple[str, str]]:
+    """Return every explicit Story audio identity with its source field.
+
+    A recovered line can carry a playback/control identity in ``audio`` while
+    ``_debug.source`` retains the direct voice identity used to relink a
+    decoded file.  Keep both as separate graph candidates; collapsing them
+    would turn a RemoteCommon SFX event into the spoken line's voice file.
+    """
+    candidates: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for field in (
+        "voice",
+        "audio",
+        "voId",
+        "audioId",
+        "audioPath",
+        "audioPaths",
+        "audioDialogPath",
+        "audioDialogPaths",
+    ):
+        append_story_audio_candidate(candidates, seen, line.get(field), f"line.{field}")
+    debug = line.get("_debug") if isinstance(line.get("_debug"), dict) else {}
+    source = debug.get("source") if isinstance(debug.get("source"), dict) else {}
+    for field in (
+        "voiceId",
+        "voId",
+        "audioOverride",
+        "audio",
+        "audioId",
+        "audioPath",
+        "audioPaths",
+        "audioDialogPath",
+        "audioDialogPaths",
+    ):
+        append_story_audio_candidate(
+            candidates,
+            seen,
+            source.get(field),
+            f"line._debug.source.{field}",
+        )
+    return candidates
+
+
 def normalize_abs_path(path_text: str) -> str:
     if not path_text:
         return ""
@@ -3427,6 +3487,8 @@ class SourceGraphBuilder:
             self.commit_step("audioConfig")
             self.ingest_decoded_audio_index()
             self.commit_step("decodedAudio")
+            self.ingest_audio_trigger_contexts()
+            self.commit_step("audioTriggerContexts")
             self.ingest_hotfix_audio_event_audit()
             self.commit_step("hotfixAudio")
             self.ingest_dialog_support_semantics()
@@ -12424,6 +12486,7 @@ class SourceGraphBuilder:
     def add_lines_and_options(self, conv: dict[str, Any], story_node: str) -> None:
         for index, line in enumerate(conv.get("lines") or []):
             line_id = safe_key(line.get("id") or f"{conv.get('key')}#{index}")
+            audio_candidates = story_line_audio_candidates(line)
             line_node = self.add_node(
                 "line",
                 line_id,
@@ -12433,6 +12496,10 @@ class SourceGraphBuilder:
                     "actor": line.get("actor"),
                     "actorId": line.get("aid"),
                     "audio": line.get("audio"),
+                    "audioCandidates": [
+                        {"id": audio_id, "evidence": evidence}
+                        for audio_id, evidence in audio_candidates
+                    ],
                     "text": compact_text(line.get("text"), 500),
                     "timestamp": line.get("ts"),
                     "duration": line.get("dur"),
@@ -12444,11 +12511,25 @@ class SourceGraphBuilder:
                 actor_node = self.add_node("actor", actor_id, name=line.get("actor"), source="webui/story")
                 self.add_edge(line_node, actor_node, "spoken_by", source="webui/story")
                 self.add_edge(actor_node, line_node, "actor_speaks_line", source="webui/story")
-            audio_id = safe_key(line.get("audio"))
-            if audio_id and audio_id not in {"0", "0.0"}:
+            for audio_id, evidence in audio_candidates:
                 audio_node = self.add_node("audio", audio_id, name=audio_id, source="dialog_line")
-                self.add_edge(line_node, audio_node, "uses_audio", source="webui/story")
-                self.add_edge(audio_node, line_node, "audio_used_by_line", source="webui/story")
+                edge_data = {"field": evidence}
+                self.add_edge(
+                    line_node,
+                    audio_node,
+                    "uses_audio",
+                    source="webui/story",
+                    evidence=evidence,
+                    data=edge_data,
+                )
+                self.add_edge(
+                    audio_node,
+                    line_node,
+                    "audio_used_by_line",
+                    source="webui/story",
+                    evidence=evidence,
+                    data=edge_data,
+                )
 
         for group in conv.get("optionGroups") or []:
             branch_risk = group.get("optionBranchRisk") or {}
@@ -20190,14 +20271,19 @@ class SourceGraphBuilder:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_spaceship_semantics", path=slash(table_root))
         for table_name in SPACESHIP_SEMANTIC_TABLES:
-            path = table_root / table_name
-            payload = read_json(path, None)
+            payload, sources = self.structured_table_payload(
+                table_name,
+                include_persistent=table_name == "EnvTalkTable.json",
+            )
             if payload is None:
                 continue
             table_key = Path(table_name).stem
-            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            table_layer, table_path = sources[-1]
+            table_source = f"{table_layer}/Table"
+            table_node = self.add_node("table", table_key, name=table_key, source=table_source, path=slash(table_path))
             self.add_edge(dataset, table_node, "has_table", source="structured/spaceship")
-            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for layer, path in sources:
+                self.add_file(slash(path), kind="structured_table", source=f"{layer}/Table")
             if not isinstance(payload, dict):
                 continue
             for row_key, row in payload.items():
@@ -23757,14 +23843,19 @@ class SourceGraphBuilder:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_npc_voice_bark_semantics", path=slash(table_root))
         for table_name in NPC_VOICE_BARK_TABLES:
-            path = table_root / table_name
-            payload = read_json(path, None)
+            payload, sources = self.structured_table_payload(
+                table_name,
+                include_persistent=table_name in {"AudioDialogChannel.json", "AudioDialogChannelMappings.json"},
+            )
             if payload is None:
                 continue
             table_key = Path(table_name).stem
-            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            table_layer, table_path = sources[-1]
+            table_source = f"{table_layer}/Table"
+            table_node = self.add_node("table", table_key, name=table_key, source=table_source, path=slash(table_path))
             self.add_edge(dataset, table_node, "has_table", source="structured/npc_voice_bark")
-            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for layer, path in sources:
+                self.add_file(slash(path), kind="structured_table", source=f"{layer}/Table")
             if not isinstance(payload, dict):
                 continue
             for row_key, row in payload.items():
@@ -24044,10 +24135,45 @@ class SourceGraphBuilder:
         media_key = safe_key(entry.get("mediaId")) or safe_key(entry.get("id"))
         return media_key if media_key.isdigit() else ""
 
+    def structured_table_payload(
+        self,
+        table_name: str,
+        *,
+        include_persistent: bool = False,
+    ) -> tuple[Any, list[tuple[str, Path]]]:
+        """Read a structured table with an optional Persistent overlay.
+
+        The installed game exports the same logical table under both
+        StreamingAssets and Persistent.  Persistent is an additive overlay in
+        the current export and wins when an id is present in both layers.  The
+        returned source paths are kept separately so callers can retain both
+        file-level evidence while consuming one authoritative merged payload.
+        """
+        layers = ["StreamingAssets"]
+        if include_persistent:
+            layers.append("Persistent")
+        payload: Any = None
+        sources: list[tuple[str, Path]] = []
+        for layer in layers:
+            path = self.export_root / "structured" / layer / "Table" / table_name
+            current = read_json(path, None)
+            if current is None:
+                continue
+            sources.append((layer, path))
+            if isinstance(current, dict):
+                if not isinstance(payload, dict):
+                    payload = {}
+                payload.update(current)
+            else:
+                payload = current
+        return payload, sources
+
     def audio_dialog_rows(self) -> dict[str, Any]:
         if self.audio_dialog_row_cache is None:
-            path = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table" / "AudioDialog.json"
-            payload = read_json(path, {})
+            payload, _sources = self.structured_table_payload(
+                "AudioDialog.json",
+                include_persistent=True,
+            )
             self.audio_dialog_row_cache = payload if isinstance(payload, dict) else {}
         return self.audio_dialog_row_cache
 
@@ -24544,14 +24670,16 @@ class SourceGraphBuilder:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_narrative_audio_semantics", path=slash(table_root))
         for table_name in NARRATIVE_AUDIO_TABLES:
-            path = table_root / table_name
-            payload = read_json(path, None)
+            payload, sources = self.structured_table_payload(table_name, include_persistent=True)
             if payload is None:
                 continue
             table_key = Path(table_name).stem
-            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            table_layer, table_path = sources[-1]
+            table_source = f"{table_layer}/Table"
+            table_node = self.add_node("table", table_key, name=table_key, source=table_source, path=slash(table_path))
             self.add_edge(dataset, table_node, "has_table", source="structured/narrative_audio")
-            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for layer, path in sources:
+                self.add_file(slash(path), kind="structured_table", source=f"{layer}/Table")
             if not isinstance(payload, dict):
                 continue
             for row_key, row in payload.items():
@@ -24564,6 +24692,261 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/narrative_audio")
                 self.add_narrative_audio_row_edges(table_key, row_key, row, row_node)
+
+    def ingest_audio_trigger_contexts(self) -> None:
+        """Add generated trigger contexts without promoting them to runtime facts."""
+        path = (
+            self.root
+            / "webui"
+            / "data"
+            / "lang"
+            / safe_key(self.language).upper()
+            / "audio"
+            / "trigger_contexts.json"
+        )
+        if not path.is_file():
+            return
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+        contexts = payload.get("contexts") if isinstance(payload, dict) else None
+        if not isinstance(contexts, list):
+            return
+
+        source = f"webui/audio/{safe_key(self.language).upper()}"
+        dataset = self.add_node(
+            "dataset",
+            f"audio_trigger_contexts:{safe_key(self.language).upper()}",
+            name=f"Audio trigger contexts ({safe_key(self.language).upper()})",
+            source=source,
+            path=slash(path),
+            data={
+                "schema": payload.get("schema"),
+                "language": payload.get("language"),
+                "counts": payload.get("counts"),
+                "evidenceBoundary": "static trigger context; runtime execution remains unobserved",
+            },
+        )
+        self.add_file(slash(path), kind="generated_audio_trigger_contexts", source=source)
+
+        def scalar_summary(value: Any, keys: Iterable[str]) -> dict[str, Any]:
+            if not isinstance(value, dict):
+                return {}
+            return {
+                key: value[key]
+                for key in keys
+                if key in value
+                and (
+                    isinstance(value[key], bool)
+                    or (isinstance(value[key], (str, int, float)) and not isinstance(value[key], bool))
+                )
+            }
+
+        def add_existing_link(
+            context_node: str,
+            kind: str,
+            key: Any,
+            edge_kind: str,
+            reverse_edge_kind: str,
+            evidence: str,
+        ) -> None:
+            key_text = safe_key(key)
+            if key_text and self.node_exists(kind, key_text):
+                target = self.node_id(kind, key_text)
+                self.add_edge(context_node, target, edge_kind, source=source, evidence=evidence)
+                self.add_edge(target, context_node, reverse_edge_kind, source=source, evidence=evidence)
+
+        for context in contexts:
+            if not isinstance(context, dict):
+                continue
+            trigger_id = safe_key(context.get("triggerId"))
+            if not trigger_id:
+                continue
+            situation = context.get("situation") if isinstance(context.get("situation"), dict) else {}
+            meaning = context.get("meaning") if isinstance(context.get("meaning"), dict) else {}
+            action = context.get("action") if isinstance(context.get("action"), dict) else {}
+            owner = context.get("owner") if isinstance(context.get("owner"), dict) else {}
+            selection = context.get("selection") if isinstance(context.get("selection"), dict) else {}
+            media_refs = context.get("mediaRefs") if isinstance(context.get("mediaRefs"), list) else []
+            compact_media = []
+            for media in media_refs[:8]:
+                if not isinstance(media, dict):
+                    continue
+                compact_media.append(
+                    scalar_summary(
+                        media,
+                        ("id", "rel", "src", "duration", "format", "audioCategory", "speakerChannel"),
+                    )
+                )
+            context_data = {
+                "triggerId": trigger_id,
+                "semanticKind": context.get("semanticKind"),
+                "triggerRole": context.get("triggerRole"),
+                "situation": scalar_summary(
+                    situation,
+                    (
+                        "eventId", "eventHash", "dialogId", "dialogKey", "timelineId", "lineId",
+                        "radioId", "envTalkId", "envTalkVariant", "mission", "remoteCommonId", "singleId", "middleId",
+                        "index", "autoPlay", "autoPlayTime", "levelScriptId", "timelineStartSec",
+                        "timelineDurationSec", "timelineEndSec", "contextKind",
+                    ),
+                ),
+                "meaning": scalar_summary(
+                    meaning,
+                    (
+                        "id", "eventId", "audio", "category", "foundInWwise", "possibleMediaCount",
+                        "playRootCount", "authoredTimelineKeyStatus",
+                    ),
+                ),
+                "action": scalar_summary(
+                    action,
+                    (
+                        "action", "triggerRole", "levelScriptId", "levelSequenceId", "sourcePath",
+                        "runtimeMethod", "runtimeMethodToken", "runtimeActivationStatus",
+                    ),
+                ),
+                "owner": scalar_summary(
+                    owner,
+                    (
+                        "dialogId", "dialogKey", "timelineId", "timelineAssetName", "levelScriptId",
+                        "radioId", "envTalkId", "remoteCommonId", "singleId", "middleId", "voiceId",
+                        "speakerActorId", "speakerChannel", "voiceLinkStatus",
+                        "audioPlayableType", "audioPlayableRuntimeContractId",
+                        "audioPlayableKeyStatus", "audioPlayableControlEvidence",
+                        "audioMusicActionType", "audioMusicActionTypeLabel",
+                        "audioMusicTriggerOnSkip", "audioMusicTriggerOnSkipLabel",
+                        "runtimeCarrierStatus",
+                    ),
+                ),
+                "selection": scalar_summary(
+                    selection,
+                    (
+                        "triggerBindingStatus", "mediaSelectionStatus", "runtimeSelection",
+                        "runtimeDispatchStatus", "lineScheduleStatus", "slotSelectionStatus",
+                        "audioSelectionStatus", "runtimeSelectionStatus", "autoPlay", "autoPlayTime",
+                    ),
+                ),
+                "mediaRefs": compact_media,
+                "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                "sourceRefs": [value for value in context.get("sourceRefs", []) if isinstance(value, str)][:8],
+                "evidenceBoundary": "static trigger context; not runtime ownership, execution, Wwise acceptance, or audibility proof",
+            }
+            context_node = self.add_node(
+                "audio_trigger_context",
+                trigger_id,
+                name=trigger_id,
+                source=source,
+                data=context_data,
+            )
+            self.add_alias(trigger_id, context_node, kind="audio_trigger_context_id", source=source)
+            self.add_edge(dataset, context_node, "has_audio_trigger_context", source=source, evidence="contexts[]")
+
+            for audio_index, audio_id in enumerate(
+                [meaning.get("audio")]
+                + [media.get("id") for media in media_refs if isinstance(media, dict)]
+            ):
+                audio_key = safe_key(audio_id)
+                if not audio_key:
+                    continue
+                self.add_audio_target_edge(
+                    context_node,
+                    audio_key,
+                    edge_kind="audio_trigger_context_uses_audio",
+                    source=source,
+                    evidence="meaning.audio" if audio_index == 0 else f"mediaRefs[{audio_index - 1}].id",
+                    reverse_edge_kind="audio_used_by_audio_trigger_context",
+                )
+
+            for event_index, event_id in enumerate((situation.get("eventId"), meaning.get("eventId"))):
+                event_key = safe_key(event_id)
+                if event_key and self.node_exists("wwise_event", event_key):
+                    event_node = self.node_id("wwise_event", event_key)
+                    evidence = "situation.eventId" if event_index == 0 else "meaning.eventId"
+                    self.add_edge(
+                        context_node,
+                        event_node,
+                        "audio_trigger_context_targets_wwise_event",
+                        source=source,
+                        evidence=evidence,
+                    )
+                    self.add_edge(
+                        event_node,
+                        context_node,
+                        "wwise_event_has_audio_trigger_context",
+                        source=source,
+                        evidence=evidence,
+                    )
+
+            for key in (situation.get("dialogId"), situation.get("dialogKey"), situation.get("storyKey")):
+                add_existing_link(
+                    context_node,
+                    "story",
+                    key,
+                    "audio_trigger_context_for_story",
+                    "story_has_audio_trigger_context",
+                    "situation.dialog/story key",
+                )
+            for key in (situation.get("lineId"), meaning.get("id")):
+                add_existing_link(
+                    context_node,
+                    "line",
+                    key,
+                    "audio_trigger_context_for_line",
+                    "line_has_audio_trigger_context",
+                    "situation.lineId/meaning.id",
+                )
+            add_existing_link(
+                context_node,
+                "radio",
+                situation.get("radioId"),
+                "audio_trigger_context_for_radio",
+                "radio_has_audio_trigger_context",
+                "situation.radioId",
+            )
+            add_existing_link(
+                context_node,
+                "env_talk",
+                situation.get("envTalkId"),
+                "audio_trigger_context_for_env_talk",
+                "env_talk_has_audio_trigger_context",
+                "situation.envTalkId",
+            )
+            add_existing_link(
+                context_node,
+                "remote_common",
+                situation.get("remoteCommonId"),
+                "audio_trigger_context_for_remote_common",
+                "remote_common_has_audio_trigger_context",
+                "situation.remoteCommonId",
+            )
+            for key in (situation.get("singleId"), meaning.get("id")):
+                add_existing_link(
+                    context_node,
+                    "remote_common_line",
+                    key,
+                    "audio_trigger_context_for_remote_common_line",
+                    "remote_common_line_has_audio_trigger_context",
+                    "situation.singleId/meaning.id",
+                )
+            for key in (situation.get("timelineId"), action.get("timelineId"), action.get("levelSequenceId")):
+                add_existing_link(
+                    context_node,
+                    "timeline",
+                    key,
+                    "audio_trigger_context_for_timeline",
+                    "timeline_has_audio_trigger_context",
+                    "situation/action.timelineId",
+                )
+            for key in (situation.get("levelScriptId"), action.get("levelScriptId")):
+                add_existing_link(
+                    context_node,
+                    "level_script",
+                    key,
+                    "audio_trigger_context_for_level_script",
+                    "level_script_has_audio_trigger_context",
+                    "situation/action.levelScriptId",
+                )
 
     def add_story_target_edge(self, owner_node: str, story_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
         story_key = safe_key(story_id)
@@ -24670,14 +25053,16 @@ class SourceGraphBuilder:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_audio_config_semantics", path=slash(table_root))
         for table_name in AUDIO_CONFIG_TABLES:
-            path = table_root / table_name
-            payload = read_json(path, None)
+            payload, sources = self.structured_table_payload(table_name, include_persistent=True)
             if payload is None:
                 continue
             table_key = Path(table_name).stem
-            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            table_layer, table_path = sources[-1]
+            table_source = f"{table_layer}/Table"
+            table_node = self.add_node("table", table_key, name=table_key, source=table_source, path=slash(table_path))
             self.add_edge(dataset, table_node, "has_table", source="structured/audio_config")
-            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for layer, path in sources:
+                self.add_file(slash(path), kind="structured_table", source=f"{layer}/Table")
             if not isinstance(payload, dict):
                 continue
             for row_key, row in payload.items():
@@ -25138,14 +25523,16 @@ class SourceGraphBuilder:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_dialog_support_semantics", path=slash(table_root))
         for table_name in DIALOG_SUPPORT_TABLES:
-            path = table_root / table_name
-            payload = read_json(path, None)
+            payload, sources = self.structured_table_payload(table_name, include_persistent=True)
             if payload is None:
                 continue
             table_key = Path(table_name).stem
-            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            table_layer, table_path = sources[-1]
+            table_source = f"{table_layer}/Table"
+            table_node = self.add_node("table", table_key, name=table_key, source=table_source, path=slash(table_path))
             self.add_edge(dataset, table_node, "has_table", source="structured/dialog_support")
-            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for layer, path in sources:
+                self.add_file(slash(path), kind="structured_table", source=f"{layer}/Table")
             if not isinstance(payload, dict):
                 continue
             for row_key, row in payload.items():
@@ -27377,14 +27764,19 @@ class SourceGraphBuilder:
         for table_name in SELECTED_STRUCTURED_TABLES:
             if table_name in WORLD_SEMANTIC_TABLES:
                 continue
-            path = table_root / table_name
-            payload = read_json(path, None)
+            payload, sources = self.structured_table_payload(
+                table_name,
+                include_persistent=table_name == "AudioDialog.json",
+            )
             if payload is None:
                 continue
             table_key = Path(table_name).stem
-            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            table_layer, table_path = sources[-1]
+            table_source = f"{table_layer}/Table"
+            table_node = self.add_node("table", table_key, name=table_key, source=table_source, path=slash(table_path))
             self.add_edge(dataset, table_node, "has_table", source="structured")
-            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for layer, path in sources:
+                self.add_file(slash(path), kind="structured_table", source=f"{layer}/Table")
             if not isinstance(payload, dict):
                 continue
             for row_key, row in payload.items():
@@ -29580,7 +29972,8 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
             audio.name AS audioId,
             audio.path AS audioPath,
             audio.source AS audioSource,
-            audio.data AS audioData
+            audio.data AS audioData,
+            e.evidence AS edgeEvidence
         FROM edges e
         JOIN nodes line ON line.id = e.src
         JOIN nodes audio ON audio.id = e.dst
@@ -29715,6 +30108,7 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
             "actor": line_data.get("actor"),
             "text": line_data.get("text"),
             "audioPath": audio_data.get("path") or row["audioPath"],
+            "audioEvidence": row["edgeEvidence"],
             "duration": audio_data.get("duration"),
             "speaker": audio_data.get("speaker"),
         }
@@ -29737,6 +30131,7 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
             record.update(classification)
             record["wwiseEvents"] = wwise_events
             record["wwiseMedia"] = wwise_media
+            record["audioEvidence"] = row["edgeEvidence"]
             story_unresolved_by_family[classification["family"]] += 1
             story_unresolved_by_class[classification["evidenceClass"]] += 1
             for owner_kind in classification["ownerKinds"]:

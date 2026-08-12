@@ -4,7 +4,7 @@ const UI_TEXTS = {
   zh: {
     suiteTitle: "\u7ec8\u672b\u5730\u7814\u7a76\u5de5\u5177",
     storyTab: "\u5267\u60c5",
-    missionPipelineTab: "\u4efb\u52a1\u6d41\u7a0b\uff08\u5b9e\u9a8c\uff09",
+    missionPipelineTab: "\u4efb\u52a1\u6d41\u7a0b",
     assetsTab: "\u8d44\u6e90",
     gameplayTab: "\u73a9\u6cd5",
     audioTab: "\u97f3\u9891",
@@ -419,7 +419,7 @@ const UI_TEXTS = {
   en: {
     suiteTitle: "Endfield Research Kit",
     storyTab: "Story",
-    missionPipelineTab: "Mission Pipeline (Experimental)",
+    missionPipelineTab: "Mission Pipeline",
     assetsTab: "Assets",
     gameplayTab: "Gameplay",
     audioTab: "Audio",
@@ -839,6 +839,7 @@ const KIND_LABELS = {
     sns: { name: "\u7ec8\u7aef\u6d88\u606f", cls: "badge-sns" },
     cutscene: { name: "\u8fc7\u573a\u6f14\u51fa", cls: "badge-cutscene" },
     video: { name: "\u5267\u60c5\u89c6\u9891", cls: "badge-video" },
+    cg: { name: "\u5267\u60c5CG", cls: "badge-video" },
     black: { name: "\u9ed1\u5c4f\u5b57\u5e55", cls: "badge-black" },
     remotecomm: { name: "\u8fdc\u7a0b\u901a\u8bdd", cls: "badge-remotecomm" },
     radio: { name: "\u8bed\u97f3\u901a\u8baf", cls: "badge-radio" },
@@ -856,6 +857,7 @@ const KIND_LABELS = {
     sns: { name: "Terminal Message", cls: "badge-sns" },
     cutscene: { name: "Cutscene", cls: "badge-cutscene" },
     video: { name: "Video", cls: "badge-video" },
+    cg: { name: "CG Image", cls: "badge-video" },
     black: { name: "Black Screen", cls: "badge-black" },
     remotecomm: { name: "Remote Comm", cls: "badge-remotecomm" },
     radio: { name: "Radio", cls: "badge-radio" },

@@ -71,6 +71,33 @@ def _dialog_tree_connection_refs(conn: dict) -> tuple[str, str]:
     return (str(src or ""), str(dst or ""))
 
 
+def _dialog_tree_node_reaches(
+    successors: dict[str, list[str]],
+    start_node_id: str,
+    target_node_id: str,
+) -> bool:
+    """Return whether a directed DialogTree path reaches the target node."""
+    start = str(start_node_id or "")
+    target = str(target_node_id or "")
+    if not start or not target:
+        return False
+    queue = deque([start])
+    seen: set[str] = set()
+    while queue:
+        current = queue.popleft()
+        if current in seen:
+            continue
+        if current == target:
+            return True
+        seen.add(current)
+        queue.extend(
+            str(node_id)
+            for node_id in successors.get(current, [])
+            if node_id and str(node_id) not in seen
+        )
+    return False
+
+
 def _normalize_dialog_tree_line_graph(nodes: list[dict], conns: list[dict]) -> dict:
     graph_nodes: list[dict] = []
     by_id: dict[str, dict] = {}
@@ -2220,11 +2247,26 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             end_node_type == "DialogTreeOptionNode"
             and end_node_id == source_option_node_id
         )
+        advances_to_next_option_node = (
+            end_node_type == "DialogTreeOptionNode"
+            and bool(end_node_id)
+            and end_node_id != source_option_node_id
+            and not _dialog_tree_node_reaches(
+                succs,
+                end_node_id,
+                source_option_node_id,
+            )
+        )
 
         outcome_kind = "unknown"
         loop: dict[str, object] | None = None
 
-        if end_node_type == "DialogTreeOptionNode":
+        if advances_to_next_option_node:
+            # A different downstream option node that cannot return to the
+            # source is the next authored prompt, not a menu loop. This also
+            # covers consecutive prompts with no trunk line between them.
+            outcome_kind = "nextOptionPrompt"
+        elif end_node_type == "DialogTreeOptionNode":
             if returns_to_target_menu:
                 outcome_kind = "sameSceneMenuLoop"
             elif returns_to_other_menu or any(scene_key != target_key for scene_key in scene_keys):
@@ -2259,6 +2301,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
         debug["sourceOptionNodeId"] = source_option_node_id
         if end_node_type == "DialogTreeOptionNode":
             debug["returnsToSourceOptionNode"] = returns_to_source_option_node
+            debug["advancesToNextOptionNode"] = advances_to_next_option_node
         summary["outcomeKind"] = outcome_kind
         summary["_debug"] = debug
         if loop:
@@ -2455,6 +2498,8 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
                 }
                 summaries.append(option_summary)
                 if summary.get("loop"):
+                    has_interesting_target = True
+                if summary.get("outcomeKind") == "nextOptionPrompt":
                     has_interesting_target = True
                 if summary.get("terminal"):
                     has_interesting_target = True
@@ -2942,6 +2987,38 @@ def load_dialog_tree(conv_key: str) -> dict | None:
             if source_node_id and target_node_id:
                 outgoing_by_node[source_node_id].append(target_node_id)
                 incoming_by_node[target_node_id].append(source_node_id)
+        node_ids = [
+            str(node.get("id") or "")
+            for node in (line_graph.get("nodes") or [])
+            if isinstance(node, dict) and str(node.get("id") or "")
+        ]
+        prime_node_id = node_ids[0] if node_ids else ""
+        distance_from_prime: dict[str, int] = {}
+        if prime_node_id:
+            distance_from_prime[prime_node_id] = 0
+            pending_node_ids = [prime_node_id]
+            while pending_node_ids:
+                source_node_id = pending_node_ids.pop(0)
+                next_distance = distance_from_prime[source_node_id] + 1
+                for target_node_id in outgoing_by_node.get(source_node_id, []):
+                    if target_node_id in distance_from_prime:
+                        continue
+                    distance_from_prime[target_node_id] = next_distance
+                    pending_node_ids.append(target_node_id)
+        reachable_node_ids_by_node: dict[str, list[str]] = {}
+        for start_node_id in node_ids:
+            reached: list[str] = []
+            seen = {start_node_id}
+            pending_node_ids = [start_node_id]
+            while pending_node_ids:
+                source_node_id = pending_node_ids.pop(0)
+                for target_node_id in outgoing_by_node.get(source_node_id, []):
+                    if target_node_id in seen:
+                        continue
+                    seen.add(target_node_id)
+                    reached.append(target_node_id)
+                    pending_node_ids.append(target_node_id)
+            reachable_node_ids_by_node[start_node_id] = reached
         for node in line_graph.get("nodes") or []:
             if (
                 not isinstance(node, dict)
@@ -2957,6 +3034,10 @@ def load_dialog_tree(conv_key: str) -> dict | None:
                     "sourceKey": source_key,
                     "file": meta.get("file") or "",
                     "nodeId": node_id,
+                    "primeNodeId": prime_node_id,
+                    "distanceFromPrime": distance_from_prime.get(node_id),
+                    "reachableFromPrime": node_id in distance_from_prime,
+                    "reachableNodeIds": reachable_node_ids_by_node.get(node_id, []),
                     "outgoingNodeIds": _unique_preserve(
                         outgoing_by_node.get(node_id, [])
                     ),

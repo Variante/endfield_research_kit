@@ -146,6 +146,13 @@ High-value entry points:
   action, and control evidence.
 - `mission_recovery.py`: mission/quest relationships.
 - `build_source_story_gap_queue.py`: source-only recovery queue.
+- `build_timeline_level_event_marker_audit.py`: exact AnimeStudio object-index
+  MarkerTrack/Timeline/event-name joins to LevelScript Story receivers,
+  including serialized marker time.
+- `build_radio_forbid_producer_audit.py`: installed-binary, complete
+  object-index, shipped-Lua, and active-IFix closure for the
+  `ForbidInteractFacBuilding -> forbidReason.radioId -> SHOW_RADIO` value path;
+  empty/default values remain non-producers.
 - `dialog_tree_control_flow.py`: reusable installed-metadata/GameAssembly
   decoder for enum-selected static port maps and serialized multi-output
   control projection; it has no mission, Story, object, OCR, or override
@@ -161,6 +168,12 @@ High-value entry points:
   census for any managed value carrier. Pass `--carrier-type` and repeat
   `--focus-field`; the code never takes mission, Story, object, OCR, or override
   identities.
+- `capture_audio_runtime_trace.py` and `import_audio_runtime_trace.py`:
+  hash-locked, read-only Frida sampling of authored audio carriers,
+  `AudioAdapter` requests, and playing-id controls, followed by a conservative
+  static Event-hash and trigger-context join. Use `--check-only` before
+  attaching to a live game; the importer never claims Wwise acceptance or
+  audibility.
 
 For the maintained Bilibili Story-order intake:
 
@@ -238,12 +251,97 @@ Wwise v150 traversal follows typed Event/Action/container/Sound edges and can
 yield multiple possible media leaves. Play roots, selector/layer relations,
 partial traversal, and decoded-content equivalence remain separate; unresolved
 runtime selection is never labeled as a set of equivalent choices.
+Event-bank discovery enumerates both StreamingAssets and Persistent VFS
+indexes, deduplicates identical payloads, and includes normal `*banks.pck` plus
+HotfixAudio `hotfix*.pck`. The generated HIRC summary fingerprints every PCK
+and records its block, byte length, embedded-bank count, Event-object count,
+and parse status. The default `all` decode keeps one normal StreamingAssets
+pass and adds one Persistent-primary pass limited to `hotfix-audio`; an exact
+numeric-media inventory fingerprint invalidates cached Event links whenever a
+decoded file is added, removed, moved, or replaced.
+The authoritative index traverses every raw Event object, not only hashes with
+recovered names. It keeps a compact `wwiseEventInventory` for unnamed hashes so
+their typed Action/object/media relations remain visible without inventing a
+trigger name or authored owner. The normal named-event evidence remains the
+full debug surface used by Story and Gameplay relinking.
+
+The audio build also decrypts the installed Lua blocks from both VFS roots,
+chooses Persistent per logical path when both roots contain the same script,
+and caches exact `au_*` callsite lines under
+`export_full/recovered/audio/lua_audio_references.json`. Only direct
+`AudioAdapter`/`AudioManager.PostEvent` literals become Event-name candidates;
+RTPC names, AudioCue names, and indirect literals remain separate evidence.
+Use `--refresh-lua-audio` with `--skip-decode` to refresh this cache without
+decoding media. A callsite proves an authored request path, not that its Lua
+branch executed in a live session.
+`story_recovery/build_lua_audio_event_audit.py` compares every direct Lua
+`PostEvent` hash against that complete Event-object inventory. Its fuzzy names
+and same-file sibling Events are review hints only and never create aliases.
+`story_recovery/build_voice_response_audio_event_audit.py` validates the voice
+bridge only when the `AudioDialog` path hash, signed voice id, and a current
+type-4 Wwise Event id are identical. It audits `ResponsiveDialog` response
+membership and `AudioVoTone` substitutions separately: the former is a
+possible authored trigger family, while the latter is only a selection
+transform. Neither is a live playback trace.
+`story_recovery/build_voice_table_audio_event_audit.py` separately validates
+typed voice defaults, channel Events, per-definition overrides, and responsive
+Event templates. It requires an approved metadata-typed field and an exact
+current Wwise Event-id hash, then reports External Source/no-source topology
+without treating the authored route as an observed runtime selection.
+`story_recovery/build_typed_ui_audio_event_audit.py` validates table fields
+that also have current metadata getters and exact decrypted-Lua audio
+consumers. Activity/popup BGM, panel-open, video-synchronized audio, region
+switch, and domain-upgrade animation routes remain distinct; generic table
+strings and hash collisions are excluded.
+`story_recovery/build_skill_id_audio_event_audit.py` validates the narrower
+identity-only bridge from `NumIdStrTable:skill_id`: the dictionary name must
+match a `SkillData` filename and a current Wwise Event hash. It also scans all
+`SkillData`/`BuffData` bytes for serialized Event hashes and refuses to infer a
+trigger or owner when no audio consumer is present.
+
+```bat
+python scripts\story_recovery\build_voice_response_audio_event_audit.py
+python scripts\story_recovery\build_voice_table_audio_event_audit.py
+python scripts\story_recovery\build_typed_ui_audio_event_audit.py
+python scripts\story_recovery\build_skill_id_audio_event_audit.py
+```
 
 `build_audio.py` also refreshes the Audio view. Run
 `python scripts\build_audio_semantics.py --language CN` independently when the
 authoritative audio index is already current and only its semantic payload or
-frontend changed. The compact overview and Event data load on view activation;
+frontend changed. It also writes the cross-system
+`webui/data/lang/<LANG>/audio/trigger_contexts.json` shard for authored
+Radio, EnvTalk (including `greetEnvTalk`), RemoteCommon auto-play,
+DialogTimeline, and Wwise/cutscene Timeline situations; this
+shard scans both complete Unity object-index sources for Timeline carriers and
+can retain an authored Timeline key with exact clip timing but no current
+Wwise/media match. It preserves static evidence boundaries and is not a runtime trace. The
+RemoteCommon `autoPlay` `audioId` route is also attached to its Event summary
+as an authored `remoteCommonAudio` context, so it is not misreported as a
+Timeline-carrier gap; the separate `voiceId` remains a dialogue identity. The
+Timeline shard distinguishes exact serialized Track/Playable carriers from
+Story cutscene `audioEvents` references, and carries raw `AudioMusicPlayable`
+`musicActionType` / `triggerOnSkip` values when present; current metadata
+resolves the music values as `DIALOG_MUSIC`, `NORMAL_MUSIC`, and `CUSTOM_MUSIC`.
+This remains serialized-control evidence, not runtime state. Semantic Event
+rows also classify typed HIRC root Actions as playback, playback/control mixed,
+control-only, or unresolved; Set State and Reset Game Parameter-only Events do
+not count as missing-media playback. The
+runtime trace importer reports module verification separately from static join
+status, and only marks runtime evidence verified for a matching attached
+GameAssembly. The
+compact overview and Event data load on view activation;
 the large decoded-media inventory loads only when its Media mode is selected.
+Repeated decode runs can recreate pre-category `wwise/unknown` files. The
+builder hashes only same-storage, same-id, same-size candidates and suppresses
+an unknown occurrence from the generated index only when its bytes exactly
+match a stronger categorized copy. It leaves files on disk and preserves
+different-byte or cross-storage collisions.
+The HIRC summary also retains decoded type-2 Sound definitions that no scanned
+Event reaches. Semantic Media rows expose this as a definition-only library
+resolution without upgrading playback placement. HotfixAudio different-byte
+same-ID replacements instead inherit the exact Event/media-ID relation and stay
+separate playable candidates.
 
 For a one-off migration of an existing export, preview first and then run:
 

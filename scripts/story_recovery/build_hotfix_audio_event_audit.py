@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
 """Audit HotfixAudio media ids against embedded Wwise event metadata.
 
-The normal audio event relinker streams `*banks.pck` files from VFS. HotfixAudio
-currently ships as `hotfix_main.pck`, so this report streams that PCK directly,
-extracts embedded bank HIRC objects, and tries to link decoded media ids to
-Wwise event hashes and known event names.
+The maintained audio relinker includes HotfixAudio in its fingerprinted bank
+set. This focused report streams the five Hotfix PCKs, resolves bank-local HIRC
+objects against their package-family media union, and checks the decoded shared
+audio inventory against Wwise event hashes and known event names.
 
 Output:
 
-    reports/mission_order/hotfix_audio_event_audit.json
-    reports/mission_order/hotfix_audio_event_audit.md
+    reports/story/recovery/hotfix_audio_event_audit.json
+    reports/story/recovery/hotfix_audio_event_audit.md
 """
 from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import subprocess
 import sys
-from collections import defaultdict, deque
+from collections import Counter, defaultdict
 from pathlib import Path
+from struct import unpack_from
 from typing import Any
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -36,23 +38,22 @@ from build_audio import (  # noqa: E402
     collect_audio_event_names,
     event_audio_category,
     fnv1_32,
-    hirc_action_target_id,
-    hirc_event_action_ids,
+    iter_bnk_sections,
     iter_akpk_bank_payloads_from_bytes,
     iter_akpk_media_ids_from_bytes,
     normalize_posix,
     parse_hirc_objects,
-    u32_values,
+    traverse_hirc_event,
 )
 from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
 
-REPORT_DIR = ROOT / "reports" / "mission_order"
+REPORT_DIR = ROOT / "reports" / "story" / "recovery"
 DEFAULT_JSON = REPORT_DIR / "hotfix_audio_event_audit.json"
 DEFAULT_MD = REPORT_DIR / "hotfix_audio_event_audit.md"
 DEFAULT_HOTFIX_ASSETS = DEFAULT_GAME_ROOT / "Persistent"
 DEFAULT_FALLBACK_ASSETS = DEFAULT_GAME_ROOT / "StreamingAssets"
 DEFAULT_CONV_DIR = DEFAULT_WEBUI_ROOT / "data" / "lang" / "CN" / "conv"
-DEFAULT_DECODED_ROOT = ROOT / "tmp" / "audio" / "hotfix_audio_probe"
+DEFAULT_DECODED_ROOT = DEFAULT_EXPORT_ROOT / "structured" / "Audio"
 DEFAULT_FILE_REGEX = r"(^|[\\/])hotfix.*\.pck$"
 
 
@@ -133,63 +134,122 @@ def trace_event_media(
     objects: dict[int, dict[str, Any]],
     event_id: int,
     media_ids: set[int],
+    bank_version: int | None,
 ) -> dict[str, Any] | None:
-    event_object = objects.get(event_id)
-    if not event_object or int(event_object.get("type") or 0) != 4:
-        return None
-    action_ids = hirc_event_action_ids(event_object.get("data") or b"")
-    queue: deque[int] = deque(action_ids)
-    visited: set[int] = {event_id}
-    resolved: list[int] = []
-
-    while queue:
-        object_id = queue.popleft()
-        if object_id in visited:
-            continue
-        visited.add(object_id)
-        obj = objects.get(object_id)
-        if not obj:
-            continue
-        object_type = int(obj.get("type") or 0)
-        data = obj.get("data") or b""
-        if object_id in media_ids:
-            append_unique(resolved, object_id)
-        if object_type == 3:
-            target = hirc_action_target_id(data)
-            if target is not None:
-                queue.append(target)
-        for value in u32_values(data):
-            if value in media_ids:
-                append_unique(resolved, value)
-            if value in objects and value not in visited:
-                queue.append(value)
-
-    if not resolved:
-        return None
-    visited_sorted = sorted(visited)
+    traversal = traverse_hirc_event(
+        event_id,
+        objects,
+        media_ids,
+        bank_version=bank_version,
+    )
+    resolved = traversal.get("mediaIds") or []
     return {
         "eventHash": event_id,
         "eventHashHex": hex_u32(event_id),
-        "actionIds": action_ids,
-        "visitedObjectCount": len(visited_sorted),
-        "visitedObjectSamples": visited_sorted[:80],
+        "bankVersion": bank_version,
+        "actionIds": traversal.get("actionIds") or [],
+        "visitedObjectCount": len(traversal.get("visitedObjectIds") or []),
+        "visitedObjectSamples": (traversal.get("visitedObjectIds") or [])[:80],
         "mediaIds": resolved,
+        "sourceMediaIds": traversal.get("sourceMediaIds") or [],
         "resolvedMediaCount": len(resolved),
+        "rootPlayActionCount": traversal.get("rootPlayActionCount") or 0,
+        "rootStopActionCount": traversal.get("rootStopActionCount") or 0,
+        "actionEvidence": traversal.get("actionEvidence") or [],
+        "traversalStatus": traversal.get("traversalStatus"),
+        "unresolvedNodes": traversal.get("unresolvedNodes") or [],
     }
 
 
 def known_event_names_by_hash(conv_dir: Path, export_root: Path) -> dict[int, list[str]]:
     names = collect_audio_event_names(conv_dir, export_root)
+    prior_index = export_root / "structured" / "Audio" / "CN" / "index.json"
+    if prior_index.is_file():
+        payload = json.loads(prior_index.read_text(encoding="utf-8"))
+        names.update(
+            str(value or "").strip()
+            for value in payload.get("eventNames") or []
+            if str(value or "").strip()
+        )
+    webui_events = conv_dir.parent / "audio" / "events.json"
+    if webui_events.is_file():
+        payload = json.loads(webui_events.read_text(encoding="utf-8"))
+        names.update(
+            str(row.get("name") or row.get("id") or "").strip()
+            for row in payload.get("events") or []
+            if isinstance(row, dict) and str(row.get("name") or row.get("id") or "").strip()
+        )
     by_hash: dict[int, list[str]] = defaultdict(list)
     for name in sorted(names):
         by_hash[fnv1_32(name.lower())].append(name)
     return dict(by_hash)
 
 
+def indexed_event_names_by_media(export_root: Path) -> dict[int, list[str]]:
+    """Load named Event relations from the complete current bank scan."""
+    index_path = export_root / "structured" / "Audio" / "CN" / "index.json"
+    if not index_path.is_file():
+        return {}
+    payload = json.loads(index_path.read_text(encoding="utf-8"))
+    by_media: dict[int, set[str]] = defaultdict(set)
+    for row in payload.get("events") or []:
+        if not isinstance(row, dict):
+            continue
+        try:
+            media_id = int(row.get("mediaId"))
+        except (TypeError, ValueError):
+            continue
+        name = str(row.get("eventId") or row.get("id") or "").strip()
+        if name:
+            by_media[media_id].add(name)
+    return {media_id: sorted(names) for media_id, names in by_media.items()}
+
+
+def indexed_wwise_event_hashes_by_media(export_root: Path) -> dict[int, list[int]]:
+    """Load every raw Event-object relation from the complete current scan."""
+    index_path = export_root / "structured" / "Audio" / "CN" / "index.json"
+    if not index_path.is_file():
+        return {}
+    payload = json.loads(index_path.read_text(encoding="utf-8"))
+    by_media: dict[int, set[int]] = defaultdict(set)
+    for row in payload.get("wwiseEventInventory") or []:
+        if not isinstance(row, dict):
+            continue
+        try:
+            event_hash = int(row.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            continue
+        for value in row.get("mediaIds") or []:
+            try:
+                by_media[int(value)].add(event_hash)
+            except (TypeError, ValueError):
+                continue
+    return {media_id: sorted(hashes) for media_id, hashes in by_media.items()}
+
+
+def classify_event_row(row: dict[str, Any], hotfix_media_ids: set[int]) -> str:
+    resolved = {int(value) for value in row.get("mediaIds") or []}
+    source = {int(value) for value in row.get("sourceMediaIds") or []}
+    if str(row.get("traversalStatus") or "") != "complete":
+        return "partialObjectGraph"
+    if resolved & hotfix_media_ids:
+        return "hotfixMediaPlayback"
+    if resolved:
+        return "decodedBaseMediaPlayback"
+    if source:
+        return "sourceMediaOutsideDecodedLanguage"
+    actions = row.get("actionEvidence") or []
+    if actions and not any(bool(action.get("traversed")) for action in actions):
+        return "controlOnly"
+    return "noMediaLeaf"
+
+
 def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     pcks, diagnostics = stream_hotfix_pcks(args)
     decoded_stats = decoded_media_stats(args.decoded_root)
     known_by_hash = known_event_names_by_hash(args.conv_dir, args.export_root)
+    indexed_names_by_media = indexed_event_names_by_media(args.export_root)
+    indexed_hashes_by_media = indexed_wwise_event_hashes_by_media(args.export_root)
 
     pck_rows = []
     event_rows = []
@@ -202,30 +262,40 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         media_ids.update(pck_media_ids)
         bank_payloads = iter_akpk_bank_payloads_from_bytes(raw_data, pck["fileName"])
         embedded_bank_count += len(bank_payloads)
+        pck["mediaIds"] = pck_media_ids
+        pck["bankPayloads"] = bank_payloads
         pck_rows.append(
             {
                 "index": pck_index,
                 "blockType": pck["blockType"],
                 "fileName": pck["fileName"],
                 "bytes": pck["bytes"],
+                "sha256": hashlib.sha256(raw_data).hexdigest(),
                 "mediaIdCount": len(pck_media_ids),
                 "embeddedBankCount": len(bank_payloads),
                 "mediaIds": sorted(pck_media_ids),
             }
         )
-        for bank_id, bank_payload in bank_payloads:
+    # Language Hotfix PCKs can carry Event/Action/Sound objects whose media is
+    # physically stored in hotfix_main.pck. Resolve every bank against the
+    # package-family media union while keeping each bank's HIRC object graph
+    # isolated so unrelated object-id collisions cannot create false edges.
+    for pck in pcks:
+        for bank_id, bank_payload in pck["bankPayloads"]:
+            bank_version = None
+            for tag, body in iter_bnk_sections(bank_payload):
+                if tag == b"BKHD" and len(body) >= 4:
+                    bank_version = unpack_from("<I", body, 0)[0]
+                    break
             objects = parse_hirc_objects(bank_payload)
             if not objects:
                 continue
             for event_id, event_object in sorted(objects.items()):
                 if int(event_object.get("type") or 0) != 4:
                     continue
-                traced = trace_event_media(objects, event_id, pck_media_ids)
-                if not traced:
-                    continue
+                traced = trace_event_media(objects, event_id, set(decoded_stats), bank_version)
                 known_names = known_by_hash.get(event_id, [])
-                event_rows.append(
-                    {
+                event_row = {
                         "sourcePck": pck["fileName"],
                         "bankId": bank_id,
                         "bankIdHex": hex_u32(bank_id),
@@ -239,18 +309,32 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                         ),
                         **traced,
                     }
+                event_row["hotfixMediaIds"] = sorted(
+                    set(event_row.get("mediaIds") or []) & media_ids
                 )
+                event_row["eventRole"] = classify_event_row(event_row, media_ids)
+                event_rows.append(event_row)
 
     event_rows.sort(key=lambda row: (str(row.get("sourcePck") or ""), int(row.get("eventHash") or 0)))
     events_by_media: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for row in event_rows:
-        for media_id in row.get("mediaIds") or []:
+        for media_id in row.get("hotfixMediaIds") or []:
             events_by_media[int(media_id)].append(row)
 
     media_rows = []
     for media_id in sorted(media_ids):
         events = events_by_media.get(media_id, [])
         known_names = sorted({name for event in events for name in event.get("knownEventNames") or []})
+        indexed_names = indexed_names_by_media.get(media_id, [])
+        indexed_hashes = indexed_hashes_by_media.get(media_id, [])
+        if events:
+            playback_location_status = "hotfixEventObject"
+        elif indexed_names:
+            playback_location_status = "namedEventObjectOutsideHotfix"
+        elif indexed_hashes:
+            playback_location_status = "unnamedEventObjectOutsideHotfix"
+        else:
+            playback_location_status = "unknownAcrossCompleteEventObjectInventory"
         media_rows.append(
             {
                 "mediaId": media_id,
@@ -260,11 +344,28 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                 "eventHashes": [row.get("eventHashHex") for row in events],
                 "knownEventNames": known_names,
                 "knownEventNameCount": len(known_names),
+                "scannedNamedEventNames": indexed_names,
+                "scannedNamedEventCount": len(indexed_names),
+                "scannedEventHashes": [hex_u32(value) for value in indexed_hashes],
+                "scannedEventHashCount": len(indexed_hashes),
+                "playbackLocationStatus": playback_location_status,
             }
         )
 
     media_with_events = [row for row in media_rows if int(row.get("eventHashCount") or 0) > 0]
     media_with_known_names = [row for row in media_rows if int(row.get("knownEventNameCount") or 0) > 0]
+    media_recovered_by_other_banks = [
+        row for row in media_rows
+        if row.get("playbackLocationStatus") == "namedEventObjectOutsideHotfix"
+    ]
+    media_recovered_by_unnamed_events = [
+        row for row in media_rows
+        if row.get("playbackLocationStatus") == "unnamedEventObjectOutsideHotfix"
+    ]
+    media_location_unknown = [
+        row for row in media_rows
+        if row.get("playbackLocationStatus") == "unknownAcrossCompleteEventObjectInventory"
+    ]
     decoded_total_bytes = sum(int(row.get("decodedBytes") or 0) for row in media_rows)
 
     known_event_name_candidate_count = sum(len(names) for names in known_by_hash.values())
@@ -283,18 +384,30 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "hotfixPckCount": len(pcks),
             "embeddedBankCount": embedded_bank_count,
             "mediaIdCount": len(media_ids),
-            "decodedProbeFileCount": sum(1 for row in media_rows if row.get("decodedPath")),
-            "decodedProbeTotalBytes": decoded_total_bytes,
-            "eventHashLinkCount": len(event_rows),
+            "decodedFileCount": sum(1 for row in media_rows if row.get("decodedPath")),
+            "decodedTotalBytes": decoded_total_bytes,
+            "eventObjectCount": len(event_rows),
+            "eventHashLinkCount": sum(bool(row.get("mediaIds")) for row in event_rows),
+            "knownEventObjectCount": sum(bool(row.get("knownEventNames")) for row in event_rows),
             "knownEventNameCandidateCount": known_event_name_candidate_count,
             "mediaWithEventHashCount": len(media_with_events),
             "mediaWithKnownEventNameCount": len(media_with_known_names),
             "knownEventNameHitCount": sum(len(row.get("knownEventNames") or []) for row in event_rows),
-            "unresolvedMediaIdCount": len(media_ids) - len(media_with_events),
+            "hotfixLocalUnresolvedMediaIdCount": len(media_ids) - len(media_with_events),
+            "recoveredByOtherBankNamedEventCount": len(media_recovered_by_other_banks),
+            "recoveredByOtherBankUnnamedEventCount": len(media_recovered_by_unnamed_events),
+            "unresolvedMediaIdCount": len(media_location_unknown),
+            "unknownEventRoleCounts": dict(sorted(Counter(
+                row.get("eventRole") or "unknown"
+                for row in event_rows
+                if not row.get("knownEventNames")
+            ).items())),
             "diagnostics": diagnostics,
         },
         "interpretation": [
-            "This audit parses HotfixAudio PCK bank metadata directly; it does not modify decoded audio or WebUI data.",
+            "This audit parses HotfixAudio PCK bank metadata directly and checks the maintained decoded shared-audio root; it does not modify decoded audio or WebUI data.",
+            "Language Hotfix banks are resolved against the current decoded shared/CN media inventory, while HIRC object graphs remain bank-local.",
+            "A Hotfix media id absent from Hotfix-local Event graphs is checked against every raw Event object from the complete nine-PCK bank scan before its playback location is called unknown.",
             "Event hashes without known event names are still useful Wwise references, but need a name source before category-based linking.",
             "Media ids with no event hash evidence may be direct/unreferenced media or may require broader Wwise object decoding.",
         ],
@@ -324,12 +437,16 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- hotfix PCKs: `{summary.get('hotfixPckCount')}`",
         f"- embedded banks: `{summary.get('embeddedBankCount')}`",
         f"- media ids: `{summary.get('mediaIdCount')}`",
-        f"- decoded probe files: `{summary.get('decodedProbeFileCount')}` "
-        f"({summary.get('decodedProbeTotalBytes')} bytes)",
-        f"- event hash links: `{summary.get('eventHashLinkCount')}`",
+        f"- decoded files: `{summary.get('decodedFileCount')}` "
+        f"({summary.get('decodedTotalBytes')} bytes)",
+        f"- Event objects: `{summary.get('eventObjectCount')}`",
+        f"- Event objects with media links: `{summary.get('eventHashLinkCount')}`",
+        f"- Event objects with known names: `{summary.get('knownEventObjectCount')}`",
         f"- known event-name candidates tested: `{summary.get('knownEventNameCandidateCount')}`",
         f"- media with event hash: `{summary.get('mediaWithEventHashCount')}`",
         f"- media with known event name: `{summary.get('mediaWithKnownEventNameCount')}`",
+        f"- media without a Hotfix-local Event but recovered through another scanned bank: `{summary.get('recoveredByOtherBankNamedEventCount')}`",
+        f"- media recovered only through unnamed Event hashes in another scanned bank: `{summary.get('recoveredByOtherBankUnnamedEventCount')}`",
         f"- unresolved media ids: `{summary.get('unresolvedMediaIdCount')}`",
         "",
         "## Interpretation",
@@ -343,13 +460,13 @@ def render_markdown(payload: dict[str, Any]) -> str:
             "",
             "## PCKs",
             "",
-            "| file | bytes | media ids | banks |",
-            "| --- | ---: | ---: | ---: |",
+            "| file | bytes | SHA-256 | media ids | banks |",
+            "| --- | ---: | --- | ---: | ---: |",
         ]
     )
     for row in payload.get("pcks") or []:
         lines.append(
-            f"| `{md_escape(row.get('fileName'))}` | {row.get('bytes')} | "
+            f"| `{md_escape(row.get('fileName'))}` | {row.get('bytes')} | `{row.get('sha256')}` | "
             f"{row.get('mediaIdCount')} | {row.get('embeddedBankCount')} |"
         )
 
