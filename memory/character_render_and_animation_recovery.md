@@ -562,6 +562,17 @@ NPC archetypes are imported as labeled source kits.
   array at `0x1820e0670`, not the current `AddInternalCall` function table.
   The dynamic service/registry observations from the legacy surface remain
   alternate negative evidence and must not replace the primary mapping.
+  The native factory update consumers are now bounded as CPU-only: current
+  `UpdateRegularEntity_Injected` (`0x1801eaa50`) calls `0x1810d93a0`, obsolete
+  update (`0x1801ec340`) calls `0x1810d97f0`, and additive-material update
+  (`0x1801eaeb0`) reaches `0x1810d9690`. The first two read/write the same
+  `manager[+0x38] + index*0x8c` records; their direct child calls are record
+  parsing, allocation, metadata/flag handling, and memcpy only. A bounded
+  census against the installed ComputeBuffer, ComputeShader, CommandBuffer,
+  and GPUDriven entrypoints finds no direct GPU edge. This strengthens the
+  CPU-record boundary but does not exclude a later indirect render-stage
+  consumer; the shared-record-to-GPU edge remains fail-closed. Details are in
+  `native_factory_update_consumption_census`.
   The adjacent native factory/VAT surface is also bounded: the registered
   `HGFactoryRenderManager::BatchSetFactoryVATParams_Internal` entry is
   `UnityPlayer 0x180155870` (`0x180155870..0x1801558ed`), which calls
