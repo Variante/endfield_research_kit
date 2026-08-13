@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from scripts import build_mission_pipeline_data as pipeline
 from scripts.mission_pipeline import (
+    dialog_tree_projection,
     quest_scope_projection,
     runtime_trace_projection,
     story_order_projection,
@@ -7598,6 +7599,9 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
         return index, output_root, story_root
 
     def test_publishes_hash_verified_definition_on_exact_quest_observer(self):
+        self.assertFalse(
+            hasattr(pipeline, "publish_quest_dialog_tree_definitions")
+        )
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             source = root / "assets" / "dlg_testm1_1.json"
@@ -7606,8 +7610,8 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
             digest = hashlib.sha256(source.read_bytes()).hexdigest().upper()
             index, output_root, story_root = self.fixture(root, digest)
 
-            with patch.object(pipeline, "ROOT", root):
-                result = pipeline.publish_quest_dialog_tree_definitions(
+            with patch.object(dialog_tree_projection, "ROOT", root):
+                result = dialog_tree_projection.publish_quest_dialog_tree_definitions(
                     index,
                     output_root,
                     story_root,
@@ -7654,8 +7658,8 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
             }
             mission_path.write_text(json.dumps(mission), encoding="utf-8")
 
-            with patch.object(pipeline, "ROOT", root):
-                pipeline.publish_quest_dialog_tree_definitions(
+            with patch.object(dialog_tree_projection, "ROOT", root):
+                dialog_tree_projection.publish_quest_dialog_tree_definitions(
                     index, output_root, story_root, "CN"
                 )
 
@@ -7685,12 +7689,12 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
             mission["nodes"][0]["objectives"] = []
             mission_path.write_text(json.dumps(mission), encoding="utf-8")
 
-            with patch.object(pipeline, "ROOT", root):
+            with patch.object(dialog_tree_projection, "ROOT", root):
                 with self.assertRaisesRegex(
                     ValueError,
                     r"mission=testm1.*expected=\['dlg_testm1_1'\].*actual=\[\]",
                 ):
-                    pipeline.publish_quest_dialog_tree_definitions(
+                    dialog_tree_projection.publish_quest_dialog_tree_definitions(
                         index, output_root, story_root, "CN"
                     )
 
@@ -7704,12 +7708,12 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
             actual = hashlib.sha256(source.read_bytes()).hexdigest().upper()
             index, output_root, story_root = self.fixture(root, expected)
 
-            with patch.object(pipeline, "ROOT", root):
+            with patch.object(dialog_tree_projection, "ROOT", root):
                 with self.assertRaisesRegex(
                     ValueError,
                     f"expected={expected} actual={actual}",
                 ):
-                    pipeline.publish_quest_dialog_tree_definitions(
+                    dialog_tree_projection.publish_quest_dialog_tree_definitions(
                         index,
                         output_root,
                         story_root,
