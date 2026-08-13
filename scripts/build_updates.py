@@ -19,7 +19,6 @@ import json
 import os
 import shutil
 import sqlite3
-import sys
 import time
 from collections import Counter
 from contextlib import closing
@@ -38,10 +37,6 @@ from common import (
     rel_requires_path_id_export_name,
     write_json,
 )
-
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
 
 from asset_builder.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
 from source_paths import resolve_asset_source_roots
