@@ -807,6 +807,21 @@ NPC archetypes are imported as labeled source kits.
   closes the obvious indirect-call surface for the CPU record while the
   resolver/table-dispatched kernel-7 selection and resource `+0xd0` upload
   edge remain fail-closed.
+  The current extracted `Gameplay.Beyond.patch.bytes` was also parsed through
+  the upstream IFix `FileVirtualMachineBuilder` layout: 73 interpreter methods,
+  330 external-method records, 102 interned strings, 171 field records, and 32
+  active fix targets. A raw byte scan and the structured type/method/field
+  identities contain zero occurrences of `GpuSceneDirtyUpdateCS`,
+  `UploadPerDrawParams`, `_UploadBuffer`, `_RTPerDrawParamsBuffer`,
+  `SetCustomPerDrawData`, `SetEntitySharedDataPartial`, the render-pipeline
+  setup, or explicit ComputeShader/CommandBuffer dispatch names. The only
+  relevant factory external references are `SetFactoryLodTier` and
+  `FacQuality.Apply`. This rules out treating the installed static IFix payload
+  as the missing kernel-7 producer, while built-in registration, other payloads,
+  and live `WrappersManager` slots remain runtime-only boundaries. Details are
+  recorded under `installed_ifix_gpu_identity_census` in the packed audit; the
+  staging-to-`_UploadBuffer` and channel-2/resource `+0xd0` edges stay
+  fail-closed.
   The adjacent native factory/VAT surface is also bounded: the registered
   `HGFactoryRenderManager::BatchSetFactoryVATParams_Internal` entry is
   `UnityPlayer 0x180155870` (`0x180155870..0x1801558ed`), which calls
