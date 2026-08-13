@@ -3229,24 +3229,10 @@ def levelscript_activation_control_contract(
         and row["triggerActiveDuring"] == active_phase_value
     ]
 
-    def runtime_setter_with_value(value: int | None) -> list[dict[str, Any]]:
-        if not isinstance(value, int):
-            return []
-        expected = {f"mov edx, 0x{value:x}", f"mov dl, 0x{value:x}"}
-        return [
-            row
-            for row in update_setter_calls
-            if str(
-                ((((row.get("argumentContext") or {}).get("argRegisterWrites") or {})
-                 .get("rdx") or {}).get("text") or "")
-            ).lower()
-            in expected
-        ]
-
-    active_begin_setters = runtime_setter_with_value(
+    active_begin_setters = selector_runtime_setters(
         runtime_state_values.get("ActiveBegin")
     )
-    wait_newly_setters = runtime_setter_with_value(
+    wait_newly_setters = selector_runtime_setters(
         runtime_state_values.get("WaitForSubEntityInitNewly")
     )
     first_active_enable = active_phase_enables[0] if active_phase_enables else {}
