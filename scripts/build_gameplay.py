@@ -42,7 +42,10 @@ def build_asset_refs_stage(
 ) -> int:
     """Build the Gameplay-owned asset sidecar from explicit current inputs."""
 
-    from asset_builder.gameplay_refs import build_from_paths
+    if __package__:
+        from .asset_builder.gameplay_refs import build_from_paths
+    else:
+        from asset_builder.gameplay_refs import build_from_paths
 
     language = str(language or "CN").upper()
     gameplay_path = data_root / "lang" / language / "gameplay" / "index.json"
@@ -99,7 +102,10 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
     """Run one stage in-process and return its exit code."""
     languages = list(args.languages)
     if stage == "base":
-        from gameplay_builder import base_data
+        if __package__:
+            from .gameplay_builder import base_data
+        else:
+            from gameplay_builder import base_data
 
         return int(
             base_data.main(
@@ -113,13 +119,19 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
             or 0
         )
     if stage == "projectiles":
-        from gameplay_builder import projectiles
+        if __package__:
+            from .gameplay_builder import projectiles
+        else:
+            from gameplay_builder import projectiles
 
         return int(projectiles.main([]) or 0)
     if stage == "asset-refs":
         return build_asset_refs_stage(args.default_language)
     if stage == "combat":
-        from gameplay_builder import combat_relationships
+        if __package__:
+            from .gameplay_builder import combat_relationships
+        else:
+            from gameplay_builder import combat_relationships
 
         return int(combat_relationships.main([]) or 0)
     raise ValueError(f"unknown gameplay stage: {stage}")
