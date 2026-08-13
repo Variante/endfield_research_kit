@@ -2,30 +2,12 @@
 
 import html
 import re
-from pathlib import Path
 
 try:
     from ..common import is_present
 except ImportError:
     from common import is_present
 
-from .context import (
-    EXPORT_ROOT,
-    MISSION_TIMELINE_EVIDENCE_POLICY,
-    MRA_DIR,
-    build_mission_script_condition_ownership,
-    load_mission_timeline_index,
-    mission_timeline_files,
-    recover_source_mission_timeline,
-    summarize_mission_timeline_recovery,
-    timeline_recovery_order_out,
-)
-from .mission_recovery import (
-    source_backed_call_server_callbacks_from_scene_graph,
-    source_backed_hash_terminals_from_scene_graph,
-    source_backed_scene_edges_from_scene_graph,
-    source_backed_story_call_contexts_from_scene_graph,
-)
 
 def clean_media_id_value(value: object) -> str:
     text = html.unescape(str(value or "")).strip()
@@ -227,66 +209,6 @@ def format_webui_timeline_seconds(value: float) -> str:
     remaining = seconds - minutes * 60
     return f"{minutes}:{remaining:04.1f}"
 
-def build_mission_timeline_recovery_report(
-    scene_graphs: dict[str, dict],
-    mission_flows: dict[str, dict] | None = None,
-) -> dict:
-    timeline_index, timeline_meta = load_mission_timeline_index(
-        timeline_recovery_order_out(EXPORT_ROOT)
-    )
-    recovered: list[dict] = []
-    files = mission_timeline_files(MRA_DIR, set()) if MRA_DIR.is_dir() else []
-    script_condition_ownership = build_mission_script_condition_ownership(files)
-    mission_flows = mission_flows or {}
-    for path in files:
-        mission_id = path.stem
-        recovered.append(
-            recover_source_mission_timeline(
-                path,
-                timeline_index,
-                None,
-                source_backed_scene_edges_from_scene_graph(
-                    scene_graphs.get(mission_id)
-                ),
-                source_backed_story_call_contexts_from_scene_graph(
-                    scene_graphs.get(mission_id)
-                ),
-                source_backed_hash_terminals_from_scene_graph(
-                    scene_graphs.get(mission_id)
-                ),
-                source_backed_call_server_callbacks_from_scene_graph(
-                    scene_graphs.get(mission_id)
-                ),
-                script_condition_ownership=script_condition_ownership,
-                mission_flow=mission_flows.get(mission_id),
-            )
-        )
-    return {
-        "evidencePolicy": MISSION_TIMELINE_EVIDENCE_POLICY,
-        "summary": summarize_mission_timeline_recovery(
-            recovered,
-            timeline_meta,
-            generated_by="scripts/story_builder/build.py",
-        ),
-        "missions": recovered,
-    }
-
-def safe_mission_data_filename(mission_id: str, used_names: set[str]) -> str:
-    stem = re.sub(r"[^0-9A-Za-z_.-]+", "_", str(mission_id or "")).strip("._")
-    if not stem:
-        stem = "mission"
-    name = f"{stem}.json"
-    if name.lower() not in used_names:
-        used_names.add(name.lower())
-        return name
-    index = 2
-    while True:
-        candidate = f"{stem}_{index}.json"
-        if candidate.lower() not in used_names:
-            used_names.add(candidate.lower())
-            return candidate
-        index += 1
-
 __all__ = [
     "clean_media_id_value",
     "written_path_key",
@@ -309,8 +231,6 @@ __all__ = [
     "level_host_type",
     "merge_search_text",
     "format_webui_timeline_seconds",
-    "build_mission_timeline_recovery_report",
-    "safe_mission_data_filename",
 ]
 
 

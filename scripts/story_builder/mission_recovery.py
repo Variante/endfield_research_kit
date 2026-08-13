@@ -3950,6 +3950,43 @@ def summarize(
     }
 
 
+def build_mission_timeline_recovery_report(
+    scene_graphs: dict[str, dict],
+    mission_flows: dict[str, dict] | None = None,
+    *,
+    timeline_orders: Path = DEFAULT_TIMELINE_ORDERS,
+    mission_runtime_root: Path = DEFAULT_MRA_DIR,
+) -> dict:
+    """Build the source-only mission timeline report used by Story output."""
+    timeline_index, timeline_meta = load_timeline_index(timeline_orders)
+    files = mission_files(mission_runtime_root, set()) if mission_runtime_root.is_dir() else []
+    script_condition_ownership = build_script_condition_ownership(files)
+    mission_flows = mission_flows or {}
+    recovered = [
+        recover_mission(
+            path,
+            timeline_index,
+            None,
+            source_backed_scene_edges_from_scene_graph(scene_graphs.get(path.stem)),
+            source_backed_story_call_contexts_from_scene_graph(scene_graphs.get(path.stem)),
+            source_backed_hash_terminals_from_scene_graph(scene_graphs.get(path.stem)),
+            source_backed_call_server_callbacks_from_scene_graph(scene_graphs.get(path.stem)),
+            script_condition_ownership=script_condition_ownership,
+            mission_flow=mission_flows.get(path.stem),
+        )
+        for path in files
+    ]
+    return {
+        "evidencePolicy": EVIDENCE_POLICY,
+        "summary": summarize(
+            recovered,
+            timeline_meta,
+            generated_by="scripts/story_builder/build.py",
+        ),
+        "missions": recovered,
+    }
+
+
 def render_markdown(payload: dict) -> str:
     summary = payload["summary"]
     lines = [

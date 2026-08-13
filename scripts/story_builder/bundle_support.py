@@ -188,6 +188,24 @@ def preview(text: str, n: int = 60) -> str:
     return text[:n]
 
 
+def safe_mission_data_filename(mission_id: str, used_names: set[str]) -> str:
+    """Allocate a stable, filesystem-safe mission JSON filename."""
+    stem = re.sub(r"[^0-9A-Za-z_.-]+", "_", str(mission_id or "")).strip("._")
+    if not stem:
+        stem = "mission"
+    name = f"{stem}.json"
+    if name.lower() not in used_names:
+        used_names.add(name.lower())
+        return name
+    index = 2
+    while True:
+        candidate = f"{stem}_{index}.json"
+        if candidate.lower() not in used_names:
+            used_names.add(candidate.lower())
+            return candidate
+        index += 1
+
+
 __all__ = [
     "discover_languages",
     "normalize_language_selection",
@@ -201,4 +219,5 @@ __all__ = [
     "scene_sort_value",
     "slot_misc",
     "preview",
+    "safe_mission_data_filename",
 ]
