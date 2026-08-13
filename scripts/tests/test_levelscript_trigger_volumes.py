@@ -8,7 +8,9 @@ from scripts.story_builder.levelscript_binary import (
     _find_final_trigger_volume_map,
     decode_levelscript_binary_summary,
     decode_levelscript_encounter_module_target,
-    find_levelscript_active_shape_candidates,
+)
+from scripts.story_builder.codecs.levelscript.active_shapes import (
+    find_active_shape_candidates,
 )
 
 
@@ -129,7 +131,7 @@ class LevelScriptTriggerVolumeTests(unittest.TestCase):
     def test_active_shape_candidate_uses_schema_and_adjacent_typed_fields(self) -> None:
         encoded = self._active_shape_list()
         payload = b"action-tail" + encoded + b"later-members"
-        candidates = find_levelscript_active_shape_candidates(
+        candidates = find_active_shape_candidates(
             payload,
             len(b"action-tail"),
             len(payload),
@@ -143,14 +145,14 @@ class LevelScriptTriggerVolumeTests(unittest.TestCase):
         invalid[4] = 4
         self.assertEqual(
             [],
-            find_levelscript_active_shape_candidates(bytes(invalid), 0, len(invalid)),
+            find_active_shape_candidates(bytes(invalid), 0, len(invalid)),
         )
 
         encoded = self._active_shape_list()
         ambiguous = encoded + b"separator" + encoded
         self.assertEqual(
             2,
-            len(find_levelscript_active_shape_candidates(
+            len(find_active_shape_candidates(
                 ambiguous,
                 0,
                 len(ambiguous),
