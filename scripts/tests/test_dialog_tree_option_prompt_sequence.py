@@ -1,7 +1,7 @@
 import unittest
 
 from scripts.story_builder.dialog_tree import _dialog_tree_node_reaches
-from scripts.story_builder.language_bundle import (
+from scripts.story_builder.option_route_projection import (
     dialog_tree_option_nodes_form_sequence,
     dialog_tree_option_prompt_sequence,
 )
