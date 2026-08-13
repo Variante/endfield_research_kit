@@ -1630,7 +1630,7 @@
           "flags": "0x0096",
           "iflags": "0x0000"
         },
-        "gameassembly_body": {
+              "gameassembly_body": {
           "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
           "code_registration": "0x18b9217d0",
           "native_pointer": "0x1841e1670",
@@ -1663,12 +1663,27 @@
             "patch_key": "0x7301",
             "unpatched_path": "writes controller +0x38 from the bool and returns",
             "patched_path": "IFix.WrappersManagerImpl.GetPatch(0x7301) -> __Gen_Wrap_* at 0x1866c2b40 with (patchObject, controller, forward, r9d=0)",
-            "direct_calls": [
-              "0x182efe6c0 IFix.WrappersManagerImpl.IsPatched",
-              "0x1871c7e18 IFix.WrappersManagerImpl.GetPatch",
-              "0x1866c2b40 IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_*"
-            ]
-          },
+                "direct_calls": [
+                  "0x182efe6c0 IFix.WrappersManagerImpl.IsPatched",
+                  "0x1871c7e18 IFix.WrappersManagerImpl.GetPatch",
+                  "0x1866c2b40 IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_*"
+                ],
+                "dynamic_wrapper_range": "0x1866c2b40..0x1866c2c1b",
+                "dynamic_wrapper_contract": {
+                  "wrapper_object_fields": {
+                    "+0x10": "dynamic method-table/interpreter object used by final invocation",
+                    "+0x18": "dynamic method index loaded into interpreter call",
+                    "+0x20": "optional patch context/table pointer"
+                  },
+                  "interpreter_helpers": [
+                    "0x189e07448 initializes an IFix call frame from the wrapper object",
+                    "0x189e077cc writes argument-frame metadata/length",
+                    "0x189e076a8 writes the bool argument into the frame",
+                    "0x189e124c4 selects the dynamic method table entry and calls 0x189dfaad8"
+                  ],
+                  "gpu_edge_scan": "The visible wrapper/interpreter bridge performs IFix frame construction and dynamic method dispatch only; it contains no direct ComputeBuffer, CommandBuffer, GPUDriven, or factory-record copy call. The actual patch bytecode/method body is still outside the static native call graph."
+                }
+              },
           "paired_flag_method": {
             "method": "SetGarbageCollectDirty",
             "metadata_method_index": 29078,
