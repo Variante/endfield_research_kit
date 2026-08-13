@@ -256,14 +256,14 @@ python .\scripts\verify_export_freshness.py %FRESHNESS_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
 if "%ANIMESTUDIO_OBJECT_INDEX%"=="0" goto :refresh_evidence
-python .\scripts\story_builder\animestudio_story_guide.py
+python -m scripts.story_builder.animestudio_story_guide
 if errorlevel 1 exit /b %errorlevel%
 
 :refresh_evidence
 python -m scripts.story_builder.refresh_evidence
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\story_builder\build.py --languages CN --default-language CN %STORY_BUILD_ARGS%
+python -m scripts.story_builder.build --languages CN --default-language CN %STORY_BUILD_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
 if "%STORY_ONLY%"=="1" (
@@ -286,7 +286,7 @@ exit /b 0
 
 :build_mission_pipeline_data_only
 echo [export.bat] Reusing current generated Story bundles and evidence.
-python .\scripts\story_builder\protocol_registry.py --ensure-current
+python -m scripts.story_builder.protocol_registry --ensure-current
 if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\build_mission_pipeline_data.py

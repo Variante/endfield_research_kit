@@ -56,7 +56,6 @@ from __future__ import annotations
 
 import argparse
 import re
-import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,20 +63,25 @@ from typing import Any, Iterator
 
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts"))
-
-from common import (  # noqa: E402
-    md_escape,
-    read_json,
-    rel_path,
-    safe_key,
-    write_report_json,
-    write_text_if_changed,
-)
-from story_builder.mission_assets import (  # noqa: E402
-    select_complete_mission_runtime_root,
-)
+try:
+    from common import (
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+except ModuleNotFoundError:
+    from scripts.common import (
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+from .mission_assets import select_complete_mission_runtime_root
 
 
 SCHEMA = "missionDependencyGraph.v1"

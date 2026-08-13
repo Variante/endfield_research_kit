@@ -2,49 +2,28 @@ from __future__ import annotations
 
 import argparse
 import shutil
-import sys
 import time
 from pathlib import Path
 
-if __package__ in (None, ""):
-    webui_script_dir = Path(__file__).resolve().parents[1]
-    if str(webui_script_dir) not in sys.path:
-        sys.path.insert(0, str(webui_script_dir))
-    from story_builder.bundle_support import (
-        discover_languages,
-        language_info,
-        normalize_language_selection,
-    )
-    from story_builder.context import (
-        BUILD_PROFILES,
-        DEFAULT_BUILD_PROFILE,
-        DEFAULT_LANGUAGE,
-        LANG_DIR,
-        OUT_DIR,
-        write_json,
-    )
-    from story_builder.language_bundle import (
-        build_language_bundle,
-        load_reused_reference_stats,
-    )
-    from story_builder.timeline_action_evidence import build_timeline_action_evidence_for_build
-    from story_builder.timeline_recovery import (
-        TIMELINE_RECOVERY_MODES,
-        ensure_timeline_orders_current,
-    )
-else:
-    from .bundle_support import discover_languages, language_info, normalize_language_selection
-    from .context import (
-        BUILD_PROFILES,
-        DEFAULT_BUILD_PROFILE,
-        DEFAULT_LANGUAGE,
-        LANG_DIR,
-        OUT_DIR,
-        write_json,
-    )
-    from .language_bundle import build_language_bundle, load_reused_reference_stats
-    from .timeline_action_evidence import build_timeline_action_evidence_for_build
-    from .timeline_recovery import TIMELINE_RECOVERY_MODES, ensure_timeline_orders_current
+from .bundle_support import (
+    discover_languages,
+    language_info,
+    normalize_language_selection,
+)
+from .context import (
+    BUILD_PROFILES,
+    DEFAULT_BUILD_PROFILE,
+    DEFAULT_LANGUAGE,
+    LANG_DIR,
+    OUT_DIR,
+    write_json,
+)
+from .language_bundle import build_language_bundle, load_reused_reference_stats
+from .timeline_action_evidence import build_timeline_action_evidence_for_build
+from .timeline_recovery import (
+    TIMELINE_RECOVERY_MODES,
+    ensure_timeline_orders_current,
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

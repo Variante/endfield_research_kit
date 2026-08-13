@@ -17,18 +17,21 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT / "scripts"))
-
-from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
-from story_builder.native_contracts.cinematic_queue import (  # noqa: E402
+try:
+    from common import ROOT, md_escape, write_report_json, write_text_if_changed
+except ModuleNotFoundError:
+    from scripts.common import (
+        ROOT,
+        md_escape,
+        write_report_json,
+        write_text_if_changed,
+    )
+from .native_contracts.cinematic_queue import (
     DEFAULT_CONTRACT as DEFAULT_CINEMATIC_CONTRACT,
     load_cinematic_queue_contract,
 )
