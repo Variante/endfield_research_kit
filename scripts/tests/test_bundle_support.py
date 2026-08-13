@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ast
+import inspect
 import unittest
 
 from scripts.story_builder import bundle_support
@@ -10,6 +12,23 @@ class BundleSupportTests(unittest.TestCase):
         from scripts.story_builder import language_bundle
 
         self.assertIs(language_bundle.load_json_path, bundle_support.load_json_path)
+
+    def test_language_bundle_has_no_internal_manual_option_override_path(self) -> None:
+        from scripts.story_builder import language_bundle
+
+        tree = ast.parse(inspect.getsource(language_bundle))
+        names = {
+            node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
+        }
+        strings = {
+            node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+        self.assertNotIn("_manual_option_group_override", names)
+        self.assertNotIn("_MANUAL_OPTION_OVERRIDES_PATH", names)
+        self.assertNotIn("manual_option_overrides.json", strings)
+        self.assertNotIn("manualOptionResponseOverride", strings)
 
     def test_language_selection_normalizes_and_rejects_unknown_codes(self) -> None:
         available = ["CN", "EN", "JP"]
