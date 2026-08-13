@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import BUCKET_ORDER, SCORE_WEIGHTS
-from common import (
+from .foundation import (
     md_escape,
     safe_key,
     write_report_json,

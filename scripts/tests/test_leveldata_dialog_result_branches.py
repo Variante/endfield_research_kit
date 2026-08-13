@@ -9,7 +9,8 @@ from unittest.mock import patch
 
 from scripts.common import read_json
 from scripts.story_builder.levelscript_binary import decode_levelscript_record_payload
-from scripts.story_builder.source_gap import evidence as gap_queue
+from scripts.story_builder.source_gap import data as gap_data
+from scripts.story_builder.source_gap import offline_evidence as gap_evidence
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -105,7 +106,7 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
         )
 
     def test_current_binary_branch_context_validates(self):
-        index, status = gap_queue.build_offline_exhaustion_index(
+        index, status = gap_evidence.build_offline_exhaustion_index(
             self.partial_report,
             self.table_root,
         )
@@ -229,16 +230,16 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
 
     def test_wrong_misc_definition_root_fails_with_exact_diagnostic(self):
         declaration = copy.deepcopy(
-            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            gap_data.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
                 "misc_dlg_gm02m1_1d5"
             ]
         )
         declaration["definitionRootKey"] = "dlg_gm02m1_missing"
         with patch.dict(
-            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
+            gap_data.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
             {"misc_dlg_gm02m1_1d5": declaration},
         ):
-            index, status = gap_queue.build_offline_exhaustion_index(
+            index, status = gap_evidence.build_offline_exhaustion_index(
                 self.partial_report,
                 self.table_root,
             )
@@ -266,7 +267,7 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
 
     def test_changed_getter_path_fails_with_actionable_diagnostic(self):
         declaration = copy.deepcopy(
-            gap_queue.OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS[
+            gap_data.OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS[
                 "gm01m24"
             ]
         )
@@ -283,10 +284,10 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
             declaration["levelScriptFile"] = str(changed)
             declaration["levelScriptSha256"] = hashlib.sha256(data).hexdigest().upper()
             with patch.dict(
-                gap_queue.OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS,
+                gap_data.OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS,
                 {"gm01m24": declaration},
             ):
-                index, status = gap_queue.build_offline_exhaustion_index(
+                index, status = gap_evidence.build_offline_exhaustion_index(
                     self.partial_report,
                     self.table_root,
                 )
@@ -311,7 +312,7 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
 
     def test_nonempty_gm01m5_action_list_fails_with_exact_diagnostic(self):
         declaration = copy.deepcopy(
-            gap_queue.OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS[
+            gap_data.OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS[
                 "gm01m5"
             ]
         )
@@ -328,10 +329,10 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
                 changed_data
             ).hexdigest().upper()
             with patch.dict(
-                gap_queue.OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS,
+                gap_data.OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS,
                 {"gm01m5": declaration},
             ):
-                index, status = gap_queue.build_offline_exhaustion_index(
+                index, status = gap_evidence.build_offline_exhaustion_index(
                     self.partial_report,
                     self.table_root,
                 )
@@ -362,7 +363,7 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
 
     def test_changed_terminal_finish_id_fails_with_exact_route_diagnostic(self):
         declaration = copy.deepcopy(
-            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            gap_data.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
                 "dlg_gm01m25_2"
             ]
         )
@@ -396,10 +397,10 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
                 changed.read_bytes()
             ).hexdigest().upper()
             with patch.dict(
-                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS,
+                gap_data.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS,
                 {"dlg_gm01m25_2": declaration},
             ):
-                index, status = gap_queue.build_offline_exhaustion_index(
+                index, status = gap_evidence.build_offline_exhaustion_index(
                     self.partial_report,
                     self.table_root,
                 )
