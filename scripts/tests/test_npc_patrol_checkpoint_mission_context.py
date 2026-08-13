@@ -6,6 +6,9 @@ import struct
 import unittest
 
 from scripts.story_builder.context import ROOT
+from scripts.story_builder.codecs.levelscript.npc_patrol_start import (
+    decode_npc_patrol_start_action,
+)
 from scripts.story_builder.level_bindings import (
     LevelDataNpcPatrolDecodeError,
     build_leveldata_npc_patrol_radio_story_contexts,
@@ -105,6 +108,14 @@ class NpcPatrolCheckpointMissionContextTests(unittest.TestCase):
         self.assertEqual(10030, decoded["patrolId"])
         self.assertEqual("robot", decoded["targetNpc"]["path"])
         self.assertEqual("npc-patrol-start-four-field-exact-eof", decoded["payloadShape"])
+        self.assertEqual(
+            decoded,
+            decode_npc_patrol_start_action(payload, (0x031E, 0x0C)),
+        )
+        self.assertEqual(
+            {},
+            decode_npc_patrol_start_action(payload, (0x031E, 0x0B)),
+        )
 
         rejected = decode_levelscript_record_payload(
             payload + b"\x00",
