@@ -569,8 +569,13 @@ NPC archetypes are imported as labeled source kits.
   `0x184e17e9e`). `CreateWrapper`/`CreateDelegate` construct objects but do not
   embed either gate literal. Thus `0x7301`/`0x7302` are confirmed runtime array
   indices, not implementation IDs; the table's slot contents and their
-  registration caller remain open. The ABI and negative GPU scan are recorded
-  under `wrappers_manager_runtime_table_abi` in the packed audit.
+  registration caller remain open. A full direct-E8 census found no static
+  caller for `InitWrapperArray` or `CreateWrapper`, only one interpreter caller
+  for `CreateDelegate`, while `GetPatch`/`IsPatched` are shared by 60,011 /
+  58,670 wrapper gates. This reinforces that slot population is indirect or
+  registration-driven rather than a recoverable static call chain. The ABI,
+  callsite census, and negative GPU scan are recorded under
+  `wrappers_manager_runtime_table_abi` in the packed audit.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
