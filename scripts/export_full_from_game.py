@@ -1343,11 +1343,17 @@ def normalized_source_leaf(value: Any) -> str:
     return source.rsplit("/", 1)[-1].casefold() if source else ""
 
 
-def texture2d_no_payload_log_indexes(log_issues: dict[str, Any] | None) -> tuple[set[tuple[int, int, str]], set[tuple[int, int]]]:
+def expected_missing_output_log_indexes(
+    log_issues: dict[str, Any] | None,
+    *,
+    record_key: str,
+    sample_key: str,
+    allowed_reasons: set[str] | frozenset[str],
+) -> tuple[set[tuple[int, int, str]], set[tuple[int, int]]]:
     exact_keys: set[tuple[int, int, str]] = set()
     fallback_keys: set[tuple[int, int]] = set()
-    for sample in (log_issues or {}).get("texture2d_no_output_records") or (log_issues or {}).get("texture2d_no_output_samples") or []:
-        if sample.get("reason") not in ANIMESTUDIO_TEXTURE2D_NO_PAYLOAD_REASONS:
+    for sample in (log_issues or {}).get(record_key) or (log_issues or {}).get(sample_key) or []:
+        if sample.get("reason") not in allowed_reasons:
             continue
         path_id = parse_log_int(sample.get("PathID"))
         source_offset = parse_log_int(sample.get("SourceOffset"))
@@ -1366,46 +1372,7 @@ def texture2d_no_payload_log_indexes(log_issues: dict[str, Any] | None) -> tuple
     return exact_keys, fallback_keys
 
 
-def texture2d_record_matches_no_payload_log(
-    record: dict[str, Any],
-    exact_keys: set[tuple[int, int, str]],
-    fallback_keys: set[tuple[int, int]],
-) -> bool:
-    entry = record["entry"]
-    path_id = parse_log_int(entry.get("PathID"))
-    source_offset = normalized_asset_offset(entry.get("Offset"))
-    if path_id is None or source_offset < 0:
-        return False
-    source_leaf = normalized_source_leaf(entry.get("Source"))
-    if source_leaf and (path_id, source_offset, source_leaf) in exact_keys:
-        return True
-    return (path_id, source_offset) in fallback_keys
-
-
-def mesh_expected_no_output_log_indexes(log_issues: dict[str, Any] | None) -> tuple[set[tuple[int, int, str]], set[tuple[int, int]]]:
-    exact_keys: set[tuple[int, int, str]] = set()
-    fallback_keys: set[tuple[int, int]] = set()
-    for sample in (log_issues or {}).get("mesh_no_output_records") or (log_issues or {}).get("mesh_no_output_samples") or []:
-        if sample.get("reason") not in ANIMESTUDIO_MESH_EXPECTED_NO_OUTPUT_REASONS:
-            continue
-        path_id = parse_log_int(sample.get("PathID"))
-        source_offset = parse_log_int(sample.get("SourceOffset"))
-        if path_id is None or source_offset is None or source_offset < 0:
-            continue
-        source_names = {
-            normalized_source_leaf(sample.get("SourceOriginalPath")),
-            normalized_source_leaf(sample.get("SourceFile")),
-        }
-        source_names.discard("")
-        if source_names:
-            for source_name in source_names:
-                exact_keys.add((path_id, source_offset, source_name))
-        else:
-            fallback_keys.add((path_id, source_offset))
-    return exact_keys, fallback_keys
-
-
-def mesh_record_matches_expected_no_output_log(
+def record_matches_expected_missing_output_log(
     record: dict[str, Any],
     exact_keys: set[tuple[int, int, str]],
     fallback_keys: set[tuple[int, int]],
@@ -1593,19 +1560,29 @@ def build_animestudio_asset_output_status(
     animator_no_output_samples = list((log_issues or {}).get("animator_no_output_samples") or [])[:ANIMESTUDIO_LOG_SAMPLE_LIMIT]
     texture2d_no_payload_record_ids: set[int] = set()
     if type_name == "Texture2D" and missing_records and texture2d_no_payload_count:
-        exact_log_keys, fallback_log_keys = texture2d_no_payload_log_indexes(log_issues)
+        exact_log_keys, fallback_log_keys = expected_missing_output_log_indexes(
+            log_issues,
+            record_key="texture2d_no_output_records",
+            sample_key="texture2d_no_output_samples",
+            allowed_reasons=ANIMESTUDIO_TEXTURE2D_NO_PAYLOAD_REASONS,
+        )
         texture2d_no_payload_record_ids = {
             id(record)
             for record in missing_records
-            if texture2d_record_matches_no_payload_log(record, exact_log_keys, fallback_log_keys)
+            if record_matches_expected_missing_output_log(record, exact_log_keys, fallback_log_keys)
         }
     mesh_expected_no_output_record_ids: set[int] = set()
     if type_name == "Mesh" and missing_records and mesh_expected_no_output_count:
-        exact_log_keys, fallback_log_keys = mesh_expected_no_output_log_indexes(log_issues)
+        exact_log_keys, fallback_log_keys = expected_missing_output_log_indexes(
+            log_issues,
+            record_key="mesh_no_output_records",
+            sample_key="mesh_no_output_samples",
+            allowed_reasons=ANIMESTUDIO_MESH_EXPECTED_NO_OUTPUT_REASONS,
+        )
         mesh_expected_no_output_record_ids = {
             id(record)
             for record in missing_records
-            if mesh_record_matches_expected_no_output_log(record, exact_log_keys, fallback_log_keys)
+            if record_matches_expected_missing_output_log(record, exact_log_keys, fallback_log_keys)
         }
     classified_no_payload_missing_output_count = 0
     if type_name == "Texture2D":

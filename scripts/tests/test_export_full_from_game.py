@@ -21,9 +21,11 @@ from scripts.export_full_from_game import (
     build_animestudio_object_index_cli_provenance,
     build_animestudio_stage_signature,
     collect_source_sizes,
+    expected_missing_output_log_indexes,
     invalidate_animestudio_object_index_commit_marker,
     load_animestudio_object_index_summary,
     merge_animestudio_object_index_for_source,
+    record_matches_expected_missing_output_log,
     parse_world_scene_chunks,
     run_animestudio_stage,
     should_merge_animestudio_type_jobs,
@@ -76,6 +78,49 @@ def object_index_stage_signature(
         "items": [],
     }
     return {"sha256": stable_hash(payload), "payload": payload}
+
+
+class ExpectedMissingOutputLogTests(unittest.TestCase):
+    def test_shared_log_matcher_prefers_exact_source_then_fallback(self) -> None:
+        exact, fallback = expected_missing_output_log_indexes(
+            {
+                "records": [
+                    {
+                        "reason": "expected",
+                        "PathID": "0x10",
+                        "SourceOffset": "32",
+                        "SourceFile": "folder/source.ab",
+                    },
+                    {
+                        "reason": "expected",
+                        "PathID": 17,
+                        "SourceOffset": 33,
+                    },
+                    {"reason": "unexpected", "PathID": 18, "SourceOffset": 34},
+                ],
+            },
+            record_key="records",
+            sample_key="samples",
+            allowed_reasons=frozenset({"expected"}),
+        )
+
+        self.assertEqual(exact, {(16, 32, "source.ab")})
+        self.assertEqual(fallback, {(17, 33)})
+        self.assertTrue(record_matches_expected_missing_output_log(
+            {"entry": {"PathID": 16, "Offset": 32, "Source": "SOURCE.AB"}},
+            exact,
+            fallback,
+        ))
+        self.assertTrue(record_matches_expected_missing_output_log(
+            {"entry": {"PathID": 17, "Offset": 33}},
+            exact,
+            fallback,
+        ))
+        self.assertFalse(record_matches_expected_missing_output_log(
+            {"entry": {"PathID": 16, "Offset": 32, "Source": "other.ab"}},
+            exact,
+            fallback,
+        ))
 
 
 class SourceFreshnessFingerprintTests(unittest.TestCase):
