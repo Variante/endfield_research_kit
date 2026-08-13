@@ -14,6 +14,7 @@ from scripts import build_mission_pipeline_data as pipeline
 from scripts.mission_pipeline import (
     dialog_tree_projection,
     lua_story_projection,
+    mission_context_projection,
     offline_shell_projection,
     offline_recovery_projection,
     quest_fork_arm_projection,
