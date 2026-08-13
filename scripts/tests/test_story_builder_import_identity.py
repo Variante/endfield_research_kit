@@ -25,6 +25,7 @@ MODULES = (
     "lua_consumer_references",
     "levelscript_binary",
     "level_bindings",
+    "language_bundle",
     "mission_dependency_graph",
     "mission_flow",
     "mission_recovery",
