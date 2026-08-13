@@ -8,7 +8,6 @@ import re as _radio_cont_re
 import shutil
 import sys
 import time
-import unicodedata
 from collections import Counter, defaultdict
 from difflib import SequenceMatcher
 from functools import lru_cache as _radio_cont_lru_cache
@@ -194,6 +193,18 @@ from .dialog_timeline_projection import (
     attach_duplicate_timestamp_warning,
     attach_timeline_action_evidence,
     attach_timeline_timestamp_regression_warning,
+)
+from .cutscene_subtitle_projection import (
+    build_cutscene_texttable_line,
+    build_fallback_track_line,
+    line_has_explicit_gender_switch,
+    normalize_subtitle_variant_text,
+    subtitle_alternate_line_debug,
+    subtitle_candidate_rank,
+    subtitle_clip_debug,
+    subtitle_slot_key,
+    subtitle_start_key,
+    subtitle_tracks_for_language,
 )
 from .bundle_primitives import (
     brace_text,
@@ -6404,38 +6415,6 @@ def build_language_bundle(
             if rest and re.fullmatch(r"d\d+(?:_.*)?", rest):
                 return candidate
         return normalized
-    def subtitle_locale_tokens(code: str) -> tuple[str, ...]:
-        return {
-            "CN": ("CHI", "CN"),
-            "EN": ("ENG", "EN"),
-            "JP": ("JP",),
-            "KR": ("KR", "KO"),
-            "TC": ("CHT", "TC"),
-            "MX": ("MX", "ES"),
-            "BR": ("BR", "PT"),
-        }.get(str(code or "").upper(), (str(code or "").upper(),))
-    def subtitle_track_language_score(track: dict) -> int:
-        name = str(track.get("parentName") or "").upper()
-        desired = subtitle_locale_tokens(language_code)
-        def first_desired_index(tokens: list[str]) -> int | None:
-            matches = [
-                desired.index(token)
-                for token in tokens
-                if token in desired
-            ]
-            return min(matches) if matches else None
-        env_tokens = re.findall(r"_ENV_([A-Z]+)", name)
-        audio_tokens = re.findall(r"_AU_([A-Z]+)", name)
-        if env_tokens:
-            env_index = first_desired_index(env_tokens)
-            if env_index is None:
-                return 100
-            audio_index = first_desired_index(audio_tokens)
-            return env_index if audio_index is not None else 10 + env_index
-        if audio_tokens:
-            audio_index = first_desired_index(audio_tokens)
-            return 20 + audio_index if audio_index is not None else 80
-        return 50
     # The CN e0m0_2 playable has two Chinese-looking subtitle families. The
     # untagged F/M tracks match observed playback; the AU_CHI_ENV_CHI tracks are
     # a different localized/audio variant with incompatible mid-scene lines.
@@ -6447,31 +6426,6 @@ def build_language_bundle(
             },
         },
     }
-    def subtitle_tracks_for_language(cutscene_key: str, tracks: list[dict]) -> list[dict]:
-        parent_override = (
-            cutscene_subtitle_parent_overrides
-            .get(str(language_code or "").upper(), {})
-            .get(cutscene_key)
-        )
-        if parent_override:
-            selected = [
-                track for track in tracks
-                if str(track.get("parentName") or "") in parent_override
-            ]
-            if selected:
-                return selected
-        scored = [
-            (subtitle_track_language_score(track), track)
-            for track in tracks
-            if isinstance(track, dict)
-        ]
-        if not scored:
-            return []
-        best_score = min(score for score, _track in scored)
-        return [
-            track for score, track in scored
-            if score == best_score
-        ]
     def cutscene_text_lines(
         asset_keys: set[str],
         subtitle_tracks_by_key: dict[str, list[dict]],
@@ -6496,182 +6450,40 @@ def build_language_bundle(
             matched_rows.append((row_key, text_entry, match))
         grouped: dict[str, list[tuple[tuple[int, int, int, str, str], dict]]] = defaultdict(list)
         lines_by_row_id: dict[str, dict] = {}
-        def build_cutscene_texttable_line(
-            row_key: str,
-            text_entry,
-            match: re.Match[str],
-            cutscene_key: str,
-            raw_group: str,
-        ) -> dict:
-            line_num = int(match.group("line"))
-            sub = match.group("sub") or ""
-            gender = (match.group("gender") or "").strip("_").upper()
-            cid = f"{match.group('line')}{sub}{('_' + gender.lower()) if gender else ''}"
-            text = t(text_entry.get("id") if isinstance(text_entry, dict) else text_entry)
-            line = {
-                "id": row_key,
-                "cid": cid,
-                "text": text,
-                "_debug": {
-                    **source_ref(
-                        "TextTable",
-                        row_key,
-                        pick_fields(text_entry, "id", "text") if isinstance(text_entry, dict) else {"value": text_entry},
-                        cutsceneKey=cutscene_key,
-                        textGroup=raw_group,
-                        line=line_num,
-                    ),
-                    "fields": {
-                        "text": text_trace("TextTable", row_key, "id", text_entry),
-                    },
-                },
-            }
-            if raw_group != cutscene_key:
-                line["textGroup"] = raw_group
-            if sub:
-                line["sub"] = sub
-                line["_debug"]["source"]["sub"] = sub
-            if gender:
-                line["gender"] = gender
-                line["_debug"]["source"]["gender"] = gender
-            return line
         def remember_cutscene_line_usage(line: dict) -> None:
             remember_texttable_row_usage(line.get("id"))
             for duplicate in line.get("mergedDuplicateRows") or []:
                 if isinstance(duplicate, dict):
                     remember_texttable_row_usage(duplicate.get("id"))
-        def subtitle_start_key(value) -> float:
-            return round(float(value), 6) if isinstance(value, (int, float)) else 0.0
-        def subtitle_slot_key(ref: dict, timing_index: int) -> tuple[float, float, int]:
-            duration = ref.get("duration")
-            return (
-                subtitle_start_key(ref.get("start")),
-                round(float(duration), 6) if isinstance(duration, (int, float)) else 0.0,
-                timing_index,
-            )
-        def subtitle_clip_debug(track: dict, ref: dict) -> dict:
-            debug = {
-                "source": "animeSubtitleTrack",
-                "file": track.get("file"),
-                "parent": track.get("parentName"),
-                "parentFile": track.get("parentFile"),
-                "textId": ref.get("textId"),
-                "start": ref.get("start"),
-                "duration": ref.get("duration"),
-                "clipIndex": ref.get("clipIndex"),
-                "assetPathId": ref.get("assetPathId"),
-            }
-            if ref.get("displayName"):
-                debug["displayName"] = ref.get("displayName")
-            if track.get("gender"):
-                debug["assetGender"] = track["gender"]
-            if track.get("pathId") not in (None, ""):
-                debug["trackPathId"] = track["pathId"]
-            if track.get("parentPathId") not in (None, ""):
-                debug["parentPathId"] = track["parentPathId"]
-            return debug
-        def line_matches_cutscene_key(line: dict, cutscene_key: str) -> bool:
-            row_id = str(line.get("id") or "")
-            if row_id.startswith(f"{cutscene_key}_"):
-                return True
-            if str(line.get("textGroup") or "") == cutscene_key:
-                return True
-            debug = line.get("_debug") if isinstance(line.get("_debug"), dict) else {}
-            if str(debug.get("cutsceneKey") or "") == cutscene_key:
-                return True
-            source = debug.get("source") if isinstance(debug.get("source"), dict) else {}
-            return str(source.get("textGroup") or "") == cutscene_key
-        def subtitle_gender_rank(gender: str) -> int:
-            return {"": 0, "F": 1, "M": 2}.get(str(gender or "").upper(), 3)
-        def line_has_explicit_gender_switch(line: dict) -> bool:
-            text = str(line.get("text") or "")
-            return "{F}" in text or "{M}" in text
-        def normalize_subtitle_variant_text(text: object) -> str:
-            source = str(text or "")
-            source = re.sub(r"\{[FM]\}", "", source)
-            return "".join(
-                ch.casefold()
-                for ch in source
-                if not ch.isspace() and not unicodedata.category(ch).startswith("P")
-            )
-        def subtitle_candidate_rank(cutscene_key: str, candidate: dict) -> tuple[int, int, int, int, str]:
-            line = candidate.get("line") if isinstance(candidate.get("line"), dict) else {}
-            return (
-                0 if line_has_explicit_gender_switch(line) else 1,
-                0 if line_matches_cutscene_key(line, cutscene_key) else 1,
-                subtitle_gender_rank(candidate.get("gender") or ""),
-                int(candidate.get("clipIndex") or 0),
-                str(candidate.get("rowKey") or ""),
-            )
-        def subtitle_alternate_line_debug(candidate: dict) -> dict:
-            line = candidate.get("line") if isinstance(candidate.get("line"), dict) else {}
-            out = {
-                "id": line.get("id"),
-                "cid": line.get("cid"),
-                "text": line.get("text"),
-                "track": candidate.get("trackDebug"),
-            }
-            if line.get("textGroup"):
-                out["textGroup"] = line.get("textGroup")
-            if candidate.get("gender"):
-                out["assetGender"] = candidate.get("gender")
-            return out
-        def build_fallback_track_line(cutscene_key: str, row_key: str, ref: dict) -> dict:
-            match = CUTSCENE_TEXT_ROW_RE.match(row_key)
-            text_entry = text_table.get(row_key)
-            text = t(text_entry.get("id") if isinstance(text_entry, dict) else text_entry) if text_entry else ""
-            source = source_ref(
-                "AnimeStudioSubtitleTrack",
-                row_key,
-                {"textId": row_key},
-                cutsceneKey=cutscene_key,
-            )
-            if match:
-                raw_group = match.group("group")
-                line_num = int(match.group("line"))
-                sub = match.group("sub") or ""
-                gender = (match.group("gender") or "").strip("_").upper()
-                source["source"]["textGroup"] = raw_group
-                source["source"]["line"] = line_num
-                if sub:
-                    source["source"]["sub"] = sub
-                if gender:
-                    source["source"]["gender"] = gender
-                cid = f"{match.group('line')}{sub}{('_' + gender.lower()) if gender else ''}"
-            else:
-                cid = str(ref.get("clipIndex") or "")
-            return {
-                "id": row_key,
-                "cid": cid,
-                "text": text,
-                "_debug": {
-                    **source,
-                    "fields": {
-                        "text": text_trace("TextTable", row_key, "id", text_entry) if text_entry else {
-                            "table": "TextTable",
-                            "rowId": row_key,
-                            "field": "id",
-                            "raw": None,
-                            "lookup": [],
-                            "text": "",
-                        },
-                    },
-                },
-            }
         for row_key, text_entry, match in matched_rows:
             raw_group = match.group("group")
             cutscene_key = resolve_cutscene_text_group(raw_group, asset_keys, raw_groups)
             line_num = int(match.group("line"))
             sub = match.group("sub") or ""
             gender = (match.group("gender") or "").strip("_").upper()
-            line = build_cutscene_texttable_line(row_key, text_entry, match, cutscene_key, raw_group)
+            line = build_cutscene_texttable_line(
+                row_key,
+                text_entry,
+                match,
+                cutscene_key,
+                raw_group,
+                translate=t,
+                source_ref=source_ref,
+                pick_fields=pick_fields,
+                text_trace=text_trace,
+            )
             lines_by_row_id[row_key] = line
             sub_order = int(sub[1:]) if sub else -1
             alias_order = 1 if raw_group != cutscene_key else 0
             grouped[cutscene_key].append(((line_num, sub_order, alias_order, gender, row_key), line))
         merged_by_key: dict[str, list[dict]] = {}
         for cutscene_key, subtitle_tracks in subtitle_tracks_by_key.items():
-            subtitle_tracks = subtitle_tracks_for_language(cutscene_key, subtitle_tracks)
+            subtitle_tracks = subtitle_tracks_for_language(
+                cutscene_key,
+                subtitle_tracks,
+                language_code=language_code,
+                parent_overrides=cutscene_subtitle_parent_overrides,
+            )
             if subtitle_tracks and not any(
                 str(ref.get("textId") or "").strip()
                 for track in subtitle_tracks
@@ -6738,7 +6550,16 @@ def build_language_bundle(
                     track_debug = subtitle_clip_debug(track, ref)
                     line = copy.deepcopy(lines_by_row_id.get(row_key))
                     if line is None:
-                        line = build_fallback_track_line(cutscene_key, row_key, ref)
+                        line = build_fallback_track_line(
+                            cutscene_key,
+                            row_key,
+                            ref,
+                            text_table=text_table,
+                            cutscene_text_row_re=CUTSCENE_TEXT_ROW_RE,
+                            translate=t,
+                            source_ref=source_ref,
+                            text_trace=text_trace,
+                        )
                     line_debug = line.setdefault("_debug", {})
                     line_debug["subtitleTrack"] = track_debug
                     line_debug.setdefault("subtitleTracks", []).append(track_debug)
