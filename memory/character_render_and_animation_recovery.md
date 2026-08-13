@@ -654,6 +654,18 @@ NPC archetypes are imported as labeled source kits.
   resolver-driven/table-dispatched kernel-7 selection and the staging-array
   upload remain open and must stay fail-closed. Details are recorded under
   `indirect_vtable_dispatch_census` in the packed-flag audit.
+  The two indirect CommandBuffer endpoints are now bounded separately as well:
+  `Internal_DispatchComputeIndirect` and its GraphicsBuffer sibling share
+  UnityPlayer entry `0x18011a850` (registration indices `3432/3433`) and record
+  through `0x1804c74d0`. Its only current native callers are the generic
+  internal-call body plus the four known GPUDriven V1/V2 indirect cores; the
+  current GameAssembly image has no direct `E8` caller or raw executable pointer
+  to this endpoint. The visible contract contains no factory `+0x8c` record,
+  five-Vector4/84-byte source, `_UploadBuffer`, or kernel-7 identity. This is
+  negative evidence for the known indirect route, not proof against resolver or
+  backend function-pointer paths; the staging-to-upload and channel-2/resource
+  `+0xd0` edges remain fail-closed. Details are under
+  `command_buffer_indirect_dispatch_census` in the packed audit.
   The managed ComputeShader/ComputeBuffer API boundary is now separately
   bounded. A PData-owned E8 census across GameAssembly `.text` and `il2cpp`
   finds one direct `ComputeShader.Dispatch` caller (MagicaCloth), cloth-only
