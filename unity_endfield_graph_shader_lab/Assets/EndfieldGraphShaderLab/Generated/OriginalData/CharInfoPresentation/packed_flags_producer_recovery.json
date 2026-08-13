@@ -1770,6 +1770,35 @@
                     ],
                     "gpu_edge_scan": "The static constructor has no per-method patch key, wrapper method index, factory-record copy, ComputeBuffer/ComputeShader, GPUDriven, CommandBuffer, or dispatch reference. It establishes shared IFix wrapper/runtime state only; it does not resolve the runtime WrappersManager slot or identify the bytecode body behind 0x7301/0x7302.",
                     "boundary": "Static wrapper registration is now closed as a non-source of the two gate values. The dynamic method table, built-in/loaded patch registration, and live slot contents remain runtime evidence boundaries."
+                  },
+                  "wrappers_manager_runtime_table_abi": {
+                    "status": "runtime-array-index-abi-closed-slot-values-open",
+                    "source": "Current IFix catalog3 metadata plus PData-bounded GameAssembly.dll disassembly for the Gameplay.Beyond.dll IFix.WrappersManagerImpl methods.",
+                    "type": "IFix.WrappersManagerImpl",
+                    "image": "Gameplay.Beyond.dll",
+                    "method_pointers": {
+                      "GetPatch": "0x1871c7e18",
+                      "IsPatched": "0x182efe6c0",
+                      "InitWrapperArray": "0x1871c7e7c",
+                      "CreateWrapper": "0x1871c7da0",
+                      "CreateDelegate": "0x1871c7cd4"
+                    },
+                    "array_object_layout": {
+                      "+0x18": "wrapper count used for bounds checks",
+                      "+0x20 + id*8": "wrapper object slot returned by GetPatch and tested by IsPatched"
+                    },
+                    "observed_contract": [
+                      "GetPatch(id) loads the manager's static wrapper-array object, checks id < array +0x18, and returns array +0x20 + id*8.",
+                      "IsPatched(id) performs the same null/negative/range checks and returns whether that slot is non-null; its shared continuation is 0x184e17e9e.",
+                      "InitWrapperArray(len) allocates the runtime array through 0x18002c190 with edx=len and stores it in the manager's static wrapper-array holder.",
+                      "CreateWrapper(id) and CreateDelegate(type,id,anon) construct wrapper/delegate objects through the IFix wrapper constructor, but the static body does not expose a literal 0x7301/0x7302 slot value."
+                    ],
+                    "gate_constants_absent": [
+                      "0x7301",
+                      "0x7302"
+                    ],
+                    "gpu_edge_scan": "The manager table methods only initialize, bounds-check, construct, or read IFix wrapper slots. They contain no factory-record copy, ComputeBuffer/ComputeShader, GPUDriven, CommandBuffer, or dispatch edge.",
+                    "boundary": "This closes the native array indexing and count ABI for the runtime IFix table, but not the contents of slots 0x7301/0x7302. Those values still require runtime capture, loaded-payload registration recovery, or the relevant wrapper construction caller."
                   }
                 }
               },
