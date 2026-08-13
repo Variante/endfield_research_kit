@@ -21,7 +21,6 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,42 +28,51 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-for search_path in (ROOT / "scripts",):
-    if str(search_path) not in sys.path:
-        sys.path.insert(0, str(search_path))
+try:
+    from ..common import (
+        STORY_RECOVERY_REPORTS_DIR,
+        md_escape,
+        read_bytes_cached,
+        read_json,
+        rel_path,
+        write_json,
+        write_report_json,
+        write_text_if_changed,
+    )
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import (
+        STORY_RECOVERY_REPORTS_DIR,
+        md_escape,
+        read_bytes_cached,
+        read_json,
+        rel_path,
+        write_json,
+        write_report_json,
+        write_text_if_changed,
+    )
 
-from common import (  # noqa: E402
-    STORY_RECOVERY_REPORTS_DIR,
-    md_escape,
-    read_bytes_cached,
-    read_json,
-    rel_path,
-    write_json,
-    write_report_json,
-    write_text_if_changed,
-)
-from story_builder.context import (  # noqa: E402
+from .context import (
     GAMEPLAY_CONFIG_DIR,
     LEVELDATA_DIR,
     LEVELSCRIPT_DIR,
     MRA_DIR,
     SPAWNER_CONFIG_DIR,
 )
-from story_builder.level_bindings import (  # noqa: E402
+from .level_bindings import (
     _native_vector_close,
     _parse_leveldata_mission_host_name,
     build_leveldata_mission_area_script_host_index,
     decode_levelscript_native_action_topology,
     parse_leveldata_levelscript_brief_dictionary,
 )
-from story_builder.levelscript_binary import (  # noqa: E402
+from .levelscript_binary import (
     decode_levelscript_task_conditions,
     decode_levelscript_binary_file,
 )
-from story_builder.levelscript_manual_control import (  # noqa: E402
+from .levelscript_manual_control import (
     build_manual_control_index,
 )
-from story_builder.mission_recovery import (  # noqa: E402
+from .mission_recovery import (
     decode_mission_script_conditions,
     decode_mission_world_entity_condition_refs,
 )
