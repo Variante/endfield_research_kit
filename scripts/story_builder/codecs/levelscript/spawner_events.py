@@ -11,6 +11,11 @@ _GROUP_BEGIN = "LevelEvent_OnSpawnerGroupBegin"
 _WAVE_BEGIN = "LevelEvent_OnSpawnerWaveBegin"
 _COMPLETE = "LevelEvent_OnSpawnerComplete"
 _ENTITY_SPAWN = "LevelEvent_OnSpawnerEntitySpawn"
+_ENTITY_LIFECYCLE_EVENTS = {
+    "LevelEvent_OnSpawnerEntityDie",
+    "LevelEvent_OnSpawnerEntityDieStart",
+    "LevelEvent_OnSpawnerEntityDieEnd",
+}
 
 
 def _read_string_param(
@@ -62,18 +67,61 @@ def _read_output(
     payload: bytes,
     cursor: int,
 ) -> tuple[str, int] | None:
+    decoded = _read_output_param(payload, cursor)
+    if decoded is None:
+        return None
+    detail, cursor = decoded
+    value = detail.get("path")
+    if detail.get("paramSource") != 0 or not isinstance(value, str):
+        return None
+    return value, cursor
+
+
+def _read_output_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a present ``ParamOutput``, retaining a nullable property path."""
     if cursor + 9 > len(payload) or payload[cursor] != 0x02:
         return None
     source = struct.unpack_from("<i", payload, cursor + 1)[0]
     size = struct.unpack_from("<i", payload, cursor + 5)[0]
     cursor += 9
-    if source != 0 or size <= 0 or size > 256 or cursor + size > len(payload):
+    if source < 0 or source > 0x10000:
+        return None
+    if size == -1:
+        return {"paramSource": source, "path": None}, cursor
+    if size <= 0 or size > 256 or cursor + size > len(payload):
         return None
     try:
         value = payload[cursor : cursor + size].decode("utf-8")
     except UnicodeDecodeError:
         return None
-    return value, cursor + size
+    return {"paramSource": source, "path": value}, cursor + size
+
+
+def _read_i32_param_detail(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    if cursor + 17 > len(payload) or payload[cursor] != 0x04:
+        return None
+    value = struct.unpack_from("<i", payload, cursor + 1)[0]
+    id_ref, source, path_size = struct.unpack_from("<iii", payload, cursor + 5)
+    cursor += 17
+    if id_ref < -1 or source < 0 or source > 0x10000:
+        return None
+    if path_size == -1:
+        path = None
+    elif 0 <= path_size <= 1024 and cursor + path_size <= len(payload):
+        try:
+            path = payload[cursor : cursor + path_size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += path_size
+    else:
+        return None
+    return {"value": value, "idRef": id_ref, "paramSource": source, "path": path}, cursor
 
 
 def _decode_begin(payload: bytes, *, wave: bool) -> dict[str, Any]:
@@ -192,6 +240,72 @@ def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
     }
 
 
+def _decode_entity_lifecycle(payload: bytes) -> dict[str, Any]:
+    """Decode the exact spawn-entity die/start/end filters and outputs."""
+    if len(payload) < 31 or payload[17:31] != b"\x04\x01" + _PARAM_TAIL:
+        return {}
+    cursor = 31
+
+    entity_output = _read_output_param(payload, cursor)
+    if entity_output is None:
+        return {}
+    entity_output_detail, cursor = entity_output
+
+    filter_type = _read_i32_param_detail(payload, cursor)
+    if filter_type is None:
+        return {}
+    filter_type_detail, cursor = filter_type
+
+    def read_optional_string() -> tuple[bool, str | None]:
+        nonlocal cursor
+        if cursor >= len(payload):
+            return False, None
+        if payload[cursor] == 0xFF:
+            cursor += 1
+            return True, None
+        decoded = _read_string_param(payload, cursor)
+        if decoded is None:
+            return False, None
+        value, cursor = decoded
+        return True, value
+
+    group_valid, group_key = read_optional_string()
+    if not group_valid:
+        return {}
+
+    group_output = _read_output_param(payload, cursor)
+    if group_output is None:
+        return {}
+    group_output_detail, cursor = group_output
+
+    if cursor + 21 > len(payload) or payload[cursor] != 0x04:
+        return {}
+    spawner_id = struct.unpack_from("<Q", payload, cursor + 1)[0]
+    if payload[cursor + 9 : cursor + 21] != _PARAM_TAIL:
+        return {}
+    cursor += 21
+
+    wave_valid, wave_key = read_optional_string()
+    if not wave_valid:
+        return {}
+
+    wave_output = _read_output_param(payload, cursor)
+    if wave_output is None:
+        return {}
+    wave_output_detail, cursor = wave_output
+    if cursor != len(payload):
+        return {}
+
+    return {
+        "entityOutputParam": entity_output_detail,
+        "filterType": filter_type_detail,
+        "groupKeyFilter": group_key,
+        "groupKeyOutputParam": group_output_detail,
+        "spawnerFilterId": spawner_id,
+        "waveKeyFilter": wave_key,
+        "waveKeyOutputParam": wave_output_detail,
+        "payloadShape": "spawner-entity-lifecycle-filters-and-outputs-exact-eof",
+    }
 def decode_spawner_event_fields(
     payload: bytes,
     native_header_name: str,
@@ -205,4 +319,6 @@ def decode_spawner_event_fields(
         return _decode_complete(payload)
     if native_header_name == _ENTITY_SPAWN:
         return _decode_entity_spawn(payload)
+    if native_header_name in _ENTITY_LIFECYCLE_EVENTS:
+        return _decode_entity_lifecycle(payload)
     return {}
