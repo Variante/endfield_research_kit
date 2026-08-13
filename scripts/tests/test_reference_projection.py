@@ -7,15 +7,24 @@ from scripts.story_builder.reference_projection import (
     collection_bucket_token,
     collection_display_name,
     collection_hint_from_path,
+    collection_map_ref_from_identifiers,
     collection_row_title,
     collection_scene_value,
+    collection_story_ref_from_bucket,
+    collection_story_ref_from_identifiers,
     collection_summary_rows,
+    collection_tags,
     normalized_reference_tags,
+    prts_archive_category_from_collection_ids,
+    prts_archive_category_from_identifier,
+    prts_archive_category_from_row,
     prts_attachment_aliases,
     reference_row_texts,
     responsive_preview_values,
     responsive_sort_values,
 )
+from scripts.story_builder.bundle_support import parse_mission
+from scripts.story_builder.context import MISSION_STORY_TYPES
 
 
 class ReferenceProjectionTests(unittest.TestCase):
@@ -79,6 +88,74 @@ class ReferenceProjectionTests(unittest.TestCase):
                 {"text": "Variant: differs from StreamingAssets row"},
                 {"text": "Group: Bucket 1"},
                 {"text": "Group Id: group_1"},
+            ],
+        )
+
+    def test_collection_story_and_map_references_are_fail_closed(self):
+        self.assertEqual(
+            collection_story_ref_from_identifiers(
+                "prefix/e2m6_11",
+                parse_mission_id=parse_mission,
+                mission_story_types=MISSION_STORY_TYPES,
+            ),
+            ("e2m6", 11, "e"),
+        )
+        self.assertEqual(
+            collection_story_ref_from_identifiers(
+                "topic_chat_1",
+                parse_mission_id=parse_mission,
+                mission_story_types=MISSION_STORY_TYPES,
+            ),
+            ("topic_chat_1", 0, "topic"),
+        )
+        self.assertEqual(
+            collection_map_ref_from_identifiers("reading_map01_lv05_3"),
+            ("map01_lv05", 3, "map"),
+        )
+        self.assertEqual(
+            collection_story_ref_from_bucket(
+                "group_e2m6_notes",
+                parse_mission_id=parse_mission,
+                mission_story_types=MISSION_STORY_TYPES,
+            ),
+            ("e2m6", 0, "e"),
+        )
+        self.assertIsNone(collection_story_ref_from_bucket(
+            "e2m6_and_a1m1",
+            parse_mission_id=parse_mission,
+            mission_story_types=MISSION_STORY_TYPES,
+        ))
+
+    def test_prts_category_and_collection_tag_projection(self):
+        self.assertEqual(prts_archive_category_from_identifier("nar_multi_media_01"), "media")
+        self.assertEqual(
+            prts_archive_category_from_collection_ids(["paper_1", "digital_1", "paper_2"]),
+            "paper",
+        )
+        row = {
+            "categoryDataList": [
+                {"collectionIdList": ["document_1", "document_2"]},
+            ],
+        }
+        self.assertEqual(prts_archive_category_from_row("PrtsInvestigate.json", "unknown", row), "document")
+        self.assertEqual(
+            collection_tags(
+                "SystemJumpTable.json",
+                "document_1",
+                "document_group",
+                row,
+                table_source="persistent",
+                variant=True,
+            ),
+            [
+                "wiki",
+                "collection",
+                "table_systemjumptable",
+                "source_persistent",
+                "systemJump",
+                "variant",
+                "group_document_group",
+                "category_document",
             ],
         )
 

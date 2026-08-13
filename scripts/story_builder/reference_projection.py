@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable, Collection
 
 if __package__ in {"story_builder", "scripts.story_builder"}:
     from .bundle_primitives import brace_text
@@ -177,6 +178,65 @@ def collection_scene_value(row: dict | None, fallback: int = 0) -> int:
     return fallback
 
 
+collection_story_mission_pattern = re.compile(
+    r"(?<![a-z0-9])((?:gm|sm|db|dm|[acefm])\d+(?:[a-z]\d+)*(?:d\d+)?)(?![a-z0-9])",
+    re.IGNORECASE,
+)
+collection_map_pattern = re.compile(r"map\d+_lv\d+", re.IGNORECASE)
+
+
+def collection_story_ref_from_identifiers(
+    *values: str,
+    parse_mission_id: Callable[[str], tuple[str, int]],
+    mission_story_types: Collection[str],
+) -> tuple[str, int, str] | None:
+    for raw_value in values:
+        value = str(raw_value or "").strip()
+        if not value:
+            continue
+        lowered = value.lower()
+        if lowered.startswith("topic_"):
+            return (value, 0, "topic")
+        if lowered.startswith("sr_"):
+            return (value, 0, "f")
+        if match := collection_story_mission_pattern.findall(lowered):
+            mission_id = match[-1]
+            type_key, _act = parse_mission_id(mission_id)
+            if type_key in mission_story_types:
+                return (mission_id, collection_scene_suffix(value), type_key)
+    return None
+
+
+def collection_map_ref_from_identifiers(*values: str) -> tuple[str, int, str] | None:
+    for raw_value in values:
+        value = str(raw_value or "").strip()
+        if not value:
+            continue
+        lowered = value.lower()
+        if match := collection_map_pattern.findall(lowered):
+            return (match[-1], collection_scene_suffix(value), "map")
+    return None
+
+
+def collection_story_ref_from_bucket(
+    bucket: str,
+    *,
+    parse_mission_id: Callable[[str], tuple[str, int]],
+    mission_story_types: Collection[str],
+) -> tuple[str, int, str] | None:
+    candidates: set[str] = set()
+    for match in collection_story_mission_pattern.finditer(str(bucket or "").lower()):
+        mission_id = match.group(1)
+        type_key, _act = parse_mission_id(mission_id)
+        if type_key in mission_story_types:
+            candidates.add(mission_id)
+    if len(candidates) != 1:
+        return None
+    mission_id = next(iter(candidates))
+    type_key, _act = parse_mission_id(mission_id)
+    return (mission_id, 0, type_key)
+
+
 def collection_source_label(table_source: str) -> str:
     return {
         "streaming": "StreamingAssets/Table",
@@ -247,6 +307,137 @@ def collection_summary_rows(
             if len(rows) >= 6:
                 break
     return rows
+
+
+prts_archive_categories = ("collection", "digital", "document", "media", "paper", "report")
+
+
+def prts_archive_category_from_identifier(value) -> str:
+    raw = re.sub(r"[^0-9A-Za-z]+", "_", str(value or "")).strip("_").lower()
+    if not raw:
+        return ""
+    if raw.startswith("nar_"):
+        raw = raw[4:]
+    if raw.startswith("multi_media"):
+        return "media"
+    for category_key in prts_archive_categories:
+        if raw == category_key or raw.startswith(f"{category_key}_"):
+            return category_key
+    return ""
+
+
+def prts_archive_category_from_collection_ids(collection_ids) -> str:
+    counts: dict[str, int] = {}
+    first_seen: dict[str, int] = {}
+    for idx, raw_id in enumerate(collection_ids or []):
+        category_key = prts_archive_category_from_identifier(raw_id)
+        if not category_key:
+            continue
+        counts[category_key] = counts.get(category_key, 0) + 1
+        first_seen.setdefault(category_key, idx)
+    if not counts:
+        return ""
+    return min(
+        counts,
+        key=lambda category_key: (-counts[category_key], first_seen.get(category_key, 0), category_key),
+    )
+
+
+def prts_archive_category_from_row(
+    table_name: str,
+    row_id: str,
+    row: dict | None,
+) -> str:
+    if table_name == "PrtsCategory.json":
+        if isinstance(row, dict):
+            return prts_archive_category_from_identifier(row.get("categoryId"))
+        return prts_archive_category_from_identifier(row_id)
+    if isinstance(row, dict):
+        for field in ("categoryId", "firstLvId", "id", "type"):
+            category_key = prts_archive_category_from_identifier(row.get(field))
+            if category_key:
+                return category_key
+        if table_name in {"PrtsInvestigate.json", "PrtsInvestigateCategory.json"}:
+            collection_ids: list[str] = []
+            for field in ("collectionIdList",):
+                values = row.get(field) or []
+                if isinstance(values, list):
+                    collection_ids.extend(str(value) for value in values if str(value))
+            for field in ("categoryDataList", "list"):
+                groups = row.get(field) or []
+                if not isinstance(groups, list):
+                    continue
+                for group_row in groups:
+                    if not isinstance(group_row, dict):
+                        continue
+                    values = group_row.get("collectionIdList") or []
+                    if isinstance(values, list):
+                        collection_ids.extend(str(value) for value in values if str(value))
+            category_key = prts_archive_category_from_collection_ids(collection_ids)
+            if category_key:
+                return category_key
+    return prts_archive_category_from_identifier(row_id)
+
+
+def collection_tags(
+    table_name: str,
+    row_id: str,
+    bucket: str,
+    row: dict | None = None,
+    *,
+    table_source: str = "streaming",
+    variant: bool = False,
+) -> list[str]:
+    stem = table_name.removesuffix(".json")
+    tags = [
+        "wiki",
+        "collection",
+        f"table_{collection_slug(stem)}",
+        f"source_{collection_slug(table_source)}",
+    ]
+    lower = stem.lower()
+    for needle, tag in (
+        ("activity", "activity"),
+        ("achievement", "achievement"),
+        ("battlepass", "battlePass"),
+        ("char", "character"),
+        ("dungeon", "dungeon"),
+        ("enemy", "enemy"),
+        ("factory", "factory"),
+        ("item", "item"),
+        ("jump", "systemJump"),
+        ("mail", "mail"),
+        ("money", "money"),
+        ("picture", "picture"),
+        ("radio", "radio"),
+        ("skill", "skill"),
+        ("system", "system"),
+        ("task", "other"),
+        ("tip", "other"),
+        ("weapon", "weapon"),
+    ):
+        if tag == "system" and lower.startswith("systemjump"):
+            continue
+        if needle in lower and tag not in tags:
+            tags.append(tag)
+    if variant:
+        tags.append("variant")
+    bucket_slug = collection_slug(bucket)
+    if bucket_slug and bucket_slug != "misc":
+        tags.append(f"group_{bucket_slug}")
+    if isinstance(row, dict):
+        if isinstance(row.get("groupId"), str) and row.get("groupId"):
+            tags.append(f"group_{collection_slug(row['groupId'])}")
+        if isinstance(row.get("categoryId"), str) and row.get("categoryId"):
+            tags.append(f"category_{collection_slug(row['categoryId'])}")
+    prts_category_key = prts_archive_category_from_row(table_name, row_id, row)
+    if prts_category_key:
+        tags.append(f"category_{collection_slug(prts_category_key)}")
+    deduped: list[str] = []
+    for tag in tags:
+        if tag not in deduped:
+            deduped.append(tag)
+    return deduped
 
 
 def collection_text_fingerprint(text_nodes: list[dict]) -> tuple[tuple[str, str], ...]:
@@ -350,16 +541,23 @@ __all__ = [
     "collection_bucket_token",
     "collection_display_name",
     "collection_hint_from_path",
+    "collection_map_ref_from_identifiers",
     "collection_row_title",
     "collection_scene_suffix",
     "collection_scene_value",
     "collection_slug",
     "collection_source_label",
+    "collection_story_ref_from_bucket",
+    "collection_story_ref_from_identifiers",
     "collection_summary_rows",
+    "collection_tags",
     "collection_table_name_tokens",
     "collection_text_fingerprint",
     "normalized_duplicate_line_texts",
     "normalized_reference_tags",
+    "prts_archive_category_from_collection_ids",
+    "prts_archive_category_from_identifier",
+    "prts_archive_category_from_row",
     "prts_attachment_aliases",
     "reference_kind_from_tags",
     "reference_row_texts",
