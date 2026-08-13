@@ -7,6 +7,9 @@ from unittest import mock
 
 
 from scripts.story_builder import callserver_callbacks, mission_flow
+from scripts.story_builder.codecs.levelscript.exit_custom_performance import (
+    decode_exit_level_custom_performance_action,
+)
 from scripts.story_builder.level_bindings import (
     LEVELSCRIPT_MISSIONISH_RE,
     _decode_uid_record,
@@ -1165,6 +1168,13 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
                 "consumedBytes": 17,
             },
             detail["exitLevelCustomPerformance"],
+        )
+        self.assertEqual(
+            {},
+            decode_exit_level_custom_performance_action(
+                bytes(data[30:47]),
+                (0x00B9, 0x08),
+            ),
         )
 
     def test_dialog_teleport_followups_are_exact_presentation_actions(self):

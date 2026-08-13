@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from .codecs.levelscript import exit_custom_performance as levelscript_exit_performance
 from .codecs.levelscript import fmv as levelscript_fmv
 from .codecs.levelscript import manual_control as levelscript_manual_control
 
@@ -5646,28 +5647,6 @@ def _decode_npc_patrol_start_action(payload: bytes) -> dict[str, Any]:
     }
 
 
-def _decode_exit_level_custom_performance_action(
-    payload: bytes,
-) -> dict[str, Any]:
-    """Decode the current action's sole authored ``Param<uint>`` handle."""
-    if (
-        len(payload) != 17
-        or payload[0] != 0x04
-        or payload[5:17] != b"\xff" * 12
-    ):
-        return {}
-    return {
-        "payloadShape": "uint-handle-with-unset-param-tail-exact-eof",
-        "handle": {
-            "serializedConstValue": struct.unpack_from("<I", payload, 1)[0],
-            "idRef": -1,
-            "paramSource": -1,
-            "path": None,
-        },
-        "consumedBytes": len(payload),
-    }
-
-
 def _decode_toggle_clear_screen_but_radio_action(
     payload: bytes,
 ) -> dict[str, Any]:
@@ -7485,12 +7464,14 @@ def decode_levelscript_record_payload(
         npc_patrol_start = _decode_npc_patrol_start_action(payload)
         if npc_patrol_start:
             out["npcPatrolStart"] = npc_patrol_start
-    if semantic_key == (0x00B9, 0x09):
-        exit_custom_performance = _decode_exit_level_custom_performance_action(
-            payload
+    exit_custom_performance = (
+        levelscript_exit_performance.decode_exit_level_custom_performance_action(
+            payload,
+            semantic_key,
         )
-        if exit_custom_performance:
-            out["exitLevelCustomPerformance"] = exit_custom_performance
+    )
+    if exit_custom_performance:
+        out["exitLevelCustomPerformance"] = exit_custom_performance
     if semantic_key == (0x04CA, 0x09):
         toggle_clear_screen = _decode_toggle_clear_screen_but_radio_action(
             payload
