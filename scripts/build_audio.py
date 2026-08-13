@@ -13,18 +13,13 @@ import tempfile
 import time
 import wave
 from collections import Counter, defaultdict, deque
-import sys
 from pathlib import Path, PurePosixPath
 from struct import unpack_from
 from typing import Any
 
-try:
-    from common import resolve_installed_game_data_root
-except ImportError:  # Imported as scripts.build_audio from repository-root tests.
-    from scripts.common import resolve_installed_game_data_root
-
-try:
-    from build_audio_semantics import (
+if __package__:
+    from .common import resolve_installed_game_data_root, sha256_file as file_sha256
+    from .build_audio_semantics import (
         HIRC_OBJECT_TYPE_LABELS,
         SELECTION_HIRC_TYPES,
         build_audio_semantic_data,
@@ -35,8 +30,9 @@ try:
         hashed_event_key,
         is_rtpc_parameter_name,
     )
-except ImportError:  # Imported as scripts.build_audio from repository-root tests.
-    from scripts.build_audio_semantics import (
+else:
+    from common import resolve_installed_game_data_root, sha256_file as file_sha256
+    from build_audio_semantics import (
         HIRC_OBJECT_TYPE_LABELS,
         SELECTION_HIRC_TYPES,
         build_audio_semantic_data,
@@ -50,12 +46,6 @@ except ImportError:  # Imported as scripts.build_audio from repository-root test
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import sha256_file as file_sha256  # noqa: E402
-
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO

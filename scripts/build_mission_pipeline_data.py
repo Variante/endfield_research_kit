@@ -22,7 +22,7 @@ from collections import Counter, defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable
 
-try:
+if not __package__:
     from common import (
         combined_non_mission_content_keys,
         compact_dict,
@@ -118,7 +118,7 @@ try:
         build_default_report as build_timeline_embedded_runtime_report,
         render_markdown as render_timeline_embedded_runtime_markdown,
     )
-except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data``
+else:
     from scripts.common import (
         combined_non_mission_content_keys,
         compact_dict,
@@ -218,11 +218,10 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import sha256_file as sha256_path  # noqa: E402
+if __package__:
+    from .common import sha256_file as sha256_path
+else:
+    from common import sha256_file as sha256_path
 
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
