@@ -554,7 +554,14 @@ NPC archetypes are imported as labeled source kits.
   that body and `SetGarbageCollectDirty` enter the same object-only wrapper at
   `0x1863633b4`. The gate constant is therefore not a unique source-method
   identity, and the visible wrapper remains GPU-negative while its dynamic
-  method table is unresolved.
+  method table is unresolved. The generated `Gameplay.Beyond` wrapper static
+  constructor (`GameAssembly 0x184d37480..0x184d374dd`) was then disassembled:
+  it only performs one-time static-state/runtime-object initialization, has no
+  `0x7301`/`0x7302` literal or per-method slot, and has no factory/GPU call.
+  This closes the wrapper `.cctor` as a registration-only path; the live
+  dynamic table and loaded/built-in patch registration remain runtime evidence
+  boundaries. Details are recorded under
+  `wrapper_static_registration_followup` in the packed audit.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
