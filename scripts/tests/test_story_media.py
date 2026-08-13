@@ -87,7 +87,7 @@ class StoryMediaTests(unittest.TestCase):
         ]
 
         selected = story_media.collect_story_file_images(entries)
-        stems = {story_media.media_lookup_stem(rel)[0] for rel in selected}
+        stems = {story_media.media_resolver.media_lookup_stem(rel)[0] for rel in selected}
 
         self.assertNotIn("cg_image_e2m6_1_m", stems)
         self.assertEqual(
@@ -109,18 +109,18 @@ class StoryMediaTests(unittest.TestCase):
             ],
         }
         video = {"entries": [], "sourceRoots": {}}
-        original_inline = story_media.collect_inline_image_ids
-        original_wiki_images = story_media.collect_wiki_media_image_ids
-        original_videos = story_media.collect_wiki_video_refs
+        original_inline = story_media.media_resolver.collect_inline_image_ids
+        original_wiki_images = story_media.media_resolver.collect_wiki_media_image_ids
+        original_videos = story_media.media_resolver.collect_wiki_video_refs
         try:
-            story_media.collect_inline_image_ids = lambda _root: {"cg_image_scene_1"}
-            story_media.collect_wiki_media_image_ids = lambda _root: set()
-            story_media.collect_wiki_video_refs = lambda _root: set()
+            story_media.media_resolver.collect_inline_image_ids = lambda _root: {"cg_image_scene_1"}
+            story_media.media_resolver.collect_wiki_media_image_ids = lambda _root: set()
+            story_media.media_resolver.collect_wiki_video_refs = lambda _root: set()
             payload = story_media.build_story_media_payload(asset, video)
         finally:
-            story_media.collect_inline_image_ids = original_inline
-            story_media.collect_wiki_media_image_ids = original_wiki_images
-            story_media.collect_wiki_video_refs = original_videos
+            story_media.media_resolver.collect_inline_image_ids = original_inline
+            story_media.media_resolver.collect_wiki_media_image_ids = original_wiki_images
+            story_media.media_resolver.collect_wiki_video_refs = original_videos
 
         self.assertEqual(payload["counts"]["image"], 1)
         self.assertEqual(payload["counts"]["cgImages"], 1)

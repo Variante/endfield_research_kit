@@ -17,6 +17,11 @@ SPEC.loader.exec_module(pack_webui)
 
 
 class PackWebuiAudioTests(unittest.TestCase):
+    def test_story_media_resolution_is_owned_by_asset_builder(self) -> None:
+        self.assertTrue(hasattr(pack_webui.media_resolver, "AssetCandidate"))
+        self.assertFalse(hasattr(pack_webui, "AssetCandidate"))
+        self.assertFalse(hasattr(pack_webui, "build_inline_image_lookup"))
+
     def test_single_value_audio_format_flag_is_removed(self) -> None:
         with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             pack_webui.parse_args(["--audio-format", "flac"])
