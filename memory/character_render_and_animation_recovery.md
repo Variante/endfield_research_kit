@@ -515,6 +515,18 @@ NPC archetypes are imported as labeled source kits.
   producer and the channel-2 descriptor edge remain unresolved. The structured
   census is recorded under `native_immediate_dispatch_census` in the packed
   shader audit.
+  The immediate-dispatch ABI is now explicit and supersedes any broader
+  `r9d`-as-kernel reading: `0x1805e7e10` consumes `edx` as the kernel index,
+  while `r8d`, `r9d`, and `[rsp+0x20]` carry the three group dimensions;
+  `0x1805e8100` gates that index against `[shader+0xd0]`. The eleven
+  terrain/SSR/ray-tracing direct callers obtain `edx` dynamically from the
+  `FindKernel`-style resolver `0x1805f6ce0` (registry-id scan, return index or
+  `-1`), so their final `r9d` values cannot be used to infer kernel identity.
+  The four GPUDriven cores remain a separate ABI: their incoming core `r9d`
+  is the caller-supplied kernel index and is copied to the final dispatch
+  `edx`; the known native GPUDriven upstream callers still zero that input.
+  The corrected register flow and all 15 sites are recorded under
+  `native_immediate_dispatch_census` in the packed audit.
   A follow-up on the large UnityPlayer initializer `0x1813018c0..0x181301d71`
   closes another false-positive bridge: it resolves registry slot 20 through
   `0x180fc5e60`, whose installed service name is

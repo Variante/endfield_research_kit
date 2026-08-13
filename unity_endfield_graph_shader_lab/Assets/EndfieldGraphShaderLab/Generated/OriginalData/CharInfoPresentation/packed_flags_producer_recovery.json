@@ -550,15 +550,128 @@
           "boundary": "This closes Unity's native compute-dispatch mechanism and distinguishes command-buffer recording from immediate context dispatch. The managed resource identity now separately proves that GpuSceneDirtyUpdateCS::UploadPerDrawParams exists at kernel index 7, but the native core census does not prove that a particular dispatch call supplies this object and index 7. It also does not expose the upload-buffer producer or connect channel 2/resource +0xd0 to the five-vector destination. Keep dispatch selection and carrier mapping fail-closed."
         },
         "native_immediate_dispatch_census": {
-          "status": "non-gpudriven-immediate-callers-classified-no-gpu-scene-edge",
+          "status": "dispatch-abi-corrected-kernel-index-dynamically-classified-no-gpu-scene-edge",
           "source": "Current UnityPlayer.dll PData-scoped direct-call census for immediate dispatch 0x1805e7e10; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
           "dispatch_function": "0x1805e7e10",
           "direct_call_count": 15,
+          "abi_contract": {
+            "kernel_index_argument": "edx",
+            "group_dimension_arguments": {
+              "x": "r8d",
+              "y": "r9d",
+              "z": "dword ptr [rsp+0x20]"
+            },
+            "argument_flow": "The bridge saves incoming r9d/r8d/edx separately, then calls 0x1805e8100 with edx as the ComputeShader kernel index and forwards r8d/r9d plus the stack z dimension to the graphics-context vtable dispatch slot +0xab0.",
+            "kernel_validation": "0x1805e8100 copies edx to r14d and gates r14d < qword ptr [shader+0xd0] before resolving the per-kernel dispatch record. Therefore r9d at the final immediate-dispatch call is a group dimension, not the kernel index."
+          },
+          "kernel_resolver": {
+            "function": "0x1805f6ce0",
+            "pdata_range": "0x1805f6ce0..0x1805f6df5",
+            "role": "FindKernel-style registry resolver",
+            "abi": "rcx points to the shader metadata object; rdx points to a 32-bit kernel/property registry id; eax returns the zero-based matching entry index or -1.",
+            "table_shape": "The body scans qword ptr [rcx+0x58] entries, uses the count at +0x18, advances entries by 0x68, and compares each entry's first dword with [rdx]."
+          },
           "gpu_driven_call_sites": [
             "0x1810f1837",
             "0x1810f18eb",
             "0x1810fdfe7",
             "0x1810fe09b"
+          ],
+          "kernel_argument_census": [
+            {
+              "site": "0x1810f1837",
+              "function": "0x1810f17e0",
+              "family": "GPUDriven",
+              "kernel_source": "incoming core r9d is saved to ebx and copied to edx",
+              "known_native_upstream": "0x18127c730 zeros r9d before entering this core; managed callers remain dynamic"
+            },
+            {
+              "site": "0x1810f18eb",
+              "function": "0x1810f1890",
+              "family": "GPUDriven",
+              "kernel_source": "incoming core r9d is saved to ebx and copied to edx",
+              "known_native_upstream": "0x181280530 zeros r9d before entering this core; managed callers remain dynamic"
+            },
+            {
+              "site": "0x1810fdfe7",
+              "function": "0x1810fdf90",
+              "family": "GPUDriven",
+              "kernel_source": "incoming core r9d is saved to ebx and copied to edx",
+              "known_native_upstream": "0x18127c730 zeros r9d before entering this core; managed callers remain dynamic"
+            },
+            {
+              "site": "0x1810fe09b",
+              "function": "0x1810fe040",
+              "family": "GPUDriven",
+              "kernel_source": "incoming core r9d is saved to ebx and copied to edx",
+              "known_native_upstream": "0x181280530 zeros r9d before entering this core; managed callers remain dynamic"
+            },
+            {
+              "site": "0x1811eb94a",
+              "function": "0x1811eb6b0",
+              "family": "terrain",
+              "kernel_source": "eax from FindKernel 0x1811eb6f6 -> r14d -> edx"
+            },
+            {
+              "site": "0x1811ec336",
+              "function": "0x1811ebdf0",
+              "family": "terrain",
+              "kernel_source": "eax from FindKernel 0x1811ec0be -> r15d -> edx"
+            },
+            {
+              "site": "0x18124be98",
+              "function": "0x18124ba10",
+              "family": "screen_space_reflections",
+              "kernel_source": "eax from FindKernel 0x18124bb2d -> r15d -> edx"
+            },
+            {
+              "site": "0x18124c79c",
+              "function": "0x18124c360",
+              "family": "screen_space_reflections",
+              "kernel_source": "eax from FindKernel 0x18124c47d -> r15d -> edx"
+            },
+            {
+              "site": "0x18124cac2",
+              "function": "0x18124c7c0",
+              "family": "screen_space_reflections",
+              "kernel_source": "eax from FindKernel 0x18124c835 -> r14d -> edx"
+            },
+            {
+              "site": "0x1812b9d7f",
+              "function": "0x1812b9bb0",
+              "family": "ray_tracing",
+              "kernel_source": "eax from FindKernel 0x1812b9be3 -> ebp -> edx"
+            },
+            {
+              "site": "0x1812ba69f",
+              "function": "0x1812ba430",
+              "family": "ray_tracing",
+              "kernel_source": "eax from FindKernel 0x1812ba463 -> ebp -> edx"
+            },
+            {
+              "site": "0x1812baecb",
+              "function": "0x1812bac10",
+              "family": "ray_tracing",
+              "kernel_source": "eax from FindKernel 0x1812bac43 -> ebp -> edx"
+            },
+            {
+              "site": "0x1812bb2e7",
+              "function": "0x1812baef0",
+              "family": "ray_tracing",
+              "kernel_source": "eax from FindKernel 0x1812baf23 -> ebp -> edx"
+            },
+            {
+              "site": "0x1812bb76b",
+              "function": "0x1812bb550",
+              "family": "ray_tracing",
+              "kernel_source": "eax from FindKernel 0x1812bb583 -> ebp -> edx"
+            },
+            {
+              "site": "0x1812bba37",
+              "function": "0x1812bb790",
+              "family": "ray_tracing",
+              "kernel_source": "eax from FindKernel 0x1812bb7d5 -> esi -> edx"
+            }
           ],
           "classified_non_gpu_scene_callers": {
             "terrain": {
@@ -583,8 +696,8 @@
               "evidence": "The registry initializer at 0x181217db0 maps these fields to the named RTR kernels; the pass bodies bind ray-tracing resources and dispatch those kernels."
             }
           },
-          "observed": "All eleven remaining direct callers are attributable to terrain, SSR, or ray-tracing render-graph passes. None selects GpuSceneDirtyUpdateCS.UploadPerDrawParams, references _UploadBuffer, or reads the factory 80-byte shared record/channel-2 resource.",
-          "boundary": "This closes the bounded native immediate-dispatch negative branch, but does not exclude a dynamically registered or indirect producer for kernel 7; the shared-record-to-_UploadBuffer edge and channel-2 descriptor binding remain fail-closed."
+          "observed": "All eleven remaining direct callers are attributable to terrain, SSR, or ray-tracing render-graph passes. Their edx kernel arguments are dynamic FindKernel results; the final r9d values are dispatch dimensions. None statically selects GpuSceneDirtyUpdateCS.UploadPerDrawParams, references _UploadBuffer, or reads the factory 80-byte shared record/channel-2 resource.",
+          "boundary": "This corrects the immediate-dispatch ABI and closes the bounded direct-call negative branch. It does not exclude a dynamically registered or indirect producer for kernel 7; the shared-record-to-_UploadBuffer edge and channel-2 descriptor binding remain fail-closed."
         },
         "managed_dispatch_entrypoint_census": {
           "status": "managed-native-dispatch-bridges-closed-upload-producer-open",
