@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .context import *
 from .anime_assets import *
-from .scene_graph import *
+from .scene_graph import _scene_graph_node_kind, _scene_graph_runtime_payload_key
 from .levelscript_binary import (
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
     LEVELSCRIPT_NATIVE_HEADER_NAMES,
