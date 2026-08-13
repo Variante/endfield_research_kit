@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from pack_webui import (
+from asset_builder.media_resolver import (
     ENV_EMOJI_FALLBACK_LAYER_STEMS,
     ENV_EMOJI_PREFAB_LAYER_STEMS,
     collect_inline_image_ids,
