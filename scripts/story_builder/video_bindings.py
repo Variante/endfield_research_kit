@@ -64,11 +64,10 @@ from pathlib import Path
 from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
-from common import fast_glob_files, path_id_export_base_stem
+try:
+    from common import fast_glob_files, path_id_export_base_stem
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.common import fast_glob_files, path_id_export_base_stem
 
 
 def compact_narrative_video_ref(ref: dict) -> dict:
@@ -726,7 +725,7 @@ def collect_levelscript_fmv_actions(
 ) -> list[dict[str, Any]]:
     """Return exact native LevelScript FMV target fields and Story keys."""
     if occurrences is None:
-        from story_builder.level_bindings import (  # noqa: PLC0415
+        from .level_bindings import (  # noqa: PLC0415
             build_levelscript_action_story_occurrences,
         )
 

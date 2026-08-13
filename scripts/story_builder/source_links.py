@@ -11,18 +11,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
-from common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
-from story_builder.mission_assets import select_complete_mission_runtime_root
+try:
+    from common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
+from .mission_assets import select_complete_mission_runtime_root
 
 DATA_JSON_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
 PERSISTENT_DATA_JSON_DIR = (

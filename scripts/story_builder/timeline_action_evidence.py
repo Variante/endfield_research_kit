@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -18,11 +17,10 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
-from common import fast_glob_files
+try:
+    from common import fast_glob_files
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.common import fast_glob_files
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"

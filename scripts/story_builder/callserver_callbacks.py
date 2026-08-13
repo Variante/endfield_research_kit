@@ -9,28 +9,32 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from collections import Counter, defaultdict, deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import (  # noqa: E402
-    STORY_RECOVERY_REPORTS_DIR,
-    md_escape,
-    read_bytes_cached,
-    rel_path,
-    write_report_json,
-    write_text_if_changed,
-)
-from story_builder.context import LEVELSCRIPT_DIR  # noqa: E402
-from story_builder.level_bindings import (  # noqa: E402
+try:
+    from common import (
+        STORY_RECOVERY_REPORTS_DIR,
+        md_escape,
+        read_bytes_cached,
+        rel_path,
+        write_report_json,
+        write_text_if_changed,
+    )
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.common import (
+        STORY_RECOVERY_REPORTS_DIR,
+        md_escape,
+        read_bytes_cached,
+        rel_path,
+        write_report_json,
+        write_text_if_changed,
+    )
+from .context import LEVELSCRIPT_DIR
+from .level_bindings import (
     CALLSERVER_CALLBACK_CONTRACT_AUDIT,
     _levelscript_native_action_successors,
     _levelscript_native_callserver_callback_successors,
@@ -39,7 +43,7 @@ from story_builder.level_bindings import (  # noqa: E402
     levelscript_native_action_name,
     levelscript_record_semantic_key,
 )
-from story_builder.levelscript_binary import (  # noqa: E402
+from .levelscript_binary import (
     compact_callserver_serialized_contract,
     decode_levelscript_record_payload,
     extract_levelscript_uid_records,

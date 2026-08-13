@@ -25,26 +25,40 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import (  # noqa: E402
-    NativeEvidenceUnavailable,
-    check_installed_native_inputs,
-    md_escape,
-    native_evidence_required,
-    native_evidence_skip_message,
-    read_json,
-    safe_key,
-    sha256_file,
-    write_report_json,
-    write_text_if_changed,
-)
-from export_full_from_game import (  # noqa: E402
-    animestudio_object_index_dir,
-    load_animestudio_object_index_summary,
-)
+try:
+    from common import (
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        md_escape,
+        native_evidence_required,
+        native_evidence_skip_message,
+        read_json,
+        safe_key,
+        sha256_file,
+        write_report_json,
+        write_text_if_changed,
+    )
+    from export_full_from_game import (
+        animestudio_object_index_dir,
+        load_animestudio_object_index_summary,
+    )
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.common import (
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        md_escape,
+        native_evidence_required,
+        native_evidence_skip_message,
+        read_json,
+        safe_key,
+        sha256_file,
+        write_report_json,
+        write_text_if_changed,
+    )
+    from scripts.export_full_from_game import (
+        animestudio_object_index_dir,
+        load_animestudio_object_index_summary,
+    )
 
 
 SCHEMA = "animestudioStoryGuideConsumerAudit.v1"

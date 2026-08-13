@@ -13,23 +13,42 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from asset_builder.media_resolver import (
-    ENV_EMOJI_FALLBACK_LAYER_STEMS,
-    ENV_EMOJI_PREFAB_LAYER_STEMS,
-    collect_inline_image_ids,
-    collect_wiki_media_image_ids,
-    inline_image_number_key,
-    normalize_inline_image_id,
-    resolve_env_emoji_prefab_key,
-)
-from common import resolve_installed_game_data_root
-from animestudio_object_index import (
-    MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
-    PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
-    MergeError as AnimeStudioObjectIndexMergeError,
-    merge_parts as merge_animestudio_object_index_parts,
-    sha256_file as sha256_animestudio_object_index_file,
-)
+try:
+    from asset_builder.media_resolver import (
+        ENV_EMOJI_FALLBACK_LAYER_STEMS,
+        ENV_EMOJI_PREFAB_LAYER_STEMS,
+        collect_inline_image_ids,
+        collect_wiki_media_image_ids,
+        inline_image_number_key,
+        normalize_inline_image_id,
+        resolve_env_emoji_prefab_key,
+    )
+    from common import resolve_installed_game_data_root
+    from animestudio_object_index import (
+        MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+        PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+        MergeError as AnimeStudioObjectIndexMergeError,
+        merge_parts as merge_animestudio_object_index_parts,
+        sha256_file as sha256_animestudio_object_index_file,
+    )
+except ModuleNotFoundError:  # imported as ``scripts.export_full_from_game``
+    from scripts.asset_builder.media_resolver import (
+        ENV_EMOJI_FALLBACK_LAYER_STEMS,
+        ENV_EMOJI_PREFAB_LAYER_STEMS,
+        collect_inline_image_ids,
+        collect_wiki_media_image_ids,
+        inline_image_number_key,
+        normalize_inline_image_id,
+        resolve_env_emoji_prefab_key,
+    )
+    from scripts.common import resolve_installed_game_data_root
+    from scripts.animestudio_object_index import (
+        MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+        PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+        MergeError as AnimeStudioObjectIndexMergeError,
+        merge_parts as merge_animestudio_object_index_parts,
+        sha256_file as sha256_animestudio_object_index_file,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]

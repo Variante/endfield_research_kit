@@ -26,38 +26,38 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = REPO_ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import (  # noqa: E402
-    ROOT,
-    check_installed_native_inputs,
-    md_escape,
-    native_evidence_required,
-    native_evidence_skip_message,
-    resolve_installed_game_data_root,
-    sha256_file as file_sha256,
-    write_report_json,
-    write_text_if_changed,
+try:
+    from common import (
+        ROOT,
+        check_installed_native_inputs,
+        md_escape,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file as file_sha256,
+        write_report_json,
+        write_text_if_changed,
+    )
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.common import (
+        ROOT,
+        check_installed_native_inputs,
+        md_escape,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file as file_sha256,
+        write_report_json,
+        write_text_if_changed,
+    )
+from .mission_assets import select_complete_mission_runtime_root
+from .levelscript_binary import (
+    extract_levelscript_uid_records,
+    levelscript_action_map_membership,
+    levelscript_native_header_contract,
+    summarize_levelscript_native_header_records,
 )
-from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
-try:  # Package import; keep direct script execution available for the CLI.
-    from .levelscript_binary import (
-        extract_levelscript_uid_records,
-        levelscript_action_map_membership,
-        levelscript_native_header_contract,
-        summarize_levelscript_native_header_records,
-    )
-except ImportError:  # pragma: no cover - direct ``python protocol_registry.py``
-    from story_builder.levelscript_binary import (  # type: ignore[no-redef]
-        extract_levelscript_uid_records,
-        levelscript_action_map_membership,
-        levelscript_native_header_contract,
-        summarize_levelscript_native_header_records,
-    )
-from story_builder.native_contracts.mission_task_paths import (  # noqa: E402
+from .native_contracts.mission_task_paths import (
     DEFAULT_CONTRACT as MISSION_TASK_PATH_CONTRACT,
     load_mission_task_paths,
 )

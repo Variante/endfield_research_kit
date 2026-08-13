@@ -26,24 +26,35 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import (  # noqa: E402
-    InstalledNativeInputs,
-    check_installed_native_inputs,
-    md_escape,
-    native_evidence_required,
-    native_evidence_skip_message,
-    read_json,
-    rel_path,
-    safe_key,
-    sha256_file,
-    write_report_json,
-    write_text_if_changed,
-)
-from story_builder.anime_assets import (  # noqa: E402
+try:
+    from common import (
+        InstalledNativeInputs,
+        check_installed_native_inputs,
+        md_escape,
+        native_evidence_required,
+        native_evidence_skip_message,
+        read_json,
+        rel_path,
+        safe_key,
+        sha256_file,
+        write_report_json,
+        write_text_if_changed,
+    )
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.common import (
+        InstalledNativeInputs,
+        check_installed_native_inputs,
+        md_escape,
+        native_evidence_required,
+        native_evidence_skip_message,
+        read_json,
+        rel_path,
+        safe_key,
+        sha256_file,
+        write_report_json,
+        write_text_if_changed,
+    )
+from .anime_assets import (
     _get_anime_tree_path_index,
     _load_anime_resource_payload,
     extract_dialog_tree_definition_evidence,
