@@ -1619,8 +1619,8 @@
         ],
         "interpretation": "This is a real native factory/VAT call surface, but the current static chain is a 0x128-byte registry/handle object (type tag 0x3c), not a 0x3c-byte GPU payload. Its pre-handoff work is hash/handle registration and its vtable +0x28 target is statically 0x180a38ea0, a handle/table finalizer with no GPU operation. This closes the VAT entry as negative evidence against the five-Vector4 shared record reaching _UploadBuffer, kernel 7, or channel-2 resource +0xd0; the independent factory per-draw upload edge remains open and fail-closed."
       },
-          "managed_frame_update_evidence": {
-            "status": "factory-frame-update-stub-noop",
+      "managed_frame_update_evidence": {
+        "status": "factory-frame-update-stub-noop",
         "source": "Current global-metadata.dat method declaration plus the matching GameAssembly.dll code-registration mapping and static call census.",
         "managed_method": {
           "type": "UnityEngine.HyperGryph.HGFactoryRenderManager",
@@ -1645,41 +1645,41 @@
           "0x1841cb3c0",
           "0x189ea513e"
         ],
-            "interpretation": "This specific managed factory per-frame entry cannot be credited as a shared-payload to _UploadBuffer or GPU-dispatch producer in the current build. The result does not disprove a dynamically initialized native factory service, IFix-patched code, or unrelated GPU-driven ECS work; those remain separate boundaries and the channel-2 upload edge stays fail-closed.",
-            "job_forward_dynamic_patch_surface": {
-              "status": "ifx-patch-body-open",
-              "source": "Current global-metadata catalog plus GameAssembly.dll body mapping/disassembly for the RemoteFactory controller frame-forward method.",
-              "managed_method": {
-                "type": "Beyond.Gameplay.RemoteFactory.RemoteFactoryGameWorldController",
-                "method": "FrameUpdateEntitiesJobForward",
-                "metadata_method_index": 29077,
-                "token": "0x06007196",
-                "parameter": "forward: System.Boolean"
-              },
-              "gameassembly_body": {
-                "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
-                "native_pointer": "0x1875316ac",
-                "range": "0x1875316ac..0x187531704",
-                "patch_key": "0x7301",
-                "unpatched_path": "writes controller +0x38 from the bool and returns",
-                "patched_path": "IFix.WrappersManagerImpl.GetPatch(0x7301) -> __Gen_Wrap_* at 0x1866c2b40 with (patchObject, controller, forward, r9d=0)",
-                "direct_calls": [
-                  "0x182efe6c0 IFix.WrappersManagerImpl.IsPatched",
-                  "0x1871c7e18 IFix.WrappersManagerImpl.GetPatch",
-                  "0x1866c2b40 IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_*"
-                ]
-              },
-              "paired_flag_method": {
-                "method": "SetGarbageCollectDirty",
-                "metadata_method_index": 29078,
-                "native_pointer": "0x18477d8e0",
-                "range": "0x18477d8e0..0x18477d910",
-                "patch_key": "0x7302",
-                "observed": "The unpatched path writes controller +0x50=true; the patched branch is an IFix jump and is not statically recoverable from this body."
-              },
-              "boundary": "The HGFactoryRenderManager.FrameUpdateEntities method pointer remains a one-byte ret, but the adjacent RemoteFactory controller frame-forward path is explicitly IFix-patchable. Static UnityPlayer/GPUDriven evidence therefore cannot close or exclude factory per-frame dirty production until the patch body or dynamic method table for key 0x7301 is recovered. Keep the shared-record-to-_UploadBuffer and channel-2/resource +0xd0 edges fail-closed; do not treat the managed ret stub as proof that no frame producer exists."
-            }
+        "interpretation": "This specific managed factory per-frame entry cannot be credited as a shared-payload to _UploadBuffer or GPU-dispatch producer in the current build. The result does not disprove a dynamically initialized native factory service, IFix-patched code, or unrelated GPU-driven ECS work; those remain separate boundaries and the channel-2 upload edge stays fail-closed.",
+        "job_forward_dynamic_patch_surface": {
+          "status": "ifx-patch-body-open",
+          "source": "Current global-metadata catalog plus GameAssembly.dll body mapping/disassembly for the RemoteFactory controller frame-forward method.",
+          "managed_method": {
+            "type": "Beyond.Gameplay.RemoteFactory.RemoteFactoryGameWorldController",
+            "method": "FrameUpdateEntitiesJobForward",
+            "metadata_method_index": 29077,
+            "token": "0x06007196",
+            "parameter": "forward: System.Boolean"
           },
+          "gameassembly_body": {
+            "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+            "native_pointer": "0x1875316ac",
+            "range": "0x1875316ac..0x187531704",
+            "patch_key": "0x7301",
+            "unpatched_path": "writes controller +0x38 from the bool and returns",
+            "patched_path": "IFix.WrappersManagerImpl.GetPatch(0x7301) -> __Gen_Wrap_* at 0x1866c2b40 with (patchObject, controller, forward, r9d=0)",
+            "direct_calls": [
+              "0x182efe6c0 IFix.WrappersManagerImpl.IsPatched",
+              "0x1871c7e18 IFix.WrappersManagerImpl.GetPatch",
+              "0x1866c2b40 IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_*"
+            ]
+          },
+          "paired_flag_method": {
+            "method": "SetGarbageCollectDirty",
+            "metadata_method_index": 29078,
+            "native_pointer": "0x18477d8e0",
+            "range": "0x18477d8e0..0x18477d910",
+            "patch_key": "0x7302",
+            "observed": "The unpatched path writes controller +0x50=true; the patched branch is an IFix jump and is not statically recoverable from this body."
+          },
+          "boundary": "The HGFactoryRenderManager.FrameUpdateEntities method pointer remains a one-byte ret, but the adjacent RemoteFactory controller frame-forward path is explicitly IFix-patchable. Static UnityPlayer/GPUDriven evidence therefore cannot close or exclude factory per-frame dirty production until the patch body or dynamic method table for key 0x7301 is recovered. Keep the shared-record-to-_UploadBuffer and channel-2/resource +0xd0 edges fail-closed; do not treat the managed ret stub as proof that no frame producer exists."
+        }
+      },
       "gpu_driven_binding_path_evidence": {
         "status": "kernel-index-and-binding-record-abi-closed-upload-dispatch-edge-open",
         "source": "Current UnityPlayer.dll GPUDrivenRendererV1/V2 internal-call implementations, current GameAssembly.dll wrapper bodies, and the current UnityPlayer shader-property registry initializer.",
