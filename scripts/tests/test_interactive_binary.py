@@ -1,15 +1,8 @@
-import importlib.util
 import math
 import unittest
-from pathlib import Path
 from struct import pack, unpack
 
-
-SCRIPT = Path(__file__).resolve().parents[1] / "story_builder/interactive_binary.py"
-SPEC = importlib.util.spec_from_file_location("interactive_binary_test", SCRIPT)
-interactive_binary = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-SPEC.loader.exec_module(interactive_binary)
+from scripts.story_builder import interactive_binary
 
 
 def mp_string(value: str) -> bytes:

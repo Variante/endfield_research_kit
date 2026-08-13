@@ -1,21 +1,13 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
 
-ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "gameplay_builder" / "projectiles.py"
-SPEC = importlib.util.spec_from_file_location("gameplay_builder_projectiles", MODULE_PATH)
-assert SPEC and SPEC.loader
-MODULE = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = MODULE
-SPEC.loader.exec_module(MODULE)
+from scripts.gameplay_builder import projectiles as MODULE
 
 
 class ProjectileBuilderTests(unittest.TestCase):

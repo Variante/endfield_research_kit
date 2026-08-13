@@ -1,20 +1,15 @@
 from __future__ import annotations
 
 import gzip
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
 import unittest
 
 
+from scripts import animestudio_object_index as MERGER
+
 HERE = Path(__file__).resolve().parent
-SPEC = importlib.util.spec_from_file_location(
-    "animestudio_object_index", HERE.parent / "animestudio_object_index.py"
-)
-MERGER = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-SPEC.loader.exec_module(MERGER)
 SCHEMA_PATH = (
     HERE.parents[1]
     / "tools"

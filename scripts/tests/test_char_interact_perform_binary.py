@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-import importlib.util
 import struct
 import unittest
-from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parents[1] / "story_builder/char_interact_perform_binary.py"
-SPEC = importlib.util.spec_from_file_location("char_interact_perform_binary_test", SCRIPT)
-char_interact = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-SPEC.loader.exec_module(char_interact)
-CharInteractPerformDecodeError = char_interact.CharInteractPerformDecodeError
-decode_char_interact_audio_actions = char_interact.decode_char_interact_audio_actions
+from scripts.story_builder.char_interact_perform_binary import (
+    CharInteractPerformDecodeError,
+    decode_char_interact_audio_actions,
+)
 
 
 def u32(value: int) -> bytes:
