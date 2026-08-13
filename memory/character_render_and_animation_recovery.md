@@ -515,6 +515,15 @@ NPC archetypes are imported as labeled source kits.
   producer and the channel-2 descriptor edge remain unresolved. The structured
   census is recorded under `native_immediate_dispatch_census` in the packed
   shader audit.
+  A follow-up on the large UnityPlayer initializer `0x1813018c0..0x181301d71`
+  closes another false-positive bridge: it resolves registry slot 20 through
+  `0x180fc5e60`, whose installed service name is
+  `RuntimeInitializeOnLoadManager`, copies generic service-state fields, and
+  calls the mode selector `0x1810e6310`. Its wrapper and initializer contain no
+  GPU upload/dispatch, factory staging, or resource `+0xd0` read; copied service
+  offsets must not be aliased with the channel-2 resolved resource. The exact
+  boundary is recorded under `service_state_constructor_followup` in the
+  packed audit.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
