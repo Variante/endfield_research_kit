@@ -72,7 +72,7 @@ Use DummyDlls only when script-derived MonoBehaviour schemas matter. After an
 installed-game update, or when provenance is stale, run:
 
 ```bat
-python scripts\animestudio\generate_dummydll.py --dry-run
+python -m scripts.animestudio.generate_dummydll --dry-run
 ```
 
 Run `--replace` only after unique registration and staged validation pass.
