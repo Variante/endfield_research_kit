@@ -18,6 +18,7 @@ from scripts.mission_pipeline import (
     mission_payload_projection,
     offline_shell_projection,
     offline_recovery_projection,
+    post_playback_projection,
     quest_fork_arm_projection,
     quest_scope_projection,
     runtime_trace_projection,
@@ -45,6 +46,17 @@ def _build_mission(*args, **kwargs):
         authority_classifier=pipeline.classify_authority,
         quest_fork_builder=pipeline.build_quest_fork_semantics,
         mission_property_projector=pipeline.mission_property_rows,
+    )
+
+
+def _build_post_playback_variable_bridge_audit(native_index):
+    return post_playback_projection.build_post_playback_variable_bridge_audit(
+        native_index,
+        setter_actions=pipeline.POST_PLAYBACK_VARIABLE_SETTER_ACTIONS,
+        listener_fields=pipeline.POST_PLAYBACK_VARIABLE_LISTENER_FIELDS,
+        post_playback_control_projector=(
+            pipeline.exact_native_receiver_post_playback_control
+        ),
     )
 
 
@@ -4986,7 +4998,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }],
         }
 
-        audit = pipeline.build_post_playback_variable_bridge_audit(native_index)
+        self.assertFalse(
+            hasattr(pipeline, "build_post_playback_variable_bridge_audit")
+        )
+        audit = _build_post_playback_variable_bridge_audit(native_index)
 
         self.assertEqual(
             "context_only_execute_notification_family_unproven",
@@ -5004,7 +5019,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertFalse(audit["usesOcrOrManualOrder"])
 
     def test_post_playback_variable_bridge_closes_zero_overlap(self):
-        audit = pipeline.build_post_playback_variable_bridge_audit({})
+        audit = _build_post_playback_variable_bridge_audit({})
 
         self.assertEqual("closed_no_exact_same_script_key_match", audit["status"])
         self.assertEqual(0, audit["summary"]["exactSetterListenerMatches"])
