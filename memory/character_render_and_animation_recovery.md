@@ -65,6 +65,16 @@ passes, with no `factory`, `perdraw`, `upload`, or character producer; the only
 direct `ComputeShader.Dispatch` caller is unrelated MagicaCloth physics code.
 This closes the direct managed dispatch candidates, while leaving the native
 command-stream record feeding the generic interpreter open and fail-closed.
+The native command-stream pair is now bounded for one dispatch opcode: writer
+`0x18092bed0..0x18092c123` stores opcode `0x27ef`, a resource/handle qword, and
+three 32-bit dispatch values (`0x18092bf54`, `0x18092bfb6`, `0x18092c00a`,
+`0x18092c05d`, `0x18092c0aa`). Interpreter case `0x27ef` begins at
+`0x1813b805b`, consumes the same four-field shape, and reaches graphics
+context slot `+0xab8` at `0x1813b819f`; the writer also has an immediate
+fallback at `0x18092c10e`. This closes the generic native command-record
+boundary, but the record is not tied to factory channel-2/resource `+0xd0` or
+`UploadPerDrawParams` kernel 7, so the character upload edge remains
+fail-closed.
 
 ## Evidence boundary
 
