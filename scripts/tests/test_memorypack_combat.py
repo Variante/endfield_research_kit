@@ -4,7 +4,11 @@ import struct
 import unittest
 
 from scripts.game_data.memorypack import buff as memorypack_buff
-from scripts.game_data.memorypack.core import MEMORYPACK_NULL_COUNT
+from scripts.game_data.memorypack.core import (
+    MEMORYPACK_NULL_COUNT,
+    scan_length_prefixed_utf8_string_hits,
+    unique_strings,
+)
 from scripts.game_data.memorypack.schemas import (
     BUFF_MEMBER_COUNT,
     MEMORYPACK_FIELD_SCHEMAS,
@@ -13,6 +17,15 @@ from scripts.game_data.memorypack.schemas import (
 
 
 class CombatMemoryPackSchemaTests(unittest.TestCase):
+    def test_shared_string_sampling_primitives_are_bounded(self) -> None:
+        data = b"prefix" + struct.pack("<I", 5) + b"Alpha" + b"tail"
+
+        self.assertEqual(
+            scan_length_prefixed_utf8_string_hits(data, start=6),
+            [{"offset": "0x6", "length": 5, "value": "Alpha"}],
+        )
+        self.assertEqual(unique_strings([" A ", "A", "", "B"], 2), ["A", "B"])
+
     def test_current_schema_counts_and_new_fields_stay_in_sync(self) -> None:
         buff_schema = MEMORYPACK_FIELD_SCHEMAS["BuffData"]
         skill_schema = MEMORYPACK_FIELD_SCHEMAS["SkillData"]
