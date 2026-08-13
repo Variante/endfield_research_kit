@@ -29,7 +29,7 @@
 - Story-playback calls: `10` across `4` modules
 - authored playback references: `3`
 - binary-proven runtime handle dispatch branches: `7` in `1` queue family
-- registry keys used for exact-case validation: `10895`
+- registry keys used for exact-case validation: `11348`
 - `case_mismatch_registry_match`: `1`
 - `exact_registry_match`: `2`
 - `runtime_payload_not_static_story_id`: `7`

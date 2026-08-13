@@ -104,13 +104,22 @@ builders must not import or execute recovery modules.
 
 Mission Pipeline reads the canonical shipped-Lua consumer index through
 `story_builder.lua_consumer_references`; it does not consume a recovery-script
-artifact. Standard WebUI extraction intentionally omits Lua, so refresh this
-tracked index only from an explicit complete plaintext-Lua extraction. To
-refresh it and optionally render Markdown, run:
+artifact. Cinematic-handle classification and typed action-producer joins come
+from the reviewed, installed-build-gated
+`story_builder/native_contracts/cinematic_queue.json`; the full native carrier
+report is not a production input. Standard WebUI extraction intentionally
+omits Lua, so refresh this tracked index only from an explicit complete
+plaintext-Lua extraction. To refresh it and optionally render Markdown, run:
 
 ```bat
 python scripts\story_builder\lua_consumer_references.py --markdown
 ```
+
+To refresh and reconcile the optional full cinematic native audit against the
+compact contract, run
+`python scripts\story_recovery\audit_native_carriers.py cinematic`. Use
+`--skip-contract-reconciliation` only while reviewing a new installed build
+before intentionally updating the versioned contract.
 
 `story_builder/source_gap/` owns the canonical source-only Story gap queue.
 Mission Pipeline refreshes it through the in-process builder API; it is not a

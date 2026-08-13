@@ -1,0 +1,213 @@
+{
+    "schema":  "cinematicQueueNativeContract.v1",
+    "status":  "validated",
+    "sources":  {
+                    "gameAssembly":  "GameAssembly.dll",
+                    "gameAssemblySha256":  "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+                    "globalMetadata":  "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+                    "globalMetadataSha256":  "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+                },
+    "queueBaseType":  "Beyond.Gameplay.Core.CinematicQueueItemDataBase",
+    "queueHandleType":  "Beyond.Gameplay.Core.CinematicQueueManager+CinematicQueueItemHandle",
+    "dispatcherMethods":  [
+                              "DoPlayCutsceneByHandle",
+                              "DoPlayDialogByHandle",
+                              "DoPlayForceSNSByHandle",
+                              "PlayCGByHandle",
+                              "ShowNarrativeBlackScreenByHandle",
+                              "ShowUIReadingPopPanelByHandle",
+                              "StartRemoteCommByHandle"
+                          ],
+    "counts":  {
+                   "payloadTypes":  7,
+                   "nativeDispatchers":  7,
+                   "enqueueEdges":  10,
+                   "nativeProducers":  10,
+                   "typedActionProducerRoutes":  16,
+                   "typedActionProducerTypes":  16
+               },
+    "actionProducerRoutes":  [
+                                 {
+                                     "actionType":  "ComplexNarrativeBlackScreenAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.ComplexNarrativeBlackScreenAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008ca9",
+                                     "actionVa":  "0x187660bf0",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "ShowNarrativeBlackScreen",
+                                     "producerToken":  "0x0600802b",
+                                     "producerVa":  "0x1875ec4b0"
+                                 },
+                                 {
+                                     "actionType":  "NarrativeBlackScreenAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.NarrativeBlackScreenAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008ce9",
+                                     "actionVa":  "0x187668c84",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "ShowNarrativeBlackScreen",
+                                     "producerToken":  "0x0600802b",
+                                     "producerVa":  "0x1875ec4b0"
+                                 },
+                                 {
+                                     "actionType":  "PlayCutsceneAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.PlayCutsceneAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008e19",
+                                     "actionVa":  "0x187675ea4",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "PlayCutscene",
+                                     "producerToken":  "0x06008055",
+                                     "producerVa":  "0x1875e6c44"
+                                 },
+                                 {
+                                     "actionType":  "PlayCutsceneIgnoreCinematicQueue",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.PlayCutsceneIgnoreCinematicQueue",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008e23",
+                                     "actionVa":  "0x187676618",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "PlayCutscene",
+                                     "producerToken":  "0x06008055",
+                                     "producerVa":  "0x1875e6c44"
+                                 },
+                                 {
+                                     "actionType":  "PlayDialogAndHideSceneObjectAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.PlayDialogAndHideSceneObjectAction",
+                                     "actionMethod":  "PlayCinematic",
+                                     "actionToken":  "0x06008cf2",
+                                     "actionVa":  "0x187669a84",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "StartDialog",
+                                     "producerToken":  "0x06008038",
+                                     "producerVa":  "0x1875ed524"
+                                 },
+                                 {
+                                     "actionType":  "PlayFmvAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.PlayFmvAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008e2b",
+                                     "actionVa":  "0x187676be4",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "PlayFmv",
+                                     "producerToken":  "0x0600805e",
+                                     "producerVa":  "0x1875e7408"
+                                 },
+                                 {
+                                     "actionType":  "PlayRemoteComm",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.PlayRemoteComm",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008e64",
+                                     "actionVa":  "0x187678a84",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "StartRemoteComm",
+                                     "producerToken":  "0x06008064",
+                                     "producerVa":  "0x1875edd90"
+                                 },
+                                 {
+                                     "actionType":  "ShowUIReadingPopPanel",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.ShowUIReadingPopPanel",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x060090f6",
+                                     "actionVa":  "0x186aac0b8",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "ShowUIReadingPopPanel",
+                                     "producerToken":  "0x060080ad",
+                                     "producerVa":  "0x1875ec8b8"
+                                 },
+                                 {
+                                     "actionType":  "StartCutsceneAndControlSceneObjectAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartCutsceneAndControlSceneObjectAction",
+                                     "actionMethod":  "PlayCinematic",
+                                     "actionToken":  "0x06008e8b",
+                                     "actionVa":  "0x18767cff4",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "PlayCutscene",
+                                     "producerToken":  "0x06008055",
+                                     "producerVa":  "0x1875e6c44"
+                                 },
+                                 {
+                                     "actionType":  "StartCutsceneAndHideSceneObjectAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction",
+                                     "actionMethod":  "PlayCinematic",
+                                     "actionToken":  "0x06008ea7",
+                                     "actionVa":  "0x18767dd14",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "PlayCutscene",
+                                     "producerToken":  "0x06008055",
+                                     "producerVa":  "0x1875e6c44"
+                                 },
+                                 {
+                                     "actionType":  "StartCutsceneAndTeleportAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartCutsceneAndTeleportAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008ec7",
+                                     "actionVa":  "0x18767e1ec",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "PlayCutscene",
+                                     "producerToken":  "0x06008055",
+                                     "producerVa":  "0x1875e6c44"
+                                 },
+                                 {
+                                     "actionType":  "StartDialogAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartDialogAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008ed7",
+                                     "actionVa":  "0x18767e920",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "StartDialog",
+                                     "producerToken":  "0x06008038",
+                                     "producerVa":  "0x1875ed524"
+                                 },
+                                 {
+                                     "actionType":  "StartDialogAndTeleportAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartDialogAndTeleportAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008ede",
+                                     "actionVa":  "0x18767f6b0",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "StartDialog",
+                                     "producerToken":  "0x06008038",
+                                     "producerVa":  "0x1875ed524"
+                                 },
+                                 {
+                                     "actionType":  "StartFmvAndTeleportAction",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartFmvAndTeleportAction",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008ee5",
+                                     "actionVa":  "0x18767fbe8",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "PlayFmv",
+                                     "producerToken":  "0x0600805e",
+                                     "producerVa":  "0x1875e7408"
+                                 },
+                                 {
+                                     "actionType":  "StartNarrativeBlackScreenAndTeleport",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartNarrativeBlackScreenAndTeleport",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008d45",
+                                     "actionVa":  "0x18766e494",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "ShowNarrativeBlackScreen",
+                                     "producerToken":  "0x0600802b",
+                                     "producerVa":  "0x1875ec4b0"
+                                 },
+                                 {
+                                     "actionType":  "StartRemoteCommAndTeleport",
+                                     "actionFullType":  "Beyond.Gameplay.Actions.StartRemoteCommAndTeleport",
+                                     "actionMethod":  "Execute",
+                                     "actionToken":  "0x06008eed",
+                                     "actionVa":  "0x18768008c",
+                                     "producerType":  "Beyond.Gameplay.Actions.GameAction",
+                                     "producerMethod":  "StartRemoteComm",
+                                     "producerToken":  "0x06008064",
+                                     "producerVa":  "0x1875edd90"
+                                 }
+                             ],
+    "conclusion":  {
+                       "luaCallsAreRuntimeDispatchers":  true,
+                       "staticMissionOwnership":  false,
+                       "staticStoryOrder":  false
+                   },
+    "boundary":  "The exact installed binary proves one polymorphic cinematic-handle dispatcher family and typed serialized-action producer routes. These facts do not identify mission ownership or establish Story order."
+}

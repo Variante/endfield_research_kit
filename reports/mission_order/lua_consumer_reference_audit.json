@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "luaConsumerReferenceAudit.v4",
-  "generatedAt": "2026-08-03T04:27:05.316262+00:00",
+  "schemaVersion": "luaConsumerReferenceAudit.v5",
+  "generatedAt": "2026-08-13T20:15:22.897857+00:00",
   "metadata": {
     "luaRoots": [
       "scratch/animestudio/zhuangfy_lizi_lua_dither_20260724/Lua/Data/LuaScripts"
@@ -18,10 +18,12 @@
     ],
     "unknownFocus": [],
     "storyIndex": "webui/data/lang/CN/index.json",
-    "storyRegistryKeys": 10895,
+    "storyRegistryKeys": 11348,
     "cinematicRuntimeAudit": {
-      "report": "reports/story/recovery/cinematic_queue_runtime_audit.json",
-      "sha256": "e41422348174de18981a381b2fd1f6551da17c0f38819aec22bf6f412bdba1e9",
+      "schema": "cinematicQueueNativeContractAudit.v1",
+      "status": "validated",
+      "report": "scripts/story_builder/native_contracts/cinematic_queue.json",
+      "sha256": "30883a462495b8d992d5c49570d4fb09478a4d3bd9475ad4be897584a2a95736",
       "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
       "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
       "handleType": "Beyond.Gameplay.Core.CinematicQueueManager+CinematicQueueItemHandle",
@@ -44,942 +46,181 @@
           "actionType": "ComplexNarrativeBlackScreenAction",
           "actionFullType": "Beyond.Gameplay.Actions.ComplexNarrativeBlackScreenAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ca9",
           "actionVa": "0x187660bf0",
-          "declaredFields": [
-            "_fadeInTime",
-            "_fadeOutTime",
-            "_isBlack",
-            "_textBeforeTime",
-            "_textAfterTime",
-            "_textDataList",
-            "_presetAudioBehaviour",
-            "_customAudioFlags",
-            "isOverrideFadeInTime",
-            "overrideFadeInTimeSeconds",
-            "isOverrideFadeOutTime",
-            "overrideFadeOutTimeSeconds"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowNarrativeBlackScreen",
           "producerToken": "0x0600802b",
-          "producerVa": "0x1875ec4b0",
-          "callOffset": 725,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 722,
-              "va": "0x187660ec2",
-              "bytes": "48 8b cb",
-              "text": "mov rcx, rbx",
-              "write": {
-                "register": "rcx",
-                "value": "rbx"
-              }
-            },
-            "rdx": {
-              "offset": 720,
-              "va": "0x187660ec0",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec4b0"
         },
         {
           "actionType": "NarrativeBlackScreenAction",
           "actionFullType": "Beyond.Gameplay.Actions.NarrativeBlackScreenAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ce9",
           "actionVa": "0x187668c84",
-          "declaredFields": [
-            "_fadeInTime",
-            "_fadeOutTime",
-            "_isBlack",
-            "_textBeforeTime",
-            "_textAfterTime",
-            "_texts",
-            "_presetAudioBehaviour",
-            "_customAudioFlags",
-            "isOverrideFadeInTime",
-            "overrideFadeInTimeSeconds",
-            "isOverrideFadeOutTime",
-            "overrideFadeOutTimeSeconds"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowNarrativeBlackScreen",
           "producerToken": "0x0600802b",
-          "producerVa": "0x1875ec4b0",
-          "callOffset": 1539,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 1536,
-              "va": "0x187669284",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 1534,
-              "va": "0x187669282",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec4b0"
         },
         {
           "actionType": "PlayCutsceneAction",
           "actionFullType": "Beyond.Gameplay.Actions.PlayCutsceneAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e19",
           "actionVa": "0x187675ea4",
-          "declaredFields": [
-            "_cutsceneId",
-            "_shouldWaitForFinish",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "_existingInteractives",
-            "_existingEnemy",
-            "_existingSceneObjects",
-            "overrideBeforeMaskConfig",
-            "beforeMask",
-            "overrideAfterMaskConfig",
-            "afterMask",
-            "m_existingInteractives",
-            "m_existingEnemies",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 963,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 955,
-              "va": "0x18767625f",
-              "bytes": "48 8b cd",
-              "text": "mov rcx, rbp",
-              "write": {
-                "register": "rcx",
-                "value": "rbp"
-              }
-            },
-            "rdx": {
-              "offset": 948,
-              "va": "0x187676258",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            },
-            "r8": {
-              "offset": 940,
-              "va": "0x187676250",
-              "bytes": "4d 8b c6",
-              "text": "mov r8, r14",
-              "write": {
-                "register": "r8",
-                "value": "r14"
-              }
-            },
-            "r9": {
-              "offset": 932,
-              "va": "0x187676248",
-              "bytes": "4d 8b cf",
-              "text": "mov r9, r15",
-              "write": {
-                "register": "r9",
-                "value": "r15"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "PlayCutsceneIgnoreCinematicQueue",
           "actionFullType": "Beyond.Gameplay.Actions.PlayCutsceneIgnoreCinematicQueue",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e23",
           "actionVa": "0x187676618",
-          "declaredFields": [
-            "m_handle"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 854,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 846,
-              "va": "0x187676966",
-              "bytes": "48 8b cd",
-              "text": "mov rcx, rbp",
-              "write": {
-                "register": "rcx",
-                "value": "rbp"
-              }
-            },
-            "rdx": {
-              "offset": 838,
-              "va": "0x18767695e",
-              "bytes": "48 8b d6",
-              "text": "mov rdx, rsi",
-              "write": {
-                "register": "rdx",
-                "value": "rsi"
-              }
-            },
-            "r8": {
-              "offset": 830,
-              "va": "0x187676956",
-              "bytes": "4d 8b c6",
-              "text": "mov r8, r14",
-              "write": {
-                "register": "r8",
-                "value": "r14"
-              }
-            },
-            "r9": {
-              "offset": 822,
-              "va": "0x18767694e",
-              "bytes": "4d 8b cf",
-              "text": "mov r9, r15",
-              "write": {
-                "register": "r9",
-                "value": "r15"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "PlayDialogAndHideSceneObjectAction",
           "actionFullType": "Beyond.Gameplay.Actions.PlayDialogAndHideSceneObjectAction",
           "actionMethod": "PlayCinematic",
-          "actionMethodSlot": 20,
           "actionToken": "0x06008cf2",
           "actionVa": "0x187669a84",
-          "declaredFields": [
-            "_dialogId",
-            "m_isSceneRecovered"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartDialog",
           "producerToken": "0x06008038",
-          "producerVa": "0x1875ed524",
-          "callOffset": 240,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 232,
-              "va": "0x187669b6c",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 221,
-              "va": "0x187669b61",
-              "bytes": "48 8d 54 24 40",
-              "text": "lea rdx, [rsp+0x40]",
-              "write": {
-                "register": "rdx",
-                "value": "&[rsp+0x40]"
-              }
-            },
-            "r8": {
-              "offset": 207,
-              "va": "0x187669b53",
-              "bytes": "4c 8d 44 24 30",
-              "text": "lea r8, [rsp+0x30]",
-              "write": {
-                "register": "r8",
-                "value": "&[rsp+0x30]"
-              }
-            },
-            "r9": {
-              "offset": 212,
-              "va": "0x187669b58",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875ed524"
         },
         {
           "actionType": "PlayFmvAction",
           "actionFullType": "Beyond.Gameplay.Actions.PlayFmvAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e2b",
           "actionVa": "0x187676be4",
-          "declaredFields": [
-            "_shouldWaitForFinish",
-            "_moviePath",
-            "beforeMask",
-            "_param",
-            "overrideAfterMaskConfig",
-            "afterMask"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayFmv",
           "producerToken": "0x0600805e",
-          "producerVa": "0x1875e7408",
-          "callOffset": 520,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 514,
-              "va": "0x187676de6",
-              "bytes": "48 8b cd",
-              "text": "mov rcx, rbp",
-              "write": {
-                "register": "rcx",
-                "value": "rbp"
-              }
-            },
-            "rdx": {
-              "offset": 508,
-              "va": "0x187676de0",
-              "bytes": "48 8b d6",
-              "text": "mov rdx, rsi",
-              "write": {
-                "register": "rdx",
-                "value": "rsi"
-              }
-            },
-            "r8": {
-              "offset": 511,
-              "va": "0x187676de3",
-              "bytes": "45 33 c0",
-              "text": "xor r8d, r8d",
-              "write": {
-                "register": "r8d",
-                "value": "0"
-              }
-            },
-            "r9": {
-              "offset": 517,
-              "va": "0x187676de9",
-              "bytes": "4c 8b cf",
-              "text": "mov r9, rdi",
-              "write": {
-                "register": "r9",
-                "value": "rdi"
-              }
-            }
-          }
+          "producerVa": "0x1875e7408"
         },
         {
           "actionType": "PlayRemoteComm",
           "actionFullType": "Beyond.Gameplay.Actions.PlayRemoteComm",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e64",
           "actionVa": "0x187678a84",
-          "declaredFields": [
-            "_remoteCommId",
-            "_useBlackScreenBefore",
-            "maskTypeBefore",
-            "_fadeInTimeBefore",
-            "_fadeOutTimeBefore",
-            "_useBlackScreenAfter",
-            "maskTypeAfter",
-            "_fadeInTimeAfter",
-            "_fadeOutTimeAfter",
-            "m_remoteCommId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartRemoteComm",
           "producerToken": "0x06008064",
-          "producerVa": "0x1875edd90",
-          "callOffset": 629,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 626,
-              "va": "0x187678cf6",
-              "bytes": "49 8b ce",
-              "text": "mov rcx, r14",
-              "write": {
-                "register": "rcx",
-                "value": "r14"
-              }
-            },
-            "rdx": {
-              "offset": 623,
-              "va": "0x187678cf3",
-              "bytes": "48 8b d7",
-              "text": "mov rdx, rdi",
-              "write": {
-                "register": "rdx",
-                "value": "rdi"
-              }
-            },
-            "r8": {
-              "offset": 620,
-              "va": "0x187678cf0",
-              "bytes": "4c 8b c6",
-              "text": "mov r8, rsi",
-              "write": {
-                "register": "r8",
-                "value": "rsi"
-              }
-            },
-            "r9": {
-              "offset": 617,
-              "va": "0x187678ced",
-              "bytes": "4c 8b cd",
-              "text": "mov r9, rbp",
-              "write": {
-                "register": "r9",
-                "value": "rbp"
-              }
-            }
-          }
+          "producerVa": "0x1875edd90"
         },
         {
           "actionType": "ShowUIReadingPopPanel",
           "actionFullType": "Beyond.Gameplay.Actions.ShowUIReadingPopPanel",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x060090f6",
           "actionVa": "0x186aac0b8",
-          "declaredFields": [
-            "_readingPopId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowUIReadingPopPanel",
           "producerToken": "0x060080ad",
-          "producerVa": "0x1875ec8b8",
-          "callOffset": 117,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 114,
-              "va": "0x186aac12a",
-              "bytes": "48 8b cb",
-              "text": "mov rcx, rbx",
-              "write": {
-                "register": "rcx",
-                "value": "rbx"
-              }
-            },
-            "rdx": {
-              "offset": 112,
-              "va": "0x186aac128",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec8b8"
         },
         {
           "actionType": "StartCutsceneAndControlSceneObjectAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndControlSceneObjectAction",
           "actionMethod": "PlayCinematic",
-          "actionMethodSlot": 20,
           "actionToken": "0x06008e8b",
           "actionVa": "0x18767cff4",
-          "declaredFields": [
-            "_cutsceneId",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 298,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 290,
-              "va": "0x18767d116",
-              "bytes": "49 8b ce",
-              "text": "mov rcx, r14",
-              "write": {
-                "register": "rcx",
-                "value": "r14"
-              }
-            },
-            "rdx": {
-              "offset": 283,
-              "va": "0x18767d10f",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            },
-            "r8": {
-              "offset": 275,
-              "va": "0x18767d107",
-              "bytes": "4c 8b c5",
-              "text": "mov r8, rbp",
-              "write": {
-                "register": "r8",
-                "value": "rbp"
-              }
-            },
-            "r9": {
-              "offset": 267,
-              "va": "0x18767d0ff",
-              "bytes": "4c 8b ce",
-              "text": "mov r9, rsi",
-              "write": {
-                "register": "r9",
-                "value": "rsi"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "StartCutsceneAndHideSceneObjectAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction",
           "actionMethod": "PlayCinematic",
-          "actionMethodSlot": 20,
           "actionToken": "0x06008ea7",
           "actionVa": "0x18767dd14",
-          "declaredFields": [
-            "_cutsceneId",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 219,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 210,
-              "va": "0x18767dde6",
-              "bytes": "48 8b cf",
-              "text": "mov rcx, rdi",
-              "write": {
-                "register": "rcx",
-                "value": "rdi"
-              }
-            },
-            "rdx": {
-              "offset": 203,
-              "va": "0x18767dddf",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            },
-            "r8": {
-              "offset": 195,
-              "va": "0x18767ddd7",
-              "bytes": "45 33 c0",
-              "text": "xor r8d, r8d",
-              "write": {
-                "register": "r8d",
-                "value": "0"
-              }
-            },
-            "r9": {
-              "offset": 187,
-              "va": "0x18767ddcf",
-              "bytes": "45 33 c9",
-              "text": "xor r9d, r9d",
-              "write": {
-                "register": "r9d",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "StartCutsceneAndTeleportAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndTeleportAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ec7",
           "actionVa": "0x18767e1ec",
-          "declaredFields": [
-            "_cutsceneId",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "_existingInteractives",
-            "_existingEnemy",
-            "_existingSceneObjects",
-            "m_existingInteractives",
-            "m_existingEnemies",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 574,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 566,
-              "va": "0x18767e422",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 558,
-              "va": "0x18767e41a",
-              "bytes": "48 8b d5",
-              "text": "mov rdx, rbp",
-              "write": {
-                "register": "rdx",
-                "value": "rbp"
-              }
-            },
-            "r8": {
-              "offset": 550,
-              "va": "0x18767e412",
-              "bytes": "4d 8b c6",
-              "text": "mov r8, r14",
-              "write": {
-                "register": "r8",
-                "value": "r14"
-              }
-            },
-            "r9": {
-              "offset": 542,
-              "va": "0x18767e40a",
-              "bytes": "4d 8b cf",
-              "text": "mov r9, r15",
-              "write": {
-                "register": "r9",
-                "value": "r15"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "StartDialogAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartDialogAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ed7",
           "actionVa": "0x18767e920",
-          "declaredFields": [
-            "_shouldWaitForFinish",
-            "_dialogId",
-            "overrideBeforeMaskConfig",
-            "beforeMask",
-            "overrideAfterMaskConfig",
-            "afterMask",
-            "_existingEnemy",
-            "m_existingEnemies",
-            "m_fStartWaitNpcTime",
-            "MAX_WAIT_NPC_TIME",
-            "m_registerDialogEndAction"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartDialog",
           "producerToken": "0x06008038",
-          "producerVa": "0x1875ed524",
-          "callOffset": 1810,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 1807,
-              "va": "0x18767f02f",
-              "bytes": "49 8b ce",
-              "text": "mov rcx, r14",
-              "write": {
-                "register": "rcx",
-                "value": "r14"
-              }
-            },
-            "rdx": {
-              "offset": 1802,
-              "va": "0x18767f02a",
-              "bytes": "48 8d 54 24 40",
-              "text": "lea rdx, [rsp+0x40]",
-              "write": {
-                "register": "rdx",
-                "value": "&[rsp+0x40]"
-              }
-            },
-            "r8": {
-              "offset": 1797,
-              "va": "0x18767f025",
-              "bytes": "4c 8d 44 24 50",
-              "text": "lea r8, [rsp+0x50]",
-              "write": {
-                "register": "r8",
-                "value": "&[rsp+0x50]"
-              }
-            },
-            "r9": {
-              "offset": 1794,
-              "va": "0x18767f022",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875ed524"
         },
         {
           "actionType": "StartDialogAndTeleportAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartDialogAndTeleportAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ede",
           "actionVa": "0x18767f6b0",
-          "declaredFields": [
-            "_dialogId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartDialog",
           "producerToken": "0x06008038",
-          "producerVa": "0x1875ed524",
-          "callOffset": 401,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 393,
-              "va": "0x18767f839",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 384,
-              "va": "0x18767f830",
-              "bytes": "48 8d 55 d0",
-              "text": "lea rdx, [rbp-0x30]",
-              "write": {
-                "register": "rdx",
-                "value": "&[rbp-0x30]"
-              }
-            },
-            "r8": {
-              "offset": 372,
-              "va": "0x18767f824",
-              "bytes": "4c 8d 45 e0",
-              "text": "lea r8, [rbp-0x20]",
-              "write": {
-                "register": "r8",
-                "value": "&[rbp-0x20]"
-              }
-            },
-            "r9": {
-              "offset": 376,
-              "va": "0x18767f828",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875ed524"
         },
         {
           "actionType": "StartFmvAndTeleportAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartFmvAndTeleportAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ee5",
           "actionVa": "0x18767fbe8",
-          "declaredFields": [
-            "_fmvId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayFmv",
           "producerToken": "0x0600805e",
-          "producerVa": "0x1875e7408",
-          "callOffset": 287,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 284,
-              "va": "0x18767fd04",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 281,
-              "va": "0x18767fd01",
-              "bytes": "48 8b d5",
-              "text": "mov rdx, rbp",
-              "write": {
-                "register": "rdx",
-                "value": "rbp"
-              }
-            },
-            "r8": {
-              "offset": 278,
-              "va": "0x18767fcfe",
-              "bytes": "45 33 c0",
-              "text": "xor r8d, r8d",
-              "write": {
-                "register": "r8d",
-                "value": "0"
-              }
-            },
-            "r9": {
-              "offset": 275,
-              "va": "0x18767fcfb",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875e7408"
         },
         {
           "actionType": "StartNarrativeBlackScreenAndTeleport",
           "actionFullType": "Beyond.Gameplay.Actions.StartNarrativeBlackScreenAndTeleport",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008d45",
           "actionVa": "0x18766e494",
-          "declaredFields": [
-            "_fadeInTime",
-            "_fadeOutTime",
-            "_isBlack",
-            "_textBeforeTime",
-            "_textAfterTime",
-            "_texts",
-            "_presetAudioBehaviour",
-            "_customAudioFlags",
-            "isOverrideFadeInTime",
-            "overrideFadeInTimeSeconds",
-            "isOverrideFadeOutTime",
-            "overrideFadeOutTimeSeconds",
-            "m_maskFadeOutData"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowNarrativeBlackScreen",
           "producerToken": "0x0600802b",
-          "producerVa": "0x1875ec4b0",
-          "callOffset": 1670,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 1667,
-              "va": "0x18766eb17",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 1665,
-              "va": "0x18766eb15",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec4b0"
         },
         {
           "actionType": "StartRemoteCommAndTeleport",
           "actionFullType": "Beyond.Gameplay.Actions.StartRemoteCommAndTeleport",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008eed",
           "actionVa": "0x18768008c",
-          "declaredFields": [
-            "_remoteCommId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartRemoteComm",
           "producerToken": "0x06008064",
-          "producerVa": "0x1875edd90",
-          "callOffset": 490,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 487,
-              "va": "0x187680273",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 484,
-              "va": "0x187680270",
-              "bytes": "49 8b d6",
-              "text": "mov rdx, r14",
-              "write": {
-                "register": "rdx",
-                "value": "r14"
-              }
-            },
-            "r8": {
-              "offset": 481,
-              "va": "0x18768026d",
-              "bytes": "4c 8b c5",
-              "text": "mov r8, rbp",
-              "write": {
-                "register": "r8",
-                "value": "rbp"
-              }
-            },
-            "r9": {
-              "offset": 478,
-              "va": "0x18768026a",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875edd90"
         }
       ],
-      "enqueueEdgeCount": 10
+      "enqueueEdgeCount": 10,
+      "validationFailures": []
     }
   },
   "settings": {
@@ -67170,8 +66411,10 @@
       }
     ],
     "runtimeHandleContract": {
-      "report": "reports/story/recovery/cinematic_queue_runtime_audit.json",
-      "sha256": "e41422348174de18981a381b2fd1f6551da17c0f38819aec22bf6f412bdba1e9",
+      "schema": "cinematicQueueNativeContractAudit.v1",
+      "status": "validated",
+      "report": "scripts/story_builder/native_contracts/cinematic_queue.json",
+      "sha256": "30883a462495b8d992d5c49570d4fb09478a4d3bd9475ad4be897584a2a95736",
       "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
       "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
       "handleType": "Beyond.Gameplay.Core.CinematicQueueManager+CinematicQueueItemHandle",
@@ -67194,942 +66437,181 @@
           "actionType": "ComplexNarrativeBlackScreenAction",
           "actionFullType": "Beyond.Gameplay.Actions.ComplexNarrativeBlackScreenAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ca9",
           "actionVa": "0x187660bf0",
-          "declaredFields": [
-            "_fadeInTime",
-            "_fadeOutTime",
-            "_isBlack",
-            "_textBeforeTime",
-            "_textAfterTime",
-            "_textDataList",
-            "_presetAudioBehaviour",
-            "_customAudioFlags",
-            "isOverrideFadeInTime",
-            "overrideFadeInTimeSeconds",
-            "isOverrideFadeOutTime",
-            "overrideFadeOutTimeSeconds"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowNarrativeBlackScreen",
           "producerToken": "0x0600802b",
-          "producerVa": "0x1875ec4b0",
-          "callOffset": 725,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 722,
-              "va": "0x187660ec2",
-              "bytes": "48 8b cb",
-              "text": "mov rcx, rbx",
-              "write": {
-                "register": "rcx",
-                "value": "rbx"
-              }
-            },
-            "rdx": {
-              "offset": 720,
-              "va": "0x187660ec0",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec4b0"
         },
         {
           "actionType": "NarrativeBlackScreenAction",
           "actionFullType": "Beyond.Gameplay.Actions.NarrativeBlackScreenAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ce9",
           "actionVa": "0x187668c84",
-          "declaredFields": [
-            "_fadeInTime",
-            "_fadeOutTime",
-            "_isBlack",
-            "_textBeforeTime",
-            "_textAfterTime",
-            "_texts",
-            "_presetAudioBehaviour",
-            "_customAudioFlags",
-            "isOverrideFadeInTime",
-            "overrideFadeInTimeSeconds",
-            "isOverrideFadeOutTime",
-            "overrideFadeOutTimeSeconds"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowNarrativeBlackScreen",
           "producerToken": "0x0600802b",
-          "producerVa": "0x1875ec4b0",
-          "callOffset": 1539,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 1536,
-              "va": "0x187669284",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 1534,
-              "va": "0x187669282",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec4b0"
         },
         {
           "actionType": "PlayCutsceneAction",
           "actionFullType": "Beyond.Gameplay.Actions.PlayCutsceneAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e19",
           "actionVa": "0x187675ea4",
-          "declaredFields": [
-            "_cutsceneId",
-            "_shouldWaitForFinish",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "_existingInteractives",
-            "_existingEnemy",
-            "_existingSceneObjects",
-            "overrideBeforeMaskConfig",
-            "beforeMask",
-            "overrideAfterMaskConfig",
-            "afterMask",
-            "m_existingInteractives",
-            "m_existingEnemies",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 963,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 955,
-              "va": "0x18767625f",
-              "bytes": "48 8b cd",
-              "text": "mov rcx, rbp",
-              "write": {
-                "register": "rcx",
-                "value": "rbp"
-              }
-            },
-            "rdx": {
-              "offset": 948,
-              "va": "0x187676258",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            },
-            "r8": {
-              "offset": 940,
-              "va": "0x187676250",
-              "bytes": "4d 8b c6",
-              "text": "mov r8, r14",
-              "write": {
-                "register": "r8",
-                "value": "r14"
-              }
-            },
-            "r9": {
-              "offset": 932,
-              "va": "0x187676248",
-              "bytes": "4d 8b cf",
-              "text": "mov r9, r15",
-              "write": {
-                "register": "r9",
-                "value": "r15"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "PlayCutsceneIgnoreCinematicQueue",
           "actionFullType": "Beyond.Gameplay.Actions.PlayCutsceneIgnoreCinematicQueue",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e23",
           "actionVa": "0x187676618",
-          "declaredFields": [
-            "m_handle"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 854,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 846,
-              "va": "0x187676966",
-              "bytes": "48 8b cd",
-              "text": "mov rcx, rbp",
-              "write": {
-                "register": "rcx",
-                "value": "rbp"
-              }
-            },
-            "rdx": {
-              "offset": 838,
-              "va": "0x18767695e",
-              "bytes": "48 8b d6",
-              "text": "mov rdx, rsi",
-              "write": {
-                "register": "rdx",
-                "value": "rsi"
-              }
-            },
-            "r8": {
-              "offset": 830,
-              "va": "0x187676956",
-              "bytes": "4d 8b c6",
-              "text": "mov r8, r14",
-              "write": {
-                "register": "r8",
-                "value": "r14"
-              }
-            },
-            "r9": {
-              "offset": 822,
-              "va": "0x18767694e",
-              "bytes": "4d 8b cf",
-              "text": "mov r9, r15",
-              "write": {
-                "register": "r9",
-                "value": "r15"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "PlayDialogAndHideSceneObjectAction",
           "actionFullType": "Beyond.Gameplay.Actions.PlayDialogAndHideSceneObjectAction",
           "actionMethod": "PlayCinematic",
-          "actionMethodSlot": 20,
           "actionToken": "0x06008cf2",
           "actionVa": "0x187669a84",
-          "declaredFields": [
-            "_dialogId",
-            "m_isSceneRecovered"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartDialog",
           "producerToken": "0x06008038",
-          "producerVa": "0x1875ed524",
-          "callOffset": 240,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 232,
-              "va": "0x187669b6c",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 221,
-              "va": "0x187669b61",
-              "bytes": "48 8d 54 24 40",
-              "text": "lea rdx, [rsp+0x40]",
-              "write": {
-                "register": "rdx",
-                "value": "&[rsp+0x40]"
-              }
-            },
-            "r8": {
-              "offset": 207,
-              "va": "0x187669b53",
-              "bytes": "4c 8d 44 24 30",
-              "text": "lea r8, [rsp+0x30]",
-              "write": {
-                "register": "r8",
-                "value": "&[rsp+0x30]"
-              }
-            },
-            "r9": {
-              "offset": 212,
-              "va": "0x187669b58",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875ed524"
         },
         {
           "actionType": "PlayFmvAction",
           "actionFullType": "Beyond.Gameplay.Actions.PlayFmvAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e2b",
           "actionVa": "0x187676be4",
-          "declaredFields": [
-            "_shouldWaitForFinish",
-            "_moviePath",
-            "beforeMask",
-            "_param",
-            "overrideAfterMaskConfig",
-            "afterMask"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayFmv",
           "producerToken": "0x0600805e",
-          "producerVa": "0x1875e7408",
-          "callOffset": 520,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 514,
-              "va": "0x187676de6",
-              "bytes": "48 8b cd",
-              "text": "mov rcx, rbp",
-              "write": {
-                "register": "rcx",
-                "value": "rbp"
-              }
-            },
-            "rdx": {
-              "offset": 508,
-              "va": "0x187676de0",
-              "bytes": "48 8b d6",
-              "text": "mov rdx, rsi",
-              "write": {
-                "register": "rdx",
-                "value": "rsi"
-              }
-            },
-            "r8": {
-              "offset": 511,
-              "va": "0x187676de3",
-              "bytes": "45 33 c0",
-              "text": "xor r8d, r8d",
-              "write": {
-                "register": "r8d",
-                "value": "0"
-              }
-            },
-            "r9": {
-              "offset": 517,
-              "va": "0x187676de9",
-              "bytes": "4c 8b cf",
-              "text": "mov r9, rdi",
-              "write": {
-                "register": "r9",
-                "value": "rdi"
-              }
-            }
-          }
+          "producerVa": "0x1875e7408"
         },
         {
           "actionType": "PlayRemoteComm",
           "actionFullType": "Beyond.Gameplay.Actions.PlayRemoteComm",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008e64",
           "actionVa": "0x187678a84",
-          "declaredFields": [
-            "_remoteCommId",
-            "_useBlackScreenBefore",
-            "maskTypeBefore",
-            "_fadeInTimeBefore",
-            "_fadeOutTimeBefore",
-            "_useBlackScreenAfter",
-            "maskTypeAfter",
-            "_fadeInTimeAfter",
-            "_fadeOutTimeAfter",
-            "m_remoteCommId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartRemoteComm",
           "producerToken": "0x06008064",
-          "producerVa": "0x1875edd90",
-          "callOffset": 629,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 626,
-              "va": "0x187678cf6",
-              "bytes": "49 8b ce",
-              "text": "mov rcx, r14",
-              "write": {
-                "register": "rcx",
-                "value": "r14"
-              }
-            },
-            "rdx": {
-              "offset": 623,
-              "va": "0x187678cf3",
-              "bytes": "48 8b d7",
-              "text": "mov rdx, rdi",
-              "write": {
-                "register": "rdx",
-                "value": "rdi"
-              }
-            },
-            "r8": {
-              "offset": 620,
-              "va": "0x187678cf0",
-              "bytes": "4c 8b c6",
-              "text": "mov r8, rsi",
-              "write": {
-                "register": "r8",
-                "value": "rsi"
-              }
-            },
-            "r9": {
-              "offset": 617,
-              "va": "0x187678ced",
-              "bytes": "4c 8b cd",
-              "text": "mov r9, rbp",
-              "write": {
-                "register": "r9",
-                "value": "rbp"
-              }
-            }
-          }
+          "producerVa": "0x1875edd90"
         },
         {
           "actionType": "ShowUIReadingPopPanel",
           "actionFullType": "Beyond.Gameplay.Actions.ShowUIReadingPopPanel",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x060090f6",
           "actionVa": "0x186aac0b8",
-          "declaredFields": [
-            "_readingPopId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowUIReadingPopPanel",
           "producerToken": "0x060080ad",
-          "producerVa": "0x1875ec8b8",
-          "callOffset": 117,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 114,
-              "va": "0x186aac12a",
-              "bytes": "48 8b cb",
-              "text": "mov rcx, rbx",
-              "write": {
-                "register": "rcx",
-                "value": "rbx"
-              }
-            },
-            "rdx": {
-              "offset": 112,
-              "va": "0x186aac128",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec8b8"
         },
         {
           "actionType": "StartCutsceneAndControlSceneObjectAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndControlSceneObjectAction",
           "actionMethod": "PlayCinematic",
-          "actionMethodSlot": 20,
           "actionToken": "0x06008e8b",
           "actionVa": "0x18767cff4",
-          "declaredFields": [
-            "_cutsceneId",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 298,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 290,
-              "va": "0x18767d116",
-              "bytes": "49 8b ce",
-              "text": "mov rcx, r14",
-              "write": {
-                "register": "rcx",
-                "value": "r14"
-              }
-            },
-            "rdx": {
-              "offset": 283,
-              "va": "0x18767d10f",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            },
-            "r8": {
-              "offset": 275,
-              "va": "0x18767d107",
-              "bytes": "4c 8b c5",
-              "text": "mov r8, rbp",
-              "write": {
-                "register": "r8",
-                "value": "rbp"
-              }
-            },
-            "r9": {
-              "offset": 267,
-              "va": "0x18767d0ff",
-              "bytes": "4c 8b ce",
-              "text": "mov r9, rsi",
-              "write": {
-                "register": "r9",
-                "value": "rsi"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "StartCutsceneAndHideSceneObjectAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction",
           "actionMethod": "PlayCinematic",
-          "actionMethodSlot": 20,
           "actionToken": "0x06008ea7",
           "actionVa": "0x18767dd14",
-          "declaredFields": [
-            "_cutsceneId",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 219,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 210,
-              "va": "0x18767dde6",
-              "bytes": "48 8b cf",
-              "text": "mov rcx, rdi",
-              "write": {
-                "register": "rcx",
-                "value": "rdi"
-              }
-            },
-            "rdx": {
-              "offset": 203,
-              "va": "0x18767dddf",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            },
-            "r8": {
-              "offset": 195,
-              "va": "0x18767ddd7",
-              "bytes": "45 33 c0",
-              "text": "xor r8d, r8d",
-              "write": {
-                "register": "r8d",
-                "value": "0"
-              }
-            },
-            "r9": {
-              "offset": 187,
-              "va": "0x18767ddcf",
-              "bytes": "45 33 c9",
-              "text": "xor r9d, r9d",
-              "write": {
-                "register": "r9d",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "StartCutsceneAndTeleportAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndTeleportAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ec7",
           "actionVa": "0x18767e1ec",
-          "declaredFields": [
-            "_cutsceneId",
-            "_needLoadExtraStream",
-            "_extraStreamPosition",
-            "_existingInteractives",
-            "_existingEnemy",
-            "_existingSceneObjects",
-            "m_existingInteractives",
-            "m_existingEnemies",
-            "m_preloadedKey",
-            "_nodeEnablePreload"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayCutscene",
           "producerToken": "0x06008055",
-          "producerVa": "0x1875e6c44",
-          "callOffset": 574,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 566,
-              "va": "0x18767e422",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 558,
-              "va": "0x18767e41a",
-              "bytes": "48 8b d5",
-              "text": "mov rdx, rbp",
-              "write": {
-                "register": "rdx",
-                "value": "rbp"
-              }
-            },
-            "r8": {
-              "offset": 550,
-              "va": "0x18767e412",
-              "bytes": "4d 8b c6",
-              "text": "mov r8, r14",
-              "write": {
-                "register": "r8",
-                "value": "r14"
-              }
-            },
-            "r9": {
-              "offset": 542,
-              "va": "0x18767e40a",
-              "bytes": "4d 8b cf",
-              "text": "mov r9, r15",
-              "write": {
-                "register": "r9",
-                "value": "r15"
-              }
-            }
-          }
+          "producerVa": "0x1875e6c44"
         },
         {
           "actionType": "StartDialogAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartDialogAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ed7",
           "actionVa": "0x18767e920",
-          "declaredFields": [
-            "_shouldWaitForFinish",
-            "_dialogId",
-            "overrideBeforeMaskConfig",
-            "beforeMask",
-            "overrideAfterMaskConfig",
-            "afterMask",
-            "_existingEnemy",
-            "m_existingEnemies",
-            "m_fStartWaitNpcTime",
-            "MAX_WAIT_NPC_TIME",
-            "m_registerDialogEndAction"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartDialog",
           "producerToken": "0x06008038",
-          "producerVa": "0x1875ed524",
-          "callOffset": 1810,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 1807,
-              "va": "0x18767f02f",
-              "bytes": "49 8b ce",
-              "text": "mov rcx, r14",
-              "write": {
-                "register": "rcx",
-                "value": "r14"
-              }
-            },
-            "rdx": {
-              "offset": 1802,
-              "va": "0x18767f02a",
-              "bytes": "48 8d 54 24 40",
-              "text": "lea rdx, [rsp+0x40]",
-              "write": {
-                "register": "rdx",
-                "value": "&[rsp+0x40]"
-              }
-            },
-            "r8": {
-              "offset": 1797,
-              "va": "0x18767f025",
-              "bytes": "4c 8d 44 24 50",
-              "text": "lea r8, [rsp+0x50]",
-              "write": {
-                "register": "r8",
-                "value": "&[rsp+0x50]"
-              }
-            },
-            "r9": {
-              "offset": 1794,
-              "va": "0x18767f022",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875ed524"
         },
         {
           "actionType": "StartDialogAndTeleportAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartDialogAndTeleportAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ede",
           "actionVa": "0x18767f6b0",
-          "declaredFields": [
-            "_dialogId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartDialog",
           "producerToken": "0x06008038",
-          "producerVa": "0x1875ed524",
-          "callOffset": 401,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 393,
-              "va": "0x18767f839",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 384,
-              "va": "0x18767f830",
-              "bytes": "48 8d 55 d0",
-              "text": "lea rdx, [rbp-0x30]",
-              "write": {
-                "register": "rdx",
-                "value": "&[rbp-0x30]"
-              }
-            },
-            "r8": {
-              "offset": 372,
-              "va": "0x18767f824",
-              "bytes": "4c 8d 45 e0",
-              "text": "lea r8, [rbp-0x20]",
-              "write": {
-                "register": "r8",
-                "value": "&[rbp-0x20]"
-              }
-            },
-            "r9": {
-              "offset": 376,
-              "va": "0x18767f828",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875ed524"
         },
         {
           "actionType": "StartFmvAndTeleportAction",
           "actionFullType": "Beyond.Gameplay.Actions.StartFmvAndTeleportAction",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008ee5",
           "actionVa": "0x18767fbe8",
-          "declaredFields": [
-            "_fmvId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "PlayFmv",
           "producerToken": "0x0600805e",
-          "producerVa": "0x1875e7408",
-          "callOffset": 287,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 284,
-              "va": "0x18767fd04",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 281,
-              "va": "0x18767fd01",
-              "bytes": "48 8b d5",
-              "text": "mov rdx, rbp",
-              "write": {
-                "register": "rdx",
-                "value": "rbp"
-              }
-            },
-            "r8": {
-              "offset": 278,
-              "va": "0x18767fcfe",
-              "bytes": "45 33 c0",
-              "text": "xor r8d, r8d",
-              "write": {
-                "register": "r8d",
-                "value": "0"
-              }
-            },
-            "r9": {
-              "offset": 275,
-              "va": "0x18767fcfb",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875e7408"
         },
         {
           "actionType": "StartNarrativeBlackScreenAndTeleport",
           "actionFullType": "Beyond.Gameplay.Actions.StartNarrativeBlackScreenAndTeleport",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008d45",
           "actionVa": "0x18766e494",
-          "declaredFields": [
-            "_fadeInTime",
-            "_fadeOutTime",
-            "_isBlack",
-            "_textBeforeTime",
-            "_textAfterTime",
-            "_texts",
-            "_presetAudioBehaviour",
-            "_customAudioFlags",
-            "isOverrideFadeInTime",
-            "overrideFadeInTimeSeconds",
-            "isOverrideFadeOutTime",
-            "overrideFadeOutTimeSeconds",
-            "m_maskFadeOutData"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "ShowNarrativeBlackScreen",
           "producerToken": "0x0600802b",
-          "producerVa": "0x1875ec4b0",
-          "callOffset": 1670,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 1667,
-              "va": "0x18766eb17",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 1665,
-              "va": "0x18766eb15",
-              "bytes": "33 d2",
-              "text": "xor edx, edx",
-              "write": {
-                "register": "edx",
-                "value": "0"
-              }
-            }
-          }
+          "producerVa": "0x1875ec4b0"
         },
         {
           "actionType": "StartRemoteCommAndTeleport",
           "actionFullType": "Beyond.Gameplay.Actions.StartRemoteCommAndTeleport",
           "actionMethod": "Execute",
-          "actionMethodSlot": 15,
           "actionToken": "0x06008eed",
           "actionVa": "0x18768008c",
-          "declaredFields": [
-            "_remoteCommId"
-          ],
           "producerType": "Beyond.Gameplay.Actions.GameAction",
           "producerMethod": "StartRemoteComm",
           "producerToken": "0x06008064",
-          "producerVa": "0x1875edd90",
-          "callOffset": 490,
-          "argumentRegisterWrites": {
-            "rcx": {
-              "offset": 487,
-              "va": "0x187680273",
-              "bytes": "48 8b ce",
-              "text": "mov rcx, rsi",
-              "write": {
-                "register": "rcx",
-                "value": "rsi"
-              }
-            },
-            "rdx": {
-              "offset": 484,
-              "va": "0x187680270",
-              "bytes": "49 8b d6",
-              "text": "mov rdx, r14",
-              "write": {
-                "register": "rdx",
-                "value": "r14"
-              }
-            },
-            "r8": {
-              "offset": 481,
-              "va": "0x18768026d",
-              "bytes": "4c 8b c5",
-              "text": "mov r8, rbp",
-              "write": {
-                "register": "r8",
-                "value": "rbp"
-              }
-            },
-            "r9": {
-              "offset": 478,
-              "va": "0x18768026a",
-              "bytes": "4c 8b cb",
-              "text": "mov r9, rbx",
-              "write": {
-                "register": "r9",
-                "value": "rbx"
-              }
-            }
-          }
+          "producerVa": "0x1875edd90"
         }
       ],
-      "enqueueEdgeCount": 10
+      "enqueueEdgeCount": 10,
+      "validationFailures": []
     },
     "allCalls": [
       {
