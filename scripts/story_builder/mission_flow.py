@@ -75,6 +75,65 @@ _QUEST_ACTION_CONNECTIONS = {
     4: ("client_action_failed", "failed"),
 }
 
+
+def build_mission_map_pins(flow: dict | None) -> list[dict]:
+    """Merge identical quest map pins into one stable mission-level list."""
+    if not flow:
+        return []
+    merged: dict[tuple, dict] = {}
+    for quest in flow.get("quests") or []:
+        for pin in quest.get("pins") or []:
+            position = pin.get("position") or {}
+            key = (
+                pin.get("scene") or "",
+                pin.get("sourceType") or "",
+                pin.get("trackingType") or "",
+                pin.get("missionAreaId") or "",
+                pin.get("npcProxyId") or "",
+                round(float(position.get("x", 0.0)), 3),
+                round(float(position.get("y", 0.0)), 3),
+                round(float(position.get("z", 0.0)), 3),
+            )
+            row = merged.get(key)
+            if row is None:
+                row = {
+                    "scene": pin.get("scene") or "",
+                    "sourceType": pin.get("sourceType") or "",
+                    "trackingType": pin.get("trackingType") or "",
+                    "position": {
+                        "x": float(position.get("x", 0.0)),
+                        "y": float(position.get("y", 0.0)),
+                        "z": float(position.get("z", 0.0)),
+                    },
+                    "questIds": [],
+                    "flowIndices": [],
+                }
+                if pin.get("missionAreaId"):
+                    row["missionAreaId"] = pin["missionAreaId"]
+                if pin.get("npcProxyId"):
+                    row["npcProxyId"] = pin["npcProxyId"]
+                if pin.get("radius") is not None:
+                    row["radius"] = pin["radius"]
+                if pin.get("routePointCount") is not None:
+                    row["routePointCount"] = pin["routePointCount"]
+                merged[key] = row
+            quest_id = quest.get("id") or ""
+            if quest_id and quest_id not in row["questIds"]:
+                row["questIds"].append(quest_id)
+            flow_index = quest.get("flowIndex")
+            if flow_index is not None and flow_index not in row["flowIndices"]:
+                row["flowIndices"].append(flow_index)
+    return sorted(
+        merged.values(),
+        key=lambda row: (
+            min(row.get("flowIndices") or [10**9]),
+            row.get("scene") or "",
+            row.get("sourceType") or "",
+            row["position"]["x"],
+            row["position"]["z"],
+        ),
+    )
+
 # Current installed MemoryPack formatter evidence maps the compact ActionHeader
 # tag 0x85 with 0x13 subtype members to LevelEvent_OnQuestStateChanged. Only
 # exact header-list membership is accepted below.
@@ -1089,4 +1148,4 @@ def load_mission_flow(mission_id: str) -> dict | None:
     return payload
 
 
-__all__ = ["load_mission_flow"]
+__all__ = ["build_mission_map_pins", "load_mission_flow"]
