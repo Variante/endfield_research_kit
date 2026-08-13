@@ -6,20 +6,22 @@ import json
 from pathlib import Path
 from typing import Any
 
-try:
+if __package__ == "scripts.story_builder.native_contracts":
+    from ...common import (
+        NATIVE_EVIDENCE_MISSING,
+        NATIVE_EVIDENCE_MISMATCHED,
+        NATIVE_EVIDENCE_VALIDATED,
+        check_installed_native_inputs,
+    )
+elif __package__ == "story_builder.native_contracts":
     from common import (
         NATIVE_EVIDENCE_MISSING,
         NATIVE_EVIDENCE_MISMATCHED,
         NATIVE_EVIDENCE_VALIDATED,
         check_installed_native_inputs,
     )
-except ImportError:  # pragma: no cover - package import identity
-    from scripts.common import (
-        NATIVE_EVIDENCE_MISSING,
-        NATIVE_EVIDENCE_MISMATCHED,
-        NATIVE_EVIDENCE_VALIDATED,
-        check_installed_native_inputs,
-    )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 
 SCHEMA = "callServerCallbackNativeContract.v1"
