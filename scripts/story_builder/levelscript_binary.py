@@ -11,6 +11,7 @@ from .codecs.levelscript import exit_custom_performance as levelscript_exit_perf
 from .codecs.levelscript import fmv as levelscript_fmv
 from .codecs.levelscript import manual_control as levelscript_manual_control
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
+from .codecs.levelscript import switch_actions as levelscript_switch_actions
 
 if __package__ == "story_builder":
     from common import (
@@ -5217,205 +5218,6 @@ def _decode_while_action(payload: bytes) -> dict[str, Any]:
     return out
 
 
-def _decode_switch_int_action(
-    payload: bytes,
-    *,
-    field_prefix: str = "switch",
-    action_name: str = "SwitchInt",
-    branch_role: str | None = None,
-) -> dict[str, Any]:
-    """Decode a serialized integer switch family using its shared shape.
-
-    The current ``SwitchInt`` and ``SwitchIntLarger`` formatters both read, in
-    setter order, ``_caseIDList``, ``_caseValueList``, ``_defaultID``, then a
-    typed ``PureGetter<int> _value`` object.  Both lists use a u32 count
-    followed by signed i32 values.  Keeping the parser parameterized by the
-    family prefix prevents per-object recovery rules while retaining explicit
-    family names in the emitted evidence.
-    """
-    if branch_role is None:
-        family_token = re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", action_name)
-        family_token = family_token.replace("-Action", "").lower()
-        branch_role = f"typed-{family_token}-actions"
-    cursor = 0
-
-    def read_i32_list() -> list[int] | None:
-        nonlocal cursor
-        if cursor + 4 > len(payload):
-            return None
-        count = struct.unpack_from("<I", payload, cursor)[0]
-        cursor += 4
-        if count > 64 or cursor + count * 4 > len(payload):
-            return None
-        values = [
-            struct.unpack_from("<i", payload, cursor + index * 4)[0]
-            for index in range(count)
-        ]
-        cursor += count * 4
-        return values
-
-    case_ids = read_i32_list()
-    case_values = read_i32_list()
-    if case_ids is None or case_values is None or len(case_ids) != len(case_values):
-        return {}
-    if cursor + 4 > len(payload):
-        return {}
-    default_id = struct.unpack_from("<i", payload, cursor)[0]
-    cursor += 4
-    value_getter = payload[cursor:]
-
-    # The installed formatter writes a polymorphic PureGetter<int> object
-    # here.  Every current integer-switch record has the object-present tag 0x04
-    # and at least the 14-byte compact object shell.  Requiring it consumes the
-    # complete record tail and prevents a matching scalar prefix from being
-    # promoted into control flow.
-    if len(value_getter) < 14 or value_getter[0] != 0x04:
-        return {}
-    if any(ref < -1 or ref > 0x10000 for ref in [*case_ids, default_id]):
-        return {}
-
-    branch_refs = list(dict.fromkeys(
-        ref for ref in [*case_ids, default_id] if ref > 0
-    ))
-    case_ids_field = f"{field_prefix}CaseActionLocalIds"
-    case_values_field = f"{field_prefix}CaseValues"
-    cases_field = f"{field_prefix}Cases"
-    default_field = f"{field_prefix}DefaultActionLocalId"
-    value_length_field = f"{field_prefix}ValueGetterPayloadLength"
-    value_prefix_field = f"{field_prefix}ValueGetterHexPrefix"
-    out: dict[str, Any] = {
-        case_ids_field: case_ids,
-        case_values_field: case_values,
-        cases_field: [
-            {"value": value, "actionLocalId": action_id}
-            for value, action_id in zip(case_values, case_ids)
-        ],
-        default_field: default_id,
-        value_length_field: len(value_getter),
-        value_prefix_field: value_getter[:32].hex(" "),
-        "branchLocalRefs": branch_refs,
-        "branchRole": branch_role,
-    }
-    # Common property-output/local-getter form used by the e3m4 radio chain:
-    # object-present + zero subtype header + local getter id + null sentinel.
-    if (
-        len(value_getter) == 17
-        and value_getter[:5] == b"\x04\x00\x00\x00\x00"
-        and value_getter[9:] == b"\xff" * 8
-    ):
-        getter_id = struct.unpack_from("<i", value_getter, 5)[0]
-        if 0 <= getter_id <= 0x10000:
-            out[f"{field_prefix}ValueGetterLocalId"] = getter_id
-    if f"{field_prefix}ValueGetterLocalId" not in out:
-        inline_value = _decode_i32_param(value_getter, 0)
-        if inline_value is not None and inline_value[1] == len(value_getter):
-            out[f"{field_prefix}ValueParam"] = inline_value[0]
-    return out
-
-
-def _decode_switch_string_action(payload: bytes) -> dict[str, Any]:
-    """Decode the current-build ``SwitchString`` branch table exactly."""
-    cursor = 0
-
-    def read_i32_list() -> list[int] | None:
-        nonlocal cursor
-        if cursor + 4 > len(payload):
-            return None
-        count = struct.unpack_from("<I", payload, cursor)[0]
-        cursor += 4
-        if count > 64 or cursor + count * 4 > len(payload):
-            return None
-        values = [
-            struct.unpack_from("<i", payload, cursor + index * 4)[0]
-            for index in range(count)
-        ]
-        cursor += count * 4
-        return values
-
-    def read_string_list() -> list[str | None] | None:
-        nonlocal cursor
-        if cursor + 4 > len(payload):
-            return None
-        count = struct.unpack_from("<I", payload, cursor)[0]
-        cursor += 4
-        if count > 64:
-            return None
-        values: list[str | None] = []
-        for _ in range(count):
-            if cursor + 4 > len(payload):
-                return None
-            size = struct.unpack_from("<i", payload, cursor)[0]
-            cursor += 4
-            if size == -1:
-                values.append(None)
-                continue
-            if size < 0 or size > 1024 or cursor + size > len(payload):
-                return None
-            try:
-                value = payload[cursor : cursor + size].decode("utf-8")
-            except UnicodeDecodeError:
-                return None
-            if any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
-                return None
-            values.append(value)
-            cursor += size
-        return values
-
-    case_ids = read_i32_list()
-    case_values = read_string_list()
-    if case_ids is None or case_values is None or len(case_ids) != len(case_values):
-        return {}
-    if cursor + 4 > len(payload):
-        return {}
-    default_id = struct.unpack_from("<i", payload, cursor)[0]
-    cursor += 4
-    if any(ref < -1 or ref > 0x10000 for ref in [*case_ids, default_id]):
-        return {}
-
-    value_param = _decode_string_param(payload, cursor)
-    value_getter_local_id: int | None = None
-    if value_param is not None and value_param[1] == len(payload):
-        value_detail = value_param[0]
-    elif (
-        cursor + 17 == len(payload)
-        and payload[cursor] == 0x04
-        and payload[cursor + 1 : cursor + 5] == b"\xff" * 4
-        and payload[cursor + 9 : cursor + 17] == b"\xff" * 8
-    ):
-        value_getter_local_id = struct.unpack_from("<i", payload, cursor + 5)[0]
-        if value_getter_local_id <= 0 or value_getter_local_id > 0x10000:
-            return {}
-        value_detail = {
-            "value": None,
-            "idRef": value_getter_local_id,
-            "paramSource": -1,
-            "path": None,
-        }
-    else:
-        return {}
-
-    branch_refs = list(dict.fromkeys(
-        ref for ref in [*case_ids, default_id] if ref > 0
-    ))
-    out: dict[str, Any] = {
-        "switchStringCaseActionLocalIds": case_ids,
-        "switchStringCaseValues": case_values,
-        "switchStringCases": [
-            {"value": value, "actionLocalId": action_id}
-            for value, action_id in zip(case_values, case_ids)
-        ],
-        "switchStringDefaultActionLocalId": default_id,
-        "switchStringValueParam": value_detail,
-        "branchLocalRefs": branch_refs,
-        "branchRole": "typed-switch-string-actions",
-        "payloadShape": "switch-string-four-fields-exact-eof",
-        "consumedBytes": len(payload),
-    }
-    if value_getter_local_id is not None:
-        out["switchStringValueGetterLocalId"] = value_getter_local_id
-    return out
-
-
 def _decode_wait_for_seconds_in_trigger_volume_action(
     payload: bytes,
 ) -> dict[str, Any]:
@@ -7257,27 +7059,16 @@ def decode_levelscript_record_payload(
             out.update(while_action)
             out["branchLocalRefs"] = [while_action["whileDoActionLocalId"]]
             out["branchRole"] = "typed-while-action-body"
-    if semantic_key == (0x04BD, 0x0C):
-        switch_int = _decode_switch_int_action(payload)
-        if switch_int:
-            out.update(switch_int)
-    if semantic_key == (0x04BE, 0x0C):
-        switch_int_larger = _decode_switch_int_action(
-            payload,
-            field_prefix="switchIntLarger",
-            action_name="SwitchIntLarger",
-            branch_role="typed-switch-int-larger-actions",
-        )
-        if switch_int_larger:
-            out.update(switch_int_larger)
+    switch_action = levelscript_switch_actions.decode_switch_action(
+        payload,
+        semantic_key,
+    )
+    if switch_action:
+        out.update(switch_action)
     if semantic_key == (0x049E, 0x0F):
         start_dialog = _decode_start_dialog_action(payload)
         if start_dialog:
             out["startDialogAction"] = start_dialog
-    if semantic_key == (0x04BF, 0x0C):
-        switch_string = _decode_switch_string_action(payload)
-        if switch_string:
-            out.update(switch_string)
     if getter_role and semantic_key == (0x0347, 0x09):
         list_get_value_string = _decode_list_get_value_string(payload)
         if list_get_value_string:
