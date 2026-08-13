@@ -15,6 +15,7 @@ from scripts.mission_pipeline import (
     dialog_tree_projection,
     lua_story_projection,
     mission_context_projection,
+    mission_payload_projection,
     offline_shell_projection,
     offline_recovery_projection,
     quest_fork_arm_projection,
@@ -26,6 +27,25 @@ from scripts.mission_pipeline import (
 )
 from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
 from scripts.story_builder.native_contracts import callserver_callback
+
+
+def _build_mission(*args, **kwargs):
+    return mission_payload_projection.build_mission(
+        *args,
+        **kwargs,
+        schema_version=pipeline.SCHEMA_VERSION,
+        repo_root=pipeline.ROOT,
+        case_studies=pipeline.CASE_STUDIES,
+        action_projector=pipeline.action_rows,
+        objective_projector=pipeline.objective_row,
+        task_dependency_validator=(
+            pipeline.validate_level_script_task_dependency
+        ),
+        condition_projector=pipeline.condition_tree,
+        authority_classifier=pipeline.classify_authority,
+        quest_fork_builder=pipeline.build_quest_fork_semantics,
+        mission_property_projector=pipeline.mission_property_rows,
+    )
 
 
 class NativeEvidenceSkipWiringTests(unittest.TestCase):
@@ -5306,7 +5326,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }],
             },
         }]
-        payload, _ = pipeline.build_mission(
+        payload, _ = _build_mission(
             fixture,
             pipeline.ROOT / "fixture" / "testm1.json",
         )
@@ -5388,7 +5408,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         }
 
     def test_build_mission_preserves_finish_zero_and_condition_dependencies(self):
-        payload, summary = pipeline.build_mission(self.fixture(), pipeline.ROOT / "fixture" / "testm1.json")
+        payload, summary = _build_mission(self.fixture(), pipeline.ROOT / "fixture" / "testm1.json")
         nodes = {row["id"]: row for row in payload["nodes"]}
         finish = nodes["testm1_q#2"]["objectives"][0]["dialogFinishes"][0]
         self.assertEqual(finish, {"dialogId": "dlg_test", "finishId": 0})
@@ -5817,7 +5837,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             placeholders.append({"description": {"key": f"gate_{index + 1}"}, "condition": row})
         fixture["questDic"]["testm1_q#1"]["objectiveList"] = placeholders
 
-        payload, summary = pipeline.build_mission(
+        payload, summary = _build_mission(
             fixture,
             pipeline.ROOT / "fixture" / "testm1.json",
         )
@@ -7592,7 +7612,7 @@ class MissionGraphPayloadTests(unittest.TestCase):
         base = MissionPipelineBuilderTests()
         mission = base.fixture()
         entry = {"upstream": {"requiresCompleted": ["beta"]}, "downstream": {}}
-        payload, _ = pipeline.build_mission(
+        payload, _ = _build_mission(
             mission,
             Path("testm1.json"),
             None,
@@ -7605,7 +7625,7 @@ class MissionGraphPayloadTests(unittest.TestCase):
 
     def test_payload_defaults_are_empty_not_missing(self):
         base = MissionPipelineBuilderTests()
-        payload, _ = pipeline.build_mission(base.fixture(), Path("testm1.json"))
+        payload, _ = _build_mission(base.fixture(), Path("testm1.json"))
         self.assertEqual(payload["missionGraph"], {"upstream": {}, "downstream": {}})
         self.assertEqual(payload["envTalkContext"], [])
 
