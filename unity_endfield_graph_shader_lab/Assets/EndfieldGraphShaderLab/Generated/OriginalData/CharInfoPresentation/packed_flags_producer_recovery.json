@@ -1558,6 +1558,34 @@
             },
             "interpretation": "The generic constant-buffer pool is not a statically reachable consumer of the factory staging path: its only direct SetData edge is self-contained and its ApplyPendingUpload entry has no direct callers in the current GameAssembly image. The staging functions likewise remain table/job-dispatched boundaries, not proven _UploadBuffer producers. Keep resolver, scheduler, and indirect consumer work open and fail-closed."
           },
+          "frame_update_step2_record_maintenance_followup": {
+            "status": "step2-8c-record-maintenance-no-upload-edge",
+            "source": "Current installed UnityPlayer.dll PData-bounded disassembly captured in scratch/reverse_engineering/gpu_scene_upload_next/frame_step2_native_current.txt; binary SHA-256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+            "function": "0x1810d36b0..0x1810d4006",
+            "record_shape": {
+              "record_pointer_formation": "At 0x1810d3c7e..0x1810d3c8a the body forms manager-like +0x38 + entityIndex * 0x8c pointers while walking a separate index/list array.",
+              "observed_record_fields": ["+0x10", "+0x20", "+0x2c", "+0x30", "+0x3e", "+0x50", "+0x58", "+0x74"],
+              "role": "The loop decrements component/list counts, copies or compacts typed component arrays, and records small handle lists; it does not copy the shared Vector4 prefix at +0x00..+0x40 into the 0x100-stride render staging lanes."
+            },
+            "direct_callees": [
+              "0x1810ca4a0 (typed component/list cleanup)",
+              "0x181c9f9a0 (bounded native copy helper)",
+              "0x1810d4020 (component lookup/creation maintenance)",
+              "0x1810d8d40 (typed component field copy)",
+              "0x1810c7a30 (typed component/list cleanup)",
+              "0x1801fa2d0/0x180303e70/0x180129d50 (generic allocation/lifecycle helpers)"
+            ],
+            "gpu_boundary_checks": {
+              "compute_buffer_upload": false,
+              "set_buffer_or_shader_property": false,
+              "command_buffer_record_or_execute": false,
+              "immediate_or_gpu_driven_dispatch": false,
+              "upload_per_draw_params_kernel_7": false,
+              "resource_plus_0xd0_or_channel_2": false,
+              "indirect_call_instruction_in_body": false
+            },
+            "interpretation": "Step2 is a second CPU-side factory/ECS maintenance pass that happens to form the same 0x8c record address. Its component compaction and typed-copy callees provide no post-staging pack, 84-byte prefix, shader dispatch, or resource binding edge. The scheduler/consumer boundary therefore remains indirect and the staging-to-_UploadBuffer edge stays fail-closed."
+          },
           "next_gap": "Recover the indirect caller and the consumer of the 0x100-stride staging array; specifically search for a pack step that prefixes an entity/index dword and yields the shader's 84-byte source stride, then tie that upload to UploadPerDrawParams kernel 7 and resource +0xd0."
         }
       },

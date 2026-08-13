@@ -784,6 +784,16 @@ NPC archetypes are imported as labeled source kits.
   separately and contains temporary-data/serialization work without a direct
   partial-writer or GPU call. Details are recorded under
   `dirty_record_staging_consumer` in the packed-flag audit.
+  A deeper pass over the native `FrameUpdateStep2` range
+  `0x1810d36b0..0x1810d4006` closes a nearby false positive: it forms
+  `manager+0x38 + entityIndex*0x8c`, but only compacts typed component/list data
+  through `0x1810ca4a0`, `0x1810d4020`, `0x1810d8d40`, and `0x1810c7a30`.
+  It does not copy the shared `+0x00..+0x40` Vector4 prefix into the `0x100`
+  staging lanes, and the complete body has no indirect call, buffer/property
+  bind, command recording, or dispatch. This is CPU record maintenance, not the
+  missing upload consumer; the staging-to-`_UploadBuffer` edge remains
+  fail-closed. Details are under
+  `frame_update_step2_record_maintenance_followup` in the packed audit.
   A bounded literal-stride search then found 81 UnityPlayer functions that
   mention `0x54` (84 bytes) alongside record-like `0x50/0x8c/0x100` or lane
   accesses. Only four unique functions (five register/lane hits) actually
