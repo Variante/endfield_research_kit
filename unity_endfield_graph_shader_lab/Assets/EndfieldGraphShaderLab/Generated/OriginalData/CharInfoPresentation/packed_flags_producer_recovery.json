@@ -2374,6 +2374,34 @@
               "outside_registry_initializer": 0
             },
             "boundary": "The native image contains only the property-name registration for _RTPerDrawParamsBuffer. No additional text reference or named upload/compute literal identifies a runtime producer, shader bind, _UploadBuffer population, or UploadPerDrawParams kernel-7 dispatch; keep the factory shared-payload-to-GPU edge fail-closed."
+          },
+          "native_rt_resource_record_consumer": {
+            "status": "native-rt-resource-config-consumer-no-gpu-upload-edge",
+            "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+            "entry_chain": [
+              "0x180cdf820 -> 0x180ce2d70",
+              "0x180ce30c1 copies +0x1308/+0x130c/+0x1310 into +0x1c4/+0x1c8/+0x1cc",
+              "0x180ce30f7 -> 0x180cf6a50"
+            ],
+            "property_copy": {
+              "source_field": "+0x130c (_RTPerDrawParamsBuffer PropertyToID slot)",
+              "destination_field": "+0x1c8 in the native RT/resource state record",
+              "neighboring_fields": {
+                "+0x1c4": "+0x1308 (_RTMaterialLevelBuffer)",
+                "+0x1cc": "+0x1310 (_RayTracingGeomInstDataBuffer)"
+              },
+              "copy_instructions": [
+                "0x180ce30db mov eax,[rbx+0x130c]",
+                "0x180ce30e5 mov [rbx+0x1c8],eax"
+              ]
+            },
+            "resource_initializer": {
+              "function": "0x180cf6a50",
+              "observed": "Copies six scalar values from rdx into rcx+0xb8..0xcc, copies five 0x28-byte vector/string-like records into rcx+0xd0..0x198 through 0x1801332e0, grows a 0x50-byte entry list, then calls 0x180cfb120/0x180ccb130 for each entry and an optional callback through 0x180557940.",
+              "direct_callers": ["0x180ce30f7"],
+              "helper_0x1801332e0": "small-string/byte-range copy helper; no ComputeShader, SetBuffer, or Dispatch call"
+            },
+            "boundary": "This is positive evidence that the registered _RTPerDrawParamsBuffer ID participates in native ray-tracing/resource-state configuration. The recovered chain has no ComputeShader dispatch, SetBuffer, _UploadBuffer write, factory shared-record input, character resource +0xd0 read, or Vulkan set-0/binding-33 edge; it must not be promoted to the missing UploadPerDrawParams producer."
           }
         },
         "compute_shader_api_and_setup_census": {
