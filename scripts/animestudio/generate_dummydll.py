@@ -21,20 +21,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import sha256_file  # noqa: E402
-
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import (  # noqa: E402
-    DEFAULT_INSTALLED_GAME_DATA_ROOT as DEFAULT_GAME_DATA,
-    resolve_installed_game_data_root,
-)
+if __package__ != "scripts.animestudio":
+    raise SystemExit(
+        "Run this command from the repository root with "
+        "`python -m scripts.animestudio.generate_dummydll`."
+    )
+from ..common import resolve_installed_game_data_root, sha256_file
 DEFAULT_CPP2IL_SOURCE = ROOT / "tools" / "Cpp2IL-src-2022.0.7"
 DEFAULT_OUTPUT = ROOT / "tools" / "DummyDll"
 CPP2IL_REPOSITORY = "https://github.com/SamboyCoding/Cpp2IL.git"

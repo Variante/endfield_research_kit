@@ -1,24 +1,19 @@
 from __future__ import annotations
 
-import importlib.util
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 
+from scripts.animestudio import generate_dummydll
+
+
 ROOT = Path(__file__).resolve().parents[2]
-GENERATOR = ROOT / "scripts" / "animestudio" / "generate_dummydll.py"
 
 
 def load_generator():
-    spec = importlib.util.spec_from_file_location("endfield_dummydll_generator", GENERATOR)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"unable to load generator: {GENERATOR}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    return generate_dummydll
 
 
 def managed_stub() -> bytes:

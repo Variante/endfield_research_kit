@@ -172,8 +172,8 @@ Pass an optional usable DummyDll folder to the story JSON export with:
 Generate or refresh the preferred repo-local folder with:
 
 ```bat
-python scripts\animestudio\generate_dummydll.py --dry-run
-python scripts\animestudio\generate_dummydll.py --replace
+python -m scripts.animestudio.generate_dummydll --dry-run
+python -m scripts.animestudio.generate_dummydll --replace
 ```
 
 The generator uses the installed `GameAssembly.dll` and matching
