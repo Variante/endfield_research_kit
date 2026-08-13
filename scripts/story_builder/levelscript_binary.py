@@ -7,9 +7,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from .codecs.levelscript import exit_custom_performance as levelscript_exit_performance
+from .codecs.levelscript import active_shapes as levelscript_active_shapes
 from .codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
 from .codecs.levelscript import entity_event_scope as levelscript_entity_event_scope
+from .codecs.levelscript import exit_custom_performance as levelscript_exit_performance
 from .codecs.levelscript import fmv as levelscript_fmv
 from .codecs.levelscript import manual_control as levelscript_manual_control
 from .codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
@@ -41,14 +42,6 @@ LEVELSCRIPT_START_TYPE_NAMES = {
     1: "Manual",
     2: "SameWithActive",
     3: "Never",
-}
-
-LEVELSCRIPT_END_TYPE_NAMES = {
-    0: "Auto",
-    1: "ByExitStartShape",
-    2: "Manual",
-    3: "SameWithDeactive",
-    4: "Never",
 }
 
 # ``LevelScriptTriggerVolumeData`` is a MemoryPack union.  The current
@@ -937,12 +930,6 @@ TRIGGER_VOLUME_RECORD_KEYS.update({(0x12BE, 0x00), (0x12C0, 0x00)})
 
 COMPACT_NULL_SENTINEL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
 
-LEVELSCRIPT_SHAPE_TYPE_NAMES = {
-    0: "None",
-    1: "BOX",
-    2: "SPHERE",
-}
-
 LEVELSCRIPT_TRIGGER_VOLUME_SHAPE_TYPE_NAMES = {
     0: "None",
     1: "Box",
@@ -1433,163 +1420,6 @@ def _read_vector3(data: bytes, offset: int) -> tuple[dict[str, float] | None, in
     )
 
 
-def _decode_levelscript_shape(data: bytes, offset: int) -> tuple[dict[str, Any] | None, int | None]:
-    """Decode `Beyond.Gameplay.Core.LevelScriptShape`.
-
-    The field order is verified from the MemoryPack setter order:
-    eulerAngles, offset, radius, size, type. The object starts with a compact
-    one-byte member count in these exported blobs.
-    """
-    if offset < 0 or offset + 45 > len(data):
-        return None, None
-    member_count = data[offset]
-    cursor = offset + 1
-    euler_angles, cursor = _read_vector3(data, cursor)
-    if cursor is None:
-        return None, None
-    shape_offset, cursor = _read_vector3(data, cursor)
-    if cursor is None:
-        return None, None
-    radius = _f32(data, cursor)
-    cursor += 4
-    size, cursor = _read_vector3(data, cursor)
-    if cursor is None:
-        return None, None
-    shape_type_raw = _u32(data, cursor)
-    cursor += 4
-    return (
-        _drop_empty(
-            {
-                "offset": _offset_hex(offset),
-                "memberCount": member_count,
-                "typeRaw": shape_type_raw,
-                "type": LEVELSCRIPT_SHAPE_TYPE_NAMES.get(
-                    shape_type_raw if shape_type_raw is not None else -1,
-                    "",
-                ),
-                "position": shape_offset,
-                "eulerAngles": euler_angles,
-                "size": size,
-                "radius": _round_float(radius),
-            }
-        ),
-        cursor,
-    )
-
-
-def _decode_levelscript_shape_list(
-    data: bytes,
-    offset: int,
-    *,
-    max_count: int = 64,
-) -> tuple[dict[str, Any], int | None]:
-    raw_count = _u32(data, offset)
-    status, count = _list_status(raw_count)
-    cursor = offset + 4
-    out: dict[str, Any] = {
-        "offset": _offset_hex(offset),
-        "status": status,
-        "count": count,
-    }
-    if status != "present" or count is None or count == 0:
-        out["endOffset"] = _offset_hex(cursor)
-        return _drop_empty(out), cursor
-    if count > max_count:
-        out["parseStatus"] = "count-too-large"
-        return _drop_empty(out), None
-
-    shapes: list[dict[str, Any]] = []
-    for _ in range(count):
-        shape, cursor = _decode_levelscript_shape(data, cursor)
-        if shape is None or cursor is None:
-            out["parseStatus"] = "truncated"
-            out["shapes"] = shapes
-            return _drop_empty(out), None
-        shapes.append(shape)
-    out["parseStatus"] = "decoded"
-    out["shapes"] = shapes
-    out["endOffset"] = _offset_hex(cursor)
-    return _drop_empty(out), cursor
-
-
-def _valid_levelscript_active_shape(shape: dict[str, Any]) -> bool:
-    """Validate one current MemoryPack ``LevelScriptShape`` structurally."""
-    if (
-        shape.get("memberCount") != 5
-        or shape.get("typeRaw") not in LEVELSCRIPT_SHAPE_TYPE_NAMES
-        or shape.get("typeRaw") == 0
-    ):
-        return False
-    values: list[Any] = [shape.get("radius")]
-    for field_name in ("position", "eulerAngles", "size"):
-        field = shape.get(field_name)
-        if not isinstance(field, dict) or set(field) != {"x", "y", "z"}:
-            return False
-        values.extend(field.values())
-    return all(
-        isinstance(value, (int, float))
-        and not isinstance(value, bool)
-        and math.isfinite(value)
-        and abs(value) < 10_000_000
-        for value in values
-    )
-
-
-def find_levelscript_active_shape_candidates(
-    data: bytes,
-    search_start: int,
-    search_end: int,
-) -> list[dict[str, Any]]:
-    """Find exact active-shape members by their generated neighbor fields.
-
-    Current metadata fixes the top-level MemoryPack order as ``actionMap``,
-    ``activeShapeList``, three booleans, then ``endType``.  The scan remains
-    fail-closed: a candidate must decode every shape with the exact five-member
-    schema and must be followed by all four typed scalar neighbors.
-    """
-    lower = max(0, int(search_start))
-    upper = min(len(data), max(lower, int(search_end)))
-    candidates: list[dict[str, Any]] = []
-    for offset in range(lower, upper):
-        shape_list, cursor = _decode_levelscript_shape_list(data, offset)
-        if (
-            cursor is None
-            or shape_list.get("status") != "present"
-            or not isinstance(shape_list.get("count"), int)
-            or int(shape_list["count"]) <= 0
-            or shape_list.get("parseStatus") != "decoded"
-            or not all(
-                isinstance(shape, dict) and _valid_levelscript_active_shape(shape)
-                for shape in shape_list.get("shapes") or []
-            )
-            or len(shape_list.get("shapes") or []) != int(shape_list["count"])
-            or cursor + 7 > upper
-        ):
-            continue
-        scalar_flags = list(data[cursor : cursor + 3])
-        end_type_raw = _u32(data, cursor + 3)
-        if (
-            any(value not in (0, 1) for value in scalar_flags)
-            or end_type_raw not in LEVELSCRIPT_END_TYPE_NAMES
-        ):
-            continue
-        candidates.append({
-            "offset": offset,
-            "offsetHex": _offset_hex(offset),
-            "endOffset": cursor,
-            "endOffsetHex": _offset_hex(cursor),
-            "shapeList": shape_list,
-            "followingFields": {
-                "allowStartOnTravelPole": bool(scalar_flags[0]),
-                "allowTick": bool(scalar_flags[1]),
-                "enablePreload": bool(scalar_flags[2]),
-                "endTypeRaw": end_type_raw,
-                "endTypeName": LEVELSCRIPT_END_TYPE_NAMES[end_type_raw],
-            },
-        })
-    return candidates
-
-
 def decode_levelscript_active_shape_list(
     data: bytes,
     script_id: int,
@@ -1638,7 +1468,7 @@ def decode_levelscript_active_shape_list(
     final_record = sorted_records[final_record_index - 1]
     search_start = int(final_record.get("payloadStart") or final_record.get("start") or 0)
     search_end = int(best_tails[0].get("scriptIdOffset") or 0)
-    candidates = find_levelscript_active_shape_candidates(
+    candidates = levelscript_active_shapes.find_active_shape_candidates(
         data,
         search_start,
         search_end,
@@ -6649,7 +6479,10 @@ def decode_levelscript_record_payload(
 
 def _tail_candidate(data: bytes, offset: int) -> dict[str, Any]:
     start_shape_offset = offset + 8
-    start_shape, start_shape_end = _decode_levelscript_shape_list(data, start_shape_offset)
+    start_shape, start_shape_end = levelscript_active_shapes.decode_shape_list(
+        data,
+        start_shape_offset,
+    )
     start_shape_status = str(start_shape.get("status") or "missing")
     start_shape_count = start_shape.get("count")
     start_type_offset: int | None = None
