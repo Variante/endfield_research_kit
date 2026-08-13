@@ -7,6 +7,9 @@ from unittest import mock
 
 
 from scripts.story_builder import callserver_callbacks, mission_flow
+from scripts.story_builder.codecs.levelscript.entity_hp_changed import (
+    decode_entity_hp_changed_event,
+)
 from scripts.story_builder.codecs.levelscript.raise_custom_script_event import (
     decode_raise_custom_script_event_action,
 )
@@ -2285,6 +2288,27 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual("Down", event["changedDirectionName"])
         self.assertEqual(40021, event["entityFilter"][0]["slotId"])
         self.assertEqual(0.1, event["hpRatio"])
+        owner_event = decode_entity_hp_changed_event(
+            bytes(payload),
+            (0x006A, 0x12),
+            header_role=True,
+        )
+        self.assertEqual(
+            {
+                key: value
+                for key, value in event.items()
+                if key not in {"payloadSchemaStatus", "payloadSchemaMappingId"}
+            },
+            owner_event,
+        )
+        self.assertEqual(
+            {},
+            decode_entity_hp_changed_event(
+                bytes(payload),
+                (0x006A, 0x11),
+                header_role=True,
+            ),
+        )
 
     def test_dynamic_hp_list_and_exact_spawner_writer_fields_decode(self):
         tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
