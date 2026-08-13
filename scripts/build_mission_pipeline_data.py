@@ -83,7 +83,6 @@ try:
     )
     from story_builder.native_receiver_activation_frontier import (
         DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
-        DEFAULT_MANUAL_CONTROL_AUDIT as NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT,
         DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
         build_report as build_native_receiver_activation_frontier_report,
         markdown_report as render_native_receiver_activation_frontier_markdown,
@@ -166,7 +165,6 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     )
     from scripts.story_builder.native_receiver_activation_frontier import (
         DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
-        DEFAULT_MANUAL_CONTROL_AUDIT as NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT,
         DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
         build_report as build_native_receiver_activation_frontier_report,
         markdown_report as render_native_receiver_activation_frontier_markdown,
@@ -15387,7 +15385,6 @@ def main() -> int:
         }
         activation_frontier = build_native_receiver_activation_frontier_report(
             index,
-            read_json(NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT) or {},
             mission_root=output_root / "missions",
             subgame_table_path=args.subgame_table.resolve(),
             game_mechanic_condition_table_path=(
