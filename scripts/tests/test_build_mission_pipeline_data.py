@@ -18,6 +18,8 @@ from scripts.mission_pipeline import (
     quest_fork_arm_projection,
     quest_scope_projection,
     runtime_trace_projection,
+    source_order_publication,
+    source_order_shells,
     story_order_projection,
 )
 from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
@@ -2664,12 +2666,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "summary": {"sceneCount": 2, "nativeControlBranchCount": 1},
                 "branches": {"nativeControlBranches": [{"id": "branch-1"}]},
             }
-            publication = pipeline.attach_source_story_partial_order(
+            publication = source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=True,
                 require_complete_branch_publication=True,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             shell = json.loads(
                 (mission_root / "gm_fixture.json").read_text(encoding="utf-8")
@@ -2719,13 +2722,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     }],
                 }],
             }
-            pipeline.attach_source_story_partial_order(
+            source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=False,
                 require_complete_branch_publication=False,
                 source_gap_queue=gap_queue,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             payload = json.loads(
                 (mission_root / "mission_a.json").read_text(encoding="utf-8")
@@ -2812,7 +2816,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "sha256": "c" * 64,
                 "playbackStoryKeys": ["story_elsewhere"],
             }
-            publication = pipeline.attach_source_story_partial_order(
+            publication = source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row], "nativeSerializedBranchInventory": {
@@ -2820,6 +2824,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }},
                 create_variant_aggregate_shells=False,
                 require_complete_branch_publication=False,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             payload = json.loads(
                 (mission_root / "mission_a.json").read_text(encoding="utf-8")
@@ -2896,26 +2901,28 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "branches": {},
             }
             cross_reference = (
-                pipeline.build_source_story_order_cross_reference_report(
+                source_order_publication.build_source_story_order_cross_reference_report(
                     {"missions": [order_row]},
                     {"missions": {"mission_a": {"order": ["story_a", "story_b"]}}},
                     {"missions": {"mission_a": {"order": ["story_b", "story_a"]}}},
                 )
             )
-            pipeline.attach_source_story_partial_order(
+            source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=False,
                 require_complete_branch_publication=False,
                 order_cross_reference=cross_reference,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
-            pipeline.attach_source_story_partial_order(
+            source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=False,
                 require_complete_branch_publication=False,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             payload = json.loads(
                 (mission_root / "mission_a.json").read_text(encoding="utf-8")
@@ -2993,12 +3000,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
             }
             index = {"counts": {"missions": 0}, "missions": []}
-            publication = pipeline.attach_source_story_partial_order(
+            publication = source_order_publication.attach_source_story_partial_order(
                 index,
                 mission_output,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=True,
                 require_complete_branch_publication=True,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             shell = json.loads(
                 (mission_output / "missions" / "source_only.json").read_text(
@@ -3099,12 +3107,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "sourceSha256": {str(validation_source): validation_sha},
                 }],
             }
-            publication = pipeline.attach_source_story_partial_order(
+            publication = source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=False,
                 require_complete_branch_publication=True,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             payload = json.loads(
                 (mission_root / "existing.json").read_text(encoding="utf-8")
@@ -3166,12 +3175,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     }],
                 },
             }
-            publication = pipeline.attach_source_story_partial_order(
+            publication = source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=True,
                 require_complete_branch_publication=True,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             payload = json.loads(
                 (root / "missions" / "branch_only.json").read_text(
@@ -3204,10 +3214,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             r"validator=story_branch_original_files gate=sourceFile "
             r"mission=missing_branch_source expected=file actual=missing",
         ):
-            pipeline._story_branch_related_original_files(order_row)
+            source_order_shells._story_branch_related_original_files(order_row)
 
     def test_story_branch_related_files_skip_non_materialized_installed_vfs_label(self):
-        related = pipeline._story_branch_related_original_files({
+        related = source_order_shells._story_branch_related_original_files({
             "mission": "installed_vfs_provenance",
             "branches": {
                 "dialogTreeIfNodes": [{
@@ -3238,7 +3248,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 r"validator=story_branch_original_files gate=sourceHash "
                 r"mission=mismatched_branch_source",
             ):
-                pipeline._story_branch_related_original_files(order_row)
+                source_order_shells._story_branch_related_original_files(order_row)
 
     def test_story_branch_related_files_keep_normalized_related_original_rows(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -3259,7 +3269,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
             }
 
-            related = pipeline._story_branch_related_original_files(order_row)
+            related = source_order_shells._story_branch_related_original_files(order_row)
 
         self.assertEqual(
             related,
@@ -3275,7 +3285,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / "dlg_branch.json"
             source.write_bytes(b"singular-source")
-            related = pipeline._story_branch_related_original_files({
+            related = source_order_shells._story_branch_related_original_files({
                 "mission": "singular_branch_source",
                 "branches": {
                     "dialogLineOptions": [{
@@ -3307,7 +3317,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 r"validator=story_branch_original_files gate=sourceHash "
                 r"mission=singular_branch_hash",
             ):
-                pipeline._story_branch_related_original_files({
+                source_order_shells._story_branch_related_original_files({
                     "mission": "singular_branch_hash",
                     "branches": {
                         "dialogLineOptions": [{
@@ -3349,12 +3359,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "summary": {"sceneCount": 3, "nativeControlBranchCount": 2},
                 "branches": {"nativeControlBranches": [{"id": "b1"}, {"id": "b2"}]},
             }
-            publication = pipeline.attach_source_story_partial_order(
+            publication = source_order_publication.attach_source_story_partial_order(
                 index,
                 root,
                 {"missions": [order_row]},
                 create_variant_aggregate_shells=True,
                 require_complete_branch_publication=True,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             shell = json.loads(
                 (mission_root / "aggregate.json").read_text(encoding="utf-8")
@@ -3383,12 +3394,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 RuntimeError,
                 r"validator=source_story_order_publication .*gate=allRecoveredNativeBranchesPublished .*mission=missing .*expected=1 actual=0 .*source=story/missing.json",
             ):
-                pipeline.attach_source_story_partial_order(
+                source_order_publication.attach_source_story_partial_order(
                     index,
                     root,
                     report,
                     create_variant_aggregate_shells=True,
                     require_complete_branch_publication=True,
+                    schema_version=pipeline.SCHEMA_VERSION,
                 )
 
     def test_dynamic_scene_context_comes_from_the_owner(self):
@@ -4119,20 +4131,23 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             report_root = root / "reports"
             with patch.object(
-                pipeline,
+                source_order_publication,
                 "build_source_story_partial_order_report",
                 return_value=report,
             ) as build_order_report, patch.object(
-                pipeline,
+                source_order_publication,
                 "render_source_story_partial_order_markdown",
                 return_value="# fixture\n",
             ):
-                result = pipeline.publish_source_story_partial_order(
+                result = source_order_publication.publish_source_story_partial_order(
                     index,
                     output_root,
                     story_root,
                     "CN",
                     report_root,
+                    schema_version=pipeline.SCHEMA_VERSION,
+                    story_order_override_path=pipeline.DEFAULT_STORY_ORDER_OVERRIDE,
+                    story_order_ocr_path=pipeline.DEFAULT_STORY_ORDER_OCR,
                 )
 
             self.assertIs(result, report)
@@ -4210,7 +4225,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }],
             }
             with patch.object(
-                pipeline,
+                source_order_publication,
                 "build_source_story_partial_order_report",
                 return_value=report,
             ):
@@ -4218,8 +4233,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     RuntimeError,
                     "gate=allStoryOrderForksHaveSemantics.*testm1_q#missing",
                 ):
-                    pipeline.publish_source_story_partial_order(
-                        index, output_root, story_root, "CN", root / "reports"
+                    source_order_publication.publish_source_story_partial_order(
+                        index, output_root, story_root, "CN", root / "reports",
+                        schema_version=pipeline.SCHEMA_VERSION,
+                        story_order_override_path=pipeline.DEFAULT_STORY_ORDER_OVERRIDE,
+                        story_order_ocr_path=pipeline.DEFAULT_STORY_ORDER_OCR,
                     )
 
     def test_publish_quest_objective_story_scope_is_exact_non_owning_context(self):
