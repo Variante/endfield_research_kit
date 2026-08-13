@@ -847,6 +847,48 @@
           "tail": "mov dl,1; jmp HGFactoryRendererBinderComponent.SetDirtyFlag (0x1834a3fa0)",
           "enum": "HGFactoryDirtyFlags.PerDrawData",
           "value": 1
+        },
+        "dynamic_burst_apply_chain": {
+          "status": "dynamic-perdraw-cpu-producer-chain-closed-upload-edge-open",
+          "source": "Installed GameAssembly.dll BurstDirectCall stubs plus the embedded Burst body; current GameAssembly sha256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce.",
+          "managed_entry": {
+            "type": "Beyond.Gameplay.Factory.UnsafeJobFuncPointers",
+            "method": "ApplyPerDrawRender",
+            "managed_pointer": "0x1869d8488",
+            "burst_managed_pointer": "0x1869d8434",
+            "dispatch_stub": "0x1869d3434",
+            "observed": "The Burst-managed wrapper preserves binderPtr, perDrawConfigs, and length, then jumps through the Burst function pointer; the direct-call catalog alone cannot see the compiled body."
+          },
+          "embedded_burst_body": {
+            "native_pointer": "0x1869d5d30",
+            "observed": "The embedded body exits for length <= 0, then loops length entries with source stride 0x3c (60 bytes). Each iteration copies the entry's 0x30-byte payload plus the dword at +0x38 into a temporary record and calls 0x1869f3654.",
+            "caller": {
+              "type": "Beyond.Gameplay.Factory.GlobalSharedData+PerDrawGlobalSetting",
+              "method": "Apply",
+              "native_pointer": "0x1869d5e18",
+              "table_stride": "0x284 bytes",
+              "callsite": "0x1869d5e74",
+              "observed": "The ordinary fallback path resolves one per-draw global entry and calls the embedded Burst loop; the feature-enabled branch instead calls 0x186a33f58 and is kept separate."
+            }
+          },
+          "branch_and_partial_writer": {
+            "branch_helper": "0x1869f3654",
+            "type_values": {
+              "1_or_3": "calls 0x1876aaefc with the binder record, entry id, and one Vector4",
+              "2": "calls SetCustomPerDrawData<float> at 0x1840f30e0",
+              "feature_enabled": "resolves a separate object through 0x186a6a9c4 and calls 0x186a555b0"
+            },
+            "vector_writer": {
+              "native_pointer": "0x1876aaefc",
+              "partial_core": "0x1876aacd0",
+              "partial_core_contract": "Loads binder/entity index from the binder record, forwards a 16-byte Vector4 with caller offset to 0x183d689c0, then tail-jumps to SetDirtyFlag with HGFactoryDirtyFlags.PerDrawData (1).",
+              "managed_partial_wrapper": "0x183d689c0",
+              "unityplayer_endpoint": "0x1801eb9a0",
+              "record_effect": "The endpoint writes the partial payload into the native entity shared-data record; the existing UnityPlayer body resolves destination manager +0x38, index*0x8c, and caller offset."
+            }
+          },
+          "interpretation": "This is the first positive dynamic/Burst producer chain from a per-draw configuration array into the same factory shared-data partial-update service previously recovered from ordinary managed writers. It closes the CPU-side producer and dirty-flag edge for the fallback ApplyPerDrawRender path, but it does not prove that the resulting 0x8c record or 80-byte prefix is packed into _UploadBuffer, dispatched with GpuSceneDirtyUpdateCS kernel 7, or bound through channel 2/resource +0xd0.",
+          "next_gap": "Recover the post-dirty record consumer/packer (including the feature-enabled 0x186a33f58 branch) and look for the 84-byte source stride or the UploadPerDrawParams dispatch; keep GPU binding fail-closed until that edge is explicit."
         }
       },
       "related_shared_data_writers": {
