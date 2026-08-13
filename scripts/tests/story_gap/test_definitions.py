@@ -1,4 +1,15 @@
-from ._support import *
+from ._support import (
+    Path,
+    SourceGapTestCase,
+    copy,
+    gap_queue,
+    json,
+    mission_payload,
+    partial_mission,
+    patch,
+    recover_dialog_tree_definition_evidence,
+    tempfile,
+)
 
 class SourceGapDefinitionTests(SourceGapTestCase):
     def test_exact_typed_selector_closes_isolated_alternatives(self) -> None:
