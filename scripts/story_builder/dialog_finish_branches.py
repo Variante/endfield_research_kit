@@ -38,14 +38,12 @@ from scripts.common import (  # noqa: E402
     resolve_installed_game_data_root,
     sha256_file,
 )
-from scripts.story_builder.dialog_tree_option_routes import (
+from scripts.story_builder.dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
+    recover_dialog_tree_finish_endpoints,
     recover_dialog_tree_option_routes,
     resolve_serialized_field,
     short_type as _short_type,
-)
-from scripts.story_builder.dialog_tree_finish_endpoints import (
-    recover_dialog_tree_finish_endpoints,
 )
 from scripts.story_builder.levelscript_binary import (
     decode_levelscript_task_conditions,
