@@ -542,6 +542,13 @@ NPC archetypes are imported as labeled source kits.
   execution can still reach arbitrary bridges, so the patch payload/table and
   its runtime method remain open. The exact census is recorded under
   `interpreter_entrypoint_census` in the packed audit.
+  The current installed `Gameplay.Beyond.patch.bytes` is 86,926 bytes with 32
+  signature targets, and its target table contains neither RemoteFactory frame
+  method. The wrapper gate constants `0x7301`/`0x7302` therefore cannot be
+  equated with on-disk implementation indexes; built-in registration, another
+  loaded payload, and live `WrappersManager` slot state remain outside this
+  static overlay. The cross-check and shared wrapper aliases are recorded under
+  `installed_patch_target_crosscheck` and `code_registration_wrapper_aliases`.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
