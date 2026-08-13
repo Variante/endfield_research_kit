@@ -101,6 +101,13 @@ from .video_bindings import (
     narrative_video_search_text,
     narrative_video_sort_key,
 )
+from .narrative_video_overrides import (
+    NarrativeVideoOverrideValidationError,
+    load_narrative_video_overrides,
+    normalize_video_override_stem,
+    validate_narrative_video_override_application,
+    validate_narrative_video_override_inputs,
+)
 
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
@@ -1418,80 +1425,6 @@ def _load_story_order_overrides(path_str: str) -> dict[str, list[str]]:
                 out[str(mission_id)] = [str(key) for key in order if key]
     return out
 
-def _normalize_video_override_stem(value: object) -> str:
-    text = str(value or "").strip().replace("\\", "/")
-    if not text:
-        return ""
-    text = text.rsplit("/", 1)[-1]
-    return _radio_cont_re.sub(r"\.[^.]+$", "", text, flags=_radio_cont_re.IGNORECASE).lower()
-
-@_radio_cont_lru_cache(maxsize=2)
-def _load_narrative_video_overrides(path_str: str) -> dict[str, dict[str, list[dict]]]:
-    path = _RadioContPath(path_str)
-    if not path.is_file():
-        return {"suppressInline": {}, "attachInline": {}}
-    try:
-        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, _radio_cont_json.JSONDecodeError):
-        return {"suppressInline": {}, "attachInline": {}}
-    if not isinstance(payload, dict):
-        return {"suppressInline": {}, "attachInline": {}}
-    out: dict[str, dict[str, list[dict]]] = {
-        "suppressInline": {},
-        "attachInline": {},
-    }
-    def add_rule(bucket: dict[str, list[dict]], target_key: object, raw_rule: object) -> None:
-        key = str(target_key or "").strip()
-        if not key:
-            return
-        note = ""
-        raw_stems: object = []
-        if isinstance(raw_rule, dict):
-            note = str(raw_rule.get("note") or "")
-            raw_stems = (
-                raw_rule.get("stems")
-                or raw_rule.get("videoStems")
-                or raw_rule.get("stem")
-                or raw_rule.get("videoStem")
-                or []
-            )
-        elif isinstance(raw_rule, list):
-            raw_stems = raw_rule
-        elif raw_rule:
-            raw_stems = [raw_rule]
-        if isinstance(raw_stems, (str, int, float)):
-            raw_stems = [raw_stems]
-        stems = sorted({
-            normalized
-            for normalized in (_normalize_video_override_stem(value) for value in (raw_stems or []))
-            if normalized
-        })
-        bucket.setdefault(key, []).append({
-            "targetKey": key,
-            "stems": stems,
-            "note": note,
-            "source": path,
-        })
-    def add_rules(bucket_name: str, raw_rules: object) -> None:
-        bucket = out[bucket_name]
-        if isinstance(raw_rules, dict):
-            for target_key, raw_rule in raw_rules.items():
-                add_rule(bucket, target_key, raw_rule)
-        elif isinstance(raw_rules, list):
-            for raw_rule in raw_rules:
-                if not isinstance(raw_rule, dict):
-                    continue
-                target_key = (
-                    raw_rule.get("targetKey")
-                    or raw_rule.get("key")
-                    or raw_rule.get("resolvedKey")
-                    or raw_rule.get("attachTo")
-                )
-                add_rule(bucket, target_key, raw_rule)
-    add_rules("suppressInline", payload.get("suppressInline"))
-    add_rules("attachInline", payload.get("attachInline") or payload.get("attachTo"))
-    return out
-
 def _manual_option_group_override(conv_key: str, group_id: int) -> dict:
     # Runtime WebUI overrides now live in webui/overrides/options.json
     # and are applied by webui/app.js so users can edit them without rebuilding
@@ -1720,9 +1653,36 @@ def build_language_bundle(
         if dialog_key:
             dialog_tree_open_ui_actions_by_key[dialog_key].append(row)
     narrative_video_assets = _load_narrative_video_assets()
-    narrative_video_overrides = _load_narrative_video_overrides(str(_NARRATIVE_VIDEO_OVERRIDES_PATH))
-    narrative_video_suppress_overrides = narrative_video_overrides.get("suppressInline") or {}
-    narrative_video_attach_overrides = narrative_video_overrides.get("attachInline") or {}
+    narrative_video_report_path = (
+        REPORTS_DIR / f"narrative_videos_{language_code}.json"
+    )
+
+    def fail_narrative_video_override_validation(
+        error: NarrativeVideoOverrideValidationError,
+    ) -> None:
+        failure_report = error.report(language=language_code)
+        failure_report["generated"] = int(time.time())
+        write_json(
+            narrative_video_report_path,
+            failure_report,
+            indent=2,
+            compact=False,
+        )
+        print(str(error), file=sys.stderr)
+        raise error
+
+    try:
+        narrative_video_overrides = load_narrative_video_overrides(
+            _NARRATIVE_VIDEO_OVERRIDES_PATH
+        )
+    except NarrativeVideoOverrideValidationError as error:
+        fail_narrative_video_override_validation(error)
+    narrative_video_suppress_overrides = narrative_video_overrides.rules_for(
+        "suppressInline"
+    )
+    narrative_video_attach_overrides = narrative_video_overrides.rules_for(
+        "attachInline"
+    )
     fmv_clips_by_key = _load_fmv_clips_by_webui_key(
         str(_FMV_CLIP_BINDINGS_PATH)
     )
@@ -12087,13 +12047,35 @@ def build_language_bundle(
         lines.append("")
         return "\n".join(lines)
     def attach_narrative_videos_to_outputs() -> dict:
-        if not narrative_video_assets:
-            return {}
         available_keys = {
             str(entry.get("k") or "")
             for entry in index_entries
             if entry.get("k")
         }
+        try:
+            override_input_validation = (
+                validate_narrative_video_override_inputs(
+                    narrative_video_overrides,
+                    story_keys=available_keys,
+                    video_refs=narrative_video_assets,
+                )
+            )
+        except NarrativeVideoOverrideValidationError as error:
+            fail_narrative_video_override_validation(error)
+        applied_attach_overrides: set[tuple[str, str]] = set()
+        applied_suppress_overrides: set[tuple[str, str]] = set()
+
+        def ref_override_stems(ref: dict) -> set[str]:
+            return {
+                normalized
+                for normalized in (
+                    normalize_video_override_stem(ref.get("stem")),
+                    normalize_video_override_stem(ref.get("baseStem")),
+                    normalize_video_override_stem(ref.get("name")),
+                )
+                if normalized
+            }
+
         def resolve_video_key(ref: dict) -> str:
             authoritative_keys = list(ref.get("authoritativeKeys") or [])
             candidate_list = list(ref.get("keyCandidates") or [])
@@ -12131,15 +12113,7 @@ def build_language_bundle(
             rules = rules_by_key.get(target_key) or []
             if not rules:
                 return {}
-            ref_stems = {
-                normalized
-                for normalized in (
-                    _normalize_video_override_stem(ref.get("stem")),
-                    _normalize_video_override_stem(ref.get("baseStem")),
-                    _normalize_video_override_stem(ref.get("name")),
-                )
-                if normalized
-            }
+            ref_stems = ref_override_stems(ref)
             for rule in rules:
                 rule_stems = set(rule.get("stems") or [])
                 if require_stem and not rule_stems:
@@ -12383,10 +12357,31 @@ def build_language_bundle(
             standalone_videos[standalone_video_key(ref)].append(standalone_ref)
             if suppress_override:
                 suppressed_inline_videos.append(standalone_ref)
+                applied_suppress_overrides.update(
+                    (str(suppress_override.get("targetKey") or ""), stem)
+                    for stem in set(suppress_override.get("stems") or [])
+                    & ref_override_stems(ref)
+                )
             elif attach_override:
                 manual_attached_inline_videos.append(standalone_ref)
+                applied_attach_overrides.update(
+                    (str(attach_override.get("targetKey") or ""), stem)
+                    for stem in set(attach_override.get("stems") or [])
+                    & ref_override_stems(ref)
+                )
             elif not resolved_key:
                 unresolved_videos.append(ref)
+        try:
+            override_validation = (
+                validate_narrative_video_override_application(
+                    narrative_video_overrides,
+                    applied_attach=applied_attach_overrides,
+                    applied_suppress=applied_suppress_overrides,
+                    input_validation=override_input_validation,
+                )
+            )
+        except NarrativeVideoOverrideValidationError as error:
+            fail_narrative_video_override_validation(error)
         authoritative_evidence: list[dict] = []
         def authoritative_video_evidence_rows(
             key: str,
@@ -12865,6 +12860,7 @@ def build_language_bundle(
         report = {
             "generated": int(time.time()),
             "language": language_code,
+            "overrideValidation": override_validation,
             "summary": {
                 "scannedVideos": len(narrative_video_assets),
                 "attachedKeys": len(attached_rows),
@@ -12917,7 +12913,7 @@ def build_language_bundle(
                 for ref in suppressed_inline_videos[:500]
             ],
         }
-        report_json = REPORTS_DIR / f"narrative_videos_{language_code}.json"
+        report_json = narrative_video_report_path
         report_md = REPORTS_DIR / f"narrative_videos_{language_code}.md"
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
         evidence_payload = {
