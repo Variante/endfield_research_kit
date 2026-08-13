@@ -3086,7 +3086,51 @@
                 },
                 "result": "The recovered managed CommandBuffer binding records are confined to built-in render passes and CommandBuffer overload wrappers; no factory, per-draw, character, or UploadPerDrawParams producer reaches the buffer/texture binding internals."
               },
-              "boundary": "This closes the direct managed CommandBuffer/ComputeShader dispatch candidates for the factory upload producer. It does not identify which native command/resource record feeds the generic UnityPlayer command-stream interpreter, so the native dynamic record-to-UploadPerDrawParams kernel-7 edge remains open and fail-closed."
+              "native_commandbuffer_interpreter": {
+                "status": "high-level-opcode-consumer-reaches-immediate-compute-sink",
+                "execution_chain": [
+                  "0x1800b6f40 ExecuteCommandBuffer_Internal_Injected",
+                  "0x18052d730",
+                  "0x1804cdf70",
+                  "0x1804ce0a0 high-level command-buffer interpreter"
+                ],
+                "interpreter": {
+                  "opcode_range": "0..0x6f",
+                  "jump_table": "0x180000000 + signed_dword[0x180000000+0x4d19c8 + opcode*4]",
+                  "resource_resolver": "0x1802f3c40 resolves the record's first dword handle to a native resource; missing entries fall back through 0x18031a570",
+                  "low_level_stream_calls": [],
+                  "direct_graphics_context_calls": [],
+                  "boundary": "The checked high-level interpreter body dispatches through opcode handlers and does not directly call the native 0x27ef writer or 0x1813aee90 interpreter."
+                },
+                "opcode_0x0d": {
+                  "handler": "0x1804cf350",
+                  "payload_bytes": 24,
+                  "consumer": "0x1805f84a0",
+                  "observed_shape": "Consumes record fields at +0x04/+0x08/+0x0c/+0x10/+0x14; the consumer bounds-checks the index against resource state +0xd0 and updates an indexed resource-state record through 0x1805f8630.",
+                  "graphics_context_slot": null
+                },
+                "opcode_0x11": {
+                  "handler": "0x1804cf455",
+                  "payload_bytes": 28,
+                  "branch_field": "record +0x14",
+                  "normal_branch": {
+                    "consumer": "0x1805e7a10",
+                    "dispatch_fields": "kernel=+0x04, x=+0x08, y=+0x0c, z=+0x10",
+                    "graphics_context_slot": "+0xab8",
+                    "call_site": "0x1805e7a8b"
+                  },
+                  "indirect_branch": {
+                    "consumer": "0x1805e7bc0",
+                    "dispatch_fields": "kernel=+0x04, x=+0x14, y=+0x18",
+                    "graphics_context_slot": "+0xab0",
+                    "call_site": "0x1805e7c14"
+                  },
+                  "result": "High-level CommandBuffer dispatch records do reach the same generic immediate-compute graphics-context family used by other Unity passes, but no factory/per-draw/character producer is present in the managed caller census."
+                },
+                "factory_name_filter_hits": [],
+                "relation_to_native_27ef": "The high-level opcode-0x11 route is proven to reach +0xab8, while the low-level 0x27ef record has its own writer/interpreter pair. No direct cross-call or factory channel-2/resource +0xd0 binding was found between the two streams."
+              },
+              "boundary": "This closes the direct managed CommandBuffer/ComputeShader dispatch candidates and the high-level native opcode consumer for the factory upload producer. Opcode 0x11 reaches the generic immediate-compute sink through 0x1805e7a10, but the separate native 0x27ef stream and high-level resource records are not tied to factory channel-2/resource +0xd0 or UploadPerDrawParams kernel 7; keep the character upload edge open and fail-closed."
             },
             "native_command_stream_dispatch_opcode": {
               "status": "opcode-27ef-writer-and-interpreter-sink-identified",

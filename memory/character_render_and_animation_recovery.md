@@ -73,8 +73,17 @@ interpreter: the recovered internal-call table maps
 GameAssembly census found 47 direct compute-buffer binding calls from eight
 named bodies and 35 texture-binding calls; they are built-in passes or
 CommandBuffer overload wrappers, with no factory/per-draw/character hits.
-These high-level records therefore cannot be merged with the native `0x27ef`
-record without a further consumer proof.
+The consumer is now bounded: `ExecuteCommandBuffer_Internal_Injected`
+(`0x1800b6f40`) reaches `0x18052d730` -> `0x1804cdf70` -> the high-level
+opcode interpreter `0x1804ce0a0`. Opcode `0x11` (`0x1804cf455`) resolves its
+resource handle and calls `0x1805e7a10`, which reaches graphics-context slot
+`+0xab8` at `0x1805e7a8b`; its indirect-dispatch branch calls
+`0x1805e7bc0` -> slot `+0xab0`. Opcode `0x0d` (`0x1804cf350`) resolves the
+same record kind and calls `0x1805f84a0` for resource-state binding, with no
+direct `+0xab8` or low-level `0x27ef` call. Thus high-level records do reach
+the generic immediate-compute sink, but remain a separate stream from the
+native `0x27ef` record, and neither path identifies the factory channel-2 /
+kernel-7 upload producer.
 The native command-stream pair is now bounded for one dispatch opcode: writer
 `0x18092bed0..0x18092c123` stores opcode `0x27ef`, a resource/handle qword, and
 three 32-bit dispatch values (`0x18092bf54`, `0x18092bfb6`, `0x18092c00a`,
