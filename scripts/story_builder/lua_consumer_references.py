@@ -28,11 +28,15 @@ if str(_REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
 from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from story_builder.native_contracts.cinematic_queue import (  # noqa: E402
+    DEFAULT_CONTRACT as DEFAULT_CINEMATIC_CONTRACT,
+    load_cinematic_queue_contract,
+)
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DEFAULT_INDEX = REPORT_DIR / "lua_consumer_reference_audit.json"
 DEFAULT_MD = REPORT_DIR / "lua_consumer_reference_audit.md"
-SCHEMA_VERSION = "luaConsumerReferenceAudit.v4"
+SCHEMA_VERSION = "luaConsumerReferenceAudit.v5"
 DEFAULT_LUA_ROOTS = (
     ROOT / "export_full" / "structured" / "Persistent" / "Lua",
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Lua",
@@ -42,9 +46,6 @@ DEFAULT_TABLE_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Table",
 )
 DEFAULT_STORY_INDEX = ROOT / "webui" / "data" / "lang" / "CN" / "index.json"
-DEFAULT_CINEMATIC_RUNTIME_AUDIT = (
-    ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.json"
-)
 
 GAME_ACTION_CALL_RE = re.compile(
     r"\b(?:CS\.Beyond\.Gameplay\.Actions\.)?GameAction\s*\.\s*"
@@ -221,57 +222,6 @@ def load_story_keys(path: Path) -> set[str]:
         str(row.get("k") or "")
         for row in payload.get("entries") or []
         if isinstance(row, dict) and row.get("k")
-    }
-
-
-def load_cinematic_runtime_contract(path: Path) -> dict[str, Any]:
-    """Load the binary-proven polymorphic handle contract fail-closed."""
-    if not path.is_file():
-        raise RuntimeError(
-            "validator=lua_cinematic_dispatch failed: gate=runtime_audit_exists "
-            f"expected=file actual=missing source={repo_rel(path)}"
-        )
-    raw = path.read_bytes()
-    payload = json.loads(raw.decode("utf-8"))
-    contract = payload.get("contract") or {}
-    conclusion = payload.get("conclusion") or {}
-    methods = contract.get("nativeDispatcherMethods") or []
-    producers = contract.get("nativeProducers") or []
-    action_routes = contract.get("actionProducerRoutes") or []
-    source = payload.get("source") or {}
-    if (
-        payload.get("schemaVersion") != "cinematicQueueRuntimeAudit.v2"
-        or conclusion.get("luaCallsAreRuntimeDispatchers") is not True
-        or conclusion.get("staticMissionOwnership") is not False
-        or conclusion.get("staticStoryOrder") is not False
-        or not methods
-        or not producers
-        or not action_routes
-        or not all(isinstance(value, str) and value.endswith("ByHandle") for value in methods)
-        or not re.fullmatch(r"[0-9a-f]{64}", str(source.get("gameAssemblySha256") or ""))
-        or not re.fullmatch(r"[0-9a-f]{64}", str(source.get("metadataSha256") or ""))
-    ):
-        raise RuntimeError(
-            "validator=lua_cinematic_dispatch failed: gate=runtime_contract "
-            f"expected=validated_polymorphic_handle actual=invalid source={repo_rel(path)}"
-        )
-    return {
-        "report": repo_rel(path),
-        "sha256": hashlib.sha256(raw).hexdigest(),
-        "gameAssemblySha256": source["gameAssemblySha256"],
-        "metadataSha256": source["metadataSha256"],
-        "handleType": (contract.get("queueHandle") or {}).get("type"),
-        "queueBaseType": (contract.get("queueBase") or {}).get("type"),
-        "dispatcherMethods": sorted(set(methods)),
-        "payloadTypeCount": len(contract.get("payloadTypes") or []),
-        "nativeProducerCount": len(producers),
-        "typedActionProducerRouteCount": len(action_routes),
-        "typedActionProducerTypeCount": len({
-            str(row.get("actionFullType") or "") for row in action_routes
-            if row.get("actionFullType")
-        }),
-        "actionProducerRoutes": action_routes,
-        "enqueueEdgeCount": len(contract.get("enqueueEdges") or []),
     }
 
 
@@ -617,9 +567,19 @@ def _build_payload(args: argparse.Namespace) -> dict[str, Any]:
     table_roots = [root.resolve() for root in (args.table_root or list(DEFAULT_TABLE_ROOTS))]
     story_index = args.story_index.resolve()
     story_keys = load_story_keys(story_index)
-    cinematic_runtime = load_cinematic_runtime_contract(
-        args.cinematic_runtime_audit.resolve()
+    cinematic_runtime = load_cinematic_queue_contract(
+        args.cinematic_contract.resolve()
     )
+    if cinematic_runtime.get("status") != "validated":
+        failures = cinematic_runtime.get("validationFailures") or []
+        first = failures[0] if failures else {}
+        raise RuntimeError(
+            "validator=lua_cinematic_dispatch failed: "
+            f"gate={first.get('gate') or 'native_contract'} "
+            f"expected={first.get('expected') or 'validated'} "
+            f"actual={first.get('actual') or cinematic_runtime.get('status')} "
+            f"source={cinematic_runtime.get('report') or repo_rel(args.cinematic_contract)}"
+        )
     table_index, table_root_summaries = build_table_index(table_roots)
     table_payloads = load_table_payloads(table_index)
     modules: dict[str, dict[str, Any]] = {}
@@ -1048,7 +1008,7 @@ def build_index(
     lua_roots: list[Path] | tuple[Path, ...] | None = None,
     table_roots: list[Path] | tuple[Path, ...] | None = None,
     story_index: Path = DEFAULT_STORY_INDEX,
-    cinematic_runtime_audit: Path = DEFAULT_CINEMATIC_RUNTIME_AUDIT,
+    cinematic_contract: Path = DEFAULT_CINEMATIC_CONTRACT,
     focus: str = "sns,remotecomm,dialog,mapmark,mission",
     top_limit: int = 30,
     example_limit: int = 20,
@@ -1063,7 +1023,7 @@ def build_index(
             lua_root=list(lua_roots) if lua_roots is not None else None,
             table_root=list(table_roots) if table_roots is not None else None,
             story_index=story_index,
-            cinematic_runtime_audit=cinematic_runtime_audit,
+            cinematic_contract=cinematic_contract,
             focus=focus,
             top_limit=top_limit,
             example_limit=example_limit,
@@ -1127,10 +1087,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Generated Story index used only for exact-case literal validation",
     )
     parser.add_argument(
-        "--cinematic-runtime-audit",
+        "--cinematic-contract",
         type=Path,
-        default=DEFAULT_CINEMATIC_RUNTIME_AUDIT,
-        help="Installed-binary cinematic queue contract used to classify handle dispatchers",
+        default=DEFAULT_CINEMATIC_CONTRACT,
+        help="Reviewed installed-build cinematic queue contract",
     )
     parser.add_argument("--focus", default="sns,remotecomm,dialog,mapmark,mission")
     parser.add_argument(
@@ -1163,7 +1123,7 @@ def main(argv: list[str] | None = None) -> int:
         lua_roots=args.lua_root,
         table_roots=args.table_root,
         story_index=args.story_index,
-        cinematic_runtime_audit=args.cinematic_runtime_audit,
+        cinematic_contract=args.cinematic_contract,
         focus=args.focus,
         top_limit=args.top_limit,
         example_limit=args.example_limit,

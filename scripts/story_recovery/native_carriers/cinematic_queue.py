@@ -28,6 +28,11 @@ from common import (  # noqa: E402
     resolve_installed_game_data_root,
     sha256_file as sha256_path,
 )
+from story_builder.native_contracts.cinematic_queue import (  # noqa: E402
+    DEFAULT_CONTRACT,
+    reconcile_runtime_audit,
+    validate_cinematic_queue_contract,
+)
 
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
 DEFAULT_GAMEASSEMBLY = (
@@ -551,6 +556,17 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--code-registration", default="0x18b9217d0")
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)
+    parser.add_argument(
+        "--contract",
+        type=Path,
+        default=DEFAULT_CONTRACT,
+        help="reviewed production contract to reconcile against",
+    )
+    parser.add_argument(
+        "--skip-contract-reconciliation",
+        action="store_true",
+        help="write a new-build audit even when the reviewed contract is not updated yet",
+    )
 
 
 def run(args: argparse.Namespace) -> int:
@@ -558,6 +574,28 @@ def run(args: argparse.Namespace) -> int:
     args.json.parent.mkdir(parents=True, exist_ok=True)
     args.json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     args.markdown.write_text(render_markdown(payload), encoding="utf-8")
+    if not args.skip_contract_reconciliation:
+        try:
+            contract = json.loads(args.contract.read_text(encoding="utf-8-sig"))
+            if not isinstance(contract, dict):
+                raise ValueError(
+                    f"expected object, found {type(contract).__name__}"
+                )
+        except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as error:
+            raise RuntimeError(
+                "validator=cinematic_queue_contract_reconciliation failed: "
+                "gate=read_contract expected=readable_json_object "
+                f"actual={str(error)[:400]} source={args.contract}"
+            ) from error
+        failures = validate_cinematic_queue_contract(contract, str(args.contract))
+        failures.extend(reconcile_runtime_audit(payload, contract))
+        if failures:
+            first = failures[0]
+            raise RuntimeError(
+                "validator=cinematic_queue_contract_reconciliation failed: "
+                f"gate={first['gate']} expected={first['expected']} "
+                f"actual={first['actual']} source={first['sourceFile']}"
+            )
     print(f"cinematic queue runtime audit: {args.json}")
     print(
         f"dispatchers={payload['summary']['nativeDispatcherCount']} "

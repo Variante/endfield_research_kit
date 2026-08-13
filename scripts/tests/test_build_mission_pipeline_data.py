@@ -6599,7 +6599,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "StartDialog",
             )
             self.assertIn(
-                "reports/story/recovery/cinematic_queue_runtime_audit.json",
+                "scripts/story_builder/native_contracts/cinematic_queue.json",
                 connected_route["sourceFiles"],
             )
             self.assertEqual(
