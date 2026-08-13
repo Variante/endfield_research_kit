@@ -13,6 +13,7 @@ from .codecs.levelscript import manual_control as levelscript_manual_control
 from .codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
 from .codecs.levelscript import raise_custom_script_event as levelscript_custom_event
+from .codecs.levelscript import spawner_events as levelscript_spawner_events
 from .codecs.levelscript import switch_actions as levelscript_switch_actions
 
 if __package__ == "story_builder":
@@ -4257,205 +4258,6 @@ def _decode_script_stage_changed_fields(payload: bytes) -> dict[str, Any]:
     return out
 
 
-def _decode_spawner_begin_fields(payload: bytes, *, wave: bool) -> dict[str, Any]:
-    """Decode the current exact SpawnerGroup/WaveBegin consumer shapes.
-
-    Both event types serialize one inherited Param<bool> before their subtype
-    fields.  The current residual Story consumers use constant strings,
-    constant SpawnerPtr ids, null outputs, and end exactly after the final
-    output marker.  Other parameter/output variants intentionally fail closed.
-    """
-    param_tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
-    inherited_filter = b"\x04\x01" + param_tail
-    if len(payload) < 31 or payload[17:31] != inherited_filter:
-        return {}
-
-    cursor = 31
-
-    def read_string_param() -> str | None:
-        nonlocal cursor
-        if cursor + 5 > len(payload) or payload[cursor] != 0x04:
-            return None
-        size = struct.unpack_from("<I", payload, cursor + 1)[0]
-        cursor += 5
-        if size > 256 or cursor + size + 12 > len(payload):
-            return None
-        raw = payload[cursor : cursor + size]
-        cursor += size
-        if payload[cursor : cursor + 12] != param_tail:
-            return None
-        cursor += 12
-        try:
-            return raw.decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-
-    def read_spawner_param() -> int | None:
-        nonlocal cursor
-        if cursor + 21 > len(payload) or payload[cursor] != 0x04:
-            return None
-        value = struct.unpack_from("<Q", payload, cursor + 1)[0]
-        cursor += 9
-        if payload[cursor : cursor + 12] != param_tail:
-            return None
-        cursor += 12
-        return value
-
-    if wave:
-        spawner_id = read_spawner_param()
-        if spawner_id is None or cursor >= len(payload) or payload[cursor] != 0xFF:
-            return {}
-        cursor += 1
-        key = read_string_param()
-        if key is None or cursor >= len(payload) or payload[cursor] != 0xFF:
-            return {}
-        cursor += 1
-        if cursor != len(payload):
-            return {}
-        return {
-            "spawnerFilterId": spawner_id,
-            "spawnerOutputPresent": False,
-            "waveKeyFilter": key,
-            "waveKeyOutputPresent": False,
-            "payloadShape": "constant-spawner-and-wave-key-null-outputs-exact-eof",
-        }
-
-    key = read_string_param()
-    if key is None or cursor >= len(payload) or payload[cursor] != 0xFF:
-        return {}
-    cursor += 1
-    spawner_id = read_spawner_param()
-    if spawner_id is None or cursor >= len(payload) or payload[cursor] != 0xFF:
-        return {}
-    cursor += 1
-    if cursor != len(payload):
-        return {}
-    return {
-        "groupKeyFilter": key,
-        "groupKeyOutputPresent": False,
-        "spawnerFilterId": spawner_id,
-        "spawnerOutputPresent": False,
-        "payloadShape": "constant-group-key-and-spawner-null-outputs-exact-eof",
-    }
-
-
-def _decode_spawner_complete_fields(payload: bytes) -> dict[str, Any]:
-    """Decode the exact current ``OnSpawnerComplete`` consumer shape.
-
-    The installed formatter appends ``_spawnerFilter: Param<SpawnerPtr>`` and
-    ``_spawnerOutput: ParamOutput<SpawnerPtr>`` after the inherited
-    ``ActionHeader._validate`` parameter.  The current residual Story consumer
-    uses one constant uint64 spawner id, a null output, and exact EOF.
-    """
-    param_tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
-    inherited_filter = b"\x04\x01" + param_tail
-    if (
-        len(payload) != 53
-        or payload[17:31] != inherited_filter
-        or payload[31] != 0x04
-        or payload[40:52] != param_tail
-        or payload[52] != 0xFF
-    ):
-        return {}
-    return {
-        "spawnerFilterId": struct.unpack_from("<Q", payload, 32)[0],
-        "spawnerOutputPresent": False,
-        "payloadShape": "constant-spawner-null-output-exact-eof",
-    }
-
-
-def _decode_spawner_entity_spawn_fields(payload: bytes) -> dict[str, Any]:
-    """Decode the exact current OnSpawnerEntitySpawn selector/output shape."""
-    param_tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
-    if len(payload) < 90 or payload[17:31] != b"\x04\x01" + param_tail:
-        return {}
-    cursor = 31
-
-    def read_output() -> str | None:
-        nonlocal cursor
-        if cursor + 9 > len(payload) or payload[cursor] != 0x02:
-            return None
-        source = struct.unpack_from("<i", payload, cursor + 1)[0]
-        size = struct.unpack_from("<i", payload, cursor + 5)[0]
-        cursor += 9
-        if source != 0 or size <= 0 or size > 256 or cursor + size > len(payload):
-            return None
-        try:
-            value = payload[cursor : cursor + size].decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-        cursor += size
-        return value
-
-    def read_i32_param() -> int | None:
-        nonlocal cursor
-        if cursor + 17 > len(payload) or payload[cursor] != 0x04:
-            return None
-        value = struct.unpack_from("<i", payload, cursor + 1)[0]
-        if payload[cursor + 5 : cursor + 17] != param_tail:
-            return None
-        cursor += 17
-        return value
-
-    def read_string_param() -> str | None:
-        nonlocal cursor
-        if cursor + 5 > len(payload) or payload[cursor] != 0x04:
-            return None
-        size = struct.unpack_from("<i", payload, cursor + 1)[0]
-        cursor += 5
-        if size <= 0 or size > 256 or cursor + size + 12 > len(payload):
-            return None
-        try:
-            value = payload[cursor : cursor + size].decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-        cursor += size
-        if payload[cursor : cursor + 12] != param_tail:
-            return None
-        cursor += 12
-        return value
-
-    def read_u64_param() -> int | None:
-        nonlocal cursor
-        if cursor + 21 > len(payload) or payload[cursor] != 0x04:
-            return None
-        value = struct.unpack_from("<Q", payload, cursor + 1)[0]
-        if payload[cursor + 9 : cursor + 21] != param_tail:
-            return None
-        cursor += 21
-        return value
-
-    entity_output = read_output()
-    entity_template_filter = read_i32_param()
-    group_key = read_string_param()
-    group_output = read_output()
-    spawner_id = read_u64_param()
-    if (
-        not entity_output
-        or entity_template_filter is None
-        or not group_key
-        or not group_output
-        or spawner_id is None
-        or cursor >= len(payload)
-        or payload[cursor] != 0xFF
-    ):
-        return {}
-    cursor += 1
-    wave_output = read_output()
-    if not wave_output or cursor != len(payload):
-        return {}
-    return {
-        "entityOutputRef": entity_output,
-        "entityTemplateIdFilter": entity_template_filter,
-        "groupKeyFilter": group_key,
-        "groupKeyOutputRef": group_output,
-        "spawnerFilterId": spawner_id,
-        "spawnerOutputPresent": False,
-        "waveKeyOutputRef": wave_output,
-        "payloadShape": "constant-spawner-group-and-template-exact-eof",
-    }
-
-
 def _decode_spawner_entity_lifecycle_fields(payload: bytes) -> dict[str, Any]:
     """Decode current spawn-entity die/start/end filters and outputs.
 
@@ -4747,7 +4549,10 @@ def _decode_named_native_event_detail(
             "summary": f"local dialog exit {literal_texts[0]}",
         }
     elif native_header_name == "LevelEvent_OnSpawnerGroupBegin":
-        spawner_fields = _decode_spawner_begin_fields(payload, wave=False)
+        spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
+            payload,
+            native_header_name,
+        )
         detail = {
             "type": native_header_name,
             **spawner_fields,
@@ -4763,7 +4568,10 @@ def _decode_named_native_event_detail(
             ),
         }
     elif native_header_name == "LevelEvent_OnSpawnerWaveBegin":
-        spawner_fields = _decode_spawner_begin_fields(payload, wave=True)
+        spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
+            payload,
+            native_header_name,
+        )
         detail = {
             "type": native_header_name,
             **spawner_fields,
@@ -4775,7 +4583,10 @@ def _decode_named_native_event_detail(
             ),
         }
     elif native_header_name == "LevelEvent_OnSpawnerComplete":
-        spawner_fields = _decode_spawner_complete_fields(payload)
+        spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
+            payload,
+            native_header_name,
+        )
         if spawner_fields:
             detail = {
                 "type": native_header_name,
@@ -4793,7 +4604,10 @@ def _decode_named_native_event_detail(
                 ),
             }
     elif native_header_name == "LevelEvent_OnSpawnerEntitySpawn":
-        spawner_fields = _decode_spawner_entity_spawn_fields(payload)
+        spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
+            payload,
+            native_header_name,
+        )
         if spawner_fields:
             detail = {
                 "type": native_header_name,

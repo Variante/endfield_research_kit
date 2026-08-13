@@ -10,6 +10,9 @@ from scripts.story_builder import callserver_callbacks, mission_flow
 from scripts.story_builder.codecs.levelscript.raise_custom_script_event import (
     decode_raise_custom_script_event_action,
 )
+from scripts.story_builder.codecs.levelscript.spawner_events import (
+    decode_spawner_event_fields,
+)
 from scripts.story_builder.codecs.levelscript.switch_actions import (
     decode_switch_action,
 )
@@ -755,6 +758,17 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual(10200260004, detail["spawnerFilterId"])
         self.assertFalse(detail["groupKeyOutputPresent"])
         self.assertFalse(detail["spawnerOutputPresent"])
+        self.assertEqual(
+            "701",
+            decode_spawner_event_fields(
+                bytes(data),
+                "LevelEvent_OnSpawnerGroupBegin",
+            )["groupKeyFilter"],
+        )
+        self.assertEqual(
+            {},
+            decode_spawner_event_fields(bytes(data), "LevelEvent_OnSpawnerGroupEnd"),
+        )
 
     def test_spawner_wave_begin_decodes_exact_constant_filters(self):
         tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
