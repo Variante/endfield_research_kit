@@ -524,6 +524,15 @@ NPC archetypes are imported as labeled source kits.
   offsets must not be aliased with the channel-2 resolved resource. The exact
   boundary is recorded under `service_state_constructor_followup` in the
   packed audit.
+  The nominal `HGFactoryRenderManager.FrameUpdateEntities` pointer is a one-byte
+  `ret`, but the adjacent `RemoteFactoryGameWorldController.FrameUpdateEntitiesJobForward`
+  method (`GameAssembly 0x1875316ac`, metadata method `29077`) is explicitly
+  IFix-patchable: it checks patch key `0x7301`, then dispatches through
+  `GetPatch`/`__Gen_Wrap_*` at `0x1866c2b40`; its unpatched path only writes
+  controller `+0x38`. The paired `SetGarbageCollectDirty` method has patch key
+  `0x7302`. This makes the IFix patch body/dynamic method table the remaining
+  frame-update boundary rather than evidence that no producer exists; details
+  are recorded under `job_forward_dynamic_patch_surface` in the packed audit.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
