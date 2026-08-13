@@ -6,7 +6,7 @@ package migration is completed across the rest of ``scripts``.
 """
 from __future__ import annotations
 
-try:
+if __package__ == "scripts.story_builder.source_gap":
     from ...common import (
         combined_non_mission_content_keys,
         md_escape,
@@ -18,7 +18,7 @@ try:
         write_report_json,
         write_text_if_changed,
     )
-except ImportError:  # loaded as top-level ``story_builder`` from scripts/
+elif __package__ == "story_builder.source_gap":
     from common import (
         combined_non_mission_content_keys,
         md_escape,
@@ -30,6 +30,8 @@ except ImportError:  # loaded as top-level ``story_builder`` from scripts/
         write_report_json,
         write_text_if_changed,
     )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 
 __all__ = [
