@@ -35,6 +35,26 @@ from .option_timeline_continuation import (
     classify_zero_index_timeline_continuation,
 )
 from .radio_continuation import build_radio_continuation_candidates
+from .reference_projection import (
+    append_reference_line,
+    collection_bucket_from_key,
+    collection_display_name,
+    collection_scene_suffix,
+    collection_scene_value,
+    collection_slug,
+    collection_source_label,
+    collection_table_name_tokens,
+    collection_text_fingerprint,
+    normalized_duplicate_line_texts,
+    normalized_reference_tags,
+    prts_attachment_aliases,
+    reference_kind_from_tags,
+    reference_row_texts,
+    responsive_preview_values,
+    responsive_sort_values,
+    responsive_summary_rows,
+    sim_duplicate_actor_from_key,
+)
 from .timeline_action_evidence import build_conversation_action_debug
 from .option_anchor_reports import (
     inferred_option_anchor_row,
