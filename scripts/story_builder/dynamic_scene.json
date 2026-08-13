@@ -1,0 +1,4177 @@
+{
+  "schema": "dynamicSceneStoryContext.v1",
+  "status": "validated",
+  "sources": {
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "globalMetadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
+    "dynamicStreamingStreamSha256": "1702E7F78D19E43F30208BC8A5CE1CAEDC16994DA9A7360FEFDD5F404E900320",
+    "installedSourceFingerprints": {
+      "StreamingAssets": "20438582CCC8B862ED6E3092648C967D1601D7E10B20367471FF72918ADB8E14",
+      "Persistent": "6DC0C8C55BFE8AC4D9506604E2D4733D9C0E470BD1CBEDBCA41B6DEDF12E3DCA"
+    },
+    "levelScriptFiles": [
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/dung01_rdg001/13000020000.json",
+        "sha256": "8C3D3DFEC777CBAF42DB1A715275D7BF61985C82FDBAB124A947D7C2A30217AD"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/dung02_dg002/24900160005.json",
+        "sha256": "14854DAFD5C024F186449BE40227ECBB5E75C3E6286ECAF075EC99C9D7FA0C89"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/dung02_rdg005/34700030004.json",
+        "sha256": "0F83E0091594414313B2C570F81FF59E9079EBA0B4FB31715D31CE8614949AA4"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/dung02_rdg005/34700030005.json",
+        "sha256": "B3989A348161D1410A7A8693D97882FDEB525D6AF08FEC4E5778BF7F5B3BB3FC"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json",
+        "sha256": "6CF160FD5803BC3BA9FC42EA298161FDDB0F8877D7E7ECFC3D7F7C30036777C3"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/indie_dg007/26200020001.json",
+        "sha256": "6F121FE36F742A630D4778E25733E123C85FDC10AEFB58DFD8B7F9DAFB5D5964"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100050017.json",
+        "sha256": "1AE1D48B08219F2FC997D506560F77E002F9A9016CD7C34DDEF26BF7053CBF21"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060003.json",
+        "sha256": "9580AF19457E32BA7322FB53AB04D3799F3D3E4781FBE57B590851D019205AEA"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060006.json",
+        "sha256": "230DA757D3CF2C6955F1A157564FC9B1438A7670658C907F87F82BC109343C68"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100130002.json",
+        "sha256": "F3E5F961AC622909EF4569D4669829A068CE8A7B43BE36129FC614D00D8FD3F3"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100130010.json",
+        "sha256": "2D3D55880D94D91C82EB5A597A86D81E830ADBBA78B1A720B491E473D973A580"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100140001.json",
+        "sha256": "7DCAE2E161C2AE8FBFC9D89F59AF605AF7392514A401F9E1486D37718BE024C6"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100140004.json",
+        "sha256": "E1CEA500BF8DE44D28DFDC0129807A3DBEFF8B9E9DD214EC4EA32FF96565158C"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100180001.json",
+        "sha256": "276002EBF16A4034EAC1FD7D2D99AA0952E6100458ADCE9A8B292ECE860C421D"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100600001.json",
+        "sha256": "D1ACDCEA021BE8F107214BD6B46D63A36E0123F6C1C0479888EE566E31C66AD2"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100600002.json",
+        "sha256": "0CFDDF1574D33679B155EAA015C7AC4648EB26E667A5478717CF54914962DBED"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json",
+        "sha256": "8B7557E2ECED3103984030AF75ABAB85FBCB79037096D262A52E7A965F2C4553"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv002/200210000.json",
+        "sha256": "7819FDBBC189AB3F5F8E0BFC64CFC5D14850C51B14BE90A3B869A0618C989339"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv005/3400310003.json",
+        "sha256": "8F67B61FD8CC940731390FD9190BC3B33A0A2CE46A12C2BA18EA2D0C05F27B14"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500150002.json",
+        "sha256": "F5893E5095CE4A3095C9EDE3E4E10FC30FF95A447FF7595DBF7A821455E5DEAE"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500240001.json",
+        "sha256": "BA20046DF902DAB1AAA73E3C6C7FB5DCE4F22AA37F796F6EEDDC7B434B78DFFF"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500290001.json",
+        "sha256": "21388CB24EFA6AF6F4211FD5732AD11D3F7ADCA6DCDE313B06D0D25161D16F56"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500290006.json",
+        "sha256": "8791F652E4225EF98D7AF35D3332BD4FE537F87F430EEE88B06823A2B0C7A8E7"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500290007.json",
+        "sha256": "7B600469F9502877F1CBC053F18DC857DE063C78140D5804F2B4BED50826FF83"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800010002.json",
+        "sha256": "E8BDD3CDCDBB0DE8711FCF7F56BC0FD97E8D17D9D330C31C7391B8247BE1EA63"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800280000.json",
+        "sha256": "B6F4500CB75F4AD23554D67C31489AB96B18ACD945E68F164316FB2EE7426C53"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800340001.json",
+        "sha256": "997C03349DC1ECB5211F1C12A932E23C982D3FD5BC75D645C214CD2B22DEE4DC"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800340004.json",
+        "sha256": "B0FC1B7171E154146FDCC0A37A62C0BC648EC27F9D07AE80D352082F47EBE79C"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100070000.json",
+        "sha256": "5A0060E3D0DF8333BA74C38E32775C31C212DB56BBCC0CD522A4AC59946C9E72"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100170006.json",
+        "sha256": "B1B254149A5C446B6746F4D9DC39DDE3637B7DAF6139FF35D588A05090E40553"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100210001.json",
+        "sha256": "4C38F7E0C36B8E00B10488F4C26B92EA1D51D5F4C52F0A01A27BA7E34E664F45"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100220002.json",
+        "sha256": "29FE8023366FA9B21CCBB8B53BDD37157C1984900474A6B1E03D48D8C70760A7"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100220003.json",
+        "sha256": "A056CA6A85F702C78097339E0D67D3983C4E77BBA6CEE9D3F8E1FC0E605C0D39"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100272002.json",
+        "sha256": "6AFF9865827CA72158D9AD0401751190C227B8F98C99FE9C8C1F13E2A8CF27AB"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100282001.json",
+        "sha256": "4BF3C50206608A79553D1E36E61EBEB62FC76133DA4B189631AA673B7B9290E7"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100420001.json",
+        "sha256": "3B85F5DB2C39B909CEF382647702EEBB673196CB3B01336770B177EF265B5CEC"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100460001.json",
+        "sha256": "25641C7E476B0A83C0F60D0E0978663398ECB5C850C088A04120DF8A38027880"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100470001.json",
+        "sha256": "0822933F4FEC167E121D96F1A73E6BF5CE90E78679F315A8DBAC27CE3F14AA96"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800070002.json",
+        "sha256": "44B78DF4EE140B7D82D6249162A89101C81052079446DB5A51D82F9D571E9496"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800080000.json",
+        "sha256": "71DC1F37B625B31FC6385C40971D135D02FA8FECDE70F4ED4B5FC90326F64D69"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800100000.json",
+        "sha256": "478771D359ABDCB05391DA82BF81ED45101E7745F92B54A9E9F163F6EBBDBA28"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800130002.json",
+        "sha256": "ADDDE4ABCBECB695445747AA18732441D385F4ABF4B72A51A7A0B2DEDD81C2DF"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800130004.json",
+        "sha256": "52C9434E671636DD9A0738B40692B041F8A36D482047437D40E56BDA1A3F753F"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800190006.json",
+        "sha256": "164B780F24AAE3AFC98AB7BC87B89A6EA62DF03F916DDBF6D27AA682E0FFD2EA"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800213001.json",
+        "sha256": "D226D686CAF5C3B8023E6A952973B81EF4FE9F2432D15049BBB0B0F8107B1612"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800220000.json",
+        "sha256": "844556BE30AB81B4B5ED55CCF11F02AB173EB4299C022713731153FACB95FC89"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800220003.json",
+        "sha256": "6795A12FC23E5E51987C60008E5641A0C3AF45BEA2686DF5BFC9AB8D012495EF"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+        "sha256": "A73C840E9832628FB37D054D3F330EC8E27EA5026DA365B01138BDE1EEC550FA"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800430001.json",
+        "sha256": "45B53FCF6A736A6660C8A9E5FA4F51E584824C2B18EB0816D50CFBAF169D5F6A"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800450001.json",
+        "sha256": "0EF55AE118D6C8D50EAC5C3DC810C5530EF2442BBC884C17DD15F42636FED329"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800630001.json",
+        "sha256": "BA8D0335D7FD957410C7C5C50E2DB414F8EBA6A8A9E9709C94DD645DE63EB57A"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800640001.json",
+        "sha256": "7A4DE6CD28EF629A3AF4A2C9E2FA41EBBDF4170DCFFA5D6011C253B68BDFAC68"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+        "sha256": "07BD1DCAECE3C9D9C2D376C56DB4E49C53CF32D0F1594CF8FDDB77F087E4FB67"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030002.json",
+        "sha256": "3276399E297DD5E77CE7F885ACC5F46AD9123047EE0D52040112F9E0E948E79F"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030003.json",
+        "sha256": "B134CDA4637EED8404A2DCC9EF59EBA9EDD93B6F46F314CA58795DF0084CC01C"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300040001.json",
+        "sha256": "B9D6C00834273E51063C0ADDA5F3E9C4F0E70EE73D7D88BB8F3D48CC60FBA4A7"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300040003.json",
+        "sha256": "8F59E429C726B0861F4636F53AAFA52471EB990B67982A715B9345E59292956C"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060001.json",
+        "sha256": "1E3B54B0274C3365235C8C4FFDB67BE61D09A1B0C552A57B41BC6871E4BF890F"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060003.json",
+        "sha256": "396289F3FB883AC073F4FA72C2E41F2BF4D63DFF27E529801C0449AE76E970EF"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060005.json",
+        "sha256": "08EE4E9FDE3EEB1A42AFA22A028F641F6017EE4939D0F6E2E1BDA06D0E3F31A2"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070000.json",
+        "sha256": "C9E0580E3F8D0C90F9DDC6C42D44695B89FDE3B4CAE07CEC33382E7CC893F4F8"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070002.json",
+        "sha256": "3D0ED03027796588CB84B0566B018D592BCF08B5199D3EB4B3DF924B972E2667"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300130004.json",
+        "sha256": "D86232BCBA847C3A66B87F4A21F675693D346735E18B1A5A419E27D47EE07097"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv005/23200013031.json",
+        "sha256": "6AEBE56AE92477A5CE2D27F60989B9DEC6B638BD3B1A063CAF018F785DEB6D89"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv006/25000160001.json",
+        "sha256": "FEB711EB2F3C727650A9769D269BD366CB8C4B5FF3F33DB38D79737A0FBC81E7"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100070002.json",
+        "sha256": "EFC53EDD98354F9979E397E5D44C9922C2A6C1D8CB6FB300FF2696E7F4A1D844"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350001.json",
+        "sha256": "9F0B62D076CA2DFFD578832C2F2335679CC12E4D01359F3EB8E5264E9728F79D"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350002.json",
+        "sha256": "5F1C4C79D894C7C0786E42E30A06DBF6C8E82EFAD4869D0DF2A65620176170DE"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350003.json",
+        "sha256": "0D8B4A400F81A190FE96C50F6C4F56905DE2ADFCC8360C431E9AA5F576F3D84C"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350004.json",
+        "sha256": "6B1A071C744D3A8A47803CAD65D57E2F0D9325AA29B9023C764A083115847B96"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350005.json",
+        "sha256": "7A5FDC1B9FC38CF65B96CEC4B60A51E61F87CF7A6D24C587C4075005D0820B2A"
+      },
+      {
+        "path": "structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350006.json",
+        "sha256": "70D51CA276B711CFF90D747F3DF6DD1850D738C2EB6643EBE2FF202C46DE4DE3"
+      }
+    ]
+  },
+  "context": {
+    "classification": "exact_cross_reference_not_runtime_owner",
+    "finding": "Exact authored DynamicScene logic ids equal exported LevelScript script ids and co-carry mission/quest state conditions. One current LevelScript also targets its matching DynamicScene root on the same local control path as Story playback. No evidence shows that the DynamicScene mission condition activates that LevelScript header, so every row remains non-owning context.",
+    "boundary": "a typed serialized or runtime edge must show that the DynamicScene mission condition activates the matched LevelScript header/action chain",
+    "directBridgeFound": false,
+    "missionActivationBridgeFound": false,
+    "missionGraphAction": "none",
+    "counts": {
+      "candidateRoots": 72,
+      "storyOccurrences": 218,
+      "exactTargetBridgeRoots": 1,
+      "sharedControlPathStoryOccurrences": 1,
+      "exactLocalTriggerVolumeContexts": 1,
+      "triggerVolumeForeignKeyBridges": 0
+    },
+    "rows": [
+      {
+        "scene": "dung01_rdg001",
+        "logicId": "13000020000",
+        "scriptId": "13000020000",
+        "conditions": [
+          {
+            "identifier": "c6m3_q#closeFire",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c6m1_21",
+            "levelId": "dung01_rdg001",
+            "scriptId": "13000020000",
+            "recordOffset": 84,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung01_rdg001/13000020000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_c6m1_8d4",
+            "levelId": "dung01_rdg001",
+            "scriptId": "13000020000",
+            "recordOffset": 1518,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung01_rdg001/13000020000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/dung01_rdg001/fb_main_4_0004_0004.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "dung02_dg002",
+        "logicId": "24900160005",
+        "scriptId": "24900160005",
+        "conditions": [
+          {
+            "identifier": "e9m2",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e9m2_7d2",
+            "levelId": "dung02_dg002",
+            "scriptId": "24900160005",
+            "recordOffset": 366,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_dg002/24900160005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e9m2_42",
+            "levelId": "dung02_dg002",
+            "scriptId": "24900160005",
+            "recordOffset": 2116,
+            "actionName": "Play3DRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_dg002/24900160005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e9m2_9",
+            "levelId": "dung02_dg002",
+            "scriptId": "24900160005",
+            "recordOffset": 3277,
+            "actionName": "Play3DRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_dg002/24900160005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/dung02_dg002/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "dung02_rdg005",
+        "logicId": "34700030004",
+        "scriptId": "34700030004",
+        "conditions": [
+          {
+            "identifier": "c33m2",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c33m2_29",
+            "levelId": "dung02_rdg005",
+            "scriptId": "34700030004",
+            "recordOffset": 7,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg005/34700030004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/dung02_rdg005/fb_main_5_0002_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "dung02_rdg005",
+        "logicId": "34700030005",
+        "scriptId": "34700030005",
+        "conditions": [
+          {
+            "identifier": "c33m2",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_c33m2_8",
+            "levelId": "dung02_rdg005",
+            "scriptId": "34700030005",
+            "recordOffset": 792,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg005/34700030005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_c33m2_57",
+            "levelId": "dung02_rdg005",
+            "scriptId": "34700030005",
+            "recordOffset": 1461,
+            "actionName": "Play3DRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg005/34700030005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/dung02_rdg005/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "dung02_rdg008",
+        "logicId": "35600010004",
+        "scriptId": "35600010004",
+        "conditions": [
+          {
+            "identifier": "e11m5",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e11m5_3",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 183,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json"
+          },
+          {
+            "storyKey": "dlg_e11m5_3",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 642,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e11m5_14",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 398,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json"
+          },
+          {
+            "storyKey": "dlg_e11m5_14",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 2280,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e11m5_7",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 1445,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e11m5_15",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 2080,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json"
+          },
+          {
+            "storyKey": "dlg_e11m5_15",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 3751,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e11m5_16",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 3230,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json"
+          },
+          {
+            "storyKey": "dlg_e11m5_16",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 5306,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e11m5_17",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 4440,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json"
+          },
+          {
+            "storyKey": "dlg_e11m5_17",
+            "levelId": "dung02_rdg008",
+            "scriptId": "35600010004",
+            "recordOffset": 5723,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/dung02_rdg008/35600010004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/dung02_rdg008/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "indie_dg007",
+        "logicId": "26200020001",
+        "scriptId": "26200020001",
+        "conditions": [
+          {
+            "identifier": "e8m4_q#5d3",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e8m4_2",
+            "levelId": "indie_dg007",
+            "scriptId": "26200020001",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/indie_dg007/26200020001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/indie_dg007/fb_main_4_0004_0004.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "200210000",
+        "scriptId": "200210000",
+        "conditions": [
+          {
+            "identifier": "c6m1",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c6m1_10",
+            "levelId": "map01_lv002",
+            "scriptId": "200210000",
+            "recordOffset": 84,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv002/200210000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0002_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100050017",
+        "scriptId": "2100050017",
+        "conditions": [
+          {
+            "identifier": "e1m8",
+            "isQuest": false,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e1m1_3d5",
+            "levelId": "map01_lv001",
+            "scriptId": "2100050017",
+            "recordOffset": 831,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100050017.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_5_0002_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100060003",
+        "scriptId": "2100060003",
+        "conditions": [
+          {
+            "identifier": "e1m2_q#5",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "e1m2_q#7",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e1m2_8",
+            "levelId": "map01_lv001",
+            "scriptId": "2100060003",
+            "recordOffset": 54,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_e1m3_1",
+            "levelId": "map01_lv001",
+            "scriptId": "2100060003",
+            "recordOffset": 368,
+            "actionName": "PlayFmvAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e1m2_9",
+            "levelId": "map01_lv001",
+            "scriptId": "2100060003",
+            "recordOffset": 1524,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0003_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100060006",
+        "scriptId": "2100060006",
+        "conditions": [
+          {
+            "identifier": "e1m2",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e1m2_10d5",
+            "levelId": "map01_lv001",
+            "scriptId": "2100060006",
+            "recordOffset": 1410,
+            "actionName": "Play3DRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e1m2_11",
+            "levelId": "map01_lv001",
+            "scriptId": "2100060006",
+            "recordOffset": 1934,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e1m2_10",
+            "levelId": "map01_lv001",
+            "scriptId": "2100060006",
+            "recordOffset": 2189,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100060006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0003_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100130002",
+        "scriptId": "2100130002",
+        "conditions": [
+          {
+            "identifier": "e1m3_q#30",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e1m3_16",
+            "levelId": "map01_lv001",
+            "scriptId": "2100130002",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100130002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e1m3_15",
+            "levelId": "map01_lv001",
+            "scriptId": "2100130002",
+            "recordOffset": 240,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100130002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_e1m3_2",
+            "levelId": "map01_lv001",
+            "scriptId": "2100130002",
+            "recordOffset": 1034,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100130002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0003_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100130010",
+        "scriptId": "2100130010",
+        "conditions": [
+          {
+            "identifier": "e1m3_q#78",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e1m3_9",
+            "levelId": "map01_lv001",
+            "scriptId": "2100130010",
+            "recordOffset": 433,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100130010.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0003_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100140001",
+        "scriptId": "2100140001",
+        "conditions": [
+          {
+            "identifier": "e1m9_q#Deco_startDigWork",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "e2m1_q#Deco_finishDigWork",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e1m9_2d1",
+            "levelId": "map01_lv001",
+            "scriptId": "2100140001",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100140001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100140004",
+        "scriptId": "2100140004",
+        "conditions": [
+          {
+            "identifier": "e2m4",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "e1m9_q#Deco_updateFleet",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e1m9_1",
+            "levelId": "map01_lv001",
+            "scriptId": "2100140004",
+            "recordOffset": 264,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100140004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "remotecomm_e1m9_1",
+            "levelId": "map01_lv001",
+            "scriptId": "2100140004",
+            "recordOffset": 454,
+            "actionName": "PlayRemoteComm",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100140004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e1m9_1d7",
+            "levelId": "map01_lv001",
+            "scriptId": "2100140004",
+            "recordOffset": 650,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100140004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_5_0001_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100180001",
+        "scriptId": "2100180001",
+        "conditions": [
+          {
+            "identifier": "sm1l1m1",
+            "isQuest": false,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "sm1l2m4",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_sm1l1m2_3d8",
+            "levelId": "map01_lv001",
+            "scriptId": "2100180001",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100180001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_sm1l1m2_4",
+            "levelId": "map01_lv001",
+            "scriptId": "2100180001",
+            "recordOffset": 556,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100180001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0002_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100600001",
+        "scriptId": "2100600001",
+        "conditions": [
+          {
+            "identifier": "c33m1_q#6",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "c33m1_q#15",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_c33m1_14",
+            "levelId": "map01_lv001",
+            "scriptId": "2100600001",
+            "recordOffset": 116,
+            "actionName": "Play3DRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100600001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100600002",
+        "scriptId": "2100600002",
+        "conditions": [
+          {
+            "identifier": "c33m1_q#33",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c33m1_1",
+            "levelId": "map01_lv001",
+            "scriptId": "2100600002",
+            "recordOffset": 7,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100600002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2100770001",
+        "scriptId": "2100770001",
+        "conditions": [
+          {
+            "identifier": "hidden53",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "a1m13_q#1",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_a1m13_1",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 100,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_1",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 809,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_2",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 204,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_2",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 913,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_2",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1017,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_2",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2041,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_2",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2646,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_2",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 3251,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_3",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 308,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_3",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1121,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_3",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1225,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_4",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 497,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_4",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1414,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_4",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1852,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_4",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2542,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_4",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 3043,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_5",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 601,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_5",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1518,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_5",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2145,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_5",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2353,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_5",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 3147,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_6",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 705,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_6",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1622,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_6",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2249,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_6",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2750,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_6",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 2854,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json"
+          },
+          {
+            "storyKey": "dlg_a1m13_OpenUI",
+            "levelId": "map01_lv001",
+            "scriptId": "2100770001",
+            "recordOffset": 1726,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv001/2100770001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_5_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2800010002",
+        "scriptId": "2800010002",
+        "conditions": [
+          {
+            "identifier": "e3m4",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e3m1_1",
+            "levelId": "map01_lv007",
+            "scriptId": "2800010002",
+            "recordOffset": 51,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800010002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2800280000",
+        "scriptId": "2800280000",
+        "conditions": [
+          {
+            "identifier": "c6m1_q#4",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "c6m1_q#teleport002",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_c6m1_1",
+            "levelId": "map01_lv007",
+            "scriptId": "2800280000",
+            "recordOffset": 234,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800280000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_5_0001_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2800340001",
+        "scriptId": "2800340001",
+        "conditions": [
+          {
+            "identifier": "c33m1_q#12",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "c33m1d5_q#32",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c33m1_13033",
+            "levelId": "map01_lv007",
+            "scriptId": "2800340001",
+            "recordOffset": 514,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800340001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "2800340004",
+        "scriptId": "2800340004",
+        "conditions": [
+          {
+            "identifier": "c33m1d5_q#14",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "c33m1d5_q#32",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_c33m1_37",
+            "levelId": "map01_lv007",
+            "scriptId": "2800340004",
+            "recordOffset": 414,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv007/2800340004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "3400310003",
+        "scriptId": "3400310003",
+        "conditions": [
+          {
+            "identifier": "c16m2d5_q#13",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c16m2_2",
+            "levelId": "map01_lv005",
+            "scriptId": "3400310003",
+            "recordOffset": 306,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv005/3400310003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "remotecomm_c16m2_1",
+            "levelId": "map01_lv005",
+            "scriptId": "3400310003",
+            "recordOffset": 497,
+            "actionName": "PlayRemoteComm",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv005/3400310003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0005_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "3500150002",
+        "scriptId": "3500150002",
+        "conditions": [
+          {
+            "identifier": "sm1l6m1_q#4d2",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm1l6m1_5",
+            "levelId": "map01_lv006",
+            "scriptId": "3500150002",
+            "recordOffset": 320,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500150002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_sm1l6m1_4",
+            "levelId": "map01_lv006",
+            "scriptId": "3500150002",
+            "recordOffset": 726,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500150002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0004_0004.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "3500240001",
+        "scriptId": "3500240001",
+        "conditions": [
+          {
+            "identifier": "c16m3d5_q#11",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "c16m3d5_q#14",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c16m3_2",
+            "levelId": "map01_lv006",
+            "scriptId": "3500240001",
+            "recordOffset": 37,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500240001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_c16m3_9",
+            "levelId": "map01_lv006",
+            "scriptId": "3500240001",
+            "recordOffset": 705,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500240001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0004_0004.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "3500290001",
+        "scriptId": "3500290001",
+        "conditions": [
+          {
+            "identifier": "c28m1",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c28m1_1",
+            "levelId": "map01_lv006",
+            "scriptId": "3500290001",
+            "recordOffset": 7,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500290001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_5_0002_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "3500290006",
+        "scriptId": "3500290006",
+        "conditions": [
+          {
+            "identifier": "c28m1",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c28m1_3",
+            "levelId": "map01_lv006",
+            "scriptId": "3500290006",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500290006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0005_0004.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map01",
+        "logicId": "3500290007",
+        "scriptId": "3500290007",
+        "conditions": [
+          {
+            "identifier": "c28m1",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c28m1_6",
+            "levelId": "map01_lv006",
+            "scriptId": "3500290007",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map01_lv006/3500290007.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map01/fb_main_4_0005_0004.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100070000",
+        "scriptId": "10100070000",
+        "conditions": [
+          {
+            "identifier": "e5m2",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e5m2_5",
+            "levelId": "map02_lv001",
+            "scriptId": "10100070000",
+            "recordOffset": 56,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e5m2_7",
+            "levelId": "map02_lv001",
+            "scriptId": "10100070000",
+            "recordOffset": 385,
+            "actionName": "Play3DRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e5m2_1",
+            "levelId": "map02_lv001",
+            "scriptId": "10100070000",
+            "recordOffset": 793,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e5m2_2",
+            "levelId": "map02_lv001",
+            "scriptId": "10100070000",
+            "recordOffset": 913,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0001_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100170006",
+        "scriptId": "10100170006",
+        "conditions": [
+          {
+            "identifier": "sm2l1m5",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "sm2l1m5_q#11",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l1m5_6",
+            "levelId": "map02_lv001",
+            "scriptId": "10100170006",
+            "recordOffset": 2959,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100170006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100210001",
+        "scriptId": "10100210001",
+        "conditions": [
+          {
+            "identifier": "f1m18d1_q#9",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "f1m18d1_q#6",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_f1m18d1_3",
+            "levelId": "map02_lv001",
+            "scriptId": "10100210001",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100210001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100220002",
+        "scriptId": "10100220002",
+        "conditions": [
+          {
+            "identifier": "f1m18d2",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_f1m18d2_3",
+            "levelId": "map02_lv001",
+            "scriptId": "10100220002",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100220002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100220003",
+        "scriptId": "10100220003",
+        "conditions": [
+          {
+            "identifier": "f1m18d2_q#13",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "f1m18d2_q#1",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_f1m18d2_6",
+            "levelId": "map02_lv001",
+            "scriptId": "10100220003",
+            "recordOffset": 74,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100220003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_f1m18d2_5",
+            "levelId": "map02_lv001",
+            "scriptId": "10100220003",
+            "recordOffset": 709,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100220003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100272002",
+        "scriptId": "10100272002",
+        "conditions": [
+          {
+            "identifier": "c27m1",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c27m1_13",
+            "levelId": "map02_lv001",
+            "scriptId": "10100272002",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100272002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100282001",
+        "scriptId": "10100282001",
+        "conditions": [
+          {
+            "identifier": "c27m3",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "c27m3_q#3",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_c27m3_6",
+            "levelId": "map02_lv001",
+            "scriptId": "10100282001",
+            "recordOffset": 7,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100282001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none",
+        "localContextBridge": {
+          "classification": "exact_dynamic_scene_target_and_shared_levelscript_control_path",
+          "exactTargetActions": [
+            {
+              "actionName": "ShowSceneDecorationNew",
+              "unionTag": "0x0485",
+              "serializedMemberCount": 10,
+              "recordOffset": 284,
+              "actionMapRole": "actionList#2 linked",
+              "localId": 6,
+              "nextId": 7,
+              "targetDynamicEntityLogicId": "10100282001",
+              "visible": false,
+              "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100282001.json",
+              "storyControlPathLinks": [
+                {
+                  "storyKey": "dlg_c27m3_6",
+                  "storyRecordOffset": 7,
+                  "storyActionName": "StartDialogAndTeleportAction",
+                  "sharedControlPaths": [
+                    {
+                      "relation": "decoration_follows_story_on_same_path",
+                      "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                      "headerLocalId": 4,
+                      "eventSummary": "leader enters trigger slot 80001",
+                      "triggerSlotId": 80001,
+                      "storyPathLocalIds": [
+                        5
+                      ],
+                      "decorationPathLocalIds": [
+                        5,
+                        6
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "localTriggerVolumeContext": {
+                "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                "selectorSlotIds": [
+                  80001
+                ],
+                "triggerVolumes": [
+                  {
+                    "slotId": 80001,
+                    "triggerVolumeType": "Leader",
+                    "triggerCountLimit": 1,
+                    "enterCheckOnGround": false,
+                    "isImportant": false,
+                    "triggerOnPole": false,
+                    "waitSrvRes": false,
+                    "shapes": [
+                      {
+                        "shapeType": "Sphere",
+                        "position": {
+                          "x": -757.75,
+                          "y": 234.828,
+                          "z": -1185.85
+                        },
+                        "radius": 59.0,
+                        "rotation": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "size": {
+                          "x": 3.0,
+                          "y": 3.0,
+                          "z": 3.0
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "schemaMappingId": "current-global-metadata-levelscript-trigger-volume-data-fields",
+                "foreignKeyBridgeFound": false,
+                "missionGraphAction": "none"
+              }
+            }
+          ],
+          "sharedStoryKeys": [
+            "dlg_c27m3_6"
+          ],
+          "missionOwnerStatus": "unresolved",
+          "storyBinding": false,
+          "orderEvidence": false,
+          "missionGraphAction": "none"
+        }
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100420001",
+        "scriptId": "10100420001",
+        "conditions": [
+          {
+            "identifier": "sm2l2m2_q#13",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l2m2_9",
+            "levelId": "map02_lv001",
+            "scriptId": "10100420001",
+            "recordOffset": 583,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100420001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l2m2_8",
+            "levelId": "map02_lv001",
+            "scriptId": "10100420001",
+            "recordOffset": 797,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100420001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100460001",
+        "scriptId": "10100460001",
+        "conditions": [
+          {
+            "identifier": "m1m49_q#2",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "m1m49_q#5",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_m1m42_6",
+            "levelId": "map02_lv001",
+            "scriptId": "10100460001",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100460001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_1",
+            "levelId": "map02_lv001",
+            "scriptId": "10100460001",
+            "recordOffset": 128,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100460001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_2",
+            "levelId": "map02_lv001",
+            "scriptId": "10100460001",
+            "recordOffset": 249,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100460001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_5",
+            "levelId": "map02_lv001",
+            "scriptId": "10100460001",
+            "recordOffset": 370,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100460001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "10100470001",
+        "scriptId": "10100470001",
+        "conditions": [
+          {
+            "identifier": "m1m50_q#2",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "m1m50_q#3",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_m1m42_6",
+            "levelId": "map02_lv001",
+            "scriptId": "10100470001",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100470001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_1",
+            "levelId": "map02_lv001",
+            "scriptId": "10100470001",
+            "recordOffset": 249,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100470001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_4",
+            "levelId": "map02_lv001",
+            "scriptId": "10100470001",
+            "recordOffset": 128,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100470001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_3",
+            "levelId": "map02_lv001",
+            "scriptId": "10100470001",
+            "recordOffset": 370,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100470001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800070002",
+        "scriptId": "22800070002",
+        "conditions": [
+          {
+            "identifier": "sm2l2m1_q#20",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "sm2l2m1_q#6",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l2m1_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800070002",
+            "recordOffset": 564,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l2m1_11",
+            "levelId": "map02_lv002",
+            "scriptId": "22800070002",
+            "recordOffset": 954,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0001_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800080000",
+        "scriptId": "22800080000",
+        "conditions": [
+          {
+            "identifier": "e6m1",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "e6m1_q#1",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e6m1_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800080000",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800080000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e6m1_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800080000",
+            "recordOffset": 262,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800080000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_5_0001_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800100000",
+        "scriptId": "22800100000",
+        "conditions": [
+          {
+            "identifier": "e6m3d5",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e6m3_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800100000",
+            "recordOffset": 51,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800100000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0001_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800130002",
+        "scriptId": "22800130002",
+        "conditions": [
+          {
+            "identifier": "sm2l2m4",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_sm2l2m4_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800130002",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800130002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0004.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800130004",
+        "scriptId": "22800130004",
+        "conditions": [
+          {
+            "identifier": "sm2l2m4",
+            "isQuest": false,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l2m4_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800130004",
+            "recordOffset": 7,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800130004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l2m4_3",
+            "levelId": "map02_lv002",
+            "scriptId": "22800130004",
+            "recordOffset": 179,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800130004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800190006",
+        "scriptId": "22800190006",
+        "conditions": [
+          {
+            "identifier": "sm2l2m6",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "sm2l2m6_q#9",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l2m6_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800190006",
+            "recordOffset": 7,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800190006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0001_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800213001",
+        "scriptId": "22800213001",
+        "conditions": [
+          {
+            "identifier": "sm2l2m2",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "sm2l2m2_q#5",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l2m2_26",
+            "levelId": "map02_lv002",
+            "scriptId": "22800213001",
+            "recordOffset": 352,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800213001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l2m2_28",
+            "levelId": "map02_lv002",
+            "scriptId": "22800213001",
+            "recordOffset": 476,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800213001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l2m2_29",
+            "levelId": "map02_lv002",
+            "scriptId": "22800213001",
+            "recordOffset": 600,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800213001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_sm2l2m2_9",
+            "levelId": "map02_lv002",
+            "scriptId": "22800213001",
+            "recordOffset": 768,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800213001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l2m2_30",
+            "levelId": "map02_lv002",
+            "scriptId": "22800213001",
+            "recordOffset": 1223,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800213001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l2m2_25",
+            "levelId": "map02_lv002",
+            "scriptId": "22800213001",
+            "recordOffset": 1347,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800213001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_5_0000_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800220000",
+        "scriptId": "22800220000",
+        "conditions": [
+          {
+            "identifier": "e5m3_q#7",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "e5m3_q#8",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e5m3_0d7",
+            "levelId": "map02_lv002",
+            "scriptId": "22800220000",
+            "recordOffset": 51,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800220000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_e5m3_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800220000",
+            "recordOffset": 200,
+            "actionName": "PreloadCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800220000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_e5m3_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800220000",
+            "recordOffset": 333,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800220000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e5m3_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800220000",
+            "recordOffset": 842,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800220000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800220003",
+        "scriptId": "22800220003",
+        "conditions": [
+          {
+            "identifier": "e5m3",
+            "isQuest": false,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e5m3_5",
+            "levelId": "map02_lv002",
+            "scriptId": "22800220003",
+            "recordOffset": 7,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800220003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0001_0003.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800410001",
+        "scriptId": "22800410001",
+        "conditions": [
+          {
+            "identifier": "e6m4",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 693,
+            "actionName": "StartCutsceneAndControlSceneObjectAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 974,
+            "actionName": "StartCutsceneAndControlSceneObjectAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_all",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 1255,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_all",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 2173,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_all",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 3091,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 1611,
+            "actionName": "StartCutsceneAndControlSceneObjectAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 1892,
+            "actionName": "StartCutsceneAndControlSceneObjectAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_3",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 2529,
+            "actionName": "StartCutsceneAndControlSceneObjectAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_map02_lv002_xueyuan_3",
+            "levelId": "map02_lv002",
+            "scriptId": "22800410001",
+            "recordOffset": 2810,
+            "actionName": "StartCutsceneAndControlSceneObjectAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800410001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800430001",
+        "scriptId": "22800430001",
+        "conditions": [
+          {
+            "identifier": "f1m19d1_q#17",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "f1m19d1_q#21",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_f1m19d1_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800430001",
+            "recordOffset": 614,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800430001.json"
+          },
+          {
+            "storyKey": "radio_f1m19d1_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800430001",
+            "recordOffset": 1627,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800430001.json"
+          },
+          {
+            "storyKey": "radio_f1m19d1_3",
+            "levelId": "map02_lv002",
+            "scriptId": "22800430001",
+            "recordOffset": 678,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800430001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_f1m19d1_3",
+            "levelId": "map02_lv002",
+            "scriptId": "22800430001",
+            "recordOffset": 1691,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800430001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800450001",
+        "scriptId": "22800450001",
+        "conditions": [
+          {
+            "identifier": "e10m1_q#10",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e10m1_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800450001",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800450001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800630001",
+        "scriptId": "22800630001",
+        "conditions": [
+          {
+            "identifier": "m1m47",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_m1m42_6",
+            "levelId": "map02_lv002",
+            "scriptId": "22800630001",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800630001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800630001",
+            "recordOffset": 128,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800630001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800630001",
+            "recordOffset": 249,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800630001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_4",
+            "levelId": "map02_lv002",
+            "scriptId": "22800630001",
+            "recordOffset": 370,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800630001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "22800640001",
+        "scriptId": "22800640001",
+        "conditions": [
+          {
+            "identifier": "m1m48_q#2",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "m1m48_q#3",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_m1m42_6",
+            "levelId": "map02_lv002",
+            "scriptId": "22800640001",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800640001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_1",
+            "levelId": "map02_lv002",
+            "scriptId": "22800640001",
+            "recordOffset": 128,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800640001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_2",
+            "levelId": "map02_lv002",
+            "scriptId": "22800640001",
+            "recordOffset": 249,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800640001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m42_4",
+            "levelId": "map02_lv002",
+            "scriptId": "22800640001",
+            "recordOffset": 370,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv002/22800640001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23100070002",
+        "scriptId": "23100070002",
+        "conditions": [
+          {
+            "identifier": "e11m2_q#1",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e11m2_2",
+            "levelId": "map02_lv008",
+            "scriptId": "23100070002",
+            "recordOffset": 7,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100070002.json"
+          },
+          {
+            "storyKey": "dlg_e11m2_2",
+            "levelId": "map02_lv008",
+            "scriptId": "23100070002",
+            "recordOffset": 936,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "remotecomm_e11m2_1",
+            "levelId": "map02_lv008",
+            "scriptId": "23100070002",
+            "recordOffset": 1202,
+            "actionName": "PlayRemoteComm",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e11m2_6",
+            "levelId": "map02_lv008",
+            "scriptId": "23100070002",
+            "recordOffset": 1399,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100070002.json"
+          },
+          {
+            "storyKey": "dlg_e11m2_3",
+            "levelId": "map02_lv008",
+            "scriptId": "23100070002",
+            "recordOffset": 1474,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23100350001",
+        "scriptId": "23100350001",
+        "conditions": [
+          {
+            "identifier": "f1m32_q#Main1Complete",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "cutscene_f1m32_rift_main1_complete",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350001",
+            "recordOffset": 7,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23100350002",
+        "scriptId": "23100350002",
+        "conditions": [
+          {
+            "identifier": "f1m32_q#Main2Complete",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "cutscene_f1m32_rift_main2_complete",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350002",
+            "recordOffset": 7,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23100350003",
+        "scriptId": "23100350003",
+        "conditions": [
+          {
+            "identifier": "f1m32_q#Main3Complete",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_f1m32_DapanShow",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350003",
+            "recordOffset": 243,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_f1m32_5",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350003",
+            "recordOffset": 528,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_f1m32_rift_main3_complete",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350003",
+            "recordOffset": 1144,
+            "actionName": "StartCutsceneAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23100350004",
+        "scriptId": "23100350004",
+        "conditions": [
+          {
+            "identifier": "f1m32_q#Side1Complete",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "cutscene_f1m32_rift_side1_complete",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350004",
+            "recordOffset": 92,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_f1m32_MifuShow",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350004",
+            "recordOffset": 396,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_f1m32_9",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350004",
+            "recordOffset": 680,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23100350005",
+        "scriptId": "23100350005",
+        "conditions": [
+          {
+            "identifier": "f1m32_q#Side2Complete",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_f1m32_15",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350005",
+            "recordOffset": 92,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350005.json"
+          },
+          {
+            "storyKey": "dlg_f1m32_15_1",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350005",
+            "recordOffset": 497,
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350005.json"
+          },
+          {
+            "storyKey": "dlg_f1m32_HezhiqiShow",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350005",
+            "recordOffset": 210,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_f1m32_10",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350005",
+            "recordOffset": 617,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_f1m32_rift_side2_complete",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350005",
+            "recordOffset": 739,
+            "actionName": "PlayCutsceneAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23100350006",
+        "scriptId": "23100350006",
+        "conditions": [
+          {
+            "identifier": "f1m32_q#Side1Complete",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_f1m32_LizhiyanShow",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350006",
+            "recordOffset": 7,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_f1m32_11",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350006",
+            "recordOffset": 295,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_f1m32_12",
+            "levelId": "map02_lv008",
+            "scriptId": "23100350006",
+            "recordOffset": 417,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv008/23100350006.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23200013031",
+        "scriptId": "23200013031",
+        "conditions": [
+          {
+            "identifier": "sm2l5m1_q#24",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l5m1_21",
+            "levelId": "map02_lv005",
+            "scriptId": "23200013031",
+            "recordOffset": 195,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv005/23200013031.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l5m1_22",
+            "levelId": "map02_lv005",
+            "scriptId": "23200013031",
+            "recordOffset": 1605,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv005/23200013031.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l5m1_23",
+            "levelId": "map02_lv005",
+            "scriptId": "23200013031",
+            "recordOffset": 2195,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv005/23200013031.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_5_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300000023",
+        "scriptId": "23300000023",
+        "conditions": [
+          {
+            "identifier": "e7m4",
+            "isQuest": false,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": false
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e7m4_12",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 8384,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_10",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 9818,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_14",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 9939,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_20",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 10175,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_8",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 10846,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_15",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 11210,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_11",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 11451,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_16",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 11572,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_18",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 11825,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_19",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 12012,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_17",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 12299,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "cutscene_e7m4_2",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 13965,
+            "actionName": "StartFmvAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e7m4_2",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 14594,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_4",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 15907,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_4",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 16147,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_4",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 16387,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_7",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 16027,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_9",
+            "levelId": "map02_lv003",
+            "scriptId": "23300000023",
+            "recordOffset": 16267,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300000023.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300030002",
+        "scriptId": "23300030002",
+        "conditions": [
+          {
+            "identifier": "e7m3",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "e7m3_q#12",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_e7m3_19",
+            "levelId": "map02_lv003",
+            "scriptId": "23300030002",
+            "recordOffset": 7,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m3_6",
+            "levelId": "map02_lv003",
+            "scriptId": "23300030002",
+            "recordOffset": 219,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300030003",
+        "scriptId": "23300030003",
+        "conditions": [
+          {
+            "identifier": "e7m3",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "e7m3_q#12",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "cutscene_e7m3_1",
+            "levelId": "map02_lv003",
+            "scriptId": "23300030003",
+            "recordOffset": 616,
+            "actionName": "StartCutsceneAndHideSceneObjectAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e7m3_4",
+            "levelId": "map02_lv003",
+            "scriptId": "23300030003",
+            "recordOffset": 1172,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e7m3_17",
+            "levelId": "map02_lv003",
+            "scriptId": "23300030003",
+            "recordOffset": 1668,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_e7m3_17",
+            "levelId": "map02_lv003",
+            "scriptId": "23300030003",
+            "recordOffset": 2166,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300030003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300040001",
+        "scriptId": "23300040001",
+        "conditions": [
+          {
+            "identifier": "e7m4_q#1",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": false
+          },
+          {
+            "identifier": "e7m4_q#13",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": false
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e7m4_5",
+            "levelId": "map02_lv003",
+            "scriptId": "23300040001",
+            "recordOffset": 82,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300040001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_5",
+            "levelId": "map02_lv003",
+            "scriptId": "23300040001",
+            "recordOffset": 278,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300040001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_e7m4_6",
+            "levelId": "map02_lv003",
+            "scriptId": "23300040001",
+            "recordOffset": 489,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300040001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300040003",
+        "scriptId": "23300040003",
+        "conditions": [
+          {
+            "identifier": "e7m4",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_e7m4_6",
+            "levelId": "map02_lv003",
+            "scriptId": "23300040003",
+            "recordOffset": 82,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300040003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300060001",
+        "scriptId": "23300060001",
+        "conditions": [
+          {
+            "identifier": "sm2l3m3",
+            "isQuest": false,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "sm2l3m1_q#4",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l3m1_9",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060001",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300060003",
+        "scriptId": "23300060003",
+        "conditions": [
+          {
+            "identifier": "sm2l3m1_q#2",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l3m1_14",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060003",
+            "recordOffset": 7,
+            "actionName": "PlayRadioAndWait",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m1_15",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060003",
+            "recordOffset": 131,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_sm2l3m1_2",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060003",
+            "recordOffset": 732,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060003.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300060005",
+        "scriptId": "23300060005",
+        "conditions": [
+          {
+            "identifier": "sm2l3m1_q#6",
+            "isQuest": true,
+            "state": 2,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          },
+          {
+            "identifier": "sm2l3m1_q#6",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 1,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_sm2l3m1_3",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060005",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m1_5",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060005",
+            "recordOffset": 249,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m1_12",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060005",
+            "recordOffset": 1128,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_sm2l3m1_5",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060005",
+            "recordOffset": 1596,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m1_8",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060005",
+            "recordOffset": 1794,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m1_16",
+            "levelId": "map02_lv003",
+            "scriptId": "23300060005",
+            "recordOffset": 2265,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300060005.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300070000",
+        "scriptId": "23300070000",
+        "conditions": [
+          {
+            "identifier": "sm2l3m4_q#1",
+            "isQuest": true,
+            "state": 3,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_sm2l3m4_3d5",
+            "levelId": "map02_lv003",
+            "scriptId": "23300070000",
+            "recordOffset": 7,
+            "actionName": "StartDialogAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m4_1d5",
+            "levelId": "map02_lv003",
+            "scriptId": "23300070000",
+            "recordOffset": 132,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_sm2l3m4_3",
+            "levelId": "map02_lv003",
+            "scriptId": "23300070000",
+            "recordOffset": 512,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m4_1",
+            "levelId": "map02_lv003",
+            "scriptId": "23300070000",
+            "recordOffset": 791,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070000.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0002_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300070002",
+        "scriptId": "23300070002",
+        "conditions": [
+          {
+            "identifier": "sm2l3m4_q#8",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_sm2l3m4_4",
+            "levelId": "map02_lv003",
+            "scriptId": "23300070002",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "dlg_sm2l3m4_5",
+            "levelId": "map02_lv003",
+            "scriptId": "23300070002",
+            "recordOffset": 996,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_sm2l3m4_10",
+            "levelId": "map02_lv003",
+            "scriptId": "23300070002",
+            "recordOffset": 3556,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300070002.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0001.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "23300130004",
+        "scriptId": "23300130004",
+        "conditions": [
+          {
+            "identifier": "sm2l3m2_q#6",
+            "isQuest": true,
+            "state": 3,
+            "isSame": false,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "dlg_sm2l3m2_1",
+            "levelId": "map02_lv003",
+            "scriptId": "23300130004",
+            "recordOffset": 7,
+            "actionName": "StartDialogAndTeleportAction",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv003/23300130004.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0002.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      },
+      {
+        "scene": "map02",
+        "logicId": "25000160001",
+        "scriptId": "25000160001",
+        "conditions": [
+          {
+            "identifier": "m1m75",
+            "isQuest": false,
+            "state": 2,
+            "isSame": true,
+            "compareType": 0,
+            "toBeTrue": true
+          }
+        ],
+        "storyOccurrences": [
+          {
+            "storyKey": "radio_m1m75_1",
+            "levelId": "map02_lv006",
+            "scriptId": "25000160001",
+            "recordOffset": 7,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv006/25000160001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m75_2",
+            "levelId": "map02_lv006",
+            "scriptId": "25000160001",
+            "recordOffset": 128,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv006/25000160001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m75_3",
+            "levelId": "map02_lv006",
+            "scriptId": "25000160001",
+            "recordOffset": 384,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv006/25000160001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m75_4",
+            "levelId": "map02_lv006",
+            "scriptId": "25000160001",
+            "recordOffset": 505,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv006/25000160001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          },
+          {
+            "storyKey": "radio_m1m75_5",
+            "levelId": "map02_lv006",
+            "scriptId": "25000160001",
+            "recordOffset": 761,
+            "actionName": "PlayRadio",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv006/25000160001.json",
+            "nativeEventOwnerStatus": "exact_serialized_control_path"
+          }
+        ],
+        "dynamicSourceFile": "Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes",
+        "classification": "exact_cross_reference_not_runtime_owner",
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": false,
+        "orderEvidence": false,
+        "missionGraphAction": "none"
+      }
+    ]
+  }
+}

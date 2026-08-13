@@ -1073,6 +1073,34 @@ def run(args: argparse.Namespace) -> int:
         return 1
     write_report_json(args.json, report)
     write_text_if_changed(args.markdown, markdown_report(report))
+    if args.carrier_type == "Beyond.Gameplay.TeleportParam":
+        try:
+            from story_builder.native_contracts.teleport_param import (
+                DEFAULT_CONTRACT,
+                reconcile_generic_audit,
+            )
+
+            contract = json.loads(DEFAULT_CONTRACT.read_text(encoding="utf-8-sig"))
+            reconciliation_failures = reconcile_generic_audit(report, contract)
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            reconciliation_failures = [{
+                "validator": "teleportParamNativeContractReconciliation",
+                "gate": "read_contract",
+                "sourceFile": str(DEFAULT_CONTRACT),
+                "expected": {"readableJsonObject": True},
+                "actual": str(exc)[:400],
+            }]
+        if reconciliation_failures:
+            failure = reconciliation_failures[0]
+            print(
+                "TeleportParam contract reconciliation failed: "
+                f"validator={failure['validator']}; gate={failure['gate']}; "
+                f"source={failure['sourceFile']}; "
+                f"expected={failure['expected']!r}; actual={failure['actual']!r}",
+                file=sys.stderr,
+            )
+            return 1
+        print("TeleportParam production contract reconciliation: validated")
     summary = report["summary"]
     print(
         "Native value carrier audit "
