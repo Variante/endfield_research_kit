@@ -178,9 +178,13 @@ from .bundle_support import (
     scene_sort_value,
     slot_misc,
 )
+from .bundle_media import (
+    collect_payload_media_tags,
+    media_id_looks_like_media,
+    sns_media_text_from_params,
+)
 from .bundle_primitives import (
     brace_text,
-    clean_media_id_value,
     env_group,
     env_story_mission,
     format_webui_timeline_seconds,
@@ -1868,146 +1872,6 @@ def build_language_bundle(
     scene_order_analysis_by_payload_id: dict[int, dict] = {}
     scene_order_gap_sources: dict[str, tuple[Path, dict, dict | None]] = {}
     inferred_option_anchor_rows_by_key: dict[str, dict] = {}
-    inline_image_tag_re = re.compile(
-        r"<image\b(?!\s*=)[^>]*>[\s\S]*?</image>"
-        r"|<image\s*=[^>]+>"
-        r"|<image\b(?=[^>]*(?:src|source|path|name|id)\s*=)[^>]*>",
-        flags=re.IGNORECASE,
-    )
-
-    def normalize_media_id(value: object) -> str:
-        trimmed = clean_media_id_value(value).replace("\\", "/")
-        if not trimmed:
-            return ""
-        without_prefix = re.sub(r"^SNS/Emoji/", "", trimmed, flags=re.IGNORECASE)
-        last_segment = without_prefix.split("/")[-1] or without_prefix
-        return re.sub(r"\.[^.]+$", "", last_segment, flags=re.IGNORECASE).lower()
-    def inline_image_id_from_tag(raw_tag: str) -> str:
-        raw = str(raw_tag or "").strip()
-        if not raw:
-            return ""
-        body_match = re.match(r"^<image\b(?!\s*=)[^>]*>([\s\S]*?)</image>$", raw, flags=re.IGNORECASE)
-        if body_match:
-            return clean_media_id_value(body_match.group(1))
-        quoted_direct = re.match(r"""^<image\s*=\s*(["'])([\s\S]*?)\1""", raw, flags=re.IGNORECASE)
-        if quoted_direct:
-            return clean_media_id_value(quoted_direct.group(2))
-        loose_direct = re.match(r"^<image\s*=\s*([^>\s]+)", raw, flags=re.IGNORECASE)
-        if loose_direct:
-            return clean_media_id_value(loose_direct.group(1))
-        quoted_attr = re.search(
-            r"""\b(?:src|source|path|name|id)\s*=\s*(["'])([\s\S]*?)\1""",
-            raw,
-            flags=re.IGNORECASE,
-        )
-        if quoted_attr:
-            return clean_media_id_value(quoted_attr.group(2))
-        loose_attr = re.search(r"\b(?:src|source|path|name|id)\s*=\s*([^>\s]+)", raw, flags=re.IGNORECASE)
-        return clean_media_id_value(loose_attr.group(1)) if loose_attr else ""
-    def image_ids_from_text(text: object) -> list[str]:
-        source = str(text or "")
-        if "<image" not in source.lower():
-            return []
-        return [
-            image_id
-            for image_id in (inline_image_id_from_tag(match.group(0)) for match in inline_image_tag_re.finditer(source))
-            if image_id
-        ]
-    def media_id_is_emoji(value: object) -> bool:
-        normalized = normalize_media_id(value)
-        return "emoji" in normalized or "emoiji" in normalized
-    def media_id_is_sticker(value: object) -> bool:
-        normalized = normalize_media_id(value)
-        if not normalized or media_id_is_emoji(normalized):
-            return False
-        return normalized.startswith("sns_sticker_") or "sticker" in normalized
-    def media_id_looks_like_media(value: object) -> bool:
-        normalized = normalize_media_id(value)
-        if not normalized:
-            return False
-        if normalized.isdigit():
-            return False
-        mission_type, _mission_act = parse_mission(normalized)
-        if mission_type in MISSION_STORY_TYPES:
-            return False
-        return True
-
-    def collect_payload_media_tags(payload: dict) -> set[str]:
-        tags: set[str] = set()
-        def add_media_id(value: object) -> None:
-            if not media_id_looks_like_media(value):
-                return
-            normalized = normalize_media_id(value)
-            if media_id_is_emoji(normalized):
-                tags.add("mediaEmoji")
-                return
-            tags.add("mediaSticker" if media_id_is_sticker(normalized) else "mediaImage")
-        def add_text_images(value: object) -> None:
-            for image_id in image_ids_from_text(value):
-                add_media_id(image_id)
-        def source_from_debug(debug: object) -> dict:
-            if not isinstance(debug, dict):
-                return {}
-            source = debug.get("source") or {}
-            if isinstance(source, dict) and isinstance(source.get("source"), dict):
-                return source["source"]
-            return source if isinstance(source, dict) else {}
-        def add_media_from_source(source: dict) -> None:
-            if not isinstance(source, dict):
-                return
-            for field in ("image", "emoji", "emojiResPath", "optionResPath"):
-                add_media_id(source.get(field))
-            for image_id in source.get("contentParam") or []:
-                add_media_id(image_id)
-            raw_content_params = source.get("contentParams")
-            if not isinstance(raw_content_params, str) or not raw_content_params.strip():
-                return
-            try:
-                content_params = json.loads(raw_content_params)
-            except json.JSONDecodeError:
-                return
-            def visit_content_param(node: object) -> None:
-                if isinstance(node, dict):
-                    for key, value in node.items():
-                        if key in {"image", "imageResPath", "emoji", "emojiResPath", "optionResPath"}:
-                            add_media_id(value)
-                        elif isinstance(value, (dict, list)):
-                            visit_content_param(value)
-                elif isinstance(node, list):
-                    for item in node:
-                        visit_content_param(item)
-            visit_content_param(content_params)
-        def visit_line(line: object) -> None:
-            if not isinstance(line, dict):
-                return
-            add_text_images(line.get("text"))
-            add_media_id(line.get("image"))
-            add_media_id(line.get("emoji"))
-            for image_id in line.get("images") or []:
-                add_media_id(image_id)
-            source = source_from_debug(line.get("_debug"))
-            add_media_from_source(source)
-            if source.get("video"):
-                tags.add("mediaVideo")
-            for option in line.get("options") or []:
-                if not isinstance(option, dict):
-                    continue
-                add_text_images(option.get("text"))
-                add_media_id(option.get("image"))
-                add_media_id(option.get("emoji"))
-                add_media_from_source(source_from_debug(option.get("_debug")))
-        for line in payload.get("lines") or []:
-            visit_line(line)
-        for row in payload.get("summary") or []:
-            if isinstance(row, dict):
-                add_text_images(row.get("text"))
-        if payload.get("narrativeVideos"):
-            tags.add("mediaVideo")
-        cutscene = payload.get("cutscene")
-        if isinstance(cutscene, dict) and cutscene.get("videoRefs"):
-            tags.add("mediaVideo")
-        return tags
-
     def remember_written(path: Path, bucket: set[str]) -> Path:
         bucket.add(written_path_key(path))
         return path
@@ -2030,7 +1894,11 @@ def build_language_bundle(
                 payload,
                 scene_order_analysis_by_payload_id.get(id(payload)),
             )
-        media_tags = collect_payload_media_tags(payload)
+        media_tags = collect_payload_media_tags(
+            payload,
+            parse_mission=parse_mission,
+            mission_story_types=MISSION_STORY_TYPES,
+        )
         if media_tags:
             conv_media_tags_by_key[out_key].update(media_tags)
         return remember_written(path, written_conv_paths)
@@ -2314,34 +2182,16 @@ def build_language_bundle(
             })
         return out
 
-    def sns_media_text_from_params(params) -> str:
-        image_ids = [
-            str(value or "").strip()
-            for value in (params or [])
-            if media_id_looks_like_media(value)
-        ]
-        if not image_ids:
-            return ""
-        if len(image_ids) == 2:
-            by_gender: dict[str, str] = {}
-            for image_id in image_ids:
-                lower = image_id.lower()
-                if lower.endswith("_m"):
-                    by_gender["M"] = image_id
-                elif lower.endswith("_f"):
-                    by_gender["F"] = image_id
-            if by_gender.get("M") and by_gender.get("F"):
-                return (
-                    f'{{M}}{inline_image_tag(by_gender["M"])}'
-                    f'{{F}}{inline_image_tag(by_gender["F"])}'
-                )
-        return " ".join(inline_image_tag(image_id) for image_id in image_ids)
     def sns_content_text(node: dict) -> str:
         text = t(node.get("content", {}).get("id"))
         if text:
             return text
         if node.get("contentType") == 2:
-            return sns_media_text_from_params(node.get("contentParam"))
+            return sns_media_text_from_params(
+                node.get("contentParam"),
+                parse_mission=parse_mission,
+                mission_story_types=MISSION_STORY_TYPES,
+            )
         return ""
     def sns_option_display_text(opt: dict) -> str:
         text = t(opt.get("optionDesc", {}).get("id"))
@@ -6575,7 +6425,11 @@ def build_language_bundle(
                 image_ids = [
                     str(value or "").strip()
                     for value in (node.get("contentParam") or [])
-                    if media_id_looks_like_media(value)
+                    if media_id_looks_like_media(
+                        value,
+                        parse_mission=parse_mission,
+                        mission_story_types=MISSION_STORY_TYPES,
+                    )
                 ]
                 if image_ids:
                     line_entry["images"] = image_ids
