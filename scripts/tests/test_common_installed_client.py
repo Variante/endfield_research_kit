@@ -2,24 +2,15 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 from unittest import mock
 
 
-HERE = Path(__file__).resolve().parent
-SPEC = importlib.util.spec_from_file_location("common", HERE.parent / "common.py")
-COMMON = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-# Register before executing: dataclasses resolves annotations through
-# sys.modules, so a path-loaded module must be findable under its own name.
-sys.modules.setdefault(SPEC.name, COMMON)
-SPEC.loader.exec_module(COMMON)
+from scripts import common as COMMON
 
 
 class InstalledClientTestCase(unittest.TestCase):

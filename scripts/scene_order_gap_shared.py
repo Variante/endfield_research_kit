@@ -5,9 +5,9 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-try:
+if __package__:
     from .common import write_report_json
-except ImportError:
+else:
     from common import write_report_json
 
 
