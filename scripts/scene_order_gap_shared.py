@@ -533,12 +533,6 @@ def _summarize_line_order_source(source: dict, line_count: int) -> dict:
     }
 
 
-def _scene_registry_info(conv: dict, dialog_id_registry: dict | None) -> dict | None:
-    """Look up this scene in the DialogIdTable runtime registry, if loaded."""
-    _scene_key, info, _registry_loaded = _scene_registry_state(conv, dialog_id_registry)
-    return info
-
-
 # Tables in the game's structured data that define inherent authored line
 # ordering for scenes whose lines are sourced from them. Each entry maps the
 # table identifier (as it appears in `line._debug.table`) to a (mode, reason)
