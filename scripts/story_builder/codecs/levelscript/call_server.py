@@ -5,54 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-
-def _decode_param_tail(
-    payload: bytes,
-    cursor: int,
-) -> tuple[dict[str, Any], int] | None:
-    """Decode the exact idRef/source/path tail of an authored Param value."""
-    if cursor + 12 > len(payload):
-        return None
-    id_ref, param_source, path_size = struct.unpack_from("<iii", payload, cursor)
-    cursor += 12
-    if id_ref < -1 or param_source < 0 or param_source > 0x10000:
-        return None
-    if path_size == -1:
-        path = None
-    elif 0 <= path_size <= 1024 and cursor + path_size <= len(payload):
-        try:
-            path = payload[cursor : cursor + path_size].decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-        cursor += path_size
-    else:
-        return None
-    return {"idRef": id_ref, "paramSource": param_source, "path": path}, cursor
-
-
-def _decode_constant_string_param(
-    payload: bytes,
-    cursor: int,
-) -> tuple[str, int] | None:
-    """Decode one constant ``Param<string>`` with its exact default tail."""
-    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
-        return None
-    size = struct.unpack_from("<i", payload, cursor + 1)[0]
-    cursor += 5
-    if size <= 0 or size > 256 or cursor + size > len(payload):
-        return None
-    try:
-        value = payload[cursor : cursor + size].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    tail = _decode_param_tail(payload, cursor + size)
-    if tail is None:
-        return None
-    detail, end = tail
-    if detail != {"idRef": -1, "paramSource": 0, "path": None}:
-        return None
-    return value, end
-
+from .params import decode_constant_string_param, decode_param_tail
 
 def decode_call_server_action(payload: bytes) -> dict[str, Any]:
     """Decode the six generated fields in the current ``CallServer`` prefix.
@@ -95,11 +48,11 @@ def decode_call_server_action(payload: bytes) -> dict[str, Any]:
         event_args_path = payload[cursor : cursor + event_args_size].decode("utf-8")
     except UnicodeDecodeError:
         return {}
-    event_args_tail = _decode_param_tail(payload, cursor + event_args_size)
+    event_args_tail = decode_param_tail(payload, cursor + event_args_size)
     if event_args_tail is None:
         return {}
     event_args_detail, cursor = event_args_tail
-    event_name = _decode_constant_string_param(payload, cursor)
+    event_name = decode_constant_string_param(payload, cursor)
     if event_name is None:
         return {}
     event_name_value, cursor = event_name

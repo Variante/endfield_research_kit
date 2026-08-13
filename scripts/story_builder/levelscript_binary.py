@@ -15,6 +15,11 @@ from .codecs.levelscript import exit_custom_performance as levelscript_exit_perf
 from .codecs.levelscript import fmv as levelscript_fmv
 from .codecs.levelscript import manual_control as levelscript_manual_control
 from .codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
+from .codecs.levelscript.params import (
+    DEFAULT_PARAM_TAIL as _DEFAULT_PARAM_TAIL,
+    decode_constant_string_param as _decode_constant_string_param,
+    decode_param_tail as _decode_param_tail,
+)
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
 from .codecs.levelscript import raise_custom_script_event as levelscript_custom_event
 from .codecs.levelscript import script_event_scope as levelscript_script_event_scope
@@ -2300,9 +2305,6 @@ def _extract_trigger_slot_ids(payload: bytes) -> list[int]:
     return slots
 
 
-_DEFAULT_PARAM_TAIL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
-
-
 def _decode_param_output_ref(
     payload: bytes,
     cursor: int,
@@ -2349,27 +2351,6 @@ def _decode_param_output(
     return {"paramSource": source, "path": value}, cursor + size
 
 
-def _decode_constant_string_param(
-    payload: bytes,
-    cursor: int,
-) -> tuple[str, int] | None:
-    """Decode one constant ``Param<string>`` with the installed default tail."""
-    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
-        return None
-    size = struct.unpack_from("<i", payload, cursor + 1)[0]
-    cursor += 5
-    if size <= 0 or size > 256 or cursor + size + 12 > len(payload):
-        return None
-    try:
-        value = payload[cursor : cursor + size].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    cursor += size
-    if payload[cursor : cursor + 12] != _DEFAULT_PARAM_TAIL:
-        return None
-    return value, cursor + 12
-
-
 def _decode_constant_i32_param(
     payload: bytes,
     cursor: int,
@@ -2397,27 +2378,6 @@ def _decode_constant_bool_param(
     ):
         return None
     return bool(payload[cursor + 1]), cursor + 14
-
-
-def _decode_param_tail(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
-    """Decode the shared idRef/source/path tail of an authored Param value."""
-    if cursor + 12 > len(payload):
-        return None
-    id_ref, param_source, path_size = struct.unpack_from("<iii", payload, cursor)
-    cursor += 12
-    if id_ref < -1 or param_source < 0 or param_source > 0x10000:
-        return None
-    if path_size == -1:
-        path = None
-    elif 0 <= path_size <= 1024 and cursor + path_size <= len(payload):
-        try:
-            path = payload[cursor : cursor + path_size].decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-        cursor += path_size
-    else:
-        return None
-    return {"idRef": id_ref, "paramSource": param_source, "path": path}, cursor
 
 
 def _decode_i32_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
