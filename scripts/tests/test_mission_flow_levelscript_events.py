@@ -7,6 +7,9 @@ from unittest import mock
 
 
 from scripts.story_builder import callserver_callbacks, mission_flow
+from scripts.story_builder.codecs.levelscript.switch_actions import (
+    decode_switch_action,
+)
 from scripts.story_builder.codecs.levelscript.exit_custom_performance import (
     decode_exit_level_custom_performance_action,
 )
@@ -1845,6 +1848,11 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual(0, decoded["switchDefaultActionLocalId"])
         self.assertEqual(6, decoded["switchValueGetterLocalId"])
         self.assertEqual([8], decoded["branchLocalRefs"])
+        self.assertEqual(
+            decoded["switchCases"],
+            decode_switch_action(payload, (0x04BD, 0x0C))["switchCases"],
+        )
+        self.assertEqual({}, decode_switch_action(payload, (0x04BD, 0x0B)))
 
         inline_value = (
             struct.pack("<Ii", 1, 8)
