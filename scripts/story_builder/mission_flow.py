@@ -4,20 +4,22 @@ import json
 import re
 from collections import defaultdict
 
-try:
-    from ..common import (
-        ROOT,
-        read_bytes_cached,
-        unique_preserve as _unique_preserve,
-        walk_field_values as _walk_field_values,
-    )
-except ImportError:
+if __package__ == "story_builder":
     from common import (
         ROOT,
         read_bytes_cached,
         unique_preserve as _unique_preserve,
         walk_field_values as _walk_field_values,
     )
+elif __package__ == "scripts.story_builder":
+    from ..common import (
+        ROOT,
+        read_bytes_cached,
+        unique_preserve as _unique_preserve,
+        walk_field_values as _walk_field_values,
+    )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.mission_flow")
 
 from .anime_assets import (
     _canonical_cutscene_key,
@@ -74,6 +76,41 @@ _QUEST_ACTION_CONNECTIONS = {
     2: ("client_action_succeed", "succeed"),
     4: ("client_action_failed", "failed"),
 }
+
+
+def parse_level_ref_name(name: str) -> dict | None:
+    if not name.endswith(".json"):
+        return None
+    stem = name[:-5]
+    marker = "_lv_data_sub_"
+    if marker not in stem:
+        return None
+    level_id, rest = stem.split(marker, 1)
+    kind = "plain"
+    if rest.startswith("mission_"):
+        kind = "mission"
+        rest = rest[len("mission_") :]
+    rest = rest.lstrip("_")
+    if not level_id or not rest:
+        return None
+    token = re.sub(r"_v[0-9A-Za-z]+$", "", rest)
+    return {
+        "level": level_id,
+        "kind": kind,
+        "token": token,
+    }
+
+
+def level_host_type(level_id: str) -> str:
+    if level_id.startswith(("map", "base")):
+        return "map"
+    if level_id.startswith("dung"):
+        return "dungeon"
+    if level_id.startswith("indie"):
+        return "indie"
+    if level_id.startswith("blackbox"):
+        return "blackbox"
+    return "other"
 
 
 def build_mission_map_pins(flow: dict | None) -> list[dict]:

@@ -1,9 +1,33 @@
 import unittest
 
-from scripts.story_builder.mission_flow import build_mission_map_pins
+from scripts.story_builder.mission_flow import (
+    build_mission_map_pins,
+    level_host_type,
+    parse_level_ref_name,
+)
 
 
 class MissionMapPinsTests(unittest.TestCase):
+    def test_parses_leveldata_mission_host_references(self):
+        self.assertEqual(
+            parse_level_ref_name("map01_lv005_lv_data_sub_mission_e1m2_v2.json"),
+            {"level": "map01_lv005", "kind": "mission", "token": "e1m2"},
+        )
+        self.assertEqual(
+            parse_level_ref_name("base01_lv001_lv_data_sub_task.json"),
+            {"level": "base01_lv001", "kind": "plain", "token": "task"},
+        )
+        self.assertIsNone(parse_level_ref_name("map01_lv005_lv_data.json"))
+        self.assertIsNone(parse_level_ref_name("map01_lv005_lv_data_sub_.json"))
+
+    def test_classifies_leveldata_host_types(self):
+        self.assertEqual(level_host_type("map01_lv005"), "map")
+        self.assertEqual(level_host_type("base01_lv001"), "map")
+        self.assertEqual(level_host_type("dung01_lv001"), "dungeon")
+        self.assertEqual(level_host_type("indie01_lv001"), "indie")
+        self.assertEqual(level_host_type("blackbox_speedlimit"), "blackbox")
+        self.assertEqual(level_host_type("rogue01"), "other")
+
     def test_merges_identical_pins_and_orders_by_flow(self):
         common_pin = {
             "scene": "scene_a",

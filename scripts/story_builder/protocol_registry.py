@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 
-try:
+if __package__ == "story_builder":
     from common import (
         ROOT,
         check_installed_native_inputs,
@@ -36,7 +36,7 @@ try:
         write_report_json,
         write_text_if_changed,
     )
-except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         ROOT,
         check_installed_native_inputs,
@@ -48,6 +48,8 @@ except ModuleNotFoundError:  # imported as ``scripts.story_builder``
         write_report_json,
         write_text_if_changed,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.protocol_registry")
 from .mission_assets import select_complete_mission_runtime_root
 from .native_protocol import il2cpp
 from .levelscript_binary import (

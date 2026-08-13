@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 
-try:
+if __package__ == "story_builder":
     from common import (
         STORY_RECOVERY_REPORTS_DIR,
         md_escape,
@@ -24,7 +24,7 @@ try:
         write_report_json,
         write_text_if_changed,
     )
-except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         STORY_RECOVERY_REPORTS_DIR,
         md_escape,
@@ -33,6 +33,8 @@ except ModuleNotFoundError:  # imported as ``scripts.story_builder``
         write_report_json,
         write_text_if_changed,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.callserver_callbacks")
 from .context import LEVELSCRIPT_DIR
 from .level_bindings import (
     CALLSERVER_CALLBACK_CONTRACT_AUDIT,

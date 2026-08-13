@@ -12,18 +12,20 @@ import json
 from pathlib import Path
 from typing import Any
 
-try:
+if __package__ == "story_builder":
     from common import (
         NATIVE_EVIDENCE_MISMATCHED,
         NATIVE_EVIDENCE_VALIDATED,
         check_installed_native_inputs,
     )
-except ImportError:  # pragma: no cover - package import identity
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         NATIVE_EVIDENCE_MISMATCHED,
         NATIVE_EVIDENCE_VALIDATED,
         check_installed_native_inputs,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.dynamic_scene")
 
 
 ROOT = Path(__file__).resolve().parents[2]

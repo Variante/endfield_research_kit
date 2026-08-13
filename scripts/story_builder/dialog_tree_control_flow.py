@@ -30,16 +30,18 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
-    from ..common import (
-        resolve_installed_game_data_root,
-        sha256_file as shared_sha256_file,
-    )
-except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+if __package__ == "story_builder":
     from common import (
         resolve_installed_game_data_root,
         sha256_file as shared_sha256_file,
     )
+elif __package__ == "scripts.story_builder":
+    from ..common import (
+        resolve_installed_game_data_root,
+        sha256_file as shared_sha256_file,
+    )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.dialog_tree_control_flow")
 
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 CATALOG_PATH = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"

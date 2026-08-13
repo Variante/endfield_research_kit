@@ -26,7 +26,7 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
+if __package__ == "story_builder":
     from common import (
         InstalledNativeInputs,
         check_installed_native_inputs,
@@ -40,7 +40,7 @@ try:
         write_report_json,
         write_text_if_changed,
     )
-except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         InstalledNativeInputs,
         check_installed_native_inputs,
@@ -54,6 +54,8 @@ except ModuleNotFoundError:  # imported as ``scripts.story_builder``
         write_report_json,
         write_text_if_changed,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.spaceship_story_content")
 from .anime_assets import (
     _get_anime_tree_path_index,
     _load_anime_resource_payload,
