@@ -925,6 +925,41 @@
             },
             "boundary": "This closes the obvious UnityPlayer indirect +0xab8 dispatch candidates as generic graphics/resource/D3D11 paths or already-known immediate wrappers. It is bounded negative evidence only: resolver-driven or table-dispatched kernel-7 selection and the staging-array-to-buffer upload remain unresolved and must stay fail-closed."
           },
+          "command_buffer_indirect_dispatch_census": {
+            "status": "registered-indirect-dispatch-endpoint-bounded-no-factory-caller",
+            "source": "Current UnityPlayer.dll primary internal-call registration, PData-scoped disassembly, and direct-call census; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+            "internal_call_registration": {
+              "managed_names": [
+                "UnityEngine.Rendering.CommandBuffer::Internal_DispatchComputeIndirect",
+                "UnityEngine.Rendering.CommandBuffer::Internal_DispatchComputeIndirectGraphicsBuffer"
+              ],
+              "unityplayer_entry": "0x18011a850",
+              "registration_table": "0x18012e2f0",
+              "registration_indices": [3432, 3433],
+              "record_helper": "0x1804c74d0"
+            },
+            "entry_contract": {
+              "observed": "The internal-call body resolves the managed command buffer, ComputeShader/native shader handle, and indirect-argument resource; it forwards the caller kernel index and argument metadata to 0x1804c74d0. The helper resolves or creates the command-stream shader record, copies the indirect-dispatch payload, then invokes the backend record function through a resolved function pointer.",
+              "command_stream": "This is an indirect command-buffer recording path, distinct from immediate context dispatch and from the direct Internal_DispatchCompute opcode-0x11 path.",
+              "gpu_scene_fields": "The visible body has no manager +0x38/index*0x8c record, five-vector 84-byte source, _UploadBuffer, GpuSceneDirtyUpdateCS, UploadPerDrawParams, or resource +0xd0/channel-2 access."
+            },
+            "direct_call_census": {
+              "unityplayer_record_helper": {
+                "function": "0x1804c74d0",
+                "direct_call_sites": [
+                  "0x18011a9f6",
+                  "0x1810f1870",
+                  "0x1810f1920",
+                  "0x1810fe020",
+                  "0x1810fe0d0"
+                ],
+                "classification": "The first site is the generic internal-call body; the remaining four are the known GPUDriven V1/V2 indirect cores."
+              },
+              "gameassembly_direct_e8_call_count": 0,
+              "raw_unityplayer_pointer_occurrences": 0
+            },
+            "boundary": "The indirect CommandBuffer endpoint and its current native callers are now explicitly bounded. No static factory dirty-record/staging consumer or kernel-7 UploadPerDrawParams producer reaches this path. This does not exclude resolver/table-driven invocation or a separate backend function-pointer route; the staging-array-to-_UploadBuffer pack, kernel-7 selection, and channel-2/resource +0xd0 binding remain fail-closed."
+          },
           "boundary": "The managed ComputeShader and CommandBuffer dispatch entrypoints, their native bridges, and the bounded immediate-call census are now explicit. They do not identify a live kernel-7 producer or the post-staging upload; keep channel 2/resource +0xd0 binding fail-closed."
         },
         "getter_cross_check": {
