@@ -7,10 +7,82 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.story_builder import anime_assets
+from scripts.story_builder import language_bundle
 from scripts.story_builder import video_bindings
 
 
 class VideoBindingsLevelScriptTests(unittest.TestCase):
+    def test_retired_playable_director_bridge_is_not_a_dependency(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        sources = [
+            root / "scripts" / "story_builder" / "video_bindings.py",
+            root
+            / "scripts"
+            / "story_recovery"
+            / "build_mission_order_evidence_audit.py",
+        ]
+        combined = "\n".join(
+            path.read_text(encoding="utf-8") for path in sources
+        )
+        self.assertNotIn("playable_director_bridge.json", combined)
+        self.assertNotIn("playableDirectorAnchoredCount", combined)
+
+    def test_story_builder_reads_clips_from_video_bindings(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "video_bindings.json"
+            path.write_text(
+                json.dumps({
+                    "fmvClipsByStory": {
+                        "cutscene_e1m3_3": [{
+                            "fmvId": "cs_video_e1m3_3",
+                            "clipStart": 1.0,
+                            "clipDuration": 2.0,
+                        }],
+                    },
+                }),
+                encoding="utf-8",
+            )
+            loaded = language_bundle._load_fmv_clips_by_webui_key(
+                str(path)
+            )
+
+        self.assertEqual(
+            loaded["cutscene_e1m3_3"][0]["clipStart"],
+            1.0,
+        )
+
+    def test_fmv_clips_are_published_by_generated_story_key(self) -> None:
+        mappings = video_bindings.fmv_clips_by_story({
+            "f_cs_video_dlg_e9m2_3": {
+                "clips": [{
+                    "start": 4.5,
+                    "duration": 2.25,
+                    "assetClipDuration": 2.0,
+                    "trackFile": "timeline/track.json",
+                }],
+            },
+            "cs_video_e1m3_3": {
+                "clips": [{
+                    "start": 1.0,
+                    "duration": 3.0,
+                    "trackFile": "timeline/other.json",
+                }],
+            },
+        })
+
+        self.assertEqual(
+            set(mappings),
+            {"dlg_e9m2_3", "cutscene_e1m3_3"},
+        )
+        self.assertEqual(
+            mappings["dlg_e9m2_3"][0]["clipStart"],
+            4.5,
+        )
+        self.assertEqual(
+            mappings["dlg_e9m2_3"][0]["assetClipDuration"],
+            2.0,
+        )
+
     def test_gender_video_stem_uses_exact_base_binding(self) -> None:
         binding = {"fmvId": "cs_video_e2m8_2"}
         with patch.object(

@@ -43,6 +43,10 @@ from common import (  # noqa: E402
     write_text_if_changed,
 )
 from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
+from story_builder.native_contracts.mission_task_paths import (  # noqa: E402
+    DEFAULT_CONTRACT as MISSION_TASK_PATH_CONTRACT,
+    load_mission_task_paths,
+)
 
 
 DEFAULT_GAME_DATA_ROOT = resolve_installed_game_data_root()
@@ -53,9 +57,6 @@ NATIVE_MAPPER_HELPER = (
     ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 )
 REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
-RUNTIME_HOOK_MANIFEST = (
-    ROOT / "scripts" / "story_recovery" / "mission_runtime_trace_hooks.json"
-)
 MISSION_RUNTIME_ROOT = select_complete_mission_runtime_root(
     ROOT
     / "export_full"
@@ -770,37 +771,6 @@ def normalized_field_name(value: str) -> str:
         value = value[: -len("FieldNumber")]
     value = value.rstrip("_")
     return re.sub(r"[^a-z0-9]", "", value.lower())
-
-
-def load_native_task_paths(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    hooks = payload.get("hooks", {}).get("levelScriptTask")
-    if not isinstance(hooks, dict) or not hooks:
-        raise RuntimeError(f"runtime hook manifest has no levelScriptTask hooks: {path}")
-    normalized: dict[str, dict[str, Any]] = {}
-    for name, row in hooks.items():
-        if not isinstance(row, dict):
-            raise RuntimeError(f"invalid levelScriptTask hook {name!r} in {path}")
-        normalized[name] = {
-            key: row[key]
-            for key in (
-                "symbol",
-                "token",
-                "methodIndex",
-                "rva",
-                "message",
-                "messageId",
-                "captureScope",
-                "fieldOffsets",
-            )
-            if key in row
-        }
-    return {
-        "manifest": str(path.resolve()),
-        "manifestSha256": file_sha256(path),
-        "gameBuild": payload.get("gameBuild"),
-        "hooks": normalized,
-    }
 
 
 def mission_event_asset_coverage(
@@ -8190,14 +8160,14 @@ def build_report(
     helper_path: Path = METADATA_HELPER,
     gameassembly_path: Path = DEFAULT_GAMEASSEMBLY,
     mapper_path: Path = NATIVE_MAPPER_HELPER,
-    hook_manifest_path: Path = RUNTIME_HOOK_MANIFEST,
+    task_contract_path: Path = MISSION_TASK_PATH_CONTRACT,
     mission_runtime_root: Path = MISSION_RUNTIME_ROOT,
     union_audit_path: Path = MEMORYPACK_UNION_AUDIT,
 ) -> dict[str, Any]:
     helper = load_metadata_helper(helper_path)
     metadata = helper.Metadata(metadata_path)
     defaults = field_defaults(metadata)
-    native_task_paths = load_native_task_paths(hook_manifest_path)
+    native_task_paths = load_mission_task_paths(task_contract_path)
     mission_event_assets = mission_event_asset_coverage(
         mission_runtime_root,
         union_audit_path,
@@ -8308,8 +8278,8 @@ def build_report(
             "gameAssemblySize": event_bus_census["gameAssemblySize"],
             "gameAssemblySha256": event_bus_census["gameAssemblySha256"],
             "nativeMapper": event_bus_census["mapper"],
-            "runtimeHookManifest": native_task_paths["manifest"],
-            "runtimeHookManifestSha256": native_task_paths["manifestSha256"],
+            "nativeTaskContract": native_task_paths["source"],
+            "nativeTaskContractSha256": native_task_paths["sha256"],
             "gameBuild": native_task_paths["gameBuild"],
         },
         "summary": {
@@ -8602,7 +8572,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             "- Generic LevelScript task-condition lifecycle: "
             f"**{'validated' if summary['levelScriptTaskLifecycleValidated'] else 'failed'}**"
         ),
-        f"- Runtime-hook manifest SHA-256: `{report['source']['runtimeHookManifestSha256']}`",
+        f"- Native task-path contract SHA-256: `{report['source']['nativeTaskContractSha256']}`",
         "",
         "## Evidence boundary",
         "",
@@ -9356,7 +9326,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "Reuse an existing validated v20 report when its original "
-            "GameAssembly and metadata hashes still match; otherwise rebuild it."
+            "GameAssembly, metadata, and task-contract hashes still match; "
+            "otherwise rebuild it."
         ),
     )
     return parser.parse_args()
@@ -9368,6 +9339,7 @@ def current_report_status(
     gameassembly_path: Path,
     *,
     measured_hashes: dict[str, str] | None = None,
+    task_contract_path: Path = MISSION_TASK_PATH_CONTRACT,
 ) -> tuple[bool, str]:
     """Fail closed unless a report describes these exact original inputs.
 
@@ -9502,6 +9474,15 @@ def current_report_status(
         actual = (measured_hashes or {}).get(hash_key) or file_sha256(source_path)
         if actual != expected:
             return False, f"{hash_key} differs: expected={expected!r} actual={actual!r}"
+    expected_contract = str(source.get("nativeTaskContractSha256") or "").lower()
+    if not task_contract_path.is_file():
+        return False, f"source missing: {task_contract_path}"
+    actual_contract = file_sha256(task_contract_path)
+    if actual_contract != expected_contract:
+        return False, (
+            "nativeTaskContractSha256 differs: "
+            f"expected={expected_contract!r} actual={actual_contract!r}"
+        )
     return True, "validated report hashes match original inputs"
 
 

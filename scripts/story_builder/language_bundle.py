@@ -43,10 +43,7 @@ _RADIO_CONTINUATION_REPORT_PATH = (
     _RadioContPath(__file__).resolve().parents[2]
     / "reports" / "mission_order" / "radio_continuation_CN.json"
 )
-_FMV_CLIP_BY_KEY_REPORT_PATH = (
-    _RadioContPath(__file__).resolve().parents[2]
-    / "reports" / "playable_director" / "fmv_clip_by_webui_key.json"
-)
+_FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
     _RadioContPath(__file__).resolve().parents[2]
     / "webui" / "overrides" / "narrative_videos.json"
@@ -1468,7 +1465,7 @@ def _load_radio_continuation_candidates_by_mission(
 
 @_radio_cont_lru_cache(maxsize=2)
 def _load_fmv_clips_by_webui_key(path_str: str) -> dict[str, list[dict]]:
-    """Load `reports/playable_director/fmv_clip_by_webui_key.json`.
+    """Load builder-owned authored FMV clip windows from video bindings.
     Returns `{webui_key: [{fmvId, clipStart, clipDuration, ...}, ...]}` or
     an empty dict when the report has not been generated yet. The builder
     surfaces these as per-conv `fmvClips` meta so the WebUI can display
@@ -1482,7 +1479,7 @@ def _load_fmv_clips_by_webui_key(path_str: str) -> dict[str, list[dict]]:
         payload = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, _radio_cont_json.JSONDecodeError):
         return {}
-    mappings = payload.get("mappings")
+    mappings = payload.get("fmvClipsByStory")
     return mappings if isinstance(mappings, dict) else {}
 
 def load_reused_reference_stats(reference_dir: Path, language_code: str) -> dict:
@@ -1691,7 +1688,9 @@ def build_language_bundle(
     narrative_video_overrides = _load_narrative_video_overrides(str(_NARRATIVE_VIDEO_OVERRIDES_PATH))
     narrative_video_suppress_overrides = narrative_video_overrides.get("suppressInline") or {}
     narrative_video_attach_overrides = narrative_video_overrides.get("attachInline") or {}
-    fmv_clips_by_key = _load_fmv_clips_by_webui_key(str(_FMV_CLIP_BY_KEY_REPORT_PATH))
+    fmv_clips_by_key = _load_fmv_clips_by_webui_key(
+        str(_FMV_CLIP_BINDINGS_PATH)
+    )
     written_conv_paths: set[str] = set()
     written_reference_paths: set[str] = set()
     written_mission_paths: set[str] = set()

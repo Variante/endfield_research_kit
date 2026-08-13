@@ -12,8 +12,25 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
+try:
+    from story_builder.animestudio_story_objects import (
+        REVERSE_GAMEASSEMBLY_SHA256,
+        REVERSE_METADATA_SHA256,
+        REVERSE_NATIVE_MAPPING_ID,
+        REVERSE_REPORT_PATH,
+        REVERSE_SCHEMA,
+    )
+except ModuleNotFoundError:  # Imported as ``scripts.common`` from repository-root tests.
+    from scripts.story_builder.animestudio_story_objects import (
+        REVERSE_GAMEASSEMBLY_SHA256,
+        REVERSE_METADATA_SHA256,
+        REVERSE_NATIVE_MAPPING_ID,
+        REVERSE_REPORT_PATH,
+        REVERSE_SCHEMA,
+    )
+
 ROOT = Path(__file__).resolve().parents[1]
-EXPORT_ROOT = ROOT / "export_full"
+EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 OUT_DIR = ROOT / "webui" / "data"
 LANG_DIR = OUT_DIR / "lang"
 ASSET_DIR = OUT_DIR / "assets"
@@ -40,7 +57,7 @@ PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16}
 PATH_ID_EXPORT_SOURCE_FAMILIES = frozenset({"streamingassets", "persistent"})
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=128)
 def _read_bytes_cached_absolute(path_text: str) -> bytes:
     return Path(path_text).read_bytes()
 
@@ -424,15 +441,12 @@ RECORDED_NATIVE_METADATA_SHA256 = (
 SPACESHIP_STORY_GAMEASSEMBLY_SHA256 = RECORDED_NATIVE_GAMEASSEMBLY_SHA256
 SPACESHIP_STORY_METADATA_SHA256 = RECORDED_NATIVE_METADATA_SHA256
 STORY_ROOT_PLAYBACK_ALIAS_REPORT = (
-    STORY_RECOVERY_REPORTS_DIR
-    / "animestudio_story_reverse_pptr_audit.json"
+    REVERSE_REPORT_PATH
 )
-STORY_ROOT_PLAYBACK_ALIAS_SCHEMA = "animestudioStoryReversePPtrAudit.v4"
-STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID = (
-    "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
-)
-STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256 = RECORDED_NATIVE_GAMEASSEMBLY_SHA256
-STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256 = RECORDED_NATIVE_METADATA_SHA256
+STORY_ROOT_PLAYBACK_ALIAS_SCHEMA = REVERSE_SCHEMA
+STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID = REVERSE_NATIVE_MAPPING_ID
+STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256 = REVERSE_GAMEASSEMBLY_SHA256
+STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256 = REVERSE_METADATA_SHA256
 DEFAULT_INSTALLED_GAME_DATA_ROOT = Path(
     r"D:\Program Files\Endfield Game\Endfield_Data"
 )

@@ -29,14 +29,9 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from common import sha256_file  # noqa: E402
+from story_builder.animestudio_story_objects import REVERSE_REPORT_PATH  # noqa: E402
 
-DEFAULT_REVERSE_AUDIT = (
-    ROOT
-    / "reports"
-    / "story"
-    / "recovery"
-    / "animestudio_story_reverse_pptr_audit.json"
-)
+DEFAULT_REVERSE_AUDIT = REVERSE_REPORT_PATH
 DEFAULT_OBJECT_INDEXES = (
     ROOT
     / "export_full"

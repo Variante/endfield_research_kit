@@ -29,6 +29,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
+                    "nativeTaskContractSha256": audit.file_sha256(
+                        audit.MISSION_TASK_PATH_CONTRACT
+                    ),
                 },
                 "stateUpdateApplicationCensus": {
                     "validation": {"status": "validated", "failures": []},
@@ -1039,10 +1042,10 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         ))
         self.assertTrue(all("MISSION" not in row["type"] for row in task_rows))
 
-    def test_runtime_manifest_exposes_hash_locked_task_paths(self):
-        paths = audit.load_native_task_paths(audit.RUNTIME_HOOK_MANIFEST)
+    def test_builder_contract_exposes_hash_locked_task_paths(self):
+        paths = audit.load_mission_task_paths(audit.MISSION_TASK_PATH_CONTRACT)
         self.assertEqual(paths["gameBuild"], "endfield-2026-07-11-gameassembly-0c557367")
-        self.assertEqual(len(paths["manifestSha256"]), 64)
+        self.assertEqual(len(paths["sha256"]), 64)
         self.assertEqual(len(paths["hooks"]), 7)
         self.assertEqual(paths["hooks"]["sendProgress"]["messageId"], 105)
         self.assertEqual(paths["hooks"]["progressUpdate"]["messageId"], 815)
@@ -1054,6 +1057,12 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             paths["hooks"]["conditionCompletionChanged"]["messageId"],
             815,
         )
+
+    def test_production_registry_has_no_recovery_manifest_dependency(self):
+        source = Path(audit.__file__).read_text(encoding="utf-8")
+
+        self.assertNotIn("story_recovery", source)
+        self.assertNotIn("mission_runtime_trace_hooks", source)
 
     def test_message_125_is_native_proven_while_sibling_fallbacks_are_inactive(self):
         rows = {row["expectedId"]: row for row in audit.RELEVANT_MESSAGES}

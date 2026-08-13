@@ -11600,14 +11600,14 @@ def collect_interactive_component_contexts(
 
     if decoder is None:
         try:
-            from build_data_index import (
+            from game_data.memorypack.interactive import (
                 decode_interactive_template_memorypack,
                 parse_interactive_audio_component,
                 parse_interactive_trigger_zone_audio_property_component,
                 find_interactive_audio_property_maps,
             )
         except ImportError:
-            from scripts.build_data_index import (
+            from scripts.game_data.memorypack.interactive import (
                 decode_interactive_template_memorypack,
                 parse_interactive_audio_component,
                 parse_interactive_trigger_zone_audio_property_component,

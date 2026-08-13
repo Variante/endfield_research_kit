@@ -90,6 +90,55 @@ assert.equal(merged[0].possibleMediaCount, 2);
 """
         )
 
+    def test_projectile_audio_sidecar_joins_by_id_field_and_unsigned_hash(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        projectile_helpers = source.split("  function projectileEventHash", 1)[1].split(
+            "\n  function projectileFriendlyName", 1
+        )[0]
+        sound_rows = source.split("  function projectileSoundRows", 1)[1].split(
+            "\n  function renderProjectileAudio", 1
+        )[0]
+        indexes = source.split("  function buildIntegrationIndexes", 1)[1].split(
+            "\n  function integrationNodeCandidates", 1
+        )[0]
+        self.run_node(
+            f"""
+const assert = require("node:assert/strict");
+const PROJECTILE_SOUND_PHASES = ["launchSound", "loopSound", "reachSound", "hitSound", "blockSound", "finishedSound", "sizzleSound"];
+const STATE = {{integration: {{
+  combat: null,
+  projectiles: {{entries: []}},
+  projectileAudio: {{links: [{{
+    projectileId: "projectile_fixture",
+    field: "launchSound",
+    eventHash: 0xffffffff,
+    event: {{foundInWwise: true, canonicalEventIds: ["au_fixture"]}},
+    audio: [{{src: "/fixture.flac", mediaId: 7}},],
+  }}]}},
+}}}};
+function projectileEventHash{projectile_helpers}
+function projectileSoundRows{sound_rows}
+function buildIntegrationIndexes{indexes}
+STATE.integration.indexes = buildIntegrationIndexes();
+const projectile = {{
+  id: "projectile_fixture",
+  sounds: {{launchSound: {{value: -1, event: {{foundInWwise: false}}, audio: [{{src: "/embedded.flac"}}]}}}},
+}};
+let rows = projectileSoundRows(projectile);
+assert.equal(rows.length, 1);
+assert.equal(rows[0].event.foundInWwise, true);
+assert.deepEqual(rows[0].event.canonicalEventIds, ["au_fixture"]);
+assert.deepEqual(rows[0].audio.map((row) => row.src), ["/fixture.flac"]);
+STATE.integration.projectileAudio = {{links: []}};
+STATE.integration.indexes = buildIntegrationIndexes();
+rows = projectileSoundRows(projectile);
+assert.equal(rows[0].event.hash, 0xffffffff);
+assert.equal(rows[0].event.foundInWwise, undefined);
+assert.deepEqual(rows[0].audio, []);
+"""
+        )
+        self.assertIn("data/lang/${code}/gameplay/projectile_audio.json", source)
+
     def test_audio_placement_and_flat_event_contract(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")
         inline = source.split("  function renderActiveSkillSoundEffects", 1)[1].split(

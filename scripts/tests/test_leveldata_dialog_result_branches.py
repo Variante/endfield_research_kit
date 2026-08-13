@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from scripts.common import read_json
 from scripts.story_builder.levelscript_binary import decode_levelscript_record_payload
-from scripts.story_recovery import build_source_story_gap_queue as gap_queue
+from scripts.story_builder.source_gap import evidence as gap_queue
 
 
 ROOT = Path(__file__).resolve().parents[2]

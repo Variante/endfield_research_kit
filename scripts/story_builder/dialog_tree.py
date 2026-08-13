@@ -1171,10 +1171,44 @@ def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, ent
         bucket.append({**normalized, "_identity": identity})
 
 
+_DIALOG_TIMELINE_LINE_ORDER_CACHE: dict[str, list[dict]] | None = None
+_DIALOG_TIMELINE_LINE_ORDER_CACHE_SIGNATURE: tuple[tuple[str, int, int], ...] | None = None
+
+
+def _timeline_line_order_source_signature() -> tuple[tuple[str, int, int], ...]:
+    signature: list[tuple[str, int, int]] = []
+    for path in TIMELINE_LINE_ORDER_PATHS:
+        try:
+            stat = path.stat()
+        except OSError:
+            signature.append((str(path), -1, -1))
+            continue
+        signature.append((str(path), stat.st_mtime_ns, stat.st_size))
+    return tuple(signature)
+
+
+def clear_timeline_order_caches() -> None:
+    """Forget Timeline-derived Story indexes after their source file changes."""
+    global _DIALOG_TIMELINE_LINE_ORDER_CACHE
+    global _DIALOG_TIMELINE_LINE_ORDER_CACHE_SIGNATURE
+    global _TIMELINE_TO_DIALOG_KEYS_CACHE
+    _DIALOG_TIMELINE_LINE_ORDER_CACHE = None
+    _DIALOG_TIMELINE_LINE_ORDER_CACHE_SIGNATURE = None
+    _TIMELINE_TO_DIALOG_KEYS_CACHE = None
+
+
 def _load_dialog_timeline_line_order_index() -> dict[str, list[dict]]:
     global _DIALOG_TIMELINE_LINE_ORDER_CACHE
-    if _DIALOG_TIMELINE_LINE_ORDER_CACHE is not None:
+    global _DIALOG_TIMELINE_LINE_ORDER_CACHE_SIGNATURE
+    global _TIMELINE_TO_DIALOG_KEYS_CACHE
+    source_signature = _timeline_line_order_source_signature()
+    if (
+        _DIALOG_TIMELINE_LINE_ORDER_CACHE is not None
+        and _DIALOG_TIMELINE_LINE_ORDER_CACHE_SIGNATURE == source_signature
+    ):
         return _DIALOG_TIMELINE_LINE_ORDER_CACHE
+
+    _TIMELINE_TO_DIALOG_KEYS_CACHE = None
 
     index: dict[str, list[dict]] = defaultdict(list)
     for path in TIMELINE_LINE_ORDER_PATHS:
@@ -1226,6 +1260,7 @@ def _load_dialog_timeline_line_order_index() -> dict[str, list[dict]]:
         public_entries.sort(key=lambda item: (-len(item["lineIds"]), item["sourceKey"], item["file"]))
         cleaned[key] = public_entries
     _DIALOG_TIMELINE_LINE_ORDER_CACHE = cleaned
+    _DIALOG_TIMELINE_LINE_ORDER_CACHE_SIGNATURE = source_signature
     return _DIALOG_TIMELINE_LINE_ORDER_CACHE
 
 

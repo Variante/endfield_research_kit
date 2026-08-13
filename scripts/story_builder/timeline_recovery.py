@@ -51,6 +51,7 @@ DEFAULT_DIALOG_REGISTRY = EXPORT_ROOT / "recovered" / "dialog_id_table_index.jso
 DEFAULT_PARENT_VALIDATION_REPORT = (
     ROOT / "reports" / "story" / "build" / "timeline_parent_chain_validation.json"
 )
+TIMELINE_RECOVERY_MODES = ("auto", "always", "never")
 
 TIMELINE_CONTAINER_RE = re.compile(r"(?:^|/)timeline/(?P<stem>(?:[fm]_)?dlgtl_[^/]+)(?:/|$)", re.IGNORECASE)
 TIMELINE_STEM_RE = re.compile(r"^(?:[fm]_)?dlgtl_.+(?:_sub_\d+|_\d+)$", re.IGNORECASE)
@@ -122,6 +123,55 @@ def default_extract_dir(export_root: Path = EXPORT_ROOT) -> Path:
 
 def default_order_out(export_root: Path = EXPORT_ROOT) -> Path:
     return recovery_root(export_root) / "timeline_line_orders.json"
+
+
+def ensure_timeline_orders_current(
+    mode: str = "auto",
+    force: bool = False,
+    *,
+    export_root: Path = EXPORT_ROOT,
+) -> Path | None:
+    """Ensure the Story build's Timeline order index is current.
+
+    ``auto`` tolerates unavailable Timeline sources or recovery failures,
+    ``always`` makes recovery failures fatal, and ``never`` leaves the current
+    index untouched. The returned path identifies a current or newly recovered
+    index; ``None`` means recovery was deliberately skipped.
+    """
+    if mode not in TIMELINE_RECOVERY_MODES:
+        raise ValueError(
+            f"Unknown Timeline recovery mode {mode!r}; expected one of "
+            + ", ".join(TIMELINE_RECOVERY_MODES)
+        )
+    if mode == "never":
+        print("Timeline line-order recovery: skipped")
+        return None
+
+    maps = discover_asset_maps(export_root)
+    order_out = default_order_out(export_root)
+    if not force and timeline_order_is_current(order_out, maps):
+        print(f"Timeline line-order recovery: using {order_out}")
+        return order_out
+
+    if mode == "auto" and not maps:
+        print("Timeline line-order recovery: skipped (no AnimeStudio CLI AssetMaps found)")
+        return None
+
+    print("Timeline line-order recovery: parsing Timeline assets...")
+    try:
+        recover_timeline_line_orders(
+            TimelineRecoveryConfig(
+                export_root=export_root,
+                maps=maps,
+                order_out=order_out,
+            )
+        )
+    except Exception as exc:
+        if mode == "always":
+            raise
+        print(f"Timeline line-order recovery: skipped ({exc})")
+        return None
+    return order_out
 
 
 def rel_path(path: Path) -> str:

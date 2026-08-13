@@ -3342,8 +3342,8 @@ from the repository root before starting the game, select the matching actor
 target, then open and settle that Character Info view:
 
 ```bat
-tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\capture_mission_runtime_trace.py --shader-target wulfa-settled
-tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\capture_mission_runtime_trace.py --shader-target zhuangfy-settled
+tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile mission --shader-target wulfa-settled
+tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile mission --shader-target zhuangfy-settled
 ```
 
 Other configured targets are `lizhiyan-settled` and `lastrite-settled`.

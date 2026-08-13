@@ -24,11 +24,6 @@ except ImportError:  # Imported as scripts.build_audio from repository-root test
     from scripts.common import resolve_installed_game_data_root
 
 try:
-    from convert_audio_to_flac import convert_audio_root
-except ImportError:  # Imported as scripts.build_audio from repository-root tests.
-    from scripts.convert_audio_to_flac import convert_audio_root
-
-try:
     from build_audio_semantics import (
         HIRC_OBJECT_TYPE_LABELS,
         SELECTION_HIRC_TYPES,
@@ -77,6 +72,7 @@ LUA_AUDIO_CALL_RE = re.compile(
 )
 NARRATIVE_VIDEO_OVERRIDES_NAME = "narrative_videos.json"
 PROJECTILE_DATA_REL = Path("data/gameplay/projectiles.json")
+PROJECTILE_AUDIO_REL = Path("data/lang/{language}/gameplay/projectile_audio.json")
 PROJECTILE_EVENT_PREFIX = "projectile-event:"
 GAMEPLAY_INDEX_REL = Path("data/lang/{language}/gameplay/index.json")
 GAMEPLAY_SFX_REL = Path("data/lang/{language}/gameplay/sound_effects.json")
@@ -136,6 +132,11 @@ PROJECTILE_SOUND_FIELDS = (
     "finishedSound",
     "sizzleSound",
 )
+PROJECTILE_AUDIO_LINK_FIELDS = (
+    "src", "mediaId", "format", "bytes", "audioScope", "audioCategory",
+    "audioCategoryDetail", "sourceBlock", "sourceBlockLabel", "sourceBank",
+    "bankId", "bank",
+)
 
 LANGUAGES = {
     "CN": {
@@ -166,6 +167,7 @@ LANGUAGES = {
 
 AUDIO_EXTENSIONS = {".flac", ".wav", ".wem"}
 AUDIO_EXTENSION_PRIORITY = {".flac": 0, ".wav": 1, ".wem": 2}
+AUDIO_OUTPUT_FORMAT = "flac"
 EVENT_CATEGORY_PREFIXES = {
     "au_sfx_": "au_sfx",
     "au_vo_": "au_vo",
@@ -290,31 +292,6 @@ AUDIO_META_KEYS = (
 
 def normalize_posix(value: str | Path) -> str:
     return PurePosixPath(str(value).replace("\\", "/")).as_posix()
-
-
-def audio_output_format(args: argparse.Namespace) -> str:
-    """Return the browser-facing format while preserving legacy WEM calls."""
-    source_format = str(getattr(args, "format", "flac") or "flac").lower()
-    requested = str(getattr(args, "audio_format", "") or "").lower()
-    output_format = requested or ("flac" if source_format in {"flac", "wav"} else source_format)
-    if output_format not in {"flac", "wav", "wem"}:
-        raise SystemExit(f"Unsupported browser audio format: {output_format}")
-    if source_format == "wem" and output_format != "wem":
-        raise SystemExit(
-            "WEM decoding can only keep WEM output; omit --format wem for "
-            "browser-playable WAV/FLAC output."
-        )
-    if source_format == "wav" and output_format == "wem":
-        raise SystemExit(
-            "WEM output requires --format wem; use the default FLAC output for "
-            "browser-playable audio."
-        )
-    if source_format == "flac" and output_format != "flac":
-        raise SystemExit(
-            "Direct FLAC decoding can only keep FLAC output; pass --format wav "
-            "when WAV output is required."
-        )
-    return output_format
 
 
 def audio_rel_with_extension(rel: str | Path, extension: str) -> str:
@@ -1659,19 +1636,19 @@ def collect_buff_play_sound_actions(
 
     if decoder is None:
         try:
-            from build_data_index import (
+            from game_data.memorypack.buff import (
                 BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
                 BUFF_PLAY_SOUND_ACTION_TAG,
-                MEMORYPACK_UNION_WIDE_TAG,
                 consume_buff_play_sound_action,
             )
+            from game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
         except ImportError:  # Imported as scripts.build_audio from repository-root tests.
-            from scripts.build_data_index import (
+            from scripts.game_data.memorypack.buff import (
                 BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
                 BUFF_PLAY_SOUND_ACTION_TAG,
-                MEMORYPACK_UNION_WIDE_TAG,
                 consume_buff_play_sound_action,
             )
+            from scripts.game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
 
         member_count = BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS[BUFF_PLAY_SOUND_ACTION_TAG]
         signature = bytes([MEMORYPACK_UNION_WIDE_TAG]) + int(BUFF_PLAY_SOUND_ACTION_TAG).to_bytes(2, "little") + bytes([member_count])
@@ -3116,33 +3093,55 @@ def link_gameplay_audio(
     return stats
 
 
-def projectile_sound_hashes(webui_root: Path) -> set[int]:
+def projectile_sound_references(webui_root: Path) -> list[dict[str, Any]]:
     payload = load_json(webui_root / PROJECTILE_DATA_REL, {})
-    hashes: set[int] = set()
+    references: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, int]] = set()
     for entry in payload.get("entries") or []:
         if not isinstance(entry, dict):
+            continue
+        projectile_id = str(entry.get("id") or "").strip()
+        if not projectile_id:
             continue
         sounds = entry.get("sounds") or {}
         for field in PROJECTILE_SOUND_FIELDS:
             value = sounds.get(field)
             raw = value.get("value") if isinstance(value, dict) else value
             if isinstance(raw, int) and raw:
-                hashes.add(raw & 0xFFFFFFFF)
-    return hashes
+                event_hash = raw & 0xFFFFFFFF
+                key = (projectile_id, field, event_hash)
+                if key in seen:
+                    continue
+                seen.add(key)
+                references.append({
+                    "projectileId": projectile_id,
+                    "field": field,
+                    "eventHash": event_hash,
+                })
+    references.sort(key=lambda row: (
+        str(row["projectileId"]).casefold(),
+        str(row["field"]),
+        int(row["eventHash"]),
+    ))
+    return references
 
 
-def link_projectile_audio(
+def projectile_sound_hashes(webui_root: Path) -> set[int]:
+    return {
+        int(row["eventHash"])
+        for row in projectile_sound_references(webui_root)
+    }
+
+
+def write_projectile_audio_sidecar(
     webui_root: Path,
+    language: str,
     event_audio_by_id: dict[str, list[dict[str, Any]]],
     event_evidence: list[dict[str, Any]],
 ) -> dict[str, int]:
-    """Attach typed HIRC event-to-media leaves to projectile sound fields."""
+    """Publish projectile media links without mutating projectile behavior."""
 
-    path = webui_root / PROJECTILE_DATA_REL
-    payload = load_json(path, {})
-    entries = payload.get("entries") or []
-    if not isinstance(payload, dict) or not isinstance(entries, list):
-        return {"projectileSoundRefs": 0, "projectileSoundEvents": 0, "projectileSoundRefsLinked": 0, "projectileAudioCandidates": 0}
+    references = projectile_sound_references(webui_root)
 
     evidence_by_hash: dict[int, list[dict[str, Any]]] = defaultdict(list)
     event_ids_by_hash: dict[int, set[str]] = defaultdict(set)
@@ -3163,52 +3162,37 @@ def link_projectile_audio(
     linked_refs = 0
     candidates = 0
     resolved_hashes: set[int] = set()
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        sounds = entry.get("sounds") or {}
-        if not isinstance(sounds, dict):
-            continue
-        for field in PROJECTILE_SOUND_FIELDS:
-            value = sounds.get(field)
-            if not isinstance(value, dict):
-                continue
-            value.pop("event", None)
-            value.pop("audio", None)
-            raw = value.get("value")
-            if not isinstance(raw, int) or not raw:
-                continue
-            refs += 1
-            event_hash = raw & 0xFFFFFFFF
-            key = projectile_event_key(event_hash)
-            evidence = evidence_by_hash.get(event_hash) or []
-            media: list[dict[str, Any]] = []
-            seen_media: set[tuple[str, str]] = set()
-            canonical_event_ids = sorted(event_ids_by_hash.get(event_hash) or {key})
-            for canonical_event_id in canonical_event_ids:
-                for audio in event_audio_by_id.get(canonical_event_id, []):
-                    src = str(audio.get("src") or "")
-                    media_id = str(audio.get("mediaId") or audio.get("id") or "")
-                    dedupe_key = (src, media_id)
-                    if not src or dedupe_key in seen_media:
-                        continue
-                    seen_media.add(dedupe_key)
-                    media.append({
-                        key: audio[key]
-                        for key in (
-                            "src", "mediaId", "format", "bytes", "audioScope",
-                            "audioCategory", "audioCategoryDetail", "sourceBlock",
-                            "sourceBlockLabel", "sourceBank", "bankId", "bank",
-                        )
-                        if audio.get(key) is not None
-                    })
-            event_found = bool(evidence)
-            if event_found:
-                resolved_hashes.add(event_hash)
-            if media:
-                linked_refs += 1
-                candidates += len(media)
-            value["event"] = {
+    links: list[dict[str, Any]] = []
+    for reference in references:
+        refs += 1
+        event_hash = int(reference["eventHash"])
+        key = projectile_event_key(event_hash)
+        evidence = evidence_by_hash.get(event_hash) or []
+        media: list[dict[str, Any]] = []
+        seen_media: set[tuple[str, str]] = set()
+        canonical_event_ids = sorted(event_ids_by_hash.get(event_hash) or {key})
+        for canonical_event_id in canonical_event_ids:
+            for audio in event_audio_by_id.get(canonical_event_id, []):
+                src = str(audio.get("src") or "")
+                media_id = str(audio.get("mediaId") or audio.get("id") or "")
+                dedupe_key = (src, media_id)
+                if not src or dedupe_key in seen_media:
+                    continue
+                seen_media.add(dedupe_key)
+                media.append({
+                    field: audio[field]
+                    for field in PROJECTILE_AUDIO_LINK_FIELDS
+                    if audio.get(field) is not None
+                })
+        event_found = bool(evidence)
+        if event_found:
+            resolved_hashes.add(event_hash)
+        if media:
+            linked_refs += 1
+            candidates += len(media)
+        link = {
+            **reference,
+            "event": {
                 "hash": event_hash,
                 "hex": f"0x{event_hash:08x}",
                 "foundInWwise": event_found,
@@ -3216,9 +3200,11 @@ def link_projectile_audio(
                 "source": "wwiseHirc" if event_found else "unresolved",
                 "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate" if media else "none",
                 "canonicalEventIds": canonical_event_ids,
-            }
-            if media:
-                value["audio"] = media
+            },
+        }
+        if media:
+            link["audio"] = media
+        links.append(link)
 
     stats = {
         "projectileSoundRefs": refs,
@@ -3226,11 +3212,17 @@ def link_projectile_audio(
         "projectileSoundRefsLinked": linked_refs,
         "projectileAudioCandidates": candidates,
     }
-    payload["audioLinks"] = {
-        **stats,
+    payload = {
+        "schemaVersion": 1,
+        "language": language,
         "source": "Wwise HIRC event traversal",
         "note": "Playable files are typed possible media leaves; Play roots and runtime switch/container selection remain unresolved.",
+        "counts": stats,
+        "links": links,
     }
+    path = webui_root / Path(
+        str(PROJECTILE_AUDIO_REL).format(language=language)
+    )
     json_dump(path, payload)
     return stats
 
@@ -6383,7 +6375,6 @@ def existing_shared_audio_metadata() -> dict[str, str]:
 def prior_source_metadata_by_rel(
     language_root: Path,
     language: str,
-    output_format: str | None = None,
 ) -> dict[tuple[str, str], dict[str, str]]:
     payload = load_json(language_root / "index.json", {})
     if not isinstance(payload, dict):
@@ -6396,8 +6387,6 @@ def prior_source_metadata_by_rel(
             rel = normalize_posix(str(entry.get("rel") or "").strip())
             if not rel:
                 continue
-            if output_format:
-                rel = audio_rel_with_extension(rel, output_format)
             storage_root = entry_storage_root(entry, language)
             key = (storage_root, rel)
             if key in out:
@@ -8354,7 +8343,7 @@ def run_audio_dumper_once(
         "--language",
         language_info["dumper"],
         "--format",
-        args.format,
+        AUDIO_OUTPUT_FORMAT,
         "--block",
         block,
     ]
@@ -8461,52 +8450,6 @@ def run_audio_dumper(
             )
     return source_by_rel
 
-
-def remap_audio_metadata_extension(
-    source_by_rel: dict[tuple[str, str], dict[str, str]],
-    output_format: str,
-) -> dict[tuple[str, str], dict[str, str]]:
-    """Move source provenance keys from decoded WAV paths to WebUI paths."""
-    if output_format == "wav":
-        return source_by_rel
-    out: dict[tuple[str, str], dict[str, str]] = {}
-    for (storage_root, rel), metadata in source_by_rel.items():
-        normalized = normalize_posix(rel)
-        remapped = audio_rel_with_extension(normalized, output_format)
-        out[(storage_root, remapped)] = metadata
-    return out
-
-
-def convert_audio_for_webui(
-    args: argparse.Namespace,
-    language: str,
-    output_format: str,
-) -> dict[str, int]:
-    """Convert the selected decoded storage roots to the browser format."""
-    if args.format != "wav" or output_format != "flac":
-        return {"scanned": 0, "converted": 0, "skipped": 0, "planned": 0, "failed": 0}
-
-    storage_names = (
-        (SHARED_AUDIO_STORAGE, language)
-        if args.block == "all"
-        else (storage_root_for_block(args.block, language),)
-    )
-    total = {"scanned": 0, "converted": 0, "skipped": 0, "planned": 0, "failed": 0}
-    for storage_name in dict.fromkeys(storage_names):
-        stats = convert_audio_root(
-            args.audio_root / storage_name,
-            ffmpeg=getattr(args, "ffmpeg", None),
-            jobs=getattr(args, "audio_conversion_jobs", None) or 1,
-            delete_source=True,
-        )
-        for key, value in stats.items():
-            total[key] = total.get(key, 0) + int(value)
-        if stats["scanned"]:
-            print(
-                f"Audio FLAC conversion [{storage_name}]: "
-                f"{stats['converted']:,} converted, {stats['skipped']:,} skipped"
-            )
-    return total
 
 def append_audio_id_candidate(ids: list[str], seen: set[str], value: object) -> None:
     if isinstance(value, (list, tuple, set)):
@@ -9133,7 +9076,6 @@ def build_audio(args: argparse.Namespace) -> int:
     args.audio_root = args.audio_root.resolve()
     language = args.language.upper()
     language_info = LANGUAGES[language]
-    output_format = audio_output_format(args)
     shared_root = args.audio_root / SHARED_AUDIO_STORAGE
     language_root = args.audio_root / language
     if args.skip_decode and not has_decoded_audio_in_roots(shared_root, language_root):
@@ -9159,14 +9101,8 @@ def build_audio(args: argparse.Namespace) -> int:
         for row in lua_audio_references
         if row.get("kind") == "luaPostEvent" and str(row.get("name") or "").strip()
     }
-    prior_source_by_rel = prior_source_metadata_by_rel(language_root, language, output_format)
+    prior_source_by_rel = prior_source_metadata_by_rel(language_root, language)
     decoded_source_by_rel = run_audio_dumper(args, language, language_info)
-    convert_audio_for_webui(args, language, output_format)
-    if output_format != args.format:
-        decoded_source_by_rel = remap_audio_metadata_extension(
-            decoded_source_by_rel,
-            output_format,
-        )
 
     for regroup_storage in (SHARED_AUDIO_STORAGE, language):
         bank_counts, bank_metadata = regroup_unmapped_by_bank(args.audio_root, regroup_storage, args.export_root)
@@ -9217,7 +9153,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language_root,
         language,
         language_info,
-        "." + output_format.lower(),
+        ".flac",
     )
     # Normalize the logical media inventory before computing the Event-cache
     # fingerprint. Otherwise the cache compares an unsuppressed physical scan
@@ -9317,7 +9253,7 @@ def build_audio(args: argparse.Namespace) -> int:
             args.webui_root,
             language,
             explicit_event_hashes,
-            expected_format=output_format,
+            expected_format=AUDIO_OUTPUT_FORMAT,
             expected_media_inventory_fingerprint=media_inventory_fingerprint,
         )
         if args.skip_decode
@@ -9448,7 +9384,12 @@ def build_audio(args: argparse.Namespace) -> int:
     })
     source_summary = summarize_audio_sources(list(generic_audio.values()))
     link_stats = link_conversation_audio(conv_dir, audio_by_id, event_audio_by_id, cutscene_audio_events)
-    projectile_link_stats = link_projectile_audio(args.webui_root, event_audio_by_id, event_evidence)
+    projectile_link_stats = write_projectile_audio_sidecar(
+        args.webui_root,
+        language,
+        event_audio_by_id,
+        event_evidence,
+    )
     gameplay_link_stats = link_gameplay_audio(
         args.webui_root,
         language,
@@ -9462,10 +9403,9 @@ def build_audio(args: argparse.Namespace) -> int:
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "language": language,
         "dumperLanguage": language_info["dumper"],
-        "format": output_format,
+        "format": AUDIO_OUTPUT_FORMAT,
         "eventEvidenceSchemaVersion": EVENT_EVIDENCE_SCHEMA_VERSION,
         "eventMediaInventoryFingerprint": media_inventory_fingerprint,
-        "sourceFormat": args.format,
         "block": args.block,
         "decodeBlocks": list(selected_audio_blocks(args.block)),
         "sourceSummary": source_summary,
@@ -9578,21 +9518,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", choices=sorted(LANGUAGES), default="CN")
     parser.add_argument(
-        "--format",
-        choices=("flac", "wav", "wem"),
-        default="flac",
-        help="AnimeStudio decode format (default: flac; no intermediate WAV file).",
-    )
-    parser.add_argument(
-        "--audio-format",
-        choices=("flac", "wav", "wem"),
-        default=None,
-        help=(
-            "Browser-facing output format. Direct FLAC is the default; explicit "
-            "--format wav or --format wem keeps those legacy outputs."
-        ),
-    )
-    parser.add_argument(
         "--block",
         choices=("all", "voice", "audio", "initial-audio", "audit-audio", "hotfix-audio"),
         default="all",
@@ -9609,17 +9534,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_AUDIO_DUMPER,
         help="Path to AnimeStudio CLI for audio extraction.",
     )
-    parser.add_argument("--fluffy", dest="audio_dumper", help=argparse.SUPPRESS)
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)
-    parser.add_argument("--ffmpeg", type=Path, default=None, help="Path to ffmpeg for legacy WAV-to-FLAC conversion.")
-    parser.add_argument(
-        "--audio-conversion-jobs",
-        type=int,
-        default=1,
-        help="Concurrent ffmpeg FLAC encoders (default: 1).",
-    )
     parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
     parser.add_argument("--webui-root", type=Path, default=DEFAULT_WEBUI_ROOT)
     parser.add_argument(

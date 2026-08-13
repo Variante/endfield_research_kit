@@ -61,6 +61,7 @@ a degraded reason instead of using them as direct evidence.
 | Story links | `story_builder/source_links.py` | localized reference data |
 | Story | `story_builder/build.py` | `webui/data/lang/<LANG>/` |
 | Mission Pipeline | `build_mission_pipeline_data.py` | `webui/data/mission_pipeline/` |
+| Lua consumer index | `story_builder/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
 | Assets | `build_assets.py` | asset indexes and media lookup |
@@ -68,9 +69,13 @@ a degraded reason instead of using them as direct evidence.
 | Updates | `build_updates.py` | `webui/data/updates/latest.json` |
 | Packaging | `pack_webui.py` | distributable static package |
 
-`build_gameplay.py` owns every Gameplay dataset; focused stages live in
-`gameplay_builder/`. The legacy economy, world, presentation, and broad data
-index helpers are diagnostic only and do not feed active pages.
+`build_gameplay.py` owns every Gameplay dataset. Behavior-focused stages live
+in `gameplay_builder/`; its `asset-refs` stage calls the public
+`asset_builder.gameplay_refs` API with the current Gameplay and Assets indexes
+and is the sole writer of `webui/data/assets/gameplay_refs.json`.
+`build_assets.py` writes only Assets-owned indexes and media lookup. The legacy
+economy, world, presentation, and broad data index helpers are diagnostic only
+and do not feed active pages.
 
 Typical focused commands:
 
@@ -97,6 +102,20 @@ Production parsing, validation, attachment, and generated schemas live in
 `story_recovery/`; they may import stable builder primitives, but production
 builders must not import or execute recovery modules.
 
+Mission Pipeline reads the canonical shipped-Lua consumer index through
+`story_builder.lua_consumer_references`; it does not consume a recovery-script
+artifact. Standard WebUI extraction intentionally omits Lua, so refresh this
+tracked index only from an explicit complete plaintext-Lua extraction. To
+refresh it and optionally render Markdown, run:
+
+```bat
+python scripts\story_builder\lua_consumer_references.py --markdown
+```
+
+`story_builder/source_gap/` owns the canonical source-only Story gap queue.
+Mission Pipeline refreshes it through the in-process builder API; it is not a
+recovery-script subprocess.
+
 Work in small validated batches:
 
 1. Use focused unit tests, parser probes, or
@@ -113,9 +132,68 @@ Validators fail closed. A failure must name the validator, gate, affected
 mission or Story key, source path, bounded expected/actual values, and relevant
 hashes in both structured output and the CLI summary.
 
+Review manual option coverage, stale targets, and current generated response
+candidate conflicts with the single maintained option audit:
+
+```bat
+python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
+```
+
 Manual Story order is user-managed in `webui/overrides/story_order.json`.
 OCR writes proposals to `webui/data/story_order_ocr.json`; exports never replace
 the active override.
+
+Gameplay-video OCR uses one command surface. `sample` extracts OCR evidence,
+`match` builds an OCR-only order proposal, `publish` refreshes the compact
+WebUI reference, and `compare` reports differences without editing the active
+override:
+
+```bat
+python scripts\story_recovery\ocr_story_order.py sample --dry-run
+python scripts\story_recovery\ocr_story_order.py match
+python scripts\story_recovery\ocr_story_order.py publish
+python scripts\story_recovery\ocr_story_order.py compare
+```
+
+AnimeStudio Story-object recovery uses one staged audit. `reverse` publishes
+the fail-closed playback-alias evidence consumed by builders; `carrier` and
+`hierarchy` remain optional candidate diagnostics, and `all` runs the three in
+dependency order:
+
+```bat
+python scripts\story_recovery\audit_story_objects.py --stage reverse
+```
+
+Native value-carrier work also uses one profile command. `generic` is the
+importable type/field-driven scanner, `cinematic` retains the structural queue
+contract and its existing report paths, and `radio-forbid` validates the small
+versioned negative boundary recorded for the pinned build:
+
+```bat
+python scripts\story_recovery\audit_native_carriers.py generic --carrier-type TYPE --focus-field FIELD
+python scripts\story_recovery\audit_native_carriers.py cinematic
+python scripts\story_recovery\audit_native_carriers.py radio-forbid
+```
+
+Reusable implementations and the radio boundary live under
+`story_recovery/native_carriers/`; tests live under `scripts/tests/` rather
+than beside recovery tools.
+
+Mission and audio runtime traces share one fail-closed CLI while retaining
+separate hook manifests, Frida agents, schemas, and evidence boundaries:
+
+```bat
+tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile mission
+tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile audio
+python scripts\story_recovery\runtime_trace.py import --profile mission CAPTURE.jsonl
+python scripts\story_recovery\runtime_trace.py import --profile audio CAPTURE.jsonl
+```
+
+The reviewed LevelScript task paths are builder-owned in
+`story_builder/native_contracts/mission_task_paths.json`. The protocol registry
+reads that contract directly; the mission runtime hook manifest references and
+validates the same contract before rendering its Frida agent, so task RVAs,
+message IDs, and field offsets have one mutable source of truth.
 
 ## Assets and audio
 
@@ -127,8 +205,13 @@ decoded assets.
 `build_audio.py` writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
 `export_full/structured/Audio/<LANG>/`. AnimeStudio streams decoded PCM into
-lossless FLAC by default without intermediate WAV files or `ffmpeg`; use
-`--format wav` or `--format wem` only when needed.
+lossless FLAC without intermediate WAV files or `ffmpeg`. The maintained decode
+and WebUI output are FLAC-only. Existing WAV/WEM files remain readable when an
+index-only maintenance run encounters them, but the builder no longer produces
+or converts those formats. Projectile behavior and authored event hashes stay
+immutable in `webui/data/gameplay/projectiles.json`; Audio publishes playable
+HIRC candidates separately in
+`webui/data/lang/<LANG>/gameplay/projectile_audio.json`.
 
 The default AnimeStudio type-job mode is `auto`: map-filtered conversion stays
 sharded, while broad Story JSON runs in isolated sequential processes. Do not
@@ -151,6 +234,8 @@ reuse native registration addresses across game builds.
 Updates compare two complete export folders. Pass `OLD NEW`, or configure
 `ENDFIELD_PREVIOUS_EXPORT_ROOT` and `ENDFIELD_EXPORT_ROOT` in
 `endfield_paths.bat`. A named `OLD` refreshes the cached baseline.
+`build_updates.py` calls the reusable `updates_builder/scanner.py` API in
+process; the scanner is an internal component rather than a second CLI.
 
 ```bat
 .\build_updates.bat OLD NEW

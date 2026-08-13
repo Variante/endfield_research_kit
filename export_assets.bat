@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-rem Rebuilds the Assets tab and CN Story audio links, leaving Story data alone.
+rem Rebuilds Assets indexes, Gameplay asset refs, and CN Story audio links.
 rem
 rem   export_assets.bat              reuse the decoded assets already on disk
 rem   export_assets.bat --from-game  decode assets and CN audio from the game
@@ -26,18 +26,15 @@ if not errorlevel 1 goto :help
 
 rem Where the assets come from.
 if /I "%~1"=="--from-game" goto :opt_from_game
-if /I "%~1"=="--export-from-game" goto :opt_from_game
 if /I "%~1"=="--game-root" goto :opt_game_root
 
 rem Asset scope, named the same way as export.bat.
 if /I "%~1"=="--focused-assets" goto :assets_focused
 if /I "%~1"=="--default-assets" goto :assets_default
 if /I "%~1"=="--debug-assets" goto :assets_debug
-if /I "%~1"=="--animestudio-asset-mode" goto :assets_explicit
 
 rem Worker limit.
 if /I "%~1"=="--asset-jobs" goto :opt_asset_jobs
-if /I "%~1"=="--animestudio-jobs" goto :opt_asset_jobs
 
 rem Anything else, including its value, goes to export_full_from_game.py.
 if not defined FIRST_PASSTHROUGH set "FIRST_PASSTHROUGH=%~1"
@@ -73,16 +70,9 @@ set "ASSET_MODE=debug"
 shift
 goto :parse_args
 
-:assets_explicit
-if "%~2"=="" goto :missing_asset_mode
-set "ASSET_MODE=%~2"
-shift
-shift
-goto :parse_args
-
 :opt_asset_jobs
 if "%~2"=="" goto :missing_asset_jobs
-set "EXPORT_ARGS=%EXPORT_ARGS% --animestudio-jobs %~2"
+set "EXPORT_ARGS=%EXPORT_ARGS% --asset-jobs %~2"
 if not defined FIRST_PASSTHROUGH set "FIRST_PASSTHROUGH=--asset-jobs"
 shift
 shift
@@ -97,10 +87,10 @@ rem Asset export/build pipeline:
 rem - rebuild indexes from existing decoded assets by default
 rem - export from the installed game only when explicitly requested
 rem - skip structured story data and AnimeStudio by default
-rem - build selected asset indexes and compact story media lookup
+rem - build selected asset indexes, compact story media, and Gameplay asset refs
 rem - rebuild/link CN audio, decoding first only for --from-game
 if "%EXPORT_FROM_GAME%"=="0" goto :skip_export_full
-python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %EXPORT_ARGS%
+python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :after_export_full
 
@@ -109,9 +99,9 @@ echo [export_assets.bat] Reusing existing decoded assets; pass --from-game to re
 
 :after_export_full
 
-set "BUILD_ASSET_MODE=%ASSET_MODE%"
-if /I "%ASSET_MODE%"=="debug" set "BUILD_ASSET_MODE=default"
-python .\scripts\build_assets.py --mode "%BUILD_ASSET_MODE%"
+python .\scripts\build_assets.py --mode "%ASSET_MODE%"
+if errorlevel 1 exit /b %errorlevel%
+python .\scripts\build_gameplay.py --stage asset-refs --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
 if "%EXPORT_FROM_GAME%"=="1" goto :decode_audio
@@ -137,11 +127,6 @@ exit /b 2
 echo Missing folder for --game-root.
 exit /b 2
 
-:missing_asset_mode
-echo Missing value for --animestudio-asset-mode.
-echo Expected focused, default, or debug.
-exit /b 2
-
 :missing_asset_jobs
 echo Missing value for --asset-jobs. Expected a worker count, for example 8.
 exit /b 2
@@ -165,8 +150,8 @@ exit /b 1
 :help
 echo Usage: export_assets.bat [options]
 echo.
-echo Rebuilds the WebUI Assets tab indexes and the compact Story media lookup,
-echo then relinks decoded CN Story audio. Story and Text Tables data is
+echo Rebuilds the WebUI Assets tab indexes, compact Story media lookup, and
+echo Gameplay asset references, then relinks decoded CN Story audio. Story data is
 echo export.bat's job, not this script's.
 echo.
 echo Options:
@@ -199,8 +184,5 @@ echo   For repeated runs, edit endfield_paths.bat instead of passing --game-root
 echo   With --from-game, any other option is passed to
 echo   scripts\export_full_from_game.py, including the --animestudio-* tuning;
 echo   run "python scripts\export_full_from_game.py --help" to see them.
-echo   The older --export-from-game, --animestudio-jobs and
-echo   --animestudio-asset-mode spellings still work.
-echo.
 endlocal
 exit /b 0

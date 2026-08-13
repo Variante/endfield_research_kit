@@ -28,6 +28,7 @@ REPORT_MD = REPORT_DIR / "webui_build_steps_latest.md"
 @dataclass(frozen=True)
 class CommandSpec:
     argv: tuple[str, ...]
+    environment: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -36,19 +37,37 @@ class TaskSpec:
     commands: tuple[CommandSpec, ...]
 
 
-def python_command(path: str, *args: str) -> CommandSpec:
-    return CommandSpec((sys.executable, str(ROOT / path), *args))
+def python_command(
+    path: str,
+    *args: str,
+    environment: tuple[tuple[str, str], ...] = (),
+) -> CommandSpec:
+    return CommandSpec((sys.executable, str(ROOT / path), *args), environment)
+
+
+def build_environment(args: argparse.Namespace) -> tuple[tuple[str, str], ...]:
+    values = {}
+    if args.export_root:
+        values["ENDFIELD_EXPORT_ROOT"] = str(args.export_root.resolve())
+    if args.game_root:
+        values["ENDFIELD_GAME_ROOT"] = str(args.game_root.resolve())
+    return tuple(sorted(values.items()))
 
 
 def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
+    environment = build_environment(args)
+
+    def command(path: str, *command_args: str) -> CommandSpec:
+        return python_command(path, *command_args, environment=environment)
+
     mission = TaskSpec(
         "mission_pipeline",
         (
-            python_command(
+            command(
                 "scripts/story_builder/protocol_registry.py",
                 "--ensure-current",
             ),
-            python_command(
+            command(
                 "scripts/build_mission_pipeline_data.py",
                 "--refresh-source-story-gap-queue",
             ),
@@ -57,7 +76,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     character = TaskSpec(
         "characters",
         (
-            python_command(
+            command(
                 "scripts/build_character_data.py",
                 "--languages",
                 "CN",
@@ -73,7 +92,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     gameplay = TaskSpec(
         "gameplay",
         (
-            python_command(
+            command(
                 "scripts/build_gameplay.py",
                 "--stage",
                 "base",
@@ -86,21 +105,19 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     )
     projectile = TaskSpec(
         "projectiles",
-        (python_command("scripts/build_gameplay.py", "--stage", "projectiles"),),
+        (command("scripts/build_gameplay.py", "--stage", "projectiles"),),
     )
 
     phase_one = [mission]
     if args.with_assets:
-        asset_mode = "default" if args.asset_mode == "debug" else args.asset_mode
         phase_one.append(
             TaskSpec(
                 "assets",
                 (
-                    python_command(
+                    command(
                         "scripts/build_assets.py",
                         "--mode",
-                        asset_mode,
-                        "--skip-gameplay-refs",
+                        args.asset_mode,
                     ),
                 ),
             )
@@ -112,7 +129,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     gameplay_refs = TaskSpec(
         "gameplay_asset_refs",
         (
-            python_command(
+            command(
                 "scripts/build_gameplay.py",
                 "--stage",
                 "asset-refs",
@@ -135,7 +152,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
             gameplay_refs,
             TaskSpec(
                 "audio",
-                (python_command("scripts/build_audio.py", *audio_args),),
+                (command("scripts/build_audio.py", *audio_args),),
             ),
         ]
 
@@ -146,13 +163,13 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         )
     graph = TaskSpec(
         "source_graph",
-        (python_command("tools/endfield_source_graph.py", *graph_args),),
+        (command("tools/endfield_source_graph.py", *graph_args),),
     )
     consumers = [
         TaskSpec(
             "combat_relationships",
             (
-                python_command(
+                command(
                     "scripts/build_gameplay.py",
                     "--stage",
                     "combat",
@@ -190,7 +207,14 @@ def run_task(task: TaskSpec) -> dict:
         print(f"[webui-build:{task.name}] {shown}", flush=True)
         command_started = time.perf_counter()
         try:
-            completed = subprocess.run(command.argv, cwd=ROOT, check=False)
+            environment = os.environ.copy()
+            environment.update(command.environment)
+            completed = subprocess.run(
+                command.argv,
+                cwd=ROOT,
+                check=False,
+                env=environment,
+            )
             returncode = completed.returncode
         except OSError as exc:
             returncode = 1
@@ -360,6 +384,8 @@ def main(argv: list[str] | None = None) -> int:
             "assetMode": args.asset_mode,
             "decodeAudio": args.decode_audio,
             "fullSourceGraph": args.full_source_graph,
+            "exportRoot": str(args.export_root.resolve()) if args.export_root else None,
+            "gameRoot": str(args.game_root.resolve()) if args.game_root else None,
         },
         "phases": phase_results,
     }

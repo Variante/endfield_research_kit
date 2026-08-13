@@ -14,6 +14,34 @@ CUTSCENE_SEMANTIC_SHAPES = frozenset({
 })
 
 
+def exact_levelscript_fmv_bindings(
+    cutscene: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Return authored FMV bindings only when their source is exact."""
+    bindings = [
+        row for row in (cutscene.get("levelscriptFmvBindings") or [])
+        if isinstance(row, dict)
+    ]
+    for index, binding in enumerate(bindings):
+        sources = [
+            row for row in (binding.get("sources") or [])
+            if isinstance(row, dict)
+        ]
+        exact_sources = [
+            row for row in sources
+            if row.get("kind") == "levelscriptFmvAction"
+            and row.get("sourceFile")
+            and row.get("actionName")
+            and row.get("nativeMappingId")
+        ]
+        if not binding.get("fmvId") or not exact_sources:
+            raise ValueError(
+                f"FMV binding {index} lacks an exact "
+                "levelscriptFmvAction source"
+            )
+    return bindings
+
+
 def cutscene_semantic_shape(cutscene: dict[str, Any]) -> str:
     """Classify one generated cutscene without implying runtime execution."""
     variants = [
@@ -22,7 +50,7 @@ def cutscene_semantic_shape(cutscene: dict[str, Any]) -> str:
     ]
     has_components = bool(variants)
     has_root = any(row.get("part") == "root" for row in variants)
-    has_levelscript_fmv = bool(cutscene.get("levelscriptFmvBindings"))
+    has_levelscript_fmv = bool(exact_levelscript_fmv_bindings(cutscene))
     text_only = bool(cutscene.get("textOnlyUnconfirmed"))
 
     if text_only and (has_components or has_levelscript_fmv):

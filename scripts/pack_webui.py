@@ -4,7 +4,7 @@
 The primary package keeps the story/gameplay/reference browser text data, code,
 and emoji image files. A companion assets package contains the larger exported
 image/video files that the story renderer can display, and a standalone audio
-package contains lossless FLAC story audio files. OBJ/FBX files, Blender bundles,
+package contains lossless FLAC story audio files. OBJ/FBX files,
 legacy local index folders, and the asset-browser data page are intentionally
 left out.
 """
@@ -178,7 +178,7 @@ Extract those zips into the same directory after this one when you want
 inline/wiki media or playable audio too.
 
 The 3D asset browser, legacy local index folders, OBJ/FBX payloads, and
-Blender bundle downloads are intentionally excluded.
+Source model downloads are intentionally excluded.
 """
 
 CHINESE_QUICKSTART_README = """Endfield WebUI 使用说明
@@ -1284,7 +1284,6 @@ def create_package(args: argparse.Namespace) -> int:
             "assets.js",
             "index.html",
         }
-        and not path.relative_to(webui_root).as_posix().startswith("data/assets/bundles/")
     ]
 
     print(f"WebUI root: {webui_root}")

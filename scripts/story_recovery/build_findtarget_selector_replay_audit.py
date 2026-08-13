@@ -15,7 +15,6 @@ Output:
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import struct
 import sys
@@ -29,8 +28,8 @@ for _path in (_REPO_ROOT / "scripts",):
         sys.path.insert(0, str(_path))
 
 from common import ROOT, md_escape, read_json, write_report_json, write_text_if_changed  # noqa: E402
+from game_data.memorypack import buff as memorypack_buff  # noqa: E402
 
-BUILD_DATA_INDEX = ROOT / "scripts" / "build_data_index.py"
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DEFAULT_BOUNDARY_JSON = REPORT_DIR / "findtarget_selector_boundary_audit.json"
 DEFAULT_TAG_JSON = REPORT_DIR / "selector_formatter_tag_audit.json"
@@ -50,16 +49,6 @@ SELECTOR_ORDER_CANDIDATES = [
         "families": ["finder", "validator", "postProcessor"],
     },
 ]
-
-
-def load_build_data_index() -> Any:
-    spec = importlib.util.spec_from_file_location("endfield_build_data_index", BUILD_DATA_INDEX)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"unable to load helper: {BUILD_DATA_INDEX}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def repo_rel(path: Path) -> str:
@@ -505,7 +494,7 @@ def shape_row(
 
 
 def build_payload(args: argparse.Namespace) -> dict[str, Any]:
-    helper = load_build_data_index()
+    helper = memorypack_buff
     boundary = read_json(args.boundary_json)
     tag_info = load_selector_tag_maps(args.tag_json)
     tag_maps = tag_info["families"]

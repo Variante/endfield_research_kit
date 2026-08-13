@@ -2343,9 +2343,8 @@ function storyMediaLookupStem(rel) {
   };
 }
 
-// envEmoji prefab layer data is reconstructed from the original Unity prefabs at
-// `Assets/Beyond/DynamicAssets/Gameplay/UI/Prefabs/Emoji/emoji_*.prefab` by
-// scripts/recover_envemoji_prefabs.py (Image color + RectTransform fields), then
+// envEmoji prefab layer data was reconstructed from the original Unity prefab
+// Image color and RectTransform fields, then
 // uniformly scaled so each prefab fits the 100脳150 stage.
 const ENV_EMOJI_PREFAB_ALIASES = {
   envemoji_common_adaptationwork: "emoji_adaptationwork",

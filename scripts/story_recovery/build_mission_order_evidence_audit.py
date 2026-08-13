@@ -58,9 +58,6 @@ MAP_TABLES = (
     TABLE_ROOT / "SceneAreaTable.json",
     TABLE_ROOT / "SceneCollectableItemTable.json",
 )
-PLAYABLE_DIRECTOR_BRIDGE_PATH = (
-    ROOT / "reports" / "playable_director" / "playable_director_bridge.json"
-)
 RADIO_CONTINUATION_REPORT_PATH = (
     ROOT / "reports" / "mission_order" / "radio_continuation_CN.json"
 )
@@ -733,52 +730,6 @@ def collect_asset_map_counts(
         }
 
 
-def collect_playable_director_hits(
-    mission: str,
-    entry_report: dict[str, dict[str, Any]],
-    bridge_path: Path = PLAYABLE_DIRECTOR_BRIDGE_PATH,
-) -> int:
-    """Add `hits.playableDirector` from the PlayableDirector bridge report.
-
-    Returns the number of entries that gained a PlayableDirector anchor.
-    Silent no-op when the bridge report has not been generated yet.
-    """
-    if not bridge_path.exists():
-        return 0
-    try:
-        bridge = read_json(bridge_path, {})
-    except Exception:  # noqa: BLE001 - defensive against partial writes
-        return 0
-    stories = bridge.get("stories") or []
-    by_lower_name: dict[str, dict[str, Any]] = {}
-    for story in stories:
-        name = (story.get("storyName") or "").lower()
-        if not name:
-            continue
-        # Restrict to this mission so the audit is bounded.
-        if (story.get("mission") or "") != mission:
-            continue
-        by_lower_name[name] = story
-    if not by_lower_name:
-        return 0
-    anchored = 0
-    for key, info in entry_report.items():
-        normalized = key[5:] if key.startswith("misc_") else key
-        story = by_lower_name.get(normalized.lower())
-        if not story:
-            continue
-        info["hits"]["playableDirector"] = {
-            "matchedStoryName": story.get("storyName"),
-            "directorCount": story.get("playableDirectorCount"),
-            "totalBindings": story.get("totalBindings"),
-            "timelineNames": (story.get("timelineNames") or [])[:3],
-            "trackTypeCounts": story.get("trackTypeCounts") or {},
-            "sourceReport": str(bridge_path.relative_to(ROOT)).replace("\\", "/"),
-        }
-        anchored += 1
-    return anchored
-
-
 def collect_radio_continuation_hits(
     mission: str,
     entry_report: dict[str, dict[str, Any]],
@@ -1055,7 +1006,6 @@ def build_report(
     map_table_hits = collect_map_hits(mission, level_ids)
     if include_asset_map:
         collect_asset_map_counts(keys, entry_report, asset_map=ASSET_MAP)
-    playable_director_anchored = collect_playable_director_hits(mission, entry_report)
     radio_continuation_anchored = collect_radio_continuation_hits(mission, entry_report)
     variant_mission_runtime_anchored = collect_variant_mission_runtime_hits(
         webui_mission,
@@ -1074,11 +1024,6 @@ def build_report(
             or entry_report[key]["hits"].get("variantMissionRuntime")
             or entry_report[key]["hits"].get("levelScriptData")
         )
-    ]
-    weak_or_unknown_anchored_by_pd = [
-        key
-        for key in weak_or_unknown
-        if entry_report[key]["hits"].get("playableDirector")
     ]
     weak_or_unknown_anchored_by_radio_cont = [
         key
@@ -1147,8 +1092,6 @@ def build_report(
                 if not entry_report[key]["hits"].get("levelData")
             ],
             "npcProxyDialogAnchoredCount": npc_proxy_dialog_anchored,
-            "playableDirectorAnchoredCount": playable_director_anchored,
-            "weakOrUnknownGainingPlayableDirectorAnchor": weak_or_unknown_anchored_by_pd,
             "radioContinuationAnchoredCount": radio_continuation_anchored,
             "weakOrUnknownGainingRadioContinuationAnchor": weak_or_unknown_anchored_by_radio_cont,
             "variantMissionRuntimeAnchoredCount": variant_mission_runtime_anchored,
@@ -1227,10 +1170,6 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"{len(summary['weakOrUnknownWithNoMissionOrLevelScriptHits'])}",
         "- Weak/unknown entries with no MissionRuntime/proxy/variant/LevelScript/LevelData hits: "
         f"{len(summary['weakOrUnknownWithNoMissionLevelScriptOrLevelDataHits'])}",
-        "- Entries with PlayableDirector anchor: "
-        f"{summary.get('playableDirectorAnchoredCount', 0)} "
-        f"(weak/unknown newly anchored: "
-        f"{len(summary.get('weakOrUnknownGainingPlayableDirectorAnchor', []))})",
         "- Entries with radio-continuation anchor: "
         f"{summary.get('radioContinuationAnchoredCount', 0)} "
         f"(weak/unknown newly anchored: "
@@ -1247,8 +1186,8 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "",
         "## Entry Evidence",
         "",
-        "| key | status | chunk | go | fallback | MissionRuntime | ProxyDlg | VariantMR | LevelScript | LevelData | Radio | Audio | Read/PRTS | AssetMap | PlayDir | RadioCont |",
-        "| --- | --- | --- | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- |",
+        "| key | status | chunk | go | fallback | MissionRuntime | ProxyDlg | VariantMR | LevelScript | LevelData | Radio | Audio | Read/PRTS | AssetMap | RadioCont |",
+        "| --- | --- | --- | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- |",
     ]
     scene_placement_index = (payload.get("missionTimeline") or {}).get("scenePlacement") or {}
     for key, info in payload["entries"].items():
@@ -1257,13 +1196,6 @@ def markdown_report(payload: dict[str, Any]) -> str:
         radio_text = ""
         if radio:
             radio_text = f"p{radio.get('priority')}/t{radio.get('radioType')}/n{radio.get('lineCount')}"
-        play_dir = hits.get("playableDirector")
-        play_dir_text = ""
-        if play_dir:
-            play_dir_text = (
-                f"d{play_dir.get('directorCount', 0)}"
-                f"/b{play_dir.get('totalBindings', 0)}"
-            )
         radio_cont = hits.get("radioContinuation")
         radio_cont_text = ""
         if radio_cont:
@@ -1317,7 +1249,6 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"| {hits.get('audioDialog', {}).get('count', 0)} "
             f"| {md_escape(reading_prts_text)} "
             f"| {hits.get('assetMapString', {}).get('count', 0)} "
-            f"| {md_escape(play_dir_text)} "
             f"| {md_escape(radio_cont_text)} |"
         )
 

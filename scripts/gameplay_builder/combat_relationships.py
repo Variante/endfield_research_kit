@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sqlite3
 from collections import defaultdict, deque
@@ -20,9 +21,10 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
-DEFAULT_ANIMESTUDIO_ROOT = ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
+DEFAULT_ANIMESTUDIO_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
 SCHEMA_VERSION = 4
 
 GRAPH_EDGE_TYPES = {

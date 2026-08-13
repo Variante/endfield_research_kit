@@ -57,7 +57,9 @@ webui/data/lang/<LANG>/mission/*.json
 webui/data/lang/<LANG>/reference/**
 webui/data/lang/<LANG>/characters/index.json
 webui/data/lang/<LANG>/gameplay/**
+webui/data/lang/<LANG>/gameplay/projectile_audio.json
 webui/data/lang/<LANG>/audio/{index,events,media}.json
+webui/data/gameplay/projectiles.json
 webui/data/mission_pipeline/index.json
 webui/data/mission_pipeline/missions/*.json
 webui/data/assets/{index,gameplay_refs,story_media,videos}.json
@@ -67,6 +69,15 @@ webui/data/updates/latest.json
 Builders may add compact sidecars, but each page must tolerate an absent
 optional sidecar and display an explicit degraded state when the omission
 matters. Schema changes must be coordinated with their frontend consumer.
+
+`data/gameplay/projectiles.json` owns immutable projectile behavior and authored
+event hashes. The language-specific `projectile_audio.json` sidecar owns decoded
+media candidates; Gameplay joins it by projectile id, sound field, and unsigned
+event hash without writing audio rows back into the behavior payload.
+
+`data/assets/gameplay_refs.json` is also Gameplay-owned: the `asset-refs` stage
+joins the current Gameplay index to the Assets-owned broad index. The Assets
+builder never writes this consumer-specific sidecar.
 
 ## Shared behavior
 

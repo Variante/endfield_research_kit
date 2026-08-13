@@ -3,10 +3,10 @@ import hashlib
 import json
 import struct
 import sys
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -1667,11 +1667,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }),
                 encoding="utf-8",
             )
+            queued_report = json.loads(queue_path.read_text(encoding="utf-8"))
             with patch.object(
-                pipeline.subprocess,
-                "run",
-                return_value=subprocess.CompletedProcess([], 0),
-            ) as run:
+                pipeline,
+                "build_source_gap_queue",
+                return_value=SimpleNamespace(report=queued_report),
+            ) as build:
                 report = pipeline.refresh_source_story_gap_queue(
                     "CN",
                     queue_path,
@@ -1681,7 +1682,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             report["_schema"],
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
         )
-        self.assertIn("--language", run.call_args.args[0])
+        build.assert_called_once_with(
+            "CN",
+            reports_dir=queue_path.parent,
+            table_root=pipeline.DEFAULT_TABLE_ROOT,
+        )
 
     def test_gap_queue_refresh_fails_with_bounded_validator_diagnostic(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -1703,10 +1708,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }),
                 encoding="utf-8",
             )
+            queued_report = json.loads(queue_path.read_text(encoding="utf-8"))
             with patch.object(
-                pipeline.subprocess,
-                "run",
-                return_value=subprocess.CompletedProcess([], 0),
+                pipeline,
+                "build_source_gap_queue",
+                return_value=SimpleNamespace(report=queued_report),
             ):
                 with self.assertRaises(RuntimeError) as raised:
                     pipeline.refresh_source_story_gap_queue(
@@ -1746,10 +1752,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }),
                 encoding="utf-8",
             )
+            queued_report = json.loads(queue_path.read_text(encoding="utf-8"))
             with patch.object(
-                pipeline.subprocess,
-                "run",
-                return_value=subprocess.CompletedProcess([], 0),
+                pipeline,
+                "build_source_gap_queue",
+                return_value=SimpleNamespace(report=queued_report),
             ):
                 with self.assertRaises(RuntimeError) as raised:
                     pipeline.refresh_source_story_gap_queue(

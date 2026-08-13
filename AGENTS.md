@@ -56,11 +56,7 @@ The wrappers share one flag vocabulary: `--from-game` reads installed game
 data, `--focused-assets`/`--default-assets`/`--debug-assets` set asset scope,
 `--asset-jobs N` caps AnimeStudio workers, `--webui-jobs N` caps post-Story
 builders, `--game-root PATH` overrides the installed client, and `--help`
-prints a plain-language option list on every wrapper. Earlier spellings
-(`--export-from-game`, `--animestudio-jobs`, `--animestudio-asset-mode`,
-`--skip-asset-updates`,
-`--skip-audio-updates`, `--hash-asset-updates`) still work but are no longer
-documented in the help screens. Options that only apply while reading
+prints a plain-language option list on every wrapper. Options that only apply while reading
 installed game data are rejected with an explanatory message when
 `--from-game` is absent, instead of being silently dropped. Batch wrappers are
 CRLF: cmd.exe mis-resolves backward `goto` in LF-only batch files, which
@@ -113,9 +109,8 @@ decoded audio, and accepts a leading `OLD NEW` folder pair (or the long
 `OLD` implies `--refresh-previous-export-baseline`. Pass `--no-audio` to omit
 decoded audio while keeping other asset entries. Pass `--text-only` only for a
 text-only update feed, and `--exact` to hash asset contents instead of
-comparing sizes. The wrapper still accepts the older `--skip-audio-updates`,
-`--skip-asset-updates`, and `--hash-asset-updates`
-spellings, and forwards any other option to `scripts/build_updates.py`.
+comparing sizes. The wrapper forwards any other option to
+`scripts/build_updates.py`.
 Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
 lookup, and CN audio relinking from existing decoded assets when Story is
 already current. Pass `--from-game` only when the user explicitly asks to
@@ -130,9 +125,9 @@ maintenance. The audio builder writes shared SFX/music once under
 `export_full/structured/Audio/<LANG>/`, parses Wwise bank event-to-media links,
 and post-processes generated conversation JSON with playable `audioSrc` links.
 AnimeStudio pipes decoded Wwise PCM directly into its in-process FLAC encoder
-and writes lossless FLAC by default, without creating intermediate WAV files or
-requiring `ffmpeg`. Use `--format wav` to write WAV or `--format wem` for legacy
-WEM output.
+and writes lossless FLAC without creating intermediate WAV files or requiring
+`ffmpeg`. The maintained WebUI audio workflow is FLAC-only; existing WAV/WEM
+files may still be indexed during a `--skip-decode` maintenance run.
 It also writes the compact
 per-language Gameplay skill/enemy SFX sidecar from exact SkillData/BuffData
 references and Wwise event traversal. The default exporter mode is
@@ -219,8 +214,8 @@ Useful direct commands:
 
 ```bat
 python scripts\build_updates.py
-python scripts\build_updates.py --skip-asset-updates
-python scripts\build_updates.py --skip-audio-updates
+python scripts\build_updates.py --text-only
+python scripts\build_updates.py --no-audio
 python scripts\build_updates.py --refresh-previous-export-baseline
 python scripts\verify_export_freshness.py
 python scripts\story_builder\refresh_evidence.py
@@ -235,7 +230,6 @@ python scripts\build_gameplay.py --stage projectiles
 python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
-python scripts\convert_audio_to_flac.py --audio-root export_full\structured\Audio --dry-run
 python scripts\download_bilibili_video.py --dry-run
 python scripts\pack_webui.py
 ```
@@ -346,6 +340,7 @@ Browser data inputs and outputs:
   `webui/data/lang/<code>/index.json`, `conv/*.json`, `mission/*.json`,
   `reference/**`, `webui/data/mission_pipeline/index.json`,
   `webui/data/mission_pipeline/missions/*.json`, `webui/data/gameplay/projectiles.json`,
+  `webui/data/lang/<code>/gameplay/projectile_audio.json`,
   `webui/data/lang/<code>/gameplay/sound_effects.json`,
   `webui/data/lang/<code>/characters/index.json`,
   `webui/data/lang/<code>/gameplay/combat_relationships.json`,
@@ -479,11 +474,10 @@ generated output outside the export roots must not appear as game-data updates.
 
 The builder scans exported assets in the same two export folders by default to
 add image/model/video/audio asset-level entries to the Updates page. Asset
-modifications use fast size fingerprints by default; pass
-`--hash-asset-updates` only when same-size binary modifications must be
-detected. Use `--skip-audio-updates` when decoded audio entries should be
-omitted while image/model/video entries remain enabled. Use
-`--skip-asset-updates` only when all asset entries should be omitted.
+modifications use fast size fingerprints by default; pass `--exact` only when
+same-size binary modifications must be detected. Use `--no-audio` when decoded
+audio entries should be omitted while image/model/video entries remain
+enabled. Use `--text-only` only when all asset entries should be omitted.
 Use `--dry-run-prune-previous-export-untracked` to preview previous-export
 files that exist byte-identically at the same relative paths in the current
 export, and `--prune-previous-export-untracked` only when intentionally
@@ -546,7 +540,6 @@ WebUI:
 
 - `scripts/export_full_from_game.py`
 - `scripts/build_webui_views.py`
-- `scripts/track_export_changes.py`
 - `scripts/story_builder/dialog_registry.py`
 - `scripts/story_builder/video_bindings.py`
 - `scripts/verify_export_freshness.py`
@@ -555,24 +548,28 @@ WebUI:
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py`
 - `scripts/story_builder/timeline_action_evidence.py`
+- `scripts/story_builder/lua_consumer_references.py` (canonical fingerprinted
+  Lua consumer index read directly by Mission Pipeline; refresh requires an
+  explicit plaintext-Lua extraction)
 - `scripts/build_character_data.py`
 - `scripts/build_gameplay.py` (every Gameplay page dataset; stage modules in
-  `scripts/gameplay_builder/`)
+  `scripts/gameplay_builder/`; its `asset-refs` stage directly calls the public
+  `asset_builder.gameplay_refs` API and solely owns `gameplay_refs.json`)
 - `scripts/build_mission_pipeline_data.py`
 - `scripts/build_assets.py`
-- legacy local index helpers `scripts/build_data_index.py`,
-  `scripts/build_decoded_index.py`, `scripts/build_economy_data.py`,
-  `scripts/build_world_data.py`, and `scripts/build_presentation_data.py` are
-  not active WebUI pages. The Factory, World, and Presentation tabs were
-  removed from `webui/index.html`, so `export.bat` no longer runs those three
-  builders and their `webui/data/lang/<code>/{economy,world,presentation}/`
-  outputs are not generated.
+- maintained stdlib-only MemoryPack codecs live under
+  `scripts/game_data/memorypack/`. The retired Data, Factory, World, and
+  Presentation page builders remain removed; do not restore those pages or
+  their generated outputs.
 - `scripts/build_audio.py`
 - `scripts/pack_webui.py`
 - supporting files in `scripts/` and `scripts/asset_builder/`
 
 Story reconstruction helpers used by WebUI builders:
 
+- `scripts/story_builder/native_contracts/` (reviewed current-build native
+  facts consumed by builders; recovery hooks must reference or validate these
+  contracts rather than duplicate them)
 - `scripts/story_builder/timeline_recovery.py`
 - `scripts/story_builder/timeline_action_evidence.py`
 - `scripts/story_builder/mission_recovery.py`
@@ -581,6 +578,10 @@ Story reconstruction helpers used by WebUI builders:
 Story recovery audit/refresh tools, not run by `export.bat`:
 
 - `scripts/story_recovery/`
+- native carrier audits use the single
+  `scripts/story_recovery/audit_native_carriers.py` profile CLI; reusable
+  scanner/profile code and versioned negative boundaries live in
+  `scripts/story_recovery/native_carriers/`
 - `scripts/download_bilibili_video.py` is an optional gameplay-video intake
   helper for the OCR/audio story-order workflow. It requires `requests`,
   `ffmpeg`, and browser-exported Bilibili cookies, writes complete `.mp4` files

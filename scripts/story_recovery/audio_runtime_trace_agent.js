@@ -1,6 +1,6 @@
 "use strict";
 
-// Replaced by capture_audio_runtime_trace.py before this agent is loaded.
+// Replaced by runtime_trace.py capture --profile audio before this agent is loaded.
 const CONFIG = __AUDIO_TRACE_CONFIG__;
 
 const gameAssembly = Process.getModuleByName(CONFIG.moduleName);

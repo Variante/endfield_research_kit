@@ -1,6 +1,6 @@
 "use strict";
 
-// Replaced by capture_mission_runtime_trace.py before this agent is loaded.
+// Replaced by runtime_trace.py capture --profile mission before this agent is loaded.
 const CONFIG = __MISSION_TRACE_CONFIG__;
 
 const gameAssembly = Process.getModuleByName(CONFIG.moduleName);

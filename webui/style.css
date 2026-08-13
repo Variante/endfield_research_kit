@@ -6365,61 +6365,6 @@ body.is-resizing-filter * {
   text-transform: uppercase;
 }
 
-.updates-impact-grid {
-  display: grid;
-  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
-  border-top: 1px solid var(--border);
-}
-
-.updates-impact-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.updates-impact-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 22px;
-  padding: 2px 7px;
-  border: 1px solid rgba(var(--accent-rgb), 0.24);
-  border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.08);
-  color: var(--text);
-  font-family: ui-monospace, Consolas, monospace;
-}
-
-.updates-decoded-list {
-  max-height: 320px;
-  margin: 0;
-  padding: 8px 10px 8px 26px;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-3);
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.updates-decoded-list li {
-  padding: 1px 0;
-  overflow-wrap: anywhere;
-}
-
-.updates-decoded-list a {
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.updates-decoded-list a:hover {
-  text-decoration: underline;
-}
-
 .updates-media-comparison {
   display: grid;
   gap: 12px;
@@ -8016,7 +7961,6 @@ body:not(.show-debug) .story-order-remove-from-mission {
 .gameplay-level-num,
 .updates-detail-link,
 .updates-detail-panel h2,
-.updates-decoded-list a,
 .updates-media-open,
 .asset-panel-label,
 .asset-related-item a,

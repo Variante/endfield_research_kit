@@ -1,0 +1,95 @@
+{
+  "schema": "missionTaskPaths.nativeContract.v1",
+  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "hooks": {
+    "conditionResultChanged": {
+      "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition._OnConditionResultChanged",
+      "token": "0x060121fe",
+      "methodIndex": 74237,
+      "rva": "0x6fb0f9c",
+      "fieldOffsets": {
+        "scriptId": "0x18",
+        "sceneNumId": "0x28",
+        "taskId": "0x30",
+        "conditionId": "0x38"
+      }
+    },
+    "sendProgress": {
+      "symbol": "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress",
+      "token": "0x06004d91",
+      "methodIndex": 19856,
+      "rva": "0x73825c8",
+      "message": "CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS",
+      "messageId": 105
+    },
+    "stateUpdate": {
+      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskStateUpdate",
+      "token": "0x06004dbc",
+      "methodIndex": 19899,
+      "rva": "0x3bd6fa0",
+      "message": "SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE",
+      "messageId": 813,
+      "fieldOffsets": {
+        "sceneNumId": "0x18",
+        "scriptId": "0x20",
+        "taskId": "0x28",
+        "taskState": "0x30"
+      }
+    },
+    "progressUpdate": {
+      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskProgressUpdate",
+      "token": "0x06004dbd",
+      "methodIndex": 19900,
+      "rva": "0x42ba410",
+      "message": "SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE",
+      "messageId": 815,
+      "fieldOffsets": {
+        "sceneNumId": "0x18",
+        "scriptId": "0x20",
+        "taskId": "0x28",
+        "conditionCompletedMap": "0x30"
+      }
+    },
+    "conditionCompletionChanged": {
+      "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition.InvokeOnIsCompleteChangeAction",
+      "token": "0x06012207",
+      "methodIndex": 74246,
+      "rva": "0x42bad00",
+      "message": "SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE",
+      "messageId": 815,
+      "captureScope": "only while progressUpdate is active on the same thread",
+      "fieldOffsets": {
+        "scriptId": "0x18",
+        "sceneNumId": "0x28",
+        "taskId": "0x30",
+        "conditionId": "0x38",
+        "isCompleted": "0x50"
+      }
+    },
+    "startFinish": {
+      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskStartFinish",
+      "token": "0x06004dbe",
+      "methodIndex": 19901,
+      "rva": "0x45e7f50",
+      "message": "SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH",
+      "messageId": 816,
+      "fieldOffsets": {
+        "sceneNumId": "0x18",
+        "scriptId": "0x20",
+        "taskId": "0x28"
+      }
+    },
+    "scriptSetDone": {
+      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_SceneLevelScriptStateNotify",
+      "token": "0x06004db6",
+      "methodIndex": 19893,
+      "rva": "0x7386060",
+      "message": "SC_SCENE_LEVEL_SCRIPT_SET_DONE",
+      "messageId": 823,
+      "fieldOffsets": {
+        "sceneNumId": "0x18",
+        "scriptId": "0x20"
+      }
+    }
+  }
+}

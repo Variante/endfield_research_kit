@@ -130,6 +130,93 @@ def normalize_responses(scene_override: dict[str, Any]) -> dict[str, list[str]]:
     return out
 
 
+def response_candidate_paths(
+    warning_group: dict[str, Any],
+    option_ids: list[str],
+) -> dict[str, list[str]]:
+    """Read per-option candidates already published by the Story builder.
+
+    Runtime Jump and DialogTree classifiers live in ``story_builder``. This
+    audit consumes their generated warning contract instead of repeating raw
+    Timeline, native-body, or source-graph analysis.
+    """
+    out: dict[str, list[str]] = {}
+    for field in ("branchLineIdsByOption", "candidateLineIdsByOption"):
+        values = warning_group.get(field)
+        if not isinstance(values, dict):
+            continue
+        for option_id in option_ids:
+            raw_path = values.get(option_id)
+            if isinstance(raw_path, list):
+                path = unique([safe_str(value) for value in raw_path])
+            else:
+                path = unique([safe_str(raw_path)])
+            if path and option_id not in out:
+                out[option_id] = path
+    candidates = unique(
+        [safe_str(value) for value in warning_group.get("candidateLineIds") or []]
+    )
+    if len(candidates) == len(option_ids):
+        for option_id, line_id in zip(option_ids, candidates):
+            out.setdefault(option_id, [line_id])
+    common = safe_str(warning_group.get("commonContinuationLineId"))
+    if common:
+        for option_id in option_ids:
+            out.setdefault(option_id, [common])
+    return out
+
+
+def classify_response_evidence(
+    *,
+    scene: str,
+    group_id: str,
+    warning_group: dict[str, Any],
+    responses: dict[str, list[str]],
+    known_lines: set[str],
+) -> list[dict[str, Any]]:
+    option_ids = unique([safe_str(value) for value in warning_group.get("optionIds") or []])
+    candidates = response_candidate_paths(warning_group, option_ids)
+    rows: list[dict[str, Any]] = []
+    for option_id in option_ids:
+        manual_path = responses.get(option_id) or []
+        inferred_path = candidates.get(option_id) or []
+        manual_first = manual_path[0] if manual_path else ""
+        inferred_first = inferred_path[0] if inferred_path else ""
+        if any(line_id not in known_lines for line_id in manual_path):
+            classification = "invalid-override"
+        elif manual_path and inferred_path:
+            if manual_first == inferred_first:
+                classification = (
+                    "manual-matches-inference"
+                    if manual_path == inferred_path
+                    else "manual-first-line-matches-inference"
+                )
+            elif manual_first in inferred_path:
+                classification = "manual-partially-matches-inference"
+            else:
+                classification = "manual-conflicts-inference"
+        elif manual_path:
+            classification = "manual-only"
+        elif inferred_path:
+            classification = "candidate-uncovered"
+        else:
+            classification = "no-candidate"
+        rows.append({
+            "scene": scene,
+            "group": group_id,
+            "optionId": option_id,
+            "classification": classification,
+            "manualPathLineIds": manual_path,
+            "inferredPathLineIds": inferred_path,
+            "manualFirstLineId": manual_first,
+            "inferredFirstLineId": inferred_first,
+            "source": safe_str(warning_group.get("source")),
+            "reason": safe_str(warning_group.get("reason")),
+            "after": safe_str(warning_group.get("after")),
+        })
+    return rows
+
+
 def position_override_status(
     group_id: str,
     *,
@@ -189,7 +276,7 @@ def classify_conversation(
     path: Path,
     conv: dict[str, Any],
     scene_override: dict[str, Any],
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     key = safe_str(conv.get("key")) or path.stem
     known_lines = line_ids(conv)
     groups = option_groups(conv)
@@ -198,6 +285,7 @@ def classify_conversation(
     responses = normalize_responses(scene_override)
     warning_rows: list[dict[str, Any]] = []
     validation_rows: list[dict[str, Any]] = []
+    response_evidence_rows: list[dict[str, Any]] = []
 
     for warning in conv.get("warnings") or []:
         if not isinstance(warning, dict):
@@ -253,11 +341,21 @@ def classify_conversation(
                     "after": safe_str(group.get("after")),
                     "optionIds": option_ids,
                     "candidateLineIds": unique([safe_str(value) for value in group.get("candidateLineIds") or []]),
+                    "candidateLineIdsByOption": response_candidate_paths(group, option_ids),
                     "coveredOptionIds": covered,
                     "missingOptionIds": missing,
                     "overrideTargets": {option_id: responses.get(option_id, []) for option_id in option_ids if option_id in responses},
                     "problems": problems,
                 })
+                response_evidence_rows.extend(
+                    classify_response_evidence(
+                        scene=key,
+                        group_id=as_group(group.get("group")),
+                        warning_group=group,
+                        responses=responses,
+                        known_lines=known_lines,
+                    )
+                )
 
     for anchor, values in positions_after.items():
         if anchor not in known_lines:
@@ -275,7 +373,7 @@ def classify_conversation(
             if target not in known_lines:
                 validation_rows.append({"scene": key, "kind": "response", "optionId": option_id, "target": target, "problem": "missing target line"})
 
-    return warning_rows, validation_rows
+    return warning_rows, validation_rows, response_evidence_rows
 
 
 def build_payload(language: str, conv_root: Path, overrides_path: Path) -> dict[str, Any]:
@@ -286,6 +384,7 @@ def build_payload(language: str, conv_root: Path, overrides_path: Path) -> dict[
 
     warning_rows: list[dict[str, Any]] = []
     validation_rows: list[dict[str, Any]] = []
+    response_evidence_rows: list[dict[str, Any]] = []
     warning_scene_keys: set[str] = set()
     raw_warning_counts: Counter[str] = Counter()
     option_warning_conversations: set[str] = set()
@@ -300,11 +399,15 @@ def build_payload(language: str, conv_root: Path, overrides_path: Path) -> dict[
                 warning_scene_keys.add(key)
                 if code in OPTION_WARNING_CODES:
                     option_warning_conversations.add(key)
-        rows, validations = classify_conversation(path, conv, scene_override)
+        rows, validations, response_rows = classify_conversation(path, conv, scene_override)
         warning_rows.extend(rows)
         validation_rows.extend(validations)
+        response_evidence_rows.extend(response_rows)
 
     classification_counts = Counter(row.get("classification") for row in warning_rows)
+    response_evidence_counts = Counter(
+        row.get("classification") for row in response_evidence_rows
+    )
     code_class_counts: dict[str, dict[str, int]] = {}
     for row in warning_rows:
         code = safe_str(row.get("code"))
@@ -340,8 +443,12 @@ def build_payload(language: str, conv_root: Path, overrides_path: Path) -> dict[
             "overrideScenesWithPositions": override_scenes_with_positions,
             "overrideScenesWithResponses": override_scenes_with_responses,
             "invalidOverrideReferences": len(validation_rows),
+            "responseEvidenceClassifications": dict(sorted(response_evidence_counts.items())),
+            "responseConflicts": response_evidence_counts.get("manual-conflicts-inference", 0),
+            "uncoveredResponseCandidates": response_evidence_counts.get("candidate-uncovered", 0),
         },
         "warningRows": warning_rows,
+        "responseEvidenceRows": response_evidence_rows,
         "invalidOverrideReferences": validation_rows,
     }
 
@@ -350,6 +457,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     counts = payload.get("counts") or {}
     rows = payload.get("warningRows") or []
     invalid = payload.get("invalidOverrideReferences") or []
+    response_rows = payload.get("responseEvidenceRows") or []
     lines: list[str] = [
         f"# Option Override Coverage Audit ({payload.get('language')})",
         "",
@@ -364,6 +472,8 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- Option warning units audited: {counts.get('optionWarningUnits', 0)}",
         f"- Override scenes: {counts.get('overrideScenes', 0)} ({counts.get('overrideScenesWithPositions', 0)} with positions, {counts.get('overrideScenesWithResponses', 0)} with responses)",
         f"- Invalid override references: {counts.get('invalidOverrideReferences', 0)}",
+        f"- Manual response conflicts with generated candidates: {counts.get('responseConflicts', 0)}",
+        f"- Generated response candidates without a manual override: {counts.get('uncoveredResponseCandidates', 0)}",
         "",
         "### Raw Warning Counts",
         "",
@@ -405,6 +515,25 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
             )
     else:
         lines.append("No option warning rows found.")
+    lines.extend(["", "## Response Conflicts and Candidates", ""])
+    if response_rows:
+        lines.append("| Scene | Group | Option | Classification | Manual path | Generated candidate path |")
+        lines.append("| --- | ---: | --- | --- | --- | --- |")
+        for row in response_rows:
+            lines.append(
+                "| "
+                + " | ".join([
+                    md_escape(row.get("scene")),
+                    md_escape(row.get("group")),
+                    md_escape(row.get("optionId")),
+                    md_escape(row.get("classification")),
+                    md_escape(" → ".join(row.get("manualPathLineIds") or []) or "none"),
+                    md_escape(" → ".join(row.get("inferredPathLineIds") or []) or "none"),
+                ])
+                + " |"
+            )
+    else:
+        lines.append("No generated response candidate rows found.")
     lines.extend(["", "## Invalid Override References", ""])
     if invalid:
         lines.append("| Scene | Kind | Problem | Detail |")
