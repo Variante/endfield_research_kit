@@ -1797,6 +1797,18 @@
                       "0x7301",
                       "0x7302"
                     ],
+                    "direct_e8_callsite_census": {
+                      "scan": "Full current GameAssembly.dll direct E8 target scan, PData-owner mapped; GameAssembly sha256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce.",
+                      "InitWrapperArray": 0,
+                      "CreateWrapper": 0,
+                      "CreateDelegate": {
+                        "count": 1,
+                        "callsite": "0x189dfa821 (IFix interpreter body)"
+                      },
+                      "GetPatch": 60011,
+                      "IsPatched": 58670,
+                      "interpretation": "The generated runtime has no direct static caller for array allocation or wrapper construction in this census; those operations remain indirect/registration-driven. The large GetPatch/IsPatched counts are shared wrapper-gate calls, not distinct patch implementations."
+                    },
                     "gpu_edge_scan": "The manager table methods only initialize, bounds-check, construct, or read IFix wrapper slots. They contain no factory-record copy, ComputeBuffer/ComputeShader, GPUDriven, CommandBuffer, or dispatch edge.",
                     "boundary": "This closes the native array indexing and count ABI for the runtime IFix table, but not the contents of slots 0x7301/0x7302. Those values still require runtime capture, loaded-payload registration recovery, or the relevant wrapper construction caller."
                   }
