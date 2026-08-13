@@ -25,6 +25,7 @@ from .mission_flow import build_mission_map_pins, load_mission_flow
 from .dialog_tree import *
 from .bundle_support import (
     load,
+    load_json_path,
     load_optional_table_json,
     load_story_source_links,
     parse_mission,
