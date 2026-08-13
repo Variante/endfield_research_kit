@@ -5,7 +5,9 @@ import unittest
 
 from scripts.story_builder.option_projection import (
     apply_source_hub_option_groups,
+    attach_submenu_targets,
     clone_dialog_option_for_hub,
+    dialog_recovery_methods,
     source_hub_option_groups,
 )
 
@@ -145,6 +147,68 @@ class OptionProjectionTests(unittest.TestCase):
         self.assertEqual(len(payload["optionGroups"]), 1)
         self.assertIn("hubMenu", payload["optionGroups"][0])
         self.assertEqual([link.get("after") for link in result], ["unrelated", "dialog_e1_1_5"])
+
+    def test_attach_submenu_targets_uses_parsed_and_positional_scenes(self):
+        links = [{
+            "options": [{
+                "submenuSceneKeys": ["dlg_e1_2", "dlg_e1_3", "dlg_e1_4"],
+                "_debug": {"returnOptionIds": ["option_dlg_e1_2_1_1", "fallback_option"]},
+            }],
+        }]
+        attach_submenu_targets(
+            links,
+            option_text_by_id={"option_dlg_e1_2_1_1": "Return", "fallback_option": "Fallback"},
+            option_scene_key=lambda option_id: "dlg_e1_2" if option_id.startswith("option_dlg_e1_2") else "",
+        )
+        self.assertEqual(
+            links[0]["options"][0]["submenuTargets"],
+            [
+                {"sceneKey": "dlg_e1_2", "optionId": "option_dlg_e1_2_1_1", "text": "Return"},
+                {"sceneKey": "dlg_e1_3", "optionId": "fallback_option", "text": "Fallback"},
+                {"sceneKey": "dlg_e1_4"},
+            ],
+        )
+
+    def test_dialog_recovery_methods_projects_layout_and_branch_evidence(self):
+        payload = {
+            "lines": [{"id": "line_1"}, {"id": "line_2"}],
+            "_debug": {
+                "runtimeRegistry": {"registered": True},
+                "lineOrder": {
+                    "mode": "lineIdSuffix",
+                    "originalLineIds": ["line_1", "line_2"],
+                    "orderedLineIds": ["line_1", "line_2"],
+                },
+            },
+            "warnings": [{
+                "code": "inferredOptionLayout",
+                "groupDetails": [{"inferredAnchorMode": "sparseGap", "status": "unanchored"}],
+            }],
+            "sceneGraphLinks": [{}],
+            "graphFragments": [{}],
+            "optionGroups": [{
+                "continuationOptionIds": ["option_1"],
+                "branchHint": "sibling",
+                "optionBranchRisk": {
+                    "code": "timelineRouteBranches",
+                    "commonContinuationLineId": "line_2",
+                },
+            }],
+        }
+        self.assertEqual(
+            dialog_recovery_methods(payload, line_id_list_equal=lambda left, right: left == right),
+            [
+                "lineOrder:runtimeRowIteration",
+                "optionLayout:sparseGap",
+                "optionLayout:unanchored",
+                "optionBranch:sceneGraph",
+                "optionBranch:dialogTreeFragment",
+                "optionBranch:continuationOption",
+                "optionBranch:siblingSceneHint",
+                "optionBranch:runtimeJump",
+                "optionBranch:commonContinuation",
+            ],
+        )
 
 
 if __name__ == "__main__":

@@ -219,7 +219,7 @@ from .option_timeline_continuation import (
     classify_timeline_clip_option_index_routes,
     classify_zero_index_timeline_continuation,
 )
-from .option_projection import apply_source_hub_option_groups
+from .option_projection import apply_source_hub_option_groups, attach_submenu_targets, dialog_recovery_methods
 from .radio_continuation import build_radio_continuation_candidates
 from .reference_projection import (
     append_reference_line,
@@ -5734,169 +5734,6 @@ def build_language_bundle(
                         parts.append(o["text"])
         return " ".join(parts)
 
-    def attach_submenu_targets(links: list[dict]) -> None:
-        for link in links or []:
-            for opt in link.get("options") or []:
-                if not isinstance(opt, dict):
-                    continue
-                submenu_scene_keys = [
-                    str(scene_key)
-                    for scene_key in (opt.get("submenuSceneKeys") or [])
-                    if str(scene_key).strip()
-                ]
-                if not submenu_scene_keys:
-                    continue
-                debug = opt.get("_debug") if isinstance(opt.get("_debug"), dict) else {}
-                return_option_ids = [
-                    str(option_id)
-                    for option_id in (debug.get("returnOptionIds") or [])
-                    if str(option_id).strip()
-                ]
-                targets: list[dict] = []
-                seen_targets: set[tuple[str, str]] = set()
-                for idx, option_id in enumerate(return_option_ids):
-                    scene_key = _dialog_tree_option_prefix(option_id) or ""
-                    if not scene_key and idx < len(submenu_scene_keys):
-                        scene_key = submenu_scene_keys[idx]
-                    if not scene_key:
-                        continue
-                    key = (scene_key, option_id)
-                    if key in seen_targets:
-                        continue
-                    seen_targets.add(key)
-                    target = {
-                        "sceneKey": scene_key,
-                        "optionId": option_id,
-                    }
-                    if text := dialog_option_text_by_id.get(option_id):
-                        target["text"] = text
-                    targets.append(target)
-                for scene_key in submenu_scene_keys:
-                    if any(target.get("sceneKey") == scene_key for target in targets):
-                        continue
-                    target = {"sceneKey": scene_key}
-                    targets.append(target)
-                if targets:
-                    opt["submenuTargets"] = targets
-    def dialog_recovery_methods(payload: dict) -> list[str]:
-        methods: list[str] = []
-        def add(method: str) -> None:
-            if method and method not in methods:
-                methods.append(method)
-        debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}
-        runtime_registry = (
-            debug.get("runtimeRegistry")
-            if isinstance(debug.get("runtimeRegistry"), dict)
-            else {}
-        )
-        line_order = debug.get("lineOrder") if isinstance(debug.get("lineOrder"), dict) else {}
-        line_order_mode = str(line_order.get("mode") or "")
-        if line_order_mode == "lineIdSuffix":
-            registry = debug.get("runtimeRegistry") if isinstance(debug.get("runtimeRegistry"), dict) else {}
-            original_line_ids = line_order.get("originalLineIds") or []
-            ordered_line_ids = line_order.get("orderedLineIds") or []
-            if registry.get("registered") is True and _line_id_list_equal(original_line_ids, ordered_line_ids):
-                add("lineOrder:runtimeRowIteration")
-            elif registry.get("registered") is False:
-                add("lineOrder:unregisteredScene")
-            else:
-                add("lineOrder:lineIdSuffix")
-        elif line_order_mode:
-            add(f"lineOrder:{line_order_mode}")
-        elif len(payload.get("lines") or []) > 1:
-            add("lineOrder:missing")
-        option_groups = [
-            group
-            for group in (payload.get("optionGroups") or [])
-            if isinstance(group, dict)
-        ]
-        warnings = [
-            warning
-            for warning in (payload.get("warnings") or [])
-            if isinstance(warning, dict)
-        ]
-        layout_warning = next(
-            (warning for warning in warnings if warning.get("code") == "inferredOptionLayout"),
-            None,
-        )
-        if layout_warning:
-            reason = str(layout_warning.get("reason") or "")
-            group_details = [
-                detail
-                for detail in (layout_warning.get("groupDetails") or [])
-                if isinstance(detail, dict)
-            ]
-            modes = {
-                str(detail.get("inferredAnchorMode") or "")
-                for detail in group_details
-            }
-            statuses = {str(detail.get("status") or "") for detail in group_details}
-            if runtime_registry.get("registered") is False:
-                add("optionLayout:tableOnlyCutContent")
-            else:
-                if "lineNumber" in modes:
-                    add("optionLayout:keyMatched")
-                if "sparseGap" in modes:
-                    add("optionLayout:sparseGap")
-                if "siblingTimelinePosition" in modes:
-                    add("optionLayout:siblingTimelinePosition")
-                if "lastLine" in modes:
-                    add("optionLayout:lastLine")
-                if "unanchored" in statuses:
-                    add("optionLayout:unanchored")
-            if not group_details:
-                if reason == "partialAuthoredCoverage":
-                    add("optionLayout:partialAuthoredCoverage")
-                elif reason == "noAuthoredGroupAnchor":
-                    add("optionLayout:noAuthoredGroupAnchor")
-                else:
-                    add("optionLayout:fallback")
-        elif option_groups:
-            add("optionLayout:authored")
-        if payload.get("sceneGraphLinks"):
-            add("optionBranch:sceneGraph")
-        if payload.get("graphFragments"):
-            add("optionBranch:dialogTreeFragment")
-        for group in option_groups:
-            if group.get("continuationOptionIds"):
-                add("optionBranch:continuationOption")
-            if group.get("branchHint"):
-                add("optionBranch:siblingSceneHint")
-            risk = group.get("optionBranchRisk") if isinstance(group.get("optionBranchRisk"), dict) else {}
-            if not risk:
-                continue
-            def add_option_branch_methods(branch_risk: dict) -> None:
-                if branch_risk.get("code") == "timelineRouteBranches":
-                    add("optionBranch:runtimeJump")
-                elif (
-                    branch_risk.get("code")
-                    == "timelineClipOptionIndexBranches"
-                ):
-                    add("optionBranch:runtimeClipOptionIndex")
-                elif branch_risk.get("code") == "siblingSceneTextBranches":
-                    add("optionBranch:siblingSceneText")
-                elif branch_risk.get("code") in {
-                    "separateDialogTreeOptionNodes",
-                    "sequentialDialogTreeOptionNodes",
-                }:
-                    add(f"optionBranch:{branch_risk['code']}")
-                elif (
-                    branch_risk.get("code")
-                    == "orphanDialogTreeOptionDefinitions"
-                ):
-                    add("optionBranch:orphanDialogTreeOptionDefinitions")
-                elif branch_risk.get("candidateMapping") == "trunkClipOptionIndex":
-                    add("optionBranch:rawIndexMatched")
-                elif branch_risk.get("code") == "inferredFollowingLines":
-                    add("optionBranch:timelineAdjacent")
-                elif branch_risk.get("code") == "sharedTimelineContinuation":
-                    add("optionBranch:commonContinuation")
-                if branch_risk.get("commonContinuationLineId"):
-                    add("optionBranch:commonContinuation")
-                if branch_risk.get("continuationOptionIds"):
-                    add("optionBranch:continuationOption")
-            add_option_branch_methods(risk)
-        return methods
     print(
         f"Extras: summary={len(summary_by_key)} scenes ({summary_orphans} orphans), "
         f"options={len(options_by_key)} scenes ({option_orphans} orphans), "
@@ -6038,7 +5875,11 @@ def build_language_bundle(
             scene_link_option_projector=scene_link_option_payload,
         )
         if scene_graph_links:
-            attach_submenu_targets(scene_graph_links)
+            attach_submenu_targets(
+                scene_graph_links,
+                option_text_by_id=dialog_option_text_by_id,
+                option_scene_key=_dialog_tree_option_prefix,
+            )
             payload["sceneGraphLinks"] = scene_graph_links
             scene_graph_links_by_key[out_key] = scene_graph_links
         attach_runtime_registry_debug(payload)
@@ -6053,7 +5894,10 @@ def build_language_bundle(
         attach_timeline_timestamp_regression_warning(payload)
         story_issue_codes = dialog_story_issue_codes(payload)
         option_issue_targets = dialog_option_issue_targets(payload)
-        recovery_methods = dialog_recovery_methods(payload)
+        recovery_methods = dialog_recovery_methods(
+            payload,
+            line_id_list_equal=_line_id_list_equal,
+        )
         if fmv_clips_by_key.get(out_key):
             payload["fmvClips"] = fmv_clips_by_key[out_key]
         write_conv_payload(out_key, payload)
@@ -11111,7 +10955,10 @@ def build_language_bundle(
             attach_timeline_timestamp_regression_warning(payload)
             story_issue_codes = dialog_story_issue_codes(payload)
             option_issue_targets = dialog_option_issue_targets(payload)
-            recovery_methods = dialog_recovery_methods(payload)
+            recovery_methods = dialog_recovery_methods(
+                payload,
+                line_id_list_equal=_line_id_list_equal,
+            )
             write_conv_payload(out_key, payload)
             entry = {
                 "k": out_key, "d": "dlg", "m": mission, "s": scene,
