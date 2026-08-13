@@ -8,19 +8,22 @@ from pathlib import Path
 from typing import Any
 
 from .codecs.levelscript import fmv as levelscript_fmv
+from .codecs.levelscript import manual_control as levelscript_manual_control
 
-try:
-    from ..common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        read_bytes_cached,
-    )
-except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+if __package__ == "story_builder":
     from common import (
         RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
         RECORDED_NATIVE_METADATA_SHA256,
         read_bytes_cached,
     )
+elif __package__ == "scripts.story_builder":
+    from ..common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        read_bytes_cached,
+    )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.levelscript_binary")
 
 
 LEVELSCRIPT_START_TYPE_NAMES = {
@@ -5942,57 +5945,6 @@ def _decode_compact_property_gate(payload: bytes) -> dict[str, Any]:
     return _drop_empty(out)
 
 
-def _decode_manual_levelscript_control(payload: bytes, role: str) -> dict[str, Any]:
-    """Decode stable diagnostics for ManualStart/ManualEnd action payloads."""
-    if len(payload) < 46:
-        return {}
-    script_id_candidate: int | None = None
-    if payload[17] == 0x04 and len(payload) >= 26:
-        raw_script_id = struct.unpack_from("<Q", payload, 18)[0]
-        if _is_plausible_levelscript_id(raw_script_id):
-            script_id_candidate = raw_script_id
-    marker_values: list[int] = []
-    for offset in range(0, len(payload) - 3):
-        value = struct.unpack_from("<I", payload, offset)[0]
-        if 900 <= value <= 1100 and value not in marker_values:
-            marker_values.append(value)
-    canonical_prefix = (
-        payload[0] == 0x04
-        and payload[1:9] == b"\xff" * 8
-        and payload[13:17] == b"\xff" * 4
-        and payload[17] == 0x04
-        and payload[18:34] == b"\x00" * 16
-        and payload[34:38] == b"\xff" * 4
-        and payload[42:46] == b"\xff" * 4
-    )
-    out = {
-        "action": "ManualStartLevelScript" if role == "manual-start" else "ManualEndLevelScript",
-        "role": role,
-        "payloadShape": "manual-levelscript-default-operands" if canonical_prefix else "manual-levelscript-unknown",
-        "memberCountByte": payload[0],
-        "markerU32s": marker_values,
-        "hasLiteralLevelId": False,
-        "hasLiteralScriptId": script_id_candidate is not None,
-        "scriptIdCandidate": str(script_id_candidate) if script_id_candidate is not None else "",
-        "constantTargetStatus": "script-id-only" if script_id_candidate is not None else "absent",
-    }
-    if canonical_prefix:
-        # Both operands are serialized Param<T> values.  Current MemoryPack
-        # metadata and generated Deserialize bodies establish the member order
-        # as constValue, idRef, paramSource, path.  Keep the numeric sources
-        # here; their build-specific enum names are supplied by the validated
-        # original-binary contract rather than hardcoded into this parser.
-        out["parameterSources"] = {
-            "levelId": struct.unpack_from("<i", payload, 9)[0],
-            "scriptId": struct.unpack_from("<i", payload, 38)[0],
-        }
-    if script_id_candidate is not None:
-        out["payloadShape"] = "manual-levelscript-script-id-operand"
-    if len(payload) > 46 and canonical_prefix:
-        out["trailingBytesAfterCanonicalPrefix"] = payload[46:].hex(" ")
-    return _drop_empty(out)
-
-
 def _decode_action_header_prefix(payload: bytes) -> dict[str, Any]:
     """Decode the compact common ActionHeader prefix.
 
@@ -7715,9 +7667,11 @@ def decode_levelscript_record_payload(
             gender = _decode_is_endmin_gender_getter(getter_payload)
             if gender:
                 out["isEndminGender"] = gender
-    if key in {(0x0308, 0x0A), (0x0302, 0x0A)}:
-        role = str(hint.get("levelScriptControlRole") or "")
-        manual_control = _decode_manual_levelscript_control(payload, role)
+    if key in levelscript_manual_control.MANUAL_CONTROL_ACTIONS:
+        manual_control = levelscript_manual_control.decode_manual_levelscript_control(
+            payload,
+            key,
+        )
         if manual_control:
             out["manualControl"] = manual_control
 

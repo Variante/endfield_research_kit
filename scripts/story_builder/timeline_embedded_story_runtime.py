@@ -26,7 +26,18 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
-try:
+if __package__ == "story_builder":
+    from common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file as sha256_path,
+    )
+elif __package__ == "scripts.story_builder":
     from ..common import (
         RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
         RECORDED_NATIVE_METADATA_SHA256,
@@ -37,16 +48,9 @@ try:
         resolve_installed_game_data_root,
         sha256_file as sha256_path,
     )
-except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
-    from common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        NativeEvidenceUnavailable,
-        check_installed_native_inputs,
-        native_evidence_required,
-        native_evidence_skip_message,
-        resolve_installed_game_data_root,
-        sha256_file as sha256_path,
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError(
+        "run this module with python -m scripts.story_builder.timeline_embedded_story_runtime"
     )
 
 

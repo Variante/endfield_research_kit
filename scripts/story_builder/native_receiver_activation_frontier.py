@@ -28,7 +28,18 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
+if __package__ == "story_builder":
+    from common import (
+        STORY_RECOVERY_REPORTS_DIR,
+        md_escape,
+        read_bytes_cached,
+        read_json,
+        rel_path,
+        write_json,
+        write_report_json,
+        write_text_if_changed,
+    )
+elif __package__ == "scripts.story_builder":
     from ..common import (
         STORY_RECOVERY_REPORTS_DIR,
         md_escape,
@@ -39,16 +50,9 @@ try:
         write_report_json,
         write_text_if_changed,
     )
-except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
-    from common import (
-        STORY_RECOVERY_REPORTS_DIR,
-        md_escape,
-        read_bytes_cached,
-        read_json,
-        rel_path,
-        write_json,
-        write_report_json,
-        write_text_if_changed,
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError(
+        "run this module with python -m scripts.story_builder.native_receiver_activation_frontier"
     )
 
 from .context import (
