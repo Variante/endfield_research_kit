@@ -541,6 +541,13 @@ NPC archetypes are imported as labeled source kits.
   itself. This closes the direct managed command-buffer graph while preserving
   the unresolved indirect/vtable and post-staging upload boundaries. Details
   are under `full_gameassembly_direct_call_census` in the packed-flag audit.
+  A cross-DLL endpoint check found no direct GameAssembly `E8` caller for
+  UnityPlayer `ComputeShader::Dispatch` (`0x180119af0`),
+  `Internal_DispatchCompute` (`0x180119fc0`), or the related buffer endpoints;
+  the few raw endpoint pointers belong to internal-call registration data.
+  This confirms that the remaining ComputeShader producer search must include
+  resolver/indirect paths and must not treat the direct E8 census as exhaustive
+  for Unity internal calls.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at

@@ -713,6 +713,23 @@
               }
             },
             "scan_method": "PData-bounded raw E8 rel32 scan followed by code-registration pointer-owner mapping; indirect vtable/calli edges remain outside this census.",
+            "cross_dll_internal_call_xref": {
+              "gameassembly_direct_e8_callers": {
+                "UnityPlayer_0x180119af0_ComputeShader_Dispatch": 0,
+                "UnityPlayer_0x180119fc0_CommandBuffer_Internal_DispatchCompute": 0,
+                "UnityPlayer_0x180116180_CommandBuffer_Internal_SetComputeBufferParam": 0,
+                "UnityPlayer_0x18011a850_CommandBuffer_DispatchIndirect": 0,
+                "UnityPlayer_0x1804b2940_ComputeShader_Dispatch_bridge": 0
+              },
+              "raw_pointer_occurrences": {
+                "UnityPlayer_0x180119af0": 0,
+                "UnityPlayer_0x180119fc0": 0,
+                "UnityPlayer_0x180116180": 3,
+                "UnityPlayer_0x18011a850": 0,
+                "UnityPlayer_0x1804b2940": 0
+              },
+              "interpretation": "The three raw 0x180116180 occurrences sit in Unity internal-call registration data, not executable caller bodies. Managed calls therefore cross this boundary through Unity's internal-call resolver or other indirect machinery; absence of a direct GameAssembly E8 is not evidence that ComputeShader.Dispatch is unused."
+            },
             "boundary": "This expands the previous focused census to every direct GameAssembly caller of the known command-buffer dispatch and compute-buffer binding wrappers. The direct graph contains no GpuSceneDirtyUpdateCS/UploadPerDrawParams producer and no factory 0x8c-record-to-buffer edge; dynamic/indirect paths remain explicitly open."
           },
           "boundary": "The managed ComputeShader and CommandBuffer dispatch entrypoints, their native bridges, and the bounded immediate-call census are now explicit. They do not identify a live kernel-7 producer or the post-staging upload; keep channel 2/resource +0xd0 binding fail-closed."
