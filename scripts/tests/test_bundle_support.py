@@ -6,6 +6,11 @@ from scripts.story_builder import bundle_support
 
 
 class BundleSupportTests(unittest.TestCase):
+    def test_language_bundle_imports_the_path_loader_explicitly(self) -> None:
+        from scripts.story_builder import language_bundle
+
+        self.assertIs(language_bundle.load_json_path, bundle_support.load_json_path)
+
     def test_language_selection_normalizes_and_rejects_unknown_codes(self) -> None:
         available = ["CN", "EN", "JP"]
         self.assertEqual(
