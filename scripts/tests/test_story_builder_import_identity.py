@@ -10,6 +10,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULES = (
+    "anime_assets",
+    "animestudio_story_guide",
+    "animestudio_story_objects.carrier",
     "bundle_primitives",
     "bundle_support",
     "callserver_callbacks",
@@ -21,6 +24,7 @@ MODULES = (
     "levelscript_manual_control",
     "lua_consumer_references",
     "levelscript_binary",
+    "level_bindings",
     "mission_dependency_graph",
     "mission_flow",
     "mission_recovery",
@@ -43,7 +47,8 @@ MODULES = (
 class StoryBuilderImportIdentityTests(unittest.TestCase):
     def test_common_imports_do_not_catch_internal_missing_modules(self):
         for name in MODULES:
-            path = ROOT / "scripts" / "story_builder" / f"{name}.py"
+            module_path = Path(*name.split(".")).with_suffix(".py")
+            path = ROOT / "scripts" / "story_builder" / module_path
             tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
             broad_handlers = [
                 handler
@@ -61,7 +66,8 @@ class StoryBuilderImportIdentityTests(unittest.TestCase):
             "import importlib; "
             f"names=({module_list},); "
             "mods=[importlib.import_module(PREFIX+n) for n in names]; "
-            "assert all(m.__package__ == PACKAGE for m in mods); "
+            "assert all(m.__package__ == PACKAGE or "
+            "m.__package__.startswith(PACKAGE+'.') for m in mods); "
             "print(PACKAGE)"
         )
         cases = (
