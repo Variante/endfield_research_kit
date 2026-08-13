@@ -11,12 +11,15 @@ left out.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 from datetime import datetime
 import html
 import json
+import os
 import posixpath
 import re
 import sys
+import tempfile
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -51,7 +54,6 @@ TEXT_EXTENSIONS = {
 }
 
 PACK_AUDIO_FORMAT = "flac"
-AUDIO_EXTENSIONS = {f".{PACK_AUDIO_FORMAT}"}
 
 IMAGE_TOKEN_RE = re.compile(
     r"<image\b(?!\s*=)[^>]*>[\s\S]*?</image>"
@@ -285,12 +287,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Do not scan or write the standalone audio zip.",
     )
-    parser.add_argument(
-        "--audio-format",
-        choices=(PACK_AUDIO_FORMAT,),
-        default=PACK_AUDIO_FORMAT,
-        help="Audio format for the standalone package (legacy WAV/WEM are excluded).",
-    )
     return parser.parse_args(argv)
 
 
@@ -353,20 +349,12 @@ def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
             yield path
 
 
-def iter_exported_audio_files(
-    export_root: Path,
-    audio_format: str = PACK_AUDIO_FORMAT,
-) -> Iterable[Path]:
+def iter_exported_audio_files(export_root: Path) -> Iterable[Path]:
     audio_root = export_root / "structured" / "Audio"
     if not audio_root.exists():
         return
-    extension = "." + str(audio_format or PACK_AUDIO_FORMAT).lstrip(".").lower()
     for path in sorted(audio_root.rglob("*")):
-        if (
-            path.is_file()
-            and path.suffix.lower() == extension
-            and extension in AUDIO_EXTENSIONS
-        ):
+        if path.is_file() and path.suffix.lower() == f".{PACK_AUDIO_FORMAT}":
             yield path
 
 
@@ -1191,7 +1179,6 @@ def webui_arcname(webui_root: Path, path: Path) -> str:
 def plan_package(
     *,
     include_audio: bool = True,
-    audio_format: str = PACK_AUDIO_FORMAT,
 ) -> PackagePlan:
     webui_root = WEBUI_ROOT.resolve()
     project_root = PROJECT_ROOT.resolve()
@@ -1220,7 +1207,7 @@ def plan_package(
     audio_files = (
         [
             exported_file(export_root, path)
-            for path in iter_exported_audio_files(export_root, audio_format)
+            for path in iter_exported_audio_files(export_root)
         ]
         if include_audio
         else []
@@ -1265,10 +1252,7 @@ def create_package(args: argparse.Namespace) -> int:
     if len(set(package_outputs.values())) != len(package_outputs):
         raise SystemExit("Package output paths must be different.")
 
-    plan = plan_package(
-        include_audio=audio_output is not None,
-        audio_format=args.audio_format,
-    )
+    plan = plan_package(include_audio=audio_output is not None)
     missing_images = [image for image in plan.exported_images if not image.source_path.exists()]
     existing_images = [image for image in plan.exported_images if image.source_path.exists()]
     missing_videos = [video for video in plan.exported_videos if not video.source_path.exists()]
@@ -1292,7 +1276,7 @@ def create_package(args: argparse.Namespace) -> int:
     print(f"Assets zip: {assets_output}")
     print(f"Audio zip: {audio_output if audio_output is not None else 'skipped'}")
     if audio_output is not None:
-        print(f"Audio format: {args.audio_format}")
+        print(f"Audio format: {PACK_AUDIO_FORMAT}")
     generated_text_count = 6
     print(f"Text files: {len(copied_text_files) + generated_text_count:,}")
     print(f"Story image IDs: {plan.image_refs:,}")
@@ -1318,13 +1302,69 @@ def create_package(args: argparse.Namespace) -> int:
     assets_output.parent.mkdir(parents=True, exist_ok=True)
     if audio_output is not None:
         audio_output.parent.mkdir(parents=True, exist_ok=True)
-    if output.exists():
-        output.unlink()
-    if assets_output.exists():
-        assets_output.unlink()
-    if audio_output is not None and audio_output.exists():
-        audio_output.unlink()
+    package_paths = [output, assets_output]
+    if audio_output is not None:
+        package_paths.append(audio_output)
 
+    with staged_package_outputs(package_paths) as staged:
+        _write_packages(
+            staged[output],
+            staged[assets_output],
+            staged.get(audio_output),
+            project_root=project_root,
+            webui_root=webui_root,
+            plan=plan,
+            copied_text_files=copied_text_files,
+            emoji_images=emoji_images,
+            asset_images=asset_images,
+            existing_videos=existing_videos,
+        )
+
+    size_mb = output.stat().st_size / (1024 * 1024)
+    assets_size_mb = assets_output.stat().st_size / (1024 * 1024)
+    print(f"Wrote story zip: {output} ({size_mb:.1f} MiB)")
+    print(f"Wrote assets zip: {assets_output} ({assets_size_mb:.1f} MiB)")
+    if audio_output is not None:
+        audio_size_mb = audio_output.stat().st_size / (1024 * 1024)
+        print(f"Wrote audio zip: {audio_output} ({audio_size_mb:.1f} MiB)")
+    return 0
+
+
+@contextmanager
+def staged_package_outputs(outputs: list[Path]):
+    """Keep published packages intact until every replacement is complete."""
+    staged: dict[Path, Path] = {}
+    try:
+        for output in outputs:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            descriptor, temp_name = tempfile.mkstemp(
+                dir=output.parent,
+                prefix=f".{output.name}.",
+                suffix=".tmp",
+            )
+            os.close(descriptor)
+            staged[output] = Path(temp_name)
+        yield staged
+        for output, temp_path in staged.items():
+            temp_path.replace(output)
+    finally:
+        for temp_path in staged.values():
+            temp_path.unlink(missing_ok=True)
+
+
+def _write_packages(
+    output: Path,
+    assets_output: Path,
+    audio_output: Path | None,
+    *,
+    project_root: Path,
+    webui_root: Path,
+    plan: PackagePlan,
+    copied_text_files: list[Path],
+    emoji_images: list[ExportedImage],
+    asset_images: list[ExportedImage],
+    existing_videos: list[ExportedImage],
+) -> None:
     written: set[str] = set()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
         zip_write_file(zipf, written, project_root / "serve.py", "serve.py")
@@ -1372,14 +1412,6 @@ def create_package(args: argparse.Namespace) -> int:
             for audio_index in plan.audio_indexes:
                 zip_write_file(zipf, audio_written, audio_index.source_path, audio_index.archive_path)
 
-    size_mb = output.stat().st_size / (1024 * 1024)
-    assets_size_mb = assets_output.stat().st_size / (1024 * 1024)
-    print(f"Wrote story zip: {output} ({size_mb:.1f} MiB)")
-    print(f"Wrote assets zip: {assets_output} ({assets_size_mb:.1f} MiB)")
-    if audio_output is not None:
-        audio_size_mb = audio_output.stat().st_size / (1024 * 1024)
-        print(f"Wrote audio zip: {audio_output} ({audio_size_mb:.1f} MiB)")
-    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
