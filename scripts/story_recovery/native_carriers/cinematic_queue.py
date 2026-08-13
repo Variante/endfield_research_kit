@@ -20,19 +20,28 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[3]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import (  # noqa: E402
-    resolve_installed_game_data_root,
-    sha256_file as sha256_path,
-)
-from story_builder.native_contracts.cinematic_queue import (  # noqa: E402
-    DEFAULT_CONTRACT,
-    reconcile_runtime_audit,
-    validate_cinematic_queue_contract,
-)
+if __package__ == "scripts.story_recovery.native_carriers":
+    from ...common import (
+        resolve_installed_game_data_root,
+        sha256_file as sha256_path,
+    )
+    from ...story_builder.native_contracts.cinematic_queue import (
+        DEFAULT_CONTRACT,
+        reconcile_runtime_audit,
+        validate_cinematic_queue_contract,
+    )
+elif __package__ == "story_recovery.native_carriers":
+    from common import (
+        resolve_installed_game_data_root,
+        sha256_file as sha256_path,
+    )
+    from story_builder.native_contracts.cinematic_queue import (
+        DEFAULT_CONTRACT,
+        reconcile_runtime_audit,
+        validate_cinematic_queue_contract,
+    )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
 DEFAULT_GAMEASSEMBLY = (

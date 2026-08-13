@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from collections.abc import Callable
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.story_recovery.audit_native_carriers"
+    )
 
-from scripts.story_recovery.native_carriers import cinematic_queue, radio_forbid, scanner
+from .native_carriers import cinematic_queue, radio_forbid, scanner
 
 
 ProfileRunner = Callable[[argparse.Namespace], int]

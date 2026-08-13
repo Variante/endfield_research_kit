@@ -33,26 +33,35 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[3]
-for path in (ROOT / "scripts", ROOT / "scripts" / "story_recovery"):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
+if __package__ == "scripts.story_recovery.ocr":
+    from ...common import (
+        REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+elif __package__ == "story_recovery.ocr":
+    from common import (
+        REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
-from common import (  # noqa: E402
-    REPORTS_DIR,
-    md_escape,
-    read_json,
-    rel_path,
-    safe_key,
-    write_report_json,
-    write_text_if_changed,
-)
-from scripts.story_recovery.ocr.proposal import build_proposed_story_order
+from .proposal import build_proposed_story_order
 
 CONV_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
 ACTIVE_STORY_ORDER_PATH = ROOT / "webui" / "overrides" / "story_order.json"
 MISSIONS_PATH = ROOT / "webui" / "data" / "lang" / "CN" / "missions.json"
 OCR_REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"
-OCR_SCRIPT_PATH = ROOT / "scripts" / "story_recovery" / "ocr_story_order.py"
 MIN_OCR_TOOL_VERSION = 17
 ARCHIVE_BOX_CROP_MODE = "fixed-dark-roi"
 DEFAULT_THRESHOLD_SWEEP = (0.98, 0.95, 0.90, 0.86, 0.80, 0.75, 0.70, 0.65, 0.60, 0.50)
@@ -1954,7 +1963,8 @@ def read_active_story_order(path: Path) -> tuple[dict[str, Any], str]:
 def run_ocr(args: argparse.Namespace) -> None:
     command = [
         sys.executable,
-        str(OCR_SCRIPT_PATH),
+        "-m",
+        "scripts.story_recovery.ocr_story_order",
         "sample",
         "--ocr-engine",
         args.ocr_engine,
@@ -2371,7 +2381,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Distill the OCR order into a small WebUI-served reference so the story
     # debug mode can compare it against the static recovery order/override.
-    from scripts.story_recovery.ocr.proposal import build_webui_ocr_order
+    from .proposal import build_webui_ocr_order
 
     webui_ocr_path = build_webui_ocr_order(proposed_story_order_path)
     print(f"Wrote {rel_path(webui_ocr_path)} (WebUI OCR order reference)")

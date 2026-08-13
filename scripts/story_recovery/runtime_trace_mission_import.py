@@ -5,7 +5,7 @@ keeps observed co-activity separate from authored mission ownership: seeing a
 Story playback while a quest is active is useful runtime context, but is not a
 foreign key proving that the quest owns or triggered the playback.
 
-Run through ``runtime_trace.py import --profile mission``.
+Run through ``python -m scripts.story_recovery.runtime_trace import --profile mission``.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from scripts.story_recovery import runtime_trace_core as core
+from . import runtime_trace_core as core
 
 
 ROOT = Path(__file__).resolve().parents[2]

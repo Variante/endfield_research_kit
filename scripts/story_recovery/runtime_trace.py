@@ -2,10 +2,10 @@ r"""Capture or import hash-locked runtime evidence.
 
 Examples from the repository root::
 
-    tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile mission
-    tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile audio
-    python scripts\story_recovery\runtime_trace.py import --profile mission capture.jsonl
-    python scripts\story_recovery\runtime_trace.py import --profile audio capture.jsonl
+    tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile mission
+    tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile audio
+    python -m scripts.story_recovery.runtime_trace import --profile mission capture.jsonl
+    python -m scripts.story_recovery.runtime_trace import --profile audio capture.jsonl
 
 Mission and audio keep separate hook manifests, agents, event schemas, and
 evidence policies. This file is the only command-line entry point; profile
@@ -15,18 +15,18 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 from typing import Sequence
 
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.story_recovery.runtime_trace"
+    )
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts.story_recovery import runtime_trace_audio_capture as audio_capture  # noqa: E402
-from scripts.story_recovery import runtime_trace_audio_import as audio_import  # noqa: E402
-from scripts.story_recovery import runtime_trace_mission_capture as mission_capture  # noqa: E402
-from scripts.story_recovery import runtime_trace_mission_import as mission_import  # noqa: E402
+from . import runtime_trace_audio_capture as audio_capture
+from . import runtime_trace_audio_import as audio_import
+from . import runtime_trace_mission_capture as mission_capture
+from . import runtime_trace_mission_import as mission_import
 
 
 PROFILES = ("mission", "audio")

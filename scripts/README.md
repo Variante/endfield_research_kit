@@ -117,7 +117,7 @@ python -m scripts.story_builder.lua_consumer_references --markdown
 
 To refresh and reconcile the optional full cinematic native audit against the
 compact contract, run
-`python scripts\story_recovery\audit_native_carriers.py cinematic`. Use
+`python -m scripts.story_recovery.audit_native_carriers cinematic`. Use
 `--skip-contract-reconciliation` only while reviewing a new installed build
 before intentionally updating the versioned contract.
 
@@ -145,7 +145,7 @@ Review manual option coverage, stale targets, and current generated response
 candidate conflicts with the single maintained option audit:
 
 ```bat
-python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
+python -m scripts.story_recovery.build_option_override_coverage_audit --language CN
 ```
 
 Manual Story order is user-managed in `webui/overrides/story_order.json`.
@@ -158,10 +158,10 @@ WebUI reference, and `compare` reports differences without editing the active
 override:
 
 ```bat
-python scripts\story_recovery\ocr_story_order.py sample --dry-run
-python scripts\story_recovery\ocr_story_order.py match
-python scripts\story_recovery\ocr_story_order.py publish
-python scripts\story_recovery\ocr_story_order.py compare
+python -m scripts.story_recovery.ocr_story_order sample --dry-run
+python -m scripts.story_recovery.ocr_story_order match
+python -m scripts.story_recovery.ocr_story_order publish
+python -m scripts.story_recovery.ocr_story_order compare
 ```
 
 AnimeStudio Story-object recovery uses one staged audit. `reverse` publishes
@@ -170,7 +170,7 @@ the fail-closed playback-alias evidence consumed by builders; `carrier` and
 dependency order:
 
 ```bat
-python scripts\story_recovery\audit_story_objects.py --stage reverse
+python -m scripts.story_recovery.audit_story_objects --stage reverse
 ```
 
 Native value-carrier work also uses one profile command. `generic` is the
@@ -179,9 +179,9 @@ contract and its existing report paths, and `radio-forbid` validates the small
 versioned negative boundary recorded for the pinned build:
 
 ```bat
-python scripts\story_recovery\audit_native_carriers.py generic --carrier-type TYPE --focus-field FIELD
-python scripts\story_recovery\audit_native_carriers.py cinematic
-python scripts\story_recovery\audit_native_carriers.py radio-forbid
+python -m scripts.story_recovery.audit_native_carriers generic --carrier-type TYPE --focus-field FIELD
+python -m scripts.story_recovery.audit_native_carriers cinematic
+python -m scripts.story_recovery.audit_native_carriers radio-forbid
 ```
 
 Reusable implementations and the radio boundary live under
@@ -192,10 +192,10 @@ Mission and audio runtime traces share one fail-closed CLI while retaining
 separate hook manifests, Frida agents, schemas, and evidence boundaries:
 
 ```bat
-tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile mission
-tools\frida-runtime\venv\Scripts\python.exe scripts\story_recovery\runtime_trace.py capture --profile audio
-python scripts\story_recovery\runtime_trace.py import --profile mission CAPTURE.jsonl
-python scripts\story_recovery\runtime_trace.py import --profile audio CAPTURE.jsonl
+tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile mission
+tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile audio
+python -m scripts.story_recovery.runtime_trace import --profile mission CAPTURE.jsonl
+python -m scripts.story_recovery.runtime_trace import --profile audio CAPTURE.jsonl
 ```
 
 The reviewed LevelScript task paths are builder-owned in
@@ -231,8 +231,8 @@ show disk contention rather than a speedup.
 Optional DummyDll regeneration is build-specific:
 
 ```bat
-python scripts\animestudio\generate_dummydll.py --dry-run
-python scripts\animestudio\generate_dummydll.py --replace
+python -m scripts.animestudio.generate_dummydll --dry-run
+python -m scripts.animestudio.generate_dummydll --replace
 ```
 
 Missing or stale DummyDlls warn and fall back to serialized schemas. Never

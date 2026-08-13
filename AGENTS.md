@@ -222,12 +222,12 @@ python -m scripts.story_builder.refresh_evidence
 python -m scripts.story_builder.source_links
 python -m scripts.story_builder.build --languages CN --default-language CN
 python -m scripts.story_builder.build --languages CN EN JP --default-language CN
-python scripts\animestudio\generate_dummydll.py --dry-run
+python -m scripts.animestudio.generate_dummydll --dry-run
 python scripts\build_character_data.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
 python scripts\build_gameplay.py
 python scripts\build_gameplay.py --stage projectiles
-python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
+python -m scripts.story_recovery.build_option_override_coverage_audit --language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
 python scripts\download_bilibili_video.py --dry-run

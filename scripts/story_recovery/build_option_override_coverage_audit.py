@@ -10,17 +10,35 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-import sys
 import time
 from pathlib import Path
 from typing import Any
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-for _path in (_REPO_ROOT / "scripts",):
-    if str(_path) not in sys.path:
-        sys.path.insert(0, str(_path))
-
-from common import ROOT, STORY_OPTION_REPORTS_DIR, md_escape, read_json, rel_path, write_report_json
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.story_recovery.build_option_override_coverage_audit"
+    )
+if __package__ == "scripts.story_recovery":
+    from ..common import (
+        ROOT,
+        STORY_OPTION_REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        write_report_json,
+    )
+elif __package__ == "story_recovery":
+    from common import (
+        ROOT,
+        STORY_OPTION_REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        write_report_json,
+    )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 OPTION_WARNING_CODES = {"inferredOptionLayout", "inferredOptionResponse"}
 
