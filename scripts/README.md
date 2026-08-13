@@ -83,7 +83,7 @@ Typical focused commands:
 python scripts\verify_export_freshness.py
 python -m scripts.story_builder.refresh_evidence
 python -m scripts.story_builder.source_links
-python scripts\story_builder\build.py --languages CN --default-language CN
+python -m scripts.story_builder.build --languages CN --default-language CN
 python scripts\build_character_data.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
 python scripts\build_gameplay.py
@@ -112,7 +112,7 @@ omits Lua, so refresh this tracked index only from an explicit complete
 plaintext-Lua extraction. To refresh it and optionally render Markdown, run:
 
 ```bat
-python scripts\story_builder\lua_consumer_references.py --markdown
+python -m scripts.story_builder.lua_consumer_references --markdown
 ```
 
 To refresh and reconcile the optional full cinematic native audit against the
