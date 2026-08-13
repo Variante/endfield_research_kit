@@ -11,7 +11,6 @@ This is the builder-owned carrier stage used by ``audit_story_objects.py``.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -38,6 +37,8 @@ else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError(
         "import this module as scripts.story_builder.animestudio_story_objects.carrier"
     )
+
+from ..object_index_io import iter_gzip_jsonl_objects
 SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -428,17 +429,7 @@ def audit_object_rows(
 
 
 def iter_gzip_jsonl(path: Path) -> Iterable[dict[str, Any]]:
-    try:
-        with gzip.open(path, "rt", encoding="utf-8") as stream:
-            for line_number, line in enumerate(stream, 1):
-                if not line.strip():
-                    continue
-                value = json.loads(line)
-                if not isinstance(value, dict):
-                    raise AuditError(f"{path}:{line_number}: row is not an object")
-                yield value
-    except (OSError, json.JSONDecodeError) as exc:
-        raise AuditError(f"{path}: cannot read merged object index: {exc}") from exc
+    yield from iter_gzip_jsonl_objects(path, error_type=AuditError)
 
 
 def scan_published_source(
