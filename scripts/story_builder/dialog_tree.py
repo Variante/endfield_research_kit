@@ -3964,10 +3964,3 @@ def build_dialog_tree_scene_link_payload(conv_key: str) -> list[dict]:
             },
         })
     return _dedupe_overlapped_scene_link_paths(out)
-
-
-__all__ = [name for name in globals() if not name.startswith("__")]
-
-
-
-
