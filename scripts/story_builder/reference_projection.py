@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import re
 
+if __package__ in {"story_builder", "scripts.story_builder"}:
+    from .bundle_primitives import brace_text
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.reference_projection")
+
 
 def append_reference_line(
     lines: list[dict],
@@ -80,6 +85,24 @@ def collection_display_name(value: str) -> str:
     )
 
 
+def collection_hint_from_path(path: str) -> str:
+    tokens: list[str] = []
+    raw = str(path or "")
+    if raw.startswith("$."):
+        raw = raw[2:]
+    elif raw == "$":
+        raw = ""
+    for piece in [part for part in raw.split(".") if part]:
+        base = re.sub(r"\[\d+\]", "", piece)
+        idx_matches = [int(match) + 1 for match in re.findall(r"\[(\d+)\]", piece)]
+        label = collection_display_name(base)
+        if idx_matches:
+            label = f"{label} {idx_matches[-1]}"
+        if label:
+            tokens.append(label)
+    return " / ".join(tokens[-2:])
+
+
 def collection_bucket_from_key(row_id: str) -> str:
     value = str(row_id or "")
     if not value:
@@ -99,6 +122,44 @@ def collection_bucket_from_key(row_id: str) -> str:
     if words:
         return "_".join(words[:2])
     return value[:24]
+
+
+def collection_bucket(table_name: str, row_id: str, row: dict | None) -> str:
+    if table_name == "CommonDeathTips.json":
+        return "common_death_tips"
+    if table_name == "DisplayEnemyTypeTable.json":
+        return "display_enemy_type"
+    if table_name == "TextTable.json":
+        return collection_bucket_from_key(row_id)
+    if isinstance(row, dict):
+        for field in (
+            "groupId",
+            "categoryId",
+            "formulaGroupId",
+            "gameCategory",
+            "machineId",
+            "owner",
+            "charId",
+            "charTypeId",
+            "profession",
+            "weaponType",
+            "roomType",
+            "pageType",
+            "tagType",
+            "type",
+        ):
+            value = row.get(field)
+            if isinstance(value, str) and value and len(value) <= 48:
+                return value
+            if isinstance(value, int | float) and field in {"roomType", "pageType", "tagType"}:
+                return f"{field}_{int(value)}"
+    return collection_bucket_from_key(row_id)
+
+
+def collection_bucket_token(bucket: str) -> str:
+    slug = collection_slug(bucket)
+    checksum = sum((idx + 1) * ord(ch) for idx, ch in enumerate(str(bucket or ""))) % 104729
+    return f"{slug}_{checksum:x}" if checksum else slug
 
 
 def collection_scene_suffix(value: str) -> int:
@@ -121,6 +182,71 @@ def collection_source_label(table_source: str) -> str:
         "streaming": "StreamingAssets/Table",
         "persistent": "Persistent/Table",
     }.get(table_source, table_source)
+
+
+def collection_row_title(
+    table_name: str,
+    row_id: str,
+    text_nodes: list[dict],
+    *,
+    preferred_source: str = "streaming",
+) -> str:
+    preferred_fields = {
+        "name",
+        "title",
+        "talentName",
+        "gameName",
+        "dungeonName",
+        "tipsTitle",
+        "topicName",
+        "recordTitle",
+        "voiceTitle",
+        "iconDesc",
+        "effectTitle",
+    }
+    for node in text_nodes:
+        if node.get("field") in preferred_fields:
+            return brace_text(node.get("text") or "") or (node.get("text") or "")
+    if table_name == "TextTable.json":
+        return row_id
+    return row_id
+
+
+def collection_summary_rows(
+    table_name: str,
+    row_id: str,
+    row: dict | None,
+    bucket: str,
+    *,
+    table_source: str = "streaming",
+    variant: bool = False,
+) -> list[dict]:
+    rows = [
+        {"text": f"Table: {collection_display_name(table_name.removesuffix('.json'))}"},
+        {"text": f"Row: {row_id}"},
+    ]
+    if table_source != "streaming":
+        rows.append({"text": f"Source: {collection_source_label(table_source)}"})
+    if variant:
+        rows.append({"text": "Variant: differs from StreamingAssets row"})
+    bucket_label = collection_display_name(bucket)
+    if bucket_label and bucket_label != "Misc":
+        rows.append({"text": f"Group: {bucket_label}"})
+    if isinstance(row, dict):
+        for field in ("groupId", "categoryId", "type", "gameCategory", "profession", "weaponType", "machineId", "roomType", "unlockMissionId"):
+            value = row.get(field)
+            if value in (None, "", [], {}):
+                continue
+            if isinstance(value, list):
+                preview_value = ", ".join(str(item) for item in value[:4])
+                if len(value) > 4:
+                    preview_value += ", ..."
+            else:
+                preview_value = str(value)
+            rows.append({"text": f"{collection_display_name(field)}: {preview_value}"})
+            if len(rows) >= 6:
+                break
+    return rows
 
 
 def collection_text_fingerprint(text_nodes: list[dict]) -> tuple[tuple[str, str], ...]:
@@ -219,12 +345,17 @@ def normalized_duplicate_line_texts(payload: dict) -> list[str]:
 
 __all__ = [
     "append_reference_line",
+    "collection_bucket",
     "collection_bucket_from_key",
+    "collection_bucket_token",
     "collection_display_name",
+    "collection_hint_from_path",
+    "collection_row_title",
     "collection_scene_suffix",
     "collection_scene_value",
     "collection_slug",
     "collection_source_label",
+    "collection_summary_rows",
     "collection_table_name_tokens",
     "collection_text_fingerprint",
     "normalized_duplicate_line_texts",
