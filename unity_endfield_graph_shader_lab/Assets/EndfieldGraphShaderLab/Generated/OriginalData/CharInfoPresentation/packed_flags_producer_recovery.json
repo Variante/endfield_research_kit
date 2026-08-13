@@ -1761,7 +1761,18 @@
             "native_pointer": "0x18477d8e0",
             "range": "0x18477d8e0..0x18477d910",
             "patch_key": "0x7302",
-            "observed": "The unpatched path writes controller +0x50=true; the patched branch is an IFix jump and is not statically recoverable from this body."
+            "observed": "The unpatched path writes controller +0x50=true; the patched branch is an IFix jump and is not statically recoverable from this body.",
+            "dynamic_wrapper": {
+              "native_pointer": "0x1863633b4",
+              "range": "0x1863633b4..0x186363473",
+              "direct_calls": [
+                "0x189e07448 IFix frame initializer",
+                "0x189e077cc IFix argument-frame writer (twice)",
+                "0x189e124c4 IFix dynamic method-table dispatch"
+              ],
+              "interpreter_target": "0x189dfaad8",
+              "gpu_edge_scan": "The visible 0x7302 wrapper is the same frame-building/dynamic-dispatch shape as the 0x7301 wrapper and contains no direct ComputeBuffer, CommandBuffer, GPUDriven, factory-staging, or record-copy call."
+            }
           },
           "installed_patch_target_crosscheck": {
             "report": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
@@ -1771,6 +1782,16 @@
             "target_count": 32,
             "matching_targets": [],
             "target_identity": "declaring type + method name + parameter-type signature; wrapper gate constants are not on-disk target-table keys",
+            "binary_immediate_reference_census": {
+              "0x7301": [
+                "0x1875316bd/0x1875316d2 FrameUpdateEntitiesJobForward"
+              ],
+              "0x7302": [
+                "0x18477d8eb SetGarbageCollectDirty",
+                "0x184780140/0x184780156 GameplayMemoryUtility+<ShirkMemory>d__4.MoveNext"
+              ],
+              "note": "The same 0x7302 gate constant appears in an unrelated memory-utility state-machine body and both sites use the object-only IFix wrapper shape at 0x1863633b4; the constant is therefore not a unique source-method identity by itself."
+            },
             "observed": "The current installed Gameplay.Beyond patch target table contains no RemoteFactoryGameWorldController.FrameUpdateEntitiesJobForward or SetGarbageCollectDirty record. This excludes those signatures from the current on-disk overlay, but does not prove the runtime WrappersManager slot for 0x7301/0x7302 is null: built-in registration, another loaded payload, or runtime state remains outside this static patch file."
           },
           "boundary": "The HGFactoryRenderManager.FrameUpdateEntities method pointer remains a one-byte ret, but the adjacent RemoteFactory controller frame-forward path is explicitly IFix-patchable. Static UnityPlayer/GPUDriven evidence therefore cannot close or exclude factory per-frame dirty production until the patch body or dynamic method table for key 0x7301 is recovered. Keep the shared-record-to-_UploadBuffer and channel-2/resource +0xd0 edges fail-closed; do not treat the managed ret stub as proof that no frame producer exists."

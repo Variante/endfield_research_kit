@@ -549,6 +549,12 @@ NPC archetypes are imported as labeled source kits.
   loaded payload, and live `WrappersManager` slot state remain outside this
   static overlay. The cross-check and shared wrapper aliases are recorded under
   `installed_patch_target_crosscheck` and `code_registration_wrapper_aliases`.
+  A binary immediate census also finds `0x7302` in the unrelated
+  `GameplayMemoryUtility+<ShirkMemory>d__4.MoveNext` state-machine body; both
+  that body and `SetGarbageCollectDirty` enter the same object-only wrapper at
+  `0x1863633b4`. The gate constant is therefore not a unique source-method
+  identity, and the visible wrapper remains GPU-negative while its dynamic
+  method table is unresolved.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
