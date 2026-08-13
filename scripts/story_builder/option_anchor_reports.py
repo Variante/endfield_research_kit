@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-try:
-    from ..common import read_json, write_report_json
-except ImportError:
+if __package__ == "story_builder":
     from common import read_json, write_report_json
+elif __package__ == "scripts.story_builder":
+    from ..common import read_json, write_report_json
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.option_anchor_reports")
 
 
 def inferred_option_anchor_row(payload: dict, fallback_key: str = "") -> dict | None:

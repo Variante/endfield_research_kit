@@ -10,11 +10,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULES = (
+    "bundle_primitives",
+    "bundle_support",
+    "callserver_callbacks",
     "context",
+    "dialog_tree_control_flow",
+    "dynamic_scene",
     "envtalk_attachment",
+    "levelscript_manual_control",
     "lua_consumer_references",
     "mission_dependency_graph",
+    "mission_flow",
+    "narrative_video_overrides",
     "node_attachment",
+    "option_anchor_reports",
+    "protocol_registry",
+    "source_links",
+    "source_story_order_cross_reference",
+    "spaceship_story_content",
+    "timeline_action_evidence",
 )
 
 
@@ -22,13 +36,14 @@ class StoryBuilderImportIdentityTests(unittest.TestCase):
     def test_common_imports_do_not_catch_internal_missing_modules(self):
         for name in MODULES:
             path = ROOT / "scripts" / "story_builder" / f"{name}.py"
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
             broad_handlers = [
-                node
-                for node in ast.walk(tree)
-                if isinstance(node, ast.ExceptHandler)
-                and isinstance(node.type, ast.Name)
-                and node.type.id == "ModuleNotFoundError"
+                handler
+                for node in tree.body
+                if isinstance(node, ast.Try)
+                for handler in node.handlers
+                if isinstance(handler.type, ast.Name)
+                and handler.type.id in {"ImportError", "ModuleNotFoundError"}
             ]
             self.assertEqual(broad_handlers, [], name)
 

@@ -17,10 +17,12 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
+if __package__ == "story_builder":
     from common import fast_glob_files
-except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+elif __package__ == "scripts.story_builder":
     from scripts.common import fast_glob_files
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.timeline_action_evidence")
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"

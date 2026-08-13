@@ -3,10 +3,12 @@
 import html
 import re
 
-try:
-    from ..common import is_present
-except ImportError:
+if __package__ == "story_builder":
     from common import is_present
+elif __package__ == "scripts.story_builder":
+    from ..common import is_present
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.bundle_primitives")
 
 
 def clean_media_id_value(value: object) -> str:
@@ -161,39 +163,6 @@ def line_option_haystack(lines: list[dict]) -> str:
                     parts.append(str(value))
     return " ".join(parts)
 
-def parse_level_ref_name(name: str) -> dict | None:
-    if not name.endswith(".json"):
-        return None
-    stem = name[:-5]
-    marker = "_lv_data_sub_"
-    if marker not in stem:
-        return None
-    level_id, rest = stem.split(marker, 1)
-    kind = "plain"
-    if rest.startswith("mission_"):
-        kind = "mission"
-        rest = rest[len("mission_") :]
-    rest = rest.lstrip("_")
-    if not level_id or not rest:
-        return None
-    token = re.sub(r"_v[0-9A-Za-z]+$", "", rest)
-    return {
-        "level": level_id,
-        "kind": kind,
-        "token": token,
-    }
-
-def level_host_type(level_id: str) -> str:
-    if level_id.startswith(("map", "base")):
-        return "map"
-    if level_id.startswith("dung"):
-        return "dungeon"
-    if level_id.startswith("indie"):
-        return "indie"
-    if level_id.startswith("blackbox"):
-        return "blackbox"
-    return "other"
-
 def merge_search_text(base: str, extra: str) -> str:
     base = base.strip()
     extra = extra.strip()
@@ -227,8 +196,6 @@ __all__ = [
     "line_haystack",
     "line_identity_haystack",
     "line_option_haystack",
-    "parse_level_ref_name",
-    "level_host_type",
     "merge_search_text",
     "format_webui_timeline_seconds",
 ]

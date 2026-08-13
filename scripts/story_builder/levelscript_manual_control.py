@@ -7,10 +7,12 @@ from pathlib import Path
 import struct
 from typing import Any
 
-try:
-    from ..common import ROOT, rel_path
-except ImportError:  # Direct ``story_builder`` identity used by script CLIs.
+if __package__ == "story_builder":
     from common import ROOT, rel_path
+elif __package__ == "scripts.story_builder":
+    from ..common import ROOT, rel_path
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.levelscript_manual_control")
 
 from .context import LEVELSCRIPT_DIR
 from .level_bindings import _load_levelscript_binding_data
