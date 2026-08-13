@@ -1,6 +1,5 @@
 import argparse
 import base64
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -8,12 +7,7 @@ from pathlib import Path
 from struct import pack
 from unittest import mock
 
-
-SCRIPT = Path(__file__).resolve().parents[1] / "build_audio.py"
-SPEC = importlib.util.spec_from_file_location("build_audio", SCRIPT)
-build_audio = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-SPEC.loader.exec_module(build_audio)
+from scripts import build_audio
 
 
 def sound_source_data(
