@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
-import gzip
 import json
 from pathlib import Path
 import re
@@ -61,6 +60,8 @@ elif __package__ == "scripts.story_builder":
     )
 else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError("run this module with python -m scripts.story_builder.animestudio_story_guide")
+
+from .object_index_io import iter_gzip_jsonl_objects
 
 
 SCHEMA = "animestudioStoryGuideConsumerAudit.v1"
@@ -244,20 +245,6 @@ def audit_object_row(row: dict[str, Any], source: str) -> list[dict[str, Any]]:
     return actions
 
 
-def iter_gzip_jsonl(path: Path) -> Iterable[dict[str, Any]]:
-    try:
-        with gzip.open(path, "rt", encoding="utf-8") as stream:
-            for line_number, line in enumerate(stream, 1):
-                if not line.strip():
-                    continue
-                value = json.loads(line)
-                if not isinstance(value, dict):
-                    raise AuditError(f"{path}:{line_number}: row is not an object")
-                yield value
-    except (OSError, json.JSONDecodeError) as exc:
-        raise AuditError(f"{path}: cannot read merged object index: {exc}") from exc
-
-
 def _source_fingerprint(
     export_summary: dict[str, Any],
     source: str,
@@ -305,7 +292,7 @@ def scan_source(
     object_path = index_dir / relative_name
     actions: list[dict[str, Any]] = []
     object_count = 0
-    for row in iter_gzip_jsonl(object_path):
+    for row in iter_gzip_jsonl_objects(object_path, error_type=AuditError):
         if row.get("recordType") != "object":
             continue
         object_count += 1
