@@ -13,6 +13,9 @@ from scripts.story_builder.codecs.levelscript.entity_hp_changed import (
 from scripts.story_builder.codecs.levelscript.raise_custom_script_event import (
     decode_raise_custom_script_event_action,
 )
+from scripts.story_builder.codecs.levelscript.script_event_scope import (
+    decode_script_event_header_scope,
+)
 from scripts.story_builder.codecs.levelscript.spawner_events import (
     decode_spawner_event_fields,
 )
@@ -529,6 +532,19 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual(0, complete["subtypeFieldCount"])
         self.assertEqual("owning-level-script", complete["scriptEventScope"])
 
+        target_script_id = 228_001_100_08
+        specified_scope = decode_script_event_header_scope(
+            common
+            + b"\x04\x01"
+            + target_script_id.to_bytes(8, "little")
+            + (-1).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + (1).to_bytes(4, "little", signed=True)
+        )
+        self.assertEqual("SPECIFY_SCRIPT", specified_scope["triggerTarget"])
+        self.assertEqual(target_script_id, specified_scope["specifiedTargetScriptId"])
+
         cast = decode(
             0x69,
             20,
@@ -703,6 +719,10 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertFalse(detail["targetScriptPresent"])
         self.assertFalse(detail["serializedMissionOrQuestId"])
         self.assertFalse(detail["serverExchange"])
+        owner_scope = decode_script_event_header_scope(bytes(data))
+        self.assertEqual("owning-level-script", owner_scope["scriptEventScope"])
+        self.assertEqual("SELF", owner_scope["triggerTarget"])
+        self.assertEqual(36, owner_scope["_subtypeOffset"])
 
     def test_script_complete_accepts_exact_zero_subtype_before_outer_container(self):
         data = bytearray(36)

@@ -14,6 +14,7 @@ from .codecs.levelscript import manual_control as levelscript_manual_control
 from .codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
 from .codecs.levelscript import raise_custom_script_event as levelscript_custom_event
+from .codecs.levelscript import script_event_scope as levelscript_script_event_scope
 from .codecs.levelscript import spawner_events as levelscript_spawner_events
 from .codecs.levelscript import switch_actions as levelscript_switch_actions
 
@@ -2869,115 +2870,6 @@ def _extract_trigger_slot_ids(payload: bytes) -> list[int]:
     return slots
 
 
-def _decode_script_event_header_scope(payload: bytes) -> dict[str, Any]:
-    """Replay the inherited validate/targetScript/triggerTarget fields.
-
-    Bytes 17 onward begin with ``ActionHeader._validate: Param<bool>``; values
-    in that object are validation-node references, not script ids.  Only after
-    the variable-length Param comes ``ScriptEventHeader._targetScript`` and
-    ``_triggerTarget``.  The latter is SELF=0 or SPECIFY_SCRIPT=1.  A specified
-    target can serialize a LevelScriptPtr ``scriptId`` but never a mission or
-    quest id.
-    """
-    cursor = 17
-
-    def read_string() -> tuple[str | None, int] | None:
-        nonlocal cursor
-        if cursor + 4 > len(payload):
-            return None
-        size = struct.unpack_from("<i", payload, cursor)[0]
-        cursor += 4
-        if size == -1:
-            return None, cursor
-        if size < 0 or size > 512 or cursor + size > len(payload):
-            return None
-        raw = payload[cursor : cursor + size]
-        cursor += size
-        try:
-            return raw.decode("utf-8"), cursor
-        except UnicodeDecodeError:
-            return None
-
-    if cursor >= len(payload) or payload[cursor] != 0x04:
-        return {}
-    cursor += 1
-    if cursor + 9 > len(payload) or payload[cursor] not in (0, 1):
-        return {}
-    validate_value = bool(payload[cursor])
-    cursor += 1
-    validate_id_ref = struct.unpack_from("<i", payload, cursor)[0]
-    cursor += 4
-    validate_source = struct.unpack_from("<i", payload, cursor)[0]
-    cursor += 4
-    validate_path_result = read_string()
-    if validate_path_result is None:
-        return {}
-    validate_path = validate_path_result[0]
-
-    target_script: dict[str, Any] | None = None
-    if cursor >= len(payload):
-        return {}
-    if payload[cursor] == 0xFF:
-        cursor += 1
-    else:
-        if payload[cursor] != 0x04:
-            return {}
-        cursor += 1
-        if cursor >= len(payload) or payload[cursor] != 0x01:
-            return {}
-        cursor += 1
-        if cursor + 16 > len(payload):
-            return {}
-        script_id = struct.unpack_from("<Q", payload, cursor)[0]
-        cursor += 8
-        target_id_ref = struct.unpack_from("<i", payload, cursor)[0]
-        cursor += 4
-        target_source = struct.unpack_from("<i", payload, cursor)[0]
-        cursor += 4
-        target_path_result = read_string()
-        if target_path_result is None:
-            return {}
-        target_script = {
-            "scriptId": script_id,
-            "idRef": target_id_ref,
-            "paramSource": target_source,
-            "path": target_path_result[0],
-        }
-
-    if cursor + 4 > len(payload):
-        return {}
-    trigger_target = struct.unpack_from("<i", payload, cursor)[0]
-    cursor += 4
-    if trigger_target not in (0, 1):
-        return {}
-
-    out: dict[str, Any] = {
-        "scriptEventScope": (
-            "owning-level-script" if trigger_target == 0 else "specified-level-script"
-        ),
-        "triggerTarget": "SELF" if trigger_target == 0 else "SPECIFY_SCRIPT",
-        "targetScriptPresent": target_script is not None,
-        "validateParam": {
-            "constValue": validate_value,
-            "idRef": validate_id_ref,
-            "paramSource": validate_source,
-            "path": validate_path,
-        },
-        "_subtypeOffset": cursor,
-    }
-    if target_script is not None:
-        out["targetScriptParam"] = target_script
-        if (
-            trigger_target == 1
-            and target_script["scriptId"]
-            and target_script["idRef"] == -1
-            and target_script["paramSource"] == 0
-            and not target_script["path"]
-        ):
-            out["specifiedTargetScriptId"] = target_script["scriptId"]
-    return out
-
-
 _DEFAULT_PARAM_TAIL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
 
 
@@ -3824,7 +3716,7 @@ def _decode_script_variable_changed_fields(
     value`` for LevelScript properties.  Requiring exact EOF prevents strings
     in later action records from being mistaken for listener keys.
     """
-    scope = _decode_script_event_header_scope(payload)
+    scope = levelscript_script_event_scope.decode_script_event_header_scope(payload)
     cursor = scope.pop("_subtypeOffset", None)
     if not scope or not isinstance(cursor, int):
         return {}
@@ -3875,7 +3767,7 @@ def _decode_leader_trigger_volume_fields(payload: bytes) -> dict[str, Any]:
     belong to the receiver, so this intentionally validates that prefix rather
     than scanning every integer in the wider record window.
     """
-    scope = _decode_script_event_header_scope(payload)
+    scope = levelscript_script_event_scope.decode_script_event_header_scope(payload)
     cursor = scope.pop("_subtypeOffset", None)
     if not scope or not isinstance(cursor, int):
         return {}
@@ -4180,7 +4072,7 @@ def _decode_script_stage_changed_fields(payload: bytes) -> dict[str, Any]:
     tail.  A null filter is one byte.  The record window may include later
     outer action-map bytes, so only this guarded subtype prefix is consumed.
     """
-    scope = _decode_script_event_header_scope(payload)
+    scope = levelscript_script_event_scope.decode_script_event_header_scope(payload)
     cursor = scope.pop("_subtypeOffset", None)
     if not scope or not isinstance(cursor, int) or cursor >= len(payload):
         return {}
@@ -4410,7 +4302,7 @@ def _decode_named_native_event_detail(
 
     detail: dict[str, Any] = {}
     if native_header_name == "ScriptEvent_OnScriptActive":
-        scope = _decode_script_event_header_scope(payload)
+        scope = levelscript_script_event_scope.decode_script_event_header_scope(payload)
         scope.pop("_subtypeOffset", None)
         if scope:
             detail = {
@@ -4423,7 +4315,7 @@ def _decode_named_native_event_detail(
                 "summary": "local LevelScript runtime becomes active",
             }
     elif native_header_name == "ScriptEvent_OnScriptComplete":
-        scope = _decode_script_event_header_scope(payload)
+        scope = levelscript_script_event_scope.decode_script_event_header_scope(payload)
         subtype_offset = scope.pop("_subtypeOffset", None)
         if scope and isinstance(subtype_offset, int):
             trailing_container_bytes = len(payload) - subtype_offset
