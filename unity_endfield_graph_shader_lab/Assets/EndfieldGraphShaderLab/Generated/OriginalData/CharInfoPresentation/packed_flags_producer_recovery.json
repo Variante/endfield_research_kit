@@ -3034,6 +3034,35 @@
                 "result": "The only direct ComputeShader.Dispatch caller is an unrelated physics writer; no factory, per-draw, or HGRenderPath caller reaches this wrapper."
               },
               "boundary": "This closes the direct managed CommandBuffer/ComputeShader dispatch candidates for the factory upload producer. It does not identify which native command/resource record feeds the generic UnityPlayer command-stream interpreter, so the native dynamic record-to-UploadPerDrawParams kernel-7 edge remains open and fail-closed."
+            },
+            "native_command_stream_dispatch_opcode": {
+              "status": "opcode-27ef-writer-and-interpreter-sink-identified",
+              "interpreter": "0x1813aee90..0x1813bb9bc",
+              "opcode_decode": {
+                "base_opcode": "0x2711",
+                "case_count": 274,
+                "jump_table": "0x180000000 + signed_dword[0x180000000+0x13bb574 + (opcode-0x2711)*4]",
+                "dispatch_case": "0x27ef -> 0x1813b805b",
+                "next_case": "0x27f0 -> 0x1813b81ab"
+              },
+              "dispatch_sink": {
+                "call_site": "0x1813b819f",
+                "slot": "+0xab8",
+                "payload_shape": "The 0x27ef handler reads an 8-byte stream value at the aligned payload offset, then three 32-bit values; it forwards [resource][0] as rdx, the first two dwords as r8d/r9d, and the third dword as the stack argument before calling graphics-context slot +0xab8.",
+                "kernel_source": "No literal kernel index is present at the sink; the resource/handle and command-record fields are dynamic."
+              },
+              "upstream_writer": {
+                "function": "0x18092bed0..0x18092c123 (split PData body)",
+                "opcode_store": "0x18092bf54 writes dword 0x27ef to the command stream",
+                "payload_stores": [
+                  "0x18092bfb6 writes the resource/handle qword from rbx",
+                  "0x18092c00a writes ebp",
+                  "0x18092c05d writes r14d",
+                  "0x18092c0aa writes the third dword from [rsp+0x70]"
+                ],
+                "immediate_fallback": "When the command context flag at [command+0x2711] is clear, the same writer directly calls +0xab8 at 0x18092c10e; otherwise it records the 0x27ef command."
+              },
+              "result": "The native command-stream producer/consumer pair is now bounded: writer 0x18092bed0 records opcode 0x27ef and its four-field dispatch payload, while interpreter case 0x1813b805b consumes it and reaches +0xab8. The record is still not tied to factory channel-2/resource +0xd0 or UploadPerDrawParams kernel 7, so the character upload edge remains open and fail-closed."
             }
           },
           "render_helper_census": {
