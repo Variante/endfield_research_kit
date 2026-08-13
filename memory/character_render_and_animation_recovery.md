@@ -560,6 +560,16 @@ NPC archetypes are imported as labeled source kits.
   separately and contains temporary-data/serialization work without a direct
   partial-writer or GPU call. Details are recorded under
   `dirty_record_staging_consumer` in the packed-flag audit.
+  A bounded literal-stride search then found 81 UnityPlayer functions that
+  mention `0x54` (84 bytes) alongside record-like `0x50/0x8c/0x100` or lane
+  accesses. Only four unique functions (five register/lane hits) actually
+  touch at least four of the five 16-byte lanes. The strongest match,
+  `0x18036ed60`, is a generic dynamic-array resize helper that zeroes an
+  element as five Vector4 lanes plus a dword at `+0x50`; `0x1804b69b9` is its
+  generic copy family. The other matches are unrelated native data/math paths,
+  and none directly reaches the checked GPU dispatch/upload boundary. This
+  confirms that 84-byte records exist in UnityPlayer but does not identify the
+  staging-array packer or `_UploadBuffer`; the GPU edge remains fail-closed.
   A current-build slot cross-check removes the remaining endpoint ambiguity:
   the Vector4 binder body loads the runtime function pointer from
   `0x18f370720` at `0x1834a3dc9`, and `SetEntitySharedDataPartial` loads the
