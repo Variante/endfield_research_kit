@@ -455,6 +455,14 @@ NPC archetypes are imported as labeled source kits.
   kernel-7 upload edge. The dynamic IFix/render-graph route remains open;
   details are recorded under `global_constant_buffer_production_boundary` in
   the packed-flag audit.
+  The adjacent `HGRenderPipeline.ExecuteRenderRequestCPP` entry is now bounded
+  separately (metadata 284111, `GameAssembly 0x183106970`): its 868-call body
+  initializes request-owned CPU state, allocates/copies `0xc80/0x520/0x170`
+  blocks, and calls `CheckAndInitializeRenderPathCPP`, but the mapped body has
+  zero direct hits for ComputeBuffer/ComputeShader bind, dispatch,
+  `_UploadBuffer`, factory `0x8c/0x100` staging, or channel-2 `+0xd0` identity.
+  It is render-request orchestration evidence only; dynamic render-graph/IFix
+  routes and the post-dirty upload edge remain open.
   The current UnityPlayer binding path is now bounded as a separate edge:
   V1 `BindBuffersForCulling` (`0x1810eece0`) and V2
   `BindBuffersForCulling` (`0x1810fb5a0`) preserve the managed caller's
