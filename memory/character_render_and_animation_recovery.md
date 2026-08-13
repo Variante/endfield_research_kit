@@ -477,6 +477,19 @@ NPC archetypes are imported as labeled source kits.
   managed wrappers, and all four native callers zero `r9d`. Thus no additional
   direct dispatch producer selects kernel 7 in the installed binary, while a
   managed caller could still do so dynamically.
+  A focused UnityPlayer follow-up finds the only non-registry native consumer
+  in the current direct displacement scan that copies this property ID into an
+  RT/resource state record: `0x180cdf820` calls
+  `0x180ce2d70`, whose `0x180ce30c1` body copies table fields `+0x1308`,
+  `+0x130c` (`_RTPerDrawParamsBuffer`), and `+0x1310` into `+0x1c4`, `+0x1c8`,
+  and `+0x1cc`, then calls `0x180cf6a50`. That initializer copies scalar and
+  vector-like resource records, grows its entry list, and invokes generic
+  per-entry/callback helpers; its only direct caller is `0x180ce30f7` and the
+  inspected body has no ComputeShader, SetBuffer, Dispatch, `_UploadBuffer`,
+  factory-record, or character `resource +0xd0` edge. Treat this as a positive
+  RT/resource-configuration edge only; the UploadPerDrawParams producer and
+  channel-2-to-binding-33 edge remain fail-closed. Details are recorded under
+  `native_rt_resource_record_consumer` in the packed audit.
   The RenderGraph GPUDriven culling producer is now mapped at the managed
   callback `GPUDrivenCullingPassConstructor+<>c.<.cctor>b__10_0`,
   `GameAssembly 0x189bb558c` (metadata method `287367`). Its V1 and V2
