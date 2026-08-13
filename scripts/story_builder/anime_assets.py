@@ -1,14 +1,65 @@
 from __future__ import annotations
 
+import base64
+import binascii
+import copy
 import hashlib
+import itertools
+import json
+import re
+from bisect import bisect_left
+from collections import Counter, defaultdict, deque
 from functools import lru_cache
+from pathlib import Path
 
-from .context import *
+try:
+    from ..common import (
+        fast_glob_files,
+        is_present,
+        path_id_export_base_stem,
+        path_id_export_path_id,
+        read_bytes_cached,
+        rel_path as repo_rel,
+        unique_preserve as _unique_preserve,
+        unique_strings,
+        walk_const_values as _walk_const_values,
+        walk_field_values as _walk_field_values,
+    )
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import (
+        fast_glob_files,
+        is_present,
+        path_id_export_base_stem,
+        path_id_export_path_id,
+        read_bytes_cached,
+        rel_path as repo_rel,
+        unique_preserve as _unique_preserve,
+        unique_strings,
+        walk_const_values as _walk_const_values,
+        walk_field_values as _walk_field_values,
+    )
+
+from .context import (
+    ANIME_RESOURCE_DIRS,
+    EXPORT_ROOT,
+    GAMEPLAY_CONFIG_DIR,
+    LEVELDATA_DIR,
+    NARRATIVE_VIDEO_EXTENSIONS,
+    NPC_PROXY_TABLE_PATH,
+    PERSISTENT_ASSETS_DIR,
+    STREAMING_ASSETS_DIR,
+    VIDEO_BINDINGS_PATH,
+    _CUTSCENE_REF_FIELDS,
+    _DIALOG_REF_FIELDS,
+    _RADIO_REF_FIELDS,
+    _REMOTECOMM_REF_FIELDS,
+)
 from .dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_finish_endpoints,
     recover_dialog_tree_option_routes,
 )
+from .mission_recovery import canonical_cutscene_key as mission_canonical_cutscene_key
 
 
 _DIALOG_TREE_TYPE = "Beyond.Gameplay.DialogTree"
@@ -55,6 +106,14 @@ _ANIME_TREE_COMPLETE_MONO_PREFIXES = tuple(
 )
 _ANIME_TREE_PATH_INDEX: dict[str, Path] | None = None
 _ANIME_TREE_SORTED_STEMS: list[str] | None = None
+_CUTSCENE_ASSET_CACHE: dict[str, dict] | None = None
+_CUTSCENE_SUBTITLE_TRACK_CACHE: dict[str, list[dict]] | None = None
+_LEVELDATA_QUEST_STORY_REF_CACHE: dict[str, dict[str, list[dict]]] | None = None
+_MISSION_AREA_CACHE: dict[tuple[str, str], dict] | None = None
+_NARRATIVE_VIDEO_CACHE: list[dict] | None = None
+_NPC_PROXY_TABLE_CACHE: dict[str, dict] | None = None
+_VIDEO_BINDINGS_CACHE: dict[str, dict] | None = None
+_VIDEO_DEFINITIONS_CACHE: dict[str, dict] | None = None
 
 
 def _anime_tree_logical_stem(path: Path) -> str:
