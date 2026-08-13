@@ -14,6 +14,7 @@ from scripts import build_mission_pipeline_data as pipeline
 from scripts.mission_pipeline import (
     dialog_tree_projection,
     offline_shell_projection,
+    quest_fork_arm_projection,
     quest_scope_projection,
     runtime_trace_projection,
     story_order_projection,
@@ -839,11 +840,16 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "validationFailures": [],
                 "usesOcrOrManualOrder": False,
             }
-            with patch.object(pipeline, "ROOT", root), patch.object(
-                pipeline, "ACTIONBASE_FORMATTER_NAME_AUDIT", audit_contract
-            ):
-                result = pipeline.publish_quest_fork_arm_evidence(
-                    index, output_root, root / "webui" / "data" / "lang", "CN"
+            self.assertFalse(
+                hasattr(pipeline, "publish_quest_fork_arm_evidence")
+            )
+            with patch.object(quest_fork_arm_projection, "ROOT", root):
+                result = quest_fork_arm_projection.publish_quest_fork_arm_evidence(
+                    index,
+                    output_root,
+                    root / "webui" / "data" / "lang",
+                    "CN",
+                    actionbase_formatter_name_audit=audit_contract,
                 )
 
             published = json.loads((mission_root / "m1.json").read_text(encoding="utf-8"))
@@ -920,18 +926,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "sourceFile": action_audit.relative_to(root).as_posix(),
                 "sourceSha256": hashlib.sha256(action_audit.read_bytes()).hexdigest().upper(),
             }
-            with patch.object(pipeline, "ROOT", root), patch.object(
-                pipeline, "ACTIONBASE_FORMATTER_NAME_AUDIT", audit_contract
-            ):
+            with patch.object(quest_fork_arm_projection, "ROOT", root):
                 with self.assertRaisesRegex(
                     RuntimeError,
                     r"validator=quest_fork_arm_evidence gate=corridorQuestsInOriginalQuestDic .*actual=\['m1_q#3'\]",
                 ):
-                    pipeline.publish_quest_fork_arm_evidence(
+                    quest_fork_arm_projection.publish_quest_fork_arm_evidence(
                         {"missions": [{"id": "m1", "file": "missions/m1.json"}]},
                         output_root,
                         root / "webui" / "data" / "lang",
                         "CN",
+                        actionbase_formatter_name_audit=audit_contract,
                     )
             failed_index = json.loads(
                 (output_root / "index.json").read_text(encoding="utf-8")
@@ -967,15 +972,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "sourceFile": action_audit.relative_to(root).as_posix(),
                 "sourceSha256": hashlib.sha256(action_audit.read_bytes()).hexdigest().upper(),
             }
-            with patch.object(pipeline, "ROOT", root), patch.object(
-                pipeline, "ACTIONBASE_FORMATTER_NAME_AUDIT", audit_contract
-            ):
+            with patch.object(quest_fork_arm_projection, "ROOT", root):
                 with self.assertRaisesRegex(
                     RuntimeError,
                     r"validator=quest_fork_arm_evidence gate=missionSidecar mission=m1",
                 ):
-                    pipeline.publish_quest_fork_arm_evidence(
-                        index, output_root, root / "webui" / "data" / "lang", "CN"
+                    quest_fork_arm_projection.publish_quest_fork_arm_evidence(
+                        index,
+                        output_root,
+                        root / "webui" / "data" / "lang",
+                        "CN",
+                        actionbase_formatter_name_audit=audit_contract,
                     )
 
     def test_state_update_contract_revalidates_original_binary_sources(self):
