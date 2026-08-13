@@ -937,66 +937,6 @@ def write_update_feed_history(payload: dict[str, Any], state_dir: Path) -> Path 
     return history_path
 
 
-def restore_zero_change_feed(
-    *,
-    current_payload: dict[str, Any],
-    out_path: Path,
-    state_dir: Path,
-    game_root: Path,
-    export_root: Path,
-    sample_limit: int,
-    scan_scope: str,
-    include_relative_paths: list[str],
-) -> tuple[dict[str, Any], str] | None:
-    existing_payload = read_json(out_path, default={})
-    if isinstance(existing_payload, dict) and total_reported_changes(existing_payload) > 0:
-        return existing_payload, "preserved_existing_feed"
-
-    latest_feed = find_latest_update_feed_history(state_dir)
-    if latest_feed is not None:
-        payload, history_path = latest_feed
-        payload["restoredAfterZeroChangeScan"] = {
-            "source": "update_feed_history",
-            "historyPath": str(history_path),
-            "zeroChangeTracker": current_payload.get("tracker") or {},
-        }
-        return payload, "restored_from_feed_history"
-
-    latest_history = find_latest_changed_history(
-        state_dir=state_dir,
-        game_root=game_root,
-        sample_limit=sample_limit,
-        scan_scope=scan_scope,
-        include_relative_paths=include_relative_paths,
-    )
-    if latest_history is None:
-        return None
-
-    raw_payload, history_path = latest_history
-    restored_payload = build_update_payload(
-        raw_payload,
-        game_root=game_root,
-        baseline_initialized=False,
-        sample_limit=sample_limit,
-        scan_scope=scan_scope,
-        include_relative_paths=include_relative_paths,
-    )
-    attach_asset_updates(
-        restored_payload,
-        export_root=export_root,
-        state_dir=state_dir,
-        sample_limit=sample_limit,
-        skip_asset_updates=True,
-        hash_asset_updates=False,
-    )
-    restored_payload["restoredAfterZeroChangeScan"] = {
-        "source": "tracker_history",
-        "historyPath": str(history_path),
-        "zeroChangeTracker": current_payload.get("tracker") or {},
-    }
-    return restored_payload, "restored_from_history"
-
-
 def combine_totals(*totals_list: dict[str, Any]) -> dict[str, int]:
     combined = {"added": 0, "modified": 0, "deleted": 0}
     for totals in totals_list:

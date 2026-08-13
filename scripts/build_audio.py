@@ -3624,10 +3624,6 @@ def decrypt_akpk_bytes(raw_data: bytes, label: str) -> bytes:
     return bytes(data)
 
 
-def read_decrypted_akpk(path: Path) -> bytes:
-    return decrypt_akpk_bytes(path.read_bytes(), str(path))
-
-
 def iter_akpk_bank_payloads_from_bytes(raw_data: bytes, label: str) -> list[tuple[int, bytes]]:
     data = decrypt_akpk_bytes(raw_data, label)
     if len(data) < 28:
@@ -5017,19 +5013,6 @@ def hirc_v150_empty_music_children(
             if len(matches) > 1:
                 return None
     return matches[0] if len(matches) == 1 else None
-
-
-def hirc_media_relation_types(path_object_types: list[int]) -> list[str]:
-    relations: list[str] = []
-    for object_type, label in (
-        (5, "randomOrSequenceBranch"),
-        (6, "switchOrStateBranch"),
-        (9, "layerBranch"),
-        (7, "actorMixerBranch"),
-    ):
-        if object_type in path_object_types:
-            relations.append(label)
-    return relations or ["directSound"]
 
 
 def hirc_v150_random_sequence_properties(
