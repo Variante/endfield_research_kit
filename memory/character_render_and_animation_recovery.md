@@ -542,17 +542,22 @@ NPC archetypes are imported as labeled source kits.
   it still does not connect channel 2/resource `+0xd0` to `_UploadBuffer` or
   binding 33. Details are recorded under
   `gpu_driven_culling_pass_callback` in the packed-flag audit.
-  The adjacent `HGRenderGraphCPP` orchestration methods are now bounded as
-  runtime-resolved native bridges: `HGRenderPath_Create` (`0x183c648a0`,
-  metadata `483565`), `HGRenderPath_BeforeCulling` (`0x183e16180`, `483566`),
-  and `HGRenderPath_Render` (`0x183df2de0`, `483567`) each call the generic
-  internal-call resolver with its fully qualified name and tail-jump through
-  a cached global slot (`0x18f370620/628/630`). The on-disk slot contents are
-  not valid GameAssembly VAs before runtime initialization, so the native
-  RenderGraph implementation cannot be attributed from this static image.
-  This identifies the next runtime/native boundary without crediting it as the
-  missing factory-record-to-`_UploadBuffer` or kernel-7 producer; details are
-  under `render_graph_cpp_bridge_followup` in the packed audit.
+  The adjacent `HGRenderGraphCPP` orchestration methods are now closed one
+  layer deeper than their managed lazy-resolver wrappers. UnityPlayer's
+  internal-call registration table at raw `0x20ee090` (names) and
+  `0x20ee1b0` (function pointers) maps `HGRenderPath_Create/BeforeCulling/
+  Render/Destroy` rows 17-20 to `0x1802516a0/6b0/6c0/6d0`; Create reaches
+  `0x1813036d0`, which installs wrapper vtable slots `+0x8/+0x10/+0x18` as
+  `0x1812fdd80/0x1812fddc0/0x1812fdb20`. BeforeCulling therefore reaches
+  `0x1813018c0 -> 0x1813042d0`, the large native RenderGraph orchestration
+  helper. Its 753-call PData-scoped census has zero direct calls to factory
+  staging `0x1810d25c0/0x1810d26bf`, the V1/V2 GPUDriven dispatch cores, or
+  immediate compute-dispatch helpers; `0x1810f10d0/0x1810fd7d0` are renderer-
+  list-with-PreZ constructors, not kernel dispatch. This closes the static
+  native RenderGraph boundary while preserving the fail-closed result for the
+  missing factory-record-to-`_UploadBuffer`, `UploadPerDrawParams` kernel-7,
+  channel-2/resource `+0xd0`, and binding-33 edges. Details are under
+  `render_graph_cpp_bridge_followup` in the packed audit.
   The V1 `PopulatePerFrameData` bridge is now closed one layer deeper:
   `GameAssembly 0x18b3f80b4` resolves the exact HyperGryph internal call to
   `UnityPlayer 0x1801e9200`, whose native core is `0x1810f2ab0`. The core
