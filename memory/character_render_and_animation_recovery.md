@@ -49,6 +49,13 @@ UnityPlayer registration: wrapper `+0x8` is the BeforeCulling setup
 show no factory staging, CommandBuffer/Compute upload, or kernel-7 edge; the
 factory-record-to-`_UploadBuffer` link remains fail-closed.
 
+The follow-up RenderGraph census separates the shared graphics-context
+dispatch slot `+0xab8` (used by the immediate ComputeShader helper family)
+from the HGRenderPath graph-record lifecycle slots `+0xcd0`, `+0xea0`, and
+`+0xeb0`. The checked Render, helper, and graph-state bodies contain no
+`+0xab8` call and no direct factory staging or GPUDriven dispatch target, so
+the factory-record-to-`UploadPerDrawParams` kernel-7 edge remains unproven.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
