@@ -3,21 +3,22 @@ from __future__ import annotations
 import re
 import struct
 import math
-import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-from common import (
-    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-    RECORDED_NATIVE_METADATA_SHA256,
-    read_bytes_cached,
-)
+try:
+    from ..common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        read_bytes_cached,
+    )
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        read_bytes_cached,
+    )
 
 
 LEVELSCRIPT_START_TYPE_NAMES = {

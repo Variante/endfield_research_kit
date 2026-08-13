@@ -16,7 +16,6 @@ import base64
 import hashlib
 import json
 import re
-import sys
 from collections import Counter, defaultdict, deque
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,41 +23,49 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts"))
+try:
+    from ..common import (
+        md_escape,
+        read_json,
+        resolve_installed_native_inputs,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import (
+        md_escape,
+        read_json,
+        resolve_installed_native_inputs,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
 
-from common import (  # noqa: E402
-    md_escape,
-    read_json,
-    resolve_installed_native_inputs,
-    safe_key,
-    write_report_json,
-    write_text_if_changed,
-)
-from story_builder.mission_recovery import (  # noqa: E402
+from .mission_recovery import (
     STRONG_ORDER_EDGE_KINDS,
     WEAK_ORDER_EDGE_KINDS,
     build_scene_order_candidate_kinds,
     natural_key,
     scene_order_infer_kind,
 )
-from story_builder.level_bindings import (  # noqa: E402
+from .level_bindings import (
     LEVELSCRIPT_NATIVE_ACTION_NAMES,
     LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS,
     LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES,
     build_levelscript_action_story_occurrences,
     decode_levelscript_native_action_topology,
 )
-from story_builder.anime_assets import (  # noqa: E402
+from .anime_assets import (
     recover_dialog_tree_narrative_mask_actions,
     recover_dialog_tree_open_ui_content_actions,
 )
-from story_builder.spawner_binary import (  # noqa: E402
+from .spawner_binary import (
     SPAWNER_WAVE_RUNTIME_MAPPING_ID,
     SpawnerWaveDecodeError,
     decode_spawner_wave_map,
 )
-from story_builder.dialog_tree_control_flow import (  # noqa: E402
+from .dialog_tree_control_flow import (
     ContractError as DialogTreeControlContractError,
     OPEN_UI_FAMILY,
     project_serialized_family_node,

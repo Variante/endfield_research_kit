@@ -26,30 +26,39 @@ from pathlib import Path
 from typing import Any, Iterable
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+try:
+    from ..common import (
+        NATIVE_EVIDENCE_MISSING,
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file,
+    )
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import (
+        NATIVE_EVIDENCE_MISSING,
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file,
+    )
 
-from scripts.common import (  # noqa: E402
-    NATIVE_EVIDENCE_MISSING,
-    NativeEvidenceUnavailable,
-    check_installed_native_inputs,
-    native_evidence_required,
-    native_evidence_skip_message,
-    resolve_installed_game_data_root,
-    sha256_file,
-)
-from scripts.story_builder.dialog_tree_routes import (
+from .dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_finish_endpoints,
     recover_dialog_tree_option_routes,
     resolve_serialized_field,
     short_type as _short_type,
 )
-from scripts.story_builder.levelscript_binary import (
+from .levelscript_binary import (
     decode_levelscript_task_conditions,
     scan_levelscript_task_condition_fragments,
 )
-from scripts.story_builder.level_bindings import (
+from .level_bindings import (
     build_leveldata_authoritative_scope_script_host_index,
     build_npc_proxy_segment_script_host_index,
     parse_leveldata_levelscript_brief_dictionary,

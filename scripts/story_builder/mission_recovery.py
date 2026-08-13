@@ -20,7 +20,6 @@ import json
 import math
 import re
 import struct
-import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -28,11 +27,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-from common import read_bytes_cached
-from story_builder.mission_assets import select_complete_mission_runtime_root
+try:
+    from ..common import read_bytes_cached
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import read_bytes_cached
+
+from .mission_assets import select_complete_mission_runtime_root
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_MRA_DIR = select_complete_mission_runtime_root(
@@ -771,7 +771,7 @@ def attach_timeline_evidence(
         # Import after story_builder.context has finished initializing.  That
         # module imports mission_recovery while defining the shared AnimeStudio
         # roots, so a module-level import here would observe a partial context.
-        from story_builder.anime_assets import recover_dialog_tree_definition_evidence
+        from .anime_assets import recover_dialog_tree_definition_evidence
 
         dialog_tree_loader = recover_dialog_tree_definition_evidence
     evidence: dict[str, list[dict]] = {}

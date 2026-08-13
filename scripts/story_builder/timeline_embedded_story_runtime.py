@@ -26,20 +26,28 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
-for import_root in (ROOT, ROOT / "scripts"):
-    if str(import_root) not in sys.path:
-        sys.path.insert(0, str(import_root))
-
-from common import (  # noqa: E402
-    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-    RECORDED_NATIVE_METADATA_SHA256,
-    NativeEvidenceUnavailable,
-    check_installed_native_inputs,
-    native_evidence_required,
-    native_evidence_skip_message,
-    resolve_installed_game_data_root,
-    sha256_file as sha256_path,
-)
+try:
+    from ..common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file as sha256_path,
+    )
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file as sha256_path,
+    )
 
 
 class TimelineNativeUnavailable(NativeEvidenceUnavailable):
@@ -79,12 +87,8 @@ def _story_builder_modules() -> tuple[Any, Any]:
     current serialized shapes; no dialog, mission, level, or script identifiers
     are declared here.
     """
-    try:
-        from scripts.story_builder import context as story_context
-        from scripts.story_builder import level_bindings
-    except ModuleNotFoundError:
-        from story_builder import context as story_context
-        from story_builder import level_bindings
+    from . import context as story_context
+    from . import level_bindings
     return story_context, level_bindings
 
 
@@ -2400,12 +2404,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             f"actual={failure.get('actual')!r}"
         )
 
-    try:
-        from scripts.story_builder.timeline_recovery import (
-            recover_timeline_text_attachments,
-        )
-    except ModuleNotFoundError:
-        from story_builder.timeline_recovery import recover_timeline_text_attachments
+    from .timeline_recovery import recover_timeline_text_attachments
     families = tuple(
         str(row["serializedAssetType"]) for row in contract["families"]
     )

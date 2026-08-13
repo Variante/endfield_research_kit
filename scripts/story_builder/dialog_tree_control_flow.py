@@ -30,14 +30,16 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from common import (  # noqa: E402
-    resolve_installed_game_data_root,
-    sha256_file as shared_sha256_file,
-)
+try:
+    from ..common import (
+        resolve_installed_game_data_root,
+        sha256_file as shared_sha256_file,
+    )
+except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+    from common import (
+        resolve_installed_game_data_root,
+        sha256_file as shared_sha256_file,
+    )
 
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 CATALOG_PATH = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
