@@ -2995,6 +2995,25 @@
               "checked_bodies": ["0x1813018c0..0x181301d71", "0x1813042d0..0x18130640e", "0x180fc51e0..0x180fc58fb"],
               "zero_direct_targets": ["0x1805e7e10", "0x1804c74d0", "0x1810d25c0", "0x1810d26bf", "0x1810f1890", "0x1810f17e0", "0x1810fe040", "0x1810fdf90"],
               "indirect_context_result": "The HGRenderPath Render/RenderGraph bodies contain no +0xab8 immediate-compute call; their +0xcd0/+0xea0/+0xeb0 calls are bounded graph-record lifecycle slots, so the factory-record-to-UploadPerDrawParams kernel-7 edge remains unproven."
+            },
+            "graphics_context_dispatch_census": {
+              "status": "ten-ab8-call-sites-catalogued-no-static-kernel7-producer",
+              "slot": "+0xab8",
+              "getter": "0x180725dc0",
+              "call_sites": [
+                {"body": "0x1805e7a10", "site": "0x1805e7a8b", "kernel": "dynamic caller argument", "role": "immediate ComputeShader dispatch helper"},
+                {"body": "0x1805e7c60", "site": "0x1805e7cdb", "kernel": "dynamic caller argument", "role": "immediate ComputeShader dispatch helper"},
+                {"body": "0x1805f3170", "site": "0x1805f31be", "kernel": "dynamic stack value", "role": "generic graphics-device dispatch helper"},
+                {"body": "0x18092bfd2", "site": "0x18092c10e", "kernel": "dynamic stack value", "role": "resource-processing dispatch helper"},
+                {"body": "0x180f02630", "site": "0x180f0275e", "kernel": "dynamic argument ebp", "role": "bind-resource/dispatch helper; prepares +0xaa8/+0xa98/+0xaa0"},
+                {"body": "0x180f0491f", "site": "0x180f04f40", "kernel": "1", "role": "resource-processing pass"},
+                {"body": "0x1810cb920", "site": "0x1810cbb79", "kernel": "1", "role": "resource/texture processing pass"},
+                {"body": "0x1810cbc00", "site": "0x1810cbe64", "kernel": "1", "role": "resource/texture processing pass"},
+                {"body": "0x1811950a5", "site": "0x181195629", "kernel": "1", "role": "dimension-derived processing pass"},
+                {"body": "0x1813aee90..0x1813bb9bc", "site": "0x1813b819f", "kernel": "command-stream table value", "role": "generic command-buffer execution sink"}
+              ],
+              "checked_rendergraph_bodies": ["0x1813018c0..0x181301d71", "0x1813042d0..0x181313eb4", "0x180fc51e0..0x180fc58fb"],
+              "result": "The full UnityPlayer body census finds no fixed kernel 7 at a +0xab8 call site and no direct +0xab8 call in the HGRenderPath RenderGraph bodies. Dynamic kernel values remain in generic helpers and the command-stream interpreter, but their source command/resource records are not statically tied to factory channel-2/resource +0xd0 or UploadPerDrawParams; keep the upload edge fail-closed."
             }
           },
           "render_helper_census": {
