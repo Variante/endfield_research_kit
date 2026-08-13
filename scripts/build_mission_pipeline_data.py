@@ -57,6 +57,13 @@ try:
         SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
         read_index as read_lua_consumer_reference_index,
     )
+    from story_builder.native_contracts.cutscene_case_resolution import (
+        load_cutscene_case_resolution_contract,
+        matches_reviewed_lua_playback,
+    )
+    from story_builder.native_contracts.identity_carrier_boundaries import (
+        load_identity_carrier_boundaries_contract,
+    )
     from story_builder.envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
     )
@@ -138,6 +145,13 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
         SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
         read_index as read_lua_consumer_reference_index,
+    )
+    from scripts.story_builder.native_contracts.cutscene_case_resolution import (
+        load_cutscene_case_resolution_contract,
+        matches_reviewed_lua_playback,
+    )
+    from scripts.story_builder.native_contracts.identity_carrier_boundaries import (
+        load_identity_carrier_boundaries_contract,
     )
     from scripts.story_builder.envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
@@ -226,8 +240,8 @@ DEFAULT_GAMEPLAY_CONFIG_ROOT = (
 # Shipped Lua is scanned as a corpus. No Story key, module, symbol, or phase is
 # admitted here by hand: the current audit enumerates bounded GameAction calls,
 # resolves only direct/module-constant first arguments, and fingerprints the
-# exact original Lua bytes. The installed-binary audit supplies the native
-# spelling boundary used for case-mismatch rejection.
+# exact original Lua bytes. A reviewed native contract supplies the current-
+# build spelling boundary used for case-mismatch rejection.
 DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
     DEFAULT_GAMEPLAY_CONFIG_ROOT / "ScriptTaskExtraInfoTable.json"
 )
@@ -253,9 +267,6 @@ DEFAULT_NATIVE_CROSS_SYSTEM_CONSUMER_CENSUS = (
 DEFAULT_NATIVE_TELEPORT_PARAM_CARRIER_AUDIT = (
     ROOT / "reports" / "story" / "recovery"
     / "native_teleport_param_carrier_audit.json"
-)
-DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
-    ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
 NATIVE_GAME_ACTION_TYPE = "Beyond.Gameplay.Actions.GameAction"
 DEFAULT_ACTIVITY_STAGE_TABLE = DEFAULT_TABLE_ROOT / "ActivityConditionalMultiStageTable.json"
@@ -595,631 +606,6 @@ RUNTIME_CONTRACT = {
         ),
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
-    },
-    "missionOptionCarrierAudit": {
-        "source": "reports/story/recovery/mission_option_carrier_audit.json",
-        "managedCarrier": {
-            "type": "Beyond.Gameplay.MissionOptionData",
-            "typeToken": "0x02000986",
-            "baseType": "Beyond.Gameplay.DialogTreeOptionBase",
-            "fields": [
-                {
-                    "name": "missionId",
-                    "token": "0x04003bcd",
-                    "type": "string",
-                    "offset": "0x68",
-                },
-                {
-                    "name": "callDialogId",
-                    "token": "0x04003bce",
-                    "type": "string",
-                    "offset": "0x70",
-                },
-            ],
-            "handlerType": {
-                "enum": "Beyond.Gameplay.DialogEnums+OptionHandlerType",
-                "value": 3,
-                "name": "Mission",
-            },
-        },
-        "nativeConsumer": {
-            "symbol": "Beyond.Gameplay.Core.MissionOptionHandler._DoAction",
-            "token": "0x0600fa1a",
-            "address": "0x186e510a4",
-            "fallbackPatchId": "0xc337",
-            "callDialogBranch": (
-                "when callDialogId is non-empty, call "
-                "DialogManager.StopAndPlayDialogById(callDialogId), then jump to end"
-            ),
-            "missionBranch": (
-                "only when callDialogId is empty and missionId is non-empty, call "
-                "MissionSystem.AcceptMission(missionId)"
-            ),
-        },
-        "authoredInstanceSearch": {
-            "monoBehaviourRows": 1325026,
-            "monoBehaviourBytes": 3240614105,
-            "textAssets": 8195,
-            "textAssetScriptBytes": 687580854,
-            "structuredJsonFiles": 179925,
-            "installedLuaFiles": 1291,
-            "installedLuaBytes": 20161714,
-            "matches": 0,
-        },
-        "wholeBinaryDirectCallCensus": {
-            "MissionOptionDataConstructor": 0,
-            "MissionOptionDataHandlerTypeGetter": 0,
-            "MissionOptionHandlerDoAction": 2,
-            "doActionCallers": [
-                "MissionOptionHandler.OnSelectWhenDialogEnd",
-                "MissionOptionHandler.OnSelectWhenOptionEnd",
-            ],
-        },
-        "installedPatch": {
-            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
-            "signatureTargetCount": 30,
-            "matchedMethods": 0,
-        },
-        "finding": (
-            "missionId and callDialogId are mutually exclusive action alternatives "
-            "in the current native fallback. Their co-carriage creates no "
-            "mission-to-dialog causality, Story ownership, or order edge."
-        ),
-        "boundary": (
-            "No exact authored instance exists in current exported MonoBehaviour, "
-            "TextAsset, structured JsonData, or installed Lua surfaces. Reflection, "
-            "dynamically constructed names, server-only construction, unexported "
-            "object kinds, future IFix, and future builds remain possible."
-        ),
-        "classification": "schema_only_current_export_absent",
-        "storyBindingsAdded": 0,
-        "confidence": "native_proven_bounded",
-    },
-    "missionPropertyScriptPtrAudit": {
-        "source": "reports/story/recovery/mission_property_scriptptr_audit.json",
-        "managedLayout": {
-            "MissionRuntimeAsset": {
-                "missionId": {"token": "0x04003206", "offset": "0x10"},
-                "properties": {"token": "0x04003224", "offset": "0xe0"},
-                "propertyDic": {"token": "0x0400322b", "offset": "0xf8"},
-            },
-            "MissionSystem+MissionData": {
-                "missionId": {"token": "0x0400487f", "offset": "0x10"},
-                "propertyDict": {"token": "0x04004882", "offset": "0x20"},
-            },
-            "ParamVariable": {
-                "m_sendToScript": {"token": "0x040038d4", "offset": "0x68"},
-                "m_scriptPtr": {"token": "0x040038d5", "offset": "0x70"},
-            },
-        },
-        "authoredMissionProperties": {
-            "missionFiles": 490,
-            "missionsWithProperties": 71,
-            "propertyRows": 217,
-            "uniquePropertyKeys": 189,
-            "valueTypeCounts": {"1": 10, "3": 207},
-            "serializedFieldKeys": [
-                "key",
-                "type",
-                "value",
-                "valueArray",
-                "valueBit64",
-                "valueString",
-            ],
-            "levelScriptPointerFieldRows": 0,
-        },
-        "trackingPropertyFilterRuntime": {
-            "conditionType": (
-                "Beyond.Gameplay.SimpleConditionCheckMissionVariableInt"
-            ),
-            "authoredRows": 204,
-            "authoredMissions": 46,
-            "authoredVariables": 110,
-            "evaluator": {
-                "symbol": (
-                    "SimpleConditionCheckMissionVariableInt."
-                    "GetResultWithoutListening"
-                ),
-                "token": "0x06004b72",
-                "address": "0x18736e6b0",
-                "flow": [
-                    "MissionSystem.TryGetSaveProperty(missionId, missionVarName)",
-                    "TableUtils.DoCompare(value, compareOperator, compareTarget)",
-                ],
-            },
-            "listener": {
-                "start": {
-                    "symbol": (
-                        "SimpleConditionCheckMissionVariableInt."
-                        "InnerStartListening"
-                    ),
-                    "token": "0x06004b6f",
-                    "address": "0x18736e8ec",
-                    "operation": "EventManager.BindGlobal",
-                },
-                "end": {
-                    "symbol": (
-                        "SimpleConditionCheckMissionVariableInt."
-                        "InnerEndListening"
-                    ),
-                    "token": "0x06004b70",
-                    "address": "0x18736e7e8",
-                    "operation": "EventManager.UnBindGlobal",
-                },
-                "onChange": {
-                    "symbol": (
-                        "SimpleConditionCheckMissionVariableInt."
-                        "_OnMissionVarChange"
-                    ),
-                    "token": "0x06004b71",
-                    "address": "0x18736ea90",
-                    "operation": (
-                        "match changed mission/property identity and "
-                        "reevaluate the condition"
-                    ),
-                },
-            },
-            "serverUpdate": {
-                "message": "SC_UPDATE_MISSION_PROPERTY (124)",
-                "direction": "server_to_client",
-                "fields": [
-                    "missionId",
-                    "properties{propertyId -> DYNAMIC_PARAMETER}",
-                ],
-                "handler": "MissionSystem.Handle_UpdateMissionProperty",
-                "token": "0x060052a1",
-                "address": "0x1873c02e4",
-                "flow": [
-                    "MissionPropertyKeyIdTable.TryGetPropertyKey",
-                    "ParamVariableExtensions.ToVariable",
-                    "MissionData.propertyDict.TryInsert",
-                    "EventManager.SendGlobal",
-                ],
-            },
-            "finding": (
-                "Tracking filters are local conditions over server-synchronized "
-                "MissionData.propertyDict values. They control marker/HUD "
-                "visibility, but the exported client does not contain the "
-                "server-side producer or timing rule for an individual property."
-            ),
-            "boundary": (
-                "The exact client evaluator and inbound update path do not prove "
-                "which server rule changes a property, when it changes, or that "
-                "the change starts/completes a quest or plays Story."
-            ),
-            "classification": (
-                "server_synchronized_tracking_visibility_no_graph_edge"
-            ),
-            "storyBindingsAdded": 0,
-            "missionOrderEdgesAdded": 0,
-        },
-        "missionPropertyWriters": [
-            {
-                "symbol": "MissionSystem.Handle_SyncAllMission",
-                "token": "0x0600529c",
-                "address": "0x1833784e0",
-                "toVariableOffset": "0x2044",
-            },
-            {
-                "symbol": "MissionSystem.Handle_UpdateMissionProperty",
-                "token": "0x060052a1",
-                "address": "0x1873c02e4",
-                "toVariableOffset": "0x2c8",
-            },
-            {
-                "symbol": "MissionSystem.Handle_MissionStateUpdate",
-                "token": "0x060052a2",
-                "address": "0x1873be300",
-                "toVariableOffset": "0x416",
-            },
-        ],
-        "scriptPointerWriters": [
-            {
-                "symbol": (
-                    "ParamVariable."
-                    "SetupOnPropertyChangedEventForLevelScript"
-                ),
-                "token": "0x06003626",
-                "address": "0x183be53e0",
-                "managedDirectCallers": 2,
-            },
-            {
-                "symbol": (
-                    "ParamVariable."
-                    "SetupOnBBVariableChangedEventForLevelScript"
-                ),
-                "token": "0x0600362d",
-                "address": "0x1849832c0",
-                "managedDirectCallers": 1,
-                "unmappedNativeOrGenericCallers": 1,
-            },
-        ],
-        "directCallCensus": {
-            "ParamVariableExtensions.ToVariable": 7,
-            "SetupOnPropertyChangedEventForLevelScript": 2,
-            "SetupOnBBVariableChangedEventForLevelScript": 2,
-            "missionSystemScriptPointerSetterCalls": 0,
-        },
-        "installedPatch": {
-            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
-            "signatureTargetCount": 30,
-            "matchedMethods": 0,
-        },
-        "finding": (
-            "The nested managed type shape is not a mission-to-LevelScript foreign "
-            "key. Authored/server mission properties are converted into MissionData."
-            "propertyDict, while m_scriptPtr is attached only by local LevelScript "
-            "property/blackboard event subscription setup."
-        ),
-        "boundary": (
-            "One BB setter callsite is native/generic with no mapped managed owner; "
-            "its call shape carries a LevelScriptPtr and key but no mission identity. "
-            "Indirect/delegate/reflection construction, unexported data, future IFix, "
-            "and future builds remain outside the bound."
-        ),
-        "classification": "runtime_context_only_no_mission_levelscript_edge",
-        "storyBindingsAdded": 0,
-        "confidence": "native_proven_bounded",
-    },
-    "paramSourceMissionContextAudit": {
-        "source": (
-            "reports/story/recovery/param_source_mission_context_audit.json"
-        ),
-        "managedContract": {
-            "enum": "Beyond.Gameplay.Actions.ParamSource",
-            "currentMissionId": 1004,
-            "paramType": "Beyond.Gameplay.Actions.Param<T>",
-            "paramSourceFieldToken": "0x04006c3d",
-            "contextFieldToken": "0x04006c41",
-            "currentMissionGetterToken": "0x060091d6",
-        },
-        "authoredMissionRuntime": {
-            "missionFiles": 490,
-            "paramSourceOccurrences": 18,
-            "currentMissionIdOccurrences": 18,
-            "missions": 6,
-            "actionTypes": {
-                "CheckMissionBoolProperty": 1,
-                "CheckMissionIntProperty": 17,
-            },
-            "storyPlaybackOperands": 0,
-        },
-        "authoredLevelScripts": {
-            "levelScriptFiles": 4512,
-            "uidRecords": 74839,
-            "rawCurrentMissionIdValues": 0,
-            "validatedParamTails": 0,
-            "embeddedJsonCurrentMissionIdValues": 0,
-        },
-        "installedPatch": {
-            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
-            "signatureTargetCount": 30,
-            "matchedMethods": 0,
-        },
-        "finding": (
-            "CURRENT_MISSION_ID is a real implicit action-context source, but every "
-            "current authored use is a MissionRuntime self-property check whose "
-            "mission owner is already explicit. The complete LevelScript corpus "
-            "contains no use, and no current use co-carries a Story playback id."
-        ),
-        "boundary": (
-            "Server-only action graphs, opaque runtime-created Param objects, "
-            "reflection/XLua construction, future IFix, and future builds remain "
-            "outside the bound."
-        ),
-        "classification": (
-            "implicit_context_only_missionruntime_no_levelscript_story_edge"
-        ),
-        "storyBindingsAdded": 0,
-        "missionOrderEdgesAdded": 0,
-        "confidence": "metadata_and_complete_authored_corpus_bounded",
-    },
-    "managedIdentityCarrierCensus": {
-        "source": (
-            "reports/story/recovery/managed_identity_carrier_census.json"
-        ),
-        "metadata": {
-            "managedTypeCount": 63987,
-            "directCandidateTypes": 10,
-            "runtimeObjectCandidates": 8,
-            "unreviewedCandidates": 0,
-        },
-        "authored": {
-            "focusModeMissionRadioRows": 13,
-            "focusModeUniqueRadios": 10,
-            "npcProxyExMissionDialogRows": 453,
-            "subGameMissionScriptRows": 20,
-            "missionOptionAuthoredMatches": 0,
-        },
-        "trackingClosure": {
-            "classification": "closed_tracking_ui_context",
-            "commonTrackingFields": {
-                "missionId": {
-                    "token": "0x04003f3b",
-                    "offset": "0x20",
-                },
-                "sceneId": {
-                    "token": "0x04003f3d",
-                    "offset": "0x30",
-                },
-            },
-            "nativeConsumers": [{
-                "symbol": "CommonTrackingPointInfoBase._UpdateVisible",
-                "token": "0x0600403b",
-                "address": "0x183482bb0",
-            }, {
-                "symbol": "CommonTrackingSystem.AddMissionTrack",
-                "token": "0x0600407e",
-                "address": "0x184792ac0",
-            }, {
-                "symbol": "TrackingInfoBase.ActivateTrackUnit",
-                "token": "0x06004c8a",
-                "address": "0x184792960",
-            }],
-            "finding": (
-                "The mission/scene fields create and display a HUD/map tracking "
-                "point. sceneId is mapped to the current system map for visibility, "
-                "while missionId is stored on the tracking point; no audited method "
-                "calls Story playback."
-            ),
-        },
-        "finding": (
-            "All ten direct managed mission/quest identity co-carrier types are "
-            "reviewed. Productive FocusMode, NpcProxyEx, and SubGame pairs are "
-            "already represented by their bounded evidence classes; the remaining "
-            "object pairs and two apparent enum/static pairs add no new Story "
-            "ownership or order edge."
-        ),
-        "boundary": (
-            "Nested object graphs, indirect/reflection/XLua construction, opaque "
-            "server-only state, unexported asset kinds, future IFix, and future "
-            "builds remain outside the bound."
-        ),
-        "classification": "all_direct_managed_identity_carriers_reviewed",
-        "storyBindingsAdded": 0,
-        "missionOrderEdgesAdded": 0,
-        "confidence": "metadata_and_native_consumers_bounded",
-    },
-    "nestedManagedIdentityCarrierCensus": {
-        "source": (
-            "reports/story/recovery/nested_managed_identity_carrier_census.json"
-        ),
-        "metadata": {
-            "managedTypeRecords": 63987,
-            "runtimeTypeEntries": 272743,
-            "traversalMode": "cycle_safe_shortest_path_fixed_point",
-            "maximumShortestPathDepth": 10,
-            "maximumTraversedDepth": 10,
-            "candidateTypes": 112,
-            "directExactCandidateTypes": 11,
-            "nestedDependentCandidateTypes": 101,
-            "reviewedCandidateTypes": 112,
-            "unreviewedCandidateTypes": 0,
-        },
-        "runtimeEntityHubClosure": {
-            "classification": (
-                "closed_runtime_entity_graph_reachability_without_serialized_instance_join"
-            ),
-            "hubType": "Beyond.Gameplay.Core.Entity",
-            "candidateTypes": 86,
-            "targetTypes": [
-                "Beyond.Gameplay.Core.Entity",
-                "Beyond.Gameplay.Core.InteractiveRootComponent",
-                "Beyond.Gameplay.Core.NpcInteractComponent",
-            ],
-            "exactIndexedTypeLabels": 0,
-            "indexedOriginalObjects": 1335450,
-            "objectsWithTruncatedScalars": 1384,
-            "finding": (
-                "Eighty-six newly visible candidates reach their missing identity "
-                "only through the mutable Entity/component graph. Installed metadata "
-                "proves the type paths, while the complete original-object indexes "
-                "expose no exact Entity/component script or scalar type label that "
-                "can populate a mission/Story ownership join. The 1,384 rows with "
-                "truncated scalar projections remain an explicit boundary."
-            ),
-        },
-        "sharedRuntimeAggregateClosure": {
-            "classification": (
-                "closed_shared_runtime_aggregate_reachability_without_same_record_join"
-            ),
-            "candidateTypes": 1,
-            "hubFamilies": [
-                "runtime_entity_component_graph",
-                "mission_runtime_property_or_action_graph",
-            ],
-            "finding": (
-                "One mixed candidate reaches different identities through the "
-                "Entity and MissionRuntime aggregate graphs; graph reachability "
-                "does not make the independent manager records one authored row."
-            ),
-        },
-        "relatedOriginalFiles": [{
-            "sourceFile": (
-                r"D:\Program Files\Endfield Game\GameAssembly.dll"
-            ),
-            "sha256": (
-                "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
-            ),
-            "role": "native managed-field consumers",
-        }, {
-            "sourceFile": (
-                r"D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata\global-metadata.dat"
-            ),
-            "sha256": (
-                "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
-            ),
-            "role": "installed managed type graph",
-        }, {
-            "sourceFile": (
-                "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
-                "object_index/objects.jsonl.gz"
-            ),
-            "sha256": (
-                "6f59db82177cd1abd027bfed385145337403a5b0791bcb628287b53e1ad341cd"
-            ),
-            "role": "original StreamingAssets serialized-object census",
-        }, {
-            "sourceFile": (
-                "export_full/recovered/AnimeStudio-cli/Persistent/"
-                "object_index/objects.jsonl.gz"
-            ),
-            "sha256": (
-                "65cd90a9f99d0da09ebcbd9de01e0b69960d513a857c5438de4272f5de1dd3bd"
-            ),
-            "role": "original Persistent serialized-object census",
-        }],
-        "pendingItemSubmitterClosure": {
-            "classification": (
-                "active_shipped_xlua_producer_with_exact_submission_context_without_ui_join"
-            ),
-            "fields": {
-                "DialogManager.m_pendingItemSubmitter": {
-                    "token": "0x0400b304",
-                    "offset": "0x200",
-                },
-                "InventoryItemSubmitter.questId": {
-                    "token": "0x04004759",
-                    "offset": "0x20",
-                },
-            },
-            "methods": [{
-                "symbol": "InventoryItemSubmitter..ctor",
-                "token": "0x060050ef",
-                "address": "0x1873b0234",
-                "nativeDirectCallerCount": 0,
-            }, {
-                "symbol": "InventoryItemSubmitter.TryGetSubmitMsg",
-                "token": "0x060050f0",
-                "address": "0x1873b0144",
-                "nativeDirectCallerCount": 1,
-            }, {
-                "symbol": "DialogManager.RegisterPendingSubmission",
-                "token": "0x0600f77e",
-                "address": "0x186e17bc8",
-                "nativeDirectCallerCount": 0,
-            }],
-            "nativeOpenUiBridge": {
-                "callee": {
-                    "symbol": "GameAction.DialogOpenUIPanel",
-                    "token": "0x06008031",
-                    "address": "0x1875e0224",
-                    "nativeDirectCallerCount": 2,
-                },
-                "callers": [{
-                    "symbol": "DialogManager.OpenUI",
-                    "token": "0x0600f795",
-                    "address": "0x186e145d8",
-                }, {
-                    "symbol": (
-                        "BeyondGameplayActionsGameActionWrap."
-                        "_m_DialogOpenUIPanel_xlua_st_"
-                    ),
-                    "token": "0x060033f2",
-                    "address": "0x18630c078",
-                }],
-            },
-            "shippedLuaProducer": {
-                "logicalPath": (
-                    "Data/LuaScripts/UI/Panels/SubmitItem/SubmitItemCtrl.lua"
-                ),
-                "sha256": (
-                    "1c2a81f42d5512fc0bcfa35b78820d6482af15e2a2c8189fe85d81199286128e"
-                ),
-                "constructorAndRegistrationCalls": 1,
-                "orderedConstructorArgumentMatches": 1,
-                "constructorArguments": [
-                    "scope",
-                    "chapterId",
-                    "submitId",
-                    "questId",
-                    "objId",
-                    "instItems",
-                    "itemIds",
-                ],
-            },
-            "fallbackParamFlow": {
-                "nativePath": [
-                    "DialogTreeOpenUINode.DoAction@0x1872a5e1c",
-                    "DialogManager.OpenUI@0x186e145d8",
-                    "GameAction.DialogOpenUIPanel@0x1875e0224",
-                ],
-                "shippedLuaConsumer": {
-                    "logicalPath": (
-                        "Data/LuaScripts/Phase/Dialog/PhaseDialog.lua"
-                    ),
-                    "sha256": (
-                        "59df40f905d038f8a0527d680eca612e7b2ed4e0e9b3f7cfc96bf97bbe882b13"
-                    ),
-                },
-                "finding": (
-                    "The native fallback forwards the original action and param "
-                    "string. PhaseDialog JSON-decodes that string and adds only "
-                    "fromDialog and actionData; it performs no quest lookup or "
-                    "submission-identity substitution."
-                ),
-            },
-            "authoredOpenUiActions": {
-                "typedTerminalActions": 95,
-                "submitItemPanelType": 9,
-                "submitItemActions": 13,
-                "parameterizedSubmitItemActions": 3,
-                "placeholderSubmitItemActions": 3,
-                "emptyParamSubmitItemActions": 10,
-                "concreteQuestIdActions": 0,
-            },
-            "authoredMissionObjectives": {
-                "conditionCount": 3,
-                "questCount": 3,
-                "missionCount": 3,
-                "tableDefinedCount": 3,
-                "dialogCoGateCount": 2,
-                "dialogCoGateOpenUiOverlap": 0,
-                "withSubGameConditionCount": 0,
-                "finding": (
-                    "Three exact MissionRuntime quest objectives resolve to "
-                    "SubmitItem table requirements. Two share an authored AND "
-                    "objective with a dialog finish, but those dialog ids do not "
-                    "overlap the 13 SubmitItem OpenUI terminals."
-                ),
-            },
-            "sendFinishDialog": {
-                "symbol": "CinematicSystem.SendFinishDialog",
-                "token": "0x06004027",
-                "address": "0x1872f0d88",
-            },
-            "installedPatchMatches": 0,
-            "finding": (
-                "Shipped SubmitItemCtrl Lua constructs InventoryItemSubmitter and "
-                "calls RegisterPendingSubmission through XLua. The zero native "
-                "direct-call counts therefore describe only the AOT call surface, "
-                "not an inactive producer. Thirteen typed SubmitItem OpenUI terminals "
-                "exist, but three contain only stock placeholder params, ten contain "
-                "no params, and none exports a concrete quest id. Three separate "
-                "quest objectives do resolve exact submission requirements; two "
-                "have bounded same-AND dialog co-gates, with zero overlap against "
-                "the SubmitItem OpenUI dialog set. The fallback parameter flow "
-                "does not supply a missing quest identity."
-            ),
-        },
-        "finding": (
-            "All 112 managed identity candidates reachable at the cycle-safe type-"
-            "graph fixed point are reviewed. Productive contexts were already "
-            "recovered; remaining joins are shared runtime aggregates, previously "
-            "closed paths, static registries, or the active XLua pending-submission "
-            "bridge with exact quest-to-submission context but no quest-to-OpenUI join."
-        ),
-        "boundary": (
-            "The exact shipped SubmitItem XLua producer, fallback OpenUI parameter "
-            "pass-through, and authored submission objectives are included. "
-            "Dynamic mutation or reflection outside this path, native-only opaque "
-            "objects, server-only state, unexported asset kinds, future IFix, and "
-            "future builds remain outside the bound."
-        ),
-        "classification": "all_nested_managed_identity_carriers_reviewed",
-        "storyBindingsAdded": 0,
-        "missionOrderEdgesAdded": 0,
-        "confidence": "metadata_registration_and_native_consumers_bounded",
     },
     "nativeCrossSystemConsumerCensus": {
         "source": (
@@ -3318,15 +2704,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--dungeon-table", type=Path, default=DEFAULT_DUNGEON_TABLE)
     parser.add_argument("--text-vo-id-table", type=Path, default=DEFAULT_TEXT_VO_ID_TABLE)
-    parser.add_argument(
-        "--cutscene-case-audit",
-        type=Path,
-        action="append",
-        help=(
-            "installed-binary spelling audit used to reject a matching Lua "
-            "case mismatch; repeatable"
-        ),
-    )
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--story-data-root", type=Path, default=DEFAULT_STORY_DATA_ROOT)
     parser.add_argument("--story-language", default="CN")
@@ -3544,13 +2921,15 @@ def _lua_phase(module: str) -> str:
 
 def load_lua_story_playback_evidence(
     lua_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
-    case_audit_paths: Iterable[Path] = (DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT,),
+    *,
+    case_resolution_contract_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Validate and normalize corpus-scanned shipped-Lua Story playback.
 
     This is deliberately data-driven: every accepted/rejected row comes from
     the complete Lua audit. Exact spelling is admitted; a spelling mismatch is
-    rejected only when a current installed-binary audit matches that exact call.
+    rejected only when the reviewed native contract matches that exact call and
+    the installed binaries plus IFix source still match its build boundary.
     """
     validator = "lua_story_playback_evidence"
     lua_audit_path = lua_audit_path.resolve()
@@ -3639,27 +3018,21 @@ def load_lua_story_playback_evidence(
             f"actual={malformed[0]} source={repo_path(lua_audit_path)}"
         )
 
-    case_audits: list[tuple[Path, dict[str, Any]]] = []
-    for path in case_audit_paths:
-        resolved = path.resolve()
-        if not resolved.is_file():
-            continue
-        case = read_json(resolved)
-        source = case.get("source") or {}
-        conclusion = case.get("conclusion") or {}
-        if (
-            int(case.get("schemaVersion") or 0) != 1
-            or str(source.get("luaAuditSha256") or "").casefold() != audit_sha.casefold()
-            or conclusion.get("caseResolution") != "case_sensitive"
-            or conclusion.get("literalResolvesToCanonicalKey") is not False
-            or not re.fullmatch(r"[0-9a-fA-F]{64}", str(source.get("gameAssemblySha256") or ""))
-            or not re.fullmatch(r"[0-9a-fA-F]{64}", str(source.get("metadataSha256") or ""))
-        ):
-            raise RuntimeError(
-                f"validator={validator} failed: gate=binary_case_audit expected=current_lua_hash+case_sensitive "
-                f"actual=invalid source={repo_path(resolved)}"
-            )
-        case_audits.append((resolved, case))
+    mismatch_calls = [
+        row for row in calls
+        if row.get("registryStatus") == "case_mismatch_registry_match"
+    ]
+    if mismatch_calls and case_resolution_contract_audit is None:
+        case_resolution_contract_audit = (
+            load_cutscene_case_resolution_contract()
+        )
+    case_resolution_contract_audit = case_resolution_contract_audit or {
+        "status": "not_required",
+        "sourceFile": "",
+        "sourceSha256": "",
+        "nativeContract": {},
+        "validationFailures": [],
+    }
 
     accepted: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
@@ -3735,34 +3108,37 @@ def load_lua_story_playback_evidence(
             continue
         if status != "case_mismatch_registry_match":
             continue
-        for case_path, case in case_audits:
-            proof_row = case.get("luaPlayback") or {}
-            comparable = ("module", "line", "method", "resolvedLiteral", "canonicalStoryKey")
-            if not all(proof_row.get(key) == row.get(key) for key in comparable):
-                continue
-            source = case.get("source") or {}
-            rejected.append({
-                "storyKey": str(row.get("canonicalStoryKey") or ""),
-                "luaLiteral": str(row.get("resolvedLiteral") or ""),
-                "luaFile": f"Lua/Data/LuaScripts/{row['module']}",
-                "luaSourcePath": str(row["sourcePath"]),
-                "luaSourceSha256": str(row["sourceSha256"]).lower(),
-                "luaLine": int(row["line"]),
-                "luaSymbol": str(row.get("firstArgument") or ""),
-                "luaCall": f"GameAction.{method}",
-                "nativeEntry": native_entry,
-                "reason": "case_sensitive_native_resource_lookup",
-                "confidence": "binary_proven_rejection",
-                "auditReport": repo_path(case_path),
-                "gameAssemblySha256": str(source["gameAssemblySha256"]).lower(),
-                "metadataSha256": str(source["metadataSha256"]).lower(),
-                "note": (
-                    "The installed binary preserves this mismatched literal through "
-                    "StringPathHash lookup, so it cannot prove playback of the "
-                    "differently-cased Story registry key."
-                ),
-            })
-            break
+        if not matches_reviewed_lua_playback(
+            row,
+            case_resolution_contract_audit,
+        ):
+            continue
+        contract = case_resolution_contract_audit["nativeContract"]
+        source = contract["sources"]
+        rejected.append({
+            "storyKey": str(row.get("canonicalStoryKey") or ""),
+            "luaLiteral": str(row.get("resolvedLiteral") or ""),
+            "luaFile": f"Lua/Data/LuaScripts/{row['module']}",
+            "luaSourcePath": str(row["sourcePath"]),
+            "luaSourceSha256": str(row["sourceSha256"]).lower(),
+            "luaLine": int(row["line"]),
+            "luaSymbol": str(row.get("firstArgument") or ""),
+            "luaCall": f"GameAction.{method}",
+            "nativeEntry": native_entry,
+            "reason": "case_sensitive_native_resource_lookup",
+            "confidence": "binary_proven_rejection",
+            "auditReport": str(case_resolution_contract_audit["sourceFile"]),
+            "auditSha256": str(
+                case_resolution_contract_audit["sourceSha256"]
+            ).lower(),
+            "gameAssemblySha256": str(source["gameAssemblySha256"]).lower(),
+            "metadataSha256": str(source["metadataSha256"]).lower(),
+            "note": (
+                "The installed binary preserves this mismatched literal through "
+                "StringPathHash lookup, so it cannot prove playback of the "
+                "differently-cased Story registry key."
+            ),
+        })
 
     accepted.sort(key=lambda row: (natural_quest_key(row["storyKey"]), row["luaFile"], row["luaLine"]))
     rejected.sort(key=lambda row: (natural_quest_key(row["storyKey"]), row["luaFile"], row["luaLine"]))
@@ -3815,7 +3191,17 @@ def load_lua_story_playback_evidence(
         "acceptedTableCarrierCalls": sum(
             1 for row in accepted if row.get("literalResolution") == "table_field_singleton"
         ),
-        "binaryCaseAuditCount": len(case_audits),
+        "caseResolutionContract": {
+            field: case_resolution_contract_audit.get(field)
+            for field in (
+                "schema",
+                "status",
+                "sourceFile",
+                "sourceSha256",
+                "validationFailures",
+            )
+            if case_resolution_contract_audit.get(field) not in (None, "")
+        },
         "evidenceBoundary": (
             "Exact shipped-Lua bytes and typed GameAction calls prove controller "
             "playback. A mission/quest attachment is admitted only when the same "
@@ -8314,9 +7700,6 @@ def build_story_binding_coverage(
     dungeon_table_path: Path | None = None,
     text_vo_id_table_path: Path | None = DEFAULT_TEXT_VO_ID_TABLE,
     lua_consumer_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
-    cutscene_case_audit_paths: Iterable[Path] = (
-        DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT,
-    ),
     *,
     native_story_playback_index: dict[str, list[dict[str, Any]]] | None = None,
     callserver_callback_audit: dict[str, Any] | None = None,
@@ -8429,7 +7812,6 @@ def build_story_binding_coverage(
     sidecars_read = 0
     lua_playback_evidence = load_lua_story_playback_evidence(
         lua_consumer_audit_path,
-        cutscene_case_audit_paths,
     )
     cinematic_contract = lua_playback_evidence.get("runtimeHandleContract") or {}
     cinematic_report = str(cinematic_contract.get("report") or "")
@@ -9858,6 +9240,25 @@ def build_story_binding_coverage(
         f"Audit: `{lua_playback_evidence['auditReport']}` "
         f"SHA-256 `{lua_playback_evidence['auditSha256']}`.",
     ])
+    case_contract_status = lua_playback_evidence.get(
+        "caseResolutionContract"
+    ) or {}
+    lines.append(
+        "Case-resolution native contract: "
+        f"`{case_contract_status.get('status') or 'not_required'}` "
+        f"from `{case_contract_status.get('sourceFile') or '-'}`."
+    )
+    case_contract_failures = case_contract_status.get("validationFailures") or []
+    if case_contract_failures:
+        failure = case_contract_failures[0]
+        lines.append(
+            "- first case-resolution failure: "
+            f"validator=`{failure.get('validator') or '-'}`, "
+            f"gate=`{failure.get('gate') or '-'}`, "
+            f"expected=`{failure.get('expected')!r}`, "
+            f"actual=`{failure.get('actual')!r}`, "
+            f"source=`{failure.get('sourceFile') or '-'}`"
+        )
     for row in lua_playback_evidence["acceptedExactPlaybackCalls"]:
         lines.append(
             f"- admitted `{row['storyKey']}` from `{row['luaFile']}:{row['luaLine']}` "
@@ -12325,6 +11726,9 @@ def build_all(
     )
     runtime_contract = {
         **RUNTIME_CONTRACT,
+        "identityCarrierBoundaries": (
+            load_identity_carrier_boundaries_contract()
+        ),
         "teleportMissionScriptCarrier": (
             load_native_teleport_param_carrier_contract()
         ),
@@ -15279,13 +14683,6 @@ def main() -> int:
         args.dungeon_table.resolve(),
         getattr(args, "text_vo_id_table", DEFAULT_TEXT_VO_ID_TABLE).resolve(),
         lua_consumer_reference_index,
-        tuple(
-            path.resolve()
-            for path in (
-                getattr(args, "cutscene_case_audit", None)
-                or [DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT]
-            )
-        ),
         callserver_callback_audit=callserver_callback_audit,
     )
     node_attachment = None
@@ -15499,6 +14896,25 @@ def main() -> int:
             f"Story binding coverage: {counts['connectedUniqueStoryFiles']} connected, "
             f"{counts['unlinkedUniqueStoryFiles']} unlinked unique files"
         )
+        case_contract_status = (
+            coverage.get("luaStoryPlaybackEvidence") or {}
+        ).get("caseResolutionContract") or {}
+        print(
+            "Cutscene case-resolution contract: "
+            f"{case_contract_status.get('status') or 'not_required'}"
+        )
+        failures = case_contract_status.get("validationFailures") or []
+        if failures:
+            failure = failures[0]
+            print(
+                "Cutscene case-resolution diagnostic: "
+                f"validator={failure.get('validator') or '-'} "
+                f"gate={failure.get('gate') or '-'} "
+                f"expected={failure.get('expected')!r} "
+                f"actual={failure.get('actual')!r} "
+                f"source={failure.get('sourceFile') or '-'}",
+                file=sys.stderr,
+            )
         if node_attachment:
             published = index["nodeAttachmentCoverage"]["published"]
             print(

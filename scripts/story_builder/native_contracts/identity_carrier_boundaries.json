@@ -1,0 +1,56 @@
+{
+  "schema": "identityCarrierNegativeBoundaries.v1",
+  "status": "validated",
+  "sources": {
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "globalMetadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
+    "ifixPatchSha256": "737134081E06371F13C073988547E887037FCCF2F57E1052BE35DD255D27BC21"
+  },
+  "boundaries": [
+    {
+      "id": "mission_option_alternate_actions",
+      "classification": "schema_only_current_export_absent",
+      "subject": "MissionOptionData",
+      "finding": "missionId and callDialogId are mutually exclusive action alternatives in the reviewed native fallback; their co-carriage creates no mission-to-dialog causality, Story ownership, or order edge.",
+      "boundary": "The reviewed export contained no exact authored MissionOptionData instance. Dynamic construction, reflection, server-only state, future IFix, and future builds remain outside this boundary.",
+      "storyBindingsAdded": 0,
+      "missionOrderEdgesAdded": 0
+    },
+    {
+      "id": "mission_property_script_pointer",
+      "classification": "runtime_context_only_no_mission_levelscript_edge",
+      "subject": "MissionRuntimeAsset properties and ParamVariable script pointers",
+      "finding": "Mission properties are authored or server-synchronized values, while the LevelScript pointer is attached later for local event subscriptions. The nested managed type shape is not a mission-to-LevelScript foreign key.",
+      "boundary": "The client evaluator and inbound property update path do not reveal the server rule or timing that changes a property, and do not prove quest lifecycle or Story playback.",
+      "storyBindingsAdded": 0,
+      "missionOrderEdgesAdded": 0
+    },
+    {
+      "id": "implicit_current_mission_context",
+      "classification": "implicit_context_only_missionruntime_no_levelscript_story_edge",
+      "subject": "ParamSource.CURRENT_MISSION_ID",
+      "finding": "CURRENT_MISSION_ID is an implicit action-context source whose reviewed authored uses remain within their already explicit MissionRuntime owner and provide no Story identity.",
+      "boundary": "An implicit current mission value alone does not establish a mission-to-LevelScript, mission-to-Story, quest, or order edge.",
+      "storyBindingsAdded": 0,
+      "missionOrderEdgesAdded": 0
+    },
+    {
+      "id": "direct_managed_identity_carriers",
+      "classification": "all_direct_managed_identity_carriers_reviewed",
+      "subject": "Direct managed mission, quest, LevelScript, and Story co-carriers",
+      "finding": "The reviewed current-build metadata has no open direct managed identity co-carrier. Productive carriers are represented by their owning runtime contracts; tracking types, editor enums, static catalogs, and inactive alternatives add no graph edge.",
+      "boundary": "Type co-carriage is an inventory signal only. It does not establish that values belong to one authored instance or that one identity owns another.",
+      "storyBindingsAdded": 0,
+      "missionOrderEdgesAdded": 0
+    },
+    {
+      "id": "nested_managed_identity_carriers",
+      "classification": "all_nested_managed_identity_carriers_reviewed",
+      "subject": "Nested managed identity reachability",
+      "finding": "Nested reachability through mutable Entity components, global managers, MissionRuntime aggregates, or the active XLua pending-submission bridge does not provide an authored same-record join. The reviewed submission bridge has exact quest requirements but no quest-to-OpenUI or order edge.",
+      "boundary": "Dynamic mutation, reflection, native-only opaque objects, server-only state, unexported asset kinds, future IFix, and future builds remain outside this boundary.",
+      "storyBindingsAdded": 0,
+      "missionOrderEdgesAdded": 0
+    }
+  ]
+}
