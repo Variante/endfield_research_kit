@@ -11,7 +11,11 @@ from unittest.mock import patch
 
 
 from scripts import build_mission_pipeline_data as pipeline
-from scripts.mission_pipeline import runtime_trace_projection, story_order_projection
+from scripts.mission_pipeline import (
+    quest_scope_projection,
+    runtime_trace_projection,
+    story_order_projection,
+)
 from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
 from scripts.story_builder.native_contracts import callserver_callback
 
@@ -4239,7 +4243,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "missions": [{"id": "testm1", "file": "missions/testm1.json"}],
             }
 
-            report = pipeline.publish_quest_objective_story_scope(
+            self.assertFalse(
+                hasattr(pipeline, "publish_quest_objective_story_scope")
+            )
+            report = quest_scope_projection.publish_quest_objective_story_scope(
                 index,
                 output_root,
                 root / "lang",
