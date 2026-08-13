@@ -14,8 +14,8 @@ import base64
 import copy
 import hashlib
 import json
+import os
 import re
-import subprocess
 import sys
 import time
 from collections import Counter, defaultdict, deque
@@ -51,6 +51,11 @@ try:
     from story_builder.mission_assets import (
         mission_runtime_source_summary,
         select_complete_mission_runtime_root,
+    )
+    from story_builder.lua_consumer_references import (
+        DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
+        SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
+        read_index as read_lua_consumer_reference_index,
     )
     from story_builder.envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
@@ -92,6 +97,7 @@ try:
         build_report as build_source_story_order_cross_reference_report,
         render_markdown as render_source_story_order_cross_reference_markdown,
     )
+    from story_builder.source_gap import build_source_gap_queue
     from story_builder.timeline_embedded_story_runtime import (
         DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
         DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
@@ -128,6 +134,11 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.story_builder.mission_assets import (
         mission_runtime_source_summary,
         select_complete_mission_runtime_root,
+    )
+    from scripts.story_builder.lua_consumer_references import (
+        DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
+        SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
+        read_index as read_lua_consumer_reference_index,
     )
     from scripts.story_builder.envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
@@ -169,6 +180,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         build_report as build_source_story_order_cross_reference_report,
         render_markdown as render_source_story_order_cross_reference_markdown,
     )
+    from scripts.story_builder.source_gap import build_source_gap_queue
     from scripts.story_builder.timeline_embedded_story_runtime import (
         DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
         DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
@@ -179,6 +191,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
@@ -188,10 +201,10 @@ from common import sha256_file as sha256_path  # noqa: E402
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 STREAMING_MISSION_ROOT = (
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
+    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
 )
 PERSISTENT_MISSION_ROOT = (
-    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
+    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
     / "MissionRuntimeAsset"
 )
 DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
@@ -199,8 +212,7 @@ DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
     PERSISTENT_MISSION_ROOT,
 )
 DEFAULT_SUBGAME_TABLE = (
-    ROOT
-    / "export_full"
+    EXPORT_ROOT
     / "structured"
     / "StreamingAssets"
     / "Data"
@@ -208,9 +220,9 @@ DEFAULT_SUBGAME_TABLE = (
     / "GameplayConfig"
     / "SubGameInstanceDataTable.json"
 )
-DEFAULT_TABLE_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
+DEFAULT_TABLE_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
 DEFAULT_GAMEPLAY_CONFIG_ROOT = (
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
+    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
 )
 
 # Shipped Lua is scanned as a corpus. No Story key, module, symbol, or phase is
@@ -218,18 +230,15 @@ DEFAULT_GAMEPLAY_CONFIG_ROOT = (
 # resolves only direct/module-constant first arguments, and fingerprints the
 # exact original Lua bytes. The installed-binary audit supplies the native
 # spelling boundary used for case-mismatch rejection.
-DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT = (
-    ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
-)
 DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
     DEFAULT_GAMEPLAY_CONFIG_ROOT / "ScriptTaskExtraInfoTable.json"
 )
 DEFAULT_LEVEL_SCRIPT_DATA_ROOT = (
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
+    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
     / "LevelScriptData"
 )
 DEFAULT_PERSISTENT_LEVEL_SCRIPT_DATA_ROOT = (
-    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
+    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
     / "LevelScriptData"
 )
 DEFAULT_LEVEL_SCRIPT_DATA_ROOTS = (
@@ -250,7 +259,6 @@ DEFAULT_NATIVE_TELEPORT_PARAM_CARRIER_AUDIT = (
 DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
-LUA_CONSUMER_REFERENCE_SCHEMA = "luaConsumerReferenceAudit.v4"
 NATIVE_GAME_ACTION_TYPE = "Beyond.Gameplay.Actions.GameAction"
 DEFAULT_ACTIVITY_STAGE_TABLE = DEFAULT_TABLE_ROOT / "ActivityConditionalMultiStageTable.json"
 DEFAULT_ACTIVITY_DUNGEON_FIGHTING_STAGE_TABLE = (
@@ -265,8 +273,7 @@ DEFAULT_TEXT_VO_ID_TABLE = DEFAULT_TABLE_ROOT / "TextVoIdTable.json"
 DEFAULT_SUBMIT_ITEM_TABLE = DEFAULT_TABLE_ROOT / "SubmitItem.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "webui" / "data" / "mission_pipeline"
 DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT = (
-    ROOT
-    / "export_full"
+    EXPORT_ROOT
     / "recovered"
     / "AnimeStudio-cli"
     / "StreamingAssets"
@@ -3314,12 +3321,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dungeon-table", type=Path, default=DEFAULT_DUNGEON_TABLE)
     parser.add_argument("--text-vo-id-table", type=Path, default=DEFAULT_TEXT_VO_ID_TABLE)
     parser.add_argument(
-        "--lua-consumer-audit",
-        type=Path,
-        default=DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
-        help="complete shipped-Lua GameAction census used for exact Story playback",
-    )
-    parser.add_argument(
         "--cutscene-case-audit",
         type=Path,
         action="append",
@@ -3386,31 +3387,17 @@ def refresh_source_story_gap_queue(
             "source Story gap refresh requires the canonical language filename: "
             f"expected={expected_path} actual={queue_path}"
         )
-    command = [
-        sys.executable,
-        str(
-            ROOT
-            / "scripts"
-            / "story_recovery"
-            / "build_source_story_gap_queue.py"
-        ),
-        "--language",
+    result = build_source_gap_queue(
         language,
-        "--reports-dir",
-        str(queue_path.parent),
-    ]
-    result = subprocess.run(command, cwd=ROOT, check=False)
-    if result.returncode:
-        raise RuntimeError(
-            "source Story gap refresh failed: "
-            f"returncode={result.returncode} queue={repo_path(queue_path)}"
-        )
+        reports_dir=queue_path.parent,
+        table_root=DEFAULT_TABLE_ROOT,
+    )
     if not queue_path.is_file():
         raise RuntimeError(
             "source Story gap refresh produced no queue: "
             f"queue={repo_path(queue_path)}"
         )
-    report = read_json(queue_path)
+    report = result.report
     failures: list[dict[str, Any]] = []
     if report.get("_schema") != SOURCE_STORY_GAP_QUEUE_SCHEMA:
         failures.append({
@@ -3558,7 +3545,7 @@ def _lua_phase(module: str) -> str:
 
 
 def load_lua_story_playback_evidence(
-    lua_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
+    lua_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
     case_audit_paths: Iterable[Path] = (DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT,),
 ) -> dict[str, Any]:
     """Validate and normalize corpus-scanned shipped-Lua Story playback.
@@ -3575,7 +3562,7 @@ def load_lua_story_playback_evidence(
             f"actual=missing source={repo_path(lua_audit_path)}"
         )
     audit_sha = sha256_path(lua_audit_path)
-    audit = read_json(lua_audit_path)
+    audit = read_lua_consumer_reference_index(lua_audit_path)
     schema = str(audit.get("schemaVersion") or "")
     if schema != LUA_CONSUMER_REFERENCE_SCHEMA:
         raise RuntimeError(
@@ -8328,7 +8315,7 @@ def build_story_binding_coverage(
     game_mechanic_condition_table_path: Path | None = None,
     dungeon_table_path: Path | None = None,
     text_vo_id_table_path: Path | None = DEFAULT_TEXT_VO_ID_TABLE,
-    lua_consumer_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
+    lua_consumer_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
     cutscene_case_audit_paths: Iterable[Path] = (
         DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT,
     ),
@@ -12041,12 +12028,12 @@ def build_mission(
         # Cross-mission relations recovered from authored mission/quest state
         # conditions. Only ``requiresCompleted`` carries precedence; the other
         # relations are co-active or mutually exclusive and must not be read as
-        # ordering. See build_mission_dependency_graph.py.
+        # ordering. See story_builder/mission_dependency_graph.py.
         "missionGraph": mission_graph_entry or {"upstream": {}, "downstream": {}},
         "questTopology": quest_topology,
         # Ambient envTalk lines configured on an NPC proxy that a quest of this
         # mission tracks. Navigation/configuration context only -- never
-        # playback ownership. See build_envtalk_attachment.py.
+        # playback ownership. See story_builder/envtalk_attachment.py.
         "envTalkContext": sorted(
             env_talk_contexts or [],
             key=lambda row: (natural_quest_key(row.get("questId") or ""), row.get("storyKey") or ""),
@@ -15281,6 +15268,7 @@ def main() -> int:
                     timeline_embedded_runtime_audit
                 ),
             )
+    lua_consumer_reference_index = DEFAULT_LUA_CONSUMER_REFERENCE_INDEX.resolve()
     coverage = build_story_binding_coverage(
         index,
         output_root / "index.json",
@@ -15292,11 +15280,7 @@ def main() -> int:
         args.game_mechanic_condition_table.resolve(),
         args.dungeon_table.resolve(),
         getattr(args, "text_vo_id_table", DEFAULT_TEXT_VO_ID_TABLE).resolve(),
-        getattr(
-            args,
-            "lua_consumer_audit",
-            DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
-        ).resolve(),
+        lua_consumer_reference_index,
         tuple(
             path.resolve()
             for path in (

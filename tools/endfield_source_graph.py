@@ -29,14 +29,14 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
-from build_data_index import (
+from game_data.memorypack.interactive import decode_interactive_template_memorypack
+from game_data.memorypack.tables import (
     decode_bamboo_raft_task_table_memorypack,
     decode_damage_text_memorypack,
     decode_dialog_id_table_memorypack,
-    decode_interactive_template_memorypack,
     decode_model_view_state_controller_memorypack,
 )
-EXPORT_ROOT = ROOT / "export_full"
+EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 WEBUI_DATA = ROOT / "webui" / "data"
 MISSION_PIPELINE_ROOT = WEBUI_DATA / "mission_pipeline"
 WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"

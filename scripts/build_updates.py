@@ -19,7 +19,6 @@ import json
 import os
 import shutil
 import sqlite3
-import subprocess
 import sys
 import time
 from collections import Counter
@@ -37,7 +36,6 @@ from common import (
     path_id_export_base_stem,
     read_json,
     rel_requires_path_id_export_name,
-    resolve_installed_game_data_root,
     write_json,
 )
 
@@ -47,15 +45,14 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from asset_builder.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
 from source_paths import resolve_asset_source_roots
+from updates_builder.scanner import ScanConfig, scan_export_changes
 
-DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
 DEFAULT_PREVIOUS_EXPORT_ROOT = ROOT / "export_1d2"
 DEFAULT_OUT = OUT_DIR / "updates" / "latest.json"
 DEFAULT_REPORT_JSON = UPDATES_REPORTS_DIR / "game-data-change-summary.json"
 DEFAULT_REPORT_MD = UPDATES_REPORTS_DIR / "game-data-change-summary.md"
-TRACKER = ROOT / "scripts" / "track_export_changes.py"
 SCHEMA_VERSION = 1
 ASSET_STATE_SCHEMA_VERSION = 1
 EXPORT_BASELINE_CONFIG_SCHEMA_VERSION = 2
@@ -70,7 +67,6 @@ AUDIO_EXTENSIONS = {
 }
 AUDIO_EXPORT_RELATIVE_ROOT = "structured/Audio"
 AUDIO_SOURCE_LABEL = "Audio"
-DECODED_IMPACT_SAMPLE_LIMIT = 200
 PRUNE_SAMPLE_LIMIT = 200
 IGNORED_GAME_PATH_PREFIXES = (
     # CrashSight writes local crash/telemetry state under the game install.
@@ -96,31 +92,11 @@ WEBUI_TEXT_JSON_RELATIVE_PATHS = (
     "recovered/AnimeStudio-cli/timeline_line_orders.json",
 )
 
-CHK_DECODE_DIR = SCRIPT_DIR / "chk_decode"
-if str(CHK_DECODE_DIR) not in sys.path:
-    sys.path.insert(0, str(CHK_DECODE_DIR))
-
-try:
-    from decode_persistent_vfs import decrypt_blc, parse_block_main_info
-except Exception:  # pragma: no cover - update feed should still build without optional decode context.
-    decrypt_blc = None
-    parse_block_main_info = None
-
-
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Build webui/data/updates/latest.json from focused exported text "
             "JSON and media asset diffs."
-        ),
-    )
-    parser.add_argument(
-        "--game-root",
-        type=Path,
-        default=DEFAULT_GAME_ROOT,
-        help=(
-            "Installed Endfield_Data directory used only for optional decoded-impact "
-            "mapping when applicable."
         ),
     )
     parser.add_argument(
@@ -137,8 +113,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--previous-export-root",
-        "--old-export-root",
-        dest="previous_export_root",
         type=Path,
         default=DEFAULT_PREVIOUS_EXPORT_ROOT,
         help="Previous exported game-data tree to compare against, usually export_1d2/.",
@@ -158,25 +132,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--report-json",
         type=Path,
         default=DEFAULT_REPORT_JSON,
-        help="Raw tracker JSON report path.",
+        help="Raw scanner JSON report path.",
     )
     parser.add_argument(
         "--report-md",
         type=Path,
         default=DEFAULT_REPORT_MD,
-        help="Raw tracker Markdown report path.",
+        help="Raw scanner Markdown report path.",
     )
     parser.add_argument(
         "--sample-limit",
         type=int,
         default=5000,
-        help="Maximum entries per status to carry from the tracker.",
+        help="Maximum entries per status to carry from the scanner.",
     )
     parser.add_argument(
         "--top-line-limit",
         type=int,
         default=50,
-        help="Maximum line-delta entries to preserve in the raw tracker report.",
+        help="Maximum line-delta entries to preserve in the raw scanner report.",
     )
     parser.add_argument(
         "--reset-baseline",
@@ -184,19 +158,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Delete cached update-diff state before rebuilding the previous-export baseline.",
     )
     parser.add_argument(
-        "--skip-asset-updates",
+        "--text-only",
         dest="skip_asset_updates",
         action="store_true",
         help=(
             "Skip the exported image/model/video/audio asset diff. By default "
             "Updates tracks media assets plus WebUI-facing text JSON."
         ),
-    )
-    parser.add_argument(
-        "--include-asset-updates",
-        dest="skip_asset_updates",
-        action="store_false",
-        help="Compatibility flag; asset updates are included by default.",
     )
     parser.set_defaults(skip_asset_updates=False)
     parser.add_argument(
@@ -208,7 +176,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--hash-asset-updates",
+        "--exact",
+        dest="hash_asset_updates",
         action="store_true",
         help=(
             "Hash exported asset contents when comparing assets. Slower, but "
@@ -216,19 +185,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--skip-audio-updates",
+        "--no-audio",
         dest="skip_audio_updates",
         action="store_true",
         help=(
             "Skip decoded audio assets in the exported asset diff while still "
             "comparing images, models, and videos."
         ),
-    )
-    parser.add_argument(
-        "--include-audio-updates",
-        dest="skip_audio_updates",
-        action="store_false",
-        help="Compatibility flag; decoded audio assets are included by default.",
     )
     parser.set_defaults(skip_audio_updates=False)
     parser.add_argument(
@@ -256,7 +219,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def tracker_has_baseline(state_dir: Path) -> bool:
+def scanner_has_baseline(state_dir: Path) -> bool:
     db_path = state_dir / "state.sqlite3"
     if not db_path.exists():
         return False
@@ -440,159 +403,6 @@ def normalized_entry(status: str, raw: dict[str, Any], *, domain: str = "game") 
         if raw.get("text_diff_truncated"):
             entry["text_diff_truncated"] = True
     return entry
-
-
-def persistent_vfs_parts(path: str) -> tuple[str, str, str] | None:
-    normalized = normalize_posix(path)
-    parts = normalized.split("/")
-    if len(parts) < 4:
-        return None
-    if parts[0].lower() != "persistent" or parts[1].lower() != "vfs":
-        return None
-    return parts[2], parts[3], Path(parts[3]).suffix.lower()
-
-
-def decoded_display_tags(decoded_rel: str) -> list[str]:
-    lower = normalize_posix(decoded_rel).lower()
-    tags: list[str] = []
-    suffix = Path(lower).suffix
-    if "/bundles/" in lower or suffix in {".ab", ".bundle"}:
-        tags.append("bundle")
-    if "/dialog/" in lower or "dlgtl_" in lower or "dialog" in lower:
-        tags.append("story")
-    if "/timeline/" in lower or suffix in {".playable", ".controller"}:
-        tags.append("timeline")
-    if "/audio/" in lower or suffix in {".pck", ".bnk", ".wem"}:
-        tags.append("audio")
-    if suffix in {".png", ".jpg", ".jpeg", ".webp", ".tga", ".ktx", ".ktx2", ".dds"}:
-        tags.append("image")
-    if suffix in {".mp4", ".webm", ".mov", ".usm"}:
-        tags.append("video")
-    if suffix in {".prefab", ".mat", ".asset", ".anim", ".fbx"}:
-        tags.append("unity_asset")
-    if "/lua/" in lower or suffix == ".lua":
-        tags.append("lua")
-    if "/table/" in lower or "/config/" in lower or suffix in {".json", ".bytes", ".csv"}:
-        tags.append("data")
-    return tags or ["decoded_file"]
-
-
-def summarize_decoded_files(block: str, rel_files: list[str]) -> dict[str, Any]:
-    paths: list[str] = []
-    tags = Counter()
-    extensions = Counter()
-    for rel in rel_files:
-        rel_norm = normalize_posix(rel)
-        decoded_path = normalize_posix(str(Path("export_full") / "raw_vfs" / "Persistent" / "files" / block / rel_norm))
-        paths.append(decoded_path)
-        extensions[display_extension(Path(rel_norm).suffix)] += 1
-        tags.update(decoded_display_tags(rel_norm))
-    return {
-        "count": len(paths),
-        "sample": paths[:DECODED_IMPACT_SAMPLE_LIMIT],
-        "truncated": max(0, len(paths) - DECODED_IMPACT_SAMPLE_LIMIT),
-        "byExtension": dict(extensions.most_common(12)),
-        "tags": dict(tags.most_common()),
-    }
-
-
-def parse_current_block_manifest(game_root: Path, block: str) -> tuple[dict[str, list[str]], str | None]:
-    if decrypt_blc is None or parse_block_main_info is None:
-        return {}, "decode_persistent_vfs helpers unavailable"
-    blc_path = game_root / "Persistent" / "VFS" / block / f"{block}.blc"
-    if not blc_path.exists():
-        return {}, f"current .blc not found: {normalize_posix(str(blc_path))}"
-    try:
-        info = parse_block_main_info(decrypt_blc(blc_path), verify_crc=True)
-    except Exception as exc:
-        return {}, f"{type(exc).__name__}: {exc}"
-    return {
-        chunk.chk_file_name(): [file_info.file_name for file_info in chunk.files if file_info.file_name]
-        for chunk in info.chunks
-    }, None
-
-
-def decoded_impact_for_entry(
-    entry: dict[str, Any],
-    *,
-    game_root: Path,
-    manifest_cache: dict[str, tuple[dict[str, list[str]], str | None]],
-) -> dict[str, Any] | None:
-    parts = persistent_vfs_parts(str(entry.get("path") or ""))
-    if parts is None:
-        return None
-    block, name, suffix = parts
-    if suffix not in {".chk", ".blc"}:
-        return None
-    if block not in manifest_cache:
-        manifest_cache[block] = parse_current_block_manifest(game_root, block)
-    manifest, error = manifest_cache[block]
-    status = str(entry.get("status") or "")
-    impact: dict[str, Any] = {
-        "source": "current_persistent_vfs_manifest",
-        "block": block,
-        "sourceFile": name,
-        "sourceExtension": suffix,
-        "sampleLimit": DECODED_IMPACT_SAMPLE_LIMIT,
-        "confidence": "current_manifest",
-    }
-    if error:
-        impact["error"] = error
-        impact["count"] = 0
-        impact["sample"] = []
-        impact["truncated"] = 0
-        return impact
-
-    if suffix == ".chk":
-        rel_files = manifest.get(name, [])
-        impact.update(summarize_decoded_files(block, rel_files))
-        if not rel_files and status == "deleted":
-            impact["confidence"] = "deleted_chunk_unmapped"
-            impact["note"] = "The chunk is deleted and the current .blc no longer maps it to decoded filenames."
-        elif status == "deleted":
-            impact["confidence"] = "current_manifest_possible_stale"
-            impact["note"] = "Deleted chunks are mapped only if the current .blc still references them."
-        else:
-            impact["confidence"] = "chunk_to_current_manifest"
-        return impact
-
-    rel_files = []
-    for chunk_files in manifest.values():
-        rel_files.extend(chunk_files)
-    impact.update(summarize_decoded_files(block, sorted(rel_files)))
-    impact["confidence"] = "block_manifest_current_files"
-    impact["note"] = "The .blc changed, so this lists files in the current block manifest; exact old-vs-new membership requires the previous .blc."
-    return impact
-
-
-def attach_decoded_impacts(payload: dict[str, Any], *, game_root: Path) -> None:
-    entries = payload.get("entries")
-    if not isinstance(entries, list):
-        return
-    manifest_cache: dict[str, tuple[dict[str, list[str]], str | None]] = {}
-    totals = Counter()
-    tag_totals = Counter()
-    with_impacts = 0
-    for entry in entries:
-        if not isinstance(entry, dict) or entry.get("domain") != "game":
-            continue
-        impact = decoded_impact_for_entry(entry, game_root=game_root, manifest_cache=manifest_cache)
-        if impact is None:
-            continue
-        entry["decodedImpact"] = impact
-        with_impacts += 1
-        totals[str(entry.get("status") or "")] += int(impact.get("count") or 0)
-        tag_totals.update(impact.get("tags") or {})
-    payload["decodedImpacts"] = {
-        "source": "current_persistent_vfs_manifest",
-        "available": decrypt_blc is not None and parse_block_main_info is not None,
-        "entriesWithImpact": with_impacts,
-        "decodedFileMentions": sum(totals.values()),
-        "byStatus": dict(totals),
-        "byTag": dict(tag_totals.most_common()),
-        "sampleLimit": DECODED_IMPACT_SAMPLE_LIMIT,
-        "note": "For modified .blc files, impact uses current manifest contents. Deleted chunks may not map without historical .blc data.",
-    }
 
 
 def filtered_game_entries(
@@ -1487,9 +1297,9 @@ def attach_asset_updates(
     return
 
 
-def run_tracker(
+def scan_export_tree(
     *,
-    game_root: Path,
+    export_root: Path,
     state_dir: Path,
     report_json: Path,
     report_md: Path,
@@ -1497,33 +1307,23 @@ def run_tracker(
     top_line_limit: int,
     write_history: bool,
     include_relative_paths: list[str],
-) -> None:
-    command = [
-        sys.executable,
-        str(TRACKER),
-        "--root",
-        str(game_root),
-        "--state-dir",
-        str(state_dir),
-        "--summary-json",
-        str(report_json),
-        "--summary-md",
-        str(report_md),
-        "--sample-limit",
-        str(sample_limit),
-        "--top-line-limit",
-        str(top_line_limit),
-    ]
-    for rel_path in normalized_relative_paths(include_relative_paths):
-        command.extend(["--include-relative-path", rel_path])
-    if write_history:
-        command.extend(["--history-dir", str(state_dir / "history")])
-    else:
-        command.append("--no-history")
-    subprocess.run(command, cwd=ROOT, check=True)
+) -> dict[str, object]:
+    result = scan_export_changes(
+        ScanConfig(
+            root=export_root,
+            state_dir=state_dir,
+            summary_json=report_json,
+            summary_md=report_md,
+            history_dir=state_dir / "history" if write_history else None,
+            sample_limit=sample_limit,
+            top_line_limit=top_line_limit,
+            include_relative_paths=tuple(normalized_relative_paths(include_relative_paths)),
+        )
+    )
+    return result.payload
 
 
-def prepare_export_diff_tracker_state(
+def prepare_export_diff_scanner_state(
     *,
     previous_export_root: Path,
     state_dir: Path,
@@ -1535,7 +1335,7 @@ def prepare_export_diff_tracker_state(
     previous_state_dir = export_baseline_state_dir(state_dir)
     compare_state_dir = export_compare_state_dir(state_dir)
     previous_baseline_ready = (
-        tracker_has_baseline(previous_state_dir)
+        scanner_has_baseline(previous_state_dir)
         and export_baseline_config_matches(
             state_dir,
             previous_export_root,
@@ -1547,8 +1347,8 @@ def prepare_export_diff_tracker_state(
     if refresh_previous_baseline or not previous_baseline_ready:
         if previous_state_dir.exists():
             shutil.rmtree(previous_state_dir)
-        run_tracker(
-            game_root=previous_export_root,
+        scan_export_tree(
+            export_root=previous_export_root,
             state_dir=previous_state_dir,
             report_json=previous_state_dir / "previous-export-baseline-summary.json",
             report_md=previous_state_dir / "previous-export-baseline-summary.md",
@@ -1572,7 +1372,6 @@ def prepare_export_diff_tracker_state(
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    game_root = args.game_root.resolve()
     state_dir = args.state_dir.resolve()
     export_root = args.export_root.resolve()
     previous_export_root = args.previous_export_root.resolve()
@@ -1598,7 +1397,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"Previous export root does not exist: {previous_export_root}.")
     if not previous_export_root.is_dir():
         raise SystemExit(f"Previous export root is not a directory: {previous_export_root}")
-    compare_state_dir, previous_baseline_rebuilt = prepare_export_diff_tracker_state(
+    compare_state_dir, previous_baseline_rebuilt = prepare_export_diff_scanner_state(
         previous_export_root=previous_export_root,
         state_dir=state_dir,
         sample_limit=args.sample_limit,
@@ -1606,8 +1405,8 @@ def main(argv: list[str] | None = None) -> int:
         refresh_previous_baseline=bool(args.refresh_previous_export_baseline),
         include_relative_paths=include_relative_paths,
     )
-    run_tracker(
-        game_root=export_root,
+    raw_payload = scan_export_tree(
+        export_root=export_root,
         state_dir=compare_state_dir,
         report_json=report_json,
         report_md=report_md,
@@ -1616,7 +1415,6 @@ def main(argv: list[str] | None = None) -> int:
         write_history=bool(not args.no_history),
         include_relative_paths=include_relative_paths,
     )
-    raw_payload = json.loads(report_json.read_text(encoding="utf-8"))
 
     webui_payload = build_update_payload(
         raw_payload,
@@ -1647,7 +1445,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         webui_payload["previousExportPrune"] = prune_result
 
-    attach_decoded_impacts(webui_payload, game_root=game_root if game_root.exists() else export_root)
     write_json(out_path, webui_payload, indent=2, compact=False)
     write_update_feed_history(webui_payload, state_dir)
 
@@ -1664,10 +1461,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[build_updates] Cached previous-export baseline rebuilt from {previous_export_root}")
     asset_totals = webui_payload.get("assetTotals") or {}
     if (webui_payload.get("assets") or {}).get("skipped"):
-        print("[build_updates] Asset changes: skipped (--skip-asset-updates)")
+        print("[build_updates] Asset changes: skipped (--text-only)")
     else:
         if args.skip_audio_updates:
-            print("[build_updates] Audio asset changes: skipped (--skip-audio-updates)")
+            print("[build_updates] Audio asset changes: skipped (--no-audio)")
         print(
             "[build_updates] Asset changes:"
             f" added={int(asset_totals.get('added') or 0)},"

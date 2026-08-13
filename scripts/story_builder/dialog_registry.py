@@ -30,14 +30,11 @@ about runtime registration, independent of Timeline/LevelScript recovery.
 from __future__ import annotations
 
 import argparse
-import io
 import json
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 

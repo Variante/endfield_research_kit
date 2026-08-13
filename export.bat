@@ -48,7 +48,6 @@ if "%~1"=="" goto :parsed_args
 
 rem Where the data comes from.
 if /I "%~1"=="--from-game" goto :opt_from_game
-if /I "%~1"=="--export-from-game" goto :opt_from_game
 if /I "%~1"=="--game-root" goto :opt_game_root
 
 rem Assets and audio.
@@ -56,21 +55,17 @@ if /I "%~1"=="--with-assets" goto :opt_with_assets
 if /I "%~1"=="--focused-assets" goto :assets_focused
 if /I "%~1"=="--default-assets" goto :assets_default
 if /I "%~1"=="--debug-assets" goto :assets_debug
-if /I "%~1"=="--animestudio-asset-mode" goto :assets_explicit
 
 rem Faster partial rebuilds.
 if /I "%~1"=="--story-only" goto :opt_story_only
 if /I "%~1"=="--mission-pipeline-only" goto :opt_pipeline_only
-if /I "%~1"=="--pipeline-only" goto :opt_pipeline_only
 if /I "%~1"=="--mission-pipeline-data-only" goto :opt_pipeline_data_only
-if /I "%~1"=="--pipeline-data-only" goto :opt_pipeline_data_only
 if /I "%~1"=="--reuse-timeline-orders" goto :opt_reuse_timeline
 if /I "%~1"=="--reuse-reference" goto :opt_reuse_reference
 
 rem Tuning.
 if /I "%~1"=="--webui-jobs" goto :opt_webui_jobs
 if /I "%~1"=="--asset-jobs" goto :opt_asset_jobs
-if /I "%~1"=="--animestudio-jobs" goto :opt_asset_jobs
 if /I "%~1"=="--full-source-graph" goto :opt_full_source_graph
 if /I "%~1"=="--animestudio-object-index" goto :opt_object_index
 
@@ -118,14 +113,6 @@ set "ASSET_MODE=debug"
 shift
 goto :parse_args
 
-:assets_explicit
-if "%~2"=="" goto :missing_asset_mode
-set "WITH_ASSETS=1"
-set "ASSET_MODE=%~2"
-shift
-shift
-goto :parse_args
-
 :opt_story_only
 set "STORY_ONLY=1"
 shift
@@ -162,7 +149,7 @@ goto :parse_args
 
 :opt_asset_jobs
 if "%~2"=="" goto :missing_asset_jobs
-set "EXPORT_ARGS=%EXPORT_ARGS% --animestudio-jobs %~2"
+set "EXPORT_ARGS=%EXPORT_ARGS% --asset-jobs %~2"
 if not defined FIRST_PASSTHROUGH set "FIRST_PASSTHROUGH=--asset-jobs"
 shift
 shift
@@ -260,7 +247,7 @@ rem - optionally rebuild Assets tab indexes and relink/decode CN audio with --wi
 rem - when --from-game and --with-assets are combined, run one AnimeStudio scope for Story and assets
 if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="0" python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type %EXPORT_ARGS%
 if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="0" if errorlevel 1 exit /b %errorlevel%
-if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="1" python .\scripts\export_full_from_game.py --animestudio-scope all --animestudio-asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %EXPORT_ARGS%
+if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="1" python .\scripts\export_full_from_game.py --animestudio-scope all --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %EXPORT_ARGS%
 if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="1" if errorlevel 1 exit /b %errorlevel%
 if "%EXPORT_FROM_GAME%"=="0" if "%WITH_ASSETS%"=="1" echo [export.bat] Reusing existing export_full and decoded assets; pass --from-game to refresh from installed game data.
 if "%EXPORT_FROM_GAME%"=="0" if "%WITH_ASSETS%"=="0" echo [export.bat] Reusing existing export_full; pass --from-game to refresh from installed game data.
@@ -276,7 +263,7 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\story_builder\refresh_evidence.py
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link %STORY_BUILD_ARGS%
+python .\scripts\story_builder\build.py --languages CN --default-language CN %STORY_BUILD_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
 if "%STORY_ONLY%"=="1" (
@@ -314,11 +301,6 @@ exit /b 2
 
 :missing_game_root
 echo Missing folder for --game-root.
-exit /b 2
-
-:missing_asset_mode
-echo Missing value for --animestudio-asset-mode.
-echo Expected focused, default, or debug.
 exit /b 2
 
 :missing_webui_jobs
@@ -417,9 +399,6 @@ echo   With --from-game, any other option is passed to
 echo   scripts\export_full_from_game.py. That is where the --animestudio-*
 echo   tuning and --world-scene-chunk MAP:X:Z live; run
 echo   "python scripts\export_full_from_game.py --help" to see them.
-echo   The older --export-from-game, --animestudio-jobs and
-echo   --animestudio-asset-mode spellings still work.
-echo.
 echo Companion wrappers:
 echo   export_assets.bat  Assets and audio only, when Story is already current.
 echo   build_updates.bat  Build the Updates tab feed.

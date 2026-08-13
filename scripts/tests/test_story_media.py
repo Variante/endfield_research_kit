@@ -42,7 +42,7 @@ class StoryMediaTests(unittest.TestCase):
             {"k": "model", "r": "StreamingAssets/Mesh/cg_image_scene_3.obj"},
         ]
 
-        selected = story_media.collect_cg_story_images(entries)
+        selected = story_media.collect_story_file_images(entries)
 
         self.assertEqual(
             sorted(selected),
@@ -71,7 +71,7 @@ class StoryMediaTests(unittest.TestCase):
             },
         ]
 
-        selected = story_media.collect_cg_story_images(entries)
+        selected = story_media.collect_story_file_images(entries)
 
         self.assertEqual(
             list(selected),

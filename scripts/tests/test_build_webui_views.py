@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
-from scripts import build_assets, build_webui_views
+from scripts import build_assets, build_gameplay, build_webui_views
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def task_names(phases: list[tuple[str, list[build_webui_views.TaskSpec]]]) -> list[list[str]]:
@@ -57,8 +63,8 @@ class WebuiViewPlanTests(unittest.TestCase):
             ["characters", "gameplay_asset_refs", "audio"],
         )
         asset_command = commands_for(phases, "assets")[0]
-        self.assertIn("--skip-gameplay-refs", asset_command)
-        self.assertEqual(asset_command[asset_command.index("--mode") + 1], "default")
+        self.assertNotIn("--skip-gameplay-refs", asset_command)
+        self.assertEqual(asset_command[asset_command.index("--mode") + 1], "debug")
         self.assertNotIn("--skip-decode", commands_for(phases, "audio")[0])
 
     def test_mission_only_plan_has_no_unrelated_views(self) -> None:
@@ -74,10 +80,70 @@ class WebuiViewPlanTests(unittest.TestCase):
         self.assertNotIn("--relevant-asset-maps", graph_command)
         self.assertNotIn("--skip-reference-rows", graph_command)
 
-    def test_asset_builder_can_defer_joined_gameplay_sidecar(self) -> None:
-        args = build_assets.parse_args(["--skip-gameplay-refs"])
+    def test_asset_builder_rejects_retired_gameplay_sidecar_option(self) -> None:
+        with mock.patch("sys.stderr"), self.assertRaises(SystemExit):
+            build_assets.parse_args(["--skip-gameplay-refs"])
 
-        self.assertTrue(args.skip_gameplay_refs)
+    def test_gameplay_stage_owns_asset_refs_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            data_root = Path(temporary)
+            gameplay_path = data_root / "lang/CN/gameplay/index.json"
+            asset_index_path = data_root / "assets/index.json"
+            output_path = data_root / "assets/gameplay_refs.json"
+            gameplay_path.parent.mkdir(parents=True)
+            asset_index_path.parent.mkdir(parents=True)
+            gameplay_path.write_text(json.dumps({"entries": []}), encoding="utf-8")
+            asset_index_path.write_text(json.dumps({"entries": []}), encoding="utf-8")
+
+            self.assertEqual(
+                build_gameplay.build_asset_refs_stage("cn", data_root=data_root),
+                0,
+            )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["counts"]["entries"], 0)
+            self.assertEqual(payload["sourcePath"], str(asset_index_path).replace("\\", "/"))
+
+    def test_asset_export_runs_gameplay_owner_after_asset_index(self) -> None:
+        source = (ROOT / "export_assets.bat").read_text(encoding="utf-8")
+
+        asset_index = source.index("scripts\\build_assets.py")
+        gameplay_refs = source.index(
+            "scripts\\build_gameplay.py --stage asset-refs --default-language CN"
+        )
+        audio = source.index("scripts\\build_audio.py", gameplay_refs)
+        self.assertLess(asset_index, gameplay_refs)
+        self.assertLess(gameplay_refs, audio)
+
+    def test_custom_roots_are_forwarded_to_every_subprocess_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            args = build_webui_views.parse_args(
+                [
+                    "--export-root",
+                    str(root / "export"),
+                    "--game-root",
+                    str(root / "game"),
+                ]
+            )
+            commands = [
+                command
+                for _, tasks in build_webui_views.build_phases(args)
+                for task in tasks
+                for command in task.commands
+            ]
+
+            self.assertTrue(commands)
+            for command in commands:
+                environment = dict(command.environment)
+                self.assertEqual(
+                    environment["ENDFIELD_EXPORT_ROOT"],
+                    str((root / "export").resolve()),
+                )
+                self.assertEqual(
+                    environment["ENDFIELD_GAME_ROOT"],
+                    str((root / "game").resolve()),
+                )
 
 
 if __name__ == "__main__":

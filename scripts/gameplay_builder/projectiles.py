@@ -15,18 +15,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any, Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or REPO_ROOT / "export_full")
 DEFAULT_INPUTS = (
-    REPO_ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour",
-    REPO_ROOT / "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour",
+    EXPORT_ROOT / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour",
+    EXPORT_ROOT / "recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour",
 )
 DEFAULT_OUTPUT = REPO_ROOT / "webui/data/gameplay/projectiles.json"
-DEFAULT_AUDIO_INDEX = REPO_ROOT / "export_full/structured/Audio/CN/index.json"
-PROJECTILE_EVENT_PREFIX = "projectile-event:"
 EFFECT_LIST_FIELDS = (
     ("main", "mainEffects"),
     ("launch", "launchEffects"),
@@ -45,13 +45,6 @@ SOUND_FIELDS = (
     "sizzleSound",
 )
 
-AUDIO_LINK_FIELDS = (
-    "src", "mediaId", "format", "bytes", "audioScope", "audioCategory",
-    "audioCategoryDetail", "sourceBlock", "sourceBlockLabel", "sourceBank",
-    "bankId", "bank",
-)
-
-
 def compact_dict(**values: Any) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
 
@@ -65,98 +58,6 @@ def enum_value(value: Any) -> Any:
         hex=value.get("hex"),
         enumType=value.get("enumType"),
     )
-
-
-def hydrate_audio_links(entries: list[dict[str, Any]], audio_index_path: Path) -> dict[str, Any] | None:
-    """Reuse the current canonical HIRC mapping without rescanning game banks."""
-
-    try:
-        audio_index = json.loads(audio_index_path.read_text(encoding="utf-8-sig"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return None
-    requested_hashes = {
-        int(value) & 0xFFFFFFFF
-        for value in (audio_index.get("projectileEventHashes") or [])
-        if isinstance(value, int)
-    }
-    if not requested_hashes:
-        return None
-    found_hashes = {
-        int(row.get("eventHash")) & 0xFFFFFFFF
-        for row in (audio_index.get("eventEvidence") or [])
-        if isinstance(row, dict)
-        and isinstance(row.get("eventHash"), int)
-    }
-    event_ids_by_hash: dict[int, set[str]] = {}
-    for row in audio_index.get("eventEvidence") or []:
-        if not isinstance(row, dict) or not isinstance(row.get("eventHash"), int):
-            continue
-        event_id = str(row.get("eventId") or "").strip()
-        if event_id:
-            event_ids_by_hash.setdefault(int(row["eventHash"]) & 0xFFFFFFFF, set()).add(event_id)
-    audio_by_hash: dict[int, list[dict[str, Any]]] = {}
-    for row in audio_index.get("events") or []:
-        if not isinstance(row, dict):
-            continue
-        try:
-            event_hash = int(row.get("eventHash")) & 0xFFFFFFFF
-        except (TypeError, ValueError):
-            continue
-        if not row.get("src"):
-            continue
-        audio_by_hash.setdefault(event_hash, []).append({
-            key: row[key]
-            for key in AUDIO_LINK_FIELDS
-            if row.get(key) is not None
-        })
-
-    refs = 0
-    linked_refs = 0
-    candidate_count = 0
-    resolved_hashes: set[int] = set()
-    for entry in entries:
-        sounds = entry.get("sounds") or {}
-        for field in SOUND_FIELDS:
-            value = sounds.get(field)
-            raw = value.get("value") if isinstance(value, dict) else value
-            if not isinstance(value, dict) or not isinstance(raw, int) or not raw:
-                continue
-            refs += 1
-            event_hash = raw & 0xFFFFFFFF
-            if event_hash not in requested_hashes:
-                continue
-            media: list[dict[str, Any]] = []
-            seen: set[tuple[str, str]] = set()
-            for audio in audio_by_hash.get(event_hash, []):
-                key = (str(audio.get("src") or ""), str(audio.get("mediaId") or ""))
-                if not key[0] or key in seen:
-                    continue
-                seen.add(key)
-                media.append(audio)
-            event_found = event_hash in found_hashes
-            resolved_hashes.update([event_hash] if event_found else [])
-            if media:
-                linked_refs += 1
-                candidate_count += len(media)
-            value["event"] = {
-                "hash": event_hash,
-                "hex": f"0x{event_hash:08x}",
-                "foundInWwise": event_found,
-                "playableCandidates": len(media),
-                "source": "wwiseHirc" if event_found else "unresolved",
-                "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate" if media else "none",
-                "canonicalEventIds": sorted(event_ids_by_hash.get(event_hash) or {f"{PROJECTILE_EVENT_PREFIX}0x{event_hash:08x}"}),
-            }
-            if media:
-                value["audio"] = media
-    return {
-        "projectileSoundRefs": refs,
-        "projectileSoundEvents": len(resolved_hashes),
-        "projectileSoundRefsLinked": linked_refs,
-        "projectileAudioCandidates": candidate_count,
-        "source": "Wwise HIRC event traversal (reused from current audio index)",
-        "note": "Playable files are event media candidates; runtime switch/container selection is not recovered.",
-    }
 
 
 def blackboard_scalar(value: Any) -> Any:
@@ -553,7 +454,7 @@ def build_entry(path: Path, root: Path) -> dict[str, Any] | None:
                 "ProjectileComponentData boundaries and exact tail consumption are validated for the current installed-game export.",
                 "Authored numeric values and blackboard keys are preserved; the WebUI does not evaluate runtime blackboards.",
                 "Exporter-provided enum member names are shown where validated; otherwise the numeric value and enum type are retained.",
-                "The seven sound fields preserve authored Wwise event hashes; build_audio.py may attach exact HIRC event-to-media candidates when decoded audio is current.",
+                "The seven sound fields preserve authored Wwise event hashes; playable media is published separately by build_audio.py.",
                 "Effect bodies are byte-complete for observed projectile variants while some wrapper semantics remain inferred.",
             ],
         },
@@ -578,8 +479,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="MonoBehaviour JSON directory to scan; repeat for multiple source roots. Defaults to StreamingAssets and Persistent.",
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help=f"Output JSON path (default: {DEFAULT_OUTPUT})")
-    parser.add_argument("--audio-index", type=Path, default=DEFAULT_AUDIO_INDEX, help=f"Current decoded audio index used to reuse projectile HIRC links (default: {DEFAULT_AUDIO_INDEX})")
-    parser.add_argument("--skip-audio-links", action="store_true", help="Do not hydrate projectile sound links from the current decoded audio index.")
     parser.add_argument("--pretty", action="store_true", help="Write indented JSON for inspection instead of compact JSON.")
     parser.add_argument("--require-exact", action="store_true", help="Fail if any emitted projectile lacks exact tail consumption.")
     return parser.parse_args(argv)
@@ -632,7 +531,7 @@ def main(argv: list[str] | None = None) -> int:
         effect_actions += sum(len(values or []) for values in ((row.get("effects") or {}).get("lists") or {}).values())
         id_only_tag_filters += int((((row.get("targeting") or {}).get("targetFilter") or {}).get("tagEntryLayout") == "idOnly"))
     output = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "source": "AnimeStudio exact MonoBehaviour projectile decode",
         "sourceRoots": [source_label(root) for root in roots],
         "counts": {
@@ -656,9 +555,6 @@ def main(argv: list[str] | None = None) -> int:
         },
         "entries": entries,
     }
-    audio_links = None if args.skip_audio_links else hydrate_audio_links(entries, args.audio_index.resolve())
-    if audio_links is not None:
-        output["audioLinks"] = audio_links
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(output, ensure_ascii=False, indent=2 if args.pretty else None, separators=None if args.pretty else (",", ":")) + "\n",

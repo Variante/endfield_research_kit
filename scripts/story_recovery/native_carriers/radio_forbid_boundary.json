@@ -1,0 +1,43 @@
+{
+  "schema": "radioForbidNegativeBoundary.v1",
+  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "classification": "no_current_offline_nonempty_radio_id_producer",
+  "sourceFingerprints": {
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "luaCorpusSha256": "c042011f1b53267f0bedfb056202d94cf0fb87b964b16d96ad53399c00a6b8f6",
+    "ifixPatchSha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
+  },
+  "managedSurface": {
+    "forbidType": "ForbidInteractFacBuilding",
+    "forbidTypeValue": 25,
+    "radioParamType": "Beyond.Gameplay.ForbidParamsWithRadioReason",
+    "radioIdFieldOffset": "0x18"
+  },
+  "nativeSurface": {
+    "radioConstructor": {
+      "methodIndex": 17254,
+      "va": "0x187325ce4"
+    },
+    "defaultFactory": {
+      "methodIndex": 17242,
+      "va": "0x187325d40",
+      "radioIdArgument": "null"
+    },
+    "setForbidExecute": {
+      "methodIndex": 37066,
+      "va": "0x18768ec1c",
+      "forbidParamsArgument": "null"
+    }
+  },
+  "observations": {
+    "serializedRadioParamInstances": 2,
+    "nonEmptySerializedRadioIds": 0,
+    "shippedLuaProducerReads": 2,
+    "luaRadioParamConstructors": 0,
+    "relevantActiveIfixTargets": 0,
+    "targetIdentifierMatches": 0
+  },
+  "conclusion": "Current reviewed offline producers do not supply a non-empty radioId for the ForbidInteractFacBuilding path.",
+  "evidenceBoundary": "This recorded negative boundary covers the pinned GameAssembly and metadata, the fingerprinted shipped Lua corpus, the reviewed active IFix patch, and the indexed serialized objects audited for this build. Indirect dispatch, runtime mutation, server-provided data, unindexed sources, and future builds remain open."
+}

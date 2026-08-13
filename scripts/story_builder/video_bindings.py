@@ -55,7 +55,6 @@ Scene-to-mission rule: the mission id is the dialog scene id with its trailing
 from __future__ import annotations
 
 import argparse
-import io
 import json
 import re
 import sys
@@ -63,8 +62,6 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = ROOT / "scripts"
@@ -217,6 +214,56 @@ def fmv_id_scene_hint(fmv_id: str) -> str:
 def fmv_id_mission_hint(fmv_id: str) -> str:
     scene_hint = fmv_id_scene_hint(fmv_id)
     return scene_to_mission(scene_hint)
+
+
+def fmv_to_webui_story_key(fmv_id: str) -> str:
+    """Map one canonical FMV id to the generated conversation key."""
+    value = str(fmv_id or "").strip()
+    if value.startswith(("f_", "m_")):
+        value = value[2:]
+    if not value.startswith("cs_video_"):
+        return value
+    rest = value[len("cs_video_"):]
+    if rest.startswith((
+        "dlg_",
+        "sns_",
+        "cutscene_",
+        "black_",
+        "radio_",
+        "remotecomm_",
+    )):
+        return rest
+    return f"cutscene_{rest}"
+
+
+def fmv_clips_by_story(
+    bindings: dict[str, dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    mappings: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for fmv_id, binding in bindings.items():
+        story_key = fmv_to_webui_story_key(fmv_id)
+        if not story_key:
+            continue
+        for clip in binding.get("clips") or []:
+            if not isinstance(clip, dict) or clip.get("start") is None:
+                continue
+            mappings[story_key].append({
+                "fmvId": fmv_id,
+                "clipStart": clip.get("start"),
+                "clipDuration": clip.get("duration"),
+                "assetClipDuration": clip.get("assetClipDuration"),
+                "trackFile": clip.get("trackFile"),
+            })
+    return {
+        key: sorted(
+            rows,
+            key=lambda row: (
+                float(row.get("clipStart") or 0),
+                str(row.get("fmvId") or ""),
+            ),
+        )
+        for key, rows in sorted(mappings.items())
+    }
 
 
 def iter_video_files() -> list[Path]:
@@ -709,6 +756,7 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
                 "optionIndex": clip.get("optionIndex"),
                 "trackFile": rel(path),
                 "playableAssetPathId": asset_pid_int,
+                "assetClipDuration": (playable or {}).get("duration"),
             })
 
     numeric_ids = load_fmv_numeric_ids()
@@ -836,6 +884,7 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
             "displayName": clip["displayName"],
             "trackFile": clip["trackFile"],
             "playableAssetPathId": clip["playableAssetPathId"],
+            "assetClipDuration": clip["assetClipDuration"],
         })
 
     for fmv_id, missions in fmv_to_missions.items():
@@ -1004,6 +1053,7 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
         "indexByScene": {k: sorted(set(v)) for k, v in sorted(by_scene.items())},
         "indexByMission": {k: sorted(set(v)) for k, v in sorted(by_mission.items())},
         "indexByVideo": {k: sorted(set(v)) for k, v in sorted(by_video.items())},
+        "fmvClipsByStory": fmv_clips_by_story(bindings),
         "unboundVideos": sorted(unbound_videos),
     }
     return payload

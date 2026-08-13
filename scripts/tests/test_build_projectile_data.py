@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,7 +54,9 @@ class ProjectileBuilderTests(unittest.TestCase):
                     "remainingRawWordCount": 0,
                     "consumedWordCount": 1,
                     "wordCount": 1,
-                    "postAlertEffectSoundTail": {},
+                    "postAlertEffectSoundTail": {
+                        "launchSound": {"value": -1, "hex": "0xffffffff"},
+                    },
                 },
             },
         }
@@ -92,35 +95,19 @@ class ProjectileBuilderTests(unittest.TestCase):
         self.assertEqual(entry["movement"]["modes"][0]["surroundCenterKey"], "TargetPoint")
         self.assertEqual(entry["template"]["normalSkillId"], "chr_0001_test_normal_skill")
         self.assertEqual(entry["template"]["hudPanelName"], "test_panel")
-
-    def test_hydrates_current_audio_index_by_unsigned_event_hash(self) -> None:
-        event_hash = 0xFFFFFFFF
-        entry = {"sounds": {"launchSound": {"value": -1, "hex": "0xffffffff"}}}
-        with tempfile.TemporaryDirectory() as directory:
-            index_path = Path(directory) / "index.json"
-            index_path.write_text(json.dumps({
-                "projectileEventHashes": [event_hash],
-                "eventEvidence": [{
-                    "eventId": "au_projectile_named_event",
-                    "eventHash": event_hash,
-                }],
-                "events": [{
-                    "eventId": "au_projectile_named_event",
-                    "eventHash": event_hash,
-                    "src": "/export_full/structured/Audio/shared/wwise/unknown/7.wav",
-                    "mediaId": 7,
-                    "format": "wav",
-                }],
-            }), encoding="utf-8")
-            stats = MODULE.hydrate_audio_links([entry], index_path)
-
-        self.assertIsNotNone(stats)
-        assert stats is not None
-        self.assertEqual(stats["projectileSoundRefsLinked"], 1)
         launch = entry["sounds"]["launchSound"]
-        self.assertTrue(launch["event"]["foundInWwise"])
-        self.assertEqual(launch["event"]["canonicalEventIds"], ["au_projectile_named_event"])
-        self.assertEqual(launch["audio"][0]["mediaId"], 7)
+        self.assertEqual(launch["value"], -1)
+        self.assertNotIn("event", launch)
+        self.assertNotIn("audio", launch)
+
+    def test_audio_hydration_options_are_removed(self) -> None:
+        for option, value in (
+            ("--audio-index", "index.json"),
+            ("--skip-audio-links", None),
+        ):
+            argv = [option] if value is None else [option, value]
+            with self.subTest(option=option), mock.patch("sys.stderr"), self.assertRaises(SystemExit):
+                MODULE.parse_args(argv)
 
 
 if __name__ == "__main__":

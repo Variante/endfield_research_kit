@@ -67,6 +67,11 @@ Run the coverage audit when adding, reviewing, or checking stale targets:
 python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
 ```
 
+The same report includes generated response candidates and flags manual paths
+whose first line conflicts with the current builder evidence. These are review
+diagnostics only; a candidate or conflict never promotes inferred evidence or
+changes the override file.
+
 If frontend code changed, also run:
 
 ```bat

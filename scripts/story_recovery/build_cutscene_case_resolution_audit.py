@@ -29,6 +29,9 @@ from common import (  # noqa: E402
     resolve_installed_game_data_root,
     sha256_file as sha256_path,
 )
+from story_builder.lua_consumer_references import (  # noqa: E402
+    DEFAULT_INDEX as DEFAULT_LUA_AUDIT,
+)
 
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root().parent
@@ -40,7 +43,6 @@ DEFAULT_METADATA = (
     / "Metadata"
     / "global-metadata.dat"
 )
-DEFAULT_LUA_AUDIT = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
 DEFAULT_IFIX_AUDIT = ROOT / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
 DEFAULT_OUT = ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 DEFAULT_MARKDOWN = ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.md"

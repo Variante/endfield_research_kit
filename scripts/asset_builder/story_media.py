@@ -44,31 +44,15 @@ def collect_story_file_images(entries: list[dict]) -> dict[str, dict]:
     return {rel: entry for _rank, rel, entry in selected_by_stem.values()}
 
 
-def collect_cg_story_images(entries: list[dict]) -> dict[str, dict]:
-    """Compatibility wrapper for callers/tests covering Story image import."""
-    return collect_story_file_images(entries)
-
-
 def source_roots_for_entries(
     payloads: list[dict],
-    entries: list[dict],
-    *,
-    include_all_sources: bool = False,
 ) -> dict:
-    roots: dict[str, str] = {}
     available: dict[str, str] = {}
     for payload in payloads:
         source_roots = payload.get("sourceRoots") if isinstance(payload.get("sourceRoots"), dict) else {}
         for key, value in source_roots.items():
             available[str(key)] = str(value)
-    if include_all_sources:
-        return {key: available[key] for key in sorted(available)}
-    for entry in entries:
-        rel = str(entry.get("r") or "").replace("\\", "/").strip("/")
-        source = rel.split("/", 1)[0] if rel else ""
-        if source and source in available:
-            roots[source] = available[source]
-    return {key: roots[key] for key in sorted(roots)}
+    return {key: available[key] for key in sorted(available)}
 
 
 def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
@@ -121,11 +105,7 @@ def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
     payload = {
         "generated": asset_payload.get("generated") or video_payload.get("generated"),
         "root": asset_payload.get("root") or video_payload.get("root") or "export_full",
-        "sourceRoots": source_roots_for_entries(
-            [asset_payload, video_payload],
-            entries,
-            include_all_sources=True,
-        ),
+        "sourceRoots": source_roots_for_entries([asset_payload, video_payload]),
         "counts": {
             "total": len(entries),
             "image": len(images),

@@ -39,20 +39,11 @@ if not errorlevel 1 goto :help
 
 rem Compare depth.
 if /I "%~1"=="--text-only" goto :opt_text_only
-if /I "%~1"=="--skip-asset-updates" goto :opt_text_only
 if /I "%~1"=="--no-audio" goto :opt_no_audio
-if /I "%~1"=="--skip-audio-updates" goto :opt_no_audio
 if /I "%~1"=="--exact" goto :opt_exact
-if /I "%~1"=="--hash-asset-updates" goto :opt_exact
-
-rem Baseline-only initialization was retired; two exports are required.
-if /I "%~1"=="--first-time" goto :first_time_removed
-if /I "%~1"=="--init-build" goto :first_time_removed
-if /I "%~1"=="--baseline-only" goto :first_time_removed
 
 rem Long-form folder flags, kept for scripts and for one-off overrides.
 if /I "%~1"=="--previous-export-root" goto :opt_old_root
-if /I "%~1"=="--old-export-root" goto :opt_old_root
 if /I "%~1"=="--export-root" goto :opt_new_root
 
 rem Old-folder cleanup.
@@ -61,27 +52,23 @@ if /I "%~1"=="--prune-previous-export-untracked" goto :opt_prune_old
 if /I "%~1"=="--dry-run" goto :opt_dry_run
 if /I "%~1"=="--dry-run-prune-previous-export-untracked" goto :opt_prune_dry_run
 
-rem Accepted and ignored: assets and audio are compared by default.
-if /I "%~1"=="--include-asset-updates" goto :next_option
-if /I "%~1"=="--include-audio-updates" goto :next_option
-
 rem Anything else, including its value, goes to scripts\build_updates.py.
 set "EXTRA_ARGS=%EXTRA_ARGS% "%~1""
 shift
 goto :parse_options
 
 :opt_text_only
-set "MODE_ARGS=%MODE_ARGS% --skip-asset-updates"
+set "MODE_ARGS=%MODE_ARGS% --text-only"
 shift
 goto :parse_options
 
 :opt_no_audio
-set "MODE_ARGS=%MODE_ARGS% --skip-audio-updates"
+set "MODE_ARGS=%MODE_ARGS% --no-audio"
 shift
 goto :parse_options
 
 :opt_exact
-set "MODE_ARGS=%MODE_ARGS% --hash-asset-updates"
+set "MODE_ARGS=%MODE_ARGS% --exact"
 shift
 goto :parse_options
 
@@ -116,10 +103,6 @@ set "DRY_RUN=1"
 shift
 goto :parse_options
 
-:next_option
-shift
-goto :parse_options
-
 :compose
 if "%DRY_RUN%"=="1" if "%PRUNE_OLD%"=="0" (
   echo --dry-run only describes what --prune-old would delete; pass both together.
@@ -137,8 +120,6 @@ if defined NEW_EXPORT set "ROOT_ARGS=%ROOT_ARGS% --export-root "%NEW_EXPORT%""
 rem Naming a different old folder invalidates its cached scan, so rebuild that
 rem baseline here instead of making the user remember to ask for it.
 if "%ROOTS_GIVEN%"=="1" set "ROOT_ARGS=%ROOT_ARGS% --refresh-previous-export-baseline"
-
-if defined ENDFIELD_GAME_ROOT set "ROOT_ARGS=%ROOT_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
 
 if not defined OLD_EXPORT set "OLD_EXPORT=(scripts\build_updates.py default)"
 if not defined NEW_EXPORT set "NEW_EXPORT=(scripts\build_updates.py default)"
@@ -162,11 +143,6 @@ exit /b 2
 
 :missing_value
 echo Missing folder for %~1.
-exit /b 2
-
-:first_time_removed
-echo --first-time is no longer supported. Updates require two exported folders.
-echo Run: build_updates.bat OLD NEW
 exit /b 2
 
 :is_help

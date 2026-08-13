@@ -6,7 +6,7 @@ import tempfile
 import hashlib
 from unittest.mock import patch
 
-from scripts.story_recovery import build_source_story_gap_queue as gap_queue
+from scripts.tests.story_gap._support import gap_queue
 
 
 _merge_exact_interaction_trigger_with_native_playback = (
@@ -17,7 +17,7 @@ _merge_exact_interaction_trigger_with_native_playback = (
 class SourceStoryGapQueueEvidenceMergeTests(unittest.TestCase):
     def test_final_native_closure_applies_interaction_merge(self) -> None:
         source = Path(
-            "scripts/story_recovery/build_source_story_gap_queue.py"
+            "scripts/story_builder/source_gap/model.py"
         ).read_text(encoding="utf-8")
         closure_start = source.index(
             "for scene_key, row in list(closed_exact_native_isolated_by_key.items())"

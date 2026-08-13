@@ -3,7 +3,7 @@
   const COLLAPSED_KINDS_STORAGE_KEY = "gameplay_collapsed_kinds";
   const LEVEL_FRACTION_STORAGE_KEY = "gameplay_level_fraction";
   const GAMEPLAY_DATA_VERSION = "20260809-gp10";
-  const GAMEPLAY_INTEGRATION_VERSION = "20260809-sfx5";
+  const GAMEPLAY_INTEGRATION_VERSION = "20260813-projectile-audio1";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const GAMEPLAY_INLINE_AUDIO_LIMIT = 20;
   const GENDER_VARIANT_STORAGE_KEY = "webui_gender_variant";
@@ -114,6 +114,7 @@
       token: 0,
       combat: null,
       projectiles: null,
+      projectileAudio: null,
       soundEffects: null,
       assets: null,
       errors: [],
@@ -1223,6 +1224,16 @@
     "launchSound", "loopSound", "reachSound", "hitSound", "blockSound", "finishedSound", "sizzleSound",
   ];
 
+  function projectileEventHash(value) {
+    const raw = value && typeof value === "object" ? value.value : value;
+    const numeric = Number(raw);
+    return Number.isFinite(numeric) && numeric !== 0 ? numeric >>> 0 : null;
+  }
+
+  function projectileAudioIndexKey(projectileId, field, eventHash) {
+    return `${String(projectileId || "")}\u0000${String(field || "")}\u0000${Number(eventHash) >>> 0}`;
+  }
+
   function projectileFriendlyName(projectile) {
     const id = String(projectile?.id || "")
       .replace(/^data_/, "")
@@ -1236,13 +1247,16 @@
     const sounds = projectile?.sounds || {};
     return PROJECTILE_SOUND_PHASES.map((field) => {
       const value = sounds[field];
-      const raw = typeof value === "object" ? value?.value : value;
-      if (!raw) return null;
+      const eventHash = projectileEventHash(value);
+      if (eventHash === null) return null;
+      const link = STATE.integration.indexes?.projectileAudio?.get(
+        projectileAudioIndexKey(projectile?.id, field, eventHash),
+      );
       return {
         field,
         value,
-        event: value?.event || {},
-        audio: Array.isArray(value?.audio) ? value.audio.filter((row) => row?.src) : [],
+        event: link?.event || { hash: eventHash, hex: `0x${eventHash.toString(16).padStart(8, "0")}` },
+        audio: Array.isArray(link?.audio) ? link.audio.filter((row) => row?.src) : [],
       };
     }).filter(Boolean);
   }
@@ -1250,13 +1264,14 @@
   function renderProjectileAudio(soundRows) {
     const playable = soundRows.filter((row) => row.audio.length);
     if (!soundRows.length) return "";
+    const sidecarUnavailable = STATE.integration.status === "ready" && !STATE.integration.projectileAudio;
     const phases = soundRows.map((row) => {
       const phaseLabel = text(`projectileSound_${row.field}`);
       const candidates = row.audio.map((audio, index) => `<div class="gameplay-projectile-audio-candidate"><audio controls preload="none" src="${escapeHtml(audio.src)}"></audio><small>${escapeHtml(`${text("projectileAudioCandidate")} ${index + 1} · ${audio.mediaId || "-"}`)}</small></div>`).join("");
       const open = row.audio.length > 0 && row.audio.length <= GAMEPLAY_INLINE_AUDIO_LIMIT ? " open" : "";
       return `<details class="gameplay-projectile-audio-phase"${open}><summary><strong>${escapeHtml(phaseLabel)}</strong><span>${escapeHtml(row.audio.length ? `${row.audio.length} ${text("projectilePlayableCandidates")}` : text("projectileSoundUnlinked"))}</span></summary>${candidates || `<p>${escapeHtml(text("projectileSoundUnlinkedNote"))}</p>`}</details>`;
     }).join("");
-    return `<section class="gameplay-projectile-audio"><header><strong>${escapeHtml(text("projectileAudio"))}</strong><span>${escapeHtml(`${playable.reduce((total, row) => total + row.audio.length, 0)} ${text("projectilePlayableCandidates")}`)}</span></header><p>${escapeHtml(text("projectileAudioNote"))}</p>${phases}</section>`;
+    return `<section class="gameplay-projectile-audio"><header><strong>${escapeHtml(text("projectileAudio"))}</strong><span>${escapeHtml(`${playable.reduce((total, row) => total + row.audio.length, 0)} ${text("projectilePlayableCandidates")}`)}</span></header><p${sidecarUnavailable ? ' class="gameplay-integration-note is-warning" role="status"' : ""}>${escapeHtml(text(sidecarUnavailable ? "projectileAudioUnavailable" : "projectileAudioNote"))}</p>${phases}</section>`;
   }
 
   function gameplaySoundEventName(eventId) {
@@ -2391,6 +2406,7 @@
     const code = encodeURIComponent(String(language || "CN").toUpperCase());
     if (kind === "combat") return `data/lang/${code}/gameplay/combat_relationships.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
     if (kind === "projectiles") return `data/gameplay/projectiles.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
+    if (kind === "projectileAudio") return `data/lang/${code}/gameplay/projectile_audio.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
     if (kind === "soundEffects") return `data/lang/${code}/gameplay/sound_effects.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
     return `data/assets/gameplay_refs.json?v=${GAMEPLAY_INTEGRATION_VERSION}`;
   }
@@ -2406,7 +2422,8 @@
   function buildIntegrationIndexes() {
     const combat = STATE.integration.combat;
     const projectile = STATE.integration.projectiles;
-    const indexes = { combat: null };
+    const projectileAudio = STATE.integration.projectileAudio;
+    const indexes = { combat: null, projectileAudio: new Map() };
     if (combat && Array.isArray(combat.nodes) && Array.isArray(combat.edges)) {
       const nodes = new Map(combat.nodes.map((node) => [String(node.id || ""), node]));
       const outgoing = new Map();
@@ -2420,6 +2437,14 @@
     }
     if (projectile && Array.isArray(projectile.entries)) {
       indexes.projectiles = projectile.entries;
+    }
+    for (const link of projectileAudio?.links || []) {
+      const eventHash = projectileEventHash(link?.eventHash);
+      if (!link?.projectileId || !link?.field || eventHash === null) continue;
+      indexes.projectileAudio.set(
+        projectileAudioIndexKey(link.projectileId, link.field, eventHash),
+        link,
+      );
     }
     return indexes;
   }
@@ -3485,6 +3510,7 @@
     integration.status = "loading";
     integration.combat = null;
     integration.projectiles = null;
+    integration.projectileAudio = null;
     integration.soundEffects = null;
     integration.assets = null;
     integration.errors = [];
@@ -3492,6 +3518,7 @@
     const requests = [
       ["combat", integrationPath("combat", nextLanguage), (payload) => payload && Array.isArray(payload.nodes) && Array.isArray(payload.edges)],
       ["projectiles", integrationPath("projectiles", nextLanguage), (payload) => payload && Array.isArray(payload.entries)],
+      ["projectileAudio", integrationPath("projectileAudio", nextLanguage), (payload) => payload?.schemaVersion === 1 && Array.isArray(payload.links)],
       ["soundEffects", integrationPath("soundEffects", nextLanguage), (payload) => payload && [1, 2, 3, 4].includes(payload.schemaVersion) && payload.characters && payload.enemies],
       ["assets", integrationPath("assets", nextLanguage), (payload) => payload && payload.entries && typeof payload.entries === "object"],
     ];
@@ -3507,7 +3534,7 @@
         integration[result.kind] = result.payload;
         // Asset refs are an optional visual enhancement. Missing visual refs
         // must not turn a valid Gameplay/Combat/Projectile build into an error.
-        if (result.error && !["assets", "soundEffects"].includes(result.kind)) integration.errors.push({ kind: result.kind, message: result.error });
+        if (result.error && !["assets", "soundEffects", "projectileAudio"].includes(result.kind)) integration.errors.push({ kind: result.kind, message: result.error });
       }
       integration.indexes = buildIntegrationIndexes();
       integration.status = "ready";

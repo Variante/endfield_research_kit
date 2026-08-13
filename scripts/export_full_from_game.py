@@ -459,7 +459,7 @@ def write_webui_texture_name_filter(output_root: Path) -> tuple[Path, dict[str, 
     if not patterns:
         raise SystemExit(
             "Focused asset mode produced no Texture2D name patterns; refusing to run a broad Texture2D export. "
-            "Use --animestudio-asset-mode default/debug or fix the WebUI media references."
+            "Use --asset-mode default/debug or fix the WebUI media references."
         )
     content = "\n".join(patterns) + "\n"
     if not filter_path.exists() or filter_path.read_text(encoding="utf-8-sig") != content:
@@ -2457,12 +2457,13 @@ def parse_args() -> argparse.Namespace:
         default="all",
         help=(
             "`story` exports only maps plus TextAsset/MonoBehaviour/PlayableDirector JSON. "
-            "`assets` uses --animestudio-asset-mode to choose focused, default, or debug assets. "
+            "`assets` uses --asset-mode to choose focused, default, or debug assets. "
             "`all` combines story JSON with the selected asset mode."
         ),
     )
     parser.add_argument(
-        "--animestudio-asset-mode",
+        "--asset-mode",
+        dest="animestudio_asset_mode",
         choices=ANIMESTUDIO_ASSET_MODES,
         default="focused",
         help=(
@@ -2482,16 +2483,8 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--animestudio-refresh-types",
-        nargs="+",
-        default=(),
-        help=(
-            "Deprecated no-op. The cross-run AnimeStudio cache has been removed, so "
-            "every selected item is always re-exported and there is nothing to force-refresh."
-        ),
-    )
-    parser.add_argument(
-        "--animestudio-jobs",
+        "--asset-jobs",
+        dest="animestudio_jobs",
         type=int,
         default=ANIMESTUDIO_DEFAULT_JOBS,
         help=(
@@ -2507,8 +2500,8 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Split each map-filtered deterministic asset type into this many filter_data shards. "
             f"The default {ANIMESTUDIO_DEFAULT_SHARDS} keeps per-process asset slices small; "
-            f"the shared --animestudio-jobs pool consumes those shards. "
-            "Use 0 to shard by --animestudio-jobs."
+            f"the shared --asset-jobs pool consumes those shards. "
+            "Use 0 to shard by --asset-jobs."
         ),
     )
     parser.add_argument(
@@ -2573,11 +2566,6 @@ def parse_args() -> argparse.Namespace:
             "the merge path explicitly, and `aggressive` runs a Convert primary export with "
             "a JSON secondary export only when the CLI advertises the secondary-export flags."
         ),
-    )
-    parser.add_argument(
-        "--no-animestudio-asset-cache",
-        action="store_true",
-        help="Deprecated no-op. The AnimeStudio conversion cache has been removed; every run re-exports.",
     )
     parser.add_argument(
         "--skip-structured",
@@ -5434,9 +5422,8 @@ def main() -> int:
     webui_texture_name_filter_signature: dict[str, Any] | None = None
     if not args.skip_animestudio and args.animestudio_scope != "story" and args.animestudio_asset_mode == "focused":
         webui_texture_name_filter, webui_texture_name_filter_signature = write_webui_texture_name_filter(output_root)
-    refresh_selectors = ordered_unique(tuple(args.animestudio_refresh_types))
     if args.animestudio_jobs < 1:
-        raise SystemExit("--animestudio-jobs must be at least 1")
+        raise SystemExit("--asset-jobs must be at least 1")
     if args.animestudio_shards < 0:
         raise SystemExit("--animestudio-shards must be 0 or greater")
     animestudio_jobs = args.animestudio_jobs
@@ -5552,7 +5539,6 @@ def main() -> int:
             "  animestudio object index ignored: asset-only scope cannot replace "
             "the broad Story object index"
         )
-    log(f"  animestudio refresh selectors: {', '.join(refresh_selectors) if refresh_selectors else 'none'}")
     if webui_texture_name_filter is not None and webui_texture_name_filter_signature is not None:
         log(
             f"  animestudio WebUI texture filter: {webui_texture_name_filter} "
@@ -5620,7 +5606,6 @@ def main() -> int:
         "asset_shards": args.animestudio_shards,
         "asset_cache_enabled": False,
         "cache_removed": True,
-        "refresh_selectors": list(refresh_selectors),
         "sources_selected": list(selected_sources),
         "stages_selected": list(selected_animestudio_stages),
         "sources": {},

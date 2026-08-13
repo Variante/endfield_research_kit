@@ -822,7 +822,7 @@ def scan_exported_media_assets(
     }
 
 
-def _asset_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> dict:
+def build_asset_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> dict:
     counts = scan["counts"]
     return {
         "generated": int(time.time()),
@@ -842,7 +842,7 @@ def _asset_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> di
     }
 
 
-def _video_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> dict:
+def build_video_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> dict:
     counts = scan["videoCounts"]
     return {
         "generated": int(time.time()),
@@ -897,7 +897,7 @@ def build_asset_index(
         root=root,
         export_root=export_root,
     )
-    payload = _asset_payload(scan, root=root, export_root=export_root)
+    payload = build_asset_payload(scan, root=root, export_root=export_root)
     write_json(out_path, payload)
     counts = scan["counts"]
     print(
@@ -926,7 +926,7 @@ def build_video_index(
         root=root,
         export_root=export_root,
     )
-    payload = _video_payload(scan, root=root, export_root=export_root)
+    payload = build_video_payload(scan, root=root, export_root=export_root)
     write_json(out_path, payload)
     counts = scan["videoCounts"]
     print("Video index written:", out_path, f"({counts['video']} videos)")
@@ -949,8 +949,8 @@ def build_asset_indexes(
         root=root,
         export_root=export_root,
     )
-    asset_payload = _asset_payload(scan, root=root, export_root=export_root)
-    video_payload = _video_payload(scan, root=root, export_root=export_root)
+    asset_payload = build_asset_payload(scan, root=root, export_root=export_root)
+    video_payload = build_video_payload(scan, root=root, export_root=export_root)
     write_json(asset_out_path, asset_payload)
 
     asset_counts = scan["counts"]

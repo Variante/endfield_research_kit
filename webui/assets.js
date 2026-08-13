@@ -98,7 +98,6 @@
       empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u5bfc\u51fa\u8d44\u6e90\u3002",
       openRawFile: "\u6253\u5f00\u539f\u59cb\u6587\u4ef6",
       downloadCurrentFile: "\u4e0b\u8f7d\u5f53\u524d\u6587\u4ef6",
-      downloadBundle: "\u4e00\u952e\u4e0b\u8f7d\u6574\u5305",
       copyRelativePath: "\u590d\u5236\u76f8\u5bf9\u8def\u5f84",
       copiedPath: "\u5df2\u590d\u5236\u8def\u5f84",
       copyFailed: "\u590d\u5236\u5931\u8d25",
@@ -207,7 +206,6 @@
       empty: "Choose an exported asset from the left.",
       openRawFile: "Open raw file",
       downloadCurrentFile: "Download current file",
-      downloadBundle: "Download bundle",
       copyRelativePath: "Copy relative path",
       copiedPath: "Copied path",
       copyFailed: "Copy failed",
@@ -306,9 +304,6 @@
     entries: [],
     entryByRel: new Map(),
     rawEntryByRel: new Map(),
-    bundles: [],
-    bundleById: new Map(),
-    bundleIdsByAssetRel: new Map(),
     filtered: [],
     rows: [],
     totalH: 0,
@@ -550,7 +545,6 @@
     if (!ASSET_STATE.selectedEntry) $("#asset-empty").textContent = assetUiText("empty");
     $("#asset-open-raw").textContent = assetUiText("openRawFile");
     $("#asset-download-current").textContent = assetUiText("downloadCurrentFile");
-    $("#asset-download-bundle").textContent = assetUiText("downloadBundle");
     $("#asset-copy-path").textContent = assetUiText("copyRelativePath");
     $("#asset-preview-label").textContent = assetUiText("preview");
     $("#asset-preview-bg-label").textContent = assetUiText("previewBackground");
@@ -797,8 +791,7 @@
     setViewBusy("assets", true);
     clearShellStatus("assets");
     window.WebUI.showLoader("assets");
-    ASSET_STATE.loadPromise = Promise.all([
-      window.WebUI.fetchWithProgress("data/assets/index.json", {
+    ASSET_STATE.loadPromise = window.WebUI.fetchWithProgress("data/assets/index.json", {
         // Downloading is only ~a third of the wall-clock cost (parse + hydrate +
         // chips + render dominate), so the download drives just the first 45% of
         // the bar; the rest advances through those phases below.
@@ -809,13 +802,11 @@
           // Streaming the body drives the bar to ~45%; the JSON.parse inside
           // json() then blocks briefly (~100ms) with the bar held there.
           return res.json();
-        }),
-      loadAssetBundleIndex(),
-    ])
+        })
       // Staged so the bar advances through the heavy main-thread phases instead
       // of freezing. nextPaint() lets each value render before the next blocking
       // step runs, so the percentage tracks the actual work.
-      .then(async ([payload]) => {
+      .then(async (payload) => {
         window.WebUI.updateLoader("assets", 0.5);
         await window.WebUI.nextPaint();
 
@@ -863,58 +854,6 @@
       });
 
     return ASSET_STATE.loadPromise;
-  }
-
-  function loadAssetBundleIndex() {
-    return fetch("data/assets/bundles/index.json")
-      .then((res) => {
-        if (res.status === 404) return null;
-        if (!res.ok) throw new Error(`assets/bundles/index.json HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((payload) => {
-        hydrateAssetBundles(payload || {});
-      })
-      .catch((error) => {
-        console.warn("Unable to load asset bundles:", error);
-        hydrateAssetBundles({});
-      });
-  }
-
-  function hydrateAssetBundles(payload) {
-    const bundles = Array.isArray(payload?.bundles)
-      ? payload.bundles.map((bundle) => ({
-          id: String(bundle.id || ""),
-          label: String(bundle.label || bundle.id || ""),
-          description: String(bundle.description || ""),
-          download: String(bundle.download || ""),
-          bytes: Number(bundle.bytes || 0),
-          fileCount: Number(bundle.fileCount || 0),
-          materialRel: String(bundle.materialRel || ""),
-          assetRels: Array.isArray(bundle.assetRels) ? bundle.assetRels.map((rel) => String(rel || "")) : [],
-        })).filter((bundle) => bundle.id && bundle.download)
-      : [];
-
-    ASSET_STATE.bundles = bundles;
-    ASSET_STATE.bundleById = new Map(bundles.map((bundle) => [bundle.id, bundle]));
-
-    const bundleIdsByAssetRel = new Map();
-    if (payload?.byAssetRel && typeof payload.byAssetRel === "object") {
-      for (const [rel, ids] of Object.entries(payload.byAssetRel)) {
-        const normalizedIds = Array.isArray(ids)
-          ? ids.map((id) => String(id || "")).filter((id) => ASSET_STATE.bundleById.has(id))
-          : [];
-        if (normalizedIds.length) bundleIdsByAssetRel.set(String(rel || ""), normalizedIds);
-      }
-    } else {
-      for (const bundle of bundles) {
-        for (const rel of bundle.assetRels) {
-          if (!bundleIdsByAssetRel.has(rel)) bundleIdsByAssetRel.set(rel, []);
-          bundleIdsByAssetRel.get(rel).push(bundle.id);
-        }
-      }
-    }
-    ASSET_STATE.bundleIdsByAssetRel = bundleIdsByAssetRel;
   }
 
   function normalizeImageCategory(value) {
@@ -1958,7 +1897,6 @@
     $("#asset-detail-meta").textContent = activeVariant ? activeVariant.rel : entry.rel;
     $("#asset-open-raw").href = assetHref(activeVariant ? activeVariant.rel : entry.rel);
     renderCurrentFileDownload(entry);
-    renderBundleDownload(entry);
     renderFacts(entry);
     renderRelated(entry);
     renderVariants(entry);
@@ -1986,34 +1924,6 @@
     return `${type} / ${assetKindLabel(entry.kind)}`;
   }
 
-  function getSelectedAssetBundles(entry = ASSET_STATE.selectedEntry) {
-    if (!entry) return [];
-
-    const candidateRels = new Set();
-    if (entry.rel) candidateRels.add(entry.rel);
-    const active = getActiveAssetFile(entry);
-    if (active?.rel) candidateRels.add(active.rel);
-    if (Array.isArray(entry.variants)) {
-      for (const variant of entry.variants) {
-        if (variant?.rel) candidateRels.add(variant.rel);
-      }
-    }
-
-    const bundles = [];
-    const seenIds = new Set();
-    for (const rel of candidateRels) {
-      const bundleIds = ASSET_STATE.bundleIdsByAssetRel.get(rel) || [];
-      for (const bundleId of bundleIds) {
-        if (seenIds.has(bundleId)) continue;
-        const bundle = ASSET_STATE.bundleById.get(bundleId);
-        if (!bundle) continue;
-        seenIds.add(bundleId);
-        bundles.push(bundle);
-      }
-    }
-    return bundles;
-  }
-
   function renderCurrentFileDownload(entry) {
     const link = $("#asset-download-current");
     if (!link) return;
@@ -2033,26 +1943,6 @@
     link.download = rel.split("/").pop() || "";
     link.title = rel;
     link.textContent = assetUiText("downloadCurrentFile");
-  }
-
-  function renderBundleDownload(entry) {
-    const link = $("#asset-download-bundle");
-    if (!link) return;
-
-    const bundle = getSelectedAssetBundles(entry)[0] || null;
-    if (!bundle) {
-      link.hidden = true;
-      link.removeAttribute("href");
-      link.removeAttribute("download");
-      link.removeAttribute("title");
-      return;
-    }
-
-    link.hidden = false;
-    link.href = String(bundle.download || "#");
-    link.download = bundle.download.split("/").pop() || "";
-    link.title = bundle.description || bundle.label || "";
-    link.textContent = assetUiText("downloadBundle");
   }
 
   function renderFacts(entry) {

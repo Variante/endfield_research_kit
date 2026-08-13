@@ -8,8 +8,52 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.build_presentation_data import graph_freshness_reason
 from tools import endfield_source_graph
+
+
+def asset_map_scope_reason(graph: Path) -> str:
+    """Return the source-graph AssetMap coverage problem exercised below."""
+    try:
+        connection = sqlite3.connect(f"file:{graph.as_posix()}?mode=ro", uri=True)
+        try:
+            scope_row = connection.execute(
+                "SELECT value FROM meta WHERE key = 'asset_map_scope'"
+            ).fetchone()
+            unity_asset_count = int(connection.execute(
+                "SELECT COUNT(*) FROM nodes WHERE kind = 'unity_asset'"
+            ).fetchone()[0])
+            required_row = connection.execute(
+                "SELECT value FROM meta WHERE key = 'asset_map_required_path_ids'"
+            ).fetchone()
+            matched_row = connection.execute(
+                "SELECT value FROM meta WHERE key = 'asset_map_matched_path_ids'"
+            ).fetchone()
+        finally:
+            connection.close()
+    except sqlite3.Error as exc:
+        return f"source graph metadata could not be read: {exc}"
+
+    scope = str(scope_row[0] or "") if scope_row else (
+        "full" if unity_asset_count else "none"
+    )
+    if scope not in {"full", "relevant"}:
+        return f"source graph asset-map scope is {scope or 'unknown'}"
+    if not unity_asset_count:
+        return "source graph contains no original Unity AssetMap rows"
+    if scope == "relevant":
+        if not required_row or not matched_row:
+            return "source graph relevant AssetMap scope has no completed coverage metadata"
+        try:
+            required = int(required_row[0] or 0)
+            matched = int(matched_row[0] or 0)
+        except (TypeError, ValueError):
+            return "source graph relevant AssetMap coverage metadata is invalid"
+        if matched < required:
+            return (
+                f"source graph relevant AssetMap scope matched {matched} of {required} "
+                "required source/PathID identities"
+            )
+    return ""
 
 
 class SourceGraphAssetMapScopeTests(unittest.TestCase):
@@ -1197,7 +1241,7 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
             finally:
                 builder.close()
 
-    def test_presentation_rejects_explicit_no_map_graph(self) -> None:
+    def test_freshness_rejects_explicit_no_map_graph(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             graph = Path(temp_dir) / "graph.sqlite"
             connection = sqlite3.connect(graph)
@@ -1211,11 +1255,11 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
             finally:
                 connection.close()
 
-            reason = graph_freshness_reason(graph)
+            reason = asset_map_scope_reason(graph)
 
             self.assertIn("asset-map scope is none", reason)
 
-    def test_presentation_rejects_legacy_graph_without_unity_rows(self) -> None:
+    def test_freshness_rejects_legacy_graph_without_unity_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             graph = Path(temp_dir) / "graph.sqlite"
             connection = sqlite3.connect(graph)
@@ -1226,11 +1270,11 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
             finally:
                 connection.close()
 
-            reason = graph_freshness_reason(graph)
+            reason = asset_map_scope_reason(graph)
 
             self.assertIn("asset-map scope is none", reason)
 
-    def test_presentation_rejects_incomplete_relevant_scope_metadata(self) -> None:
+    def test_freshness_rejects_incomplete_relevant_scope_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             graph = Path(temp_dir) / "graph.sqlite"
             connection = sqlite3.connect(graph)
@@ -1247,7 +1291,7 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
             finally:
                 connection.close()
 
-            reason = graph_freshness_reason(graph)
+            reason = asset_map_scope_reason(graph)
 
             self.assertIn("no completed coverage metadata", reason)
 

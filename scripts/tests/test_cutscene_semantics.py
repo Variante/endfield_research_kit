@@ -6,8 +6,21 @@ from pathlib import Path
 from scripts.story_builder.cutscene_semantics import (
     cutscene_semantic_shape,
     cutscene_subtitle_evidence,
+    exact_levelscript_fmv_bindings,
     select_subtitle_text_group_from_display_names,
 )
+
+
+def exact_fmv_binding() -> dict:
+    return {
+        "fmvId": "cs_video_test",
+        "sources": [{
+            "kind": "levelscriptFmvAction",
+            "sourceFile": "LevelScriptData/test.json",
+            "actionName": "PlayFmvAction",
+            "nativeMappingId": "mapping",
+        }],
+    }
 
 
 class CutsceneSemanticsTests(unittest.TestCase):
@@ -35,7 +48,7 @@ class CutsceneSemanticsTests(unittest.TestCase):
             (
                 {
                     "variants": [{"part": "root"}],
-                    "levelscriptFmvBindings": [{"fmvId": "video"}],
+                    "levelscriptFmvBindings": [exact_fmv_binding()],
                 },
                 "unityTimelineWithIndependentFmv",
             ),
@@ -44,7 +57,7 @@ class CutsceneSemanticsTests(unittest.TestCase):
                 "timelineComponentsWithoutRoot",
             ),
             (
-                {"levelscriptFmvBindings": [{"fmvId": "video"}]},
+                {"levelscriptFmvBindings": [exact_fmv_binding()]},
                 "levelscriptFmv",
             ),
             ({"textOnlyUnconfirmed": True}, "textOnlyUnconfirmed"),
@@ -60,6 +73,24 @@ class CutsceneSemanticsTests(unittest.TestCase):
             cutscene_semantic_shape({
                 "variants": [{"part": "root"}],
                 "textOnlyUnconfirmed": True,
+            })
+
+    def test_levelscript_fmv_binding_requires_exact_source(self) -> None:
+        self.assertEqual(
+            exact_levelscript_fmv_bindings({
+                "levelscriptFmvBindings": [exact_fmv_binding()],
+            }),
+            [exact_fmv_binding()],
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "lacks an exact levelscriptFmvAction source",
+        ):
+            cutscene_semantic_shape({
+                "levelscriptFmvBindings": [{
+                    "fmvId": "cs_video_test",
+                    "sources": [],
+                }],
             })
 
     def test_classifies_subtitle_evidence_separately_from_text(self) -> None:

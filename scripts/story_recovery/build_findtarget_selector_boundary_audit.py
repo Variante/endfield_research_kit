@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Audit real FindTargetAction selector/TargetSettings boundary evidence.
 
-The IL2CPP body audit proves setter order and field offsets, but the WebUI
-index builder still needs sample-byte proof before it can consume
-FindTargetAction chains. This script scans exported BuffData files through the
-existing `build_data_index.py` decoder and records the real opaque
-FindTargetAction middle bytes that still block promotion.
+The IL2CPP body audit proves setter order and field offsets, but the maintained
+BuffData decoder still needs sample-byte proof before it can consume
+FindTargetAction chains. This script scans exported BuffData files and records
+the real opaque middle bytes that still block promotion.
 
 Output:
 
@@ -16,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.util
 import json
 import struct
 import sys
@@ -30,23 +28,13 @@ for _path in (_REPO_ROOT / "scripts",):
         sys.path.insert(0, str(_path))
 
 from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from game_data.memorypack import buff as memorypack_buff  # noqa: E402
 
-BUILD_DATA_INDEX = ROOT / "scripts" / "build_data_index.py"
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DEFAULT_JSON = REPORT_DIR / "findtarget_selector_boundary_audit.json"
 DEFAULT_MD = REPORT_DIR / "findtarget_selector_boundary_audit.md"
 FIND_TARGET_TAG_HEX = "0x009f"
-
-
-def load_build_data_index() -> Any:
-    spec = importlib.util.spec_from_file_location("endfield_build_data_index", BUILD_DATA_INDEX)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"unable to load helper: {BUILD_DATA_INDEX}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def repo_rel(path: Path) -> str:
@@ -198,7 +186,7 @@ def ambiguous_row(path: Path, record: dict[str, Any], sequence: dict[str, Any]) 
 
 
 def build_payload(args: argparse.Namespace) -> dict[str, Any]:
-    helper = load_build_data_index()
+    helper = memorypack_buff
     files = buffdata_files(args.export_root)
     samples: list[dict[str, Any]] = []
     ambiguous: list[dict[str, Any]] = []
