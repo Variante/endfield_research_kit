@@ -21,10 +21,6 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-for search_path in (ROOT / "scripts",):
-    if str(search_path) not in sys.path:
-        sys.path.insert(0, str(search_path))
-
 from common import (  # noqa: E402
     STORY_RECOVERY_REPORTS_DIR,
     md_escape,
