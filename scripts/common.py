@@ -12,16 +12,16 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
-try:
-    from story_builder.animestudio_story_objects import (
+if __package__ == "scripts":
+    from .story_builder.animestudio_story_objects import (
         REVERSE_GAMEASSEMBLY_SHA256,
         REVERSE_METADATA_SHA256,
         REVERSE_NATIVE_MAPPING_ID,
         REVERSE_REPORT_PATH,
         REVERSE_SCHEMA,
     )
-except ModuleNotFoundError:  # Imported as ``scripts.common`` from repository-root tests.
-    from scripts.story_builder.animestudio_story_objects import (
+else:
+    from story_builder.animestudio_story_objects import (
         REVERSE_GAMEASSEMBLY_SHA256,
         REVERSE_METADATA_SHA256,
         REVERSE_NATIVE_MAPPING_ID,
