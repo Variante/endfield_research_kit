@@ -1841,6 +1841,56 @@
         },
         "bounded_result": "The FrameUpdateStep2 continuation is now positively bounded as lifecycle cleanup and CPU descriptor construction. It does not close the shared-record-to-_UploadBuffer producer or channel-2/resource +0xd0 GPU edge; both remain fail-closed."
       },
+      "remote_factory_frame_update_dynamic_boundary": {
+        "status": "remote-factory-frame-update-flag-only-static-fallback-dynamic-ifix-open",
+        "source": "Current GameAssembly.dll method-body mapping/disassembly, full-image direct E8 caller census, and the current installed Gameplay.Beyond IFix patch target table.",
+        "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+        "persistent_ifix_patch_sha256": "79ad16be86e488eca829ce60b133f1c3c6d3d4c3d180e04621713e57f8c3bbea",
+        "persistent_ifix_target_count": 18,
+        "persistent_ifix_matching_targets": [],
+        "hg_render_pipeline_render_boundary": {
+          "native_pointer": "0x183455030",
+          "method": "HG.Rendering.Runtime.HGRenderPipeline.Render",
+          "patch_id": "0x23d",
+          "dynamic_gate": "WrappersManagerImpl.GetPatch(0x23d) -> ILFix dynamic wrapper 0x189cb3b10 -> VirtualMachine.Execute 0x189e124c4",
+          "static_body_scan": {
+            "direct_call_count": 361,
+            "unresolved_direct_call_count": 237,
+            "command_buffer_calls": [
+              "CommandBufferPool.Get 0x183339460",
+              "ScriptableRenderContext.ExecuteCommandBuffer 0x183339850",
+              "CommandBufferPool.Release 0x183339790"
+            ],
+            "direct_gpu_scene_or_factory_calls": [],
+            "direct_compute_buffer_or_shader_bind_calls": [],
+            "direct_compute_dispatch_calls": []
+          },
+          "bounded_result": "The current static Render body records/executes ordinary command-buffer work and calls named render passes, but has no direct GpuSceneDirtyUpdateCS, UploadPerDrawParams, _UploadBuffer, factory FrameUpdate, 0x8c record staging, ComputeBuffer bind, or compute-dispatch edge. The command-buffer and dynamic IFix subroutes remain open and are not evidence that kernel 7 consumes channel 2/resource +0xd0."
+        },
+        "methods": {
+          "FrameUpdateEntitiesJobForward": {
+            "type": "Beyond.Gameplay.RemoteFactory.RemoteFactoryGameWorldController",
+            "metadata_method_index": 29077,
+            "token": "0x06007196",
+            "native_pointer": "0x1875316ac",
+            "patch_id": "0x7301",
+            "static_fallback": "writes the boolean argument to this+0x38 and returns",
+            "dynamic_gate": "WrappersManagerImpl.IsPatched(0x7301) -> GetPatch(0x7301) -> ILFix dynamic wrapper 0x1866c2b40",
+            "direct_e8_callers": 0
+          },
+          "SetGarbageCollectDirty": {
+            "type": "Beyond.Gameplay.RemoteFactory.RemoteFactoryGameWorldController",
+            "metadata_method_index": 29078,
+            "token": "0x06007197",
+            "native_pointer": "0x18477d8e0",
+            "patch_id": "0x7302",
+            "static_fallback": "writes byte 1 to this+0x50 and returns",
+            "dynamic_gate": "WrappersManagerImpl.IsPatched(0x7302) -> GetPatch(0x7302) -> ILFix dynamic wrapper 0x1863633b4",
+            "direct_e8_callers": 0
+          }
+        },
+        "bounded_result": "Both recovered RemoteFactory methods are IFix-gated control-flag wrappers only in the static image. Neither reaches HGFactoryRenderManager FrameUpdateEntities, the native 0x8c record staging family, the 0x100-stride CPU lanes, _UploadBuffer, UploadPerDrawParams kernel 7, or channel-2/resource +0xd0. The current persistent IFix table has no RemoteFactory, HGRenderPipeline, GpuScene, or PerDraw target identity; the dynamic patch route remains runtime-only and cannot be credited as the missing producer."
+      },
       "native_unityplayer_record_shape_scan": {
         "status": "bounded-0x8c-record-shape-census-no-direct-gpu-edge",
         "source": "Full installed UnityPlayer.dll PData-scoped x64 scan; candidate functions required both an immediate 0x8c/140 record-shape operand and a +0x38 memory-field access, then their direct calls were checked against the installed ComputeBuffer, ComputeShader, CommandBuffer, and GPUDriven entrypoints.",
