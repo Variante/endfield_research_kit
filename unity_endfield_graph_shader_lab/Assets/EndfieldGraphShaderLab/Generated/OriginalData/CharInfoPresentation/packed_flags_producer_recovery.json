@@ -920,6 +920,23 @@
             "range": "0x186a33f58..0x186a341a0",
             "result": "The feature-enabled PerDrawGlobalSetting branch performs a large temporary-data/serialization-style operation and has no direct call to the recovered partial writer 0x183d689c0, UnityPlayer endpoint 0x1801eb9a0, checked GPU upload, or compute dispatch. Keep it separate from the fallback ApplyPerDrawRender CPU producer until an indirect edge is recovered."
           },
+          "stride_84_census": {
+            "status": "literal-84-byte-candidates-bounded-no-gpu-edge",
+            "source": "Installed UnityPlayer.dll PData-scoped disassembly; immediate 0x54 (84-byte) layouts were first screened with 0x50/0x8c/0x100 or shared-lane accesses, then reduced to functions that touch at least four of the 0x00/0x10/0x20/0x30/0x40 lanes.",
+            "scan_counts": {
+              "broad_candidates": 81,
+              "precise_lane_hits": 5,
+              "precise_unique_functions": 4,
+              "precise_candidates": [
+                "0x18036ed60..0x18036ede2",
+                "0x1804b69b9..0x1804b6a7f",
+                "0x1812117ec..0x181211bf4",
+                "0x1812145af..0x18121487b"
+              ]
+            },
+            "interpretation": "0x18036ed60 is a generic dynamic-array resize/zero helper whose element stride is 0x54 and whose zeroed layout is five Vector4 lanes plus a dword at +0x50; 0x1804b69b9 is a generic element-copy helper. The remaining precise candidates consume the same stride for unrelated native data and only call math/formatting helpers. None directly calls GpuSceneDirtyUpdateCS, UploadPerDrawParams, the checked immediate-dispatch boundary, a GPU buffer upload, or the factory record consumer.",
+            "negative_gpu_edge": "The 0x54 literal is therefore a real generic 84-byte layout clue, but this bounded census does not identify it as the staging array's packer or as _UploadBuffer. Keep the shader-to-native edge fail-closed."
+          },
           "next_gap": "Recover the indirect caller and the consumer of the 0x100-stride staging array; specifically search for a pack step that prefixes an entity/index dword and yields the shader's 84-byte source stride, then tie that upload to UploadPerDrawParams kernel 7 and resource +0xd0."
         }
       },
