@@ -1884,6 +1884,38 @@
               "interpretation": "These bodies are internal-call/lazy-resolver wrappers or public forwarding stubs; absence of a direct E8 caller does not exclude resolver-driven use, but no factory caller was found in the direct graph."
             }
           },
+          "lazy_slot_reference_census": {
+            "status": "compute-api-lazy-slots-confined-to-wrapper-bodies",
+            "source": "Raw RIP-relative slot scan over GameAssembly.dll .text and il2cpp sections, with PData owner mapping; no dynamic process assumptions.",
+            "slots": {
+              "ComputeBuffer.InternalSetData": {
+                "slot": "0x18f3aad28",
+                "references": ["0x18b3d70dc load", "0x18b3d7100 cache write"],
+                "owner": "0x18b3d70c8"
+              },
+              "ComputeShader.Dispatch": {
+                "slot": "0x18f3aad78",
+                "references": ["0x18b3d74bc load", "0x18b3d74df cache write"],
+                "owner": "0x18b3d74a8"
+              },
+              "ComputeShader.Internal_HGSetBuffer": {
+                "slot": "0x18f3aad60",
+                "references": ["0x18b3d75d0 load", "0x18b3d75f3 cache write"],
+                "owner": "0x18b3d75bc"
+              },
+              "ComputeShader.Internal_SetBuffer": {
+                "slot": "0x18f3aad50",
+                "references": ["0x18b3d7630 load", "0x18b3d7653 cache write"],
+                "owner": "0x18b3d761c"
+              },
+              "ComputeShader.SetConstantComputeBuffer": {
+                "slot": "0x18f3aad68",
+                "references": ["0x18b3d77f8 load", "0x18b3d781b cache write"],
+                "owner": "0x18b3d77e4"
+              }
+            },
+            "interpretation": "Each checked ComputeShader/ComputeBuffer internal-call cache slot has exactly the wrapper's load and first-call cache write, with no additional RIP-relative reference in the image. This removes a second static caller surface for these APIs; copied function pointers, resolver tables, and native-side indirect calls remain outside the scan."
+          },
           "gpu_scene_shader_setup": {
             "shader_resource_field": "HGRenderPipeline defaultResources[+0x18][+0x638]",
             "callers": [
