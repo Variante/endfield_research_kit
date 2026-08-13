@@ -15,8 +15,10 @@ from .levelscript_binary import (
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
     LEVELSCRIPT_NATIVE_HEADER_NAMES,
     LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID,
+    classify_local_trigger_volume_context,
     compact_callserver_serialized_contract,
     decode_levelscript_binary_file,
+    decode_levelscript_binary_summary,
     decode_levelscript_encounter_module_target,
     decode_levelscript_record_payload,
     decode_levelscript_task_mission_state_dependencies,
@@ -2427,6 +2429,10 @@ def decode_levelscript_native_action_topology(
                 "uid": str(header.get("uid") or ""),
                 "recordOffset": int(header.get("start") or 0),
                 "recordOffsetHex": f"0x{int(header.get('start') or 0):x}",
+                "opcode": (
+                    f"0x{int(header.get('code') or 0):04x}/"
+                    f"0x{int(header.get('kind') or 0):02x}"
+                ),
                 "headerName": header_name,
                 "unionTag": f"0x{pair[0]:04x}",
                 "serializedMemberCount": pair[1],
@@ -2777,6 +2783,182 @@ def decode_levelscript_native_action_topology(
             "files unless a typed action explicitly targets one"
         ),
     }, None
+
+
+def build_levelscript_header_action_index(
+    level_ids: list[str],
+    *,
+    level_script_root: Path | None = None,
+    max_action_nodes: int = 64,
+) -> dict:
+    """Index active LevelScript event roots and their reachable action graph.
+
+    This is the production query boundary for consumers that need to join an
+    independently decoded header slot to an action occurrence.  It delegates
+    all record selection and control-flow semantics to
+    :func:`decode_levelscript_native_action_topology`, so repeated IDs always
+    resolve through the current runtime's final-serialized indexed slot.
+
+    Invalid or incomplete files contribute a bounded diagnostic and no rows;
+    callers must treat a non-``validated`` result as unavailable evidence.
+    """
+    root = level_script_root or LEVELSCRIPT_DIR
+    selected_levels = list(dict.fromkeys(str(value) for value in level_ids if value))
+    failures: list[dict] = []
+    rows: list[dict] = []
+    max_action_nodes = max(1, int(max_action_nodes))
+
+    for level_id in selected_levels:
+        level_dir = root / level_id
+        if not level_dir.is_dir():
+            failures.append({
+                "validator": "levelScriptHeaderActionIndex",
+                "gate": "levelDirectory",
+                "expected": "existing LevelScript level directory",
+                "actual": "missing",
+                "levelId": level_id,
+                "source": repo_rel(level_dir),
+            })
+            continue
+        for path in sorted(level_dir.glob("*.json"), key=_levelscript_file_sort_key):
+            try:
+                data = read_bytes_cached(path)
+            except OSError as error:
+                failures.append({
+                    "validator": "levelScriptHeaderActionIndex",
+                    "gate": "sourceFile",
+                    "expected": "readable original LevelScript bytes",
+                    "actual": f"{type(error).__name__}: {error}",
+                    "levelId": level_id,
+                    "source": repo_rel(path),
+                })
+                continue
+
+            topology, diagnostic = decode_levelscript_native_action_topology(data)
+            if diagnostic is not None or not str(topology.get("status") or "").startswith(
+                "exact_"
+            ):
+                failures.append({
+                    "validator": "levelScriptHeaderActionIndex",
+                    "gate": "completeSerializedActionEventGraph",
+                    "expected": "exact LevelScript action topology",
+                    "actual": topology.get("status") or "unavailable",
+                    "levelId": level_id,
+                    "source": repo_rel(path),
+                    "diagnostic": diagnostic or topology.get("validatorDiagnostic") or {},
+                })
+                continue
+
+            actions_by_id = {
+                row["localId"]: row
+                for row in topology.get("actions") or []
+                if isinstance(row, dict) and isinstance(row.get("localId"), int)
+            }
+            outgoing: dict[int, list[dict]] = defaultdict(list)
+            for edge in topology.get("edges") or []:
+                if (
+                    isinstance(edge, dict)
+                    and edge.get("sourceKind") == "action"
+                    and isinstance(edge.get("sourceLocalId"), int)
+                    and isinstance(edge.get("targetActionLocalId"), int)
+                ):
+                    outgoing[edge["sourceLocalId"]].append(edge)
+
+            binary_summary: dict | None = None
+            for event in topology.get("eventRoots") or []:
+                if not isinstance(event, dict):
+                    continue
+                target_local_id = event.get("nextActionLocalId")
+                target = (
+                    actions_by_id.get(target_local_id)
+                    if isinstance(target_local_id, int)
+                    else None
+                )
+                if target is not None:
+                    target_status = "action-list"
+                elif isinstance(target_local_id, int) and target_local_id > 0:
+                    target_status = "missing"
+                else:
+                    target_status = "no-next"
+
+                reachable_ids: list[int] = []
+                reachable_edges: list[dict] = []
+                pending = [target_local_id] if target is not None else []
+                seen: set[int] = set()
+                while pending and len(reachable_ids) < max_action_nodes:
+                    local_id = pending.pop(0)
+                    if not isinstance(local_id, int) or local_id in seen:
+                        continue
+                    seen.add(local_id)
+                    reachable_ids.append(local_id)
+                    for edge in outgoing.get(local_id) or []:
+                        reachable_edges.append(edge)
+                        next_id = edge.get("targetActionLocalId")
+                        if isinstance(next_id, int) and next_id not in seen:
+                            pending.append(next_id)
+
+                event_detail = event.get("eventDetail") or {}
+                local_trigger_context: dict = {}
+                trigger_slot_id = (
+                    event_detail.get("triggerSlotIdFilter")
+                    if isinstance(event_detail, dict)
+                    else None
+                )
+                if (
+                    isinstance(trigger_slot_id, int)
+                    and not isinstance(trigger_slot_id, bool)
+                    and trigger_slot_id > 0
+                    and path.stem.isdigit()
+                ):
+                    if binary_summary is None:
+                        binary_summary = decode_levelscript_binary_summary(
+                            data, int(path.stem)
+                        )
+                    local_trigger_context = classify_local_trigger_volume_context(
+                        binary_summary,
+                        [trigger_slot_id],
+                    )
+
+                rows.append({
+                    key: value
+                    for key, value in {
+                        "levelId": level_id,
+                        "sourceScript": path.stem,
+                        "file": repo_rel(path),
+                        "header": {
+                            "localId": event.get("localId"),
+                            "offset": event.get("recordOffsetHex"),
+                            "opcode": event.get("opcode"),
+                        },
+                        "headerName": event.get("headerName"),
+                        "eventDetail": event_detail,
+                        "localTriggerVolumeContext": local_trigger_context,
+                        "targetSource": "actionHeader.nextId",
+                        "targetLocalId": target_local_id,
+                        "runtimeSlotStatus": "active-final-serialized-slot",
+                        "runtimeSlotMappingId": LEVELSCRIPT_NATIVE_HEADER_SLOT_MAPPING_ID,
+                        "targetStatus": target_status,
+                        "targetAction": target or {},
+                        "reachableActions": [
+                            actions_by_id[local_id]
+                            for local_id in reachable_ids
+                            if local_id in actions_by_id
+                        ],
+                        "reachableActionEdges": reachable_edges,
+                        "reachabilityTruncated": bool(pending),
+                    }.items()
+                    if value not in (None, "", [], {})
+                })
+
+    return {
+        "validation": {
+            "status": "validated" if not failures else "failed",
+            "failures": failures,
+        },
+        "runtimeSlotMappingId": LEVELSCRIPT_NATIVE_HEADER_SLOT_MAPPING_ID,
+        "levelIds": selected_levels,
+        "rows": rows,
+    }
 
 
 def build_levelscript_native_black_action_index(

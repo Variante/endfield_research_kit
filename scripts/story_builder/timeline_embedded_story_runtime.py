@@ -71,7 +71,7 @@ DEFAULT_JSON = (
 DEFAULT_MD = DEFAULT_JSON.with_suffix(".md")
 
 
-def _story_builder_modules() -> tuple[Any, Any, Any]:
+def _story_builder_modules() -> tuple[Any, Any]:
     """Load the shared native topology and LevelData host recoveries lazily.
 
     Keeping these imports lazy avoids making the Timeline object scanner own a
@@ -82,12 +82,10 @@ def _story_builder_modules() -> tuple[Any, Any, Any]:
     try:
         from scripts.story_builder import context as story_context
         from scripts.story_builder import level_bindings
-        from scripts.story_builder import levelscript_header_chain
     except ModuleNotFoundError:
         from story_builder import context as story_context
         from story_builder import level_bindings
-        from story_builder import levelscript_header_chain
-    return story_context, level_bindings, levelscript_header_chain
+    return story_context, level_bindings
 
 
 def load_module(name: str, path: Path) -> Any:
@@ -806,7 +804,7 @@ def _activation_control_decisions(path: list[dict[str, Any]]) -> list[dict[str, 
 
 def join_parent_dialog_activation_routes(
     rows: list[dict[str, Any]],
-    header_report: dict[str, Any],
+    header_action_index: dict[str, Any],
     playback_index: dict[str, list[dict[str, Any]]],
     mission_hosts: dict[tuple[str, str], dict[str, Any]],
     mission_area_hosts: dict[tuple[str, str], dict[str, Any]],
@@ -837,14 +835,22 @@ def join_parent_dialog_activation_routes(
             dialog_to_story[dialog_key].add(story_key)
     wanted = set(dialog_to_story)
     expected_slot_mapping = str(
-        (header_report.get("summary") or {}).get("runtimeSlotMappingId") or ""
+        header_action_index.get("runtimeSlotMappingId") or ""
     )
-    failures: list[dict[str, Any]] = []
+    index_validation = header_action_index.get("validation") or {}
+    failures: list[dict[str, Any]] = list(index_validation.get("failures") or [])
+    if index_validation.get("status") != "validated" and not failures:
+        failures.append(validation_failure(
+            "levelscript_header_action_index",
+            "validated",
+            index_validation.get("status") or "missing",
+            "LevelScriptData",
+        ))
     routes: list[dict[str, Any]] = []
     header_rows_by_key: dict[tuple[str, str, int], list[dict[str, Any]]] = (
         defaultdict(list)
     )
-    for header_row in header_report.get("headerRows") or []:
+    for header_row in header_action_index.get("rows") or []:
         if not isinstance(header_row, dict):
             continue
         header = header_row.get("header") or {}
@@ -1553,7 +1559,7 @@ def recover_parent_dialog_configuration_contexts(
     mission_runtime_root: Path | None = None,
 ) -> dict[str, Any]:
     """Run the corpus-wide NPC configuration join for all parent dialogs."""
-    story_context, level_bindings, _header_audit = _story_builder_modules()
+    story_context, level_bindings = _story_builder_modules()
     npc_proxy_ex_path = npc_proxy_ex_path or story_context.NPC_PROXY_EX_PATH
     mission_runtime_root = mission_runtime_root or story_context.MRA_DIR
     relevant_missions: set[str] = set()
@@ -1602,7 +1608,7 @@ def recover_parent_dialog_activation_routes(
     levelscript_root: Path | None = None,
 ) -> dict[str, Any]:
     """Run the exact activation join over every discovered parent dialog."""
-    story_context, level_bindings, header_audit = _story_builder_modules()
+    story_context, level_bindings = _story_builder_modules()
     use_default_levelscript_root = levelscript_root is None
     levelscript_root = levelscript_root or story_context.LEVELSCRIPT_DIR
     dialog_keys = {
@@ -1641,14 +1647,10 @@ def recover_parent_dialog_activation_routes(
             )
         }
     levels = discover_parent_dialog_candidate_levels(dialog_keys, levelscript_root)
-    header_report = header_audit.build_report(SimpleNamespace(
-        level=levels,
-        mapping=header_audit.DEFAULT_MAPPING,
-        chain_preview=64,
-        samples_per_event=0,
-        play_samples=0,
-        unresolved_samples=0,
-    ))
+    header_action_index = level_bindings.build_levelscript_header_action_index(
+        levels,
+        level_script_root=levelscript_root,
+    )
     script_pairs = {
         (str(occurrence.get("levelId") or ""), str(occurrence.get("scriptId") or ""))
         for dialog_key in dialog_keys
@@ -1682,7 +1684,7 @@ def recover_parent_dialog_activation_routes(
     )
     result = join_parent_dialog_activation_routes(
         rows,
-        header_report,
+        header_action_index,
         playback_index,
         mission_hosts,
         mission_area_hosts,
@@ -1698,7 +1700,7 @@ def recover_parent_dialog_activation_routes(
         "candidateLevels": levels,
         "levelScriptRoot": repo_path(levelscript_root),
         "runtimeSlotMappingId": (
-            (header_report.get("summary") or {}).get("runtimeSlotMappingId")
+            header_action_index.get("runtimeSlotMappingId")
         ),
     }
     return result
