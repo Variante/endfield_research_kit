@@ -821,6 +821,17 @@ NPC archetypes are imported as labeled source kits.
   and none directly reaches the checked GPU dispatch/upload boundary. This
   confirms that 84-byte records exist in UnityPlayer but does not identify the
   staging-array packer or `_UploadBuffer`; the GPU edge remains fail-closed.
+  A precise follow-up inspected UnityPlayer `0x18037feb7..0x180380235`, another
+  real `+0x100`-stride CPU record writer. Its source advances by `+0x16c` and
+  writes unrelated mask/transform fields rather than the factory lanes at
+  `+0xb0..+0xf0`; its only callees are math/copy/output helpers and it has no
+  buffer bind, upload, or dispatch. It is therefore a bounded generic false
+  positive, not the missing `0x100`-to-`0x54` pack. The sole direct
+  `ComputeBuffer.SetData<byte>` caller was also checked: `HGConstantBufferPool`
+  creates a count-`0x80000`, stride-8 generic buffer, so that pool cannot be
+  the shader's 84-byte `_UploadBuffer` producer. Details are under
+  `unrelated_0x100_stride_writer_followup` and `pool_buffer_contract` in the
+  packed-flag audit; the actual staging-to-kernel-7 edge remains fail-closed.
   A stricter factory-range prefix scan then required one non-stack base register
   to receive the shader-shaped byte offsets `+0x04/+0x14/+0x24/+0x34/+0x44`
   plus `+0x00`. It found six unrelated constant/metadata writers in
