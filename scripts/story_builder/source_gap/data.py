@@ -1458,6 +1458,32 @@ QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS = {
             "membership": "getterList#2",
             "texts": ("CarParked",),
         },
+        "connectionRows": (
+            {
+                "key": "dlg_e2m8_1",
+                "kind": "dialog",
+                "relation": "levelscript_condition_scope",
+                "direction": "context",
+                "phase": "context",
+                "confidence": "scoped_script",
+                "source": "LevelScript referenced by this quest condition",
+                "mapId": "map01_lv006",
+                "scriptId": "3500100002",
+                "conditionKey": "CarParked",
+            },
+            {
+                "key": "radio_e2m8_1d5",
+                "kind": "radio",
+                "relation": "levelscript_condition_scope",
+                "direction": "context",
+                "phase": "context",
+                "confidence": "scoped_script",
+                "source": "LevelScript referenced by this quest condition",
+                "mapId": "map01_lv006",
+                "scriptId": "3500100002",
+                "conditionKey": "CarParked",
+            },
+        ),
         "relatedSourceFiles": (
             QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
                 "missionRuntime:e2m8"
@@ -1475,7 +1501,8 @@ QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS = {
         "attachmentBoundary": (
             "CarParked resolves to one exact getterList record at 0x841; "
             "the record carries no Story id and is serialized outside the "
-            "three independent Story action chains in the same script"
+            "three independent Story action chains in the same script; the "
+            "generated condition-scope rows remain context-only diagnostics"
         ),
         "orderBoundary": (
             "shared script membership cannot attach dlg_e2m8_1, "

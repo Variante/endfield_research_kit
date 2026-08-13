@@ -294,15 +294,23 @@ def build_quest_attachment_diagnostic_index(
                 }
                 == set(declaration["diagnosticStoryKeys"])
             )
-        elif valid and validation_kind in {
-            "property_getter_without_story_chain",
-            "shared_levelscript_condition_scope",
-        }:
-            # These negative boundaries prove that same-script literals and
-            # property getters do not form a typed Story control path.  After
-            # weak file/list/cross-file scope was removed from the producer,
-            # the only valid generated shape is no Story connection at all.
-            # Any newly typed route reopens the diagnostic fail-closed.
+        elif valid and validation_kind == (
+            "property_getter_without_story_chain"
+        ):
+            # The producer publishes exact context-only condition-scope rows;
+            # they identify stories in the referenced script but do not form
+            # a typed ownership or control route. Any drift or newly typed
+            # route reopens the diagnostic fail-closed.
+            valid = exact_rows(
+                connections,
+                declaration.get("connectionRows") or (),
+            )
+        elif valid and validation_kind == (
+            "shared_levelscript_condition_scope"
+        ):
+            # This boundary has no property-scoped generated connection. A
+            # newly recovered row must be reviewed rather than accepted as a
+            # route implicitly.
             valid = not connections
         elif valid:
             valid = exact_rows(
@@ -615,10 +623,8 @@ def build_quest_attachment_diagnostic_index(
                     "validationKind": validation_kind,
                     "connectionStoryKeys": (
                         []
-                        if validation_kind in {
-                            "property_getter_without_story_chain",
-                            "shared_levelscript_condition_scope",
-                        }
+                        if validation_kind
+                        == "shared_levelscript_condition_scope"
                         else sorted({
                             safe_key(row.get("key"))
                             for row in declaration.get("connectionRows") or []
@@ -627,10 +633,8 @@ def build_quest_attachment_diagnostic_index(
                     ),
                     "connectionRelations": (
                         []
-                        if validation_kind in {
-                            "property_getter_without_story_chain",
-                            "shared_levelscript_condition_scope",
-                        }
+                        if validation_kind
+                        == "shared_levelscript_condition_scope"
                         else sorted({
                             safe_key(row.get("relation"))
                             for row in declaration.get("connectionRows") or []
@@ -656,6 +660,25 @@ def build_quest_attachment_diagnostic_index(
                         if isinstance(row, dict)
                         and safe_key(row.get("relation"))
                     }),
+                    "connectionRows": [
+                        {
+                            key: row.get(key)
+                            for key in (
+                                "key",
+                                "kind",
+                                "relation",
+                                "direction",
+                                "phase",
+                                "confidence",
+                                "mapId",
+                                "scriptId",
+                                "conditionKey",
+                            )
+                            if key in row
+                        }
+                        for row in (connections or [])[:8]
+                        if isinstance(row, dict)
+                    ],
                 },
             })
             continue
