@@ -22,15 +22,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-try:
+if __package__ == "story_builder":
     from common import ROOT, md_escape, write_report_json, write_text_if_changed
-except ModuleNotFoundError:
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         ROOT,
         md_escape,
         write_report_json,
         write_text_if_changed,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.lua_consumer_references")
 from .native_contracts.cinematic_queue import (
     DEFAULT_CONTRACT as DEFAULT_CINEMATIC_CONTRACT,
     load_cinematic_queue_contract,

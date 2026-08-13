@@ -15,11 +15,10 @@ import time
 from pathlib import Path
 from typing import Any
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from common import EXPORT_ROOT, LANG_DIR, rel_path, write_json
+if __package__ == "scripts.gameplay_builder":
+    from ..common import EXPORT_ROOT, LANG_DIR, rel_path, write_json
+else:
+    from common import EXPORT_ROOT, LANG_DIR, rel_path, write_json
 
 
 DEFAULT_TABLE_SOURCE_RELS = (
