@@ -443,6 +443,18 @@ NPC archetypes are imported as labeled source kits.
   field identity, and the fail-closed boundary are recorded under
   `gpu_scene_setup_wiring`, `gpu_scene_upload_kernel_evidence`, and
   `gpu_dispatch_bridge_evidence` in the packed-flag audit.
+  The independent `HGRenderPathBase.UpdateShaderVariablesGlobalCB` path is now
+  closed as a global-constant-buffer producer: current metadata method `287938`
+  maps to `GameAssembly 0x189bddeb4` (IFix gate `0x49e`), calls
+  `HGCamera.UpdateShaderVariablesGlobalCB`, allocates global buffers of
+  `0x310/0x520/0xc80` bytes, and binds them through
+  `SetGlobalConstantBufferInternal0` at `0x183a7f620`. Its body has no
+  ComputeShader/CommandBuffer dispatch, `_UploadBuffer`, factory staging, or
+  channel-2/resource `+0xd0` access, so these global bindings are explicitly
+  kept separate from the unresolved `GpuSceneDirtyUpdateCS.UploadPerDrawParams`
+  kernel-7 upload edge. The dynamic IFix/render-graph route remains open;
+  details are recorded under `global_constant_buffer_production_boundary` in
+  the packed-flag audit.
   The current UnityPlayer binding path is now bounded as a separate edge:
   V1 `BindBuffersForCulling` (`0x1810eece0`) and V2
   `BindBuffersForCulling` (`0x1810fb5a0`) preserve the managed caller's

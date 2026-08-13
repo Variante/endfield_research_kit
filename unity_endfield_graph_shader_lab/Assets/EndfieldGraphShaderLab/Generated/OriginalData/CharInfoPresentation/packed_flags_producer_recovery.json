@@ -1233,6 +1233,46 @@
         ],
         "boundary": "This closes an independent ShaderVariablesGlobal CharacterParams10 producer and its c117.y layout, but HGRP/Lit HGBuffer consumes a separate register(b3) cb3[0].w vector; no evidence yet maps this global c117.y or custom channel 2 onto that b3 component."
       },
+      "global_constant_buffer_production_boundary": {
+        "status": "global-constant-buffer-producer-closed-separate-from-gpu-scene-upload",
+        "source": "Current GameAssembly.dll PData-scoped render-path mapping and disassembly; source image hash is pinned to the installed build.",
+        "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+        "type": "HG.Rendering.Runtime.HGRenderPathBase",
+        "method": "UpdateShaderVariablesGlobalCB",
+        "metadata_method_index": 287938,
+        "token": "0x0600133e",
+        "native_pointer": "0x189bddeb4",
+        "ifix_gate": {
+          "patch_id": "0x49e",
+          "static_body": "The body is the current fallback when the IFix gate is not patched; the dynamic wrapper remains a separate runtime boundary."
+        },
+        "producer_contract": {
+          "camera_update": "Calls HGCamera.UpdateShaderVariablesGlobalCB at 0x1832de2d0 with the render-path camera state at this+0x580.",
+          "global_state_copies": "Copies the render-path global blocks at this+0x60..0xd0 and this+0x1200..0x1230 into temporary constant-buffer payloads.",
+          "allocated_constant_buffers": [
+            {"size_bytes": 784, "size_hex": "0x310", "allocate_callsite": "0x189bde0e2 -> 0x183a7f530"},
+            {"size_bytes": 1312, "size_hex": "0x520", "allocate_callsite": "0x189bde2e4 -> 0x183a7f530"},
+            {"size_bytes": 3200, "size_hex": "0xc80", "allocate_callsite": "0x189bde318 -> 0x183a7f530"}
+          ],
+          "global_bind_calls": [
+            "0x189bde2c7 -> ScriptableRenderContext/CommandBuffer.SetGlobalConstantBufferInternal0 at 0x183a7f620",
+            "0x189bde3d0 -> SetGlobalConstantBufferInternal0 at 0x183a7f620",
+            "0x189bde404 -> SetGlobalConstantBufferInternal0 at 0x183a7f620"
+          ]
+        },
+        "negative_gpu_scene_checks": {
+          "absent": [
+            "ComputeShader.SetBuffer/SetConstantComputeBuffer",
+            "ComputeShader.Dispatch or CommandBuffer.Internal_DispatchCompute",
+            "GpuSceneDirtyUpdateCS.UploadPerDrawParams kernel 7",
+            "_UploadBuffer or 84-byte source-stride pack",
+            "factory 0x8c record/0x100 staging lanes",
+            "custom channel 2 or resolved resource +0xd0"
+          ],
+          "interpretation": "This method is a positive producer/binder for global constant buffers only. Its three global CB bindings must not be treated as the missing per-draw upload or as evidence that channel 2 reaches binding 33."
+        },
+        "boundary": "The global ShaderVariablesGlobal path is now explicitly separated from the unresolved GPU Scene upload schedule. The dynamic IFix/render-graph subroute remains open, while staging-to-_UploadBuffer, kernel-7 dispatch selection, and channel-2/resource +0xd0 binding stay fail-closed."
+      },
       "upstream_packed_word_producer": {
         "source": "Installed GameAssembly.dll native HGCharacterVolume body recovered from the current metadata/code-registration pair.",
         "type": "HG.Rendering.Runtime.HGCharacterVolume",
