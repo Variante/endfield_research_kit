@@ -9,6 +9,7 @@ import re
 import struct
 import time
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,6 @@ from common import (
     path_id_export_path_id,
     rel_path,
     rel_requires_path_id_export_name,
-    write_json,
 )
 
 ASSET_KIND_BY_EXT = {
@@ -552,11 +552,61 @@ def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str,
         if path:
             entry["h"] = _file_sha256(path)
 
+
+@dataclass(frozen=True)
+class AssetScanResult:
+    """One filesystem scan and every value derived from it."""
+
+    asset_entries: list[dict]
+    video_entries: list[dict]
+    counts: dict[str, int]
+    video_counts: dict[str, int]
+    asset_root_labels: dict[str, str]
+    media_root_labels: dict[str, str]
+    relations: dict[str, dict]
+    materials: int
+    texture_links: int
+    preview_models: int
+    image_categories: dict[str, int]
+    material_like_images: int
+
+    def payloads(self, *, root: Path, export_root: Path) -> tuple[dict, dict]:
+        """Build the browser asset payload and in-memory Story video payload."""
+        generated = int(time.time())
+        asset_payload = {
+            "generated": generated,
+            "root": rel_path(export_root, root),
+            "sourceRoots": self.asset_root_labels,
+            "counts": {
+                "total": self.counts["total"],
+                "image": self.counts["image"],
+                "model": self.counts["model"],
+                "video": self.counts["video"],
+                "json": self.counts["json"],
+            },
+            "entries": self.asset_entries,
+            "relations": self.relations,
+            "imageCategories": self.image_categories,
+            "materialLikeImages": self.material_like_images,
+        }
+        video_payload = {
+            "generated": generated,
+            "root": rel_path(export_root, root),
+            "sourceRoots": self.media_root_labels,
+            "counts": {
+                "total": self.video_counts["total"],
+                "video": self.video_counts["video"],
+            },
+            "entries": self.video_entries,
+        }
+        return asset_payload, video_payload
+
+
 def scan_exported_media_assets(
     *,
     root: Path,
     export_root: Path,
-) -> dict[str, Any]:
+) -> AssetScanResult:
     """Scan exported media once and derive image/model/video indexes from it."""
     asset_entries: list[dict] = []
     video_entries: list[dict] = []
@@ -806,172 +856,18 @@ def scan_exported_media_assets(
     _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel)
     _add_duplicate_candidate_hashes(video_entries, asset_paths_by_rel)
 
-    return {
-        "assetEntries": asset_entries,
-        "videoEntries": video_entries,
-        "counts": counts,
-        "videoCounts": video_counts,
-        "assetRootLabels": asset_root_labels,
-        "mediaRootLabels": media_root_labels,
-        "relations": relations,
-        "materials": material_count,
-        "textureLinks": texture_link_count,
-        "previewModels": preview_proxy_count,
-        "imageCategories": dict(sorted(image_category_counts.items())),
-        "materialLikeImages": material_like_image_count,
-    }
-
-
-def build_asset_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> dict:
-    counts = scan["counts"]
-    return {
-        "generated": int(time.time()),
-        "root": rel_path(export_root, root),
-        "sourceRoots": scan["assetRootLabels"],
-        "counts": {
-            "total": counts["total"],
-            "image": counts["image"],
-            "model": counts["model"],
-            "video": counts["video"],
-            "json": counts["json"],
-        },
-        "entries": scan["assetEntries"],
-        "relations": scan["relations"],
-        "imageCategories": scan["imageCategories"],
-        "materialLikeImages": scan["materialLikeImages"],
-    }
-
-
-def build_video_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> dict:
-    counts = scan["videoCounts"]
-    return {
-        "generated": int(time.time()),
-        "root": rel_path(export_root, root),
-        "sourceRoots": scan["mediaRootLabels"],
-        "counts": {
-            "total": counts["total"],
-            "video": counts["video"],
-        },
-        "entries": scan["videoEntries"],
-    }
-
-
-def _asset_stats(scan: dict[str, Any], out_path: Path, export_root: Path) -> dict:
-    counts = scan["counts"]
-    label_text = _label_text(scan["assetRootLabels"], export_root)
-    return {
-        "sourceRoot": label_text,
-        "sourceRoots": scan["assetRootLabels"],
-        "assets": counts["total"],
-        "images": counts["image"],
-        "models": counts["model"],
-        "videos": counts["video"],
-        "json": counts["json"],
-        "materials": scan["materials"],
-        "imageCategories": scan["imageCategories"],
-        "materialLikeImages": scan["materialLikeImages"],
-        "previewModels": scan["previewModels"],
-        "indexBytes": out_path.stat().st_size,
-    }
-
-
-def _video_stats(scan: dict[str, Any], out_path: Path | None, export_root: Path) -> dict:
-    counts = scan["videoCounts"]
-    return {
-        "sourceRoot": _label_text(scan["mediaRootLabels"], export_root),
-        "sourceRoots": scan["mediaRootLabels"],
-        "assets": counts["total"],
-        "videos": counts["video"],
-        "indexBytes": out_path.stat().st_size if out_path is not None else 0,
-    }
-
-
-def build_asset_index(
-    out_path: Path,
-    *,
-    root: Path,
-    export_root: Path,
-) -> dict:
-    """Scan exported browser-visible assets into a lightweight search index."""
-    scan = scan_exported_media_assets(
-        root=root,
-        export_root=export_root,
-    )
-    payload = build_asset_payload(scan, root=root, export_root=export_root)
-    write_json(out_path, payload)
-    counts = scan["counts"]
-    print(
-        "Asset index written:",
-        out_path,
-        (
-            f"({counts['total']} assets; {counts['image']} images; {counts['model']} models; "
-            f"{counts['video']} videos; {counts['json']} JSON files; "
-            f"{scan['materialLikeImages']} material-like images; "
-            f"{len(scan['imageCategories'])} image categories; "
-            f"{scan['materials']} materials; {scan['textureLinks']} texture links; "
-            f"{scan['previewModels']} model preview proxies)"
-        ),
-    )
-    return _asset_stats(scan, out_path, export_root)
-
-
-def build_video_index(
-    out_path: Path,
-    *,
-    root: Path,
-    export_root: Path,
-) -> dict:
-    """Scan exported video files into a small exact-name lookup index."""
-    scan = scan_exported_media_assets(
-        root=root,
-        export_root=export_root,
-    )
-    payload = build_video_payload(scan, root=root, export_root=export_root)
-    write_json(out_path, payload)
-    counts = scan["videoCounts"]
-    print("Video index written:", out_path, f"({counts['video']} videos)")
-    return _video_stats(scan, out_path, export_root)
-
-
-def build_asset_indexes(
-    asset_out_path: Path,
-    *,
-    root: Path,
-    export_root: Path,
-) -> tuple[dict, dict, dict, dict]:
-    """Build image/model and video indexes from a single filesystem scan.
-
-    Only the asset index is written. The video payload is a Story-media build
-    input that no WebUI page fetches, so it is returned in memory instead of
-    round-tripping through ``webui/data/assets/videos.json``.
-    """
-    scan = scan_exported_media_assets(
-        root=root,
-        export_root=export_root,
-    )
-    asset_payload = build_asset_payload(scan, root=root, export_root=export_root)
-    video_payload = build_video_payload(scan, root=root, export_root=export_root)
-    write_json(asset_out_path, asset_payload)
-
-    asset_counts = scan["counts"]
-    video_counts = scan["videoCounts"]
-    print(
-        "Asset index written:",
-        asset_out_path,
-        (
-            f"({asset_counts['total']} assets; {asset_counts['image']} images; "
-            f"{asset_counts['model']} models; {asset_counts['video']} videos; "
-            f"{asset_counts['json']} JSON files; "
-            f"{scan['materialLikeImages']} material-like images; "
-            f"{len(scan['imageCategories'])} image categories; "
-            f"{scan['materials']} materials; "
-            f"{scan['textureLinks']} texture links; {scan['previewModels']} model preview proxies)"
-        ),
-    )
-    print("Video index:", f"{video_counts['video']} videos (in-memory Story media input)")
-    return (
-        _asset_stats(scan, asset_out_path, export_root),
-        _video_stats(scan, None, export_root),
-        asset_payload,
-        video_payload,
+    count_keys = ("total", "image", "model", "video", "json")
+    return AssetScanResult(
+        asset_entries=asset_entries,
+        video_entries=video_entries,
+        counts={key: int(counts[key]) for key in count_keys},
+        video_counts={key: int(video_counts[key]) for key in ("total", "video")},
+        asset_root_labels=asset_root_labels,
+        media_root_labels=media_root_labels,
+        relations=relations,
+        materials=material_count,
+        texture_links=texture_link_count,
+        preview_models=preview_proxy_count,
+        image_categories=dict(sorted(image_category_counts.items())),
+        material_like_images=material_like_image_count,
     )
