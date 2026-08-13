@@ -21,8 +21,6 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from common import sha256_file as shared_sha256_file  # noqa: E402
-
 for search_path in (ROOT / "scripts",):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
@@ -37,6 +35,7 @@ from common import (  # noqa: E402
 )
 from story_builder.context import LEVELSCRIPT_DIR  # noqa: E402
 from story_builder.level_bindings import (  # noqa: E402
+    CALLSERVER_CALLBACK_CONTRACT_AUDIT,
     _levelscript_native_action_successors,
     _levelscript_native_callserver_callback_successors,
     _prepare_levelscript_native_control_context,
@@ -53,114 +52,10 @@ from story_builder.levelscript_binary import (  # noqa: E402
 
 
 SCHEMA = "levelScriptCallServerCallbackAudit.v2"
-CONTRACT_SCHEMA = "callServerCallbackNativeContract.v1"
 CALLSERVER_PAIR = (0x0034, 14)
 HEX_UID_RE = re.compile(r"[0-9a-fA-F]{8}")
-DEFAULT_CONTRACT = (
-    ROOT
-    / "reports"
-    / "mission_order"
-    / "levelscript_callserver_callback_contract.json"
-)
 DEFAULT_JSON = STORY_RECOVERY_REPORTS_DIR / "levelscript_callserver_callback_audit.json"
 DEFAULT_MARKDOWN = STORY_RECOVERY_REPORTS_DIR / "levelscript_callserver_callback_audit.md"
-
-
-def sha256_file(path: Path) -> str:
-    return shared_sha256_file(path).upper()
-
-
-def load_native_contract(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    expected = {
-        "schema": CONTRACT_SCHEMA,
-        "status": "validated",
-        "gameAssemblySha256": (
-            "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-        ),
-        "globalMetadataSha256": (
-            "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-        ),
-        "executeMethodToken": "0x06008f04",
-        "executeMethodVa": "0x1845f6000",
-        "outputFieldToken": "0x040069fe",
-        "outputFieldOffset": "this+0xd8",
-        "setWaitMethodToken": "0x06007e87",
-        "setWaitMethodVa": "0x1875f1180",
-        "waitHeaderUidListOffset": "this+0x80",
-    }
-    actual = {
-        "schema": payload.get("schema"),
-        "status": payload.get("status"),
-        "gameAssemblySha256": (payload.get("sources") or {}).get(
-            "gameAssemblySha256"
-        ),
-        "globalMetadataSha256": (payload.get("sources") or {}).get(
-            "globalMetadataSha256"
-        ),
-        "executeMethodToken": (payload.get("callServer") or {}).get(
-            "executeMethodToken"
-        ),
-        "executeMethodVa": (payload.get("callServer") or {}).get(
-            "executeMethodVa"
-        ),
-        "outputFieldToken": (payload.get("callServer") or {}).get(
-            "outputFieldToken"
-        ),
-        "outputFieldOffset": (payload.get("callServer") or {}).get(
-            "outputFieldOffset"
-        ),
-        "setWaitMethodToken": (payload.get("actionBase") or {}).get(
-            "setWaitMethodToken"
-        ),
-        "setWaitMethodVa": (payload.get("actionBase") or {}).get(
-            "setWaitMethodVa"
-        ),
-        "waitHeaderUidListOffset": (payload.get("actionBase") or {}).get(
-            "waitHeaderUidListOffset"
-        ),
-    }
-    failures = [
-        {
-            "gate": key,
-            "expected": expected_value,
-            "actual": actual.get(key),
-            "source": rel_path(path),
-        }
-        for key, expected_value in expected.items()
-        if actual.get(key) != expected_value
-    ]
-    byte_gates = ((payload.get("validation") or {}).get("byteGates") or [])
-    if len(byte_gates) != 4:
-        failures.append({
-            "gate": "native_byte_gate_count",
-            "expected": 4,
-            "actual": len(byte_gates),
-            "source": rel_path(path),
-        })
-    if (payload.get("validation") or {}).get("validationFailures"):
-        failures.append({
-            "gate": "native_contract_validation_failures",
-            "expected": [],
-            "actual": (payload.get("validation") or {}).get(
-                "validationFailures"
-            ),
-            "source": rel_path(path),
-        })
-    if failures:
-        raise ValueError(json.dumps(failures, ensure_ascii=False, indent=2))
-    return {
-        "schema": payload["schema"],
-        "status": payload["status"],
-        "source": rel_path(path),
-        "sourceSha256": sha256_file(path),
-        "sources": payload["sources"],
-        "callServer": payload["callServer"],
-        "actionBase": payload["actionBase"],
-        "validation": payload["validation"],
-        "evidenceBoundary": payload["evidenceBoundary"],
-        "usesOcrOrManualOrder": False,
-    }
 
 
 def _story_occurrences_by_record(
@@ -360,14 +255,22 @@ def validate_callserver_serialized_contract(
 def build_report(
     *,
     level_script_root: Path = LEVELSCRIPT_DIR,
-    contract_path: Path = DEFAULT_CONTRACT,
 ) -> dict[str, Any]:
-    native_contract = load_native_contract(contract_path)
+    contract_audit = CALLSERVER_CALLBACK_CONTRACT_AUDIT
+    native_contract = dict(contract_audit.get("nativeContract") or {})
+    native_contract.setdefault("schema", contract_audit.get("schema", ""))
+    native_contract.setdefault("status", contract_audit.get("status", ""))
+    native_contract.update({
+        "source": contract_audit.get("sourceFile", ""),
+        "sourceSha256": contract_audit.get("sourceSha256", ""),
+    })
     level_script_root = level_script_root.resolve()
     story_by_record = _story_occurrences_by_record(level_script_root)
     rows: list[dict[str, Any]] = []
     unresolved_outputs: list[dict[str, Any]] = []
-    validation_failures: list[dict[str, Any]] = []
+    validation_failures: list[dict[str, Any]] = list(
+        contract_audit.get("validationFailures") or []
+    )
     counts: Counter[str] = Counter()
     output_count_distribution: Counter[str] = Counter()
     callback_event_types: Counter[str] = Counter()
@@ -703,13 +606,11 @@ def markdown_report(report: dict[str, Any]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--level-script-root", type=Path, default=LEVELSCRIPT_DIR)
-    parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
     parser.add_argument("--out", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
     args = parser.parse_args()
     report = build_report(
         level_script_root=args.level_script_root,
-        contract_path=args.contract,
     )
     write_report_json(args.out, report)
     write_text_if_changed(args.markdown, markdown_report(report))
