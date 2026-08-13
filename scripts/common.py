@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import fnmatch
 import hashlib
 import os
 import re
@@ -41,18 +40,6 @@ STORY_RECOVERY_REPORTS_DIR = REPORTS_DIR / "story" / "recovery"
 STORY_OPTION_REPORTS_DIR = STORY_RECOVERY_REPORTS_DIR / "options"
 UPDATES_REPORTS_DIR = REPORTS_DIR / "updates"
 ASSET_REPORTS_DIR = REPORTS_DIR / "assets"
-SAFE_REPORT_REPLACEMENTS = str.maketrans({
-    "\\": "_",
-    "/": "_",
-    ":": "_",
-    "*": "_",
-    "?": "_",
-    "\"": "_",
-    "<": "_",
-    ">": "_",
-    "|": "_",
-    ",": "_",
-})
 PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
 PATH_ID_EXPORT_SOURCE_FAMILIES = frozenset({"streamingassets", "persistent"})
 
@@ -354,49 +341,6 @@ def split_csv_values(values: list[str] | None) -> list[str]:
             if item:
                 out.append(item)
     return out
-
-
-def parse_group_filters(values: list[str] | None) -> set[int]:
-    groups: set[int] = set()
-    for value in split_csv_values(values):
-        try:
-            groups.add(int(value))
-        except ValueError as exc:
-            raise ValueError(f"group must be an integer: {value}") from exc
-    return groups
-
-
-def story_matches(story_key: str, filters: list[str]) -> bool:
-    if not filters:
-        return True
-    lowered = story_key.lower()
-    for item in filters:
-        pattern = item.lower()
-        if pattern == lowered or pattern in lowered:
-            return True
-        if any(ch in pattern for ch in "*?[]") and fnmatch.fnmatch(lowered, pattern):
-            return True
-    return False
-
-
-def filtered_json_paths(json_dir: Path, filters: list[str]) -> list[Path]:
-    if not filters:
-        return sorted(json_dir.glob("*.json"))
-
-    paths: dict[Path, None] = {}
-    for item_filter in filters:
-        if any(ch in item_filter for ch in "*?[]"):
-            for path in json_dir.glob(f"{item_filter}.json"):
-                paths[path] = None
-            continue
-        exact = json_dir / f"{item_filter}.json"
-        if exact.exists():
-            paths[exact] = None
-            continue
-        for path in json_dir.glob("*.json"):
-            if story_matches(path.stem, [item_filter]):
-                paths[path] = None
-    return sorted(paths)
 
 
 # Authored tables whose Story ids are structurally not mission narrative.
@@ -728,8 +672,6 @@ def non_mission_content_keys(table_root: Path) -> dict[str, dict[str, str]]:
                             "content": spec["content"],
                         }
     return found
-
-
 def guide_runtime_non_mission_content_keys(
     report_path: Path = GUIDE_RUNTIME_NON_MISSION_REPORT,
     *,
@@ -1195,25 +1137,3 @@ def combined_non_mission_content_keys(
     for key, row in spaceship_story_non_mission_content_keys().items():
         found.setdefault(key, row)
     return found
-
-
-def safe_report_suffix(
-    story_filters: list[str],
-    group_filters: set[int],
-    flag: bool = False,
-    *,
-    flag_label: str = "interesting",
-) -> str:
-    parts: list[str] = []
-    if story_filters:
-        parts.append("story_" + "_".join(story_filters[:4]))
-        if len(story_filters) > 4:
-            parts.append(f"plus_{len(story_filters) - 4}")
-    if group_filters:
-        parts.append("group_" + "_".join(str(value) for value in sorted(group_filters)))
-    if flag:
-        parts.append(flag_label)
-    if not parts:
-        return ""
-    suffix = "_".join(parts).translate(SAFE_REPORT_REPLACEMENTS)
-    return "_" + suffix[:120].strip("_")
