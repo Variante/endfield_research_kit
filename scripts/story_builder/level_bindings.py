@@ -1,15 +1,66 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
 import re
 import struct
+from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
 
-from .context import *
-from .anime_assets import *
+try:
+    from common import (
+        EXPORT_ROOT,
+        ROOT,
+        read_bytes_cached,
+        read_json_cached,
+        rel_path as repo_rel,
+        unique_preserve as _unique_preserve,
+    )
+except ModuleNotFoundError:  # imported as ``scripts.story_builder.level_bindings``
+    from scripts.common import (
+        EXPORT_ROOT,
+        ROOT,
+        read_bytes_cached,
+        read_json_cached,
+        rel_path as repo_rel,
+        unique_preserve as _unique_preserve,
+    )
+
+from .anime_assets import (
+    _build_mission_area_index,
+    _canonical_cutscene_key,
+    _extract_tracking_hints,
+    _quest_area_story_refs,
+    _quest_sort_key,
+    _resolve_payload_scene_key,
+    _resolve_tracking_hint,
+    _scene_ref_alias_candidates,
+)
+from .context import (
+    DATA_JSON_DIR,
+    GAMEPLAY_CONFIG_DIR,
+    HEX_UID_RE,
+    LEVELDATA_DIR,
+    LEVELSCRIPT_DIR,
+    LT_BINDING_RE,
+    MISSION_SCENE_ENTRY_KINDS,
+    MRA_DIR,
+    NPC_PROXY_EX_PATH,
+    NPC_PROXY_TABLE_PATH,
+    PERSISTENT_ASSETS_DIR,
+    PERSISTENT_DATA_JSON_DIR,
+    PRINTABLE_ASCII_MAX,
+    PRINTABLE_ASCII_MIN,
+    SPAWNER_CONFIG_DIR,
+    STREAMING_TABLE_DIR,
+    _LEVELDATA_NAMED_TABLE_CACHE,
+    _LEVELSCRIPT_BINDING_CACHE,
+    _MISSION_LEVELSCRIPT_CACHE,
+    _NPC_PROXY_EX_CACHE,
+)
 from .scene_graph import _scene_graph_node_kind, _scene_graph_runtime_payload_key
 from .levelscript_binary import (
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
