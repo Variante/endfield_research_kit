@@ -58,6 +58,11 @@ from .source_provenance import (
     enrich_story_connection_original_files,
     render_story_connection_original_files_markdown,
 )
+from .source_links import (
+    compact_story_source_link,
+    story_source_link_index_summary,
+    story_source_link_search_text,
+)
 
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (

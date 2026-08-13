@@ -477,64 +477,6 @@ def normalized_duplicate_line_texts(payload: dict) -> list[str]:
             out.append(text)
     return out
 
-def compact_story_source_link(link: dict) -> dict:
-    source = str(link.get("source") or "")
-    file_ref = str(link.get("file") or "")
-    path_ref = str(link.get("path") or "")
-    raw = str(link.get("raw") or "")
-    context = link.get("context") if isinstance(link.get("context"), dict) else {}
-    compact = {
-        "source": source,
-        "file": file_ref,
-        "path": path_ref,
-        "raw": raw,
-        "kind": str(link.get("kind") or ""),
-        "context": context,
-        "_debug": {
-            "source": {
-                "source": source,
-                "file": file_ref,
-                "path": path_ref,
-                "raw": raw,
-                "kind": str(link.get("kind") or ""),
-                "matchKind": str(link.get("matchKind") or ""),
-                "context": context,
-            },
-        },
-    }
-    for optional in ("sourceKey", "mission", "levelId", "scriptId", "templateGroup", "templateId"):
-        if link.get(optional):
-            compact[optional] = link[optional]
-            compact["_debug"]["source"][optional] = link[optional]
-    return compact
-
-def story_source_link_search_text(links: list[dict]) -> str:
-    parts: list[str] = []
-    for link in links:
-        for field in ("raw", "source", "file", "path", "mission", "levelId", "scriptId", "templateId"):
-            value = link.get(field)
-            if value:
-                parts.append(str(value))
-        context = link.get("context") if isinstance(link.get("context"), dict) else {}
-        owner = context.get("owner") if isinstance(context.get("owner"), dict) else {}
-        for value in owner.values():
-            if value:
-                parts.append(str(value))
-    return " ".join(parts)
-
-def story_source_link_index_summary(links: list[dict]) -> dict:
-    source_counts = Counter(str(link.get("source") or "") for link in links)
-    files = _unique_preserve(str(link.get("file") or "") for link in links if link.get("file"))
-    return {
-        "n": len(links),
-        "sources": {
-            key: source_counts[key]
-            for key in sorted(source_counts)
-            if key
-        },
-        "files": files[:5],
-    }
-
 def compact_narrative_video_ref(ref: dict) -> dict:
     compact = {
         "name": str(ref.get("name") or ""),
@@ -790,9 +732,6 @@ __all__ = [
     "responsive_summary_rows",
     "sim_duplicate_actor_from_key",
     "normalized_duplicate_line_texts",
-    "compact_story_source_link",
-    "story_source_link_search_text",
-    "story_source_link_index_summary",
     "compact_narrative_video_ref",
     "narrative_video_sort_key",
     "narrative_video_search_text",
