@@ -66,10 +66,12 @@ from .context import (
     write_mission_timeline_recovery_json,
 )
 
-try:
+if __package__ == "story_builder":
     from common import write_report_json, write_text_if_changed
-except ModuleNotFoundError:
+elif __package__ == "scripts.story_builder":
     from scripts.common import write_report_json, write_text_if_changed
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.language_bundle")
 from .anime_assets import (
     _canonical_cutscene_key,
     _cutscene_component_summary,
@@ -248,9 +250,9 @@ from .option_anchor_reports import (
     inferred_option_anchor_row,
     write_inferred_option_anchors_report,
 )
-try:
+if __package__ == "story_builder":
     from scene_order_gap_shared import write_scene_order_gap_reports
-except ModuleNotFoundError:
+else:
     from scripts.scene_order_gap_shared import write_scene_order_gap_reports
 from .cutscene_semantics import (
     _line_id_list_equal,
