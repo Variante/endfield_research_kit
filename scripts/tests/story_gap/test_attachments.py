@@ -1,4 +1,11 @@
-from ._support import *
+from ._support import (
+    Path,
+    SourceGapTestCase,
+    copy,
+    gap_queue,
+    mission_payload,
+    partial_mission,
+)
 
 class SourceGapAttachmentTests(SourceGapTestCase):
     def test_current_quest_attachment_diagnostics_are_exact(self) -> None:
