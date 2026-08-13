@@ -1620,6 +1620,39 @@
               "resource_plus_0xd0_or_channel_2": false,
               "indirect_call_instruction_in_body": false
             },
+            "unity_jobs_scheduler_bridge": {
+              "status": "scheduler-record-transport-closed-gpu-consumer-open",
+              "source": "Installed UnityPlayer.dll JobsUtility internal-call registration and PData-scoped native disassembly; current UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+              "entrypoint_chain": [
+                {
+                  "managed_internal_call": "Unity.Jobs.LowLevel.Unsafe.JobsUtility::ScheduleParallelFor_Injected",
+                  "registration_index": 151,
+                  "unityplayer_wrapper": "0x1800ac0d0",
+                  "wrapper_contract": "Receives JobScheduleParameters*, arrayLength, innerloopBatchCount, and JobHandle*; rearranges the first three values and calls 0x18055c720."
+                },
+                {
+                  "native_bridge": "0x18055c720",
+                  "observed": "Preserves the return handle pointer, forwards JobScheduleParameters* as the scheduler input, and forwards arrayLength/batch count before calling 0x18055d110."
+                },
+                {
+                  "scheduler_core": "0x18055d110",
+                  "observed": "Builds the native schedule/job record, computes range metadata, and enters the common record builder 0x180555e50; the direct body has no ComputeBuffer, ComputeShader, CommandBuffer, or dispatch call."
+                }
+              ],
+              "record_transport": {
+                "common_record_builder": "0x180555e50",
+                "record_backend_a": "0x1805572f0",
+                "record_backend_b": "0x180557c30",
+                "callback_glue": "0x18055bac0",
+                "callback_glue_role": "The scheduler stores this Unity worker/range callback in the job record; it is not the Burst function identity and must not be mistaken for 0x1810d25c0/0x1810d26bf.",
+                "record_writes": [
+                  "0x1805572f0 writes record[0] = callback_glue and record[0x10] = scheduler-owned job payload before enqueueing.",
+                  "0x180557c30 writes the same callback/payload prefix for the alternate scheduling backend.",
+                  "0x1805592b0 copies the callback/payload metadata into the queue node and submits it through the worker queue."
+                ]
+              },
+              "boundary": "This closes the runtime transport that can invoke a Burst/job callback without a static E8 caller: JobScheduleParameters and the callback/payload record cross UnityPlayer's scheduler queue. It does not identify which schedule record carries 0x1810d25c0/0x1810d26bf, does not recover the 0x100-stride-to-84-byte pack, and does not prove UploadPerDrawParams kernel 7, _UploadBuffer, or resource +0xd0/channel 2. Keep the GPU edge fail-closed."
+            },
             "interpretation": "Step2 is a second CPU-side factory/ECS maintenance pass that happens to form the same 0x8c record address. Its component compaction and typed-copy callees provide no post-staging pack, 84-byte prefix, shader dispatch, or resource binding edge. The scheduler/consumer boundary therefore remains indirect and the staging-to-_UploadBuffer edge stays fail-closed."
           },
           "next_gap": "Recover the indirect caller and the consumer of the 0x100-stride staging array; specifically search for a pack step that prefixes an entity/index dword and yields the shader's 84-byte source stride, then tie that upload to UploadPerDrawParams kernel 7 and resource +0xd0."
