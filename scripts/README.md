@@ -81,7 +81,7 @@ Typical focused commands:
 
 ```bat
 python scripts\verify_export_freshness.py
-python scripts\story_builder\refresh_evidence.py
+python -m scripts.story_builder.refresh_evidence
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\build_character_data.py --languages CN --default-language CN
