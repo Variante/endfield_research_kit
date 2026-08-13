@@ -18,10 +18,6 @@ from typing import Any
 
 from common import ROOT, native_evidence_required, read_json, rel_path as slash
 
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
 from export_full_from_game import (  # noqa: E402
     DEFAULT_GAME_ROOT,
     DEFAULT_OUTPUT,
