@@ -845,6 +845,18 @@ NPC archetypes are imported as labeled source kits.
   IFix-patched code, or unrelated GPU-driven ECS work; the channel-2 upload edge
   remains fail-closed. Details are recorded under
   `managed_frame_update_evidence` in the packed-flag audit.
+  UnityPlayer now provides a stronger native boundary for the same path:
+  exact references to the literals `HGFactoryRenderManager::FrameUpdateStep1`
+  and `FrameUpdateStep2` land in `0x1810d31a0..0x1810d36af` and
+  `0x1810d36b0..0x1810d4006`. Their only recovered service adapters are
+  `0x180fc5ea0..0x180fc5ebb` and `0x180fc5ec0..0x180fc5eeb`; Step1 initializes
+  the CPU output container/state and Step2 consumes/reallocates it. Neither
+  composite body nor the post-Step2 continuation `0x180e75000 ->
+  0x180e58cb0` contains a checked ComputeBuffer, shader bind, CommandBuffer,
+  or dispatch edge. This positively identifies the native frame-update stages
+  as CPU-output work, but the resolver/table-dispatched consumer and the
+  shared-record-to-`_UploadBuffer`/channel-2 `+0xd0` edges remain fail-closed.
+  Details are under `native_frame_update_step_census` in the packed audit.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
