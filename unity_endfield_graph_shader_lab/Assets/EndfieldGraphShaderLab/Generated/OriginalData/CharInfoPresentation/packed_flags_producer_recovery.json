@@ -3033,6 +3033,59 @@
                 "caller": "MagicaCloth.PhysicsManagerMeshData::DispatchWriting (method index 431943)",
                 "result": "The only direct ComputeShader.Dispatch caller is an unrelated physics writer; no factory, per-draw, or HGRenderPath caller reaches this wrapper."
               },
+              "native_commandbuffer_recording": {
+                "dispatch_internal_call": {
+                  "function_table_row": 1383,
+                  "name_table_row": 3431,
+                  "name_pointer": "0x1820da8e8",
+                  "native_entry": "0x180119fc0",
+                  "body_range": "0x180119fc0..0x18011a184",
+                  "record_writer": "0x1804c73e0",
+                  "record_opcode": "0x11",
+                  "record_shape": "The native CommandBuffer dispatch entry resolves the shader/resource object, forwards the kernel and dispatch values to 0x1804c73e0, and that writer appends a 0x11 record with a 28-byte payload to the high-level command buffer."
+                },
+                "buffer_binding_internal_call": {
+                  "function_table_row": 1377,
+                  "name_table_row": 3425,
+                  "name_pointer": "0x1820da8b8",
+                  "native_entry": "0x180116180",
+                  "record_writer": "0x1804cb1a0",
+                  "record_opcode": "0x0d",
+                  "record_shape": "The native SetComputeBufferParam entry resolves the shader/resource and buffer metadata, then appends a 0x0d record with a 24-byte payload; it has no direct graphics-context +0xab8 call."
+                },
+                "pointer_table_mapping": "UnityPlayer pointer table 0x1820d0000 plus the internal-call name table at 0x1820d3db0 with the observed +0x800 row offset maps the native entries to their UnityEngine.Rendering.CommandBuffer names."
+              },
+              "managed_binding_census": {
+                "source": "PData-scoped raw E8 target scan across all GameAssembly.dll code sections using the current method-pointer index.",
+                "internal_set_compute_buffer_param": {
+                  "target": "0x18b3e6d80",
+                  "direct_call_count": 47,
+                  "unique_named_body_count": 8,
+                  "named_bodies": [
+                    "HG.Rendering.Runtime.UberPostPassUtils+<>c::<.cctor>b__104_0",
+                    "HG.Rendering.Runtime.GPUParticleSimulationPassConstructor::ProcessParticles",
+                    "HG.Rendering.Runtime.DepthPyramidLDSRenderingPass+<>c::<Render>b__6_0",
+                    "HG.Rendering.Runtime.ParticleLightingPassConstructor+<>c::<.cctor>b__21_0",
+                    "HG.Rendering.Runtime.VirtualTextureRenderer::Render",
+                    "HG.Rendering.Runtime.LightCullingGPU::PrepareGPUData",
+                    "HG.Rendering.Runtime.ReflectionProbeBinningPassConstructor+<>c::<.cctor>b__35_0",
+                    "UnityEngine.Rendering.CommandBuffer::SetComputeBufferParam"
+                  ],
+                  "factory_name_filter_hits": []
+                },
+                "internal_set_compute_texture_param": {
+                  "target": "0x18b3e6eac",
+                  "direct_call_count": 35,
+                  "unique_named_body_count": 8,
+                  "named_bodies": [
+                    "HG.Rendering.Runtime.GTAOPassConstructor+<>c::<.cctor>b__24_0",
+                    "HG.Rendering.Runtime.VirtualTextureRenderer::Render",
+                    "UnityEngine.Rendering.CommandBuffer::SetComputeTextureParam (6 overload bodies)"
+                  ],
+                  "factory_name_filter_hits": []
+                },
+                "result": "The recovered managed CommandBuffer binding records are confined to built-in render passes and CommandBuffer overload wrappers; no factory, per-draw, character, or UploadPerDrawParams producer reaches the buffer/texture binding internals."
+              },
               "boundary": "This closes the direct managed CommandBuffer/ComputeShader dispatch candidates for the factory upload producer. It does not identify which native command/resource record feeds the generic UnityPlayer command-stream interpreter, so the native dynamic record-to-UploadPerDrawParams kernel-7 edge remains open and fail-closed."
             },
             "native_command_stream_dispatch_opcode": {

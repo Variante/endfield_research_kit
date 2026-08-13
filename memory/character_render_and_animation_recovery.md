@@ -65,6 +65,16 @@ passes, with no `factory`, `perdraw`, `upload`, or character producer; the only
 direct `ComputeShader.Dispatch` caller is unrelated MagicaCloth physics code.
 This closes the direct managed dispatch candidates, while leaving the native
 command-stream record feeding the generic interpreter open and fail-closed.
+The native Unity CommandBuffer layer is now separated from that low-level
+interpreter: the recovered internal-call table maps
+`CommandBuffer.Internal_DispatchCompute` to `0x180119fc0`, which calls
+`0x1804c73e0` to record opcode `0x11`; buffer binding maps to
+`0x180116180` and `0x1804cb1a0`, which records opcode `0x0d`. A separate
+GameAssembly census found 47 direct compute-buffer binding calls from eight
+named bodies and 35 texture-binding calls; they are built-in passes or
+CommandBuffer overload wrappers, with no factory/per-draw/character hits.
+These high-level records therefore cannot be merged with the native `0x27ef`
+record without a further consumer proof.
 The native command-stream pair is now bounded for one dispatch opcode: writer
 `0x18092bed0..0x18092c123` stores opcode `0x27ef`, a resource/handle qword, and
 three 32-bit dispatch values (`0x18092bf54`, `0x18092bfb6`, `0x18092c00a`,
