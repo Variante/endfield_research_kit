@@ -10,6 +10,7 @@ from typing import Any
 from .codecs.levelscript import exit_custom_performance as levelscript_exit_performance
 from .codecs.levelscript import fmv as levelscript_fmv
 from .codecs.levelscript import manual_control as levelscript_manual_control
+from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
 
 if __package__ == "story_builder":
     from common import (
@@ -5451,122 +5452,6 @@ def _decode_wait_for_seconds_in_trigger_volume_action(
     }
 
 
-def _decode_play3d_radio_action(payload: bytes) -> dict[str, Any]:
-    """Decode the exact current-build ``Play3DRadio`` field sequence.
-
-    The generated native deserializer sets the 12 subtype fields in the order
-    replayed below.  This decoder intentionally requires the action payload to
-    end at the twelfth field; a minority of records have additional serialized
-    list framing after the action and remain unsupported until that outer
-    framing is independently decoded.
-    """
-    sentinel = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
-    cursor = 0
-    values: dict[str, Any] = {}
-    offsets: dict[str, str] = {}
-    encodings: dict[str, str] = {}
-
-    class DecodeError(ValueError):
-        pass
-
-    def expect_tag(name: str) -> None:
-        nonlocal cursor
-        if cursor >= len(payload) or payload[cursor] != 0x04:
-            raise DecodeError(f"{name}: missing object-present tag")
-        offsets[name] = _offset_hex(cursor)
-        cursor += 1
-
-    def expect_sentinel(name: str) -> None:
-        nonlocal cursor
-        if payload[cursor : cursor + 12] != sentinel:
-            raise DecodeError(f"{name}: invalid Param tail")
-        cursor += 12
-
-    def scalar(name: str, fmt: str, size: int) -> None:
-        nonlocal cursor
-        expect_tag(name)
-        if cursor + size > len(payload):
-            raise DecodeError(f"{name}: truncated scalar")
-        values[name] = struct.unpack_from(fmt, payload, cursor)[0]
-        cursor += size
-        expect_sentinel(name)
-
-    def boolean(name: str) -> None:
-        nonlocal cursor
-        expect_tag(name)
-        if cursor >= len(payload) or payload[cursor] not in (0, 1):
-            raise DecodeError(f"{name}: invalid bool")
-        values[name] = bool(payload[cursor])
-        cursor += 1
-        expect_sentinel(name)
-
-    def string(name: str, *, nullable: bool = False) -> None:
-        nonlocal cursor
-        offsets[name] = _offset_hex(cursor)
-        if nullable and payload[cursor : cursor + 1] == b"\xff":
-            values[name] = ""
-            encodings[name] = "bare-null"
-            cursor += 1
-            return
-        expect_tag(name)
-        if cursor + 4 > len(payload):
-            raise DecodeError(f"{name}: truncated length")
-        size = struct.unpack_from("<I", payload, cursor)[0]
-        cursor += 4
-        if nullable and size == 0xFFFFFFFF:
-            values[name] = ""
-            encodings[name] = "tagged-null"
-            expect_sentinel(name)
-            return
-        if size > 512 or cursor + size > len(payload):
-            raise DecodeError(f"{name}: invalid length")
-        try:
-            values[name] = payload[cursor : cursor + size].decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise DecodeError(f"{name}: invalid UTF-8") from exc
-        cursor += size
-        encodings[name] = "tagged-string"
-        expect_sentinel(name)
-
-    try:
-        scalar("attenuationType", "<I", 4)
-        boolean("enableAdvancedOptions")
-        expect_tag("entityPtr")
-        entity_raw = payload[cursor : cursor + 26]
-        if len(entity_raw) != 26:
-            raise DecodeError("entityPtr: truncated")
-        if entity_raw[14:26] == sentinel:
-            encodings["entityPtr"] = "default14+sentinel12"
-        elif entity_raw[18:26] == b"\xff" * 8:
-            encodings["entityPtr"] = "bound18+null8"
-        else:
-            raise DecodeError("entityPtr: unsupported shape")
-        cursor += 26
-        boolean("fromBegin")
-        scalar("index", "<i", 4)
-        boolean("noFlushAfterLoading")
-        string("npcProxyId", nullable=True)
-        boolean("onlyOnce")
-        string("radioId")
-        scalar("reverbOffset", "<f", 4)
-        boolean("useNpcProxy")
-        scalar("voOffset", "<f", 4)
-    except (DecodeError, struct.error):
-        return {}
-    if cursor != len(payload):
-        return {}
-    return {
-        "payloadShape": "play3d-radio-native-12-field-exact-eof",
-        "radioId": str(values.get("radioId") or ""),
-        "npcProxyId": str(values.get("npcProxyId") or ""),
-        "useNpcProxy": bool(values.get("useNpcProxy")),
-        "fields": values,
-        "fieldOffsets": offsets,
-        "fieldEncodings": encodings,
-        "consumedBytes": cursor,
-    }
-
-
 def _decode_npc_patrol_start_action(payload: bytes) -> dict[str, Any]:
     """Decode the current four-field ``NpcPatrolStart`` action exactly."""
     param_tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
@@ -7403,10 +7288,12 @@ def decode_levelscript_record_payload(
         )
         if wait_trigger_volume:
             out.update(wait_trigger_volume)
-    if semantic_key == (0x034A, 0x14):
-        play3d_radio = _decode_play3d_radio_action(payload)
-        if play3d_radio:
-            out["play3DRadio"] = play3d_radio
+    play3d_radio = levelscript_play3d_radio.decode_play3d_radio_action(
+        payload,
+        semantic_key,
+    )
+    if play3d_radio:
+        out["play3DRadio"] = play3d_radio
     if semantic_key in {(0x035E, 0x0E), (0x04A1, 0x10)}:
         fmv_action = levelscript_fmv.decode_fmv_action(
             payload,
