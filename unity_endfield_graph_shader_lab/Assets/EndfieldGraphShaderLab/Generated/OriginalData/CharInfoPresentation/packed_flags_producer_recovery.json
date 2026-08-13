@@ -1680,9 +1680,45 @@
                   {
                     "method_index": 443633,
                     "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_33"
+                  },
+                  {
+                    "method_index": 88350,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_35"
+                  },
+                  {
+                    "method_index": 290892,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_51"
+                  },
+                  {
+                    "method_index": 482204,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8"
+                  },
+                  {
+                    "method_index": 464668,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_5"
+                  },
+                  {
+                    "method_index": 467946,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_3"
+                  },
+                  {
+                    "method_index": 455895,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_5"
+                  },
+                  {
+                    "method_index": 478952,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_29"
+                  },
+                  {
+                    "method_index": 401399,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_79"
+                  },
+                  {
+                    "method_index": 426774,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8"
                   }
                 ],
-                "code_registration_wrapper_alias_note": "The current code-registration map resolves the shared native target 0x1866c2b40 to these three generated wrapper metadata aliases; the native body is the same IFix frame bridge, while the wrapper signature is selected by the generated method metadata.",
+                "code_registration_wrapper_alias_note": "The current code-registration map resolves the shared native target 0x1866c2b40 to twelve generated wrapper metadata aliases; the native body is a signature-shared IFix frame bridge, while the wrapper signature is selected by the generated method metadata.",
                 "dynamic_wrapper_range": "0x1866c2b40..0x1866c2c1b",
                 "dynamic_wrapper_contract": {
                   "wrapper_object_fields": {
