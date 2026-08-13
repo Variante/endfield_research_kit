@@ -32,6 +32,7 @@ from .context import (
     repo_rel,
 )
 from .scene_graph import _node_short_type
+from .story_keys import timeline_stem_to_dialog_key
 from .dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_option_routes,
@@ -794,16 +795,6 @@ def _option_text_signature(text: str) -> str:
     return re.sub(r"\s+", "", str(text or "").strip())
 
 
-def _timeline_stem_to_dialog_key(timeline: str) -> str:
-    value = str(timeline or "")
-    for prefix in ("f_dlgtl_", "m_dlgtl_", "dlgtl_"):
-        if value.startswith(prefix):
-            value = value[len(prefix):]
-            break
-    value = re.sub(r"_sub_\d+$", "", value)
-    return f"dlg_{value}" if value else ""
-
-
 def _normalize_line_order_ids(values) -> list[str]:
     if not isinstance(values, list):
         return []
@@ -893,7 +884,7 @@ def _dialog_timeline_aliases(raw_key: str, entry: dict, line_ids: list[str], opt
     _add_dialog_timeline_alias(aliases, str(entry.get("dialogKey") or ""))
     timeline = str(entry.get("timeline") or raw_key or "")
     if timeline:
-        _add_dialog_timeline_alias(aliases, _timeline_stem_to_dialog_key(timeline))
+        _add_dialog_timeline_alias(aliases, timeline_stem_to_dialog_key(timeline))
     for line_id in line_ids:
         for stem in _line_order_stems(line_id):
             _add_dialog_timeline_alias(aliases, stem)
