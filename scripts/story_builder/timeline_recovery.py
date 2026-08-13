@@ -44,6 +44,8 @@ elif __package__ == "scripts.story_builder":
 else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError("run this module with python -m scripts.story_builder.timeline_recovery")
 
+from .story_keys import line_stem, timeline_stem_to_dialog_key
+
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
 DEFAULT_EXTRACT_DIR = DEFAULT_RECOVERY_ROOT / "timeline_extract"
@@ -572,24 +574,6 @@ def iter_asset_ref_ids(payload: dict):
 def iter_ref_ids(payload: dict):
     yield from iter_structural_ref_ids(payload)
     yield from iter_asset_ref_ids(payload)
-
-
-def line_stem(line_id: str) -> str:
-    if line_id.startswith("dlg_"):
-        return re.sub(r"_\d+$", "", line_id)
-    if re.search(r"_\d+_\d+$", line_id):
-        return re.sub(r"_\d+_\d+$", "", line_id)
-    return re.sub(r"_\d+$", "", line_id) if re.search(r"_\d+$", line_id) else ""
-
-
-def timeline_stem_to_dialog_key(timeline: str) -> str:
-    value = str(timeline or "")
-    for prefix in ("f_dlgtl_", "m_dlgtl_", "dlgtl_"):
-        if value.startswith(prefix):
-            value = value[len(prefix):]
-            break
-    value = re.sub(r"_sub_\d+$", "", value)
-    return f"dlg_{value}" if value else ""
 
 
 def timeline_name_from_record_name(name: str) -> str:

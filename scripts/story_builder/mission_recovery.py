@@ -35,6 +35,7 @@ else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError("import this module as scripts.story_builder.mission_recovery")
 
 from .mission_assets import select_complete_mission_runtime_root
+from .story_keys import line_stem, timeline_stem_to_dialog_key
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_MRA_DIR = select_complete_mission_runtime_root(
@@ -653,25 +654,6 @@ def build_branch_points(edges: list[dict], quests_by_id: dict[str, dict]) -> lis
     return branches
 
 
-def timeline_to_dialog_key(timeline: str) -> str:
-    value = str(timeline or "")
-    for prefix in ("f_dlgtl_", "m_dlgtl_", "dlgtl_"):
-        if value.startswith(prefix):
-            value = value[len(prefix):]
-            break
-    value = re.sub(r"_sub_\d+$", "", value)
-    return f"dlg_{value}" if value else ""
-
-
-def line_stem(line_id: str) -> str:
-    value = str(line_id or "")
-    if value.startswith("dlg_"):
-        return re.sub(r"_\d+$", "", value)
-    if re.search(r"_\d+_\d+$", value):
-        return re.sub(r"_\d+_\d+$", "", value)
-    return re.sub(r"_\d+$", "", value) if re.search(r"_\d+$", value) else ""
-
-
 def option_scene_key(option_id: str) -> str:
     value = str(option_id or "")
     if not value.startswith("option_dlg_"):
@@ -706,7 +688,7 @@ def compact_timeline_entry(entry: dict, source_key: str, timeline_orders_path: P
     payload = {
         "sourceKey": source_key,
         "timeline": entry.get("timeline") or "",
-        "dialogKey": entry.get("dialogKey") or timeline_to_dialog_key(entry.get("timeline") or ""),
+        "dialogKey": entry.get("dialogKey") or timeline_stem_to_dialog_key(entry.get("timeline") or ""),
         "lineIds": [str(line_id) for line_id in (entry.get("lineIds") or []) if str(line_id)],
         "lineTimings": line_timings,
         "source": source_ref(timeline_orders_path, source_key),
@@ -734,7 +716,7 @@ def load_timeline_index(path: Path) -> tuple[dict[str, list[dict]], dict]:
             aliases = {
                 str(key),
                 compact.get("dialogKey") or "",
-                timeline_to_dialog_key(compact.get("timeline") or ""),
+                timeline_stem_to_dialog_key(compact.get("timeline") or ""),
             }
             for line_id in compact.get("lineIds") or []:
                 aliases.add(line_stem(line_id))
