@@ -18,6 +18,7 @@ from scripts.story_builder.level_bindings import (
     resolve_entity_tracking_script,
 )
 from scripts.story_builder.mission_recovery import (
+    _logic_id_from_entity_ptr,
     decode_mission_interactive_script_entity_conditions,
     decode_mission_world_entity_condition_groups,
     decode_mission_world_entity_condition_refs,
@@ -25,6 +26,22 @@ from scripts.story_builder.mission_recovery import (
 
 
 class EntityTrackingStoryContextTests(unittest.TestCase):
+    def test_entity_ptr_logic_id_gate_is_shared_and_fail_closed(self) -> None:
+        self.assertEqual(
+            _logic_id_from_entity_ptr({
+                "constValue": {"useSlotId": False, "logicId": 42},
+            }),
+            42,
+        )
+        self.assertIsNone(_logic_id_from_entity_ptr({
+            "useSlotId": True,
+            "logicId": 42,
+        }))
+        self.assertIsNone(_logic_id_from_entity_ptr({
+            "useSlotId": False,
+            "logicId": True,
+        }))
+
     def test_decodes_grouped_world_entity_condition_foreign_keys(self) -> None:
         raw = {
             "questDic": {

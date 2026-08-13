@@ -1365,6 +1365,21 @@ def _unwrap_const(value: Any) -> Any:
     return value
 
 
+def _logic_id_from_entity_ptr(value: Any) -> int | None:
+    value = _unwrap_const(value)
+    if not isinstance(value, dict) or value.get("useSlotId") is not False:
+        return None
+    logic_id = value.get("logicId")
+    if (
+        not isinstance(logic_id, int)
+        or isinstance(logic_id, bool)
+        or logic_id <= 0
+        or logic_id > 0xFFFFFFFFFFFFFFFF
+    ):
+        return None
+    return logic_id
+
+
 def _safe_key(value: Any) -> str:
     return str(value if value is not None else "").strip()
 
@@ -1500,20 +1515,6 @@ def decode_mission_world_entity_condition_refs(raw: dict) -> list[dict]:
     out: list[dict] = []
     seen: set[tuple[str, str, str, int, str]] = set()
 
-    def logic_id_from_ptr(value: Any) -> int | None:
-        value = _unwrap_const(value)
-        if not isinstance(value, dict) or value.get("useSlotId") is not False:
-            return None
-        logic_id = value.get("logicId")
-        if (
-            not isinstance(logic_id, int)
-            or isinstance(logic_id, bool)
-            or logic_id <= 0
-            or logic_id > 0xFFFFFFFFFFFFFFFF
-        ):
-            return None
-        return logic_id
-
     def walk(value: Any, quest_id: str = "", path: str = "$") -> None:
         if isinstance(value, dict):
             next_quest_id = quest_id
@@ -1533,13 +1534,13 @@ def decode_mission_world_entity_condition_refs(raw: dict) -> list[dict]:
                 )
             )
             candidates: list[tuple[str, int]] = []
-            direct_logic_id = logic_id_from_ptr(value.get("_entityId"))
+            direct_logic_id = _logic_id_from_entity_ptr(value.get("_entityId"))
             if direct_logic_id is not None:
                 candidates.append(("_entityId", direct_logic_id))
             raw_enemy_ids = _unwrap_const(value.get("_enemyIds"))
             if isinstance(raw_enemy_ids, list):
                 for index, raw_entity in enumerate(raw_enemy_ids):
-                    logic_id = logic_id_from_ptr(raw_entity)
+                    logic_id = _logic_id_from_entity_ptr(raw_entity)
                     if logic_id is not None:
                         candidates.append((f"_enemyIds[{index}]", logic_id))
             if short_name and next_quest_id and map_id:
@@ -1594,20 +1595,6 @@ def decode_mission_world_entity_condition_groups(raw: dict) -> list[dict]:
     out: list[dict] = []
     seen: set[tuple[str, str, str, tuple[int, ...]]] = set()
 
-    def logic_id_from_ptr(value: Any) -> int | None:
-        value = _unwrap_const(value)
-        if not isinstance(value, dict) or value.get("useSlotId") is not False:
-            return None
-        logic_id = value.get("logicId")
-        if (
-            not isinstance(logic_id, int)
-            or isinstance(logic_id, bool)
-            or logic_id <= 0
-            or logic_id > 0xFFFFFFFFFFFFFFFF
-        ):
-            return None
-        return logic_id
-
     def emit(
         *,
         quest_id: str,
@@ -1659,7 +1646,7 @@ def decode_mission_world_entity_condition_groups(raw: dict) -> list[dict]:
                 valid = isinstance(raw_enemy_ids, list) and bool(raw_enemy_ids)
                 if valid:
                     for raw_entity in raw_enemy_ids:
-                        logic_id = logic_id_from_ptr(raw_entity)
+                        logic_id = _logic_id_from_entity_ptr(raw_entity)
                         if logic_id is None:
                             valid = False
                             break
@@ -1697,7 +1684,7 @@ def decode_mission_world_entity_condition_groups(raw: dict) -> list[dict]:
                                 )
                             )
                         )
-                        logic_id = logic_id_from_ptr(child.get("_entityId"))
+                        logic_id = _logic_id_from_entity_ptr(child.get("_entityId"))
                         if not map_id or logic_id is None:
                             valid = False
                             break
