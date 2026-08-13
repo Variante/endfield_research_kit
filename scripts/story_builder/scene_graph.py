@@ -6,6 +6,82 @@ from collections import Counter, defaultdict
 from .anime_assets import _canonical_cutscene_key, _resolve_payload_scene_key
 from .context import MISSION_SCENE_ENTRY_KINDS
 
+
+def graph_fragments_text(fragments: list[dict]) -> str:
+    """Flatten graph fragment identities into searchable text."""
+    parts: list[str] = []
+    for fragment in fragments or []:
+        if fragment.get("sourceKey"):
+            parts.append(str(fragment["sourceKey"]))
+        if fragment.get("lineIds"):
+            parts.extend(str(line_id) for line_id in fragment["lineIds"] if line_id)
+        for label, count in (fragment.get("terminalCounts") or {}).items():
+            if count:
+                parts.append(f"{label}:{count}")
+        for group in fragment.get("optionGroups") or []:
+            if group.get("after"):
+                parts.append(str(group["after"]))
+            parts.extend(str(opt_id) for opt_id in group.get("optionIds") or [] if opt_id)
+            for branch_lines in (group.get("branches") or {}).values():
+                parts.extend(str(line_id) for line_id in branch_lines if line_id)
+            parts.extend(
+                str(line_id)
+                for line_id in (group.get("merge") or {}).values()
+                if line_id
+            )
+    return " ".join(parts)
+
+
+def scene_links_text(links: list[dict]) -> str:
+    """Flatten scene-link routes and submenu targets into searchable text."""
+    parts: list[str] = []
+    for link in links or []:
+        if link.get("sourceKey"):
+            parts.append(str(link["sourceKey"]))
+        if link.get("after"):
+            parts.append(str(link["after"]))
+        for option in link.get("options") or []:
+            for field in (
+                "optionId",
+                "firstLineId",
+                "firstSceneKey",
+                "terminal",
+                "outcomeKind",
+            ):
+                if option.get(field):
+                    parts.append(str(option[field]))
+            loop = option.get("loop") or {}
+            if isinstance(loop, dict):
+                if loop.get("kind"):
+                    parts.append(str(loop["kind"]))
+                parts.extend(str(key) for key in loop.get("sceneKeys") or [] if key)
+            for field in ("pathLineIds", "sceneKeys", "submenuSceneKeys"):
+                parts.extend(str(value) for value in option.get(field) or [] if value)
+            for target in option.get("submenuTargets") or []:
+                if not isinstance(target, dict):
+                    continue
+                parts.extend(
+                    str(target[field])
+                    for field in ("sceneKey", "optionId", "text")
+                    if target.get(field)
+                )
+    return " ".join(parts)
+
+
+def scene_link_option_payload(raw_option: dict) -> dict:
+    """Keep only the route fields published in a Story scene-link option."""
+    entry = {"optionId": raw_option.get("optionId") or ""}
+    for key in ("firstLineId", "firstSceneKey", "terminal"):
+        if raw_option.get(key):
+            entry[key] = raw_option[key]
+    for key in ("pathLineIds", "sceneKeys", "submenuSceneKeys"):
+        if raw_option.get(key):
+            entry[key] = raw_option[key]
+    for key in ("conditionalOutcomes", "loop", "outcomeKind", "_debug"):
+        if raw_option.get(key):
+            entry[key] = raw_option[key]
+    return entry
+
 def _node_short_type(node: dict) -> str:
     t = node.get("$type", "")
     return t.split(",", 1)[0].rsplit(".", 1)[-1]
@@ -463,6 +539,9 @@ def _detect_scene_graph_entries(
 
 
 __all__ = [
+    "graph_fragments_text",
+    "scene_link_option_payload",
+    "scene_links_text",
     "_scene_graph_runtime_payload_key",
     "_scene_graph_node_kind",
     "_is_story_scene_graph_kind",

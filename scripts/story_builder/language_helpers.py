@@ -202,92 +202,6 @@ def format_webui_timeline_seconds(value: float) -> str:
     remaining = seconds - minutes * 60
     return f"{minutes}:{remaining:04.1f}"
 
-def graph_fragments_text(fragments: list[dict]) -> str:
-    parts: list[str] = []
-    for fragment in fragments or []:
-        if fragment.get("sourceKey"):
-            parts.append(str(fragment["sourceKey"]))
-        if fragment.get("lineIds"):
-            parts.extend(str(line_id) for line_id in fragment["lineIds"] if line_id)
-        terminals = fragment.get("terminalCounts") or {}
-        for label, count in terminals.items():
-            if count:
-                parts.append(f"{label}:{count}")
-        for group in fragment.get("optionGroups") or []:
-            if group.get("after"):
-                parts.append(str(group["after"]))
-            parts.extend(str(opt_id) for opt_id in group.get("optionIds") or [] if opt_id)
-            for branch_lines in (group.get("branches") or {}).values():
-                parts.extend(str(line_id) for line_id in branch_lines if line_id)
-            parts.extend(
-                str(line_id)
-                for line_id in (group.get("merge") or {}).values()
-                if line_id
-            )
-    return " ".join(parts)
-
-def scene_links_text(links: list[dict]) -> str:
-    parts: list[str] = []
-    for link in links or []:
-        if link.get("sourceKey"):
-            parts.append(str(link["sourceKey"]))
-        if link.get("after"):
-            parts.append(str(link["after"]))
-        for opt in link.get("options") or []:
-            if opt.get("optionId"):
-                parts.append(str(opt["optionId"]))
-            if opt.get("firstLineId"):
-                parts.append(str(opt["firstLineId"]))
-            if opt.get("firstSceneKey"):
-                parts.append(str(opt["firstSceneKey"]))
-            if opt.get("terminal"):
-                parts.append(str(opt["terminal"]))
-            if opt.get("outcomeKind"):
-                parts.append(str(opt["outcomeKind"]))
-            loop = opt.get("loop") or {}
-            if isinstance(loop, dict):
-                if loop.get("kind"):
-                    parts.append(str(loop["kind"]))
-                parts.extend(str(scene_key) for scene_key in (loop.get("sceneKeys") or []) if scene_key)
-            parts.extend(str(line_id) for line_id in (opt.get("pathLineIds") or []) if line_id)
-            parts.extend(str(scene_key) for scene_key in (opt.get("sceneKeys") or []) if scene_key)
-            parts.extend(str(scene_key) for scene_key in (opt.get("submenuSceneKeys") or []) if scene_key)
-            for target in opt.get("submenuTargets") or []:
-                if not isinstance(target, dict):
-                    continue
-                parts.extend(
-                    str(target.get(key) or "")
-                    for key in ("sceneKey", "optionId", "text")
-                    if target.get(key)
-                )
-    return " ".join(parts)
-
-def scene_link_option_payload(raw_option: dict) -> dict:
-    entry = {
-        "optionId": raw_option.get("optionId") or "",
-    }
-    for key in ("firstLineId", "firstSceneKey", "terminal"):
-        if raw_option.get(key):
-            entry[key] = raw_option[key]
-    for key in ("pathLineIds", "sceneKeys", "submenuSceneKeys"):
-        if raw_option.get(key):
-            entry[key] = raw_option[key]
-    if raw_option.get("conditionalOutcomes"):
-        entry["conditionalOutcomes"] = raw_option["conditionalOutcomes"]
-    if raw_option.get("loop"):
-        entry["loop"] = raw_option["loop"]
-    if raw_option.get("outcomeKind"):
-        entry["outcomeKind"] = raw_option["outcomeKind"]
-    if raw_option.get("_debug"):
-        entry["_debug"] = raw_option["_debug"]
-    return entry
-
-
-
-
-
-
-
 def append_reference_line(
     lines: list[dict],
     seen_texts: set[tuple[str, str, str]],
@@ -559,9 +473,6 @@ __all__ = [
     "level_host_type",
     "merge_search_text",
     "format_webui_timeline_seconds",
-    "graph_fragments_text",
-    "scene_links_text",
-    "scene_link_option_payload",
     "append_reference_line",
     "reference_kind_from_tags",
     "normalized_reference_tags",
