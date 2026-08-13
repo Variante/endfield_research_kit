@@ -533,6 +533,15 @@ NPC archetypes are imported as labeled source kits.
   `0x7302`. This makes the IFix patch body/dynamic method table the remaining
   frame-update boundary rather than evidence that no producer exists; details
   are recorded under `job_forward_dynamic_patch_surface` in the packed audit.
+  The visible IFix wrapper builds its argument frame through
+  `0x189e07448`/`0x189e077cc`/`0x189e076a8`, then invokes the dynamic method
+  table through `0x189e124c4` and the large interpreter at `0x189dfaad8`.
+  That interpreter is 47,943 bytes with 2,490 direct calls, but its bounded
+  census contains no channel-2, GPUDriven, factory-staging, ComputeShader, or
+  CommandBuffer target. This is only a static negative edge: dynamic method
+  execution can still reach arbitrary bridges, so the patch payload/table and
+  its runtime method remain open. The exact census is recorded under
+  `interpreter_entrypoint_census` in the packed audit.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`

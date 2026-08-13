@@ -1681,7 +1681,27 @@
                     "0x189e076a8 writes the bool argument into the frame",
                     "0x189e124c4 selects the dynamic method table entry and calls 0x189dfaad8"
                   ],
-                  "gpu_edge_scan": "The visible wrapper/interpreter bridge performs IFix frame construction and dynamic method dispatch only; it contains no direct ComputeBuffer, CommandBuffer, GPUDriven, or factory-record copy call. The actual patch bytecode/method body is still outside the static native call graph."
+                  "gpu_edge_scan": "The visible wrapper/interpreter bridge performs IFix frame construction and dynamic method dispatch only; it contains no direct ComputeBuffer, CommandBuffer, GPUDriven, or factory-record copy call. The actual patch bytecode/method body is still outside the static native call graph.",
+                  "interpreter_entrypoint_census": {
+                    "native_pointer": "0x189dfaad8",
+                    "range": "0x189dfaad8..0x189e0661f",
+                    "native_body_size_bytes": 47943,
+                    "direct_call_count": 2490,
+                    "unique_direct_call_count": 145,
+                    "known_gameassembly_gpu_targets_absent": [
+                      "0x18323af00 SetPerDrawData_CharacterParams",
+                      "0x1839454d0 HGShadingStateSystem.SetupGpuSceneUploadCs",
+                      "0x18b3d74a8 ComputeShader.Dispatch",
+                      "0x18b3f7d94 GPUDrivenRendererV1.BindBuffersForCulling",
+                      "0x18b3f83d0 GPUDrivenRendererV2.BindBuffersForCulling"
+                    ],
+                    "known_unityplayer_gpu_targets_absent": [
+                      "0x1810d25c0/0x1810d26bf factory staging consumers",
+                      "0x1805e7a10 immediate ComputeShader dispatch",
+                      "0x1804c73e0 CommandBuffer dispatch recording"
+                    ],
+                    "interpretation": "The installed IFix interpreter entrypoint is a large bytecode/object interpreter, not a direct factory or GPU upload routine. Its bounded direct-call census contains no checked character channel-2, GPUDriven, factory-staging, ComputeShader, or CommandBuffer target. Dynamic method-table execution can still reach arbitrary managed/native bridges, so this is a negative static edge only; the patch payload and its runtime method table remain open."
+                  }
                 }
               },
           "paired_flag_method": {
