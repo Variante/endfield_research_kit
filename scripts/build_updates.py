@@ -873,60 +873,6 @@ def total_reported_changes(payload: dict[str, Any]) -> int:
     return int(totals.get("changed") or 0)
 
 
-def total_game_changes(payload: dict[str, Any]) -> int:
-    totals = payload.get("gameTotals") or {}
-    return int(totals.get("changed") or 0)
-
-
-def find_latest_changed_history(
-    *,
-    state_dir: Path,
-    game_root: Path,
-    sample_limit: int,
-    scan_scope: str,
-    include_relative_paths: list[str],
-) -> tuple[dict[str, Any], Path] | None:
-    history_dir = state_dir / "history"
-    if not history_dir.exists():
-        return None
-    candidates = sorted(
-        history_dir.glob("export-change-summary-*.json"),
-        key=lambda path: (path.stat().st_mtime, path.name),
-        reverse=True,
-    )
-    for path in candidates:
-        raw_payload = read_json(path, default={})
-        if not isinstance(raw_payload, dict):
-            continue
-        candidate = build_update_payload(
-            raw_payload,
-            game_root=game_root,
-            baseline_initialized=False,
-            sample_limit=sample_limit,
-            scan_scope=scan_scope,
-            include_relative_paths=include_relative_paths,
-        )
-        if total_game_changes(candidate) > 0:
-            return raw_payload, path
-    return None
-
-
-def find_latest_update_feed_history(state_dir: Path) -> tuple[dict[str, Any], Path] | None:
-    history_dir = state_dir / "history"
-    if not history_dir.exists():
-        return None
-    candidates = sorted(
-        history_dir.glob("update-feed-*.json"),
-        key=lambda path: (path.stat().st_mtime, path.name),
-        reverse=True,
-    )
-    for path in candidates:
-        payload = read_json(path, default={})
-        if isinstance(payload, dict) and total_reported_changes(payload) > 0:
-            return payload, path
-    return None
-
-
 def write_update_feed_history(payload: dict[str, Any], state_dir: Path) -> Path | None:
     if total_reported_changes(payload) <= 0:
         return None
