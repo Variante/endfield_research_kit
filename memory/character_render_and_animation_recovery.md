@@ -798,6 +798,15 @@ NPC archetypes are imported as labeled source kits.
   stronger static CPU-record negative evidence, not proof against an indirect
   or dynamically registered render-stage consumer; details are under
   `native_unityplayer_record_shape_scan`.
+  A follow-up Capstone pass over those 39 candidates found 12 functions with
+  indirect calls, but none in the factory-adjacent subset (including the
+  `0x1810d25c0`/`0x1810d26bf` staging family and GPUDriven binding entry
+  `0x1810eece0`). The sampled indirect candidates are generic property,
+  table-dispatched, PhysX metadata, or reflection paths without the
+  `manager[+0x38] + index*0x8c` contract or custom resource identity. This
+  closes the obvious indirect-call surface for the CPU record while the
+  resolver/table-dispatched kernel-7 selection and resource `+0xd0` upload
+  edge remain fail-closed.
   The adjacent native factory/VAT surface is also bounded: the registered
   `HGFactoryRenderManager::BatchSetFactoryVATParams_Internal` entry is
   `UnityPlayer 0x180155870` (`0x180155870..0x1801558ed`), which calls

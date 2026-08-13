@@ -1558,7 +1558,57 @@
           "0x1810d97f0 obsolete UpdateRegularEntity helper",
           "0x1810ce0be..0x1810cf261 adjacent factory record helpers"
         ],
-        "bounded_result": "Across the complete decoded UnityPlayer PData set, no function matching the 0x8c/+0x38 factory-record shape directly calls a checked GPU upload, shader-buffer/property bind, CommandBuffer GPUDriven recorder, or compute dispatch. This broadens the static CPU-record negative evidence beyond the three registered update entries, but cannot exclude an indirect function-pointer or dynamically registered render-stage consumer; keep the shared-record-to-GPU edge fail-closed."
+        "bounded_result": "Across the complete decoded UnityPlayer PData set, no function matching the 0x8c/+0x38 factory-record shape directly calls a checked GPU upload, shader-buffer/property bind, CommandBuffer GPUDriven recorder, or compute dispatch. This broadens the static CPU-record negative evidence beyond the three registered update entries, but cannot exclude an indirect function-pointer or dynamically registered render-stage consumer; keep the shared-record-to-GPU edge fail-closed.",
+        "indirect_call_followup": {
+          "status": "record-shape-indirect-census-factory-subset-negative",
+          "source": "Capstone re-disassembly of all 39 previously identified UnityPlayer 0x8c/+0x38 candidates in the installed binary.",
+          "candidate_count": 39,
+          "candidates_with_indirect_call_instructions": 12,
+          "factory_adjacent_candidates": [
+            "0x1810ce0be",
+            "0x1810ce131",
+            "0x1810ce510",
+            "0x1810cebc0",
+            "0x1810d1ec2",
+            "0x1810d1fb0",
+            "0x1810d2336",
+            "0x1810d26bf",
+            "0x1810d39b3",
+            "0x1810d93a0",
+            "0x1810d97c7",
+            "0x1810d97f0",
+            "0x1810eece0"
+          ],
+          "factory_adjacent_candidates_with_indirect_calls": [],
+          "known_gpu_targets_checked": [
+            "0x1800906c0",
+            "0x180091050",
+            "0x180091d70",
+            "0x1801153f0",
+            "0x180116c10",
+            "0x180117130",
+            "0x180119af0",
+            "0x1801e9200..0x1801e9c90"
+          ],
+          "selected_non_factory_indirect_candidates": [
+            {
+              "function": "0x1811ad8b0/0x1811b08fe",
+              "indirect_call": "qword ptr [r9 + 0xf58]",
+              "observed": "Both have one indirect callback and generic property/graphics helpers, but only local stack/vector metadata around 0xb0/0xd0/0xf0; no manager +0x38 plus index*0x8c contract or custom resource identity."
+            },
+            {
+              "function": "0x1815d8d60",
+              "indirect_call": "qword ptr [rbx + 0x360/0x378/0x380] and register calls",
+              "observed": "Large table-dispatched native subsystem; its +0xd0 and 0x8c operands are local object fields, not the factory manager record; fallback is selected through caller function pointer [rsi+0x3e0]."
+            },
+            {
+              "function": "0x18174cd00/0x1817bb9d6",
+              "indirect_call": "PhysX metadata/PVD vtable calls",
+              "observed": "Referenced strings identify PhysX vehicle reflection/PVD metadata; unrelated to factory rendering."
+            }
+          ],
+          "negative_result": "The only indirect-call candidates in the 39-shape set are non-factory or generic table/property paths. The factory-adjacent functions, including the 0x1810d25c0/0x1810d26bf staging family and GPUDriven binding entry 0x1810eece0, contain no indirect call and no checked GPU target. This closes the obvious indirect-call surface for the recovered CPU record while leaving resolver/table-dispatched kernel-7 selection and the resource +0xd0 upload edge fail-closed."
+        }
       },
       "native_factory_batch_vat_evidence": {
         "status": "native-batch-vat-registry-finalizer-negative-upload-edge-open",
