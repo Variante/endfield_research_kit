@@ -380,6 +380,17 @@ NPC archetypes are imported as labeled source kits.
   `0x10b000`. A 113,390-function PData-scoped RIP scan found no code reference
   to those metadata/table addresses, reinforcing that the invocation is
   section/runtime-driven and still yields no GPU upload identity.
+  The Unity JobsUtility bridge now closes the invocation mechanism at the
+  scheduler level: `ScheduleParallelFor_Injected` (`UnityPlayer
+  0x1800ac0d0`) forwards `JobScheduleParameters*`, array length, and batch
+  size through `0x18055c720` to scheduler core `0x18055d110`. The common
+  record builder `0x180555e50` and backends `0x1805572f0/0x180557c30` store a
+  scheduler callback (`0x18055bac0`) plus job-payload metadata before queue
+  submission at `0x1805592b0`. This is positive runtime transport evidence
+  explaining why the Burst staging entry lacks static E8 callers; it does not
+  identify the record carrying `0x1810d25c0/0x1810d26bf`, the 0x100-to-84-byte
+  pack, `UploadPerDrawParams` kernel 7, `_UploadBuffer`, or resource `+0xd0`,
+  so the GPU edge remains fail-closed.
   No inspected UnityPlayer path reads `resource +0xd0` (or an equivalent vector
   lane) into a constant-buffer/descriptor binding, and no direct call edge names
   Vulkan set 0/binding 33. Keep the channel-to-resource-to-GPU edge open.
