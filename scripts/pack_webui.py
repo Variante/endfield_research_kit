@@ -24,12 +24,20 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
-from asset_builder import media_resolver
-from common import (
-    EXPORT_ROOT,
-    ROOT as PROJECT_ROOT,
-    normalize_posix,
-)
+if __package__:
+    from .asset_builder import media_resolver
+    from .common import (
+        EXPORT_ROOT,
+        ROOT as PROJECT_ROOT,
+        normalize_posix,
+    )
+else:
+    from asset_builder import media_resolver
+    from common import (
+        EXPORT_ROOT,
+        ROOT as PROJECT_ROOT,
+        normalize_posix,
+    )
 
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 ZIP_NAME_PREFIX = "endfield-story-exported"

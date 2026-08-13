@@ -1,23 +1,12 @@
 from __future__ import annotations
 
-import importlib.util
 import contextlib
 import io
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-
-SCRIPT = Path(__file__).parents[1] / "build_updates.py"
-if str(SCRIPT.parent) not in sys.path:
-    sys.path.insert(0, str(SCRIPT.parent))
-SPEC = importlib.util.spec_from_file_location("build_updates", SCRIPT)
-assert SPEC and SPEC.loader
-build_updates = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = build_updates
-SPEC.loader.exec_module(build_updates)
-
+from scripts import build_updates
 
 class CommandLineTests(unittest.TestCase):
     def test_current_scope_flags_map_to_internal_options(self) -> None:

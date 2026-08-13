@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 
-SCRIPT_DIR = Path(__file__).parents[1]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from updates_builder.scanner import ScanConfig, scan_export_changes
+from scripts.updates_builder.scanner import ScanConfig, scan_export_changes
 
 
 class ExportChangeScannerTests(unittest.TestCase):
