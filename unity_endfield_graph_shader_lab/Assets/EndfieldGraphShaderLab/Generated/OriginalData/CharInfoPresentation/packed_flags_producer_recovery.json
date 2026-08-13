@@ -1719,6 +1719,83 @@
                   }
                 ],
                 "code_registration_wrapper_alias_note": "The current code-registration map resolves the shared native target 0x1866c2b40 to twelve generated wrapper metadata aliases; the native body is a signature-shared IFix frame bridge, while the wrapper signature is selected by the generated method metadata.",
+                "code_registration_method_pointer_table": {
+                  "status": "gameplay-beyond-method-pointer-entries-closed",
+                  "source": "Current GameAssembly.dll codegen module table and PData/body mapping; GameAssembly sha256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce.",
+                  "codegen_module_index": 32,
+                  "method_pointers_va": "0x18e9e6580",
+                  "method_pointer_count": 98319,
+                  "entry_rule_for_rows": "Gameplay.Beyond method index N resolves to methodPointersVa + N*8 in this module table.",
+                  "entries": [
+                    {
+                      "method_index": 29077,
+                      "method": "Beyond.Gameplay.RemoteFactory.RemoteFactoryGameWorldController.FrameUpdateEntitiesJobForward",
+                      "table_entry_va": "0x18ea1f228",
+                      "native_pointer": "0x1875316ac"
+                    },
+                    {
+                      "method_index": 29078,
+                      "method": "Beyond.Gameplay.RemoteFactory.RemoteFactoryGameWorldController.SetGarbageCollectDirty",
+                      "table_entry_va": "0x18ea1f230",
+                      "native_pointer": "0x18477d8e0"
+                    },
+                    {
+                      "method_index": 88314,
+                      "method": "IFix.ILFixDynamicMethodWrapper..ctor",
+                      "table_entry_va": "0x18ea92d50",
+                      "native_pointer": "0x1832b2c30"
+                    },
+                    {
+                      "method_index": 88315,
+                      "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+                      "table_entry_va": "0x18ea92d58",
+                      "native_pointer": "0x1863633b4"
+                    },
+                    {
+                      "method_index": 88350,
+                      "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_35",
+                      "table_entry_va": "0x18ea92e70",
+                      "native_pointer": "0x1866c2b40"
+                    },
+                    {
+                      "method_index": 98313,
+                      "method": "IFix.WrappersManagerImpl.GetPatch",
+                      "table_entry_va": "0x18eaa65c8",
+                      "native_pointer": "0x1871c7e18"
+                    },
+                    {
+                      "method_index": 98314,
+                      "method": "IFix.WrappersManagerImpl.IsPatched",
+                      "table_entry_va": "0x18eaa65d0",
+                      "native_pointer": "0x182efe6c0"
+                    },
+                    {
+                      "method_index": 98315,
+                      "method": "IFix.WrappersManagerImpl.CreateDelegate",
+                      "table_entry_va": "0x18eaa65d8",
+                      "native_pointer": "0x1871c7cd4"
+                    },
+                    {
+                      "method_index": 98316,
+                      "method": "IFix.WrappersManagerImpl.CreateWrapper",
+                      "table_entry_va": "0x18eaa65e0",
+                      "native_pointer": "0x1871c7da0"
+                    },
+                    {
+                      "method_index": 98317,
+                      "method": "IFix.WrappersManagerImpl.InitWrapperArray",
+                      "table_entry_va": "0x18eaa65e8",
+                      "native_pointer": "0x1871c7e7c"
+                    },
+                    {
+                      "method_index": 98318,
+                      "method": "IFix.WrappersManagerImpl.CreateBridge",
+                      "table_entry_va": "0x18eaa65f0",
+                      "native_pointer": "0x1871c7c30"
+                    }
+                  ],
+                  "interpretation": "The static code-registration table confirms the exact Gameplay.Beyond method-pointer entries for the two RemoteFactory gates, the shared object-only/bool-capable IFix wrappers, and the manager table ABI. It does not contain the runtime wrapper-array slot contents or on-disk patch implementation bodies."
+                },
                 "dynamic_wrapper_range": "0x1866c2b40..0x1866c2c1b",
                 "dynamic_wrapper_contract": {
                   "wrapper_object_fields": {
