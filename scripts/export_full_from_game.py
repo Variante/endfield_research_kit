@@ -113,11 +113,8 @@ ANIMESTUDIO_OBJECT_INDEX_SCALAR_POLICY = "identifier-and-state-v1"
 ANIMESTUDIO_OBJECT_INDEX_REQUIRED_IMPLEMENTATION_ASSEMBLIES = frozenset(
     {"AnimeStudio.CLI.dll", "AnimeStudio.dll", "AnimeStudio.Utility.dll"}
 )
-ANIMESTUDIO_MANIFEST_SCHEMA_VERSION = 2
 ANIMESTUDIO_ASSET_CACHE_SCHEMA_VERSION = 1
-ANIMESTUDIO_MANIFEST_MAP_ITEM = "__maps__"
 ANIMESTUDIO_MANIFEST_MAP_LABEL = "maps"
-SOURCE_NAME_SET = frozenset(source.lower() for source in SOURCES)
 ANIMESTUDIO_TEXTURE_EXTENSION = ".png"
 ANIMESTUDIO_CONVERT_OUTPUT_EXTENSIONS = {
     "Texture2D": ANIMESTUDIO_TEXTURE_EXTENSION,
@@ -405,18 +402,6 @@ def build_animestudio_object_index_cli_provenance(
     return provenance
 
 
-def build_file_signature(path: Path) -> dict[str, Any]:
-    resolved = path.resolve()
-    stat = resolved.stat()
-    payload = {
-        "path": str(resolved),
-        "size": stat.st_size,
-        "mtime_ns": stat.st_mtime_ns,
-    }
-    payload["fingerprint"] = stable_hash(payload)
-    return payload
-
-
 def regex_exact(value: str) -> str:
     return f"^{re.escape(value)}$"
 
@@ -518,45 +503,6 @@ def build_dummy_dll_signature(path: Path | None) -> dict[str, Any] | None:
         "dlls": entries,
     }
     return payload
-
-
-def animestudio_manifest_path(output_root: Path) -> Path:
-    return output_root / "recovered" / "AnimeStudio-cli" / "animestudio_type_manifest.json"
-
-
-def default_animestudio_manifest() -> dict[str, Any]:
-    return {
-        "schema_version": ANIMESTUDIO_MANIFEST_SCHEMA_VERSION,
-        "entries": {},
-    }
-
-
-def load_animestudio_manifest(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return default_animestudio_manifest()
-
-    try:
-        data = json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, json.JSONDecodeError):
-        log(f"unable to parse AnimeStudio manifest at {path}; starting with an empty manifest")
-        return default_animestudio_manifest()
-
-    if not isinstance(data, dict):
-        return default_animestudio_manifest()
-
-    manifest = dict(data)
-    manifest["schema_version"] = ANIMESTUDIO_MANIFEST_SCHEMA_VERSION
-    if not isinstance(manifest.get("entries"), dict):
-        manifest["entries"] = {}
-    return manifest
-
-
-def save_animestudio_manifest(path: Path, manifest: dict[str, Any]) -> None:
-    payload = dict(manifest)
-    payload["schema_version"] = ANIMESTUDIO_MANIFEST_SCHEMA_VERSION
-    payload["last_updated_epoch"] = int(time.time())
-    ensure_dir(path.parent)
-    write_json(path, payload, compact=True)
 
 
 def animestudio_asset_cache_path(output_root: Path) -> Path:
@@ -1297,20 +1243,6 @@ def remove_animestudio_asset_outputs(
     return removed
 
 
-def count_existing_animestudio_asset_outputs(
-    output_root: Path,
-    source: str,
-    stage: str,
-    entries: list[dict[str, Any]],
-) -> int:
-    return sum(
-        1
-        for entry in entries
-        if any(path.is_file() for path in animestudio_candidate_convert_output_paths(output_root, source, stage, entry))
-    )
-
-
-
 def asset_entry_ab_identity(entry: dict[str, Any]) -> dict[str, Any]:
     source_path = str(entry.get("Source") or "")
     source_file = Path(source_path) if source_path else None
@@ -1331,11 +1263,6 @@ def parse_log_int(value: Any) -> int | None:
         return int(str(value), 0)
     except (TypeError, ValueError):
         return None
-
-
-def normalized_log_int(value: Any) -> int:
-    parsed = parse_log_int(value)
-    return parsed if parsed is not None else -1
 
 
 def normalized_source_leaf(value: Any) -> str:
@@ -2021,10 +1948,6 @@ def animestudio_log_suffix(item_name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", item_name).strip("._") or "item"
 
 
-def animestudio_manifest_entry_key(source: str, stage: str, type_spec: str | None) -> str:
-    return f"{source}|{stage}|{type_spec or ANIMESTUDIO_MANIFEST_MAP_ITEM}"
-
-
 def animestudio_stage_items(stage: str, types: tuple[str, ...]) -> list[tuple[str | None, str]]:
     if stage == "maps":
         return [(None, ANIMESTUDIO_MANIFEST_MAP_LABEL)]
@@ -2067,13 +1990,6 @@ def animestudio_stage_options_for_scope(scope: str, asset_mode: str = "focused")
             "asset_map_filter": scope == "assets" and bool(json_types),
         },
     }
-
-
-def animestudio_output_file_count(output_root: Path, source: str, stage: str, type_spec: str | None) -> int:
-    stage_root = animestudio_stage_dir(output_root, source, stage)
-    if stage == "maps":
-        return count_files(stage_root)
-    return count_files(stage_root / animestudio_type_name(type_spec))
 
 
 def animestudio_cli_type_tree_priority(value: str) -> str:
@@ -2209,62 +2125,6 @@ def clear_animestudio_stage_outputs(
             target.unlink()
 
 
-def build_animestudio_cache_key(
-    source: str,
-    stage_signature: dict[str, Any],
-    cli_signature: dict[str, Any] | None,
-    dummy_dll_signature: dict[str, Any] | None,
-    source_fingerprint: dict[str, Any],
-) -> str:
-    return stable_hash(
-        {
-            "source": source,
-            "stage_signature": stage_signature,
-            "cli_signature": cli_signature,
-            "dummy_dll_signature": dummy_dll_signature,
-            "source_fingerprint": source_fingerprint,
-        }
-    )
-
-
-def animestudio_matches_refresh_selector(selector: str, source: str, stage: str, item_name: str) -> bool:
-    parts = [part.strip().lower() for part in str(selector or "").split(":") if part.strip()]
-    if not parts:
-        return False
-
-    current_source = source.lower()
-    current_stage = stage.lower()
-    current_item = item_name.lower()
-
-    if len(parts) == 1:
-        return parts[0] in {current_stage, current_item}
-    if len(parts) == 2:
-        left, right = parts
-        if left in SOURCE_NAME_SET:
-            return left == current_source and right in {current_stage, current_item}
-        return left == current_stage and right == current_item
-    if len(parts) == 3:
-        left, middle, right = parts
-        return left == current_source and middle == current_stage and right == current_item
-    return False
-
-
-def animestudio_plan_cache_state(plan: dict[str, Any]) -> str:
-    selected_items = plan.get("selected_items") or []
-    cached_items = plan.get("cached_items") or []
-    run_items = plan.get("run_items") or []
-    forced_refresh_items = plan.get("forced_refresh_items") or []
-    if not selected_items:
-        return "empty"
-    if not run_items:
-        return "cached"
-    if forced_refresh_items and len(run_items) == len(selected_items):
-        return "forced_refresh"
-    if cached_items:
-        return "partial"
-    return "miss"
-
-
 def plan_animestudio_stage(
     source: str,
     output_root: Path,
@@ -2308,45 +2168,6 @@ def plan_animestudio_stage(
         "should_run": bool(run_items),
         "cache_state": "no_cache",
     }
-
-
-def update_animestudio_manifest_for_stage(
-    manifest: dict[str, Any],
-    output_root: Path,
-    source: str,
-    stage: str,
-    plan: dict[str, Any],
-    cli_signature: dict[str, Any] | None,
-    dummy_dll_signature: dict[str, Any] | None,
-    source_fingerprint: dict[str, Any],
-) -> None:
-    entries = manifest.setdefault("entries", {})
-    completed_at_epoch = int(time.time())
-    for item in plan.get("items", []):
-        if item["item_name"] not in plan.get("run_items", []):
-            continue
-        current_file_count = animestudio_output_file_count(output_root, source, stage, item["type_spec"])
-        item["file_count"] = current_file_count
-        plan.setdefault("item_file_counts", {})[item["item_name"]] = current_file_count
-        entries[item["manifest_key"]] = {
-            "source": source,
-            "stage": stage,
-            "type_spec": item["type_spec"],
-            "item_name": item["item_name"],
-            "cache_key": item["cache_key"],
-            "file_count": current_file_count,
-            "completed_at_epoch": completed_at_epoch,
-            "cli_signature": cli_signature,
-            "dummy_dll_signature": dummy_dll_signature,
-            "source_fingerprint": source_fingerprint,
-            "stage_signature": item["stage_signature"],
-        }
-
-
-def copy_animestudio_plan_for_run_items(plan: dict[str, Any], run_items: list[str]) -> dict[str, Any]:
-    copied = dict(plan)
-    copied["run_items"] = list(run_items)
-    return copied
 
 
 def parse_args() -> argparse.Namespace:
@@ -2645,10 +2466,6 @@ def load_previous_summary(primary_path: Path, legacy_path: Path) -> dict[str, An
         if candidate.exists():
             return json.loads(candidate.read_text(encoding="utf-8-sig"))
     return {}
-
-
-def structured_dump_steps(mode: str) -> list[dict[str, Any]]:
-    return structured_dump_steps_with_world_scenes(mode, ())
 
 
 def parse_world_scene_chunks(values: list[str] | tuple[str, ...]) -> tuple[tuple[str, int, int], ...]:
@@ -3619,60 +3436,6 @@ def split_structured_failures(
         else:
             actual.append(item)
     return actual, manifest_only
-
-
-def summarize_raw_failures(log_path: Path, source: str) -> dict[str, Any]:
-    if not log_path.exists():
-        return {
-            "summary": None,
-            "actual_failures": [],
-            "manifest_missing_chunks": [],
-            "missing": True,
-        }
-
-    data = json.loads(log_path.read_text(encoding="utf-8"))
-    actual_failures: list[dict[str, Any]] = []
-    manifest_missing_chunks: list[dict[str, Any]] = []
-    for block in data.get("blocks", []):
-        block_name = block.get("dir")
-        if block.get("blc_error"):
-            actual_failures.append(
-                {
-                    "block": block_name,
-                    "chunk": None,
-                    "file": None,
-                    "reason": block["blc_error"],
-                }
-            )
-        for chunk in block.get("chunks", []):
-            if not chunk.get("present", True):
-                manifest_missing_chunks.append(
-                    {
-                        "block": block_name,
-                        "chunk": chunk.get("chk"),
-                        "referenced_file_count": chunk.get("file_count"),
-                        "reason": "chk file missing on disk (listed in .blc but not present)",
-                    }
-                )
-                continue
-            for err in chunk.get("errors", []):
-                reason = err.get("reason") or ""
-                record = {
-                    "block": block_name,
-                    "chunk": chunk.get("chk"),
-                    "file": err.get("file"),
-                    "reason": reason,
-                }
-                if is_manifest_reference_missing(source, reason):
-                    # Keep the chunk-level summary only; file-level entries are redundant.
-                    continue
-                actual_failures.append(record)
-    return {
-        "summary": data.get("summary"),
-        "actual_failures": actual_failures,
-        "manifest_missing_chunks": manifest_missing_chunks,
-        "missing": False,
-    }
 
 
 def collect_source_sizes(game_root: Path, sources: tuple[str, ...]) -> dict[str, Any]:
