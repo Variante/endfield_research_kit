@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.story_builder.language_helpers import (
+from scripts.story_builder.option_timeline_continuation import (
     classify_runtime_jump_option_routes,
     classify_timeline_clip_option_index_routes,
     classify_zero_index_timeline_continuation,
