@@ -428,9 +428,10 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                 "missionOwnership": False,
             }]
             mapping_id = "runtime-indexed-general"
-            header_report = {
-                "summary": {"runtimeSlotMappingId": mapping_id},
-                "headerRows": [{
+            header_action_index = {
+                "validation": {"status": "validated", "failures": []},
+                "runtimeSlotMappingId": mapping_id,
+                "rows": [{
                     "levelId": "level_general",
                     "sourceScript": "70001",
                     "file": str(levelscript),
@@ -554,7 +555,7 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
 
             result = audit.join_parent_dialog_activation_routes(
                 timeline_rows,
-                header_report,
+                header_action_index,
                 playback_index,
                 mission_hosts,
                 {},
@@ -632,8 +633,9 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         result = audit.join_parent_dialog_activation_routes(
             rows,
             {
-                "summary": {"runtimeSlotMappingId": "mapping"},
-                "headerRows": [{
+                "validation": {"status": "validated", "failures": []},
+                "runtimeSlotMappingId": "mapping",
+                "rows": [{
                     "levelId": "level_general",
                     "sourceScript": "1",
                     "file": "missing.json",
@@ -679,6 +681,32 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
             "inactive-shadowed-slot", failure["actual"]["runtimeSlotStatus"]
         )
         self.assertEqual("missing.json", failure["sourceFile"])
+
+    def test_parent_dialog_activation_propagates_header_index_failure(self) -> None:
+        diagnostic = {
+            "validator": "levelScriptHeaderActionIndex",
+            "gate": "completeSerializedActionEventGraph",
+            "expected": "exact LevelScript action topology",
+            "actual": "unavailable_fail_closed",
+            "source": "level_general/1.json",
+        }
+        result = audit.join_parent_dialog_activation_routes(
+            [{"key": "black_general", "dialogKey": "dlg_general"}],
+            {
+                "validation": {"status": "failed", "failures": [diagnostic]},
+                "runtimeSlotMappingId": "mapping",
+                "rows": [],
+            },
+            {},
+            {},
+            {},
+            gameassembly=Path("unused"),
+            metadata=Path("unused"),
+            mission_runtime_root=Path("unused"),
+        )
+
+        self.assertEqual("failed", result["validation"]["status"])
+        self.assertEqual(diagnostic, result["validation"]["failures"][0])
 
     def test_activation_control_decisions_preserve_typed_branch_semantics(self) -> None:
         path = [
@@ -727,7 +755,11 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         rows = [{"key": "black_general", "dialogKey": "dlg_property_only"}]
         result = audit.join_parent_dialog_activation_routes(
             rows,
-            {"summary": {}, "headerRows": []},
+            {
+                "validation": {"status": "validated", "failures": []},
+                "runtimeSlotMappingId": "",
+                "rows": [],
+            },
             {},
             {},
             {},
@@ -748,8 +780,9 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         result = audit.join_parent_dialog_activation_routes(
             rows,
             {
-                "summary": {"runtimeSlotMappingId": mapping},
-                "headerRows": [{
+                "validation": {"status": "validated", "failures": []},
+                "runtimeSlotMappingId": mapping,
+                "rows": [{
                     "levelId": "level_general",
                     "sourceScript": "1",
                     "file": "level_general/1.json",
