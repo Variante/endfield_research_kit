@@ -20,19 +20,23 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[3]
-try:
+if __package__ == "story_builder.animestudio_story_objects":
     from animestudio_object_index import MergeError, validate_identity
     from common import md_escape, read_json
     from export_full_from_game import (
         animestudio_object_index_dir,
         load_animestudio_object_index_summary,
     )
-except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+elif __package__ == "scripts.story_builder.animestudio_story_objects":
     from scripts.animestudio_object_index import MergeError, validate_identity
     from scripts.common import md_escape, read_json
     from scripts.export_full_from_game import (
         animestudio_object_index_dir,
         load_animestudio_object_index_summary,
+    )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError(
+        "import this module as scripts.story_builder.animestudio_story_objects.carrier"
     )
 SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_GAP_QUEUE = (

@@ -25,7 +25,7 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
+if __package__ == "story_builder":
     from common import (
         NativeEvidenceUnavailable,
         check_installed_native_inputs,
@@ -42,7 +42,7 @@ try:
         animestudio_object_index_dir,
         load_animestudio_object_index_summary,
     )
-except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         NativeEvidenceUnavailable,
         check_installed_native_inputs,
@@ -59,6 +59,8 @@ except ModuleNotFoundError:  # imported as ``scripts.story_builder``
         animestudio_object_index_dir,
         load_animestudio_object_index_summary,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.animestudio_story_guide")
 
 
 SCHEMA = "animestudioStoryGuideConsumerAudit.v1"

@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
 
-try:
+if __package__ == "story_builder":
     from common import (
         EXPORT_ROOT,
         ROOT,
@@ -19,7 +19,7 @@ try:
         rel_path as repo_rel,
         unique_preserve as _unique_preserve,
     )
-except ModuleNotFoundError:  # imported as ``scripts.story_builder.level_bindings``
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         EXPORT_ROOT,
         ROOT,
@@ -28,6 +28,8 @@ except ModuleNotFoundError:  # imported as ``scripts.story_builder.level_binding
         rel_path as repo_rel,
         unique_preserve as _unique_preserve,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.level_bindings")
 
 from .anime_assets import (
     _build_mission_area_index,
