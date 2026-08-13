@@ -505,6 +505,16 @@ NPC archetypes are imported as labeled source kits.
   it still does not connect channel 2/resource `+0xd0` to `_UploadBuffer` or
   binding 33. Details are recorded under
   `gpu_driven_culling_pass_callback` in the packed-flag audit.
+  The V1 `PopulatePerFrameData` bridge is now closed one layer deeper:
+  `GameAssembly 0x18b3f80b4` resolves the exact HyperGryph internal call to
+  `UnityPlayer 0x1801e9200`, whose native core is `0x1810f2ab0`. The core
+  updates V1 frame metadata, records command opcode `0x57` through
+  `0x1804cd7d0` when a native CommandBuffer is present, and otherwise invokes
+  graphics-context vtable slot `+0xea0`. This is a positive GPUDriven
+  per-frame command/CPU bridge, but its body still has no factory `+0x8c`
+  record walk, `0x100` staging lane, `_UploadBuffer`, or channel-2/resource
+  `+0xd0` access; those upload edges remain fail-closed. Details are under
+  `populate_per_frame_command_bridge`.
   `HGConstantBufferPool.ApplyPendingUpload` is a separate generic upload
   candidate: `GameAssembly 0x189b6a7c0` updates `this+0x10` through
   `ComputeBuffer.SetData` (`0x187af05e0`), but its visible body has no

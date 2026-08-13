@@ -347,6 +347,25 @@
           },
           "boundary": "This closes a concrete UnityPlayer GPUDriven service/binding/dispatch path while separating it from the factory ECS staging producer. It does not recover the UploadPerDrawParams kernel-7 selector, the 84-byte upload-buffer producer, or the channel-2 descriptor binding; those edges remain fail-closed."
         },
+        "populate_per_frame_command_bridge": {
+          "status": "v1-populate-per-frame-command-bridge-closed-no-factory-upload-edge",
+          "source": "Current GameAssembly.dll managed wrapper and PData-bounded UnityPlayer.dll disassembly; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+          "managed_call": {
+            "rendergraph_callback": "HG.Rendering.Runtime.GPUDrivenCullingPassConstructor+<>c.<.cctor>b__10_0 at GameAssembly 0x189bb558c (metadata method 287367)",
+            "v1_wrapper": "GPUDrivenRendererV1.PopulatePerFrameData at GameAssembly 0x18b3f80b4",
+            "internal_call": "UnityEngine.HyperGryph.GPUDrivenRendererV1::PopulatePerFrameData(UnityEngine.Rendering.CommandBuffer,System.UInt32,System.UInt32,System.UInt32,System.Boolean)",
+            "internal_call_entry": "UnityPlayer 0x1801e9200",
+            "resolver": "GameAssembly 0x180059ea0"
+          },
+          "native_core": {
+            "entry": "UnityPlayer 0x1810f2ab0",
+            "command_record_helper": "0x1804cd7d0",
+            "command_opcode": "0x57",
+            "observed": "The core resolves the V1 service state through 0x1810f1980, updates frame metadata/counters rooted at state +0x68, and uses the non-null command-buffer branch to record the 0x57 frame-data command through 0x1804cd7d0. When the native command-buffer pointer is null, it obtains the graphics context through 0x180725dc0 and invokes context vtable slot +0xea0 instead."
+          },
+          "negative_result": "The inspected body never reads factory records at 0x1810d25c0 + index*0x8c, the HyperGryph ECS 0x100-stride staging lanes, _UploadBuffer, UploadPerDrawParams kernel 7, _RTPerDrawParamsBuffer, or resource +0xd0/channel 2.",
+          "boundary": "This closes a positive GPUDriven V1 per-frame command/CPU bridge and separates it from the factory dirty-record consumer and the unresolved 84-byte upload-buffer producer. Dynamic/table-driven scheduling and the channel-2 descriptor edge remain open."
+        },
         "gpu_scene_upload_kernel_evidence": {
           "status": "per-draw-gpu-buffer-consumer-and-resource-identity-closed-native-edge-open",
           "source": "Current installed-game serialized ComputeShader metadata and extracted SPIR-V for GpuSceneDirtyUpdateCS (Persistent VFS 0CE8FA57/36243F039A1BFD05676B5D323B50D4AA.chk, rawDataSha256 0202830400d56f224dd45c43f2ff1cdfe848272509ae8663cccfa1abd0351f36).",
