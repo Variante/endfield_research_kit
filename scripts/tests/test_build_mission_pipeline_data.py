@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 
 from scripts import build_mission_pipeline_data as pipeline
-from scripts.mission_pipeline import story_order_projection
+from scripts.mission_pipeline import runtime_trace_projection, story_order_projection
 from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
 from scripts.story_builder.native_contracts import callserver_callback
 
@@ -4278,6 +4278,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertTrue((report_root / "node_attachment_coverage.json").is_file())
 
     def test_publish_runtime_trace_attaches_observation_without_promoting_ownership(self):
+        self.assertFalse(hasattr(pipeline, "publish_mission_runtime_trace"))
+        self.assertEqual(runtime_trace_projection.SCHEMA, "missionRuntimeTrace.v1")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             output_root = root / "mission_pipeline"
@@ -4318,7 +4320,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "observedMerges": [],
             })
 
-            pipeline.publish_mission_runtime_trace(index, output_root, bundle_path)
+            runtime_trace_projection.publish_mission_runtime_trace(
+                index,
+                output_root,
+                bundle_path,
+            )
 
             payload = json.loads((mission_root / "e11m1.json").read_text(encoding="utf-8"))
             attached = payload["nodes"][0]["runtimeStoryObservations"]

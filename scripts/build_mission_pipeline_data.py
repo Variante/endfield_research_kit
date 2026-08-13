@@ -220,9 +220,11 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 if __package__:
     from .common import sha256_file as sha256_path
+    from .mission_pipeline import runtime_trace_projection
     from .mission_pipeline import story_order_projection
 else:
     from common import sha256_file as sha256_path
+    from mission_pipeline import runtime_trace_projection
     from mission_pipeline import story_order_projection
 
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
@@ -306,7 +308,6 @@ DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
 SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v132"
-MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v3 added per-mission ``missionGraph`` and quest-tracked ambient lines. v4
 # extends ``envTalkContext`` with exact atmospheric-switcher state context. v5
 # adds the recursive protobuf identity-carrier census and closes
@@ -13341,179 +13342,6 @@ def publish_quest_fork_arm_evidence(
     return result
 
 
-def _compact_runtime_observation(row: dict[str, Any]) -> dict[str, Any]:
-    keys = (
-        "sessionId",
-        "seq",
-        "monotonicMs",
-        "storyKey",
-        "playbackType",
-        "chainId",
-        "triggerStatus",
-        "ownershipStatus",
-        "levelId",
-        "scriptId",
-        "headerLocalId",
-        "actionLocalId",
-        "actionType",
-        "route",
-    )
-    return {key: row[key] for key in keys if key in row}
-
-
-def publish_mission_runtime_trace(
-    index: dict[str, Any],
-    output_root: Path,
-    trace_bundle_path: Path,
-) -> dict[str, Any]:
-    """Publish an observed-only runtime overlay without promoting ownership/order."""
-    if not trace_bundle_path.is_file():
-        raise FileNotFoundError(f"Mission runtime trace bundle not found: {trace_bundle_path}")
-    bundle = read_json(trace_bundle_path)
-    if not isinstance(bundle, dict) or bundle.get("_schema") != MISSION_RUNTIME_TRACE_SCHEMA:
-        raise ValueError(
-            f"Mission runtime trace must use {MISSION_RUNTIME_TRACE_SCHEMA}: {trace_bundle_path}"
-        )
-    observations = bundle.get("storyObservations")
-    if not isinstance(observations, dict):
-        raise ValueError("Mission runtime trace storyObservations must be an object")
-
-    observations_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for story_key, raw_rows in observations.items():
-        if not isinstance(story_key, str) or not isinstance(raw_rows, list):
-            raise ValueError("Mission runtime trace observations have an invalid shape")
-        for row in raw_rows:
-            if not isinstance(row, dict) or str(row.get("storyKey") or "") != story_key:
-                raise ValueError(f"Mission runtime trace observation mismatch for {story_key}")
-            mission_ids = {
-                str(item.get("missionId") or "")
-                for item in [*(row.get("activeMissions") or []), *(row.get("activeQuests") or [])]
-                if isinstance(item, dict) and item.get("missionId")
-            }
-            for mission_id in sorted(mission_ids):
-                observations_by_mission[mission_id].append(row)
-
-    edges_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for edge in bundle.get("observedEdges") or []:
-        if not isinstance(edge, dict):
-            continue
-        for mission_id in edge.get("sharedMissionIds") or []:
-            if isinstance(mission_id, str) and mission_id:
-                edges_by_mission[mission_id].append(edge)
-        for quest in edge.get("sharedQuests") or []:
-            if isinstance(quest, dict) and quest.get("missionId"):
-                mission_id = str(quest["missionId"])
-                if edge not in edges_by_mission[mission_id]:
-                    edges_by_mission[mission_id].append(edge)
-
-    published_missions = 0
-    quest_placements = 0
-    mission_context_only = 0
-    unmatched_mission_ids = sorted(
-        set(observations_by_mission)
-        - {
-            str(summary.get("id") or "")
-            for summary in index.get("missions") or []
-            if isinstance(summary, dict)
-        }
-    )
-    for summary in index.get("missions") or []:
-        if not isinstance(summary, dict):
-            continue
-        mission_id = str(summary.get("id") or "")
-        mission_rows = observations_by_mission.get(mission_id) or []
-        if not mission_rows:
-            continue
-        mission_path = output_root / str(summary.get("file") or "")
-        if not mission_path.is_file():
-            continue
-        payload = read_json(mission_path)
-        if not isinstance(payload, dict):
-            continue
-        nodes = {
-            str(node.get("id") or ""): node
-            for node in payload.get("nodes") or []
-            if isinstance(node, dict) and node.get("id")
-        }
-        context_only_rows = []
-        unique_rows: dict[tuple[str, int, str], dict[str, Any]] = {}
-        for row in mission_rows:
-            compact = _compact_runtime_observation(row)
-            signature = (
-                str(compact.get("sessionId") or ""),
-                int(compact.get("seq") or 0),
-                str(compact.get("storyKey") or ""),
-            )
-            unique_rows[signature] = compact
-            quest_ids = sorted({
-                str(item.get("questId") or "")
-                for item in row.get("activeQuests") or []
-                if isinstance(item, dict)
-                and str(item.get("missionId") or "") == mission_id
-                and item.get("questId")
-            })
-            attached = False
-            for quest_id in quest_ids:
-                node = nodes.get(quest_id)
-                if node is None:
-                    continue
-                node.setdefault("runtimeStoryObservations", []).append(compact)
-                quest_placements += 1
-                attached = True
-            if not attached:
-                context_only_rows.append(compact)
-                mission_context_only += 1
-        for node in nodes.values():
-            if node.get("runtimeStoryObservations"):
-                node["runtimeStoryObservations"].sort(
-                    key=lambda row: (
-                        str(row.get("sessionId") or ""),
-                        int(row.get("seq") or 0),
-                        str(row.get("storyKey") or ""),
-                    )
-                )
-        payload["runtimeTrace"] = {
-            "schema": MISSION_RUNTIME_TRACE_SCHEMA,
-            "evidenceClassification": "observed_runtime",
-            "ownershipPromotion": False,
-            "orderPromotion": False,
-            "storyObservationCount": len(unique_rows),
-            "questObservationPlacements": sum(
-                len(node.get("runtimeStoryObservations") or []) for node in nodes.values()
-            ),
-            "missionContextOnly": context_only_rows,
-            "observedEdges": edges_by_mission.get(mission_id, []),
-        }
-        summary["runtimeStoryObservationCount"] = len(unique_rows)
-        summary["runtimeQuestObservationPlacementCount"] = payload["runtimeTrace"][
-            "questObservationPlacements"
-        ]
-        write_json(mission_path, payload)
-        published_missions += 1
-
-    bundle_summary = bundle.get("summary") or {}
-    index["runtimeTrace"] = {
-        "schema": MISSION_RUNTIME_TRACE_SCHEMA,
-        "source": repo_path(trace_bundle_path),
-        "evidenceClassification": "observed_runtime",
-        "ownershipPromotion": False,
-        "orderPromotion": False,
-        "evidencePolicy": bundle.get("evidencePolicy") or {},
-        "summary": bundle_summary,
-        "sessions": bundle.get("sessions") or [],
-        "published": {
-            "missions": published_missions,
-            "questObservationPlacements": quest_placements,
-            "missionContextOnlyObservations": mission_context_only,
-            "unmatchedMissionIds": unmatched_mission_ids,
-        },
-        "observedForks": bundle.get("observedForks") or [],
-        "observedMerges": bundle.get("observedMerges") or [],
-    }
-    write_json(output_root / "index.json", index)
-    return bundle
-
-
 def main() -> int:
     args = parse_args()
     output_root = args.output_root.resolve()
@@ -13825,7 +13653,7 @@ def main() -> int:
     runtime_trace = None
     runtime_trace_path = getattr(args, "runtime_trace_bundle", None)
     if runtime_trace_path:
-        runtime_trace = publish_mission_runtime_trace(
+        runtime_trace = runtime_trace_projection.publish_mission_runtime_trace(
             index,
             output_root,
             runtime_trace_path.resolve(),
