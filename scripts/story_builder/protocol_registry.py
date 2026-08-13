@@ -15,13 +15,11 @@ from __future__ import annotations
 import argparse
 from bisect import bisect_right
 import hashlib
-import importlib.util
 import json
 import re
 import struct
 import sys
 from collections import Counter
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -51,6 +49,7 @@ except ModuleNotFoundError:  # imported as ``scripts.story_builder``
         write_text_if_changed,
     )
 from .mission_assets import select_complete_mission_runtime_root
+from .native_protocol import il2cpp
 from .levelscript_binary import (
     extract_levelscript_uid_records,
     levelscript_action_map_membership,
@@ -450,140 +449,6 @@ KNOWN_ID_CHECKS = {
 }
 
 
-@lru_cache(maxsize=None)
-def load_metadata_helper(path: Path) -> Any:
-    """Load the metadata helper once, so its exception classes stay identical."""
-    spec = importlib.util.spec_from_file_location("endfield_protocol_metadata", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load metadata helper: {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-def load_native_mapper(path: Path) -> Any:
-    spec = importlib.util.spec_from_file_location("endfield_protocol_native_mapper", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load native mapper: {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-RUNTIME_PRIMITIVE_TYPE_NAMES = {
-    0x01: "void",
-    0x02: "bool",
-    0x03: "char",
-    0x04: "sbyte",
-    0x05: "byte",
-    0x06: "short",
-    0x07: "ushort",
-    0x08: "int",
-    0x09: "uint",
-    0x0A: "long",
-    0x0B: "ulong",
-    0x0C: "float",
-    0x0D: "double",
-    0x0E: "string",
-    0x18: "nint",
-    0x19: "nuint",
-    0x1C: "object",
-}
-
-
-def runtime_generic_inst_type_pointers(pe: Any, generic_inst_va: int) -> list[int]:
-    offset, _section, _rva = pe.file_offset_for_va(generic_inst_va)
-    if offset is None:
-        raise RuntimeError(f"generic instantiation VA is outside GameAssembly: 0x{generic_inst_va:x}")
-    argc, argv_va = struct.unpack_from("<QQ", pe.buf, offset)
-    if argc > 64:
-        raise RuntimeError(f"implausible generic argument count {argc} at 0x{generic_inst_va:x}")
-    return [pe.u64_at_va(argv_va + index * 8) for index in range(argc)]
-
-
-def runtime_type_name(
-    pe: Any,
-    metadata: Any,
-    type_va: int,
-    *,
-    depth: int = 0,
-    seen: frozenset[int] = frozenset(),
-) -> str:
-    """Name one MetadataRegistration Il2CppType, including generic instances."""
-    if depth > 12:
-        return "<generic-depth-limit>"
-    if type_va in seen:
-        return f"<recursive-type:0x{type_va:x}>"
-    offset, _section, _rva = pe.file_offset_for_va(type_va)
-    if offset is None:
-        return f"<type-va-outside-image:0x{type_va:x}>"
-    data = struct.unpack_from("<Q", pe.buf, offset)[0]
-    type_code = pe.buf[offset + 10]
-    primitive = RUNTIME_PRIMITIVE_TYPE_NAMES.get(type_code)
-    if primitive is not None:
-        return primitive
-    if type_code in {0x11, 0x12}:  # IL2CPP_TYPE_VALUETYPE / CLASS
-        if 0 <= data < len(metadata.types):
-            return metadata.type_full_name(metadata.types[data])
-        return f"<type-definition:{data}>"
-    if type_code == 0x15:  # IL2CPP_TYPE_GENERICINST
-        generic_offset, _section, _rva = pe.file_offset_for_va(data)
-        if generic_offset is None:
-            return f"<generic-class-va-outside-image:0x{data:x}>"
-        definition_type_va, class_inst_va = struct.unpack_from(
-            "<QQ", pe.buf, generic_offset
-        )
-        next_seen = seen | {type_va}
-        definition_name = runtime_type_name(
-            pe,
-            metadata,
-            definition_type_va,
-            depth=depth + 1,
-            seen=next_seen,
-        )
-        arguments = [
-            runtime_type_name(
-                pe,
-                metadata,
-                argument_type_va,
-                depth=depth + 1,
-                seen=next_seen,
-            )
-            for argument_type_va in runtime_generic_inst_type_pointers(
-                pe, class_inst_va
-            )
-        ]
-        return f"{definition_name}<{','.join(arguments)}>"
-    if type_code in {0x13, 0x1E}:  # IL2CPP_TYPE_VAR / MVAR
-        kind = "VAR" if type_code == 0x13 else "MVAR"
-        return f"{kind}[{data}]"
-    if type_code == 0x0F:  # IL2CPP_TYPE_PTR
-        return (
-            runtime_type_name(
-                pe,
-                metadata,
-                data,
-                depth=depth + 1,
-                seen=seen | {type_va},
-            )
-            + "*"
-        )
-    if type_code == 0x1D:  # IL2CPP_TYPE_SZARRAY
-        return (
-            runtime_type_name(
-                pe,
-                metadata,
-                data,
-                depth=depth + 1,
-                seen=seen | {type_va},
-            )
-            + "[]"
-        )
-    return f"<runtime-type:0x{type_code:x}:data=0x{data:x}>"
-
-
 def expected_event_bus_binding_type(payload_type: str) -> str:
     return f"Beyond.EventData`1<{payload_type}>"
 
@@ -612,7 +477,7 @@ def event_bus_specialization_census(
     body. This census therefore covers compiled managed call forms independent
     of whether the final call instruction is direct, virtual, or delegate-based.
     """
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     metadata_registration = mapper.find_metadata_registration(
         pe, mapper.DEFAULT_CODE_REGISTRATION
@@ -673,8 +538,8 @@ def event_bus_specialization_census(
             continue
         generic_inst_va = pe.u64_at_va(generic_insts_va + method_inst_index * 8)
         generic_arguments = [
-            runtime_type_name(pe, metadata, type_va)
-            for type_va in runtime_generic_inst_type_pointers(pe, generic_inst_va)
+            il2cpp.runtime_type_name(pe, metadata, type_va)
+            for type_va in il2cpp.runtime_generic_inst_type_pointers(pe, generic_inst_va)
         ]
         pointer_va = pe.u64_at_va(generic_pointers_va + pointer_slot * 8)
         rows_by_spec.setdefault(
@@ -763,41 +628,6 @@ def event_bus_specialization_census(
             "or a future IFix/game build can never add a subscription."
         ),
     }
-
-
-def read_compressed_uint32(data: bytes, offset: int) -> tuple[int, int]:
-    first = data[offset]
-    if first & 0x80 == 0:
-        return first, 1
-    if first & 0xC0 == 0x80:
-        return ((first & 0x3F) << 8) | data[offset + 1], 2
-    if first & 0xE0 == 0xC0:
-        return (
-            ((first & 0x1F) << 24)
-            | (data[offset + 1] << 16)
-            | (data[offset + 2] << 8)
-            | data[offset + 3],
-            4,
-        )
-    if first == 0xF0:
-        return struct.unpack_from(">I", data, offset + 1)[0], 5
-    if first == 0xFE:
-        return 0xFFFFFFFE, 1
-    if first == 0xFF:
-        return 0xFFFFFFFF, 1
-    raise ValueError(f"unsupported compressed uint prefix 0x{first:02x}")
-
-
-def read_compressed_int32(data: bytes, offset: int) -> tuple[int, int]:
-    unsigned, size = read_compressed_uint32(data, offset)
-    return (unsigned >> 1) ^ -(unsigned & 1), size
-
-
-def normalized_field_name(value: str) -> str:
-    if value.endswith("FieldNumber"):
-        value = value[: -len("FieldNumber")]
-    value = value.rstrip("_")
-    return re.sub(r"[^a-z0-9]", "", value.lower())
 
 
 def mission_event_asset_coverage(
@@ -922,63 +752,6 @@ def mission_event_asset_coverage(
             "runtime or indirect consumer."
         ),
     }
-
-
-def field_defaults(metadata: Any) -> dict[int, tuple[int, int]]:
-    section = metadata.sections["fieldDefaultValues"]
-    if section.size % 12:
-        raise RuntimeError("fieldDefaultValues is not aligned to 12-byte records")
-    out: dict[int, tuple[int, int]] = {}
-    for position in range(section.offset, section.offset + section.size, 12):
-        field_index, type_index, data_index = struct.unpack_from(
-            "<iii", metadata.buf, position
-        )
-        if field_index in out:
-            raise RuntimeError(f"duplicate field default for field {field_index}")
-        out[field_index] = (type_index, data_index)
-    return out
-
-
-def constant_value(
-    metadata: Any,
-    defaults: dict[int, tuple[int, int]],
-    field: Any,
-) -> int | None:
-    default = defaults.get(field.index)
-    if default is None:
-        return None
-    _type_index, data_index = default
-    section = metadata.sections["fieldAndParameterDefaultValueData"]
-    value, _size = read_compressed_int32(metadata.buf, section.offset + data_index)
-    return value
-
-
-def enum_members(
-    metadata: Any,
-    defaults: dict[int, tuple[int, int]],
-    type_name: str,
-) -> list[dict[str, Any]]:
-    for type_def in metadata.types:
-        if metadata.type_full_name(type_def) != type_name:
-            continue
-        rows: list[dict[str, Any]] = []
-        for field in metadata.fields_for(type_def):
-            name = metadata.string(field.name_index)
-            if name == "value__":
-                continue
-            value = constant_value(metadata, defaults, field)
-            if value is None:
-                continue
-            rows.append(
-                {
-                    "id": value,
-                    "name": name,
-                    "fieldIndex": field.index,
-                    "token": f"0x{field.token:08x}",
-                }
-            )
-        return sorted(rows, key=lambda row: (row["id"], row["name"]))
-    raise RuntimeError(f"metadata type not found: {type_name}")
 
 
 def validate_levelscript_start_policy_observation(
@@ -1144,7 +917,7 @@ def levelscript_start_policy_contract(
     mapper_path: Path = NATIVE_MAPPER_HELPER,
 ) -> dict[str, Any]:
     """Discover SameWithActive semantics from names, enums, and native flow."""
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
     ranges = mapper.image_method_ranges(metadata)
@@ -1170,7 +943,7 @@ def levelscript_start_policy_contract(
         "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
     )
     enum_rows = {
-        type_name: enum_members(metadata, defaults, type_name)
+        type_name: il2cpp.enum_members(metadata, defaults, type_name)
         for type_name in enum_type_names
     }
     enum_values = {
@@ -1629,7 +1402,7 @@ def levelscript_manual_self_control_contract(
     mapper_path: Path = NATIVE_MAPPER_HELPER,
 ) -> dict[str, Any]:
     """Discover current-level/current-script ManualStart semantics generically."""
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
     ranges = mapper.image_method_ranges(metadata)
@@ -1665,7 +1438,7 @@ def levelscript_manual_self_control_contract(
 
     def resolved_field_type(type_index: int) -> tuple[int, str]:
         type_va = pe.u64_at_va(runtime_types_va + type_index * 8)
-        return type_va, runtime_type_name(pe, metadata, type_va)
+        return type_va, il2cpp.runtime_type_name(pe, metadata, type_va)
 
     def find_type(type_name: str) -> list[Any]:
         return [
@@ -1729,13 +1502,13 @@ def levelscript_manual_self_control_contract(
 
     param_sources = {
         row["name"]: row["id"]
-        for row in enum_members(
+        for row in il2cpp.enum_members(
             metadata, defaults, "Beyond.Gameplay.Actions.ParamSource"
         )
     }
     runtime_state_values = {
         row["name"]: row["id"]
-        for row in enum_members(
+        for row in il2cpp.enum_members(
             metadata,
             defaults,
             "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
@@ -2386,7 +2159,7 @@ def levelscript_activation_control_contract(
     mapper_path: Path = NATIVE_MAPPER_HELPER,
 ) -> dict[str, Any]:
     """Recover general public-state and SubGame ManualStart producers."""
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
     ranges = mapper.image_method_ranges(metadata)
@@ -2826,7 +2599,7 @@ def levelscript_activation_control_contract(
         if len(matches) != 1:
             return ""
         type_va = pe.u64_at_va(runtime_types_va + matches[0].type_index * 8)
-        return runtime_type_name(pe, metadata, type_va)
+        return il2cpp.runtime_type_name(pe, metadata, type_va)
 
     snapshot_level_scripts_runtime_type = field_runtime_type(
         self_scene_info_fields,
@@ -2834,33 +2607,33 @@ def levelscript_activation_control_contract(
     )
     field_offsets: dict[str, int | None] = {}
     if len(challenge_fields) == 1:
-        current = runtime_type_field_offsets(
+        current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, challenge_fields[0].index
         )
         field_offsets["challengeStartPoint.m_subGameId"] = current.get(
             "m_subGameId"
         )
     if len(subgame_fields) == 1:
-        current = runtime_type_field_offsets(
+        current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, subgame_fields[0].index
         )
         field_offsets["subGameInstanceData.bindScriptId"] = current.get(
             "bindScriptId"
         )
     if len(state_notify_fields) == 1:
-        current = runtime_type_field_offsets(
+        current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, state_notify_fields[0].index
         )
         for name in ("sceneNumId_", "scriptId_", "state_", "isComplete_"):
             field_offsets[f"stateNotify.{name}"] = current.get(name)
     if len(self_scene_info_fields) == 1:
-        current = runtime_type_field_offsets(
+        current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, self_scene_info_fields[0].index
         )
         for name in ("sceneNumId_", "sceneId_", "levelScripts_"):
             field_offsets[f"selfSceneInfo.{name}"] = current.get(name)
     if len(level_script_info_fields) == 1:
-        current = runtime_type_field_offsets(
+        current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, level_script_info_fields[0].index
         )
         for name in (
@@ -2874,7 +2647,7 @@ def levelscript_activation_control_contract(
             field_offsets[f"levelScriptInfo.{name}"] = current.get(name)
     runtime_fields = find_type("Beyond.Gameplay.Core.LevelScriptRuntime")
     if len(runtime_fields) == 1:
-        current = runtime_type_field_offsets(
+        current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, runtime_fields[0].index
         )
         field_offsets["levelScriptRuntime.m_manualStartTriggered"] = current.get(
@@ -3184,7 +2957,7 @@ def levelscript_activation_control_contract(
 
     trigger_active_during_values = {
         row["name"]: row["id"]
-        for row in enum_members(
+        for row in il2cpp.enum_members(
             metadata,
             defaults,
             "Beyond.Gameplay.Actions.TriggerActiveDuring",
@@ -3192,7 +2965,7 @@ def levelscript_activation_control_contract(
     }
     runtime_state_values = {
         row["name"]: row["id"]
-        for row in enum_members(
+        for row in il2cpp.enum_members(
             metadata,
             defaults,
             "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
@@ -3200,7 +2973,7 @@ def levelscript_activation_control_contract(
     }
     level_script_type_values = {
         row["name"]: row["id"]
-        for row in enum_members(
+        for row in il2cpp.enum_members(
             metadata,
             defaults,
             "Beyond.GEnums.LevelScriptType",
@@ -3678,12 +3451,12 @@ def message_schema(
         for field in metadata.fields_for(type_def):
             name = metadata.string(field.name_index)
             if name.endswith("FieldNumber"):
-                tags[normalized_field_name(name)] = {
+                tags[il2cpp.normalized_field_name(name)] = {
                     "constantName": name,
-                    "tag": constant_value(metadata, defaults, field),
+                    "tag": il2cpp.constant_value(metadata, defaults, field),
                 }
             elif name.endswith("_"):
-                storage[normalized_field_name(name)] = {
+                storage[il2cpp.normalized_field_name(name)] = {
                     "name": name[:-1],
                     "storageName": name,
                     "storageTypeIndex": field.type_index,
@@ -3705,7 +3478,7 @@ def message_schema(
 
 def protobuf_identity_field_classes(field_name: str) -> set[str]:
     """Classify protobuf storage fields relevant to the missing ownership join."""
-    name = normalized_field_name(field_name)
+    name = il2cpp.normalized_field_name(field_name)
     classes: set[str] = set()
     name_without_request_id = name.replace("requestid", "")
     if "missionid" in name or "questid" in name_without_request_id:
@@ -3753,7 +3526,7 @@ def protobuf_identity_carrier_census(
     mapper_path: Path = NATIVE_MAPPER_HELPER,
 ) -> dict[str, Any]:
     """Census direct and nested message identity carriers in the current build."""
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     metadata_registration = mapper.find_metadata_registration(
         pe, mapper.DEFAULT_CODE_REGISTRATION
@@ -3773,7 +3546,7 @@ def protobuf_identity_carrier_census(
                 runtime_name_cache[type_index] = f"<type-index:{type_index}>"
             else:
                 type_va = pe.u64_at_va(runtime_types_va + type_index * 8)
-                runtime_name_cache[type_index] = runtime_type_name(
+                runtime_name_cache[type_index] = il2cpp.runtime_type_name(
                     pe,
                     metadata,
                     type_va,
@@ -3802,7 +3575,7 @@ def protobuf_identity_carrier_census(
         proto_types[type_name] = fields
 
     registry_by_normalized_name = {
-        normalized_field_name(row["name"]): row
+        il2cpp.normalized_field_name(row["name"]): row
         for row in registry_rows
     }
     return finish_protobuf_identity_carrier_census(
@@ -3829,7 +3602,7 @@ def state_update_candidate_schemas(
 ) -> list[dict[str, Any]]:
     """Discover enum-backed mission/quest state messages from their field shape."""
     registry_by_normalized_name = {
-        normalized_field_name(row["name"]): row
+        il2cpp.normalized_field_name(row["name"]): row
         for row in server_registry
     }
     candidates: list[dict[str, Any]] = []
@@ -3838,7 +3611,7 @@ def state_update_candidate_schemas(
         if not type_name.startswith("Proto.SC_"):
             continue
         storage_names = {
-            normalized_field_name(metadata.string(field.name_index))
+            il2cpp.normalized_field_name(metadata.string(field.name_index))
             for field in metadata.fields_for(type_def)
             if metadata.string(field.name_index).endswith("_")
         }
@@ -3855,7 +3628,7 @@ def state_update_candidate_schemas(
         if len(matches) != 1:
             continue
         stem, control_names, control_kind = matches[0]
-        registry_key = normalized_field_name(type_name.removeprefix("Proto."))
+        registry_key = il2cpp.normalized_field_name(type_name.removeprefix("Proto."))
         registry_row = registry_by_normalized_name.get(registry_key)
         if registry_row is None:
             continue
@@ -3876,29 +3649,6 @@ def state_update_candidate_schemas(
             }
         )
     return sorted(candidates, key=lambda row: (row["messageId"], row["type"]))
-
-
-def runtime_type_field_offsets(
-    metadata: Any,
-    pe: Any,
-    metadata_registration_summary: dict[str, Any],
-    type_index: int,
-) -> dict[str, int]:
-    """Read one type's current-build instance offsets from MetadataRegistration."""
-    table_count = int(metadata_registration_summary["fieldOffsetsCount"])
-    if not 0 <= type_index < table_count:
-        raise RuntimeError(
-            f"field-offset type index {type_index} outside current table count {table_count}"
-        )
-    table_va = int(metadata_registration_summary["fieldOffsets"], 16)
-    type_offsets_va = pe.u64_at_va(table_va + type_index * 8)
-    if not type_offsets_va:
-        raise RuntimeError(f"type {type_index} has no runtime field-offset row")
-    type_def = metadata.types[type_index]
-    return {
-        metadata.string(field.name_index): pe.u32_at_va(type_offsets_va + index * 4)
-        for index, field in enumerate(metadata.fields_for(type_def))
-    }
 
 
 def validate_levelscript_task_lifecycle_observation(
@@ -3998,7 +3748,7 @@ def levelscript_task_lifecycle_contract(
     resulting contract contains no scene-, mission-, script-, task-, or dialog-
     specific ids.
     """
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     metadata_registration = mapper.find_metadata_registration(
         pe, mapper.DEFAULT_CODE_REGISTRATION
@@ -4293,7 +4043,7 @@ def levelscript_task_lifecycle_contract(
         "Beyond.Gameplay.GameplayNetwork",
         "SendLevelScriptUpdateTaskProgress",
     )
-    condition_offsets = runtime_type_field_offsets(
+    condition_offsets = il2cpp.runtime_type_field_offsets(
         metadata, pe, metadata_summary, task_condition.index
     )
     identity_field_names = [
@@ -4325,13 +4075,13 @@ def levelscript_task_lifecycle_contract(
     observation = {
         "scriptTaskStateEnum": {
             str(row["name"]): int(row["id"])
-            for row in enum_members(
+            for row in il2cpp.enum_members(
                 metadata, defaults, "Beyond.GEnums.ScriptTaskState"
             )
         },
         "levelScriptTaskTypeEnum": {
             str(row["name"]): int(row["id"])
-            for row in enum_members(
+            for row in il2cpp.enum_members(
                 metadata, defaults, "Beyond.Gameplay.LevelScriptTaskType"
             )
         },
@@ -5290,7 +5040,7 @@ def action_extra_thread_scheduler_census(
     child Execute body.  Display names are reported only after admission; they
     are never selection keys.
     """
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     registration = mapper.find_metadata_registration(
         pe, mapper.DEFAULT_CODE_REGISTRATION
@@ -5342,7 +5092,7 @@ def action_extra_thread_scheduler_census(
         ]
         if "m_extraThreadIDList" not in field_names or not scheduler_methods:
             continue
-        offsets = runtime_type_field_offsets(
+        offsets = il2cpp.runtime_type_field_offsets(
             metadata, pe, registration_summary, type_def.index
         )
         carriers.append({
@@ -5384,7 +5134,7 @@ def action_extra_thread_scheduler_census(
             continue
         caller_method = metadata.methods[int(caller["methodIndex"])]
         caller_def = metadata.types[caller_method.declaring_type]
-        own_offsets = runtime_type_field_offsets(
+        own_offsets = il2cpp.runtime_type_field_offsets(
             metadata, pe, registration_summary, caller_def.index
         )
         scan_start = max(caller_va, site - 24)
@@ -5460,7 +5210,7 @@ def action_extra_thread_scheduler_census(
                         changed = True
             alias_pattern = "(?:" + "|".join(sorted(map(re.escape, this_aliases))) + ")"
             try:
-                own_offsets = runtime_type_field_offsets(
+                own_offsets = il2cpp.runtime_type_field_offsets(
                     metadata, pe, registration_summary, type_def.index
                 )
             except RuntimeError:
@@ -6142,7 +5892,7 @@ def quest_optional_objective_flag_contract(
 
     type_def = type_candidates[0]
     type_name = metadata.type_full_name(type_def)
-    field_offsets = runtime_type_field_offsets(
+    field_offsets = il2cpp.runtime_type_field_offsets(
         metadata,
         pe,
         metadata_summary,
@@ -6352,12 +6102,12 @@ def quest_topology_field_consumer_census(
     }
     getter_rows = quest_start.get("questInfoGetterCalls") or []
     getter_va = int(str(getter_rows[0]["targetVa"]), 16)
-    quest_type_enum = enum_members(
+    quest_type_enum = il2cpp.enum_members(
         metadata,
         defaults,
         "Beyond.GEnums.QuestType",
     )
-    show_mode_enum = enum_members(
+    show_mode_enum = il2cpp.enum_members(
         metadata,
         defaults,
         "Beyond.Gameplay.QuestShowMode",
@@ -6428,7 +6178,7 @@ def quest_topology_field_consumer_census(
     else:
         mission_def = mission_candidates[0]
         mission_type = metadata.type_full_name(mission_def)
-        all_offsets = runtime_type_field_offsets(
+        all_offsets = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, mission_def.index
         )
         mission_offsets = {
@@ -6783,7 +6533,7 @@ def quest_start_application_contract(
         pe=pe,
         max_instructions=2400,
     )
-    offsets = runtime_type_field_offsets(
+    offsets = il2cpp.runtime_type_field_offsets(
         metadata,
         pe,
         metadata_summary,
@@ -6914,7 +6664,7 @@ def quest_succeed_action_contract(
             "sourceHashes": source_hashes,
         })
 
-    enum_rows = enum_members(
+    enum_rows = il2cpp.enum_members(
         metadata,
         defaults,
         "Beyond.Gameplay.QuestAction",
@@ -7140,7 +6890,7 @@ def quest_succeed_action_contract(
             mission_system_def = metadata.types[
                 metadata.methods[int(run_aliases[0]["methodIndex"])].declaring_type
             ]
-            field_offsets = runtime_type_field_offsets(
+            field_offsets = il2cpp.runtime_type_field_offsets(
                 metadata, pe, metadata_summary, mission_system_def.index
             )
             field_names_by_origin = {
@@ -7331,7 +7081,7 @@ def quest_state_lifecycle_application_contract(
         ]
         if len(enum_type_candidates) == 1:
             enum_type = enum_type_candidates[0]
-            enum_values = enum_members(metadata, defaults, enum_type)
+            enum_values = il2cpp.enum_members(metadata, defaults, enum_type)
         else:
             failures.append({
                 "validator": "quest_state_lifecycle_application",
@@ -7522,7 +7272,7 @@ def quest_enable_lifecycle_application_contract(
             if len(owner_types) != 1:
                 continue
             try:
-                offsets = runtime_type_field_offsets(
+                offsets = il2cpp.runtime_type_field_offsets(
                     metadata,
                     pe,
                     metadata_summary,
@@ -7542,7 +7292,7 @@ def quest_enable_lifecycle_application_contract(
                 if not 0 <= field_def.type_index < runtime_type_count:
                     continue
                 type_va = pe.u64_at_va(runtime_types_va + field_def.type_index * 8)
-                field_type = runtime_type_name(pe, metadata, type_va)
+                field_type = il2cpp.runtime_type_name(pe, metadata, type_va)
                 if field_type == "bool":
                     runtime_reads.append(
                         (access, owner_name, field_offset, field_name, field_type)
@@ -7667,7 +7417,7 @@ def state_update_application_census(
     mapper_path: Path = NATIVE_MAPPER_HELPER,
 ) -> dict[str, Any]:
     """Recover the general server-selected mission/quest state application pattern."""
-    mapper = load_native_mapper(mapper_path)
+    mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
     metadata_registration = mapper.find_metadata_registration(
         pe, mapper.DEFAULT_CODE_REGISTRATION
@@ -7733,7 +7483,7 @@ def state_update_application_census(
                 method_by_pointer,
                 sorted_pointers,
             )
-            all_offsets = runtime_type_field_offsets(
+            all_offsets = il2cpp.runtime_type_field_offsets(
                 metadata, pe, metadata_summary, candidate["typeIndex"]
             )
         except RuntimeError as exc:
@@ -7848,7 +7598,7 @@ def state_update_application_census(
         identity_fields = [
             field["name"]
             for field in schema_fields
-            if normalized_field_name(field["name"]) in {"missionid", "questid"}
+            if il2cpp.normalized_field_name(field["name"]) in {"missionid", "questid"}
         ]
         successor_like_fields = [
             field["name"]
@@ -8007,7 +7757,7 @@ def finish_protobuf_identity_carrier_census(
         if not type_name.startswith(("Proto.CS_", "Proto.SC_")):
             continue
         registry = registry_by_normalized_name.get(
-            normalized_field_name(type_name.removeprefix("Proto."))
+            il2cpp.normalized_field_name(type_name.removeprefix("Proto."))
         )
         if registry is None:
             continue
@@ -8209,9 +7959,9 @@ def build_report(
     mission_runtime_root: Path = MISSION_RUNTIME_ROOT,
     levelscript_roots: tuple[Path, ...] = LEVELSCRIPT_ROOTS,
 ) -> dict[str, Any]:
-    helper = load_metadata_helper(helper_path)
+    helper = il2cpp.load_metadata_helper(helper_path)
     metadata = helper.Metadata(metadata_path)
-    defaults = field_defaults(metadata)
+    defaults = il2cpp.field_defaults(metadata)
     native_task_paths = load_mission_task_paths(task_contract_path)
     mission_event_assets = mission_event_asset_coverage(
         mission_runtime_root,
@@ -8221,8 +7971,8 @@ def build_report(
             file_sha256(metadata_path),
         ),
     )
-    cs = enum_members(metadata, defaults, "Proto.CSMessageID")
-    sc = enum_members(metadata, defaults, "Proto.SCMessageID")
+    cs = il2cpp.enum_members(metadata, defaults, "Proto.CSMessageID")
+    sc = il2cpp.enum_members(metadata, defaults, "Proto.SCMessageID")
     event_bus_census = event_bus_specialization_census(
         metadata, gameassembly_path, mapper_path
     )
@@ -9578,7 +9328,7 @@ def main() -> int:
             mapper_path=args.native_mapper,
             mission_runtime_root=args.mission_runtime_root,
         )
-    except load_metadata_helper(args.helper).MetadataParseError as exc:
+    except il2cpp.load_metadata_helper(args.helper).MetadataParseError as exc:
         # Re-deriving the registry is how a different client build is
         # supported; metadata this parser cannot read is a real stop.
         print(
