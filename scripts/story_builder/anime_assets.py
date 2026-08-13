@@ -461,8 +461,6 @@ def extract_dialog_tree_definition_evidence(
             "does not create a cross-file mission chronology edge"
         ),
     }
-
-
 @lru_cache(maxsize=8192)
 def _recover_dialog_tree_definition_evidence(dialog_key: str) -> dict | None:
     path = _find_anime_tree_path(f"{dialog_key}.json")
@@ -3948,4 +3946,3 @@ def _tracking_hint_pin(hint: dict) -> dict | None:
     }
 
 
-__all__ = [name for name in globals() if not name.startswith("__")]

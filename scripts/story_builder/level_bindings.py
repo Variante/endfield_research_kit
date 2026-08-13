@@ -815,8 +815,6 @@ def resolve_dynamic_hp_spawner_context(
         "entityTemplateIdFilter": source_event.get("entityTemplateIdFilter"),
         "spawnEventDetail": source_event,
     }
-
-
 def match_entity_tracking_native_entity_event_context(
     occurrence: dict,
     tracking: dict,
@@ -13169,4 +13167,3 @@ def build_mission_scene_file_order(
     }
 
 
-__all__ = [name for name in globals() if not name.startswith("__")]
