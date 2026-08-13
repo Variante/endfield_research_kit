@@ -260,7 +260,7 @@ python .\scripts\story_builder\animestudio_story_guide.py
 if errorlevel 1 exit /b %errorlevel%
 
 :refresh_evidence
-python .\scripts\story_builder\refresh_evidence.py
+python -m scripts.story_builder.refresh_evidence
 if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\story_builder\build.py --languages CN --default-language CN %STORY_BUILD_ARGS%

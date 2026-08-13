@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Refresh independent Story builder evidence files in parallel."""
 from __future__ import annotations
 
@@ -9,13 +8,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts"))
-
-from common import is_native_evidence_skip  # noqa: E402
-from story_builder.mission_assets import (  # noqa: E402
+from scripts.common import ROOT, is_native_evidence_skip
+from scripts.story_builder.mission_assets import (
     select_complete_mission_runtime_root,
 )
 
@@ -36,7 +30,8 @@ REQUIRED_SOURCE_LINK_ROOTS = (
 @dataclass(frozen=True)
 class EvidenceStep:
     name: str
-    argv: tuple[str, ...]
+    module: str
+    argv: tuple[str, ...] = ()
 
 
 @dataclass
@@ -49,12 +44,12 @@ class EvidenceResult:
 
 
 STEPS = (
-    EvidenceStep("dialog_registry", ("scripts/story_builder/dialog_registry.py", "--quiet")),
-    EvidenceStep("video_bindings", ("scripts/story_builder/video_bindings.py",)),
-    EvidenceStep("source_links", ("scripts/story_builder/source_links.py",)),
+    EvidenceStep("dialog_registry", "scripts.story_builder.dialog_registry", ("--quiet",)),
+    EvidenceStep("video_bindings", "scripts.story_builder.video_bindings"),
+    EvidenceStep("source_links", "scripts.story_builder.source_links"),
     EvidenceStep(
         "spaceship_story_content",
-        ("scripts/story_builder/spaceship_story_content.py",),
+        "scripts.story_builder.spaceship_story_content",
     ),
 )
 
@@ -62,7 +57,7 @@ STEPS = (
 def run_step(step: EvidenceStep) -> EvidenceResult:
     started = time.time()
     proc = subprocess.run(
-        [sys.executable, *step.argv],
+        [sys.executable, "-m", step.module, *step.argv],
         cwd=ROOT,
         text=True,
         encoding="utf-8",
