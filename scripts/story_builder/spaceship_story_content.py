@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recover operator-spacecraft Story content without inventing missions.
+"""Build operator-spacecraft Story content evidence without inventing missions.
 
 Two original-data producer shapes are accepted:
 

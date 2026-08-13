@@ -279,13 +279,33 @@ class SourceGraphSchemaTests(unittest.TestCase):
                                     "radioId": "radio_fixture",
                                     "lineId": "radio_fixture_001",
                                     "levelScriptId": "level_fixture",
+                                    "sentenceType": "1",
+                                    "speakerId": "chr_fixture",
+                                    "triggerKey": "action_dodge",
+                                    "triggerTypeId": 8,
                                 },
                                 "meaning": {
                                     "id": "radio_fixture_001",
                                     "audio": "au_fixture",
                                     "eventId": "au_sfx_fixture",
                                 },
-                                "action": {"levelScriptId": "level_fixture"},
+                                "action": {
+                                    "levelScriptId": "level_fixture",
+                                    "responseIndex": 0,
+                                    "voiceId": 123,
+                                    "runtimeRoute": "VoiceResponseProcessor -> VoicePlayer.PlayVoice",
+                                    "runtimeSelectionStatus": "liveChoiceUnobserved",
+                                },
+                                "owner": {
+                                    "sourcePath": "structured/Persistent/Data/Json/SkillData/fixture.json",
+                                    "sourceSha256": "abc123",
+                                    "actionOffset": 123,
+                                    "nativeMappingId": "fixture-mapping",
+                                    "source": "structured/Persistent/Table/ResponsiveDialog.json",
+                                    "sourceLayer": "Persistent",
+                                    "speakerId": "chr_fixture",
+                                    "table": "ResponsiveDialog",
+                                },
                                 "selection": {"mediaSelectionStatus": "playable"},
                                 "mediaRefs": [{"id": "au_fixture"}],
                                 "runtimeActivationStatus": "unobserved",
@@ -328,6 +348,41 @@ class SourceGraphSchemaTests(unittest.TestCase):
                 self.assertIn("audio_trigger_context_for_radio", edges)
                 self.assertIn("audio_trigger_context_for_line", edges)
                 self.assertIn("audio_trigger_context_for_level_script", edges)
+                self.assertIn("audio_trigger_context_source_file", edges)
+                context_data = json.loads(
+                    builder.db.execute(
+                        "SELECT data FROM nodes WHERE id = ?",
+                        (context_node,),
+                    ).fetchone()[0]
+                )
+                self.assertEqual(
+                    context_data["owner"],
+                    {
+                        "actionOffset": 123,
+                        "nativeMappingId": "fixture-mapping",
+                        "sourcePath": "structured/Persistent/Data/Json/SkillData/fixture.json",
+                        "sourceSha256": "abc123",
+                        "source": "structured/Persistent/Table/ResponsiveDialog.json",
+                        "sourceLayer": "Persistent",
+                        "speakerId": "chr_fixture",
+                        "table": "ResponsiveDialog",
+                    },
+                )
+                self.assertEqual(context_data["situation"]["triggerKey"], "action_dodge")
+                self.assertEqual(context_data["action"]["voiceId"], 123)
+                self.assertEqual(context_data["action"]["responseIndex"], 0)
+                source_file = builder.node_id(
+                    "file",
+                    "structured/Persistent/Data/Json/SkillData/fixture.json",
+                )
+                reverse_edges = {
+                    row[0]
+                    for row in builder.db.execute(
+                        "SELECT kind FROM edges WHERE src = ? AND dst = ?",
+                        (source_file, context_node),
+                    )
+                }
+                self.assertIn("file_defines_audio_trigger_context", reverse_edges)
                 boundary = json.loads(
                     builder.db.execute(
                         "SELECT data FROM nodes WHERE id = ?",
@@ -479,6 +534,45 @@ class SourceGraphSchemaTests(unittest.TestCase):
                         for marker in ("trigger", "story", "line", "speaker")
                     )
                 )
+            finally:
+                builder.close()
+
+    def test_audio_trigger_context_resolves_unique_wwise_case_variant(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            context_path = root / "webui" / "data" / "lang" / "CN" / "audio" / "trigger_contexts.json"
+            context_path.parent.mkdir(parents=True)
+            context_path.write_text(json.dumps({
+                "schemaVersion": 14,
+                "language": "CN",
+                "counts": {"total": 1},
+                "contexts": [{
+                    "triggerId": "managed:fixture",
+                    "semanticKind": "binaryManagedLiteralCallsite",
+                    "situation": {"eventId": "au_item_collect_common_3p", "eventHash": 1},
+                    "meaning": {"eventId": "au_item_collect_common_3p"},
+                    "action": {"playbackCall": "GameAction.PlayAudioAtPosition"},
+                    "mediaRefs": [],
+                }],
+            }), encoding="utf-8")
+            builder = SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                root=root,
+                export_root=root / "export",
+                include_asset_maps=False,
+                include_reference_rows=False,
+            )
+            builder.open()
+            try:
+                wwise_node = builder.add_node("wwise_event", "au_item_collect_common_3P", source="fixture")
+                builder.ingest_audio_trigger_contexts()
+                context_node = builder.node_id("audio_trigger_context", "managed:fixture")
+                edges = builder.db.execute(
+                    "SELECT kind, dst FROM edges WHERE src = ? ORDER BY kind, dst",
+                    (context_node,),
+                ).fetchall()
+                self.assertIn(("audio_trigger_context_targets_wwise_event", wwise_node), edges)
+                self.assertFalse(builder.node_exists("audio", "au_item_collect_common_3p"))
             finally:
                 builder.close()
 

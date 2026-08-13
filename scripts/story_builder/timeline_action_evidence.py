@@ -602,6 +602,30 @@ def attach_line_order_comparisons(by_dialog: dict[str, list[dict]], line_orders_
     return dict(sorted(status_counts.items()))
 
 
+def action_evidence_availability(scan_meta: dict) -> dict[str, str]:
+    if not scan_meta.get("monoDirCount"):
+        return {
+            "status": "unavailable",
+            "reason": "monobehaviour_export_roots_missing",
+        }
+    if not scan_meta.get("candidateMonoFileCount"):
+        return {
+            "status": "unavailable",
+            "reason": "timeline_action_carriers_missing",
+        }
+    if not scan_meta.get("managedReferenceCount"):
+        return {
+            "status": "unavailable",
+            "reason": "managed_reference_recovery_missing",
+        }
+    if not scan_meta.get("mainFlowCount"):
+        return {
+            "status": "unavailable",
+            "reason": "dialog_main_flows_missing",
+        }
+    return {"status": "available", "reason": "decoded_dialog_main_flows"}
+
+
 def build_timeline_action_evidence(
     *,
     mono_roots: list[Path] | None = None,
@@ -612,6 +636,7 @@ def build_timeline_action_evidence(
     roots = mono_roots or iter_default_mono_roots(out_path.parents[0] if out_path.name else DEFAULT_RECOVERY_ROOT)
     t0 = time.time()
     by_dialog, scan_meta = scan_action_entries(roots)
+    availability = action_evidence_availability(scan_meta)
     comparison_counts = attach_line_order_comparisons(by_dialog, line_orders_path)
     by_dialog = {
         key: sorted(entries, key=lambda item: (item.get("timeline") or "", item.get("file") or ""))
@@ -626,6 +651,8 @@ def build_timeline_action_evidence(
             "dialogKeyCount": len(by_dialog),
             "timelineEntryCount": sum(len(entries) for entries in by_dialog.values()),
             "lineOrderComparisonCounts": comparison_counts,
+            "evidenceStatus": availability["status"],
+            "evidenceStatusReason": availability["reason"],
             **scan_meta,
         },
         "byDialogKey": by_dialog,
@@ -637,6 +664,15 @@ def build_timeline_action_evidence(
             f"({payload['_meta']['dialogKeyCount']} dialog key(s), "
             f"{payload['_meta']['mainFlowCount']} action flow(s))"
         )
+        if availability["status"] != "available":
+            log(
+                "warning: action evidence unavailable: "
+                f"{availability['reason']} "
+                f"(MonoBehaviour roots={scan_meta['monoDirCount']}, "
+                f"matching carriers={scan_meta['candidateMonoFileCount']}, "
+                f"managed refs={scan_meta['managedReferenceCount']}, "
+                f"main flows={scan_meta['mainFlowCount']})"
+            )
     return payload
 
 

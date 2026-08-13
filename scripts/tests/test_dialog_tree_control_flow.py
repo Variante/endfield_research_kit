@@ -7,8 +7,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import build_mission_pipeline_data as mission_pipeline
-from scripts.story_recovery import build_source_story_partial_order as partial_order
-from scripts.story_recovery.dialog_tree_control_flow import (
+from scripts.story_builder import source_story_partial_order as partial_order
+from scripts.story_builder.dialog_tree_control_flow import (
     ContractError,
     ExternalResultRouterSpec,
     StaticPortFamilySpec,

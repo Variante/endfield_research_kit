@@ -10,9 +10,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 try:
-    import build_dialog_finish_branch_audit as audit
+    from story_builder import dialog_finish_branches as audit
 except ModuleNotFoundError:
-    from scripts.story_recovery import build_dialog_finish_branch_audit as audit
+    from scripts.story_builder import dialog_finish_branches as audit
 
 # Bind to the exact common module the audit imported: loading it under a
 # second name would give same-named classes that are not identical.

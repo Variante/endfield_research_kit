@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
     SpawnerWaveDecodeError,
     decode_spawner_wave_map,
 )
-from story_recovery.dialog_tree_control_flow import (  # noqa: E402
+from story_builder.dialog_tree_control_flow import (  # noqa: E402
     ContractError as DialogTreeControlContractError,
     OPEN_UI_FAMILY,
     project_serialized_family_node,

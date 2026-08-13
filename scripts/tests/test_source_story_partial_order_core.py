@@ -12,11 +12,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
-import build_source_story_partial_order as partial_order  # noqa: E402
+from story_builder import source_story_partial_order as partial_order  # noqa: E402
 
 
 def mp_string(value: str | None) -> bytes:

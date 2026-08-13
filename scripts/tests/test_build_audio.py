@@ -646,6 +646,97 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertEqual(decoded["audioRows"][0]["events"], ["au_int_fixture_break"])
         self.assertEqual(decoded["customRows"][0]["name"], "panel_open")
 
+    def test_current_interactive_model_union_tag_is_0x0126(self) -> None:
+        from scripts import build_data_index
+
+        self.assertEqual(
+            build_data_index.BASE_COMPONENT_UNION_TAGS[0x0126],
+            "View_InteractiveModelComponentData",
+        )
+
+    def test_current_interactive_trigger_zone_audio_property_map_is_exact(self) -> None:
+        from scripts import build_data_index
+
+        def string(value: str) -> bytes:
+            raw = value.encode("utf-8")
+            return pack("<I", len(raw)) + raw
+
+        event_id = "au_int_fixture_start"
+        property_map = b"".join((
+            pack("<I", 1),
+            bytes((2,)),
+            string("audio_key_start"),
+            bytes((2,)),
+            pack("<iI", 7, 1),
+            bytes((2,)),
+            pack("<q", 0),
+            string(event_id),
+        ))
+        body = b"".join((
+            pack("<I", 0xFFFFFFFF),
+            pack("<I", 1),
+            bytes((20,)),
+            bytes(60),
+            property_map,
+            bytes((0, 0)),
+        ))
+
+        decoded, end = build_data_index.parse_interactive_trigger_zone_audio_property_component(
+            body,
+            0,
+            3,
+        )
+
+        self.assertEqual(end, len(body) - 2)
+        self.assertEqual(decoded["tag"], "0x00f5")
+        self.assertEqual(decoded["type"], "Core_TriggerZoneComponentForIntData")
+        self.assertEqual(decoded["audioPropertyRows"], [{
+            "key": "audio_key_start",
+            "events": [event_id],
+            "valueType": 7,
+            "identityKind": "wwiseEvent",
+        }])
+        self.assertEqual(decoded["runtimePropertyConsumerStatus"], "unresolved")
+        self.assertEqual(decoded["runtimeEventPostingStatus"], "notObserved")
+
+        found = build_data_index.find_interactive_audio_property_maps(body)
+        self.assertEqual(found[0]["audioPropertyRows"][0]["events"], [event_id])
+        self.assertEqual(found[0]["componentResolutionStatus"], "containingComponentUnresolved")
+
+    def test_interactive_template_config_audio_property_has_exact_field_boundary(self) -> None:
+        from scripts import build_data_index
+
+        def string(value: str) -> bytes:
+            raw = value.encode("utf-8")
+            return pack("<I", len(raw)) + raw
+
+        event_id = "au_int_fixture_escape"
+        config_map = b"".join((
+            pack("<I", 2),
+            bytes((2,)), string("audio_escape"),
+            bytes((2,)), pack("<iI", 7, 1), bytes((2,)), pack("<q", 0), string(event_id),
+            bytes((2,)), string("label"),
+            bytes((2,)), pack("<iI", 28, 1), bytes((2,)), pack("<q", 0), string("lang_fixture"),
+        ))
+        tail = b"".join((
+            pack("<ff", 0.0, 0.0), bytes((0,)), pack("<f", 1.0), bytes((0,)),
+            pack("<I", 0), pack("<I", 0), pack("<i", 0), config_map,
+        ))
+
+        decoded, end = build_data_index.parse_interactive_template_config_properties(
+            tail, 0
+        )
+
+        self.assertEqual(end, len(tail))
+        self.assertEqual(decoded["configPropertyCount"], 2)
+        self.assertEqual(decoded["audioPropertyRows"], [{
+            "key": "audio_escape",
+            "events": [event_id],
+            "valueType": 7,
+            "identityKind": "wwiseEvent",
+        }])
+        self.assertEqual(decoded["configPropertiesOffset"], "0x1a")
+
     def test_current_play_sound_union_tag_matches_binary_formatter_audit(self) -> None:
         from scripts import build_data_index
 
@@ -2375,6 +2466,50 @@ AnimationClip:
             self.assertEqual(enemy_spawn["confidence"], "direct")
             self.assertEqual(set(enemy_spawn["events"]), {"au_enemy_spawn"})
 
+    def test_collects_owner_unresolved_exact_gameplay_config_audio_references(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            webui_root = root / "webui"
+            export_root = root / "export_full"
+            gameplay_path = webui_root / "data/lang/CN/gameplay/index.json"
+            gameplay_path.parent.mkdir(parents=True)
+            gameplay_path.write_text(json.dumps({"entries": []}), encoding="utf-8")
+            skill_root = export_root / "structured/StreamingAssets/Data/Json/SkillData"
+            buff_root = export_root / "structured/Persistent/Data/Json/BuffData"
+            skill_root.mkdir(parents=True)
+            buff_root.mkdir(parents=True)
+            (skill_root / "skill_orphan.json").write_bytes(
+                self.memorypack_strings(47, "au_skill_orphan_exact")
+            )
+            (buff_root / "buff_orphan.json").write_bytes(
+                self.memorypack_strings(30, "au_buff_orphan_exact")
+            )
+
+            result = build_audio.collect_gameplay_audio_references(
+                webui_root,
+                export_root,
+                "CN",
+            )
+
+            references = {
+                row["eventId"]: row
+                for row in result["authoredConfigEventReferences"]
+            }
+            self.assertEqual(
+                set(references),
+                {"au_skill_orphan_exact", "au_buff_orphan_exact"},
+            )
+            self.assertEqual(references["au_skill_orphan_exact"]["configKind"], "SkillData")
+            self.assertEqual(references["au_skill_orphan_exact"]["configId"], "skill_orphan")
+            self.assertEqual(references["au_buff_orphan_exact"]["configKind"], "BuffData")
+            self.assertEqual(references["au_buff_orphan_exact"]["ownerLinkStatus"], "unresolved")
+            self.assertEqual(
+                references["au_buff_orphan_exact"]["evidence"],
+                "exactMemoryPackLengthPrefixedAudioEventString",
+            )
+            self.assertEqual(result["counts"]["authoredConfigEventReferences"], 2)
+            self.assertEqual(result["counts"]["authoredConfigEventReferenceEvents"], 2)
+
     def test_exact_play_sound_event_seeds_buff_traversal_and_keeps_owner_gap(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
@@ -2465,6 +2600,64 @@ AnimationClip:
                 1,
             )
             self.assertEqual(result["counts"]["buffPlaySoundActionsOwnerUnresolved"], 1)
+
+    def test_exact_skill_play_sound_event_seeds_direct_skill_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            webui_root = root / "webui"
+            export_root = root / "export_full"
+            gameplay_path = webui_root / "data/lang/CN/gameplay/index.json"
+            gameplay_path.parent.mkdir(parents=True)
+            gameplay_path.write_text(json.dumps({"entries": [{
+                "kind": "character",
+                "id": "chr_test",
+                "skillGroups": [{"id": "normal", "skills": [{"id": "chr_test_normal"}]}],
+            }]}), encoding="utf-8")
+            skill_path = (
+                export_root
+                / "structured/StreamingAssets/Data/Json/SkillData/chr_test_normal.json"
+            )
+            skill_path.parent.mkdir(parents=True)
+            skill_path.write_bytes(b"fixture-without-generic-au-prefix")
+            skill_action = {
+                "buffId": "chr_test_normal",
+                "eventId": "eny_fixture_direct_event",
+                "timelineActionIndex": 0,
+                "actionDataIndex": 0,
+                "startFrame": 4,
+                "endFrame": 9,
+                "serverActionIndex": 2,
+                "runtimeConditionStatus": "unresolved",
+            }
+            skill_decoded = {
+                "byBuffEvent": {
+                    "chr_test_normal": {"eny_fixture_direct_event": [skill_action]},
+                },
+                "counts": {
+                    "buffPlaySoundActionOccurrences": 1,
+                    "buffPlaySoundUniqueEvents": 1,
+                },
+            }
+            empty_decoded = {"byBuffEvent": {}, "counts": {}}
+
+            with mock.patch.object(
+                build_audio,
+                "collect_buff_play_sound_actions",
+                side_effect=[skill_decoded, empty_decoded],
+            ):
+                result = build_audio.collect_gameplay_audio_references(
+                    webui_root,
+                    export_root,
+                    "CN",
+                )
+
+            owner = next(row for row in result["owners"] if row["ownerKind"] == "character")
+            evidence = owner["events"]["eny_fixture_direct_event"][0]
+            self.assertEqual(evidence["kind"], "skillData")
+            self.assertEqual(evidence["playSoundActions"][0]["skillId"], "chr_test_normal")
+            self.assertNotIn("buffId", evidence["playSoundActions"][0])
+            self.assertEqual(result["counts"]["skillPlaySoundSeededEventRefs"], 1)
+            self.assertEqual(result["counts"]["skillPlaySoundActionOccurrences"], 1)
 
     def test_collects_enemy_template_skill_authored_under_another_enemy(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -2839,7 +3032,7 @@ AnimationClip:
                 "randomAlternative": {"nodeCount": 1, "childEdgeCount": 12},
                 "switchCandidate": {"nodeCount": 1, "childEdgeCount": 4},
             })
-            self.assertEqual(payload["schemaVersion"], 4)
+            self.assertEqual(payload["schemaVersion"], 5)
             dispatch = event_a["actionDispatchEvidence"][0]
             self.assertEqual(dispatch["bankId"], 100)
             self.assertEqual(dispatch["bankVersion"], 150)
@@ -3011,7 +3204,7 @@ AnimationClip:
             payload = json.loads(
                 (webui_root / "data/lang/CN/gameplay/sound_effects.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(payload["schemaVersion"], 4)
+            self.assertEqual(payload["schemaVersion"], 5)
             self.assertEqual(payload["authoredPlaySoundActions"][0]["startFrame"], 17)
             event = payload["characters"]["chr_test"]["groups"]["normal"]["events"][0]
             binding = event["triggerBindings"][0]

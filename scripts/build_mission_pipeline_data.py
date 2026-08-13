@@ -52,16 +52,16 @@ try:
         mission_runtime_source_summary,
         select_complete_mission_runtime_root,
     )
-    from story_recovery.build_envtalk_attachment import (
+    from story_builder.envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
     )
-    from story_recovery.build_callserver_callback_audit import (
+    from story_builder.callserver_callbacks import (
         DEFAULT_JSON as CALLSERVER_CALLBACK_AUDIT_JSON,
         DEFAULT_MARKDOWN as CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
         build_report as build_callserver_callback_audit_report,
         markdown_report as render_callserver_callback_audit_markdown,
     )
-    from story_recovery.build_dialog_finish_branch_audit import (
+    from story_builder.dialog_finish_branches import (
         DEFAULT_JSON as DIALOG_FINISH_BRANCH_AUDIT_JSON,
         DEFAULT_MARKDOWN as DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
         NativeContractUnavailable as DialogFinishNativeUnavailable,
@@ -69,14 +69,14 @@ try:
         markdown_report as render_dialog_finish_branch_audit_markdown,
         publish_to_pipeline_index as publish_dialog_finish_branch_audit,
     )
-    from story_recovery.build_mission_dependency_graph import (
+    from story_builder.mission_dependency_graph import (
         build_report as build_mission_dependency_graph_report,
     )
-    from story_recovery.build_node_attachment_coverage import (
+    from story_builder.node_attachment import (
         build_report as build_node_attachment_report,
         render_markdown as render_node_attachment_markdown,
     )
-    from story_recovery.build_native_receiver_activation_frontier import (
+    from story_builder.native_receiver_activation_frontier import (
         DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
         DEFAULT_MANUAL_CONTROL_AUDIT as NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT,
         DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
@@ -84,15 +84,15 @@ try:
         markdown_report as render_native_receiver_activation_frontier_markdown,
         publish_to_pipeline_index as publish_native_receiver_activation_frontier,
     )
-    from story_recovery.build_source_story_partial_order import (
+    from story_builder.source_story_partial_order import (
         build_report as build_source_story_partial_order_report,
         render_markdown as render_source_story_partial_order_markdown,
     )
-    from story_recovery.build_source_story_order_cross_reference import (
+    from story_builder.source_story_order_cross_reference import (
         build_report as build_source_story_order_cross_reference_report,
         render_markdown as render_source_story_order_cross_reference_markdown,
     )
-    from story_recovery.build_timeline_embedded_story_runtime_audit import (
+    from story_builder.timeline_embedded_story_runtime import (
         DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
         DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
         TimelineNativeUnavailable,
@@ -129,16 +129,16 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         mission_runtime_source_summary,
         select_complete_mission_runtime_root,
     )
-    from scripts.story_recovery.build_envtalk_attachment import (
+    from scripts.story_builder.envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
     )
-    from scripts.story_recovery.build_callserver_callback_audit import (
+    from scripts.story_builder.callserver_callbacks import (
         DEFAULT_JSON as CALLSERVER_CALLBACK_AUDIT_JSON,
         DEFAULT_MARKDOWN as CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
         build_report as build_callserver_callback_audit_report,
         markdown_report as render_callserver_callback_audit_markdown,
     )
-    from scripts.story_recovery.build_dialog_finish_branch_audit import (
+    from scripts.story_builder.dialog_finish_branches import (
         DEFAULT_JSON as DIALOG_FINISH_BRANCH_AUDIT_JSON,
         DEFAULT_MARKDOWN as DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
         NativeContractUnavailable as DialogFinishNativeUnavailable,
@@ -146,14 +146,14 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         markdown_report as render_dialog_finish_branch_audit_markdown,
         publish_to_pipeline_index as publish_dialog_finish_branch_audit,
     )
-    from scripts.story_recovery.build_mission_dependency_graph import (
+    from scripts.story_builder.mission_dependency_graph import (
         build_report as build_mission_dependency_graph_report,
     )
-    from scripts.story_recovery.build_node_attachment_coverage import (
+    from scripts.story_builder.node_attachment import (
         build_report as build_node_attachment_report,
         render_markdown as render_node_attachment_markdown,
     )
-    from scripts.story_recovery.build_native_receiver_activation_frontier import (
+    from scripts.story_builder.native_receiver_activation_frontier import (
         DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
         DEFAULT_MANUAL_CONTROL_AUDIT as NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT,
         DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
@@ -161,15 +161,15 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         markdown_report as render_native_receiver_activation_frontier_markdown,
         publish_to_pipeline_index as publish_native_receiver_activation_frontier,
     )
-    from scripts.story_recovery.build_source_story_partial_order import (
+    from scripts.story_builder.source_story_partial_order import (
         build_report as build_source_story_partial_order_report,
         render_markdown as render_source_story_partial_order_markdown,
     )
-    from scripts.story_recovery.build_source_story_order_cross_reference import (
+    from scripts.story_builder.source_story_order_cross_reference import (
         build_report as build_source_story_order_cross_reference_report,
         render_markdown as render_source_story_order_cross_reference_markdown,
     )
-    from scripts.story_recovery.build_timeline_embedded_story_runtime_audit import (
+    from scripts.story_builder.timeline_embedded_story_runtime import (
         DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
         DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
         TimelineNativeUnavailable,

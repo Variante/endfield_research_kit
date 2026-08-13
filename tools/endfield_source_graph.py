@@ -3241,6 +3241,20 @@ class SourceGraphBuilder:
     def node_exists(self, kind: str, key: Any) -> bool:
         return self.db.execute("SELECT 1 FROM nodes WHERE id = ?", (self.node_id(kind, key),)).fetchone() is not None
 
+    def resolve_wwise_event_node(self, event_id: Any) -> str | None:
+        """Resolve normalized authored ids without duplicating case variants."""
+        event_key = safe_key(event_id)
+        if not event_key:
+            return None
+        exact = self.node_id("wwise_event", event_key)
+        if self.db.execute("SELECT 1 FROM nodes WHERE id = ?", (exact,)).fetchone():
+            return exact
+        rows = self.db.execute(
+            "SELECT id FROM nodes WHERE kind = 'wwise_event' AND lower(name) = lower(?) ORDER BY id LIMIT 2",
+            (event_key,),
+        ).fetchall()
+        return rows[0][0] if len(rows) == 1 else None
+
     def alias_node_ids(self, alias: Any, *, kind: str = "") -> list[str]:
         alias_text = safe_key(alias)
         if not alias_text:
@@ -24793,25 +24807,45 @@ class SourceGraphBuilder:
                     situation,
                     (
                         "eventId", "eventHash", "dialogId", "dialogKey", "timelineId", "lineId",
+                        "sentenceType", "speakerId", "triggerKey", "triggerTypeId",
                         "radioId", "envTalkId", "envTalkVariant", "mission", "remoteCommonId", "singleId", "middleId",
                         "index", "autoPlay", "autoPlayTime", "levelScriptId", "timelineStartSec",
                         "timelineDurationSec", "timelineEndSec", "contextKind",
                         "componentName", "gameObjectName", "serializedFieldPath",
                         "stateDirection", "audioStateMask", "ownerKind", "ownerId",
+                        "configKind", "configId",
+                        "audioPropertyKey", "audioAction", "audioActionRole", "actionLocalId",
+                        "consumerType", "consumerMethod", "triggerRole", "targetBinding",
+                        "branchCondition", "selectorType", "selectorMethod", "selectorMethodIndex",
+                        "selectorMethodVa", "selectorLoadVa", "selectorCallVa", "selectorField", "selectorFieldOffset",
+                        "additionalConsumerMethod", "additionalMethodVa", "additionalSelectorLoadVa", "additionalSelectorCallVa",
+                        "additionalPlaybackCallVa",
                     ),
                 ),
                 "meaning": scalar_summary(
                     meaning,
                     (
                         "id", "eventId", "audio", "category", "foundInWwise", "possibleMediaCount",
-                        "playRootCount", "authoredTimelineKeyStatus", "playbackRole",
+                        "playRootCount", "authoredTimelineKeyStatus", "playbackRole", "responseWeight",
+                        "baseVoiceId", "variantVoiceId", "variantIndex", "intParameter",
                     ),
                 ),
                 "action": scalar_summary(
                     action,
                     (
-                        "action", "triggerRole", "levelScriptId", "levelSequenceId", "sourcePath",
+                        "action", "role", "sourceField", "actionMapRole", "localId", "uid", "nextId",
+                        "unionTag", "serializedMemberCount", "serverActionIndex",
+                        "canInterruptTimeMs", "speakerType", "stopOnRelease",
+                        "targetBindingKind", "targetParamSource",
+                        "targetParameterKind",
+                        "playbackCall", "playbackCallVa", "playbackParameter",
+                        "literalArgumentRegister", "literalArgumentInstruction",
+                        "playbackHashCall", "playbackHashCallVa", "playbackHashInvocationVa",
+                        "playbackSink", "playbackSinkVa", "playbackSinkInvocationVa", "playbackInvocationVa",
+                        "triggerRole", "levelScriptId", "levelSequenceId", "sourcePath",
                         "runtimeMethod", "runtimeMethodToken", "runtimeActivationStatus",
+                        "responseIndex", "voiceId", "runtimeRoute", "runtimeSelectionStatus",
+                        "function", "eventIndex", "time", "floatParameter", "intParameter",
                     ),
                 ),
                 "owner": scalar_summary(
@@ -24827,6 +24861,18 @@ class SourceGraphBuilder:
                         "audioMusicActionType", "audioMusicActionTypeLabel",
                         "audioMusicTriggerOnSkip", "audioMusicTriggerOnSkipLabel",
                         "runtimeCarrierStatus",
+                        "configKind", "configId", "ownerStatus",
+                        "ownerId", "componentType", "componentTag", "interactiveTemplatePath",
+                        "componentResolutionStatus", "templateAssociationStatus",
+                        "propertyMapOffset", "audioPropertyKey",
+                        "actionMapOffset", "actionRecordOffset", "actionPayloadOffset",
+                        "consumerType", "consumerMethod", "methodIndex", "methodVa",
+                        "literalLoadVa", "metadataSha256", "gameAssemblySha256",
+                        "sourcePath", "sourceSha256", "actionOffset",
+                        "source", "sourceLayer", "toneSource", "toneSourceLayer", "speakerId", "table",
+                        "nativeMappingId", "identityToken", "clip", "ownerKind",
+                        "animationOwnerCandidateCount", "animationOwnershipScope",
+                        "additionalMethodIndex", "additionalMethodVa",
                         "sourceRoot", "serializedFile", "sourceAssetFile", "sourceOffset",
                         "pathId", "componentName", "scriptPathId", "scriptFullName",
                         "gameObjectName", "worldPositionStatus", "managedReferenceClass",
@@ -24839,6 +24885,7 @@ class SourceGraphBuilder:
                     selection,
                     (
                         "triggerBindingStatus", "mediaSelectionStatus", "runtimeSelection",
+                        "memberFieldStatus",
                         "runtimeDispatchStatus", "lineScheduleStatus", "slotSelectionStatus",
                         "audioSelectionStatus", "runtimeSelectionStatus", "autoPlay", "autoPlayTime",
                     ),
@@ -24857,6 +24904,33 @@ class SourceGraphBuilder:
             )
             self.add_alias(trigger_id, context_node, kind="audio_trigger_context_id", source=source)
             self.add_edge(dataset, context_node, "has_audio_trigger_context", source=source, evidence="contexts[]")
+
+            owner_source_path = safe_key(owner.get("sourcePath"))
+            if owner_source_path:
+                source_file = self.add_file(
+                    owner_source_path,
+                    kind="audio_trigger_authored_source",
+                    source=source,
+                    data={"sourceSha256": owner.get("sourceSha256")},
+                )
+                self.add_edge(
+                    context_node,
+                    source_file,
+                    "audio_trigger_context_source_file",
+                    source=source,
+                    evidence="owner.sourcePath",
+                    data={
+                        "sourceSha256": owner.get("sourceSha256"),
+                        "actionOffset": owner.get("actionOffset"),
+                    },
+                )
+                self.add_edge(
+                    source_file,
+                    context_node,
+                    "file_defines_audio_trigger_context",
+                    source=source,
+                    evidence="owner.sourcePath",
+                )
 
             for audio_index, audio_id in enumerate(
                 [meaning.get("audio")]
@@ -24880,8 +24954,8 @@ class SourceGraphBuilder:
                 if not event_key or event_key in seen_event_keys:
                     continue
                 seen_event_keys.add(event_key)
-                if event_key and self.node_exists("wwise_event", event_key):
-                    event_node = self.node_id("wwise_event", event_key)
+                event_node = self.resolve_wwise_event_node(event_key)
+                if event_node:
                     evidence = "situation.eventId" if event_index == 0 else "meaning.eventId"
                     self.add_edge(
                         context_node,

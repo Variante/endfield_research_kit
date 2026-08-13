@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recover exact Story consumers embedded in factory guide runtime assets.
+"""Build exact Story consumers embedded in factory guide runtime assets.
 
 This audit is deliberately narrow.  It accepts only a fully typed
 ``GuideRuntimeAsset`` managed-reference action whose class is exactly

@@ -2564,6 +2564,20 @@ a.opt-target-chip { cursor: pointer; }
 /* Cutscene structured info panel */
 .cutscene-info-box { /* inherits --accent left border from .summary-box */ }
 .cutscene-info-box .summary-label { color: var(--accent); }
+.cs-semantic-shape {
+  display: inline-flex; align-items: center;
+  margin: 0 0 8px; padding: 3px 8px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: rgba(var(--fg-rgb), 0.07); color: var(--text);
+  font-size: 12px; font-weight: 650;
+}
+.cs-semantic-shape.is-textOnlyUnconfirmed,
+.cs-semantic-shape.is-timelineComponentsWithoutRoot {
+  border-style: dashed; color: var(--muted);
+}
+.cs-evidence-note {
+  margin: 0 0 8px; color: var(--muted); font-size: 12px;
+}
 .cs-flags-row {
   display: flex; flex-wrap: wrap; gap: 5px;
   margin-bottom: 8px;

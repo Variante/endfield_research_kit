@@ -157,6 +157,7 @@
       contextGlobalLifecycle: "Global audio lifecycle",
       contextDialogLifecycle: "Dialog lifecycle hook",
       contextResponsiveVoice: "Responsive voice route",
+      contextAbilityVoiceTrigger: "Ability voice trigger",
       contextVoiceEventRoute: "Voice Event template / override",
       contextTypedUiEvent: "UI / activity audio route",
       contextSnsVoice: "SNS voice message",
@@ -370,6 +371,7 @@
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
       contextDialogLifecycle: "\u5bf9\u8bdd\u751f\u547d\u5468\u671f\u94a9\u5b50",
       contextResponsiveVoice: "\u54cd\u5e94\u8bed\u97f3\u89e6\u53d1\u94fe",
+      contextAbilityVoiceTrigger: "\u6280\u80fd\u8bed\u97f3\u89e6\u53d1",
       contextVoiceEventRoute: "\u8bed\u97f3 Event \u6a21\u677f / \u8986\u76d6\u8def\u7531",
       contextTypedUiEvent: "UI / \u6d3b\u52a8\u97f3\u9891\u8def\u7531",
       contextSnsVoice: "SNS \u8bed\u97f3\u6d88\u606f",
@@ -610,6 +612,7 @@
     globalLifecycle: "contextGlobalLifecycle",
     dialogLifecycle: "contextDialogLifecycle",
     responsiveVoice: "contextResponsiveVoice",
+    abilityVoiceTrigger: "contextAbilityVoiceTrigger",
     voiceEventRoute: "contextVoiceEventRoute",
     typedUiEvent: "contextTypedUiEvent",
     snsVoice: "contextSnsVoice",
@@ -683,13 +686,13 @@
   }
 
   function contextGroup(kind) {
-    if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
+    if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField", "abilityVoiceTriggerAction"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (kind === "levelSequenceAudio") return "timeline";
     if (kind === "timelineAudioCueBehaviorEvent") return "timeline";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
-    if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "monoBehaviourAudioIdField", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "interactiveComponentPropertyAudio", "interactivePropertyMapAudio", "interactiveTemplateConfigAudio", "interactiveTemplateActionAudio", "interactiveEmbeddedActionAudio", "binaryManagedLiteralCallsite", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "monoBehaviourAudioIdField", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     if (kind === "luaPostEvent") return "luaRuntime";
     return "";
@@ -709,10 +712,11 @@
       if (["modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"].includes(contextKind)) tags.add("modelViewState");
       if (contextKind === "monoBehaviourAudioIdField") tags.add("componentAudioId");
       if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent", "timelineAudioCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
-      if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
+      if (["interactiveAudioTrigger", "interactiveComponentTrigger", "interactiveComponentPropertyAudio", "interactivePropertyMapAudio", "interactiveTemplateConfigAudio", "interactiveTemplateActionAudio", "interactiveEmbeddedActionAudio"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
       if (contextKind === "dialogLifecycle") tags.add("dialogLifecycle");
       if (["audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent"].includes(contextKind)) tags.add("responsiveVoice");
+      if (contextKind === "abilityVoiceTriggerAction") tags.add("abilityVoiceTrigger");
       if (["voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent"].includes(contextKind)) tags.add("voiceEventRoute");
       if (["uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent"].includes(contextKind)) tags.add("typedUiEvent");
       if (contextKind === "snsVoiceMessageEvent") tags.add("snsVoice");
@@ -862,6 +866,16 @@
       ...asArray(taxonomy.relationTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
         context.kind, context.ownerId, context.groupId, context.storyKey, context.table, context.path,
+        context.consumerType, context.consumerMethod, context.playbackCall, context.triggerRole,
+        context.selectorType, context.selectorMethod, context.selectorMethodVa, context.selectorLoadVa, context.selectorCallVa,
+        context.selectorField, context.selectorFieldOffset, context.additionalConsumerMethod,
+        context.additionalMethodVa, context.additionalSelectorLoadVa, context.additionalSelectorCallVa, context.additionalPlaybackCallVa,
+        context.methodVa, context.literalLoadVa, context.playbackCallVa, context.targetBinding,
+        context.playbackParameter, context.literalArgumentRegister,
+        context.literalArgumentInstruction, context.branchCondition,
+        context.playbackHashCall, context.playbackHashCallVa, context.playbackHashInvocationVa,
+        context.playbackSink, context.playbackSinkVa, context.playbackSinkInvocationVa, context.playbackInvocationVa,
+        context.configKind, context.configId, context.ownerLinkStatus,
         context.semanticRole, context.confidence, context.animationOwnershipScope, context.possibleMediaScope,
         context.modelId, context.subTemplateId, context.triggerStateId, context.triggerStateName,
         context.triggerCustomState, context.ownerKind, context.stateDirection, context.audioStateMask, context.description,
@@ -870,7 +884,12 @@
         context.gameObjectName, ...asArray(context.hierarchyPath), context.serializedFile,
         context.objectIndexSource, context.rawJsonSource, context.sourceAssetFile,
         ...Object.entries(context.serializedPlaybackControls || {}).flat(),
-        context.componentIndex, context.sourceOffset, context.sourceFingerprint, ...asArray(context.sourcePaths),
+        context.componentIndex, context.componentType, context.componentTag, context.sourceOffset,
+        context.propertyMapOffset, context.audioPropertyKey, context.audioAction, context.audioActionRole,
+        context.audioSourceField, context.actionMapRole, context.actionLocalId, context.actionUid,
+        context.actionUnionTag, context.actionMapOffset, context.actionRecordOffset, context.actionPayloadOffset,
+        context.targetBindingKind, context.targetParamSource,
+        context.sourceFingerprint, ...asArray(context.sourcePaths),
         context.authoredEventId, context.spawnerConfigId, context.enemyLibraryIndex, context.enemyId,
         context.bornTemplateId, context.enemyLevel, context.spawnerEnemyKey, context.preWarnTime,
         context.preWarnEffectKey, ...asArray(context.preWarnEffectFixedRotation), ...asArray(context.bornBuffIds),
@@ -2434,6 +2453,16 @@
       if (context?.runtimeSelectionStatus) parts.push(humanize(context.runtimeSelectionStatus));
       if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
     }
+    if (kind === "abilityVoiceTriggerAction") {
+      if (context?.configId) parts.push(`SkillData ${context.configId}`);
+      if (context?.triggerKey) parts.push(`trigger ${context.triggerKey}`);
+      if (context?.speakerType !== undefined) parts.push(`speaker type ${context.speakerType}`);
+      if (context?.canInterruptTimeMs !== undefined) parts.push(`interrupt ${context.canInterruptTimeMs} ms`);
+      if (context?.actionUnionTag) parts.push(`union ${context.actionUnionTag} / ${context.serializedMemberCount ?? "?"} members`);
+      if (context?.runtimeRoute) parts.push(context.runtimeRoute);
+      if (context?.runtimeActivationStatus) parts.push(humanize(context.runtimeActivationStatus));
+      if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
+    }
     if (["voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent"].includes(kind)) {
       if (context?.field) parts.push(`field ${context.field}`);
       if (context?.routeKind) parts.push(humanize(context.routeKind));
@@ -2469,6 +2498,12 @@
       if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
     }
     if (context?.semanticRole) parts.push(humanize(context.semanticRole));
+    if (kind === "gameplayConfigAudioReference") {
+      if (context?.configKind || context?.configId) parts.push(`${context.configKind || "gameplay config"} ${context.configId || ""}`.trim());
+      if (context?.triggerBindingStatus) parts.push(humanize(context.triggerBindingStatus));
+      if (context?.ownerLinkStatus) parts.push(`gameplay owner ${humanize(context.ownerLinkStatus)}`);
+      parts.push("config member, activation, Event posting, and runtime owner unobserved");
+    }
     if (context?.confidence) parts.push(context.confidence);
     if (context?.modelId) parts.push(`model ${context.modelId}`);
     if (context?.subTemplateId) parts.push(`sub-template ${context.subTemplateId}`);
@@ -2558,6 +2593,28 @@
     if (context?.definitionOwnerId) parts.push(`physics definition ${context.definitionOwnerId}`);
     if (context?.templatePath) parts.push(context.templatePath);
     if (context?.interactiveTemplatePath) parts.push(`InteractiveData ${context.interactiveTemplatePath}`);
+    if (context?.componentType) parts.push(`${context.componentType}${context.componentTag ? ` (${context.componentTag})` : ""}`);
+    if (context?.componentResolutionStatus) parts.push(humanize(context.componentResolutionStatus));
+    if (context?.audioPropertyKey) parts.push(`audio property ${context.audioPropertyKey}`);
+    if (context?.propertyMapOffset) parts.push(`property map offset ${context.propertyMapOffset}`);
+    if (context?.audioAction) parts.push(`${context.audioAction} / ${context.audioActionRole || "audio"} / ${context.audioSourceField || "event field"}`);
+    if (context?.actionMapRole) parts.push(`${context.actionMapRole} / local ${context.actionLocalId ?? "?"} / UID ${context.actionUid || "?"}`);
+    if (context?.actionUnionTag) parts.push(`action union ${context.actionUnionTag} / mc${context.actionSerializedMemberCount ?? "?"}`);
+    if (context?.actionMapOffset) parts.push(`embedded action map ${context.actionMapOffset}`);
+    if (context?.actionRecordOffset) parts.push(`action record ${context.actionRecordOffset} / payload ${context.actionPayloadOffset || "?"}`);
+    if (context?.stopOnRelease !== undefined) parts.push(`stop on release ${String(Boolean(context.stopOnRelease))}`);
+    if (context?.targetBindingKind) parts.push(`target ${context.targetBindingKind} / source ${context.targetParamSource ?? "?"}`);
+    if (context?.consumerType || context?.consumerMethod) parts.push(`${context.consumerType || "managed consumer"}.${context.consumerMethod || "?"}`);
+    if (context?.selectorType || context?.selectorMethod) parts.push(`selector ${context.selectorType || "managed selector"}.${context.selectorMethod || "?"} ${context.selectorMethodVa || "?"} / load ${context.selectorLoadVa || "?"} / call ${context.selectorCallVa || "?"}`);
+    if (context?.selectorField) parts.push(`selector field ${context.selectorField} ${context.selectorFieldOffset || "?"}`);
+    if (context?.additionalConsumerMethod) parts.push(`additional path ${context.additionalConsumerMethod} ${context.additionalMethodVa || "?"} / load ${context.additionalSelectorLoadVa || "?"} / selector call ${context.additionalSelectorCallVa || "?"} / playback call ${context.additionalPlaybackCallVa || "?"}`);
+    if (context?.playbackCall) parts.push(`${context.playbackCall} / ${humanize(context.triggerRole || "managed playback")}`);
+    if (context?.playbackHashCall || context?.playbackSink) parts.push(`${context.playbackHashCall || "hash"} ${context.playbackHashCallVa || "?"} -> ${context.playbackSink || "playback sink"} ${context.playbackSinkVa || "?"}`);
+    if (context?.playbackInvocationVa || context?.playbackHashInvocationVa || context?.playbackSinkInvocationVa) parts.push(`invocation ${context.playbackInvocationVa || "?"} / hash ${context.playbackHashInvocationVa || "?"} / sink ${context.playbackSinkInvocationVa || "?"}`);
+    if (context?.playbackParameter || context?.literalArgumentRegister) parts.push(`${context.literalArgumentInstruction || "load"} literal -> ${context.playbackParameter || "playback argument"} (${context.literalArgumentRegister || "register unknown"})`);
+    if (context?.branchCondition) parts.push(`branch ${context.branchCondition}`);
+    if (context?.methodVa || context?.playbackCallVa) parts.push(`method ${context.methodVa || "?"} / literal ${context.literalLoadVa || "?"} / call ${context.playbackCallVa || "?"}`);
+    if (context?.targetBinding) parts.push(`target ${humanize(context.targetBinding)}`);
     const physicsConsumers = asArray(context?.consumerIds).filter(Boolean);
     if (physicsConsumers.length) parts.push(`configured consumers ${physicsConsumers.join(", ")}`);
     if (context?.componentTagHex || context?.componentTag !== undefined) {

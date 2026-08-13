@@ -10,10 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(ROOT / "scripts"))
-if str(ROOT / "scripts" / "story_recovery") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts" / "story_recovery"))
-
-import build_envtalk_attachment as eta  # noqa: E402
+from story_builder import envtalk_attachment as eta  # noqa: E402
 
 
 def npc_proxy_tracking(proxy_id):

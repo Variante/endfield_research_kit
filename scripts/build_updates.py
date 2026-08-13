@@ -249,14 +249,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--baseline-only",
-        action="store_true",
-        help=(
-            "Suppress reported changes and skip exported media asset diffing. "
-            "Use for initial WebUI data builds."
-        ),
-    )
-    parser.add_argument(
         "--no-history",
         action="store_true",
         help="Do not write timestamped raw scanner history for this comparison.",
@@ -279,34 +271,6 @@ def tracker_has_baseline(state_dir: Path) -> bool:
             return bool(count and int(count[0]) > 0)
     except sqlite3.Error:
         return False
-
-
-def empty_tracker_payload() -> dict[str, Any]:
-    now = dt.datetime.now(dt.timezone.utc).astimezone()
-    return {
-        "started_at": now.isoformat(),
-        "finished_at": now.isoformat(),
-        "duration_seconds": 0.0,
-        "scanned_files": 0,
-        "changes": {
-            "added": 0,
-            "modified": 0,
-            "deleted": 0,
-            "metadata_only_updates": 0,
-            "reused_metadata_matches": 0,
-        },
-        "breakdown": {
-            "added_by_extension": {},
-            "modified_by_extension": {},
-            "deleted_by_extension": {},
-        },
-        "samples": {
-            "added": [],
-            "modified": [],
-            "deleted": [],
-            "largest_line_changes": [],
-        },
-    }
 
 
 def export_baseline_state_dir(state_dir: Path) -> Path:
@@ -1117,7 +1081,6 @@ def find_latest_changed_history(
             raw_payload,
             game_root=game_root,
             baseline_initialized=False,
-            baseline_only=False,
             sample_limit=sample_limit,
             scan_scope=scan_scope,
             include_relative_paths=include_relative_paths,
@@ -1193,7 +1156,6 @@ def restore_zero_change_feed(
         raw_payload,
         game_root=game_root,
         baseline_initialized=False,
-        baseline_only=False,
         sample_limit=sample_limit,
         scan_scope=scan_scope,
         include_relative_paths=include_relative_paths,
@@ -1229,7 +1191,6 @@ def build_update_payload(
     game_root: Path,
     previous_game_root: Path | None = None,
     baseline_initialized: bool,
-    baseline_only: bool,
     sample_limit: int,
     scan_scope: str,
     include_relative_paths: list[str],
@@ -1237,7 +1198,7 @@ def build_update_payload(
     changes = raw_payload.get("changes") or {}
     samples = raw_payload.get("samples") or {}
     now = dt.datetime.now(dt.timezone.utc).astimezone()
-    suppress_changes = baseline_initialized or baseline_only
+    suppress_changes = baseline_initialized
 
     entry_domain = "text" if scan_scope == "webui_text_json" else "game"
     entries, ignored_counts = filtered_game_entries(
@@ -1291,11 +1252,6 @@ def build_update_payload(
         },
         "ignoredVolatilePathPrefixes": list(IGNORED_GAME_PATH_PREFIXES),
         "suppressedInitialAdded": int(changes.get("added") or 0) if baseline_initialized else 0,
-        "suppressedBaselineOnly": {
-            "added": int(changes.get("added") or 0) if baseline_only else 0,
-            "modified": int(changes.get("modified") or 0) if baseline_only else 0,
-            "deleted": int(changes.get("deleted") or 0) if baseline_only else 0,
-        },
     }
     if previous_game_root is not None:
         tracker_payload.update(
@@ -1314,7 +1270,6 @@ def build_update_payload(
         "source": source,
         "sourceRoot": str(game_root),
         "baselineInitialized": baseline_initialized,
-        "baselineOnly": baseline_only,
         "gameTotals": game_totals,
         "textTotals": game_totals if entry_domain == "text" else zero_totals(),
         "totals": totals,
@@ -1638,47 +1593,36 @@ def main(argv: list[str] | None = None) -> int:
     include_relative_paths = [] if args.full_export_scan else list(WEBUI_TEXT_JSON_RELATIVE_PATHS)
     prune_requested = bool(args.prune_previous_export_untracked or args.dry_run_prune_previous_export_untracked)
     if prune_requested:
-        if args.baseline_only:
-            raise SystemExit("--prune-previous-export-untracked is not valid with --baseline-only.")
         assert_safe_previous_export_prune(previous_export_root, export_root)
-    if args.baseline_only:
-        report_json.unlink(missing_ok=True)
-        report_md.unlink(missing_ok=True)
-        raw_payload = empty_tracker_payload()
-    else:
-        if not previous_export_root.exists():
-            raise SystemExit(
-                f"Previous export root does not exist: {previous_export_root}. "
-                "Pass --previous-export-root or run with --baseline-only for an empty initial feed."
-            )
-        if not previous_export_root.is_dir():
-            raise SystemExit(f"Previous export root is not a directory: {previous_export_root}")
-        compare_state_dir, previous_baseline_rebuilt = prepare_export_diff_tracker_state(
-            previous_export_root=previous_export_root,
-            state_dir=state_dir,
-            sample_limit=args.sample_limit,
-            top_line_limit=args.top_line_limit,
-            refresh_previous_baseline=bool(args.refresh_previous_export_baseline),
-            include_relative_paths=include_relative_paths,
-        )
-        run_tracker(
-            game_root=export_root,
-            state_dir=compare_state_dir,
-            report_json=report_json,
-            report_md=report_md,
-            sample_limit=args.sample_limit,
-            top_line_limit=args.top_line_limit,
-            write_history=bool(not args.no_history),
-            include_relative_paths=include_relative_paths,
-        )
-        raw_payload = json.loads(report_json.read_text(encoding="utf-8"))
+    if not previous_export_root.exists():
+        raise SystemExit(f"Previous export root does not exist: {previous_export_root}.")
+    if not previous_export_root.is_dir():
+        raise SystemExit(f"Previous export root is not a directory: {previous_export_root}")
+    compare_state_dir, previous_baseline_rebuilt = prepare_export_diff_tracker_state(
+        previous_export_root=previous_export_root,
+        state_dir=state_dir,
+        sample_limit=args.sample_limit,
+        top_line_limit=args.top_line_limit,
+        refresh_previous_baseline=bool(args.refresh_previous_export_baseline),
+        include_relative_paths=include_relative_paths,
+    )
+    run_tracker(
+        game_root=export_root,
+        state_dir=compare_state_dir,
+        report_json=report_json,
+        report_md=report_md,
+        sample_limit=args.sample_limit,
+        top_line_limit=args.top_line_limit,
+        write_history=bool(not args.no_history),
+        include_relative_paths=include_relative_paths,
+    )
+    raw_payload = json.loads(report_json.read_text(encoding="utf-8"))
 
     webui_payload = build_update_payload(
         raw_payload,
         game_root=export_root,
         previous_game_root=previous_export_root,
-        baseline_initialized=bool(args.baseline_only),
-        baseline_only=args.baseline_only,
+        baseline_initialized=False,
         sample_limit=args.sample_limit,
         scan_scope=scan_scope,
         include_relative_paths=include_relative_paths,
@@ -1689,7 +1633,7 @@ def main(argv: list[str] | None = None) -> int:
         previous_export_root=previous_export_root,
         state_dir=state_dir,
         sample_limit=args.sample_limit,
-        skip_asset_updates=bool(args.skip_asset_updates or args.baseline_only),
+        skip_asset_updates=bool(args.skip_asset_updates),
         hash_asset_updates=bool(args.hash_asset_updates),
         skip_audio_updates=bool(args.skip_audio_updates),
     )
@@ -1708,25 +1652,14 @@ def main(argv: list[str] | None = None) -> int:
     write_update_feed_history(webui_payload, state_dir)
 
     totals = webui_payload["gameTotals"]
-    if webui_payload["baselineInitialized"]:
-        print(f"[build_updates] Baseline-only feed from current export {export_root}")
-    elif webui_payload.get("baselineOnly"):
-        suppressed = (webui_payload.get("tracker") or {}).get("suppressedBaselineOnly") or {}
-        print(
-            "[build_updates] Baseline-only feed:"
-            f" suppressed added={int(suppressed.get('added') or 0)},"
-            f" modified={int(suppressed.get('modified') or 0)},"
-            f" deleted={int(suppressed.get('deleted') or 0)}"
-        )
-    else:
-        label = "Full export diff" if args.full_export_scan else "WebUI text JSON diff"
-        scope_note = "" if args.full_export_scan else f"; scan_roots={len(include_relative_paths)}"
-        print(
-            f"[build_updates] {label}:"
-            f" previous={previous_export_root}, current={export_root};"
-            f" added={totals['added']}, modified={totals['modified']}, deleted={totals['deleted']}"
-            f"{scope_note}"
-        )
+    label = "Full export diff" if args.full_export_scan else "WebUI text JSON diff"
+    scope_note = "" if args.full_export_scan else f"; scan_roots={len(include_relative_paths)}"
+    print(
+        f"[build_updates] {label}:"
+        f" previous={previous_export_root}, current={export_root};"
+        f" added={totals['added']}, modified={totals['modified']}, deleted={totals['deleted']}"
+        f"{scope_note}"
+    )
     if previous_baseline_rebuilt:
         print(f"[build_updates] Cached previous-export baseline rebuilt from {previous_export_root}")
     asset_totals = webui_payload.get("assetTotals") or {}

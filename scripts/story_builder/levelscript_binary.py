@@ -4,7 +4,7 @@ import re
 import struct
 import math
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -2487,6 +2487,188 @@ def decode_levelscript_action_map_details(
             "sampleRecords": sample_rows,
         }
     )
+
+
+def decode_embedded_action_serialized_map_audio(
+    data: bytes,
+    offset: int,
+) -> dict[str, Any]:
+    """Decode exact audio actions from an embedded ``ActionSerializedMap``.
+
+    InteractiveTemplateData stores ``dataMap`` as the three-member
+    ActionSerializedMap object directly, without LevelScriptData's outer
+    object marker.  Adapt that exact boundary to the maintained LevelScript
+    decoder, then accept only records proven to be physical ``actionList``
+    members whose typed audio payload consumes the complete record body.
+    """
+
+    if offset < 0 or offset >= len(data) or data[offset] != 3:
+        return {}
+    adapted = b"\x00\x02" + data[offset:]
+    tagged_strings = _extract_levelscript_tagged_ascii_strings(adapted)
+    plain_strings = _extract_levelscript_plain_ascii_strings(
+        adapted,
+        tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
+    )
+    records = extract_levelscript_uid_records(
+        adapted,
+        tagged_strings,
+        plain_strings,
+    )
+    action_map, memberships = levelscript_action_map_membership(adapted, records)
+    lists = action_map.get("serializedLists") or []
+    list_rows = {
+        str(row.get("name") or ""): row
+        for row in lists
+        if isinstance(row, dict)
+    }
+    action_list = list_rows.get("actionList") or {}
+    if action_map.get("status") != "present" or action_list.get("status") != "present":
+        return {}
+    action_count = action_list.get("count")
+    if not isinstance(action_count, int) or action_count < 0:
+        return {}
+
+    audio_actions: list[dict[str, Any]] = []
+    for index, record in enumerate(records):
+        record_start = _record_start(record)
+        role = str(memberships.get(record_start) or "")
+        if not role.startswith("actionList#"):
+            continue
+        next_start = (
+            _record_start(records[index + 1])
+            if index + 1 < len(records)
+            else len(adapted)
+        )
+        detail = decode_levelscript_record_payload(
+            adapted,
+            record,
+            next_start=next_start,
+            action_map_role=role,
+        )
+        audio_action = detail.get("audioAction")
+        if not isinstance(audio_action, dict):
+            continue
+        consumed_bytes = audio_action.get("consumedBytes")
+        payload_length = detail.get("payloadLength")
+        exact_payload = consumed_bytes == payload_length
+        if not exact_payload:
+            trailing_counts = audio_action.get("trailingActionMapFramingU32s") or []
+            next_role = str(memberships.get(next_start) or "")
+            getter_count = (list_rows.get("getterList") or {}).get("count")
+            header_count = (list_rows.get("headerList") or {}).get("count")
+            exact_payload = (
+                isinstance(consumed_bytes, int)
+                and isinstance(payload_length, int)
+                and (
+                    (
+                        payload_length - consumed_bytes == 4
+                        and next_role.startswith("getterList#")
+                        and trailing_counts == [getter_count]
+                    )
+                    or (
+                        payload_length - consumed_bytes == 8
+                        and next_role.startswith("headerList#")
+                        and trailing_counts == [0, header_count]
+                    )
+                )
+            )
+        if not exact_payload:
+            continue
+        event_bindings = [
+            dict(row)
+            for row in audio_action.get("eventBindings") or []
+            if isinstance(row, dict) and str(row.get("eventName") or "").strip()
+        ]
+        if not event_bindings:
+            continue
+        audio_actions.append(_drop_empty({
+            "actionMapRole": role,
+            "recordOffset": _offset_hex(offset + record_start - 2),
+            "payloadOffset": _offset_hex(
+                offset + int(record.get("payloadStart") or 0) - 2
+            ),
+            "unionTag": f"0x{int(record.get('code') or 0):04x}",
+            "serializedMemberCount": record.get("kind"),
+            "localId": record.get("localId"),
+            "uid": record.get("uid"),
+            "nextId": record.get("nextId"),
+            "action": audio_action.get("action"),
+            "fields": audio_action.get("fields") or {},
+            "eventBindings": event_bindings,
+            "payloadLength": detail.get("payloadLength"),
+            "payloadShape": audio_action.get("payloadShape"),
+            "nativeMappingId": audio_action.get("nativeMappingId"),
+        }))
+
+    return _drop_empty({
+        "offset": _offset_hex(offset),
+        "serializedMemberCount": 3,
+        "serializedListOrder": list(ACTION_SERIALIZED_MAP_LIST_ORDER),
+        "serializedListOrderEvidence": ACTION_SERIALIZED_MAP_ORDER_EVIDENCE,
+        "listCounts": {
+            name: row.get("count")
+            for name in ACTION_SERIALIZED_MAP_LIST_ORDER
+            for row in [list_rows.get(name) or {}]
+            if isinstance(row.get("count"), int)
+        },
+        "decodedRecordCount": len(memberships),
+        "audioActions": audio_actions,
+        "evidence": (
+            "exact embedded ActionSerializedMap boundary; physical actionList "
+            "membership; complete current-build typed audio-action payload"
+        ),
+    })
+
+
+def find_embedded_action_serialized_map_audio(
+    data: bytes,
+    *,
+    start_offset: int = 0,
+    max_action_count: int = 10_000,
+) -> list[dict[str, Any]]:
+    """Find uniquely claimed exact audio actions in embedded action maps.
+
+    This is a structural scan, not a string scan: a candidate must begin with
+    the three-member ActionSerializedMap header, expose a bounded action-list
+    count, produce physical list membership, and consume a complete typed
+    audio-action payload.  If two candidate map boundaries claim the same
+    physical action record, the record is rejected as ambiguous.
+    """
+
+    claims: dict[tuple[str, int | None, str], list[dict[str, Any]]] = defaultdict(list)
+    cursor = max(0, start_offset)
+    while cursor + 5 <= len(data):
+        candidate = data.find(b"\x03", cursor)
+        if candidate < 0 or candidate + 5 > len(data):
+            break
+        cursor = candidate + 1
+        action_count = _u32(data, candidate + 1)
+        if (
+            not isinstance(action_count, int)
+            or action_count > max_action_count
+        ):
+            continue
+        decoded = decode_embedded_action_serialized_map_audio(data, candidate)
+        for action in decoded.get("audioActions") or []:
+            if not isinstance(action, dict):
+                continue
+            record_offset = str(action.get("recordOffset") or "")
+            local_id = action.get("localId") if isinstance(action.get("localId"), int) else None
+            uid = str(action.get("uid") or "")
+            if not record_offset or not uid:
+                continue
+            claims[(record_offset, local_id, uid)].append({
+                "actionMapOffset": _offset_hex(candidate),
+                "actionMapListCounts": decoded.get("listCounts") or {},
+                **action,
+            })
+    rows: list[dict[str, Any]] = []
+    for key in sorted(claims, key=lambda item: int(item[0], 16)):
+        candidates = claims[key]
+        if len(candidates) == 1:
+            rows.append(candidates[0])
+    return rows
 
 
 def _payload_sentinel_size(data: bytes, offset: int) -> int:

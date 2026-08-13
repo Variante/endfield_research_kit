@@ -9,12 +9,10 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_ROOT = ROOT / "scripts"
-RECOVERY_ROOT = SCRIPTS_ROOT / "story_recovery"
-for path in (SCRIPTS_ROOT, RECOVERY_ROOT):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
 
-import build_animestudio_story_guide_consumer_audit as audit  # noqa: E402
+from story_builder import animestudio_story_guide as audit  # noqa: E402
 from common import guide_runtime_non_mission_content_keys  # noqa: E402
 
 

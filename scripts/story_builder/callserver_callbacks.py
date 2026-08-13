@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Audit every serialized CallServer possible-callback header relation."""
+"""Parse and validate serialized CallServer callback relations.
+
+The stable parsing, validation, report, and command APIs live together here so
+production consumers do not depend on the recovery package.
+"""
 from __future__ import annotations
 
 import argparse
@@ -19,7 +23,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from common import sha256_file as shared_sha256_file  # noqa: E402
 
-for search_path in (ROOT / "scripts", ROOT / "scripts" / "story_recovery"):
+for search_path in (ROOT / "scripts",):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 

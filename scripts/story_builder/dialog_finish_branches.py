@@ -6,6 +6,10 @@ finish number written by an authored DialogTree finish node or Timeline option
 playable and consumed by a MissionRuntime ``CheckTalkOptionFinish`` objective.
 It never uses filenames, numeric suffixes, OCR, or manual order overrides as an
 ordering or branch signal.
+
+This module is the stable implementation consumed by Mission Pipeline.  It
+also owns the report command so production consumers do not depend on the
+recovery package.
 """
 from __future__ import annotations
 
