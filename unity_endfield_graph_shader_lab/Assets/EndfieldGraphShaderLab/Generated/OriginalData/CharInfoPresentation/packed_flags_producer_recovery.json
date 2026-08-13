@@ -2962,7 +2962,40 @@
             "function": "0x1813018c0",
             "body_range": "0x1813018c0..0x181301d70",
             "render_helper": "0x1813042d0",
+            "direct_call_count": 25,
             "observed": "Initializes the native render-state and graph allocations, then enters the large RenderGraph helper; the static body is orchestration/resource setup rather than a proven per-draw upload producer."
+          },
+          "render_core_followup": {
+            "status": "rendergraph-context-slots-separated-from-immediate-compute",
+            "source": "UnityPlayer.dll PData-scoped disassembly of 0x1813018c0, 0x1813042d0, 0x180fc51e0, and the shared graphics-context getter 0x180725dc0.",
+            "graphics_context_getter": "0x180725dc0",
+            "immediate_compute_slot_control": {
+              "slot": "+0xab8",
+              "positive_callers": [
+                "0x1805e7a10 (immediate compute helper)",
+                "0x1805e7c60 (immediate compute helper)"
+              ],
+              "argument_shape": "Forwards the resolved resource handle plus x/y/z dimensions and is reached only from the immediate ComputeShader dispatch helper family in the checked UnityPlayer body census."
+            },
+            "rendergraph_record_slots": {
+              "+0xcd0": {
+                "call_sites": ["0x180fc572e", "0x180fc58d0"],
+                "argument_shape": "The graph-state initializer calls this slot with dl=1 before per-record construction and dl=0 after the record loop."
+              },
+              "+0xea0": {
+                "call_sites": ["0x180fc575c", "0x180fc58b5"],
+                "argument_shape": "Receives the graph context, a small record descriptor, and the per-record callback payload while the initializer registers graph records."
+              },
+              "+0xeb0": {
+                "call_sites": ["0x180fc57bb"],
+                "argument_shape": "Called on the same graphics-context singleton only after the optional graph-state callback; no shader/kernel or dispatch dimensions are present."
+              }
+            },
+            "render_path_negative": {
+              "checked_bodies": ["0x1813018c0..0x181301d71", "0x1813042d0..0x18130640e", "0x180fc51e0..0x180fc58fb"],
+              "zero_direct_targets": ["0x1805e7e10", "0x1804c74d0", "0x1810d25c0", "0x1810d26bf", "0x1810f1890", "0x1810f17e0", "0x1810fe040", "0x1810fdf90"],
+              "indirect_context_result": "The HGRenderPath Render/RenderGraph bodies contain no +0xab8 immediate-compute call; their +0xcd0/+0xea0/+0xeb0 calls are bounded graph-record lifecycle slots, so the factory-record-to-UploadPerDrawParams kernel-7 edge remains unproven."
+            }
           },
           "render_helper_census": {
             "function": "0x1813042d0",
