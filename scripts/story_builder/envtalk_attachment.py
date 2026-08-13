@@ -49,7 +49,7 @@ from typing import Any, Iterator
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
+if __package__ == "story_builder":
     from common import (
         md_escape,
         read_json,
@@ -58,7 +58,7 @@ try:
         write_report_json,
         write_text_if_changed,
     )
-except ModuleNotFoundError:
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         md_escape,
         read_json,
@@ -67,6 +67,8 @@ except ModuleNotFoundError:
         write_report_json,
         write_text_if_changed,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.envtalk_attachment")
 from .mission_assets import select_complete_mission_runtime_root
 
 

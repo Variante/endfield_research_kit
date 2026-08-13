@@ -49,7 +49,7 @@ from collections import Counter, defaultdict, deque
 from difflib import SequenceMatcher
 from pathlib import Path
 
-try:
+if __package__ == "story_builder":
     from common import (
         ASSET_DIR,
         EXPORT_ROOT,
@@ -85,7 +85,7 @@ try:
         collect_scene_order_gap_rows_from_payloads as shared_collect_scene_order_gap_rows_from_payloads,
         load_dialog_id_registry as shared_load_dialog_id_registry,
     )
-except ModuleNotFoundError:
+elif __package__ == "scripts.story_builder":
     from scripts.common import (
         ASSET_DIR,
         EXPORT_ROOT,
@@ -121,6 +121,8 @@ except ModuleNotFoundError:
         collect_scene_order_gap_rows_from_payloads as shared_collect_scene_order_gap_rows_from_payloads,
         load_dialog_id_registry as shared_load_dialog_id_registry,
     )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.context")
 
 REPORTS_DIR = STORY_REPORTS_DIR
 

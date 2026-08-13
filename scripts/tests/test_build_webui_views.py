@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ast
+import inspect
 import json
 import tempfile
 import unittest
@@ -29,6 +31,22 @@ def commands_for(
 
 
 class WebuiViewPlanTests(unittest.TestCase):
+    def test_gameplay_base_builder_uses_scripts_package_identity(self) -> None:
+        from scripts import common
+        from scripts.gameplay_builder import base_data
+
+        self.assertIs(base_data.write_json, common.write_json)
+        tree = ast.parse(inspect.getsource(base_data))
+        self.assertFalse(
+            any(
+                isinstance(node, ast.Attribute)
+                and node.attr == "path"
+                and isinstance(node.value, ast.Name)
+                and node.value.id == "sys"
+                for node in ast.walk(tree)
+            )
+        )
+
     def test_default_plan_keeps_graph_after_every_producer(self) -> None:
         args = build_webui_views.parse_args([])
         phases = build_webui_views.build_phases(args)
