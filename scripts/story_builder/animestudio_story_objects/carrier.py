@@ -16,21 +16,24 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import sys
 from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[3]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from animestudio_object_index import MergeError, validate_identity  # noqa: E402
-from common import md_escape, read_json  # noqa: E402
-from export_full_from_game import (  # noqa: E402
-    animestudio_object_index_dir,
-    load_animestudio_object_index_summary,
-)
+try:
+    from animestudio_object_index import MergeError, validate_identity
+    from common import md_escape, read_json
+    from export_full_from_game import (
+        animestudio_object_index_dir,
+        load_animestudio_object_index_summary,
+    )
+except ModuleNotFoundError:  # imported as ``scripts.story_builder``
+    from scripts.animestudio_object_index import MergeError, validate_identity
+    from scripts.common import md_escape, read_json
+    from scripts.export_full_from_game import (
+        animestudio_object_index_dir,
+        load_animestudio_object_index_summary,
+    )
 SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"

@@ -45,6 +45,14 @@ def python_command(
     return CommandSpec((sys.executable, str(ROOT / path), *args), environment)
 
 
+def python_module(
+    module: str,
+    *args: str,
+    environment: tuple[tuple[str, str], ...] = (),
+) -> CommandSpec:
+    return CommandSpec((sys.executable, "-m", module, *args), environment)
+
+
 def build_environment(args: argparse.Namespace) -> tuple[tuple[str, str], ...]:
     values = {}
     if args.export_root:
@@ -63,9 +71,10 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     mission = TaskSpec(
         "mission_pipeline",
         (
-            command(
-                "scripts/story_builder/protocol_registry.py",
+            python_module(
+                "scripts.story_builder.protocol_registry",
                 "--ensure-current",
+                environment=environment,
             ),
             command(
                 "scripts/build_mission_pipeline_data.py",

@@ -72,6 +72,11 @@ class WebuiViewPlanTests(unittest.TestCase):
         phases = build_webui_views.build_phases(args)
 
         self.assertEqual(task_names(phases), [["mission_pipeline"]])
+        protocol_command = commands_for(phases, "mission_pipeline")[0]
+        self.assertEqual(
+            protocol_command[1:3],
+            ("-m", "scripts.story_builder.protocol_registry"),
+        )
 
     def test_full_graph_omits_relevant_scope_filters(self) -> None:
         args = build_webui_views.parse_args(["--full-source-graph"])
