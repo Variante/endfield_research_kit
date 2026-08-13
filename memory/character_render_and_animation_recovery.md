@@ -926,6 +926,29 @@ NPC archetypes are imported as labeled source kits.
   `GpuSceneDirtyUpdateCS` `_UploadBuffer` source, so the staging-to-upload and
   channel-2/resource `+0xd0` edges remain fail-closed. Details are under
   `native_frame_update_post_step2_lifecycle_census` in the packed audit.
+  The adjacent managed RemoteFactory surface is now bounded separately:
+  `FrameUpdateEntitiesJobForward` (`GameAssembly 0x1875316ac`, metadata method
+  29077) checks IFix patch ID `0x7301` and, when unpatched, only stores its
+  boolean argument at `this+0x38`; `SetGarbageCollectDirty` (`0x18477d8e0`,
+  method 29078) does the same for ID `0x7302`, setting `this+0x50`. A full
+  GameAssembly E8 census finds no direct callers to either method. The current
+  persistent Gameplay.Beyond IFix payload has 18 targets and no RemoteFactory,
+  HGRenderPipeline, GpuScene, or PerDraw identity, so these are control-flag
+  wrappers rather than a static frame-update or `_UploadBuffer` producer. Their
+  dynamic IFix bodies remain runtime-only; do not credit them with the
+  0x8c-record staging, kernel-7 upload, or channel-2/resource `+0xd0` edge.
+  Details are under `remote_factory_frame_update_dynamic_boundary` in the
+  packed audit.
+  The owning `HGRenderPipeline.Render` entry (`GameAssembly 0x183455030`) is
+  also IFix-gated by ID `0x23d`; the current persistent table has no matching
+  target, so its static body is the relevant baseline. Its 361 direct calls
+  include `CommandBufferPool.Get`, `ExecuteCommandBuffer`, and `Release`, but
+  none directly calls ComputeBuffer/ComputeShader bind or dispatch, the named
+  `GpuSceneDirtyUpdateCS` kernel, factory FrameUpdate/staging, or
+  `_UploadBuffer`. This closes only the static direct-call branch: command
+  buffer subpass recording and the dynamic IFix/virtual route remain open and
+  cannot be used as proof of the kernel-7/channel-2 upload edge. Details are
+  under `hg_render_pipeline_render_boundary` in the packed audit.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
