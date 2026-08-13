@@ -2867,6 +2867,36 @@
           "additional_stage": "Both branches also record SetComputeTextureParam for the RenderGraph texture handle before the second shader sequence.",
           "boundary": "This closes the known RenderGraph GPUDriven culling producer and gives negative evidence against kernel 7 on this route. It does not identify a producer for GpuSceneDirtyUpdateCS.UploadPerDrawParams, nor connect channel 2/resource +0xd0 to _UploadBuffer or binding 33."
         },
+        "render_graph_cpp_bridge_followup": {
+          "status": "rendergraph-native-bridge-runtime-slot-open",
+          "source": "Current global-metadata.dat body-target catalog plus GameAssembly.dll x64 disassembly and internal-call resolver strings.",
+          "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+          "managed_bridge_methods": [
+            {
+              "method": "HGRenderPath_Create",
+              "metadata_method_index": 483565,
+              "wrapper": "0x183c648a0",
+              "resolver_name": "UnityEngine.HyperGryphEngineCode.HGRenderGraphCPP::HGRenderPath_Create(UnityEngine.HyperGryphEngineCode.HGRenderPathInternalCPP,UnityEngine.HyperGryphEngineCode.HGRenderPipelineRuntimeResourcesCPP*,UnityEngine.HyperGryphEngineCode.HGRenderPipelineDebugResourcesCPP*)",
+              "lazy_slot": "0x18f370620"
+            },
+            {
+              "method": "HGRenderPath_BeforeCulling",
+              "metadata_method_index": 483566,
+              "wrapper": "0x183e16180",
+              "resolver_name": "UnityEngine.HyperGryphEngineCode.HGRenderGraphCPP::HGRenderPath_BeforeCulling(System.Int64,UnityEngine.HyperGryphEngineCode.HGRenderPathBeforeCullingParamsCPP*,System.IntPtr,System.IntPtr,System.IntPtr)",
+              "lazy_slot": "0x18f370628"
+            },
+            {
+              "method": "HGRenderPath_Render",
+              "metadata_method_index": 483567,
+              "wrapper": "0x183df2de0",
+              "resolver_name": "UnityEngine.HyperGryphEngineCode.HGRenderGraphCPP::HGRenderPath_Render(System.Int64,UnityEngine.HyperGryphEngineCode.HGRenderPathParamsCPP*,UnityEngine.HyperGryphEngineCode.HGRenderPathBeforeCullingParamsCPP*,System.IntPtr,System.IntPtr,System.IntPtr)",
+              "lazy_slot": "0x18f370630"
+            }
+          ],
+          "wrapper_contract": "Each body tests a resolver-populated global slot, otherwise calls the generic internal-call resolver 0x180059fc0 with the exact fully-qualified name, caches the returned pointer, and tail-jumps through it. The on-disk slot bytes are not valid GameAssembly VAs before runtime initialization, so no native implementation body can be attributed from this static image.",
+          "boundary": "These are the likely native RenderGraph orchestration boundaries, but their runtime slot targets remain unresolved without a live initialized process or a recovered native registration snapshot. No static edge from these bridge wrappers proves factory 0x8c/0x100 staging, _UploadBuffer population, UploadPerDrawParams kernel 7, or channel-2/resource +0xd0 consumption; keep all three edges fail-closed."
+        },
         "shader_property_registry": {
           "initializer": "0x181217db0",
           "table_root": "0x1821ed7b0",
