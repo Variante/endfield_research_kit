@@ -8,6 +8,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.story_builder import level_bindings
+from scripts.story_builder.codecs.leveldata.radio_contexts import (
+    parse_airwall_groups as parse_leveldata_airwall_groups,
+    parse_function_area_radio_trigger as parse_level_function_area_radio_trigger_zone_entry,
+)
 from scripts.story_builder.level_bindings import (
     _find_exact_bytes_offsets,
     _leveldata_interactive_final_record_boundary,
@@ -25,10 +29,8 @@ from scripts.story_builder.level_bindings import (
     build_npc_proxy_segment_script_host_index,
     find_levelscript_brief_data_entries,
     parse_leveldata_levelscript_brief_dictionary,
-    parse_leveldata_airwall_groups,
     parse_leveldata_interactive_horn_dialog_records,
     parse_leveldata_interactive_narrative_records,
-    parse_level_function_area_radio_trigger_zone_entry,
     parse_level_interactive_narrative_mission_context,
     parse_levelscript_interactive_narrative_maps,
     parse_levelscript_brief_data_entry,
