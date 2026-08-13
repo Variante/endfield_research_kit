@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 
 def line_stem(line_id: str) -> str:
@@ -24,4 +25,15 @@ def timeline_stem_to_dialog_key(timeline: str) -> str:
     return f"dlg_{value}" if value else ""
 
 
-__all__ = ["line_stem", "timeline_stem_to_dialog_key"]
+def string_list(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    out: list[str] = []
+    for value in values:
+        text = str(value if value is not None else "").strip()
+        if text and text not in out:
+            out.append(text)
+    return out
+
+
+__all__ = ["line_stem", "string_list", "timeline_stem_to_dialog_key"]

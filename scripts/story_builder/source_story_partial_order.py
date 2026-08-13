@@ -67,6 +67,7 @@ from .spawner_binary import (
     SpawnerWaveDecodeError,
     decode_spawner_wave_map,
 )
+from .story_keys import string_list as _string_list
 from .dialog_tree_control_flow import (
     ContractError as DialogTreeControlContractError,
     OPEN_UI_FAMILY,
@@ -995,17 +996,6 @@ def _scene_graph_option_branches(direct_edges: list[dict[str, Any]]) -> list[dic
         group["arms"] = arms
         group["isFork"] = len(arms) > 1
         out.append(group)
-    return out
-
-
-def _string_list(values: Any) -> list[str]:
-    if not isinstance(values, list):
-        return []
-    out: list[str] = []
-    for value in values:
-        text = safe_key(value)
-        if text and text not in out:
-            out.append(text)
     return out
 
 

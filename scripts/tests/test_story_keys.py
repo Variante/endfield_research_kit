@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.story_builder.story_keys import line_stem, timeline_stem_to_dialog_key
+from scripts.story_builder.story_keys import (
+    line_stem,
+    string_list,
+    timeline_stem_to_dialog_key,
+)
 
 
 class StoryKeyTests(unittest.TestCase):
@@ -18,6 +22,10 @@ class StoryKeyTests(unittest.TestCase):
             "dlg_e1m1_1",
         )
         self.assertEqual(timeline_stem_to_dialog_key(""), "")
+
+    def test_string_list_normalizes_and_deduplicates(self) -> None:
+        self.assertEqual(string_list([" A ", "A", None, 2, ""]), ["A", "2"])
+        self.assertEqual(string_list("A"), [])
 
 
 if __name__ == "__main__":

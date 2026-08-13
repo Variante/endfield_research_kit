@@ -16,6 +16,7 @@ from .foundation import (
     sha256_file,
 )
 from ..mission_recovery import natural_key
+from ..story_keys import string_list as _string_list
 from ..mission_assets import (
     mission_runtime_source_summary,
     select_complete_mission_runtime_root,
@@ -597,16 +598,6 @@ def _generic_mission_npc_proxy_tracking_contexts(
             "graphEffect": "none",
         })
     return contexts, failures
-
-def _string_list(values: Any) -> list[str]:
-    if not isinstance(values, list):
-        return []
-    out: list[str] = []
-    for value in values:
-        text = safe_key(value)
-        if text and text not in out:
-            out.append(text)
-    return out
 
 def _sha256_file(path: Path) -> str:
     return sha256_file(path).upper()
