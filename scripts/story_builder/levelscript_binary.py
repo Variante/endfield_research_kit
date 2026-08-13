@@ -12,6 +12,7 @@ from .codecs.levelscript import fmv as levelscript_fmv
 from .codecs.levelscript import manual_control as levelscript_manual_control
 from .codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
+from .codecs.levelscript import raise_custom_script_event as levelscript_custom_event
 from .codecs.levelscript import switch_actions as levelscript_switch_actions
 
 if __package__ == "story_builder":
@@ -5975,90 +5976,6 @@ def _decode_list_add_value_entity_ptr(payload: bytes) -> dict[str, Any]:
     }
 
 
-def _decode_raise_custom_script_event(
-    payload: bytes,
-    texts: list[str],
-) -> dict[str, Any]:
-    """Decode the exact current-build ``RaiseCustomScriptEvent`` payload.
-
-    GameAssembly and MemoryPack metadata establish the field order as
-    ``eventArgsPtr``, ``eventKey``, and ``receiver``.  The current serialized
-    receiver is a four-member ``Param<LevelScriptPtr>`` whose constant storage
-    carries an explicit script id, or whose ``ParamSource`` value 1002 denotes
-    the currently executing LevelScript.  Fail closed for every other shape so
-    this diagnostic can never turn an arbitrary string into a script route.
-    """
-    event_key_offset = 18
-    param_tail_size = 12
-    receiver_size = 29
-    minimum_size = event_key_offset + 5 + param_tail_size + receiver_size
-    if len(payload) < minimum_size or payload[event_key_offset] != 0x04:
-        return {}
-    event_key_size = struct.unpack_from("<I", payload, event_key_offset + 1)[0]
-    if not 0 < event_key_size <= 512:
-        return {}
-    event_key_start = event_key_offset + 5
-    event_key_end = event_key_start + event_key_size
-    receiver_start = event_key_end + param_tail_size
-    if receiver_start + receiver_size > len(payload):
-        return {}
-    try:
-        event_key = payload[event_key_start:event_key_end].decode("utf-8")
-    except UnicodeDecodeError:
-        return {}
-    if (
-        not event_key
-        or event_key.startswith("$")
-        or event_key not in texts
-        or any(ord(char) < 0x20 or ord(char) == 0x7F for char in event_key)
-    ):
-        return {}
-    receiver = payload[receiver_start : receiver_start + receiver_size]
-    if receiver[0] != 0x04 or receiver[1] not in (0, 1):
-        return {}
-    has_const_value = bool(receiver[1])
-    const_script_id = struct.unpack_from("<Q", receiver, 2)[0]
-    id_ref = struct.unpack_from("<i", receiver, 17)[0]
-    param_source = struct.unpack_from("<i", receiver, 21)[0]
-    path_length = struct.unpack_from("<i", receiver, 25)[0]
-    receiver_mode = "dynamic_or_unresolved"
-    target_script_id: int | None = None
-    if (
-        not has_const_value
-        and const_script_id == 0
-        and id_ref == -1
-        and param_source == 1002
-        and path_length == -1
-    ):
-        receiver_mode = "current_script"
-    elif (
-        has_const_value
-        and _is_plausible_levelscript_id(const_script_id)
-        and id_ref == -1
-        and param_source == 0
-        and path_length == -1
-    ):
-        receiver_mode = "constant_script"
-        target_script_id = const_script_id
-    return _drop_empty(
-        {
-            "action": "RaiseCustomScriptEvent",
-            "eventKey": event_key,
-            "receiverMode": receiver_mode,
-            "targetScriptId": target_script_id,
-            "receiver": {
-                "hasConstValue": has_const_value,
-                "constScriptId": const_script_id,
-                "idRef": id_ref,
-                "paramSource": param_source,
-                "pathLength": path_length,
-                "payloadOffset": _offset_hex(receiver_start),
-            },
-            "payloadShape": "raise-custom-script-event-exact-current-build",
-        }
-    )
-
-
 def _record_payload_window(
     data: bytes,
     record: dict[str, Any] | None,
@@ -7104,10 +7021,15 @@ def decode_levelscript_record_payload(
         list_add = _decode_list_add_value_entity_ptr(payload)
         if list_add:
             out["listAddValueEntityPtr"] = list_add
-    if semantic_key == (0x0380, 0x0B):
-        raise_custom_script_event = _decode_raise_custom_script_event(payload, texts)
-        if raise_custom_script_event:
-            out["raiseCustomScriptEvent"] = raise_custom_script_event
+    raise_custom_script_event = (
+        levelscript_custom_event.decode_raise_custom_script_event_action(
+            payload,
+            semantic_key,
+            texts,
+        )
+    )
+    if raise_custom_script_event:
+        out["raiseCustomScriptEvent"] = raise_custom_script_event
     if semantic_key == (0x0028, 0x0A):
         entity_compare = _decode_entity_compare_getter(payload, property_outputs)
         if entity_compare:
