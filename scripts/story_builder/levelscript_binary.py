@@ -3398,81 +3398,6 @@ def _decode_scripted_char_patrol_fields(payload: bytes) -> dict[str, Any]:
     }
 
 
-def _decode_spawner_entity_lifecycle_fields(payload: bytes) -> dict[str, Any]:
-    """Decode current spawn-entity die/start/end filters and outputs.
-
-    Installed MemoryPack setter order is entity output, filter type, group
-    filter/output, spawner filter, then wave filter/output.  Nullable group and
-    wave filters are retained as nulls; they are not inferred from filterType.
-    """
-    if len(payload) < 31 or payload[17:31] != b"\x04\x01" + _DEFAULT_PARAM_TAIL:
-        return {}
-    cursor = 31
-
-    entity_output = _decode_param_output(payload, cursor)
-    if entity_output is None:
-        return {}
-    entity_output_detail, cursor = entity_output
-
-    filter_type = _decode_i32_param(payload, cursor)
-    if filter_type is None:
-        return {}
-    filter_type_detail, cursor = filter_type
-
-    def read_optional_string() -> tuple[str | None, int] | None:
-        nonlocal cursor
-        if cursor >= len(payload):
-            return None
-        if payload[cursor] == 0xFF:
-            cursor += 1
-            return None, cursor
-        decoded = _decode_constant_string_param(payload, cursor)
-        if decoded is None:
-            return None
-        value, cursor = decoded
-        return value, cursor
-
-    group_filter = read_optional_string()
-    if group_filter is None:
-        return {}
-    group_key, _ = group_filter
-
-    group_output = _decode_param_output(payload, cursor)
-    if group_output is None:
-        return {}
-    group_output_detail, cursor = group_output
-
-    if cursor + 21 > len(payload) or payload[cursor] != 0x04:
-        return {}
-    spawner_id = struct.unpack_from("<Q", payload, cursor + 1)[0]
-    if payload[cursor + 9 : cursor + 21] != _DEFAULT_PARAM_TAIL:
-        return {}
-    cursor += 21
-
-    wave_filter = read_optional_string()
-    if wave_filter is None:
-        return {}
-    wave_key, _ = wave_filter
-
-    wave_output = _decode_param_output(payload, cursor)
-    if wave_output is None:
-        return {}
-    wave_output_detail, cursor = wave_output
-    if cursor != len(payload):
-        return {}
-
-    return {
-        "entityOutputParam": entity_output_detail,
-        "filterType": filter_type_detail,
-        "groupKeyFilter": group_key,
-        "groupKeyOutputParam": group_output_detail,
-        "spawnerFilterId": spawner_id,
-        "waveKeyFilter": wave_key,
-        "waveKeyOutputParam": wave_output_detail,
-        "payloadShape": "spawner-entity-lifecycle-filters-and-outputs-exact-eof",
-    }
-
-
 def _decode_npc_patrol_checkpoint_fields(payload: bytes) -> dict[str, Any]:
     """Decode the exact dynamic-NPC patrol/checkpoint listener fields."""
     param_tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
@@ -3768,7 +3693,10 @@ def _decode_named_native_event_detail(
         "LevelEvent_OnSpawnerEntityDieStart",
         "LevelEvent_OnSpawnerEntityDieEnd",
     }:
-        spawner_fields = _decode_spawner_entity_lifecycle_fields(payload)
+        spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
+            payload,
+            native_header_name,
+        )
         if spawner_fields:
             phase = {
                 "LevelEvent_OnSpawnerEntityDie": "dies",
