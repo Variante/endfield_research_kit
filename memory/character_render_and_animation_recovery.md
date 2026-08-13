@@ -55,6 +55,10 @@ from the HGRenderPath graph-record lifecycle slots `+0xcd0`, `+0xea0`, and
 `+0xeb0`. The checked Render, helper, and graph-state bodies contain no
 `+0xab8` call and no direct factory staging or GPUDriven dispatch target, so
 the factory-record-to-`UploadPerDrawParams` kernel-7 edge remains unproven.
+The complete UnityPlayer `+0xab8` census has ten sites: fixed kernel `1`
+resource passes, dynamic generic helpers, and one command-stream interpreter;
+none statically identifies kernel `7` or binds factory channel-2 `+0xd0`, so
+the dynamic command/resource record remains the only open bridge.
 
 ## Evidence boundary
 
