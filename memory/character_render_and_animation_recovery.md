@@ -515,6 +515,18 @@ NPC archetypes are imported as labeled source kits.
   record walk, `0x100` staging lane, `_UploadBuffer`, or channel-2/resource
   `+0xd0` access; those upload edges remain fail-closed. Details are under
   `populate_per_frame_command_bridge`.
+  The native V1/V2 `BindBuffersForRendering` routes are now bounded one layer
+  deeper: V1 `0x1810ef150` emits three metadata lanes at
+  `+0x88/+0x9c/+0xa8`, while V2 `0x1810fbb00` emits five at
+  `+0xa0/+0xb8/+0xac/+0xbc/+0xc8`. Null-command paths enter generic binder
+  `0x180fd96c0`; CommandBuffer paths record opcode `0x2b` through
+  `0x1804cb730`. The binder only resolves property IDs into compact metadata
+  arrays, while `0x180fe4d50` packs five generic arrays and calls context
+  vtable `+0xea0`; bounded direct callers contain no factory `+0x8c`,
+  `_UploadBuffer`, kernel 7, or resource `+0xd0`. This closes the static
+  GPUDriven rendering-binding path as a generic command path, leaving
+  staging-to-upload and dynamic/table-driven edges fail-closed. Details are
+  under `gpu_driven_rendering_binding_lane_census`.
   `HGConstantBufferPool.ApplyPendingUpload` is a separate generic upload
   candidate: `GameAssembly 0x189b6a7c0` updates `this+0x10` through
   `ComputeBuffer.SetData` (`0x187af05e0`), but its visible body has no
