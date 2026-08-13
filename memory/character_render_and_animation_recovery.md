@@ -528,6 +528,19 @@ NPC archetypes are imported as labeled source kits.
   graphics commands. None is a five-lane staging consumer. Details are under
   `managed_dispatch_entrypoint_census`; the post-staging `_UploadBuffer`,
   kernel-7, and channel-2/resource `+0xd0` edges remain fail-closed.
+  The direct-call boundary is now expanded beyond the focused GPU catalog:
+  a PData-bounded `E8 rel32` scan of the current GameAssembly maps 110 calls
+  to `CommandBuffer.Internal_DispatchCompute` across 37 unique managed
+  functions. They are all named post-processing, HZB/depth, particles, cloth,
+  terrain, water, atmosphere/fog, light-culling, reflection-probe,
+  virtual-texture, or utility passes; none is a factory dirty-record consumer
+  or `GpuSceneDirtyUpdateCS` owner. The same census finds 47
+  `Internal_SetComputeBufferParam` calls in 8 callers and 38 constant-buffer
+  binds in 22 callers, again with no factory shared-record/staging caller. The
+  sole direct `InternalSetComputeBufferData` edge is the CommandBuffer wrapper
+  itself. This closes the direct managed command-buffer graph while preserving
+  the unresolved indirect/vtable and post-staging upload boundaries. Details
+  are under `full_gameassembly_direct_call_census` in the packed-flag audit.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at

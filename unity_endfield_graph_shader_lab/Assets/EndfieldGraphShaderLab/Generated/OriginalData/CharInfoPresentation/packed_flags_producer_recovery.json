@@ -614,6 +614,107 @@
             ],
             "boundary": "After exact-immediate and base-register filtering, no candidate proves that the CPU-only 0x100-stride render structure is the 84-byte _UploadBuffer source or the resource +0xd0 channel-2 carrier."
           },
+          "full_gameassembly_direct_call_census": {
+            "status": "all-pdata-dispatch-callers-classified-no-gpu-scene-upload-edge",
+            "source": "Current GameAssembly.dll PData-bounded raw E8 scan, with each hit mapped back through the current CodeRegistration method-pointer tables; GameAssembly sha256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce and metadata sha256 90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e.",
+            "method_targets": {
+              "command_buffer_internal_dispatch_compute": {
+                "target": "0x18b3e6868",
+                "direct_callsite_count": 110,
+                "unique_pdata_callers": 37,
+                "callers": [
+                  "UnityEngine.Rendering.EncodeBC6H::EncodeFastCubemap",
+                  "HG.Rendering.Runtime.UberPostPassUtils+<>c::<.cctor>b__104_0",
+                  "HG.Rendering.Runtime.UberPostPassUtils::<.cctor>g__DispatchWithGuardBands|104_11",
+                  "HG.Rendering.Runtime.UberPostPassUtils::<.cctor>g__DispatchWithGuardBands|104_12",
+                  "HG.Rendering.Runtime.DepthOfFieldPassConstructor::SetupLowQualityPreamble",
+                  "HG.Rendering.Runtime.ContactShadowPassConstructor+<>c::<.cctor>b__31_0",
+                  "HG.Rendering.Runtime.DepthOfFieldPassConstructor+<>c::<.cctor>b__38_0",
+                  "HG.Rendering.Runtime.DepthOfFieldPassConstructor+<>c::<.cctor>b__38_1",
+                  "HG.Rendering.Runtime.DepthOfFieldPassConstructor+<>c::<.cctor>b__38_2",
+                  "HG.Rendering.Runtime.GPUParticleSimulationPassConstructor::ProcessParticles",
+                  "HG.Rendering.Runtime.DepthPyramidNoLDSRenderingPass+<>c::<Render>b__6_0",
+                  "HG.Rendering.Runtime.DepthPyramidLDSRenderingPass+<>c::<Render>b__6_0",
+                  "HG.Rendering.Runtime.DepthPyramidCustomMipsRenderingPass+<>c::<.cctor>b__10_0",
+                  "HG.Rendering.Runtime.GpuClothSimulationPassConstructor+<>c::<.cctor>b__27_0",
+                  "HG.Rendering.Runtime.GpuClothSimulationPassConstructor+<>c::<.cctor>b__27_1",
+                  "HG.Rendering.Runtime.GpuClothSimulationPassConstructor+<>c::<.cctor>b__27_2",
+                  "HG.Rendering.Runtime.MotionBlurPassConstructor::<ConstructPass>b__21_0",
+                  "HG.Rendering.Runtime.BuildHZBPass+<>c::<.cctor>b__20_0",
+                  "HG.Rendering.Runtime.GTAOPassConstructor+<>c::<.cctor>b__24_0",
+                  "HG.Rendering.Runtime.ParticleLightingPassConstructor+<>c::<.cctor>b__21_0",
+                  "HG.Rendering.Runtime.TerrainDeformPassConstructor+<>c::<.cctor>b__29_1",
+                  "HG.Rendering.Runtime.HyperScreenSpaceReflectionRenderingPass+<>c::<.cctor>b__41_0",
+                  "HG.Rendering.Runtime.WaterDefaultDeferredRenderingPass+<>c::<.cctor>b__68_6",
+                  "HG.Rendering.Runtime.HGTerrainV2::GenerateConeMapMipmaps",
+                  "HG.Rendering.Runtime.VirtualTextureRenderer::Render",
+                  "HG.Rendering.Runtime.HGHierarchicalZOcclusionCulling::DownSampleMipmapChainPhase0",
+                  "HG.Rendering.Runtime.HGHierarchicalZOcclusionCulling::DownSampleMipmapChainPhase1",
+                  "HG.Rendering.Runtime.HGRenderPipeline+<>c::<.cctor>b__176_1",
+                  "HG.Rendering.Runtime.TerrainV2.HGTerrainGroundLayerClipmap+<>c::<.cctor>b__11_0",
+                  "HG.Rendering.Runtime.HGAtmosphereRenderer::_DispatchAtmosphereLutCS",
+                  "HG.Rendering.Runtime.HGVolumetricFogRenderer::ComputeVolumetricFogFinalIntegration",
+                  "HG.Rendering.Runtime.HGVolumetricFogRenderer::ComputeVolumetricFogGridInjection",
+                  "HG.Rendering.Runtime.HGVolumetricFogRenderer::ComputeVolumetricFogLightScattering",
+                  "HG.Rendering.Runtime.LightCullingGPU::PrepareGPUData",
+                  "HG.Rendering.Runtime.ReflectionProbeBinningPassConstructor+<>c::<.cctor>b__35_0",
+                  "UnityEngine.Rendering.TextureXR::CreateBlackUIntTextureArray",
+                  "UnityEngine.Rendering.TextureXR::CreateBlackUintTexture"
+                ],
+                "classification": "Every mapped caller belongs to a named post-processing, depth/HZB, particle, cloth, terrain, water, atmosphere/fog, light-culling, reflection-probe, virtual-texture, or utility pass. No caller is a factory dirty-record consumer, GpuSceneDirtyUpdateCS owner, or UploadPerDrawParams producer."
+              },
+              "command_buffer_internal_set_compute_buffer_param": {
+                "target": "0x18b3e6d80",
+                "direct_callsite_count": 47,
+                "unique_pdata_callers": 8,
+                "caller_groups": [
+                  "UberPostPassUtils",
+                  "GPUParticleSimulationPassConstructor",
+                  "DepthPyramidLDSRenderingPass",
+                  "ParticleLightingPassConstructor",
+                  "VirtualTextureRenderer",
+                  "LightCullingGPU",
+                  "ReflectionProbeBinningPassConstructor",
+                  "UnityEngine.Rendering.CommandBuffer::SetComputeBufferParam wrapper"
+                ],
+                "negative_result": "No factory shared-record/staging caller appears in the direct call set."
+              },
+              "command_buffer_internal_set_compute_constant_buffer_param": {
+                "target": "0x18b3e6de4",
+                "direct_callsite_count": 38,
+                "unique_pdata_callers": 22,
+                "caller_groups": [
+                  "HGShadowConstantBufferUtils",
+                  "UberPostPassUtils",
+                  "DepthOfFieldPassConstructor",
+                  "ContactShadowPassConstructor",
+                  "DepthPyramidCustomMipsRenderingPass",
+                  "GpuClothSimulationPassConstructor",
+                  "BuildHZBPass",
+                  "GTAOPassConstructor",
+                  "ParticleLightingPassConstructor",
+                  "TerrainDeformPassConstructor",
+                  "WaterDefaultDeferredRenderingPass",
+                  "TerrainV2.HGTerrainGroundLayerClipmap",
+                  "HGAtmosphereRenderer",
+                  "HGVolumetricFogRenderer",
+                  "LightCullingGPU",
+                  "ReflectionProbeBinningPassConstructor",
+                  "UnityEngine.Rendering.CommandBuffer::SetComputeConstantBufferParam wrapper"
+                ],
+                "negative_result": "No factory shared-record/staging caller appears in the direct call set."
+              },
+              "compute_buffer_data": {
+                "target": "0x18b3e6804",
+                "direct_callsite_count": 1,
+                "unique_pdata_callers": 1,
+                "caller": "UnityEngine.Rendering.CommandBuffer::SetBufferData wrapper",
+                "negative_result": "The direct call is only the managed wrapper-to-internal-call bridge; no factory record packer reaches it."
+              }
+            },
+            "scan_method": "PData-bounded raw E8 rel32 scan followed by code-registration pointer-owner mapping; indirect vtable/calli edges remain outside this census.",
+            "boundary": "This expands the previous focused census to every direct GameAssembly caller of the known command-buffer dispatch and compute-buffer binding wrappers. The direct graph contains no GpuSceneDirtyUpdateCS/UploadPerDrawParams producer and no factory 0x8c-record-to-buffer edge; dynamic/indirect paths remain explicitly open."
+          },
           "boundary": "The managed ComputeShader and CommandBuffer dispatch entrypoints, their native bridges, and the bounded immediate-call census are now explicit. They do not identify a live kernel-7 producer or the post-staging upload; keep channel 2/resource +0xd0 binding fail-closed."
         },
         "getter_cross_check": {
