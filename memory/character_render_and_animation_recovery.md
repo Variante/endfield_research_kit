@@ -523,6 +523,20 @@ NPC archetypes are imported as labeled source kits.
   `manager[+0x38] + index*0x8c + offset` CPU memcpy path. The old
   `0x180155300` value is only the alternate pointer-table surface, not the
   current registered endpoint. The payload-to-GPU edge remains fail-closed.
+  A focused current-build census explains the lazy-slot population rather than
+  treating those addresses as static GPU pointers. GameAssembly has 24 true
+  PData-scoped functions touching slots `0x18f370720` (partial update),
+  `0x18f370728` (dirty get), and `0x18f370730` (dirty set); the partial slot
+  has 13 reads and 13 cache writes, while each dirty slot has four reads and
+  four writes. The cache writers call resolver `0x180059fc0` with the exact
+  managed name `HGFactoryRenderManager::SetEntitySharedDataPartial(...)`,
+  which searches the internal-call name table and returns the matching record's
+  function pointer. The name maps to primary UnityPlayer entry 206 at
+  `0x1801eb9a0`; no slot-population body directly calls a checked GPU upload,
+  shader bind, command recorder, or compute dispatch. This closes runtime
+  endpoint resolution as a CPU-side internal-call edge, not the later
+  record-array-to-`_UploadBuffer` edge; details are under
+  `dynamic_slot_population_census` in the packed-flag audit.
   The factory producer is broader than the Vector4 path alone. Static
   GameAssembly bodies show `SetPosition` (`0x1834a3ce0`, offset `0x50`, 12
   bytes), `SetRotation` (`0x183e21230`, offset `0x60`, 16 bytes), and the

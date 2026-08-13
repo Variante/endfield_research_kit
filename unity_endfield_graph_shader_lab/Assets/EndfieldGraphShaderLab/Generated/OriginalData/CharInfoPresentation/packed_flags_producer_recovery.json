@@ -743,6 +743,52 @@
           "float_wrapper_cross_check": "SetEntitySharedData<float> at 0x183d68850 calls SetEntitySharedDataPartial at 0x183d68885, which uses the same slot",
           "interpretation": "The current GameAssembly confirms one runtime-populated factory partial-update slot shared by Vector4, float, and direct partial writers; static image bytes at the slot are not a callable address, so endpoint identity is taken from the primary UnityPlayer AddInternalCall registration and remains CPU-record-only."
         },
+        "dynamic_slot_population_census": {
+          "status": "runtime-internal-call-resolver-closed-cpu-edge-gpu-edge-open",
+          "source": "Installed GameAssembly.dll PData-scoped x64 disassembly and exact RIP-relative slot census, cross-checked against the primary UnityPlayer AddInternalCall registration.",
+          "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+          "slots": {
+            "partial_update": "0x18f370720",
+            "dirty_get": "0x18f370728",
+            "dirty_set": "0x18f370730"
+          },
+          "scan_counts": {
+            "raw_slot_hits": 84,
+            "true_reference_functions": 24,
+            "partial_slot_read_instructions": 13,
+            "partial_slot_write_instructions": 13,
+            "dirty_get_read_instructions": 4,
+            "dirty_get_write_instructions": 4,
+            "dirty_set_read_instructions": 4,
+            "dirty_set_write_instructions": 4,
+            "direct_calls_to_primary_unityplayer_endpoint": 0
+          },
+          "resolver_contract": {
+            "resolver": "GameAssembly 0x180059fc0",
+            "input": "UTF-8 managed internal-call name pointer",
+            "observed_string": "UnityEngine.HyperGryph.HGFactoryRenderManager::SetEntitySharedDataPartial(System.UInt32,System.IntPtr,System.Int32,System.Int32)",
+            "lookup_shape": "The resolver hashes/searches its internal-call name table and returns the registered function pointer from the matching record's +0x40 field; cache-miss paths are guarded by the existing null/error handling.",
+            "cache_writers": [
+              "0x1834a1260..0x1834a173b generated factory initialization path",
+              "0x184e60348..0x184e6044f generated internal-call cache path",
+              "0x18508094a..0x1850809fc generated EntityManager/factory wrapper path",
+              "0x185080eb6..0x185080f1e and 0x1851e0c98..0x1851e0d34 generic SetEntitySharedData wrapper paths",
+              "0x18520eace..0x18520eb82 generated conveyor wrapper path"
+            ],
+            "dirty_slot_population": "SetDirtyFlag/GetEntityDirtyFlags/SetEntityDirtyFlags use the same resolver-and-cache pattern for the adjacent dirty-get and dirty-set slots.",
+            "endpoint_identity": "The exact name resolves to primary UnityPlayer AddInternalCall entry 206 at 0x1801eb9a0; the GameAssembly lazy slots are cached delegate pointers, not file-backed GPU resources."
+          },
+          "negative_gpu_edge": {
+            "checked_direct_targets": [
+              "ComputeBuffer upload/internal data entries",
+              "ComputeShader SetBuffer/SetConstantComputeBuffer/Dispatch entries",
+              "CommandBuffer GPUDriven recording entries",
+              "GPUDrivenRenderer V1/V2 binding and dispatch entries"
+            ],
+            "result": "No slot-population function directly calls a checked GPU upload, shader-buffer/property bind, command recording, or compute dispatch. The dynamic resolver closes the CPU internal-call endpoint but does not identify the later record-array consumer or UploadPerDrawParams dispatch."
+          },
+          "boundary": "This census explains how the shared factory partial-update and dirty slots become callable at runtime and closes their endpoint identity through the primary UnityPlayer registration. It still does not prove that the 140-byte UnityPlayer record, or its 80-byte shared-data prefix, reaches _UploadBuffer, kernel 7, channel 2, or resource +0xd0; retain the GPU edge as fail-closed."
+        },
         "dirty_flag": {
           "tail": "mov dl,1; jmp HGFactoryRendererBinderComponent.SetDirtyFlag (0x1834a3fa0)",
           "enum": "HGFactoryDirtyFlags.PerDrawData",
