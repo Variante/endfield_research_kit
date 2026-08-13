@@ -2625,18 +2625,19 @@ def refresh_source_story_gap_queue(
             if isinstance(value, dict)
         )
     for validator, status in validator_statuses:
-        validation_failures = [
-            *(
-                status.get("validationFailures")
-                if isinstance(status.get("validationFailures"), list)
-                else []
-            ),
-            *(
-                status.get("validationFailureDetails")
-                if isinstance(status.get("validationFailureDetails"), list)
-                else []
-            ),
-        ]
+        failure_details = (
+            status.get("validationFailureDetails")
+            if isinstance(status.get("validationFailureDetails"), list)
+            else []
+        )
+        failure_summaries = (
+            status.get("validationFailures")
+            if isinstance(status.get("validationFailures"), list)
+            else []
+        )
+        # Prefer structured details over summary ids so a failed long-running
+        # refresh always names the exact gate and bounded expected/actual data.
+        validation_failures = [*failure_details, *failure_summaries]
         hash_mismatches = (
             status.get("sourceHashMismatches")
             if isinstance(status.get("sourceHashMismatches"), list)
@@ -2692,9 +2693,13 @@ def refresh_source_story_gap_queue(
                 "expected": diagnostic.get("expected"),
                 "actual": diagnostic.get("actual"),
                 "missionId": diagnostic.get("missionId"),
-                "storyKey": diagnostic.get("storyKey"),
+                "storyKey": (
+                    diagnostic.get("storyKey")
+                    or diagnostic.get("questId")
+                ),
                 "sourceFile": (
                     diagnostic.get("sourceFile")
+                    or diagnostic.get("sourcePath")
                     or diagnostic.get("source")
                     or status.get("source")
                 ),

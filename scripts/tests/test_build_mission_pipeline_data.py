@@ -1777,6 +1777,48 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             message,
         )
 
+    def test_gap_queue_refresh_prefers_structured_failure_details(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "source_story_gap_queue_CN.json"
+            queued_report = {
+                "_schema": pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+                "language": "CN",
+                "questAttachmentDiagnosticEvidence": {
+                    "status": "inactive_generated_shape_validation_failed",
+                    "validationFailures": ["e2m8_q#5"],
+                    "validationFailureDetails": [{
+                        "validator": "questAttachmentDiagnostic",
+                        "gate": "property_getter_without_story_chain",
+                        "questId": "e2m8_q#5",
+                        "missionId": "e2m8",
+                        "sourcePath": "export_full/mission/e2m8.json",
+                        "expected": {"relations": ["context"]},
+                        "actual": {"relations": ["typed"]},
+                    }],
+                },
+            }
+            queue_path.write_text(
+                json.dumps(queued_report),
+                encoding="utf-8",
+            )
+            with patch.object(
+                pipeline,
+                "build_source_gap_queue",
+                return_value=SimpleNamespace(report=queued_report),
+            ):
+                with self.assertRaises(RuntimeError) as raised:
+                    pipeline.refresh_source_story_gap_queue(
+                        "CN",
+                        queue_path,
+                    )
+
+        message = str(raised.exception)
+        self.assertIn("mission=e2m8", message)
+        self.assertIn("story=e2m8_q#5", message)
+        self.assertIn("expected={'relations': ['context']}", message)
+        self.assertIn("actual={'relations': ['typed']}", message)
+        self.assertIn("source=export_full/mission/e2m8.json", message)
+
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
             queue_path = Path(temporary) / "gap_queue.json"
