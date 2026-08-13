@@ -14,6 +14,7 @@ from scripts import build_mission_pipeline_data as pipeline
 from scripts.mission_pipeline import (
     dialog_tree_projection,
     offline_shell_projection,
+    offline_recovery_projection,
     quest_fork_arm_projection,
     quest_scope_projection,
     runtime_trace_projection,
@@ -2260,9 +2261,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
             }
 
-            result = pipeline.publish_offline_story_recovery(
+            self.assertFalse(hasattr(pipeline, "publish_offline_story_recovery"))
+            result = offline_recovery_projection.publish_offline_story_recovery(
                 manifest,
                 queue_path,
+                source_story_gap_queue_schema=(
+                    pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA
+                ),
             )
 
         self.assertEqual(result["status"], "active")
@@ -2459,9 +2464,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            result = pipeline.publish_offline_story_recovery(
+            result = offline_recovery_projection.publish_offline_story_recovery(
                 {},
                 queue_path,
+                source_story_gap_queue_schema=(
+                    pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA
+                ),
             )
 
         self.assertEqual(result["questAttachmentDiagnosticStatus"], "active")
@@ -2496,9 +2504,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }
             }
 
-            result = pipeline.publish_offline_story_recovery(
+            result = offline_recovery_projection.publish_offline_story_recovery(
                 manifest,
                 queue_path,
+                source_story_gap_queue_schema=(
+                    pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA
+                ),
             )
 
         self.assertEqual(result["status"], "rejected_stale_or_incompatible")
@@ -2548,9 +2559,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }
             }
 
-            result = pipeline.publish_offline_story_recovery(
+            result = offline_recovery_projection.publish_offline_story_recovery(
                 manifest,
                 queue_path,
+                source_story_gap_queue_schema=(
+                    pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA
+                ),
             )
 
         provenance = manifest["opaque_notice"]["contentProvenance"]
