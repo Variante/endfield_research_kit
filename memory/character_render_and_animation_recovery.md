@@ -555,8 +555,15 @@ NPC archetypes are imported as labeled source kits.
   generic buffer path, not evidence for `_UploadBuffer` or channel 2/resource
   `+0xd0`; its constructor is a count-`0x80000`, stride-1 byte pool and its
   only SetData caller is the pool's own upload loop, so it cannot satisfy the
-  84-byte `_UploadBuffer` source contract. Details are under
-  `constant_buffer_pool_cross_check`.
+  84-byte `_UploadBuffer` source contract. A whole-image E8 scan now finds
+  zero direct callers of `ApplyPendingUpload`, one `SetData<byte>` call (the
+  pool's own loop), and zero raw code-pointer references to the native staging
+  entries `0x1810d25c0`/`0x1810d26bf`. The matching `.tvm0` records partition
+  those entries into adjacent Burst/native ranges with metadata RVAs
+  `0x204a398`/`0x204a3ac`; this explains the table/job invocation boundary but
+  does not identify a GPU consumer. Details are under
+  `constant_buffer_pool_cross_check` and
+  `post_staging_direct_call_census`.
   The remaining eleven direct callers of UnityPlayer immediate dispatch
   `0x1805e7e10` are now classified rather than left as a generic unknown set:
   two are terrain (`UpdateSubdivision`, `PingPongSubdAndCull`), three are SSR
