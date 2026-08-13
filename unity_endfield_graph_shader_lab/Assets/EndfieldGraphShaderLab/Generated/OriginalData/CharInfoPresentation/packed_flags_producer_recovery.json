@@ -3014,6 +3014,26 @@
               ],
               "checked_rendergraph_bodies": ["0x1813018c0..0x181301d71", "0x1813042d0..0x181313eb4", "0x180fc51e0..0x180fc58fb"],
               "result": "The full UnityPlayer body census finds no fixed kernel 7 at a +0xab8 call site and no direct +0xab8 call in the HGRenderPath RenderGraph bodies. Dynamic kernel values remain in generic helpers and the command-stream interpreter, but their source command/resource records are not statically tied to factory channel-2/resource +0xd0 or UploadPerDrawParams; keep the upload edge fail-closed."
+            },
+            "managed_dispatch_census": {
+              "status": "managed-dispatch-producers-catalogued-no-factory-perdraw-route",
+              "source": "PData-scoped raw E8 target scan across all GameAssembly.dll code sections, using the current global-metadata.dat method-pointer index; target wrappers are CommandBuffer.Internal_DispatchCompute 0x18b3e6868 and ComputeShader.Dispatch 0x18b3d74a8.",
+              "commandbuffer_internal_dispatch_compute": {
+                "target": "0x18b3e6868",
+                "direct_call_count": 110,
+                "unique_caller_method_count": 37,
+                "name_filter_patterns": ["upload", "perdraw", "factory", "character"],
+                "name_filter_hits": [],
+                "caller_scope": "All recovered callers are named built-in rendering/compute passes such as DepthPyramid, GTAO, GPU particles/cloth, motion blur, SSR, fog, atmosphere, terrain, reflection-probe binning, virtual texture, water, and texture utility paths; no Beyond.Gameplay.Factory or per-draw producer method calls this wrapper directly.",
+                "result": "The managed CommandBuffer dispatch route contains no direct factory/per-draw/UploadPerDrawParams producer. Kernel indices at these sites remain pass-local dynamic values or pass-specific constants and are not a static kernel-7 bridge."
+              },
+              "computeshader_dispatch": {
+                "target": "0x18b3d74a8",
+                "direct_call_count": 1,
+                "caller": "MagicaCloth.PhysicsManagerMeshData::DispatchWriting (method index 431943)",
+                "result": "The only direct ComputeShader.Dispatch caller is an unrelated physics writer; no factory, per-draw, or HGRenderPath caller reaches this wrapper."
+              },
+              "boundary": "This closes the direct managed CommandBuffer/ComputeShader dispatch candidates for the factory upload producer. It does not identify which native command/resource record feeds the generic UnityPlayer command-stream interpreter, so the native dynamic record-to-UploadPerDrawParams kernel-7 edge remains open and fail-closed."
             }
           },
           "render_helper_census": {
