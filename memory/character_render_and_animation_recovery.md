@@ -560,6 +560,23 @@ NPC archetypes are imported as labeled source kits.
   resolver-driven/table-dispatched kernel-7 selection and the staging-array
   upload remain open and must stay fail-closed. Details are recorded under
   `indirect_vtable_dispatch_census` in the packed-flag audit.
+  The managed ComputeShader/ComputeBuffer API boundary is now separately
+  bounded. A PData-owned E8 census across GameAssembly `.text` and `il2cpp`
+  finds one direct `ComputeShader.Dispatch` caller (MagicaCloth), cloth-only
+  `HGSetBuffer`/string-`SetBuffer` callers, volumetric/probe/interaction
+  `ComputeBuffer.SetData` callers, and a generic `ConstantBuffer<T>.Set` body
+  whose seven concrete instantiations are probe-volume, particle, or Hammersley
+  buffers. The only generic `ComputeBuffer.SetData<PerInstanceData>` upload is
+  an instance-data layout with padding fields, not the factory's five-Vector4
+  84-byte source. The direct graph has no factory or GPU-scene caller for
+  `Internal_SetBuffer`, `HGSetBuffer`, or the named dispatch body; resolver
+  wrappers remain indirect by design. The render-pipeline constructor is the
+  sole direct caller of both `SetupGpuSceneUploadCs` wrappers, and both load the
+  same default-resource shader field (`+0x18 +0x638`); their UnityPlayer endpoint
+  only performs managed-root/write-barrier work. This ties the named shader
+  resource to initialization but still does not prove kernel-7 selection or the
+  staging-to-`_UploadBuffer` edge. Details are under
+  `compute_shader_api_and_setup_census` in the packed-flag audit.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at

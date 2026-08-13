@@ -1799,6 +1799,112 @@
             "boundary": "The native image contains only the property-name registration for _RTPerDrawParamsBuffer. No additional text reference or named upload/compute literal identifies a runtime producer, shader bind, _UploadBuffer population, or UploadPerDrawParams kernel-7 dispatch; keep the factory shared-payload-to-GPU edge fail-closed."
           }
         },
+        "compute_shader_api_and_setup_census": {
+          "status": "managed-compute-api-census-no-factory-binding-edge",
+          "source": "PData-owned raw E8 census over the current GameAssembly.dll .text and il2cpp code sections, joined through the current CodeRegistration method-pointer tables; GameAssembly sha256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce and metadata sha256 90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab207adf97e.",
+          "targets": {
+            "compute_shader_dispatch": {
+              "target": "0x18b3d74a8",
+              "direct_callsite_count": 1,
+              "unique_pdata_callers": 1,
+              "callers": ["MagicaCloth.PhysicsManagerMeshData::DispatchWriting (431943)"],
+              "negative_result": "No HGFactory, HGShadingStateSystem, HGRenderPipeline, or GpuSceneDirtyUpdateCS caller reaches the managed ComputeShader.Dispatch body directly."
+            },
+            "compute_shader_hg_set_buffer": {
+              "target": "0x18b3d75bc",
+              "direct_callsite_count": 2,
+              "unique_pdata_callers": 1,
+              "callers": ["MagicaCloth.PhysicsManagerMeshData::DispatchWriting (431943)"],
+              "negative_result": "The direct calls are the MagicaCloth graphics path; no factory shared-record or GPU-scene upload caller appears."
+            },
+            "compute_shader_string_set_buffer": {
+              "target": "0x18b3d772c",
+              "direct_callsite_count": 3,
+              "unique_pdata_callers": 1,
+              "callers": ["MagicaCloth.PhysicsManagerMeshData::DispatchWriting (431943)"],
+              "negative_result": "No factory or GpuSceneDirtyUpdateCS caller reaches the string-property SetBuffer wrapper directly."
+            },
+            "compute_shader_graphics_buffer_set_buffer": {
+              "target": "0x18b3d7788",
+              "direct_callsite_count": 2,
+              "unique_pdata_callers": 1,
+              "callers": ["MagicaCloth.PhysicsManagerMeshData::CopyToRenderVertexBuffer (431939)"],
+              "negative_result": "The direct calls are a cloth vertex-buffer path, not the factory per-draw record path."
+            },
+            "compute_shader_constant_buffer": {
+              "target": "0x18b3d77e4",
+              "direct_callsite_count": 1,
+              "unique_pdata_callers": 1,
+              "caller": "generic UnityEngine.Rendering.ConstantBuffer<T>::Set body 0x18985df1c",
+              "generic_instantiations": [
+                "ShaderVariablesProbeVolumes",
+                "GPUParticleSimulationPassConstructor::MergePassConstants",
+                "GPUParticleSimulationPassConstructor::PerFrameBuffer",
+                "Hammersley2dSeq16 fixed buffer",
+                "Hammersley2dSeq256 fixed buffer",
+                "Hammersley2dSeq32 fixed buffer",
+                "Hammersley2dSeq64 fixed buffer"
+              ],
+              "negative_result": "No factory shared record, GpuSceneDirtyUpdateCS, or UploadPerDrawParams instantiation is present in the concrete generic body set."
+            },
+            "compute_buffer_set_data": {
+              "target": "0x18b3d71e4",
+              "direct_callsite_count": 10,
+              "unique_pdata_callers": 9,
+              "caller_groups": [
+                "HGUtils::PackedMipChainInfo::GetOffsetBufferData",
+                "VolumetricLocalLightManager::UpdateBuffer/.ctor",
+                "VolumetricModifierManager::UpdateBuffer/.ctor",
+                "VolumetricSHBake::BuildSHSampleBuffer",
+                "HGInteractionChain::DrawChainNodes",
+                "ProbeBrickIndex::UploadIndexData",
+                "ProbeCellIndices::PushComputeData"
+              ],
+              "negative_result": "All direct SetData callers are volumetric, interaction, probe, or utility uploads; none is a factory dirty-record consumer."
+            },
+            "compute_buffer_internal_set_data": {
+              "target": "0x18b3d70c8",
+              "direct_callsite_count": 2,
+              "unique_pdata_callers": 2,
+              "callers": [
+                "UnityEngine.ComputeBuffer::SetData wrapper",
+                "generic ComputeBuffer.SetData<HG.Rendering.Runtime.PerInstanceData> body 0x187af07c8"
+              ],
+              "per_instance_layout": "PerInstanceData has one position value, emitRate, and three padding scalars; this generic path is an instance-data upload and does not expose the 84-byte five-Vector4 factory prefix.",
+              "negative_result": "No factory shared-record or UploadPerDrawParams edge reaches the internal data upload body directly."
+            },
+            "unresolved_or_indirect_wrappers": {
+              "targets": [
+                "ComputeShader.Internal_SetBuffer 0x18b3d761c",
+                "ComputeShader.HGSetBuffer 0x18b3d75ac",
+                "ComputeShader.SetBuffer(ComputeBuffer) 0x18b3d7778",
+                "ComputeShader.SetBuffer(GraphicsBuffer) 0x18b3d771c"
+              ],
+              "direct_callsite_count": 0,
+              "interpretation": "These bodies are internal-call/lazy-resolver wrappers or public forwarding stubs; absence of a direct E8 caller does not exclude resolver-driven use, but no factory caller was found in the direct graph."
+            }
+          },
+          "gpu_scene_shader_setup": {
+            "shader_resource_field": "HGRenderPipeline defaultResources[+0x18][+0x638]",
+            "callers": [
+              {
+                "caller": "HG.Rendering.Runtime.HGRenderPipeline::.ctor 0x183947230",
+                "sites": ["0x183948758", "0x183948786"],
+                "targets": [
+                  "HGRayTracingScene::SetupGpuSceneUploadCs 0x183945510",
+                  "HGShadingStateSystem::SetupGpuSceneUploadCs 0x1839454d0"
+                ],
+                "observed": "Both setup calls load the same shader resource field at defaultResources+0x18+0x638."
+              }
+            ],
+            "setup_wrapper_contract": "Both GameAssembly wrappers resolve their exact internal-call names through resolver 0x180059fc0 and tail-jump the cached delegate; neither wrapper contains SetBuffer, ComputeBuffer upload, or Dispatch instructions.",
+            "native_endpoint": {
+              "function": "0x1801ee4c0",
+              "observed": "The UnityPlayer endpoint performs managed-root/write-barrier handling and calls 0x180fc5e60; the visible body contains no shader bind, buffer upload, command recording, or compute dispatch."
+            }
+          },
+          "boundary": "The direct managed ComputeShader/ComputeBuffer API census closes the visible non-factory callers and ties the named GpuSceneDirtyUpdateCS resource to one shared setup field used by the render-pipeline constructor. Internal-call resolver paths and native GPU-scene code remain indirect, so this is not proof that kernel 7 is never dispatched; the factory staging-to-_UploadBuffer and channel-2/resource +0xd0 edges remain fail-closed."
+        },
         "boundary": "This closes the managed kernel argument flow and the native immediate/command binding-record ABI. No static edge yet identifies GpuSceneDirtyUpdateCS as the shader object passed to these bind cores, proves kernel 7 is selected by a live producer, or maps the character resource +0xd0 into _RTPerDrawParamsBuffer/binding 33."
       }
     },
