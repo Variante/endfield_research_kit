@@ -13,6 +13,7 @@ from unittest.mock import patch
 from scripts import build_mission_pipeline_data as pipeline
 from scripts.mission_pipeline import (
     dialog_tree_projection,
+    offline_shell_projection,
     quest_scope_projection,
     runtime_trace_projection,
     story_order_projection,
@@ -2593,11 +2594,15 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     },
                 },
             }
-            published = pipeline.publish_offline_recovery_mission_shells(
+            self.assertFalse(
+                hasattr(pipeline, "publish_offline_recovery_mission_shells")
+            )
+            published = offline_shell_projection.publish_offline_recovery_mission_shells(
                 index,
                 root,
                 offline,
                 queue_path,
+                schema_version=pipeline.SCHEMA_VERSION,
             )
             shell = json.loads(
                 (root / "missions/gm_fixture.json").read_text(encoding="utf-8")
