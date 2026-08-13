@@ -1610,6 +1610,49 @@
           "negative_result": "The only indirect-call candidates in the 39-shape set are non-factory or generic table/property paths. The factory-adjacent functions, including the 0x1810d25c0/0x1810d26bf staging family and GPUDriven binding entry 0x1810eece0, contain no indirect call and no checked GPU target. This closes the obvious indirect-call surface for the recovered CPU record while leaving resolver/table-dispatched kernel-7 selection and the resource +0xd0 upload edge fail-closed."
         }
       },
+      "installed_ifix_gpu_identity_census": {
+        "status": "installed-ifix-payload-gpu-name-census-negative-dynamic-table-open",
+        "source": "Current extracted Gameplay.Beyond IFix patch payload parsed from the FileVirtualMachineBuilder binary format; raw byte-name scan cross-checked the structured tables.",
+        "patch_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/dump/Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
+        "patch_size_bytes": 86926,
+        "patch_sha256": "baa28ae497e64d94e152886622bbe5fb391199bcbf8366e2df91591c9a9f172c",
+        "format_boundary": {
+          "bridge_string_offset": "0x88",
+          "type_count": 296,
+          "method_count": 73,
+          "extern_method_count": 330,
+          "intern_string_count": 102,
+          "field_info_count": 171,
+          "fix_target_count": 32,
+          "target_table_offset": "0x14eb8",
+          "target_table_end": "0x1538a",
+          "terminal_int32": 0
+        },
+        "raw_name_scan": {
+          "terms": [
+            "HGRenderPipeline",
+            "HGShadingStateSystem",
+            "GpuSceneDirtyUpdateCS",
+            "UploadPerDrawParams",
+            "ComputeShader.Dispatch",
+            "CommandBuffer.Internal_DispatchCompute",
+            "_RTPerDrawParamsBuffer",
+            "SetCustomPerDrawData",
+            "SetEntitySharedDataPartial",
+            "_UploadBuffer"
+          ],
+          "byte_occurrences": 0
+        },
+        "structured_identity_scan": {
+          "gpu_target_name_matches": [],
+          "relevant_non_gpu_external_methods": [
+            "UnityEngine.HyperGryph.HGFactoryRenderManager::SetFactoryLodTier",
+            "Beyond.Gameplay.Factory.FacQuality::Apply"
+          ],
+          "active_target_gpu_matches": []
+        },
+        "interpretation": "The installed local IFix payload contains no serialized identity for the render-pipeline, GpuSceneDirtyUpdateCS/UploadPerDrawParams, custom-per-draw setter/partial-update endpoint, or explicit ComputeShader/CommandBuffer upload names. Its relevant factory references are quality/Lod configuration only. This rules out treating the current static IFix payload as the missing kernel-7 producer, but built-in registration, another loaded payload, and runtime WrappersManager slot contents remain outside the file; keep the staging-to-_UploadBuffer and channel-2/resource +0xd0 edges fail-closed."
+      },
       "native_factory_batch_vat_evidence": {
         "status": "native-batch-vat-registry-finalizer-negative-upload-edge-open",
         "source": "Installed UnityPlayer.dll HyperGryph internal-call surface and PData-scoped x64 disassembly.",
