@@ -14,6 +14,9 @@ from scripts.story_builder.codecs.levelscript.trigger_volumes import (
     decode_trigger_volume_map,
     find_final_trigger_volume_map,
 )
+from scripts.story_builder.codecs.levelscript.top_level_tail import (
+    decode_tail_candidate,
+)
 
 
 class LevelScriptTriggerVolumeTests(unittest.TestCase):
@@ -160,6 +163,22 @@ class LevelScriptTriggerVolumeTests(unittest.TestCase):
                 len(ambiguous),
             )),
         )
+
+    def test_top_level_tail_decodes_exact_nullable_members_to_eof(self) -> None:
+        payload = (
+            struct.pack("<Q", 70000000001)
+            + struct.pack("<i", -1)
+            + struct.pack("<I", 1)
+            + struct.pack("<i", -1)
+            + struct.pack("<i", -1)
+        )
+        decoded = decode_tail_candidate(payload, 0)
+        self.assertEqual("null", decoded["startShapeListStatus"])
+        self.assertEqual("Manual", decoded["startTypeName"])
+        self.assertEqual("null", decoded["taskMapStatus"])
+        self.assertEqual("null", decoded["triggerVolumesStatus"])
+        self.assertEqual("0x18", decoded["triggerVolumes"]["endOffset"])
+        self.assertEqual(1_360_000, decoded["score"])
 
     def test_finds_exact_empty_or_null_map_at_eof(self) -> None:
         for encoded_count, expected_status, expected_count in (

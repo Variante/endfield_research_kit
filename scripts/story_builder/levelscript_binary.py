@@ -20,6 +20,7 @@ from .codecs.levelscript import script_event_scope as levelscript_script_event_s
 from .codecs.levelscript import script_stage_changed as levelscript_script_stage_changed
 from .codecs.levelscript import spawner_events as levelscript_spawner_events
 from .codecs.levelscript import switch_actions as levelscript_switch_actions
+from .codecs.levelscript import top_level_tail as levelscript_top_level_tail
 from .codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
 
 if __package__ == "story_builder":
@@ -37,13 +38,6 @@ elif __package__ == "scripts.story_builder":
 else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError("import this module as scripts.story_builder.levelscript_binary")
 
-
-LEVELSCRIPT_START_TYPE_NAMES = {
-    0: "ByEnterStartShape",
-    1: "Manual",
-    2: "SameWithActive",
-    3: "Never",
-}
 
 SCRIPT_POINTER_REF_RECORDS = {
     (0x045D, 0x0A),
@@ -1381,7 +1375,10 @@ def decode_levelscript_active_shape_list(
         out["diagnostic"] = "completeActionMapBoundaryMissing"
         return out
 
-    tail_rows = [_tail_candidate(data, offset) for offset in _u64_offsets(data, script_id)]
+    tail_rows = [
+        levelscript_top_level_tail.decode_tail_candidate(data, offset)
+        for offset in _u64_offsets(data, script_id)
+    ]
     if not tail_rows:
         out["diagnostic"] = "verifiedTopLevelScriptIdMissing"
         return out
@@ -1608,7 +1605,7 @@ def decode_levelscript_encounter_module_target(
             if cursor.count() is not None:
                 raise ValueError("unsupported start shape list")
             start_type = cursor.i32()
-            if start_type not in LEVELSCRIPT_START_TYPE_NAMES:
+            if start_type not in levelscript_top_level_tail.START_TYPE_NAMES:
                 raise ValueError("invalid start type")
             if cursor.count() is not None:
                 raise ValueError("unsupported task map")
@@ -1658,7 +1655,7 @@ def decode_levelscript_encounter_module_target(
                 "tailPartMode": tail_part_mode,
                 "resetModeWhenActive": reset_mode_when_active,
                 "resetModeWhenEnd": reset_mode_when_end,
-                "startType": LEVELSCRIPT_START_TYPE_NAMES[start_type],
+                "startType": levelscript_top_level_tail.START_TYPE_NAMES[start_type],
                 "triggerVolumeCount": trigger_map.get("count"),
                 "serializedMissionOrQuestId": False,
                 "clientRequest": False,
@@ -6005,103 +6002,6 @@ def decode_levelscript_record_payload(
     return _drop_empty(out)
 
 
-def _tail_candidate(data: bytes, offset: int) -> dict[str, Any]:
-    start_shape_offset = offset + 8
-    start_shape, start_shape_end = levelscript_active_shapes.decode_shape_list(
-        data,
-        start_shape_offset,
-    )
-    start_shape_status = str(start_shape.get("status") or "missing")
-    start_shape_count = start_shape.get("count")
-    start_type_offset: int | None = None
-    if start_shape_status in {"null", "present"} and start_shape_end is not None:
-        start_type_offset = start_shape_end
-
-    start_type_raw = _u32(data, start_type_offset) if start_type_offset is not None else None
-    start_type_valid = start_type_raw in LEVELSCRIPT_START_TYPE_NAMES
-    task_map_offset = start_type_offset + 4 if start_type_valid and start_type_offset is not None else None
-    task_map_raw = _u32(data, task_map_offset) if task_map_offset is not None else None
-    task_map_status, task_map_count = _list_status(task_map_raw)
-    task_map_end: int | None = None
-    if task_map_offset is not None and task_map_status == "null":
-        task_map_end = task_map_offset + 4
-    elif (
-        task_map_offset is not None
-        and task_map_status == "present"
-        and task_map_count == 0
-    ):
-        # An empty dictionary has no records.  Its end is exact, so the next
-        # top-level member must begin immediately after the count.  Searching
-        # forward to the final trigger-volume-shaped bytes can otherwise make
-        # an embedded logic ID look like the repeated top-level script ID.
-        task_map_end = task_map_offset + 4
-    trigger_volume_offset = task_map_end
-    trigger_volume: dict[str, Any] = {}
-    trigger_volume_end: int | None = None
-    if trigger_volume_offset is not None:
-        trigger_volume, trigger_volume_end = (
-            levelscript_trigger_volumes.decode_trigger_volume_map(
-                data,
-                trigger_volume_offset,
-            )
-        )
-    elif task_map_offset is not None and task_map_status == "present":
-        (
-            trigger_volume_offset,
-            trigger_volume,
-            trigger_volume_end,
-        ) = levelscript_trigger_volumes.find_final_trigger_volume_map(
-            data,
-            search_start=task_map_offset + 4,
-        )
-    trigger_volume_status = str(trigger_volume.get("status") or "missing")
-    trigger_volume_count = trigger_volume.get("count")
-
-    score = offset
-    if start_type_valid:
-        score += 1_000_000
-    if start_shape_status == "null":
-        score += 100_000
-    elif start_shape_count == 0:
-        score += 50_000
-    if task_map_status in {"null", "present"}:
-        score += 10_000
-    if (
-        trigger_volume_status in {"null", "present"}
-        and trigger_volume.get("parseStatus") != "truncated"
-        and trigger_volume_end == len(data)
-    ):
-        # A completely decoded final top-level member is stronger evidence
-        # than a locally plausible embedded ID and shape/list header.
-        score += 250_000
-
-    return {
-        "scriptIdOffset": offset,
-        "scriptIdOffsetHex": f"0x{offset:x}",
-        "startShapeListOffset": start_shape_offset,
-        "startShapeListStatus": start_shape_status,
-        "startShapeListCount": start_shape_count,
-        "startShapeList": start_shape,
-        "startTypeOffset": start_type_offset,
-        "startTypeOffsetHex": _offset_hex(start_type_offset),
-        "startTypeRaw": start_type_raw if start_type_valid else None,
-        "startTypeName": LEVELSCRIPT_START_TYPE_NAMES.get(
-            start_type_raw if start_type_raw is not None else -1,
-            "",
-        ),
-        "taskMapOffset": task_map_offset,
-        "taskMapOffsetHex": _offset_hex(task_map_offset),
-        "taskMapStatus": task_map_status,
-        "taskMapCount": task_map_count,
-        "triggerVolumesOffset": trigger_volume_offset,
-        "triggerVolumesOffsetHex": _offset_hex(trigger_volume_offset),
-        "triggerVolumesStatus": trigger_volume_status,
-        "triggerVolumesCount": trigger_volume_count,
-        "triggerVolumes": trigger_volume,
-        "score": score,
-    }
-
-
 LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID = (
     "gameassembly-2026-07-22-levelscript-task-check-mission-state-0x67"
 )
@@ -7241,7 +7141,7 @@ def decode_levelscript_task_conditions(
 
     parsed_hosts: list[dict[str, Any]] = []
     for script_id_offset in _u64_offsets(data, numeric_script_id):
-        host = _tail_candidate(data, script_id_offset)
+        host = levelscript_top_level_tail.decode_tail_candidate(data, script_id_offset)
         task_count = host.get("taskMapCount")
         task_map_offset = host.get("taskMapOffset")
         if (
@@ -7361,7 +7261,7 @@ def scan_levelscript_task_condition_fragments(
 
     hosts: dict[tuple[int, int, int], dict[str, Any]] = {}
     for script_id_offset in _u64_offsets(data, numeric_script_id):
-        host = _tail_candidate(data, script_id_offset)
+        host = levelscript_top_level_tail.decode_tail_candidate(data, script_id_offset)
         task_count = host.get("taskMapCount")
         task_map_offset = host.get("taskMapOffset")
         if (
@@ -7480,7 +7380,7 @@ def decode_levelscript_task_mission_state_dependencies(
     ):
         return []
     tail_candidates = [
-        _tail_candidate(data, offset)
+        levelscript_top_level_tail.decode_tail_candidate(data, offset)
         for offset in _u64_offsets(data, numeric_script_id)
     ]
     task_hosts = [
@@ -7560,7 +7460,10 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
         return {}
     action_map = decode_levelscript_action_map_header(data)
     offsets = _u64_offsets(data, script_id)
-    candidates = [_tail_candidate(data, offset) for offset in offsets]
+    candidates = [
+        levelscript_top_level_tail.decode_tail_candidate(data, offset)
+        for offset in offsets
+    ]
     best = max(candidates, key=lambda item: int(item.get("score") or 0), default={})
     active_shapes = decode_levelscript_active_shape_list(data, script_id)
     return {
