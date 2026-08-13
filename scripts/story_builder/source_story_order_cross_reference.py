@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Compare strict source-order edges with OCR/manual lists without promoting them.
 
 The source partial-order report is the only evidence input. Story-order
@@ -8,26 +7,19 @@ cross-reference row is ever emitted as a source-order edge.
 """
 from __future__ import annotations
 
-import argparse
-import sys
 from collections import Counter
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
+try:
+    from ..common import md_escape, safe_key
+except ImportError:
+    from common import md_escape, safe_key
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts"))
-
-from common import md_escape, read_json, safe_key, write_report_json, write_text_if_changed  # noqa: E402
-from story_builder.mission_recovery import natural_key  # noqa: E402
+from .mission_recovery import natural_key
 
 
 SCHEMA = "sourceStoryOrderCrossReference.v1"
-DEFAULT_PARTIAL_ORDER = ROOT / "reports" / "mission_order" / "source_story_partial_order_CN.json"
-DEFAULT_OVERRIDE = ROOT / "webui" / "overrides" / "story_order.json"
-DEFAULT_OCR = ROOT / "webui" / "data" / "story_order_ocr.json"
 
 
 def _mission_orders(payload: Any) -> dict[str, list[str]]:
@@ -207,34 +199,4 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--language", default="CN")
-    parser.add_argument("--partial-order", type=Path)
-    parser.add_argument("--override", type=Path, default=DEFAULT_OVERRIDE)
-    parser.add_argument("--ocr", type=Path, default=DEFAULT_OCR)
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports" / "mission_order")
-    return parser.parse_args(argv)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-    partial_path = args.partial_order or (
-        DEFAULT_PARTIAL_ORDER.parent / f"source_story_partial_order_{args.language}.json"
-    )
-    report = build_report(
-        read_json(partial_path, {}),
-        read_json(args.override, {}),
-        read_json(args.ocr, {}),
-    )
-    out_json = args.reports_dir / f"source_story_order_cross_reference_{args.language}.json"
-    out_md = args.reports_dir / f"source_story_order_cross_reference_{args.language}.md"
-    write_report_json(out_json, report)
-    write_text_if_changed(out_md, render_markdown(report))
-    print(f"Source order cross-reference: {out_md.relative_to(ROOT)}")
-    print(f"Source order cross-reference data: {out_json.relative_to(ROOT)}")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+__all__ = ["SCHEMA", "build_report", "render_markdown"]
