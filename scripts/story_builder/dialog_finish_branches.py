@@ -26,17 +26,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-try:
-    from ..common import (
-        NATIVE_EVIDENCE_MISSING,
-        NativeEvidenceUnavailable,
-        check_installed_native_inputs,
-        native_evidence_required,
-        native_evidence_skip_message,
-        resolve_installed_game_data_root,
-        sha256_file,
-    )
-except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+if __package__ == "story_builder":
     from common import (
         NATIVE_EVIDENCE_MISSING,
         NativeEvidenceUnavailable,
@@ -46,6 +36,18 @@ except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
         resolve_installed_game_data_root,
         sha256_file,
     )
+elif __package__ == "scripts.story_builder":
+    from ..common import (
+        NATIVE_EVIDENCE_MISSING,
+        NativeEvidenceUnavailable,
+        check_installed_native_inputs,
+        native_evidence_required,
+        native_evidence_skip_message,
+        resolve_installed_game_data_root,
+        sha256_file,
+    )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.dialog_finish_branches")
 
 from .dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,

@@ -15,6 +15,7 @@ else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError("import this module as scripts.story_builder.levelscript_manual_control")
 
 from .context import LEVELSCRIPT_DIR
+from .codecs.levelscript import manual_control as levelscript_manual_codec
 from .level_bindings import _load_levelscript_binding_data
 from .levelscript_binary import (
     decode_levelscript_action_map_header,
@@ -22,11 +23,6 @@ from .levelscript_binary import (
 )
 
 
-MANUAL_CONTROL_MAPPING_ID = "levelscript-actionbase-manual-control-opcodes-v1"
-MANUAL_OPCODES = {
-    (0x0308, 0x0A): ("manual-start", "ManualStartLevelScript"),
-    (0x0302, 0x0A): ("manual-end", "ManualEndLevelScript"),
-}
 EXPECTED_EVENT_OPCODES = {
     "manual-start": (0x12BE, 0x00),
     "manual-end": (0x12C0, 0x00),
@@ -184,7 +180,7 @@ class ManualControlIndex:
     summary: dict[str, Any]
     validation: dict[str, Any]
     source_root: str
-    mapping_id: str = MANUAL_CONTROL_MAPPING_ID
+    mapping_id: str = levelscript_manual_codec.MANUAL_CONTROL_MAPPING_ID
     evidence_boundary: str = EVIDENCE_BOUNDARY
 
 
@@ -247,7 +243,7 @@ def build_manual_control_index(
             source_script_id = file_path.stem
 
             for index, record in enumerate(records):
-                role_action = MANUAL_OPCODES.get(
+                role_action = levelscript_manual_codec.MANUAL_CONTROL_ACTIONS.get(
                     (record.get("code"), record.get("kind"))
                 )
                 if not role_action:

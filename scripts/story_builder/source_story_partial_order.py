@@ -23,16 +23,7 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
-    from ..common import (
-        md_escape,
-        read_json,
-        resolve_installed_native_inputs,
-        safe_key,
-        write_report_json,
-        write_text_if_changed,
-    )
-except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+if __package__ == "story_builder":
     from common import (
         md_escape,
         read_json,
@@ -41,6 +32,17 @@ except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
         write_report_json,
         write_text_if_changed,
     )
+elif __package__ == "scripts.story_builder":
+    from ..common import (
+        md_escape,
+        read_json,
+        resolve_installed_native_inputs,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("run this module with python -m scripts.story_builder.source_story_partial_order")
 
 from .mission_recovery import (
     STRONG_ORDER_EDGE_KINDS,

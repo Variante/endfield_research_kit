@@ -27,10 +27,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-try:
-    from ..common import read_bytes_cached
-except ImportError:  # pragma: no cover - top-level ``story_builder`` identity
+if __package__ == "story_builder":
     from common import read_bytes_cached
+elif __package__ == "scripts.story_builder":
+    from ..common import read_bytes_cached
+else:  # pragma: no cover - direct file execution is intentionally unsupported
+    raise ImportError("import this module as scripts.story_builder.mission_recovery")
 
 from .mission_assets import select_complete_mission_runtime_root
 

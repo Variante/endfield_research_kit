@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 
 from scripts.story_builder import levelscript_manual_control as manual_index
-from scripts.story_builder.levelscript_binary import (
-    _decode_manual_levelscript_control,
+from scripts.story_builder.codecs.levelscript.manual_control import (
+    decode_manual_levelscript_control,
 )
 
 
@@ -36,9 +36,9 @@ class LevelScriptManualControlTests(unittest.TestCase):
             + b"\xff" * 4
         )
 
-        decoded = _decode_manual_levelscript_control(
+        decoded = decode_manual_levelscript_control(
             payload,
-            "manual-start",
+            (0x0308, 0x0A),
         )
 
         self.assertEqual(
@@ -51,12 +51,18 @@ class LevelScriptManualControlTests(unittest.TestCase):
         )
 
     def test_unknown_payload_does_not_invent_param_sources(self) -> None:
-        decoded = _decode_manual_levelscript_control(
+        decoded = decode_manual_levelscript_control(
             bytes(range(46)),
-            "manual-start",
+            (0x0308, 0x0A),
         )
 
         self.assertNotIn("parameterSources", decoded)
+
+    def test_wrong_member_count_fails_closed(self) -> None:
+        self.assertEqual(
+            {},
+            decode_manual_levelscript_control(bytes(46), (0x0308, 0x09)),
+        )
 
     def test_typed_index_preserves_literal_and_validated_self_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
