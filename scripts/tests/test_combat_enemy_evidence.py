@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-
-SCRIPTS = Path(__file__).resolve().parents[1]
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
-from gameplay_builder.combat_relationships import PayloadBuilder
-
+from scripts.gameplay_builder.combat_relationships import PayloadBuilder
 
 class CombatEnemyEvidenceTests(unittest.TestCase):
     def test_enemy_links_retain_variant_source_coordinates_and_semantics(self) -> None:

@@ -2,19 +2,12 @@ from __future__ import annotations
 
 import base64
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-
-SCRIPTS = Path(__file__).resolve().parents[1]
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
-from story_builder import dialog_tree  # noqa: E402
-
+from scripts.story_builder import dialog_tree
 
 class DialogTreeRootPayloadAliasTests(unittest.TestCase):
     def setUp(self) -> None:

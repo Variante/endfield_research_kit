@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import unittest
-import sys
 import tempfile
 import gzip
 import hashlib
@@ -9,12 +8,8 @@ import json
 from pathlib import Path
 from unittest import mock
 
-SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-import export_full_from_game
-from export_full_from_game import (
+from scripts import export_full_from_game
+from scripts.export_full_from_game import (
     ANIMESTUDIO_STORY_JSON_TYPES,
     CommandResult,
     animestudio_object_index_export_is_relevant,

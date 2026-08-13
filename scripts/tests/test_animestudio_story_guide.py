@@ -2,18 +2,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 
-
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from story_builder import animestudio_story_guide as audit  # noqa: E402
-from common import guide_runtime_non_mission_content_keys  # noqa: E402
+from scripts.common import guide_runtime_non_mission_content_keys
+from scripts.story_builder import animestudio_story_guide as audit
 
 
 def object_row(*, owner: bool = False) -> dict:
