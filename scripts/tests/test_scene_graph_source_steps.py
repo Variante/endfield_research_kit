@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import unittest
 
+from scripts.story_builder import scene_graph
 from scripts.story_builder.scene_graph import (
     _compact_scene_graph_sequence_steps,
 )
 
 
 class SceneGraphSourceStepTests(unittest.TestCase):
+    def test_module_does_not_reexport_its_dependencies(self) -> None:
+        self.assertNotIn("ROOT", scene_graph.__all__)
+        self.assertNotIn("re", scene_graph.__all__)
+        self.assertNotIn("_canonical_cutscene_key", scene_graph.__all__)
+
     def test_story_compaction_keeps_endpoint_steps_aligned(self) -> None:
         sequence = [
             "radio_e9m2_27",
