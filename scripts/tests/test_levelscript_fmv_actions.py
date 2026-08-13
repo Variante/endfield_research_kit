@@ -4,6 +4,9 @@ from pathlib import Path
 from unittest import mock
 
 from scripts.story_builder import level_bindings
+from scripts.story_builder.codecs.levelscript.fmv import (
+    LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID,
+)
 from scripts.story_builder.language_bundle import (
     filter_non_fmv_story_playback_index,
     filter_native_story_playback_index,
@@ -14,10 +17,7 @@ from scripts.story_builder.level_bindings import (
     classify_levelscript_record,
     levelscript_native_action_name,
 )
-from scripts.story_builder.levelscript_binary import (
-    LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID,
-    decode_levelscript_record_payload,
-)
+from scripts.story_builder.levelscript_binary import decode_levelscript_record_payload
 
 
 PARAM_TAIL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
