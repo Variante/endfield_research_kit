@@ -15,7 +15,7 @@ from scripts.story_builder.source_gap import attachment_evidence as _attachment_
 from scripts.story_builder.source_gap import content_evidence as _content_evidence
 from scripts.story_builder.source_gap import core as _core
 from scripts.story_builder.source_gap import data as _data
-from scripts.story_builder.source_gap import evidence as _evidence
+from scripts.story_builder.source_gap import foundation as _foundation
 from scripts.story_builder.source_gap import model as _model
 from scripts.story_builder.source_gap import offline_evidence as _offline_evidence
 from scripts.story_builder.source_gap import providers as _providers
@@ -33,13 +33,13 @@ class _GapQueueTestFacade:
 
     _modules = (
         _core,
-        _evidence,
         _model,
         _offline_evidence,
         _content_evidence,
         _attachment_evidence,
         _providers,
         _data,
+        _foundation,
         _contracts,
     )
 

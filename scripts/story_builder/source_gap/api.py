@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from . import core
+from .foundation import read_json, safe_key
 from .report import GapReportPaths, publish_gap_report
-from common import read_json, safe_key
-from story_builder.level_bindings import (
+from ..level_bindings import (
     build_levelscript_action_story_occurrences,
     build_levelscript_native_story_playback_index,
 )
