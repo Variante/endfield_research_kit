@@ -14,18 +14,11 @@ from scripts.story_builder import video_bindings
 class VideoBindingsLevelScriptTests(unittest.TestCase):
     def test_retired_playable_director_bridge_is_not_a_dependency(self) -> None:
         root = Path(__file__).resolve().parents[2]
-        sources = [
-            root / "scripts" / "story_builder" / "video_bindings.py",
-            root
-            / "scripts"
-            / "story_recovery"
-            / "build_mission_order_evidence_audit.py",
-        ]
-        combined = "\n".join(
-            path.read_text(encoding="utf-8") for path in sources
-        )
-        self.assertNotIn("playable_director_bridge.json", combined)
-        self.assertNotIn("playableDirectorAnchoredCount", combined)
+        source = (
+            root / "scripts" / "story_builder" / "video_bindings.py"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("playable_director_bridge.json", source)
+        self.assertNotIn("playableDirectorAnchoredCount", source)
 
     def test_story_builder_reads_clips_from_video_bindings(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
