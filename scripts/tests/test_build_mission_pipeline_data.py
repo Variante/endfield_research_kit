@@ -25,6 +25,7 @@ from scripts.mission_pipeline import (
     source_order_publication,
     source_order_shells,
     story_order_projection,
+    story_trigger_route_projection,
 )
 from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
 from scripts.story_builder.native_contracts import callserver_callback
@@ -57,6 +58,14 @@ def _build_post_playback_variable_bridge_audit(native_index):
         post_playback_control_projector=(
             pipeline.exact_native_receiver_post_playback_control
         ),
+    )
+
+
+def _build_story_trigger_route(*args, **kwargs):
+    return story_trigger_route_projection.build_story_trigger_route(
+        *args,
+        **kwargs,
+        runtime_selector=pipeline.exact_native_runtime_selector,
     )
 
 
@@ -1712,7 +1721,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
 
     def test_trigger_route_preserves_exact_connected_context_evidence(self):
-        route = pipeline.build_story_trigger_route(
+        route = _build_story_trigger_route(
             {
                 "key": "radio_arbitrary_2",
                 "relation": "levelscript_quest_state_gate",
@@ -3465,6 +3474,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIsNone(published)
 
     def test_trigger_route_reads_exact_levelscript_occurrence_paths(self):
+        self.assertFalse(hasattr(pipeline, "build_story_trigger_route"))
+        self.assertFalse(hasattr(pipeline, "story_trigger_route_sort_key"))
         row = {
             "key": "radio_testm1_1",
             "relation": "levelscript_mission_context",
@@ -3489,7 +3500,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }],
         }
 
-        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+        route = _build_story_trigger_route(row, mission_id="testm1")
 
         self.assertEqual(route["eventNames"], ["LevelEvent_OnBattleSignal"])
         self.assertEqual(route["actionNames"], ["PlayRadioAction"])
@@ -3510,7 +3521,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "rootPaths": ["TimelineRoot.json"],
         }
 
-        route = pipeline.build_story_trigger_route(
+        route = _build_story_trigger_route(
             row,
             mission_id="testm1",
             owner_status="unresolved",
@@ -3528,8 +3539,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         direct = {"causality": "playback", "questId": "testm1_q#1"}
         self.assertLess(
-            pipeline.story_trigger_route_sort_key(direct),
-            pipeline.story_trigger_route_sort_key(route),
+            story_trigger_route_projection.story_trigger_route_sort_key(direct),
+            story_trigger_route_projection.story_trigger_route_sort_key(route),
         )
 
     def test_trigger_route_reads_world_entity_listener_evidence(self):
@@ -3559,7 +3570,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }],
         }
 
-        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+        route = _build_story_trigger_route(row, mission_id="testm1")
 
         self.assertEqual(
             route["eventNames"],
@@ -3626,7 +3637,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }],
         }
 
-        route = pipeline.build_story_trigger_route(
+        route = _build_story_trigger_route(
             row,
             mission_id="testm1",
         )
@@ -3671,7 +3682,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "entityTemplateIds": ["int_narrative_mission"],
         }
 
-        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+        route = _build_story_trigger_route(row, mission_id="testm1")
 
         self.assertEqual(
             [step["kind"] for step in route["steps"]],
@@ -3731,7 +3742,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }],
         }
 
-        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+        route = _build_story_trigger_route(row, mission_id="testm1")
 
         self.assertEqual(
             [step["kind"] for step in route["steps"]],
@@ -3791,7 +3802,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "upstreamServerStateSources": ["SC_NPC_ACTIVE_CHANGE_NTF"],
         }
 
-        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+        route = _build_story_trigger_route(row, mission_id="testm1")
 
         self.assertEqual(route["causality"], "dependency")
         self.assertEqual(route["npcProxyId"], "proxy_a")
@@ -4072,7 +4083,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "entityTemplateIds": ["int_horn"],
         }
 
-        route = pipeline.build_story_trigger_route(
+        route = _build_story_trigger_route(
             row,
             mission_id="testm1",
             quest_id="testm1_q#3",
