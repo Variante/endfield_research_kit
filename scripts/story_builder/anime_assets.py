@@ -118,6 +118,25 @@ _VIDEO_BINDINGS_CACHE: dict[str, dict] | None = None
 _VIDEO_DEFINITIONS_CACHE: dict[str, dict] | None = None
 
 
+def _shortest_directed_path(
+    start_id: str,
+    target_id: str,
+    targets_by_source: dict[str, list[str]],
+) -> list[str]:
+    paths: dict[str, list[str]] = {start_id: [start_id]}
+    pending = deque([start_id])
+    while pending:
+        source_id = pending.popleft()
+        if source_id == target_id:
+            return paths[source_id]
+        for next_id in targets_by_source.get(source_id) or []:
+            if next_id in paths:
+                continue
+            paths[next_id] = [*paths[source_id], next_id]
+            pending.append(next_id)
+    return []
+
+
 def _anime_tree_logical_stem(path: Path) -> str:
     return path_id_export_base_stem(path.stem)
 
@@ -645,22 +664,6 @@ def _dialog_tree_immediate_trunk_contexts(payload: dict) -> dict[str, dict]:
         for row in edge_rows
     }
 
-    def shortest_prime_path(target_id: str) -> list[str]:
-        paths: dict[str, list[str]] = {
-            prime_node_id: [prime_node_id],
-        }
-        pending = deque([prime_node_id])
-        while pending:
-            source_id = pending.popleft()
-            if source_id == target_id:
-                return paths[source_id]
-            for next_id in targets_by_source.get(source_id) or []:
-                if next_id in paths:
-                    continue
-                paths[next_id] = [*paths[source_id], next_id]
-                pending.append(next_id)
-        return []
-
     def trunk_id(node_id: str) -> str:
         node = node_by_id.get(node_id)
         if not isinstance(node, dict) or node.get("$type") != _DIALOG_TREE_TRUNK_NODE_TYPE:
@@ -691,7 +694,11 @@ def _dialog_tree_immediate_trunk_contexts(payload: dict) -> dict[str, dict]:
             for adjacent_id in outgoing_ids
             if (value := trunk_id(adjacent_id))
         ]
-        node_path = shortest_prime_path(node_id)
+        node_path = _shortest_directed_path(
+            prime_node_id,
+            node_id,
+            targets_by_source,
+        )
         predecessor_is_entry_path_tail = (
             len(incoming_ids) == 1
             and len(node_path) >= 2
@@ -1790,20 +1797,6 @@ def _extract_dialog_tree_prime_reachable_story_playback_carriers(
             row,
         )
 
-    def shortest_prime_path(target_id: str) -> list[str]:
-        paths: dict[str, list[str]] = {prime_node_id: [prime_node_id]}
-        pending = deque([prime_node_id])
-        while pending:
-            source_id = pending.popleft()
-            if source_id == target_id:
-                return paths[source_id]
-            for next_id in targets_by_source.get(source_id) or []:
-                if next_id in paths:
-                    continue
-                paths[next_id] = [*paths[source_id], next_id]
-                pending.append(next_id)
-        return []
-
     accepted_story_keys = set(story_keys)
     out: list[dict] = []
     for node_id, (node_index, node) in sorted(
@@ -1846,7 +1839,11 @@ def _extract_dialog_tree_prime_reachable_story_playback_carriers(
             continue
         if story_key == dialog_key or story_key not in accepted_story_keys:
             continue
-        node_path = shortest_prime_path(node_id)
+        node_path = _shortest_directed_path(
+            prime_node_id,
+            node_id,
+            targets_by_source,
+        )
         if not node_path:
             continue
         out.append({

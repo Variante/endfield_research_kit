@@ -55,6 +55,22 @@ class AnimeAssetsImportContractTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(name, vars(anime_assets))
 
+    def test_shortest_directed_path_is_stable_and_cycle_safe(self) -> None:
+        graph = {
+            "root": ["left", "right"],
+            "left": ["root", "target"],
+            "right": ["target"],
+        }
+
+        self.assertEqual(
+            anime_assets._shortest_directed_path("root", "target", graph),
+            ["root", "left", "target"],
+        )
+        self.assertEqual(
+            anime_assets._shortest_directed_path("root", "missing", graph),
+            [],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
