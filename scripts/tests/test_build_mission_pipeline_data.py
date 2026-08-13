@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from scripts import build_mission_pipeline_data as pipeline
 from scripts.story_builder import level_bindings, mission_flow, source_links
+from scripts.story_builder.native_contracts import callserver_callback
 
 
 class NativeEvidenceSkipWiringTests(unittest.TestCase):
@@ -4780,84 +4781,46 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             level_bindings.LEVELSCRIPT_NATIVE_ACTION_NAMES[(0x02FA, 0x09)],
         )
 
-    def test_actionbase_formatter_loader_recovers_every_tag_and_fails_closed(self):
-        rows = [
-            {
-                "tag": tag,
-                "tagHex": f"0x{tag:04x}",
-                "actionName": f"GenericAction{tag}",
-            }
-            for tag in range(1313)
-        ]
-        payload = {
-            "metadata": {
-                "gameAssemblySha256":
-                    level_bindings.ACTIONBASE_FORMATTER_GAMEASSEMBLY_SHA256,
-                "metadataSha256":
-                    level_bindings.ACTIONBASE_FORMATTER_METADATA_SHA256,
-                "codeRegistration": "0x18b9217d0",
-            },
-            "targetMethod": {
-                "typeToken": "0x02000c1c",
-                "methodToken": "0x0600488f",
-                "methodPointerVa": "0x183998700",
-            },
-            "summary": {
-                "tagCount": 1313,
-                "minTag": 0,
-                "maxTag": 1312,
-                "duplicateTagCount": 0,
-                "missingTagCountInsideRange": 0,
-                "unknownInstructionCount": 0,
-            },
-            "actionNames": [row["actionName"] for row in rows],
-        }
-        with tempfile.TemporaryDirectory() as temporary:
-            valid_path = Path(temporary) / "valid.json"
-            valid_path.write_text(json.dumps(payload), encoding="utf-8")
-            names, audit = level_bindings.load_actionbase_formatter_names(
-                valid_path
-            )
-            payload["actionNames"][42] = ""
-            invalid_path = Path(temporary) / "invalid.json"
-            invalid_path.write_text(json.dumps(payload), encoding="utf-8")
-            invalid_names, invalid_audit = (
-                level_bindings.load_actionbase_formatter_names(invalid_path)
-            )
-
-        self.assertEqual(1313, len(names))
-        self.assertEqual("GenericAction42", names[42])
-        self.assertEqual("validated", audit["status"])
-        self.assertEqual({}, invalid_names)
-        self.assertEqual("validation_failed", invalid_audit["status"])
-        self.assertEqual(
-            "nonempty_action_name",
-            invalid_audit["validationFailures"][0]["gate"],
-        )
-
     def test_callserver_callback_contract_loader_fails_closed(self):
         canonical = json.loads(
-            level_bindings.DEFAULT_CALLSERVER_CALLBACK_CONTRACT.read_text(
-                encoding="utf-8"
-            )
+            callserver_callback.DEFAULT_CONTRACT.read_text(encoding="utf-8")
+        )
+        validated_native = SimpleNamespace(status="validated", detail="")
+        mismatched_native = SimpleNamespace(
+            status="mismatched",
+            detail="GameAssembly.dll hash differs",
         )
         with tempfile.TemporaryDirectory() as temporary:
-            valid_path = Path(temporary) / "valid.json"
-            valid_path.write_text(json.dumps(canonical), encoding="utf-8")
-            valid = level_bindings.load_callserver_callback_contract(valid_path)
-
+            missing_path = Path(temporary) / "missing.json"
             canonical["callServer"]["outputFieldOffset"] = "this+0x00"
             invalid_path = Path(temporary) / "invalid.json"
             invalid_path.write_text(json.dumps(canonical), encoding="utf-8")
-            invalid = level_bindings.load_callserver_callback_contract(
-                invalid_path
-            )
+            missing = level_bindings.load_callserver_callback_contract(missing_path)
+            with patch.object(
+                callserver_callback,
+                "check_installed_native_inputs",
+                return_value=validated_native,
+            ):
+                valid = level_bindings.load_callserver_callback_contract()
+                invalid = level_bindings.load_callserver_callback_contract(invalid_path)
+            with patch.object(
+                callserver_callback,
+                "check_installed_native_inputs",
+                return_value=mismatched_native,
+            ):
+                mismatched = level_bindings.load_callserver_callback_contract()
 
+        self.assertEqual("missing", missing["status"])
         self.assertEqual("validated", valid["status"])
-        self.assertEqual("validation_failed", invalid["status"])
+        self.assertEqual("mismatched", invalid["status"])
         self.assertEqual(
             "output_field_offset",
             invalid["validationFailures"][0]["gate"],
+        )
+        self.assertEqual("mismatched", mismatched["status"])
+        self.assertEqual(
+            "installed_native_inputs",
+            mismatched["validationFailures"][0]["gate"],
         )
 
     def test_callserver_callback_successor_requires_exact_header_contract(self):

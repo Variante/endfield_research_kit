@@ -1,6 +1,6 @@
 {
-  "schema": "levelScriptActionBaseFormatterNames.v1",
-  "sourceAudit": "reports/mission_order/levelscript_actionbase_formatter_tags.json",
+  "schema": "actionBaseFormatterNativeContract.v1",
+  "status": "validated",
   "metadata": {
     "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
     "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
