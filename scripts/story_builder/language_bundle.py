@@ -13,6 +13,11 @@ from .mission_flow import *
 from .dialog_tree import *
 from .bundle_support import *
 from .language_helpers import *
+from .option_timeline_continuation import (
+    classify_runtime_jump_option_routes,
+    classify_timeline_clip_option_index_routes,
+    classify_zero_index_timeline_continuation,
+)
 from .timeline_action_evidence import build_conversation_action_debug
 from .option_anchor_reports import (
     inferred_option_anchor_row,
