@@ -35,7 +35,7 @@ else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError("import this module as scripts.story_builder.mission_recovery")
 
 from .mission_assets import select_complete_mission_runtime_root
-from .story_keys import line_stem, timeline_stem_to_dialog_key
+from .story_keys import canonical_cutscene_key, line_stem, timeline_stem_to_dialog_key
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_MRA_DIR = select_complete_mission_runtime_root(
@@ -101,13 +101,6 @@ CUTSCENE_REF_FIELDS = ("_cutsceneId",)
 REMOTECOMM_REF_FIELDS = ("_remoteCommId",)
 RADIO_REF_FIELDS = ("_radioId",)
 STORY_REF_FIELDS = DIALOG_REF_FIELDS + CUTSCENE_REF_FIELDS + REMOTECOMM_REF_FIELDS + RADIO_REF_FIELDS
-
-CUTSCENE_HASH_SUFFIX_RE = re.compile(r"_p[0-9A-Fa-f]{8,16}$")
-CUTSCENE_COMPONENT_SUFFIX_RE = re.compile(
-    r"_(?:Actor|Audio|Effect|Light|Others)(?:_(?:cam_\d+|AU|CHI|CN|EN|ENG|JP|KO|KR|ENV))*$",
-    re.IGNORECASE,
-)
-CUTSCENE_LOCALE_SUFFIX_RE = re.compile(r"_(?:CHI|CN|EN|ENG|JP|KO|KR|ENV)$", re.IGNORECASE)
 
 OBJECTIVE_FLAG_FIELDS = (
     "multiple",
@@ -275,23 +268,6 @@ def flatten_primitives(node: Any, path: str = "$", *, max_items: int = 80) -> li
 
     visit(node, path)
     return out
-
-
-def canonical_cutscene_key(value: str) -> str:
-    if not isinstance(value, str):
-        return ""
-    key = value.strip()
-    if key.startswith("cutscene_"):
-        pass
-    elif match := re.match(r"^(?:f|m|fm)_(cutscene_.+)$", key, re.IGNORECASE):
-        key = match.group(1)
-    else:
-        return ""
-    key = "cutscene_" + key[len("cutscene_"):]
-    key = CUTSCENE_HASH_SUFFIX_RE.sub("", key)
-    key = CUTSCENE_COMPONENT_SUFFIX_RE.sub("", key)
-    key = CUTSCENE_LOCALE_SUFFIX_RE.sub("", key)
-    return key if key != "cutscene" else ""
 
 
 def classify_story_ref(field_name: str, raw_value: str) -> tuple[str, str]:

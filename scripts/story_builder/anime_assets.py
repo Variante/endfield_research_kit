@@ -61,7 +61,7 @@ from .dialog_tree_routes import (
     recover_dialog_tree_finish_endpoints,
     recover_dialog_tree_option_routes,
 )
-from .mission_recovery import canonical_cutscene_key as mission_canonical_cutscene_key
+from .story_keys import canonical_cutscene_key as mission_canonical_cutscene_key
 
 
 _DIALOG_TREE_TYPE = "Beyond.Gameplay.DialogTree"
