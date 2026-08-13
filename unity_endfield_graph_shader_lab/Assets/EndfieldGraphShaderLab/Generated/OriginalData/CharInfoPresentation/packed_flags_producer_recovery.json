@@ -318,6 +318,35 @@
           },
           "negative_result": "The mapped V1/V2 GPU-driven entrypoints expose frame/buffer binding helpers, but the inspected call paths do not alias their +0xd0 fields to the custom resource returned by 0x1804255f0. Keep resource +0xd0 to descriptor upload unresolved."
         },
+        "gpu_driven_service_object_census": {
+          "status": "service-registry-backed-v1-v2-gpu-path-bounded-no-factory-staging-edge",
+          "source": "Current installed UnityPlayer.dll internal-call wrappers and PData-bounded native disassembly; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+          "service_resolution": {
+            "registry_service": "0x1810f1980/0x1810fe120 call 0x180fc5e60 (RuntimeInitializeOnLoadManager service slot 20), load service +0xe8, then call 0x1810e6310 with mode dl=0/1.",
+            "mode_zero": "V1 wrappers receive the state selected from the service pointer table; 0x1810e6310 indexes the table by the root mode byte at +0x180 and returns the selected state object or a fail-closed sentinel.",
+            "mode_one": "V2 wrappers use the same table resolver with dl=1; this is a separate state mode, not an alias to the factory manager or the custom-per-draw resource."
+          },
+          "binding_core": {
+            "frame_constants": {
+              "entry": "0x1801e9280 -> 0x1810ef350",
+              "observed": "The native core reads state +0x68 metadata, computes an indexed lane from metadata (+0x20/+0x28, +0x48, and state +0x80), and records a 0x40-byte binding payload from state metadata +0x94 through 0x1805f85e0 -> command-context +0x308 -> 0x1805d5700."
+            },
+            "frame_constants_global": {
+              "entry": "0x1801e9360 -> 0x1810ef3f0",
+              "observed": "The sibling path uses state metadata +0x20 and the same 0x40-byte generic binding writer; it has no manager +0x38/index*0x8c or five-vector staging access."
+            },
+            "culling_and_rendering": {
+              "entries": ["0x1810eece0", "0x1810ef150"],
+              "observed": "These paths enumerate GPU-driven buffer/property metadata rooted at state +0x68 and call generic resource-binding helpers (0x1805f84a0/0x1804cb730). The V2 +0xd0 lane is one member of that GPU-driven metadata array, not the custom resource +0xd0 proven by 0x1804255f0."
+            }
+          },
+          "dispatch_core": {
+            "native_functions": ["0x1810f17e0", "0x1810f1890", "0x1810fdf90", "0x1810fe040"],
+            "observed": "The four GPU-driven dispatch cores derive dimensions from state metadata and invoke 0x1805e7e10, whose successful path resolves the shader/kernel and calls the graphics-context vtable slot +0xab0. The internal native callers select kernel index 0; managed wrappers still accept a caller-supplied index.",
+            "negative_result": "The service-object and GPU-driven dispatch bodies never read the factory manager records at 0x1810d25c0 + index*0x8c, the HyperGryph ECS 0x100-stride staging lanes, _UploadBuffer, or resource +0xd0/channel 2."
+          },
+          "boundary": "This closes a concrete UnityPlayer GPUDriven service/binding/dispatch path while separating it from the factory ECS staging producer. It does not recover the UploadPerDrawParams kernel-7 selector, the 84-byte upload-buffer producer, or the channel-2 descriptor binding; those edges remain fail-closed."
+        },
         "gpu_scene_upload_kernel_evidence": {
           "status": "per-draw-gpu-buffer-consumer-and-resource-identity-closed-native-edge-open",
           "source": "Current installed-game serialized ComputeShader metadata and extracted SPIR-V for GpuSceneDirtyUpdateCS (Persistent VFS 0CE8FA57/36243F039A1BFD05676B5D323B50D4AA.chk, rawDataSha256 0202830400d56f224dd45c43f2ff1cdfe848272509ae8663cccfa1abd0351f36).",
