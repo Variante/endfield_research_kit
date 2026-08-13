@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.story_builder.dialog_tree_finish_endpoints import (
-    recover_dialog_tree_finish_endpoints,
-)
-from scripts.story_builder.dialog_tree_option_routes import (
+from scripts.story_builder.dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
+    recover_dialog_tree_finish_endpoints,
 )
 
 

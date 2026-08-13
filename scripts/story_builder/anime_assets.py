@@ -4,11 +4,11 @@ import hashlib
 from functools import lru_cache
 
 from .context import *
-from .dialog_tree_option_routes import (
+from .dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
+    recover_dialog_tree_finish_endpoints,
     recover_dialog_tree_option_routes,
 )
-from .dialog_tree_finish_endpoints import recover_dialog_tree_finish_endpoints
 
 
 _DIALOG_TREE_TYPE = "Beyond.Gameplay.DialogTree"

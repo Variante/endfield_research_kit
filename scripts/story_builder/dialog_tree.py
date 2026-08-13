@@ -3,9 +3,10 @@
 from .context import *
 from .anime_assets import *
 from .scene_graph import *
+from .scene_graph import _node_short_type
 from .level_bindings import *
 from .mission_flow import *
-from .dialog_tree_option_routes import (
+from .dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_option_routes,
 )
