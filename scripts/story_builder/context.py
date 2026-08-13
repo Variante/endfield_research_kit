@@ -86,11 +86,6 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from source_paths import _existing_unique_paths, _resolve_recovered_dir, _resolve_structured_source_dir
 from story_builder.mission_assets import select_complete_mission_runtime_root
-from .reports import (
-    inferred_option_anchor_row as shared_inferred_option_anchor_row,
-    write_inferred_option_anchors_report as shared_write_inferred_option_anchors_report,
-    write_scene_order_gap_reports as shared_write_scene_order_gap_reports,
-)
 from .source_links import build_source_links
 from .timeline_recovery import (
     TimelineRecoveryConfig,

@@ -5,6 +5,11 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+try:
+    from .common import write_report_json
+except ImportError:
+    from common import write_report_json
+
 
 # DialogIdTable registry: see scripts/story_builder/dialog_registry.py.
 # This is Endfield's authoritative runtime dialog registry (extracted from
@@ -2185,3 +2190,31 @@ def render_scene_order_gap_markdown(summary: dict, rows: list[dict]) -> str:
         )
 
     return "\n".join(lines)
+
+
+def write_scene_order_gap_reports(
+    root: Path,
+    reports_dir: Path,
+    language: str,
+    conv_dir: Path,
+    *,
+    rows: list[dict] | None = None,
+) -> dict:
+    """Write the Markdown and JSON views owned by this scene-order module."""
+    if rows is None:
+        rows = collect_scene_order_gap_rows(root, conv_dir)
+    summary = build_scene_order_gap_summary(rows, language)
+
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    out_md = reports_dir / f"scene_order_gap_report_{language}.md"
+    out_json = reports_dir / f"scene_order_gap_report_{language}.json"
+    out_md.write_text(
+        render_scene_order_gap_markdown(summary, rows) + "\n",
+        encoding="utf-8",
+    )
+    write_report_json(out_json, {"summary": summary, "scenes": rows})
+
+    print(f"  scene-order report: {out_md}")
+    print(f"  scene-order data:   {out_json}")
+    print(f"  flagged dlg scenes: {summary['totalFlaggedScenes']}")
+    return {"summary": summary, "markdown": out_md, "json": out_json}

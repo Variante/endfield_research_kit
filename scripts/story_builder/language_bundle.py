@@ -14,6 +14,11 @@ from .dialog_tree import *
 from .bundle_support import *
 from .language_helpers import *
 from .timeline_action_evidence import build_conversation_action_debug
+from .option_anchor_reports import (
+    inferred_option_anchor_row,
+    write_inferred_option_anchors_report,
+)
+from scene_order_gap_shared import write_scene_order_gap_reports
 from .cutscene_semantics import (
     cutscene_semantic_shape,
     cutscene_subtitle_evidence,
@@ -1845,7 +1850,7 @@ def build_language_bundle(
     def write_conv_payload(out_key: str, payload: dict) -> Path:
         path = conv_dir / f"{out_key}.json"
         write_json(path, payload)
-        inferred_anchor_row = shared_inferred_option_anchor_row(payload, out_key)
+        inferred_anchor_row = inferred_option_anchor_row(payload, out_key)
         if inferred_anchor_row is None:
             inferred_option_anchor_rows_by_key.pop(out_key, None)
         else:
@@ -23343,14 +23348,14 @@ def build_language_bundle(
         scene_placement_index=scene_placement_index,
         dialog_id_registry=dialog_id_registry,
     )
-    scene_order_report = shared_write_scene_order_gap_reports(
+    scene_order_report = write_scene_order_gap_reports(
         ROOT,
         REPORTS_DIR,
         language_code,
         conv_dir,
         rows=scene_order_rows,
     )
-    inferred_anchor_report = shared_write_inferred_option_anchors_report(
+    inferred_anchor_report = write_inferred_option_anchors_report(
         REPORTS_DIR,
         language_code,
         conv_dir,

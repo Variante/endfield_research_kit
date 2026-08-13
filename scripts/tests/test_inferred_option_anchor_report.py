@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.story_builder import reports
+from scripts.story_builder import option_anchor_reports
 
 
 class InferredOptionAnchorReportTests(unittest.TestCase):
@@ -51,19 +51,19 @@ class InferredOptionAnchorReportTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            legacy = reports.write_inferred_option_anchors_report(
+            legacy = option_anchor_reports.write_inferred_option_anchors_report(
                 legacy_reports,
                 "CN",
                 conv_dir,
             )
-            row = reports.inferred_option_anchor_row(payload, "fallback")
+            row = option_anchor_reports.inferred_option_anchor_row(payload, "fallback")
             self.assertIsNotNone(row)
             with patch.object(
-                reports,
+                option_anchor_reports,
                 "read_json",
                 side_effect=AssertionError("in-memory report must not reread conversations"),
             ):
-                memory = reports.write_inferred_option_anchors_report(
+                memory = option_anchor_reports.write_inferred_option_anchors_report(
                     memory_reports,
                     "CN",
                     conv_dir,
@@ -83,11 +83,11 @@ class InferredOptionAnchorReportTests(unittest.TestCase):
     def test_non_inferred_rewrite_removes_current_row(self) -> None:
         payload = self.fixture()
         self.assertIsNotNone(
-            reports.inferred_option_anchor_row(payload, "dlg_testm1_1")
+            option_anchor_reports.inferred_option_anchor_row(payload, "dlg_testm1_1")
         )
         payload["warnings"] = []
         self.assertIsNone(
-            reports.inferred_option_anchor_row(payload, "dlg_testm1_1")
+            option_anchor_reports.inferred_option_anchor_row(payload, "dlg_testm1_1")
         )
 
 
