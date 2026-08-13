@@ -9,7 +9,7 @@ from common import write_report_json, write_text_if_changed
 from .anime_assets import *
 from .scene_graph import *
 from .level_bindings import *
-from .mission_flow import *
+from .mission_flow import build_mission_map_pins, load_mission_flow
 from .dialog_tree import *
 from .bundle_support import *
 from .language_helpers import *
