@@ -6,7 +6,22 @@ from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path as _RadioContPath
 from .context import *
 from common import write_report_json, write_text_if_changed
-from .anime_assets import *
+from .anime_assets import (
+    _canonical_cutscene_key,
+    _cutscene_component_summary,
+    _infer_cutscene_mission_and_scene,
+    _load_cutscene_assets,
+    _load_cutscene_subtitle_tracks,
+    _load_narrative_video_assets,
+    _quest_area_story_refs,
+    _scene_ref_alias_candidates,
+    recover_dialog_tree_left_subtitle_actions,
+    recover_dialog_tree_narrative_mask_actions,
+    recover_dialog_tree_open_ui_actions,
+    recover_dialog_tree_prime_reachable_story_playback_carriers,
+    recover_dialog_tree_quest_state_dependencies,
+    recover_dialog_tree_story_playback_carriers,
+)
 from .scene_graph import (
     _compact_scene_graph_sequence,
     _compact_scene_graph_sequence_steps,
