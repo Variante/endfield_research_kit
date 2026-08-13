@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import struct
+from typing import Any
 
 MEMORYPACK_NULL_COUNT = 0xFFFFFFFF
 MEMORYPACK_UNION_WIDE_TAG = 0xFA
@@ -14,6 +15,52 @@ STRING_SAMPLE_MAX_CHARS = 360
 
 def format_offset(offset: int | None) -> str:
     return f"0x{offset:x}" if isinstance(offset, int) and offset >= 0 else ""
+
+
+def scan_length_prefixed_utf8_string_hits(
+    data: bytes,
+    *,
+    start: int = 0,
+    max_scan_bytes: int | None = None,
+    max_samples: int = 128,
+    min_length: int = 2,
+    max_length: int = 160,
+) -> list[dict[str, Any]]:
+    end = len(data) if max_scan_bytes is None else min(len(data), start + max_scan_bytes)
+    hits: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+    for pos in range(max(start, 0), max(start, end - 4)):
+        length = struct.unpack_from("<I", data, pos)[0]
+        if length < min_length or length > max_length or pos + 4 + length > end:
+            continue
+        raw = data[pos + 4 : pos + 4 + length]
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        if any(ord(ch) < 32 for ch in text):
+            continue
+        if not any(ch.isalnum() for ch in text):
+            continue
+        key = (pos, text)
+        if key in seen:
+            continue
+        seen.add(key)
+        hits.append({"offset": format_offset(pos), "length": length, "value": text})
+        if len(hits) >= max_samples:
+            break
+    return hits
+
+
+def unique_strings(values: list[str], limit: int) -> list[str]:
+    out: list[str] = []
+    for value in values:
+        text = str(value or "").strip()
+        if text and text not in out:
+            out.append(text)
+            if len(out) >= limit:
+                break
+    return out
 
 
 def read_memorypack_utf8_string(

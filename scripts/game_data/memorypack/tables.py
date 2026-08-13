@@ -20,6 +20,8 @@ from .core import (
     read_memorypack_utf8_string,
     require_memorypack_non_null_string,
     require_memorypack_string,
+    scan_length_prefixed_utf8_string_hits,
+    unique_strings,
 )
 from .schemas import MEMORYPACK_FIELD_SCHEMAS
 
@@ -76,52 +78,6 @@ DIALOG_ID_TABLE_OPTION_RE = re.compile(r"^option_(?P<scene>dlg_[A-Za-z0-9_]+?)_(
 
 
 MODEL_VIEW_STATE_CONTROLLER_MEMBER_COUNT = 7
-
-
-def scan_length_prefixed_utf8_string_hits(
-    data: bytes,
-    *,
-    start: int = 0,
-    max_scan_bytes: int | None = None,
-    max_samples: int = 128,
-    min_length: int = 2,
-    max_length: int = 160,
-) -> list[dict[str, Any]]:
-    end = len(data) if max_scan_bytes is None else min(len(data), start + max_scan_bytes)
-    hits: list[dict[str, Any]] = []
-    seen: set[tuple[int, str]] = set()
-    for pos in range(max(start, 0), max(start, end - 4)):
-        length = struct.unpack_from("<I", data, pos)[0]
-        if length < min_length or length > max_length or pos + 4 + length > end:
-            continue
-        raw = data[pos + 4:pos + 4 + length]
-        try:
-            text = raw.decode("utf-8")
-        except UnicodeDecodeError:
-            continue
-        if any(ord(ch) < 32 for ch in text):
-            continue
-        if not any(ch.isalnum() for ch in text):
-            continue
-        key = (pos, text)
-        if key in seen:
-            continue
-        seen.add(key)
-        hits.append({"offset": format_offset(pos), "length": length, "value": text})
-        if len(hits) >= max_samples:
-            break
-    return hits
-
-
-def unique_strings(values: list[str], limit: int) -> list[str]:
-    out: list[str] = []
-    for value in values:
-        text = str(value or "").strip()
-        if text and text not in out:
-            out.append(text)
-            if len(out) >= limit:
-                break
-    return out
 
 
 def find_length_prefixed_utf8_tail_value(data: bytes, value: str, *, trailing_bytes: int = 1) -> tuple[int, int] | None:
