@@ -3,22 +3,16 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-try:
-    from story_builder import dialog_finish_branches as audit
-except ModuleNotFoundError:
-    from scripts.story_builder import dialog_finish_branches as audit
+from scripts import common
+from scripts.story_builder import dialog_finish_branches as audit
 
-# Bind to the exact common module the audit imported: loading it under a
-# second name would give same-named classes that are not identical.
-_common = sys.modules[audit.NativeEvidenceUnavailable.__module__]
-NATIVE_EVIDENCE_MISMATCHED = _common.NATIVE_EVIDENCE_MISMATCHED
-NativeEvidenceUnavailable = _common.NativeEvidenceUnavailable
+NATIVE_EVIDENCE_MISMATCHED = common.NATIVE_EVIDENCE_MISMATCHED
+NativeEvidenceUnavailable = common.NativeEvidenceUnavailable
 
 
 def text_asset(nodes: list[dict], connections: list[dict], name: str = "dlg_fixture") -> dict:
