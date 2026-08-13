@@ -7,6 +7,9 @@ from unittest import mock
 
 
 from scripts.story_builder import callserver_callbacks, mission_flow
+from scripts.story_builder.codecs.levelscript.raise_custom_script_event import (
+    decode_raise_custom_script_event_action,
+)
 from scripts.story_builder.codecs.levelscript.switch_actions import (
     decode_switch_action,
 )
@@ -308,6 +311,22 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual("current_script", decoded["receiverMode"])
         self.assertNotIn("targetScriptId", decoded)
         self.assertEqual(1002, decoded["receiver"]["paramSource"])
+        self.assertEqual(
+            decoded,
+            decode_raise_custom_script_event_action(
+                payload,
+                (0x0380, 0x0B),
+                [event_key],
+            ),
+        )
+        self.assertEqual(
+            {},
+            decode_raise_custom_script_event_action(
+                payload,
+                (0x0380, 0x0A),
+                [event_key],
+            ),
+        )
 
     def test_raise_custom_script_event_decodes_constant_script_receiver(self):
         event_key = "StageFailAction"
