@@ -401,7 +401,24 @@
             "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
           },
           "observed": "The body operates on this+0x10 as a ComputeBuffer, queries stride/count, reallocates or disposes the buffer as needed, iterates pool segments, and calls ComputeBuffer.SetData through 0x187af05e0. The visible body contains no ComputeShader dispatch, SetBuffer, GpuSceneDirtyUpdateCS reference, or call edge from the factory shared-payload producer.",
-          "interpretation": "This is a real generic ComputeBuffer upload candidate, but its static contract does not identify the named _UploadBuffer or UploadPerDrawParams kernel. Keep it separate from the GPU-scene upload edge and do not use it to bind channel 2/resource +0xd0."
+          "interpretation": "This is a real generic ComputeBuffer upload candidate, but its static contract does not identify the named _UploadBuffer or UploadPerDrawParams kernel. Keep it separate from the GPU-scene upload edge and do not use it to bind channel 2/resource +0xd0.",
+          "stride_census": {
+            "status": "byte-stride-pool-negative-for-upload-per-draw",
+            "constructor": {
+              "native_pointer": "0x189b6aa28",
+              "count_immediate": "0x80000",
+              "stride_bytes": 1,
+              "type_immediate": 8,
+              "destination_field": "+0x10"
+            },
+            "segment_type_metadata_index": 38071,
+            "segment_fields": ["offset", "size", "data"],
+            "set_data_wrapper": "0x187af05e0",
+            "set_data_element_type": "System.Byte",
+            "set_data_direct_call_sites": ["0x189b6a97d"],
+            "apply_pending_upload_direct_call_count": 0,
+            "boundary": "The pool is a byte-stride staging/upload buffer and has no static dispatch, SetBuffer, named GPU-scene shader, or factory shared-payload edge; it cannot stand in for the 84-byte _UploadBuffer source record."
+          }
         },
         "gpu_scene_setup_wiring": {
           "status": "managed-compute-shader-identity-and-initialization-closed-dispatch-edge-open",
@@ -502,6 +519,43 @@
             "observed": "The four GPUDriven cores are the only direct dispatch bridge callers attributable to the mapped V1/V2 methods; the remaining direct callers belong to unrelated Unity native compute passes."
           },
           "boundary": "This closes Unity's native compute-dispatch mechanism and distinguishes command-buffer recording from immediate context dispatch. The managed resource identity now separately proves that GpuSceneDirtyUpdateCS::UploadPerDrawParams exists at kernel index 7, but the native core census does not prove that a particular dispatch call supplies this object and index 7. It also does not expose the upload-buffer producer or connect channel 2/resource +0xd0 to the five-vector destination. Keep dispatch selection and carrier mapping fail-closed."
+        },
+        "native_immediate_dispatch_census": {
+          "status": "non-gpudriven-immediate-callers-classified-no-gpu-scene-edge",
+          "source": "Current UnityPlayer.dll PData-scoped direct-call census for immediate dispatch 0x1805e7e10; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+          "dispatch_function": "0x1805e7e10",
+          "direct_call_count": 15,
+          "gpu_driven_call_sites": [
+            "0x1810f1837",
+            "0x1810f18eb",
+            "0x1810fdfe7",
+            "0x1810fe09b"
+          ],
+          "classified_non_gpu_scene_callers": {
+            "terrain": {
+              "call_sites": ["0x1811eb94a", "0x1811ec336"],
+              "kernel_names": ["UpdateSubdivision", "PingPongSubdAndCull"],
+              "evidence": "The callsite functions load the literal kernel names from the UnityPlayer property/kernel registry and bind terrain subdivision resources before dispatch."
+            },
+            "screen_space_reflections": {
+              "call_sites": ["0x18124be98", "0x18124c79c", "0x18124cac2"],
+              "registry_literal": "SSR_IMPORTANCE_SAMPLE",
+              "evidence": "The surrounding initializer and pass bodies are the SSR compute family; their resource/property records are SSR-specific."
+            },
+            "ray_tracing": {
+              "call_sites": [
+                {"site": "0x1812b9d7f", "kernel_registry_field": "+0x173c", "kernel_name": "RTRColorResolveIndirect1"},
+                {"site": "0x1812ba69f", "kernel_registry_field": "+0x1738", "kernel_name": "RTRColorResolveIndirect0"},
+                {"site": "0x1812baecb", "kernel_registry_field": "+0x1748", "kernel_name": "RTRFillLowOnlyRayTracing"},
+                {"site": "0x1812bb2e7", "kernel_registry_field": "+0x1750", "kernel_name": "RTRRayMarchingLow"},
+                {"site": "0x1812bb76b", "kernel_registry_field": "+0x174c", "kernel_name": "RTRFillLow"},
+                {"site": "0x1812bba37", "kernel_registry_field": "+0x1758", "kernel_name": "RTRTraceRayLow0"}
+              ],
+              "evidence": "The registry initializer at 0x181217db0 maps these fields to the named RTR kernels; the pass bodies bind ray-tracing resources and dispatch those kernels."
+            }
+          },
+          "observed": "All eleven remaining direct callers are attributable to terrain, SSR, or ray-tracing render-graph passes. None selects GpuSceneDirtyUpdateCS.UploadPerDrawParams, references _UploadBuffer, or reads the factory 80-byte shared record/channel-2 resource.",
+          "boundary": "This closes the bounded native immediate-dispatch negative branch, but does not exclude a dynamically registered or indirect producer for kernel 7; the shared-record-to-_UploadBuffer edge and channel-2 descriptor binding remain fail-closed."
         },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",

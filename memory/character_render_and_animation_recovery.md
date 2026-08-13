@@ -498,7 +498,23 @@ NPC archetypes are imported as labeled source kits.
   ComputeShader dispatch, `SetBuffer`, named `GpuSceneDirtyUpdateCS`, or edge
   from the factory shared-payload producer. It therefore remains an unresolved
   generic buffer path, not evidence for `_UploadBuffer` or channel 2/resource
-  `+0xd0`; details are under `constant_buffer_pool_cross_check`.
+  `+0xd0`; its constructor is a count-`0x80000`, stride-1 byte pool and its
+  only SetData caller is the pool's own upload loop, so it cannot satisfy the
+  84-byte `_UploadBuffer` source contract. Details are under
+  `constant_buffer_pool_cross_check`.
+  The remaining eleven direct callers of UnityPlayer immediate dispatch
+  `0x1805e7e10` are now classified rather than left as a generic unknown set:
+  two are terrain (`UpdateSubdivision`, `PingPongSubdAndCull`), three are SSR
+  passes, and six are ray-tracing passes selecting
+  `RTRColorResolveIndirect0/1`, `RTRFillLow/LowOnlyRayTracing`,
+  `RTRRayMarchingLow`, or `RTRTraceRayLow0` through the shader-property
+  registry. Together with the four already-mapped GPUDriven callers this
+  accounts for all 15 direct calls and provides no `_UploadBuffer`,
+  `GpuSceneDirtyUpdateCS`, or factory-record edge. This closes the bounded
+  native immediate-dispatch negative branch; a dynamically registered kernel-7
+  producer and the channel-2 descriptor edge remain unresolved. The structured
+  census is recorded under `native_immediate_dispatch_census` in the packed
+  shader audit.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at
