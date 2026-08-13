@@ -1,17 +1,11 @@
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts"))
-from story_builder import envtalk_attachment as eta  # noqa: E402
-
+from scripts.story_builder import envtalk_attachment as eta
 
 def npc_proxy_tracking(proxy_id):
     return {

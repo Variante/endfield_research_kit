@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[1]
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
-from build_character_data import build_language_payload, table_roots
+from scripts.build_character_data import build_language_payload, table_roots
 
 
 class BuildCharacterDataTests(unittest.TestCase):

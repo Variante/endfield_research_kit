@@ -5,18 +5,13 @@ import copy
 import hashlib
 import json
 import struct
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 
-SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
-from story_builder import source_story_partial_order as partial_order  # noqa: E402
+from scripts.story_builder import source_story_partial_order as partial_order
 
 
 def mp_string(value: str | None) -> bytes:

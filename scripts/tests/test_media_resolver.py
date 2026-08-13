@@ -1,14 +1,10 @@
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 
-SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(SCRIPTS_DIR))
-
-from asset_builder import media_resolver
+from scripts.asset_builder import media_resolver
 
 
 class MediaResolverTests(unittest.TestCase):

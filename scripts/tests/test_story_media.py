@@ -1,22 +1,14 @@
-import importlib.util
-import sys
 import unittest
 from pathlib import Path
 
+from scripts.asset_builder import story_media
 
-SCRIPT = Path(__file__).resolve().parents[1] / "asset_builder" / "story_media.py"
-sys.path.insert(0, str(SCRIPT.parents[1]))
-sys.path.insert(0, str(SCRIPT.parent))
-SPEC = importlib.util.spec_from_file_location("story_media", SCRIPT)
-story_media = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = story_media
-SPEC.loader.exec_module(story_media)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 class StoryMediaTests(unittest.TestCase):
     def test_frontend_promotes_cg_assets_to_exact_story_file_rows(self) -> None:
-        project_root = SCRIPT.parents[2]
+        project_root = PROJECT_ROOT
         app = (project_root / "webui" / "app.js").read_text(encoding="utf-8")
         labels = (project_root / "webui" / "app_labels.js").read_text(encoding="utf-8")
 

@@ -1,17 +1,11 @@
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts"))
-from story_builder import mission_dependency_graph as mdg  # noqa: E402
-
+from scripts.story_builder import mission_dependency_graph as mdg
 
 def check_mission_state(mission_id, state=3, comparer=0, unique_id="u1"):
     return {

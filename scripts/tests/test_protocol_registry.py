@@ -1,20 +1,14 @@
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from story_builder import protocol_registry as audit  # noqa: E402
-from story_builder import levelscript_binary  # noqa: E402
-from story_builder.native_protocol import il2cpp  # noqa: E402
+from scripts.story_builder import levelscript_binary
+from scripts.story_builder import protocol_registry as audit
+from scripts.story_builder.native_protocol import il2cpp
 
 
 class ProtocolRegistryAuditTests(unittest.TestCase):

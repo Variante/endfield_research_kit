@@ -1,15 +1,9 @@
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-
-SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(SCRIPTS_DIR))
-
-import build_assets
-from asset_builder.index import AssetScanResult, scan_exported_media_assets
-
+from scripts import build_assets
+from scripts.asset_builder.index import AssetScanResult, scan_exported_media_assets
 
 class BuildAssetsTests(unittest.TestCase):
     def scan_fixture(self, root: Path) -> tuple[Path, AssetScanResult]:

@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-import sys
 import unittest
-from pathlib import Path
 
 
-SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
-from story_builder import source_story_order_cross_reference as cross_reference  # noqa: E402
+from scripts.story_builder import source_story_order_cross_reference as cross_reference
 
 
 class SourceStoryOrderCrossReferenceTests(unittest.TestCase):

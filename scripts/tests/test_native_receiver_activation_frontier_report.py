@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,11 +8,7 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
-for search_path in (ROOT / "scripts", ROOT / "scripts" / "story_recovery"):
-    if str(search_path) not in sys.path:
-        sys.path.insert(0, str(search_path))
-
-from story_builder import native_receiver_activation_frontier as frontier  # noqa: E402
+from scripts.story_builder import native_receiver_activation_frontier as frontier
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):

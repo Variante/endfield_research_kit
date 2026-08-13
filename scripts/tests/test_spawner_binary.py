@@ -1,16 +1,10 @@
 from __future__ import annotations
 
 import struct
-import sys
 import unittest
-from pathlib import Path
 
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from story_builder.spawner_binary import (
+from scripts.story_builder.spawner_binary import (
     SPAWNER_ENEMY_LIBRARY_ITEM_MEMBER_COUNT,
     SPAWNER_GROUP_MEMBER_COUNT,
     SPAWNER_WAVE_MEMBER_COUNT,

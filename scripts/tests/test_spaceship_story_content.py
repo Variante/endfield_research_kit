@@ -6,19 +6,14 @@ import io
 import json
 import os
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_ROOT = ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
-
-from story_builder import spaceship_story_content as audit  # noqa: E402
-from common import spaceship_story_non_mission_content_keys  # noqa: E402
+from scripts.common import spaceship_story_non_mission_content_keys
+from scripts.story_builder import spaceship_story_content as audit
 
 
 def dialog_tree(option_type: str = "Beyond.Gameplay.SpaceshipOptionWorkData") -> dict:
