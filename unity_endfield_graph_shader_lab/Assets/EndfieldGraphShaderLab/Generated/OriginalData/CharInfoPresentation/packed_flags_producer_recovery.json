@@ -1534,6 +1534,31 @@
             "interpretation": "0x18036ed60 is a generic dynamic-array resize/zero helper whose element stride is 0x54 and whose zeroed layout is five Vector4 lanes plus a dword at +0x50; 0x1804b69b9 is a generic element-copy helper. The remaining precise candidates consume the same stride for unrelated native data and only call math/formatting helpers. None directly calls GpuSceneDirtyUpdateCS, UploadPerDrawParams, the checked immediate-dispatch boundary, a GPU buffer upload, or the factory record consumer.",
             "negative_gpu_edge": "The 0x54 literal is therefore a real generic 84-byte layout clue, but this bounded census does not identify it as the staging array's packer or as _UploadBuffer. Keep the shader-to-native edge fail-closed."
           },
+          "factory_prefix_layout_followup": {
+            "status": "factory-range-prefix-store-census-no-upload-edge",
+            "source": "Installed UnityPlayer.dll PData-scoped Capstone scan over 0x181000000..0x1812fffff; candidate stores required one non-stack base register to receive the byte-prefix offsets +0x04/+0x14/+0x24/+0x34/+0x44, alongside the index slot at +0x00.",
+            "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+            "scan_result": {
+              "pdata_scope": "0x181000000..0x1812fffff",
+              "matching_functions": 6,
+              "matching_ranges": [
+                "0x1812029f0..0x1812032f3",
+                "0x181216e30..0x181217bee",
+                "0x181221c50..0x181222063",
+                "0x181265dc0..0x18126721c",
+                "0x1812b4d00..0x1812b5645",
+                "0x1812fdef0..0x1812fdfef"
+              ],
+              "factory_range_matches": 0,
+              "checked_gpu_edges": 0
+            },
+            "factory_copy_helpers": {
+              "full_record": "0x1810d9170 writes manager[+0x38] + index*0x8c from +0x00..+0x88; it is a CPU 0x8c-record copy, not a +0x04-prefixed 0x54 pack.",
+              "partial_record": "0x1810d91f0 computes manager[+0x38] + index*0x8c + offset and tail-jumps 0x181c9f9a0; it is an optimized CPU partial memcpy with no GPU API or dispatch edge.",
+              "generic_memcpy": "0x181c9f9a0 advances source/destination by 0x100 in its loop and copies record-shaped fields; it has no shader, buffer, descriptor, or command-buffer identity."
+            },
+            "interpretation": "The strict factory-range scan finds no native function that materializes the shader's index-plus-five-lane prefix. The nearby full/partial record helpers remain CPU-only, so the staging-to-_UploadBuffer pack, kernel-7 dispatch, and channel-2/resource +0xd0 upload edge remain fail-closed."
+          },
           "post_staging_direct_call_census": {
             "status": "whole-image-direct-call-negative-upload-consumer-open",
             "source": "Current installed GameAssembly.dll SHA-256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce and UnityPlayer.dll SHA-256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2; raw E8 rel32 scan over GameAssembly .text/il2cpp plus PData range attribution.",

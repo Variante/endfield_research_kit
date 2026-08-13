@@ -804,6 +804,17 @@ NPC archetypes are imported as labeled source kits.
   and none directly reaches the checked GPU dispatch/upload boundary. This
   confirms that 84-byte records exist in UnityPlayer but does not identify the
   staging-array packer or `_UploadBuffer`; the GPU edge remains fail-closed.
+  A stricter factory-range prefix scan then required one non-stack base register
+  to receive the shader-shaped byte offsets `+0x04/+0x14/+0x24/+0x34/+0x44`
+  plus `+0x00`. It found six unrelated constant/metadata writers in
+  `0x1812029f0..0x1812fdef0`, but none in the factory range and none with a GPU
+  edge. The nearby `0x1810d9170` full-record helper copies an `0x8c` CPU record,
+  while `0x1810d91f0` computes `manager+0x38 + index*0x8c + offset` and
+  tail-jumps `0x181c9f9a0`; neither is the index-plus-five-lane packer. This
+  narrows the missing boundary without promoting generic 84-byte layouts to
+  `_UploadBuffer`; kernel-7 dispatch and channel-2/resource `+0xd0` remain
+  fail-closed. Details are under `factory_prefix_layout_followup` in the packed
+  flag audit.
   A current-build slot cross-check removes the remaining endpoint ambiguity:
   the Vector4 binder body loads the runtime function pointer from
   `0x18f370720` at `0x1834a3dc9`, and `SetEntitySharedDataPartial` loads the
