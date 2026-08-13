@@ -342,8 +342,3 @@ AUTHORED_LINE_ORDER_MODES = {
 TIMELINE_LINE_ORDER_PATHS = [
     timeline_recovery_order_out(EXPORT_ROOT),
 ]
-
-
-
-
-__all__ = [name for name in globals() if not name.startswith("__")]
