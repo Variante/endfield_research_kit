@@ -889,6 +889,38 @@
           },
           "interpretation": "This is the first positive dynamic/Burst producer chain from a per-draw configuration array into the same factory shared-data partial-update service previously recovered from ordinary managed writers. It closes the CPU-side producer and dirty-flag edge for the fallback ApplyPerDrawRender path, but it does not prove that the resulting 0x8c record or 80-byte prefix is packed into _UploadBuffer, dispatched with GpuSceneDirtyUpdateCS kernel 7, or bound through channel 2/resource +0xd0.",
           "next_gap": "Recover the post-dirty record consumer/packer (including the feature-enabled 0x186a33f58 branch) and look for the 84-byte source stride or the UploadPerDrawParams dispatch; keep GPU binding fail-closed until that edge is explicit."
+        },
+        "dirty_record_staging_consumer": {
+          "status": "native-dirty-record-consumer-staging-boundary-identified-upload-edge-open",
+          "source": "Installed UnityPlayer.dll PData-scoped disassembly; current UnityPlayer binary was checked directly rather than inferred from the managed resolver.",
+          "native_pointer": "0x1810d25c0",
+          "function_range": "0x1810d25c0..0x1810d3198",
+          "record_contract": {
+            "manager_base": "The function receives a manager-like object whose +0x1a0 range metadata and +0x190 side arrays drive the loop; each source entry reads an entity index and resolves manager[+0x38] + index * 0x8c.",
+            "source_record_stride": "0x8c (140 bytes)",
+            "shared_payload": "record offsets 0x00, 0x10, 0x20, 0x30, 0x40 are copied when record+0x70 bit 0 is set, exactly the 80-byte shared per-draw prefix written by SetEntitySharedDataPartial.",
+            "dirty_flags": "record+0x70 is tested for bits 0x01/0x02/0x04/0x08/0x10/0x20; record+0x71 contributes object-state bits; the function writes a reduced dirty byte back to record+0x70 before advancing.",
+            "staging_destination": "The five Vector4 payload lanes are written to output base + entryIndex * 0x100 + 0xb0..0xf0. The same 0x100-stride structure also carries prior output ranges at +0x00..0x90 and derived visibility/material data.",
+            "other_arrays": "Per-entry loop state advances separate arrays by 0xa4, 0xd0, and 0x18 bytes; these are not the 0x100 staging stride and are retained as separate native layout evidence."
+          },
+          "gpu_boundary_checks": {
+            "direct_calls_in_body": [
+              "0x18056cb40 (derived transform/visibility calculation)",
+              "0x18040f810 (local output helper)",
+              "0x181c622c0 (scalar clamp/math helper)",
+              "0x18065a9b0/0x18137d370/0x180303e70 (allocation/error helpers)",
+              "0x18023c920/0x180424d60/0x180424ec0/0x180425030/0x1804251a0/0x180425310/0x180425480/0x1804255f0/0x1804258d0/0x18033b740 (native container/material helpers)"
+            ],
+            "result": "No ComputeBuffer upload, SetBuffer/property bind, command recording, immediate dispatch, GpuSceneDirtyUpdateCS kernel-7 dispatch, or explicit 84-byte prefix is present in this body.",
+            "caller_scan": "No direct E8 caller or raw little-endian code-pointer xref to 0x1810d25c0/0x1810d26bf was found in the installed UnityPlayer image; invocation is therefore likely an indirect scheduler/vtable callback and remains unresolved."
+          },
+          "interpretation": "This is the first positive native consumer after the factory dirty flag: it reads the same 0x8c record and stages the exact 80-byte payload into a per-entry 0x100-byte render-side structure. It materially narrows the missing edge, but the staging structure is not proven to be the 84-byte _UploadBuffer source or the resource +0xd0 channel-2 buffer.",
+          "feature_enabled_branch_check": {
+            "native_pointer": "0x186a33f58",
+            "range": "0x186a33f58..0x186a341a0",
+            "result": "The feature-enabled PerDrawGlobalSetting branch performs a large temporary-data/serialization-style operation and has no direct call to the recovered partial writer 0x183d689c0, UnityPlayer endpoint 0x1801eb9a0, checked GPU upload, or compute dispatch. Keep it separate from the fallback ApplyPerDrawRender CPU producer until an indirect edge is recovered."
+          },
+          "next_gap": "Recover the indirect caller and the consumer of the 0x100-stride staging array; specifically search for a pack step that prefixes an entity/index dword and yields the shader's 84-byte source stride, then tie that upload to UploadPerDrawParams kernel 7 and resource +0xd0."
         }
       },
       "related_shared_data_writers": {

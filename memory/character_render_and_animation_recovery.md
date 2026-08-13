@@ -545,6 +545,21 @@ NPC archetypes are imported as labeled source kits.
   identify the post-dirty 84-byte `_UploadBuffer` packer, kernel-7 dispatch, or
   channel-2/resource `+0xd0` bind. The feature-enabled branch
   (`0x186a33f58`) remains a separate next target; keep the GPU edge fail-closed.
+  The first concrete native consumer after that dirty flag is now identified:
+  UnityPlayer `0x1810d25c0..0x1810d3198` walks the manager's entity-index list,
+  resolves the same `manager[+0x38] + index*0x8c` records, tests dirty bits at
+  `record+0x70`, and copies the five 16-byte shared-data lanes from
+  `record+0x00..0x40` into a render-side structure at `entry*0x100+0xb0..0xf0`.
+  It also updates derived visibility/material arrays and writes a reduced dirty
+  byte back to the source record. This is a positive post-dirty staging boundary
+  and explains why a broad `0x8c` record scan alone missed the path; however the
+  body has no explicit GPU upload, immediate dispatch, kernel-7 call, or 84-byte
+  source stride, and no direct/raw code-pointer caller was found. The staging
+  array is therefore not yet proven to be `_UploadBuffer` or channel-2 resource
+  `+0xd0`. The feature-enabled branch `GameAssembly 0x186a33f58` was checked
+  separately and contains temporary-data/serialization work without a direct
+  partial-writer or GPU call. Details are recorded under
+  `dirty_record_staging_consumer` in the packed-flag audit.
   A current-build slot cross-check removes the remaining endpoint ambiguity:
   the Vector4 binder body loads the runtime function pointer from
   `0x18f370720` at `0x1834a3dc9`, and `SetEntitySharedDataPartial` loads the
