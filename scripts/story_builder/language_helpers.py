@@ -477,101 +477,6 @@ def normalized_duplicate_line_texts(payload: dict) -> list[str]:
             out.append(text)
     return out
 
-def compact_narrative_video_ref(ref: dict) -> dict:
-    compact = {
-        "name": str(ref.get("name") or ""),
-        "rel": str(ref.get("rel") or ""),
-        "source": str(ref.get("source") or ""),
-        "format": str(ref.get("format") or ""),
-        "size": int(ref.get("size") or 0),
-        "stem": str(ref.get("stem") or ""),
-        "baseStem": str(ref.get("baseStem") or ""),
-        "kind": str(ref.get("kind") or ""),
-        "_debug": {
-            "source": {
-                "rel": str(ref.get("rel") or ""),
-                "source": str(ref.get("source") or ""),
-                "name": str(ref.get("name") or ""),
-                "kind": str(ref.get("kind") or ""),
-                "keyCandidates": list(ref.get("keyCandidates") or []),
-            },
-        },
-    }
-    if ref.get("gender"):
-        compact["gender"] = str(ref["gender"])
-        compact["_debug"]["source"]["gender"] = str(ref["gender"])
-    if ref.get("resolvedKey"):
-        compact["_debug"]["source"]["resolvedKey"] = str(ref["resolvedKey"])
-    binding = ref.get("binding")
-    if isinstance(binding, dict):
-        compact["binding"] = binding
-        compact["_debug"]["source"]["binding"] = binding
-    definition = ref.get("definition")
-    if isinstance(definition, dict):
-        compact["definition"] = definition
-        compact["_debug"]["source"]["definition"] = definition
-    if ref.get("authoritativeKeys"):
-        compact["_debug"]["source"]["authoritativeKeys"] = list(ref["authoritativeKeys"])
-    attachment_override = ref.get("attachmentOverride")
-    if isinstance(attachment_override, dict):
-        compact["_debug"]["source"]["attachmentOverride"] = attachment_override
-    return compact
-
-def narrative_video_sort_key(ref: dict) -> tuple:
-    source = str(ref.get("source") or "")
-    fmt = str(ref.get("format") or "")
-    source_rank = {
-        "StreamingAssets-structured": 0,
-        "Persistent-structured": 1,
-        "raw_vfs": 2,
-    }.get(source, 9)
-    format_rank = {
-        "mp4": 0,
-        "webm": 1,
-        "ogv": 2,
-        "mov": 3,
-        "m4v": 4,
-        "avi": 5,
-        "usm": 6,
-    }.get(fmt, 9)
-    gender = str(ref.get("gender") or "")
-    gender_rank = {"": 0, "m": 1, "f": 2}.get(gender, 9)
-    return (
-        str(ref.get("baseStem") or ""),
-        gender_rank,
-        format_rank,
-        source_rank,
-        str(ref.get("rel") or ""),
-    )
-
-def narrative_video_search_text(refs: list[dict]) -> str:
-    parts: list[str] = []
-    for ref in refs:
-        for field in ("name", "rel", "source", "stem", "baseStem", "gender", "format", "kind"):
-            value = ref.get(field)
-            if value:
-                parts.append(str(value))
-    return " ".join(parts)
-
-def narrative_video_index_summary(refs: list[dict]) -> dict:
-    source_counts = Counter(str(ref.get("source") or "") for ref in refs)
-    format_counts = Counter(str(ref.get("format") or "") for ref in refs)
-    names = _unique_preserve(str(ref.get("name") or "") for ref in refs if ref.get("name"))
-    return {
-        "n": len(refs),
-        "sources": {
-            key: source_counts[key]
-            for key in sorted(source_counts)
-            if key
-        },
-        "formats": {
-            key: format_counts[key]
-            for key in sorted(format_counts)
-            if key
-        },
-        "files": names[:5],
-    }
-
 def build_mission_map_pins(flow: dict | None) -> list[dict]:
     if not flow:
         return []
@@ -732,10 +637,6 @@ __all__ = [
     "responsive_summary_rows",
     "sim_duplicate_actor_from_key",
     "normalized_duplicate_line_texts",
-    "compact_narrative_video_ref",
-    "narrative_video_sort_key",
-    "narrative_video_search_text",
-    "narrative_video_index_summary",
     "build_mission_map_pins",
     "build_mission_timeline_recovery_report",
     "safe_mission_data_filename",

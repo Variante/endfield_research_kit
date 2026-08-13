@@ -63,6 +63,12 @@ from .source_links import (
     story_source_link_index_summary,
     story_source_link_search_text,
 )
+from .video_bindings import (
+    compact_narrative_video_ref,
+    narrative_video_index_summary,
+    narrative_video_search_text,
+    narrative_video_sort_key,
+)
 
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
