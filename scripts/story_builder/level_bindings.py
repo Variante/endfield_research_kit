@@ -7,7 +7,7 @@ import math
 import re
 import struct
 from collections import Counter, defaultdict
-from functools import lru_cache
+from functools import lru_cache, partial
 from pathlib import Path
 
 if __package__ == "story_builder":
@@ -1316,6 +1316,25 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
     }
 
 
+def _decode_levelscript_record_cached(
+    record: dict,
+    *,
+    data: bytes,
+    next_starts: dict[int, int],
+    membership: dict[int, str],
+    decoded_cache: dict[int, dict],
+) -> dict:
+    start = int(record.get("start") or 0)
+    if start not in decoded_cache:
+        decoded_cache[start] = decode_levelscript_record_payload(
+            data,
+            record,
+            next_start=next_starts.get(start),
+            action_map_role=str(membership.get(start) or ""),
+        )
+    return decoded_cache[start]
+
+
 def _prepare_levelscript_native_control_context(
     data: bytes,
     records: list[dict],
@@ -1345,16 +1364,13 @@ def _prepare_levelscript_native_control_context(
             header_buckets[local_id].append(record)
     decoded_cache: dict[int, dict] = {}
 
-    def decoded(record: dict) -> dict:
-        start = int(record.get("start") or 0)
-        if start not in decoded_cache:
-            decoded_cache[start] = decode_levelscript_record_payload(
-                data,
-                record,
-                next_start=next_starts.get(start),
-                action_map_role=str(membership.get(start) or ""),
-            )
-        return decoded_cache[start]
+    decoded = partial(
+        _decode_levelscript_record_cached,
+        data=data,
+        next_starts=next_starts,
+        membership=membership,
+        decoded_cache=decoded_cache,
+    )
 
     def control_signature(record: dict) -> tuple:
         """Return only binary-decoded fields that affect static traversal."""
@@ -1638,16 +1654,13 @@ def _levelscript_native_control_paths_to_record(
     ):
         return []
 
-    def decoded(record: dict) -> dict:
-        start = int(record.get("start") or 0)
-        if start not in decoded_cache:
-            decoded_cache[start] = decode_levelscript_record_payload(
-                data,
-                record,
-                next_start=next_starts.get(start),
-                action_map_role=str(membership.get(start) or ""),
-            )
-        return decoded_cache[start]
+    decoded = partial(
+        _decode_levelscript_record_cached,
+        data=data,
+        next_starts=next_starts,
+        membership=membership,
+        decoded_cache=decoded_cache,
+    )
 
     records_by_uid: dict[str, list[dict]] = defaultdict(list)
     for candidate in ordered:
@@ -2155,16 +2168,13 @@ def decode_levelscript_native_action_topology(
     decoded_cache = context.get("decodedByStart")
     if not isinstance(decoded_cache, dict):
         decoded_cache = {}
-    def decoded(record: dict) -> dict:
-        start = int(record.get("start") or 0)
-        if start not in decoded_cache:
-            decoded_cache[start] = decode_levelscript_record_payload(
-                data,
-                record,
-                next_start=next_starts.get(start),
-                action_map_role=str(membership.get(start) or ""),
-            )
-        return decoded_cache[start]
+    decoded = partial(
+        _decode_levelscript_record_cached,
+        data=data,
+        next_starts=next_starts,
+        membership=membership,
+        decoded_cache=decoded_cache,
+    )
 
     failures: list[dict] = []
     if action_map.get("status") != "present":
