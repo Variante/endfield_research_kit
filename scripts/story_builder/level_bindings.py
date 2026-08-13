@@ -88,6 +88,22 @@ from .native_contracts.callserver_callback import (
 from .native_contracts.actionbase_formatter import (
     load_actionbase_formatter_names as _load_actionbase_formatter_names,
 )
+from .codecs.leveldata.memorypack import (
+    read_bool as _read_leveldata_bool,
+    read_count as _read_leveldata_count,
+    read_f32 as _read_leveldata_f32,
+    read_f64 as _read_leveldata_f64,
+    read_i32 as _read_leveldata_i32,
+    read_string as _read_leveldata_memorypack_string,
+    read_u32 as _read_leveldata_u32,
+    read_u64 as _read_leveldata_u64,
+    skip_bytes as _skip_leveldata_bytes,
+    skip_string as _skip_leveldata_memorypack_string,
+)
+from .codecs.leveldata.radio_contexts import (
+    parse_airwall_groups,
+    parse_function_area_radio_trigger,
+)
 
 _LEVELDATA_NAMED_TABLES_CACHE: dict[str, list[list[dict]]] = {}
 _LEVELSCRIPT_UID_OCCURRENCE_CACHE: dict[tuple[str, ...], dict[str, list[dict]]] = {}
@@ -5894,318 +5910,6 @@ def _find_exact_bytes_offsets(data: bytes, needle: bytes) -> list[int]:
     return offsets
 
 
-def _read_leveldata_i32(data: bytes, offset: int) -> tuple[int, int] | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return int.from_bytes(data[offset : offset + 4], "little", signed=True), offset + 4
-
-
-def _read_leveldata_u32(data: bytes, offset: int) -> tuple[int, int] | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return int.from_bytes(data[offset : offset + 4], "little", signed=False), offset + 4
-
-
-def _read_leveldata_u64(data: bytes, offset: int) -> tuple[int, int] | None:
-    if offset < 0 or offset + 8 > len(data):
-        return None
-    return int.from_bytes(data[offset : offset + 8], "little", signed=False), offset + 8
-
-
-def _skip_leveldata_memorypack_string(data: bytes, offset: int) -> int | None:
-    decoded = _read_leveldata_i32(data, offset)
-    if decoded is None:
-        return None
-    length, offset = decoded
-    if length == -1:
-        return offset
-    if length < 0 or offset + length > len(data):
-        return None
-    try:
-        data[offset : offset + length].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    return offset + length
-
-
-def _read_leveldata_count(
-    data: bytes,
-    offset: int,
-    *,
-    max_count: int = 100_000,
-) -> tuple[int, int] | None:
-    decoded = _read_leveldata_i32(data, offset)
-    if decoded is None:
-        return None
-    count, offset = decoded
-    if count < -1 or count > max_count:
-        return None
-    return count, offset
-
-
-def _read_leveldata_memorypack_string(
-    data: bytes,
-    offset: int,
-    *,
-    max_length: int = 512,
-) -> tuple[str, int] | None:
-    decoded = _read_leveldata_i32(data, offset)
-    if decoded is None:
-        return None
-    length, offset = decoded
-    if length == -1:
-        return "", offset
-    if length < 0 or length > max_length or offset + length > len(data):
-        return None
-    try:
-        value = data[offset : offset + length].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    return value, offset + length
-
-
-def _read_leveldata_bool(data: bytes, offset: int) -> tuple[bool, int] | None:
-    if offset < 0 or offset >= len(data) or data[offset] not in (0, 1):
-        return None
-    return bool(data[offset]), offset + 1
-
-
-def _read_leveldata_f32(data: bytes, offset: int) -> tuple[float, int] | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    value = struct.unpack_from("<f", data, offset)[0]
-    if not math.isfinite(value):
-        return None
-    return value, offset + 4
-
-
-def _read_leveldata_f64(data: bytes, offset: int) -> tuple[float, int] | None:
-    if offset < 0 or offset + 8 > len(data):
-        return None
-    value = struct.unpack_from("<d", data, offset)[0]
-    if not math.isfinite(value):
-        return None
-    return value, offset + 8
-
-
-def _skip_leveldata_bytes(data: bytes, offset: int, size: int) -> int | None:
-    if offset < 0 or size < 0 or offset + size > len(data):
-        return None
-    return offset + size
-
-
-def parse_leveldata_airwall_groups(data: bytes) -> list[dict]:
-    """Decode exact ``LevelData.airWalls`` MemoryPack rows.
-
-    ``airWalls`` is member 0 of the current 43-member LevelData object, so its
-    collection frame begins at byte 1. Generated ForMemoryPack setters order
-    object members alphabetically. Every nested member count and collection
-    boundary is validated before a row is admitted.
-    """
-    if not data or data[0] != 43:
-        return []
-    count_decoded = _read_leveldata_count(data, 1, max_count=4096)
-    if count_decoded is None or count_decoded[0] < 0:
-        return []
-    group_count, cursor = count_decoded
-
-    def object_header(offset: int, expected: int) -> int | None:
-        if offset >= len(data) or data[offset] != expected:
-            return None
-        return offset + 1
-
-    def skip_three_dim_range(offset: int) -> int | None:
-        if offset < len(data) and data[offset] == 0xFF:
-            return offset + 1
-        offset = object_header(offset, 2)
-        return None if offset is None else _skip_leveldata_bytes(data, offset, 24)
-
-    def parse_mission_check(offset: int) -> tuple[dict, int] | None:
-        start = offset
-        offset = object_header(offset, 4)
-        if offset is None:
-            return None
-        detail_decoded = _read_leveldata_i32(data, offset)
-        if detail_decoded is None:
-            return None
-        detail_state, offset = detail_decoded
-        id_decoded = _read_leveldata_memorypack_string(data, offset)
-        if id_decoded is None:
-            return None
-        check_id, offset = id_decoded
-        quest_decoded = _read_leveldata_bool(data, offset)
-        if quest_decoded is None:
-            return None
-        is_quest, offset = quest_decoded
-        same_decoded = _read_leveldata_bool(data, offset)
-        if same_decoded is None:
-            return None
-        is_same, offset = same_decoded
-        return {
-            "id": check_id,
-            "isQuest": is_quest,
-            "detailState": detail_state,
-            "isSame": is_same,
-            "recordOffset": start,
-            "recordEndOffset": offset,
-        }, offset
-
-    def parse_mission_check_list(offset: int) -> tuple[list[dict], int] | None:
-        decoded = _read_leveldata_count(data, offset, max_count=4096)
-        if decoded is None:
-            return None
-        count, offset = decoded
-        if count == -1:
-            return [], offset
-        rows: list[dict] = []
-        for _index in range(count):
-            parsed = parse_mission_check(offset)
-            if parsed is None:
-                return None
-            row, offset = parsed
-            rows.append(row)
-        return rows, offset
-
-    def parse_mission_total(offset: int) -> tuple[dict | None, int] | None:
-        if offset < len(data) and data[offset] == 0xFF:
-            return None, offset + 1
-        offset = object_header(offset, 4)
-        if offset is None:
-            return None
-        down_decoded = parse_mission_check_list(offset)
-        if down_decoded is None:
-            return None
-        down_reason, offset = down_decoded
-        down_any_decoded = _read_leveldata_bool(data, offset)
-        if down_any_decoded is None:
-            return None
-        is_down_any, offset = down_any_decoded
-        rise_any_decoded = _read_leveldata_bool(data, offset)
-        if rise_any_decoded is None:
-            return None
-        is_rise_any, offset = rise_any_decoded
-        rise_decoded = parse_mission_check_list(offset)
-        if rise_decoded is None:
-            return None
-        rise_reason, offset = rise_decoded
-        return {
-            "downReason": down_reason,
-            "isDownAny": is_down_any,
-            "isRiseAny": is_rise_any,
-            "riseReason": rise_reason,
-        }, offset
-
-    def parse_airwall_check(offset: int) -> tuple[dict | None, int] | None:
-        if offset < len(data) and data[offset] == 0xFF:
-            return None, offset + 1
-        offset = object_header(offset, 2)
-        if offset is None:
-            return None
-        type_decoded = _read_leveldata_i32(data, offset)
-        if type_decoded is None:
-            return None
-        check_type, offset = type_decoded
-        total_decoded = parse_mission_total(offset)
-        if total_decoded is None:
-            return None
-        mission_data, offset = total_decoded
-        return {
-            "checkType": check_type,
-            "missionData": mission_data,
-        }, offset
-
-    def skip_poly_line_wall(offset: int) -> int | None:
-        offset = object_header(offset, 10)
-        if offset is None:
-            return None
-        offset = skip_three_dim_range(offset)
-        if offset is None:
-            return None
-        for _field in ("disableDefaultEffect", "enableNavObstacle"):
-            decoded = _read_leveldata_bool(data, offset)
-            if decoded is None:
-                return None
-            _value, offset = decoded
-        offset = _skip_leveldata_bytes(data, offset, 8)
-        if offset is None:
-            return None
-        offset = _skip_leveldata_memorypack_string(data, offset)
-        if offset is None:
-            return None
-        positions_decoded = _read_leveldata_count(data, offset, max_count=65536)
-        if positions_decoded is None:
-            return None
-        position_count, offset = positions_decoded
-        if position_count >= 0:
-            offset = _skip_leveldata_bytes(data, offset, position_count * 8)
-            if offset is None:
-                return None
-        # pushDis + pushWarnDis + usage + visualHeightRange
-        return _skip_leveldata_bytes(data, offset, 20)
-
-    def skip_poly_line_wall_list(offset: int) -> int | None:
-        decoded = _read_leveldata_count(data, offset, max_count=65536)
-        if decoded is None:
-            return None
-        count, offset = decoded
-        if count == -1:
-            return offset
-        for _index in range(count):
-            offset = skip_poly_line_wall(offset)
-            if offset is None:
-                return None
-        return offset
-
-    rows: list[dict] = []
-    for _index in range(group_count):
-        record_offset = cursor
-        cursor = object_header(cursor, 8)
-        if cursor is None:
-            return []
-        cursor = skip_three_dim_range(cursor)
-        if cursor is None:
-            return []
-        check_decoded = parse_airwall_check(cursor)
-        if check_decoded is None:
-            return []
-        check_data, cursor = check_decoded
-        default_decoded = _read_leveldata_bool(data, cursor)
-        if default_decoded is None:
-            return []
-        default_on, cursor = default_decoded
-        group_decoded = _read_leveldata_u64(data, cursor)
-        if group_decoded is None:
-            return []
-        group_id, cursor = group_decoded
-        cursor = skip_poly_line_wall_list(cursor)
-        if cursor is None:
-            return []
-        radio_decoded = _read_leveldata_memorypack_string(data, cursor)
-        if radio_decoded is None:
-            return []
-        pushback_radio_id, cursor = radio_decoded
-        script_decoded = _read_leveldata_u64(data, cursor)
-        if script_decoded is None:
-            return []
-        script_id, cursor = script_decoded
-        slot_decoded = _read_leveldata_u32(data, cursor)
-        if slot_decoded is None:
-            return []
-        slot_id, cursor = slot_decoded
-        rows.append({
-            "recordOffset": record_offset,
-            "recordEndOffset": cursor,
-            "serializedMemberCount": 8,
-            "defaultOn": default_on,
-            "groupId": str(group_id),
-            "scriptId": str(script_id),
-            "slotId": slot_id,
-            "checkData": check_data,
-            "pushBackRadioId": pushback_radio_id,
-        })
-    return rows
-
-
 def build_leveldata_airwall_mission_radio_contexts(
     available_story_keys: set[str],
     mission_runtime_ids: set[str],
@@ -6222,7 +5926,7 @@ def build_leveldata_airwall_mission_radio_contexts(
             data = read_bytes_cached(path)
         except OSError:
             continue
-        for group in parse_leveldata_airwall_groups(data):
+        for group in parse_airwall_groups(data):
             radio_id = str(group.get("pushBackRadioId") or "")
             check_data = group.get("checkData") or {}
             mission_data = check_data.get("missionData") or {}
@@ -6295,67 +5999,6 @@ def build_leveldata_airwall_mission_radio_contexts(
     return rows
 
 
-def parse_level_function_area_radio_trigger_zone_entry(
-    data: bytes,
-    offset: int,
-) -> dict | None:
-    """Parse one exact LevelFunctionArea RadioTriggerZoneData union row.
-
-    The installed-build MemoryPack union table maps
-    ``FunctionAreaSpecificData`` tag 9 to ``RadioTriggerZoneData``. Its wrapper
-    serializes seven alphabetically ordered members: three mission ids,
-    ``prtsId``, ``radioId``, ``triggerId``, and ``useRadioTriggerOnce``.
-    Current authored rows are the sole item in ``specificDatas``; requiring the
-    immediately preceding list count to equal one proves the collection frame
-    and rejects identical tag/member pairs from unrelated unions.
-    """
-    if (
-        offset < 4
-        or data[offset : offset + 2] != b"\x09\x07"
-        or int.from_bytes(data[offset - 4 : offset], "little", signed=True) != 1
-    ):
-        return None
-    cursor = offset + 2
-    values: list[str] = []
-    for _ in range(5):
-        decoded = _read_leveldata_memorypack_string(data, cursor)
-        if decoded is None:
-            return None
-        value, cursor = decoded
-        values.append(value)
-    trigger_decoded = _read_leveldata_u64(data, cursor)
-    if trigger_decoded is None:
-        return None
-    trigger_id, cursor = trigger_decoded
-    if trigger_id <= 0 or cursor >= len(data) or data[cursor] not in (0, 1):
-        return None
-    use_once = bool(data[cursor])
-    cursor += 1
-    (
-        hide_after_mission_id,
-        hide_before_mission_id,
-        hide_complete_mission_id,
-        prts_id,
-        radio_id,
-    ) = values
-    if not radio_id.startswith("radio_"):
-        return None
-    return {
-        "recordOffset": offset,
-        "recordEndOffset": cursor,
-        "unionTag": 9,
-        "serializedMemberCount": 7,
-        "specificDataListCount": 1,
-        "hideAfterMissionId": hide_after_mission_id,
-        "hideBeforeMissionId": hide_before_mission_id,
-        "hideCompleteMissionId": hide_complete_mission_id,
-        "prtsId": prts_id,
-        "radioId": radio_id,
-        "triggerId": str(trigger_id),
-        "useRadioTriggerOnce": use_once,
-    }
-
-
 def build_level_function_area_radio_trigger_story_contexts(
     available_story_keys: set[str],
     mission_runtime_ids: set[str],
@@ -6385,7 +6028,7 @@ def build_level_function_area_radio_trigger_story_contexts(
             if offset < 0:
                 break
             start = offset + 1
-            row = parse_level_function_area_radio_trigger_zone_entry(data, offset)
+            row = parse_function_area_radio_trigger(data, offset)
             if row is None or row["radioId"] not in available_story_keys:
                 continue
             mission_fields = [
