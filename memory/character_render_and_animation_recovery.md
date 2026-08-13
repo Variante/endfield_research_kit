@@ -515,6 +515,19 @@ NPC archetypes are imported as labeled source kits.
   producer and the channel-2 descriptor edge remain unresolved. The structured
   census is recorded under `native_immediate_dispatch_census` in the packed
   shader audit.
+  The managed dispatch boundary is now explicit as well. UnityPlayer's primary
+  internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
+  resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
+  to immediate context dispatch `0x1805e7a10`; `CommandBuffer::Internal_DispatchCompute`
+  maps to `0x180119fc0` and records opcode `0x11` through `0x1804c73e0`.
+  `Internal_SetComputeBufferParam` is `0x180116180`, but no factory dirty-record
+  or staging call reaches it in the bounded census. A nine-row `0x100`/lane
+  heuristic was then rechecked with exact immediates and base registers: six
+  rows were actually `0x1001` multipliers, two used stack temporaries, and the
+  one genuine `+0x100` row read only an object `+0xf0` field while recording
+  graphics commands. None is a five-lane staging consumer. Details are under
+  `managed_dispatch_entrypoint_census`; the post-staging `_UploadBuffer`,
+  kernel-7, and channel-2/resource `+0xd0` edges remain fail-closed.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at

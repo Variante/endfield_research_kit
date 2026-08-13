@@ -557,6 +557,65 @@
           "observed": "All eleven remaining direct callers are attributable to terrain, SSR, or ray-tracing render-graph passes. None selects GpuSceneDirtyUpdateCS.UploadPerDrawParams, references _UploadBuffer, or reads the factory 80-byte shared record/channel-2 resource.",
           "boundary": "This closes the bounded native immediate-dispatch negative branch, but does not exclude a dynamically registered or indirect producer for kernel 7; the shared-record-to-_UploadBuffer edge and channel-2 descriptor binding remain fail-closed."
         },
+        "managed_dispatch_entrypoint_census": {
+          "status": "managed-native-dispatch-bridges-closed-upload-producer-open",
+          "source": "Current UnityPlayer.dll primary internal-call table and PData-scoped bridge disassembly; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+          "internal_calls": {
+            "compute_shader_dispatch": {
+              "managed_name": "UnityEngine.ComputeShader::Dispatch",
+              "unityplayer_entry": "0x180119af0",
+              "bridge": "0x1804b2940",
+              "immediate_dispatch": "0x1805e7a10",
+              "argument_flow": "The internal-call body preserves kernel, x, y, and z, resolves the managed shader/native handle, and calls 0x1804b2940; that bridge forwards the three dimensions and kernel to 0x1805e7a10, whose successful path invokes the command-context vtable slot +0xab8.",
+              "kernel_constant": "none"
+            },
+            "command_buffer_internal_dispatch_compute": {
+              "managed_name": "UnityEngine.Rendering.CommandBuffer::Internal_DispatchCompute",
+              "unityplayer_entry": "0x180119fc0",
+              "command_encoder": "0x1804c73e0",
+              "command_opcode": "0x11",
+              "argument_flow": "The internal-call body resolves the shader and command context, then records kernel and x/y/z dimensions through 0x1804c73e0; this is command-stream serialization, not an immediate GPU dispatch.",
+              "kernel_constant": "none"
+            },
+            "command_buffer_internal_set_compute_buffer_param": {
+              "managed_name": "UnityEngine.Rendering.CommandBuffer::Internal_SetComputeBufferParam",
+              "unityplayer_entry": "0x180116180",
+              "binding_edge": "The entry is present in the primary internal-call table, but this bounded census did not find a call from the factory dirty-record/staging path into it or another named buffer-property bind."
+            }
+          },
+          "direct_immediate_census": {
+            "dispatch_function": "0x1805e7a10",
+            "direct_callsite_count": 19,
+            "unique_pdata_function_count": 15,
+            "known_gpu_driven_callsites": [
+              "0x1810f1837",
+              "0x1810f18eb",
+              "0x1810fdfe7",
+              "0x1810fe09b"
+            ],
+            "non_gpu_scene_groups": "The remaining direct callsites are in command/compute skinning, texture/graphics, terrain, SSR, and ray-tracing families; none has a statically named GpuSceneDirtyUpdateCS or UploadPerDrawParams edge."
+          },
+          "staging_candidate_filter": {
+            "status": "nine-heuristic-0x100-lane-candidates-classified-no-staging-consumer",
+            "candidate_count": 9,
+            "exact_operand_result": "The initial heuristic matched the text prefix 0x100, so six rows were actually 0x1001 multipliers and two rows used rbp/rsp stack temporaries. The remaining row has a genuine lea +0x100 but reads only an object +0xf0 field and records graphics command opcodes; it does not iterate five +0xb0..+0xf0 payload lanes.",
+            "non_stack_five_lane_matches": 0,
+            "command_or_immediate_call_matches": "The nine rows call generic command encoders or unrelated texture/graphics immediate dispatch helpers. None reads the 0x1810d25c0 output as a five-lane 0x100-stride staging record, calls a buffer upload, or selects kernel 7.",
+            "candidate_ranges": [
+              "0x181113c10..0x181114dc3",
+              "0x181117560..0x181118b2b",
+              "0x1811b1247..0x1811b2de4",
+              "0x1811bac4c..0x1811bc1e9",
+              "0x1811bdc37..0x1811c0112",
+              "0x1811c4de4..0x1811c6dfc",
+              "0x1811fc63a..0x1811fe533",
+              "0x1811fe533..0x181200119",
+              "0x1812eccac..0x1812ef5d4"
+            ],
+            "boundary": "After exact-immediate and base-register filtering, no candidate proves that the CPU-only 0x100-stride render structure is the 84-byte _UploadBuffer source or the resource +0xd0 channel-2 carrier."
+          },
+          "boundary": "The managed ComputeShader and CommandBuffer dispatch entrypoints, their native bridges, and the bounded immediate-call census are now explicit. They do not identify a live kernel-7 producer or the post-staging upload; keep channel 2/resource +0xd0 binding fail-closed."
+        },
         "getter_cross_check": {
           "name": "UnityEngine.Renderer::GetCustomPerDrawData_Injected",
           "function_pointer": "0x1800fedc0",
