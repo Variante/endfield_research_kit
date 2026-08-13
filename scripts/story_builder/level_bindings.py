@@ -12735,6 +12735,26 @@ def _scene_binding_search_text(binding_entry: dict) -> str:
     return " ".join(part for part in parts if part)
 
 
+def _resolve_entry_scene_ref(
+    raw_ref: str,
+    *,
+    entries_by_key: dict[str, dict],
+) -> str:
+    candidates = _unique_preserve([
+        str(raw_ref or "").strip(),
+        *_scene_ref_alias_candidates(raw_ref),
+    ])
+    for candidate in candidates:
+        if not candidate:
+            continue
+        if candidate in entries_by_key:
+            return candidate
+        canonical_cutscene = _canonical_cutscene_key(candidate) or ""
+        if canonical_cutscene in entries_by_key:
+            return canonical_cutscene
+    return ""
+
+
 def infer_mission_dialog_order(
     mission_id: str,
     mission_entries: list[dict],
@@ -12792,20 +12812,10 @@ def infer_mission_dialog_order(
             seen.add(dialog_id)
             ordered_keys.append(dialog_id)
 
-    def resolve_entry_scene_ref(raw_ref: str) -> str:
-        candidates = _unique_preserve([
-            str(raw_ref or "").strip(),
-            *_scene_ref_alias_candidates(raw_ref),
-        ])
-        for candidate in candidates:
-            if not candidate:
-                continue
-            if candidate in entries_by_key:
-                return candidate
-            canonical_cutscene = _canonical_cutscene_key(candidate) or ""
-            if canonical_cutscene in entries_by_key:
-                return canonical_cutscene
-        return ""
+    resolve_entry_scene_ref = partial(
+        _resolve_entry_scene_ref,
+        entries_by_key=entries_by_key,
+    )
 
     def quest_area_scene_refs(quest: dict) -> list[str]:
         refs: list[str] = []
@@ -13005,20 +13015,10 @@ def build_mission_scene_file_order(
 
     quest_by_id = {quest["id"]: quest for quest in quests}
 
-    def resolve_entry_scene_ref(raw_ref: str) -> str:
-        candidates = _unique_preserve([
-            str(raw_ref or "").strip(),
-            *_scene_ref_alias_candidates(raw_ref),
-        ])
-        for candidate in candidates:
-            if not candidate:
-                continue
-            if candidate in entries_by_key:
-                return candidate
-            canonical_cutscene = _canonical_cutscene_key(candidate) or ""
-            if canonical_cutscene in entries_by_key:
-                return canonical_cutscene
-        return ""
+    resolve_entry_scene_ref = partial(
+        _resolve_entry_scene_ref,
+        entries_by_key=entries_by_key,
+    )
 
     def quest_area_scene_refs(quest: dict) -> list[str]:
         refs: list[str] = []
