@@ -1,19 +1,12 @@
-import importlib.util
 import io
-import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
 
+from scripts import pack_webui
 
-SCRIPT = Path(__file__).resolve().parents[1] / "pack_webui.py"
-sys.path.insert(0, str(SCRIPT.parent))
-SPEC = importlib.util.spec_from_file_location("pack_webui", SCRIPT)
-pack_webui = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = pack_webui
-SPEC.loader.exec_module(pack_webui)
+SCRIPT = Path(pack_webui.__file__).resolve()
 
 
 class PackWebuiAudioTests(unittest.TestCase):
