@@ -548,6 +548,18 @@ NPC archetypes are imported as labeled source kits.
   This confirms that the remaining ComputeShader producer search must include
   resolver/indirect paths and must not treat the direct E8 census as exhaustive
   for Unity internal calls.
+  The next bounded indirect search scanned every UnityPlayer PData function for
+  the graphics-context vtable call at displacement `+0xab8`. Ten bodies were
+  found: the two already-known immediate-dispatch wrappers, three generic or
+  unresolved context paths, four resource/descriptor-oriented paths, and the
+  existing D3D11 backend path. Their visible contracts contain temporary
+  descriptor/list data, native resource setup, or backend context work, but no
+  manager `+0x38` plus `index*0x8c` record, five-vector 84-byte source, or
+  `_UploadBuffer`/`UploadPerDrawParams`/channel-2 `+0xd0` edge. This closes the
+  obvious UnityPlayer indirect-dispatch candidates as a bounded negative result;
+  resolver-driven/table-dispatched kernel-7 selection and the staging-array
+  upload remain open and must stay fail-closed. Details are recorded under
+  `indirect_vtable_dispatch_census` in the packed-flag audit.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at
