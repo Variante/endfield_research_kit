@@ -10,6 +10,37 @@ from scripts.story_builder import level_bindings
 
 
 class LevelScriptActionTopologyTests(unittest.TestCase):
+    def test_shared_record_decoder_caches_by_start_and_forwards_context(self) -> None:
+        cache: dict[int, dict] = {}
+        record = {"start": 10}
+        with patch.object(
+            level_bindings,
+            "decode_levelscript_record_payload",
+            return_value={"decoded": True},
+        ) as decode:
+            first = level_bindings._decode_levelscript_record_cached(
+                record,
+                data=b"payload",
+                next_starts={10: 20},
+                membership={10: "actionList#1 root"},
+                decoded_cache=cache,
+            )
+            second = level_bindings._decode_levelscript_record_cached(
+                record,
+                data=b"payload",
+                next_starts={10: 20},
+                membership={10: "actionList#1 root"},
+                decoded_cache=cache,
+            )
+
+        self.assertIs(first, second)
+        decode.assert_called_once_with(
+            b"payload",
+            record,
+            next_start=20,
+            action_map_role="actionList#1 root",
+        )
+
     def records(self) -> list[dict]:
         return [
             {
