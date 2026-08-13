@@ -42,7 +42,6 @@ import json
 import os
 import re
 import shutil
-import sys
 import time
 import unicodedata
 from bisect import bisect_left
@@ -50,42 +49,82 @@ from collections import Counter, defaultdict, deque
 from difflib import SequenceMatcher
 from pathlib import Path
 
-PACKAGE_DIR = Path(__file__).resolve().parent
-WEBUI_SCRIPT_DIR = PACKAGE_DIR.parent
-if str(WEBUI_SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(WEBUI_SCRIPT_DIR))
-
-from common import (
-    ASSET_DIR,
-    EXPORT_ROOT,
-    LANG_DIR,
-    OUT_DIR,
-    STORY_REPORTS_DIR,
-    ROOT,
-    fast_glob_files,
-    first_string_field as _first_string_field,
-    is_present,
-    path_id_export_base_stem,
-    path_id_export_path_id,
-    read_bytes_cached,
-    read_json_cached,
-    rel_path as repo_rel,
-    rel_requires_path_id_export_name,
-    unique_preserve as _unique_preserve,
-    unique_strings,
-    walk_const_values as _walk_const_values,
-    walk_field_values as _walk_field_values,
-    write_json,
-)
+try:
+    from common import (
+        ASSET_DIR,
+        EXPORT_ROOT,
+        LANG_DIR,
+        OUT_DIR,
+        STORY_REPORTS_DIR,
+        ROOT,
+        fast_glob_files,
+        first_string_field as _first_string_field,
+        is_present,
+        path_id_export_base_stem,
+        path_id_export_path_id,
+        read_bytes_cached,
+        read_json_cached,
+        rel_path as repo_rel,
+        rel_requires_path_id_export_name,
+        unique_preserve as _unique_preserve,
+        unique_strings,
+        walk_const_values as _walk_const_values,
+        walk_field_values as _walk_field_values,
+        write_json,
+    )
+    from source_paths import (
+        _existing_unique_paths,
+        _resolve_recovered_dir,
+        _resolve_structured_source_dir,
+    )
+    from scene_order_gap_shared import (
+        analyze_scene_order_disorder as shared_analyze_scene_order_disorder,
+        build_scene_placement_index_from_timelines as shared_build_scene_placement_index_from_timelines,
+        build_runtime_registry_debug as shared_build_runtime_registry_debug,
+        build_scene_order_disorder_warning as shared_build_scene_order_disorder_warning,
+        collect_scene_order_gap_rows_from_payloads as shared_collect_scene_order_gap_rows_from_payloads,
+        load_dialog_id_registry as shared_load_dialog_id_registry,
+    )
+except ModuleNotFoundError:
+    from scripts.common import (
+        ASSET_DIR,
+        EXPORT_ROOT,
+        LANG_DIR,
+        OUT_DIR,
+        STORY_REPORTS_DIR,
+        ROOT,
+        fast_glob_files,
+        first_string_field as _first_string_field,
+        is_present,
+        path_id_export_base_stem,
+        path_id_export_path_id,
+        read_bytes_cached,
+        read_json_cached,
+        rel_path as repo_rel,
+        rel_requires_path_id_export_name,
+        unique_preserve as _unique_preserve,
+        unique_strings,
+        walk_const_values as _walk_const_values,
+        walk_field_values as _walk_field_values,
+        write_json,
+    )
+    from scripts.source_paths import (
+        _existing_unique_paths,
+        _resolve_recovered_dir,
+        _resolve_structured_source_dir,
+    )
+    from scripts.scene_order_gap_shared import (
+        analyze_scene_order_disorder as shared_analyze_scene_order_disorder,
+        build_scene_placement_index_from_timelines as shared_build_scene_placement_index_from_timelines,
+        build_runtime_registry_debug as shared_build_runtime_registry_debug,
+        build_scene_order_disorder_warning as shared_build_scene_order_disorder_warning,
+        collect_scene_order_gap_rows_from_payloads as shared_collect_scene_order_gap_rows_from_payloads,
+        load_dialog_id_registry as shared_load_dialog_id_registry,
+    )
 
 REPORTS_DIR = STORY_REPORTS_DIR
 
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
-from source_paths import _existing_unique_paths, _resolve_recovered_dir, _resolve_structured_source_dir
-from story_builder.mission_assets import select_complete_mission_runtime_root
+from .mission_assets import select_complete_mission_runtime_root
 from .source_links import build_source_links
 from .timeline_recovery import (
     TimelineRecoveryConfig,
@@ -112,16 +151,6 @@ from .mission_recovery import (
     summarize as summarize_mission_timeline_recovery,
     write_json as write_mission_timeline_recovery_json,
 )
-from scene_order_gap_shared import (
-    analyze_scene_order_disorder as shared_analyze_scene_order_disorder,
-    build_scene_placement_index_from_timelines as shared_build_scene_placement_index_from_timelines,
-    build_runtime_registry_debug as shared_build_runtime_registry_debug,
-    build_scene_order_disorder_warning as shared_build_scene_order_disorder_warning,
-    collect_scene_order_gap_rows_from_payloads as shared_collect_scene_order_gap_rows_from_payloads,
-    load_dialog_id_registry as shared_load_dialog_id_registry,
-)
-
-
 STORY_SOURCE_LINKS_PATH = EXPORT_ROOT / "recovered" / "story_source_links.json"
 
 
