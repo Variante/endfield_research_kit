@@ -20,6 +20,7 @@ import re
 import struct
 import sys
 from collections import Counter
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -1396,6 +1397,64 @@ def validate_levelscript_manual_self_control_observation(
     }
 
 
+def _mapped_native_method(
+    metadata: Any,
+    helper: Any,
+    pointers_by_method_index: dict[int, set[int]],
+    find_type: Any,
+    type_name: str,
+    method_name: str,
+    parameter_count: int,
+    return_type: str,
+    *,
+    parameter_types: tuple[str, ...] | None = None,
+) -> dict[str, Any]:
+    candidates: list[dict[str, Any]] = []
+    types = find_type(type_name)
+    if len(types) == 1:
+        for method_def in metadata.methods_for(types[0]):
+            info = helper.method_row(metadata, method_def)
+            actual_parameter_types = tuple(
+                row.get("typeName")
+                for row in info.get("parameterDetails") or []
+            )
+            if (
+                info.get("name") != method_name
+                or info.get("parameterCount") != parameter_count
+                or info.get("returnTypeName") != return_type
+                or (
+                    parameter_types is not None
+                    and actual_parameter_types != parameter_types
+                )
+            ):
+                continue
+            pointers = sorted(
+                pointers_by_method_index.get(method_def.index) or []
+            )
+            candidates.append({
+                "methodIndex": method_def.index,
+                "token": info.get("token"),
+                "parameterTypes": list(actual_parameter_types),
+                "returnTypeName": info.get("returnTypeName"),
+                "pointers": pointers,
+            })
+    if len(candidates) == 1 and len(candidates[0]["pointers"]) == 1:
+        candidate = candidates[0]
+        pointer = candidate["pointers"][0]
+        return {
+            **candidate,
+            "pointers": [f"0x{value:x}" for value in candidate["pointers"]],
+            "methodPointerVa": f"0x{pointer:x}",
+            "mappingStatus": "mapped_unique",
+        }
+    return {
+        "mappingStatus": "unresolved",
+        "candidateCount": len(candidates),
+        "declaringTypeCount": len(types),
+        "candidates": candidates,
+    }
+
+
 def levelscript_manual_self_control_contract(
     metadata: Any,
     defaults: dict[int, tuple[int, int]],
@@ -1449,58 +1508,13 @@ def levelscript_manual_self_control_contract(
             if metadata.type_full_name(type_def) == type_name
         ]
 
-    def mapped_method(
-        type_name: str,
-        method_name: str,
-        parameter_count: int,
-        return_type: str,
-        *,
-        parameter_types: tuple[str, ...] | None = None,
-    ) -> dict[str, Any]:
-        candidates: list[dict[str, Any]] = []
-        types = find_type(type_name)
-        if len(types) == 1:
-            for method_def in metadata.methods_for(types[0]):
-                info = helper.method_row(metadata, method_def)
-                actual_parameter_types = tuple(
-                    row.get("typeName")
-                    for row in info.get("parameterDetails") or []
-                )
-                if (
-                    info.get("name") != method_name
-                    or info.get("parameterCount") != parameter_count
-                    or info.get("returnTypeName") != return_type
-                    or (
-                        parameter_types is not None
-                        and actual_parameter_types != parameter_types
-                    )
-                ):
-                    continue
-                pointers = sorted(
-                    pointers_by_method_index.get(method_def.index) or []
-                )
-                candidates.append({
-                    "methodIndex": method_def.index,
-                    "token": info.get("token"),
-                    "parameterTypes": list(actual_parameter_types),
-                    "returnTypeName": info.get("returnTypeName"),
-                    "pointers": pointers,
-                })
-        if len(candidates) == 1 and len(candidates[0]["pointers"]) == 1:
-            candidate = candidates[0]
-            pointer = candidate["pointers"][0]
-            return {
-                **candidate,
-                "pointers": [f"0x{value:x}" for value in candidate["pointers"]],
-                "methodPointerVa": f"0x{pointer:x}",
-                "mappingStatus": "mapped_unique",
-            }
-        return {
-            "mappingStatus": "unresolved",
-            "candidateCount": len(candidates),
-            "declaringTypeCount": len(types),
-            "candidates": candidates,
-        }
+    mapped_method = partial(
+        _mapped_native_method,
+        metadata,
+        helper,
+        pointers_by_method_index,
+        find_type,
+    )
 
     param_sources = {
         row["name"]: row["id"]
@@ -2203,58 +2217,13 @@ def levelscript_activation_control_contract(
             if metadata.type_full_name(type_def) == type_name
         ]
 
-    def mapped_method(
-        type_name: str,
-        method_name: str,
-        parameter_count: int,
-        return_type: str,
-        *,
-        parameter_types: tuple[str, ...] | None = None,
-    ) -> dict[str, Any]:
-        candidates: list[dict[str, Any]] = []
-        types = find_type(type_name)
-        if len(types) == 1:
-            for method_def in metadata.methods_for(types[0]):
-                info = helper.method_row(metadata, method_def)
-                actual_parameter_types = tuple(
-                    row.get("typeName")
-                    for row in info.get("parameterDetails") or []
-                )
-                if (
-                    info.get("name") != method_name
-                    or info.get("parameterCount") != parameter_count
-                    or info.get("returnTypeName") != return_type
-                    or (
-                        parameter_types is not None
-                        and actual_parameter_types != parameter_types
-                    )
-                ):
-                    continue
-                pointers = sorted(
-                    pointers_by_method_index.get(method_def.index) or []
-                )
-                candidates.append({
-                    "methodIndex": method_def.index,
-                    "token": info.get("token"),
-                    "parameterTypes": list(actual_parameter_types),
-                    "returnTypeName": info.get("returnTypeName"),
-                    "pointers": pointers,
-                })
-        if len(candidates) == 1 and len(candidates[0]["pointers"]) == 1:
-            candidate = candidates[0]
-            pointer = candidate["pointers"][0]
-            return {
-                **candidate,
-                "pointers": [f"0x{value:x}" for value in candidate["pointers"]],
-                "methodPointerVa": f"0x{pointer:x}",
-                "mappingStatus": "mapped_unique",
-            }
-        return {
-            "mappingStatus": "unresolved",
-            "candidateCount": len(candidates),
-            "declaringTypeCount": len(types),
-            "candidates": candidates,
-        }
+    mapped_method = partial(
+        _mapped_native_method,
+        metadata,
+        helper,
+        pointers_by_method_index,
+        find_type,
+    )
 
     methods = {
         "SelfSceneInfoHandler": mapped_method(
