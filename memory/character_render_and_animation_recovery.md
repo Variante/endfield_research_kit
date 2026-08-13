@@ -562,6 +562,15 @@ NPC archetypes are imported as labeled source kits.
   dynamic table and loaded/built-in patch registration remain runtime evidence
   boundaries. Details are recorded under
   `wrapper_static_registration_followup` in the packed audit.
+  The `Gameplay.Beyond` `IFix.WrappersManagerImpl` ABI is now closed one step
+  further: `InitWrapperArray( len )` allocates the runtime array, `GetPatch(id)`
+  bounds-checks its `+0x18` count and reads `+0x20 + id*8`, while
+  `IsPatched(id)` performs the same null/range check (shared continuation
+  `0x184e17e9e`). `CreateWrapper`/`CreateDelegate` construct objects but do not
+  embed either gate literal. Thus `0x7301`/`0x7302` are confirmed runtime array
+  indices, not implementation IDs; the table's slot contents and their
+  registration caller remain open. The ABI and negative GPU scan are recorded
+  under `wrappers_manager_runtime_table_abi` in the packed audit.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
