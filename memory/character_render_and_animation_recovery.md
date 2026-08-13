@@ -542,6 +542,17 @@ NPC archetypes are imported as labeled source kits.
   it still does not connect channel 2/resource `+0xd0` to `_UploadBuffer` or
   binding 33. Details are recorded under
   `gpu_driven_culling_pass_callback` in the packed-flag audit.
+  The adjacent `HGRenderGraphCPP` orchestration methods are now bounded as
+  runtime-resolved native bridges: `HGRenderPath_Create` (`0x183c648a0`,
+  metadata `483565`), `HGRenderPath_BeforeCulling` (`0x183e16180`, `483566`),
+  and `HGRenderPath_Render` (`0x183df2de0`, `483567`) each call the generic
+  internal-call resolver with its fully qualified name and tail-jump through
+  a cached global slot (`0x18f370620/628/630`). The on-disk slot contents are
+  not valid GameAssembly VAs before runtime initialization, so the native
+  RenderGraph implementation cannot be attributed from this static image.
+  This identifies the next runtime/native boundary without crediting it as the
+  missing factory-record-to-`_UploadBuffer` or kernel-7 producer; details are
+  under `render_graph_cpp_bridge_followup` in the packed audit.
   The V1 `PopulatePerFrameData` bridge is now closed one layer deeper:
   `GameAssembly 0x18b3f80b4` resolves the exact HyperGryph internal call to
   `UnityPlayer 0x1801e9200`, whose native core is `0x1810f2ab0`. The core
