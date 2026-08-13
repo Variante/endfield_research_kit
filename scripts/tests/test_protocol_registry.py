@@ -14,6 +14,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from story_builder import protocol_registry as audit  # noqa: E402
 from story_builder import levelscript_binary  # noqa: E402
+from story_builder.native_protocol import il2cpp  # noqa: E402
 
 
 class ProtocolRegistryAuditTests(unittest.TestCase):
@@ -881,16 +882,16 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         )
 
     def test_compressed_signed_integer_decoding(self):
-        self.assertEqual(audit.read_compressed_int32(bytes([0x00]), 0), (0, 1))
-        self.assertEqual(audit.read_compressed_int32(bytes([0x02]), 0), (1, 1))
-        self.assertEqual(audit.read_compressed_int32(bytes([0x01]), 0), (-1, 1))
-        self.assertEqual(audit.read_compressed_int32(bytes([0x80, 0x80]), 0), (64, 2))
+        self.assertEqual(il2cpp.read_compressed_int32(bytes([0x00]), 0), (0, 1))
+        self.assertEqual(il2cpp.read_compressed_int32(bytes([0x02]), 0), (1, 1))
+        self.assertEqual(il2cpp.read_compressed_int32(bytes([0x01]), 0), (-1, 1))
+        self.assertEqual(il2cpp.read_compressed_int32(bytes([0x80, 0x80]), 0), (64, 2))
 
     def test_field_names_join_constants_to_protobuf_storage(self):
-        self.assertEqual(audit.normalized_field_name("SceneNumIdFieldNumber"), "scenenumid")
-        self.assertEqual(audit.normalized_field_name("sceneNumId_"), "scenenumid")
-        self.assertEqual(audit.normalized_field_name("TaskIdFieldNumber"), "taskid")
-        self.assertEqual(audit.normalized_field_name("taskId_"), "taskid")
+        self.assertEqual(il2cpp.normalized_field_name("SceneNumIdFieldNumber"), "scenenumid")
+        self.assertEqual(il2cpp.normalized_field_name("sceneNumId_"), "scenenumid")
+        self.assertEqual(il2cpp.normalized_field_name("TaskIdFieldNumber"), "taskid")
+        self.assertEqual(il2cpp.normalized_field_name("taskId_"), "taskid")
 
     def test_quest_start_observation_accepts_single_object_initialization(self):
         result = audit.validate_quest_start_application_observation(
