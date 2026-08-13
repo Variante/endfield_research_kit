@@ -6,6 +6,9 @@ import unittest
 from scripts.story_builder.language_bundle import (
     match_play3d_npc_tracking_context,
 )
+from scripts.story_builder.codecs.levelscript.play3d_radio import (
+    decode_play3d_radio_action,
+)
 from scripts.story_builder.levelscript_binary import (
     decode_levelscript_record_payload,
 )
@@ -70,6 +73,10 @@ class Play3DNpcContextTests(unittest.TestCase):
         self.assertEqual("dengen_map01_e3m301", decoded["npcProxyId"])
         self.assertTrue(decoded["useNpcProxy"])
         self.assertEqual(len(payload), decoded["consumedBytes"])
+        self.assertEqual(
+            decoded,
+            decode_play3d_radio_action(payload, (0x034A, 0x14)),
+        )
 
         framed = decode_levelscript_record_payload(
             payload + b"\x00\x00\x00\x00",
@@ -78,6 +85,10 @@ class Play3DNpcContextTests(unittest.TestCase):
             action_map_role="actionList#1 root",
         )
         self.assertNotIn("play3DRadio", framed)
+        self.assertEqual(
+            {},
+            decode_play3d_radio_action(payload, (0x034A, 0x13)),
+        )
 
     def test_context_requires_true_flag_same_scene_and_unique_mission(self) -> None:
         occurrence = {
