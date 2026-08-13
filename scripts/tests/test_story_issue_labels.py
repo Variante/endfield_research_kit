@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.story_builder.language_helpers import (
+from scripts.story_builder.story_issue_labels import (
     dialog_option_issue_targets,
     dialog_story_issue_codes,
 )

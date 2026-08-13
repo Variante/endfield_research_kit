@@ -138,3 +138,78 @@ def select_subtitle_text_group_from_display_names(
     if usable_tracks and agreed_groups and len(agreed_groups) == 1:
         return next(iter(agreed_groups))
     return ""
+
+
+def _line_id_list_equal(left: object, right: object) -> bool:
+    if not isinstance(left, list) or not isinstance(right, list):
+        return False
+    return [str(value or "") for value in left] == [str(value or "") for value in right]
+
+def normalize_cutscene_text_group(group: str) -> str:
+    match = re.match(r"^(.*_)(0+)(\d+)$", group)
+    if not match:
+        return group
+    return f"{match.group(1)}{int(match.group(3))}"
+
+def merge_duplicate_cutscene_rows(rows: list[tuple[tuple[int, int, int, str, str], dict]]) -> list[dict]:
+    merged: list[dict] = []
+    seen: dict[tuple[str, str, str], dict] = {}
+    for _sort_key, line in sorted(rows, key=lambda item: item[0]):
+        dedupe_key = (
+            str(line.get("cid") or ""),
+            str(line.get("gender") or ""),
+            str(line.get("text") or ""),
+        )
+        existing = seen.get(dedupe_key)
+        if existing is None:
+            seen[dedupe_key] = line
+            merged.append(line)
+            continue
+
+        duplicate = {"id": line.get("id") or ""}
+        if line.get("textGroup"):
+            duplicate["textGroup"] = line["textGroup"]
+        if line.get("sub"):
+            duplicate["sub"] = line["sub"]
+        if line.get("gender"):
+            duplicate["gender"] = line["gender"]
+        existing.setdefault("mergedDuplicateRows", []).append(duplicate)
+        existing_debug = existing.setdefault("_debug", {})
+        existing_debug.setdefault("mergedDuplicateRows", []).append(duplicate)
+        existing_source = existing_debug.setdefault("source", {})
+        merged_row_ids = existing_source.setdefault("mergedDuplicateRowIds", [])
+        if duplicate["id"] and duplicate["id"] not in merged_row_ids:
+            merged_row_ids.append(duplicate["id"])
+        if duplicate.get("textGroup"):
+            merged_groups = existing_source.setdefault("mergedDuplicateTextGroups", [])
+            if duplicate["textGroup"] not in merged_groups:
+                merged_groups.append(duplicate["textGroup"])
+    return merged
+
+def cutscene_line_text_groups(cutscene_key: str, lines: list[dict]) -> list[str]:
+    groups: list[str] = []
+    for line in lines:
+        for group in [
+            str(line.get("textGroup") or cutscene_key),
+            *[
+                str(duplicate.get("textGroup") or "")
+                for duplicate in (line.get("mergedDuplicateRows") or [])
+                if isinstance(duplicate, dict)
+            ],
+        ]:
+            if group and group not in groups:
+                groups.append(group)
+    return groups
+
+def cutscene_pair_normalize(text: str) -> str:
+    """Strip whitespace, punctuation, and symbols so that F and M variants
+    differing only in cosmetic markers (leading space, halfwidth/fullwidth
+    punctuation, smart quotes) compare equal. Letters and digits survive."""
+    if not text:
+        return ""
+    out = []
+    for ch in str(text):
+        cat = unicodedata.category(ch)
+        if cat and cat[0] in ("L", "N"):
+            out.append(ch)
+    return "".join(out)

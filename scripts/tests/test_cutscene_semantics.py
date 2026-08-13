@@ -4,9 +4,13 @@ import unittest
 from pathlib import Path
 
 from scripts.story_builder.cutscene_semantics import (
+    cutscene_line_text_groups,
+    cutscene_pair_normalize,
     cutscene_semantic_shape,
     cutscene_subtitle_evidence,
     exact_levelscript_fmv_bindings,
+    merge_duplicate_cutscene_rows,
+    normalize_cutscene_text_group,
     select_subtitle_text_group_from_display_names,
 )
 
@@ -24,6 +28,37 @@ def exact_fmv_binding() -> dict:
 
 
 class CutsceneSemanticsTests(unittest.TestCase):
+    def test_normalizes_and_collects_cutscene_text_groups(self) -> None:
+        self.assertEqual(
+            normalize_cutscene_text_group("cutscene_test_007"),
+            "cutscene_test_7",
+        )
+        self.assertEqual(normalize_cutscene_text_group("group"), "group")
+        self.assertEqual(
+            cutscene_line_text_groups(
+                "cutscene_test",
+                [
+                    {"textGroup": "007"},
+                    {
+                        "textGroup": "8",
+                        "mergedDuplicateRows": [{"textGroup": "007"}],
+                    },
+                ],
+            ),
+            ["007", "8"],
+        )
+
+    def test_merges_duplicate_rows_and_normalizes_pair_text(self) -> None:
+        merged = merge_duplicate_cutscene_rows(
+            [
+                ((0, 0, 0, "a", "a"), {"id": "a", "text": "same"}),
+                ((0, 0, 1, "b", "b"), {"id": "b", "text": "same"}),
+            ]
+        )
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["mergedDuplicateRows"], [{"id": "b"}])
+        self.assertEqual(cutscene_pair_normalize(" A，１! "), "A１")
+
     def test_language_bundle_attaches_semantics_only_to_cutscene_payload(self) -> None:
         source = (
             Path(__file__).resolve().parents[1]

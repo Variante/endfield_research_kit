@@ -285,306 +285,7 @@ def scene_link_option_payload(raw_option: dict) -> dict:
 
 
 
-def dialog_story_issue_codes(payload: dict) -> list[str]:
-    codes: list[str] = []
-    debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}
-    runtime_registry = (
-        debug.get("runtimeRegistry")
-        if isinstance(debug.get("runtimeRegistry"), dict)
-        else {}
-    )
-    is_unregistered_scene = runtime_registry.get("registered") is False
-    warning = next(
-        (
-            item
-            for item in (payload.get("warnings") or [])
-            if isinstance(item, dict) and item.get("code") == "sceneOrderDisorder"
-        ),
-        None,
-    )
-    if isinstance(warning, dict):
-        line_order = warning.get("lineOrder") if isinstance(warning.get("lineOrder"), dict) else {}
-        option_layout = warning.get("optionLayout") if isinstance(warning.get("optionLayout"), dict) else {}
-        problematic_aspects = {
-            str(aspect)
-            for aspect in (warning.get("problematicAspects") or [])
-            if str(aspect)
-        }
 
-        line_order_status = str(line_order.get("status") or "")
-        if "lineOrder" in problematic_aspects:
-            if line_order_status == "missing":
-                codes.append("missingLineOrder")
-            elif line_order_status == "fallback":
-                codes.append("fallbackLineOrder")
-            if int(line_order.get("uncoveredLineCount") or 0) > 0:
-                codes.append("uncoveredLines")
-        if str(option_layout.get("status") or "") == "inferred":
-            layout_warning = next(
-                (
-                    item
-                    for item in (payload.get("warnings") or [])
-                    if isinstance(item, dict) and item.get("code") == "inferredOptionLayout"
-                ),
-                None,
-            )
-            group_details = (
-                layout_warning.get("groupDetails")
-                if isinstance(layout_warning, dict)
-                and isinstance(layout_warning.get("groupDetails"), list)
-                else []
-            )
-            modes = {
-                str(detail.get("inferredAnchorMode") or "")
-                for detail in group_details
-                if isinstance(detail, dict) and not detail.get("manualLayoutOverride")
-            }
-            statuses = {
-                str(detail.get("status") or "")
-                for detail in group_details
-                if isinstance(detail, dict) and not detail.get("manualLayoutOverride")
-            }
-            if is_unregistered_scene:
-                # A DialogOptionTable row can survive without any executable
-                # DialogIdTable root. Its suffix/gap still provides a useful
-                # display placement, but there is no live runtime layout to
-                # recover or validate. Keep this queue separate from active
-                # key/gap placement work.
-                codes.append("tableOnlyOptionLayout")
-            else:
-                if "lineNumber" in modes:
-                    codes.append("keyedOptionLayout")
-                if modes.intersection({"sparseGap", "siblingTimelinePosition"}):
-                    codes.append("gapOptionLayout")
-                if "lastLine" in modes:
-                    codes.append("lastLineOptionLayout")
-                if "unanchored" in statuses or any(
-                    isinstance(detail, dict)
-                    and not detail.get("manualLayoutOverride")
-                    and not (detail.get("after") or detail.get("position"))
-                    for detail in group_details
-                ):
-                    codes.append("unanchoredOptionLayout")
-            # Older payloads did not expose per-group placement modes. Keep a
-            # compatibility issue only for those files instead of incorrectly
-            # calling every recovered table-key anchor "missing".
-            if not group_details and not is_unregistered_scene:
-                codes.append("inferredOptionLayout")
-    if any(
-        isinstance(item, dict) and item.get("code") == "duplicateTimestamps"
-        for item in (payload.get("warnings") or [])
-    ):
-        codes.append("duplicateTimestamps")
-    if any(
-        isinstance(item, dict) and item.get("code") == "timelineTimestampRegression"
-        for item in (payload.get("warnings") or [])
-    ):
-        codes.append("timelineTimestampRegression")
-    if any(
-        isinstance(item, dict) and item.get("code") == "inferredOptionResponse"
-        for item in (payload.get("warnings") or [])
-    ):
-        codes.append("inferredOptionResponse")
-    if dialog_has_manual_option_override(payload):
-        codes.append("overrided")
-    return codes
-
-def dialog_option_issue_targets(payload: dict) -> dict:
-    """Return compact per-issue targets for runtime WebUI override coverage.
-
-    Option overrides intentionally stay outside generated conversation JSON so
-    they can be edited without rebuilding Story data.  The index still needs
-    to say which generated groups/options each issue covers; otherwise the
-    frontend can only detect that a scene has *some* override and cannot tell a
-    complete correction from a partial one.
-    """
-    warnings = [
-        warning
-        for warning in (payload.get("warnings") or [])
-        if isinstance(warning, dict)
-    ]
-    layout_warning = next(
-        (warning for warning in warnings if warning.get("code") == "inferredOptionLayout"),
-        None,
-    )
-    response_warning = next(
-        (warning for warning in warnings if warning.get("code") == "inferredOptionResponse"),
-        None,
-    )
-    issue_codes = set(dialog_story_issue_codes(payload))
-    out: dict[str, object] = {}
-
-    if isinstance(layout_warning, dict):
-        details = [
-            detail
-            for detail in (layout_warning.get("groupDetails") or [])
-            if isinstance(detail, dict) and not detail.get("manualLayoutOverride")
-        ]
-        if not details and "inferredOptionLayout" in issue_codes:
-            details = [
-                {"group": group.get("g")}
-                for group in (payload.get("optionGroups") or [])
-                if isinstance(group, dict) and group.get("g") is not None
-            ]
-
-        def groups_matching(predicate) -> list[str]:
-            values: list[str] = []
-            for detail in details:
-                if not predicate(detail) or detail.get("group") is None:
-                    continue
-                group_id = str(detail.get("group"))
-                if group_id and group_id not in values:
-                    values.append(group_id)
-            return values
-
-        layout_targets: dict[str, list[str]] = {}
-        if "tableOnlyOptionLayout" in issue_codes:
-            layout_targets["tableOnlyOptionLayout"] = groups_matching(lambda _detail: True)
-        if "keyedOptionLayout" in issue_codes:
-            layout_targets["keyedOptionLayout"] = groups_matching(
-                lambda detail: str(detail.get("inferredAnchorMode") or "") == "lineNumber"
-            )
-        if "gapOptionLayout" in issue_codes:
-            layout_targets["gapOptionLayout"] = groups_matching(
-                lambda detail: str(detail.get("inferredAnchorMode") or "")
-                in {"sparseGap", "siblingTimelinePosition"}
-            )
-        if "lastLineOptionLayout" in issue_codes:
-            layout_targets["lastLineOptionLayout"] = groups_matching(
-                lambda detail: str(detail.get("inferredAnchorMode") or "") == "lastLine"
-            )
-        if "unanchoredOptionLayout" in issue_codes:
-            layout_targets["unanchoredOptionLayout"] = groups_matching(
-                lambda detail: (
-                    str(detail.get("status") or "") == "unanchored"
-                    or not (detail.get("after") or detail.get("position"))
-                )
-            )
-        if "inferredOptionLayout" in issue_codes:
-            layout_targets["inferredOptionLayout"] = groups_matching(lambda _detail: True)
-        layout_targets = {
-            code: group_ids
-            for code, group_ids in layout_targets.items()
-            if group_ids
-        }
-        if layout_targets:
-            out["layoutGroupsByCode"] = layout_targets
-
-    if isinstance(response_warning, dict) and "inferredOptionResponse" in issue_codes:
-        option_ids: list[str] = []
-        raw_option_ids = list(response_warning.get("optionIds") or [])
-        if not raw_option_ids:
-            raw_option_ids = [
-                option_id
-                for group in (response_warning.get("groups") or [])
-                if isinstance(group, dict)
-                for option_id in (group.get("optionIds") or [])
-            ]
-        for raw_option_id in raw_option_ids:
-            option_id = str(raw_option_id or "")
-            if option_id and option_id not in option_ids:
-                option_ids.append(option_id)
-        if option_ids:
-            out["responseOptionIds"] = option_ids
-
-    return out
-
-def dialog_has_manual_option_override(payload: dict) -> bool:
-    for group in (payload.get("optionGroups") or []):
-        if not isinstance(group, dict):
-            continue
-        if isinstance(group.get("manualOverride"), dict) and group.get("manualOverride"):
-            return True
-        for option in (group.get("options") or []):
-            if isinstance(option, dict) and isinstance(option.get("manualOverride"), dict) and option.get("manualOverride"):
-                return True
-    for warning in (payload.get("warnings") or []):
-        if not isinstance(warning, dict):
-            continue
-        if isinstance(warning.get("manualOverride"), dict) and warning.get("manualOverride"):
-            return True
-        for detail in (warning.get("groupDetails") or []):
-            if isinstance(detail, dict) and isinstance(detail.get("manualOverride"), dict) and detail.get("manualOverride"):
-                return True
-        for group in (warning.get("groups") or []):
-            if isinstance(group, dict) and isinstance(group.get("manualOverride"), dict) and group.get("manualOverride"):
-                return True
-    return False
-
-def _line_id_list_equal(left: object, right: object) -> bool:
-    if not isinstance(left, list) or not isinstance(right, list):
-        return False
-    return [str(value or "") for value in left] == [str(value or "") for value in right]
-
-def normalize_cutscene_text_group(group: str) -> str:
-    match = re.match(r"^(.*_)(0+)(\d+)$", group)
-    if not match:
-        return group
-    return f"{match.group(1)}{int(match.group(3))}"
-
-def merge_duplicate_cutscene_rows(rows: list[tuple[tuple[int, int, int, str, str], dict]]) -> list[dict]:
-    merged: list[dict] = []
-    seen: dict[tuple[str, str, str], dict] = {}
-    for _sort_key, line in sorted(rows, key=lambda item: item[0]):
-        dedupe_key = (
-            str(line.get("cid") or ""),
-            str(line.get("gender") or ""),
-            str(line.get("text") or ""),
-        )
-        existing = seen.get(dedupe_key)
-        if existing is None:
-            seen[dedupe_key] = line
-            merged.append(line)
-            continue
-
-        duplicate = {"id": line.get("id") or ""}
-        if line.get("textGroup"):
-            duplicate["textGroup"] = line["textGroup"]
-        if line.get("sub"):
-            duplicate["sub"] = line["sub"]
-        if line.get("gender"):
-            duplicate["gender"] = line["gender"]
-        existing.setdefault("mergedDuplicateRows", []).append(duplicate)
-        existing_debug = existing.setdefault("_debug", {})
-        existing_debug.setdefault("mergedDuplicateRows", []).append(duplicate)
-        existing_source = existing_debug.setdefault("source", {})
-        merged_row_ids = existing_source.setdefault("mergedDuplicateRowIds", [])
-        if duplicate["id"] and duplicate["id"] not in merged_row_ids:
-            merged_row_ids.append(duplicate["id"])
-        if duplicate.get("textGroup"):
-            merged_groups = existing_source.setdefault("mergedDuplicateTextGroups", [])
-            if duplicate["textGroup"] not in merged_groups:
-                merged_groups.append(duplicate["textGroup"])
-    return merged
-
-def cutscene_line_text_groups(cutscene_key: str, lines: list[dict]) -> list[str]:
-    groups: list[str] = []
-    for line in lines:
-        for group in [
-            str(line.get("textGroup") or cutscene_key),
-            *[
-                str(duplicate.get("textGroup") or "")
-                for duplicate in (line.get("mergedDuplicateRows") or [])
-                if isinstance(duplicate, dict)
-            ],
-        ]:
-            if group and group not in groups:
-                groups.append(group)
-    return groups
-
-
-def cutscene_pair_normalize(text: str) -> str:
-    """Strip whitespace, punctuation, and symbols so that F and M variants
-    differing only in cosmetic markers (leading space, halfwidth/fullwidth
-    punctuation, smart quotes) compare equal. Letters and digits survive."""
-    if not text:
-        return ""
-    out = []
-    for ch in str(text):
-        cat = unicodedata.category(ch)
-        if cat and cat[0] in ("L", "N"):
-            out.append(ch)
-    return "".join(out)
 
 
 def append_reference_line(
@@ -1046,7 +747,60 @@ def safe_mission_data_filename(mission_id: str, used_names: set[str]) -> str:
             return candidate
         index += 1
 
-__all__ = [name for name in globals() if not name.startswith("__")]
+__all__ = [
+    "clean_media_id_value",
+    "written_path_key",
+    "norm_id",
+    "pick_fields",
+    "source_ref",
+    "inline_image_tag",
+    "text_sequence_fingerprint",
+    "brace_text",
+    "sns_raw_title",
+    "normalize_blackbox_id",
+    "norm_template_id",
+    "icon_basename",
+    "env_group",
+    "env_story_mission",
+    "line_haystack",
+    "line_identity_haystack",
+    "line_option_haystack",
+    "parse_level_ref_name",
+    "level_host_type",
+    "merge_search_text",
+    "format_webui_timeline_seconds",
+    "graph_fragments_text",
+    "scene_links_text",
+    "scene_link_option_payload",
+    "append_reference_line",
+    "reference_kind_from_tags",
+    "normalized_reference_tags",
+    "collection_slug",
+    "collection_display_name",
+    "collection_bucket_from_key",
+    "collection_scene_suffix",
+    "collection_scene_value",
+    "collection_source_label",
+    "collection_text_fingerprint",
+    "collection_table_name_tokens",
+    "reference_row_texts",
+    "prts_attachment_aliases",
+    "responsive_sort_values",
+    "responsive_preview_values",
+    "responsive_summary_rows",
+    "sim_duplicate_actor_from_key",
+    "normalized_duplicate_line_texts",
+    "compact_story_source_link",
+    "story_source_link_search_text",
+    "story_source_link_index_summary",
+    "compact_narrative_video_ref",
+    "narrative_video_sort_key",
+    "narrative_video_search_text",
+    "narrative_video_index_summary",
+    "build_mission_map_pins",
+    "build_mission_timeline_recovery_report",
+    "safe_mission_data_filename",
+]
 
 
 

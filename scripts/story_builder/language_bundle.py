@@ -13,11 +13,16 @@ from .mission_flow import *
 from .dialog_tree import *
 from .bundle_support import *
 from .language_helpers import *
+from .story_issue_labels import (
+    dialog_option_issue_targets,
+    dialog_story_issue_codes,
+)
 from .option_timeline_continuation import (
     classify_runtime_jump_option_routes,
     classify_timeline_clip_option_index_routes,
     classify_zero_index_timeline_continuation,
 )
+from .radio_continuation import build_radio_continuation_candidates
 from .timeline_action_evidence import build_conversation_action_debug
 from .option_anchor_reports import (
     inferred_option_anchor_row,
@@ -25,8 +30,13 @@ from .option_anchor_reports import (
 )
 from scene_order_gap_shared import write_scene_order_gap_reports
 from .cutscene_semantics import (
+    _line_id_list_equal,
     cutscene_semantic_shape,
     cutscene_subtitle_evidence,
+    cutscene_line_text_groups,
+    cutscene_pair_normalize,
+    merge_duplicate_cutscene_rows,
+    normalize_cutscene_text_group,
     select_subtitle_text_group_from_display_names,
 )
 from .ability_binary import (
@@ -49,10 +59,6 @@ from .source_provenance import (
     render_story_connection_original_files_markdown,
 )
 
-_RADIO_CONTINUATION_REPORT_PATH = (
-    _RadioContPath(__file__).resolve().parents[2]
-    / "reports" / "mission_order" / "radio_continuation_CN.json"
-)
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
     _RadioContPath(__file__).resolve().parents[2]
@@ -1448,30 +1454,6 @@ def _manual_option_group_override(conv_key: str, group_id: int) -> dict:
     # and are applied by webui/app.js so users can edit them without rebuilding
     # generated conversation JSON.
     return {}
-
-@_radio_cont_lru_cache(maxsize=2)
-def _load_radio_continuation_candidates_by_mission(
-    path_str: str,
-) -> dict[str, list[dict]]:
-    """Load the radio-continuation audit report keyed by mission id.
-    Each value is a list of `(predecessor, radio, match, levelId, file)` dicts.
-    Returns an empty dict when the report has not been generated yet, so the
-    builder degrades to its prior behavior cleanly.
-    """
-    path = _RadioContPath(path_str)
-    if not path.is_file():
-        return {}
-    try:
-        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, _radio_cont_json.JSONDecodeError):
-        return {}
-    out: dict[str, list[dict]] = {}
-    for result in payload.get("results") or []:
-        mission = result.get("mission") or ""
-        if not mission:
-            continue
-        out.setdefault(mission, []).extend(result.get("candidates") or [])
-    return out
 
 @_radio_cont_lru_cache(maxsize=2)
 def _load_fmv_clips_by_webui_key(path_str: str) -> dict[str, list[dict]]:
@@ -14213,13 +14195,16 @@ def build_language_bundle(
                     edge.setdefault("positions", [])
                     if pos not in edge["positions"]:
                         edge["positions"].append(pos)
-        # Radio-continuation edges (authored continueAfterDialog/Radio flags
-        # combined with LevelScript file-offset adjacency, audited offline by
-        # the focused radio-continuation recovery audit). Silent
-        # no-op when the audit report has not been generated yet.
-        radio_cont_candidates = _load_radio_continuation_candidates_by_mission(
-            str(_RADIO_CONTINUATION_REPORT_PATH)
-        ).get(mission) or []
+        # Radio-continuation edges combine the authored RadioTable flag with
+        # same-file serialized LevelScript occurrence order. Build this
+        # directly from current source evidence; no recovery report is an
+        # input to the production Story graph.
+        radio_cont_candidates = build_radio_continuation_candidates(
+            mission,
+            flow_level_ids,
+            radios,
+            lambda text: resolve_scene_ref_out_key(text, available),
+        )
         for cand in radio_cont_candidates:
             predecessor = cand.get("predecessor") or ""
             radio = cand.get("radio") or ""
