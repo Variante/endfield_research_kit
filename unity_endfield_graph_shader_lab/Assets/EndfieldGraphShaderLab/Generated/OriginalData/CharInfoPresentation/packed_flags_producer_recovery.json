@@ -1121,6 +1121,21 @@
         "dirty_record_staging_consumer": {
           "status": "native-dirty-record-consumer-staging-boundary-identified-upload-edge-open",
           "source": "Installed UnityPlayer.dll PData-scoped disassembly; current UnityPlayer binary was checked directly rather than inferred from the managed resolver.",
+          "ecs_staging_dispatch_boundary": {
+            "status": "hypergryph-ecs-table-dispatch-classified-no-gpu-edge",
+            "native_functions": [
+              "0x1810d25c0..0x1810d3198",
+              "0x1810d26bf (table-referenced entry)"
+            ],
+            "rva_table_evidence": [
+              "UnityPlayer .rdata VA 0x182048fd4 (RVA 0x10d25c0)",
+              "UnityPlayer .rdata VA 0x182225368 (RVA 0x10d26bf)",
+              "UnityPlayer .rdata VA 0x1823d4254 (metadata RVA 0x204a398)",
+              "UnityPlayer .tvm0 VA 0x1824d1058/0x1824d1060"
+            ],
+            "classification_evidence": "The body emits the assertion `entityTypeData.memory == nullptr` and operates on HyperGryph ECS entity-type/record arrays. Its five-lane copy into the 0x100-stride staging entry is CPU-side ECS work; no ComputeShader, CommandBuffer, buffer upload, or dispatch target is present.",
+            "boundary": "No direct E8 caller or raw code-pointer xref reaches the table entry, so invocation remains an indirect Burst/job scheduler boundary. Do not equate this ECS staging table with the 84-byte _UploadBuffer source until an explicit pack and UploadPerDrawParams kernel-7 consumer is recovered."
+          },
           "native_pointer": "0x1810d25c0",
           "function_range": "0x1810d25c0..0x1810d3198",
           "record_contract": {
