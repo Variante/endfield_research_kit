@@ -1,7 +1,9 @@
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 
 
@@ -15,6 +17,40 @@ SPEC.loader.exec_module(pack_webui)
 
 
 class PackWebuiAudioTests(unittest.TestCase):
+    def test_single_value_audio_format_flag_is_removed(self) -> None:
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            pack_webui.parse_args(["--audio-format", "flac"])
+
+    def test_staged_package_failure_preserves_published_files(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            outputs = [root / "story.zip", root / "assets.zip"]
+            for output in outputs:
+                output.write_bytes(b"published")
+
+            with self.assertRaisesRegex(RuntimeError, "fixture failure"):
+                with pack_webui.staged_package_outputs(outputs) as staged:
+                    for path in staged.values():
+                        path.write_bytes(b"replacement")
+                    raise RuntimeError("fixture failure")
+
+            self.assertEqual([path.read_bytes() for path in outputs], [b"published"] * 2)
+            self.assertEqual(list(root.glob("*.tmp")), [])
+
+    def test_staged_packages_replace_outputs_after_success(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            outputs = [root / "story.zip", root / "assets.zip"]
+            for output in outputs:
+                output.write_bytes(b"published")
+
+            with pack_webui.staged_package_outputs(outputs) as staged:
+                for path in staged.values():
+                    path.write_bytes(b"replacement")
+
+            self.assertEqual([path.read_bytes() for path in outputs], [b"replacement"] * 2)
+            self.assertEqual(list(root.glob("*.tmp")), [])
+
     def test_live_router_keeps_audio_normal_and_debug_mission_views(self) -> None:
         project_root = SCRIPT.parents[1]
         router = (project_root / "webui" / "assets.js").read_text(encoding="utf-8")
