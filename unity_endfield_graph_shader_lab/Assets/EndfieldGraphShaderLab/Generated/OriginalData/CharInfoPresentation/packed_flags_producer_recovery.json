@@ -1273,6 +1273,42 @@
         },
         "boundary": "The global ShaderVariablesGlobal path is now explicitly separated from the unresolved GPU Scene upload schedule. The dynamic IFix/render-graph subroute remains open, while staging-to-_UploadBuffer, kernel-7 dispatch selection, and channel-2/resource +0xd0 binding stay fail-closed."
       },
+      "render_request_native_boundary": {
+        "status": "render-request-initialization-no-static-upload-edge",
+        "source": "Current GameAssembly.dll PData-scoped HGRenderPipeline mapping and native disassembly; source image hash is pinned to the installed build.",
+        "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+        "type": "HG.Rendering.Runtime.HGRenderPipeline",
+        "method": "ExecuteRenderRequestCPP",
+        "metadata_method_index": 284111,
+        "token": "0x0600044b",
+        "native_pointer": "0x183106970",
+        "parameters": ["renderRequest", "renderContext", "cmd"],
+        "observed_contract": {
+          "entry_initialization": [
+            "Allocates/copies render-request state blocks through 0x18033b9d0 with sizes 0xc80, 0x520, and 0x170.",
+            "Calls HGRenderPipeline.CheckAndInitializeRenderPathCPP at 0x183c64900 before filling the request-side records.",
+            "Writes repeated 16-byte lanes into request-owned records through offsets +0x00..+0x530; these are CPU request-state copies, not the five-lane 84-byte upload record."
+          ],
+          "direct_call_scan": {
+            "body_direct_call_count": 868,
+            "known_gpu_targets_checked": [
+              "ComputeBuffer.SetData/InternalSetData",
+              "ComputeShader.SetBuffer/SetConstantComputeBuffer",
+              "ComputeShader.Dispatch",
+              "CommandBuffer.Internal_DispatchCompute",
+              "GpuSceneDirtyUpdateCS.UploadPerDrawParams",
+              "factory 0x8c record/0x100 staging consumers"
+            ],
+            "hits": 0
+          }
+        },
+        "negative_checks": [
+          "No direct ComputeShader/ComputeBuffer bind or compute dispatch target occurs in the mapped body target scan.",
+          "No _UploadBuffer, UploadPerDrawParams kernel 7, factory 0x8c/0x100 staging, or custom channel 2/resource +0xd0 identity is present in the static call surface.",
+          "The render-context/CommandBuffer arguments and CheckAndInitializeRenderPathCPP call identify render-request orchestration, not the missing post-dirty upload schedule."
+        ],
+        "boundary": "ExecuteRenderRequestCPP is now a bounded CPU render-request initialization boundary. Its dynamic render-graph/IFix subroutes remain open, but this static entry must not be credited as the channel-2-to-_UploadBuffer or kernel-7 producer."
+      },
       "upstream_packed_word_producer": {
         "source": "Installed GameAssembly.dll native HGCharacterVolume body recovered from the current metadata/code-registration pair.",
         "type": "HG.Rendering.Runtime.HGCharacterVolume",
