@@ -13,6 +13,7 @@ from unittest.mock import patch
 from scripts import build_mission_pipeline_data as pipeline
 from scripts.mission_pipeline import (
     dialog_tree_projection,
+    lua_story_projection,
     offline_shell_projection,
     offline_recovery_projection,
     quest_fork_arm_projection,
@@ -6973,7 +6974,15 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.evidence = pipeline.load_lua_story_playback_evidence()
+        if hasattr(pipeline, "load_lua_story_playback_evidence"):
+            raise AssertionError("Lua playback loader must live in its owner")
+        cls.evidence = lua_story_projection.load_lua_story_playback_evidence(
+            pipeline.DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
+            lua_consumer_reference_schema=(
+                pipeline.LUA_CONSUMER_REFERENCE_SCHEMA
+            ),
+            native_game_action_type="Beyond.Gameplay.Actions.GameAction",
+        )
 
     def test_every_admitted_call_site_has_full_provenance(self) -> None:
         for row in self.evidence["acceptedExactPlaybackCalls"]:
@@ -7053,8 +7062,12 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 }]},
             }), encoding="utf-8")
 
-            evidence = pipeline.load_lua_story_playback_evidence(
+            evidence = lua_story_projection.load_lua_story_playback_evidence(
                 audit_path,
+                lua_consumer_reference_schema=(
+                    pipeline.LUA_CONSUMER_REFERENCE_SCHEMA
+                ),
+                native_game_action_type="Beyond.Gameplay.Actions.GameAction",
             )
 
         self.assertEqual(
@@ -7106,8 +7119,12 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 }]},
             }), encoding="utf-8")
 
-            evidence = pipeline.load_lua_story_playback_evidence(
+            evidence = lua_story_projection.load_lua_story_playback_evidence(
                 audit_path,
+                lua_consumer_reference_schema=(
+                    pipeline.LUA_CONSUMER_REFERENCE_SCHEMA
+                ),
+                native_game_action_type="Beyond.Gameplay.Actions.GameAction",
             )
 
         row = evidence["acceptedExactPlaybackCalls"][0]
@@ -7137,7 +7154,15 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 RuntimeError,
                 r"validator.*gate=row_provenance.*sourceSha256:sha256",
             ):
-                pipeline.load_lua_story_playback_evidence(audit_path)
+                lua_story_projection.load_lua_story_playback_evidence(
+                    audit_path,
+                    lua_consumer_reference_schema=(
+                        pipeline.LUA_CONSUMER_REFERENCE_SCHEMA
+                    ),
+                    native_game_action_type=(
+                        "Beyond.Gameplay.Actions.GameAction"
+                    ),
+                )
 
     def test_rejected_candidate_is_published_without_a_trigger_route(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
