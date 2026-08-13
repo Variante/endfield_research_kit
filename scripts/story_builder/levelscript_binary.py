@@ -13,7 +13,11 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
-from common import read_bytes_cached
+from common import (
+    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+    RECORDED_NATIVE_METADATA_SHA256,
+    read_bytes_cached,
+)
 
 
 LEVELSCRIPT_START_TYPE_NAMES = {
@@ -75,6 +79,7 @@ SCRIPT_POINTER_REF_RECORDS = {
 LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID = (
     "gameassembly-2026-07-11-cr-0x18b9217d0-actionheader"
 )
+LEVELSCRIPT_NATIVE_HEADER_CONTRACT_SCHEMA = "levelScriptNativeHeaderContract.v1"
 LEVELSCRIPT_NATIVE_HEADER_NAMES: dict[tuple[int, int], str] = {
     (0x1052, 0x00): "LevelEvent_OnCustomEvent",
     (0x1054, 0x00): "LevelEvent_OnDialogEnter",
@@ -338,6 +343,85 @@ LEVELSCRIPT_NATIVE_HEADER_UNION_TAG_NAMES: dict[int, str] = {
     0x00E4: "OnTianshizhuangActivate",
     0x00E5: "OnTianshizhuangFinish",
 }
+
+
+def levelscript_native_header_contract(
+    gameassembly_sha256: str,
+    metadata_sha256: str,
+) -> dict[str, Any]:
+    """Gate the recorded ActionHeader union registry to its exact build."""
+    gameassembly_sha256 = str(gameassembly_sha256 or "").upper()
+    metadata_sha256 = str(metadata_sha256 or "").upper()
+    missing = [
+        label
+        for label, value in (
+            ("GameAssembly.dll", gameassembly_sha256),
+            ("global-metadata.dat", metadata_sha256),
+        )
+        if not value
+    ]
+    mismatches = [
+        {
+            "source": label,
+            "expected": expected,
+            "actual": actual,
+        }
+        for label, actual, expected in (
+            (
+                "GameAssembly.dll",
+                gameassembly_sha256,
+                RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+            ),
+            (
+                "global-metadata.dat",
+                metadata_sha256,
+                RECORDED_NATIVE_METADATA_SHA256,
+            ),
+        )
+        if actual and actual != expected
+    ]
+    status = "missing" if missing else "mismatched" if mismatches else "validated"
+    return {
+        "schema": LEVELSCRIPT_NATIVE_HEADER_CONTRACT_SCHEMA,
+        "mappingId": LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
+        "status": status,
+        "sources": {
+            "gameAssemblySha256": gameassembly_sha256,
+            "globalMetadataSha256": metadata_sha256,
+        },
+        "missing": missing,
+        "mismatches": mismatches,
+    }
+
+
+def summarize_levelscript_native_header_records(
+    records: list[dict[str, Any]],
+    memberships: dict[int, str],
+    *,
+    names: set[str],
+) -> list[dict[str, Any]]:
+    """Summarize exact header-list records selected by the native registry."""
+    counts: Counter[tuple[int, int, str]] = Counter()
+    for record in records:
+        role = str(memberships.get(_record_start(record)) or "")
+        if not role.startswith("headerList"):
+            continue
+        union_tag, member_count = levelscript_record_semantic_key(record)
+        header_name = LEVELSCRIPT_NATIVE_HEADER_UNION_TAG_NAMES.get(union_tag, "")
+        if header_name in names:
+            counts[(union_tag, member_count, header_name)] += 1
+    return [
+        {
+            "headerTagHex": f"0x{union_tag:04x}",
+            "serializedMemberCount": member_count,
+            "headerName": header_name,
+            "count": count,
+            "headerListCount": count,
+            "headerTable": "Beyond_Gameplay_Actions_ActionHeader",
+            "nativeHeaderMappingId": LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
+        }
+        for (union_tag, member_count, header_name), count in sorted(counts.items())
+    ]
 
 
 def levelscript_record_semantic_key(record: dict[str, Any]) -> tuple[int, int]:

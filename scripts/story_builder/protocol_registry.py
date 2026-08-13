@@ -43,6 +43,20 @@ from common import (  # noqa: E402
     write_text_if_changed,
 )
 from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
+try:  # Package import; keep direct script execution available for the CLI.
+    from .levelscript_binary import (
+        extract_levelscript_uid_records,
+        levelscript_action_map_membership,
+        levelscript_native_header_contract,
+        summarize_levelscript_native_header_records,
+    )
+except ImportError:  # pragma: no cover - direct ``python protocol_registry.py``
+    from story_builder.levelscript_binary import (  # type: ignore[no-redef]
+        extract_levelscript_uid_records,
+        levelscript_action_map_membership,
+        levelscript_native_header_contract,
+        summarize_levelscript_native_header_records,
+    )
 from story_builder.native_contracts.mission_task_paths import (  # noqa: E402
     DEFAULT_CONTRACT as MISSION_TASK_PATH_CONTRACT,
     load_mission_task_paths,
@@ -73,8 +87,21 @@ MISSION_RUNTIME_ROOT = select_complete_mission_runtime_root(
     / "Json"
     / "MissionRuntimeAsset",
 )
-MEMORYPACK_UNION_AUDIT = (
-    REPORT_ROOT / "memorypack_union_formatter_tag_audit.json"
+LEVELSCRIPT_ROOTS = (
+    ROOT
+    / "export_full"
+    / "structured"
+    / "StreamingAssets"
+    / "Data"
+    / "Json"
+    / "LevelScriptData",
+    ROOT
+    / "export_full"
+    / "structured"
+    / "Persistent"
+    / "Data"
+    / "Json"
+    / "LevelScriptData",
 )
 MESSAGE_125_SEND_GLOBAL_VA = 0x187BDFD38
 MESSAGE_125_PAYLOAD_TYPE = "Beyond.Gameplay.EventData"
@@ -775,7 +802,8 @@ def normalized_field_name(value: str) -> str:
 
 def mission_event_asset_coverage(
     mission_runtime_root: Path,
-    union_audit_path: Path,
+    levelscript_roots: tuple[Path, ...],
+    native_header_contract: dict[str, Any],
 ) -> dict[str, Any]:
     """Measure serialized consumers of the native mission-event surface."""
     if not mission_runtime_root.is_dir():
@@ -837,20 +865,38 @@ def mission_event_asset_coverage(
             if action_id in actions_by_id:
                 resolved_client_action_mapping_count += 1
 
-    levelscript_candidate_count = 0
+    if native_header_contract.get("schema") != "levelScriptNativeHeaderContract.v1":
+        raise RuntimeError("LevelScript native-header contract schema mismatch")
+    if native_header_contract.get("status") != "validated":
+        raise RuntimeError(
+            "LevelScript native-header contract is not valid for this build: "
+            f"{native_header_contract.get('status') or 'missing'}"
+        )
+    target_header_names = {
+        "MissionEvent_OnCustomEventForMission",
+        "MissionEventHeader",
+    }
+    levelscript_files = 0
     levelscript_candidates: list[dict[str, Any]] = []
-    if union_audit_path.is_file():
-        union_audit = json.loads(union_audit_path.read_text(encoding="utf-8"))
-        for row in union_audit.get("derivedOpcodeMappings") or []:
-            if not isinstance(row, dict):
-                continue
-            if (
-                row.get("headerName") == "MissionEvent_OnCustomEventForMission"
-                or row.get("headerName") == "MissionEventHeader"
-                or row.get("headerTagHex") in {"0x00b6", "0x00b8"}
+    for root in levelscript_roots:
+        if not root.is_dir():
+            continue
+        for path in sorted(root.rglob("*.json")):
+            levelscript_files += 1
+            data = path.read_bytes()
+            records = extract_levelscript_uid_records(data)
+            _action_map, memberships = levelscript_action_map_membership(data, records)
+            for row in summarize_levelscript_native_header_records(
+                records,
+                memberships,
+                names=target_header_names,
             ):
+                row = dict(row)
+                row["sourceFile"] = str(path.resolve())
                 levelscript_candidates.append(row)
-                levelscript_candidate_count += int(row.get("count") or 0)
+    levelscript_candidate_count = sum(
+        int(row.get("count") or 0) for row in levelscript_candidates
+    )
 
     return {
         "missionRuntimeRoot": str(mission_runtime_root.resolve()),
@@ -864,9 +910,8 @@ def mission_event_asset_coverage(
             client_action_mapping_count - resolved_client_action_mapping_count
         ),
         "actionTypes": dict(sorted(action_types.items())),
-        "levelScriptUnionAudit": (
-            str(union_audit_path.resolve()) if union_audit_path.is_file() else None
-        ),
+        "levelScriptFilesScanned": levelscript_files,
+        "levelScriptNativeHeaderContract": native_header_contract,
         "levelScriptCustomMissionEventRecords": levelscript_candidate_count,
         "levelScriptCandidateOpcodeMappings": levelscript_candidates,
         "finding": (
@@ -8162,7 +8207,7 @@ def build_report(
     mapper_path: Path = NATIVE_MAPPER_HELPER,
     task_contract_path: Path = MISSION_TASK_PATH_CONTRACT,
     mission_runtime_root: Path = MISSION_RUNTIME_ROOT,
-    union_audit_path: Path = MEMORYPACK_UNION_AUDIT,
+    levelscript_roots: tuple[Path, ...] = LEVELSCRIPT_ROOTS,
 ) -> dict[str, Any]:
     helper = load_metadata_helper(helper_path)
     metadata = helper.Metadata(metadata_path)
@@ -8170,7 +8215,11 @@ def build_report(
     native_task_paths = load_mission_task_paths(task_contract_path)
     mission_event_assets = mission_event_asset_coverage(
         mission_runtime_root,
-        union_audit_path,
+        levelscript_roots,
+        levelscript_native_header_contract(
+            file_sha256(gameassembly_path),
+            file_sha256(metadata_path),
+        ),
     )
     cs = enum_members(metadata, defaults, "Proto.CSMessageID")
     sc = enum_members(metadata, defaults, "Proto.SCMessageID")
@@ -9307,11 +9356,6 @@ def parse_args() -> argparse.Namespace:
         default=MISSION_RUNTIME_ROOT,
     )
     parser.add_argument(
-        "--union-audit",
-        type=Path,
-        default=MEMORYPACK_UNION_AUDIT,
-    )
-    parser.add_argument(
         "--json-output",
         type=Path,
         default=REPORT_ROOT / "protocol_registry_audit.json",
@@ -9533,7 +9577,6 @@ def main() -> int:
             gameassembly_path=args.gameassembly,
             mapper_path=args.native_mapper,
             mission_runtime_root=args.mission_runtime_root,
-            union_audit_path=args.union_audit,
         )
     except load_metadata_helper(args.helper).MetadataParseError as exc:
         # Re-deriving the registry is how a different client build is
