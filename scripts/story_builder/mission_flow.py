@@ -31,6 +31,7 @@ from .anime_assets import (
     _extract_ref_strings,
     _extract_tracking_hints,
     _leveldata_quest_story_refs_for_mission,
+    _quest_sort_key,
     _resolve_tracking_hint,
     _tracking_hint_pin,
 )
@@ -47,7 +48,6 @@ from .level_bindings import (
     LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
     _load_levelscript_binding_data,
     _load_npc_proxy_ex,
-    _topo_sort_quests,
     classify_levelscript_record,
     levelscript_native_action_name,
 )
@@ -76,6 +76,82 @@ _QUEST_ACTION_CONNECTIONS = {
     2: ("client_action_succeed", "succeed"),
     4: ("client_action_failed", "failed"),
 }
+
+
+def _topo_sort_quests(quests_out: list[dict]) -> list[dict]:
+    by_id = {q["id"]: q for q in quests_out if q.get("id")}
+    indegree = {qid: 0 for qid in by_id}
+    succs: dict[str, set[str]] = defaultdict(set)
+
+    def has_path(src: str, dst: str) -> bool:
+        if src == dst:
+            return True
+        seen: set[str] = set()
+        stack = list(succs.get(src) or [])
+        while stack:
+            cur = stack.pop()
+            if cur == dst:
+                return True
+            if cur in seen:
+                continue
+            seen.add(cur)
+            stack.extend(succs.get(cur) or [])
+        return False
+
+    def add_edge(src: str, dst: str) -> None:
+        if not src or not dst or src == dst:
+            return
+        if src not in by_id or dst not in by_id or dst in succs[src]:
+            return
+        succs[src].add(dst)
+        indegree[dst] += 1
+
+    for q in by_id.values():
+        for prev in q.get("prev") or []:
+            add_edge(prev, q["id"])
+
+    story_ref_owners: dict[str, list[str]] = defaultdict(list)
+    for q in by_id.values():
+        qid = q["id"]
+        for field_name in ("dialogs", "cutscenes", "remotecomms", "radios"):
+            for ref in q.get(field_name) or []:
+                if ref and qid not in story_ref_owners[ref]:
+                    story_ref_owners[ref].append(qid)
+
+    # A failedCondition story ref is an authored "this branch closes when that
+    # scene happens" guard. Use it as a weak chronology edge when it does not
+    # contradict the explicit prevQuestIdList graph.
+    for q in by_id.values():
+        qid = q["id"]
+        for ref in q.get("failStoryRefs") or []:
+            for owner_id in story_ref_owners.get(ref) or []:
+                if owner_id == qid or has_path(owner_id, qid):
+                    continue
+                add_edge(qid, owner_id)
+
+    ready = [by_id[qid] for qid, deg in indegree.items() if deg == 0]
+    ready.sort(key=_quest_sort_key)
+
+    out: list[dict] = []
+    emitted: set[str] = set()
+    while ready:
+        cur = ready.pop(0)
+        qid = cur["id"]
+        if qid in emitted:
+            continue
+        emitted.add(qid)
+        out.append(cur)
+        for nxt in sorted(succs.get(qid, []), key=lambda next_id: _quest_sort_key(by_id[next_id])):
+            indegree[nxt] -= 1
+            if indegree[nxt] == 0:
+                ready.append(by_id[nxt])
+        ready.sort(key=_quest_sort_key)
+
+    if len(out) < len(by_id):
+        for q in sorted(by_id.values(), key=_quest_sort_key):
+            if q["id"] not in emitted:
+                out.append(q)
+    return out
 
 
 def parse_level_ref_name(name: str) -> dict | None:
