@@ -916,6 +916,16 @@ NPC archetypes are imported as labeled source kits.
   as CPU-output work, but the resolver/table-dispatched consumer and the
   shared-record-to-`_UploadBuffer`/channel-2 `+0xd0` edges remain fail-closed.
   Details are under `native_frame_update_step_census` in the packed audit.
+  The post-Step2 continuation is now bounded more tightly: adapter
+  `0x180fc5ec0` passes service `+0x200` to `0x180e75000`, which forwards
+  through `0x180e566d0` to `0x180e58cb0`. That body performs lifecycle gating,
+  drains four callback/resource slots at `+0xcb0`, and builds a CPU descriptor
+  structure through `0x180e53750`; the latter allocates/zeroes `0xd0`-byte
+  entries and metadata arrays, with no checked ComputeBuffer, shader bind,
+  CommandBuffer, or dispatch edge. This is distinct from the 84-byte
+  `GpuSceneDirtyUpdateCS` `_UploadBuffer` source, so the staging-to-upload and
+  channel-2/resource `+0xd0` edges remain fail-closed. Details are under
+  `native_frame_update_post_step2_lifecycle_census` in the packed audit.
   A follow-up call-graph audit covered all 21 resolver call sites that had
   recorded memory accesses, plus their direct and one-level child calls. The
   renderer registration/rebuild path (`0x18042c910..0x18042cb01`) reaches
