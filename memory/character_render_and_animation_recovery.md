@@ -530,6 +530,21 @@ NPC archetypes are imported as labeled source kits.
   channel 2/resource `+0xd0`; keep the GPU edge fail-closed. Details are in
   `packed_flags_producer_recovery.json` under
   `factory_per_draw_shared_payload_evidence`.
+  The previously hidden dynamic/Burst path is now partially closed as well:
+  `Beyond.Gameplay.Factory.UnsafeJobFuncPointers.ApplyPerDrawRender` preserves
+  `(binderPtr, perDrawConfigs, length)` through the Burst stub at
+  `0x1869d3434`, whose embedded body `0x1869d5d30` loops 60-byte (`0x3c`)
+  configuration entries. `GlobalSharedData.PerDrawGlobalSetting.Apply`
+  (`0x1869d5e18`) is a concrete caller; its fallback path indexes a `0x284`-
+  byte table entry and enters that loop. The loop's `0x1869f3654` branch sends
+  type 1/3 entries through `0x1876aaefc -> 0x1876aacd0 ->
+  HGFactoryRenderManager.SetEntitySharedDataPartial (0x183d689c0)`, forwarding
+  one 16-byte Vector4 and then setting `PerDrawData` dirty; type 2 uses the
+  existing float writer. This is positive CPU-side evidence from dynamic
+  per-draw configuration into the native shared record, but it still does not
+  identify the post-dirty 84-byte `_UploadBuffer` packer, kernel-7 dispatch, or
+  channel-2/resource `+0xd0` bind. The feature-enabled branch
+  (`0x186a33f58`) remains a separate next target; keep the GPU edge fail-closed.
   A current-build slot cross-check removes the remaining endpoint ambiguity:
   the Vector4 binder body loads the runtime function pointer from
   `0x18f370720` at `0x1834a3dc9`, and `SetEntitySharedDataPartial` loads the
