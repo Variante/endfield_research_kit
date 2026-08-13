@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 
 from scripts import build_mission_pipeline_data as pipeline
+from scripts.mission_pipeline import story_order_projection
 from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
 from scripts.story_builder.native_contracts import callserver_callback
 
@@ -42,6 +43,60 @@ class NativeEvidenceSkipWiringTests(unittest.TestCase):
                 # same-named class that is not identical.
                 audit = sys.modules[report_builder.__module__]
                 self.assertTrue(issubclass(getattr(audit, raised), caught))
+
+
+class StoryOrderProjectionTests(unittest.TestCase):
+    def test_summary_projection_is_owned_outside_the_pipeline_entrypoint(self) -> None:
+        self.assertFalse(hasattr(pipeline, "_update_story_order_summary"))
+        summary: dict[str, object] = {}
+        story_order_projection.update_story_order_summary(summary, {
+            "summary": {"sceneCount": 3, "strongEdgeCount": 2},
+            "crossReference": {
+                "strictEdgeCount": 2,
+                "override": {"disagrees": 1},
+                "ocr": {"disagrees": 0},
+                "conflictCount": 1,
+            },
+        })
+        self.assertEqual(summary["storyOrderSceneCount"], 3)
+        self.assertEqual(summary["storyOrderStrongEdgeCount"], 2)
+        self.assertEqual(summary["storyOrderCycleCount"], 0)
+        self.assertEqual(summary["storyOrderCrossReferenceStrictEdgeCount"], 2)
+        self.assertEqual(
+            summary["storyOrderCrossReferenceOverrideDisagreeCount"],
+            1,
+        )
+        self.assertEqual(summary["storyOrderCrossReferenceConflictCount"], 1)
+
+    def test_cross_reference_projection_preserves_evidence_boundary(self) -> None:
+        projected = story_order_projection.compact_story_order_cross_reference(
+            {
+                "strictEdgeCount": 1,
+                "counts": {
+                    "override_disagrees": 1,
+                    "ocr_agrees": 1,
+                },
+                "edges": [{
+                    "from": "story_b",
+                    "to": "story_a",
+                    "kind": "questPrev",
+                    "override": {"status": "disagrees", "missing": ["story_a"]},
+                    "ocr": {"status": "agrees"},
+                    "crossReferenceConflict": True,
+                }],
+            },
+            {
+                "_schema": "sourceStoryOrderCrossReference.v1",
+                "reportJson": "reports/order.json",
+                "reportMarkdown": "reports/order.md",
+            },
+        )
+        self.assertEqual(projected["status"], "cross_reference_only")
+        self.assertEqual(projected["override"]["disagrees"], 1)
+        self.assertEqual(projected["ocr"]["agrees"], 1)
+        self.assertEqual(projected["conflictCount"], 1)
+        self.assertFalse(projected["orderEvidence"])
+        self.assertFalse(projected["disagreementEdges"][0]["orderEvidence"])
 
 
 class LevelScriptSourceEvidenceTests(unittest.TestCase):
