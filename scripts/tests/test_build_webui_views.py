@@ -67,6 +67,8 @@ class WebuiViewPlanTests(unittest.TestCase):
         )
         self.assertIn("--relevant-asset-maps", commands_for(phases, "source_graph")[0])
         self.assertNotIn("audio", [name for phase in task_names(phases) for name in phase])
+        for task_name in ("mission_pipeline", "characters", "gameplay", "projectiles"):
+            self.assertEqual(commands_for(phases, task_name)[-1][1], "-m")
 
     def test_asset_plan_joins_character_and_refs_after_fresh_asset_index(self) -> None:
         args = build_webui_views.parse_args(

@@ -10,7 +10,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from common import EXPORT_ROOT, LANG_DIR, OUT_DIR, rel_path, write_json
+if __package__:
+    from .common import EXPORT_ROOT, LANG_DIR, OUT_DIR, rel_path, write_json
+else:
+    from common import EXPORT_ROOT, LANG_DIR, OUT_DIR, rel_path, write_json
 
 
 TABLE_ROOT_RELS = (
