@@ -1668,6 +1668,21 @@
                   "0x1871c7e18 IFix.WrappersManagerImpl.GetPatch",
                   "0x1866c2b40 IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_*"
                 ],
+                "code_registration_wrapper_aliases": [
+                  {
+                    "method_index": 386925,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_144"
+                  },
+                  {
+                    "method_index": 311111,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_16"
+                  },
+                  {
+                    "method_index": 443633,
+                    "method": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_33"
+                  }
+                ],
+                "code_registration_wrapper_alias_note": "The current code-registration map resolves the shared native target 0x1866c2b40 to these three generated wrapper metadata aliases; the native body is the same IFix frame bridge, while the wrapper signature is selected by the generated method metadata.",
                 "dynamic_wrapper_range": "0x1866c2b40..0x1866c2c1b",
                 "dynamic_wrapper_contract": {
                   "wrapper_object_fields": {
@@ -1711,6 +1726,16 @@
             "range": "0x18477d8e0..0x18477d910",
             "patch_key": "0x7302",
             "observed": "The unpatched path writes controller +0x50=true; the patched branch is an IFix jump and is not statically recoverable from this body."
+          },
+          "installed_patch_target_crosscheck": {
+            "report": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
+            "patch_sha256": "baa28ae497e64d94e152886622bbe5fb391199bcbf8366e2df91591c9a9f172c",
+            "patch_size_bytes": 86926,
+            "target_table_offset": "0x14eb8",
+            "target_count": 32,
+            "matching_targets": [],
+            "target_identity": "declaring type + method name + parameter-type signature; wrapper gate constants are not on-disk target-table keys",
+            "observed": "The current installed Gameplay.Beyond patch target table contains no RemoteFactoryGameWorldController.FrameUpdateEntitiesJobForward or SetGarbageCollectDirty record. This excludes those signatures from the current on-disk overlay, but does not prove the runtime WrappersManager slot for 0x7301/0x7302 is null: built-in registration, another loaded payload, or runtime state remains outside this static patch file."
           },
           "boundary": "The HGFactoryRenderManager.FrameUpdateEntities method pointer remains a one-byte ret, but the adjacent RemoteFactory controller frame-forward path is explicitly IFix-patchable. Static UnityPlayer/GPUDriven evidence therefore cannot close or exclude factory per-frame dirty production until the patch body or dynamic method table for key 0x7301 is recovered. Keep the shared-record-to-_UploadBuffer and channel-2/resource +0xd0 edges fail-closed; do not treat the managed ret stub as proof that no frame producer exists."
         }
