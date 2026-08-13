@@ -13,6 +13,13 @@ from story_builder import source_story_order_cross_reference as cross_reference 
 
 
 class SourceStoryOrderCrossReferenceTests(unittest.TestCase):
+    def test_module_is_a_small_library_not_a_second_command_surface(self) -> None:
+        self.assertFalse(hasattr(cross_reference, "main"))
+        self.assertEqual(
+            cross_reference.__all__,
+            ["SCHEMA", "build_report", "render_markdown"],
+        )
+
     def test_cross_references_never_add_non_strict_edges(self) -> None:
         partial = {
             "_schema": "fixture",
