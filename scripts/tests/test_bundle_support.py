@@ -42,6 +42,7 @@ class BundleSupportTests(unittest.TestCase):
             "scene_sort_value",
             "slot_misc",
             "preview",
+            "safe_mission_data_filename",
         })
 
 
