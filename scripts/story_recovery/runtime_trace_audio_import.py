@@ -4,7 +4,7 @@ The importer joins numeric Wwise Event hashes to the current exported audio
 index only as a static name/media candidate. It never upgrades an observed
 Adapter request into Wwise acceptance or audible playback.
 
-Run through ``runtime_trace.py import --profile audio``.
+Run through ``python -m scripts.story_recovery.runtime_trace import --profile audio``.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from scripts.story_recovery import runtime_trace_core as core
+from . import runtime_trace_core as core
 
 
 ROOT = Path(__file__).resolve().parents[2]

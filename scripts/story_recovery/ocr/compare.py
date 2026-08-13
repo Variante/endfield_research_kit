@@ -9,26 +9,36 @@ It does not promote OCR keys or modify either input.
 from __future__ import annotations
 
 import argparse
-import sys
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[3]
-if str(ROOT / "scripts") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts"))
-
-from common import (  # noqa: E402
-    REPORTS_DIR,
-    md_escape,
-    read_json,
-    rel_path,
-    safe_key,
-    write_report_json,
-    write_text_if_changed,
-)
-from story_builder.mission_recovery import natural_key  # noqa: E402
+if __package__ == "scripts.story_recovery.ocr":
+    from ...common import (
+        REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+    from ...story_builder.mission_recovery import natural_key
+elif __package__ == "story_recovery.ocr":
+    from common import (
+        REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+    from story_builder.mission_recovery import natural_key
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 
 DEFAULT_OVERRIDE = ROOT / "webui" / "overrides" / "story_order.json"

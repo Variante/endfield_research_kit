@@ -2,11 +2,12 @@ r"""Mission/LevelScript capture adapter for :mod:`runtime_trace`.
 
 This launcher refuses to load hooks unless the installed executable,
 GameAssembly, and IL2CPP metadata exactly match the reviewed hook manifest.
-The resulting JSONL is normalized through ``runtime_trace.py import``.
+The resulting JSONL is normalized through the maintained ``runtime_trace``
+module entry point.
 
 Run from the repository root with the repo-local Frida environment:
-    tools\frida-runtime\venv\Scripts\python.exe \
-        scripts\story_recovery\runtime_trace.py capture --profile mission
+    tools\frida-runtime\venv\Scripts\python.exe -m \
+        scripts.story_recovery.runtime_trace capture --profile mission
 """
 from __future__ import annotations
 
@@ -19,11 +20,20 @@ from pathlib import Path
 from typing import Any
 
 
-from scripts.story_recovery import runtime_trace_core as core
-from scripts.story_builder.native_contracts.mission_task_paths import (
-    MissionTaskPathContractError,
-    load_mission_task_paths,
-)
+from . import runtime_trace_core as core
+
+if __package__ == "scripts.story_recovery":
+    from ..story_builder.native_contracts.mission_task_paths import (
+        MissionTaskPathContractError,
+        load_mission_task_paths,
+    )
+elif __package__ == "story_recovery":
+    from story_builder.native_contracts.mission_task_paths import (
+        MissionTaskPathContractError,
+        load_mission_task_paths,
+    )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 ROOT = core.ROOT
 SCRIPT_DIR = Path(__file__).resolve().parent

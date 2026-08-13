@@ -8,13 +8,13 @@ fragments such as `.m4s` and `.lock` files are ignored by default.
 This is the lower-level OCR worker. For the full OCR-to-story-order pipeline,
 prefer:
 
-    python scripts/story_recovery/ocr_story_order.py match --run-ocr
+    python -m scripts.story_recovery.ocr_story_order match --run-ocr
 
 Direct OCR-only runs are still useful for diagnostics:
 
-    python scripts/story_recovery/ocr_story_order.py sample
-    python scripts/story_recovery/ocr_story_order.py sample --frame-step 10
-    python scripts/story_recovery/ocr_story_order.py sample --dry-run
+    python -m scripts.story_recovery.ocr_story_order sample
+    python -m scripts.story_recovery.ocr_story_order sample --frame-step 10
+    python -m scripts.story_recovery.ocr_story_order sample --dry-run
 """
 from __future__ import annotations
 
@@ -36,19 +36,28 @@ from pathlib import Path
 from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[3]
-for path in (ROOT / "scripts",):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
-
-from common import (  # noqa: E402
-    REPORTS_DIR,
-    md_escape,
-    read_json,
-    rel_path,
-    safe_key,
-    write_report_json,
-    write_text_if_changed,
-)
+if __package__ == "scripts.story_recovery.ocr":
+    from ...common import (
+        REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+elif __package__ == "story_recovery.ocr":
+    from common import (
+        REPORTS_DIR,
+        md_escape,
+        read_json,
+        rel_path,
+        safe_key,
+        write_report_json,
+        write_text_if_changed,
+    )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 
 VIDEO_ROOT = ROOT / "videos"

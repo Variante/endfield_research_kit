@@ -2,10 +2,10 @@ r"""Maintain gameplay-video OCR Story-order evidence with one command.
 
 Commands::
 
-    python scripts\story_recovery\ocr_story_order.py sample [OCR options]
-    python scripts\story_recovery\ocr_story_order.py match [matching options]
-    python scripts\story_recovery\ocr_story_order.py publish [proposal options]
-    python scripts\story_recovery\ocr_story_order.py compare [comparison options]
+    python -m scripts.story_recovery.ocr_story_order sample [OCR options]
+    python -m scripts.story_recovery.ocr_story_order match [matching options]
+    python -m scripts.story_recovery.ocr_story_order publish [proposal options]
+    python -m scripts.story_recovery.ocr_story_order compare [comparison options]
 
 Use ``compare --detailed`` to rematch selected OCR reports and render the
 diagnostic video/override window comparison. No command edits the active Story
@@ -15,15 +15,15 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 from typing import Callable, Sequence
 
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.story_recovery.ocr_story_order"
+    )
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts.story_recovery.ocr import _detailed_compare, compare, extract, match, proposal  # noqa: E402
+from .ocr import _detailed_compare, compare, extract, match, proposal
 
 
 COMMANDS: dict[str, tuple[str, Callable[[list[str] | None], int]]] = {

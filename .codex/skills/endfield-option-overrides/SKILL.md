@@ -64,7 +64,7 @@ python -m json.tool webui\overrides\options.json
 Run the coverage audit when adding, reviewing, or checking stale targets:
 
 ```bat
-python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
+python -m scripts.story_recovery.build_option_override_coverage_audit --language CN
 ```
 
 The same report includes generated response candidates and flags manual paths

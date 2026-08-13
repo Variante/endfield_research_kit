@@ -7,8 +7,8 @@ are audio-specific.
 
 Run from the repository root with the repo-local Frida environment::
 
-    tools\frida-runtime\venv\Scripts\python.exe \
-        scripts\story_recovery\runtime_trace.py capture --profile audio
+    tools\frida-runtime\venv\Scripts\python.exe -m \
+        scripts.story_recovery.runtime_trace capture --profile audio
 
 The capture is read-only. It records authored carrier calls, AudioAdapter
 requests, and playing-id controls; it does not change arguments or prevent
@@ -27,7 +27,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-from scripts.story_recovery import runtime_trace_core as core
+from . import runtime_trace_core as core
 
 
 DEFAULT_GAME_ROOT = core.DEFAULT_GAME_ROOT

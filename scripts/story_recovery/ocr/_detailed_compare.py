@@ -9,7 +9,6 @@ the full promotion pipeline.
 from __future__ import annotations
 
 import argparse
-import sys
 import time
 from collections import Counter, defaultdict
 from difflib import SequenceMatcher
@@ -17,20 +16,30 @@ from pathlib import Path
 from typing import Any
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-for _path in (_REPO_ROOT / "scripts", _REPO_ROOT / "scripts" / "story_recovery"):
-    if str(_path) not in sys.path:
-        sys.path.insert(0, str(_path))
+if __package__ == "scripts.story_recovery.ocr":
+    from ...common import (
+        REPORTS_DIR,
+        md_escape,
+        rel_path,
+        safe_key,
+        split_csv_values,
+        write_report_json,
+        write_text_if_changed,
+    )
+elif __package__ == "story_recovery.ocr":
+    from common import (
+        REPORTS_DIR,
+        md_escape,
+        rel_path,
+        safe_key,
+        split_csv_values,
+        write_report_json,
+        write_text_if_changed,
+    )
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
-from common import (  # noqa: E402
-    REPORTS_DIR,
-    md_escape,
-    rel_path,
-    safe_key,
-    split_csv_values,
-    write_report_json,
-    write_text_if_changed,
-)
-from scripts.story_recovery.ocr import match as matcher  # noqa: E402
+from . import match as matcher
 
 
 REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"

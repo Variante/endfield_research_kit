@@ -9,8 +9,8 @@ small, standalone, read-only reference the WebUI loads in debug mode to compare
 OCR order against static recovery and the editable override.
 
 Usage:
-    python scripts/story_recovery/ocr_story_order.py publish
-    python scripts/story_recovery/ocr_story_order.py publish --proposed <path> --out <path>
+    python -m scripts.story_recovery.ocr_story_order publish
+    python -m scripts.story_recovery.ocr_story_order publish --proposed <path> --out <path>
 """
 from __future__ import annotations
 
@@ -21,8 +21,14 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.common import safe_key
-from scripts.story_builder.mission_recovery import natural_key
+if __package__ == "scripts.story_recovery.ocr":
+    from ...common import safe_key
+    from ...story_builder.mission_recovery import natural_key
+elif __package__ == "story_recovery.ocr":
+    from common import safe_key
+    from story_builder.mission_recovery import natural_key
+else:  # pragma: no cover - invalid embedding identity
+    raise ImportError(f"unsupported package identity: {__package__!r}")
 
 ROOT = Path(__file__).resolve().parents[3]
 PROPOSED_STORY_ORDER_PATH = (
