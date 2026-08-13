@@ -66,10 +66,10 @@ from .context import (
     write_mission_timeline_recovery_json,
 )
 
-_MANUAL_OPTION_OVERRIDES_PATH = Path(__file__).with_name(
-    "manual_option_overrides.json"
-)
-from common import write_report_json, write_text_if_changed
+try:
+    from common import write_report_json, write_text_if_changed
+except ModuleNotFoundError:
+    from scripts.common import write_report_json, write_text_if_changed
 from .anime_assets import (
     _canonical_cutscene_key,
     _cutscene_component_summary,
@@ -236,7 +236,10 @@ from .option_anchor_reports import (
     inferred_option_anchor_row,
     write_inferred_option_anchors_report,
 )
-from scene_order_gap_shared import write_scene_order_gap_reports
+try:
+    from scene_order_gap_shared import write_scene_order_gap_reports
+except ModuleNotFoundError:
+    from scripts.scene_order_gap_shared import write_scene_order_gap_reports
 from .cutscene_semantics import (
     _line_id_list_equal,
     cutscene_semantic_shape,
@@ -1601,12 +1604,6 @@ def _load_story_order_overrides(path_str: str) -> dict[str, list[str]]:
             if isinstance(order, list):
                 out[str(mission_id)] = [str(key) for key in order if key]
     return out
-
-def _manual_option_group_override(conv_key: str, group_id: int) -> dict:
-    # Runtime WebUI overrides now live in webui/overrides/options.json
-    # and are applied by webui/app.js so users can edit them without rebuilding
-    # generated conversation JSON.
-    return {}
 
 @_radio_cont_lru_cache(maxsize=2)
 def _load_fmv_clips_by_webui_key(path_str: str) -> dict[str, list[dict]]:
@@ -4309,7 +4306,6 @@ def build_language_bundle(
         fallback_group_labels: list[str] = []
         group_details: list[dict] = []
         option_response_risks: list[dict] = []
-        manual_option_response_overrides: list[dict] = []
         def preferred_timeline_option_row(opt_id: str) -> dict:
             rows = timeline_option_rows.get(opt_id) or []
             if not rows:
@@ -5236,7 +5232,6 @@ def build_language_bundle(
             opts = sorted(groups_map[g], key=lambda o: o["i"])
             group_opt_ids = group_option_ids_by_group.get(g, [])
             placement_override = DIALOG_OPTION_GROUP_POSITION_OVERRIDES.get((conv_key or "", g), "")
-            manual_override = _manual_option_group_override(conv_key or "", g)
             cinematic_after_candidate = cinematic_after_by_group.get(g, "")
             cinematic_group_sources = cinematic_sources_by_group.get(g, [])
             text_alias_after_candidate = text_alias_after_by_group.get(g, "")
@@ -5385,36 +5380,6 @@ def build_language_bundle(
                 group["after"] = fallback_anchor_id
             elif used_group_fallback and fallback_anchor_id:
                 group["after"] = fallback_anchor_id
-            layout_override = (
-                manual_override.get("layout")
-                if isinstance(manual_override.get("layout"), dict)
-                else {}
-            )
-            manual_layout_applied = False
-            if layout_override:
-                override_after = str(layout_override.get("after") or "").strip()
-                override_position = str(layout_override.get("position") or "").strip()
-                can_apply_layout_override = (
-                    (after_is_authored or group_status in {"fallbackAfter", "keyedAfter", "unanchored"})
-                    and (
-                        override_position == "pre"
-                        or (override_after and override_after in valid_line_ids)
-                    )
-                )
-                if can_apply_layout_override:
-                    if override_position == "pre":
-                        group.pop("after", None)
-                        group["position"] = "pre"
-                    else:
-                        group.pop("position", None)
-                        group["after"] = override_after
-                        fallback_anchor_id = override_after
-                    manual_layout_applied = True
-                    group["manualOverride"] = {
-                        "kind": "optionLayout",
-                        "source": repo_rel(_MANUAL_OPTION_OVERRIDES_PATH),
-                        "note": str(manual_override.get("note") or layout_override.get("note") or ""),
-                    }
             timeline_route_branch = timeline_route_branch_for_group(group_opt_ids, group.get("after") or "")
             route_branch_lines_by_option = timeline_route_branch.get("branchLineIdsByOption") or {}
             sibling_text_branch = {}
@@ -5436,7 +5401,7 @@ def build_language_bundle(
                     group_opt_ids,
                     group.get("after") or "",
                     sibling_anchor_record
-                    if not manual_layout_applied and inferred_anchor_mode == "siblingTimelinePosition"
+                    if inferred_anchor_mode == "siblingTimelinePosition"
                     else None,
                     g,
                 )
@@ -5518,65 +5483,6 @@ def build_language_bundle(
                 or dialog_tree_node_layout
                 or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
             )
-            original_following_line_risk = dict(following_line_risk) if following_line_risk else {}
-            response_override = (
-                manual_override.get("responses")
-                if isinstance(manual_override.get("responses"), dict)
-                else {}
-            )
-            manual_response_applied = False
-            if response_override:
-                option_set = {opt_id for opt_id in group_opt_ids if opt_id}
-                branch_line_ids_by_option: dict[str, list[str]] = {}
-                for raw_opt_id, raw_response in response_override.items():
-                    opt_id = str(raw_opt_id or "")
-                    if opt_id not in option_set or not isinstance(raw_response, dict):
-                        continue
-                    raw_lines = raw_response.get("branchLines")
-                    if raw_lines is None:
-                        raw_lines = raw_response.get("lineIds")
-                    if raw_lines is None:
-                        raw_lines = [raw_response.get("lineId")]
-                    if not isinstance(raw_lines, list):
-                        raw_lines = [raw_lines]
-                    line_ids = [
-                        str(line_id)
-                        for line_id in raw_lines
-                        if str(line_id or "") in valid_line_ids
-                    ]
-                    if line_ids:
-                        branch_line_ids_by_option[opt_id] = _unique_preserve(line_ids)
-                if branch_line_ids_by_option:
-                    override_detail = (
-                        "Manual WebUI-only override supplies option response "
-                        "line mapping for this group."
-                    )
-                    if following_line_risk.get("code") == "inferredFollowingLines":
-                        override_detail = (
-                            "Manual WebUI-only override supplies option response "
-                            "line mapping for a group that otherwise used inferred "
-                            "Timeline-order candidates."
-                        )
-                    following_line_risk = {
-                        **following_line_risk,
-                        "code": "manualOptionResponseOverride",
-                        "reason": "manualOverride",
-                        "detail": override_detail,
-                        "branchLineIdsByOption": branch_line_ids_by_option,
-                        "candidateLineIdsByOption": branch_line_ids_by_option,
-                        "manualOverride": {
-                            "kind": "optionResponse",
-                            "source": repo_rel(_MANUAL_OPTION_OVERRIDES_PATH),
-                            "note": str(manual_override.get("note") or ""),
-                        },
-                    }
-                    if original_following_line_risk:
-                        following_line_risk["overriddenRisk"] = original_following_line_risk
-                    for opt in opts:
-                        opt_id = opt.get("id") or ""
-                        if opt_id in branch_line_ids_by_option:
-                            opt["branchLines"] = branch_line_ids_by_option[opt_id]
-                    manual_response_applied = True
             if following_line_risk.get("code") == "siblingSceneTextBranches":
                 if used_group_fallback:
                     used_group_fallback = False
@@ -5632,45 +5538,6 @@ def build_language_bundle(
                         if strong_raw_index_mapping:
                             tag["candidateMapping"] = following_line_risk.get("candidateMapping") or ""
                         opt.setdefault("riskTags", []).append(tag)
-                elif following_line_risk.get("code") == "manualOptionResponseOverride":
-                    manual_option_response_overrides.append({
-                        "group": g,
-                        **following_line_risk,
-                    })
-                    if original_following_line_risk.get("code") == "inferredFollowingLines":
-                        strong_raw_index_mapping = (
-                            original_following_line_risk.get("candidateMapping") == "trunkClipOptionIndex"
-                            and bool(original_following_line_risk.get("branchLineIdsByOption"))
-                        )
-                        if not strong_raw_index_mapping:
-                            option_response_risks.append({
-                                "group": g,
-                                **original_following_line_risk,
-                            })
-                        tag_code = "rawOptionIndexMatchedLine" if strong_raw_index_mapping else "inferredFollowingLine"
-                        for opt, line_id in zip(opts, option_risk_line_ids(original_following_line_risk, len(opts))):
-                            tag = {
-                                "code": tag_code,
-                                "lineId": line_id,
-                                "reason": original_following_line_risk["reason"],
-                                "branchRiskCode": original_following_line_risk.get("code") or "",
-                                "source": original_following_line_risk.get("source") or "",
-                            }
-                            if strong_raw_index_mapping:
-                                tag["candidateMapping"] = original_following_line_risk.get("candidateMapping") or ""
-                            opt.setdefault("riskTags", []).append(tag)
-                    for opt in opts:
-                        opt_id = opt.get("id") or ""
-                        line_ids = (following_line_risk.get("branchLineIdsByOption") or {}).get(opt_id) or []
-                        if not line_ids:
-                            continue
-                        opt.setdefault("riskTags", []).append({
-                            "code": "manualOptionResponseOverride",
-                            "lineId": line_ids[0],
-                            "reason": "manualOverride",
-                            "branchRiskCode": following_line_risk.get("code") or "",
-                            "source": repo_rel(_MANUAL_OPTION_OVERRIDES_PATH),
-                        })
             if sibling_anchor_record and sibling_anchor_record.get("siblingScenes"):
                 group["branchHint"] = {
                     "scenes": sibling_anchor_record["siblingScenes"],
@@ -5699,15 +5566,6 @@ def build_language_bundle(
                 "cinematicSources": cinematic_group_sources,
                 "textAliasSources": text_alias_group_sources,
             }
-            group_manual_override = group.get("manualOverride") or (
-                following_line_risk.get("manualOverride") if manual_response_applied else {}
-            )
-            if group_manual_override:
-                group_detail["manualOverride"] = group_manual_override
-            if manual_layout_applied:
-                group_detail["manualLayoutOverride"] = True
-            if manual_response_applied:
-                group_detail["manualResponseOverride"] = True
             if authored_group_option_ids and unauthored_group_option_ids:
                 group.setdefault("_debug", {})[
                     "partialAuthoredOptionCoverage"
@@ -5799,28 +5657,6 @@ def build_language_bundle(
                 "lineIds": _unique_preserve([
                     line_id
                     for risk in option_response_risks
-                    for line_id in all_option_response_risk_line_ids(risk)
-                    if line_id
-                ]),
-            })
-        if manual_option_response_overrides:
-            warnings.append({
-                "code": "manualOptionResponseOverride",
-                "reason": "manualOverride",
-                "detail": (
-                    "manual WebUI-only overrides supply option response line "
-                    "mappings for these groups"
-                ),
-                "groups": manual_option_response_overrides,
-                "optionIds": _unique_preserve([
-                    option_id
-                    for risk in manual_option_response_overrides
-                    for option_id in (risk.get("optionIds") or [])
-                    if option_id
-                ]),
-                "lineIds": _unique_preserve([
-                    line_id
-                    for risk in manual_option_response_overrides
                     for line_id in all_option_response_risk_line_ids(risk)
                     if line_id
                 ]),
@@ -6345,7 +6181,7 @@ def build_language_bundle(
             group_details = [
                 detail
                 for detail in (layout_warning.get("groupDetails") or [])
-                if isinstance(detail, dict) and not detail.get("manualLayoutOverride")
+                if isinstance(detail, dict)
             ]
             modes = {
                 str(detail.get("inferredAnchorMode") or "")
@@ -6410,21 +6246,12 @@ def build_language_bundle(
                     add("optionBranch:rawIndexMatched")
                 elif branch_risk.get("code") == "inferredFollowingLines":
                     add("optionBranch:timelineAdjacent")
-                elif branch_risk.get("code") == "manualOptionResponseOverride":
-                    add("optionBranch:manualOverride")
                 elif branch_risk.get("code") == "sharedTimelineContinuation":
                     add("optionBranch:commonContinuation")
                 if branch_risk.get("commonContinuationLineId"):
                     add("optionBranch:commonContinuation")
                 if branch_risk.get("continuationOptionIds"):
                     add("optionBranch:continuationOption")
-            overridden_risk = (
-                risk.get("overriddenRisk")
-                if isinstance(risk.get("overriddenRisk"), dict)
-                else {}
-            )
-            if overridden_risk:
-                add_option_branch_methods(overridden_risk)
             add_option_branch_methods(risk)
         return methods
     print(
