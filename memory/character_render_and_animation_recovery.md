@@ -576,6 +576,14 @@ NPC archetypes are imported as labeled source kits.
   registration-driven rather than a recoverable static call chain. The ABI,
   callsite census, and negative GPU scan are recorded under
   `wrappers_manager_runtime_table_abi` in the packed audit.
+  The same current codegen module table is now pinned directly: Gameplay.Beyond
+  module 32 uses method-pointer table `0x18e9e6580`; entries `29077/29078`
+  resolve to the two RemoteFactory native bodies, `88315/88350` resolve to the
+  object-only/bool-capable shared IFix wrappers, and `98313..98318` resolve to
+  the manager methods above. This confirms the native targets are genuine
+  module-table entries, while still exposing no runtime array slot contents or
+  patch implementation body. The exact table entries are recorded under
+  `code_registration_method_pointer_table` in the packed audit.
   The managed dispatch boundary is now explicit as well. UnityPlayer's primary
   internal-call table maps `ComputeShader::Dispatch` to `0x180119af0`, which
   resolves the shader handle and forwards kernel/x/y/z through `0x1804b2940`
