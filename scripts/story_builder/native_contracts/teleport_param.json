@@ -1,0 +1,134 @@
+{
+  "schema": "teleportParamNativeContract.v1",
+  "status": "validated",
+  "sources": {
+    "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "globalMetadata": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+  },
+  "auditSchema": "nativeValueCarrierAudit.v1",
+  "carrier": {
+    "type": "Beyond.Gameplay.TeleportParam",
+    "nativeSize": 56,
+    "layout": {
+      "source": "0x0",
+      "uiType": "0x4",
+      "options": "0x8",
+      "resetMap": "0xc",
+      "callbackHandle": "0x10",
+      "missionId": "0x18",
+      "levelScriptId": "0x20",
+      "actionId": "0x28",
+      "performId": "0x30"
+    }
+  },
+  "counts": {
+    "carrierFields": 9,
+    "focusFields": 4,
+    "containerPaths": 10,
+    "signatureMethods": 15,
+    "mappedSignaturePointers": 14,
+    "focusFieldAccesses": 23,
+    "directCallsites": 13,
+    "directCarrierArguments": 10
+  },
+  "directCallerCensus": {
+    "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline.Beyond.Gameplay.Core.ILoadingPipelineContext.get_teleportParam": 2,
+    "Beyond.Gameplay.Core.GameLevelLoader.LoadAtPos": 1,
+    "Beyond.Gameplay.Core.GameLevelLoader.LoadAtPosInCurrentMap": 2,
+    "Beyond.Gameplay.Core.GameLevelLoader.OpenLevel": 1,
+    "Beyond.Gameplay.Core.PerformerFactory._CreatePerformPerformer": 1,
+    "Beyond.Gameplay.Core.SquadManager.ServerTeleportSquad": 1,
+    "Beyond.Gameplay.TeleportProcessor.GetTeleportParamsFromPassThroughData": 2,
+    "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_4652": 1,
+    "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8806": 1,
+    "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8811": 1
+  },
+  "focusFieldSummary": {
+    "missionId": {
+      "offset": "0x18",
+      "width": 8,
+      "readAccesses": 3,
+      "writeAccesses": 2,
+      "zeroWriteAccesses": 1,
+      "unknownWriteAccesses": 1,
+      "directCallInitializerStates": {
+        "forwarded_or_unresolved": 3,
+        "unknown": 1,
+        "zero": 6
+      }
+    },
+    "levelScriptId": {
+      "offset": "0x20",
+      "width": 8,
+      "readAccesses": 4,
+      "writeAccesses": 2,
+      "zeroWriteAccesses": 1,
+      "unknownWriteAccesses": 1,
+      "directCallInitializerStates": {
+        "forwarded_or_unresolved": 3,
+        "unknown": 1,
+        "zero": 6
+      }
+    },
+    "actionId": {
+      "offset": "0x28",
+      "width": 8,
+      "readAccesses": 4,
+      "writeAccesses": 2,
+      "zeroWriteAccesses": 1,
+      "unknownWriteAccesses": 1,
+      "directCallInitializerStates": {
+        "forwarded_or_unresolved": 3,
+        "unknown": 1,
+        "zero": 6
+      }
+    },
+    "performId": {
+      "offset": "0x30",
+      "width": 8,
+      "readAccesses": 4,
+      "writeAccesses": 2,
+      "zeroWriteAccesses": 1,
+      "unknownWriteAccesses": 1,
+      "directCallInitializerStates": {
+        "forwarded_or_unresolved": 3,
+        "unknown": 1,
+        "zero": 6
+      }
+    }
+  },
+  "loadFinishConsumerAccesses": [
+    {
+      "field": "levelScriptId",
+      "kind": "read",
+      "writeState": null,
+      "pathKind": "nested_container",
+      "root": "this",
+      "expectedPath": ["0x20", "0x60"],
+      "origin": "this+0x20+0x60",
+      "method": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadFinishStep.DoExecute",
+      "token": "0x06011d23",
+      "methodVa": "0x183dd8c60",
+      "instructionVa": "0x183dd8e56",
+      "instruction": "mov r14, [rsi+0x60]",
+      "width": 8
+    },
+    {
+      "field": "actionId",
+      "kind": "read",
+      "writeState": null,
+      "pathKind": "nested_container",
+      "root": "this",
+      "expectedPath": ["0x20", "0x68"],
+      "origin": "this+0x20+0x68",
+      "method": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadFinishStep.DoExecute",
+      "token": "0x06011d23",
+      "methodVa": "0x183dd8c60",
+      "instructionVa": "0x183dd8e63",
+      "instruction": "mov rsi, [rsi+0x68]",
+      "width": 8
+    }
+  ]
+}

@@ -1,0 +1,2742 @@
+{
+  "schemaVersion": "nativeCrossSystemConsumerCensus.v4",
+  "source": {
+    "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "globalMetadata": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "sections": [
+      ".text",
+      "il2cpp"
+    ]
+  },
+  "method": {
+    "selection": "all direct E8 rel32 calls to unambiguous current managed API-family pointers",
+    "idSeeds": 0,
+    "maximumPointerAliases": 8,
+    "mappedMethodPointers": 500976,
+    "familyTargetPointers": 7214,
+    "rawCallOpcodeCandidatesBySection": {
+      ".text": 177831,
+      "il2cpp": 6247393
+    },
+    "mappedFamilyCalls": {
+      "dynamic_scene": 4136,
+      "level_script": 1262,
+      "mission_system": 503,
+      "story": 3567
+    }
+  },
+  "summary": {
+    "crossSystemCallers": 17,
+    "classificationCounts": {
+      "global_level_load_synchronization": 1,
+      "mission_or_dialog_alternate_action_consumer": 1,
+      "mission_state_controls_dynamic_component_availability": 4,
+      "shared_trigger_geometry_adapter": 3,
+      "story_dynamic_scene_visual_context": 8
+    },
+    "familyCombinationCounts": {
+      "dynamic_scene+level_script": 4,
+      "dynamic_scene+mission_system": 4,
+      "dynamic_scene+story": 8,
+      "mission_system+story": 1
+    },
+    "missionLevelScriptCallers": 0,
+    "tripleOrGreaterFamilyCallers": 0,
+    "unreviewedCallers": 0,
+    "storyBindingsAdded": 0,
+    "missionOrderEdgesAdded": 0
+  },
+  "directConsumerClosure": {
+    "method": "Fixed-point traversal from every mission-state/DynamicScene caller through unambiguous Beyond.Gameplay direct calls; no content identity is seeded.",
+    "counts": {
+      "seedMethods": 4,
+      "reachableMethods": 23,
+      "directEdges": 30,
+      "maximumDepth": 2,
+      "levelScriptMethods": 0,
+      "storyMethods": 0,
+      "reviewedIndirectSites": 1,
+      "unreviewedIndirectSites": 0
+    },
+    "reachableFamilyCounts": {
+      "dynamic_scene": 18,
+      "mission_system": 4
+    },
+    "seeds": [
+      "0x183375640",
+      "0x183376430",
+      "0x18711ea0c",
+      "0x18711eae4"
+    ],
+    "reachableMethods": [
+      {
+        "va": "0x181676e50",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+        ]
+      },
+      {
+        "va": "0x1816777c0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueOwnerComps"
+        ]
+      },
+      {
+        "va": "0x182f98ba0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.GameInstance.get_player"
+        ]
+      },
+      {
+        "va": "0x183365ab0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Num"
+        ]
+      },
+      {
+        "va": "0x183366ba0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex.get_Index"
+        ]
+      },
+      {
+        "va": "0x1833680b0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Index"
+        ]
+      },
+      {
+        "va": "0x183375640",
+        "depth": 0,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ]
+      },
+      {
+        "va": "0x183375ae0",
+        "depth": 2,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._GetCurrentConditionValue"
+        ]
+      },
+      {
+        "va": "0x183375cb0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue"
+        ]
+      },
+      {
+        "va": "0x183375f60",
+        "depth": 2,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_State"
+        ]
+      },
+      {
+        "va": "0x183375fc0",
+        "depth": 2,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_IsSame"
+        ]
+      },
+      {
+        "va": "0x183376020",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_Id"
+        ]
+      },
+      {
+        "va": "0x183376080",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_IsQuest"
+        ]
+      },
+      {
+        "va": "0x183376430",
+        "depth": 0,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionSync"
+        ]
+      },
+      {
+        "va": "0x183377e10",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._CheckMissionSystemReady"
+        ]
+      },
+      {
+        "va": "0x183378060",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.MissionSystem.GetQuestState"
+        ]
+      },
+      {
+        "va": "0x1833781e0",
+        "depth": 2,
+        "symbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionIdByQuestId"
+        ]
+      },
+      {
+        "va": "0x1834e2830",
+        "depth": 2,
+        "symbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionData"
+        ]
+      },
+      {
+        "va": "0x1838525e0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionState"
+        ]
+      },
+      {
+        "va": "0x1843c9e80",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_ToBeTrue"
+        ]
+      },
+      {
+        "va": "0x1843c9ee0",
+        "depth": 1,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_CompareType"
+        ]
+      },
+      {
+        "va": "0x18711ea0c",
+        "depth": 0,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionStateChanged"
+        ]
+      },
+      {
+        "va": "0x18711eae4",
+        "depth": 0,
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnQuestStateChange"
+        ]
+      }
+    ],
+    "directEdges": [
+      {
+        "sourceVa": "0x181676e50",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+        ],
+        "targetVa": "0x1816777c0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueOwnerComps"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x182f98ba0",
+        "targetSymbols": [
+          "Beyond.Gameplay.GameInstance.get_player"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x183365ab0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Num"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x183366ba0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex.get_Index"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x1833680b0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Index"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x183375cb0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x183376020",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_Id"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x183376080",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_IsQuest"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x183377e10",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._CheckMissionSystemReady"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x183378060",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetQuestState"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x1838525e0",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionState"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x1843c9e80",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_ToBeTrue"
+        ]
+      },
+      {
+        "sourceVa": "0x183375640",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+        ],
+        "targetVa": "0x1843c9ee0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_CompareType"
+        ]
+      },
+      {
+        "sourceVa": "0x183375cb0",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue"
+        ],
+        "targetVa": "0x183375ae0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._GetCurrentConditionValue"
+        ]
+      },
+      {
+        "sourceVa": "0x183375cb0",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue"
+        ],
+        "targetVa": "0x183375f60",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_State"
+        ]
+      },
+      {
+        "sourceVa": "0x183375cb0",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue"
+        ],
+        "targetVa": "0x183375fc0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_IsSame"
+        ]
+      },
+      {
+        "sourceVa": "0x183376430",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionSync"
+        ],
+        "targetVa": "0x1816777c0",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueOwnerComps"
+        ]
+      },
+      {
+        "sourceVa": "0x183376430",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionSync"
+        ],
+        "targetVa": "0x182f98ba0",
+        "targetSymbols": [
+          "Beyond.Gameplay.GameInstance.get_player"
+        ]
+      },
+      {
+        "sourceVa": "0x183376430",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionSync"
+        ],
+        "targetVa": "0x183378060",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetQuestState"
+        ]
+      },
+      {
+        "sourceVa": "0x183376430",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionSync"
+        ],
+        "targetVa": "0x1838525e0",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionState"
+        ]
+      },
+      {
+        "sourceVa": "0x183377e10",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._CheckMissionSystemReady"
+        ],
+        "targetVa": "0x182f98ba0",
+        "targetSymbols": [
+          "Beyond.Gameplay.GameInstance.get_player"
+        ]
+      },
+      {
+        "sourceVa": "0x183378060",
+        "sourceSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetQuestState"
+        ],
+        "targetVa": "0x1833781e0",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionIdByQuestId"
+        ]
+      },
+      {
+        "sourceVa": "0x183378060",
+        "sourceSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetQuestState"
+        ],
+        "targetVa": "0x1834e2830",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionData"
+        ]
+      },
+      {
+        "sourceVa": "0x1838525e0",
+        "sourceSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionState"
+        ],
+        "targetVa": "0x1834e2830",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionData"
+        ]
+      },
+      {
+        "sourceVa": "0x18711ea0c",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionStateChanged"
+        ],
+        "targetVa": "0x181676e50",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+        ]
+      },
+      {
+        "sourceVa": "0x18711ea0c",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionStateChanged"
+        ],
+        "targetVa": "0x182f98ba0",
+        "targetSymbols": [
+          "Beyond.Gameplay.GameInstance.get_player"
+        ]
+      },
+      {
+        "sourceVa": "0x18711ea0c",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionStateChanged"
+        ],
+        "targetVa": "0x1838525e0",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetMissionState"
+        ]
+      },
+      {
+        "sourceVa": "0x18711eae4",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnQuestStateChange"
+        ],
+        "targetVa": "0x181676e50",
+        "targetSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+        ]
+      },
+      {
+        "sourceVa": "0x18711eae4",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnQuestStateChange"
+        ],
+        "targetVa": "0x182f98ba0",
+        "targetSymbols": [
+          "Beyond.Gameplay.GameInstance.get_player"
+        ]
+      },
+      {
+        "sourceVa": "0x18711eae4",
+        "sourceSymbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnQuestStateChange"
+        ],
+        "targetVa": "0x183378060",
+        "targetSymbols": [
+          "Beyond.Gameplay.MissionSystem.GetQuestState"
+        ]
+      }
+    ],
+    "indirectCallSites": [
+      {
+        "callerVa": "0x181676e50",
+        "callers": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+        ],
+        "va": "0x1816773ec",
+        "instruction": "call [rax]",
+        "classification": "il2cpp_class_initializer_guard",
+        "window": [
+          "mov rax, [rdi+0x20]",
+          "mov rcx, [rax+0xc0]",
+          "mov rax, [rcx+0xb0]",
+          "cmp [rax+0x20], 0x0",
+          "jne 0x1816773ee",
+          "mov rax, [rdi+0x20]",
+          "mov rcx, [rax+0xc0]",
+          "mov rax, [rcx+0xb0]",
+          "call [rax]"
+        ]
+      }
+    ]
+  },
+  "deferredRefreshClosure": {
+    "ownerType": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+    "ownerTypeToken": "0x02003190",
+    "pendingField": {
+      "name": "m_pendingRefreshCompSet",
+      "token": "0x0400e5f9",
+      "offset": "0x48"
+    },
+    "counts": {
+      "enqueueWriters": 2,
+      "scheduledReaders": 1,
+      "fieldWriterReferences": 1,
+      "fieldReaderReferences": 3,
+      "refreshEntityStatusTargets": 1,
+      "conditionUpdateTargets": 1
+    },
+    "enqueueWriters": [
+      {
+        "va": "0x181676e50",
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+        ],
+        "references": [
+          {
+            "va": "0x1816770f3",
+            "instruction": "movsxd rcx, [rax+0x48]"
+          },
+          {
+            "va": "0x181677373",
+            "instruction": "movsxd rcx, [rax+0x48]"
+          },
+          {
+            "va": "0x181677445",
+            "instruction": "mov rax, [rsi+0x48]"
+          },
+          {
+            "va": "0x1816776e3",
+            "instruction": "movsxd rbx, [rax+0x48]"
+          }
+        ]
+      },
+      {
+        "va": "0x1816777c0",
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueOwnerComps"
+        ],
+        "references": [
+          {
+            "va": "0x181677aa3",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181677d3b",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181677f12",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x1816780ec",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x18167878a",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181678a6f",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181678b09",
+            "instruction": "mov rcx, [rbx+0x48]"
+          }
+        ]
+      }
+    ],
+    "scheduledReaders": [
+      {
+        "va": "0x181675430",
+        "symbols": [
+          "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.BeforeTick"
+        ],
+        "references": [
+          {
+            "va": "0x18167563a",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181675836",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181675a16",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181675e19",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x181676085",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x1816760af",
+            "instruction": "movaps [rsp+0x48], xmm0"
+          },
+          {
+            "va": "0x1816760cd",
+            "instruction": "mov rax, [r13+0x48]"
+          },
+          {
+            "va": "0x1816760fb",
+            "instruction": "mov r9, [r13+0x48]"
+          },
+          {
+            "va": "0x181676187",
+            "instruction": "movaps [rsp+0x48], xmm0"
+          },
+          {
+            "va": "0x18167619d",
+            "instruction": "lea rax, [rsp+0x48]"
+          },
+          {
+            "va": "0x1816761b7",
+            "instruction": "mov rdx, [rsp+0x48]"
+          },
+          {
+            "va": "0x1816764ca",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x1816767ba",
+            "instruction": "movsxd rax, [rax+0x48]"
+          },
+          {
+            "va": "0x1816768a7",
+            "instruction": "mov rcx, [r13+0x48]"
+          }
+        ]
+      }
+    ],
+    "instanceFieldAccess": {
+      "writerBaseRegister": "rbx",
+      "writerReferences": [
+        {
+          "va": "0x181678b09",
+          "instruction": "mov rcx, [rbx+0x48]"
+        }
+      ],
+      "readerBaseRegister": "r13",
+      "readerReferences": [
+        {
+          "va": "0x1816760cd",
+          "instruction": "mov rax, [r13+0x48]"
+        },
+        {
+          "va": "0x1816760fb",
+          "instruction": "mov r9, [r13+0x48]"
+        },
+        {
+          "va": "0x1816768a7",
+          "instruction": "mov rcx, [r13+0x48]"
+        }
+      ]
+    },
+    "scheduledTargets": [
+      "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RefreshEntityStatus",
+      "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue",
+      "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase.GetEntityId",
+      "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase.HasRegisterComp",
+      "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.DisableTick",
+      "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+    ],
+    "chain": [
+      "MissionSystem mission/quest state",
+      "DynamicScene cared component enqueue",
+      "m_pendingRefreshCompSet@0x48",
+      "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.BeforeTick",
+      "DynamicSceneMissionControlSystem._UpdateConditionValue",
+      "DynamicSceneEntitySystem.RefreshEntityStatus"
+    ],
+    "classification": "mission_state_drives_deferred_dynamic_scene_availability_refresh",
+    "storyBindingsAdded": 0,
+    "missionOrderEdgesAdded": 0
+  },
+  "missionRuntimeSurface": {
+    "method": "Discovers every Beyond.Gameplay type whose name denotes mission/quest semantics or whose own fields carry missionId/questId identities, then censuses direct callers and method signatures that cross that complete surface with LevelScript or Story types. No content id is seeded.",
+    "counts": {
+      "missionIdentityTypes": 174,
+      "familyTargetPointers": 4322,
+      "crossSystemCallers": 2,
+      "missionRuntimeLevelScriptCallers": 1,
+      "missionRuntimeStoryCallers": 1,
+      "crossFamilyMethodSignatures": 0,
+      "trackingMissionFieldWrites": 0,
+      "trackingSceneFieldWrites": 3,
+      "unreviewedCallers": 0
+    },
+    "classificationCounts": {
+      "levelscript_tracking_context_candidate": 1,
+      "mission_or_dialog_alternate_action_consumer": 1
+    },
+    "familyCombinationCounts": {
+      "level_script+mission_runtime": 1,
+      "mission_runtime+story": 1
+    },
+    "rows": [
+      {
+        "callerVa": "0x186fb63e8",
+        "callers": [
+          "Beyond.Gameplay.Core.LevelScriptTaskTracking._AddTrackPoint"
+        ],
+        "families": [
+          "level_script",
+          "mission_runtime"
+        ],
+        "classification": "levelscript_tracking_context_candidate",
+        "targets": [
+          "Beyond.Gameplay.CommonTrackingPointInfoBase..ctor",
+          "Beyond.Gameplay.Core.LevelScriptTaskTracking.get_scriptId"
+        ],
+        "callSites": [
+          {
+            "callVa": "0x186fb6555",
+            "targetVa": "0x184d3e4e0",
+            "families": [
+              "mission_runtime"
+            ],
+            "targets": [
+              "Beyond.Gameplay.CommonTrackingPointInfoBase..ctor"
+            ]
+          },
+          {
+            "callVa": "0x186fb6627",
+            "targetVa": "0x186fb7768",
+            "families": [
+              "level_script"
+            ],
+            "targets": [
+              "Beyond.Gameplay.Core.LevelScriptTaskTracking.get_scriptId"
+            ]
+          }
+        ]
+      },
+      {
+        "callerVa": "0x186e510a4",
+        "callers": [
+          "Beyond.Gameplay.Core.MissionOptionHandler._DoAction"
+        ],
+        "families": [
+          "mission_runtime",
+          "story"
+        ],
+        "classification": "mission_or_dialog_alternate_action_consumer",
+        "targets": [
+          "Beyond.Gameplay.Core.DialogManager.StopAndPlayDialogById",
+          "Beyond.Gameplay.MissionSystem.AcceptMission"
+        ],
+        "callSites": [
+          {
+            "callVa": "0x186e5112e",
+            "targetVa": "0x186e1a67c",
+            "families": [
+              "story"
+            ],
+            "targets": [
+              "Beyond.Gameplay.Core.DialogManager.StopAndPlayDialogById"
+            ]
+          },
+          {
+            "callVa": "0x186e51164",
+            "targetVa": "0x1873b7b48",
+            "families": [
+              "mission_runtime"
+            ],
+            "targets": [
+              "Beyond.Gameplay.MissionSystem.AcceptMission"
+            ]
+          }
+        ]
+      }
+    ],
+    "crossFamilyMethodSignatures": [],
+    "trackingFieldFlow": {
+      "baseRegister": "rbx",
+      "fieldLayout": {
+        "missionId": {
+          "name": "missionId",
+          "token": "0x04003f3b",
+          "offset": "0x20"
+        },
+        "sceneId": {
+          "name": "sceneId",
+          "token": "0x04003f3d",
+          "offset": "0x30"
+        }
+      },
+      "writes": {
+        "missionId": [],
+        "sceneId": [
+          {
+            "va": "0x186fb6567",
+            "instruction": "mov [rbx+0x30], rcx"
+          },
+          {
+            "va": "0x186fb6675",
+            "instruction": "mov [rbx+0x30], rax"
+          },
+          {
+            "va": "0x186fb66e4",
+            "instruction": "mov [rbx+0x30], rcx"
+          }
+        ]
+      }
+    },
+    "finding": "The broadened 174-type mission/quest runtime surface adds no activation bridge. Its sole LevelScript caller constructs a tracking point and writes sceneId, but never writes CommonTrackingPointInfoBase.missionId; the other caller is the separately audited MissionOption alternate action. No managed method signature co-carries a mission-runtime type and a LevelScript type.",
+    "boundary": "This covers current managed method pointers and metadata signatures. Reflection, XLua, server-only registries, opaque native-only objects, and future builds remain outside the bound. Tracking UI context creates no receiver activation, Story ownership, branch, or order edge.",
+    "classification": "full_mission_runtime_surface_reviewed_no_activation_bridge",
+    "storyBindingsAdded": 0,
+    "missionOrderEdgesAdded": 0
+  },
+  "managedCallableSurface": {
+    "method": "Resolves every callable field type from the installed IL2CPP runtime-type table for the complete mission/quest and LevelScript type surface, then finds every owner method with a callable parameter and every direct native caller of those binding entry points. No field, method, callback, mission, quest, script, or Story identifier is allowlisted.",
+    "counts": {
+      "callableFields": 13,
+      "missionRuntimeCallableFields": 9,
+      "levelScriptCallableFields": 4,
+      "crossIdentityCallableFields": 0,
+      "callableEntryMethods": 5,
+      "callableEntryTargetPointers": 5,
+      "directBindingCalls": 5,
+      "missionLevelScriptBindings": 0,
+      "unreviewedBindingCallers": 0
+    },
+    "fields": [
+      {
+        "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+ScriptTaskRuntime",
+        "ownerToken": "0x02002d5a",
+        "field": "onStateChanged",
+        "fieldToken": "0x0400c8d3",
+        "type": "System.Action`1<Beyond.GEnums.ScriptTaskState>",
+        "families": [
+          "level_script"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+        "ownerToken": "0x02002d5b",
+        "field": "m_onIsCompleteChangeAction",
+        "fieldToken": "0x0400c8ea",
+        "type": "System.Action",
+        "families": [
+          "level_script"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+        "ownerToken": "0x02002d5b",
+        "field": "m_onProgressChangeAction",
+        "fieldToken": "0x0400c8e9",
+        "type": "System.Action",
+        "families": [
+          "level_script"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.Core.MissionBeaconComponent",
+        "ownerToken": "0x02002b10",
+        "field": "m_interactAction",
+        "fieldToken": "0x0400bdcf",
+        "type": "System.Action",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.Core.MissionBeaconComponent",
+        "ownerToken": "0x02002b10",
+        "field": "m_onPerformFinishAction",
+        "fieldToken": "0x0400bdd0",
+        "type": "System.Action",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.Core.MissionBeaconComponent",
+        "ownerToken": "0x02002b10",
+        "field": "m_onPerformStopAction",
+        "fieldToken": "0x0400bdd1",
+        "type": "System.Action",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.LevelScriptTemplateData+<>c",
+        "ownerToken": "0x02000400",
+        "field": "<>9__7_0",
+        "fieldToken": "0x04001a2f",
+        "type": "System.Action`2<bool,Beyond.Gameplay.LevelScriptData>",
+        "families": [
+          "level_script"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.MissionAcceptMode",
+        "ownerToken": "0x02000c7e",
+        "field": "m_acceptModeCallback",
+        "fieldToken": "0x040047f0",
+        "type": "Beyond.Gameplay.MissionAcceptMode+AcceptModeCallback",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.MissionAcceptMode+<>c",
+        "ownerToken": "0x02000c87",
+        "field": "<>9__20_0",
+        "fieldToken": "0x0400480b",
+        "type": "System.Action`1<bool>",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.MissionSystem",
+        "ownerToken": "0x02000c8e",
+        "field": "s_mapTrackerChange",
+        "fieldToken": "0x0400484f",
+        "type": "System.Action",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.MissionSystem",
+        "ownerToken": "0x02000c8e",
+        "field": "s_mapTrackingMissionRefresh",
+        "fieldToken": "0x04004850",
+        "type": "System.Action",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.View.CharacterAnimationComponent+PerformRequest",
+        "ownerToken": "0x02002123",
+        "field": "shouldInterrupt",
+        "fieldToken": "0x04009170",
+        "type": "System.Func`2<Beyond.Gameplay.View.CharacterAnimationComponent,bool>",
+        "families": [
+          "mission_runtime"
+        ]
+      },
+      {
+        "owner": "Beyond.Gameplay.View.ModelManager+PersistentLoadRequest",
+        "ownerToken": "0x0200208e",
+        "field": "callback",
+        "fieldToken": "0x04008bca",
+        "type": "System.Action`3<int,Beyond.Resource.StringPathHash,UnityEngine.GameObject>",
+        "families": [
+          "mission_runtime"
+        ]
+      }
+    ],
+    "entryPoints": [
+      {
+        "targetVa": "0x18445eee0",
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.MissionAcceptMode",
+            "method": "Activate",
+            "token": "0x060051fc",
+            "parameterTypes": [
+              "System.String+TrimType&",
+              "Beyond.Gameplay.MissionAcceptMode+AcceptModeCallback"
+            ],
+            "callableParameterTypes": [
+              "Beyond.Gameplay.MissionAcceptMode+AcceptModeCallback"
+            ],
+            "families": [
+              "mission_runtime"
+            ]
+          }
+        ],
+        "targetFamilies": [
+          "mission_runtime"
+        ],
+        "bindings": [
+          {
+            "callVa": "0x18445ed9c",
+            "callerVa": "0x18445ed00",
+            "callers": [
+              "Beyond.Gameplay.MissionSystem.AvailableMission"
+            ],
+            "callerFamilies": [
+              "mission_runtime"
+            ],
+            "callerAliasCount": 1,
+            "entryMethodIndices": [
+              20987
+            ]
+          }
+        ]
+      },
+      {
+        "targetVa": "0x186fb06f8",
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "AddOnIsCompleteChangeAction",
+            "token": "0x06012208",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ],
+        "targetFamilies": [
+          "level_script"
+        ],
+        "bindings": [
+          {
+            "callVa": "0x186fac545",
+            "callerVa": "0x186fac3d4",
+            "callers": [
+              "Beyond.Gameplay.Core.LevelScriptRuntime.SetTaskMainObjectiveIsCompleteChangedAction"
+            ],
+            "callerFamilies": [
+              "level_script"
+            ],
+            "callerAliasCount": 1,
+            "entryMethodIndices": [
+              74247
+            ]
+          }
+        ]
+      },
+      {
+        "targetVa": "0x186fb07c8",
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "AddOnProgressChangedAction",
+            "token": "0x06012205",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ],
+        "targetFamilies": [
+          "level_script"
+        ],
+        "bindings": [
+          {
+            "callVa": "0x186fac771",
+            "callerVa": "0x186fac600",
+            "callers": [
+              "Beyond.Gameplay.Core.LevelScriptRuntime.SetTaskMainObjectiveProgressChangedAction"
+            ],
+            "callerFamilies": [
+              "level_script"
+            ],
+            "callerAliasCount": 1,
+            "entryMethodIndices": [
+              74244
+            ]
+          }
+        ]
+      },
+      {
+        "targetVa": "0x186fb0b18",
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "RemoveOnIsCompleteChangeAction",
+            "token": "0x06012209",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ],
+        "targetFamilies": [
+          "level_script"
+        ],
+        "bindings": [
+          {
+            "callVa": "0x186fabc31",
+            "callerVa": "0x186fabac0",
+            "callers": [
+              "Beyond.Gameplay.Core.LevelScriptRuntime.RemoveTaskMainObjectiveIsCompleteChangedAction"
+            ],
+            "callerFamilies": [
+              "level_script"
+            ],
+            "callerAliasCount": 1,
+            "entryMethodIndices": [
+              74248
+            ]
+          }
+        ]
+      },
+      {
+        "targetVa": "0x186fb0be8",
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "RemoveOnProgressChangedAction",
+            "token": "0x06012206",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ],
+        "targetFamilies": [
+          "level_script"
+        ],
+        "bindings": [
+          {
+            "callVa": "0x186fabe5d",
+            "callerVa": "0x186fabcec",
+            "callers": [
+              "Beyond.Gameplay.Core.LevelScriptRuntime.RemoveTaskMainObjectiveProgressChangedAction"
+            ],
+            "callerFamilies": [
+              "level_script"
+            ],
+            "callerAliasCount": 1,
+            "entryMethodIndices": [
+              74245
+            ]
+          }
+        ]
+      }
+    ],
+    "bindings": [
+      {
+        "callVa": "0x18445ed9c",
+        "callerVa": "0x18445ed00",
+        "callers": [
+          "Beyond.Gameplay.MissionSystem.AvailableMission"
+        ],
+        "callerFamilies": [
+          "mission_runtime"
+        ],
+        "callerAliasCount": 1,
+        "entryMethodIndices": [
+          20987
+        ],
+        "targetVa": "0x18445eee0",
+        "targetFamilies": [
+          "mission_runtime"
+        ],
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.MissionAcceptMode",
+            "method": "Activate",
+            "token": "0x060051fc",
+            "parameterTypes": [
+              "System.String+TrimType&",
+              "Beyond.Gameplay.MissionAcceptMode+AcceptModeCallback"
+            ],
+            "callableParameterTypes": [
+              "Beyond.Gameplay.MissionAcceptMode+AcceptModeCallback"
+            ],
+            "families": [
+              "mission_runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "callVa": "0x186fac545",
+        "callerVa": "0x186fac3d4",
+        "callers": [
+          "Beyond.Gameplay.Core.LevelScriptRuntime.SetTaskMainObjectiveIsCompleteChangedAction"
+        ],
+        "callerFamilies": [
+          "level_script"
+        ],
+        "callerAliasCount": 1,
+        "entryMethodIndices": [
+          74247
+        ],
+        "targetVa": "0x186fb06f8",
+        "targetFamilies": [
+          "level_script"
+        ],
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "AddOnIsCompleteChangeAction",
+            "token": "0x06012208",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ]
+      },
+      {
+        "callVa": "0x186fac771",
+        "callerVa": "0x186fac600",
+        "callers": [
+          "Beyond.Gameplay.Core.LevelScriptRuntime.SetTaskMainObjectiveProgressChangedAction"
+        ],
+        "callerFamilies": [
+          "level_script"
+        ],
+        "callerAliasCount": 1,
+        "entryMethodIndices": [
+          74244
+        ],
+        "targetVa": "0x186fb07c8",
+        "targetFamilies": [
+          "level_script"
+        ],
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "AddOnProgressChangedAction",
+            "token": "0x06012205",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ]
+      },
+      {
+        "callVa": "0x186fabc31",
+        "callerVa": "0x186fabac0",
+        "callers": [
+          "Beyond.Gameplay.Core.LevelScriptRuntime.RemoveTaskMainObjectiveIsCompleteChangedAction"
+        ],
+        "callerFamilies": [
+          "level_script"
+        ],
+        "callerAliasCount": 1,
+        "entryMethodIndices": [
+          74248
+        ],
+        "targetVa": "0x186fb0b18",
+        "targetFamilies": [
+          "level_script"
+        ],
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "RemoveOnIsCompleteChangeAction",
+            "token": "0x06012209",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ]
+      },
+      {
+        "callVa": "0x186fabe5d",
+        "callerVa": "0x186fabcec",
+        "callers": [
+          "Beyond.Gameplay.Core.LevelScriptRuntime.RemoveTaskMainObjectiveProgressChangedAction"
+        ],
+        "callerFamilies": [
+          "level_script"
+        ],
+        "callerAliasCount": 1,
+        "entryMethodIndices": [
+          74245
+        ],
+        "targetVa": "0x186fb0be8",
+        "targetFamilies": [
+          "level_script"
+        ],
+        "entries": [
+          {
+            "owner": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+            "method": "RemoveOnProgressChangedAction",
+            "token": "0x06012206",
+            "parameterTypes": [
+              "System.Action"
+            ],
+            "callableParameterTypes": [
+              "System.Action"
+            ],
+            "families": [
+              "level_script"
+            ]
+          }
+        ]
+      }
+    ],
+    "finding": "The current managed callable surface contains 13 delegate/Action/Func fields and five callable-parameter binding entry points. All five native binding calls remain within their owning family: MissionSystem binds the MissionAcceptMode callback, while LevelScriptRuntime binds its own task condition notifications. No callable field or binding joins mission/quest identity to LevelScript, a Story receiver, or scene order.",
+    "boundary": "This closes typed managed fields and direct calls to callable-parameter entry points in the current installed AOT image. Runtime mutation of public delegate fields, reflection, XLua, IFix, native-only registries, and server selection remain outside the bound and cannot be promoted as ownership.",
+    "classification": "managed_callable_carriers_reviewed_no_activation_bridge",
+    "storyBindingsAdded": 0,
+    "missionOrderEdgesAdded": 0
+  },
+  "rows": [
+    {
+      "callerVa": "0x1831af510",
+      "callers": [
+        "Beyond.Gameplay.Core.BaseProxy.TickPosition"
+      ],
+      "families": [
+        "dynamic_scene",
+        "level_script"
+      ],
+      "classification": "shared_trigger_geometry_adapter",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_position",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_rotation",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_scale",
+        "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_position",
+        "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_rotation"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x1831af884",
+          "targetVa": "0x183bddf60",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_scale"
+          ]
+        },
+        {
+          "callVa": "0x1831afa16",
+          "targetVa": "0x1841cb7d0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_position"
+          ]
+        },
+        {
+          "callVa": "0x1831afaca",
+          "targetVa": "0x183bdc5f0",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_position"
+          ]
+        },
+        {
+          "callVa": "0x1831afc5e",
+          "targetVa": "0x183bddd60",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_rotation"
+          ]
+        },
+        {
+          "callVa": "0x1831afd0d",
+          "targetVa": "0x183bdc5b0",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_rotation"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x183bdc8a0",
+      "callers": [
+        "Beyond.Gameplay.FunctionAreaManager+FunctionAreaTrigger.get_rotation"
+      ],
+      "families": [
+        "dynamic_scene",
+        "level_script"
+      ],
+      "classification": "shared_trigger_geometry_adapter",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_shapeOffset",
+        "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_shapeOffset"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x183bdcf7f",
+          "targetVa": "0x183bddb20",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_shapeOffset"
+          ]
+        },
+        {
+          "callVa": "0x183bdcfab",
+          "targetVa": "0x183bdd5f0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_shapeOffset"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x183bdd0e0",
+      "callers": [
+        "Beyond.Gameplay.MapRegionOverlapUnit.get_shapeType"
+      ],
+      "families": [
+        "dynamic_scene",
+        "level_script"
+      ],
+      "classification": "shared_trigger_geometry_adapter",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_shapeSize",
+        "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_shapeSize"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x183bdd180",
+          "targetVa": "0x183bdd650",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneTrigger.get_shapeSize"
+          ]
+        },
+        {
+          "callVa": "0x183bdd19d",
+          "targetVa": "0x183bddb70",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.LevelScriptTriggerVolumeOverlapUnit.get_shapeSize"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x183ddd010",
+      "callers": [
+        "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+StartLevelStep+<DoExecuteAsync>d__12.MoveNext"
+      ],
+      "families": [
+        "dynamic_scene",
+        "level_script"
+      ],
+      "classification": "global_level_load_synchronization",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.WaitIdle",
+        "Beyond.Gameplay.Core.LevelScriptManager.CheckNeedWaitForInstantStartOrActiveLevelScripts",
+        "Beyond.Gameplay.Core.LevelScriptManager.RecollectLevelWaitForLoadedScripts",
+        "Beyond.Gameplay.Core.LevelScriptManager.StartUnscaledTick",
+        "Beyond.Gameplay.Core.LevelScriptManager.WaitForInstantStartOrActiveLevelScripts"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x183dde6d1",
+          "targetVa": "0x1847a6210",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.LevelScriptManager.RecollectLevelWaitForLoadedScripts"
+          ]
+        },
+        {
+          "callVa": "0x183dde74d",
+          "targetVa": "0x1847a6210",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.LevelScriptManager.RecollectLevelWaitForLoadedScripts"
+          ]
+        },
+        {
+          "callVa": "0x183ddf694",
+          "targetVa": "0x183ddc950",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.WaitIdle"
+          ]
+        },
+        {
+          "callVa": "0x183ddf7bf",
+          "targetVa": "0x183ddc830",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.LevelScriptManager.StartUnscaledTick"
+          ]
+        },
+        {
+          "callVa": "0x183ddf812",
+          "targetVa": "0x183ddb2f0",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.LevelScriptManager.CheckNeedWaitForInstantStartOrActiveLevelScripts"
+          ]
+        },
+        {
+          "callVa": "0x183ddf848",
+          "targetVa": "0x183ddc8b0",
+          "families": [
+            "level_script"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.LevelScriptManager.WaitForInstantStartOrActiveLevelScripts"
+          ]
+        },
+        {
+          "callVa": "0x183ddfbe6",
+          "targetVa": "0x183ddc950",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.WaitIdle"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x183375640",
+      "callers": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem.RegisterEntityCaredCondition"
+      ],
+      "families": [
+        "dynamic_scene",
+        "mission_system"
+      ],
+      "classification": "mission_state_controls_dynamic_component_availability",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._CheckMissionSystemReady",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Index",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Num",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex.get_Index",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_Id",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_IsQuest",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_CompareType",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_ToBeTrue",
+        "Beyond.Gameplay.MissionSystem.GetMissionState",
+        "Beyond.Gameplay.MissionSystem.GetQuestState"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x18337575d",
+          "targetVa": "0x1843c9ee0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_CompareType"
+          ]
+        },
+        {
+          "callVa": "0x183375771",
+          "targetVa": "0x1843c9e80",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp.get_ToBeTrue"
+          ]
+        },
+        {
+          "callVa": "0x183375784",
+          "targetVa": "0x183377e10",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._CheckMissionSystemReady"
+          ]
+        },
+        {
+          "callVa": "0x1833757f4",
+          "targetVa": "0x1833680b0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Index"
+          ]
+        },
+        {
+          "callVa": "0x183375811",
+          "targetVa": "0x183366ba0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex.get_Index"
+          ]
+        },
+        {
+          "callVa": "0x183375824",
+          "targetVa": "0x183365ab0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup.get_Num"
+          ]
+        },
+        {
+          "callVa": "0x183375913",
+          "targetVa": "0x183376020",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_Id"
+          ]
+        },
+        {
+          "callVa": "0x1833759d8",
+          "targetVa": "0x183376080",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition.get_IsQuest"
+          ]
+        },
+        {
+          "callVa": "0x183375a14",
+          "targetVa": "0x183378060",
+          "families": [
+            "mission_system"
+          ],
+          "targets": [
+            "Beyond.Gameplay.MissionSystem.GetQuestState"
+          ]
+        },
+        {
+          "callVa": "0x183375a67",
+          "targetVa": "0x183375cb0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._UpdateConditionValue"
+          ]
+        },
+        {
+          "callVa": "0x183375ab7",
+          "targetVa": "0x1838525e0",
+          "families": [
+            "mission_system"
+          ],
+          "targets": [
+            "Beyond.Gameplay.MissionSystem.GetMissionState"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x183376430",
+      "callers": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionSync"
+      ],
+      "families": [
+        "dynamic_scene",
+        "mission_system"
+      ],
+      "classification": "mission_state_controls_dynamic_component_availability",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueOwnerComps",
+        "Beyond.Gameplay.MissionSystem.GetMissionState",
+        "Beyond.Gameplay.MissionSystem.GetQuestState"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x1833777e1",
+          "targetVa": "0x183378060",
+          "families": [
+            "mission_system"
+          ],
+          "targets": [
+            "Beyond.Gameplay.MissionSystem.GetQuestState"
+          ]
+        },
+        {
+          "callVa": "0x183377818",
+          "targetVa": "0x1838525e0",
+          "families": [
+            "mission_system"
+          ],
+          "targets": [
+            "Beyond.Gameplay.MissionSystem.GetMissionState"
+          ]
+        },
+        {
+          "callVa": "0x183377850",
+          "targetVa": "0x1816777c0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueOwnerComps"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x18711ea0c",
+      "callers": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnMissionStateChanged"
+      ],
+      "families": [
+        "dynamic_scene",
+        "mission_system"
+      ],
+      "classification": "mission_state_controls_dynamic_component_availability",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr",
+        "Beyond.Gameplay.MissionSystem.GetMissionState"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x18711ea81",
+          "targetVa": "0x1838525e0",
+          "families": [
+            "mission_system"
+          ],
+          "targets": [
+            "Beyond.Gameplay.MissionSystem.GetMissionState"
+          ]
+        },
+        {
+          "callVa": "0x18711eaaa",
+          "targetVa": "0x181676e50",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x18711eae4",
+      "callers": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._OnQuestStateChange"
+      ],
+      "families": [
+        "dynamic_scene",
+        "mission_system"
+      ],
+      "classification": "mission_state_controls_dynamic_component_availability",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr",
+        "Beyond.Gameplay.MissionSystem.GetQuestState"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x18711eb59",
+          "targetVa": "0x183378060",
+          "families": [
+            "mission_system"
+          ],
+          "targets": [
+            "Beyond.Gameplay.MissionSystem.GetQuestState"
+          ]
+        },
+        {
+          "callVa": "0x18711eb82",
+          "targetVa": "0x181676e50",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem._EnqueueCompsForStr"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x18468c800",
+      "callers": [
+        "Beyond.Gameplay.Core.DialogManager._RecoverLevelHide"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Actions.GameAction+Factory.DialogSetBuildingUIActive",
+        "Beyond.Gameplay.AirWallManager.ExitDialogMode",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys",
+        "Beyond.Gameplay.Core.InteractiveRootComponent.SetModelVisibleByDialog",
+        "Beyond.Gameplay.Core.ObjectContainer.SetAllAbilityEntitiesInDialogActive"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x18468c9b7",
+          "targetVa": "0x1870a9ee0",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.ObjectContainer.SetAllAbilityEntitiesInDialogActive"
+          ]
+        },
+        {
+          "callVa": "0x18468ca5c",
+          "targetVa": "0x186f46cc8",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.AirWallManager.ExitDialogMode"
+          ]
+        },
+        {
+          "callVa": "0x18468cace",
+          "targetVa": "0x1875f5ae4",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.GameAction+Factory.DialogSetBuildingUIActive"
+          ]
+        },
+        {
+          "callVa": "0x18468cc1c",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x18468cc33",
+          "targetVa": "0x18711231c",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride"
+          ]
+        },
+        {
+          "callVa": "0x18468ce58",
+          "targetVa": "0x186f357a4",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.InteractiveRootComponent.SetModelVisibleByDialog"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x186d9f50c",
+      "callers": [
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase.RecoverDecorations"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase._RestoreRendererMaterialSnapshots",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RefreshEntityPerformForceByLogicId",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.ReleaseHold",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x186d9f80b",
+          "targetVa": "0x186da96ac",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.CinematicTimelineManagerBase._RestoreRendererMaterialSnapshots"
+          ]
+        },
+        {
+          "callVa": "0x186d9f998",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x186d9f9af",
+          "targetVa": "0x18711231c",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride"
+          ]
+        },
+        {
+          "callVa": "0x186d9fb61",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x186d9fb78",
+          "targetVa": "0x18166b4b0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.ReleaseHold"
+          ]
+        },
+        {
+          "callVa": "0x186d9fb82",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x186d9fb99",
+          "targetVa": "0x187111fb8",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RefreshEntityPerformForceByLogicId"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x186da7198",
+      "callers": [
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase._PreprocessActors"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase.AddActorEntityIntoHolder",
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase._GenProcessDescriptor",
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase._PreprocessInteractiveByLogicId",
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase._PreprocessInteractiveBySlotId",
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase._TryAddAddonComponents",
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase._TryApplyRendererMaterialOverrides",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneConditionHelper.ForceGetMountPoint",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.GetModelByDynamicEntityId",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneViewControllerSystem.TryGetCtrlProxyForOtherSystem",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_viewControllerSystem"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x186da7537",
+          "targetVa": "0x1816584c0",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneConditionHelper.ForceGetMountPoint"
+          ]
+        },
+        {
+          "callVa": "0x186da75aa",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x186da75c4",
+          "targetVa": "0x181664f40",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.GetModelByDynamicEntityId"
+          ]
+        },
+        {
+          "callVa": "0x186da77f0",
+          "targetVa": "0x187154d50",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_viewControllerSystem"
+          ]
+        },
+        {
+          "callVa": "0x186da7811",
+          "targetVa": "0x18714c490",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneViewControllerSystem.TryGetCtrlProxyForOtherSystem"
+          ]
+        },
+        {
+          "callVa": "0x186da78ba",
+          "targetVa": "0x186dab150",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.CinematicTimelineManagerBase._TryApplyRendererMaterialOverrides"
+          ]
+        },
+        {
+          "callVa": "0x186da78cb",
+          "targetVa": "0x186daab48",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.CinematicTimelineManagerBase._TryAddAddonComponents"
+          ]
+        },
+        {
+          "callVa": "0x186da797b",
+          "targetVa": "0x186da892c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.CinematicTimelineManagerBase._PreprocessInteractiveByLogicId"
+          ]
+        },
+        {
+          "callVa": "0x186da7982",
+          "targetVa": "0x186da8d30",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.CinematicTimelineManagerBase._PreprocessInteractiveBySlotId"
+          ]
+        },
+        {
+          "callVa": "0x186da7a52",
+          "targetVa": "0x186d98f84",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.CinematicTimelineManagerBase.AddActorEntityIntoHolder"
+          ]
+        },
+        {
+          "callVa": "0x186da7ab4",
+          "targetVa": "0x186da5de0",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.CinematicTimelineManagerBase._GenProcessDescriptor"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x186e293b8",
+      "callers": [
+        "Beyond.Gameplay.Core.DialogManager._PreRecoverStreamingHide"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys",
+        "Beyond.Gameplay.Core.InteractiveRootComponent.SetModelVisibleByDialog"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x186e2955d",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x186e29574",
+          "targetVa": "0x18711231c",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride"
+          ]
+        },
+        {
+          "callVa": "0x186e29690",
+          "targetVa": "0x186f357a4",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.InteractiveRootComponent.SetModelVisibleByDialog"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x186e29a70",
+      "callers": [
+        "Beyond.Gameplay.Core.DialogManager._ProcessLevelHide"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Actions.GameAction+Factory.DialogSetBuildingUIActive",
+        "Beyond.Gameplay.AirWallManager.EnterDialogMode",
+        "Beyond.Gameplay.Core.DialogManager.get_dialogTree",
+        "Beyond.Gameplay.Core.DialogManager.get_disableAirWallInDialog",
+        "Beyond.Gameplay.Core.DialogManager.get_hideAllAbilityEntities",
+        "Beyond.Gameplay.Core.DialogManager.get_hideAllBuildingUI",
+        "Beyond.Gameplay.Core.DialogManager.get_hideAllEnemies",
+        "Beyond.Gameplay.Core.DialogManager.get_hideAllEnvCreature",
+        "Beyond.Gameplay.Core.DialogManager.get_hideDecoConfigs",
+        "Beyond.Gameplay.Core.DialogManager.get_hideFacBuildingDesc",
+        "Beyond.Gameplay.Core.DialogManager.get_hideFacFence",
+        "Beyond.Gameplay.Core.DialogManager.get_hideInteractive",
+        "Beyond.Gameplay.Core.DialogManager.get_hideNpcDesc",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.SetOverrideEnable",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys",
+        "Beyond.Gameplay.Core.InteractiveRootComponent.SetModelVisibleByDialog",
+        "Beyond.Gameplay.Core.ObjectContainer.SetAllAbilityEntitiesInDialogActive",
+        "Beyond.Gameplay.DialogTree.get_dialogType",
+        "Beyond.Gameplay.DialogTree.get_rootPos"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x186e29bfb",
+          "targetVa": "0x186e33b4c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideAllEnemies"
+          ]
+        },
+        {
+          "callVa": "0x186e29c3b",
+          "targetVa": "0x186e339ec",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideAllAbilityEntities"
+          ]
+        },
+        {
+          "callVa": "0x186e29c71",
+          "targetVa": "0x1870a9ee0",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.ObjectContainer.SetAllAbilityEntitiesInDialogActive"
+          ]
+        },
+        {
+          "callVa": "0x186e29caf",
+          "targetVa": "0x18306c070",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_dialogTree"
+          ]
+        },
+        {
+          "callVa": "0x186e29cc2",
+          "targetVa": "0x1872abf18",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.DialogTree.get_dialogType"
+          ]
+        },
+        {
+          "callVa": "0x186e29d00",
+          "targetVa": "0x186e336e4",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_disableAirWallInDialog"
+          ]
+        },
+        {
+          "callVa": "0x186e29d30",
+          "targetVa": "0x186f46bec",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.AirWallManager.EnterDialogMode"
+          ]
+        },
+        {
+          "callVa": "0x186e29d3a",
+          "targetVa": "0x186e33bc0",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideAllEnvCreature"
+          ]
+        },
+        {
+          "callVa": "0x186e29d4f",
+          "targetVa": "0x186e33e70",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideFacBuildingDesc"
+          ]
+        },
+        {
+          "callVa": "0x186e29d5c",
+          "targetVa": "0x18306c070",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_dialogTree"
+          ]
+        },
+        {
+          "callVa": "0x186e29d75",
+          "targetVa": "0x1872ac6f0",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.DialogTree.get_rootPos"
+          ]
+        },
+        {
+          "callVa": "0x186e29de2",
+          "targetVa": "0x186e33a60",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideAllBuildingUI"
+          ]
+        },
+        {
+          "callVa": "0x186e29df6",
+          "targetVa": "0x1875f5ae4",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.GameAction+Factory.DialogSetBuildingUIActive"
+          ]
+        },
+        {
+          "callVa": "0x186e29e00",
+          "targetVa": "0x186e33ee4",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideFacFence"
+          ]
+        },
+        {
+          "callVa": "0x186e29e2a",
+          "targetVa": "0x186e33dfc",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideDecoConfigs"
+          ]
+        },
+        {
+          "callVa": "0x186e29ede",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x186e29f02",
+          "targetVa": "0x187112840",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.SetOverrideEnable"
+          ]
+        },
+        {
+          "callVa": "0x186e29f52",
+          "targetVa": "0x186e33f48",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideInteractive"
+          ]
+        },
+        {
+          "callVa": "0x186e2a069",
+          "targetVa": "0x186f357a4",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.InteractiveRootComponent.SetModelVisibleByDialog"
+          ]
+        },
+        {
+          "callVa": "0x186e2a0e6",
+          "targetVa": "0x186e33fbc",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideNpcDesc"
+          ]
+        },
+        {
+          "callVa": "0x186e2a12a",
+          "targetVa": "0x186e33fbc",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideNpcDesc"
+          ]
+        },
+        {
+          "callVa": "0x186e2a150",
+          "targetVa": "0x186e33fbc",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideNpcDesc"
+          ]
+        },
+        {
+          "callVa": "0x186e2a16d",
+          "targetVa": "0x186e33fbc",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideNpcDesc"
+          ]
+        },
+        {
+          "callVa": "0x186e2a1fd",
+          "targetVa": "0x186e33fbc",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.get_hideNpcDesc"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x187669c10",
+      "callers": [
+        "Beyond.Gameplay.Actions.PlayDialogAndHideSceneObjectAction._OnCinematicFinishBeforeSceneRecover"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x187669dd3",
+          "targetVa": "0x18767ca9c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject"
+          ]
+        },
+        {
+          "callVa": "0x187669de6",
+          "targetVa": "0x18767ca9c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject"
+          ]
+        },
+        {
+          "callVa": "0x187669e8b",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x187669e9e",
+          "targetVa": "0x18711231c",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x18767c164",
+      "callers": [
+        "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.OnCinematicFinish"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x18767c31b",
+          "targetVa": "0x18767ca9c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject"
+          ]
+        },
+        {
+          "callVa": "0x18767c32e",
+          "targetVa": "0x18767ca9c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject"
+          ]
+        },
+        {
+          "callVa": "0x18767c3d3",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x18767c3ea",
+          "targetVa": "0x18711231c",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RemoveOverride"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x18767c4fc",
+      "callers": [
+        "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.OnCinematicReady"
+      ],
+      "families": [
+        "dynamic_scene",
+        "story"
+      ],
+      "classification": "story_dynamic_scene_visual_context",
+      "targets": [
+        "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.SetOverrideEnable",
+        "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x18767c70a",
+          "targetVa": "0x18767ca9c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject"
+          ]
+        },
+        {
+          "callVa": "0x18767c71d",
+          "targetVa": "0x18767ca9c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Actions.StartCinematicAndHideSceneObject.get_hideSceneObject"
+          ]
+        },
+        {
+          "callVa": "0x18767c7c6",
+          "targetVa": "0x183368160",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.get_entitySys"
+          ]
+        },
+        {
+          "callVa": "0x18767c7e0",
+          "targetVa": "0x187112840",
+          "families": [
+            "dynamic_scene"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.SetOverrideEnable"
+          ]
+        }
+      ]
+    },
+    {
+      "callerVa": "0x186e510a4",
+      "callers": [
+        "Beyond.Gameplay.Core.MissionOptionHandler._DoAction"
+      ],
+      "families": [
+        "mission_system",
+        "story"
+      ],
+      "classification": "mission_or_dialog_alternate_action_consumer",
+      "targets": [
+        "Beyond.Gameplay.Core.DialogManager.StopAndPlayDialogById",
+        "Beyond.Gameplay.MissionSystem.AcceptMission"
+      ],
+      "callSites": [
+        {
+          "callVa": "0x186e5112e",
+          "targetVa": "0x186e1a67c",
+          "families": [
+            "story"
+          ],
+          "targets": [
+            "Beyond.Gameplay.Core.DialogManager.StopAndPlayDialogById"
+          ]
+        },
+        {
+          "callVa": "0x186e51164",
+          "targetVa": "0x1873b7b48",
+          "families": [
+            "mission_system"
+          ],
+          "targets": [
+            "Beyond.Gameplay.MissionSystem.AcceptMission"
+          ]
+        }
+      ]
+    }
+  ],
+  "finding": "The current binary exposes mission-state consumers for DynamicScene component availability, but no direct MissionSystem/LevelScript caller and no caller that joins mission state, DynamicScene, and Story or LevelScript. Other cross-system callers are shared geometry, global loading, or Story visual context.",
+  "boundary": "The mission-state consumer closure includes every unambiguous managed gameplay direct call and reviews decoded indirect call instructions; its sole indirect site is an IL2CPP class-initializer guard. The bundled partial decoder is not a general x64 proof, so reflection, XLua, server-only logic, opaque dynamic dispatch, and future builds remain outside this census. The MissionOption mission/dialog row relies on its separate pinned control-flow audit before interpreting the two calls as alternate actions.",
+  "validation": {
+    "status": "passed",
+    "failures": []
+  }
+}

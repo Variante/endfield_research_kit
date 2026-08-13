@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 
 from scripts import build_mission_pipeline_data as pipeline
-from scripts.story_builder import level_bindings, mission_flow, source_links
+from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
 from scripts.story_builder.native_contracts import callserver_callback
 
 
@@ -3263,280 +3263,32 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     require_complete_branch_publication=True,
                 )
 
-    def test_dynamic_scene_cross_references_remain_non_owning(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            audit_path = Path(temporary) / "dynamic_scene.json"
-            audit_path.write_text(
-                json.dumps({
-                    "schemaVersion": 1,
-                    "nativeIdentityBoundary": {
-                        "classification":
-                            "exact_cross_reference_not_runtime_owner",
-                        "directBridgeFound": False,
-                        "missionGraphAction": "none",
-                        "promotionRequirement": "typed runtime bridge required",
-                    },
-                    "storyIdentityCandidates": [{
-                        "scene": "map01",
-                        "logicId": "2100060003",
-                        "sourceFile": "DynamicStreaming/map01/fb_main.bytes",
-                        "missionControls": [{
-                            "compareType": 0,
-                            "toBeTrue": True,
-                            "conditions": [{
-                                "identifier": "e1m2_q#5",
-                                "isQuest": True,
-                                "state": 3,
-                                "isSame": True,
-                            }],
-                        }],
-                        "storyOccurrences": [{
-                            "storyKey": "cutscene_e1m3_1",
-                            "levelId": "map01_lv001",
-                            "scriptId": "2100060003",
-                            "recordOffset": 368,
-                            "actionName": "PlayFmvAction",
-                            "sourceFile":
-                                "LevelScriptData/map01_lv001/2100060003.json",
-                            "nativeEventOwnerStatus":
-                                "exact_serialized_control_path",
-                        }],
-                    }],
-                }),
-                encoding="utf-8",
-            )
+    def test_dynamic_scene_context_comes_from_the_owner(self):
+        expected = dynamic_scene.load_dynamic_scene_context()
+        published = pipeline.load_dynamic_scene_identity_cross_references()
 
-            published = pipeline.load_dynamic_scene_identity_cross_references(
-                audit_path
-            )
-
-        self.assertIsNotNone(published)
-        self.assertEqual(published["missionGraphAction"], "none")
+        self.assertEqual(published, expected)
+        self.assertEqual(published["counts"], dynamic_scene.EXPECTED_COUNTS)
         self.assertFalse(published["directBridgeFound"])
-        self.assertEqual(published["counts"]["candidateRoots"], 1)
-        row = published["rows"][0]
-        self.assertEqual(row["logicId"], row["scriptId"])
-        self.assertEqual(row["missionOwnerStatus"], "unresolved")
-        self.assertFalse(row["storyBinding"])
-        self.assertFalse(row["orderEvidence"])
+        self.assertFalse(published["missionActivationBridgeFound"])
+        self.assertEqual(published["missionGraphAction"], "none")
+        self.assertTrue(all(
+            row["missionOwnerStatus"] == "unresolved"
+            and row["storyBinding"] is False
+            and row["orderEvidence"] is False
+            and row["missionGraphAction"] == "none"
+            for row in published["rows"]
+        ))
 
-    def test_dynamic_scene_cross_references_fail_closed_on_positive_bridge(self):
+    def test_dynamic_scene_context_fails_closed_on_artifact_drift(self):
+        artifact = json.loads(dynamic_scene.DEFAULT_ARTIFACT.read_text("utf-8"))
+        artifact["context"]["directBridgeFound"] = True
         with tempfile.TemporaryDirectory() as temporary:
-            audit_path = Path(temporary) / "dynamic_scene.json"
-            audit_path.write_text(
-                json.dumps({
-                    "schemaVersion": 1,
-                    "nativeIdentityBoundary": {
-                        "classification":
-                            "exact_cross_reference_not_runtime_owner",
-                        "directBridgeFound": True,
-                        "missionGraphAction": "none",
-                    },
-                    "storyIdentityCandidates": [],
-                }),
-                encoding="utf-8",
-            )
-
-            published = pipeline.load_dynamic_scene_identity_cross_references(
-                audit_path
-            )
+            path = Path(temporary) / "dynamic_scene.json"
+            path.write_text(json.dumps(artifact), encoding="utf-8")
+            published = pipeline.load_dynamic_scene_identity_cross_references(path)
 
         self.assertIsNone(published)
-
-    def test_dynamic_scene_typed_target_bridge_stays_local_context(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            audit_path = root / "dynamic_scene.json"
-            bridge_path = root / "dynamic_scene_bridge.json"
-            audit = {
-                "schemaVersion": 1,
-                "nativeIdentityBoundary": {
-                    "classification":
-                        "exact_cross_reference_not_runtime_owner",
-                    "directBridgeFound": False,
-                    "missionActivationBridgeFound": False,
-                    "missionGraphAction": "none",
-                    "promotionRequirement":
-                        "mission condition activation edge required",
-                },
-                "storyIdentityCandidates": [{
-                    "scene": "map02",
-                    "logicId": "10100282001",
-                    "sourceFile": "DynamicStreaming/map02/fb_main.bytes",
-                    "missionControls": [{
-                        "conditions": [{
-                            "identifier": "c27m3_q#3",
-                            "isQuest": True,
-                            "state": 3,
-                            "isSame": True,
-                        }],
-                    }],
-                    "storyOccurrences": [{
-                        "storyKey": "dlg_c27m3_6",
-                        "levelId": "map02_lv001",
-                        "scriptId": "10100282001",
-                        "recordOffset": 7,
-                        "actionName": "StartDialogAndTeleportAction",
-                    }],
-                }],
-            }
-            audit_path.write_text(json.dumps(audit), encoding="utf-8")
-            bridge_path.write_text(
-                json.dumps({
-                    "schemaVersion": 1,
-                    "sources": {
-                        "identityAudit": {
-                            "sha256": hashlib.sha256(
-                                audit_path.read_bytes()
-                            ).hexdigest(),
-                        },
-                    },
-                    "boundary": {
-                        "classification":
-                            "exact_local_context_without_mission_activation_edge",
-                        "missionActivationBridgeFound": False,
-                        "missionGraphAction": "none",
-                        "levelScriptTriggerVolumeBoundary": {
-                            "classification":
-                                "exact_local_trigger_geometry_without_dynamic_scene_or_mission_foreign_key",
-                            "foreignKeyBridgeFound": False,
-                            "schemaMappingId":
-                                "current-global-metadata-levelscript-trigger-volume-data-fields",
-                            "leaderDeclaredFieldCount": 0,
-                        },
-                    },
-                    "bridgeRows": [{
-                        "logicId": "10100282001",
-                        "missionOwnerStatus": "unresolved",
-                        "storyBinding": False,
-                        "orderEvidence": False,
-                        "missionGraphAction": "none",
-                        "classification":
-                            "exact_dynamic_scene_target_and_shared_levelscript_control_path",
-                        "exactTargetActions": [{
-                            "actionName": "ShowSceneDecorationNew",
-                            "unionTag": "0x0485",
-                            "serializedMemberCount": 10,
-                            "recordOffset": 284,
-                            "localId": 6,
-                            "targetDynamicEntityLogicId": "10100282001",
-                            "visible": False,
-                            "payloadFullyConsumed": True,
-                            "targetParam": {
-                                "idRef": -1,
-                                "paramSource": 0,
-                                "path": None,
-                            },
-                            "visibleParam": {
-                                "idRef": -1,
-                                "paramSource": 0,
-                                "path": None,
-                            },
-                            "localTriggerVolumeContext": {
-                                "status":
-                                    "exact_local_levelscript_trigger_volume_without_foreign_identity",
-                                "selectorSlotIds": [80001],
-                                "matchedSlotIds": [80001],
-                                "missingSlotIds": [],
-                                "scriptIdVerified": True,
-                                "triggerVolumesStatus": "present",
-                                "triggerVolumesParseStatus": "decoded",
-                                "dynamicSceneIdentityFieldPresent": False,
-                                "missionOrQuestIdentityFieldPresent": False,
-                                "foreignKeyBridgeFound": False,
-                                "missionGraphAction": "none",
-                                "schema": {
-                                    "baseDeclaredFieldCount": 8,
-                                    "leaderDeclaredFieldCount": 0,
-                                    "serializedMemberCount": 8,
-                                    "mappingId":
-                                        "current-global-metadata-levelscript-trigger-volume-data-fields",
-                                },
-                                "triggerVolumes": [{
-                                    "keySlotId": 80001,
-                                    "slotId": 80001,
-                                    "triggerVolumeType": "Leader",
-                                    "memberCount": 8,
-                                    "triggerCountLimit": 1,
-                                    "enterCheckOnGround": False,
-                                    "isImportant": False,
-                                    "triggerOnPole": False,
-                                    "waitSrvRes": False,
-                                    "shapeList": {
-                                        "parseStatus": "decoded",
-                                        "shapes": [{
-                                            "shapeType": "Sphere",
-                                            "position": {
-                                                "x": -757.75,
-                                                "y": 234.828,
-                                                "z": -1185.85,
-                                            },
-                                            "radius": 59.0,
-                                        }],
-                                    },
-                                }],
-                            },
-                            "storyControlPathLinks": [{
-                                "storyKey": "dlg_c27m3_6",
-                                "storyRecordOffset": 7,
-                                "storyActionName":
-                                    "StartDialogAndTeleportAction",
-                                "sharedControlPaths": [{
-                                    "status":
-                                        "exact_serialized_shared_control_path",
-                                    "relation":
-                                        "decoration_follows_story_on_same_path",
-                                    "headerName":
-                                        "ScriptEvent_OnLeaderEnterTriggerVolume",
-                                    "headerLocalId": 4,
-                                    "eventDetail": {
-                                        "summary":
-                                            "leader enters trigger slot 80001",
-                                        "triggerSlotIdFilter": 80001,
-                                    },
-                                    "storyPathLocalIds": [5],
-                                    "decorationPathLocalIds": [5, 6],
-                                }],
-                            }],
-                        }],
-                    }],
-                }),
-                encoding="utf-8",
-            )
-
-            published = pipeline.load_dynamic_scene_identity_cross_references(
-                audit_path,
-                bridge_path,
-            )
-
-        self.assertIsNotNone(published)
-        self.assertEqual(published["counts"]["exactTargetBridgeRoots"], 1)
-        self.assertEqual(
-            published["counts"]["sharedControlPathStoryOccurrences"],
-            1,
-        )
-        row = published["rows"][0]
-        bridge = row["localContextBridge"]
-        self.assertFalse(bridge["storyBinding"])
-        self.assertFalse(bridge["orderEvidence"])
-        self.assertEqual(bridge["missionGraphAction"], "none")
-        path = bridge["exactTargetActions"][0][
-            "storyControlPathLinks"
-        ][0]["sharedControlPaths"][0]
-        self.assertEqual(path["triggerSlotId"], 80001)
-        self.assertEqual(path["decorationPathLocalIds"], [5, 6])
-        context = bridge["exactTargetActions"][0][
-            "localTriggerVolumeContext"
-        ]
-        self.assertFalse(context["foreignKeyBridgeFound"])
-        self.assertEqual(
-            context["triggerVolumes"][0]["shapes"][0]["shapeType"],
-            "Sphere",
-        )
-        self.assertEqual(
-            published["counts"]["exactLocalTriggerVolumeContexts"],
-            1,
-        )
 
     def test_trigger_route_reads_exact_levelscript_occurrence_paths(self):
         row = {
@@ -6044,7 +5796,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("separate native inbound handler", trigger_done["effect"])
 
     def test_teleport_param_contract_rejects_unused_mission_script_carrier(self):
-        contract = pipeline.load_native_teleport_param_carrier_contract()
+        contract = pipeline.load_teleport_param_contract()
         self.assertEqual(contract["type"], "Beyond.Gameplay.TeleportParam")
         self.assertEqual(contract["size"], "0x38")
         self.assertEqual(contract["layout"]["missionId"], "0x18")
@@ -7853,62 +7605,6 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
                         story_root,
                         "CN",
                     )
-
-    def test_native_cross_system_contract_loads_generic_closure(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            audit_path = Path(temporary) / "census.json"
-            audit_path.write_text(json.dumps({
-                "schemaVersion": "nativeCrossSystemConsumerCensus.v4",
-                "source": {
-                    "gameAssembly": "GameAssembly.dll",
-                    "gameAssemblySha256": "a" * 64,
-                    "globalMetadata": "global-metadata.dat",
-                    "globalMetadataSha256": "b" * 64,
-                },
-                "method": {"selection": "all direct calls", "mappedMethodPointers": 9},
-                "summary": {
-                    "crossSystemCallers": 4,
-                    "classificationCounts": {
-                        "mission_state_controls_dynamic_component_availability": 4,
-                    },
-                },
-                "directConsumerClosure": {
-                    "method": "fixed point",
-                    "counts": {"reachableMethods": 23, "directEdges": 30},
-                },
-                "deferredRefreshClosure": {
-                    "pendingField": {"name": "pending", "offset": "0x48"},
-                    "chain": ["state", "refresh"],
-                    "classification": "availability_refresh",
-                },
-                "missionRuntimeSurface": {
-                    "counts": {"missionIdentityTypes": 174},
-                    "finding": "no broad activation bridge",
-                },
-                "managedCallableSurface": {
-                    "counts": {"callableFields": 13, "directBindingCalls": 5},
-                    "finding": "no callable activation bridge",
-                },
-                "finding": "binary finding",
-                "boundary": "binary boundary",
-                "validation": {"status": "passed", "failures": []},
-            }), encoding="utf-8")
-
-            contract = pipeline.load_native_cross_system_consumer_contract(audit_path)
-
-            self.assertEqual(contract["counts"]["closureReachableMethods"], 23)
-            self.assertEqual(contract["counts"]["closureDirectEdges"], 30)
-            self.assertEqual(contract["deferredRefreshClosure"]["chain"], ["state", "refresh"])
-            self.assertEqual(
-                contract["missionRuntimeSurface"]["counts"]["missionIdentityTypes"],
-                174,
-            )
-            self.assertEqual(
-                contract["managedCallableSurface"]["counts"]["callableFields"],
-                13,
-            )
-            self.assertEqual(contract["classification"], "availability_refresh")
-
 
 if __name__ == "__main__":
     unittest.main()
