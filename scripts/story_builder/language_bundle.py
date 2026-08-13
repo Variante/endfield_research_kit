@@ -1,10 +1,74 @@
 ﻿from __future__ import annotations
+import copy
+import json
 import json as _radio_cont_json
 import hashlib as _reference_hashlib
+import re
 import re as _radio_cont_re
+import shutil
+import sys
+import time
+import unicodedata
+from collections import Counter, defaultdict
+from difflib import SequenceMatcher
 from functools import lru_cache as _radio_cont_lru_cache
+from pathlib import Path
 from pathlib import Path as _RadioContPath
-from .context import *
+from .context import (
+    ADMIN_ACTOR_IDS,
+    ATMOS_CLUSTER_TABLE_PATH,
+    BLACK_RE,
+    BUILD_PROFILES,
+    CORRECTED_DIALOG_OPTION_IDS,
+    CUTSCENE_TEXT_ROW_RE,
+    DEFAULT_BUILD_PROFILE,
+    DIALOG_OPTION_GROUP_POSITION_OVERRIDES,
+    DIALOG_OPTION_ID_CORRECTIONS,
+    DLG_RE,
+    FOCUS_MODE_INSTANCE_TABLE_PATH,
+    GAMEPLAY_CONFIG_DIR,
+    I18N_HOTFIX_LANGUAGE_TYPES,
+    I18N_HOTFIX_TABLE,
+    LEVELDATA_DIR,
+    LT_BINDING_RE,
+    MISSION_SCENE_ENTRY_KINDS,
+    MISSION_STORY_TYPES,
+    MISSION_TIMELINE_EVIDENCE_POLICY,
+    MRA_DIR,
+    NPC_PROXY_EX_PATH,
+    NPC_PROXY_TABLE_PATH,
+    OPTION_RE,
+    PERSISTENT_TABLE_DIR,
+    RADIO_RE,
+    REMOTECOMM_RE,
+    REPORTS_DIR,
+    ROOT,
+    SCENE_BINDING_TARGET_KINDS,
+    SCENE_TOK,
+    SNS_RE,
+    STORY_SOURCE_LINKS_PATH,
+    STREAMING_TABLE_DIR,
+    SUMMARY_RE,
+    VIDEO_BINDINGS_PATH,
+    _unique_preserve,
+    build_mission_scene_order_candidate_kinds,
+    build_mission_scene_order_info,
+    is_present,
+    recover_black_timeline_attachments,
+    render_mission_timeline_markdown,
+    repo_rel,
+    shared_analyze_scene_order_disorder,
+    shared_build_runtime_registry_debug,
+    shared_build_scene_placement_index_from_timelines,
+    shared_collect_scene_order_gap_rows_from_payloads,
+    shared_load_dialog_id_registry,
+    write_json,
+    write_mission_timeline_recovery_json,
+)
+
+_MANUAL_OPTION_OVERRIDES_PATH = Path(__file__).with_name(
+    "manual_option_overrides.json"
+)
 from common import write_report_json, write_text_if_changed
 from .anime_assets import (
     _canonical_cutscene_key,
