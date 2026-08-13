@@ -347,6 +347,88 @@
           },
           "boundary": "This closes a concrete UnityPlayer GPUDriven service/binding/dispatch path while separating it from the factory ECS staging producer. It does not recover the UploadPerDrawParams kernel-7 selector, the 84-byte upload-buffer producer, or the channel-2 descriptor binding; those edges remain fail-closed."
         },
+        "gpu_driven_rendering_binding_lane_census": {
+          "status": "v1-v2-rendering-binding-lanes-bounded-generic-command-path-no-perdraw-upload-edge",
+          "source": "Current UnityPlayer.dll internal-call mapping, PData-bounded disassembly, and exact E8 caller census; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+          "native_entrypoints": {
+            "V1": {
+              "managed_internal_call": "UnityEngine.HyperGryph.GPUDrivenRendererV1::BindBuffersForRendering(CommandBuffer)",
+              "internal_call": "0x1801e9480",
+              "native_core": "0x1810ef150",
+              "immediate_lanes": [
+                {
+                  "metadata_offset": "+0x88",
+                  "resource_id_source": "metadata[+0x10]->(+0x78 or +0x8)+0x30",
+                  "helper": "0x180fd96c0"
+                },
+                {
+                  "metadata_offset": "+0x9c",
+                  "resource_id_source": "metadata[+0x30]+0x38+0x30",
+                  "helper": "0x180fd96c0"
+                },
+                {
+                  "metadata_offset": "+0xa8",
+                  "resource_id_source": "metadata[+0x50]+0x24",
+                  "helper": "0x180fd96c0"
+                }
+              ],
+              "command_path": {
+                "helper": "0x1804cb730",
+                "opcode": "0x2b",
+                "lanes": ["+0x88", "+0x9c", "+0xa8"]
+              }
+            },
+            "V2": {
+              "managed_internal_call": "UnityEngine.HyperGryph.GPUDrivenRendererV2::BindBuffersForRendering(CommandBuffer)",
+              "internal_call": "0x1801e9b70",
+              "native_core": "0x1810fbb00",
+              "immediate_lanes": [
+                {
+                  "metadata_offset": "+0xa0",
+                  "resource_id_source": "metadata[+0x10]->(+0x78 or +0x8)+0x30",
+                  "helper": "0x180fd96c0"
+                },
+                {
+                  "metadata_offset": "+0xb8",
+                  "resource_id_source": "metadata[+0x40]+0x38+0x30",
+                  "helper": "0x180fd96c0"
+                },
+                {
+                  "metadata_offset": "+0xac",
+                  "resource_id_source": "metadata[+0x28]->(+0x78 or +0x8)+0x30",
+                  "helper": "0x180fd96c0"
+                },
+                {
+                  "metadata_offset": "+0xbc",
+                  "resource_id_source": "metadata[+0x48]+0x38+0x30",
+                  "helper": "0x180fd96c0"
+                },
+                {
+                  "metadata_offset": "+0xc8",
+                  "resource_id_source": "metadata[+0x68]+0x24",
+                  "helper": "0x180fd94d0_or_0x180fd96c0"
+                }
+              ],
+              "command_path": {
+                "helper": "0x1804cb730",
+                "opcode": "0x2b",
+                "lanes": ["+0xa0", "+0xb8", "+0xac", "+0xbc", "+0xc8"]
+              }
+            }
+          },
+          "generic_binding_helper": {
+            "immediate_helper": "0x180fd96c0",
+            "direct_caller_count": 3,
+            "direct_callers": ["0x1810ef150", "0x1810ef240", "0x1810fbb00"],
+            "observed": "Resolves property/metadata IDs into compact binder arrays, grows cache storage, appends a 16-byte binding tuple, and calls generic helper 0x1805d5520; no ComputeShader/ComputeBuffer/SetBuffer/Dispatch, factory +0x38/index*0x8c, or custom resource +0xd0 access.",
+            "command_record_helper": "0x1804cb730",
+            "command_record_observed": "Appends opcode 0x2b and an 8-byte payload (dword [rdx], r8d) to a CommandBuffer stream.",
+            "deferred_packer": "0x180fe4d50",
+            "deferred_packer_observed": "Packs five variable-length binder arrays from +0x30/+0x50/+0x70/+0x90/+0xb0 using count fields +0x28/+0x48/+0x68/+0x88/+0xa8, resets counts, then invokes graphics-context vtable slot +0xea0; no factory/per-draw/upload identity.",
+            "direct_caller_scan": "UnityPlayer PData-scoped E8 scan found only the three V1/V2 rendering helper bodies for 0x180fd96c0; 0x180fe4d50 additionally has generic post-processing/renderer callers and tail-jump callers from the binder helpers."
+          },
+          "negative_result": "This closes the bounded native V1/V2 rendering-binding command path as generic property/buffer metadata and excludes it as a static source of _UploadBuffer, UploadPerDrawParams kernel 7, _RTPerDrawParamsBuffer, or channel-2/resource +0xd0. The 84-byte staging-to-GPU edge and dynamic/table-driven paths remain unresolved."
+        },
         "populate_per_frame_command_bridge": {
           "status": "v1-populate-per-frame-command-bridge-closed-no-factory-upload-edge",
           "source": "Current GameAssembly.dll managed wrapper and PData-bounded UnityPlayer.dll disassembly; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
