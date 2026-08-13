@@ -27,8 +27,8 @@ Writes:
   webui/data/lang/<code>/reference/...     (raw localized table reference)
 
 Run from the repo root:
-    python scripts/story_builder/build.py
-    python scripts/story_builder/build.py --profile full
+    python -m scripts.story_builder.build
+    python -m scripts.story_builder.build --profile full
 """
 from __future__ import annotations
 

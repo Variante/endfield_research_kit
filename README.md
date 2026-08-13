@@ -87,7 +87,7 @@ disk space and memory.
 To build more languages:
 
 ```bat
-python scripts\story_builder\build.py --languages CN EN JP --default-language CN
+python -m scripts.story_builder.build --languages CN EN JP --default-language CN
 ```
 
 ## Game updates
