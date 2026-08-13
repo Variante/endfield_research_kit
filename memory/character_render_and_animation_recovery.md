@@ -577,6 +577,13 @@ NPC archetypes are imported as labeled source kits.
   resource to initialization but still does not prove kernel-7 selection or the
   staging-to-`_UploadBuffer` edge. Details are under
   `compute_shader_api_and_setup_census` in the packed-flag audit.
+  A follow-up RIP-relative cache-slot scan makes that negative result stronger:
+  each checked `ComputeShader`/`ComputeBuffer` internal-call slot has exactly two
+  image references—the wrapper's lazy-slot load and its first-call cache write—
+  with no second static caller surface elsewhere in GameAssembly. This does not
+  exclude copied function pointers or native resolver/table calls, but it rules
+  out another ordinary slot-backed managed producer for the visible API set.
+  The slot details are recorded under `lazy_slot_reference_census`.
   Generic-instantiation mapping now recovers the strongest CPU-side factory
   producer that the ordinary method table hid: concrete
   `HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4>` at
