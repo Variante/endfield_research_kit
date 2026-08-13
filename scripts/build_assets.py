@@ -9,11 +9,14 @@ import argparse
 import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-
-from asset_builder.index import AssetScanResult, scan_exported_media_assets
-from asset_builder.story_media import build_story_media_payload, write_story_media_payload
-from common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, write_json
+if __package__:
+    from .asset_builder.index import AssetScanResult, scan_exported_media_assets
+    from .asset_builder.story_media import build_story_media_payload, write_story_media_payload
+    from .common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, write_json
+else:
+    from asset_builder.index import AssetScanResult, scan_exported_media_assets
+    from asset_builder.story_media import build_story_media_payload, write_story_media_payload
+    from common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, write_json
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

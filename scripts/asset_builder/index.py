@@ -13,17 +13,30 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from source_paths import (
-    _asset_source_family,
-    resolve_asset_source_roots,
-    resolve_material_source_roots,
-)
-from common import (
-    path_id_export_base_stem,
-    path_id_export_path_id,
-    rel_path,
-    rel_requires_path_id_export_name,
-)
+if __package__.startswith("scripts."):
+    from ..source_paths import (
+        _asset_source_family,
+        resolve_asset_source_roots,
+        resolve_material_source_roots,
+    )
+    from ..common import (
+        path_id_export_base_stem,
+        path_id_export_path_id,
+        rel_path,
+        rel_requires_path_id_export_name,
+    )
+else:
+    from source_paths import (
+        _asset_source_family,
+        resolve_asset_source_roots,
+        resolve_material_source_roots,
+    )
+    from common import (
+        path_id_export_base_stem,
+        path_id_export_path_id,
+        rel_path,
+        rel_requires_path_id_export_name,
+    )
 
 ASSET_KIND_BY_EXT = {
     ".obj": "model",

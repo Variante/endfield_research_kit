@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from asset_builder import media_resolver
-from common import ASSET_DIR, OUT_DIR, write_json
+if __package__.startswith("scripts."):
+    from . import media_resolver
+    from ..common import ASSET_DIR, OUT_DIR, write_json
+else:
+    from asset_builder import media_resolver
+    from common import ASSET_DIR, OUT_DIR, write_json
 
 
 STORY_FILE_IMAGE_PREFIXES = ("cg_image_", "dlg_biglogo_", "remotecomm_image_")

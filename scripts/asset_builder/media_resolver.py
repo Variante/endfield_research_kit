@@ -8,15 +8,15 @@ from pathlib import Path
 import re
 from typing import Iterable
 
-try:
-    from common import (
+if __package__.startswith("scripts."):
+    from ..common import (
         normalize_posix,
         path_id_export_base_stem,
         path_id_export_path_id,
         rel_requires_path_id_export_name,
     )
-except ModuleNotFoundError:  # imported as ``scripts.asset_builder``
-    from scripts.common import (
+else:
+    from common import (
         normalize_posix,
         path_id_export_base_stem,
         path_id_export_path_id,

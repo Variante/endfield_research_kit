@@ -12,7 +12,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from common import read_json, write_json
+if __package__.startswith("scripts."):
+    from ..common import read_json, write_json
+else:
+    from common import read_json, write_json
 
 
 SCHEMA_VERSION = "gameplayAssetRefs.v9"
