@@ -1534,6 +1534,30 @@
             "interpretation": "0x18036ed60 is a generic dynamic-array resize/zero helper whose element stride is 0x54 and whose zeroed layout is five Vector4 lanes plus a dword at +0x50; 0x1804b69b9 is a generic element-copy helper. The remaining precise candidates consume the same stride for unrelated native data and only call math/formatting helpers. None directly calls GpuSceneDirtyUpdateCS, UploadPerDrawParams, the checked immediate-dispatch boundary, a GPU buffer upload, or the factory record consumer.",
             "negative_gpu_edge": "The 0x54 literal is therefore a real generic 84-byte layout clue, but this bounded census does not identify it as the staging array's packer or as _UploadBuffer. Keep the shader-to-native edge fail-closed."
           },
+          "post_staging_direct_call_census": {
+            "status": "whole-image-direct-call-negative-upload-consumer-open",
+            "source": "Current installed GameAssembly.dll SHA-256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce and UnityPlayer.dll SHA-256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2; raw E8 rel32 scan over GameAssembly .text/il2cpp plus PData range attribution.",
+            "checked_targets": {
+              "HGConstantBufferPool.ApplyPendingUpload": "0x189b6a7c0",
+              "ComputeBuffer.SetData<byte>": "0x187af05e0",
+              "factory_staging_entry": "0x1810d25c0",
+              "factory_staging_loop_entry": "0x1810d26bf"
+            },
+            "scan_result": {
+              "direct_e8_callers_to_apply_pending_upload": 0,
+              "direct_e8_callers_to_compute_buffer_set_data": 1,
+              "set_data_only_caller": "0x189b6a7c0 (the pool's own ApplyPendingUpload loop)",
+              "direct_e8_callers_to_unityplayer_staging_entries": 0,
+              "raw_little_endian_code_pointer_xrefs_to_staging_entries": 0
+            },
+            "tvm0_partition": {
+              "entry": "0x1810d25c0..0x1810d26bf",
+              "loop_entry": "0x1810d26bf..0x1810d3189",
+              "metadata_rvas": ["0x204a398", "0x204a3ac"],
+              "interpretation": "The UnityPlayer .tvm0 records encode adjacent Burst/native function ranges and metadata RVAs; they explain why ordinary E8/raw-pointer caller scans miss invocation, but expose no GPU upload or dispatch edge by themselves."
+            },
+            "interpretation": "The generic constant-buffer pool is not a statically reachable consumer of the factory staging path: its only direct SetData edge is self-contained and its ApplyPendingUpload entry has no direct callers in the current GameAssembly image. The staging functions likewise remain table/job-dispatched boundaries, not proven _UploadBuffer producers. Keep resolver, scheduler, and indirect consumer work open and fail-closed."
+          },
           "next_gap": "Recover the indirect caller and the consumer of the 0x100-stride staging array; specifically search for a pack step that prefixes an entity/index dword and yields the shader's 84-byte source stride, then tie that upload to UploadPerDrawParams kernel 7 and resource +0xd0."
         }
       },
