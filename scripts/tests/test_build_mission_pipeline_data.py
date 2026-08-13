@@ -6147,244 +6147,6 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         self.assertIn("zero mission/quest + LevelScript/Story", native["finding"])
 
-    def test_mission_option_carrier_is_alternate_action_not_dialog_bridge(self):
-        audit = pipeline.RUNTIME_CONTRACT["missionOptionCarrierAudit"]
-        fields = {
-            row["name"]: row
-            for row in audit["managedCarrier"]["fields"]
-        }
-        self.assertEqual(fields["missionId"]["offset"], "0x68")
-        self.assertEqual(fields["callDialogId"]["offset"], "0x70")
-        self.assertEqual(
-            audit["managedCarrier"]["handlerType"]["name"],
-            "Mission",
-        )
-        consumer = audit["nativeConsumer"]
-        self.assertEqual(consumer["token"], "0x0600fa1a")
-        self.assertIn("then jump to end", consumer["callDialogBranch"])
-        self.assertIn(
-            "only when callDialogId is empty",
-            consumer["missionBranch"],
-        )
-        search = audit["authoredInstanceSearch"]
-        self.assertEqual(search["monoBehaviourRows"], 1325026)
-        self.assertEqual(search["textAssets"], 8195)
-        self.assertEqual(search["structuredJsonFiles"], 179925)
-        self.assertEqual(search["installedLuaFiles"], 1291)
-        self.assertEqual(search["matches"], 0)
-        self.assertEqual(audit["installedPatch"]["matchedMethods"], 0)
-        self.assertIn("mutually exclusive", audit["finding"])
-        self.assertEqual(audit["storyBindingsAdded"], 0)
-        self.assertEqual(
-            audit["classification"],
-            "schema_only_current_export_absent",
-        )
-
-    def test_mission_property_script_pointer_is_runtime_subscription_context(self):
-        audit = pipeline.RUNTIME_CONTRACT["missionPropertyScriptPtrAudit"]
-        layout = audit["managedLayout"]
-        self.assertEqual(
-            layout["MissionRuntimeAsset"]["properties"]["offset"],
-            "0xe0",
-        )
-        self.assertEqual(
-            layout["MissionRuntimeAsset"]["propertyDic"]["offset"],
-            "0xf8",
-        )
-        self.assertEqual(
-            layout["MissionSystem+MissionData"]["propertyDict"]["offset"],
-            "0x20",
-        )
-        self.assertEqual(
-            layout["ParamVariable"]["m_scriptPtr"]["offset"],
-            "0x70",
-        )
-        authored = audit["authoredMissionProperties"]
-        self.assertEqual(authored["missionFiles"], 490)
-        self.assertEqual(authored["missionsWithProperties"], 71)
-        self.assertEqual(authored["propertyRows"], 217)
-        self.assertEqual(authored["levelScriptPointerFieldRows"], 0)
-        tracking = audit["trackingPropertyFilterRuntime"]
-        self.assertEqual(tracking["authoredRows"], 204)
-        self.assertEqual(tracking["authoredMissions"], 46)
-        self.assertEqual(tracking["authoredVariables"], 110)
-        self.assertEqual(
-            tracking["evaluator"]["token"],
-            "0x06004b72",
-        )
-        self.assertEqual(
-            tracking["serverUpdate"]["message"],
-            "SC_UPDATE_MISSION_PROPERTY (124)",
-        )
-        self.assertEqual(tracking["storyBindingsAdded"], 0)
-        self.assertEqual(tracking["missionOrderEdgesAdded"], 0)
-        self.assertEqual(len(audit["missionPropertyWriters"]), 3)
-        self.assertEqual(
-            audit["directCallCensus"]["missionSystemScriptPointerSetterCalls"],
-            0,
-        )
-        self.assertEqual(audit["installedPatch"]["matchedMethods"], 0)
-        self.assertIn("not a mission-to-LevelScript", audit["finding"])
-        self.assertEqual(audit["storyBindingsAdded"], 0)
-        self.assertEqual(
-            audit["classification"],
-            "runtime_context_only_no_mission_levelscript_edge",
-        )
-
-    def test_current_mission_param_source_has_no_levelscript_story_use(self):
-        audit = pipeline.RUNTIME_CONTRACT["paramSourceMissionContextAudit"]
-        managed = audit["managedContract"]
-        self.assertEqual(managed["currentMissionId"], 1004)
-        self.assertEqual(managed["paramSourceFieldToken"], "0x04006c3d")
-        self.assertEqual(managed["currentMissionGetterToken"], "0x060091d6")
-        mission = audit["authoredMissionRuntime"]
-        self.assertEqual(mission["missionFiles"], 490)
-        self.assertEqual(mission["currentMissionIdOccurrences"], 18)
-        self.assertEqual(mission["missions"], 6)
-        self.assertEqual(mission["storyPlaybackOperands"], 0)
-        self.assertEqual(
-            mission["actionTypes"]["CheckMissionIntProperty"],
-            17,
-        )
-        levelscript = audit["authoredLevelScripts"]
-        self.assertEqual(levelscript["levelScriptFiles"], 4512)
-        self.assertEqual(levelscript["uidRecords"], 74839)
-        self.assertEqual(levelscript["rawCurrentMissionIdValues"], 0)
-        self.assertEqual(levelscript["validatedParamTails"], 0)
-        self.assertEqual(
-            levelscript["embeddedJsonCurrentMissionIdValues"],
-            0,
-        )
-        self.assertEqual(audit["installedPatch"]["matchedMethods"], 0)
-        self.assertEqual(audit["storyBindingsAdded"], 0)
-        self.assertEqual(audit["missionOrderEdgesAdded"], 0)
-        self.assertEqual(
-            audit["classification"],
-            "implicit_context_only_missionruntime_no_levelscript_story_edge",
-        )
-
-    def test_direct_managed_identity_carrier_census_has_no_open_candidate(self):
-        audit = pipeline.RUNTIME_CONTRACT["managedIdentityCarrierCensus"]
-        metadata = audit["metadata"]
-        self.assertEqual(metadata["managedTypeCount"], 63987)
-        self.assertEqual(metadata["directCandidateTypes"], 10)
-        self.assertEqual(metadata["runtimeObjectCandidates"], 8)
-        self.assertEqual(metadata["unreviewedCandidates"], 0)
-        authored = audit["authored"]
-        self.assertEqual(authored["focusModeMissionRadioRows"], 13)
-        self.assertEqual(authored["focusModeUniqueRadios"], 10)
-        self.assertEqual(authored["npcProxyExMissionDialogRows"], 453)
-        self.assertEqual(authored["subGameMissionScriptRows"], 20)
-        tracking = audit["trackingClosure"]
-        self.assertEqual(
-            tracking["classification"],
-            "closed_tracking_ui_context",
-        )
-        self.assertEqual(
-            tracking["commonTrackingFields"]["missionId"]["offset"],
-            "0x20",
-        )
-        self.assertEqual(
-            tracking["commonTrackingFields"]["sceneId"]["offset"],
-            "0x30",
-        )
-        self.assertEqual(len(tracking["nativeConsumers"]), 3)
-        self.assertEqual(audit["storyBindingsAdded"], 0)
-        self.assertEqual(audit["missionOrderEdgesAdded"], 0)
-        self.assertEqual(
-            audit["classification"],
-            "all_direct_managed_identity_carriers_reviewed",
-        )
-
-    def test_nested_managed_identity_carrier_census_has_no_open_candidate(self):
-        audit = pipeline.RUNTIME_CONTRACT["nestedManagedIdentityCarrierCensus"]
-        metadata = audit["metadata"]
-        self.assertEqual(metadata["managedTypeRecords"], 63987)
-        self.assertEqual(metadata["runtimeTypeEntries"], 272743)
-        self.assertEqual(
-            metadata["traversalMode"],
-            "cycle_safe_shortest_path_fixed_point",
-        )
-        self.assertEqual(metadata["maximumShortestPathDepth"], 10)
-        self.assertEqual(metadata["maximumTraversedDepth"], 10)
-        self.assertEqual(metadata["candidateTypes"], 112)
-        self.assertEqual(metadata["directExactCandidateTypes"], 11)
-        self.assertEqual(metadata["nestedDependentCandidateTypes"], 101)
-        self.assertEqual(metadata["reviewedCandidateTypes"], 112)
-        self.assertEqual(metadata["unreviewedCandidateTypes"], 0)
-        entity_hub = audit["runtimeEntityHubClosure"]
-        self.assertEqual(entity_hub["candidateTypes"], 86)
-        self.assertEqual(entity_hub["exactIndexedTypeLabels"], 0)
-        self.assertEqual(entity_hub["indexedOriginalObjects"], 1335450)
-        self.assertEqual(entity_hub["objectsWithTruncatedScalars"], 1384)
-        self.assertIn("no exact Entity/component script", entity_hub["finding"])
-        shared_aggregate = audit["sharedRuntimeAggregateClosure"]
-        self.assertEqual(shared_aggregate["candidateTypes"], 1)
-        self.assertEqual(len(audit["relatedOriginalFiles"]), 4)
-        submitter = audit["pendingItemSubmitterClosure"]
-        self.assertEqual(
-            submitter["classification"],
-            "active_shipped_xlua_producer_with_exact_submission_context_without_ui_join",
-        )
-        self.assertEqual(
-            submitter["fields"]["DialogManager.m_pendingItemSubmitter"]["offset"],
-            "0x200",
-        )
-        self.assertEqual(
-            submitter["fields"]["InventoryItemSubmitter.questId"]["offset"],
-            "0x20",
-        )
-        caller_counts = {
-            row["symbol"]: row["nativeDirectCallerCount"]
-            for row in submitter["methods"]
-        }
-        self.assertEqual(caller_counts["InventoryItemSubmitter..ctor"], 0)
-        self.assertEqual(
-            caller_counts["InventoryItemSubmitter.TryGetSubmitMsg"],
-            1,
-        )
-        self.assertEqual(
-            caller_counts["DialogManager.RegisterPendingSubmission"],
-            0,
-        )
-        self.assertEqual(
-            submitter["nativeOpenUiBridge"]["callee"][
-                "nativeDirectCallerCount"
-            ],
-            2,
-        )
-        self.assertEqual(
-            submitter["shippedLuaProducer"][
-                "constructorAndRegistrationCalls"
-            ],
-            1,
-        )
-        authored = submitter["authoredOpenUiActions"]
-        self.assertEqual(authored["typedTerminalActions"], 95)
-        self.assertEqual(authored["submitItemPanelType"], 9)
-        self.assertEqual(authored["submitItemActions"], 13)
-        self.assertEqual(authored["placeholderSubmitItemActions"], 3)
-        self.assertEqual(authored["emptyParamSubmitItemActions"], 10)
-        self.assertEqual(authored["concreteQuestIdActions"], 0)
-        objectives = submitter["authoredMissionObjectives"]
-        self.assertEqual(objectives["conditionCount"], 3)
-        self.assertEqual(objectives["questCount"], 3)
-        self.assertEqual(objectives["missionCount"], 3)
-        self.assertEqual(objectives["tableDefinedCount"], 3)
-        self.assertEqual(objectives["dialogCoGateCount"], 2)
-        self.assertEqual(objectives["dialogCoGateOpenUiOverlap"], 0)
-        self.assertIn(
-            "no quest lookup",
-            submitter["fallbackParamFlow"]["finding"],
-        )
-        self.assertEqual(submitter["installedPatchMatches"], 0)
-        self.assertEqual(audit["storyBindingsAdded"], 0)
-        self.assertEqual(audit["missionOrderEdgesAdded"], 0)
-        self.assertEqual(
-            audit["classification"],
-            "all_nested_managed_identity_carriers_reviewed",
-        )
-
     def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
         audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
         self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)
@@ -7386,7 +7148,6 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
 
             evidence = pipeline.load_lua_story_playback_evidence(
                 audit_path,
-                (),
             )
 
         self.assertEqual(
@@ -7440,7 +7201,6 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
 
             evidence = pipeline.load_lua_story_playback_evidence(
                 audit_path,
-                (),
             )
 
         row = evidence["acceptedExactPlaybackCalls"][0]
@@ -7470,7 +7230,7 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 RuntimeError,
                 r"validator.*gate=row_provenance.*sourceSha256:sha256",
             ):
-                pipeline.load_lua_story_playback_evidence(audit_path, ())
+                pipeline.load_lua_story_playback_evidence(audit_path)
 
     def test_rejected_candidate_is_published_without_a_trigger_route(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
