@@ -59,6 +59,12 @@ The complete UnityPlayer `+0xab8` census has ten sites: fixed kernel `1`
 resource passes, dynamic generic helpers, and one command-stream interpreter;
 none statically identifies kernel `7` or binds factory channel-2 `+0xd0`, so
 the dynamic command/resource record remains the only open bridge.
+The current GameAssembly PData-scoped dispatch census finds 110 direct
+`CommandBuffer.Internal_DispatchCompute` calls from 37 named built-in render
+passes, with no `factory`, `perdraw`, `upload`, or character producer; the only
+direct `ComputeShader.Dispatch` caller is unrelated MagicaCloth physics code.
+This closes the direct managed dispatch candidates, while leaving the native
+command-stream record feeding the generic interpreter open and fail-closed.
 
 ## Evidence boundary
 
