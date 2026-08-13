@@ -13,7 +13,7 @@ for search_path in (ROOT / "scripts", ROOT / "scripts" / "story_recovery"):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 
-import build_native_receiver_activation_frontier as frontier  # noqa: E402
+from story_builder import native_receiver_activation_frontier as frontier  # noqa: E402
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):

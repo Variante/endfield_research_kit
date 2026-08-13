@@ -29,7 +29,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-for search_path in (ROOT / "scripts", ROOT / "scripts" / "story_recovery"):
+for search_path in (ROOT / "scripts",):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 

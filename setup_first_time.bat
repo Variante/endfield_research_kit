@@ -140,9 +140,9 @@ echo [setup]   .\export.bat
 echo [setup] Asset media and CN audio export is optional and can take several hours.
 echo [setup] Run this later when you want Assets tab media and playable CN audio:
 echo [setup]   .\export_assets.bat --from-game
-echo [setup] Updates tracking is optional until you want the Updates tab baseline/feed.
-echo [setup] Initialize a first-time empty baseline with:
-echo [setup]   .\build_updates.bat --first-time
+echo [setup] Updates requires two complete exports and is unavailable after
+echo [setup] this first export. After a later export, compare OLD and NEW with:
+echo [setup]   .\build_updates.bat OLD NEW
 
 echo.
 echo [setup] First-time setup finished.

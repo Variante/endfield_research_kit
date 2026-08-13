@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from scripts.story_recovery import build_timeline_embedded_story_runtime_audit as audit
+from scripts.story_builder import timeline_embedded_story_runtime as audit
 
 
 def type_row(name: str, fields: list[str]) -> dict:

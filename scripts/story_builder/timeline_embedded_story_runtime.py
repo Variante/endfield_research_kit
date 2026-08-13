@@ -71,7 +71,7 @@ DEFAULT_JSON = (
 DEFAULT_MD = DEFAULT_JSON.with_suffix(".md")
 
 
-def _story_recovery_modules() -> tuple[Any, Any, Any]:
+def _story_builder_modules() -> tuple[Any, Any, Any]:
     """Load the shared native topology and LevelData host recoveries lazily.
 
     Keeping these imports lazy avoids making the Timeline object scanner own a
@@ -82,12 +82,12 @@ def _story_recovery_modules() -> tuple[Any, Any, Any]:
     try:
         from scripts.story_builder import context as story_context
         from scripts.story_builder import level_bindings
-        from scripts.story_recovery import build_levelscript_header_chain_audit
+        from scripts.story_builder import levelscript_header_chain
     except ModuleNotFoundError:
         from story_builder import context as story_context
         from story_builder import level_bindings
-        from story_recovery import build_levelscript_header_chain_audit
-    return story_context, level_bindings, build_levelscript_header_chain_audit
+        from story_builder import levelscript_header_chain
+    return story_context, level_bindings, levelscript_header_chain
 
 
 def load_module(name: str, path: Path) -> Any:
@@ -1553,7 +1553,7 @@ def recover_parent_dialog_configuration_contexts(
     mission_runtime_root: Path | None = None,
 ) -> dict[str, Any]:
     """Run the corpus-wide NPC configuration join for all parent dialogs."""
-    story_context, level_bindings, _header_audit = _story_recovery_modules()
+    story_context, level_bindings, _header_audit = _story_builder_modules()
     npc_proxy_ex_path = npc_proxy_ex_path or story_context.NPC_PROXY_EX_PATH
     mission_runtime_root = mission_runtime_root or story_context.MRA_DIR
     relevant_missions: set[str] = set()
@@ -1602,7 +1602,7 @@ def recover_parent_dialog_activation_routes(
     levelscript_root: Path | None = None,
 ) -> dict[str, Any]:
     """Run the exact activation join over every discovered parent dialog."""
-    story_context, level_bindings, header_audit = _story_recovery_modules()
+    story_context, level_bindings, header_audit = _story_builder_modules()
     use_default_levelscript_root = levelscript_root is None
     levelscript_root = levelscript_root or story_context.LEVELSCRIPT_DIR
     dialog_keys = {

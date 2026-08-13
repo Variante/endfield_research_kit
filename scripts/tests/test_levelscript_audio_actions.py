@@ -4,6 +4,7 @@ import unittest
 from scripts.story_builder.level_bindings import levelscript_native_action_name
 from scripts.story_builder.levelscript_binary import (
     LEVELSCRIPT_NATIVE_AUDIO_ACTION_MAPPING_ID,
+    decode_embedded_action_serialized_map_audio,
     decode_levelscript_record_payload,
 )
 
@@ -631,6 +632,52 @@ class LevelScriptAudioActionTests(unittest.TestCase):
                 "serializedMemberCount": count,
             }
             self.assertEqual(name, levelscript_native_action_name(record))
+
+    def test_embedded_action_map_audio_requires_physical_action_list_and_exact_payload(self) -> None:
+        away_record = bytes.fromhex(
+            "fa52030c001600000000080000003666363061393839010000000101ffffffff"
+            "042400000061755f696e745f73706c6974706c6174666f726d5f73706c69745f"
+            "6c6f6f705f61776179ffffffff00000000ffffffff0200000000130000002432"
+            "32405f617564696f506c6179696e6749640401ffffffff00000000ffffffff04"
+            "0300000000000000000000000000ffffffffe9030000ffffffff"
+        )
+        ambience_record = bytes.fromhex(
+            "fa52030c001700000000080000006238653332396661010000000101ffffffff"
+            "041e00000061755f696e745f73706c6974706c6174666f726d5f73706c69745f"
+            "616d62ffffffff00000000ffffffff020000000013000000243233405f617564"
+            "696f506c6179696e6749640401ffffffff00000000ffffffff04030000000000"
+            "00000000000000ffffffffe9030000ffffffff"
+        )
+        getter_record = bytes.fromhex(
+            "5c08000300000000080000006564333234383163010000000001040300000000"
+            "000000000000000000ffffffffe9030000ffffffff"
+        )
+        embedded = b"".join((
+            b"\x03",
+            struct.pack("<I", 2),
+            away_record,
+            ambience_record,
+            struct.pack("<I", 1),
+            getter_record,
+            struct.pack("<I", 0),
+        ))
+
+        decoded = decode_embedded_action_serialized_map_audio(embedded, 0)
+
+        self.assertEqual(decoded["listCounts"]["actionList"], 2)
+        self.assertEqual(decoded["audioActions"][0]["actionMapRole"], "actionList#1 root")
+        self.assertEqual(decoded["audioActions"][0]["action"], "PlayAudioOnTarget")
+        self.assertEqual(decoded["audioActions"][0]["eventBindings"], [{
+            "eventName": "au_int_splitplatform_split_loop_away",
+            "role": "play",
+            "sourceField": "_audioKey",
+        }])
+        self.assertTrue(decoded["audioActions"][0]["fields"]["stopOnRelease"]["value"])
+        self.assertEqual(
+            decoded["audioActions"][0]["fields"]["target"]["bindingKind"],
+            "dynamic",
+        )
+        self.assertFalse(decode_embedded_action_serialized_map_audio(embedded, 1))
 
 
 if __name__ == "__main__":

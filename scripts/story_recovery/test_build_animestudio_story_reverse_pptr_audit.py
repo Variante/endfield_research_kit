@@ -78,6 +78,53 @@ class AnimeStudioStoryReversePPtrAuditTests(unittest.TestCase):
             (set(), "unresolved"),
         )
 
+    def test_cutscene_root_identity_accepts_only_exact_gender_root_variant(
+        self,
+    ) -> None:
+        for prefix in ("f_", "m_", "fm_", "F_", "M_", "FM_"):
+            with self.subTest(prefix=prefix):
+                self.assertEqual(
+                    audit.cutscene_root_story_identity(
+                        set(),
+                        root_game_object_name=
+                            f"{prefix}cutscene_e1m1_test",
+                        component_game_object_path_id=10,
+                        root_game_object_path_id=10,
+                        all_story_keys={"cutscene_e1m1_test"},
+                    ),
+                    (
+                        {"cutscene_e1m1_test"},
+                        "root_game_object_gender_variant_fallback",
+                    ),
+                )
+
+        for rejected in (
+            "female_cutscene_e1m1_test",
+            "f_cutscene_e1m1_test_Actor",
+        ):
+            with self.subTest(rejected=rejected):
+                self.assertEqual(
+                    audit.cutscene_root_story_identity(
+                        set(),
+                        root_game_object_name=rejected,
+                        component_game_object_path_id=10,
+                        root_game_object_path_id=10,
+                        all_story_keys={"cutscene_e1m1_test"},
+                    ),
+                    (set(), "unresolved"),
+                )
+
+        self.assertEqual(
+            audit.cutscene_root_story_identity(
+                set(),
+                root_game_object_name="f_cutscene_e1m1_test",
+                component_game_object_path_id=11,
+                root_game_object_path_id=10,
+                all_story_keys={"cutscene_e1m1_test"},
+            ),
+            (set(), "unresolved"),
+        )
+
     def test_collects_gendered_cutscene_variant_as_canonical_target(
         self,
     ) -> None:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recover the current-build protobuf message registry and Story-facing schemas.
+"""Build the current-build protobuf message registry and Story-facing schemas.
 
 This is a metadata/schema audit. Message presence and field names do not prove
 that a native sender or handler is active, nor do they create Mission Pipeline

@@ -41,7 +41,7 @@ from common import (  # noqa: E402
     write_text_if_changed,
 )
 from build_priority_story_order_audit import priority_bucket  # noqa: E402
-from build_source_story_partial_order import (  # noqa: E402
+from story_builder.source_story_partial_order import (  # noqa: E402
     build_report as build_partial_order_report,
     load_mission_payload_with_variants,
 )

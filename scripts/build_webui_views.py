@@ -45,7 +45,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         "mission_pipeline",
         (
             python_command(
-                "scripts/story_recovery/build_protocol_registry_audit.py",
+                "scripts/story_builder/protocol_registry.py",
                 "--ensure-current",
             ),
             python_command(

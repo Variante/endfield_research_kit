@@ -5628,6 +5628,45 @@ function renderCutscenePlacementEdges(placement, flowKeyMap, currentKey) {
   return details;
 }
 
+function cutsceneSemanticShapeLabel(cs) {
+  const shapeLabels = {
+    unityTimeline: ["cutsceneShapeUnityTimeline", "cutsceneShapeUnityTimelineHint"],
+    unityTimelineWithIndependentFmv: ["cutsceneShapeUnityTimelineWithIndependentFmv", "cutsceneShapeUnityTimelineWithIndependentFmvHint"],
+    timelineComponentsWithoutRoot: ["cutsceneShapeTimelineComponentsWithoutRoot", "cutsceneShapeTimelineComponentsWithoutRootHint"],
+    levelscriptFmv: ["cutsceneShapeLevelscriptFmv", "cutsceneShapeLevelscriptFmvHint"],
+    textOnlyUnconfirmed: ["cutsceneShapeTextOnlyUnconfirmed", "cutsceneShapeTextOnlyUnconfirmedHint"],
+  };
+  const semanticShape = String(cs.semanticShape || "");
+  const shapeLabel = shapeLabels[semanticShape];
+  return shapeLabel ? { semanticShape, shapeLabel } : null;
+}
+
+function renderCutsceneSemanticSummary(conv) {
+  const cs = conv.cutscene;
+  if (!cs) return null;
+  const shape = cutsceneSemanticShapeLabel(cs);
+  const showSubtitleBoundary = cs.subtitleEvidence === "localizedTextWithoutTrack";
+  if (!shape && !showSubtitleBoundary) return null;
+
+  const box = document.createElement("div");
+  box.className = "summary-box cutscene-semantic-box";
+  if (shape) {
+    const shapeRow = document.createElement("div");
+    shapeRow.className = `cs-semantic-shape is-${shape.semanticShape}`;
+    shapeRow.textContent = uiText(shape.shapeLabel[0]);
+    shapeRow.title = uiText(shape.shapeLabel[1]);
+    box.appendChild(shapeRow);
+  }
+  if (showSubtitleBoundary) {
+    const note = document.createElement("div");
+    note.className = "cs-evidence-note";
+    note.textContent = uiText("cutsceneLocalizedTextWithoutTrack");
+    note.title = uiText("cutsceneLocalizedTextWithoutTrackHint");
+    box.appendChild(note);
+  }
+  return box;
+}
+
 function renderCutsceneInfoPanel(conv, timeline = null) {
   const cs = conv.cutscene;
   if (!cs) return null;
@@ -6030,6 +6069,7 @@ function lineHintSpeakerTitle(conv, line) {
   if (String(conv && conv.kind || "") === "responsive") {
     return responsiveLineTriggerTitle(line);
   }
+
   return String(line && line.hint || "").trim();
 }
 
@@ -6911,6 +6951,8 @@ function renderConv(conv) {
   // Cutscenes get a dedicated structured info panel; all other kinds use the
   // generic summary text block.
   if (conv.kind === "cutscene") {
+    const semanticSummary = renderCutsceneSemanticSummary(conv);
+    if (semanticSummary) frag.appendChild(semanticSummary);
     if (STATE.showDebug) {
       const csPanel = renderCutsceneInfoPanel(conv, missionTimelineRecovery);
       if (csPanel) frag.appendChild(csPanel);

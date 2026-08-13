@@ -49,6 +49,1379 @@ MANAGED_AUDIO_LITERAL_RE = re.compile(
     r"^(?:au|bark|radio)_[A-Za-z0-9_./+:-]+$",
     re.IGNORECASE,
 )
+MANAGED_AUDIO_CALLSITE_METADATA_SHA256 = (
+    "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+)
+MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256 = (
+    "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+)
+NATIVE_VOICE_TRIGGER_MAPPING_ID = (
+    "gameassembly-2026-08-13-native-voice-response-trigger-callsites"
+)
+ANIMATION_VOICE_TRIGGER_MAPPING_ID = (
+    "gameassembly-2026-08-13-animator-mono-trigger-voice"
+)
+ANIMATION_VOICE_TRIGGER_NATIVE = {
+    "consumerType": "Beyond.Gameplay.Core.AnimatorMono",
+    "consumerMethod": "TriggerVoice(AnimationEvent) / TriggerVoice(string,int,float)",
+    "methodIndex": 53421,
+    "methodVa": "0x186c9c8a8",
+    "additionalMethodIndex": 53422,
+    "additionalMethodVa": "0x183abf9f0",
+    "playbackCall": "Beyond.Gameplay.Audio.VoiceManager.ResponseOnEntity",
+    "playbackCallMethodIndex": 40534,
+    "playbackCallVa": "0x183abfb10",
+    "playbackInvocationVa": "0x186c9c9b2",
+    "additionalPlaybackInvocationVa": "0x183abfacc",
+}
+ANIMATION_VOICE_CLIP_RELS = (
+    Path("recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"),
+    Path("recovered/AnimeStudio-cli/Persistent/convert_by_type/AnimationClip"),
+)
+ANIMATION_VOICE_CLIP_RE = re.compile(
+    r"^A_(?P<kind>actor|monster)_(?P<token>[^_]+)_", re.IGNORECASE
+)
+ANIMATION_VOICE_EVENT_RE = re.compile(
+    r"^(?P<owner>(?P<prefix>chr|eny)_\d{4}_(?P<token>[a-z0-9]+))_"
+    r"(?P<trigger>[a-z0-9_]+)_sv$",
+    re.IGNORECASE,
+)
+NATIVE_VOICE_TRIGGER_ROWS = {
+    "combat_dead": {
+        "consumerType": "Beyond.Gameplay.Audio.VoiceTempSpeakerProcessor",
+        "consumerMethod": "ResponseDeath", "methodIndex": 40440,
+        "methodVa": "0x183abdf70", "literalLoadVa": "0x183abe172",
+        "playbackCall": "Beyond.Gameplay.Audio.VoiceResponseProcessor.Response",
+        "playbackCallVa": "0x183abfbc0", "playbackInvocationVa": "0x183abe18f",
+        "triggerRole": "temporarySpeakerDeathResponse",
+        "targetBinding": "temporarySpeakerEntityAndSpeakerType",
+    },
+    "explocomm_switch": {
+        "consumerType": "Beyond.Gameplay.Core.AbilitySystem",
+        "consumerMethod": "SwitchCenterBySkill / _PlayFxWhenSwitchKeepSkill",
+        "methodIndex": 54302, "methodVa": "0x186cb060c",
+        "additionalMethodIndex": 54304, "additionalMethodVa": "0x186cb4ca8",
+        "literalLoadVa": "0x186cb1f64", "additionalLiteralLoadVa": "0x186cb4d5d",
+        "playbackCall": "Beyond.Gameplay.Audio.VoiceManager.ResponseOnEntity",
+        "playbackCallVa": "0x186b03194", "playbackInvocationVa": "0x186cb1f6b",
+        "additionalPlaybackInvocationVa": "0x186cb4d64",
+        "triggerRole": "centerCharacterSkillSwitchResponse",
+        "targetBinding": "selectedCenterCharacterEntity",
+    },
+    "combat_hurt_heavy": {
+        "consumerType": "Beyond.Gameplay.Core.BattleManager",
+        "consumerMethod": "SendVoiceTriggerEventOnPhysicalInflictionApplied",
+        "methodIndex": 59749, "methodVa": "0x186d75f38",
+        "literalLoadVa": "0x186d75fa6",
+        "playbackCall": "Beyond.Gameplay.Audio.VoiceManager.ResponseOnEntity",
+        "playbackCallVa": "0x186b03194", "playbackInvocationVa": "0x186d75fb3",
+        "triggerRole": "physicalInflictionHeavyHurtResponse",
+        "targetBinding": "physicallyInflictedEntity",
+    },
+    "combat_hurt_break": {
+        "consumerType": "Beyond.Gameplay.Core.BattleManager",
+        "consumerMethod": "SendVoiceTriggerEventOnPoiseBroken",
+        "methodIndex": 59750, "methodVa": "0x186d75ff0",
+        "literalLoadVa": "0x186d7605e",
+        "playbackCall": "Beyond.Gameplay.Audio.VoiceManager.ResponseOnEntity",
+        "playbackCallVa": "0x186b03194", "playbackInvocationVa": "0x186d7606b",
+        "triggerRole": "poiseBrokenResponse",
+        "targetBinding": "poiseBrokenEntity",
+    },
+    "combat_hurt_interrupt": {
+        "consumerType": "Beyond.Gameplay.Core.BattleManager",
+        "consumerMethod": "SendVoiceTriggerEventOnWeaknessTriggered",
+        "methodIndex": 59751, "methodVa": "0x186d76160",
+        "literalLoadVa": "0x186d761ce",
+        "playbackCall": "Beyond.Gameplay.Audio.VoiceManager.ResponseOnEntity",
+        "playbackCallVa": "0x186b03194", "playbackInvocationVa": "0x186d761db",
+        "triggerRole": "weaknessTriggeredInterruptResponse",
+        "targetBinding": "weaknessTriggeredEntity",
+    },
+}
+NATIVE_STRING_EVENT_PLAYBACK = {
+    "playbackCall": "nativeStringEventWrapper", "playbackCallVa": "0x183287c90",
+    "playbackParameter": "eventName",
+    "playbackHashCall": "Beyond.Audio.AudioHashGenerator.Compute", "playbackHashCallVa": "0x18328dcd0",
+    "playbackSink": "Beyond.Audio.AudioAdapter._PostEvent", "playbackSinkVa": "0x18328a690",
+}
+NATIVE_STRING_EVENT_FORWARDER_PLAYBACK = {
+    "playbackCall": "nativeStringEventForwarder", "playbackCallVa": "0x183d3f2e0",
+    "playbackParameter": "eventName",
+    "playbackHashCall": "Beyond.Audio.AudioHashGenerator.Compute", "playbackHashCallVa": "0x18328dcd0",
+    "playbackSink": "Beyond.Audio.AudioAdapter._PostEvent", "playbackSinkVa": "0x18328a690",
+}
+NATIVE_POSITION_EVENT_PLAYBACK = {
+    "playbackCall": "nativeStringPositionEventWrapper", "playbackCallVa": "0x183b87ba0",
+    "playbackParameter": "eventNameAndWorldPosition",
+    "playbackHashCall": "Beyond.Audio.AudioHashGenerator.Compute", "playbackHashCallVa": "0x18328dcd0",
+    "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PlaySoundAtPosition", "playbackSinkVa": "0x183b87c60",
+}
+NATIVE_MOBILE_MOTION_EVENT_PLAYBACK = {
+    "playbackCall": "mobileMotionConditionalEventWrapper", "playbackCallVa": "0x18b0f5f68",
+    "playbackParameter": "motionManagerAndEventName",
+    "playbackHashCall": "Beyond.Audio.AudioHashGenerator.Compute", "playbackHashCallVa": "0x18328dcd0",
+    "playbackSink": "Beyond.Audio.AudioAdapter._PostEvent", "playbackSinkVa": "0x18328a690",
+}
+NATIVE_AUDIO_OBJECT_STRING_EVENT_PLAYBACK = {
+    "playbackCall": "nativeAudioObjectStringEventWrapper", "playbackCallVa": "0x1847d90c0",
+    "playbackParameter": "audioObject,eventName",
+    "playbackHashCall": "Beyond.Audio.AudioHashGenerator.Compute", "playbackHashCallVa": "0x18328dcd0",
+    "playbackHashInvocationVa": "0x183b878df",
+    "playbackSink": "Beyond.Audio.AudioAdapter._PostEvent", "playbackSinkVa": "0x18328a690",
+    "playbackSinkInvocationVa": "0x183b878f9",
+}
+NARRATIVE_3D_RADIO_SELECTOR_ROWS = (
+    (2, "020", "0x1852edb10"),
+    (4, "040", "0x1852edb28"),
+    (5, "050", "0x1852edb40"),
+    (6, "060", "0x1852edb58"),
+    (7, "070", "0x1852edb70"),
+    (8, "080", "0x1852edb88"),
+    (10, "100", "0x1852edba0"),
+    (12, "120", "0x1852edbb8"),
+    (16, "160", "0x1852edbd0"),
+    (20, "200", "0x1852edbe8"),
+)
+NATURE_RESOURCE_SOUND_SELECTOR_ROWS = (
+    ("plow", "Reclaim", 1, "0x183b16e14", "0x183b16e9f"),
+    ("watering", "Watering", 2, "0x183b16e2f", "0x183b16eba"),
+    ("harvest", "Harvest", 5, "0x183b16e4a", "0x183b16ed5"),
+)
+SELECTOR_AUDIO_CALLSITE_CONTEXTS = {
+    "au_ui_event_explorelevels_hold": {
+        "consumerType": "Beyond.UI.UISemiCircleScrollList", "consumerMethod": "OnBeginDrag",
+        "methodIndex": 400238, "methodVa": "0x18b0f3910",
+        "selectorType": "Beyond.UI.UISemiCircleScrollList", "selectorMethod": "_audioHoldStart",
+        "selectorField": "_audioHoldStart", "selectorFieldOffset": "this+0xf8", "selectorLoadVa": "0x18b0f3930",
+        "literalLoadVa": "0x18b0f4721", "literalArgumentRegister": "rax",
+        "literalArgumentInstruction": "audioIdFieldLoad",
+        "playbackCall": "Beyond.Audio.AudioUIUtil.PostUIEvent", "playbackCallVa": "0x18b0f3958",
+        "playbackParameter": "audioId,gameObject", "targetBinding": "semiCircleScrollListGameObject",
+        "triggerRole": "exploreLevelsDragHoldStart",
+        "branchCondition": "OnBeginDrag && _audioHoldStart is non-empty",
+    },
+    "au_ui_event_explorelevels_release": {
+        "consumerType": "Beyond.UI.UISemiCircleScrollList", "consumerMethod": "OnEndDrag",
+        "methodIndex": 400239, "methodVa": "0x18b0f3b50",
+        "selectorType": "Beyond.UI.UISemiCircleScrollList", "selectorMethod": "_audioHoldEnd",
+        "selectorField": "_audioHoldEnd", "selectorFieldOffset": "this+0x100", "selectorLoadVa": "0x18b0f3b74",
+        "literalLoadVa": "0x18b0f4734", "literalArgumentRegister": "rax",
+        "literalArgumentInstruction": "audioIdFieldLoad",
+        "playbackCall": "Beyond.Audio.AudioUIUtil.PostUIEvent", "playbackCallVa": "0x18b0f3b9c",
+        "playbackParameter": "audioId,gameObject", "targetBinding": "semiCircleScrollListGameObject",
+        "triggerRole": "exploreLevelsDragRelease",
+        "branchCondition": "OnEndDrag && _audioHoldEnd is non-empty, before damping starts",
+    },
+    "au_ui_event_explorelevels_alignment": {
+        "consumerType": "Beyond.UI.UISemiCircleScrollList+<_ApplyDamping>d__46", "consumerMethod": "MoveNext",
+        "methodIndex": 400248, "methodVa": "0x18b0ee2a0",
+        "selectorType": "Beyond.UI.UISemiCircleScrollList", "selectorMethod": "_audioAlignment",
+        "selectorField": "_audioAlignment", "selectorFieldOffset": "owner+0x108", "selectorLoadVa": "0x18b0ee569",
+        "literalLoadVa": "0x18b0f474e", "literalArgumentRegister": "rax",
+        "literalArgumentInstruction": "audioIdFieldLoad",
+        "playbackCall": "Beyond.Audio.AudioUIUtil.PostUIEvent", "playbackCallVa": "0x18b0ee591",
+        "playbackParameter": "audioId,gameObject", "targetBinding": "semiCircleScrollListGameObject",
+        "triggerRole": "exploreLevelsScrollAlignment",
+        "branchCondition": "_ApplyDamping completes final aligned layout && _audioAlignment is non-empty",
+    },
+    "au_ui_event_explorelevels_set": {
+        "consumerType": "Beyond.UI.UIWorldLevelScrollListAnimCtrl+<_ScrollLayouts>d__12", "consumerMethod": "MoveNext",
+        "methodIndex": 400599, "methodVa": "0x18b0f8414",
+        "selectorType": "Beyond.UI.UIWorldLevelScrollListAnimCtrl", "selectorMethod": "_audioEnd",
+        "selectorField": "_audioEnd", "selectorFieldOffset": "owner+0x40", "selectorLoadVa": "0x18b0f8ad3",
+        "literalLoadVa": "0x18b0fe125", "literalArgumentRegister": "rax",
+        "literalArgumentInstruction": "audioIdFieldLoad",
+        "playbackCall": "Beyond.Audio.AudioUIUtil.PostUIEvent", "playbackCallVa": "0x18b0f8af8",
+        "playbackParameter": "audioId,gameObject", "targetBinding": "worldLevelScrollListAnimControllerGameObject",
+        "triggerRole": "exploreLevelsSetCompleted",
+        "branchCondition": "_ScrollLayouts completes final local-position updates && _audioEnd is non-empty",
+    },
+    "au_int_xiranitenexus_appear": {
+        "consumerType": "Beyond.Gameplay.XiraniteNexusLogicComponent", "consumerMethod": "NotifyShown",
+        "methodIndex": 7571, "methodVa": "0x186ff8644",
+        "selectorType": "Beyond.Gameplay.XiraniteNexusConfig", "selectorMethod": "appearAudio",
+        "selectorField": "appearAudio", "selectorFieldOffset": "config+0x100", "selectorLoadVa": "0x186ff86dd",
+        "literalLoadVa": "0x18480ad61", "literalArgumentRegister": "rdx",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.XiraniteNexusLogicComponent._PlayAudio",
+        "playbackCallVa": "0x186ff86ea", "playbackParameter": "eventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x186ff9a50",
+        "targetBinding": "xiraniteNexusEntityAudioObject", "triggerRole": "xiraniteNexusShown",
+        "branchCondition": "NotifyShown && isVisible changes false->true",
+    },
+    "au_int_xiranitenexus_disappear": {
+        "consumerType": "Beyond.Gameplay.XiraniteNexusLogicComponent", "consumerMethod": "NotifyHidden",
+        "methodIndex": 7572, "methodVa": "0x186ff8394",
+        "selectorType": "Beyond.Gameplay.XiraniteNexusConfig", "selectorMethod": "disappearAudio",
+        "selectorField": "disappearAudio", "selectorFieldOffset": "config+0x108", "selectorLoadVa": "0x186ff8420",
+        "literalLoadVa": "0x18480ad7b", "literalArgumentRegister": "rdx",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.XiraniteNexusLogicComponent._PlayAudio",
+        "playbackCallVa": "0x186ff842d", "playbackParameter": "eventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x186ff9a50",
+        "targetBinding": "xiraniteNexusEntityAudioObject", "triggerRole": "xiraniteNexusHidden",
+        "branchCondition": "NotifyHidden && isVisible changes true->false",
+    },
+    "au_int_xiranitenexus_scan_start": {
+        "consumerType": "Beyond.Gameplay.XiraniteNexusLogicComponent", "consumerMethod": "OnScanEnable",
+        "methodIndex": 7573, "methodVa": "0x186ff9024",
+        "selectorType": "Beyond.Gameplay.XiraniteNexusConfig", "selectorMethod": "scanStartAudio",
+        "selectorField": "scanStartAudio", "selectorFieldOffset": "config+0x110", "selectorLoadVa": "0x186ff90a7",
+        "literalLoadVa": "0x18480ad95", "literalArgumentRegister": "rdx",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.XiraniteNexusLogicComponent._PlayAudio",
+        "playbackCallVa": "0x186ff90b4", "playbackParameter": "eventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x186ff9a50",
+        "targetBinding": "xiraniteNexusEntityAudioObject", "triggerRole": "xiraniteNexusScanEnabled",
+        "branchCondition": "OnScanEnable",
+    },
+    "au_int_xiranitenexus_scan_end": {
+        "consumerType": "Beyond.Gameplay.XiraniteNexusLogicComponent", "consumerMethod": "OnScanDisable",
+        "methodIndex": 7574, "methodVa": "0x186ff8cd8",
+        "selectorType": "Beyond.Gameplay.XiraniteNexusConfig", "selectorMethod": "scanEndAudio",
+        "selectorField": "scanEndAudio", "selectorFieldOffset": "config+0x118", "selectorLoadVa": "0x186ff8d62",
+        "literalLoadVa": "0x18480adaf", "literalArgumentRegister": "rdx",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.XiraniteNexusLogicComponent._PlayAudio",
+        "playbackCallVa": "0x186ff8d6f", "playbackParameter": "eventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x186ff9a50",
+        "targetBinding": "xiraniteNexusEntityAudioObject", "triggerRole": "xiraniteNexusScanDisabled",
+        "branchCondition": "OnScanDisable",
+    },
+    "au_int_xiranitenexus_flash": {
+        "consumerType": "Beyond.Gameplay.XiraniteNexusLogicComponent", "consumerMethod": "OnBlightMiasmaAreaEnter",
+        "methodIndex": 7576, "methodVa": "0x186ff89ec",
+        "selectorType": "Beyond.Gameplay.XiraniteNexusConfig", "selectorMethod": "flashAudio",
+        "selectorField": "flashAudio", "selectorFieldOffset": "config+0x120", "selectorLoadVa": "0x186ff8a14",
+        "literalLoadVa": "0x18480adc9", "literalArgumentRegister": "rdx",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.XiraniteNexusLogicComponent._PlayAudio",
+        "playbackCallVa": "0x186ff8a21", "playbackParameter": "eventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x186ff9a50",
+        "additionalConsumerMethod": "OnStart", "additionalMethodVa": "0x186ff92d4",
+        "additionalSelectorLoadVa": "0x186ff94ba", "additionalPlaybackCallVa": "0x186ff94c7",
+        "targetBinding": "xiraniteNexusEntityAudioObject", "triggerRole": "xiraniteNexusBlightFlash",
+        "branchCondition": "blightMiasmaAreaEnter || OnStart while already in blight area",
+    },
+    "au_int_shuimo_bridge_appear": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.FireSeedBrain", "consumerMethod": "_TickUpdateFireSeedInUse",
+        "methodIndex": 82411, "methodVa": "0x183efb0c0",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.FireSeedGameplayConfig",
+        "selectorMethod": "invisibleBridgeAppearAudio", "selectorField": "invisibleBridgeAppearAudio",
+        "selectorFieldOffset": "config+0x98", "selectorLoadVa": "0x183efb825",
+        "literalLoadVa": "0x1849bac58", "literalArgumentRegister": "rsi",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x183efb877", "playbackParameter": "eventName",
+        "targetBinding": "playerControllerAudioObject", "triggerRole": "invisibleBridgeUseStart",
+        "branchCondition": "HasInvisibleBridgeInRange && !wasUsingInvisibleBridge; sets in-use flag true",
+        "additionalConsumerMethod": "_PlayFireSeedInUseAudio", "additionalMethodVa": "0x1870d30a0",
+        "additionalSelectorLoadVa": "0x1870d30fc", "additionalPlaybackCallVa": "0x1870d313c",
+    },
+    "au_int_shuimo_bridge_disappear": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.FireSeedBrain", "consumerMethod": "_PlayFireSeedUnUseAudio",
+        "methodIndex": 82417, "methodVa": "0x1870d3178",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.FireSeedGameplayConfig",
+        "selectorMethod": "invisibleBridgeDisappearAudio", "selectorField": "invisibleBridgeDisappearAudio",
+        "selectorFieldOffset": "config+0xa0", "selectorLoadVa": "0x1870d31d9",
+        "literalLoadVa": "0x1849bac6b", "literalArgumentRegister": "rsi",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1870d3219", "playbackParameter": "eventName",
+        "targetBinding": "playerControllerAudioObject", "triggerRole": "invisibleBridgeUseEnd",
+        "branchCondition": "invisible bridge leaves range after in-use state, or fire-seed in-use ticking is disabled",
+    },
+    "au_int_yinglongguan_fire_appear": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.FireSeedBrain", "consumerMethod": "_PlayFireSeedAppearAudio",
+        "methodIndex": 82420, "methodVa": "0x1870d2f08",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.FireSeedGameplayConfig",
+        "selectorMethod": "fireSeedAppearAudio", "selectorField": "fireSeedAppearAudio",
+        "selectorFieldOffset": "config+0xa8", "selectorLoadVa": "0x1870d2f5f",
+        "literalLoadVa": "0x1849bac85", "literalArgumentRegister": "rsi",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1870d2f9f", "playbackParameter": "eventName",
+        "targetBinding": "playerControllerAudioObject", "triggerRole": "fireSeedAppear",
+        "branchCondition": "SetFireSeedLevel with active=true and level>0",
+    },
+    "au_int_yinglongguan_fire_disappear": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.FireSeedBrain", "consumerMethod": "_PlayFireSeedDisappearAudio",
+        "methodIndex": 82421, "methodVa": "0x1870d2fd4",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.FireSeedGameplayConfig",
+        "selectorMethod": "fireSeedDisappearAudio", "selectorField": "fireSeedDisappearAudio",
+        "selectorFieldOffset": "config+0xb0", "selectorLoadVa": "0x1870d302b",
+        "literalLoadVa": "0x1849bac9f", "literalArgumentRegister": "rsi",
+        "literalArgumentInstruction": "configFieldLoad",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1870d306b", "playbackParameter": "eventName",
+        "targetBinding": "playerControllerAudioObject", "triggerRole": "fireSeedDisappear",
+        "branchCondition": "SetFireSeedLevel with active=false or level<=0",
+    },
+    "au_int_blightmiasma_idle_light": {
+        "consumerType": "Beyond.Gameplay.BlightMiasmaBrain", "consumerMethod": "_PlayMiasmaAreaIdleAudio",
+        "methodIndex": 11363, "methodVa": "0x18721ce64",
+        "selectorType": "Beyond.Gameplay.BlightMiasmaBrain", "selectorMethod": "_GetMiasmaAreaIdleAudio",
+        "selectorMethodIndex": 11362, "selectorMethodVa": "0x18721cbb0", "selectorCallVa": "0x18721ce9d",
+        "literalLoadVa": "0x18721cc2a", "literalArgumentRegister": "rax", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.BlightMiasmaBrain._PlayMiasmaAudio",
+        "playbackCallVa": "0x18721ceb6", "playbackParameter": "selectedEventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x18721cf6a",
+        "targetBinding": "mainCharacterAudioObject", "triggerRole": "miasmaAreaIdleLight",
+        "branchCondition": "miasmaAreaLevel==1",
+    },
+    "au_int_blightmiasma_idle_medium": {
+        "consumerType": "Beyond.Gameplay.BlightMiasmaBrain", "consumerMethod": "_PlayMiasmaAreaIdleAudio",
+        "methodIndex": 11363, "methodVa": "0x18721ce64",
+        "selectorType": "Beyond.Gameplay.BlightMiasmaBrain", "selectorMethod": "_GetMiasmaAreaIdleAudio",
+        "selectorMethodIndex": 11362, "selectorMethodVa": "0x18721cbb0", "selectorCallVa": "0x18721ce9d",
+        "literalLoadVa": "0x18721cc21", "literalArgumentRegister": "rax", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.BlightMiasmaBrain._PlayMiasmaAudio",
+        "playbackCallVa": "0x18721ceb6", "playbackParameter": "selectedEventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x18721cf6a",
+        "targetBinding": "mainCharacterAudioObject", "triggerRole": "miasmaAreaIdleMedium",
+        "branchCondition": "miasmaAreaLevel==2",
+    },
+    "au_int_blightmiasma_idle_heavy": {
+        "consumerType": "Beyond.Gameplay.BlightMiasmaBrain", "consumerMethod": "_PlayMiasmaAreaIdleAudio",
+        "methodIndex": 11363, "methodVa": "0x18721ce64",
+        "selectorType": "Beyond.Gameplay.BlightMiasmaBrain", "selectorMethod": "_GetMiasmaAreaIdleAudio",
+        "selectorMethodIndex": 11362, "selectorMethodVa": "0x18721cbb0", "selectorCallVa": "0x18721ce9d",
+        "literalLoadVa": "0x18721cc18", "literalArgumentRegister": "rax", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.BlightMiasmaBrain._PlayMiasmaAudio",
+        "playbackCallVa": "0x18721ceb6", "playbackParameter": "selectedEventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x18721cf6a",
+        "targetBinding": "mainCharacterAudioObject", "triggerRole": "miasmaAreaIdleHeavy",
+        "branchCondition": "miasmaAreaLevel==3",
+    },
+    "au_int_erosion_sludge_idle_loop": {
+        "consumerType": "Beyond.Gameplay.Core.ErosionSludgeV2", "consumerMethod": "_PlayAudio",
+        "methodIndex": 72093, "methodVa": "0x183aff8e0",
+        "selectorType": "Beyond.Gameplay.Core.ErosionSludgeV2", "selectorMethod": "_GetAudioType",
+        "selectorMethodIndex": 72096, "selectorMethodVa": "0x183aff9f0", "selectorCallVa": "0x183aff96c",
+        "literalLoadVa": "0x183affa2e", "literalArgumentRegister": "rax", "literalArgumentInstruction": "mov",
+        **NATIVE_AUDIO_OBJECT_STRING_EVENT_PLAYBACK,
+        "playbackInvocationVa": "0x183aff991",
+        "targetBinding": "erosionSludgeAudioEmitter", "triggerRole": "erosionSludgeIdleLoop",
+        "branchCondition": "audioType==1",
+    },
+    "au_int_erosion_sludge_recover_loop": {
+        "consumerType": "Beyond.Gameplay.Core.ErosionSludgeV2", "consumerMethod": "_PlayRecoverAudio",
+        "methodIndex": 72099, "methodVa": "0x186f7037c",
+        "selectorType": "Beyond.Gameplay.Core.ErosionSludgeV2", "selectorMethod": "_GetAudioType",
+        "selectorMethodIndex": 72096, "selectorMethodVa": "0x183aff9f0", "selectorCallVa": "0x186f70584",
+        "literalLoadVa": "0x1851865b3", "literalArgumentRegister": "rax", "literalArgumentInstruction": "mov",
+        **NATIVE_AUDIO_OBJECT_STRING_EVENT_PLAYBACK,
+        "playbackInvocationVa": "0x186f705a5",
+        "targetBinding": "erosionSludgeAudioEmitter", "triggerRole": "erosionSludgeRecoverLoop",
+        "branchCondition": "audioType==2",
+    },
+    "au_int_erosion_sludge_recover_done": {
+        "consumerType": "Beyond.Gameplay.Core.ErosionSludgeV2", "consumerMethod": "_PlayRecoverAudio",
+        "methodIndex": 72099, "methodVa": "0x186f7037c",
+        "selectorType": "Beyond.Gameplay.Core.ErosionSludgeV2", "selectorMethod": "_GetAudioType",
+        "selectorMethodIndex": 72096, "selectorMethodVa": "0x183aff9f0", "selectorCallVa": "0x186f70584",
+        "literalLoadVa": "0x1851865a7", "literalArgumentRegister": "rax", "literalArgumentInstruction": "mov",
+        **NATIVE_AUDIO_OBJECT_STRING_EVENT_PLAYBACK,
+        "playbackInvocationVa": "0x186f705a5",
+        "targetBinding": "erosionSludgeAudioEmitter", "triggerRole": "erosionSludgeRecoverDone",
+        "branchCondition": "audioType==3",
+    },
+    **{
+        f"au_voice_narrating_3dradio_{suffix}": {
+            "consumerType": "Beyond.Gameplay.Audio.VoiceManager", "consumerMethod": "_SpeakNarrative",
+            "methodIndex": 40555, "methodVa": "0x1845e3f20",
+            "selectorType": "Beyond.Gameplay.Audio.NarrativeVoiceConfig",
+            "selectorMethod": "SetSpecialOverrideWwiseEvent", "selectorMethodIndex": 40485,
+            "selectorMethodVa": "0x1845e4460", "selectorCallVa": "0x1845e4177",
+            "literalLoadVa": load_va, "literalArgumentRegister": "rax", "literalArgumentInstruction": "mov",
+            "playbackCall": "Beyond.Gameplay.Audio.VoicePlayer.PlayVoice",
+            "playbackCallVa": "0x1845e4196", "playbackParameter": "voiceContext.selectedWwiseEvent",
+            "targetBinding": "narrativeVoiceContext", "triggerRole": "narrative3DRadioOverride",
+            "branchCondition": f"specialOverrideWwiseEvent=={selector_value}",
+        }
+        for selector_value, suffix, load_va in NARRATIVE_3D_RADIO_SELECTOR_ROWS
+    },
+    **{
+        f"au_int_farming_{event_stem}_start": {
+            "consumerType": "Beyond.Gameplay.NatureResourceManager", "consumerMethod": "DoOperation",
+            "methodIndex": 12869, "methodVa": "0x18726a090",
+            "selectorType": "Beyond.Gameplay.NatureResourceManager",
+            "selectorMethod": "m_startSoundMap.TryGetValue", "selectorField": "m_startSoundMap",
+            "selectorFieldOffset": "this+0xd0", "selectorCallVa": "0x18726a2dc",
+            "literalLoadVa": start_load_va, "literalArgumentRegister": "rdx",
+            "literalArgumentInstruction": "dictionaryLookup",
+            "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+            "playbackCallVa": "0x18726a30e", "playbackParameter": "evt",
+            "targetBinding": "natureOperationActorAudioObject", "triggerRole": f"natureOperation{enum_name}Start",
+            "branchCondition": f"operationType==ENatureOperation.{enum_name}({enum_value})",
+        }
+        for event_stem, enum_name, enum_value, start_load_va, _ in NATURE_RESOURCE_SOUND_SELECTOR_ROWS
+    },
+    **{
+        f"au_int_farming_{event_stem}_end": {
+            "consumerType": "Beyond.Gameplay.NatureResourceManager", "consumerMethod": "OperationFinish",
+            "methodIndex": 12876, "methodVa": "0x18726b190",
+            "selectorType": "Beyond.Gameplay.NatureResourceManager",
+            "selectorMethod": "m_endSoundMap.TryGetValue", "selectorField": "m_endSoundMap",
+            "selectorFieldOffset": "this+0xd8", "selectorCallVa": "0x18726b56c",
+            "literalLoadVa": end_load_va, "literalArgumentRegister": "rdx",
+            "literalArgumentInstruction": "dictionaryLookup",
+            "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+            "playbackCallVa": "0x18726b59e", "playbackParameter": "evt",
+            "additionalConsumerMethod": "_FinishOperation", "additionalMethodVa": "0x18726c218",
+            "additionalSelectorCallVa": "0x18726c383", "additionalPlaybackCallVa": "0x18726c3b5",
+            "targetBinding": "natureResourceEntityAudioObject", "triggerRole": f"natureOperation{enum_name}End",
+            "branchCondition": f"operationType==ENatureOperation.{enum_name}({enum_value})",
+        }
+        for event_stem, enum_name, enum_value, _, end_load_va in NATURE_RESOURCE_SOUND_SELECTOR_ROWS
+    },
+}
+MANAGED_AUDIO_CALLSITE_CONTEXTS = {
+    **SELECTOR_AUDIO_CALLSITE_CONTEXTS,
+    "au_ui_event_socialbuildinglike": {
+        "consumerType": "Beyond.Gameplay.Factory.FactorySocialBuildingCircleEffectCtrl",
+        "consumerMethod": "_UpdateBuildingSocialState", "methodIndex": 26304,
+        "methodVa": "0x18408b270", "literalLoadVa": "0x185255f2c",
+        "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        "playbackCall": "nativeStringPositionEventWrapper", "playbackCallVa": "0x185255f42",
+        "playbackParameter": "eventNameAndWorldPosition",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PlaySoundAtPosition",
+        "playbackSinkVa": "0x183b87c60", "targetBinding": "socialBuildingControllerTransformPosition",
+        "triggerRole": "socialBuildingLikeStateChanged",
+        "branchCondition": "updated social state==3 && socialUnit value changed",
+    },
+    "au_ui_popup_levelup_ingame_side": {
+        "consumerType": "Beyond.UI.SquadIcon", "consumerMethod": "_TryShowLevelUpAnim",
+        "methodIndex": 425791, "methodVa": "0x184665560", "literalLoadVa": "0x1852fc2eb",
+        "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "playbackInvocationVa": "0x1852fc2f2", "targetBinding": "globalAudioObject",
+        "triggerRole": "squadIconLevelUpAnimation",
+        "branchCondition": "current level exceeds cached level && component enabled; after PlayInAnimation starts",
+    },
+    "au_weekraid_danger_warnning_start": {
+        "consumerType": "Beyond.Gameplay.Core.WeekRaidGame",
+        "consumerMethod": "_PlayDangerEffectOnMainCharacter", "methodIndex": 71625,
+        "methodVa": "0x186f600f4", "literalLoadVa": "0x186f6041a",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.Core.WeekRaidGame", "selectorMethod": "s_DangerAudio",
+        "selectorField": "s_DangerAudio", "selectorFieldOffset": "static+0x10",
+        "selectorLoadVa": "0x186f60312",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186f60333", "playbackParameter": "gameObject,audioId",
+        "targetBinding": "mainCharacterModelGameObject", "triggerRole": "weekRaidDangerThresholdCrossed",
+        "branchCondition": "UpdateDangerMeter level==1 && current meter rose above previous meter",
+    },
+    "au_int_collection_intteractive": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicCollectionMoon",
+        "consumerMethod": "_OnCollect", "methodIndex": 9058, "methodVa": "0x187141588",
+        "literalLoadVa": "0x1871418d8", "literalArgumentRegister": "rdi",
+        "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.InteractiveLogicCollectionMoon", "selectorMethod": "AUDIO_COLLECT",
+        "selectorField": "AUDIO_COLLECT", "selectorFieldOffset": "static+0x8",
+        "selectorLoadVa": "0x18714164f",
+        "playbackCall": "nativeStringPositionEventWrapper", "playbackCallVa": "0x1871416aa",
+        "playbackParameter": "eventNameAndWorldPosition",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PlaySoundAtPosition",
+        "playbackSinkVa": "0x183b87c60", "targetBinding": "collectionMoonEntityPosition",
+        "triggerRole": "collectionMoonCollected",
+        "branchCondition": "_OnPropertyChangedState invokes _OnCollect; after collected animator flag is set",
+    },
+    "au_int_collection_coin_countingdown": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicCollectionCoin",
+        "consumerMethod": "_PlayDisappearPerform", "methodIndex": 9029,
+        "methodVa": "0x187140d58", "literalLoadVa": "0x187141252",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.InteractiveLogicCollectionCoin",
+        "selectorMethod": "DISAPPEAR_AUDIO_NAME", "selectorField": "DISAPPEAR_AUDIO_NAME",
+        "selectorFieldOffset": "static+0x40", "selectorLoadVa": "0x187140f4e",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187140f6f", "playbackParameter": "entity,audioId",
+        "additionalConsumerType": "Beyond.Gameplay.Core.InteractiveCollectionCoinComponent",
+        "additionalConsumerMethod": "_PlayDisappearPerform", "additionalMethodIndex": 67467,
+        "additionalMethodVa": "0x186eceff4", "additionalLiteralLoadVa": "0x184b88632",
+        "additionalSelectorFieldOffset": "static+0x8", "additionalSelectorLoadVa": "0x186ecf1d3",
+        "additionalPlaybackCallVa": "0x186ecf1f4",
+        "targetBinding": "collectionCoinEntity", "triggerRole": "collectionCoinDisappearCountdown",
+        "branchCondition": "_PlayDisappearPerform after disappear effect creation and countdown duration initialization",
+    },
+    "au_int_gold_coin_eny_die": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.InteractiveGoldCoinBrain",
+        "consumerMethod": "_PlayCreateCoinAudio", "methodIndex": 82819,
+        "methodVa": "0x1870e0f6c", "literalLoadVa": "0x184a3f5c9",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.InteractiveGoldCoinBrain",
+        "selectorMethod": "AUDIO_ENEMY_DIE", "selectorField": "AUDIO_ENEMY_DIE",
+        "selectorFieldOffset": "static+0x28", "selectorLoadVa": "0x1870e0fd6",
+        "playbackCall": "Beyond.Gameplay.Actions.GameAction.PlayAudioAtPosition",
+        "playbackCallVa": "0x1870e1002", "playbackParameter": "audioId,position",
+        "callerMethod": "AddGoldCoin", "callerMethodIndex": 82818,
+        "callerMethodVa": "0x1870ddc34", "callerCallVa": "0x1870de140",
+        "targetBinding": "goldCoinCreationPosition", "triggerRole": "monsterSourceGoldCoinCreated",
+        "branchCondition": "source==EGoldCoinSource.Monster(3)",
+    },
+    "au_int_gold_coin_eny_trigger": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.InteractiveGoldCoinBrain",
+        "consumerMethod": "_PlayGoldCoinDisappearAudio", "methodIndex": 82811,
+        "methodVa": "0x1870e1050", "literalLoadVa": "0x184a3f54e",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.InteractiveGoldCoinBrain",
+        "selectorMethod": "AUDIO_COIN_DISAPPEAR", "selectorField": "AUDIO_COIN_DISAPPEAR",
+        "selectorFieldOffset": "static+0x20", "selectorLoadVa": "0x1870e10b1",
+        "playbackCall": "Beyond.Gameplay.Actions.GameAction.PlayAudioAtPosition",
+        "playbackCallVa": "0x1870e10dd", "playbackParameter": "audioId,position",
+        "callerMethod": "PlayCoinExplodeEffect", "callerMethodIndex": 82810,
+        "callerMethodVa": "0x1870deaf8", "callerCallVa": "0x1870decb2",
+        "targetBinding": "playerPositionPlusGoldCoinEffectOffset",
+        "triggerRole": "goldCoinExplodeDisappear",
+        "branchCondition": "PlayCoinExplodeEffect after the player-relative effect position is calculated",
+    },
+    "au_sfx_enemy_drop_absorbing_02": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.FlyThread",
+        "consumerMethod": "_PlayDisappearAudio", "methodIndex": 82965,
+        "methodVa": "0x183b94370", "literalLoadVa": "0x184d128c9",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.FlyThread",
+        "selectorMethod": "DROP_EFFECT_FIRST", "selectorField": "DROP_EFFECT_FIRST",
+        "selectorFieldOffset": "static+0x0", "selectorLoadVa": "0x183b9444e",
+        "playbackCall": "nativeStringPositionEventWrapper", "playbackCallVa": "0x183b944cc",
+        "playbackParameter": "eventNameAndWorldPosition",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PlaySoundAtPosition",
+        "playbackSinkVa": "0x183b87c60",
+        "callerMethod": "_Finish", "callerMethodIndex": 82964,
+        "callerMethodVa": "0x1870e4f98", "callerCallVa": "0x1870e50cd",
+        "targetBinding": "flyThreadTargetEntityPositionPlusFinishEffectYOffset",
+        "triggerRole": "enemyDropAbsorptionFinish",
+        "branchCondition": "_Finish after absorb effect creation; _PlayDisappearAudio cooldown permits playback",
+    },
+    "au_sfx_enemy_drop_absorbing_01_start": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.FlyThread",
+        "consumerMethod": "_PlayDisappearAudio", "methodIndex": 82965,
+        "methodVa": "0x183b94370", "literalLoadVa": "0x184d128d5",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.Core.GameMech.FlyThread",
+        "selectorMethod": "DROP_EFFECT_SECOND", "selectorField": "DROP_EFFECT_SECOND",
+        "selectorFieldOffset": "static+0x8", "selectorLoadVa": "0x183b94523",
+        "playbackCall": "nativeStringPositionEventWrapper", "playbackCallVa": "0x183b944cc",
+        "playbackParameter": "eventNameAndWorldPosition",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PlaySoundAtPosition",
+        "playbackSinkVa": "0x183b87c60",
+        "callerMethod": "_Finish", "callerMethodIndex": 82964,
+        "callerMethodVa": "0x1870e4f98", "callerCallVa": "0x1870e50cd",
+        "targetBinding": "flyThreadTargetEntityPositionPlusFinishEffectYOffset",
+        "triggerRole": "repeatedEnemyDropAbsorptionFinish",
+        "branchCondition": "_PlayDisappearAudio selects DROP_EFFECT_SECOND while nextRefreshTime is set and current time remains before it",
+    },
+    "au_int_medicalstation_end": {
+        "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryMedicalTowerManager",
+        "consumerMethod": "_DoTick", "methodIndex": 29572,
+        "methodVa": "0x18376c7c0", "literalLoadVa": "0x1850f5db7",
+        "literalArgumentRegister": "rdx", "literalArgumentInstruction": "coldBranchManagedLiteralLoad",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1850f5dd1", "playbackParameter": "entity,audioId",
+        "targetBinding": "medicalTowerEntity", "triggerRole": "mainCharacterExitedMedicalTowerRange",
+        "branchCondition": "the previous range tower no longer contains the main character; after MedicFunctionManager.ClearRangeTower",
+    },
+    "au_int_medicalstation_start": {
+        "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryMedicalTowerManager",
+        "consumerMethod": "_DoTick", "methodIndex": 29572,
+        "methodVa": "0x18376c7c0", "literalLoadVa": "0x1850f5e4e",
+        "literalArgumentRegister": "rdx", "literalArgumentInstruction": "coldBranchManagedLiteralLoad",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1850f5e68", "playbackParameter": "entity,audioId",
+        "targetBinding": "medicalTowerEntity", "triggerRole": "mainCharacterEnteredMedicalTowerRange",
+        "branchCondition": "the nearest medical tower contains the main character; after MedicFunctionManager.SetRangeTower",
+    },
+    "au_ui_hud_tacticalmedicationrecovery": {
+        "consumerType": "Beyond.UI.SquadIcon",
+        "consumerMethod": "_UpdateTacticalItemStatus", "methodIndex": 425800,
+        "methodVa": "0x18339ff90", "literalLoadVa": "0x18504f14d",
+        "literalArgumentRegister": "rcx", "literalArgumentInstruction": "coldBranchManagedLiteralLoad",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "playbackInvocationVa": "0x18504f154",
+        "targetBinding": "globalAudioObject", "triggerRole": "tacticalMedicationChargeRecovered",
+        "branchCondition": "the squad is in combat and current usable tactical-item count exceeds the cached count; after the recovery tween starts",
+    },
+    "au_eny_find_target": {
+        "consumerType": "Beyond.Gameplay.AI.EnemyBattleGraph",
+        "consumerMethod": "OnEnter", "methodIndex": 43420,
+        "methodVa": "0x184134080", "literalLoadVa": "0x184b4a93d",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "configuredAudioNameFieldLoad",
+        "selectorType": "Beyond.Gameplay.AI.EnemyBattleGraph+EnemyBattleGraphData",
+        "selectorMethod": "soundName", "selectorField": "soundName",
+        "selectorFieldOffset": "graphData+0x38", "selectorLoadVa": "0x1841357ab",
+        "playbackCall": "nativeStringPositionEventWrapper", "playbackCallVa": "0x1841357f9",
+        "playbackParameter": "eventNameAndWorldPosition",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PlaySoundAtPosition",
+        "playbackSinkVa": "0x183b87c60",
+        "targetBinding": "enemyBattleGraphEntityPosition", "triggerRole": "enemyBattleGraphEntered",
+        "branchCondition": "EnemyBattleGraph.OnEnter after graph state is initialized; soundName defaults to au_eny_find_target",
+    },
+    "au_int_farming_addsoil": {
+        "consumerType": "Beyond.Gameplay.FacSoilSystem",
+        "consumerMethod": "OnNodeAdded", "methodIndex": 16905,
+        "methodVa": "0x1838fe9f0", "literalLoadVa": "0x1851390a1",
+        "literalArgumentRegister": "rdx", "literalArgumentInstruction": "coldBranchManagedLiteralLoad",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1851390bd", "playbackParameter": "entity,audioId",
+        "targetBinding": "mainCharacterEntity", "triggerRole": "factorySoilNodeAdded",
+        "branchCondition": "the chapter node resolves as a soil node and FacSoilSystem.AddSoilNode completes",
+    },
+    "au_int_anchor_wave_explosion": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore",
+        "consumerMethod": "_DoWaveVFX", "methodIndex": 8698,
+        "methodVa": "0x1870b9270", "literalLoadVa": "0x1870bebb9",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore",
+        "selectorMethod": "ANCHOR_EXPLOSION_AUDIO", "selectorField": "ANCHOR_EXPLOSION_AUDIO",
+        "selectorFieldOffset": "static+0x10", "selectorLoadVa": "0x1870b93c4",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1870b93ec", "playbackParameter": "entity,audioId",
+        "targetBinding": "anchorWaveCoreEntity", "triggerRole": "anchorWaveExplosion",
+        "branchCondition": "_DoWaveVFX after creating the wave effect at the anchor entity position",
+    },
+    "au_int_anchor_wave_diffusion": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore",
+        "consumerMethod": "_DoWaveVFX", "methodIndex": 8698,
+        "methodVa": "0x1870b9270", "literalLoadVa": "0x1870bebd1",
+        "literalArgumentRegister": "rdx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore",
+        "selectorMethod": "ANCHOR_WAVE_SPREAD_AUDIO", "selectorField": "ANCHOR_WAVE_SPREAD_AUDIO",
+        "selectorFieldOffset": "static+0x18", "selectorLoadVa": "0x1870b941e",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1870b9422", "playbackParameter": "entity,audioId",
+        "targetBinding": "anchorWaveCoreEntity", "triggerRole": "anchorWaveSpread",
+        "branchCondition": "_DoWaveVFX immediately after the anchor explosion Event",
+    },
+    "au_int_anchor_idle": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicSimpleAnchorWaveCore",
+        "consumerMethod": "_HideSceneDynamicObjectEffectWithCondition", "methodIndex": 10210,
+        "methodVa": "0x187203704", "literalLoadVa": "0x187204d89",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.InteractiveLogicSimpleAnchorWaveCore",
+        "selectorMethod": "ANCHOR_IDLE_AUDIO", "selectorField": "ANCHOR_IDLE_AUDIO",
+        "selectorFieldOffset": "static+0x0", "selectorLoadVa": "0x18720380c",
+        "playbackCall": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneConditionHelper.PlayLoopAudioIfNecessary",
+        "playbackCallVa": "0x18720381d", "playbackParameter": "sceneDynamicMono,audioId",
+        "targetBinding": "anchorSceneDynamicMono", "triggerRole": "anchorIdleLoopRestore",
+        "branchCondition": "anchor state is idle and scene dynamic object effect is being restored",
+    },
+    "au_env_npc_butterflyclust_small_interactall": {
+        "consumerType": "Beyond.Gameplay.Core.GuideButterflyModuleController",
+        "consumerMethod": "_OnSmallButterflyCollected", "methodIndex": 73832,
+        "methodVa": "0x186f9ec3c", "literalLoadVa": "0x184d50759",
+        "literalArgumentRegister": "rbx", "literalArgumentInstruction": "staticAudioIdFieldLoad",
+        "selectorType": "Beyond.Gameplay.Core.GuideButterflyModuleController",
+        "selectorMethod": "ALL_SMALL_BUTTER_FLY_COLLECTED_AUDIO",
+        "selectorField": "ALL_SMALL_BUTTER_FLY_COLLECTED_AUDIO",
+        "selectorFieldOffset": "static+0x0", "selectorLoadVa": "0x186f9edaf",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186f9ee02", "playbackParameter": "entity,audioId",
+        "additionalPlaybackCall": "nativeStringEventWrapper",
+        "additionalPlaybackCallVa": "0x186f9edc1",
+        "targetBinding": "collectedSmallButterflyEntityWhenResolvedOtherwiseGlobal",
+        "triggerRole": "allSmallGuideButterfliesCollected",
+        "branchCondition": "the pending small-butterfly id set becomes empty after collection",
+    },
+    "au_gameplay_common_scanning_feedback_lv1": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.TreasureHuntBrain",
+        "consumerMethod": "OnTriggerScanInteractive",
+        "methodIndex": 83368,
+        "methodVa": "0x18710e248",
+        "literalLoadVa": "0x18710e81e",
+        "playbackCall": "Beyond.Gameplay.Actions.GameAction.PlayAudio",
+        "playbackCallVa": "0x18710e773",
+        "targetBinding": "scannedInteractiveModelGameObject",
+        "triggerRole": "scanFeedbackLevel1",
+    },
+    "au_int_campfire_recover": {
+        "consumerType": "Beyond.Gameplay.Core.InteractiveCampfireComponent",
+        "consumerMethod": "_LocalReqRecovery",
+        "methodIndex": 67409,
+        "methodVa": "0x186ecd03c",
+        "literalLoadVa": "0x186ecd141",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186ecd15d",
+        "targetBinding": "componentAudioObject",
+        "triggerRole": "localRecoveryRequest",
+    },
+    "au_int_box_collision": {
+        "consumerType": "Beyond.Gameplay.Core.PushableComponent",
+        "consumerMethod": "_InternalUpdateAttached",
+        "methodIndex": 69383,
+        "methodVa": "0x186f10b18",
+        "literalLoadVa": "0x186f10c07",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186f10c11",
+        "targetBinding": "componentAudioObject",
+        "triggerRole": "attachedCollisionUpdate",
+    },
+    "au_ui_button_hyperlink": {
+        "consumerType": "Beyond.UI.UIText", "consumerMethod": "OnPointerClick",
+        "methodIndex": 397877, "methodVa": "0x18b08c134",
+        "literalLoadVa": "0x18b08c2e1", "literalArgumentRegister": "rcx",
+        "playbackCall": "Beyond.Audio.AudioUIUtil.PostUIEvent",
+        "playbackCallVa": "0x18b08c2e8", "playbackParameter": "eventName",
+        "targetBinding": "clickedUiGameObject", "triggerRole": "hyperlinkClick",
+    },
+    "au_ui_event_growcabin_finish": {
+        "consumerType": "Beyond.Gameplay.SpaceshipGrowCabinViewHandler", "consumerMethod": "_PlayGrowFinishAudio",
+        "methodIndex": 12126, "methodVa": "0x187252d68",
+        "literalLoadVa": "0x187252dbf", "literalArgumentRegister": "r8",
+        "playbackCall": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneConditionHelper.PlaySoundAtPlantPos",
+        "playbackCallVa": "0x187252dce", "playbackParameter": "soundEventName",
+        "targetBinding": "cabinPlantPosition", "triggerRole": "growCabinFinish",
+    },
+    "au_gameplay_common_scanning_feedback_lv2": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.TreasureHuntBrain", "consumerMethod": "OnTriggerScanInteractive",
+        "methodIndex": 83368, "methodVa": "0x18710e248",
+        "literalLoadVa": "0x18710e7f0", "literalArgumentRegister": "rcx",
+        "playbackCall": "Beyond.Gameplay.Actions.GameAction.PlayAudio",
+        "playbackCallVa": "0x18710e773", "playbackParameter": "audioEventKey",
+        "targetBinding": "scannedInteractiveModelGameObject", "triggerRole": "scanFeedbackLevel2",
+    },
+    "au_gameplay_common_scanning_feedback_lv3": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.TreasureHuntBrain", "consumerMethod": "OnTriggerScanInteractive",
+        "methodIndex": 83368, "methodVa": "0x18710e248",
+        "literalLoadVa": "0x18710e766", "literalArgumentRegister": "rcx",
+        "playbackCall": "Beyond.Gameplay.Actions.GameAction.PlayAudio",
+        "playbackCallVa": "0x18710e773", "playbackParameter": "audioEventKey",
+        "targetBinding": "scannedInteractiveModelGameObject", "triggerRole": "scanFeedbackLevel3",
+    },
+    "au_int_anchor_wave_brokensapling_active": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "_TickBroken",
+        "methodIndex": 8790, "methodVa": "0x187146e90",
+        "literalLoadVa": "0x187146edc", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x187146ee9", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "brokenSaplingActiveTick",
+    },
+    "au_int_anchor_wave_brokensapling_idle_loop": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "Init",
+        "methodIndex": 8780, "methodVa": "0x187145544",
+        "literalLoadVa": "0x187145591", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x18714559e", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "brokenSaplingInitialization",
+    },
+    "au_int_blightmiasma_screen_idle": {
+        "consumerType": "Beyond.Gameplay.BlightMiasmaBrain", "consumerMethod": "_PlayMiasmaIdleAudio",
+        "methodIndex": 11360, "methodVa": "0x18721cfa4",
+        "literalLoadVa": "0x18721d025", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x18721d02f", "playbackParameter": "evt",
+        "targetBinding": "blightMiasmaEntity", "triggerRole": "miasmaScreenIdle",
+    },
+    "au_int_blightmiasma_screen_enter": {
+        "consumerType": "Beyond.Gameplay.BlightMiasmaBrain", "consumerMethod": "_EnableBlightMiasma",
+        "methodIndex": 11367, "methodVa": "0x18721c958",
+        "literalLoadVa": "0x18721cad6", "literalArgumentRegister": "rdx",
+        "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.BlightMiasmaBrain._PlayMiasmaAudio",
+        "playbackCallVa": "0x18721cae3", "playbackParameter": "eventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x18721cf6a",
+        "targetBinding": "mainCharacterAudioObject", "triggerRole": "miasmaScreenEnter",
+        "branchCondition": "_EnableBlightMiasma after enabling tolerance updates and screen effect",
+    },
+    "au_int_blightmiasma_screen_dying": {
+        "consumerType": "Beyond.Gameplay.BlightMiasmaBrain", "consumerMethod": "_UpdateCurrentTolerance",
+        "methodIndex": 11371, "methodVa": "0x18459c260",
+        "literalLoadVa": "0x1852e1b5a", "literalArgumentRegister": "rdx",
+        "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.BlightMiasmaBrain._PlayMiasmaAudio",
+        "playbackCallVa": "0x1852e1b67", "playbackParameter": "eventName",
+        "playbackSink": "Beyond.Gameplay.Audio.AudioManager.PostEvent", "playbackSinkVa": "0x183288a80",
+        "playbackSinkInvocationVa": "0x18721cf6a",
+        "targetBinding": "mainCharacterAudioObject", "triggerRole": "miasmaToleranceEnteredDanger",
+        "branchCondition": "previous tolerance safe && updated tolerance enters danger threshold",
+    },
+    "au_int_erosion_sludge_under_scanner": {
+        "consumerType": "Beyond.Gameplay.Core.ErosionSludgeCoreComponent", "consumerMethod": "OnBeginScanned",
+        "methodIndex": 66946, "methodVa": "0x186eaa5b4",
+        "literalLoadVa": "0x186eaa6cc", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186eaa6e8", "playbackParameter": "evt",
+        "targetBinding": "erosionSludgeEntity", "triggerRole": "beginScanned",
+    },
+    "au_int_rune_column_disappear": {
+        "consumerType": "Beyond.Gameplay.Core.InteractiveRuneAnchorPointComponent", "consumerMethod": "SetHideState",
+        "methodIndex": 68437, "methodVa": "0x186ee4f7c",
+        "literalLoadVa": "0x186ee5005", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186ee500c", "playbackParameter": "evt",
+        "targetBinding": "runeAnchorEntity", "triggerRole": "hideStateDisappear",
+    },
+    "au_int_rune_column_reappear": {
+        "consumerType": "Beyond.Gameplay.Core.InteractiveRuneAnchorPointComponent", "consumerMethod": "SetHideState",
+        "methodIndex": 68437, "methodVa": "0x186ee4f7c",
+        "literalLoadVa": "0x186ee4ff7", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186ee500c", "playbackParameter": "evt",
+        "targetBinding": "runeAnchorEntity", "triggerRole": "hideStateReappear",
+    },
+    "au_int_seesaw_end": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicSeesaw", "consumerMethod": "_AudioEventEnd",
+        "methodIndex": 10188, "methodVa": "0x187200c48",
+        "literalLoadVa": "0x187200cb4", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187200cbe", "playbackParameter": "evt",
+        "targetBinding": "seesawEntity", "triggerRole": "seesawEnd",
+    },
+    "au_int_seesaw_shaking": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicSeesaw", "consumerMethod": "_AudioEventShaking",
+        "methodIndex": 10189, "methodVa": "0x187200cf4",
+        "literalLoadVa": "0x187200d60", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187200d6a", "playbackParameter": "evt",
+        "targetBinding": "seesawEntity", "triggerRole": "seesawShaking",
+    },
+    "au_int_seesaw_start": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicSeesaw", "consumerMethod": "_AudioEventStart",
+        "methodIndex": 10187, "methodVa": "0x187200da0",
+        "literalLoadVa": "0x187200e0c", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187200e16", "playbackParameter": "evt",
+        "targetBinding": "seesawEntity", "triggerRole": "seesawStart",
+    },
+    "au_int_telescopic_fold_end": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicTelescopic", "consumerMethod": "_AudioRetractPlateEnd",
+        "methodIndex": 10322, "methodVa": "0x18720789c",
+        "literalLoadVa": "0x187207908", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187207912", "playbackParameter": "evt",
+        "targetBinding": "telescopicEntity", "triggerRole": "retractPlateEnd",
+    },
+    "au_int_telescopic_fold_start": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicTelescopic", "consumerMethod": "_AudioRetractRailStart",
+        "methodIndex": 10319, "methodVa": "0x187207aa0",
+        "literalLoadVa": "0x187207b0c", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187207b16", "playbackParameter": "evt",
+        "targetBinding": "telescopicEntity", "triggerRole": "retractRailStart",
+    },
+    "au_int_telescopic_parapet_unfold_loop": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicTelescopic", "consumerMethod": "_AudioExtendRailStart",
+        "methodIndex": 10316, "methodVa": "0x187207744",
+        "literalLoadVa": "0x1872077b0", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1872077ba", "playbackParameter": "evt",
+        "targetBinding": "telescopicEntity", "triggerRole": "extendRailStart",
+    },
+    "au_int_telescopic_plate_fold_loop": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicTelescopic", "consumerMethod": "_AudioRetractPlateStart",
+        "methodIndex": 10320, "methodVa": "0x187207948",
+        "literalLoadVa": "0x1872079b4", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1872079be", "playbackParameter": "evt",
+        "targetBinding": "telescopicEntity", "triggerRole": "retractPlateStart",
+    },
+    "au_int_telescopic_unfold_end": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicTelescopic", "consumerMethod": "_AudioExtendRailEnd",
+        "methodIndex": 10318, "methodVa": "0x187207698",
+        "literalLoadVa": "0x187207704", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x18720770e", "playbackParameter": "evt",
+        "targetBinding": "telescopicEntity", "triggerRole": "extendRailEnd",
+    },
+    "au_int_telescopic_unfold_start": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicTelescopic", "consumerMethod": "_AudioExtendPlateStart",
+        "methodIndex": 10315, "methodVa": "0x1872075ec",
+        "literalLoadVa": "0x187207658", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187207662", "playbackParameter": "evt",
+        "targetBinding": "telescopicEntity", "triggerRole": "extendPlateStart",
+    },
+    "au_int_wash_stain_tip": {
+        "consumerType": "Beyond.Gameplay.InteractiveStainComponent", "consumerMethod": "OnCoreStateChanged",
+        "methodIndex": 8608, "methodVa": "0x1870c3adc",
+        "literalLoadVa": "0x1870c3bac", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1870c3bc8", "playbackParameter": "evt",
+        "targetBinding": "stainEntity", "triggerRole": "coreStateChanged",
+    },
+    "au_int_water_start": {
+        "consumerType": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume", "consumerMethod": "_UpdateInfiniteWaterMeshPos",
+        "methodIndex": 74956, "methodVa": "0x1870070f4",
+        "literalLoadVa": "0x1870074b3", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1870074bd", "playbackParameter": "evt",
+        "targetBinding": "infiniteWaterGameObject", "triggerRole": "infiniteWaterPositionUpdate",
+    },
+    "au_int_water_stop": {
+        "consumerType": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume", "consumerMethod": "_OnInfiniteWaterMeshPosUpdateFinished",
+        "methodIndex": 74957, "methodVa": "0x187006e14",
+        "literalLoadVa": "0x187006ebf", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x187006ec9", "playbackParameter": "evt",
+        "targetBinding": "infiniteWaterGameObject", "triggerRole": "infiniteWaterPositionUpdateFinished",
+    },
+    "au_item_collect_common_3p": {
+        "consumerType": "Beyond.Gameplay.Core.DropItemBehaviourComponent", "consumerMethod": "_PlayAudioDrop",
+        "methodIndex": 66760, "methodVa": "0x183bee140",
+        "literalLoadVa": "0x183bee20e", "literalArgumentRegister": "rcx",
+        "playbackCall": "Beyond.Gameplay.Actions.GameAction.PlayAudioAtPosition",
+        "playbackCallVa": "0x183bee227", "playbackParameter": "audioEventKey",
+        "targetBinding": "dropItemPosition", "triggerRole": "itemDrop",
+    },
+    "au_ui_battle_enemy_imbalance": {
+        "consumerType": "Beyond.Gameplay.Core.AbilitySystem+PoiseController", "consumerMethod": "ModifyPoise",
+        "methodIndex": 54924, "methodVa": "0x1843c54e0",
+        "literalLoadVa": "0x1843c5a77", "literalArgumentRegister": "rdx",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1843c5a81", "playbackParameter": "evt",
+        "targetBinding": "abilityOwnerEntity", "triggerRole": "enemyPoiseImbalance",
+    },
+    "au_int_anchor_wave_idlesapling_hit": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "_ChangeState",
+        "methodIndex": 8774, "methodVa": "0x187145bfc",
+        "literalLoadVa": "0x187145cd4", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x187145ceb", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "state4Hit",
+        "branchCondition": "get_canBreak=false",
+    },
+    "au_int_anchor_wave_brokensapling_hit": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "_ChangeState",
+        "methodIndex": 8774, "methodVa": "0x187145bfc",
+        "literalLoadVa": "0x187145cdd", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "cmovne",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x187145ceb", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "state4Hit",
+        "branchCondition": "get_canBreak=true",
+    },
+    "au_int_anchor_wave_idlesapling_destory": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "_ChangeState",
+        "methodIndex": 8774, "methodVa": "0x187145bfc",
+        "literalLoadVa": "0x187145cfa", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x187145d11", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "state4Destroy",
+        "branchCondition": "get_canBreak=false",
+    },
+    "au_int_anchor_wave_brokensapling_destory": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "_ChangeState",
+        "methodIndex": 8774, "methodVa": "0x187145bfc",
+        "literalLoadVa": "0x187145d03", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "cmovne",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x187145d11", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "state4Destroy",
+        "branchCondition": "get_canBreak=true",
+    },
+    "au_int_anchor_wave_idlesapling_enterarea": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "_ChangeState",
+        "methodIndex": 8774, "methodVa": "0x187145bfc",
+        "literalLoadVa": "0x187145d6c", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x187145d83", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "enterArea",
+        "branchCondition": "get_canBreak=false",
+    },
+    "au_int_anchor_wave_brokensapling_enterarea": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling", "consumerMethod": "_ChangeState",
+        "methodIndex": 8774, "methodVa": "0x187145bfc",
+        "literalLoadVa": "0x187145d75", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "cmovne",
+        "playbackCall": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Sapling._PostAudioEvent",
+        "playbackCallVa": "0x187145d83", "playbackParameter": "audioEventName",
+        "targetBinding": "anchorWaveSapling", "triggerRole": "enterArea",
+        "branchCondition": "get_canBreak=true",
+    },
+    "au_int_anchor_wave_movingsapling_hit": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Slug", "consumerMethod": "_PostOnHitAudioEvent",
+        "methodIndex": 8807, "methodVa": "0x187147940",
+        "literalLoadVa": "0x1871479a3", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1871479bf", "playbackParameter": "evt",
+        "targetBinding": "movingSaplingEntity", "triggerRole": "onHitFirstEvent",
+        "branchCondition": "unpatchedMethodPath",
+    },
+    "au_int_anchor_wave_movingsapling_destory": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicAnchorWaveCore+Slug", "consumerMethod": "_PostOnHitAudioEvent",
+        "methodIndex": 8807, "methodVa": "0x187147940",
+        "literalLoadVa": "0x1871479d6", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x1871479e1", "playbackParameter": "evt",
+        "targetBinding": "movingSaplingEntity", "triggerRole": "onHitSecondEvent",
+        "branchCondition": "unpatchedMethodPath",
+    },
+    "au_int_box_touch": {
+        "consumerType": "Beyond.Gameplay.Core.PushableComponent", "consumerMethod": "_SetState",
+        "methodIndex": 69381, "methodVa": "0x186f117d4",
+        "literalLoadVa": "0x186f11886", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186f11890", "playbackParameter": "evt",
+        "targetBinding": "pushableAudioObject", "triggerRole": "enterState2",
+        "branchCondition": "previousState!=2 && newState==2",
+    },
+    "au_int_box_move_stop": {
+        "consumerType": "Beyond.Gameplay.Core.PushableComponent", "consumerMethod": "_SetState",
+        "methodIndex": 69381, "methodVa": "0x186f117d4",
+        "literalLoadVa": "0x186f118c5", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186f118cf", "playbackParameter": "evt",
+        "targetBinding": "pushableAudioObject", "triggerRole": "leaveState2",
+        "branchCondition": "previousState==2 && newState!=2",
+    },
+    "au_int_box_fall_high": {
+        "consumerType": "Beyond.Gameplay.Core.PushableComponent", "consumerMethod": "_SetState",
+        "methodIndex": 69381, "methodVa": "0x186f117d4",
+        "literalLoadVa": "0x186f11903", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186f1192d", "playbackParameter": "evt",
+        "targetBinding": "pushableAudioObject", "triggerRole": "leaveState4FallBranch",
+        "branchCondition": "previousState==4 && newState!=4 && m_fallSpeed<=10.0",
+    },
+    "au_int_box_fall_low": {
+        "consumerType": "Beyond.Gameplay.Core.PushableComponent", "consumerMethod": "_SetState",
+        "methodIndex": 69381, "methodVa": "0x186f117d4",
+        "literalLoadVa": "0x186f11911", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        "playbackCall": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+        "playbackCallVa": "0x186f1192d", "playbackParameter": "evt",
+        "targetBinding": "pushableAudioObject", "triggerRole": "leaveState4FallBranch",
+        "branchCondition": "previousState==4 && newState!=4 && m_fallSpeed>10.0",
+    },
+    "au_fac_amb_opening": {
+        "consumerType": "Beyond.Gameplay.Audio.AudioRemoteFactoryBridge", "consumerMethod": "TriggerFactoryMainRegionAudio",
+        "methodIndex": 39720, "methodVa": "0x1846bcc00",
+        "literalLoadVa": "0x1846bccce", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        "playbackCall": "nativeStringEventWrapper",
+        "playbackCallVa": "0x183287c90", "playbackParameter": "eventName",
+        "playbackHashCall": "Beyond.Audio.AudioHashGenerator.Compute", "playbackHashCallVa": "0x18328dcd0",
+        "playbackSink": "Beyond.Audio.AudioAdapter._PostEvent", "playbackSinkVa": "0x18328a690",
+        "targetBinding": "globalAudioObject", "triggerRole": "factoryMainRegionOpening",
+        "branchCondition": "directTailCallAfterFactoryAnnouncement",
+    },
+    "au_ui_battle_combo_skill": {
+        "consumerType": "Beyond.Gameplay.Core.BattleManager", "consumerMethod": "PendingComboSkill",
+        "methodIndex": 59554, "methodVa": "0x186d7411c",
+        "literalLoadVa": "0x186d745d9", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        "playbackCall": "nativeStringEventWrapper",
+        "playbackCallVa": "0x183287c90", "playbackParameter": "eventName",
+        "playbackHashCall": "Beyond.Audio.AudioHashGenerator.Compute", "playbackHashCallVa": "0x18328dcd0",
+        "playbackSink": "Beyond.Audio.AudioAdapter._PostEvent", "playbackSinkVa": "0x18328a690",
+        "targetBinding": "globalAudioObject", "triggerRole": "pendingComboSkillUiCue",
+        "branchCondition": "r14d!=0 timing branch before PlayComboSkillVoice",
+    },
+    "au_ui_event_inventory_destory_animation": {
+        "consumerType": "Beyond.Gameplay.AbandonPackSystem", "consumerMethod": "_HandlePackCreateMessage",
+        "methodIndex": 15569, "methodVa": "0x1872b1fd8",
+        "literalLoadVa": "0x1872b2086", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "abandonPackCreateAnimation",
+    },
+    "au_ui_event_remote_start": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.MainCharRemoteCommBrain", "consumerMethod": "_PostAudioEvent",
+        "methodIndex": 83168, "methodVa": "0x1870f4810",
+        "literalLoadVa": "0x1870f485d", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "remoteCommunicationStart",
+        "branchCondition": "unpatchedMethodPath",
+    },
+    "au_ui_event_spaceshipscreen_pageflip": {
+        "consumerType": "SpaceShipReceptionRoomImagePoster", "consumerMethod": "_EnqueueImagePoster",
+        "methodIndex": 163, "methodVa": "0x186a8db0c",
+        "literalLoadVa": "0x186a8dbfb", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "imagePosterWorldPosition", "triggerRole": "spaceshipImagePosterPageFlip",
+    },
+    "au_ui_hud_hiddentube_outofrange": {
+        "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnUdpipeConnectPreviewOutOfRange",
+        "methodIndex": 29012, "methodVa": "0x182abf3a0",
+        "literalLoadVa": "0x182abf8f6", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "udpipeConnectPreviewOutOfRange",
+    },
+    "au_ui_mission_step_target": {
+        "consumerType": "Beyond.Gameplay.MissionTrackerUpdate", "consumerMethod": "UpdateMissionTrackers",
+        "methodIndex": 21308, "methodVa": "0x1830a4ec0",
+        "literalLoadVa": "0x1830a51fa", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "missionTrackerStepTargetUpdate",
+    },
+    "au_ui_plant_cultivation": {
+        "consumerType": "Beyond.Gameplay.Core.IntFacSoilComponent", "consumerMethod": "_DoReclaim",
+        "methodIndex": 69046, "methodVa": "0x186ef1240",
+        "literalLoadVa": "0x186ef129b", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "soilReclaimOperation",
+        "branchCondition": "isDisableInteract=false",
+    },
+    "au_ui_plant_gather": {
+        "consumerType": "Beyond.Gameplay.Core.IntFacSoilComponent", "consumerMethod": "_DoHarvest",
+        "methodIndex": 69047, "methodVa": "0x186ef0f14",
+        "literalLoadVa": "0x186ef0f6f", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "soilHarvestOperation",
+        "branchCondition": "isDisableInteract=false",
+    },
+    "au_ui_plant_water": {
+        "consumerType": "Beyond.Gameplay.Core.IntFacSoilComponent", "consumerMethod": "_DoWatering",
+        "methodIndex": 69045, "methodVa": "0x186ef12e4",
+        "literalLoadVa": "0x186ef133f", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "soilWateringOperation",
+        "branchCondition": "isDisableInteract=false",
+    },
+    "au_ui_toast_snsnewdialogtoast_open": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain+<_ShowStartCoroutine>d__106", "consumerMethod": "MoveNext",
+        "methodIndex": 83119, "methodVa": "0x1871026d8",
+        "literalLoadVa": "0x187102bc0", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "snsNewDialogToastOpen",
+    },
+    "au_ui_toast_tasktrack_countdowntoast_rank": {
+        "consumerType": "Beyond.UI.UIRaceModuleRankController", "consumerMethod": "_UpdateRaceModuleRank",
+        "methodIndex": 426688, "methodVa": "0x18b144c24",
+        "literalLoadVa": "0x18b144d73", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "raceModuleRankUpdate",
+    },
+    "au_eny_general_death_dissolve": {
+        "consumerType": "Beyond.Gameplay.Core.EnemyController", "consumerMethod": "OnDie",
+        "methodIndex": 64304, "methodVa": "0x18420f8a0",
+        "literalLoadVa": "0x184211c00", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "enemyDeathWorldPosition", "triggerRole": "enemyDeathDissolve",
+    },
+    "au_global_dungeon_reset": {
+        "consumerType": "Beyond.Gameplay.Audio.AudioManager", "consumerMethod": "OnMapReset",
+        "methodIndex": 38912, "methodVa": "0x186ac3470",
+        "literalLoadVa": "0x186ac34c4", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "mapReset",
+    },
+    "au_int_erosion_disappear": {
+        "consumerType": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneErosionSystem", "consumerMethod": "_StartErosionPerformance",
+        "methodIndex": 84027, "methodVa": "0x1871175ec",
+        "literalLoadVa": "0x1871177e9", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "erosionWorldPosition", "triggerRole": "erosionPerformanceStart",
+    },
+    "au_int_factory_upgrade_bot_interact": {
+        "consumerType": "Beyond.Gameplay.Core.FacRegionUpgradeSystemComponent", "consumerMethod": "_OpenFacRegionUpgradePanel",
+        "methodIndex": 67043, "methodVa": "0x186ec4558",
+        "literalLoadVa": "0x186ec45d4", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "openFactoryRegionUpgradePanel",
+    },
+    "au_int_forge_iron_success": {
+        "consumerType": "Beyond.UI.ForgeIronTemperatureCircleUI", "consumerMethod": "_SetState",
+        "methodIndex": 426287, "methodVa": "0x18b12b90c",
+        "literalLoadVa": "0x18b12bb49", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "forgeIronSuccessState",
+    },
+    "au_int_mining_machine_eject": {
+        "consumerType": "Beyond.Gameplay.InteractiveLogicRotatePlatform", "consumerMethod": "_EnterIdleRunningState",
+        "methodIndex": 10129, "methodVa": "0x1871fdf08",
+        "literalLoadVa": "0x1871fdf55", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "rotatePlatformEnterIdleRunning",
+    },
+    "au_int_socialcircle_active": {
+        "consumerType": "Beyond.Gameplay.Factory.FactorySocialBuildingCircleEffectCtrl", "consumerMethod": "_PlaySoundEffect",
+        "methodIndex": 26306, "methodVa": "0x1874d2030",
+        "literalLoadVa": "0x1874d20dc", "literalArgumentRegister": "rdi", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "socialBuildingWorldPosition", "triggerRole": "socialCircleActivate",
+        "branchCondition": "requestedState==2 && currentState==3",
+    },
+    "au_int_socialcircle_inactive": {
+        "consumerType": "Beyond.Gameplay.Factory.FactorySocialBuildingCircleEffectCtrl", "consumerMethod": "_PlaySoundEffect",
+        "methodIndex": 26306, "methodVa": "0x1874d2030",
+        "literalLoadVa": "0x1874d20f3", "literalArgumentRegister": "rdi", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "socialBuildingWorldPosition", "triggerRole": "socialCircleDeactivate",
+        "branchCondition": "requestedState==3 && currentState==2",
+    },
+    "au_int_systempoi_building_dissolve": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.InteractiveUpgradePerformBrain", "consumerMethod": "_SetupModelChangeTimer",
+        "methodIndex": 82885, "methodVa": "0x1870e8d0c",
+        "literalLoadVa": "0x1870e8e95", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "upgradeBuildingWorldPosition", "triggerRole": "buildingModelDissolve",
+    },
+    "au_int_systempoi_building_generated": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.InteractiveUpgradePerformBrain", "consumerMethod": "_AfterModelChange",
+        "methodIndex": 82892, "methodVa": "0x1870e80ac",
+        "literalLoadVa": "0x1870e81de", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "upgradeBuildingWorldPosition", "triggerRole": "buildingModelGenerated",
+    },
+    "au_int_water_outlet_cdg004_working": {
+        "consumerType": "Beyond.Gameplay.Core.InteractiveOutFallComponent", "consumerMethod": "OnCoreStateChanged",
+        "methodIndex": 68324, "methodVa": "0x186edfde4",
+        "literalLoadVa": "0x186edfedf", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "waterOutfallWorkingState",
+        "branchCondition": "newCoreState!=0",
+    },
+    "au_ui_belt_confirm": {
+        "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnConveyorWholeConfirmed",
+        "methodIndex": 28989, "methodVa": "0x18752bcfc",
+        "literalLoadVa": "0x18752bd49", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "conveyorWholeConfirmed",
+    },
+    "au_ui_btn_info_map": {
+        "consumerType": "Beyond.Gameplay.Actions.ShowEnterDungeonUI", "consumerMethod": "Execute",
+        "methodIndex": 36132, "methodVa": "0x18766ceb8",
+        "literalLoadVa": "0x18766cf92", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "showEnterDungeonUi",
+    },
+    "au_ui_char_campfire_revive": {
+        "consumerType": "Beyond.Gameplay.Core.SquadManager", "consumerMethod": "_OnRest",
+        "methodIndex": 60487, "methodVa": "0x183a99a30",
+        "literalLoadVa": "0x183a99ba9", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "squadRestCampfireRevive",
+    },
+    "au_ui_char_revive": {
+        "consumerType": "Beyond.Gameplay.Core.SquadManager", "consumerMethod": "_OnReviveByItem",
+        "methodIndex": 60491, "methodVa": "0x186db37e0",
+        "literalLoadVa": "0x186db3a77", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_POSITION_EVENT_PLAYBACK,
+        "targetBinding": "revivedCharacterWorldPosition", "triggerRole": "reviveCharacterByItem",
+    },
+    "au_ui_exceed_cast_distance": {
+        "consumerType": "Beyond.Gameplay.Core.Skill", "consumerMethod": "_StartShowOutOfRangeHint",
+        "methodIndex": 53890, "methodVa": "0x186ca7c18",
+        "literalLoadVa": "0x186ca8063", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "skillCastOutOfRangeHint",
+    },
+    "au_ui_fac_checkerboard_fail": {
+        "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnBuildingPreviewPositionRotationChanged",
+        "methodIndex": 29002, "methodVa": "0x18752ba14",
+        "literalLoadVa": "0x18752ba60", "literalArgumentRegister": "rbx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "factoryCheckerboardPlacementFail",
+        "branchCondition": "positionRotationValid=false",
+    },
+    "au_ui_fac_no_power": {
+        "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnChapterPowerOutage",
+        "methodIndex": 28984, "methodVa": "0x18752babc",
+        "literalLoadVa": "0x18752bb23", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "factoryChapterPowerOutage",
+    },
+    "au_ui_medicine_read": {
+        "consumerType": "Beyond.Gameplay.Core.AbilitySystem+TacticalItem", "consumerMethod": "_Cast",
+        "methodIndex": 55016, "methodVa": "0x186cc6338",
+        "literalLoadVa": "0x186cc6843", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "tacticalMedicineCast",
+    },
+    "au_ui_power_pole_connect": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.PowerPoleBrain", "consumerMethod": "DoLinkFacPowerPole",
+        "methodIndex": 83212, "methodVa": "0x1870f6778",
+        "literalLoadVa": "0x1870f695d", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "factoryPowerPoleLinked",
+    },
+    "au_ui_recover_skill": {
+        "consumerType": "Beyond.Gameplay.Core.ObtainCostAction", "consumerMethod": "ExecuteInternal",
+        "methodIndex": 56881, "methodVa": "0x184246060",
+        "literalLoadVa": "0x184246fa6", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "recoverSkillCostAction",
+    },
+    "au_ui_scan": {
+        "consumerType": "Beyond.Gameplay.ScanInteractive", "consumerMethod": "Scan",
+        "methodIndex": 15540, "methodVa": "0x1872b80c8",
+        "literalLoadVa": "0x1872b836b", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "interactiveScan",
+    },
+    "au_ui_sprint_errors": {
+        "consumerType": "Beyond.UI.UIMainCharFootBarArc", "consumerMethod": "_OnDashFailed",
+        "methodIndex": 426053, "methodVa": "0x18b12f770",
+        "literalLoadVa": "0x18b12f7c9", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "dashFailed",
+    },
+    "au_ui_ultskill_cd_complete": {
+        "consumerType": "Beyond.UI.SkillButton", "consumerMethod": "OnUspChange",
+        "methodIndex": 425705, "methodVa": "0x183d40940",
+        "literalLoadVa": "0x183d41298", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_FORWARDER_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "ultimateSkillCooldownComplete",
+    },
+    "au_vibration_common_action_fail": {
+        "consumerType": "Beyond.UI.MobileMotionManager", "consumerMethod": "PostEventCommonOperateFailure",
+        "methodIndex": 400620, "methodVa": "0x18b0f7e48",
+        "literalLoadVa": "0x18b0f7e7d", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        **NATIVE_MOBILE_MOTION_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "commonOperationFailureMotion",
+        "branchCondition": "controllerCachedMotion && motionManagerEnabled",
+    },
+    "au_vibration_common_action_success": {
+        "consumerType": "Beyond.UI.MobileMotionManager", "consumerMethod": "PostEventCommonOperateSuccess",
+        "methodIndex": 400619, "methodVa": "0x18b0f7ebc",
+        "literalLoadVa": "0x18b0f7ef1", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        **NATIVE_MOBILE_MOTION_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "commonOperationSuccessMotion",
+        "branchCondition": "controllerCachedMotion && motionManagerEnabled",
+    },
+    "au_vibration_common_short": {
+        "consumerType": "Beyond.UI.MobileMotionManager", "consumerMethod": "PostEventCommonShort",
+        "methodIndex": 400618, "methodVa": "0x18b0f7f30",
+        "literalLoadVa": "0x18b0f7f65", "literalArgumentRegister": "rdx", "literalArgumentInstruction": "mov",
+        **NATIVE_MOBILE_MOTION_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "commonShortMotion",
+        "branchCondition": "controllerCachedMotion && motionManagerEnabled",
+    },
+    "au_ui_hud_powertower_count_units": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.LinkWireBrain", "consumerMethod": "_UpdateLine",
+        "methodIndex": 83029, "methodVa": "0x1870ec404",
+        "literalLoadVa": "0x1870ec76c", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "powerTowerCountUnitsUpdate",
+        "branchCondition": "quantizedCount comparison at 0x1870ec75a takes not-above path",
+    },
+    "au_ui_hud_powertower_count_tens": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.LinkWireBrain", "consumerMethod": "_UpdateLine",
+        "methodIndex": 83029, "methodVa": "0x1870ec404",
+        "literalLoadVa": "0x1870ec90a", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "powerTowerCountTensUpdate",
+        "branchCondition": "quantizedCount comparison at 0x1870ec75a takes above path",
+    },
+    "au_ui_power_pole_stayguy": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.LinkWireBrain", "consumerMethod": "BeginLink",
+        "methodIndex": 83018, "methodVa": "0x1870e9f54",
+        "literalLoadVa": "0x1870ea2f7", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "beginPowerPoleLink",
+        "branchCondition": "linkType==1",
+    },
+    "au_ui_udpipe_stayguy": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.LinkWireBrain", "consumerMethod": "BeginLink",
+        "methodIndex": 83018, "methodVa": "0x1870e9f54",
+        "literalLoadVa": "0x1870ea2e2", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "beginUdpipeLink",
+        "branchCondition": "linkType==2",
+    },
+    "au_ui_udpipe_connect": {
+        "consumerType": "Beyond.Gameplay.Core.GameMech.LinkWireBrain", "consumerMethod": "DoLinkUdpipe",
+        "methodIndex": 83023, "methodVa": "0x1870ea644",
+        "literalLoadVa": "0x1870ea866", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
+        **NATIVE_STRING_EVENT_PLAYBACK,
+        "targetBinding": "globalAudioObject", "triggerRole": "udpipeConnectionAccepted",
+        "branchCondition": "linkCommitGuard [this+0x22]==false",
+    },
+}
 
 EVENT_CATEGORY_PREFIXES = (
     ("au_sfx_", "sfx"),
@@ -138,8 +1511,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 54
-TRIGGER_CONTEXT_SCHEMA_VERSION = 7
+AUDIO_SEMANTIC_SCHEMA_VERSION = 75
+TRIGGER_CONTEXT_SCHEMA_VERSION = 29
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -3913,6 +5286,23 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
     animation_evidence = load_json(gameplay_path.with_name(evidence_path), {}) if evidence_path else {}
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
+    for reference in payload.get("authoredConfigEventReferences") or []:
+        if not isinstance(reference, dict):
+            continue
+        context = {
+            "kind": "gameplayConfigAudioReference",
+            "semanticRole": "authoredGameplayConfigAudioReference",
+            "configKind": str(reference.get("configKind") or ""),
+            "configId": str(reference.get("configId") or ""),
+            "confidence": "direct",
+            "playbackPlacementStatus": "authoredConfigAudioReference",
+            "triggerBindingStatus": "exactMemoryPackLengthPrefixedAudioEventString",
+            "triggerRequestEvidence": ["exactMemoryPackLengthPrefixedAudioEventString"],
+            "triggerSourcePaths": list(reference.get("sourcePaths") or []),
+            "triggerRuntimeActivationStatuses": ["configRuntimeExecutionNotObserved"],
+            "ownerLinkStatus": "unresolved",
+        }
+        _append_context(contexts, seen, reference.get("eventId"), context)
     for action in payload.get("authoredPlaySoundActions") or []:
         if not isinstance(action, dict):
             continue
@@ -8916,6 +10306,598 @@ def _build_levelscript_voice_trigger_contexts(
     return contexts
 
 
+def _build_gameplay_config_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose owner-unresolved SkillData/BuffData audio references.
+
+    The exact MemoryPack string boundary and source object identify an authored
+    gameplay-config request. They do not identify its still-undecoded member,
+    runtime actor, activation condition, or live Event execution.
+    """
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            _trigger_media_ref(row)
+            for row in event.get("media") or []
+            if isinstance(row, dict)
+        ]
+        media_refs = [row for row in media_refs if row]
+        for occurrence_index, raw_context in enumerate(event.get("contexts") or []):
+            if (
+                not isinstance(raw_context, dict)
+                or raw_context.get("kind") != "gameplayConfigAudioReference"
+            ):
+                continue
+            config_kind = str(raw_context.get("configKind") or "")
+            config_id = str(raw_context.get("configId") or "")
+            source_refs = [
+                str(value)
+                for value in raw_context.get("triggerSourcePaths") or []
+                if str(value)
+            ]
+            contexts.append({
+                "triggerId": (
+                    f"gameplayConfigAudio:{config_kind}:{config_id}:"
+                    f"{occurrence_index}:{event_id}"
+                ),
+                "semanticKind": "gameplayConfigAudioReference",
+                "triggerRole": "authoredGameplayConfigAudioReference",
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "configKind": config_kind,
+                    "configId": config_id,
+                },
+                "meaning": {
+                    key: event.get(key)
+                    for key in (
+                        "id", "name", "hash", "category", "foundInWwise",
+                        "playbackRole", "possibleMediaCount",
+                    )
+                    if event.get(key) not in (None, "", [])
+                },
+                "action": {
+                    "runtimeActivationStatus": "configRuntimeExecutionNotObserved",
+                },
+                "owner": {
+                    "configKind": config_kind,
+                    "configId": config_id,
+                    "ownerStatus": "gameplayOwnerUnresolved",
+                },
+                "selection": {
+                    "triggerBindingStatus": "exactMemoryPackLengthPrefixedAudioEventString",
+                    "memberFieldStatus": "undecodedConfigMember",
+                    "mediaSelectionStatus": (
+                        "wwiseEventMediaCandidates"
+                        if media_refs
+                        else "noDecodedMediaCandidate"
+                    ),
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": "exactMemoryPackLengthPrefixedAudioEventString",
+                    "owner": "exactGameplayConfigBinaryOwnerUnresolved",
+                    "media": (
+                        "wwiseEventMediaCandidate"
+                        if media_refs
+                        else "noDecodedMediaLeaf"
+                    ),
+                    "runtimeExecution": "configRuntimeExecutionNotObserved",
+                },
+                "runtimeActivationStatus": "configRuntimeExecutionNotObserved",
+                "sourceRefs": source_refs,
+            })
+    return contexts
+
+
+def _build_ability_voice_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose exact SkillData response-trigger actions without inventing playback."""
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row)
+                for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for occurrence_index, context in enumerate(event.get("contexts") or []):
+            if (
+                not isinstance(context, dict)
+                or context.get("kind") != "abilityVoiceTriggerAction"
+            ):
+                continue
+            contexts.append({
+                "triggerId": (
+                    f"abilityVoiceTrigger:{context.get('configId')}:"
+                    f"{context.get('actionOffsetHex')}:{event_id}"
+                ),
+                "semanticKind": "abilityVoiceTriggerAction",
+                "triggerRole": "authoredAbilityVoiceResponseTrigger",
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "ownerId": context.get("ownerId"),
+                    "configId": context.get("configId"),
+                    "triggerKey": context.get("triggerKey"),
+                    "speakerType": context.get("speakerType"),
+                },
+                "meaning": {
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                    "eventSelectionStatus": context.get("eventSelectionStatus"),
+                },
+                "action": {
+                    "action": "VoiceTriggerAction",
+                    "unionTag": context.get("actionUnionTag"),
+                    "serializedMemberCount": context.get("serializedMemberCount"),
+                    "canInterruptTimeMs": context.get("canInterruptTimeMs"),
+                    "serverActionIndex": context.get("serverActionIndex"),
+                    "runtimeRoute": context.get("runtimeRoute"),
+                    "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                },
+                "owner": {
+                    "configKind": context.get("configKind"),
+                    "configId": context.get("configId"),
+                    "ownerId": context.get("ownerId"),
+                    "sourcePath": context.get("sourcePath"),
+                    "sourceSha256": context.get("sourceSha256"),
+                    "actionOffset": context.get("actionOffset"),
+                    "nativeMappingId": context.get("nativeMappingId"),
+                },
+                "selection": {
+                    "triggerBindingStatus": context.get("triggerBindingStatus"),
+                    "eventSelectionStatus": context.get("eventSelectionStatus"),
+                    "mediaSelectionStatus": (
+                        "wwiseEventMediaCandidates" if media_refs
+                        else "noDecodedMediaCandidate"
+                    ),
+                    "runtimeSelectionStatus": (
+                        "responsiveRuntimeSelectionUnobserved"
+                    ),
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("triggerRequestEvidence") or [],
+                    "owner": "exactSkillDataAbilityActionRecord",
+                    "media": "exactCurrentAudioDialogWwiseEventIdentity",
+                    "runtimeExecution": context.get("runtimeActivationStatus"),
+                },
+                "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                "sourceRefs": context.get("sourcePaths") or [],
+            })
+    return contexts
+
+
+def _build_responsive_voice_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose authored ResponsiveDialog choices as possible trigger rows."""
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row) for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for context in event.get("contexts") or []:
+            if not isinstance(context, dict) or context.get("kind") not in {
+                "responsiveDialogVoice", "responsiveDialogToneVariant",
+            }:
+                continue
+            is_tone_variant = context.get("kind") == "responsiveDialogToneVariant"
+            source_path = str(context.get("responsiveSource") or context.get("source") or "")
+            tone_source_path = str(context.get("toneSource") or "")
+            source_layer = (
+                "Persistent" if "/Persistent/" in source_path
+                else "StreamingAssets" if "/StreamingAssets/" in source_path
+                else "unknown"
+            )
+            tone_source_layer = (
+                "Persistent" if "/Persistent/" in tone_source_path
+                else "StreamingAssets" if "/StreamingAssets/" in tone_source_path
+                else "none"
+            )
+            contexts.append({
+                "triggerId": (
+                    f"responsiveVoice:{source_layer}:{tone_source_layer}:"
+                    f"{context.get('sentenceType')}:"
+                    f"{context.get('speakerId')}:{context.get('triggerKey')}:"
+                    f"{context.get('responseIndex')}:"
+                    f"{context.get('variantIndex') if is_tone_variant else 'base'}:{event_id}"
+                ),
+                "semanticKind": str(context.get("kind")),
+                "triggerRole": (
+                    "authoredResponsiveToneVariantCandidate"
+                    if is_tone_variant else "authoredResponsiveVoiceCandidate"
+                ),
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "sentenceType": context.get("sentenceType"),
+                    "speakerId": context.get("speakerId"),
+                    "triggerKey": context.get("triggerKey"),
+                    "triggerTypeId": context.get("triggerTypeId"),
+                },
+                "meaning": {
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                    "responseWeight": context.get("responseWeight"),
+                    "baseVoiceId": context.get("baseVoiceId"),
+                    "variantVoiceId": context.get("variantVoiceId"),
+                    "variantIndex": context.get("variantIndex"),
+                },
+                "action": {
+                    "responseIndex": context.get("responseIndex"),
+                    "voiceId": context.get("voiceId"),
+                    "runtimeRoute": context.get("runtimeRoute"),
+                    "runtimeSelectionStatus": context.get("runtimeSelectionStatus"),
+                },
+                "owner": {
+                    "table": "ResponsiveDialog",
+                    "source": source_path,
+                    "sourcePath": source_path,
+                    "sourceLayer": source_layer,
+                    "toneSource": tone_source_path,
+                    "toneSourceLayer": tone_source_layer,
+                    "speakerId": context.get("speakerId"),
+                },
+                "selection": {
+                    "triggerBindingStatus": (
+                        "exactResponsiveDialogResponseVoiceIdComposedWithExactAudioVoToneVariantVoiceId"
+                        if is_tone_variant else "exactResponsiveDialogResponseVoiceId"
+                    ),
+                    "mediaSelectionStatus": (
+                        "wwiseEventMediaCandidates" if media_refs else "noDecodedMediaCandidate"
+                    ),
+                    "runtimeSelectionStatus": context.get("runtimeSelectionStatus"),
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("evidence"),
+                    "owner": (
+                        "exactResponsiveDialogSpeakerTriggerAndAudioVoToneVariantComposition"
+                        if is_tone_variant
+                        else "exactResponsiveDialogSpeakerTriggerResponseMembership"
+                    ),
+                    "media": "exactCurrentAudioDialogWwiseEventIdentity",
+                    "runtimeExecution": "liveResponseSelectionUnobserved",
+                },
+                "runtimeActivationStatus": "liveResponseSelectionUnobserved",
+                "sourceRefs": [value for value in (source_path, tone_source_path) if value],
+            })
+    return contexts
+
+
+def _build_native_voice_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row) for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for context in event.get("contexts") or []:
+            if not isinstance(context, dict) or context.get("kind") != "nativeVoiceTriggerCallsite":
+                continue
+            contexts.append({
+                "triggerId": f"nativeVoiceTrigger:{context.get('triggerKey')}:{event_id}",
+                "semanticKind": "nativeVoiceTriggerCallsite",
+                "triggerRole": context.get("triggerRole"),
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "triggerKey": context.get("triggerKey"),
+                    "targetBinding": context.get("targetBinding"),
+                    "consumerType": context.get("consumerType"),
+                    "consumerMethod": context.get("consumerMethod"),
+                },
+                "meaning": {
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                },
+                "action": {
+                    "runtimeRoute": context.get("runtimeRoute"),
+                    "literalLoadVa": context.get("literalLoadVa"),
+                    "playbackCall": context.get("playbackCall"),
+                    "playbackInvocationVa": context.get("playbackInvocationVa"),
+                    "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                },
+                "owner": {
+                    "methodIndex": context.get("methodIndex"),
+                    "methodVa": context.get("methodVa"),
+                    "nativeMappingId": context.get("nativeMappingId"),
+                },
+                "selection": {
+                    "triggerBindingStatus": context.get("triggerBindingStatus"),
+                    "mediaSelectionStatus": (
+                        "wwiseEventMediaCandidates" if media_refs else "noDecodedMediaCandidate"
+                    ),
+                    "runtimeSelectionStatus": context.get("runtimeSelectionStatus"),
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("triggerRequestEvidence") or [],
+                    "owner": "exactCurrentBuildNativeVoiceResponseCallsite",
+                    "media": "exactCurrentAudioDialogWwiseEventIdentity",
+                    "runtimeExecution": context.get("runtimeActivationStatus"),
+                },
+                "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                "sourceRefs": [
+                    value for value in (
+                        context.get("methodVa"), context.get("literalLoadVa"),
+                        context.get("playbackInvocationVa"),
+                    ) if value
+                ],
+            })
+    return contexts
+
+
+def _build_animation_voice_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row) for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for context in event.get("contexts") or []:
+            if not isinstance(context, dict) or context.get("kind") != "animationVoiceTrigger":
+                continue
+            contexts.append({
+                "triggerId": (
+                    f"animationVoice:{context.get('sourceLayer')}:"
+                    f"{context.get('clip')}:{context.get('eventIndex')}:{event_id}"
+                ),
+                "semanticKind": "animationVoiceTrigger",
+                "triggerRole": "authoredAnimationVoiceResponseTrigger",
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "ownerKind": context.get("ownerKind"),
+                    "ownerId": context.get("ownerId"),
+                    "triggerKey": context.get("triggerKey"),
+                    "consumerType": context.get("consumerType"),
+                    "consumerMethod": context.get("consumerMethod"),
+                },
+                "meaning": {
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                    "intParameter": context.get("intParameter"),
+                },
+                "action": {
+                    "function": context.get("function"),
+                    "eventIndex": context.get("eventIndex"),
+                    "time": context.get("time"),
+                    "floatParameter": context.get("floatParameter"),
+                    "intParameter": context.get("intParameter"),
+                    "runtimeRoute": context.get("runtimeRoute"),
+                    "playbackCall": context.get("playbackCall"),
+                    "playbackCallVa": context.get("playbackCallVa"),
+                    "playbackInvocationVa": context.get("playbackInvocationVa"),
+                    "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                },
+                "owner": {
+                    "ownerKind": context.get("ownerKind"),
+                    "ownerId": context.get("ownerId"),
+                    "ownerCandidateIds": context.get("ownerCandidateIds") or [],
+                    "animationOwnerCandidateCount": context.get("animationOwnerCandidateCount"),
+                    "animationOwnershipScope": context.get("animationOwnershipScope"),
+                    "identityToken": context.get("identityToken"),
+                    "clip": context.get("clip"),
+                    "sourcePath": context.get("clipSource"),
+                    "sourceLayer": context.get("sourceLayer"),
+                    "methodIndex": context.get("methodIndex"),
+                    "methodVa": context.get("methodVa"),
+                    "additionalMethodIndex": context.get("additionalMethodIndex"),
+                    "additionalMethodVa": context.get("additionalMethodVa"),
+                    "nativeMappingId": context.get("nativeMappingId"),
+                },
+                "selection": {
+                    "triggerBindingStatus": context.get("triggerBindingStatus"),
+                    "mediaSelectionStatus": (
+                        "wwiseEventMediaCandidates" if media_refs else "noDecodedMediaCandidate"
+                    ),
+                    "runtimeSelectionStatus": context.get("runtimeSelectionStatus"),
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("triggerRequestEvidence") or [],
+                    "owner": "exactAnimationClipAndAudioDialogOwnerIdentity",
+                    "media": "exactCurrentAudioDialogWwiseEventIdentity",
+                    "runtimeExecution": context.get("runtimeActivationStatus"),
+                },
+                "runtimeActivationStatus": context.get("runtimeActivationStatus"),
+                "sourceRefs": [
+                    value for value in (
+                        context.get("clipSource"), context.get("methodVa"),
+                        context.get("playbackInvocationVa"),
+                    ) if value
+                ],
+            })
+    return contexts
+
+
+def _build_interactive_property_audio_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose exact InteractiveData audio-key placements without runtime guesses."""
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row)
+                for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for occurrence_index, context in enumerate(event.get("contexts") or []):
+            if (
+                not isinstance(context, dict)
+                or context.get("kind") not in {
+                    "interactiveComponentPropertyAudio",
+                    "interactivePropertyMapAudio",
+                    "interactiveTemplateConfigAudio",
+                    "interactiveTemplateActionAudio",
+                    "interactiveEmbeddedActionAudio",
+                }
+            ):
+                continue
+            is_action = context.get("kind") in {
+                "interactiveTemplateActionAudio",
+                "interactiveEmbeddedActionAudio",
+            }
+            owner_id = str(context.get("ownerId") or "unknown")
+            property_key = str(
+                context.get("audioPropertyKey")
+                or context.get("audioSourceField")
+                or "unknown"
+            )
+            contexts.append({
+                "triggerId": (
+                    f"{'interactiveActionAudio' if is_action else 'interactivePropertyAudio'}:"
+                    f"{owner_id}:{property_key}:"
+                    f"{occurrence_index}:{event_id}"
+                ),
+                "semanticKind": str(context.get("kind")),
+                "triggerRole": (
+                    "authoredInteractiveActionAudioRequest"
+                    if is_action
+                    else "authoredInteractiveAudioProperty"
+                ),
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "contextKind": "InteractiveData",
+                    "ownerKind": context.get("ownerKind"),
+                    "ownerId": owner_id,
+                    "audioPropertyKey": property_key,
+                    "audioAction": context.get("audioAction"),
+                    "audioActionRole": context.get("audioActionRole"),
+                    "actionLocalId": context.get("actionLocalId"),
+                },
+                "meaning": {
+                    "eventId": event_id,
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "playbackRole": event.get("playbackRole"),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                },
+                "action": {
+                    "action": context.get("audioAction"),
+                    "role": context.get("audioActionRole"),
+                    "sourceField": context.get("audioSourceField"),
+                    "actionMapRole": context.get("actionMapRole"),
+                    "localId": context.get("actionLocalId"),
+                    "uid": context.get("actionUid"),
+                    "nextId": context.get("actionNextId"),
+                    "unionTag": context.get("actionUnionTag"),
+                    "stopOnRelease": context.get("stopOnRelease"),
+                    "targetBindingKind": context.get("targetBindingKind"),
+                    "targetParamSource": context.get("targetParamSource"),
+                    "targetParameterKind": context.get("targetParameterKind"),
+                    "runtimeActivationStatus": (
+                        "runtimeActionActivationUnobserved"
+                        if is_action
+                        else "runtimePropertyConsumerUnresolved"
+                    ),
+                },
+                "owner": {
+                    "ownerId": owner_id,
+                    "componentType": context.get("componentType"),
+                    "componentTag": context.get("componentTag"),
+                    "componentResolutionStatus": context.get("componentResolutionStatus"),
+                    "interactiveTemplatePath": context.get("interactiveTemplatePath"),
+                    "templateAssociationStatus": context.get("templateAssociationStatus"),
+                    "propertyMapOffset": context.get("propertyMapOffset"),
+                    "audioPropertyKey": property_key,
+                    "sourceOffset": context.get("sourceOffset"),
+                    "actionRecordOffset": context.get("actionRecordOffset"),
+                    "actionPayloadOffset": context.get("actionPayloadOffset"),
+                    "actionMapOffset": context.get("actionMapOffset"),
+                },
+                "selection": {
+                    "triggerBindingStatus": str(context.get("evidence")),
+                    "memberFieldStatus": (
+                        "exactActionListAndTypedAudioActionEventField"
+                        if is_action
+                        else "exactDynamicPropertyKeyAndEventValue"
+                    ),
+                    "mediaSelectionStatus": (
+                        "wwiseEventMediaCandidates" if media_refs else "noDecodedMediaCandidate"
+                    ),
+                    "runtimeSelectionStatus": "runtimeEventPostingNotObserved",
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("evidence"),
+                    "owner": (
+                        "exactInteractiveDataTemplateActionMapMembership"
+                        if is_action
+                        else "exactInteractiveDataTemplateAndComponentProperty"
+                    ),
+                    "media": "wwiseEventMediaCandidate" if media_refs else "noDecodedMediaLeaf",
+                    "runtimeExecution": (
+                        "runtimeActionActivationTargetResolutionAndEventPostingNotObserved"
+                        if is_action
+                        else "runtimePropertyConsumerAndEventPostingNotObserved"
+                    ),
+                },
+                "runtimeActivationStatus": (
+                    "runtimeActionActivationUnobserved"
+                    if is_action
+                    else "runtimePropertyConsumerUnresolved"
+                ),
+                "sourceRefs": [
+                    value for value in context.get("sourcePaths") or []
+                    if isinstance(value, str) and value
+                ],
+            })
+    return contexts
+
+
 def _build_mono_behaviour_audio_id_trigger_contexts(
     event_rows: Iterable[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -9086,6 +11068,116 @@ def _build_audio_global_config_trigger_contexts(
     return contexts
 
 
+def _build_managed_literal_callsite_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose fingerprint-locked managed native playback callsites."""
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row)
+                for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for context in event.get("contexts") or []:
+            if not isinstance(context, dict) or context.get("kind") != "binaryManagedLiteralCallsite":
+                continue
+            contexts.append({
+                "triggerId": ":".join((
+                    "managed-audio-callsite",
+                    event_id,
+                    str(context.get("methodIndex") or "unknown"),
+                    str(context.get("playbackCallVa") or "unknown"),
+                )),
+                "semanticKind": "binaryManagedLiteralCallsite",
+                "triggerRole": context.get("triggerRole"),
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "consumerType": context.get("consumerType"),
+                    "consumerMethod": context.get("consumerMethod"),
+                    "triggerRole": context.get("triggerRole"),
+                    "targetBinding": context.get("targetBinding"),
+                    "branchCondition": context.get("branchCondition"),
+                    "selectorType": context.get("selectorType"),
+                    "selectorMethod": context.get("selectorMethod"),
+                    "selectorMethodIndex": context.get("selectorMethodIndex"),
+                    "selectorMethodVa": context.get("selectorMethodVa"),
+                    "selectorCallVa": context.get("selectorCallVa"),
+                    "selectorLoadVa": context.get("selectorLoadVa"),
+                    "selectorField": context.get("selectorField"),
+                    "selectorFieldOffset": context.get("selectorFieldOffset"),
+                    "additionalConsumerMethod": context.get("additionalConsumerMethod"),
+                    "additionalMethodVa": context.get("additionalMethodVa"),
+                    "additionalSelectorLoadVa": context.get("additionalSelectorLoadVa"),
+                    "additionalSelectorCallVa": context.get("additionalSelectorCallVa"),
+                    "additionalPlaybackCallVa": context.get("additionalPlaybackCallVa"),
+                },
+                "meaning": {
+                    "eventId": event_id,
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "playbackRole": event.get("playbackRole"),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                },
+                "action": {
+                    "playbackCall": context.get("playbackCall"),
+                    "playbackCallVa": context.get("playbackCallVa"),
+                    "playbackParameter": context.get("playbackParameter"),
+                    "literalArgumentRegister": context.get("literalArgumentRegister"),
+                    "literalArgumentInstruction": context.get("literalArgumentInstruction"),
+                    "playbackHashCall": context.get("playbackHashCall"),
+                    "playbackHashCallVa": context.get("playbackHashCallVa"),
+                    "playbackHashInvocationVa": context.get("playbackHashInvocationVa"),
+                    "playbackSink": context.get("playbackSink"),
+                    "playbackSinkVa": context.get("playbackSinkVa"),
+                    "playbackSinkInvocationVa": context.get("playbackSinkInvocationVa"),
+                    "playbackInvocationVa": context.get("playbackInvocationVa"),
+                    "runtimeActivationStatus": "runtimeBranchExecutionUnobserved",
+                },
+                "owner": {
+                    key: context[key]
+                    for key in (
+                        "consumerType", "consumerMethod", "methodIndex", "methodVa",
+                        "literalLoadVa", "metadataSha256", "gameAssemblySha256",
+                    ) if context.get(key) not in (None, "", [])
+                },
+                "selection": {
+                    "triggerBindingStatus": "exactCurrentBuildManagedNativePlaybackCallsite",
+                    "mediaSelectionStatus": "wwiseEventMediaCandidates",
+                    "runtimeSelectionStatus": "runtimeBranchExecutionUnobserved",
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("evidence"),
+                    "owner": "exactManagedMethodAndLiteralHandleXref",
+                    "media": "wwiseEventMediaCandidate",
+                    "runtimeExecution": "runtimeBranchExecutionUnobserved",
+                },
+                "runtimeActivationStatus": "runtimeBranchExecutionUnobserved",
+                "sourceRefs": [
+                    value for value in (
+                        context.get("source"), context.get("methodVa"),
+                        context.get("selectorMethodVa"), context.get("selectorLoadVa"),
+                        context.get("selectorCallVa"), context.get("additionalMethodVa"),
+                        context.get("additionalSelectorLoadVa"), context.get("additionalSelectorCallVa"),
+                        context.get("literalLoadVa"), context.get("playbackCallVa"),
+                        context.get("additionalPlaybackCallVa"),
+                        context.get("playbackInvocationVa"), context.get("playbackSinkInvocationVa"),
+                    ) if isinstance(value, str) and value
+                ],
+            })
+    return contexts
+
+
 def build_trigger_context_catalog(
     event_rows: Iterable[dict[str, Any]],
     media_rows: Iterable[dict[str, Any]],
@@ -9143,6 +11235,13 @@ def build_trigger_context_catalog(
         ),
         "timelineAudio": _build_timeline_trigger_contexts(event_rows),
         "luaPostEvent": _build_lua_post_event_trigger_contexts(event_rows),
+        "gameplayConfigAudio": _build_gameplay_config_trigger_contexts(event_rows),
+        "abilityVoiceTrigger": _build_ability_voice_trigger_contexts(event_rows),
+        "responsiveVoiceTrigger": _build_responsive_voice_trigger_contexts(event_rows),
+        "nativeVoiceTrigger": _build_native_voice_trigger_contexts(event_rows),
+        "animationVoiceTrigger": _build_animation_voice_trigger_contexts(event_rows),
+        "interactivePropertyAudio": _build_interactive_property_audio_trigger_contexts(event_rows),
+        "managedLiteralCallsite": _build_managed_literal_callsite_trigger_contexts(event_rows),
         "monoBehaviourAudioId": _build_mono_behaviour_audio_id_trigger_contexts(
             mono_event_rows or event_rows
         ),
@@ -9185,6 +11284,30 @@ def build_trigger_context_catalog(
             "storedTriggerContextRows": len(grouped["luaPostEvent"]),
             "runtimeExecutionObserved": 0,
         },
+        "gameplayConfigAudio": {
+            "source": "exact MemoryPack length-prefixed au_* strings in SkillData/BuffData",
+            "storedTriggerContextRows": len(grouped["gameplayConfigAudio"]),
+            "runtimeExecutionObserved": 0,
+            "ownerStatus": "gameplayOwnerUnresolved",
+        },
+        "abilityVoiceTrigger": {
+            "source": "exact SkillData AbilityActionData VoiceTriggerAction records",
+            "storedTriggerContextRows": len(grouped["abilityVoiceTrigger"]),
+            "runtimeExecutionObserved": 0,
+            "runtimeSelectionStatus": "responsiveRuntimeSelectionUnobserved",
+        },
+        "nativeVoiceTrigger": {
+            "source": "fingerprint-locked current metadata literal handles and GameAssembly voice response callsites",
+            "storedTriggerContextRows": len(grouped["nativeVoiceTrigger"]),
+            "runtimeExecutionObserved": 0,
+            "runtimeSelectionStatus": "speakerCooldownProbabilityToneAndLiveChoiceUnobserved",
+        },
+        "responsiveVoiceTrigger": {
+            "source": "merged StreamingAssets/Persistent ResponsiveDialog response arrays plus exact AudioVoTone compositions",
+            "storedTriggerContextRows": len(grouped["responsiveVoiceTrigger"]),
+            "runtimeExecutionObserved": 0,
+            "runtimeSelectionStatus": "probabilityCooldownBandLimitToneAndLiveChoiceUnobserved",
+        },
         "monoBehaviourAudioId": {
             "source": "AnimeStudio MonoBehaviour object-index exact AudioId scalar paths",
             "storedTriggerContextRows": len(grouped["monoBehaviourAudioId"]),
@@ -9193,6 +11316,11 @@ def build_trigger_context_catalog(
         "audioGlobalConfig": {
             "source": "AudioGlobalConfig raw JSON or complete MonoBehaviour object index",
             "storedTriggerContextRows": len(grouped["audioGlobalConfig"]),
+            "runtimeExecutionObserved": 0,
+        },
+        "managedLiteralCallsite": {
+            "source": "fingerprint-locked current metadata literal handles and GameAssembly native callsites",
+            "storedTriggerContextRows": len(grouped["managedLiteralCallsite"]),
             "runtimeExecutionObserved": 0,
         },
         "dialogTimeline": {
@@ -9472,9 +11600,27 @@ def collect_interactive_component_contexts(
 
     if decoder is None:
         try:
-            from build_data_index import parse_interactive_audio_component
+            from build_data_index import (
+                decode_interactive_template_memorypack,
+                parse_interactive_audio_component,
+                parse_interactive_trigger_zone_audio_property_component,
+                find_interactive_audio_property_maps,
+            )
         except ImportError:
-            from scripts.build_data_index import parse_interactive_audio_component
+            from scripts.build_data_index import (
+                decode_interactive_template_memorypack,
+                parse_interactive_audio_component,
+                parse_interactive_trigger_zone_audio_property_component,
+                find_interactive_audio_property_maps,
+            )
+        try:
+            from story_builder.levelscript_binary import (
+                find_embedded_action_serialized_map_audio,
+            )
+        except ImportError:
+            from scripts.story_builder.levelscript_binary import (
+                find_embedded_action_serialized_map_audio,
+            )
 
         def decoder(_path: Path, data: bytes, _size: int) -> dict[str, Any]:
             components: list[dict[str, Any]] = []
@@ -9496,7 +11642,49 @@ def collect_interactive_component_contexts(
                     "sourceOffset": candidate,
                     **parsed,
                 })
-            return {"decoded": {"componentAudioComponents": components}}
+            property_components: list[dict[str, Any]] = []
+            property_signature = bytes((0xF5, 0x03, 0xFF, 0xFF, 0xFF, 0xFF))
+            cursor = 0
+            while True:
+                candidate = data.find(property_signature, cursor)
+                if candidate < 0:
+                    break
+                cursor = candidate + 1
+                try:
+                    parsed, end = parse_interactive_trigger_zone_audio_property_component(
+                        data,
+                        candidate + 2,
+                        3,
+                    )
+                except (UnicodeDecodeError, struct.error, ValueError):
+                    continue
+                if end <= candidate + len(property_signature) or end > len(data):
+                    continue
+                property_components.append({
+                    "index": len(property_components),
+                    "sourceOffset": candidate,
+                    **parsed,
+                })
+            template = decode_interactive_template_memorypack(_path, data, len(data))
+            template_body = template.get("decoded") if isinstance(template, dict) else None
+            return {"decoded": {
+                "componentAudioComponents": components,
+                "componentAudioPropertyComponents": property_components,
+                "standaloneAudioPropertyMaps": find_interactive_audio_property_maps(data),
+                "templateConfigProperties": (
+                    template_body.get("templateConfigProperties")
+                    if isinstance(template_body, dict)
+                    else None
+                ),
+                "templateActionMapAudio": (
+                    template_body.get("templateActionMapAudio")
+                    if isinstance(template_body, dict)
+                    else None
+                ),
+                "embeddedActionMapAudioActions": (
+                    find_embedded_action_serialized_map_audio(data)
+                ),
+            }}
 
     # InteractiveTable is an exact serialized ownership index.  Keep this
     # optional so focused callers/tests that only provide an InteractiveData
@@ -9587,7 +11775,34 @@ def collect_interactive_component_contexts(
             body = decoded.get("decoded") if isinstance(decoded, dict) else None
             components = body.get("componentAudioComponents") if isinstance(body, dict) else None
             if not isinstance(components, list):
-                continue
+                components = []
+            property_components = (
+                body.get("componentAudioPropertyComponents") if isinstance(body, dict) else None
+            )
+            if not isinstance(property_components, list):
+                property_components = []
+            standalone_property_maps = (
+                body.get("standaloneAudioPropertyMaps") if isinstance(body, dict) else None
+            )
+            if not isinstance(standalone_property_maps, list):
+                standalone_property_maps = []
+            template_config = (
+                body.get("templateConfigProperties") if isinstance(body, dict) else None
+            )
+            if not isinstance(template_config, dict):
+                template_config = {}
+            template_action_map = (
+                body.get("templateActionMapAudio") if isinstance(body, dict) else None
+            )
+            if not isinstance(template_action_map, dict):
+                template_action_map = {}
+            embedded_action_audio = (
+                body.get("embeddedActionMapAudioActions")
+                if isinstance(body, dict)
+                else None
+            )
+            if not isinstance(embedded_action_audio, list):
+                embedded_action_audio = []
             source_paths = [normalize_posix(path.relative_to(export_root)) for path in version_paths]
             template_file_name = f"{owner_id}.json"
             template_ids = sorted(set(template_ids_by_file_name.get(template_file_name, [])))
@@ -9675,6 +11890,287 @@ def collect_interactive_component_contexts(
                     if note:
                         context["description"] = note
                     _append_context(contexts, seen, event_name, context)
+            for component in property_components:
+                if not isinstance(component, dict):
+                    continue
+                component_index = component.get("index")
+                for property_index, row in enumerate(component.get("audioPropertyRows") or []):
+                    if not isinstance(row, dict):
+                        continue
+                    if row.get("identityKind") != "wwiseEvent":
+                        continue
+                    property_key = str(row.get("key") or "")
+                    for event_index, event_id in enumerate(row.get("events") or []):
+                        event_name = str(event_id or "").strip()
+                        if not event_name:
+                            continue
+                        _append_context(contexts, seen, event_name, {
+                            "kind": "interactiveComponentPropertyAudio",
+                            "table": "InteractiveData",
+                            "semanticRole": "interactiveComponentAuthoredAudioProperty",
+                            "ownerKind": "interactiveEntityConfig",
+                            "ownerId": owner_id,
+                            "interactiveTemplateIds": template_ids,
+                            "interactiveTemplatePath": template_path,
+                            "interactiveConsumerIds": consumer_ids,
+                            "templateAssociationStatus": association_status,
+                            "interactiveTableSourcePaths": table_source_paths,
+                            "interactiveTableSha256": table_source_fingerprint,
+                            "componentIndex": component_index,
+                            "componentType": component.get("type"),
+                            "componentTag": component.get("tag"),
+                            "sourceOffset": component.get("sourceOffset"),
+                            "propertyMapOffset": component.get("propertyMapOffset"),
+                            "audioPropertyKey": property_key,
+                            "triggerRequestEvidence": [
+                                "exactDecodedInteractiveComponentAudioPropertyMap"
+                            ],
+                            "triggerRuntimeActivationStatuses": [
+                                "runtimePropertyConsumerUnresolved",
+                                "runtimeEventPostingNotObserved",
+                            ],
+                            "path": (
+                                f"componentAudioPropertyComponents[{component_index}]"
+                                f".audioPropertyRows[{property_index}].events[{event_index}]"
+                            ),
+                            "sourcePaths": source_paths,
+                            "sourceFingerprint": digest,
+                            "evidence": "exactDecodedMemoryPackInteractiveAudioProperty",
+                        })
+            component_property_events = {
+                str(event_id)
+                for component in property_components
+                if isinstance(component, dict)
+                for row in component.get("audioPropertyRows") or []
+                if isinstance(row, dict)
+                for event_id in row.get("events") or []
+                if event_id
+            }
+            template_config_events: set[str] = set()
+            for property_index, row in enumerate(template_config.get("audioPropertyRows") or []):
+                if not isinstance(row, dict) or row.get("identityKind") != "wwiseEvent":
+                    continue
+                property_key = str(row.get("key") or "")
+                for event_index, event_id in enumerate(row.get("events") or []):
+                    event_name = str(event_id or "").strip()
+                    if not event_name:
+                        continue
+                    template_config_events.add(event_name)
+                    _append_context(contexts, seen, event_name, {
+                        "kind": "interactiveTemplateConfigAudio",
+                        "table": "InteractiveData",
+                        "semanticRole": "interactiveTemplateAuthoredAudioProperty",
+                        "ownerKind": "interactiveEntityConfig",
+                        "ownerId": owner_id,
+                        "interactiveTemplateIds": template_ids,
+                        "interactiveTemplatePath": template_path,
+                        "interactiveConsumerIds": consumer_ids,
+                        "templateAssociationStatus": association_status,
+                        "interactiveTableSourcePaths": table_source_paths,
+                        "interactiveTableSha256": table_source_fingerprint,
+                        "audioPropertyKey": property_key,
+                        "propertyMapOffset": template_config.get("configPropertiesOffset"),
+                        "propertyMapEndOffset": template_config.get("configPropertiesEndOffset"),
+                        "triggerRequestEvidence": [
+                            "exactDecodedInteractiveTemplateConfigProperties"
+                        ],
+                        "triggerRuntimeActivationStatuses": [
+                            "runtimeTemplatePropertyConsumerUnresolved",
+                            "runtimeEventPostingNotObserved",
+                        ],
+                        "path": (
+                            "templateConfigProperties.audioPropertyRows"
+                            f"[{property_index}].events[{event_index}]"
+                        ),
+                        "sourcePaths": source_paths,
+                        "sourceFingerprint": digest,
+                        "evidence": "exactDecodedMemoryPackInteractiveTemplateConfigProperty",
+                    })
+            template_action_events: set[str] = set()
+            for action_index, action in enumerate(template_action_map.get("audioActions") or []):
+                if not isinstance(action, dict):
+                    continue
+                fields = action.get("fields") if isinstance(action.get("fields"), dict) else {}
+                stop_on_release = fields.get("stopOnRelease")
+                target = fields.get("target") or fields.get("position")
+                for binding_index, binding in enumerate(action.get("eventBindings") or []):
+                    if not isinstance(binding, dict):
+                        continue
+                    event_name = str(binding.get("eventName") or "").strip()
+                    if not event_name:
+                        continue
+                    template_action_events.add(event_name)
+                    _append_context(contexts, seen, event_name, {
+                        "kind": "interactiveTemplateActionAudio",
+                        "table": "InteractiveData",
+                        "semanticRole": "interactiveTemplateActionAudioRequest",
+                        "ownerKind": "interactiveEntityConfig",
+                        "ownerId": owner_id,
+                        "interactiveTemplateIds": template_ids,
+                        "interactiveTemplatePath": template_path,
+                        "interactiveConsumerIds": consumer_ids,
+                        "templateAssociationStatus": association_status,
+                        "interactiveTableSourcePaths": table_source_paths,
+                        "interactiveTableSha256": table_source_fingerprint,
+                        "audioAction": action.get("action"),
+                        "audioActionRole": binding.get("role"),
+                        "audioSourceField": binding.get("sourceField"),
+                        "actionMapRole": action.get("actionMapRole"),
+                        "actionMapOffset": template_action_map.get("offset"),
+                        "actionLocalId": action.get("localId"),
+                        "actionUid": action.get("uid"),
+                        "actionNextId": action.get("nextId"),
+                        "actionUnionTag": action.get("unionTag"),
+                        "actionSerializedMemberCount": action.get("serializedMemberCount"),
+                        "actionRecordOffset": action.get("recordOffset"),
+                        "actionPayloadOffset": action.get("payloadOffset"),
+                        "stopOnRelease": (
+                            stop_on_release.get("value")
+                            if isinstance(stop_on_release, dict)
+                            else None
+                        ),
+                        "targetBindingKind": (
+                            target.get("bindingKind") if isinstance(target, dict) else None
+                        ),
+                        "targetParameterKind": (
+                            "target" if "target" in fields else "position"
+                        ),
+                        "targetParamSource": (
+                            target.get("paramSource") if isinstance(target, dict) else None
+                        ),
+                        "triggerRequestEvidence": [
+                            "exactEmbeddedInteractiveActionSerializedMapActionList",
+                            "exactTypedAudioActionPayload",
+                        ],
+                        "triggerRuntimeActivationStatuses": [
+                            "runtimeActionActivationUnobserved",
+                            "runtimeTargetResolutionRequired",
+                            "runtimeEventPostingNotObserved",
+                        ],
+                        "path": (
+                            f"templateActionMapAudio.audioActions[{action_index}]"
+                            f".eventBindings[{binding_index}]"
+                        ),
+                        "sourcePaths": source_paths,
+                        "sourceFingerprint": digest,
+                        "evidence": "exactDecodedInteractiveTemplateActionAudio",
+                    })
+            for action_index, action in enumerate(embedded_action_audio):
+                if not isinstance(action, dict):
+                    continue
+                fields = action.get("fields") if isinstance(action.get("fields"), dict) else {}
+                stop_on_release = fields.get("stopOnRelease")
+                target = fields.get("target") or fields.get("position")
+                for binding_index, binding in enumerate(action.get("eventBindings") or []):
+                    if not isinstance(binding, dict):
+                        continue
+                    event_name = str(binding.get("eventName") or "").strip()
+                    if not event_name or event_name in template_action_events:
+                        continue
+                    template_action_events.add(event_name)
+                    _append_context(contexts, seen, event_name, {
+                        "kind": "interactiveEmbeddedActionAudio",
+                        "table": "InteractiveData",
+                        "semanticRole": "interactiveEmbeddedActionAudioRequest",
+                        "ownerKind": "interactiveEntityConfig",
+                        "ownerId": owner_id,
+                        "interactiveTemplateIds": template_ids,
+                        "interactiveTemplatePath": template_path,
+                        "interactiveConsumerIds": consumer_ids,
+                        "templateAssociationStatus": association_status,
+                        "interactiveTableSourcePaths": table_source_paths,
+                        "interactiveTableSha256": table_source_fingerprint,
+                        "componentResolutionStatus": "containingSerializedFieldUnresolved",
+                        "actionMapOffset": action.get("actionMapOffset"),
+                        "actionMapListCounts": action.get("actionMapListCounts"),
+                        "audioAction": action.get("action"),
+                        "audioActionRole": binding.get("role"),
+                        "audioSourceField": binding.get("sourceField"),
+                        "actionMapRole": action.get("actionMapRole"),
+                        "actionLocalId": action.get("localId"),
+                        "actionUid": action.get("uid"),
+                        "actionNextId": action.get("nextId"),
+                        "actionUnionTag": action.get("unionTag"),
+                        "actionSerializedMemberCount": action.get("serializedMemberCount"),
+                        "actionRecordOffset": action.get("recordOffset"),
+                        "actionPayloadOffset": action.get("payloadOffset"),
+                        "stopOnRelease": (
+                            stop_on_release.get("value")
+                            if isinstance(stop_on_release, dict)
+                            else None
+                        ),
+                        "targetBindingKind": (
+                            target.get("bindingKind") if isinstance(target, dict) else None
+                        ),
+                        "targetParamSource": (
+                            target.get("paramSource") if isinstance(target, dict) else None
+                        ),
+                        "targetParameterKind": (
+                            "target" if "target" in fields else "position"
+                        ),
+                        "triggerRequestEvidence": [
+                            "uniqueEmbeddedActionSerializedMapBoundary",
+                            "exactPhysicalActionListMembership",
+                            "exactTypedAudioActionPayload",
+                        ],
+                        "triggerRuntimeActivationStatuses": [
+                            "runtimeActionActivationUnobserved",
+                            "runtimeTargetResolutionRequired",
+                            "runtimeEventPostingNotObserved",
+                        ],
+                        "path": (
+                            f"embeddedActionMapAudioActions[{action_index}]"
+                            f".eventBindings[{binding_index}]"
+                        ),
+                        "sourcePaths": source_paths,
+                        "sourceFingerprint": digest,
+                        "evidence": "exactDecodedInteractiveEmbeddedActionAudio",
+                    })
+            for property_map_index, property_map in enumerate(standalone_property_maps):
+                if not isinstance(property_map, dict):
+                    continue
+                for property_index, row in enumerate(property_map.get("audioPropertyRows") or []):
+                    if not isinstance(row, dict):
+                        continue
+                    property_key = str(row.get("key") or "")
+                    for event_index, event_id in enumerate(row.get("events") or []):
+                        event_name = str(event_id or "").strip()
+                        if (
+                            not event_name
+                            or event_name in component_property_events
+                            or event_name in template_config_events
+                            or event_name in template_action_events
+                        ):
+                            continue
+                        _append_context(contexts, seen, event_name, {
+                            "kind": "interactivePropertyMapAudio",
+                            "table": "InteractiveData",
+                            "semanticRole": "interactiveAuthoredAudioProperty",
+                            "ownerKind": "interactiveEntityConfig",
+                            "ownerId": owner_id,
+                            "interactiveTemplateIds": template_ids,
+                            "interactiveTemplatePath": template_path,
+                            "interactiveConsumerIds": consumer_ids,
+                            "templateAssociationStatus": association_status,
+                            "interactiveTableSourcePaths": table_source_paths,
+                            "interactiveTableSha256": table_source_fingerprint,
+                            "componentResolutionStatus": "containingComponentUnresolved",
+                            "propertyMapOffset": property_map.get("propertyMapOffset"),
+                            "propertyMapEndOffset": property_map.get("propertyMapEndOffset"),
+                            "audioPropertyKey": property_key,
+                            "triggerRequestEvidence": ["exactDecodedInteractiveAudioPropertyMap"],
+                            "triggerRuntimeActivationStatuses": [
+                                "runtimePropertyConsumerUnresolved",
+                                "runtimeEventPostingNotObserved",
+                            ],
+                            "path": (
+                                f"standaloneAudioPropertyMaps[{property_map_index}]"
+                                f".audioPropertyRows[{property_index}].events[{event_index}]"
+                            ),
+                            "sourcePaths": source_paths,
+                            "sourceFingerprint": digest,
+                            "evidence": "exactDecodedMemoryPackInteractivePropertyMap",
+                        })
     return dict(contexts)
 
 
@@ -11170,6 +13666,163 @@ def sns_voice_event_contexts(
     return dict(contexts)
 
 
+ABILITY_VOICE_TRIGGER_PREFIX = b"\xfa\x7c\x01\x08"
+ABILITY_VOICE_TRIGGER_MAPPING_ID = (
+    "gameassembly-2026-08-13-ability-voice-trigger-action-0x017c"
+)
+ABILITY_VOICE_TRIGGER_KEY_RE = re.compile(r"^[a-z0-9_]{1,128}$")
+ABILITY_VOICE_OWNER_RE = re.compile(
+    r"^((?:chr|eny)_\d{4}_[a-z0-9]+)(?:_|$)",
+    re.IGNORECASE,
+)
+
+
+def collect_ability_voice_trigger_contexts(
+    export_root: Path,
+    audio_index: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Join exact SkillData VoiceTriggerAction records to compatible Events.
+
+    Current ``AbilityActionData`` union tag ``0x017c`` has eight members. The
+    generated MemoryPack setter order after the four inherited action members
+    is ``_canInterruptTimeMs``, ``_speakerType``, ``_triggerKey``, then
+    ``targetSettings``. ``VoiceTriggerAction.ExecuteInternal`` passes that
+    trigger key and the resolved target entity to ``VoiceManager.ResponseOnEntity``.
+
+    Live response selection can still apply cooldown, probability, speaker,
+    and target rules. We therefore admit only the unique current
+    AudioDialog/Wwise identity named exactly
+    ``<SkillData owner>_<triggerKey>_sv`` and keep it as an authored possible
+    trigger rather than claiming observed playback.
+    """
+
+    aliases_by_name = {
+        str(row.get("name") or "").strip().casefold(): row
+        for row in audio_index.get("audioDialogWwiseEventAliases") or []
+        if isinstance(row, dict) and str(row.get("name") or "").strip()
+    }
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    source_root = (
+        export_root / "structured" / "Persistent" / "Data" / "Json"
+        / "SkillData"
+    )
+    if not source_root.is_dir() or not aliases_by_name:
+        return {}
+
+    for path in sorted(source_root.glob("*.json"), key=lambda item: item.name):
+        owner_match = ABILITY_VOICE_OWNER_RE.match(path.stem)
+        if owner_match is None:
+            continue
+        owner_id = owner_match.group(1).casefold()
+        try:
+            data = path.read_bytes()
+        except OSError:
+            continue
+        source_path = normalize_posix(path.relative_to(export_root))
+        source_sha256 = hashlib.sha256(data).hexdigest()
+        offset = 0
+        while True:
+            action_offset = data.find(ABILITY_VOICE_TRIGGER_PREFIX, offset)
+            if action_offset < 0:
+                break
+            offset = action_offset + 1
+            payload_offset = action_offset + len(ABILITY_VOICE_TRIGGER_PREFIX)
+            # bool + inherited 3*i32 + interrupt + speaker + string length
+            if payload_offset + 25 > len(data):
+                continue
+            enabled = data[payload_offset]
+            if enabled not in (0, 1):
+                continue
+            try:
+                (
+                    priority_level,
+                    priority_offset,
+                    server_action_index,
+                    can_interrupt_time_ms,
+                    speaker_type,
+                    trigger_length,
+                ) = struct.unpack_from("<iiiiii", data, payload_offset + 1)
+            except struct.error:
+                continue
+            trigger_start = payload_offset + 25
+            trigger_end = trigger_start + trigger_length
+            if (
+                enabled != 1
+                or abs(priority_level) > 1_000_000
+                or abs(priority_offset) > 1_000_000
+                or abs(server_action_index) > 1_000_000
+                or can_interrupt_time_ms < -1
+                or can_interrupt_time_ms > 3_600_000
+                or speaker_type < 0
+                or speaker_type > 255
+                or trigger_length < 1
+                or trigger_length > 128
+                or trigger_end > len(data)
+            ):
+                continue
+            try:
+                trigger_key = data[trigger_start:trigger_end].decode("ascii")
+            except UnicodeDecodeError:
+                continue
+            if ABILITY_VOICE_TRIGGER_KEY_RE.fullmatch(trigger_key) is None:
+                continue
+            event_name = f"{owner_id}_{trigger_key}_sv"
+            alias = aliases_by_name.get(event_name.casefold())
+            if not isinstance(alias, dict):
+                continue
+            context = {
+                "kind": "abilityVoiceTriggerAction",
+                "confidence": "direct",
+                "semanticRole": "authoredAbilityVoiceResponseTrigger",
+                "playbackPlacementStatus": "authoredPossibleTrigger",
+                "triggerBindingStatus": (
+                    "exactAbilityVoiceTriggerAndUniqueOwnerEventIdentity"
+                ),
+                "configKind": "SkillData",
+                "configId": path.stem,
+                "ownerId": owner_id,
+                "sourcePath": source_path,
+                "sourcePaths": [source_path],
+                "sourceSha256": source_sha256,
+                "actionOffset": action_offset,
+                "actionOffsetHex": f"0x{action_offset:x}",
+                "actionUnionTag": "0x017c",
+                "serializedMemberCount": 8,
+                "nativeMappingId": ABILITY_VOICE_TRIGGER_MAPPING_ID,
+                "isEnabled": True,
+                "priorityLevel": priority_level,
+                "priorityOffset": priority_offset,
+                "serverActionIndex": server_action_index,
+                "canInterruptTimeMs": can_interrupt_time_ms,
+                "speakerType": speaker_type,
+                "triggerKey": trigger_key,
+                "eventName": str(alias.get("name") or event_name),
+                "eventHash": alias.get("eventHash"),
+                "eventNameEvidence": alias.get("evidence"),
+                "eventSelectionStatus": (
+                    "uniqueSkillOwnerTriggerCompatibleAudioDialogWwiseEvent;"
+                    "responsiveRuntimeSelectionUnobserved"
+                ),
+                "runtimeRoute": (
+                    "VoiceTriggerAction.ExecuteInternal -> "
+                    "VoiceManager.ResponseOnEntity -> VoiceResponseProcessor -> "
+                    "VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice"
+                ),
+                "runtimeActivationStatus": (
+                    "abilityActionExecutionTargetResolutionAndResponseSelectionUnobserved"
+                ),
+                "triggerRequestEvidence": [
+                    "exactAbilityActionDataUnionTagAndMemberCount",
+                    "exactVoiceTriggerActionMemoryPackSetterOrder",
+                    "currentGameAssemblyResponseOnEntityCall",
+                    "exactAudioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+                ],
+            }
+            _append_context(contexts, seen, event_name, context)
+    return dict(contexts)
+
+
 def collect_responsive_voice_contexts(
     export_root: Path,
     audio_index: dict[str, Any],
@@ -11195,6 +13848,33 @@ def collect_responsive_voice_contexts(
     if not aliases:
         return {}
 
+    extra_by_hash: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for source_layer in ("StreamingAssets", "Persistent"):
+        extra_path = (
+            export_root / "structured" / source_layer / "Table"
+            / "AudioVoiceExtraData.json"
+        )
+        payload = load_json(extra_path, {}) if extra_path.is_file() else {}
+        for raw_voice_id, raw_row in (payload.items() if isinstance(payload, dict) else []):
+            if not isinstance(raw_row, dict):
+                continue
+            try:
+                voice_hash = int(raw_voice_id) & 0xFFFFFFFF
+            except (TypeError, ValueError):
+                continue
+            extra_by_hash[voice_hash].append({
+                "sourceLayer": source_layer,
+                "source": normalize_posix(extra_path.relative_to(export_root)),
+                "devStageCN": raw_row.get("devStageCN"),
+                "devStageEN": raw_row.get("devStageEN"),
+                "devStageJP": raw_row.get("devStageJP"),
+                "devStageKR": raw_row.get("devStageKR"),
+                "durationCN": raw_row.get("durationCN"),
+                "durationEN": raw_row.get("durationEN"),
+                "durationJP": raw_row.get("durationJP"),
+                "durationKR": raw_row.get("durationKR"),
+            })
+
     for event_hash, alias in sorted(aliases.items()):
         event_id = str(alias["name"]).strip().lower()
         _append_context(contexts, seen, event_id, {
@@ -11207,16 +13887,21 @@ def collect_responsive_voice_contexts(
             "speakerChannel": alias.get("speakerChannel") or "",
             "voType": alias.get("voType"),
             "sources": alias.get("sources") or [],
+            "voiceExtraData": extra_by_hash.get(event_hash) or [],
+            "voiceExtraDataStatus": (
+                "exactSignedVoiceIdTableRows"
+                if extra_by_hash.get(event_hash) else "notPresent"
+            ),
             "evidence": alias.get("evidence") or "audioDialogPathHashEqualsVoiceIdAndWwiseEventId",
             "playbackPlacementStatus": "definitionOnly",
         })
 
-    responsive_path = next((
+    responsive_paths = [
         export_root / "structured" / source / "Table" / "ResponsiveDialog.json"
         for source in ("StreamingAssets", "Persistent")
         if (export_root / "structured" / source / "Table" / "ResponsiveDialog.json").is_file()
-    ), None)
-    if responsive_path is not None:
+    ]
+    for responsive_path in responsive_paths:
         payload = load_json(responsive_path, {})
         source = normalize_posix(responsive_path.relative_to(export_root))
         for sentence_type, sentence_row in (payload.items() if isinstance(payload, dict) else []):
@@ -11262,12 +13947,12 @@ def collect_responsive_voice_contexts(
                             "playbackPlacementStatus": "authoredPossibleTrigger",
                         })
 
-    tone_path = next((
+    tone_paths = [
         export_root / "structured" / source / "Table" / "AudioVoTone.json"
         for source in ("StreamingAssets", "Persistent")
         if (export_root / "structured" / source / "Table" / "AudioVoTone.json").is_file()
-    ), None)
-    if tone_path is not None:
+    ]
+    for tone_path in tone_paths:
         payload = load_json(tone_path, {})
         source = normalize_posix(tone_path.relative_to(export_root))
         for raw_base_id, tone_row in (payload.items() if isinstance(payload, dict) else []):
@@ -11297,6 +13982,305 @@ def collect_responsive_voice_contexts(
                     "runtimeSelectionStatus": "liveVariantSelectionUnobserved",
                     "playbackPlacementStatus": "selectionTransformOnly",
                 })
+
+    # Compose exact response membership with exact tone substitution. A tone
+    # row alone is not placement evidence, but a base voice that is an authored
+    # response candidate makes every exact AudioVoTone replacement a candidate
+    # for the same trigger family.
+    aliases_by_voice_id = {
+        int(row.get("voiceId")) & 0xFFFFFFFF: row
+        for row in audio_index.get("audioDialogWwiseEventAliases") or []
+        if isinstance(row, dict) and isinstance(row.get("voiceId"), int)
+    }
+    tone_rows = [
+        (event_id, row)
+        for event_id, event_contexts in list(contexts.items())
+        for row in list(event_contexts)
+        if isinstance(row, dict) and row.get("kind") == "voiceToneVariant"
+    ]
+    for variant_event_id, tone in tone_rows:
+        base_alias = aliases_by_voice_id.get(int(tone.get("baseVoiceId") or 0) & 0xFFFFFFFF)
+        if not isinstance(base_alias, dict):
+            continue
+        base_event_id = str(base_alias.get("name") or "").strip().lower()
+        if not base_event_id:
+            continue
+        for response in list(contexts.get(base_event_id) or []):
+            if not isinstance(response, dict) or response.get("kind") != "responsiveDialogVoice":
+                continue
+            _append_context(contexts, seen, variant_event_id, {
+                "kind": "responsiveDialogToneVariant",
+                "sentenceType": response.get("sentenceType"),
+                "speakerId": response.get("speakerId"),
+                "triggerKey": response.get("triggerKey"),
+                "triggerTypeId": response.get("triggerTypeId"),
+                "responseIndex": response.get("responseIndex"),
+                "responseWeight": response.get("responseWeight"),
+                "baseVoiceId": tone.get("baseVoiceId"),
+                "variantVoiceId": tone.get("variantVoiceId"),
+                "variantIndex": tone.get("variantIndex"),
+                "eventHash": tone.get("eventHash"),
+                "audioDialogPath": tone.get("audioDialogPath"),
+                "responsiveSource": response.get("source"),
+                "toneSource": tone.get("source"),
+                "evidence": "exactResponsiveDialogResponseVoiceIdComposedWithExactAudioVoToneVariantVoiceId",
+                "runtimeRoute": (
+                    "VoiceResponseProcessor response selection -> "
+                    "VoiceUtilsInternal.ApplyRandomVoiceTone -> TryReplaceVoiceIdWithTone -> "
+                    "VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice"
+                ),
+                "runtimeSelectionStatus": "baseResponseToneProbabilityCooldownAndLiveChoiceUnobserved",
+                "playbackPlacementStatus": "authoredPossibleTriggerViaToneTransform",
+            })
+    return dict(contexts)
+
+
+def collect_native_voice_trigger_contexts(
+    audio_index: dict[str, Any],
+    metadata_path: Path | None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Attach fingerprint-locked native response requests to voice definitions.
+
+    These callsites load the trigger literal directly into the trigger-key
+    argument immediately before ``VoiceManager.ResponseOnEntity`` (or the
+    equivalent ``VoiceResponseProcessor.Response`` death path).  The selected
+    speaker response and live execution remain unobserved, so matching is
+    limited to current AudioDialog/Wwise identities ending in the exact
+    ``_<triggerKey>_sv`` suffix.
+    """
+
+    gameassembly_path = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
+    if (
+        metadata_path is None
+        or not metadata_path.is_file()
+        or not gameassembly_path.is_file()
+        or file_sha256(metadata_path) != MANAGED_AUDIO_CALLSITE_METADATA_SHA256
+        or file_sha256(gameassembly_path) != MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256
+    ):
+        return {}
+    aliases = [
+        row for row in audio_index.get("audioDialogWwiseEventAliases") or []
+        if isinstance(row, dict) and str(row.get("name") or "").strip()
+    ]
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    for trigger_key, native in NATIVE_VOICE_TRIGGER_ROWS.items():
+        suffix = f"_{trigger_key}_sv"
+        for alias in aliases:
+            event_name = str(alias.get("name") or "").strip()
+            if not event_name.casefold().endswith(suffix.casefold()):
+                continue
+            _append_context(contexts, seen, event_name, {
+                "kind": "nativeVoiceTriggerCallsite",
+                "confidence": "direct",
+                "semanticRole": "nativeVoiceResponseTriggerRequest",
+                "playbackPlacementStatus": "exactNativeTriggerCompatibleVoiceDefinition",
+                "triggerBindingStatus": "exactCurrentBuildLiteralArgumentAndAudioDialogEventSuffix",
+                "triggerKey": trigger_key,
+                "eventName": event_name,
+                "eventHash": alias.get("eventHash"),
+                "eventNameEvidence": alias.get("evidence"),
+                "nativeMappingId": NATIVE_VOICE_TRIGGER_MAPPING_ID,
+                "runtimeRoute": " -> ".join((
+                    f"{native['consumerType']}.{native['consumerMethod']}",
+                    str(native["playbackCall"]),
+                    *(() if native["playbackCall"].endswith("VoiceResponseProcessor.Response")
+                      else ("VoiceResponseProcessor",)),
+                    "VoiceSpeakChannelProcessor._PlayVoice",
+                    "VoicePlayer.PlayVoice",
+                )),
+                "runtimeActivationStatus": "nativeBranchAndLiveResponseSelectionUnobserved",
+                "runtimeSelectionStatus": "speakerCooldownProbabilityToneAndLiveChoiceUnobserved",
+                "triggerRequestEvidence": [
+                    "fingerprintLockedCurrentMetadataStringLiteralHandle",
+                    "exactNativeLiteralLoadIntoTriggerArgument",
+                    "exactDirectVoiceResponseCall",
+                    "exactAudioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+                ],
+                **native,
+            })
+    return dict(contexts)
+
+
+def _animation_voice_trigger_rows(data: bytes) -> list[dict[str, Any]]:
+    """Read only Unity AnimationEvent ``TriggerVoice`` scalar arguments."""
+
+    rows: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    in_events = False
+    event_index = -1
+
+    def finish() -> None:
+        nonlocal current
+        if (
+            current
+            and current.get("function") == "TriggerVoice"
+            and str(current.get("triggerKey") or "").strip()
+        ):
+            rows.append(current)
+        current = None
+
+    for raw_line in data.splitlines():
+        line = raw_line.decode("utf-8", errors="replace")
+        if line == "  m_Events:":
+            in_events = True
+        elif in_events and line.startswith("  - time: "):
+            finish()
+            event_index += 1
+            raw_value = line.removeprefix("  - time: ").strip()
+            try:
+                time_value: float | str = float(raw_value)
+            except ValueError:
+                time_value = raw_value
+            current = {"eventIndex": event_index, "time": time_value}
+        elif current is not None and line.startswith("    functionName: "):
+            current["function"] = line.removeprefix("    functionName: ").strip().strip("'\"")
+        elif current is not None and line.startswith("    data: "):
+            current["triggerKey"] = line.removeprefix("    data: ").strip().strip("'\"")
+        elif current is not None and line.startswith("    floatParameter: "):
+            raw_value = line.removeprefix("    floatParameter: ").strip()
+            try:
+                current["floatParameter"] = float(raw_value)
+            except ValueError:
+                current["floatParameter"] = raw_value
+        elif current is not None and line.startswith("    intParameter: "):
+            raw_value = line.removeprefix("    intParameter: ").strip()
+            try:
+                current["intParameter"] = int(raw_value)
+            except ValueError:
+                current["intParameter"] = raw_value
+    finish()
+    return rows
+
+
+def collect_animation_voice_trigger_contexts(
+    export_root: Path,
+    audio_index: dict[str, Any],
+    metadata_path: Path | None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Join exact AnimationClip voice requests to exact voice Event identities.
+
+    ``AnimatorMono.TriggerVoice(AnimationEvent)`` forwards ``data`` as the
+    response trigger key and ``intParameter`` as the response integer argument.
+    This is not a direct Wwise Event post.  A voice definition is admitted only
+    when its actor/enemy kind, identity token, and trigger key exactly match the
+    current AudioDialog/Wwise Event name.  When multiple numbered definitions
+    reuse one animation identity token, all exact candidates remain visibly
+    shared instead of inventing a unique template owner.
+    """
+
+    gameassembly_path = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
+    if (
+        metadata_path is None
+        or not metadata_path.is_file()
+        or not gameassembly_path.is_file()
+        or file_sha256(metadata_path) != MANAGED_AUDIO_CALLSITE_METADATA_SHA256
+        or file_sha256(gameassembly_path) != MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256
+    ):
+        return {}
+
+    aliases: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for raw_alias in audio_index.get("audioDialogWwiseEventAliases") or []:
+        if not isinstance(raw_alias, dict):
+            continue
+        event_name = str(raw_alias.get("name") or "").strip()
+        match = ANIMATION_VOICE_EVENT_RE.fullmatch(event_name)
+        if match is None:
+            continue
+        aliases[(
+            match.group("prefix").casefold(),
+            match.group("token").casefold(),
+            match.group("trigger").casefold(),
+        )].append(raw_alias)
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    for rel_root in ANIMATION_VOICE_CLIP_RELS:
+        root = export_root / rel_root
+        if not root.is_dir():
+            continue
+        for path in sorted(root.glob("A_*.anim"), key=lambda item: item.name):
+            clip_match = ANIMATION_VOICE_CLIP_RE.match(path.stem)
+            if clip_match is None:
+                continue
+            try:
+                data = path.read_bytes()
+            except OSError:
+                continue
+            if b"functionName: TriggerVoice" not in data:
+                continue
+            prefix = "chr" if clip_match.group("kind").casefold() == "actor" else "eny"
+            identity_token = clip_match.group("token").casefold()
+            source_path = normalize_posix(path.relative_to(export_root))
+            source_layer = (
+                "Persistent" if "/Persistent/" in source_path else "StreamingAssets"
+            )
+            for row in _animation_voice_trigger_rows(data):
+                trigger_key = str(row.get("triggerKey") or "").strip().casefold()
+                candidates = aliases.get((prefix, identity_token, trigger_key)) or []
+                candidates_by_name = {
+                    str(alias.get("name") or "").strip(): alias
+                    for alias in candidates
+                    if str(alias.get("name") or "").strip()
+                }
+                if not candidates_by_name:
+                    continue
+                owner_candidate_ids = sorted(
+                    match.group("owner")
+                    for event_name in candidates_by_name
+                    if (match := ANIMATION_VOICE_EVENT_RE.fullmatch(event_name)) is not None
+                )
+                for event_name, alias in sorted(candidates_by_name.items()):
+                    owner_match = ANIMATION_VOICE_EVENT_RE.fullmatch(event_name)
+                    if owner_match is None:
+                        continue
+                    shared_owner = len(owner_candidate_ids) > 1
+                    _append_context(contexts, seen, event_name, {
+                        "kind": "animationVoiceTrigger",
+                        "confidence": (
+                            "exactSharedIdentityTokenCandidate" if shared_owner else "direct"
+                        ),
+                        "semanticRole": "authoredAnimationVoiceResponseTrigger",
+                        "playbackPlacementStatus": "exactAnimationVoiceTriggerCompatibleDefinition",
+                        "triggerBindingStatus": (
+                            "exactAnimationOwnerTokenTriggerKeyAndAudioDialogEventIdentity"
+                        ),
+                        "ownerKind": "character" if prefix == "chr" else "enemy",
+                        "ownerId": owner_match.group("owner"),
+                        "ownerCandidateIds": owner_candidate_ids,
+                        "animationOwnerCandidateCount": len(owner_candidate_ids),
+                        "animationOwnershipScope": (
+                            "sharedIdentityToken" if shared_owner else "singleDefinitionIdentityToken"
+                        ),
+                        "identityToken": identity_token,
+                        "triggerKey": trigger_key,
+                        "eventName": event_name,
+                        "eventHash": alias.get("eventHash"),
+                        "eventNameEvidence": alias.get("evidence"),
+                        "clip": path.stem,
+                        "clipSource": source_path,
+                        "sourceLayer": source_layer,
+                        "eventIndex": row.get("eventIndex"),
+                        "time": row.get("time"),
+                        "function": row.get("function"),
+                        "intParameter": row.get("intParameter"),
+                        "floatParameter": row.get("floatParameter"),
+                        "nativeMappingId": ANIMATION_VOICE_TRIGGER_MAPPING_ID,
+                        "runtimeRoute": (
+                            "AnimationClip TriggerVoice -> AnimatorMono.TriggerVoice -> "
+                            "VoiceManager.ResponseOnEntity -> VoiceResponseProcessor -> "
+                            "VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice"
+                        ),
+                        "runtimeActivationStatus": "animationPlaybackAndLiveResponseSelectionUnobserved",
+                        "runtimeSelectionStatus": "speakerCooldownProbabilityToneAndLiveChoiceUnobserved",
+                        "triggerRequestEvidence": [
+                            "exactUnityAnimationEventTriggerVoiceArguments",
+                            "exactAnimationClipAndVoiceDefinitionIdentityToken",
+                            "fingerprintLockedCurrentBuildAnimatorMonoNativeForwarder",
+                            "exactAudioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+                        ],
+                        **ANIMATION_VOICE_TRIGGER_NATIVE,
+                    })
     return dict(contexts)
 
 
@@ -11320,6 +14304,30 @@ def collect_webui_cutscene_events(webui_root: Path, language: str) -> dict[str, 
     return out
 
 
+def merge_cutscene_event_maps(
+    *sources: dict[str, list[str]] | None,
+) -> dict[str, list[str]]:
+    """Merge authored cutscene evidence without losing source-only placements."""
+
+    out: dict[str, list[str]] = {}
+    seen: dict[str, set[str]] = defaultdict(set)
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        for story_key, values in source.items():
+            key = str(story_key or "").strip()
+            if not key or not isinstance(values, list):
+                continue
+            for value in values:
+                event_id = str(value or "").strip()
+                marker = event_id.lower()
+                if not marker or marker in seen[key]:
+                    continue
+                seen[key].add(marker)
+                out.setdefault(key, []).append(event_id)
+    return out
+
+
 def managed_literal_contexts(
     metadata_path: Path | None,
     *,
@@ -11331,6 +14339,19 @@ def managed_literal_contexts(
     ]
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
+    callsite_contexts: dict[str, dict[str, Any]] = {}
+    metadata_fingerprint = ""
+    gameassembly_fingerprint = ""
+    gameassembly_path = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
+    if metadata_path and metadata_path.is_file():
+        metadata_fingerprint = file_sha256(metadata_path)
+    if gameassembly_path.is_file():
+        gameassembly_fingerprint = file_sha256(gameassembly_path)
+    if (
+        metadata_fingerprint == MANAGED_AUDIO_CALLSITE_METADATA_SHA256
+        and gameassembly_fingerprint == MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256
+    ):
+        callsite_contexts = MANAGED_AUDIO_CALLSITE_CONTEXTS
     for name in names:
         event_hash = audio_hash_generator_compute(name)
         if (
@@ -11338,16 +14359,34 @@ def managed_literal_contexts(
             and event_hash not in current_wwise_event_hashes
         ):
             continue
-        _append_context(contexts, seen, name, {
-            "kind": "binaryManagedLiteral",
+        callsite = callsite_contexts.get(name.lower())
+        context = {
+            "kind": "binaryManagedLiteralCallsite" if callsite else "binaryManagedLiteral",
             "literal": name,
             "eventHash": event_hash,
             "eventHashHex": f"0x{event_hash:08x}",
             "source": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat:stringLiteral",
-            "evidence": "exactManagedStringLiteralAndCurrentWwiseEventHash",
-            "playbackPlacementStatus": "identityOnlyManagedStringLiteral",
-            "runtimeConsumerStatus": "consumerCallsiteUnresolved",
-        })
+            "evidence": (
+                "exactManagedStringLiteralCurrentWwiseEventHashAndNativePlaybackCallsite"
+                if callsite else "exactManagedStringLiteralAndCurrentWwiseEventHash"
+            ),
+            "playbackPlacementStatus": (
+                "exactManagedNativePlaybackCallsite"
+                if callsite else "identityOnlyManagedStringLiteral"
+            ),
+            "runtimeConsumerStatus": (
+                "exactCurrentBuildNativeConsumer"
+                if callsite else "consumerCallsiteUnresolved"
+            ),
+        }
+        if callsite:
+            context.update(callsite)
+            context.update({
+                "metadataSha256": metadata_fingerprint,
+                "gameAssemblySha256": gameassembly_fingerprint,
+                "runtimeExecutionStatus": "runtimeBranchExecutionUnobserved",
+            })
+        _append_context(contexts, seen, name, context)
     return dict(contexts), names
 
 
@@ -12037,6 +15076,7 @@ def build_event_rows(
         if category == "unknown" and any(
             context.get("kind") in {
                 "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant",
+                "responsiveDialogToneVariant",
                 "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent",
                 "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent",
                 "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "snsVoiceMessageEvent",
@@ -12087,6 +15127,14 @@ def build_event_rows(
             purpose_knowledge_status = "audioLibraryEmptyEventKnown"
             purpose_investigation_priority = "secondary"
             playback_location_status = "libraryEmptyEventExternalCallerUnknown"
+        elif (
+            (identity_alias or {}).get("dictionaryKind") == "skill_id"
+            and (identity_alias or {}).get("playbackPlacementStatus")
+            == "identityOnlyNoAudioConsumer"
+        ):
+            purpose_knowledge_status = "identityOnlyNoConsumer"
+            purpose_investigation_priority = "highest"
+            playback_location_status = "unknown"
         else:
             purpose_knowledge_status = (
                 "identityOnlyNoConsumer" if event_contexts else "unknownUse"
@@ -12309,11 +15357,18 @@ def annotate_media_playback_locations(
 
 def semantic_context_group(kind: Any) -> str:
     value = str(kind or "")
-    if value in {"characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"}:
+    if value in {
+        "characterSkill", "enemySkill", "buffPlaySoundAction",
+        "projectileSoundField", "gameplayConfigAudioReference",
+        "abilityVoiceTriggerAction", "nativeVoiceTriggerCallsite",
+    }:
         return "gameplay"
     if value == "cutsceneTimeline":
         return "cutscene"
-    if value in {"characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"}:
+    if value in {
+        "characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved",
+        "animationVoiceTrigger",
+    }:
         return "animation"
     if value in {"levelSequenceAudio", "timelineAudioCueBehaviorEvent"}:
         return "timeline"
@@ -12321,10 +15376,15 @@ def semantic_context_group(kind: Any) -> str:
         return "scripted"
     if value in {
         "table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger",
+        "interactiveComponentPropertyAudio", "interactivePropertyMapAudio",
+        "interactiveTemplateConfigAudio", "interactiveTemplateActionAudio",
+        "interactiveEmbeddedActionAudio",
+        "binaryManagedLiteralCallsite",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
         "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
         "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "physicsAudioComponentEvent",
         "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant",
+        "responsiveDialogToneVariant", "nativeVoiceTriggerCallsite",
         "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent",
         "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent",
         "responsiveVoiceEventTemplate", "voiceTableWwiseEvent",
@@ -12593,6 +15653,17 @@ def build_audio_semantic_data(
     cutscene_events: dict[str, list[str]] | None = None,
 ) -> dict[str, Any]:
     language = language.upper()
+    if cutscene_events is None:
+        cached_cutscene_events = audio_index.get("cutsceneAudioEvents")
+        # The persisted map is the exact binary placement evidence. Published
+        # Story cards are only a compatibility fallback for older indexes;
+        # merging them would re-add line-bound audio whose purpose is already
+        # known and multiply generic timeline contexts across aliases.
+        cutscene_events = (
+            merge_cutscene_event_maps(cached_cutscene_events)
+            if isinstance(cached_cutscene_events, dict) and cached_cutscene_events
+            else collect_webui_cutscene_events(webui_root, language)
+        )
     runtime_model = build_runtime_model(metadata_path, export_root)
     current_wwise_event_hashes = {
         int(row.get("eventHash")) & 0xFFFFFFFF
@@ -12629,6 +15700,19 @@ def build_audio_semantic_data(
         export_root,
         audio_index,
     )
+    ability_voice_trigger_contexts = collect_ability_voice_trigger_contexts(
+        export_root,
+        audio_index,
+    )
+    native_voice_trigger_contexts = collect_native_voice_trigger_contexts(
+        audio_index,
+        metadata_path,
+    )
+    animation_voice_trigger_contexts = collect_animation_voice_trigger_contexts(
+        export_root,
+        audio_index,
+        metadata_path,
+    )
     voice_table_contexts = voice_table_event_contexts(audio_index)
     typed_ui_table_contexts = typed_ui_table_event_contexts(audio_index)
     sns_voice_contexts = sns_voice_event_contexts(audio_index)
@@ -12652,6 +15736,9 @@ def build_audio_semantic_data(
         lua_audio_contexts(audio_index),
         literal_context_index,
         responsive_voice_contexts,
+        ability_voice_trigger_contexts,
+        native_voice_trigger_contexts,
+        animation_voice_trigger_contexts,
         voice_table_contexts,
         typed_ui_table_contexts,
         sns_voice_contexts,
@@ -13097,6 +16184,16 @@ def build_audio_semantic_data(
             "interactiveAudioTriggerContexts": context_kind_counts.get("interactiveAudioTrigger", 0),
             "interactiveComponentTriggerEvents": context_kind_event_counts.get("interactiveComponentTrigger", 0),
             "interactiveComponentTriggerContexts": context_kind_counts.get("interactiveComponentTrigger", 0),
+            "interactiveComponentPropertyAudioEvents": context_kind_event_counts.get("interactiveComponentPropertyAudio", 0),
+            "interactiveComponentPropertyAudioContexts": context_kind_counts.get("interactiveComponentPropertyAudio", 0),
+            "interactivePropertyMapAudioEvents": context_kind_event_counts.get("interactivePropertyMapAudio", 0),
+            "interactivePropertyMapAudioContexts": context_kind_counts.get("interactivePropertyMapAudio", 0),
+            "interactiveTemplateConfigAudioEvents": context_kind_event_counts.get("interactiveTemplateConfigAudio", 0),
+            "interactiveTemplateConfigAudioContexts": context_kind_counts.get("interactiveTemplateConfigAudio", 0),
+            "interactiveTemplateActionAudioEvents": context_kind_event_counts.get("interactiveTemplateActionAudio", 0),
+            "interactiveTemplateActionAudioContexts": context_kind_counts.get("interactiveTemplateActionAudio", 0),
+            "interactiveEmbeddedActionAudioEvents": context_kind_event_counts.get("interactiveEmbeddedActionAudio", 0),
+            "interactiveEmbeddedActionAudioContexts": context_kind_counts.get("interactiveEmbeddedActionAudio", 0),
             "audioGlobalConfigEvents": (
                 context_kind_event_counts.get("audioGlobalConfigEvent", 0)
                 + context_kind_event_counts.get("audioGlobalConfigEventHash", 0)
@@ -13486,7 +16583,6 @@ def main(argv: list[str] | None = None) -> int:
         export_root=args.export_root.resolve(),
         webui_root=args.webui_root.resolve(),
         metadata_path=args.metadata.resolve() if args.metadata else None,
-        cutscene_events=collect_webui_cutscene_events(args.webui_root.resolve(), language),
     )
     print(
         "Audio semantic WebUI data:"

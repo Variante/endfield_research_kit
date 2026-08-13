@@ -1,13 +1,10 @@
 @echo off
 setlocal
 
-rem Compares an older exported game-data folder against the current one and
-rem writes the WebUI Updates tab feed plus the change reports.
+rem Compares two exported game-data folders and builds the WebUI Updates feed.
 rem
-rem   build_updates.bat                compare the folders set in endfield_paths.bat
-rem   build_updates.bat OLD NEW        compare two folders you name
-rem   build_updates.bat --first-time   record a starting point, report no changes
-rem   build_updates.bat --help         all options
+rem   build_updates.bat OLD NEW  compare two exports
+rem   build_updates.bat --help   all options
 
 set "OLD_EXPORT="
 set "NEW_EXPORT="
@@ -48,10 +45,10 @@ if /I "%~1"=="--skip-audio-updates" goto :opt_no_audio
 if /I "%~1"=="--exact" goto :opt_exact
 if /I "%~1"=="--hash-asset-updates" goto :opt_exact
 
-rem First build of the feed.
-if /I "%~1"=="--first-time" goto :opt_first_time
-if /I "%~1"=="--init-build" goto :opt_first_time
-if /I "%~1"=="--baseline-only" goto :opt_first_time
+rem Baseline-only initialization was retired; two exports are required.
+if /I "%~1"=="--first-time" goto :first_time_removed
+if /I "%~1"=="--init-build" goto :first_time_removed
+if /I "%~1"=="--baseline-only" goto :first_time_removed
 
 rem Long-form folder flags, kept for scripts and for one-off overrides.
 if /I "%~1"=="--previous-export-root" goto :opt_old_root
@@ -85,11 +82,6 @@ goto :parse_options
 
 :opt_exact
 set "MODE_ARGS=%MODE_ARGS% --hash-asset-updates"
-shift
-goto :parse_options
-
-:opt_first_time
-set "MODE_ARGS=%MODE_ARGS% --baseline-only"
 shift
 goto :parse_options
 
@@ -172,6 +164,11 @@ exit /b 2
 echo Missing folder for %~1.
 exit /b 2
 
+:first_time_removed
+echo --first-time is no longer supported. Updates require two exported folders.
+echo Run: build_updates.bat OLD NEW
+exit /b 2
+
 :is_help
 if /I "%~1"=="--help" exit /b 0
 if /I "%~1"=="-h" exit /b 0
@@ -190,11 +187,13 @@ exit /b 1
 :help
 if not defined ENDFIELD_PREVIOUS_EXPORT_ROOT set "ENDFIELD_PREVIOUS_EXPORT_ROOT=(unset in endfield_paths.bat)"
 if not defined ENDFIELD_EXPORT_ROOT set "ENDFIELD_EXPORT_ROOT=(unset in endfield_paths.bat)"
-echo Usage: build_updates.bat [OLD NEW] [options]
+echo Usage:
+echo   build_updates.bat [OLD NEW] [options]
 echo.
-echo Compares two exported game-data folders and builds the WebUI Updates tab.
-echo OLD is the export saved from the older game version, NEW is the current
-echo export. With no folders it uses the ones set in endfield_paths.bat:
+echo Compares two exported game-data folders and builds
+echo webui\data\updates\latest.json. OLD is the saved older export and NEW is
+echo the current export. With no folders it uses endfield_paths.bat. No
+echo first-time or installed-VFS tracking mode exists.
 echo.
 echo   old: %ENDFIELD_PREVIOUS_EXPORT_ROOT%
 echo   new: %ENDFIELD_EXPORT_ROOT%
@@ -208,8 +207,6 @@ echo     images/models/video   from the asset export roots
 echo     decoded audio         from structured\Audio (.flac .wav .wem)
 echo.
 echo Options:
-echo   --first-time   Record NEW as the starting point and report no changes.
-echo                  Use this for the very first Updates build.
 echo   --text-only    Drop both media groups and compare text only. Fastest,
 echo                  because no media folder is walked at all.
 echo   --no-audio     Keep images/models/video, drop decoded audio. Audio is
@@ -241,8 +238,6 @@ echo   between --exact and the default throws that reuse away.
 echo.
 echo Examples:
 echo   build_updates.bat
-echo   build_updates.bat --first-time
-echo   build_updates.bat --no-audio
 echo   build_updates.bat "D:\exports\Endfield_old" "D:\exports\Endfield_new"
 echo.
 echo Writes:
@@ -252,11 +247,7 @@ echo.
 echo Notes:
 echo   Naming OLD and NEW rebuilds the cached scan of OLD automatically.
 echo   For repeated runs, edit endfield_paths.bat instead of passing folders.
-echo   build_updates_by_patch.bat is the other workflow: it detects a game
-echo   patch in the installed files, produces the new export, and then calls
-echo   this script for you.
-echo   Advanced options are passed through to scripts\build_updates.py.
-echo   Run "python scripts\build_updates.py --help" to see them.
+echo   Advanced options pass through to scripts\build_updates.py.
 echo.
 endlocal
 exit /b 0

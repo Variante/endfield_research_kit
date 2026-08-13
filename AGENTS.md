@@ -32,11 +32,7 @@ disposable evidence belongs in `scratch/` or `tmp/`.
 .\export.bat --from-game
 .\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
 .\build_updates.bat
-.\build_updates.bat --first-time
 .\build_updates.bat OLD NEW
-.\build_updates_by_patch.bat --first-time
-.\build_updates_by_patch.bat --check
-.\build_updates_by_patch.bat
 .\export_assets.bat
 python serve.py
 python serve.py 9000
@@ -62,7 +58,7 @@ data, `--focused-assets`/`--default-assets`/`--debug-assets` set asset scope,
 builders, `--game-root PATH` overrides the installed client, and `--help`
 prints a plain-language option list on every wrapper. Earlier spellings
 (`--export-from-game`, `--animestudio-jobs`, `--animestudio-asset-mode`,
-`--apply`, `--init-baseline`, `--init-build`, `--skip-asset-updates`,
+`--skip-asset-updates`,
 `--skip-audio-updates`, `--hash-asset-updates`) still work but are no longer
 documented in the help screens. Options that only apply while reading
 installed game data are rejected with an explanatory message when
@@ -74,9 +70,9 @@ breaks their argument loops.
 initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, verifies the
 integrated AnimeStudio VFS/audio commands, runs `export.bat --from-game
 --story-only --animestudio-story-monobehaviour-names`,
-prints optional `export_assets.bat --from-game` and
-`build_updates.bat --first-time` follow-up commands plus plain `export.bat` for
-the remaining semantic views, then starts or reuses the default WebUI server.
+prints optional `export_assets.bat --from-game` and plain `export.bat` follow-up
+commands for the remaining semantic views, explains that Updates requires two
+complete exports, then starts or reuses the default WebUI server.
 Pass `--no-serve` when setup should finish without starting `serve.py`.
 
 `export.bat` is the canonical Story/Text Tables and curated semantic-view WebUI rebuild from an existing
@@ -109,9 +105,7 @@ order is user-managed there, while OCR recovery writes proposed order references
 under `webui/data/story_order_ocr.json`. Every `export.bat` run writes a
 wall-time and process-tree RAM benchmark under `reports/export/benchmarks/` and updates
 `reports/export/export_benchmark_latest.md/json`.
-Use `build_updates.bat` for the standalone Updates feed comparison. Use
-`build_updates.bat --first-time` for first-time/baseline-only builds where the
-Updates feed should be baselined instead of reporting changes. It reads the
+Use `build_updates.bat` to compare two complete exports. It reads the
 previous/current export roots from `endfield_paths.bat` by default, tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and
 decoded audio, and accepts a leading `OLD NEW` folder pair (or the long
@@ -119,8 +113,8 @@ decoded audio, and accepts a leading `OLD NEW` folder pair (or the long
 `OLD` implies `--refresh-previous-export-baseline`. Pass `--no-audio` to omit
 decoded audio while keeping other asset entries. Pass `--text-only` only for a
 text-only update feed, and `--exact` to hash asset contents instead of
-comparing sizes. The wrapper still accepts the older `--init-build`,
-`--skip-audio-updates`, `--skip-asset-updates`, and `--hash-asset-updates`
+comparing sizes. The wrapper still accepts the older `--skip-audio-updates`,
+`--skip-asset-updates`, and `--hash-asset-updates`
 spellings, and forwards any other option to `scripts/build_updates.py`.
 Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
 lookup, and CN audio relinking from existing decoded assets when Story is
@@ -225,7 +219,6 @@ Useful direct commands:
 
 ```bat
 python scripts\build_updates.py
-python scripts\build_updates.py --baseline-only
 python scripts\build_updates.py --skip-asset-updates
 python scripts\build_updates.py --skip-audio-updates
 python scripts\build_updates.py --refresh-previous-export-baseline
@@ -455,9 +448,9 @@ image/model/video assets plus decoded audio. Use `--full-export-scan` only for
 a broad audit of all files under the two export roots.
 
 `build_updates.bat` reads the saved previous export and current export roots
-from `endfield_paths.bat` (`ENDFIELD_PREVIOUS_EXPORT_ROOT` and
-`ENDFIELD_EXPORT_ROOT`). The underlying `scripts/build_updates.py` defaults to
-comparing:
+from `endfield_paths.bat`
+(`ENDFIELD_PREVIOUS_EXPORT_ROOT` and `ENDFIELD_EXPORT_ROOT`). The underlying
+`scripts/build_updates.py` defaults to comparing:
 
 ```text
 export_1d2
@@ -475,42 +468,14 @@ two-extraction command that also generates the WebUI page is:
 version; the pair must be the first arguments, and the wrapper adds
 `--refresh-previous-export-baseline` for them. The long
 `--previous-export-root PATH`/`--export-root PATH` flags remain available and
-may override one side only. `build_updates_by_patch.bat --check` is detection-only; the default
-no-argument patch mode invokes the extracted-tree feed comparison itself after
-successful staging and rotation.
+may override one side only. With no folder arguments, the wrapper uses its
+configured defaults. Both complete export folders are required;
+there is no first-time or installed-VFS tracking mode.
 Scanner cache and feed history live under `.game-data-tracker/`; the cached
 baseline is built from the previous export folder, then the current export root
 is scanned against it using the same focused roots. Do not point this
 comparison at `webui/`, `reports/`, `memory/`, or `scratch/`. WebUI edits and
 generated output outside the export roots must not appear as game-data updates.
-
-`build_updates_by_patch.bat` is the original installed-data patch workflow. Its
-three modes are `--update` (default), `--check`, and `--first-time`, and only
-one may be given per run. `--first-time` builds a logical VFS snapshot from only
-the current installed version and attaches it under the current export without
-requiring a previous export. Use `build_updates.bat --first-time` separately
-when an empty first WebUI feed is desired. `--check` is detection-only. Asset
-scope uses the same `--focused-assets`/`--default-assets`/`--debug-assets` names
-as `export.bat`, and `--jobs N` caps AnimeStudio workers. The older `--apply`,
-`--init-baseline`, `--init-current-version`, `--baseline-current`,
-`--asset-mode MODE`, and `--animestudio-jobs N` spellings still work, and any
-other option is forwarded to `scripts/game_data_update_workflow.py`.
-With no mode, the wrapper
-runs `--apply`: logical no-change, version-only, and chunk-only repack results
-leave all published state untouched; logical changes clone the complete current
-export into sibling staging, selectively dump changed Table/JsonData/Video/
-AuditVideo/Lua files, refresh broad AnimeStudio or CN audio scopes only when
-their source blocks changed, re-scan the installed VFS, and then publish.
-
-Patch publication moves the previous `export_full` to the configured previous
-export path, using a snapshot-suffixed sibling if that path already exists,
-renames staging to the canonical `export_full`, rebuilds WebUI data, invokes
-`build_updates.bat` against archive/current, and advances the baseline only
-after all required work succeeds. On a post-rotation failure it restores the
-previous export and WebUI data and retains the failed new tree under
-`.game-data-tracker/original-data/failed/`. The current and archive roots must
-be on the same volume. A transaction journal under the operational root blocks
-new runs if an interrupted publication needs inspection.
 
 The builder scans exported assets in the same two export folders by default to
 add image/model/video/audio asset-level entries to the Updates page. Asset
@@ -527,9 +492,8 @@ pruning must never target `export_full/` or the repo root. Through the wrapper
 these are `build_updates.bat --prune-old --dry-run` and
 `build_updates.bat --prune-old`.
 
-Use `--baseline-only` only when an empty feed is intentional. Use
-`--refresh-previous-export-baseline` after replacing the saved previous export
-folder so the cached scanner baseline is rebuilt.
+Use `--refresh-previous-export-baseline` after replacing the saved previous
+export folder so the cached scanner baseline is rebuilt.
 
 ## Repo Rules
 

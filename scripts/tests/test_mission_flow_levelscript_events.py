@@ -38,7 +38,7 @@ from scripts.story_builder.mission_recovery import (
     source_backed_call_server_callbacks_from_scene_graph,
     source_backed_hash_terminals_from_scene_graph,
 )
-from scripts.story_recovery.build_callserver_callback_audit import (
+from scripts.story_builder.callserver_callbacks import (
     validate_callserver_serialized_contract,
 )
 

@@ -31,11 +31,8 @@ graph evidence or edits to `webui/overrides/options.json`.
   `export.bat --mission-pipeline-only`.
 - Rebuild only Mission Pipeline JSON/frontend after generated Story and
   evidence are known current: `export.bat --mission-pipeline-data-only`.
-- Build the Updates feed: `build_updates.bat`.
-- Build an empty first-time Updates baseline: `build_updates.bat --first-time`.
-- Compare named extracted trees: `build_updates.bat OLD NEW`.
-- Detect an installed-game patch without publishing:
-  `build_updates_by_patch.bat --check`.
+- Compare named extracted trees and build Updates:
+  `build_updates.bat OLD NEW`.
 - Package the static site: `python scripts\pack_webui.py`.
 
 Use current flag names in docs and commands: `--from-game`, `--with-assets`,
@@ -117,10 +114,11 @@ Gameplay.
 
 ## Updates Contract
 
-Build Updates only from the configured previous and current export roots. The
-normal feed tracks WebUI-facing exported text plus exported image, model,
-video, and decoded audio assets. Never compare `webui/`, `reports/`, `memory/`,
-or `scratch/` as game-data roots.
+Build Updates only from complete previous and current export roots. The feed
+tracks WebUI-facing exported text plus exported image, model, video, and decoded
+audio assets. Both roots are required; there is no first-time or installed-VFS
+tracking mode. Never compare `webui/`, `reports/`, `memory/`, or `scratch/` as
+game-data roots.
 
 Use `--text-only` for text-only output, `--no-audio` to omit audio while
 retaining other assets, `--exact` for content hashing, and

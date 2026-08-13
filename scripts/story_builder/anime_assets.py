@@ -3169,12 +3169,47 @@ def _cutscene_variant_gender(name: str) -> str:
     return ""
 
 
+def _subtitle_track_clip_lines(
+    clips: list[dict],
+    playable_text_ids: dict[int, list[str]],
+) -> list[dict]:
+    lines: list[dict] = []
+    for clip_index, clip in enumerate(clips):
+        if not isinstance(clip, dict):
+            continue
+        asset_ref = clip.get("m_Asset") if isinstance(clip.get("m_Asset"), dict) else {}
+        asset_id = asset_ref.get("m_PathID")
+        common = {
+            "start": clip.get("m_Start"),
+            "duration": clip.get("m_Duration"),
+            "displayName": str(clip.get("m_DisplayName") or ""),
+            "clipIndex": clip_index,
+            "assetPathId": asset_id,
+        }
+        text_ids = playable_text_ids.get(asset_id, [])
+        if text_ids:
+            for text_id in text_ids:
+                lines.append({"textId": text_id, **common})
+        elif common["displayName"].strip():
+            # Preserve authored timing/display evidence even when the exporter
+            # did not emit the referenced SubtitlePlayableAsset `_textId`.
+            lines.append({"textId": "", **common})
+    lines.sort(key=lambda line: (
+        float(line["start"]) if isinstance(line.get("start"), (int, float)) else 0.0,
+        int(line.get("clipIndex") or 0),
+        str(line.get("textId") or ""),
+    ))
+    return lines
+
+
 def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
-    """Return AnimeStudio subtitle clip text IDs grouped by canonical cutscene.
+    """Return AnimeStudio subtitle clip evidence grouped by canonical cutscene.
 
     TextTable rows can contain loose aliases and unused leftovers. When a
     decoded cutscene has a real Timeline subtitle track, the clip asset
     references are the stronger source for which text IDs are actually used.
+    Clip timing/display names remain available as fail-closed evidence when
+    the referenced SubtitlePlayableAsset objects were not exported.
     """
     global _CUTSCENE_SUBTITLE_TRACK_CACHE
     if _CUTSCENE_SUBTITLE_TRACK_CACHE is not None:
@@ -3242,29 +3277,9 @@ def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
             continue
 
         track_info = raw.get("$animestudio") if isinstance(raw.get("$animestudio"), dict) else {}
-        lines: list[dict] = []
-        for clip_index, clip in enumerate(clips):
-            if not isinstance(clip, dict):
-                continue
-            asset_ref = clip.get("m_Asset") if isinstance(clip.get("m_Asset"), dict) else {}
-            asset_id = asset_ref.get("m_PathID")
-            for text_id in playable_text_ids.get(asset_id, []):
-                lines.append({
-                    "textId": text_id,
-                    "start": clip.get("m_Start"),
-                    "duration": clip.get("m_Duration"),
-                    "displayName": str(clip.get("m_DisplayName") or ""),
-                    "clipIndex": clip_index,
-                    "assetPathId": asset_id,
-                })
+        lines = _subtitle_track_clip_lines(clips, playable_text_ids)
         if not lines:
             continue
-
-        lines.sort(key=lambda line: (
-            float(line["start"]) if isinstance(line.get("start"), (int, float)) else 0.0,
-            int(line.get("clipIndex") or 0),
-            str(line.get("textId") or ""),
-        ))
         out[parent_asset["cutsceneKey"]].append({
             "file": repo_rel(path),
             "pathId": track_info.get("pathId"),

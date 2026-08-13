@@ -51,7 +51,7 @@ MAPPER_HELPER = (
     ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 )
 PROTOCOL_AUDIT = (
-    ROOT / "scripts" / "story_recovery" / "build_protocol_registry_audit.py"
+    ROOT / "scripts" / "story_builder" / "protocol_registry.py"
 )
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"

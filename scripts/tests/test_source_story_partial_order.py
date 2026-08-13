@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.story_recovery.build_source_story_partial_order import (
+from scripts.story_builder.source_story_partial_order import (
     NATIVE_TYPED_CONTROL_ACTION_NAMES,
     _native_branch_kind,
     _native_serialized_branch_arm_projection,

@@ -374,8 +374,6 @@ def gameplay_config_records(export_root: Path, family: str) -> dict[str, dict[st
                 continue
             events = length_prefixed_matches(data, GAMEPLAY_AUDIO_EVENT_BYTES_RE)
             buffs = length_prefixed_matches(data, GAMEPLAY_BUFF_BYTES_RE)
-            if not events and not buffs:
-                continue
             record = records.setdefault(path.stem, {"events": set(), "buffs": set(), "sources": set()})
             record["events"].update(events)
             record["buffs"].update(buffs)
@@ -1870,6 +1868,12 @@ def collect_gameplay_audio_references(
 
     skill_records = gameplay_config_records(export_root, "SkillData")
     buff_records = gameplay_config_records(export_root, "BuffData")
+    skill_play_sound = collect_buff_play_sound_actions(export_root, skill_records)
+    skill_play_sound_by_id = skill_play_sound.get("byBuffEvent") or {}
+    seeded_skill_play_sound_events = seed_buff_play_sound_events(
+        skill_records,
+        skill_play_sound_by_id,
+    )
     buff_play_sound = collect_buff_play_sound_actions(export_root, buff_records)
     buff_play_sound_by_id = buff_play_sound.get("byBuffEvent") or {}
     seeded_play_sound_events = seed_buff_play_sound_events(
@@ -1883,6 +1887,21 @@ def collect_gameplay_audio_references(
         for buff_id in sorted(buff_ids):
             rows.extend((buff_play_sound_by_id.get(buff_id) or {}).get(event_key) or [])
         return rows
+
+    def skill_play_sound_rows(event_id: str, skill_id: str) -> list[dict[str, Any]]:
+        rows = (
+            (skill_play_sound_by_id.get(skill_id) or {}).get(event_id.lower()) or []
+        )
+        return [
+            {
+                **{key: value for key, value in row.items() if key != "buffId"},
+                "skillId": skill_id,
+                "configKind": "SkillData",
+                "configId": skill_id,
+            }
+            for row in rows
+            if isinstance(row, dict)
+        ]
 
     enemy_source_files = enemy_template_source_files(export_root)
     enemy_template_skills = enemy_template_skill_references(
@@ -1966,7 +1985,11 @@ def collect_gameplay_audio_references(
 
         event_evidence: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for event_id in sorted(record.get("events") or set()):
-            event_evidence[event_id].append({"kind": "skillData", "skillId": skill_id})
+            evidence = {"kind": "skillData", "skillId": skill_id}
+            actions = skill_play_sound_rows(event_id, skill_id)
+            if actions:
+                evidence["playSoundActions"] = actions
+            event_evidence[event_id].append(evidence)
         for event_id, buff_ids in gameplay_buff_audio(set(record.get("buffs") or set()), buff_records).items():
             evidence = {
                 "kind": "skillBuffData",
@@ -2036,6 +2059,26 @@ def collect_gameplay_audio_references(
     )
     profile_voices = collect_gameplay_profile_voices(export_root, entries)
     event_names.update(animation_audio.get("eventNames") or set())
+    authored_config_event_references: list[dict[str, Any]] = []
+    for config_kind, records in (("SkillData", skill_records), ("BuffData", buff_records)):
+        for config_id, record in sorted(records.items()):
+            for event_id in sorted(record.get("events") or set()):
+                if event_id in event_names:
+                    continue
+                authored_config_event_references.append({
+                    "eventId": event_id,
+                    "configKind": config_kind,
+                    "configId": config_id,
+                    "sourcePaths": sorted(record.get("sources") or set()),
+                    "ownerLinkStatus": "unresolved",
+                    "evidence": "exactMemoryPackLengthPrefixedAudioEventString",
+                    "runtimeExecutionStatus": "configRuntimeExecutionNotObserved",
+                })
+    event_names.update(
+        str(row.get("eventId") or "")
+        for row in authored_config_event_references
+        if str(row.get("eventId") or "")
+    )
     authored_play_sound_actions, play_sound_owner_counts = (
         annotate_play_sound_action_owner_links(authored_play_sound_actions, owners)
     )
@@ -2043,6 +2086,7 @@ def collect_gameplay_audio_references(
         "eventNames": event_names,
         "owners": owners,
         "authoredPlaySoundActions": authored_play_sound_actions,
+        "authoredConfigEventReferences": authored_config_event_references,
         "animationOwners": animation_audio.get("owners") or [],
         "unownedAnimationEvents": animation_audio.get("unownedEvents") or {},
         "profileVoiceOwners": profile_voices.get("owners") or [],
@@ -2051,10 +2095,26 @@ def collect_gameplay_audio_references(
             "audioOwnedSkills": len(owned_skill_ids),
             "audioReferences": sum(len(owner.get("events") or {}) for owner in owners),
             "audioEventNames": len(event_names),
+            "authoredConfigEventReferences": len(authored_config_event_references),
+            "authoredConfigEventReferenceEvents": len({
+                str(row.get("eventId") or "")
+                for row in authored_config_event_references
+                if str(row.get("eventId") or "")
+            }),
             "enemyTemplatesWithSkillReferences": len(enemy_template_skills),
             "enemyTemplateSkillReferences": sum(len(skills) for skills in enemy_template_skills.values()),
             **(buff_play_sound.get("counts") or {}),
             "buffPlaySoundSeededEventRefs": seeded_play_sound_events,
+            "skillPlaySoundDecodedSourceFiles": int(
+                (skill_play_sound.get("counts") or {}).get("buffPlaySoundDecodedSourceFiles") or 0
+            ),
+            "skillPlaySoundActionOccurrences": int(
+                (skill_play_sound.get("counts") or {}).get("buffPlaySoundActionOccurrences") or 0
+            ),
+            "skillPlaySoundUniqueEvents": int(
+                (skill_play_sound.get("counts") or {}).get("buffPlaySoundUniqueEvents") or 0
+            ),
+            "skillPlaySoundSeededEventRefs": seeded_skill_play_sound_events,
             **play_sound_owner_counts,
             **(animation_audio.get("counts") or {}),
             **(profile_voices.get("counts") or {}),
@@ -2123,7 +2183,10 @@ def link_gameplay_audio(
             if isinstance(action, dict)
         ]
         if play_sound_actions:
-            relation_types.append("buffPlaySoundAction")
+            if any(action.get("configKind") == "SkillData" for action in play_sound_actions):
+                relation_types.append("skillPlaySoundAction")
+            if any(action.get("configKind") != "SkillData" for action in play_sound_actions):
+                relation_types.append("buffPlaySoundAction")
         if owner_kind == "character" and confidence == "direct" and method == "gameplaySkillId":
             status = "exactSkillConfig"
         elif owner_kind == "enemy" and confidence == "direct" and method == "enemyBornBuffField":
@@ -3023,12 +3086,13 @@ def link_gameplay_audio(
         **animation_evidence,
     })
     json_dump(path, {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "language": language,
         "counts": stats,
         "animationEventCatalogPath": GAMEPLAY_SFX_ANIMATION_CATALOG_NAME,
         "animationEvidencePath": GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME,
         "authoredPlaySoundActions": references.get("authoredPlaySoundActions") or [],
+        "authoredConfigEventReferences": references.get("authoredConfigEventReferences") or [],
         "characters": characters,
         "enemies": enemies,
         "scope": {
@@ -3044,6 +3108,7 @@ def link_gameplay_audio(
             "animationMediaBoundary": "An owned clip proves that its callback requests the Event. Shared playable-character Events expose a shared Wwise selector graph; its reachable leaves are not attributed to one character until switch/state values are decoded.",
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
             "referenceOnlyBoundary": "Exact SkillData/BuffData and owned AnimationClip trigger contexts remain serialized when the Event is absent from current Wwise banks or has no decoded possible media; Gameplay only renders records with playable files.",
+            "unownedConfigBoundary": "A length-prefixed au_* string in one exact SkillData/BuffData binary proves an authored gameplay-config audio reference even when no character/enemy owner is recovered. It does not identify the field subtype, activation condition, runtime owner, Event posting, selected media, or audibility.",
             "runtimeSelection": "Possible media files come from typed Wwise v150 edges and are grouped by Play root and selector relation; the live branch selected by switches, states, random/sequence containers, and layers remains unresolved.",
             "actionDispatchBoundary": "Typed v150 Event Action ordinals and serialized DelayTime, TransitionTime, and Probability properties are preserved. They prove authored dispatch membership and controls, not live action execution, evaluated probability, or sample-accurate audible simultaneity.",
         },
@@ -9463,6 +9528,14 @@ def build_audio(args: argparse.Namespace) -> int:
         "skillIdDictionaryWwiseEventAliases": skill_id_dictionary_wwise_event_aliases,
         "luaAudioReferenceSummary": lua_audio_payload.get("summary") or {},
         "luaAudioReferences": lua_audio_references,
+        # Persist the exact Timeline/LevelSequence/FMV evidence used by the
+        # semantic build. Story cards intentionally do not contain every raw
+        # cutscene placement, so rebuilding semantics from their published
+        # audioEvents alone would silently discard valid playback contexts.
+        "cutsceneAudioEvents": {
+            key: list(events)
+            for key, events in sorted(cutscene_audio_events.items())
+        },
         "hircSummary": hirc_summary,
         "eventEvidence": event_evidence,
         "wwiseEventInventory": wwise_event_inventory,

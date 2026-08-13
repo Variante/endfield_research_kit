@@ -269,7 +269,7 @@ python .\scripts\verify_export_freshness.py %FRESHNESS_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
 if "%ANIMESTUDIO_OBJECT_INDEX%"=="0" goto :refresh_evidence
-python .\scripts\story_recovery\build_animestudio_story_guide_consumer_audit.py
+python .\scripts\story_builder\animestudio_story_guide.py
 if errorlevel 1 exit /b %errorlevel%
 
 :refresh_evidence
@@ -299,7 +299,7 @@ exit /b 0
 
 :build_mission_pipeline_data_only
 echo [export.bat] Reusing current generated Story bundles and evidence.
-python .\scripts\story_recovery\build_protocol_registry_audit.py --ensure-current
+python .\scripts\story_builder\protocol_registry.py --ensure-current
 if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\build_mission_pipeline_data.py

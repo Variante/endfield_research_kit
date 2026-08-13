@@ -147,11 +147,17 @@ def cutscene_root_story_identity(
     """
     if component_story_keys:
         return component_story_keys, "cutscene_root_timeline_name"
-    if (
-        component_game_object_path_id == root_game_object_path_id
-        and root_game_object_name in all_story_keys
-    ):
-        return {root_game_object_name}, "root_game_object_name_fallback"
+    if component_game_object_path_id == root_game_object_path_id:
+        if root_game_object_name in all_story_keys:
+            return {root_game_object_name}, "root_game_object_name_fallback"
+        gender_match = carrier.GENDERED_CUTSCENE_TARGET_RE.fullmatch(
+            root_game_object_name
+        )
+        gender_canonical = gender_match.group(1) if gender_match else ""
+        if gender_canonical in all_story_keys:
+            return {
+                gender_canonical
+            }, "root_game_object_gender_variant_fallback"
     return set(), "unresolved"
 
 
@@ -545,6 +551,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"`{summary['crossStoryContainments']}`",
         "- Exact root-director playback aliases: "
         f"`{summary['crossStoryPlaybackAliases']}`",
+        "- Exact root-director bindings: "
+        f"`{summary['rootDirectorBindings']}` "
+        f"(`{summary['genderVariantRootBindings']}` gender-variant roots)",
         "",
         "Reverse PPtrs establish serialized composition, not mission ownership "
         "or chronology.",
@@ -603,6 +612,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         "CutsceneRoot `_timelineName`. Playback aliases additionally require "
         "that exact CutsceneRoot's resolved `_director` PPtr to land on the "
         "same PlayableDirector.",
+        "- Exact root GameObject fallback accepts only a canonical Story key "
+        "or the strict authored `f_`/`m_`/`fm_` cutscene variant whose "
+        "prefix-stripped key exists in the current Story index.",
         "- Rejected: names without object identity, unresolved PPtrs, "
         "neighboring objects, bundle order/proximity, and filename order.",
         "- No relation here creates mission/quest ownership or relative Story "
@@ -755,6 +767,16 @@ def build_report(
             "crossStoryPlaybackAliases": sum(
                 len(row["crossStoryPlaybackAliases"])
                 for row in director_hosts
+            ),
+            "rootDirectorBindings": sum(
+                len(row["rootDirectorBindings"])
+                for row in director_hosts
+            ),
+            "genderVariantRootBindings": sum(
+                binding.get("storyIdentitySource")
+                == "root_game_object_gender_variant_fallback"
+                for row in director_hosts
+                for binding in row["rootDirectorBindings"]
             ),
         },
         "directorHosts": director_hosts,

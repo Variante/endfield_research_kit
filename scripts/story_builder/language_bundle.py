@@ -14,6 +14,11 @@ from .dialog_tree import *
 from .bundle_support import *
 from .language_helpers import *
 from .timeline_action_evidence import build_conversation_action_debug
+from .cutscene_semantics import (
+    cutscene_semantic_shape,
+    cutscene_subtitle_evidence,
+    select_subtitle_text_group_from_display_names,
+)
 from .ability_binary import (
     build_battle_signal_producer_index,
     match_battle_signal_story_producers,
@@ -7572,6 +7577,53 @@ def build_language_bundle(
         merged_by_key: dict[str, list[dict]] = {}
         for cutscene_key, subtitle_tracks in subtitle_tracks_by_key.items():
             subtitle_tracks = subtitle_tracks_for_language(cutscene_key, subtitle_tracks)
+            if subtitle_tracks and not any(
+                str(ref.get("textId") or "").strip()
+                for track in subtitle_tracks
+                for ref in (track.get("lines") or [])
+                if isinstance(ref, dict)
+            ):
+                candidate_groups: dict[str, list[dict]] = defaultdict(list)
+                for _sort_key, line in grouped.get(cutscene_key) or []:
+                    if not isinstance(line, dict):
+                        continue
+                    raw_group = str(line.get("textGroup") or cutscene_key)
+                    candidate_groups[raw_group].append(line)
+                selected_group = select_subtitle_text_group_from_display_names(
+                    candidate_groups,
+                    subtitle_tracks,
+                )
+                if selected_group:
+                    selected_lines = [
+                        copy.deepcopy(line)
+                        for line in candidate_groups[selected_group]
+                    ]
+                    unselected_groups = sorted(
+                        group for group in candidate_groups
+                        if group != selected_group
+                    )
+                    track_rows = [
+                        {
+                            "file": track.get("file"),
+                            "parent": track.get("parentName"),
+                            "gender": track.get("gender"),
+                            "clipCount": len(track.get("lines") or []),
+                        }
+                        for track in subtitle_tracks
+                    ]
+                    for line in selected_lines:
+                        line.setdefault("_debug", {})[
+                            "subtitleTrackDisplayFallback"
+                        ] = {
+                            "source": "animeSubtitleTrackDisplayAlignment",
+                            "reason": "SubtitlePlayableAsset text IDs unavailable",
+                            "selectedTextGroup": selected_group,
+                            "unselectedTextGroups": unselected_groups,
+                            "tracks": track_rows,
+                        }
+                        remember_cutscene_line_usage(line)
+                    merged_by_key[cutscene_key] = selected_lines
+                    continue
             slot_candidates: dict[tuple[float, float, int], list[dict]] = defaultdict(list)
             for track in subtitle_tracks:
                 timing_counts: dict[tuple[float, float], int] = defaultdict(int)
@@ -8144,6 +8196,12 @@ def build_language_bundle(
                 },
             },
         }
+        payload["cutscene"]["semanticShape"] = cutscene_semantic_shape(
+            payload["cutscene"]
+        )
+        payload["cutscene"]["subtitleEvidence"] = (
+            cutscene_subtitle_evidence(payload["cutscene"], lines)
+        )
         if fmv_clips_by_key.get(cutscene_key):
             payload["fmvClips"] = fmv_clips_by_key[cutscene_key]
         write_conv_payload(cutscene_key, payload)
@@ -14148,7 +14206,7 @@ def build_language_bundle(
                         edge["positions"].append(pos)
         # Radio-continuation edges (authored continueAfterDialog/Radio flags
         # combined with LevelScript file-offset adjacency, audited offline by
-        # scripts/story_recovery/build_radio_continuation_audit.py). Silent
+        # the focused radio-continuation recovery audit). Silent
         # no-op when the audit report has not been generated yet.
         radio_cont_candidates = _load_radio_continuation_candidates_by_mission(
             str(_RADIO_CONTINUATION_REPORT_PATH)

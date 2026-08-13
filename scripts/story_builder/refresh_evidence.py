@@ -54,7 +54,7 @@ STEPS = (
     EvidenceStep("source_links", ("scripts/story_builder/source_links.py",)),
     EvidenceStep(
         "spaceship_story_content",
-        ("scripts/story_recovery/build_spaceship_story_content_audit.py",),
+        ("scripts/story_builder/spaceship_story_content.py",),
     ),
 )
 

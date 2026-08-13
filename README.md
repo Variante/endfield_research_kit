@@ -31,66 +31,58 @@ notepad endfield_paths.bat
 ```
 
 Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` directory.
-`setup_first_time.bat` initializes and builds AnimeStudio, exports the core
-WebUI data, and starts or reuses:
+`setup_first_time.bat` builds AnimeStudio, exports CN Story and Text data, and
+starts or reuses `http://127.0.0.1:8765/`. Pass `--no-serve` to build without
+starting the server.
 
-```text
-http://127.0.0.1:8765/
-```
+## WebUI
 
-Pass `--no-serve` to build without starting the server.
+- **Story** reconstructs dialog, radio, SNS, cutscenes, options, media, and
+  evidence-typed ordering.
+- **Characters** groups identity evidence and supports live merge/name
+  overrides.
+- **Gameplay** covers characters, equipment, enemies, progression, skills,
+  projectiles, related assets, and recovered sound effects.
+- **Audio**, **Assets**, and **Text** expose decoded media, exported resources,
+  and localized tables.
+- **Updates** compares exported game data across two saved versions.
+- **Mission Pipeline** is an experimental debug-only quest/Story evidence view.
 
-## What is in the WebUI
+First-time setup generates Story and Text. Run `export.bat --from-game --with-assets` to build the remaining WebUI data and refresh assets and audio. Updates requires two complete exports.
 
-- **Story:** reconstructed dialog, radio, SNS, cutscenes, options, media, and
-  evidence-aware ordering.
-- **Characters:** grouped names and identity evidence from tables, Story, and
-  exported assets, with live merge and display-name overrides.
-- **Gameplay:** characters, weapons, equipment, enemies, usable items,
-  progression requirements, skills, projectile summaries, related assets, and
-  playable recovered sound effects.
-- **Assets:** exported images, models, materials, video, and metadata.
-- **Text:** searchable localized table rows.
-- **Updates:** exported game-data differences between saved versions.
-- **Mission Pipeline:** an experimental quest/Story evidence view available
-  only when `Show debug info` is enabled.
-
-## Common commands
+## Common workflows
 
 ```bat
-:: Rebuild from the current export_full
+:: Rebuild WebUI data from the current export_full
 .\export.bat
 
-:: Refresh Story and assets from the installed game
+:: Refresh Story and assets in one installed-game export
 .\export.bat --from-game --with-assets
 
-:: Fast Story/Mission Pipeline recovery loop
+:: Rebuild Story and Mission Pipeline with reusable inputs
 .\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
 
-:: Rebuild only Mission Pipeline data when Story inputs are current
+:: Rebuild only Mission Pipeline JSON when Story inputs are current
 .\export.bat --mission-pipeline-data-only
 
-:: Rebuild asset indexes and relink existing CN audio
+:: Reindex existing assets/audio, or refresh them from the game
 .\export_assets.bat
-
-:: Refresh assets and CN audio from the installed game
 .\export_assets.bat --from-game
 
-:: Serve or package the WebUI
+:: Serve or package the static WebUI
 python serve.py
 .\pack_webui.bat
 ```
 
-`export.bat` reuses `export_full/` by default and verifies it against the
-installed client. Use `--from-game` only for an intentional fresh
-extraction. Asset export modes are `--focused-assets`, `--default-assets`, and
-`--debug-assets`; use `--asset-jobs N` to reduce peak memory. Every wrapper
-takes `--help`.
+`export.bat` reuses `export_full/` and checks it against the installed client.
+Add `--from-game` only for an intentional extraction. Asset scope runs from
+`--focused-assets` through `--default-assets` to `--debug-assets`;
+`--asset-jobs N` and `--webui-jobs N` cap concurrency. Every wrapper supports
+`--help`.
 
-Audio served by the WebUI is lossless FLAC by default. `export_assets.bat` (or
-`export.bat --with-assets`) asks AnimeStudio to encode FLAC directly and relinks
-generated Story/Gameplay data. Normal audio export does not create intermediate
-WAV files or require `ffmpeg`.
+Audio is lossless FLAC by default and is encoded directly without temporary WAV
+files or `ffmpeg`. Optional asset decoding can take several hours and substantial
+disk space and memory.
 
 To build more languages:
 
@@ -101,92 +93,64 @@ python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 ## Game updates
 
 ```bat
-:: First export: create an empty Updates feed
-.\build_updates.bat --first-time
-
-:: Record the installed version, so later patches can be detected
-.\build_updates_by_patch.bat --first-time
-
-:: Detect, stage, publish, and report a game update
-.\build_updates_by_patch.bat
-
-:: Detection only
-.\build_updates_by_patch.bat --check
-
-:: Compare two complete extracted versions, old folder first
+:: Compare two complete exports, old folder first
 .\build_updates.bat OLD NEW
 ```
 
-Both scripts read the folders in `endfield_paths.bat`, so the usual commands
-take no arguments. Run either with `--help` for the full option list.
-
-Updates compare exported game-data roots. Local changes under `webui/`,
-`reports/`, `memory/`, or `scratch/` are never game-data updates.
-
-## Recovery snapshot
+The wrapper accepts `OLD NEW` or reads both roots from `endfield_paths.bat`.
+It compares exported text, image, model, video, and decoded audio data; local
+changes under `webui/`, `reports/`, `memory/`, or `scratch/` never appear in the
+feed. See [scripts/README.md](scripts/README.md) for focused, text-only, and
+exact-hash options.
 
 ### Story
 
-- The current CN coverage report contains 5,563 unique Story files across 490
-  pipeline missions.
-- 4,236 files have an accepted pipeline connection (76.1%); 4,457 have at
-  least one normalized trigger or context route (80.1%).
-- 1,327 files remain unlinked. Of those, 156 already have exact native
-  playback but still lack a mission or quest activation bridge.
-- The source-only graph is cycle-free, but proves only 1.54% of possible
-  within-mission pairs. It is intentionally a partial order, not a claimed
-  canonical playthrough.
+- The CN build contains 5,563 Story files; 4,236 have an accepted pipeline
+  connection and 1,327 remain unlinked.
+- The source-only graph is cycle-free but sparse. It is an evidence-typed
+  partial order, not a claimed canonical playthrough.
 
-Current counts and evidence breakdowns live in
+Current counts live in
 [`reports/story/build/mission_pipeline_story_binding_coverage_CN.md`](reports/story/build/mission_pipeline_story_binding_coverage_CN.md)
 and [`reports/mission_order/source_story_partial_order_CN.md`](reports/mission_order/source_story_partial_order_CN.md).
-Stable conclusions and the recovery queue live in
+Stable conclusions and next work live in
 [`memory/game_story_recovery.md`](memory/game_story_recovery.md).
 
 ### Game data and combat
 
-- The shipped stock-client damage, defense, elemental resistance, critical,
-  healing, poise, and shield paths are recovered from the binary, IL2CPP
-  metadata, and authored tables.
-- Skills resolve as phased action graphs and DamageUnits; buffs compose
-  modifiers, shields, tags, stacking rules, events, actions, and child buffs.
-- Enemy level controls contain only exact authored points. Variants share raw
-  HP/ATK/DEF curves only when they reference the same attribute template; their
-  buffs and modifiers can still differ.
-- Active IFix patches, server corrections, and live target/branch/blackboard
-  selection remain explicit evidence boundaries.
+- Stock-client damage, defense, resistance, critical, healing, poise, and
+  shield paths are recovered from binaries, IL2CPP metadata, and authored data.
+- Skills and buffs retain action, modifier, timing, and ownership evidence.
+  Server corrections, active patches, and live branch selection remain outside
+  the proven boundary.
 
 See [`memory/game_data_recovery.md`](memory/game_data_recovery.md) for the
-formula overview and current recovery limits.
+formula overview and current limits.
 
 ### Character models and animation
 
-- All 30 playable models are imported and render successfully.
-- All 156 canonical post-model identities have generated prefab paths: 30
-  playables, 2 NPC characters, 1 cutscene clone, 94 enemies, and 29
-  ability/prop actors.
-- Playable UI animation recovery covers 754 body clips and 321 private
-  item/deco clips.
-- Static Overview reconstruction is strong, but original HGRP lighting,
-  shadows, material state, controller execution, IK, facial behavior, physics,
-  and non-playable animation remain incomplete.
+- All 31 playable models render in the Unity lab, and all 156 canonical
+  post-model identities have generated prefab paths.
+- Playable UI animation coverage is complete for the selected scope. Retail
+  lighting, material state, controllers, IK, facial behavior, physics, and
+  non-playable animation remain incomplete.
 
 See
 [`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md)
 for the current evidence boundary.
 
-## Repository layout
+## Project map
 
 - `webui/`: static browser, runtime overrides, and generated data.
 - `scripts/`: maintained export, build, update, audio, and packaging tools.
 - `tools/AnimeStudio/`: tracked exporter fork.
 - `export_full/`: generated extraction from the installed client.
-- `reports/`: generated inventories and audits grouped by topic.
-- `memory/`: concise current conclusions and recovery queues.
+- `reports/`: generated inventories and audits.
+- `memory/`: current conclusions, evidence boundaries, and recovery queues.
 - `scratch/`: revisitable experiments; `tmp/`: disposable intermediates.
 - `unity_endfield_graph_shader_lab/`: character rendering and animation lab.
 
-Further documentation:
+Technical documentation:
 
 - [`scripts/README.md`](scripts/README.md): command and script map.
 - [`webui/README.md`](webui/README.md): frontend scope and data contracts.

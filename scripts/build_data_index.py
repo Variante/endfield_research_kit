@@ -147,22 +147,24 @@ NPC_MONTAGE_ROOT_MEMBER_COUNT = 3
 NPC_MONTAGE_DATA_MEMBER_COUNT = 22
 LIPSYNC_RECORD_DIMENSION_LIMIT = 64
 INTERACTIVE_TEMPLATE_MEMBER_COUNT = 25
-INTERACTIVE_TRIGGER_OBSERVER_COMPONENT_TAG = 0x00D9
+INTERACTIVE_TRIGGER_OBSERVER_COMPONENT_TAG = 0x00F3
 INTERACTIVE_TRIGGER_OBSERVER_MEMBER_COUNT = 3
-INTERACTIVE_COMMON_PERFORM_COMPONENT_TAG = 0x005A
+INTERACTIVE_COMMON_PERFORM_COMPONENT_TAG = 0x0067
 INTERACTIVE_COMMON_PERFORM_MEMBER_COUNT = 3
+INTERACTIVE_TRIGGER_ZONE_COMPONENT_TAG = 0x00F5
+INTERACTIVE_TRIGGER_ZONE_MEMBER_COUNT = 3
 INTERACTIVE_PERFORM_PROPERTY_ROW_MEMBER_COUNT = 3
-INTERACTIVE_LOGIC_CONTROLLER_COMPONENT_TAG = 0x0069
+INTERACTIVE_LOGIC_CONTROLLER_COMPONENT_TAG = 0x0078
 INTERACTIVE_LOGIC_CONTROLLER_MEMBER_COUNT = 2
-INTERACTIVE_HITTABLE_COMPONENT_TAG = 0x004A
+INTERACTIVE_HITTABLE_COMPONENT_TAG = 0x0055
 INTERACTIVE_HITTABLE_MEMBER_COUNT = 3
 INTERACTIVE_HITTABLE_COLLIDER_SHAPE_BLOB_LENGTH = 80
 INTERACTIVE_AUDIO_COMPONENT_TAG = 0x005D
 INTERACTIVE_AUDIO_MEMBER_COUNT = 2
 INTERACTIVE_AUDIO_DATA_MEMBER_COUNT = 13
 INTERACTIVE_SHOW_GUIDE_COMPONENT_TAGS = {
-    0x00BA: "Core_ShowGuideComponentData",
-    0x00BB: "Core_ShowGuideWithConditionComponentData",
+    0x00D2: "Core_ShowGuideComponentData",
+    0x00D3: "Core_ShowGuideWithConditionComponentData",
 }
 INTERACTIVE_SHOW_GUIDE_MEMBER_COUNT = 5
 INTERACTIVE_AUDIO_BOOL_FIELDS = [
@@ -178,7 +180,7 @@ INTERACTIVE_AUDIO_BOOL_FIELDS = [
     "useTiggerStencil",
     "useWorkStencil",
 ]
-INTERACTIVE_PROPERTY_VALUE_STRING_TAIL_TYPES = {7, 8}
+INTERACTIVE_PROPERTY_VALUE_STRING_TAIL_TYPES = {7, 8, 16, 28}
 INTERACTIVE_PERFORM_PROPERTY_TYPE_NAMES = {
     0: "Int",
     1: "Float",
@@ -213,6 +215,7 @@ INTERACTIVE_SINGLE_PROPERTY_MAP_COMPONENT_TAGS = {
     0x0006,
     0x0019,
     0x001B,
+    0x0022,
     0x0026,
     0x0027,
     0x002A,
@@ -230,6 +233,7 @@ INTERACTIVE_SINGLE_PROPERTY_MAP_COMPONENT_TAGS = {
     0x004F,
     0x0055,
     0x0059,
+    0x005A,
     0x0061,
     0x0064,
     0x0066,
@@ -247,6 +251,7 @@ INTERACTIVE_SINGLE_PROPERTY_MAP_COMPONENT_TAGS = {
     0x008E,
     0x0092,
     0x009F,
+    0x00A2,
     0x00AA,
     0x00BC,
     0x00C6,
@@ -262,7 +267,6 @@ INTERACTIVE_SINGLE_PROPERTY_MAP_COMPONENT_TAGS = {
     0x00EB,
     0x00ED,
     0x00EE,
-    0x00F5,
     0x00F6,
     0x00F8,
     0x00F9,
@@ -285,7 +289,8 @@ BASE_COMPONENT_UNION_TAGS = {
     0x000C: "Core_AbilitySystemForIntData",
     0x0013: "Core_AttackTriggerComponentForIntData",
     0x0016: "Core_BaseControllerData",
-    0x001B: "Core_CanSetVisibleComponentData",
+    0x001B: "Core_BaseControllerData",
+    0x0022: "Core_CanSetVisibleComponentData",
     0x001F: "Core_CharacterMovementComponentData",
     0x0023: "Core_ClickTriggerComponentForIntData",
     0x002C: "Core_CustomCurveMoveComponentData",
@@ -294,15 +299,17 @@ BASE_COMPONENT_UNION_TAGS = {
     0x0042: "Core_FactoryBuildingWrapperComponentData",
     0x0045: "Core_GameplayElectricityNodeComponentData",
     0x0049: "Core_HeightZeroMarkerComponentData",
-    0x004A: "Core_HittableComponentForIntData",
+    0x004A: "Core_FactoryGasComponentData",
+    0x0055: "Core_HittableComponentForIntData",
     0x004F: "Core_InteractCommonTwoStateComponentData",
     0x005D: "Core_InteractiveAudioData",
     0x0059: "Core_InteractiveCommonMultiStateComponentData",
-    0x005A: "Core_InteractiveCommonPerformComponentData",
+    0x005A: "Core_InteractCommonTwoStateComponentData",
     0x005B: "Core_InteractiveCoolerUnitComponentData",
     0x0061: "Core_InteractiveDoorCommonComponentData",
-    0x0062: "Core_InteractiveDynamicAINavComponentData",
-    0x0069: "Core_InteractiveLogicControllerComponentData",
+    0x0062: "Core_InteractiveBehitPerformComponentData",
+    0x0067: "Core_InteractiveCommonPerformComponentData",
+    0x0069: "Core_InteractiveCoreComponentData",
     0x006B: "Core_InteractiveManualMovePlatformComponentData",
     0x006C: "Core_InteractiveModelLevelUpComponentData",
     0x006F: "Core_InteractiveOutFallComponentData",
@@ -311,14 +318,16 @@ BASE_COMPONENT_UNION_TAGS = {
     0x0077: "Core_InteractiveSteamBlockerComponentData",
     0x0086: "Core_InteractiveWaterPipeComponentData",
     0x0087: "Core_InteractiveWaterSwitchComponentData",
-    0x0092: "Core_KeepRelativeOffsetComponentData",
+    0x0078: "Core_InteractiveLogicControllerComponentData",
+    0x0092: "Core_InteractiveVerticalRopeComponentData",
     0x009F: "Core_NavmeshDynamicBakeAreaComponentData",
-    0x00AA: "Core_PlayerInteractPerformComponentData",
-    0x00BA: "Core_ShowGuideComponentData",
-    0x00BB: "Core_ShowGuideWithConditionComponentData",
+    0x00A2: "Core_KeepRelativeOffsetComponentData",
+    0x00AA: "Core_MovingPlatformComponentData",
+    0x00D2: "Core_ShowGuideComponentData",
+    0x00D3: "Core_ShowGuideWithConditionComponentData",
     0x00BD: "Core_SimpleAnimatorComponentData",
     0x00CE: "Core_StepOnTriggerComponentForIntData",
-    0x00D9: "Core_TriggerObserverComponentData",
+    0x00D9: "Core_SpaceshipCharacterWallData",
     0x00DB: "Core_TriggerZoneComponentForIntData",
     0x00DF: "Core_WaterProgressDriveCurveMovementComponentData",
     0x00E0: "Core_WaterVolHeightMarkerComponentData",
@@ -326,12 +335,14 @@ BASE_COMPONENT_UNION_TAGS = {
     0x00E7: "CraneTowerComponentData",
     0x00E9: "DungeonExitComponentData",
     0x00ED: "HiddenMarkComponentComponentData",
-    0x00EE: "InfraredGroupComponentData",
-    0x00F5: "InteractiveMovingPlatClientOnlyComponentData",
+    0x00EE: "Core_TravelLinkEffectModelComponentData",
+    0x00F3: "Core_TriggerObserverComponentData",
+    0x00F5: "Core_TriggerZoneComponentForIntData",
     0x00F8: "InteractiveStainComponentData",
     0x00FC: "ScannableTraceComponentData",
     0x0108: "View_InteractiveModelComponentData",
     0x010A: "View_ModelComponentData",
+    0x0126: "View_InteractiveModelComponentData",
 }
 MEMORYPACK_FIELD_SCHEMAS = {
     "BuffData": [
@@ -1440,6 +1451,7 @@ def parse_interactive_component_property_map(
     field_name: str,
     *,
     max_entries: int = 4096,
+    sample_limit: int = 16,
 ) -> tuple[dict[str, Any], int]:
     count, offset = read_memorypack_u32_count(data, offset, field_name, max_count=max_entries)
     rows: list[dict[str, Any]] = []
@@ -1473,7 +1485,7 @@ def parse_interactive_component_property_map(
             tail_counts[int(tail)] += tail_count
         for string_tail, string_tail_count in (value.get("stringTailCounts") or {}).items():
             string_tail_counts[str(string_tail)] += int(string_tail_count)
-        if len(rows) < 16:
+        if len(rows) < sample_limit:
             rows.append({
                 "key": key,
                 "valueType": value["valueType"],
@@ -1574,6 +1586,272 @@ def parse_interactive_single_property_map_component(
         "previewByKey": previews,
         "sampleProperties": (property_map.get("sampleRows") or [])[:16],
     }, offset
+
+
+def parse_interactive_template_config_properties(
+    data: bytes,
+    offset: int,
+) -> tuple[dict[str, Any], int]:
+    """Decode the exact template fields through ``configProperties``.
+
+    ``offset`` must be the proven end of the complete component list.  The
+    serialized order comes from the current ForMemoryPack setters: five
+    scalar lifecycle fields, two property maps, ``aoiRadiusType``, then the
+    authored template config map.  Parsing every preceding field prevents a
+    coincidental property-map-shaped byte range from being accepted.
+    """
+
+    start = offset
+    delay_recycle_perform_time, offset = read_memorypack_f32(data, offset)
+    delay_to_recycle_time, offset = read_memorypack_f32(data, offset)
+    if offset >= len(data):
+        raise ValueError("interactiveTemplate.enableBornFadeIn:truncated")
+    enable_born_fade_in = data[offset]
+    offset += 1
+    if enable_born_fade_in not in (0, 1):
+        raise ValueError(
+            f"interactiveTemplate.enableBornFadeIn={enable_born_fade_in}"
+        )
+    fade_in_time, offset = read_memorypack_f32(data, offset)
+    if offset >= len(data):
+        raise ValueError("interactiveTemplate.sendDieEvent:truncated")
+    send_die_event = data[offset]
+    offset += 1
+    if send_die_event not in (0, 1):
+        raise ValueError(f"interactiveTemplate.sendDieEvent={send_die_event}")
+    all_global, offset = parse_interactive_component_property_map(
+        data, offset, "interactiveTemplate.allGlobalSaveProperties"
+    )
+    all_map, offset = parse_interactive_component_property_map(
+        data, offset, "interactiveTemplate.allMapSaveProperties"
+    )
+    aoi_radius_type, offset = read_memorypack_i32(data, offset)
+    config_offset = offset
+    config, offset = parse_interactive_component_property_map(
+        data,
+        offset,
+        "interactiveTemplate.configProperties",
+        sample_limit=4096,
+    )
+    audio_rows: list[dict[str, Any]] = []
+    for row in config.get("sampleRows") or []:
+        values = [
+            str(value.get("stringTail") or "").strip()
+            for value in row.get("values") or []
+            if str(value.get("stringTail") or "").strip().startswith("au_")
+        ]
+        if not values:
+            continue
+        audio_rows.append({
+            "key": str(row.get("key") or ""),
+            "events": values,
+            "valueType": row.get("valueType"),
+            "identityKind": (
+                "rtpcParameter"
+                if all(value.startswith("au_rtpc_") for value in values)
+                else "wwiseEvent"
+            ),
+        })
+    return {
+        "byteLength": offset - start,
+        "schemaSource": (
+            "current InteractiveTemplateData ForMemoryPack setter order; "
+            "all preceding scalar and property-map fields decoded exactly"
+        ),
+        "delayRecyclePerformTime": round(delay_recycle_perform_time, 6),
+        "delayToRecycleTime": round(delay_to_recycle_time, 6),
+        "enableBornFadeIn": bool(enable_born_fade_in),
+        "fadeInTime": round(fade_in_time, 6),
+        "sendDieEvent": bool(send_die_event),
+        "allGlobalSavePropertyCount": int(all_global.get("count") or 0),
+        "allMapSavePropertyCount": int(all_map.get("count") or 0),
+        "aoiRadiusType": aoi_radius_type,
+        "configPropertiesOffset": format_offset(config_offset),
+        "configPropertiesEndOffset": format_offset(offset),
+        "configPropertyCount": int(config.get("count") or 0),
+        "configPropertyKeys": list(config.get("keys") or []),
+        "audioPropertyRows": audio_rows,
+    }, offset
+
+
+def find_interactive_audio_property_maps(data: bytes) -> list[dict[str, Any]]:
+    """Find complete typed property maps whose key explicitly denotes audio.
+
+    This is intentionally narrower than a string scan.  A row is returned only
+    when the enclosing MemoryPack property map parses completely and the
+    selected key/value row contains a non-RTPC ``au_*`` identity.  The
+    containing component remains unresolved unless another component decoder
+    supplies it.
+    """
+
+    key_names = ("audio_key", "audio_key_start", "audio_key_loop", "audio_key_end", "hit_sound_event")
+    candidate_ranges: set[tuple[int, int]] = set()
+    rows: list[dict[str, Any]] = []
+    for key_name in key_names:
+        marker = struct.pack("<I", len(key_name)) + key_name.encode("utf-8")
+        marker_offset = 0
+        while True:
+            marker_offset = data.find(marker, marker_offset)
+            if marker_offset < 0:
+                break
+            search_start = max(0, marker_offset - 4096)
+            matches: list[tuple[int, int, dict[str, Any]]] = []
+            for property_offset in range(search_start, marker_offset + 1):
+                try:
+                    property_map, end = parse_interactive_component_property_map(
+                        data,
+                        property_offset,
+                        "interactive.audioPropertyMap",
+                        max_entries=256,
+                    )
+                except (UnicodeDecodeError, struct.error, ValueError):
+                    continue
+                if property_offset <= marker_offset < end and key_name in (property_map.get("keys") or []):
+                    matches.append((property_offset, end, property_map))
+            # A unique enclosing typed map is the fail-closed acceptance gate.
+            unique = {(start, end): value for start, end, value in matches}
+            if len(unique) == 1:
+                (property_offset, end), property_map = next(iter(unique.items()))
+                if (property_offset, end) not in candidate_ranges:
+                    audio_rows: list[dict[str, Any]] = []
+                    for row in property_map.get("sampleRows") or []:
+                        key = str(row.get("key") or "")
+                        if key not in key_names:
+                            continue
+                        values = [str(value) for value in (row.get("preview") or []) if value]
+                        events = [
+                            value for value in values
+                            if value.startswith("au_") and not value.startswith("au_rtpc_")
+                        ]
+                        if events:
+                            audio_rows.append({
+                                "key": key,
+                                "events": events,
+                                "valueType": row.get("valueType"),
+                                "identityKind": "wwiseEvent",
+                            })
+                    if audio_rows:
+                        candidate_ranges.add((property_offset, end))
+                        rows.append({
+                            "propertyMapOffset": format_offset(property_offset),
+                            "propertyMapEndOffset": format_offset(end),
+                            "propertyMapCount": int(property_map.get("count") or 0),
+                            "propertyKeys": list(property_map.get("keys") or []),
+                            "audioPropertyRows": audio_rows,
+                            "componentResolutionStatus": "containingComponentUnresolved",
+                            "runtimePropertyConsumerStatus": "unresolved",
+                            "runtimeEventPostingStatus": "notObserved",
+                        })
+            marker_offset += 1
+    rows.sort(key=lambda row: int(str(row["propertyMapOffset"]), 16))
+    return rows
+
+
+def parse_interactive_trigger_zone_audio_property_component(
+    data: bytes,
+    offset: int,
+    member_count: int,
+    *,
+    max_scan_bytes: int = 16_384,
+) -> tuple[dict[str, Any], int]:
+    """Recover the exact audio-key property map from the current 0x00f5 body.
+
+    The generated formatter and current files establish three serialized
+    members.  The first is nullable and the second is a list whose current
+    rows have 20 members, but their individual field schema is still opaque.
+    Do not guess that schema.  Instead, accept an audio property map only when
+    it is the unique complete MemoryPack map after that prefix and its end is
+    also a syntactically valid next-component union handoff.
+    """
+
+    if member_count != INTERACTIVE_TRIGGER_ZONE_MEMBER_COUNT:
+        raise ValueError(f"triggerZone.memberCount={member_count}")
+    start = offset
+    if offset + 9 > len(data):
+        raise ValueError("triggerZone.prefix:truncated")
+    nullable_first = struct.unpack_from("<I", data, offset)[0]
+    if nullable_first != MEMORYPACK_NULL_COUNT:
+        raise ValueError(f"triggerZone.field0.count={nullable_first}")
+    second_count = struct.unpack_from("<I", data, offset + 4)[0]
+    if second_count == MEMORYPACK_NULL_COUNT or second_count <= 0 or second_count > 256:
+        raise ValueError(f"triggerZone.field1.count={second_count}")
+    if data[offset + 8] != 20:
+        raise ValueError(f"triggerZone.field1.firstMemberCount={data[offset + 8]}")
+
+    candidates: list[tuple[int, int, dict[str, Any], list[dict[str, Any]]]] = []
+    scan_end = min(len(data) - 1, offset + max_scan_bytes)
+    for candidate_offset in range(offset + 9, scan_end):
+        try:
+            property_map, end = parse_interactive_component_property_map(
+                data,
+                candidate_offset,
+                "triggerZone.audioPropertyMap",
+                max_entries=256,
+            )
+        except (UnicodeDecodeError, struct.error, ValueError):
+            continue
+        audio_rows: list[dict[str, Any]] = []
+        for row in property_map.get("sampleRows") or []:
+            key = str(row.get("key") or "")
+            if not key.startswith("audio_key"):
+                continue
+            values = [str(value) for value in (row.get("preview") or []) if value]
+            if not values or any(not value.startswith("au_") for value in values):
+                continue
+            audio_rows.append({
+                "key": key,
+                "events": values,
+                "valueType": row.get("valueType"),
+                "identityKind": (
+                    "rtpcParameter"
+                    if all(value.startswith("au_rtpc_") for value in values)
+                    else "wwiseEvent"
+                ),
+            })
+        if not audio_rows:
+            continue
+        try:
+            next_tag, next_offset, _tag_width = read_memorypack_union_tag(data, end)
+        except (struct.error, ValueError):
+            continue
+        if next_offset >= len(data):
+            continue
+        next_member_count = data[next_offset]
+        if next_member_count > 64:
+            continue
+        if next_tag != 0 and next_tag not in BASE_COMPONENT_UNION_TAGS:
+            continue
+        candidates.append((candidate_offset, end, property_map, audio_rows))
+
+    if len(candidates) != 1:
+        raise ValueError(f"triggerZone.audioPropertyMapCandidates={len(candidates)}")
+    property_offset, end, property_map, audio_rows = candidates[0]
+    return {
+        "tag": f"0x{INTERACTIVE_TRIGGER_ZONE_COMPONENT_TAG:04x}",
+        "type": BASE_COMPONENT_UNION_TAGS.get(INTERACTIVE_TRIGGER_ZONE_COMPONENT_TAG, ""),
+        "memberCount": member_count,
+        "byteLength": end - start,
+        "bodyShape": "opaqueNullableAndListPrefixThenExactAudioPropertyMap",
+        "schemaSource": (
+            "current generated MemoryPack formatter proves three members; the first two remain opaque; "
+            "the audio property map is selected uniquely by a complete typed map parse and exact next-union handoff"
+        ),
+        "opaquePrefixByteLength": property_offset - start,
+        "propertyMapOffset": format_offset(property_offset),
+        "propertyMapCount": int(property_map.get("count") or 0),
+        "propertyKeys": list((property_map.get("keyCounts") or {}).keys()),
+        "audioPropertyRows": audio_rows,
+        "runtimePropertyConsumerStatus": "unresolved",
+        "runtimeEventPostingStatus": "notObserved",
+    }, end
+
+
+# Compatibility for focused callers written before the current union table
+# proved that tag 0x00f5 is TriggerZoneComponentForIntData, not the moving-
+# platform client-only component (which is tag 0x0110 in this build).
+parse_interactive_moving_plat_audio_property_component = (
+    parse_interactive_trigger_zone_audio_property_component
+)
 
 
 def parse_interactive_common_perform_component(
@@ -3764,7 +4042,10 @@ def consume_buff_play_sound_action(
         "playSound.soundEvent",
         max_length=512,
     )
-    if not sound_event or not sound_event.startswith("au_"):
+    if not sound_event or re.fullmatch(
+        r"(?i)(?:au|eny|chr|bark|radio|play_au)_[a-z0-9_]+",
+        sound_event,
+    ) is None:
         raise ValueError(f"playSound.soundEvent:unexpected={sound_event or ''}")
 
     stop_fade_duration_ms, offset = read_buff_i32_field(data, offset, "playSound.stopFadeDurationMs")
@@ -8549,6 +8830,7 @@ def read_memorypack_tag_list_prefix(
     offset: int,
     *,
     max_items: int = 32,
+    allow_hash_only: bool = False,
 ) -> tuple[list[dict[str, Any]], int | None, int, str | None]:
     if offset + 4 > len(data):
         return [], None, offset, "truncated-count"
@@ -8558,6 +8840,22 @@ def read_memorypack_tag_list_prefix(
         return [], None, offset, None
     if raw_count > max_items:
         return [], raw_count, offset, f"large-count={raw_count}"
+
+    if allow_hash_only:
+        hash_only_end = offset + raw_count * 4
+        if hash_only_end + 4 <= len(data):
+            following_count = struct.unpack_from("<I", data, hash_only_end)[0]
+            if following_count == MEMORYPACK_NULL_COUNT or following_count <= 10_000:
+                return [
+                    {
+                        "index": index,
+                        "memberCount": None,
+                        "hash": f"0x{struct.unpack_from('<I', data, offset + index * 4)[0]:08x}",
+                        "tag": None,
+                        "serialization": "hashOnly",
+                    }
+                    for index in range(raw_count)
+                ], raw_count, hash_only_end, None
 
     tags: list[dict[str, Any]] = []
     for index in range(raw_count):
@@ -8696,7 +8994,11 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
     if object_type_error:
         return None
 
-    born_tags, born_tag_count, offset, tag_error = read_memorypack_tag_list_prefix(data, offset)
+    born_tags, born_tag_count, offset, tag_error = read_memorypack_tag_list_prefix(
+        data,
+        offset,
+        allow_hash_only=True,
+    )
     component_count: int | None = None
     component_offset = offset
     first_component_tag: int | None = None
@@ -8723,6 +9025,7 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
     property_map_components: list[dict[str, Any]] = []
     common_perform_component: dict[str, Any] | None = None
     common_perform_components: list[dict[str, Any]] = []
+    trigger_zone_audio_property_components: list[dict[str, Any]] = []
     logic_controller_component: dict[str, Any] | None = None
     logic_controller_components: list[dict[str, Any]] = []
     hittable_component: dict[str, Any] | None = None
@@ -8733,6 +9036,8 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
     show_guide_components: list[dict[str, Any]] = []
     component_stop_component: dict[str, Any] | None = None
     component_scan_offset: int | None = None
+    template_config_properties: dict[str, Any] | None = None
+    template_action_map_audio: dict[str, Any] | None = None
     component_string_samples: list[str] = []
     component_error: str | None = None
 
@@ -8797,7 +9102,7 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
                             raise ValueError("truncated-second-component-member-count")
                         second_component_member_count = data[component_cursor]
                         component_cursor += 1
-                        if second_component_tag in (0x108, 0x10A) and second_component_member_count == 4:
+                        if second_component_tag in (0x108, 0x10A, 0x126) and second_component_member_count == 4:
                             born_fade_in_time, component_cursor = read_memorypack_f32(data, component_cursor)
                             if component_cursor >= len(data):
                                 raise ValueError("truncated-model-component-enable-born-fade-in")
@@ -8922,6 +9227,26 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
                                     **parsed_common_perform,
                                 })
                             elif (
+                                tag == INTERACTIVE_TRIGGER_ZONE_COMPONENT_TAG
+                                and member_count == INTERACTIVE_TRIGGER_ZONE_MEMBER_COUNT
+                            ):
+                                parsed_trigger_zone, parsed_body_end_offset = (
+                                    parse_interactive_trigger_zone_audio_property_component(
+                                        data,
+                                        component_cursor,
+                                        member_count,
+                                    )
+                                )
+                                row["byteLength"] = parsed_trigger_zone["byteLength"]
+                                row["parsedBody"] = "targetedAudioPropertyMap"
+                                row["audioPropertyCount"] = len(
+                                    parsed_trigger_zone.get("audioPropertyRows") or []
+                                )
+                                trigger_zone_audio_property_components.append({
+                                    "index": component_index,
+                                    **parsed_trigger_zone,
+                                })
+                            elif (
                                 tag == INTERACTIVE_HITTABLE_COMPONENT_TAG
                                 and member_count == INTERACTIVE_HITTABLE_MEMBER_COUNT
                             ):
@@ -9005,6 +9330,34 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
                             component_payload_parsed_rows.append(row)
                             component_cursor = parsed_body_end_offset
                             component_scan_offset = component_cursor
+                    if (
+                        component_count is not None
+                        and component_stop_component is None
+                        and component_scan_offset is not None
+                        and component_prefix_parsed_count + component_payload_parsed_count
+                        == component_count
+                    ):
+                        template_config_properties, _template_config_end = (
+                            parse_interactive_template_config_properties(
+                                data,
+                                component_scan_offset,
+                            )
+                        )
+                        try:
+                            from story_builder.levelscript_binary import (
+                                decode_embedded_action_serialized_map_audio,
+                            )
+                        except ImportError:
+                            from scripts.story_builder.levelscript_binary import (
+                                decode_embedded_action_serialized_map_audio,
+                            )
+                        template_action_map_audio = (
+                            decode_embedded_action_serialized_map_audio(
+                                data,
+                                _template_config_end,
+                            )
+                            or None
+                        )
                     scan_offset = (
                         component_scan_offset
                         or first_payload_body_end_offset
@@ -9098,6 +9451,24 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
         details.append(f"guideShape={show_guide_component['shape']}")
     if component_payload_parsed_count:
         details.append(f"parsedPayloads={component_payload_parsed_count}")
+    if template_config_properties:
+        details.append(
+            f"templateConfig={template_config_properties['configPropertyCount']}"
+        )
+        template_audio_rows = template_config_properties.get("audioPropertyRows") or []
+        if template_audio_rows:
+            details.append(
+                "templateAudio="
+                + ",".join(
+                    str(event)
+                    for row in template_audio_rows[:2]
+                    for event in (row.get("events") or [])[:1]
+                )
+            )
+    if template_action_map_audio and template_action_map_audio.get("audioActions"):
+        details.append(
+            f"templateAudioActions={len(template_action_map_audio['audioActions'])}"
+        )
     if component_stop_component and component_stop_component is not first_payload_component:
         details.append(
             f"stopComponent={component_stop_component['type']}:{component_stop_component['memberCount']}"
@@ -9143,6 +9514,8 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
                 "componentListAudioBody",
                 "componentListShowGuideBody",
                 "componentListParsedPayloads",
+                "templateConfigProperties",
+                "templateActionMapAudio",
             ],
             "name": name,
             "factionIndex": faction_index,
@@ -9177,6 +9550,7 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
             "componentPropertyMapComponents": property_map_components,
             "componentCommonPerformData": common_perform_component,
             "componentCommonPerformComponents": common_perform_components,
+            "componentAudioPropertyComponents": trigger_zone_audio_property_components,
             "componentLogicControllerData": logic_controller_component,
             "componentLogicControllerComponents": logic_controller_components,
             "componentHittableData": hittable_component,
@@ -9185,6 +9559,8 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
             "componentAudioComponents": audio_components,
             "componentShowGuideData": show_guide_component,
             "componentShowGuideComponents": show_guide_components,
+            "templateConfigProperties": template_config_properties,
+            "templateActionMapAudio": template_action_map_audio,
             "componentStringSamples": component_string_samples,
             "componentUnionSource": BASE_COMPONENT_UNION_SOURCE_NOTE if first_component_type else "",
             "componentParseError": component_error or "",
