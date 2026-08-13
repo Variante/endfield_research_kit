@@ -190,7 +190,18 @@
               "function": "0x1810d26bf",
               "extent": "0x1810d26bf..0x1810d3189",
               "observed": "The function RVA 0x10d26bf is present only as a paired 32-bit RVA record with metadata RVA 0x204a398 in the installed .rdata table at 0x18204a3d8/0x18204a3e8 and the matching .tvm0 table at 0x1824d1058/0x1824d1060. The records are adjacent to neighboring generic job/function RVAs; no direct call or RIP reference to the function or either table record was found in UnityPlayer .text. This is consistent with table-driven Burst/job dispatch, but it does not identify the custom-per-draw resource or a GPU descriptor consumer.",
-              "negative_result": "The table-dispatched function remains a generic component-record staging path. Its paired RVA metadata provides no channel-2, resource +0xd0, constant-buffer, or descriptor binding edge."
+              "negative_result": "The table-dispatched function remains a generic component-record staging path. Its paired RVA metadata provides no channel-2, resource +0xd0, constant-buffer, or descriptor binding edge.",
+              "tvm0_header_and_table_boundary": {
+                "section_va": "0x1823c6000",
+                "raw_header": "!mdb header, version/seed fields, and Debug\\UnityPlayer.dll.private_dbg0 marker before the code/data region",
+                "table_region_raw_offset": "0x10b000",
+                "table_entry_shape": "12-byte [start RVA, end RVA, metadata RVA] entries observed at raw offset 0x10b054 and adjacent records",
+                "text_reference_scan": {
+                  "unityplayer_pdata_functions": 113390,
+                  "metadata_or_tvm0_rip_reference_hits": 0
+                },
+                "interpretation": "The section contains a Burst metadata header plus embedded table/data; it is not a flat record table beginning at offset 0. The table is section/runtime-driven, which explains why ordinary E8/RIP scans miss the invocation, but it supplies no GPU upload or dispatch identity."
+              }
             },
             "explicit_api_separation": {
               "material_property_block": {
@@ -1769,6 +1780,87 @@
           "shared_payload_endpoint": "HGFactoryRendererBinderComponent.SetCustomPerDrawData<Vector4> at 0x1834a3d60"
         },
         "boundary": "This closes a concrete native/GameAssembly entry into the Burst per-draw configuration path and its binder Vector4 writer. It still ends at the generic factory shared-data/dirty-flag producer: no static edge from this bridge proves _UploadBuffer population, UploadPerDrawParams kernel 7 selection, or channel-2 resource +0xd0 consumption."
+      },
+      "per_draw_apply_callsite_census": {
+        "status": "factory-perdraw-config-callers-cpu-only-upload-edge-open",
+        "source": "Installed GameAssembly.dll PData-scoped E8 caller census for the concrete PerDrawGlobalSetting Apply/ApplyPass bodies; current GameAssembly SHA-256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce.",
+        "targets": {
+          "apply": {
+            "native_pointer": "0x1869d5e18",
+            "embedded_burst_loop": "0x1869d5d30",
+            "config_stride": "0x3c",
+            "branch_call": "0x186a33f58",
+            "unique_pdata_callers": 21,
+            "named_caller_examples": [
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_BlueprintProcessInternal$BurstManaged#395639",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_ContinuationStart$BurstManaged#395645",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_HighLightProcess$BurstManaged#395622",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_HighLightStart$BurstManaged#395620",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_InvalidOverlapPlaceStart$BurstManaged#395651",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_OverloadInvalidStart$BurstManaged#395632",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_PowerInteractionStart$BurstManaged#395649",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_PreSelectStart$BurstManaged#395642",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_SocialSharingStart$BurstManaged#395648",
+              "GlobalSharedData+PerDrawGlobalSetting::Apply#395344",
+              "UnitPreviewRenderJob::Execute#396282",
+              "GridRendererProcessor::_UpdateGridBinder#26702"
+            ]
+          },
+          "apply_pass": {
+            "native_pointer": "0x1869d5b78",
+            "embedded_burst_loop": "0x1869d5cac",
+            "config_stride": "0x40",
+            "branch_call": "0x186a54f28",
+            "unique_pdata_callers": 19,
+            "named_caller_examples": [
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_BlueprintProcessInternal$BurstManaged#395639",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_ContinuationStart$BurstManaged#395645",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_HighLightProcess$BurstManaged#395622",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_HighLightStart$BurstManaged#395620",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_InvalidOverlapPlaceStart$BurstManaged#395651",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_OverloadInvalidStart$BurstManaged#395632",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_PowerInteractionStart$BurstManaged#395649",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_PreSelectStart$BurstManaged#395642",
+              "Beyond.Gameplay.Factory.AdditiveEffectRenderJob::_SocialSharingStart$BurstManaged#395648",
+              "GlobalSharedData+PerDrawGlobalSetting::ApplyPass#395347"
+            ]
+          },
+          "wrappers": {
+            "apply_wrapper": {
+              "native_pointer": "0x1869d5db0",
+              "unique_pdata_callers": 4,
+              "named_caller_examples": [
+                "AdditiveEffectRenderJob::ResetMaterial#395605",
+                "ConveyorRendererJob::_UpdateCachedConveyor#396167",
+                "PipeRendererJob::_UpdateCachedPipe#396248",
+                "PipeTrackRendererJob::_UpdateCachedTrack#396252"
+              ]
+            },
+            "apply_pass_wrapper": {
+              "native_pointer": "0x1869d5c3c",
+              "unique_pdata_callers": 3,
+              "named_caller_examples": [
+                "AdditiveEffectRenderJob::ResetMaterial#395605",
+                "ConveyorRendererJob::_UpdateCachedConveyor#396167",
+                "PipeRendererJob::_UpdateCachedPipe#396248"
+              ]
+            }
+          }
+        },
+        "body_contract": "Apply resolves a per-draw table and iterates 0x3c-byte CPU config entries before calling PerDrawConfig.Apply at 0x1869f3654. ApplyPass iterates 0x40-byte CPU entries before calling 0x1869f394c. The feature branches are large config/serialization/resource paths.",
+        "negative_gpu_edge": {
+          "checked_callers": "All 21 Apply and 19 ApplyPass PData-attributed caller bodies, plus the wrapper caller sets",
+          "checked_targets": [
+            "_UploadBuffer / UploadPerDrawParams",
+            "GpuSceneDirtyUpdateCS kernel 7",
+            "ComputeBuffer.SetData",
+            "ComputeShader.SetBuffer/SetConstantBuffer/Dispatch",
+            "CommandBuffer GPU-driven recording",
+            "factory resource +0xd0/channel 2"
+          ],
+          "result": "No checked caller directly reaches a GPU upload, shader bind, command recording, or compute dispatch. These callsites broaden the CPU-side per-draw configuration surface but do not identify the later native factory staging or kernel-7 consumer."
+        },
+        "boundary": "Keep the per-draw config caller family separate from the positive SetCustomPerDrawData<Vector4> producer. The CPU Apply/ApplyPass branches are now bounded, while the staging-to-_UploadBuffer pack, kernel-7 dispatch, and channel-2/resource +0xd0 edge remain fail-closed."
       },
       "native_partial_endpoint_evidence": {
         "status": "primary-native-record-copy-closed-gpu-upload-open",

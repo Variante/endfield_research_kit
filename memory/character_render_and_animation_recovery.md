@@ -374,6 +374,12 @@ NPC archetypes are imported as labeled source kits.
   is consistent with table-driven Burst/job dispatch, but adds no
   custom-resource or GPU descriptor identity. The durable details are recorded
   in `packed_flags_producer_recovery.json` under `burst_table_followup`.
+  The `.tvm0` section is not a flat record table from offset zero: it begins
+  with a `!mdb`/seed/debug marker header, while 12-byte
+  `[start RVA,end RVA,metadata RVA]` records appear around raw offset
+  `0x10b000`. A 113,390-function PData-scoped RIP scan found no code reference
+  to those metadata/table addresses, reinforcing that the invocation is
+  section/runtime-driven and still yields no GPU upload identity.
   No inspected UnityPlayer path reads `resource +0xd0` (or an equivalent vector
   lane) into a constant-buffer/descriptor binding, and no direct call edge names
   Vulkan set 0/binding 33. Keep the channel-to-resource-to-GPU edge open.
@@ -868,6 +874,17 @@ NPC archetypes are imported as labeled source kits.
   binder Vector4 production, not the GPU edge: `_UploadBuffer`, kernel 7,
   and channel-2/resource `+0xd0` consumption remain fail-closed. The durable
   details are under `apply_per_draw_render_bridge` in the packed-flag audit.
+  A whole-image PData/E8 census now bounds the surrounding per-draw config
+  callers as CPU-only. `PerDrawGlobalSetting.Apply` at `0x1869d5e18` has 21
+  unique attributed callers and iterates `0x3c`-byte entries through
+  `0x1869d5d30`; `ApplyPass` at `0x1869d5b78` has 19 and iterates `0x40`-byte
+  entries through `0x1869d5cac`. The named callers are predominantly
+  AdditiveEffect/Conveyor/Pipe Burst jobs, plus `UnitPreviewRenderJob` and
+  `GridRendererProcessor`. None of the caller bodies reaches a checked
+  ComputeBuffer upload, shader bind, command recording, dispatch, or factory
+  resource `+0xd0`; this broadens the CPU-side surface without identifying
+  the staging-to-`_UploadBuffer` packer. Details are under
+  `per_draw_apply_callsite_census` in the packed-flag audit.
   Updated primary registration conclusion (the legacy surface is noted below):
   the current
   `AddInternalCall` table at `0x1820e8560` maps entry 206
