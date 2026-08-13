@@ -732,6 +732,57 @@
             },
             "boundary": "This expands the previous focused census to every direct GameAssembly caller of the known command-buffer dispatch and compute-buffer binding wrappers. The direct graph contains no GpuSceneDirtyUpdateCS/UploadPerDrawParams producer and no factory 0x8c-record-to-buffer edge; dynamic/indirect paths remain explicitly open."
           },
+          "indirect_vtable_dispatch_census": {
+            "status": "all-unityplayer-ab8-call-bodies-bounded-no-factory-upload-edge",
+            "source": "PData-scoped Capstone scan of the current UnityPlayer.dll for indirect calls through the graphics-context vtable displacement +0xab8; UnityPlayer sha256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2.",
+            "slot_displacement": "0xab8",
+            "function_count": 10,
+            "functions": {
+              "known_immediate_dispatch_wrappers": [
+                "0x1805e7a10",
+                "0x1805e7c60"
+              ],
+              "generic_or_unresolved_context_paths": [
+                {"function": "0x1805f3170", "direct_e8_callers": 0},
+                {"function": "0x18092bfd2", "direct_e8_callers": 0},
+                {"function": "0x1811950a5", "direct_e8_callers": 0}
+              ],
+              "resource_or_descriptor_context_paths": [
+                {
+                  "function": "0x180f02630",
+                  "direct_callers": ["0x180f04548"],
+                  "observed": "Obtains a native context, prepares a resource/descriptor object, invokes neighboring context slots, and dispatches dimensions supplied by the caller; no factory record or 84-byte staging access is present."
+                },
+                {
+                  "function": "0x1810cb920",
+                  "direct_callers": ["0x18109aba0", "0x1810b5700"],
+                  "observed": "Builds temporary indexed data from a descriptor/list, invokes context setup slots, then dispatches; the visible body has no manager +0x38, entity +0x8c, or five-vector lane access."
+                },
+                {
+                  "function": "0x1810cbc00",
+                  "direct_callers": ["0x18109aba0", "0x1810b5700"],
+                  "observed": "Sibling descriptor/temporary-data path with the same indirect dispatch shape; no factory record or 84-byte upload source is visible."
+                },
+                {
+                  "function": "0x180f0491f",
+                  "direct_e8_callers": 0,
+                  "observed": "Native context/resource path with no direct factory-record or upload-stride evidence in the bounded body."
+                }
+              ],
+              "d3d11_context_path": {
+                "function": "0x1813aee90",
+                "dispatch_sites": ["0x1813b9b2a", "0x1813b9dc9"],
+                "direct_callers": ["0x1813aea57", "0x1813bbad6"],
+                "observed": "Existing D3D11 context implementation; it is a backend graphics path and does not read the factory manager record or the 84-byte per-draw staging shape."
+              }
+            },
+            "negative_checks": {
+              "record_stride_0x8c": "No non-wrapper +0xab8 body or listed direct caller exposes the manager +0x38 plus index*0x8c record contract.",
+              "upload_source_stride_0x54": "No body shows the five-vector 84-byte source shape or the 0x1810d25c0 staging lanes.",
+              "gpu_scene_identity": "No body names or statically binds GpuSceneDirtyUpdateCS, UploadPerDrawParams, _UploadBuffer, or channel-2 resource +0xd0."
+            },
+            "boundary": "This closes the obvious UnityPlayer indirect +0xab8 dispatch candidates as generic graphics/resource/D3D11 paths or already-known immediate wrappers. It is bounded negative evidence only: resolver-driven or table-dispatched kernel-7 selection and the staging-array-to-buffer upload remain unresolved and must stay fail-closed."
+          },
           "boundary": "The managed ComputeShader and CommandBuffer dispatch entrypoints, their native bridges, and the bounded immediate-call census are now explicit. They do not identify a live kernel-7 producer or the post-staging upload; keep channel 2/resource +0xd0 binding fail-closed."
         },
         "getter_cross_check": {
