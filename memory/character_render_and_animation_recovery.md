@@ -142,6 +142,20 @@ because the expected exported `HGRenderPipelineAsset` JSON is absent; retain
 the hash-pinned snapshot and boundary in
 `reports/assets/character_recovery/gacha_scene_color_physical_lifetime.md`.
 
+The Gacha light cull-view boundary is now source-pinned independently of that
+missing pipeline-asset export. The installed fallback has
+`useFallbackLightCulling=false`, zero occlusion dimensions, and the normal
+native candidate core. Active `SceneLight6Rarity` rows initialize
+`mask=1<<layer` and `flags=0x701`; Gacha layer 30 intersects the camera mask
+`0x40010008`, so the generic flag/mask gate is closed for all twelve authored
+rows. The native point-sphere top-plane branch guarantees `Spot Light (20)` is
+absent (margin `81.4967041015625`), leaving an exact conditional order for the
+other eleven and an authored maximum of 11. Horizontal AABB planes, unrelated
+live lights, the 256-row input cap, and the runtime punctual-light cap still
+own the exact selected list. The regenerated checker passes with current
+binary hashes; details are in
+`reports/assets/character_recovery/gacha_light_cull_survivor_contract.md`.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
