@@ -104,6 +104,17 @@ fallback at `0x18092c10e`. This closes the generic native command-record
 boundary, but the record is not tied to factory channel-2/resource `+0xd0` or
 `UploadPerDrawParams` kernel 7, so the character upload edge remains
 fail-closed.
+
+The generic `HGConstantBufferPool` upload candidate is now source-closed as a
+false positive. `HGConstantBufferPool::.ctor` (`0x189b6aa28`) creates a
+`count=0x80000`, byte-stride-1, type-8 `ComputeBuffer` at `this+0x10`, while
+`ApplyPendingUpload` (`0x189b6a7c0`) only walks metadata-backed
+`Segment(offset,size,data)` rows and calls `ComputeBuffer.SetData<byte>` at
+`0x187af05e0`. The image-wide census finds no direct caller of
+`ApplyPendingUpload` and no factory, `_UploadBuffer`, `UploadPerDrawParams`,
+dispatch, or resource `+0xd0` edge in its body. It therefore cannot supply the
+missing 84-byte factory upload; details are in
+`reports/assets/character_recovery/gpu_scene_constant_buffer_pool_contract.md`.
 The current protected `Gameplay.Beyond` IFix payload is now structurally
 bounded beyond its 32 target signatures: its 330-entry external-method table
 contains only factory LOD/quality references (`SetFactoryLodTier` and
