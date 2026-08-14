@@ -666,6 +666,21 @@ and final draw/queue ownership remain fail-closed.
     not statically prove HGTree-specific draw ordering, final indirect-draw
     ownership, or queue submission after the generated callback record.
 
+39. The managed caller census now places the Tree command inside six concrete
+    render-pass lambdas: `HGPunctualLightShadowManager`,
+    `GBufferPassConstructor`, both `OnePassDeferredPassConstructor` branches,
+    `HGShadowManager`, and `HGASMManager`. Each calls
+    `HGRendererListUtils.DrawTreeECSRendererList` alongside ordinary renderer,
+    ECS, and grass-list helpers. The GBuffer branches also issue the separate
+    `CommandBuffer.Add_GPUDriven_DrawRendererList` path; it is not a Tree
+    callback. `HGASMManager` has a
+    `ScriptableRenderContext.ExecuteCommandBufferNoCopy` call before its
+    renderer-list sequence, not a Tree-specific post-call flush. None of the
+    six caller bodies has a direct edge to API-2 `+0xDA8`, `+0xDE8`, or
+    `+0xF10`. This is positive pass-context evidence for Tree playback, while
+    final render-graph/command-buffer execution and HGTree-specific draw/queue
+    ownership remain external to these callbacks and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.

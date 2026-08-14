@@ -816,6 +816,13 @@ only stable interpretation and priorities.
    resource functions, and no static HGTree handler emits either flush opcode
    or `+0xF10`/`+0xDE8`; keep HGTree-specific ordering and final draw/queue
    ownership fail-closed.
+   The caller census now places Tree playback inside six concrete pass lambdas
+   (punctual-shadow, GBuffer, two deferred branches, HGShadow, and HGASM),
+   alongside ordinary renderer/ECS/grass list calls. GBuffer's nearby
+   `Add_GPUDriven_DrawRendererList` is a separate path, and HGASM's
+   `ExecuteCommandBufferNoCopy` occurs before the list sequence. No caller has
+   a direct Tree-specific `+0xDA8`/`+0xDE8`/`+0xF10` edge, so final
+   render-graph execution and HGTree draw/queue ownership stay fail-closed.
    A complete callback-slot census narrows this boundary further: the main
    HGTree handler uses `+0x210/+0x268/+0x280/+0xC8/+0xD8/+0xD0/+0xE0/+0xE8`
    plus `+0xDA0/+0x380`, while the sibling also uses `+0xB0/+0xC0`, which map
