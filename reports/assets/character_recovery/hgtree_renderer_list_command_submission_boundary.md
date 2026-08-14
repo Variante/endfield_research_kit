@@ -309,6 +309,28 @@ claim.
     HGTree `+E90` case, so the remaining gap is receiver/branch ownership, not
     the existence of the concrete Vulkan sink.
 
+18. The interpreter cases now have an exact command-stream producer boundary.
+    The dispatch table at `0x1813BB574` uses `opcode - 0x2711` as its index:
+    `0x2730 -> 0x1813AFB6B`, `0x2731 -> 0x1813AFECF`, and
+    `0x273B -> 0x1813B1110`. Case `0x2730` parses the variable-size record
+    payload and calls the receiver at `[r14+0x70]` through vtable `+0xE90` at
+    `0x1813AFEC3`; its common-exit jump is at `0x1813AFECA`. The adjacent
+    case `0x2731` calls the same receiver through `+0xDE8` at
+    `0x1813AFED9` and exits at `0x1813AFEDF`. These are adjacent jump-table
+    cases, not a fall-through from `+E90` into `+DE8`.
+
+    Their native writers share the same command-buffer object layout and the
+    same recorder flag (`byte [object+0x2711]`). Writer `0x18093AE10` stores
+    literal opcode `0x2730` at `0x18093AEB5` and, when recording is disabled,
+    immediately dispatches the same receiver through `+0xE90` at
+    `0x18093B129`. Writer `0x18092E350` stores literal opcode `0x2731` at
+    `0x18092E40F` and, on its immediate path, dispatches through `+0xDE8` at
+    `0x18092E450`. This proves that the descriptor/resource operation and the
+    draw/submit operation are separate recorded opcodes in the same native
+    command architecture. It does not yet prove that every HGTree renderer
+    list emits `0x2730` followed by `0x2731`, so the receiver/branch ownership
+    and runtime ordering remain fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -346,4 +368,6 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180861C20 0x180861C34
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180850F80 0x180851320
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180823F80 0x180824040
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18093AE10 0x18093B150
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18092E350 0x18092E480
 ```

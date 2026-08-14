@@ -690,8 +690,15 @@ only stable interpretation and priorities.
    so this is now a concrete descriptor-state update boundary. The API-2
    vtable's adjacent `+0xDE8 -> 0x18083F1E0 -> 0x180843D60` path now proves
    descriptor update -> `vkCmdDraw` -> `vkQueueSubmit` in the same backend
-   family; the remaining uncertainty is whether the HGTree `+0xE90` case takes
-   that sibling branch for the same receiver. A file-backed fallback assignment to
+   family. The interpreter jump table `0x1813BB574` maps `0x2730` to the
+   HGTree/resource `+0xE90` case (`0x1813AFEC3`) and adjacent `0x2731` to the
+   same receiver's `+0xDE8` case (`0x1813AFED9`); native writers
+   `0x18093AE10` and `0x18092E350` record those literals under the shared
+   `object+0x2711` command-stream flag and use the same slots for their
+   immediate fallbacks. They are separate recorded opcodes, so this still does
+   not prove that every HGTree renderer list emits `0x2730` followed by
+   `0x2731`, but the remaining uncertainty is now runtime receiver/branch
+   ownership and ordering rather than opcode identity. A file-backed fallback assignment to
    `0x180861C20` is only a generic 32-byte record-copy helper, and loader order
    can overwrite the cell; capture or resolve that order before calling the
    fallback active. Keep component 67's LOD/list role and the retail culling
