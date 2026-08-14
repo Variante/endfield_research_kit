@@ -77,7 +77,16 @@ If admitted, the remaining rows have this exact strict relative order:
 This is a subsequence constraint, not an exact selected-list reconstruction:
 unrelated native Light entities on admitted layers can interleave, any of the
 eleven can still fail the live horizontal-plane/AABB test, and the punctual
-setting cap can truncate the final list.
+native producer's 256-row result bound can truncate the final list.
+
+The desktop settings/culling-cap audit resolves
+`PunctualLightMaxCount=256`. `HGCullingSystem.CullLights` is already invoked
+with `maxCount=256`, so `SetupState`'s `min(survivorCount, cap)` cannot further
+truncate that native result on the installed Windows route. This closes the
+runtime cap as a remaining unknown; it does not close the horizontal AABB
+planes, the complete unrelated native-light population, or the live camera
+cull-view inputs. The generated source evidence is
+`unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/light_cull_cap_recovery.json`.
 
 ## Recovery boundary
 
@@ -85,12 +94,14 @@ The cull mode, room layer/mask gate, one guaranteed authored exclusion, native
 sort order, and authored maximum contribution are now source-pinned. The
 remaining lighting inputs are the live final render-target aspect/culling
 matrix (horizontal AABB planes), the complete unrelated native-light
-population, and the runtime punctual-light cap. No Unity or lab patch is
-justified by this audit, and authored JSON is not substituted for native cull
-output.
+population, and live camera/cull-view state. The desktop punctual-light cap is
+source-closed at 256 and adds no further truncation because the native producer
+already receives `maxCount=256`. No Unity or lab patch is justified by this
+audit, and authored JSON is not substituted for native cull output.
 
 Reproduce with:
 
 ```bat
 python scratch\reverse_engineering\gacha_light_cull_view\audit_gacha_light_cull_view.py --check
+python unity_endfield_graph_shader_lab\tools\audit_light_cull_cap.py --check
 ```
