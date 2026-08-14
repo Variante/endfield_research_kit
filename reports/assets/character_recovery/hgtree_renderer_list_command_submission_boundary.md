@@ -7,14 +7,16 @@ graphics-context and command-stream callback route. The dedicated HyperGryph
 wrappers build renderer/resource records, resolve vtable `+0xEA0`, and emit
 opcode `0x273B`; the interpreter dispatches that opcode to HGTree-specific
 callbacks. The populated resource records then reach callback-built renderer
-records whose thunks enter graphics-context vtable loops. The separate
-CommandBuffer tree-list call is pinned to its GC-root and string-payload
-validation boundary. The later record loop is now pinned to Vulkan
-`vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, and the
-same API-2 backend family has a concrete descriptor -> draw -> queue-submit
-sink. The recorded HGTree receiver is now pinned to that API-2 backend;
-ownership/order of the branch that reaches the draw/submit sink remains
-unresolved, so this remains fail-closed and is not a retail frame-parity
+records whose thunks resolve through Unity's Vulkan function loader and issue
+real command-buffer operations: buffer binds, dynamic state, descriptor/pipeline
+binds, and (on the `+0xDA8` sibling) indirect draws. The separate CommandBuffer
+tree-list call is pinned to its GC-root and string-payload validation boundary.
+The later record loop is also pinned to Vulkan
+`vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, and the same
+API-2 backend family has a concrete descriptor -> draw -> queue-submit sink.
+The recorded HGTree receiver and its callback-produced Vulkan commands are now
+source-pinned, but managed tree-list playback, callback ordering, and queue
+submission ownership remain unresolved; this is not yet a retail frame-parity
 claim.
 
 ## Source pins
@@ -528,20 +530,41 @@ claim.
     runtime-indirect record consumer or a capture binds these families.
 
 27. The 0x60-byte records created on the resource path now have bounded
-    callback thunks, which narrows the unresolved edge further. The `+0xDA0`
-    builder `0x18083E720` stores callback `0x180820580` at
-    `0x18083EA2A`; that thunk jumps to `0x18082D6B0`, which compares resource
-    handles and calls only an indirect resource/state method. The adjacent
-    shared builder path `0x180839D50` stores callback `0x1808208F0` at
-    `0x18083A033`; it jumps to `0x18082E660`, whose body updates dimensions,
-    handles, and indirect resource callbacks. The `+0xDA8` sibling
+    callback thunks, and their runtime slots are resolved to named Vulkan
+    commands. The `+0xDA0` builder `0x18083E720` stores callback `0x180820580`
+    at `0x18083EA2A`; that thunk jumps to `0x18082D6B0`, which compares
+    resource handles, then calls `0x1821D35A0 = vkCmdBindIndexBuffer` and
+    `0x1821D35A8 = vkCmdBindVertexBuffers`. The shared builder path
+    `0x180839D50` stores callback `0x1808208F0` at `0x18083A033`; it jumps to
+    `0x18082E660`, whose state-delta path calls
+    `0x1821D3568 = vkCmdSetDepthBias`,
+    `0x1821D3590 = vkCmdSetStencilReference`,
+    `0x1821D3548 = vkCmdBindPipeline`, and
+    `0x1821D3598 = vkCmdBindDescriptorSets`. The `+0xDA8` sibling
     `0x18083EC60` stores callback `0x180820940` at `0x18083F0F7`; it jumps to
-    `0x18082E820` and has the same resource/state-only shape. None of these
-    callback bodies contains a direct `+0xDE8`, graphics, Vulkan, or
-    queue-submit edge. The unresolved part is therefore the runtime receiver
-    behind those indirect resource methods or an external frame-order event,
-    not the 0x60-byte record callback itself; do not promote this to an HGTree
-    draw route without runtime capture or a stronger indirect-table proof.
+    `0x18082E820`, binds index/vertex buffers through the same `35A0/35A8`
+    slots, and selects `0x1821D35C8 = vkCmdDrawIndexedIndirect` or
+    `0x1821D35C0 = vkCmdDrawIndirect` at its final branch. These are direct
+    Vulkan command-recording calls reached from the callback-produced records,
+    not merely resource-state copies. They do not themselves call the backend
+    `+0xDE8` wrapper or `vkQueueSubmit`; the remaining uncertainty is which
+    HGTree record variants install/execute each callback and how their command
+    buffer is ordered and submitted. Keep managed tree-list playback and
+    retail frame order fail-closed until capture or a stronger producer/consumer
+    join proves that scheduling.
+
+28. The indirect-slot names are source-pinned by Unity's Vulkan resolver
+    `0x180746620`, which passes each symbol string to `0x181CA0480` and stores
+    the resolved function pointer in the corresponding BSS cell. The resolver
+    maps `0x1821D3548/3568/3590/3598/35A0/35A8/35C0/35C8` to
+    `vkCmdBindPipeline`, `vkCmdSetDepthBias`, `vkCmdSetStencilReference`,
+    `vkCmdBindDescriptorSets`, `vkCmdBindIndexBuffer`,
+    `vkCmdBindVertexBuffers`, `vkCmdDrawIndirect`, and
+    `vkCmdDrawIndexedIndirect`. This closes the previously unresolved
+    callback receiver identity without treating the file-backed BSS contents as
+    initialized pointers. Re-run
+    `python scratch\\reverse_engineering\\hgtree_component67_producers\\resolve_vulkan_function_slots.py`
+    against the pinned UnityPlayer to reproduce the mapping.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
