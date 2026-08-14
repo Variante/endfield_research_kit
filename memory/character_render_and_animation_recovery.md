@@ -676,10 +676,13 @@ only stable interpretation and priorities.
    `0x1808351F0` via interpreter opcode `0x27B6`, the registry paths
    `0x180822180`/`0x1808224F0`, and the shared builder `0x18083E720`; these
    remain pre-device layers. The adjacent setup path
-   `0x180843BF0 -> 0x18083F680` reaches an unresolved runtime vtable call at
-   `0x18083F71B` (`+0x48`) and is the next indirect-boundary candidate.
-   Keep component 67's LOD/list role and the retail culling survivor list
-   separately bounded.
+   `0x180843BF0 -> 0x18083F680` reaches `0x18083F71B`, where
+   `[[[rdi+0x78]+0x208]]` supplies a heap/runtime vtable and `+0x48` is
+   invoked. Four static `+E90` callers feed this resource initializer, while
+   no static `+DC0` caller was found. The receiver is therefore currently a
+   runtime resource-subobject interface, not proven device submission. Identify
+   its heap-created vtable or returned-record consumer next. Keep component
+   67's LOD/list role and the retail culling survivor list separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
