@@ -18,6 +18,7 @@ from scripts.mission_pipeline import (
     mission_payload_projection,
     offline_shell_projection,
     offline_recovery_projection,
+    post_playback_enrichment,
     post_playback_projection,
     quest_fork_arm_projection,
     quest_scope_projection,
@@ -4690,13 +4691,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }],
             }],
         }]
-        result = pipeline.attach_post_playback_callserver_contracts(
+        self.assertFalse(
+            hasattr(pipeline, "attach_post_playback_callserver_contracts")
+        )
+        result = post_playback_enrichment.attach_post_playback_callserver_contracts(
             nodes,
             {"rows": [{
                 "sourceFile": "LevelScriptData/map_fixture/42.json",
                 "callServerLocalId": 7,
                 "serializedContract": contract,
             }]},
+            contract_projector=pipeline.compact_callserver_serialized_contract,
         )
 
         self.assertEqual("validated", result["status"])
@@ -4716,9 +4721,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "serverHandoffs": [{"localId": 7}],
             }],
         }]
-        result = pipeline.attach_post_playback_callserver_contracts(
+        result = post_playback_enrichment.attach_post_playback_callserver_contracts(
             nodes,
             {"rows": []},
+            contract_projector=pipeline.compact_callserver_serialized_contract,
         )
 
         self.assertEqual("validation_failed", result["status"])
@@ -4842,7 +4848,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }],
             }],
         }]
-        audit = pipeline.build_post_playback_action_name_audit(
+        audit = post_playback_enrichment.build_post_playback_action_name_audit(
             nodes,
             formatter_names={0x0010: "GenericAction"},
             formatter_audit={
@@ -4897,7 +4903,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            index = pipeline.build_level_sequence_textasset_index(root)
+            index = post_playback_enrichment.build_level_sequence_textasset_index(
+                root,
+                compact_projector=pipeline.compact_dict,
+                repo_path_projector=pipeline.repo_path,
+            )
 
         self.assertEqual("degraded_fail_closed", index["status"])
         self.assertEqual(
@@ -4948,7 +4958,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             },
         }
 
-        audit = pipeline.attach_exact_level_sequence_assets(nodes, index)
+        audit = post_playback_enrichment.attach_exact_level_sequence_assets(
+            nodes,
+            index,
+        )
 
         actions = nodes[0]["postPlaybackControls"][0]["actions"]
         self.assertEqual(
