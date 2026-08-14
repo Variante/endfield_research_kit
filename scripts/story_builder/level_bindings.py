@@ -105,7 +105,6 @@ from .codecs.leveldata.radio_contexts import (
     parse_function_area_radio_trigger,
 )
 
-_LEVELDATA_NAMED_TABLES_CACHE: dict[str, list[list[dict]]] = {}
 _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE: dict[str, list[dict]] = {}
 _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_NATIVE_STORY_PLAYBACK_CACHE: dict[str, list[dict]] | None = None
@@ -3153,22 +3152,6 @@ def _load_leveldata_named_entries(path: Path) -> list[dict]:
 
     _LEVELDATA_NAMED_TABLE_CACHE[cache_key] = entries
     return entries
-
-
-def _load_leveldata_named_tables(path: Path) -> list[list[dict]]:
-    cache_key = str(path)
-    if cache_key in _LEVELDATA_NAMED_TABLES_CACHE:
-        return _LEVELDATA_NAMED_TABLES_CACHE[cache_key]
-
-    try:
-        data = read_bytes_cached(path)
-    except OSError:
-        tables: list[list[dict]] = []
-    else:
-        tables = _extract_named_entry_tables(data)
-
-    _LEVELDATA_NAMED_TABLES_CACHE[cache_key] = tables
-    return tables
 
 
 def _load_levelscript_binding_data(
