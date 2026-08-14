@@ -154,6 +154,17 @@ fail-closed. Keep the numeric staging `+0xd0` lane separate from the
 renderer resource's channel-2 `+0xd0`; details are in
 `reports/assets/character_recovery/factory_record_to_100_staging_contract.md`.
 
+A bounded UnityPlayer follow-up found two genuine native near-matches,
+`0x1812117ec..0x181211c02` and `0x1812145af..0x181214888`, that walk a
+`0x54` source array while updating a separate `0x100`-stride record. They
+preserve destination `+0x00..+0x30` into `+0x60..+0x90` and update
+`+0x30..+0x38`; they do not read the factory manager `+0x38`/`0x8c` record,
+the dirty byte at `+0x70`, or the confirmed staging lanes `+0xb0..+0xf0`, and
+have no direct GPU upload or kernel-7 call. This proves the literal strides
+coexist in other native layouts but does not identify the missing
+factory-to-`_UploadBuffer` pack. Keep that edge fail-closed; evidence is in
+`reports/assets/character_recovery/native_54_to_100_near_match_followup.md`.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable
