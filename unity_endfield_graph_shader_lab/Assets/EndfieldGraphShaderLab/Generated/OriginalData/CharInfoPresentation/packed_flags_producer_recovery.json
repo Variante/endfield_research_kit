@@ -2325,6 +2325,62 @@
         },
         "interpretation": "The installed local IFix payload contains no serialized identity for the render-pipeline, GpuSceneDirtyUpdateCS/UploadPerDrawParams, custom-per-draw setter/partial-update endpoint, or explicit ComputeShader/CommandBuffer upload names. Its relevant factory references are quality/Lod configuration only. This rules out treating the current static IFix payload as the missing kernel-7 producer, but built-in registration, another loaded payload, and runtime WrappersManager slot contents remain outside the file; keep the staging-to-_UploadBuffer and channel-2/resource +0xd0 edges fail-closed."
       },
+      "installed_ifix_external_method_census": {
+        "status": "current-ifix-patch-external-method-table-no-gpu-api",
+        "source": "Current extracted Gameplay.Beyond IFix patch payload; structured type, interpreter-method, and external-method tables parsed from the protected payload after the bridge string, with the target table cross-check.",
+        "patch_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/dump/Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
+        "patch_size_bytes": 86926,
+        "patch_sha256": "baa28ae497e64d94e152886622bbe5fb391199bcbf8366e2df91591c9a9f172c",
+        "format_boundary": {
+          "bridge_string_offset": "0x88",
+          "type_count": 296,
+          "interpreter_method_count": 73,
+          "external_method_count": 330,
+          "target_count": 32,
+          "target_table_offset": "0x14eb8",
+          "target_table_end": "0x1538a"
+        },
+        "keyword_filter": {
+          "factory_or_render_hits": [
+            {
+              "external_method_index": 57,
+              "type": "UnityEngine.HyperGryph.HGFactoryRenderManager",
+              "method": "SetFactoryLodTier",
+              "parameters": ["UnityEngine.HyperGryph.HGFactoryLODTier"]
+            },
+            {
+              "external_method_index": 58,
+              "type": "Beyond.Gameplay.Factory.FacQuality",
+              "method": "Apply",
+              "parameters": []
+            }
+          ],
+          "dynamic_scene_hits": [
+            {
+              "external_method_index": 318,
+              "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+              "method": "get_ByteBuffer",
+              "parameters": []
+            },
+            {
+              "external_method_index": 319,
+              "type": "Google.FlatBuffers.ByteBuffer",
+              "method": "IsCreated",
+              "parameters": []
+            }
+          ],
+          "gpu_api_hits": []
+        },
+        "target_crosscheck": {
+          "remote_factory_frame_update_target": null,
+          "matched_target_count": 0,
+          "notes": [
+            "The current on-disk target table has no RemoteFactoryGameWorldController.FrameUpdateEntitiesJobForward record for key 0x7301.",
+            "Factory-related external methods are limited to LOD/quality configuration; no ComputeShader, ComputeBuffer, CommandBuffer, GPUDriven, UploadPerDrawParams, per-draw, or dispatch API appears in the 330-entry external-method table."
+          ]
+        },
+        "interpretation": "The current protected IFix payload provides a stronger static negative for the missing producer: its external-method table contains only factory LOD/quality references and no GPU upload or dispatch API, while the 0x7301 RemoteFactory target is absent. This still does not resolve runtime wrapper-array slots, built-in registration, or another loaded payload, so the IFix runtime boundary and the factory-record-to-_UploadBuffer edge remain fail-closed."
+      },
       "native_factory_batch_vat_evidence": {
         "status": "native-batch-vat-registry-finalizer-negative-upload-edge-open",
         "source": "Installed UnityPlayer.dll HyperGryph internal-call surface and PData-scoped x64 disassembly.",

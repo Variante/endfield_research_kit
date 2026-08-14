@@ -104,6 +104,16 @@ fallback at `0x18092c10e`. This closes the generic native command-record
 boundary, but the record is not tied to factory channel-2/resource `+0xd0` or
 `UploadPerDrawParams` kernel 7, so the character upload edge remains
 fail-closed.
+The current protected `Gameplay.Beyond` IFix payload is now structurally
+bounded beyond its 32 target signatures: its 330-entry external-method table
+contains only factory LOD/quality references (`SetFactoryLodTier` and
+`FacQuality.Apply`) plus unrelated dynamic-scene buffer helpers, with no
+`ComputeShader`, `ComputeBuffer`, `CommandBuffer`, `GPUDriven`, per-draw,
+`UploadPerDrawParams`, or dispatch API. The `0x7301`
+`RemoteFactoryGameWorldController.FrameUpdateEntitiesJobForward` target is
+also absent from this on-disk table. This strengthens the static negative but
+does not expose runtime wrapper-array slots or another loaded patch payload;
+the IFix route and factory-record-to-`_UploadBuffer` edge stay fail-closed.
 
 ## Evidence boundary
 
