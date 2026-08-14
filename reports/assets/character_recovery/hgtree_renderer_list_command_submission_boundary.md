@@ -579,6 +579,23 @@ and final draw/queue ownership remain fail-closed.
     not its HGTree-specific ordering or final draw/queue ownership; keep that
     final edge fail-closed.
 
+34. A complete callback-side front-vtable census narrows the remaining
+    receiver boundary. Main handler `0x18107AE60` calls slots `+0x210`,
+    `+0x268`, `+0x280`, `+0xC8`, `+0xD8`, `+0xD0`, `+0xE0`, `+0xE8`,
+    `+0xDA0`, and `+0x380`; sibling `0x18107B3A0` additionally calls
+    `+0xB0`/`+0xC0`. API-2 maps those extra slots through
+    `0x180833470`/`0x180833630` to `0x180822180`/`0x1808224F0` registry
+    paths, while the other inspected slots are resource/handle/state
+    mutations. None of these callback bodies emits `+0xDA8`, `+0xDE8`, or
+    `+0xF10`, and the inspected bodies contain no direct Vulkan draw. The
+    generic low-level writer `0x18092E350` records `0x2730` then `0x2731`;
+    interpreter case `0x2731` (`0x1813AFED9`) dispatches `+0xDE8`, paired with
+    `0x18093AE10`'s `0x2730`/`+0xE90` path. This identifies a separate
+    render-pass/command family in the static image rather than an HGTree
+    callback edge. The managed `HGRendererListUtils.DrawTreeECSRendererList`
+    wrapper (`0x189C0A130 -> 0x18B3FBFA4`) also contains no flush writer.
+    Keep HGTree ordering, final draw, and queue ownership fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
