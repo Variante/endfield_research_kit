@@ -79,6 +79,16 @@ unrelated native Light entities on admitted layers can interleave, any of the
 eleven can still fail the live horizontal-plane/AABB test, and the punctual
 native producer's 256-row result bound can truncate the final list.
 
+The native cull-view predicate itself is now source-pinned. The ordinary
+scheduled batch path tests the candidate AABB center/extent against six
+normalized planes stored at view `+0x58/+0x5C`; only `cameraType == 0x80`
+selects the alternate distance predicate
+`distanceSquared <= (max(candidateExtent) + view.occlusionScreenSizeMinimumSquared@+0x34)^2`.
+Neither selected predicate reads the constructor's screen-size word at view
+`+0x18`. Thus “horizontal AABB” is no longer an unknown native equation: the
+remaining uncertainty is the live plane values, candidate bounds, camera type,
+and unrelated native-light population for the settled frame.
+
 The desktop settings/culling-cap audit resolves
 `PunctualLightMaxCount=256`. `HGCullingSystem.CullLights` is already invoked
 with `maxCount=256`, so `SetupState`'s `min(survivorCount, cap)` cannot further
@@ -93,11 +103,12 @@ cull-view inputs. The generated source evidence is
 The cull mode, room layer/mask gate, one guaranteed authored exclusion, native
 sort order, and authored maximum contribution are now source-pinned. The
 remaining lighting inputs are the live final render-target aspect/culling
-matrix (horizontal AABB planes), the complete unrelated native-light
-population, and live camera/cull-view state. The desktop punctual-light cap is
-source-closed at 256 and adds no further truncation because the native producer
-already receives `maxCount=256`. No Unity or lab patch is justified by this
-audit, and authored JSON is not substituted for native cull output.
+matrix and candidate bounds (which supply the six plane values and AABB test
+inputs), the selected camera type/cull-view state, and the complete unrelated
+native-light population. The desktop punctual-light cap is source-closed at
+256 and adds no further truncation because the native producer already
+receives `maxCount=256`. No Unity or lab patch is justified by this audit, and
+authored JSON is not substituted for native cull output.
 
 Reproduce with:
 

@@ -448,9 +448,13 @@ native candidate core. Active `SceneLight6Rarity` rows initialize
 `0x40010008`, so the generic flag/mask gate is closed for all twelve authored
 rows. The native point-sphere top-plane branch guarantees `Spot Light (20)` is
 absent (margin `81.4967041015625`), leaving an exact conditional order for the
-other eleven and an authored maximum of 11. Horizontal AABB planes, unrelated
-live lights, the 256-row input cap, and live camera/cull-view state still own
-the exact selected list. The desktop settings audit resolves
+other eleven and an authored maximum of 11. The native scheduled cull-view
+predicate is now closed: ordinary cameras test candidate AABBs against six
+normalized planes at view `+0x58/+0x5C`, while only camera type `0x80` selects
+the alternate distance/extent predicate. The exact selected list still
+depends on live plane values, candidate bounds, camera/cull-view state,
+unrelated live lights, and the native 256-row input bound. The desktop settings
+audit resolves
 `PunctualLightMaxCount=256`, while native `HGCullingSystem.CullLights` already
 receives `maxCount=256`, so the runtime settings cap adds no further
 truncation. The regenerated checkers pass with current binary hashes; details
