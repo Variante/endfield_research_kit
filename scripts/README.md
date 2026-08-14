@@ -66,6 +66,7 @@ a degraded reason instead of using them as direct evidence.
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
 | Assets | `build_assets.py` | asset indexes and media lookup |
 | Audio | `build_audio.py` | decoded/relinked audio data |
+| Audio semantics | `build_audio_semantics.py` | compact Audio page evidence and shards |
 | Updates | `build_updates.py` | `webui/data/updates/latest.json` |
 | Packaging | `pack_webui.py` | distributable static package |
 
@@ -221,6 +222,25 @@ or converts those formats. Projectile behavior and authored event hashes stay
 immutable in `webui/data/gameplay/projectiles.json`; Audio publishes playable
 HIRC candidates separately in
 `webui/data/lang/<LANG>/gameplay/projectile_audio.json`.
+
+`build_audio_semantics.py` is the thin orchestration/publishing surface for
+the Audio evidence page. Maintained domain code lives under
+`audio_semantics/`: `native_evidence.py` owns the installed-build gate,
+`identifiers.py` owns Wwise hashes and managed string identities,
+`managed_literals.py`, `responsive_voice.py`, and `voice_requests.py`
+own their respective consumer evidence, `interactive_components.py` and
+`authored_components.py` own serialized component recovery,
+`table_contexts.py` owns authored table/config scanning, and
+`event_projection.py` / `event_summary.py` own WebUI row projection.
+`build_audio.py` imports shared primitives from those owners instead of
+treating the semantics entry point as a utility module.
+
+Native Audio claims always receive both the selected
+`global-metadata.dat` and the matching `GameAssembly.dll` through
+`--game-root`. Missing or mismatched binaries retain authored evidence but
+omit build-locked callsites, mappings, and runtime addresses. Do not restore
+module-global default game paths, duplicate native catalogs, compatibility
+re-exports, or broad `ImportError` import fallbacks.
 
 The default AnimeStudio type-job mode is `auto`: map-filtered conversion stays
 sharded, while broad Story JSON runs in isolated sequential processes. Do not

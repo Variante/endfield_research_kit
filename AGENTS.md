@@ -23,6 +23,36 @@ topic documents under `memory/`. Do not recreate one-file-per-investigation or
 dated status snapshots. Generated inventories belong in `reports/`, and
 disposable evidence belongs in `scratch/` or `tmp/`.
 
+### Audio recovery documentation boundary
+
+Keep Audio documentation split by audience and do not repeat the same
+build-specific catalog across files:
+
+- `scripts/README.md` owns maintained Audio commands, module ownership, and
+  builder/output contracts.
+- `webui/README.md` owns only Audio page behavior, generated-data layout, and
+  frontend evidence/filter contracts.
+- `memory/game_data_recovery.md` owns durable Wwise, serialized-data, and
+  native-consumer conclusions plus the highest-value recovery gaps.
+- `memory/webui_recovery.md` owns the current user-visible Audio recovery
+  state and UI-facing evidence boundary.
+- Per-build addresses, method tokens, hashes, mapping tables, and full
+  inventories belong in versioned code contracts or generated reports, not in
+  `AGENTS.md`, active READMEs, or memory prose. Changing counts belong in
+  reports; disposable before/after evidence belongs in `tmp/audio/<task>/`.
+
+Audio code follows the same ownership boundary. `build_audio.py` owns decode,
+Wwise indexing, relinking, and Gameplay sidecars;
+`build_audio_semantics.py` owns orchestration and publication only; reusable
+semantic domains live under `scripts/audio_semantics/`. Add logic to its
+domain owner instead of growing either entry point or importing the entry
+point as a helper library. Native claims must use the explicit selected
+`global-metadata.dat` plus `GameAssembly.dll` gate, fail closed on
+missing/mismatched inputs, and never fall back to a module-global game root.
+Do not add compatibility re-exports, duplicate native catalogs, broad
+`ImportError` import fallbacks, or a second scan when one collected context
+index can supply both names and hashes.
+
 ## Commands
 
 ```bat
@@ -562,6 +592,8 @@ WebUI:
   Presentation page builders remain removed; do not restore those pages or
   their generated outputs.
 - `scripts/build_audio.py`
+- `scripts/build_audio_semantics.py` is the Audio page orchestrator/publisher;
+  reusable Audio evidence owners live under `scripts/audio_semantics/`
 - `scripts/pack_webui.py`
 - supporting files in `scripts/` and `scripts/asset_builder/`
 
