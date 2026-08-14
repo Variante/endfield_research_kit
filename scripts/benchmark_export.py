@@ -14,7 +14,10 @@ import sys
 import time
 from typing import Any
 
-from common import EXPORT_REPORTS_DIR, ROOT, rel_path
+if __package__:
+    from .common import EXPORT_REPORTS_DIR, ROOT, rel_path
+else:
+    from common import EXPORT_REPORTS_DIR, ROOT, rel_path
 
 
 ACTIVE_ENV = "ENDFIELD_EXPORT_BENCHMARK_ACTIVE"
