@@ -41,21 +41,27 @@ archetypes are imported as labeled source kits rather than finished characters.
   unresolved; it must not be merged with managed `RenderObjectLODInfo` (ID 6)
   or `HGTreeComponent` (ID 80). See
   `reports/assets/character_recovery/native_component67_lod_renderer_list_boundary.md`.
-- The managed HGTree renderer-list edge is now pinned through the installed
-  internal-call tables: `HGTreeRender.CreateRendererList*` resolves to native
-  wrappers `0x1801D75A0/0x1801D7640/0x1801D76E0`, while
-  `DrawECSRendererList` tail-jumps to
+- The managed HGTree renderer-list creation edge is pinned through the
+  dedicated 729-entry HyperGryph internal-call table
+  (`0x1820E6E90` names / `0x1820E8560` functions): indexes 564/565/566 map to
+  wrappers `0x1801D9D10/0x1801D9F10/0x1801D9FA0`, which read the graphics
+  context through `0x180FC5E60` at `context+0xC0` and call cores
+  `0x18107EE40/0x18107FCF0/0x181080190`. The normal core builds
+  context-owned renderer/resource records and reaches graphics-context vtable
+  slot `+0xEA0` (`0x18107F13F`); fallback builders `0x18107E2E0` and
+  `0x181080730` produce the result record and per-renderer arrays. This closes
+  the native creation/resource-record boundary, not the final GPU consumer.
+  Separately, `DrawECSRendererList` tail-jumps to
   `CommandBuffer::AddDrawECSTreeRendererList`, native `0x1801719B0`, which
-  roots local managed-pointer state through slot `0x1821BE708` and then calls
-  shared helper `0x180A5C5C0`. The earlier `0x180149500` attribution was a
-  CommandBuffer-table index error; that address is a Profiler entry. Static
-  initialization at `0x18077C050/0x18077C055` resolves slot `0x1821BE708` to
-  `il2cpp_gc_wbarrier_set_field`, not a renderer-list converter. The checked
-  `0x180A5C5C0` body validates/converts the wrapper and returns a status, but
-  exposes no ComputeBuffer, dispatch, graphics API, or command-stream opcode;
-  the tree-specific resource consumer after it remains fail-closed. Keep
-  component 67 as LOD/list state rather than merging it with these opaque
-  handles. See
+  roots local managed-pointer state through slot `0x1821BE708` and calls the
+  string-payload conversion/validation helper `0x180A5C5C0`. The earlier
+  `0x180149500` attribution was a CommandBuffer-table index error; that address
+  is a Profiler entry. Static initialization at `0x18077C050/0x18077C055`
+  resolves slot `0x1821BE708` to `il2cpp_gc_wbarrier_set_field`, not a
+  renderer-list converter. The separate CommandBuffer body exposes no
+  ComputeBuffer, dispatch, graphics API, or command-stream opcode; its final
+  dynamic consumer remains fail-closed. Keep component 67 as LOD/list state
+  rather than merging it with these handles. See
   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
 
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
@@ -630,8 +636,8 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Follow the newly pinned HGTree internal-call edge after shared helper
-   `0x180A5C5C0` into the later command-buffer/resource consumer, while keeping
+1. Resolve the graphics-context vtable `+0xEA0` target reached by the HGTree
+   creation cores and its later command-buffer/resource consumer, while keeping
    component 67's LOD/list role and the retail culling survivor list separately
    bounded.
 2. Validate representative paths against accepted retail captures.
