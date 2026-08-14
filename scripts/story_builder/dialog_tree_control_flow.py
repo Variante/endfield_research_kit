@@ -43,12 +43,17 @@ elif __package__ == "scripts.story_builder":
 else:  # pragma: no cover - direct file execution is intentionally unsupported
     raise ImportError("import this module as scripts.story_builder.dialog_tree_control_flow")
 
+from .native_contracts.ifix_patch import (
+    DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,
+    load_ifix_patch_contract,
+    project_current_ifix_evidence,
+)
+
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 CATALOG_PATH = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
-DEFAULT_IFIX_AUDIT = ROOT / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
 DEFAULT_ANIMESTUDIO_CLI = (
     ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release"
     / "net9.0-windows" / "AnimeStudio.CLI.exe"
@@ -159,6 +164,35 @@ def repo_path(path: Path) -> str:
         return path.resolve().relative_to(ROOT.resolve()).as_posix()
     except (OSError, ValueError):
         return str(path.resolve())
+
+
+def _validated_current_ifix_evidence(
+    ifix_audit: dict[str, Any],
+    *,
+    relevant_prefixes: set[str],
+    source: Path,
+) -> dict[str, Any]:
+    if ifix_audit.get("status") != "validated":
+        failure = (ifix_audit.get("validationFailures") or [{}])[0]
+        raise ContractError(
+            "validator=dialog_tree_static_port_contract "
+            "gate=current_ifix_contract "
+            "expected='validated' "
+            f"actual={ifix_audit.get('status')!r} "
+            f"source={failure.get('sourceFile') or source} "
+            f"detail={failure!r}"
+        )
+    current_ifix = project_current_ifix_evidence(
+        ifix_audit,
+        relevant_prefixes=relevant_prefixes,
+    )
+    relevant_ifix = current_ifix["relevantFixedMethods"]
+    if relevant_ifix:
+        raise ContractError(
+            "validator=dialog_tree_static_port_contract gate=current_ifix_exclusion "
+            f"expected=[] actual={relevant_ifix!r} source={source}"
+        )
+    return current_ifix
 
 
 def _read_compressed_uint32(data: bytes, offset: int) -> tuple[int, int]:
@@ -497,30 +531,6 @@ def parse_static_enum_string_list_initializer(
     if len(selectors) != len(set(selectors)):
         raise ContractError("static initializer repeats an enum selector")
     return rows
-
-
-def _fixed_ifix_signatures(path: Path) -> tuple[list[str], dict[str, Any]]:
-    if not path.is_file():
-        return [], {"status": "missing", "sourceLabel": repo_path(path)}
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    signatures = sorted(
-        str(row.get("signature") or "")
-        for row in payload.get("fixedMethods") or []
-        if isinstance(row, dict) and row.get("signature")
-    )
-    source = payload.get("source") or {}
-    return signatures, {
-        "status": "audited",
-        "sourceLabel": (
-            source.get("label")
-            or source.get("source")
-            or source.get("file")
-            or repo_path(path)
-        ),
-        "sha256": source.get("patchSha256") or source.get("sha256") or "",
-        "reportFile": repo_path(path),
-        "fixedMethodCount": len(signatures),
-    }
 
 
 def _lua_source_record(
@@ -1087,14 +1097,14 @@ def recover_static_port_family_contract(
     *,
     game_assembly_path: Path = DEFAULT_GAME_ASSEMBLY,
     metadata_path: Path = DEFAULT_METADATA,
-    ifix_audit_path: Path = DEFAULT_IFIX_AUDIT,
+    ifix_contract_path: Path = DEFAULT_IFIX_CONTRACT,
 ) -> dict[str, Any]:
     """Recover and fail-closed validate one installed multi-output family."""
     cache_key = (
         spec,
         str(game_assembly_path.resolve()),
         str(metadata_path.resolve()),
-        str(ifix_audit_path.resolve()),
+        str(ifix_contract_path.resolve()),
     )
     if cache_key in _CONTRACT_CACHE:
         return _CONTRACT_CACHE[cache_key]
@@ -1277,21 +1287,20 @@ def recover_static_port_family_contract(
             f"gate={first['gate']} expected={first['expected']!r} actual={first['actual']!r}"
         )
 
-    ifix_signatures, ifix_source = _fixed_ifix_signatures(ifix_audit_path)
+    ifix_audit = load_ifix_patch_contract(
+        ifix_contract_path,
+        gameassembly=game_assembly_path,
+        metadata=metadata_path,
+    )
     relevant_prefixes = {
         f"{type_name}::{method_name}("
         for _key, type_name, method_name, _parameter_count in method_specs
     }
-    relevant_ifix = [
-        signature
-        for signature in ifix_signatures
-        if any(signature.startswith(prefix) for prefix in relevant_prefixes)
-    ]
-    if relevant_ifix:
-        raise ContractError(
-            "validator=dialog_tree_static_port_contract gate=current_ifix_exclusion "
-            f"expected=[] actual={relevant_ifix!r} source={ifix_audit_path}"
-        )
+    current_ifix = _validated_current_ifix_evidence(
+        ifix_audit,
+        relevant_prefixes=relevant_prefixes,
+        source=ifix_contract_path,
+    )
 
     external_result_router = None
     if spec.external_result_router is not None:
@@ -1344,10 +1353,7 @@ def recover_static_port_family_contract(
                 "global-metadata.dat": metadata_hash,
             },
         },
-        "currentIFix": {
-            **ifix_source,
-            "relevantFixedMethods": relevant_ifix,
-        },
+        "currentIFix": current_ifix,
         "externalResultRouter": external_result_router,
         "selectionRule": (
             "A nonnegative DialogManager.Next(index) reaches DialogTreeController.Next(index), "

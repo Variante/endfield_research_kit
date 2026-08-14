@@ -23,22 +23,21 @@ elif __package__ == "story_builder.native_contracts":
 else:  # pragma: no cover - invalid embedding identity
     raise ImportError(f"unsupported package identity: {__package__!r}")
 
+from .ifix_patch import (
+    DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,
+    PATCH_SHA256 as IFIX_PATCH_SHA256,
+    load_ifix_patch_contract,
+)
+
 
 SCHEMA = "identityCarrierNegativeBoundaries.v1"
 AUDIT_SCHEMA = "identityCarrierNegativeBoundariesAudit.v1"
 DEFAULT_CONTRACT = Path(__file__).with_name("identity_carrier_boundaries.json")
-DEFAULT_IFIX_AUDIT = (
-    Path(__file__).resolve().parents[3]
-    / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
-)
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
 METADATA_SHA256 = (
     "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
-IFIX_PATCH_SHA256 = (
-    "737134081E06371F13C073988547E887037FCCF2F57E1052BE35DD255D27BC21"
 )
 BOUNDARY_IDS = (
     "mission_option_alternate_actions",
@@ -71,7 +70,7 @@ def _read_json(path: Path) -> tuple[dict[str, Any], bytes, str | None]:
 def load_identity_carrier_boundaries_contract(
     contract_path: Path = DEFAULT_CONTRACT,
     *,
-    ifix_audit_path: Path = DEFAULT_IFIX_AUDIT,
+    ifix_contract_path: Path = DEFAULT_IFIX_CONTRACT,
     gameassembly: Path | None = None,
     metadata: Path | None = None,
 ) -> dict[str, Any]:
@@ -154,24 +153,21 @@ def load_identity_carrier_boundaries_contract(
         if actual != expected:
             reject(gate, expected, actual)
 
-    ifix_path = Path(ifix_audit_path)
-    ifix, _ifix_raw, ifix_error = _read_json(ifix_path)
-    if ifix_error:
+    ifix_audit = load_ifix_patch_contract(
+        ifix_contract_path,
+        gameassembly=gameassembly,
+        metadata=metadata,
+    )
+    if ifix_audit.get("status") != NATIVE_EVIDENCE_VALIDATED:
         reject(
-            "read_valid_ifix_audit",
-            {"readableJsonObject": True},
-            ifix_error,
-            _source_file(ifix_path),
+            "ifix_contract_status",
+            {"status": NATIVE_EVIDENCE_VALIDATED},
+            {
+                "status": ifix_audit.get("status"),
+                "validationFailures": ifix_audit.get("validationFailures") or [],
+            },
+            str(ifix_audit.get("sourceFile") or _source_file(ifix_contract_path)),
         )
-    else:
-        ifix_sha = str((ifix.get("source") or {}).get("patchSha256") or "").upper()
-        if ifix_sha != IFIX_PATCH_SHA256:
-            reject(
-                "ifix_source_hash",
-                IFIX_PATCH_SHA256,
-                ifix_sha or "<missing>",
-                _source_file(ifix_path),
-            )
 
     native = check_installed_native_inputs(
         GAMEASSEMBLY_SHA256,
@@ -192,7 +188,7 @@ def load_identity_carrier_boundaries_contract(
             native.status
             if native.status != NATIVE_EVIDENCE_VALIDATED
             else NATIVE_EVIDENCE_MISSING
-            if error or ifix_error
+            if error or ifix_audit.get("status") == NATIVE_EVIDENCE_MISSING
             else NATIVE_EVIDENCE_MISMATCHED
         )
     return {
@@ -210,7 +206,7 @@ __all__ = [
     "AUDIT_SCHEMA",
     "BOUNDARY_IDS",
     "DEFAULT_CONTRACT",
-    "DEFAULT_IFIX_AUDIT",
+    "DEFAULT_IFIX_CONTRACT",
     "GAMEASSEMBLY_SHA256",
     "IFIX_PATCH_SHA256",
     "METADATA_SHA256",

@@ -59,6 +59,10 @@ if not __package__:
     from story_builder.native_contracts.identity_carrier_boundaries import (
         load_identity_carrier_boundaries_contract,
     )
+    from story_builder.native_contracts.ifix_patch import (
+        fixed_method_prefix_matches,
+        load_ifix_patch_contract,
+    )
     from story_builder.native_contracts.cross_system_consumers import (
         load_cross_system_consumers_contract,
     )
@@ -141,6 +145,10 @@ else:
     )
     from scripts.story_builder.native_contracts.identity_carrier_boundaries import (
         load_identity_carrier_boundaries_contract,
+    )
+    from scripts.story_builder.native_contracts.ifix_patch import (
+        fixed_method_prefix_matches,
+        load_ifix_patch_contract,
     )
     from scripts.story_builder.native_contracts.cross_system_consumers import (
         load_cross_system_consumers_contract,
@@ -455,21 +463,6 @@ RUNTIME_CONTRACT = {
             "matches none of patch ids 0x5605, 0x54d1, or 0x54d2. Future patches can "
             "change that result, so rebuild-scoped audits must still fail closed."
         ),
-        "installedPatch": {
-            "source": "Persistent VFS: Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
-            "size": 82021,
-            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
-            "signatureTargetCount": 30,
-            "relevantPatchIds": ["0x5605", "0x54d1", "0x54d2"],
-            "matchedRelevantPatchIds": [],
-            "taskCompletionTargetMatches": 0,
-            "taskCompletionExplicitReferenceMatches": 0,
-            "receiverOwnershipTargetMatches": 0,
-            "receiverOwnershipExplicitReferenceMatches": 0,
-            "missionHudTargets": 2,
-            "dialogCinematicTargets": 7,
-            "auditReport": "reports/story/recovery/current_ifix_mission_graph_audit.json",
-        },
         "confidence": "native_proven",
     },
     "levelScriptCtxTokenAudit": {
@@ -579,12 +572,6 @@ RUNTIME_CONTRACT = {
                 "host and creates no Story ownership or order edge."
             ),
         },
-        "installedPatch": {
-            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
-            "signatureTargetCount": 30,
-            "relevantPatchIds": ["0x5ec5", "0x5ebe", "0x5ea7"],
-            "matchedMethods": 0,
-        },
         "finding": (
             "Recursive typed-field traversal across every current enum-backed CS/SC "
             "message found no mission/quest + LevelScript/Story identity co-carrier. "
@@ -678,11 +665,6 @@ RUNTIME_CONTRACT = {
                 "effect": "plays pushBackRadioId after local AirWall contact",
             },
         ],
-        "installedPatch": {
-            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
-            "signatureTargetCount": 30,
-            "matchedAirWallMethods": 0,
-        },
         "finding": (
             "This is an exact state-gated playback context: synchronized mission/quest "
             "state controls an authored AirWall, and later player contact can play its "
@@ -2428,6 +2410,88 @@ RUNTIME_CONTRACT = {
         },
     ],
 }
+
+
+def project_ifix_runtime_contract(
+    runtime_contract: dict[str, Any],
+    ifix_audit: dict[str, Any],
+) -> dict[str, Any]:
+    """Attach shared IFix facts without publishing stale negative conclusions."""
+    projected = copy.deepcopy(runtime_contract)
+    status = str(ifix_audit.get("status") or "missing")
+    if status != "validated":
+        unavailable = {
+            "status": status,
+            "contract": ifix_audit.get("sourceFile") or "",
+            "contractSha256": str(ifix_audit.get("sourceSha256") or "").lower(),
+            "validationFailures": ifix_audit.get("validationFailures") or [],
+        }
+        projected["serverPlaceholder"]["installedPatch"] = copy.deepcopy(unavailable)
+        projected["protobufIdentityCarrierAudit"]["installedPatch"] = copy.deepcopy(
+            unavailable
+        )
+        projected["airWallMissionRadioContext"]["installedPatch"] = copy.deepcopy(
+            unavailable
+        )
+        return projected
+
+    source = ifix_audit["source"]
+    signatures = ifix_audit["fixedMethodSignatures"]
+    classifications = ifix_audit["classifications"]
+    projected["serverPlaceholder"]["installedPatch"] = {
+        "source": source["label"],
+        "size": source["patchBytes"],
+        "sha256": str(source["patchSha256"]).lower(),
+        "signatureTargetCount": len(signatures),
+        "relevantPatchIds": ["0x5605", "0x54d1", "0x54d2"],
+        "matchedRelevantPatchIds": [],
+        "taskCompletionTargetMatches": len(
+            classifications["taskCompletionFixMatches"]
+        ),
+        "taskCompletionExplicitReferenceMatches": len(
+            classifications["taskCompletionReferenceMatches"]
+        ),
+        "receiverOwnershipTargetMatches": len(
+            classifications["receiverOwnershipFixMatches"]
+        ),
+        "receiverOwnershipExplicitReferenceMatches": len(
+            classifications["receiverOwnershipReferenceMatches"]
+        ),
+        "missionHudTargets": len(classifications["missionHudFixSignatures"]),
+        "dialogCinematicTargets": len(
+            classifications["dialogCinematicFixSignatures"]
+        ),
+        "auditReport": ifix_audit["sourceFile"],
+    }
+    protobuf_prefixes = (
+        "Beyond.Gameplay.MissionSystem::Handle_MissionStateUpdate(",
+        "Beyond.Gameplay.MissionSystem::Handle_QuestStateUpdate(",
+        "Beyond.Gameplay.MissionSystem::CharacterPositionCorrection(",
+    )
+    projected["protobufIdentityCarrierAudit"]["installedPatch"] = {
+        "sha256": str(source["patchSha256"]).lower(),
+        "signatureTargetCount": len(signatures),
+        "relevantPatchIds": ["0x5ec5", "0x5ebe", "0x5ea7"],
+        "matchedMethods": len(
+            fixed_method_prefix_matches(ifix_audit, protobuf_prefixes)
+        ),
+    }
+    air_wall_prefixes = (
+        "Beyond.Gameplay.AirWallManager::_InitMissionListener(",
+        "Beyond.Gameplay.AirWallManager::_OnMissionStateChanged(",
+        "Beyond.Gameplay.AirWallManager::_OnQuestStateChanged(",
+        "Beyond.Gameplay.AirWallGroupAgent::OnMissionStateChanged(",
+        "Beyond.Gameplay.AirWallGroupAgent::OnQuestStateChanged(",
+        "Beyond.Gameplay.AirWallManager::TriggerMainCharGoBack(",
+    )
+    projected["airWallMissionRadioContext"]["installedPatch"] = {
+        "sha256": str(source["patchSha256"]).lower(),
+        "signatureTargetCount": len(signatures),
+        "matchedAirWallMethods": len(
+            fixed_method_prefix_matches(ifix_audit, air_wall_prefixes)
+        ),
+    }
+    return projected
 
 
 CASE_STUDIES: dict[str, dict[str, Any]] = {
@@ -7519,8 +7583,9 @@ def build_all(
     activation_control_contract = (
         load_levelscript_activation_control_contract()
     )
+    ifix_patch_contract = load_ifix_patch_contract()
     runtime_contract = {
-        **RUNTIME_CONTRACT,
+        **project_ifix_runtime_contract(RUNTIME_CONTRACT, ifix_patch_contract),
         "identityCarrierBoundaries": (
             load_identity_carrier_boundaries_contract()
         ),

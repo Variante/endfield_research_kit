@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 from scripts.story_builder.native_contracts import identity_carrier_boundaries as contract
+from scripts.story_builder.native_contracts import ifix_patch
 
 
 class IdentityCarrierBoundariesContractTests(unittest.TestCase):
@@ -15,27 +16,26 @@ class IdentityCarrierBoundariesContractTests(unittest.TestCase):
         self.root = Path(self.temp_dir.name)
         self.contract_path = self.root / "contract.json"
         self.contract_path.write_bytes(contract.DEFAULT_CONTRACT.read_bytes())
-        self.ifix_path = self.root / "ifix.json"
-        self.ifix_path.write_text(
-            json.dumps({
-                "source": {"patchSha256": contract.IFIX_PATCH_SHA256},
-            }),
-            encoding="utf-8",
-        )
 
     @staticmethod
     def native(status: str = "validated") -> SimpleNamespace:
         return SimpleNamespace(status=status, detail=f"native {status}")
 
     def load(self, native_status: str = "validated") -> dict:
-        with mock.patch.object(
-            contract,
-            "check_installed_native_inputs",
-            return_value=self.native(native_status),
+        with (
+            mock.patch.object(
+                ifix_patch,
+                "check_installed_native_inputs",
+                return_value=self.native(),
+            ),
+            mock.patch.object(
+                contract,
+                "check_installed_native_inputs",
+                return_value=self.native(native_status),
+            ),
         ):
             return contract.load_identity_carrier_boundaries_contract(
                 self.contract_path,
-                ifix_audit_path=self.ifix_path,
             )
 
     def test_validated_contract_publishes_all_closed_boundaries(self) -> None:
@@ -88,6 +88,37 @@ class IdentityCarrierBoundariesContractTests(unittest.TestCase):
         )
         self.assertEqual("validated", failure["expected"]["status"])
         self.assertEqual("mismatched", failure["actual"]["status"])
+
+    def test_shared_ifix_contract_failure_drops_all_boundaries(self) -> None:
+        failed_ifix = {
+            "status": "missing",
+            "sourceFile": "fixture/ifix.json",
+            "validationFailures": [{"gate": "read_valid_json"}],
+        }
+        with (
+            mock.patch.object(
+                contract,
+                "load_ifix_patch_contract",
+                return_value=failed_ifix,
+            ),
+            mock.patch.object(
+                contract,
+                "check_installed_native_inputs",
+                return_value=self.native(),
+            ),
+        ):
+            audit = contract.load_identity_carrier_boundaries_contract(
+                self.contract_path,
+            )
+
+        self.assertEqual("missing", audit["status"])
+        self.assertEqual([], audit["boundaries"])
+        failure = next(
+            row
+            for row in audit["validationFailures"]
+            if row["gate"] == "ifix_contract_status"
+        )
+        self.assertEqual("missing", failure["actual"]["status"])
 
 
 if __name__ == "__main__":

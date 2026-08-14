@@ -23,22 +23,22 @@ elif __package__ == "story_builder.native_contracts":
 else:  # pragma: no cover - invalid embedding identity
     raise ImportError(f"unsupported package identity: {__package__!r}")
 
+from .ifix_patch import (
+    DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,
+    PATCH_SHA256 as IFIX_PATCH_SHA256,
+    fixed_method_prefix_matches,
+    load_ifix_patch_contract,
+)
+
 
 SCHEMA = "cutsceneCaseResolutionNativeContract.v1"
 AUDIT_SCHEMA = "cutsceneCaseResolutionNativeContractAudit.v1"
 DEFAULT_CONTRACT = Path(__file__).with_name("cutscene_case_resolution.json")
-DEFAULT_IFIX_AUDIT = (
-    Path(__file__).resolve().parents[3]
-    / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
-)
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
 METADATA_SHA256 = (
     "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
-IFIX_PATCH_SHA256 = (
-    "737134081E06371F13C073988547E887037FCCF2F57E1052BE35DD255D27BC21"
 )
 RESOLVER_METHODS = {
     "gameAction": ("0x06008058", "0x1875e6aac"),
@@ -84,7 +84,7 @@ def _read_json(path: Path) -> tuple[dict[str, Any], bytes, str | None]:
 def load_cutscene_case_resolution_contract(
     contract_path: Path = DEFAULT_CONTRACT,
     *,
-    ifix_audit_path: Path = DEFAULT_IFIX_AUDIT,
+    ifix_contract_path: Path = DEFAULT_IFIX_CONTRACT,
     gameassembly: Path | None = None,
     metadata: Path | None = None,
 ) -> dict[str, Any]:
@@ -147,34 +147,22 @@ def load_cutscene_case_resolution_contract(
         if actual != list(expected):
             reject(f"resolver_{label}", list(expected), actual)
 
-    ifix_path = Path(ifix_audit_path)
-    ifix, _ifix_raw, ifix_error = _read_json(ifix_path)
-    if ifix_error:
+    ifix_audit = load_ifix_patch_contract(
+        ifix_contract_path,
+        gameassembly=gameassembly,
+        metadata=metadata,
+    )
+    if ifix_audit.get("status") != NATIVE_EVIDENCE_VALIDATED:
         reject(
-            "read_valid_ifix_audit",
-            {"readableJsonObject": True},
-            ifix_error,
-            _source_file(ifix_path),
+            "ifix_contract_status",
+            {"status": NATIVE_EVIDENCE_VALIDATED},
+            {
+                "status": ifix_audit.get("status"),
+                "validationFailures": ifix_audit.get("validationFailures") or [],
+            },
+            str(ifix_audit.get("sourceFile") or _source_file(ifix_contract_path)),
         )
     else:
-        ifix_sha = str((ifix.get("source") or {}).get("patchSha256") or "").upper()
-        if ifix_sha != IFIX_PATCH_SHA256:
-            reject(
-                "ifix_source_hash",
-                IFIX_PATCH_SHA256,
-                ifix_sha or "<missing>",
-                _source_file(ifix_path),
-            )
-        ifix_metadata_sha = str(
-            (ifix.get("source") or {}).get("metadataSha256") or ""
-        ).upper()
-        if ifix_metadata_sha != METADATA_SHA256:
-            reject(
-                "ifix_metadata_hash",
-                METADATA_SHA256,
-                ifix_metadata_sha or "<missing>",
-                _source_file(ifix_path),
-            )
         prefixes = resolver.get("protectedMethodPrefixes") or []
         if (
             not isinstance(prefixes, list)
@@ -187,21 +175,13 @@ def load_cutscene_case_resolution_contract(
                 prefixes,
             )
             prefixes = []
-        ifix_hits = [
-            row
-            for row in ifix.get("fixedMethods") or []
-            if isinstance(row, dict)
-            and any(
-                str(row.get("signature") or "").startswith(prefix)
-                for prefix in prefixes
-            )
-        ]
+        ifix_hits = fixed_method_prefix_matches(ifix_audit, prefixes)
         if ifix_hits:
             reject(
                 "ifix_resolver_matches",
                 [],
-                [str(row.get("signature") or "") for row in ifix_hits[:10]],
-                _source_file(ifix_path),
+                ifix_hits[:10],
+                str(ifix_audit.get("sourceFile") or _source_file(ifix_contract_path)),
             )
 
     native = check_installed_native_inputs(
@@ -224,7 +204,7 @@ def load_cutscene_case_resolution_contract(
             native.status
             if native.status != NATIVE_EVIDENCE_VALIDATED
             else NATIVE_EVIDENCE_MISSING
-            if error or ifix_error
+            if error or ifix_audit.get("status") == NATIVE_EVIDENCE_MISSING
             else NATIVE_EVIDENCE_MISMATCHED
         )
     return {
@@ -263,7 +243,7 @@ def matches_reviewed_lua_playback(
 __all__ = [
     "AUDIT_SCHEMA",
     "DEFAULT_CONTRACT",
-    "DEFAULT_IFIX_AUDIT",
+    "DEFAULT_IFIX_CONTRACT",
     "GAMEASSEMBLY_SHA256",
     "IFIX_PATCH_SHA256",
     "MATCH_FIELDS",
