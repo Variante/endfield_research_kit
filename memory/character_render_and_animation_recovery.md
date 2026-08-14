@@ -92,7 +92,14 @@ archetypes are imported as labeled source kits rather than finished characters.
    plus `0x180557750` (field setter), copied by `0x1805592B0` into node
    `+0x30..+0x40` and invoked by `0x1805598C0`; this path has no graphics,
    opcode, Vulkan, draw, or queue-submit operation. This does not classify
-   unrelated producers of the shared pool. See
+   unrelated producers of the shared pool. A separate positive producer edge
+   is now bounded: `0x181080730` registers a pool record whose node callback
+   is `0x181065190` or `0x181067A70`; pool worker sites reach
+   `0x1805598C0`, which invokes that callback, and the callback builders
+   `0x18106BEF0`/`0x18106D020` write `outResult+8` plus callback thunks
+   `0x181060EA0`/`0x181060EB0`. This joins the shared pool to the previously
+   identified resource-callback producers, but does not yet establish
+   HGTree-specific draw ordering or final queue ownership. See
    `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
   Separately, `DrawECSRendererList` is reached from
   `HGRendererListUtils.DrawTreeECSRendererList` (`0x189C0A130`) and has two
