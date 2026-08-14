@@ -9,6 +9,7 @@ from typing import Any
 
 from .codecs.levelscript import active_shapes as levelscript_active_shapes
 from .codecs.levelscript import call_server as levelscript_call_server
+from .codecs.levelscript import compact_property_gate as levelscript_property_gate
 from .codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
 from .codecs.levelscript import entity_event_scope as levelscript_entity_event_scope
 from .codecs.levelscript import exit_custom_performance as levelscript_exit_performance
@@ -4193,6 +4194,7 @@ def _decode_entity_compare_getter(payload: bytes, property_outputs: list[dict]) 
 
 
 def _read_compact_string(payload: bytes, offset: int) -> tuple[str | None, int | None]:
+    """Read a compact ASCII string shared by task-map schemas."""
     if offset < 0 or offset + 4 > len(payload):
         return None, None
     size = struct.unpack_from("<I", payload, offset)[0]
@@ -4202,105 +4204,6 @@ def _read_compact_string(payload: bytes, offset: int) -> tuple[str | None, int |
     if not _is_printable_ascii(raw):
         return None, None
     return raw.decode("ascii", errors="replace"), offset + 4 + size
-
-
-def _append_small_i32_tail(payload: bytes, cursor: int, out: dict[str, Any]) -> None:
-    if cursor < 0 or cursor >= len(payload):
-        return
-    remaining = len(payload) - cursor
-    if remaining != 4:
-        if 0 < remaining <= 16:
-            out["tailBytes"] = payload[cursor:].hex(" ")
-        return
-    value = struct.unpack_from("<i", payload, cursor)[0]
-    out["tailLocalRef"] = value
-    if 0 <= value <= 0x1000:
-        out["gateLocalRefs"] = [value]
-
-
-def _decode_post_flag_and_tail(payload: bytes, cursor: int, out: dict[str, Any]) -> None:
-    if cursor + 14 > len(payload) or payload[cursor] != 0x04:
-        _append_small_i32_tail(payload, cursor, out)
-        return
-    out["postFlag"] = payload[cursor + 1]
-    out["postFlagOffset"] = _offset_hex(cursor + 1)
-    out["postSentinel"] = payload[cursor + 2 : cursor + 14] == COMPACT_NULL_SENTINEL
-    cursor += 14
-    _append_small_i32_tail(payload, cursor, out)
-
-
-def _decode_compact_property_gate(payload: bytes) -> dict[str, Any]:
-    """Decode the compact 0x0a03 condition/gate payload shape.
-
-    The runtime class is still unnamed. The stable exported shape is a
-    sentinel-headed compact condition with one or two operand slots, an
-    authored property/key string in many rows, a post-key 0/1 flag, and
-    sometimes a trailing small int that resolves to a local action id.
-    """
-    if len(payload) < 15:
-        return {}
-    out: dict[str, Any] = {
-        "payloadShape": "compact-condition-gate",
-        "headByte": payload[0],
-        "headSentinel": payload[1:13] == COMPACT_NULL_SENTINEL,
-        "firstTag": payload[13],
-        "firstFlag": payload[14],
-    }
-    if not out["headSentinel"] or payload[13] != 0x04:
-        return _drop_empty(out)
-
-    # Common key form:
-    #   00 <sentinel> 04 00 ff ff ff ff <typeCode> <len> <key>
-    if len(payload) >= 27 and payload[15:19] == b"\xff\xff\xff\xff":
-        type_code = struct.unpack_from("<I", payload, 19)[0]
-        key_text, cursor = _read_compact_string(payload, 23)
-        if key_text is not None and cursor is not None:
-            out.update(
-                {
-                    "schema": "single-key",
-                    "typeCode": type_code,
-                    "propertyKey": key_text,
-                    "propertyKeyOffset": _offset_hex(27),
-                }
-            )
-            _decode_post_flag_and_tail(payload, cursor, out)
-            return _drop_empty(out)
-
-    # Two-slot key form:
-    #   00 <sentinel> 04 01 <sentinel> 04 00 ff ff ff ff <typeCode> <len> <key>
-    if len(payload) >= 41 and payload[15:27] == COMPACT_NULL_SENTINEL and payload[27] == 0x04:
-        type_code = struct.unpack_from("<I", payload, 33)[0]
-        key_text, cursor = _read_compact_string(payload, 37)
-        if key_text is not None and cursor is not None:
-            out.update(
-                {
-                    "schema": "two-slot-key",
-                    "secondTag": payload[27],
-                    "secondFlag": payload[28],
-                    "typeCode": type_code,
-                    "propertyKey": key_text,
-                    "propertyKeyOffset": _offset_hex(41),
-                }
-            )
-            _decode_post_flag_and_tail(payload, cursor, out)
-            return _drop_empty(out)
-
-    # No-key local-ref form. These rows compare a local/scalar slot and do not
-    # carry a property name in the action payload.
-    if len(payload) >= 41 and payload[19:27] == b"\xff\xff\xff\xff\xff\xff\xff\xff" and payload[27] == 0x04:
-        out.update(
-            {
-                "schema": "local-ref",
-                "firstLocalRef": struct.unpack_from("<i", payload, 15)[0],
-                "secondTag": payload[27],
-                "secondFlag": payload[28],
-                "secondSentinel": payload[29:41] == COMPACT_NULL_SENTINEL,
-            }
-        )
-        _append_small_i32_tail(payload, 41, out)
-        return _drop_empty(out)
-
-    return _drop_empty(out)
 
 
 def _decode_action_header_prefix(payload: bytes) -> dict[str, Any]:
@@ -5519,7 +5422,7 @@ def decode_levelscript_record_payload(
     if trigger_slot_ids:
         out["triggerSlotIds"] = trigger_slot_ids
     if semantic_key == (0x0003, 0x0A):
-        gate = _decode_compact_property_gate(payload)
+        gate = levelscript_property_gate.decode_compact_property_gate(payload)
         if gate:
             out["compactGate"] = gate
             gate_key = gate.get("propertyKey")
