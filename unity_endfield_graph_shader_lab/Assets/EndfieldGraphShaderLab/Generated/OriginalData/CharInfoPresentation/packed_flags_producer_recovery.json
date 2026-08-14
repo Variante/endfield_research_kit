@@ -3130,6 +3130,44 @@
                 "factory_name_filter_hits": [],
                 "relation_to_native_27ef": "The high-level opcode-0x11 route is proven to reach +0xab8, while the low-level 0x27ef record has its own writer/interpreter pair. No direct cross-call or factory channel-2/resource +0xd0 binding was found between the two streams."
               },
+              "native_commandbuffer_writer_census": {
+                "status": "native-commandbuffer-writer-callers-bounded-no-factory-direct-edge",
+                "source": "PData-bounded raw E8 target scan across UnityPlayer.dll .text using the installed image; counts are direct native callsites, not inferred runtime executions.",
+                "writers": {
+                  "buffer_binding_opcode_0x0d": {
+                    "function": "0x1804cb1a0",
+                    "record_opcode": "0x0d",
+                    "direct_call_count": 58,
+                    "unique_pdata_body_count": 20
+                  },
+                  "dispatch_opcode_0x11": {
+                    "function": "0x1804c73e0",
+                    "record_opcode": "0x11",
+                    "direct_call_count": 42,
+                    "unique_pdata_body_count": 18
+                  }
+                },
+                "union_unique_pdata_body_count": 27,
+                "caller_body_starts": [
+                  "0x180116244", "0x1801176c0", "0x180119fc0",
+                  "0x180eadfd0", "0x180eb1cb0", "0x180ecdff0",
+                  "0x180ece4ea", "0x180ed475d", "0x180ed48c0",
+                  "0x180ed9480", "0x180ed9870", "0x1810eece0",
+                  "0x1810fb5a0", "0x1811134a0", "0x181113c10",
+                  "0x18111589d", "0x181115eac", "0x181117560",
+                  "0x1811195e0", "0x181122018", "0x1811b1247",
+                  "0x1811bac4c", "0x1811bdc37", "0x1811c4de4",
+                  "0x1811c772d", "0x1811d3320", "0x1811d3a70"
+                ],
+                "known_gpu_driven_bodies": ["0x1810eece0", "0x1810fb5a0"],
+                "zero_direct_call_targets_across_checked_bodies": {
+                  "factory_staging": ["0x1810d25c0", "0x1810d26bf"],
+                  "custom_resource_resolver": ["0x1804255f0"],
+                  "immediate_dispatch_helpers": ["0x1805e7a10", "0x1805e7bc0"],
+                  "renderer_refresh": ["0x18042f750"]
+                },
+                "result": "The direct native high-level CommandBuffer writer surface contains no factory staging or custom-resource resolver edge. The two GPUDriven binders are generic metadata paths already separated from channel 2; remaining virtual/table-dispatched or runtime-registered paths are not credited as an upload producer without stronger evidence."
+              },
               "boundary": "This closes the direct managed CommandBuffer/ComputeShader dispatch candidates and the high-level native opcode consumer for the factory upload producer. Opcode 0x11 reaches the generic immediate-compute sink through 0x1805e7a10, but the separate native 0x27ef stream and high-level resource records are not tied to factory channel-2/resource +0xd0 or UploadPerDrawParams kernel 7; keep the character upload edge open and fail-closed."
             },
             "native_command_stream_dispatch_opcode": {
