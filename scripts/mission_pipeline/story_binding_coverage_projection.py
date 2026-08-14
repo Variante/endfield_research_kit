@@ -462,4 +462,3 @@ def build_report(
         ),
     }
     return report
-

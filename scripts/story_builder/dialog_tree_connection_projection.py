@@ -398,4 +398,3 @@ __all__ = [
     "dialog_tree_narrative_connection",
     "dialog_tree_story_playback_connection",
 ]
-
