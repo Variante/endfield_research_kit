@@ -527,6 +527,22 @@ claim.
     consumer reaches it. Keep the HGTree playback edge fail-closed until the
     runtime-indirect record consumer or a capture binds these families.
 
+27. The 0x60-byte records created on the resource path now have bounded
+    callback thunks, which narrows the unresolved edge further. The `+0xDA0`
+    builder `0x18083E720` stores callback `0x180820580` at
+    `0x18083EA2A`; that thunk jumps to `0x18082D6B0`, which compares resource
+    handles and calls only an indirect resource/state method. The adjacent
+    shared builder path `0x180839D50` stores callback `0x1808208F0` at
+    `0x18083A033`; it jumps to `0x18082E660`, whose body updates dimensions,
+    handles, and indirect resource callbacks. The `+0xDA8` sibling
+    `0x18083EC60` stores callback `0x180820940` at `0x18083F0F7`; it jumps to
+    `0x18082E820` and has the same resource/state-only shape. None of these
+    callback bodies contains a direct `+0xDE8`, graphics, Vulkan, or
+    queue-submit edge. The unresolved part is therefore the runtime receiver
+    behind those indirect resource methods or an external frame-order event,
+    not the 0x60-byte record callback itself; do not promote this to an HGTree
+    draw route without runtime capture or a stronger indirect-table proof.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -569,6 +585,12 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F1E0 0x18083F230
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843D60 0x180844A20
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083C6B0 0x18083D3B0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180820580 0x1808205A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18082D6B0 0x18082D7A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808208F0 0x180820910
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18082E660 0x18082E750
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180820940 0x180820960
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18082E820 0x18082E8A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18061FB60 0x18061FD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180624000 0x1806242B0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180861C20 0x180861C34

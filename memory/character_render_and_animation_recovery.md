@@ -754,7 +754,12 @@ only stable interpretation and priorities.
    `0x18083AA90` consumer remains allocation/copy/state-list logic with no
    static `+0xDE8` or Vulkan edge. The positive `+0xDE8 -> 0x18083F1E0 ->
    0x180843D60` Vulkan submission family is therefore still separate until a
-   runtime-indirect consumer or capture proves the join.
+   runtime-indirect consumer or capture proves the join. The 0x60-byte record
+   callbacks are now bounded as `0x180820580 -> 0x18082D6B0`,
+   `0x1808208F0 -> 0x18082E660`, and `0x180820940 -> 0x18082E820`; all three
+   remain resource/state-only indirect callbacks with no direct `+0xDE8` or
+   Vulkan edge, so this does not justify promoting the HGTree path to a draw
+   route.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
