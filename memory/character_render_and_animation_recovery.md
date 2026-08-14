@@ -184,6 +184,16 @@ factory `0x100 -> 0x54` pack, kernel-7 dispatch, and channel-2/resource `+0xd0`
 binding remain fail-closed. See
 `reports/assets/character_recovery/native_84_helpers_status_vfx_followup.md`.
 
+The factory staging consumer now has a positive indirect registration edge.
+`0x1810d33a3` creates the per-factory job object and passes the exact callback
+pointer `0x1810d25c0` at `0x1810d356f` into Unity's native scheduler
+`0x180555e50`; `0x1805572f0 -> 0x180559240` packages and links that callback in
+the worker descriptor. This closes the static “unreferenced callback” gap and
+confirms the `0x8c -> 0x100` producer is job-driven. The scheduler has no GPU
+upload/dispatch edge, so the later `0x100 -> 0x54` pack, kernel-7 selection, and
+channel-2/resource `+0xd0` binding remain fail-closed. Details:
+`reports/assets/character_recovery/factory_staging_job_callback_chain.md`.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable
