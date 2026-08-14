@@ -259,6 +259,24 @@ Keep Gacha/M02 irradiance fail-closed and do not substitute legacy files or an
 arbitrary scene index. See
 `reports/assets/character_recovery/gacha_irradiance_scene_ownership_contract.md`.
 
+The CharacterNPR OverlayShadow local-volume visibility path is now source-closed
+for the isolated CharInfo/Character Overview route. The refreshed operator-light
+export contains 31 exact rigs and 273 lights, including Liino's seven lights;
+41 type-4 Fog rows (36 advanced, five convenience, ten directional) are
+character-only and match the native NPR pack. The selected retail fragment and
+decompile, `LightCharacterOnly`/NPR-type lanes, inverse
+`charIgnoreSceneAdditionalLights` gate, 32-pixel XY/2048 one-unit-Z membership,
+Fog attenuation, and neutral-zero fallback are hash-pinned. The regenerated
+eye-shadow audit now covers 29 LOD0 renderers and 87 overlay materials, with
+Liino's two shared eye-shadow materials corrected to queue 2900 and zero audit
+failures. This remains an isolated producer path: the arbitrary-gameplay
+`HGCullingSystem.CullLights` candidate producer, live unrelated-light/shadow
+state, and retail pixel parity are open. The focused/runtime/chronology checks
+pass; the old material-import gate still expects an 853-row contract and does
+not yet include Liino's new packed-texture rows, so it is a data-contract queue
+item rather than a reason to generalize this path. See
+`reports/assets/character_recovery/character_overlay_shadow_visibility_contract.md`.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
