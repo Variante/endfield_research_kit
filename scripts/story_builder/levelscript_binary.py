@@ -29,6 +29,7 @@ from .codecs.levelscript.params import (
 )
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
 from .codecs.levelscript import raise_custom_script_event as levelscript_custom_event
+from .codecs.levelscript import scalar_value_getters as levelscript_scalar_getters
 from .codecs.levelscript import script_event_scope as levelscript_script_event_scope
 from .codecs.levelscript import script_stage_changed as levelscript_script_stage_changed
 from .codecs.levelscript import spawner_events as levelscript_spawner_events
@@ -2302,52 +2303,6 @@ def _extract_trigger_slot_ids(payload: bytes) -> list[int]:
     return slots
 
 
-def _decode_float_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
-    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
-        return None
-    value = _round_float(struct.unpack_from("<f", payload, cursor + 1)[0])
-    tail = _decode_param_tail(payload, cursor + 5)
-    if tail is None:
-        return None
-    detail, end = tail
-    return {"value": value, **detail}, end
-
-
-def _decode_local_getter_ref(payload: bytes, cursor: int) -> tuple[int, int] | None:
-    if (
-        cursor + 17 > len(payload)
-        or payload[cursor : cursor + 5] != b"\x04\x00\x00\x00\x00"
-        or payload[cursor + 9 : cursor + 17] != b"\xff" * 8
-    ):
-        return None
-    local_id = struct.unpack_from("<i", payload, cursor + 5)[0]
-    if local_id < 0 or local_id > 0x10000:
-        return None
-    return local_id, cursor + 17
-
-
-def _finish_getter_fields(
-    payload: bytes,
-    end: int,
-    detail: dict[str, Any],
-) -> dict[str, Any]:
-    """Accept exact subtype EOF or one proven outer-list u32 trailer.
-
-    Some final getter rows are followed by the next serialized ActionMap list
-    count before the next UID record begins.  The four bytes are not a getter
-    field; retaining the value explicitly keeps the field decoder exact while
-    allowing those terminal rows to be used.
-    """
-    if end == len(payload):
-        return detail
-    if end + 4 != len(payload):
-        return {}
-    return {
-        **detail,
-        "trailingActionMapFramingU32": struct.unpack_from("<I", payload, end)[0],
-    }
-
-
 def _decode_levelscript_ptr_param(
     payload: bytes,
     cursor: int,
@@ -2418,7 +2373,7 @@ def _decode_interactive_check_state_getter(payload: bytes) -> dict[str, Any]:
     if value is None:
         return {}
     comparer_raw = comparer[0]["value"]
-    return _finish_getter_fields(payload, value[1], {
+    return levelscript_params.finish_getter_fields(payload, value[1], {
         "type": "InteractiveCheckState",
         "comparer": comparer[0],
         "comparerName": {
@@ -2452,7 +2407,7 @@ def _decode_get_lsm_is_completed_getter(payload: bytes) -> dict[str, Any]:
     script_ptr = _decode_levelscript_ptr_param(payload, 21)
     if script_ptr is None:
         return {}
-    return _finish_getter_fields(payload, script_ptr[1], {
+    return levelscript_params.finish_getter_fields(payload, script_ptr[1], {
         "type": "GetLsmIsCompleted",
         "lsmPtr": {
             "rawValueHex": payload[1:9].hex(),
@@ -2465,157 +2420,16 @@ def _decode_get_lsm_is_completed_getter(payload: bytes) -> dict[str, Any]:
     })
 
 
-def _decode_int_equal_getter(payload: bytes) -> dict[str, Any]:
-    value_a = _decode_i32_operand(payload, 0)
-    if value_a is None:
-        return {}
-    value_b = _decode_i32_operand(payload, value_a[1])
-    if value_b is None:
-        return {}
-    has_getter_ref = any(
-        operand.get("operandKind") == "localGetterRef"
-        for operand in (value_a[0], value_b[0])
-    )
-    detail = {
-        "operation": "Equal",
-        "valueA": value_a[0],
-        "valueB": value_b[0],
-        "payloadShape": (
-            "two-int-operands-exact-eof"
-            if has_getter_ref
-            else "two-int-params-exact-eof"
-        ),
-    }
-    for label, operand in (("valueA", value_a[0]), ("valueB", value_b[0])):
-        getter_local_id = operand.get("getterLocalId")
-        if isinstance(getter_local_id, int):
-            detail[f"{label}GetterLocalId"] = getter_local_id
-    return _finish_getter_fields(payload, value_b[1], detail)
-
-
-def _decode_i32_operand(
-    payload: bytes,
-    cursor: int,
-) -> tuple[dict[str, Any], int] | None:
-    """Decode one polymorphic ``Param<int>`` operand exactly.
-
-    The installed serializer uses the same field for authored constants and
-    local getter references.  A getter reference has a distinct 17-byte
-    envelope, so keep its identity instead of interpreting its local id as a
-    constant value.
-    """
-    getter_ref = _decode_local_getter_ref(payload, cursor)
-    if getter_ref is not None:
-        return {
-            "operandKind": "localGetterRef",
-            "getterLocalId": getter_ref[0],
-        }, getter_ref[1]
-    value = _decode_i32_param(payload, cursor)
-    if value is None:
-        return None
-    return value
-
-
 def _decode_get_condition_result_getter(payload: bytes) -> dict[str, Any]:
     """Decode the embedded root ``GameCondition`` union used by this getter."""
     decoded = _decode_levelscript_task_condition(payload, 0, len(payload))
     if decoded is None:
         return {}
     condition, end = decoded
-    return _finish_getter_fields(payload, end, {
+    return levelscript_params.finish_getter_fields(payload, end, {
         "condition": condition,
         "payloadShape": "root-game-condition-union-exact-fields",
     })
-
-
-def _decode_int_random_getter(payload: bytes) -> dict[str, Any]:
-    # Generated setter order is _max, then _min (confirmed by the current
-    # IntGetterRandomForMemoryPack metadata and the installed payloads).
-    maximum = _decode_i32_param(payload, 0)
-    if maximum is None:
-        return {}
-    minimum = _decode_i32_param(payload, maximum[1])
-    if minimum is None:
-        return {}
-    return _finish_getter_fields(payload, minimum[1], {
-        "minimum": minimum[0],
-        "maximum": maximum[0],
-        "payloadShape": "max-then-min-int-params-exact-fields",
-    })
-
-
-def _decode_number_compare_getter(payload: bytes, *, floating: bool) -> dict[str, Any]:
-    comparer = _decode_i32_param(payload, 0)
-    if comparer is None:
-        return {}
-    value_a = _decode_local_getter_ref(payload, comparer[1])
-    if value_a is None:
-        return {}
-    value_decoder = _decode_float_param if floating else _decode_i32_param
-    value_b = value_decoder(payload, value_a[1])
-    if value_b is None:
-        return {}
-    comparer_raw = comparer[0]["value"]
-    return _finish_getter_fields(payload, value_b[1], {
-        "comparerRaw": comparer_raw,
-        "comparerName": {
-            0: "Equal",
-            1: "NotEqual",
-            2: "GreaterThan",
-            3: "GreaterEqual",
-            4: "LessThan",
-            5: "LessEqual",
-        }.get(comparer_raw, ""),
-        "valueAGetterLocalId": value_a[0],
-        "valueB": value_b[0],
-        "valueType": "float" if floating else "int",
-        "payloadShape": "number-comparer-getter-ref-constant-exact-eof",
-    })
-
-
-def _decode_getter_int(payload: bytes) -> dict[str, Any]:
-    value = _decode_i32_param(payload, 0)
-    if value is None:
-        return {}
-    return _finish_getter_fields(payload, value[1], {
-        "value": value[0],
-        "payloadShape": "one-int-param-exact-eof",
-    })
-
-
-def _decode_getter_string(payload: bytes) -> dict[str, Any]:
-    """Decode the installed ``GetterString`` property-path payload.
-
-    The leading byte is the nullable/default string marker, followed by the
-    shared id/source/path fields.  Requiring exact EOF keeps arbitrary strings
-    in neighboring records from being promoted to authored property getters.
-    """
-    if len(payload) < 17 or payload[0] != 0x04:
-        return {}
-    value_size, id_ref, param_source, path_size = struct.unpack_from(
-        "<iiii", payload, 1
-    )
-    if (
-        value_size != -1
-        or id_ref != -1
-        or param_source < 0
-        or param_source > 0x10000
-        or path_size <= 0
-        or path_size > 1024
-        or 17 + path_size != len(payload)
-    ):
-        return {}
-    try:
-        path = payload[17:].decode("utf-8")
-    except UnicodeDecodeError:
-        return {}
-    return {
-        "value": None,
-        "idRef": id_ref,
-        "paramSource": param_source,
-        "path": path,
-        "payloadShape": "nullable-string-property-path-exact-eof",
-    }
 
 
 def _decode_start_dialog_action(payload: bytes) -> dict[str, Any]:
@@ -2645,21 +2459,9 @@ def _decode_get_levelscript_stage_getter(payload: bytes) -> dict[str, Any]:
     script_ptr = _decode_levelscript_ptr_param(payload, 0)
     if script_ptr is None:
         return {}
-    return _finish_getter_fields(payload, script_ptr[1], {
+    return levelscript_params.finish_getter_fields(payload, script_ptr[1], {
         "scriptPtr": script_ptr[0],
         "payloadShape": "level-script-ptr-param-exact-fields",
-    })
-
-
-def _decode_is_endmin_gender_getter(payload: bytes) -> dict[str, Any]:
-    gender = _decode_i32_param(payload, 0)
-    if gender is None:
-        return {}
-    raw = gender[0]["value"]
-    return _finish_getter_fields(payload, gender[1], {
-        "gender": gender[0],
-        "genderName": {0: "Male", 1: "Female"}.get(raw, ""),
-        "payloadShape": "gender-param-exact-fields",
     })
 
 
@@ -2670,7 +2472,7 @@ def _decode_levelscript_property_bool_getter(payload: bytes) -> dict[str, Any]:
     target = _decode_levelscript_ptr_param(payload, property_key[1])
     if target is None:
         return {}
-    return _finish_getter_fields(payload, target[1], {
+    return levelscript_params.finish_getter_fields(payload, target[1], {
         "propertyKey": property_key[0],
         "targetScript": target[0],
         "payloadShape": "property-key-and-level-script-target-exact-fields",
@@ -2763,7 +2565,7 @@ def _decode_check_levelscript_stage_getter(payload: bytes) -> dict[str, Any]:
     if expected_stage is None:
         return {}
     comparer_raw = comparer[0]["value"]
-    return _finish_getter_fields(payload, expected_stage[1], {
+    return levelscript_params.finish_getter_fields(payload, expected_stage[1], {
         "type": "CheckLevelScriptStage",
         "scriptPtr": script_ptr[0],
         "comparer": comparer[0],
@@ -2805,7 +2607,7 @@ def _decode_check_mission_or_quest_complete_getter(
     if not re.fullmatch(r"[A-Za-z0-9_#-]+", mission_or_quest_id):
         return {}
     target_kind = "quest" if is_quest[0]["value"] else "mission"
-    return _finish_getter_fields(payload, identity[1], {
+    return levelscript_params.finish_getter_fields(payload, identity[1], {
         "type": "CheckMissionOrQuestIsComplete",
         "isQuest": is_quest[0],
         "targetKind": target_kind,
@@ -3591,7 +3393,7 @@ def _decode_wait_for_seconds_in_trigger_volume_action(
     if len(payload) < 10 or payload[0] != 0xFF:
         return {}
     fail_id = struct.unpack_from("<i", payload, 1)[0]
-    seconds = _decode_float_param(payload, 5)
+    seconds = levelscript_params.decode_float_param(payload, 5)
     if seconds is None or seconds[1] + 4 > len(payload):
         return {}
     success_id = struct.unpack_from("<i", payload, seconds[1])[0]
@@ -5129,7 +4931,15 @@ def decode_levelscript_record_payload(
         (0x01C2, 0x08),
     }:
         getter_payload = _getter_subtype_payload(data, record, next_start)
-        if semantic_key == (0x013A, 0x08):
+        scalar_field, scalar_detail = (
+            levelscript_scalar_getters.decode_scalar_value_getter(
+                getter_payload,
+                semantic_key,
+            )
+        )
+        if scalar_field and scalar_detail:
+            out[scalar_field] = scalar_detail
+        elif semantic_key == (0x013A, 0x08):
             mission_state_getter = _decode_get_mission_state_getter(getter_payload)
             if mission_state_getter:
                 out["getMissionState"] = mission_state_getter
@@ -5170,13 +4980,6 @@ def decode_levelscript_record_payload(
             )
             if condition_result:
                 out["getConditionResult"] = condition_result
-        elif semantic_key == (0x0049, 0x0A):
-            float_compare = _decode_number_compare_getter(
-                getter_payload,
-                floating=True,
-            )
-            if float_compare:
-                out["floatNewCompare"] = float_compare
         elif semantic_key == (0x0100, 0x09):
             property_bool = _decode_levelscript_property_bool_getter(
                 getter_payload
@@ -5202,39 +5005,12 @@ def decode_levelscript_record_payload(
             )
             if field_name and boolean_detail:
                 out[field_name] = boolean_detail
-        elif semantic_key == (0x0184, 0x08):
-            getter_int = _decode_getter_int(getter_payload)
-            if getter_int:
-                out["getterInt"] = getter_int
-        elif semantic_key == (0x01A5, 0x08):
-            getter_string = _decode_getter_string(getter_payload)
-            if getter_string:
-                out["getterString"] = getter_string
-        elif semantic_key == (0x01AA, 0x0A):
-            int_compare = _decode_number_compare_getter(
-                getter_payload,
-                floating=False,
-            )
-            if int_compare:
-                out["intCompare"] = int_compare
-        elif semantic_key == (0x01AC, 0x09):
-            int_equal = _decode_int_equal_getter(getter_payload)
-            if int_equal:
-                out["intEqual"] = int_equal
         elif semantic_key == (0x01AD, 0x0A):
             interactive_state = _decode_interactive_check_state_getter(
                 getter_payload
             )
             if interactive_state:
                 out["interactiveCheckState"] = interactive_state
-        elif semantic_key == (0x01BA, 0x09):
-            int_random = _decode_int_random_getter(getter_payload)
-            if int_random:
-                out["intRandom"] = int_random
-        elif semantic_key == (0x01C2, 0x08):
-            gender = _decode_is_endmin_gender_getter(getter_payload)
-            if gender:
-                out["isEndminGender"] = gender
     if key in levelscript_manual_control.MANUAL_CONTROL_ACTIONS:
         manual_control = levelscript_manual_control.decode_manual_levelscript_control(
             payload,
