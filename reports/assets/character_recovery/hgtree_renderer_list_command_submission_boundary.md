@@ -649,6 +649,23 @@ and final draw/queue ownership remain fail-closed.
     ingress. It does not classify unrelated producers of the shared pool, so
     other node contexts remain fail-closed.
 
+38. A second, distinct producer now closes the shared pool's callback-
+    production edge. The normal/child/PreZ result builders call
+    `0x181080730`, which copies the caller's two output slots into the new
+    record at `+0x58/+0x60` and registers that record through
+    `0x180555D30`. Depending on the record state, `0x181080730` stores
+    `0x181065190` or `0x181067A70` as the node callback. Pool worker/dequeue
+    call sites (including `0x180558463` and `0x180558A80`) reach
+    `0x1805598C0`, whose normal node branch invokes the stored `+0x30`
+    callback. The selected callback then calls `0x18106BEF0` or
+    `0x18106D020`; those builders call `0x18107A410`/`0x181079860` for the
+    resource result and write the output pair as `outResult+8 = result` and
+    `outResult+0x10 = 0x181060EA0`/`0x181060EB0`. This is a positive
+    producer-to-resource-callback edge, separate from the table-A
+    `0x18107AB10` lifecycle ingress and its allocator tuple. It still does
+    not statically prove HGTree-specific draw ordering, final indirect-draw
+    ownership, or queue submission after the generated callback record.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
