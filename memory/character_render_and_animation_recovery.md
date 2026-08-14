@@ -733,6 +733,13 @@ only stable interpretation and priorities.
    renderer/resource-state helper, while the HGTree body `0x1801719B0` never
    calls it. Keep that ordinary resource resolver separate from HGTree tree
    submission; neither is a proven final playback sink.
+   The apparent late-bound helper in the native tree body is also bounded:
+   `0x180A5C5C0 -> 0x180769E20 -> 0x18065C0C0` only normalizes a bounded
+   managed payload and computes its CRC/hash (shared by unrelated draw and
+   texture command APIs); it emits no opcode, graphics call, or `+0xDE8`
+   dispatch. The unresolved edge therefore remains after the internal call,
+   in dynamic CommandBuffer/render-graph playback or the runtime-indirect
+   resource consumer.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
