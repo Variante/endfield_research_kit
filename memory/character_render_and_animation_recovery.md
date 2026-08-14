@@ -126,6 +126,22 @@ contract needed by `HGRP/Lit` but not the physical `SceneColor` allocation or
 the channel-2 resource-to-descriptor upload. Durable details and hashes are in
 `reports/assets/character_recovery/gacha_room_gbuffer_rendergraph.md`.
 
+The upstream SceneColor contract is now source-pinned as well. The selected
+`HGRenderPathDefaultDeferred` route creates SceneColor in
+`HGRenderPathScene.OnPreRendering` with format
+`B10G11R11_UFloatPack32`, Point/Clamp sampling, the selected Gacha clear
+`(0.025, 0.07, 0.19, 0)`, and 1x MSAA/`bindTextureMS=false`. The transient
+logical handle is physically created/released at compiled first-write/last-use
+boundaries through the descriptor-hash `RTHandle` pool; stale entries require
+an 11-frame gap before purge. The initial handle is at `+0x12e0` and the
+preserved history lane at `+0x1328`. Scene dimensions are target-relative and
+evenized using the live persistent-camera viewport and
+`video_rendering_scale_pc`, so exact pixels, active scale, native pointer, and
+alias peer remain open. The deterministic checkers currently cannot rerun
+because the expected exported `HGRenderPipelineAsset` JSON is absent; retain
+the hash-pinned snapshot and boundary in
+`reports/assets/character_recovery/gacha_scene_color_physical_lifetime.md`.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
