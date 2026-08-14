@@ -164,12 +164,16 @@ The command-stream tail now has an interpreter-side mapping as well.
 `0x1813aee90..0x1813bb9bc` dispatches the `0x2711..0x2822` opcode range through
 `0x1813bb574`; `0x273b` lands at `0x1813b1110`, `0x2798` at `0x1813b55ea`,
 and `0x27ef` at `0x1813b805b`. The V1 culling `0x273b` record carries the
-`0x1810e6450` E9 trampoline targeting `0x18115d810`; that target obtains
-`context+0x190` and calls `0x1810e3b40`, which allocates/reuses buffer records
-through `0x1810e1ea0` and copies 0x80-byte rows via `0x1810e0a30`. These
-resource helpers still never load the factory `context+0x110` or
-`manager+0x38 + index*0x8c` records, so the recovered command/resource path
-does not yet prove the factory-to-upload alias.
+`0x1810e6450` E9 trampoline targeting `0x18115d810`; the internal-call table
+shows that the shared `context+0x190` object is `HGGpuClothManagerV2`, with
+setup/cleanup and clear/upload/render-data wrappers at `0x1801ed2b0..0x1801ed770`.
+The target obtains that object and calls `0x1810e3b40`, which allocates/reuses
+cloth buffer records through `0x1810e1ea0` and copies 0x80-byte rows via
+`0x1810e0a30`. These bodies still never load the factory `context+0x110` or
+`manager+0x38 + index*0x8c` records. The result is a bounded GPU-cloth
+resource/cache tail, not evidence for the character per-draw or
+`UploadPerDrawParams` bridge; the factory-to-character-upload alias remains
+unresolved.
 
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a
 false positive. `HGConstantBufferPool::.ctor` (`0x189b6aa28`) creates a
