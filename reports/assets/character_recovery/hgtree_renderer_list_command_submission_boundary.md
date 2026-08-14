@@ -2,13 +2,14 @@
 
 ## Verdict
 
-The installed build now pins both halves of the managed HGTree renderer-list
-route. The dedicated HyperGryph internal-call wrappers reach native cores that
-build renderer/resource records and call a graphics-context vtable slot; the
-separate CommandBuffer tree-list call is pinned to its GC-root and
-string-payload validation boundary. Neither branch proves the final GPU
-submission or command-stream consumer, so this remains fail-closed and is not a
-retail frame-parity claim.
+The installed build now pins the HGTree creation cores through their concrete
+graphics-context and command-stream callback route. The dedicated HyperGryph
+wrappers build renderer/resource records, resolve vtable `+0xEA0`, and emit
+opcode `0x273B`; the interpreter dispatches that opcode to HGTree-specific
+callbacks. The separate CommandBuffer tree-list call is pinned to its GC-root
+and string-payload validation boundary. The final backend draw/resource sink
+is still unresolved, so this remains fail-closed and is not a retail
+frame-parity claim.
 
 ## Source pins
 
@@ -39,13 +40,28 @@ retail frame-parity claim.
    renderer index, builds context-owned records and allocations, and its
    successful branch calls graphics-context vtable slot `+0xEA0` at
    `0x18107F13F`. Fallback builders `0x18107E2E0` and `0x181080730` write the
-   result record and allocate/copy per-renderer arrays. This is a positive
-   creation/resource-record boundary, but the dynamic vtable target and final
-   command consumer remain unresolved.
-3. `HGTreeRender.DrawECSRendererList` (`GameAssembly 0x18B3FBFA4`) rejects a
+   result record and allocate/copy per-renderer arrays.
+3. The dynamic graphics context is now pinned. Getter `0x180725DC0` reads TLS
+   index `0x182111300` through `TlsGetValue` (`0x181CB0980`). The backend setup
+   path `0x18072F3EB -> 0x180929430 -> 0x1809258C0` allocates the `0x2A00`
+   context and writes vtable `0x181DCB360`; `0x1807303B5 -> 0x180727EA0`
+   stores the same pointer in the TLS/global slot. Vtable `+0xEA0` is concrete
+   target `0x1809324E0` (and `+0x850` is `0x180934850`).
+4. `0x1809324E0` writes command-stream opcode `0x273B` (at
+   `0x18093255B`), followed by the callback pointer and descriptor fields. The
+   normal/child/PreZ creation cores supply callbacks
+   `0x181060D90 -> 0x18107AD80`, `0x181060D20 -> 0x1810794D0`, and
+   `0x181060D00 -> 0x181079320`. The command interpreter entry
+   `0x1813AEE90` subtracts `0x2711` from the opcode and uses table
+   `0x1813BB574`; entry `0x273B` lands at `0x1813B1110`, which consumes the
+   callback/size/record fields and invokes the callback. The callback bodies
+   call the HGTree fallback record builders and copy the resulting record into
+   the renderer-list state; no direct graphics API or final backend draw is
+   visible in this callback boundary.
+5. `HGTreeRender.DrawECSRendererList` (`GameAssembly 0x18B3FBFA4`) rejects a
    null command buffer, then tail-jumps to the resolved internal call
    `UnityEngine.Rendering.CommandBuffer::AddDrawECSTreeRendererList(System.UInt32)`.
-4. The current UnityPlayer CommandBuffer name/function tables map that call at
+6. The current UnityPlayer CommandBuffer name/function tables map that call at
    index 321 to `0x1801719B0`. The earlier `0x180149500` attribution was a
    table-index error: that address is a Profiler entry, not the tree-list
    internal call. The true tree body uses slot `0x1821BE708` twice for local
@@ -53,18 +69,19 @@ retail frame-parity claim.
    `0x18077C050/0x18077C055` calls `0x1806898F0` with the string
    `il2cpp_gc_wbarrier_set_field` (`0x181D9E7F8`) and writes the result into
    that BSS slot, so it is not a renderer-list converter.
-5. After the two GC-barrier calls, `0x1801719B0` forwards the local wrapper to
+7. After the two GC-barrier calls, `0x1801719B0` forwards the local wrapper to
    `0x180A5C5C0`. That helper is shared by neighboring CommandBuffer draw
    entry points; its checked body calls `0x180769E20` (string-payload
    conversion/validation) and `0x18065C0C0`, returns a status, and emits only
    an error path on failure. It contains no visible ComputeBuffer, dispatch,
    graphics API, or command-stream opcode. This is a separate draw
    validation boundary, not a proven downstream step from the creation cores.
-6. Therefore this pass closes the HGTree creation/resource-record boundary and
-   the separate CommandBuffer GC-root/validation boundary without claiming GPU
-   submission. The next bounded target is the dynamic graphics-context
-   `+0xEA0` target and the later tree-specific command/resource consumer, not
-   `0x1821BE708` and not the unrelated Profiler entry `0x180149500`.
+8. Therefore this pass closes the HGTree creation/resource-record boundary, the
+   concrete `+0xEA0 -> 0x273B -> callback` command-stream boundary, and the
+   separate CommandBuffer GC-root/validation boundary without claiming final
+   GPU submission. The next bounded target is the callback output's backend
+   draw/resource consumer, not `0x1821BE708` and not the unrelated Profiler
+   entry `0x180149500`.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -77,6 +94,11 @@ python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^Un
 python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\tree_render_metadata_current.json --out scratch\\reverse_engineering\\hgtree_component67_producers\\tree_render_native_map_current.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\tree_render_native_map_current.md
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801D9D10 0x1801DA040
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18107EE40 0x1810802A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180725DC0 0x180727EA0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18072F300 0x1807303C0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1809324E0 0x180932780
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AEE90 0x1813B12C0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181060D00 0x18107AD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A5C5C0
 ```

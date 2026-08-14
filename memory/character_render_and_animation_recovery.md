@@ -50,7 +50,17 @@ archetypes are imported as labeled source kits rather than finished characters.
   context-owned renderer/resource records and reaches graphics-context vtable
   slot `+0xEA0` (`0x18107F13F`); fallback builders `0x18107E2E0` and
   `0x181080730` produce the result record and per-renderer arrays. This closes
-  the native creation/resource-record boundary, not the final GPU consumer.
+  the native creation/resource-record boundary. The `+0xEA0` target is now
+  resolved through the TLS graphics context: getter `0x180725DC0` uses TLS
+  index `0x182111300`, backend setup `0x18072F3EB -> 0x180929430 ->
+  0x1809258C0` writes vtable `0x181DCB360`, and setter `0x1807303B5 ->
+  0x180727EA0` stores that context. Vtable `+0xEA0` is
+  `0x1809324E0`, which records opcode `0x273B`; the normal/child/PreZ
+  callbacks are `0x181060D90 -> 0x18107AD80`,
+  `0x181060D20 -> 0x1810794D0`, and `0x181060D00 -> 0x181079320`.
+  Interpreter table `0x1813BB574` maps `0x273B` to `0x1813B1110`, which
+  invokes those callback records. This closes the HGTree command-stream
+  writer/callback boundary, not the final backend draw/resource consumer.
   Separately, `DrawECSRendererList` tail-jumps to
   `CommandBuffer::AddDrawECSTreeRendererList`, native `0x1801719B0`, which
   roots local managed-pointer state through slot `0x1821BE708` and calls the
@@ -636,10 +646,10 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Resolve the graphics-context vtable `+0xEA0` target reached by the HGTree
-   creation cores and its later command-buffer/resource consumer, while keeping
-   component 67's LOD/list role and the retail culling survivor list separately
-   bounded.
+1. Follow the `0x273B` callback output records (`0x18107AD80`,
+   `0x1810794D0`, `0x181079320`) into the final backend draw/resource consumer,
+   while keeping component 67's LOD/list role and the retail culling survivor
+   list separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
