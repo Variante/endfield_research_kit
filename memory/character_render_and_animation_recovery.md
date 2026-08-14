@@ -35,6 +35,12 @@ archetypes are imported as labeled source kits rather than finished characters.
 - Selected CharacterNPR, eye, hair, shadow, material, particle, gacha, depth,
   GBuffer, light, cookie, and irradiance diagnostics.
 - Fail-closed native texture payload recovery for the admitted playable set.
+- Native ECS component slot 67 is now source-pinned as a 24-byte LOD/culling
+  state record: `0x181038D00` tests high-mask bit 3, and its LOD jobs and list
+  builders are bounded by direct xrefs. Its standalone native name remains
+  unresolved; it must not be merged with managed `RenderObjectLODInfo` (ID 6)
+  or `HGTreeComponent` (ID 80). See
+  `reports/assets/character_recovery/native_component67_lod_renderer_list_boundary.md`.
 
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
 model families with distinct containers, Animator identities, VFS sources, and
@@ -609,8 +615,8 @@ only stable interpretation and priorities.
 ## Highest-value next work
 
 1. Close the remaining native component identities and retail culling survivor
-   list before populating shadow, depth, GBuffer, irradiance, cookie, and
-   VisibilitySH inputs.
+   list (component 67's LOD/culling role is now bounded) before populating
+   shadow, depth, GBuffer, irradiance, cookie, and VisibilitySH inputs.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
