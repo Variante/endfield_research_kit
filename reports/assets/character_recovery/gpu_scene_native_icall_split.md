@@ -142,15 +142,22 @@ record. The V1 culling producer supplies the on-disk trampoline at
 calls through the carried cell, this is recorded as a trampoline/payload link,
 not as a claim that the raw on-disk bytes are already the final callable slot.
 
-The trampoline target is a positive resource-side path: `0x18115d810` builds a
-small layout descriptor, obtains the global context via `0x180fc5e60`, and
-passes `context+0x190` to `0x1810e3b40`. That helper allocates or reuses several
-size/stride-specific buffer records through `0x1810e1ea0` and inserts/copies
-the resulting 0x80-byte rows through `0x1810e0a30`. None of
-`0x18115d810`, `0x1810e3b40`, `0x1810e1ea0`, or `0x1810e0a30` loads
-`context+0x110`, `manager+0x38`, or an `index*0x8c` factory record. This
-strengthens the resource-allocation side of the GPU tail while keeping the
-factory-record-to-upload alias unresolved.
+The trampoline target is a positive **GPU-cloth** path, not a generic
+character-upload path. The internal-call table identifies the entire
+`0x1801ed2b0..0x1801ed770` family as `HGGpuClothManagerV2`: setup at
+`0x1801ed2b0` obtains `context+0x190` and initializes it through
+`0x1810e46b0`; cleanup at `0x1801ed350` reaches `0x1810e20c0`; the wind,
+center, enable/validity, reset, clear/upload/render-data, and buffer-ID wrappers
+all pass the same `context+0x190` object to the `0x1810e29xx..0x1810e49xx`
+helpers. The command trampoline target `0x18115d810` builds five keyed records,
+obtains the same global context, and passes `context+0x190` to
+`0x1810e3b40`; that helper allocates or reuses size/stride-specific cloth
+buffer records through `0x1810e1ea0` and inserts/copies 0x80-byte rows through
+`0x1810e0a30`. None of these cloth bodies loads `context+0x110`,
+`manager+0x38`, or an `index*0x8c` factory record. This is useful positive
+evidence for the cloth resource/cache tail, but it must not be promoted to a
+role per-draw or `UploadPerDrawParams` bridge; the factory-record-to-character-
+upload alias remains unresolved.
 
 Therefore the current static boundary is:
 
