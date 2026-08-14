@@ -71,7 +71,7 @@ First-time setup generates Story and Text. Run `export.bat --from-game --with-as
 
 :: Serve or package the static WebUI
 python serve.py
-.\pack_webui.bat
+python scripts\pack_webui.py
 ```
 
 `export.bat` reuses `export_full/` and checks it against the installed client.
