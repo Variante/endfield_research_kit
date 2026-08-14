@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.story_builder import level_bindings
+from scripts.story_builder.codecs.leveldata import interactive_layout
 from scripts.story_builder.level_bindings import (
     build_entity_tracking_world_interactive_dialog_contexts,
     parse_level_interactive_world_dialog_context,
@@ -333,9 +334,11 @@ class LevelDataWorldInteractiveDialogTests(unittest.TestCase):
 
             with (
                 patch.object(
-                    level_bindings,
-                    "_level_interactive_data_list_frames",
-                    wraps=level_bindings._level_interactive_data_list_frames,
+                    interactive_layout,
+                    "level_interactive_data_list_frames",
+                    wraps=(
+                        interactive_layout.level_interactive_data_list_frames
+                    ),
                 ) as frame_parser,
                 patch.object(
                     level_bindings,
@@ -480,9 +483,9 @@ class LevelDataWorldInteractiveDialogTests(unittest.TestCase):
             }
 
             with patch.object(
-                level_bindings,
-                "_level_interactive_data_list_frames",
-                wraps=level_bindings._level_interactive_data_list_frames,
+                interactive_layout,
+                "level_interactive_data_list_frames",
+                wraps=interactive_layout.level_interactive_data_list_frames,
             ) as frame_parser:
                 rows = build_entity_tracking_world_interactive_dialog_contexts(
                     {self.STORY_KEY}, {self.MISSION_ID}, **kwargs
