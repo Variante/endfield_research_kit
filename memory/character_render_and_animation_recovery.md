@@ -789,6 +789,17 @@ only stable interpretation and priorities.
    resource functions, and no static HGTree handler emits either flush opcode
    or `+0xF10`/`+0xDE8`; keep HGTree-specific ordering and final draw/queue
    ownership fail-closed.
+   A complete callback-slot census narrows this boundary further: the main
+   HGTree handler uses `+0x210/+0x268/+0x280/+0xC8/+0xD8/+0xD0/+0xE0/+0xE8`
+   plus `+0xDA0/+0x380`, while the sibling also uses `+0xB0/+0xC0`, which map
+   to API-2 resource-registry paths (`0x180833470/0x180833630` ->
+   `0x180822180/0x1808224F0`). The other inspected slots are resource,
+   handle, or state mutations; neither callback emits `+0xDA8`, `+0xDE8`, or
+   `+0xF10`. Generic `0x2731 -> +0xDE8` is paired with `0x2730 -> +0xE90`
+   in a separate render-pass/command writer (`0x18092E350`/
+   `0x18093AE10`), and the managed tree wrapper (`0x189C0A130`/
+   `0x18B3FBFA4`) has no flush edge. The remaining HGTree ordering/final
+   draw/queue boundary therefore stays fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
