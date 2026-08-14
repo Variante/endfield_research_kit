@@ -129,7 +129,11 @@ returns `[context+0x110]` for the `HGFactoryRenderManager.SetEntitySharedData*`
 wrappers. Thus this is a confirmed factory `0x8c` record to persistent
 resource-maintenance edge, not merely a matching layout. No GPU API or
 dispatch is present in the chain, so retain only the persistent-resource to
-GPU-upload edge as runtime-indirect. Details are in
+GPU-upload edge as runtime-indirect. `HGRenderPath` BeforeCulling and the
+GPUDriven binders do share the same global context `+0xe8` selector path
+(`0x1810e6310`), but their checked bodies do not read global `context+0x110`;
+that common resource origin does not merge the factory CPU records into the
+GPU upload surface. Details are in
 `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a

@@ -66,6 +66,17 @@ None of these bodies directly calls ComputeBuffer, CommandBuffer,
 `_UploadBuffer`, or dispatch. The persistent resource to GPU upload edge
 therefore remains runtime-indirect and fail-closed.
 
+The common resource context is now bounded separately from the factory record.
+`HGRenderPath` BeforeCulling (`0x1812fdd80 -> 0x1813018c0`) also calls
+`0x180fc5e60`, keeps the returned global context, and selects two entries from
+`context+0xe8` through `0x1810e6310` (selectors `0` and `1`) for render-path
+state. The GPUDriven V1 binders reach the same selector helper through
+`0x1810f1980`. These bodies therefore share the runtime resource-context
+origin, but do not read the global `context+0x110` factory-record array; the
+render-path object's own `+0x110` input is a separate state field. This
+strengthens the negative split: common `+0xe8` resource selection is proven,
+while a static `manager+0x38`/`0x8c` to GPU binder upload edge is not.
+
 Therefore the current static boundary is:
 
 ```text
