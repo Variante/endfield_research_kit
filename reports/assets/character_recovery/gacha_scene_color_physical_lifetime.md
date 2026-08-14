@@ -2,8 +2,9 @@
 
 This is an offline audit of the installed fallback binaries and exported
 render-path evidence. The game and the Unity recovery lab were not launched.
-The source audit snapshots were produced on 2026-07-29; the installed binary
-hashes below still match the current checkout on 2026-08-14.
+The source audit snapshots were refreshed on 2026-08-14 after a targeted
+AnimeStudio export of the current `HGRenderPipelineAsset` object; the installed
+binary hashes below still match the current checkout.
 
 Inputs:
 
@@ -18,6 +19,11 @@ Inputs:
   `gacha_scene_color_live_state_audit.json`, and the deferred framebuffer
   compatibility audit under the matching `scratch/reverse_engineering/`
   directories.
+- current exported pipeline asset:
+  `HGRenderPipelineAsset_p626CD9CED6F75568.json`, SHA-256
+  `8f459ab4e65bf826376e71e8ed9d88f3a30e52960cf5590229594ce2cbd14b0b`.
+- `scripts/verify_export_freshness.py` passes for both current
+  `StreamingAssets` and `Persistent` roots after the targeted refresh.
 
 ## Producer and descriptor
 
@@ -78,16 +84,14 @@ policy, publication/history lanes, and exact target-relative sizing equation.
 It does not close the live camera target/viewport, persisted scale, optional
 pixel-rect override, active IFix state, native pointer, or concrete alias peer.
 
-The three deterministic SceneColor checkers were attempted against the current
-checkout and all stop before producing a new audit because this exported input
-is absent:
-
-```text
-export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour/
-HGRenderPipelineAsset_p626CD9CED6F75568.json
-```
-
-Therefore this report preserves the hash-pinned 2026-07-29 source snapshots
-and records the missing export asset as a validation boundary; it does not
-claim a fresh checker run. Re-export the current game data before treating
-the exact pipeline-asset selection or live scale as revalidated.
+The three deterministic SceneColor checkers now pass against the targeted
+current export: producer (`PATCH_APPLIED_WITH_RUNTIME_BOUNDARY`), physical
+owner (`PHYSICAL_POLICY_CLOSED_IDENTITY_LIVE`), and live state
+(`MSAA_CLOSED_DIMENSIONS_TARGET_RELATIVE`). Their current audit hashes are
+`99650b713e5c04d64bd1b5ba54b7749e2115cd1d2fed2f4ea73f57ad51322efa`,
+`1908a43285253ba7769619e3305c4360d2c10b4ed604d3acefa9b3ffd578da24`, and
+`c693f9edde09834be42ccf54aa0082651d08de43d99ef2a0caceb78421a99559`.
+The remaining boundary is live frame identity: physical camera target/window,
+persisted `video_rendering_scale_pc`, optional pixel-rect override, native
+pointer, pool hit, and alias peer remain capture/runtime inputs rather than
+being replaced with defaults.
