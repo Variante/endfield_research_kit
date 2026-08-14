@@ -9,9 +9,10 @@ opcode `0x273B`; the interpreter dispatches that opcode to HGTree-specific
 callbacks. The populated resource records then reach callback-built renderer
 records whose thunks enter graphics-context vtable loops. The separate
 CommandBuffer tree-list call is pinned to its GC-root and string-payload
-validation boundary. Concrete device/API submission behind those vtable slots
-is still unresolved, so this remains fail-closed and is not a retail
-frame-parity claim.
+validation boundary. The later record loop is now pinned to Vulkan
+`vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, but concrete
+draw/dispatch/queue submission behind the vtable path remains unresolved, so
+this remains fail-closed and is not a retail frame-parity claim.
 
 ## Source pins
 
@@ -245,7 +246,37 @@ frame-parity claim.
     following two arguments. Thus this `+0x48` result is not consumed as a
     queue, command list, or graphics handle on this path. The durable
     interpretation is now `resource metadata/name preparation -> resource
-    record builder`; device submission remains a separate unresolved path.
+    record builder`; the later record loop is a separate backend descriptor
+    update path, not a consumer of this returned metadata value.
+
+16. The post-F8F0 indirect at `0x18083F89D` is a shared runtime dispatch cell,
+    not an opaque per-object graphics call. Its RIP slot is
+    `0x1821D3898`, and the same cell is referenced by 28 resource/record call
+    sites, including `0x180823FF5`, `0x180839E83`, `0x180840EBA`,
+    `0x1808464F0`, and `0x1808467B4`. A file-backed registration at
+    `0x180848A8A` assigns `0x180861C20`, whose bounded body is:
+
+    ```text
+    mov r8, [r8+8]
+    lea rcx, [rdx+8]
+    shl r8, 5
+    mov rdx, r9
+    jmp 0x181C9F9A0
+    ```
+
+    That initializer is a generic `count * 0x20` record-copy helper, not a
+    device call. However, the same cell is populated by the Vulkan symbol
+    resolver at `0x18085127C`/`0x1808512A7`/`0x1808512CB`/`0x1808512F0`;
+    each branch passes the file-backed string
+    `vkUpdateDescriptorSetWithTemplate` and stores the resolved address into
+    `0x1821D3898`. The call-site register shape is consistent with the Vulkan
+    ABI (`device`, descriptor-set handle from `0x180839B00`, update-template
+    handle, and a byte-offset-adjusted data pointer). Therefore the bounded
+    post-record operation is now promoted to a concrete Vulkan descriptor
+    update, while the earlier static copy assignment remains an initialization
+    fallback. It is backend descriptor state, not proof of draw/dispatch or
+    queue submission; resolve loader order or capture the runtime slot before
+    treating the copy helper as the active target.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -276,4 +307,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F680 0x18083F8F0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18061FB60 0x18061FD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180624000 0x1806242B0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180861C20 0x180861C34
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180850F80 0x180851320
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180823F80 0x180824040
 ```
