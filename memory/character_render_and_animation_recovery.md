@@ -194,6 +194,12 @@ upload/dispatch edge, so the later `0x100 -> 0x54` pack, kernel-7 selection, and
 channel-2/resource `+0xd0` binding remain fail-closed. Details:
 `reports/assets/character_recovery/factory_staging_job_callback_chain.md`.
 
+The scheduler worker path is bounded through `0x180558440 -> 0x18055865f ->
+0x1805598c0`, which loads and calls a queued task entry indirectly. The final
+alias from that queued-slot field back to `0x1810d25c0` is not unique in the
+static image, so this remains an execution boundary rather than a fully
+resolved call. The scheduler still has no GPU upload/dispatch edge.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable
