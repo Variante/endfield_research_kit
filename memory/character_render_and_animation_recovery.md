@@ -159,6 +159,17 @@ separate from both the callback-local factory scratch and the unresolved
 channel-2 upload resource. Details are in
 `reports/assets/character_recovery/gpudriven_v2_renderer_list_descriptor_boundary.md`.
 
+The only direct UnityPlayer caller of the factory-linked persistent-resource
+copy `0x1810d8d40` is now bounded at `0x1810d3f27`. It runs from the frame-step
+resource loop, resolves active `0x8c` entries through `0x1810d4020`, immediately
+passes the returned pair to `0x1810c7a30`, and recycles the companion arrays.
+`0x1810d8d40` itself only copies descriptor metadata and a 0x100-byte CPU block;
+it has no graphics-context dispatch, command opcode, ComputeBuffer, or kernel
+selection. This is a resource-maintenance/reclamation consumer, not the missing
+84-byte `_UploadBuffer`/kernel-7 producer. Keep the persistent-resource-to-GPU
+upload edge fail-closed; details are in
+`reports/assets/character_recovery/factory_resource_maintenance_consumer_boundary.md`.
+
 The indirect GPUDriven tail is now resolved for the installed graphics-context
 constructor. `0x180725dc0` reads TLS index `0x182111300` and resolves the
 context through `TlsGetValue` (`0x181cb0980`); setter `0x180727ea0` stores the
