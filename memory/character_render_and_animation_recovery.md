@@ -677,8 +677,13 @@ only stable interpretation and priorities.
 1. Follow the API-2 resource/descriptor records after the HGTree front-end
    wrappers to their runtime object/queue consumer. The callback route now
    enters front-end slots `+0xDA0`/`+0x380`, which record `0x2734`/`0x27B6` or
-   tail-dispatch to the selected API backend. It includes `0x1808351F0` via
-   interpreter opcode `0x27B6`, the registry paths
+   tail-dispatch to the selected API backend. The command-stream receiver is
+   now resolved: `0x180929540` writes the selected backend returned by
+   `0x18072F7E0` to both `[context+0x2700]+0x70` and `context+0x2708`, so the
+   interpreter's `0x27B6` case (`0x1813B92F8`) reaches backend `+0x358`
+   (`0x1808351F0`) and its `0x2734` case (`0x1813B03DA`) reaches backend
+   `+0xDA0` (`0x18083E720`). This closes the recorded front-end -> backend
+   receiver edge. It includes the registry paths
    `0x180822180`/`0x1808224F0`, and the shared builder `0x18083E720`; these
    remain pre-device layers. The adjacent setup path
    `0x180843BF0 -> 0x18083F680` reaches `0x18083F71B`, where
