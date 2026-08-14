@@ -139,9 +139,10 @@ interpreter: the recovered internal-call table maps
 GameAssembly census found 47 direct compute-buffer binding calls from eight
 named bodies and 35 texture-binding calls; they are built-in passes or
 CommandBuffer overload wrappers, with no factory/per-draw/character hits.
-The consumer is now bounded: `ExecuteCommandBuffer_Internal_Injected`
-(`0x1800b6f40`) reaches `0x18052d730` -> `0x1804cdf70` -> the high-level
-opcode interpreter `0x1804ce0a0`. Opcode `0x11` (`0x1804cf455`) resolves its
+The consumer is now bounded: the class-local UnityPlayer registration for
+`UnityEngine.Graphics::ExecuteCommandBuffer` resolves to `0x1800b6f40`, which
+reaches `0x18052d730` -> `0x1804cdf70` -> the high-level opcode interpreter
+`0x1804ce0a0`. Opcode `0x11` (`0x1804cf455`) resolves its
 resource handle and calls `0x1805e7a10`, which reaches graphics-context slot
 `+0xab8` at `0x1805e7a8b`; its indirect-dispatch branch calls
 `0x1805e7bc0` -> slot `+0xab0`. Opcode `0x0d` (`0x1804cf350`) resolves the
