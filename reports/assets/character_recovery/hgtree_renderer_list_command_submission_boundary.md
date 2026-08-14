@@ -714,6 +714,26 @@ and final draw/queue ownership remain fail-closed.
     `+0xDE8`, `+0xF10`, Vulkan, or queue submission; the runtime consumer that
     joins the resource pair to the final HGTree draw remains unresolved.
 
+42. A broader exact indirect-call census does not uncover a hidden result-pair
+    executor. Scanning the UnityPlayer `.text` for direct `call qword ptr
+    [register+0x10]` sites and filtering API-2/resource ranges yields 40
+    candidates. The four sites in the HGTree-adjacent `0x18106AAE0` cleanup
+    family (`0x18106AAC6`, `0x18106AC96`, `0x18106AE54`, `0x18106B014`) all
+    load an object from `[rsi+0x10]`, pass its `[object+8]` context, and invoke
+    `[object+0x10]`; they are renderer-list/resource cleanup callbacks, not the
+    builder `outResult+0x10` slot. The analogous `0x18109EC12`/
+    `0x18109EDDD` sites are the same per-slot cleanup pattern. The remaining
+    `0x18082*`/`0x18084*`/`0x18085*`/`0x18086*` candidates are ordinary vtable
+    release/destructor or container cleanup calls (their call target is loaded
+    from a vtable object first), with no `rcx=outResult`, result-object item
+    walk, API-2 `+0xDA8`/`+0xDE8`/`+0xF10`, Vulkan, or queue edge. Separately,
+    `0x1805594BD` in `0x1805592B0` invokes a caller-supplied allocator control
+    pair (`rdi` from the incoming control record) with a pool index; the node
+    result is `rsi` and is not that pair. The `0x1810685A0` resource handler's
+    direct-call census likewise contains only resource/registry work and
+    indirect `+0xB0`/`+0xC0` interface slots. Keep the result-pair-to-final-draw
+    join unresolved and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.

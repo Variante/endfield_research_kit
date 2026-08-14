@@ -841,8 +841,11 @@ only stable interpretation and priorities.
    confirms that `0x181060EA0/0x181060EB0` only rearrange arguments into
    `0x18107AE60/0x18107B3A0`; the handlers consume a result object whose
    `[result]` is the item array and `[result+8]` is the count, then dispatch
-   only `+0xDA0/+0x380`. Neither the handler range nor the pool worker's node
-   `+0x30` callback path statically consumes builder `outResult+0x10`, so the
+   only `+0xDA0/+0x380`. A full exact `call [register+0x10]` census in the
+   API-2/resource ranges finds only ordinary vtable release/destructor calls
+   plus the known `0x18106AAE0` cleanup family; none consumes builder
+   `outResult+0x10`. The pool's `0x1805594BD` callback is a caller-supplied
+   allocator control pair with a pool index, not the node result pair. The
    runtime result-pair-to-final-draw join remains unresolved and fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
