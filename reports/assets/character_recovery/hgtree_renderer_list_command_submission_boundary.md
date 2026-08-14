@@ -6,18 +6,19 @@ The installed build now pins the HGTree creation cores through their concrete
 graphics-context and command-stream callback route. The dedicated HyperGryph
 wrappers build renderer/resource records, resolve vtable `+0xEA0`, and emit
 opcode `0x273B`; the interpreter dispatches that opcode to HGTree-specific
-callbacks. The populated resource records then reach callback-built renderer
-records whose thunks resolve through Unity's Vulkan function loader and issue
-real command-buffer operations: buffer binds, dynamic state, descriptor/pipeline
-binds, and (on the `+0xDA8` sibling) indirect draws. The separate CommandBuffer
-tree-list call is pinned to its GC-root and string-payload validation boundary.
+callbacks. The HGTree handlers then reach the API-2 `+0xDA0`/`+0x380`
+resource/state wrappers. The neighboring `+0xDA8` callback has a real Vulkan
+indirect-draw implementation, but its concrete producer is now separated: the
+source-pinned `HGTerrainManager::RenderTerrain` command path, not a statically
+proven HGTree handler. The separate CommandBuffer tree-list call is pinned to
+its GC-root and string-payload validation boundary.
 The later record loop is also pinned to Vulkan
 `vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, and the same
 API-2 backend family has a concrete descriptor -> draw -> queue-submit sink.
-The recorded HGTree receiver and its callback-produced Vulkan commands are now
-source-pinned, but managed tree-list playback, callback ordering, and queue
-submission ownership remain unresolved; this is not yet a retail frame-parity
-claim.
+The recorded HGTree receiver and its callback-produced resource/state records
+are source-pinned. Managed tree-list playback, callback ordering, the
+HGTree-specific Vulkan draw consumer, and queue submission ownership remain
+unresolved; this is not yet a retail frame-parity claim.
 
 ## Source pins
 
@@ -545,13 +546,12 @@ claim.
     `0x18082E820`, binds index/vertex buffers through the same `35A0/35A8`
     slots, and selects `0x1821D35C8 = vkCmdDrawIndexedIndirect` or
     `0x1821D35C0 = vkCmdDrawIndirect` at its final branch. These are direct
-    Vulkan command-recording calls reached from the callback-produced records,
-    not merely resource-state copies. They do not themselves call the backend
-    `+0xDE8` wrapper or `vkQueueSubmit`; the remaining uncertainty is which
-    HGTree record variants install/execute each callback and how their command
-    buffer is ordered and submitted. Keep managed tree-list playback and
-    retail frame order fail-closed until capture or a stronger producer/consumer
-    join proves that scheduling.
+    Vulkan command-recording calls, not merely resource-state copies. The
+    ownership boundary is now explicit: a direct-code scan finds only four
+    `+0xDA8` call sites (`0x1804D2A32`, `0x1804D492D`, `0x180932246`, and
+    `0x1813B0580`); neither native HGTree callback handler contains one. The
+    `+0xDA8` implementation therefore remains a neighboring render-family
+    control path until a runtime record join proves an HGTree producer.
 
 28. The indirect-slot names are source-pinned by Unity's Vulkan resolver
     `0x180746620`, which passes each symbol string to `0x181CA0480` and stores
@@ -565,6 +565,24 @@ claim.
     initialized pointers. Re-run
     `python scratch\\reverse_engineering\\hgtree_component67_producers\\resolve_vulkan_function_slots.py`
     against the pinned UnityPlayer to reproduce the mapping.
+
+29. The neighboring indirect-draw control path is now source-identified rather
+    than inferred from slot proximity. HyperGryph table index 503 names
+    `HGTerrainManager::RenderTerrain` and maps to `0x1801F4D40`; its wrapper
+    calls `0x1811DDC50` (`0x1801F4DB3`), which writes a high-level `0x60`
+    callback record containing `0x1811A5BD0`. The high-level interpreter
+    `0x1804CE0A0` uses table `0x1804D19C8`; case `0x60` begins at
+    `0x1804CECEF`, extracts the recorded callback through
+    `call qword [base+r10]`, and invokes it. `0x1811A5BD0` forwards to
+    `0x1811AB1B0`; that function records `+0xEA0` at `0x1811AB110` and then
+    enters pass executor `0x1811D03A0` at `0x1811AB7A8`. Its branch at
+    `0x1811D0671` calls `0x1804D4680`, whose API-2/front-end branches are
+    `+0xDA8` (`0x1804D492C`) or `+0x390` (`0x1804D4961`), reaching the named
+    Vulkan indirect-draw thunks above. This is a complete Terrain render
+    producer/consumer witness for the generic command framework; it is not an
+    HGTree ownership proof because the HGTree `0x273B` records use distinct
+    callbacks (`0x181060D90/0x181060D20/0x181060D00`) and their handlers still
+    dispatch only `+0xDA0`/`+0x380`. Keep the HGTree draw edge fail-closed.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -638,4 +656,10 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083AA90 0x18083C700
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F1E0 0x18083F230
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843D60 0x180844D00
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811DDC50 0x1811DDDCC
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804CECEF 0x1804CED50
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811A5BD0 0x1811A5C08
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811AB1B0 0x1811AB7DB
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811D03A0 0x1811D06F8
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804D4680 0x1804D49A0
 ```
