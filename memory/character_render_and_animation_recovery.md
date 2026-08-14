@@ -191,6 +191,17 @@ final pixels remain runtime history. Do not force a fresh exposure reset or
 selected-frame multiplier. See
 `reports/assets/character_recovery/gacha_postprocess_exposure_contract.md`.
 
+The deferred environment-global publisher boundary is now also pinned. The
+Gacha path has two exact closures: `_MultiscatteringLUT` is a fixed 32x32
+`RHalf` payload (raw SHA `1A15AFE2…289F030E`) published by
+`PreparePCMultiscattering`, and disabled ASM binds the default shadow texture.
+V2 irradiance, volumetric scattering, cloud shadow, CSM, and punctual shadow
+producer/fallback ownership and shader slots are mapped, but their live branch,
+camera settings, atlas/voxel contents, and frame parameters remain open.
+`RenderForwardTransparent` does not publish these globals, so M02 stays
+fail-closed. See
+`reports/assets/character_recovery/gacha_environment_global_publishers_contract.md`.
+
 The Gacha light cull-view boundary is now source-pinned independently of that
 missing pipeline-asset export. The installed fallback has
 `useFallbackLightCulling=false`, zero occlusion dimensions, and the normal
