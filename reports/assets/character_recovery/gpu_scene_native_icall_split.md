@@ -36,6 +36,31 @@ whether a later runtime-indirect callee consumes that context is still open.
 reference to the factory record, `_UploadBuffer`, kernel 7, or channel-2
 resource `+0xd0`.
 
+## Context-side resource maintenance
+
+The helper reached by both the custom-per-draw bridge and the GPU-scene setup
+path is more than a passive context accessor. UnityPlayer `0x180fc5e60`
+obtains pointer-table slot `0x14`, calls `0x1810d36b0` on
+`context+0x110`, then forwards `context+0x200` to `0x180e75000`.
+
+`0x1810d36b0` performs a CPU-side resource-table update. Its `this+0x38`
+array is walked with an exact `index*0x8c` stride; active entries are checked
+through the per-entry flag at `record+0x74` and routed through
+`0x1810d4020`. The resulting resource pair is copied by
+`0x1810d8d40`, which reaches the persistent resolver family
+(`0x180424d60`, `0x180424ec0`, `0x180425030`, `0x1804251a0`,
+`0x180425310`, `0x180425480`, `0x1804258d0`, and `0x18033b740`) and then
+`0x1810ccd20` for the 0x80-byte resource-block copy. The terminal helper
+`0x1810c7a30` updates the companion resource list.
+
+This is a positive CPU/resource-maintenance edge adjacent to the persistent
+per-draw sink. It is not yet proof that `context+0x110` is the same object as
+the manager resolved by `HGFactoryRenderManager::SetEntitySharedData*`: the
+two paths expose compatible `+0x38`/`0x8c` shapes, but no static pointer alias
+has been recovered. None of these bodies directly calls ComputeBuffer,
+CommandBuffer, `_UploadBuffer`, or dispatch; the GPU upload edge therefore
+remains runtime-indirect and fail-closed.
+
 Therefore the current static boundary is:
 
 ```text
@@ -45,6 +70,7 @@ ApplyPerDrawRender
 
 GPUDrivenRenderer / SetupGpuSceneUploadCs
   -> runtime resource/context slots
+  -> context+0x110 FrameUpdateStep2 / CPU resource maintenance
   -> buffer/compute binding helpers
 
 [factory record -> persistent GPU upload/dispatch consumer: unresolved]

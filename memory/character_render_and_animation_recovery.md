@@ -118,6 +118,18 @@ its remaining resource/context bridge is runtime-indirect. Do not promote the
 MagicaCloth binding path to the character upload route. Details are in
 `reports/assets/character_recovery/gpu_scene_compute_buffer_callsite_census.md`.
 
+The shared context helper now has a more precise CPU-side boundary:
+`0x180fc5e60` obtains slot `0x14`, runs `0x1810d36b0` on `context+0x110`, and
+then forwards `context+0x200` to `0x180e75000`. `0x1810d36b0` walks
+`this+0x38 + index*0x8c`, checks `record+0x74`, and routes active entries
+through `0x1810d4020 -> 0x1810d8d40 -> 0x1810ccd20`, where persistent resource
+records are cloned/copied. This is adjacent to the persistent per-draw sink,
+but the `context+0x110` object is not statically proven identical to the
+factory manager resolved by `SetEntitySharedData*`; no GPU API or dispatch is
+present in the chain. Keep it as a CPU/resource-maintenance candidate and
+retain the upload edge as runtime-indirect. Details are in
+`reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
+
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a
 false positive. `HGConstantBufferPool::.ctor` (`0x189b6aa28`) creates a
 `count=0x80000`, byte-stride-1, type-8 `ComputeBuffer` at `this+0x10`, while
