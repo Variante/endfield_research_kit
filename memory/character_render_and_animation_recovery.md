@@ -175,6 +175,22 @@ were refreshed. This does not establish retail numeric fidelity or justify
 enabling a lab draw.
 See `reports/assets/character_recovery/gacha_deferred_resolver_framebuffer_contract.md`.
 
+The Gacha final-color chain is now source-pinned through post processing.
+`Env_gachaRoom_01` owns Manual exposure on the persistent physical main Camera,
+while CinemachineExternalCamera supplies only virtual transform/lens state.
+Native Phase 1 is DepthOfField → MotionBlur → conditional AfterDOF; Phase 2 is
+ColorGrading/LUT → Bloom → AutoExposure → Uber. Gacha Bloom is high quality
+with threshold `0.95`, effective intensity `0.41421356`, effective scatter
+`0.41`; Vignette and chromatic aberration are explicitly inactive. Exposure
+recurs as `E[n+1] = Lerp(E[n], 1, clamp(0.6*Time.deltaTime[n],0,1))`, and
+`_ExposureWithMiscParams` publishes current exposure, reciprocal exposure,
+target aspect, and the recovered reciprocal camera field. The camera-local
+Gacha Bloom selector and exposure ownership probe are validated, but physical
+camera carry-in, exact deltas, AfterDOF state, lower volume ownership, and
+final pixels remain runtime history. Do not force a fresh exposure reset or
+selected-frame multiplier. See
+`reports/assets/character_recovery/gacha_postprocess_exposure_contract.md`.
+
 The Gacha light cull-view boundary is now source-pinned independently of that
 missing pipeline-asset export. The installed fallback has
 `useFallbackLightCulling=false`, zero occlusion dimensions, and the normal
