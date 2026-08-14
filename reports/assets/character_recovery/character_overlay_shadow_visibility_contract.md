@@ -21,6 +21,11 @@ general gameplay-lighting implementation.
   87 generated overlay materials, including Liino's
   `S_actor_liino_eyeshadow_01_lod0`. Its two shared eye-shadow materials were
   corrected to render queue 2900; the audit reports zero material failures.
+- The current Texture2D import contract is now source-closed at 897 rows,
+  including all 22 Liino-owned texture rows and three Persistent item-widget
+  rows. Its source census resolves 897/897 AssetMap entries with 1,541
+  generated copies; contract SHA-256 is
+  `02A89272F454A91E91F2CFB485E97F98706946D1C13E3AA3C1E916430DEC509C`.
 
 ## Closed shader/resource contract
 
@@ -50,11 +55,10 @@ The implementation is limited to the lab's isolated CharInfo path in
 
 The focused checker passes the hash-pinned fragment/decompile, native ownership
 tokens, current 31-rig/273-light scope, 29-renderer audit, runtime input
-verifier, and face/eye/overlay chronology verifier. The legacy material-import
-verifier remains intentionally skipped for this refreshed export because its
-generated source contract is still hard-coded to 853 rows and does not yet
-contain the new Liino packed-texture rows. That is a data-contract refresh gap,
-not evidence that Liino's OverlayShadow material is wrong.
+verifier, face/eye/overlay chronology verifier, and the full refreshed
+material/import verifier. The native payload contract remains 193 rows and
+continues to gate exact compressed bytes separately; newly added Liino/Jsspsi
+priority surfaces are not assigned guessed payloads.
 
 The native `HGCullingSystem.CullLights` candidate producer for arbitrary
 gameplay scenes remains opaque. Live interleaving with unrelated scene lights,

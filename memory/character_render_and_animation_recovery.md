@@ -269,13 +269,16 @@ decompile, `LightCharacterOnly`/NPR-type lanes, inverse
 Fog attenuation, and neutral-zero fallback are hash-pinned. The regenerated
 eye-shadow audit now covers 29 LOD0 renderers and 87 overlay materials, with
 Liino's two shared eye-shadow materials corrected to queue 2900 and zero audit
-failures. This remains an isolated producer path: the arbitrary-gameplay
+failures. The refreshed current-data Texture2D census is now 897/897 resolved
+objects with 1,541 generated copies, and the import contract includes Liino's
+22 owned rows plus three Persistent item-widget rows. The Unity batch refresh
+and full material/import verifier pass with zero descriptor drift; the separate exact compressed-payload
+contract remains 193 rows and does not invent payloads for newly added priority
+surfaces. This remains an isolated producer path: the arbitrary-gameplay
 `HGCullingSystem.CullLights` candidate producer, live unrelated-light/shadow
-state, and retail pixel parity are open. The focused/runtime/chronology checks
-pass; the old material-import gate still expects an 853-row contract and does
-not yet include Liino's new packed-texture rows, so it is a data-contract queue
-item rather than a reason to generalize this path. See
-`reports/assets/character_recovery/character_overlay_shadow_visibility_contract.md`.
+state, and retail pixel parity are open. See
+`reports/assets/character_recovery/character_overlay_shadow_visibility_contract.md`
+and `reports/assets/character_recovery/liino_texture_import_contract.md`.
 
 ## Evidence boundary
 
