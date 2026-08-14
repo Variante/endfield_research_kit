@@ -734,6 +734,25 @@ and final draw/queue ownership remain fail-closed.
     indirect `+0xB0`/`+0xC0` interface slots. Keep the result-pair-to-final-draw
     join unresolved and fail-closed.
 
+43. The producer side of that boundary is now positively joined to the async
+    pool. `.pdata` identifies `0x181065190` and `0x181067A70` as the two worker
+    callback entries installed by `0x181080730` through `0x180555D30`.
+    Their bodies call the paired builders `0x18106BEF0` and `0x18106D020`
+    with output slots `[context+0x58]` and `[context+0x60]`; those builders
+    write the generated item array at `outResult+8` and the completion thunks
+    `0x181060EA0`/`0x181060EB0` at `outResult+0x10`. The same initializer writes
+    the completion flag at `context+0x68`, and the pool worker invokes the
+    callback with `context` from the node's `+0x28` field. This closes
+    `HGTree/resource record -> 0x98-byte async context -> pool node -> builder`
+    on the producer side, but the post-callback consumer is still not a draw
+    proof. A global short-window scan for `mov reg,[pair+0x10]` followed by
+    `call reg` finds only five unrelated families: the XR audio-driver table
+    around `0x180F150C0` (table at `0x181E17288`), a refcount notifier at
+    `0x181AF9ECF`, and tagged generic operations at `0x181BBA56F`/
+    `0x181BBA9FD`; none references the HGTree handlers, API-2 `+0xDA0`/
+    `+0xDA8`/`+0xDE8`/`+0xF10`, Vulkan, or queue submission. Keep the
+    post-callback result-pair-to-draw edge unresolved and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.

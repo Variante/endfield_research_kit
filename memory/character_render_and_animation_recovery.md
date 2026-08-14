@@ -846,6 +846,13 @@ only stable interpretation and priorities.
    plus the known `0x18106AAE0` cleanup family; none consumes builder
    `outResult+0x10`. The pool's `0x1805594BD` callback is a caller-supplied
    allocator control pair with a pool index, not the node result pair. The
+   producer trace now positively joins `0x181080730 -> 0x180555D30` to pool
+   callbacks `0x181065190/0x181067A70`, which call builders
+   `0x18106BEF0/0x18106D020` using `context+0x58/+0x60`; those builders write
+   completion thunks `0x181060EA0/0x181060EB0` at `outResult+0x10`, while
+   `context+0x68` is the completion flag. A global
+   `mov [pair+0x10]`/`call reg` scan found only unrelated XR-audio, refcount,
+   and tagged-generic families; no HGTree/API-2/Vulkan/queue consumer. The
    runtime result-pair-to-final-draw join remains unresolved and fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
