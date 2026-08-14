@@ -118,9 +118,10 @@ its remaining resource/context bridge is runtime-indirect. Do not promote the
 MagicaCloth binding path to the character upload route. Details are in
 `reports/assets/character_recovery/gpu_scene_compute_buffer_callsite_census.md`.
 
-The shared context helper now has a more precise CPU-side boundary:
-`0x180fc5e60` obtains slot `0x14`, runs `0x1810d36b0` on `context+0x110`, and
-then forwards `context+0x200` to `0x180e75000`. `0x1810d36b0` walks
+The shared context path now has a more precise CPU-side boundary: accessor
+`0x180fc5e60` obtains slot `0x14`; its companion helper `0x180fc5ec0`
+obtains that context, runs `0x1810d36b0` on `context+0x110`, and then forwards
+`context+0x200` to `0x180e75000`. `0x1810d36b0` walks
 `this+0x38 + index*0x8c`, checks `record+0x74`, and routes active entries
 through `0x1810d4020 -> 0x1810d8d40 -> 0x1810ccd20`, where persistent resource
 records are cloned/copied. This is adjacent to the persistent per-draw sink,

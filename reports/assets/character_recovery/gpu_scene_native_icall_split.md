@@ -38,10 +38,11 @@ resource `+0xd0`.
 
 ## Context-side resource maintenance
 
-The helper reached by both the custom-per-draw bridge and the GPU-scene setup
-path is more than a passive context accessor. UnityPlayer `0x180fc5e60`
-obtains pointer-table slot `0x14`, calls `0x1810d36b0` on
-`context+0x110`, then forwards `context+0x200` to `0x180e75000`.
+The global-context accessor used by the custom-per-draw bridge and the
+GPU-scene setup path is UnityPlayer `0x180fc5e60`; it is a small thunk that
+obtains pointer-table slot `0x14`. The companion helper at `0x180fc5ec0`
+obtains that context, calls `0x1810d36b0` on `context+0x110`, then forwards
+`context+0x200` to `0x180e75000`.
 
 `0x1810d36b0` performs a CPU-side resource-table update. Its `this+0x38`
 array is walked with an exact `index*0x8c` stride; active entries are checked
