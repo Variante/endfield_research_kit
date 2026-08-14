@@ -145,6 +145,16 @@ culling records opcode `0x57` through `0x1804cd7d0`; both remain runtime
 resource paths without a factory-record load. Details are in
 `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
+The indirect GPUDriven tail is now bounded at its real runtime boundary:
+command paths call `0x180725dc0`, which reads the TLS index at
+`0x182111300` and resolves the per-thread graphics context through
+`TlsGetValue` (`0x181cb0980`), then invoke that object's vtable `+0xea0`
+(`+0x850` on the V2 follow-up). The adjacent `0x180725f00` table is only a
+backend-name table, and the import cell is an on-disk RVA/name record rather
+than a static code pointer. Therefore the `+0xea0` implementation cannot be
+claimed from this image; the checked callers still never load the factory
+`+0x8c` record, so the factory-record-to-GPU-upload edge remains fail-closed.
+
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a
 false positive. `HGConstantBufferPool::.ctor` (`0x189b6aa28`) creates a
 `count=0x80000`, byte-stride-1, type-8 `ComputeBuffer` at `this+0x10`, while

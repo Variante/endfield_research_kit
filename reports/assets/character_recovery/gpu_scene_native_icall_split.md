@@ -107,6 +107,21 @@ runtime command formats are now explicit: V1 rendering `0x2b`, V1 culling
 `0x57`, and V2 binding `0x0d`; none of these checked producers loads the
 factory `manager+0x38 + index*0x8c` record.
 
+The remaining indirect tail is now bounded without assigning it a static
+implementation. The culling/render command paths call `0x180725dc0` and then
+invoke the returned object's vtable slot `+0xea0` (the V2 tail also invokes a
+second slot `+0x850`). `0x180725dc0` reads the process TLS index at
+`0x182111300` and calls the runtime-resolved `TlsGetValue` import at
+`0x181cb0980`; its error path repeats the same TLS lookup. The on-disk import
+cell contains an RVA/name record rather than a callable code pointer, so the
+actual TLS object's vtable and its `+0xea0` implementation are not recoverable
+from this image alone. The nearby `0x180725f00` helper is only a 28-entry
+backend-name table (Direct3D/OpenGL/Vulkan/etc.), not that vtable. This makes
+the runtime boundary explicit: the `+0xea0` object is a per-thread graphics
+context, and the checked callers still contain no factory `+0x8c` record load;
+the factory-record-to-upload edge remains fail-closed rather than being
+inferred from the matching slot number.
+
 Therefore the current static boundary is:
 
 ```text
