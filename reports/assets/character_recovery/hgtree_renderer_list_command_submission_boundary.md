@@ -374,6 +374,34 @@ claim.
     prove that either resource operation schedules the adjacent `+0xDE8`
     draw/submit case; that branch/order ownership remains fail-closed.
 
+20. The managed HGTree draw route is now pinned separately from that recorded
+    resource family. PData-scoped direct-call scanning of the pinned
+    `GameAssembly.dll` maps `HGRendererListUtils.DrawTreeECSRendererList`
+    (`0x189C0A130`, method index `288214`) to
+    `HGTreeRender.DrawECSRendererList` (`0x18B3FBFA4`) at
+    `0x189C0A165`. The helper loads the CommandBuffer from
+    `[context+0x18]`, forwards the renderer-list id in `edx`, and enters the
+    HGTree wrapper; that wrapper null-checks the command buffer and tail-jumps
+    to `CommandBuffer::AddDrawECSTreeRendererList`
+    (`0x18B3E3FE8`, method index `407629`). The UnityPlayer internal-call table
+    maps that name to native `0x1801719B0` (table index `321`).
+
+    The same draw helper is directly called by six pinned render callbacks:
+    `HGPunctualLightShadowManager+<>c::<.cctor>b__49_0` (`0x189B56CCC`),
+    `GBufferPassConstructor+<>c::<.cctor>b__10_0` (`0x189BB6280`), both
+    `OnePassDeferredPassConstructor+<>c::<.cctor>b__33_0/1`
+    (`0x189BC526C`/`0x189BC5674`),
+    `HGShadowManager+<>c::<.cctor>b__104_3` (`0x189D2572C`), and
+    `HGASMManager+<>c::<.cctor>b__84_0` (`0x189D26464`). This is positive
+    evidence that the tree-list draw entry is used by real render passes.
+    Native `0x1801719B0` itself only performs the managed-root barrier and
+    string-payload/hash validation before returning; it exposes no direct
+    graphics call, `0x273x` opcode, or `+0xDE8` dispatch. Therefore the
+    `+0xDE8` API-2 sink remains a separate command-family candidate, while the
+    unresolved HGTree sink is the runtime CommandBuffer consumer/execution
+    edge after this internal call (and the runtime-indirect consumer of the
+    populated resource nodes).
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -419,4 +447,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180929430 0x1809295A5
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AFFF7 0x1813B03E2
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813B91F0 0x1813B9305
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x189C0A130 0x189C0A1AA
+python scratch\\reverse_engineering\\hgtree_component67_producers\\find_gameassembly_direct_calls.py 0x189C0A130 0x18B3FBFA4 0x18B3E3FE8
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A38
 ```

@@ -711,7 +711,16 @@ only stable interpretation and priorities.
    `0x180861C20` is only a generic 32-byte record-copy helper, and loader order
    can overwrite the cell; capture or resolve that order before calling the
    fallback active. Keep component 67's LOD/list role and the retail culling
-   survivor list separately bounded.
+   survivor list separately bounded. The managed draw edge is now separately
+   pinned: `HGRendererListUtils.DrawTreeECSRendererList` (`0x189C0A130`)
+   loads its CommandBuffer from context `+0x18` and calls
+   `HGTreeRender.DrawECSRendererList` (`0x18B3FBFA4`), which resolves to
+   `CommandBuffer::AddDrawECSTreeRendererList` (`0x18B3E3FE8`, UnityPlayer
+   `0x1801719B0`). Six named render callbacks call the tree helper. The native
+   internal-call body only roots/validates/hash-checks its managed payload and
+   exposes no direct `+0xDE8` or graphics call, so the API-2 `+0xDE8` sink is a
+   separate command-family candidate; the remaining HGTree sink is the runtime
+   CommandBuffer execution edge and the runtime-indirect resource-node consumer.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
