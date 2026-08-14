@@ -133,7 +133,12 @@ GPU-upload edge as runtime-indirect. `HGRenderPath` BeforeCulling and the
 GPUDriven binders do share the same global context `+0xe8` selector path
 (`0x1810e6310`), but their checked bodies do not read global `context+0x110`;
 that common resource origin does not merge the factory CPU records into the
-GPU upload surface. Details are in
+GPU upload surface. The V1/V2 distinction is now bounded too: V1 selects
+`context+0xe8` entry 0, V2 selects entry 1; V2 rendering emits opcode `0x0d`
+through `0x1804cb1a0` from runtime descriptor fields through `+0xd0`, while
+V1/V2 dispatch reaches graphics-context vtable slot `+0xab0`. Those runtime
+descriptor fields are not the factory channel-2 `+0xd0` without a proven
+alias. Details are in
 `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a
