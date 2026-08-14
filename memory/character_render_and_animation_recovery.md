@@ -126,6 +126,22 @@ also absent from this on-disk table. This strengthens the static negative but
 does not expose runtime wrapper-array slots or another loaded patch payload;
 the IFix route and factory-record-to-`_UploadBuffer` edge stay fail-closed.
 
+The installed Burst AOT library now provides a positive CPU-side factory
+record producer. Its resolver binds `SetEntitySharedDataPartial` to slot
+`0x1803c4440`, `GetEntityDirtyFlags` to `0x1803c43f0`, and
+`SetEntityDirtyFlags` to `0x1803c4420`. The per-entity range
+`0x1801d0140..0x1801d045c` calls `0x1801cf3c0..0x1801d013c`, which writes
+partial fields at offsets `0x50/0x1c/0x18/0x60/0x14` with sizes
+`0x20/4/4/0x10/4`, then marks the entity dirty. The managed wrapper
+`0x183d689c0` reaches UnityPlayer `0x1801eb9a0` -> `0x1810d91f0`, whose core
+computes `manager+0x38 + index*0x8c + offset` and copies the requested bytes.
+This closes a real Burst-to-native `0x8c` record update edge, but the Burst
+image contains no ComputeBuffer/ComputeShader/CommandBuffer/GPUDriven/
+UploadPerDraw/_UploadBuffer/Dispatch identity. It therefore remains CPU
+record maintenance, not proof of the 84-byte pack or kernel-7/channel-2
+upload; durable details are in
+`reports/assets/character_recovery/burst_shared_data_producer_contract.md`.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable

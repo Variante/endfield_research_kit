@@ -3557,6 +3557,51 @@
       ],
       "boundary": "Static native evidence now separates the known cloth/proxy/skin-capture routes from the missing previous-deformed-position producer. The IFix-patched cloth wrapper and the renderer-side history state still require compatible patch-body or target-frame evidence before publication."
     },
+    "burst_shared_data_producer_followup": {
+      "status": "positive-burst-cpu-record-producer-gpu-edge-open",
+      "source": "Installed Endfield_Data/Plugins/x86_64/lib_burst_generated.dll; SHA-256 ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99.",
+      "resolver": {
+        "function": "0x18001d1c0",
+        "external_slots": {
+          "SetEntitySharedDataPartial": "0x1803c4440",
+          "GetEntityDirtyFlags": "0x1803c43f0",
+          "SetEntityDirtyFlags": "0x1803c4420"
+        }
+      },
+      "factory_producer": {
+        "outer_range": "0x1801d0140..0x1801d045c",
+        "inner_range": "0x1801cf3c0..0x1801d013c",
+        "partial_writes": [
+          {"call": "0x1801cf890", "offset": "0x50", "size": "0x20"},
+          {"call": "0x1801cf91a", "offset": "0x1c", "size": "4"},
+          {"call": "0x1801cf975", "offset": "0x18", "size": "4"},
+          {"call": "0x1801cfa38", "offset": "0x60", "size": "0x10"},
+          {"call": "0x1801cfe38", "offset": "0x14", "size": "4"}
+        ],
+        "dirty_followup": "Each partial write is followed by a dirty-flag read/write; the outer loop walks [rdi+0x80] and per-entity arrays rooted at [rdi+0x60]/[rdi+0x68]."
+      },
+      "native_storage": {
+        "managed_wrapper": "0x183d689c0",
+        "unityplayer_endpoint": "0x1801eb9a0",
+        "partial_copy_core": "0x1810d91f0",
+        "record_formula": "manager+0x38 + sharedDataIndex*0x8c + offset",
+        "interpretation": "The Burst path writes native 0x8c shared-data records through the exact SetEntitySharedDataPartial ABI."
+      },
+      "gpu_boundary": {
+        "burst_external_name_counts": {
+          "ComputeBuffer": 0,
+          "ComputeShader": 0,
+          "CommandBuffer": 0,
+          "GpuScene": 0,
+          "UploadPerDraw": 0,
+          "_UploadBuffer": 0,
+          "GPUDriven": 0,
+          "Dispatch": 0
+        },
+        "result": "CPU record maintenance only; this does not produce the 84-byte prefix or identify channel 2/resource +0xd0 or UploadPerDrawParams kernel 7."
+      },
+      "report": "reports/assets/character_recovery/burst_shared_data_producer_contract.md"
+    },
     "conclusion": "The source-backed producer and Unity native storage/resource ABI for the character custom per-draw channel are recovered (CHARACTER_PARAMS_INDEX=2; renderer +0x160; resource +0xd0), and refreshed Vulkan reflection closes the HGRP/Lit b3 equivalent at descriptor set 0/binding 33, vector member w. The remaining open edge is channel 2 into that resource binding. Do not synthesize a packed word from _ShadingModel, UnityPerDraw, channel 2, or zero/default values. Keep Target2.w and Target3.w neutral until the channel-to-resource upload or an authorized target-frame capture is recovered."
   },
   "activation_policy": "default-off-fail-closed"
