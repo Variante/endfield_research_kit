@@ -142,6 +142,18 @@ record maintenance, not proof of the 84-byte pack or kernel-7/channel-2
 upload; durable details are in
 `reports/assets/character_recovery/burst_shared_data_producer_contract.md`.
 
+The first native consumer after that dirty-record edge is now bounded as
+well. UnityPlayer `0x1810d25c0..0x1810d3198` resolves each entity to the same
+`0x8c` record, checks `record+0x70`, and copies `record+0x00..+0x40` as five
+16-byte lanes into `output + entry*0x100 + 0xb0..+0xf0`. This closes the
+CPU-side `0x8c`-record -> `0x100`-stride staging step and preserves the exact
+80-byte shared per-draw payload width. It has no direct GPU upload, command
+recording, dispatch, or kernel-7 edge; the subsequent `0x100`-to-`0x54`
+`_UploadBuffer` conversion and channel-2 resource `+0xd0` binding remain
+fail-closed. Keep the numeric staging `+0xd0` lane separate from the
+renderer resource's channel-2 `+0xd0`; details are in
+`reports/assets/character_recovery/factory_record_to_100_staging_contract.md`.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable

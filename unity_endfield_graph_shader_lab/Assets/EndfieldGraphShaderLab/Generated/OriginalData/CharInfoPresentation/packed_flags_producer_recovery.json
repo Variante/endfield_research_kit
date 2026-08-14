@@ -1480,11 +1480,11 @@
               "record_effect": "The endpoint writes the partial payload into the native entity shared-data record; the existing UnityPlayer body resolves destination manager +0x38, index*0x8c, and caller offset."
             }
           },
-          "interpretation": "This is the first positive dynamic/Burst producer chain from a per-draw configuration array into the same factory shared-data partial-update service previously recovered from ordinary managed writers. It closes the CPU-side producer and dirty-flag edge for the fallback ApplyPerDrawRender path, but it does not prove that the resulting 0x8c record or 80-byte prefix is packed into _UploadBuffer, dispatched with GpuSceneDirtyUpdateCS kernel 7, or bound through channel 2/resource +0xd0.",
-          "next_gap": "Recover the post-dirty record consumer/packer (including the feature-enabled 0x186a33f58 branch) and look for the 84-byte source stride or the UploadPerDrawParams dispatch; keep GPU binding fail-closed until that edge is explicit."
+          "interpretation": "This is the first positive dynamic/Burst producer chain from a per-draw configuration array into the same factory shared-data partial-update service previously recovered from ordinary managed writers. It closes the CPU-side producer and dirty-flag edge for the fallback ApplyPerDrawRender path. The native 0x8c-record consumer is now recovered below, but the later _UploadBuffer pack, GpuSceneDirtyUpdateCS kernel-7 dispatch, and channel-2/resource +0xd0 binding remain open.",
+          "next_gap": "Use the recovered dirty-record consumer as the anchor for the indirect 0x100-staging consumer; recover the 0x54/84-byte _UploadBuffer pack and UploadPerDrawParams kernel-7 dispatch, keeping GPU binding fail-closed until that edge is explicit."
         },
         "dirty_record_staging_consumer": {
-          "status": "native-dirty-record-consumer-staging-boundary-identified-upload-edge-open",
+          "status": "positive-native-0x8c-to-0x100-staging-consumer-upload-edge-open",
           "source": "Installed UnityPlayer.dll PData-scoped disassembly; current UnityPlayer binary was checked directly rather than inferred from the managed resolver.",
           "ecs_staging_dispatch_boundary": {
             "status": "hypergryph-ecs-table-dispatch-classified-no-gpu-edge",
@@ -1498,8 +1498,8 @@
               "UnityPlayer .rdata VA 0x1823d4254 (metadata RVA 0x204a398)",
               "UnityPlayer .tvm0 VA 0x1824d1058/0x1824d1060"
             ],
-            "classification_evidence": "The body emits the assertion `entityTypeData.memory == nullptr` and operates on HyperGryph ECS entity-type/record arrays. Its five-lane copy into the 0x100-stride staging entry is CPU-side ECS work; no ComputeShader, CommandBuffer, buffer upload, or dispatch target is present.",
-            "boundary": "No direct E8 caller or raw code-pointer xref reaches the table entry, so invocation remains an indirect Burst/job scheduler boundary. Do not equate this ECS staging table with the 84-byte _UploadBuffer source until an explicit pack and UploadPerDrawParams kernel-7 consumer is recovered."
+            "classification_evidence": "The body emits the assertion `entityTypeData.memory == nullptr` and operates on HyperGryph ECS entity-type/record arrays. Its five-lane copy from the same 0x8c dirty record into the 0x100-stride staging entry is CPU-side ECS work; no ComputeShader, CommandBuffer, buffer upload, or dispatch target is present.",
+            "boundary": "No direct E8 caller or raw code-pointer xref reaches the table entry, so invocation remains an indirect Burst/job scheduler boundary. The native record-to-0x100 staging step is positive, but the later 0x100-to-0x54 _UploadBuffer conversion and UploadPerDrawParams kernel-7 consumer remain open."
           },
           "native_pointer": "0x1810d25c0",
           "function_range": "0x1810d25c0..0x1810d3198",
@@ -1519,10 +1519,11 @@
               "0x18065a9b0/0x18137d370/0x180303e70 (allocation/error helpers)",
               "0x18023c920/0x180424d60/0x180424ec0/0x180425030/0x1804251a0/0x180425310/0x180425480/0x1804255f0/0x1804258d0/0x18033b740 (native container/material helpers)"
             ],
-            "result": "No ComputeBuffer upload, SetBuffer/property bind, command recording, immediate dispatch, GpuSceneDirtyUpdateCS kernel-7 dispatch, or explicit 84-byte prefix is present in this body.",
+            "result": "No ComputeBuffer upload, SetBuffer/property bind, command recording, immediate dispatch, GpuSceneDirtyUpdateCS kernel-7 dispatch, or literal 0x54/84-byte source pack is present in this body.",
             "caller_scan": "No direct E8 caller or raw little-endian code-pointer xref to 0x1810d25c0/0x1810d26bf was found in the installed UnityPlayer image; invocation is therefore likely an indirect scheduler/vtable callback and remains unresolved."
           },
-          "interpretation": "This is the first positive native consumer after the factory dirty flag: it reads the same 0x8c record and stages the exact 80-byte payload into a per-entry 0x100-byte render-side structure. It materially narrows the missing edge, but the staging structure is not proven to be the 84-byte _UploadBuffer source or the resource +0xd0 channel-2 buffer.",
+          "interpretation": "This is the first positive native consumer after the factory dirty flag: it reads the same 0x8c record and stages the exact five-Vector4/80-byte payload into a per-entry 0x100-byte render-side structure. This closes the CPU-side record-to-staging step, but the staging structure is not proven to be the 0x54/84-byte _UploadBuffer source or the resource +0xd0 channel-2 buffer.",
+          "report": "reports/assets/character_recovery/factory_record_to_100_staging_contract.md",
           "feature_enabled_branch_check": {
             "native_pointer": "0x186a33f58",
             "range": "0x186a33f58..0x186a341a0",
@@ -1688,7 +1689,7 @@
             },
             "interpretation": "Step2 is a second CPU-side factory/ECS maintenance pass that happens to form the same 0x8c record address. Its component compaction and typed-copy callees provide no post-staging pack, 84-byte prefix, shader dispatch, or resource binding edge. The scheduler/consumer boundary therefore remains indirect and the staging-to-_UploadBuffer edge stays fail-closed."
           },
-          "next_gap": "Recover the indirect caller and the consumer of the 0x100-stride staging array; specifically search for a pack step that prefixes an entity/index dword and yields the shader's 84-byte source stride, then tie that upload to UploadPerDrawParams kernel 7 and resource +0xd0."
+          "next_gap": "Recover the indirect consumer of the 0x100-stride staging array; specifically identify any pack step that prefixes an entity/index dword and yields the shader's 0x54/84-byte source stride, then tie that upload to UploadPerDrawParams kernel 7 and resource +0xd0."
         }
       },
       "related_shared_data_writers": {
