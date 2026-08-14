@@ -727,7 +727,12 @@ only stable interpretation and priorities.
    updates native context state, while no-copy enters indirect helpers
    `0x180B3E5C0`/`0x180A95EB0`. The remaining HGTree sink is therefore the
    dynamic command-buffer/render-graph playback edge plus the
-   runtime-indirect resource-node consumer.
+   runtime-indirect resource-node consumer. Ordinary
+   `CommandBuffer::Internal_DrawRendererList_Injected` is a separate route:
+   UnityPlayer `0x1801713D0` resolves through `0x180A60190`'s indirect
+   renderer/resource-state helper, while the HGTree body `0x1801719B0` never
+   calls it. Keep that ordinary resource resolver separate from HGTree tree
+   submission; neither is a proven final playback sink.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
