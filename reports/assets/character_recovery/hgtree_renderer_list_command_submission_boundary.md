@@ -3,10 +3,11 @@
 ## Verdict
 
 The installed build now pins the managed HGTree list path to the native
-CommandBuffer tree-list enqueue path. This is the first checked edge from the
-component-67 LOD/list work into a renderer-list command producer. The native
-GPU submission/resource consumer after the tree helper remains opaque and is
-still fail-closed; this is not a retail frame-parity claim.
+CommandBuffer tree-list internal-call boundary. The checked native body does
+not yet prove a GPU submission or command-stream opcode: its visible tail is
+tree-record state maintenance and dynamic-array cleanup. The downstream
+command/resource consumer remains opaque and fail-closed; this is not a retail
+frame-parity claim.
 
 ## Source pins
 
@@ -40,11 +41,21 @@ still fail-closed; this is not a retail frame-parity claim.
    null command buffer, then tail-jumps to the resolved internal call
    `UnityEngine.Rendering.CommandBuffer::AddDrawECSTreeRendererList(System.UInt32)`.
 4. The current UnityPlayer CommandBuffer table maps that call to
-   `0x180149500`. Its body converts the incoming opaque handles through the
-   shared runtime converter and reaches the tree-specific helper
-   `0x180A16870`. This is the bounded native command-producer edge after the
-   renderer-list handle; the helper's downstream GPU/command-stream consumer
-   is not identified by static evidence in this pass.
+   `0x180149500`. Its body runs four calls through one runtime-owned function
+   slot (`0x1821BE708`, a non-file-backed/BSS slot in the static image), then
+   reaches `0x180A16870` when a converted handle is available.
+5. `0x180A16870` is not a proven draw enqueue. It walks the object vector
+   `[+0xA0,+0xA8)` and calls `0x180A2E500` for each record; that helper reads
+   record flags at `+0x50`, updates state/LOD values at `+0x24/+0x28`, and the
+   caller resets the dynamic-array end `[+0x230]` to its begin `[+0x228]`.
+   The adjacent `0x180A168D0` and the callers of `0x180A12010` show the same
+   record-vector/LOD-state family (weighted state updates, removal, and
+   cleanup), not a visible graphics API, dispatch, or command opcode.
+6. Therefore this pass closes a native HGTree state/list-maintenance edge
+   after the managed internal call, while the actual command recording or GPU
+   resource consumer remains unresolved. The next bounded candidates are the
+   runtime-owned converter slot and the later command-buffer execution path;
+   do not label `0x180A16870` itself as GPU submission.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -57,4 +68,3 @@ python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^Un
 python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\tree_render_metadata_current.json --out scratch\\reverse_engineering\\hgtree_component67_producers\\tree_render_native_map_current.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\tree_render_native_map_current.md
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A16870 0x180A160F0
 ```
-
