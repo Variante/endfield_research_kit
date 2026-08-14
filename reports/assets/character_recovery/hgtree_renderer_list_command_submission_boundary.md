@@ -466,6 +466,25 @@ claim.
     resource resolution and HGTree tree-list submission are statically split;
     neither one closes the missing renderer-list playback consumer.
 
+24. The remaining native helper in the tree internal-call body is now bounded
+    as a payload hash check, not a hidden renderer-list writer. At
+    `0x180171A07`, `AddDrawECSTreeRendererList` calls shared helper
+    `0x180A5C5C0`. That helper first rejects a null payload, uses
+    `0x180769E20` to normalize the inline/indirect byte span, then seeds an
+    accumulator with `0xffffffff` and calls `0x18065C0C0`. The latter is a
+    byte-at-a-time CRC loop over the bounded span; `A5C5C0` returns the
+    bitwise-not accumulator and only enters the ordinary error logger when the
+    validation flag is false. An exhaustive direct-xref scan finds the same
+    helper shared by unrelated command APIs (`Internal_DrawProcedural...`,
+    instanced/indirect mesh draws, occlusion/random-write/scissor commands,
+    `CopyTexture`, and `Blit_Identifier`) in addition to the HGTree entry.
+    Neither `A5C5C0` nor `65C0C0` writes a command opcode, touches the
+    graphics-context vtable, or dispatches API-2 `+0xDE8`. This closes the
+    apparent late-bound call in the tree body as generic managed-payload
+    validation and leaves the actual renderer-list playback edge after the
+    internal call (or in the runtime-indirect resource consumer), still
+    fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -524,4 +543,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x189C0A130 0x189C0A1AA
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_gameassembly_direct_calls.py 0x189C0A130 0x18B3FBFA4 0x18B3E3FE8
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A38
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180A5C5C0 0x180A5C650
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18065C0C0 0x18065C0F0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A5C5C0
 ```
