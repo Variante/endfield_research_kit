@@ -170,6 +170,16 @@ selection. This is a resource-maintenance/reclamation consumer, not the missing
 upload edge fail-closed; details are in
 `reports/assets/character_recovery/factory_resource_maintenance_consumer_boundary.md`.
 
+The UnityPlayer internal-call/native upstream boundary is also closed for the
+known GPUDriven route: V2 `PopulatePerFrameData` wrapper `0x1801e98f0` calls
+`0x1810ff600`, with upstreams `0x18127c730` and `0x181280530` selecting V1/V2
+branches and passing `xor r9d,r9d` into their dispatch helpers. The checked
+route therefore selects GPUDriven kernel 0; it does not load factory `0x8c`
+records, pack `_UploadBuffer`'s 84-byte payload, or select `UploadPerDrawParams`
+kernel 7. This is a negative producer result, not a channel-2 binding proof;
+the resource-to-descriptor upload edge remains fail-closed. Details are in
+`reports/assets/character_recovery/gpudriven_native_upstream_kernel_zero_boundary.md`.
+
 The indirect GPUDriven tail is now resolved for the installed graphics-context
 constructor. `0x180725dc0` reads TLS index `0x182111300` and resolves the
 context through `TlsGetValue` (`0x181cb0980`); setter `0x180727ea0` stores the
