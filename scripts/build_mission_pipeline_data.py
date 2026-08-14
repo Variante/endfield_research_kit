@@ -208,6 +208,8 @@ if __package__:
     from .mission_pipeline import runtime_trace_projection
     from .mission_pipeline import source_order_publication
     from .mission_pipeline import story_order_projection
+    from .mission_pipeline import story_binding_coverage_projection
+    from .mission_pipeline import story_binding_coverage_publisher
     from .mission_pipeline import story_trigger_route_projection
 else:
     from common import sha256_file as sha256_path
@@ -225,6 +227,8 @@ else:
     from mission_pipeline import runtime_trace_projection
     from mission_pipeline import source_order_publication
     from mission_pipeline import story_order_projection
+    from mission_pipeline import story_binding_coverage_projection
+    from mission_pipeline import story_binding_coverage_publisher
     from mission_pipeline import story_trigger_route_projection
 
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
@@ -5781,596 +5785,95 @@ def build_story_binding_coverage(
         or bool(row.get("intersectsAuthoredMerge"))
         for row in tracked_proxy_topology_rows
     )
-    report = {
-        "schemaVersion": 19,
-        "generated": int(time.time()),
-        "language": language,
-        "policy": (
-            "Original exported game data and current-build native serialization only; "
-            "OCR, manual overrides, and gameplay observations do not promote a connection. "
-            "Story rows whose nominal owner is not a pipeline mission enter the denominator "
-            "only when an accepted generated pipeline edge connects them."
-        ),
-        "sources": {
-            "pipelineIndex": repo_path(pipeline_index_path),
-            "storyIndex": repo_path(story_index_path),
-            "missionSidecars": repo_path(mission_sidecar_root),
-            "definitionOnlyAudioMetadata": definition_only_classification["source"],
-            "luaPlaybackAudit": lua_playback_evidence["auditReport"],
-            "luaPlaybackAuditSha256": lua_playback_evidence["auditSha256"],
-            "cinematicQueueRuntimeAudit": cinematic_report,
-            "levelSequenceTextAssets": repo_path(
-                DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT
-            ),
-            "actionBaseFormatterTable": str(
-                ACTIONBASE_FORMATTER_NAME_AUDIT.get("sourceFile") or ""
-            ),
-            "callServerCallbackAudit": repo_path(
-                CALLSERVER_CALLBACK_AUDIT_JSON
-            ),
-        },
-        "counts": {
-            "pipelineMissions": len(mission_ids),
-            "missionSidecarsRead": sidecars_read,
-            "uniqueStoryFiles": len(story_rows),
-            "connectedUniqueStoryFiles": len(connected_keys),
-            "connectedCrossOwnerStoryFiles": len(connected_cross_owner_keys),
-            "unlinkedUniqueStoryFiles": len(unlinked),
-            "connectedMissionPlacements": sum(len(keys) for keys in connected_by_mission.values()),
-            "connectionEvidenceRows": evidence_row_count,
-            "storyTriggerRoutes": trigger_route_count,
-            "storyFilesWithTriggerRoutes": story_files_with_trigger_routes,
-            "trackedProxyCandidateTopologyContexts": len(
-                tracked_proxy_topology_rows
-            ),
-            "trackedProxyCandidateTopologyRoutes": (
-                tracked_proxy_topology_route_count
-            ),
-            "trackedProxyCandidateTopologyBranchContexts": (
-                tracked_proxy_branch_context_count
-            ),
-            "trackedProxyCandidateTopologyForkSpanningContexts": sum(
-                bool(row.get("spansAuthoredForkArms"))
-                for row in tracked_proxy_topology_rows
-            ),
-            "trackedProxyCandidateTopologyMergeContexts": sum(
-                bool(row.get("intersectsAuthoredMerge"))
-                for row in tracked_proxy_topology_rows
-            ),
-            "trackedProxyCandidateTopologyFailures": len(
-                tracked_proxy_topology_failures
-            ),
-            "nativeCinematicProducerStoryFiles": sum(
-                any(route.get("nativeCinematicProducerRoutes") for route in row.get("routes") or [])
-                for row in story_trigger_manifest.values()
-            ),
-            "nativeCinematicProducerRouteAttachments": sum(
-                len(route.get("nativeCinematicProducerRoutes") or [])
-                for row in story_trigger_manifest.values()
-                for route in row.get("routes") or []
-            ),
-            "contextOnlyTriggerRouteFiles":
-                context_only_trigger_route_files,
-            "contextOnlyTriggerRoutes": context_only_trigger_route_count,
-            "definitionOnlyInteractiveConfigFiles": len({
-                key
-                for key in definition_only_interactive_config_keys
-                if key in story_trigger_manifest
-            }),
-            "definitionOnlyInteractiveConfigRoutes": sum(
-                len(story_trigger_manifest[key].get("routes") or [])
-                for key in definition_only_interactive_config_keys
-                if key in story_trigger_manifest
-            ),
-            "unlinkedStoryFilesWithTriggerRoutes": unlinked_files_with_trigger_routes,
-            "rootPlaybackAliasFiles": len({
-                row["playableAssetStoryKey"]
-                for row in root_playback_alias_rows
-            }),
-            "rootPlaybackAliasRows": len(root_playback_alias_rows),
-            "composedRootPlaybackAliasFiles": len({
-                row["playableAssetStoryKey"]
-                for row in composed_root_playback_alias_rows
-            }),
-            "composedRootPlaybackAliasRows":
-                len(composed_root_playback_alias_rows),
-            "rejectedStoryPlaybackCandidates": sum(
-                len(rows)
-                for key, rows in rejected_playback_by_key.items()
-                if key in story_rows
-            ),
-            "scannedLuaStoryPlaybackCalls":
-                lua_playback_evidence["scannedPlaybackCalls"],
-            "acceptedLuaExactPlaybackCalls": len(
-                lua_playback_evidence["acceptedExactPlaybackCalls"]
-            ),
-            "acceptedLuaTableCarrierCalls":
-                lua_playback_evidence["acceptedTableCarrierCalls"],
-            "rejectedLuaCaseMismatchCalls": len(
-                lua_playback_evidence["rejectedCaseMismatchCalls"]
-            ),
-            "runtimeLuaHandleDispatcherCalls":
-                lua_playback_evidence["runtimeHandleDispatcherCallCount"],
-            "runtimeLuaHandleDispatcherFamilies":
-                lua_playback_evidence["runtimeHandleDispatcherFamilyCount"],
-            "unresolvedLuaAuthoredPlaybackCalls":
-                lua_playback_evidence["unresolvedPlaybackCalls"],
-            "missionStateDependencyStoryFiles": len(
-                mission_state_dependency_keys
-            ),
-            "missionStateDependencyCrossOwnerStoryFiles": len(
-                mission_state_dependency_cross_owner_keys
-            ),
-            "missionStateDependencyPlacements": len(
-                mission_state_dependency_placements
-            ),
-            "unlinkedNativePlaybackFiles": len(native_playback_unscoped),
-            "unlinkedNativePlaybackWithoutNamedEvent": len(native_playback_without_named_event),
-            "unresolvedTimelineContainmentFiles": len(unresolved_timeline_containment),
-            "unresolvedDialogTreeNarrativeFiles": len(unresolved_dialog_tree_containment),
-            "unlinkedDialogTreeNarrativeFiles": len(unlinked_dialog_tree_containment),
-            "unresolvedDialogTreeLeftSubtitleFiles": len(
-                unresolved_dialog_tree_left_subtitle
-            ),
-            "unlinkedDialogTreeLeftSubtitleFiles": len(
-                unlinked_dialog_tree_left_subtitle
-            ),
-            "unresolvedDialogTreeStoryPlaybackFiles": len(
-                unresolved_dialog_tree_story_playback
-            ),
-            "unlinkedDefinitionOnlyFiles": len(unlinked_definition_only),
-            "nonMissionContentFiles": len(unlinked_non_mission_content),
-            "unlinkedDefinitionOnlyAudioMetadataFiles": definition_only_class_counts.get(
-                "original_audio_metadata_without_playback_consumer",
-                0,
-            ),
-            "unlinkedDefinitionOnlyEmptyAudioLikelyLegacyFiles": definition_only_class_counts.get(
-                "explicit_empty_audio_metadata_likely_legacy_definition",
-                0,
-            ),
-            "unlinkedDefinitionOnlyWithoutAudioMetadataFiles": definition_only_class_counts.get(
-                "no_audio_metadata_or_playback_consumer_recovered",
-                0,
-            ),
-            "missionlessSubGameRows": len(missionless_nodes),
-            "missionlessSubGameStoryFiles": len(missionless_story_keys),
-            "missionlessSubGameStoryPlacements": missionless_story_placements,
-            "missionlessNativeRuntimeRows": len(missionless_runtime_nodes),
-            "missionlessNativeRuntimeStoryFiles": len(missionless_runtime_story_keys),
-            "missionlessNativeRuntimeStoryPlacements": missionless_runtime_story_placements,
-            "missionlessNativeRuntimeProducerRoutes": sum(
-                len(node.get("localProducerRoutes") or [])
-                for node in missionless_runtime_nodes
-            ),
-            "missionlessNativeRuntimePlaybackGates": sum(
-                len(node.get("playbackGates") or [])
-                for node in missionless_runtime_nodes
-            ),
-            "missionlessNativeRuntimePlaybackGateStoryFiles": len({
-                story["key"]
-                for node in missionless_runtime_nodes
-                if node.get("playbackGates")
-                for story in node.get("storyFiles") or []
-            }),
-            "missionlessNativeRuntimePostPlaybackControls": sum(
-                len(node.get("postPlaybackControls") or [])
-                for node in missionless_runtime_nodes
-            ),
-            "missionlessNativeRuntimePostPlaybackBranchPoints": sum(
-                len(control.get("branchPointLocalIds") or [])
-                for node in missionless_runtime_nodes
-                for control in node.get("postPlaybackControls") or []
-            ),
-            "missionlessNativeRuntimePostPlaybackServerHandoffs": sum(
-                len(control.get("serverHandoffs") or [])
-                for node in missionless_runtime_nodes
-                for control in node.get("postPlaybackControls") or []
-            ),
-            "missionlessNativeRuntimePostPlaybackCallbackHeaderUids": sum(
-                len(handoff.get("possibleCallbackHeaderUIDs") or [])
-                for node in missionless_runtime_nodes
-                for control in node.get("postPlaybackControls") or []
-                for handoff in control.get("serverHandoffs") or []
-            ),
-            "callServerActions": callback_audit_summary.get(
-                "callServerActions", 0
-            ),
-            "callServerCallbackOutputUids": callback_audit_summary.get(
-                "callbackOutputUids", 0
-            ),
-            "callServerExactCallbackHeaders": callback_audit_summary.get(
-                "exactCallbackHeaders", 0
-            ),
-            "callServerCallbackHeadersReachingStory": callback_audit_summary.get(
-                "callbackHeadersReachingStory", 0
-            ),
-            "callServerUnresolvedCallbackOutputs": callback_audit_summary.get(
-                "unresolvedCallbackOutputs", 0
-            ),
-            "postPlaybackCallServerExactContracts": (
-                post_playback_callserver_summary.get("exactContracts", 0)
-            ),
-            "postPlaybackCallServerUnresolvedContracts": (
-                post_playback_callserver_summary.get("unresolvedContracts", 0)
-            ),
-            "postPlaybackLevelSequenceActions": level_sequence_asset_summary.get(
-                "typedActionPlacements", 0
-            ),
-            "postPlaybackLevelSequenceIds": level_sequence_asset_summary.get(
-                "serializedLevelSequenceIds", 0
-            ),
-            "postPlaybackLevelSequenceExactAssets": level_sequence_asset_summary.get(
-                "exactResolvedLevelSequenceIds", 0
-            ),
-            "postPlaybackLevelSequenceUnresolvedIds": level_sequence_asset_summary.get(
-                "unresolvedLevelSequenceIds", 0
-            ),
-            "postPlaybackLevelSequenceRelatedOriginalFiles": (
-                level_sequence_asset_summary.get("relatedOriginalFiles", 0)
-            ),
-            "postPlaybackActionPlacements": action_name_summary.get(
-                "actionPlacements", 0
-            ),
-            "postPlaybackFormatterNamedActions": action_name_summary.get(
-                "formatterNamedActionPlacements", 0
-            ),
-            "postPlaybackFallbackNamedActions": action_name_summary.get(
-                "fallbackNamedActionPlacements", 0
-            ),
-            "postPlaybackUnresolvedActionShapes": action_name_summary.get(
-                "unresolvedOutsideActionBaseShapes", 0
-            ),
-            "postPlaybackVariableSetters": variable_bridge_summary.get(
-                "postPlaybackVariableSetters", 0
-            ),
-            "postPlaybackVariableExactListenerMatches": (
-                variable_bridge_summary.get("exactSetterListenerMatches", 0)
-            ),
-            "postPlaybackVariableCrossStoryListenerMatches": (
-                variable_bridge_summary.get(
-                    "crossStorySetterListenerMatches", 0
-                )
-            ),
-            "partiallyConnectedDialogTreeNarrativeFiles": len(
-                unresolved_dialog_tree_containment & connected_keys
-            ),
-        },
-        "byKind": kind_counts,
-        "relationEvidenceRows": dict(sorted(relation_counts.items())),
-        "evidenceTierRows": dict(sorted(evidence_tier_counts.items())),
-        "evidenceTierUniqueStoryFiles": {
-            tier: len(keys)
-            for tier, keys in sorted(connected_keys_by_evidence_tier.items())
-        },
-        "missionStateStoryDependencies": sorted(
-            mission_state_dependency_rows,
-            key=lambda row: (
-                natural_quest_key(str(row.get("missionId") or "")),
-                natural_quest_key(str(row.get("key") or "")),
-            ),
-        ),
-        "storyTriggerManifest": story_trigger_manifest,
-        "trackedProxyCandidateTopology": {
-            "schema": "trackedProxyCandidateQuestTopologyAudit.v1",
-            "status": (
-                "validation_failed"
-                if tracked_proxy_topology_failures
-                else "validated"
-            ),
-            "counts": {
-                "contexts": len(tracked_proxy_topology_rows),
-                "routes": tracked_proxy_topology_route_count,
-                "branchContexts": tracked_proxy_branch_context_count,
-                "forkSpanningContexts": sum(
-                    bool(row.get("spansAuthoredForkArms"))
-                    for row in tracked_proxy_topology_rows
-                ),
-                "mergeContexts": sum(
-                    bool(row.get("intersectsAuthoredMerge"))
-                    for row in tracked_proxy_topology_rows
-                ),
-                "topologyClasses": dict(sorted(
-                    tracked_proxy_topology_class_counts.items()
-                )),
-                "validationFailures": len(
-                    tracked_proxy_topology_failures
-                ),
-            },
-            "rows": tracked_proxy_topology_rows,
-            "validationFailures": tracked_proxy_topology_failures[:100],
-            "evidenceBoundary": (
-                "This audit classifies candidate quests in original "
-                "MissionRuntime topology. The original binary keeps proxy "
-                "active-row selection and quest state application separate, "
-                "so no dialog is assigned to a quest arm and no Story order "
-                "edge is added."
-            ),
-        },
-        "postPlaybackActionNameAudit": post_playback_action_name_audit,
-        "callServerCallbackAudit": compact_callback_audit,
-        "postPlaybackLevelSequenceAssetAudit": (
-            post_playback_level_sequence_asset_audit
-        ),
-        "luaStoryPlaybackEvidence": lua_playback_evidence,
-        "rootPlaybackAliases": root_playback_alias_rows,
-        "composedRootPlaybackAliases":
-            composed_root_playback_alias_rows,
-        "missionStateDependencyCrossOwnerStoryKeys": sorted(
-            mission_state_dependency_cross_owner_keys,
-            key=natural_quest_key,
-        ),
-        "nativePlaybackEventFamilies": {
-            event_name: len(keys)
-            for event_name, keys in sorted(native_playback_event_keys.items())
-        },
-        "nativePlaybackEventFamilyKeys": {
-            event_name: sorted(keys, key=natural_quest_key)
-            for event_name, keys in sorted(native_playback_event_keys.items())
-        },
-        "unlinkedNativePlaybackWithoutNamedEventKeys": sorted(
-            native_playback_without_named_event,
-            key=natural_quest_key,
-        ),
-        "unlinked": unlinked,
-        "connectedCrossOwnerStoryKeys": sorted(
-            connected_cross_owner_keys,
-            key=natural_quest_key,
-        ),
-        "unlinkedNativePlaybackKeys": sorted(native_playback_unscoped, key=natural_quest_key),
-        "unresolvedTimelineContainmentKeys": sorted(unresolved_timeline_containment, key=natural_quest_key),
-        "unresolvedDialogTreeNarrativeKeys": sorted(
-            unresolved_dialog_tree_containment,
-            key=natural_quest_key,
-        ),
-        "unlinkedDialogTreeNarrativeKeys": sorted(
-            unlinked_dialog_tree_containment,
-            key=natural_quest_key,
-        ),
-        "unresolvedDialogTreeLeftSubtitleKeys": sorted(
-            unresolved_dialog_tree_left_subtitle,
-            key=natural_quest_key,
-        ),
-        "unlinkedDialogTreeLeftSubtitleKeys": sorted(
-            unlinked_dialog_tree_left_subtitle,
-            key=natural_quest_key,
-        ),
-        "unresolvedDialogTreeStoryPlaybackKeys": sorted(
-            unresolved_dialog_tree_story_playback,
-            key=natural_quest_key,
-        ),
-        "unlinkedDefinitionOnlyKeys": sorted(
-            unlinked_definition_only,
-            key=natural_quest_key,
-        ),
-        "definitionOnlyNegativeConsumerClassification": definition_only_classification,
-        "nonMissionContentKeys": [
-            {"key": key, **unlinked_non_mission_content[key]}
-            for key in sorted(unlinked_non_mission_content, key=natural_quest_key)
-        ],
-        "missionlessSubGamePlaybackNodes": missionless_nodes,
-        "missionlessNativeRuntimeNodes": missionless_runtime_nodes,
-        "postPlaybackVariableBridgeAudit": (
-            post_playback_variable_bridge_audit
-        ),
-        "dynamicSceneIdentityCrossReferences": dynamic_scene_identity,
-        "partiallyConnectedDialogTreeNarrativeKeys": sorted(
-            unresolved_dialog_tree_containment & connected_keys,
-            key=natural_quest_key,
-        ),
-    }
-    report_root.mkdir(parents=True, exist_ok=True)
-    stem = f"mission_pipeline_story_binding_coverage_{language}"
-    write_json(report_root / f"{stem}.json", report)
-    counts = report["counts"]
-    lines = [
-        f"# Mission Pipeline Story Binding Coverage ({language})",
-        "",
-        report["policy"],
-        "",
-        "## Summary",
-        "",
-        f"- Pipeline missions: `{counts['pipelineMissions']}`",
-        f"- Unique Story files: `{counts['uniqueStoryFiles']}`",
-        f"- Connected unique Story files: `{counts['connectedUniqueStoryFiles']}`",
-        f"- Connected cross-owner Story files admitted by exact pipeline edges: `{counts['connectedCrossOwnerStoryFiles']}`",
-        f"- Unlinked unique Story files: `{counts['unlinkedUniqueStoryFiles']}`",
-        f"- Connected mission placements: `{counts['connectedMissionPlacements']}`",
-        f"- Connection evidence rows: `{counts['connectionEvidenceRows']}`",
-        f"- Normalized Story trigger/context routes: `{counts['storyTriggerRoutes']}`",
-        f"- Validated tracked-proxy candidate topology contexts: `{counts['trackedProxyCandidateTopologyContexts']}` across `{counts['trackedProxyCandidateTopologyRoutes']}` dialog routes",
-        f"- Those intersecting authored fork/merge structure: `{counts['trackedProxyCandidateTopologyBranchContexts']}` (fork-spanning `{counts['trackedProxyCandidateTopologyForkSpanningContexts']}`, merge `{counts['trackedProxyCandidateTopologyMergeContexts']}`)",
-        f"- Tracked-proxy topology validation failures: `{counts['trackedProxyCandidateTopologyFailures']}`",
-        f"- Story files with at least one normalized route: `{counts['storyFilesWithTriggerRoutes']}`",
-        f"- Unlinked Story files with a known trigger/context route: `{counts['unlinkedStoryFilesWithTriggerRoutes']}`",
-        f"- Shipped-Lua Story playback calls scanned: `{counts['scannedLuaStoryPlaybackCalls']}`",
-        f"- Exact-case Lua playback calls admitted: `{counts['acceptedLuaExactPlaybackCalls']}`",
-        f"- Case-mismatched Lua calls rejected by installed-binary proof: `{counts['rejectedLuaCaseMismatchCalls']}`",
-        f"- Runtime Lua handle dispatcher branches: `{counts['runtimeLuaHandleDispatcherCalls']}` in `{counts['runtimeLuaHandleDispatcherFamilies']}` polymorphic queue family",
-        f"- Unresolved authored Lua playback references: `{counts['unresolvedLuaAuthoredPlaybackCalls']}`",
-        f"- Exact root playback alias rows: `{counts['rootPlaybackAliasRows']}`",
-        f"- TimelineAsset Story files reached by those aliases: `{counts['rootPlaybackAliasFiles']}`",
-        f"- Alias rows composed with an independently connected root playback route: `{counts['composedRootPlaybackAliasRows']}`",
-        f"- Story files connected by that composition: `{counts['composedRootPlaybackAliasFiles']}`",
-        f"- Non-owning mission-state dependency Story files: `{counts['missionStateDependencyStoryFiles']}`",
-        f"- Dependency-only Story files whose nominal owner is outside the pipeline: `{counts['missionStateDependencyCrossOwnerStoryFiles']}`",
-        f"- Non-owning mission-state dependency placements: `{counts['missionStateDependencyPlacements']}`",
-        f"- Unlinked files with exact native playback: `{counts['unlinkedNativePlaybackFiles']}`",
-        f"- Exact native playbacks without a named event owner: `{counts['unlinkedNativePlaybackWithoutNamedEvent']}`",
-        f"- Unresolved serialized Timeline containment: `{counts['unresolvedTimelineContainmentFiles']}`",
-        f"- Unresolved typed DialogTree narrative containment: `{counts['unresolvedDialogTreeNarrativeFiles']}`",
-        f"- Unlinked typed DialogTree narrative files: `{counts['unlinkedDialogTreeNarrativeFiles']}`",
-        f"- Unresolved typed DialogTree left-subtitle containment: `{counts['unresolvedDialogTreeLeftSubtitleFiles']}`",
-        f"- Unlinked typed DialogTree left-subtitle files: `{counts['unlinkedDialogTreeLeftSubtitleFiles']}`",
-        f"- Unresolved typed DialogTree Story playback carriers: `{counts['unresolvedDialogTreeStoryPlaybackFiles']}`",
-        f"- Definition-only black-screen files with no current-build playback consumer: `{counts['unlinkedDefinitionOnlyFiles']}`",
-        f"- Those with non-empty original audio metadata only: `{counts['unlinkedDefinitionOnlyAudioMetadataFiles']}`",
-        f"- Those with explicit empty audio mappings (likely legacy definitions): `{counts['unlinkedDefinitionOnlyEmptyAudioLikelyLegacyFiles']}`",
-        f"- Those with no original audio metadata row: `{counts['unlinkedDefinitionOnlyWithoutAudioMetadataFiles']}`",
-        f"- Exact non-mission authored content (speaker radio continuation, character SNS topics, factory guides): `{counts['nonMissionContentFiles']}`",
-        f"- Missionless SubGame runtime nodes with exact playback: `{counts['missionlessSubGameRows']}`",
-        f"- Unique Story files attached to those missionless nodes: `{counts['missionlessSubGameStoryFiles']}`",
-        f"- Missionless SubGame-to-Story placements: `{counts['missionlessSubGameStoryPlacements']}`",
-        f"- Exact missionless native runtime receiver nodes: `{counts['missionlessNativeRuntimeRows']}`",
-        f"- Unique Story files attached to exact runtime receivers: `{counts['missionlessNativeRuntimeStoryFiles']}`",
-        f"- Exact runtime-receiver-to-Story placements: `{counts['missionlessNativeRuntimeStoryPlacements']}`",
-        f"- Exact receiver playback gates: `{counts['missionlessNativeRuntimePlaybackGates']}`",
-        f"- Story files controlled by those exact gates: `{counts['missionlessNativeRuntimePlaybackGateStoryFiles']}`",
-        f"- Exact post-playback control graphs: `{counts['missionlessNativeRuntimePostPlaybackControls']}`",
-        f"- Typed branch points in those graphs: `{counts['missionlessNativeRuntimePostPlaybackBranchPoints']}`",
-        f"- Server handoffs with unresolved handler identity: `{counts['missionlessNativeRuntimePostPlaybackServerHandoffs']}`",
-        f"- Post-playback ActionBase placements named by the complete binary formatter: `{counts['postPlaybackFormatterNamedActions']}` / `{counts['postPlaybackActionPlacements']}`",
-        f"- Remaining action shapes outside ActionBase: `{counts['postPlaybackUnresolvedActionShapes']}`",
-        f"- Typed post-playback LevelSequence action placements: `{counts['postPlaybackLevelSequenceActions']}`",
-        f"- Unique serialized LevelSequence ids: `{counts['postPlaybackLevelSequenceIds']}`",
-        f"- Exact internally validated original LevelSequence TextAssets: `{counts['postPlaybackLevelSequenceExactAssets']}`",
-        f"- Unresolved serialized LevelSequence ids: `{counts['postPlaybackLevelSequenceUnresolvedIds']}`",
-        f"- Typed variable setters after any native Story playback: `{counts['postPlaybackVariableSetters']}`",
-        f"- Exact same-level/script/key Story listener matches: `{counts['postPlaybackVariableExactListenerMatches']}`",
-        f"- Cross-Story matches eligible for a future execution-semantics bridge: `{counts['postPlaybackVariableCrossStoryListenerMatches']}`",
-        f"- Connected files with another unresolved DialogTree parent use: `{counts['partiallyConnectedDialogTreeNarrativeFiles']}`",
-        "",
-        "## By kind",
-        "",
-        "| kind | total | connected | unlinked |",
-        "| --- | ---: | ---: | ---: |",
-    ]
-    for kind, values in kind_counts.items():
-        lines.append(f"| `{kind}` | {values['total']} | {values['connected']} | {values['unlinked']} |")
-    lines.extend([
-        "",
-        "## Shipped-Lua playback census",
-        "",
-        f"Validator: `{lua_playback_evidence['validator']}` / "
-        f"`{lua_playback_evidence['status']}`.",
-        "",
-        lua_playback_evidence["evidenceBoundary"],
-        "",
-        f"Audit: `{lua_playback_evidence['auditReport']}` "
-        f"SHA-256 `{lua_playback_evidence['auditSha256']}`.",
-    ])
-    case_contract_status = lua_playback_evidence.get(
-        "caseResolutionContract"
-    ) or {}
-    lines.append(
-        "Case-resolution native contract: "
-        f"`{case_contract_status.get('status') or 'not_required'}` "
-        f"from `{case_contract_status.get('sourceFile') or '-'}`."
+    report = story_binding_coverage_projection.build_report(
+        ACTIONBASE_FORMATTER_NAME_AUDIT=ACTIONBASE_FORMATTER_NAME_AUDIT,
+        CALLSERVER_CALLBACK_AUDIT_JSON=CALLSERVER_CALLBACK_AUDIT_JSON,
+        DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT=DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT,
+        action_name_summary=action_name_summary,
+        callback_audit_summary=callback_audit_summary,
+        cinematic_report=cinematic_report,
+        compact_callback_audit=compact_callback_audit,
+        composed_root_playback_alias_rows=composed_root_playback_alias_rows,
+        connected_by_mission=connected_by_mission,
+        connected_cross_owner_keys=connected_cross_owner_keys,
+        connected_keys=connected_keys,
+        connected_keys_by_evidence_tier=connected_keys_by_evidence_tier,
+        context_only_trigger_route_count=context_only_trigger_route_count,
+        context_only_trigger_route_files=context_only_trigger_route_files,
+        definition_only_class_counts=definition_only_class_counts,
+        definition_only_classification=definition_only_classification,
+        definition_only_interactive_config_keys=definition_only_interactive_config_keys,
+        dynamic_scene_identity=dynamic_scene_identity,
+        evidence_row_count=evidence_row_count,
+        evidence_tier_counts=evidence_tier_counts,
+        kind_counts=kind_counts,
+        language=language,
+        level_sequence_asset_summary=level_sequence_asset_summary,
+        lua_playback_evidence=lua_playback_evidence,
+        mission_ids=mission_ids,
+        mission_sidecar_root=mission_sidecar_root,
+        mission_state_dependency_cross_owner_keys=mission_state_dependency_cross_owner_keys,
+        mission_state_dependency_keys=mission_state_dependency_keys,
+        mission_state_dependency_placements=mission_state_dependency_placements,
+        mission_state_dependency_rows=mission_state_dependency_rows,
+        missionless_nodes=missionless_nodes,
+        missionless_runtime_nodes=missionless_runtime_nodes,
+        missionless_runtime_story_keys=missionless_runtime_story_keys,
+        missionless_runtime_story_placements=missionless_runtime_story_placements,
+        missionless_story_keys=missionless_story_keys,
+        missionless_story_placements=missionless_story_placements,
+        native_playback_event_keys=native_playback_event_keys,
+        native_playback_unscoped=native_playback_unscoped,
+        native_playback_without_named_event=native_playback_without_named_event,
+        natural_quest_key=natural_quest_key,
+        pipeline_index_path=pipeline_index_path,
+        post_playback_action_name_audit=post_playback_action_name_audit,
+        post_playback_callserver_summary=post_playback_callserver_summary,
+        post_playback_level_sequence_asset_audit=post_playback_level_sequence_asset_audit,
+        post_playback_variable_bridge_audit=post_playback_variable_bridge_audit,
+        rejected_playback_by_key=rejected_playback_by_key,
+        relation_counts=relation_counts,
+        repo_path=repo_path,
+        root_playback_alias_rows=root_playback_alias_rows,
+        sidecars_read=sidecars_read,
+        story_files_with_trigger_routes=story_files_with_trigger_routes,
+        story_index_path=story_index_path,
+        story_rows=story_rows,
+        story_trigger_manifest=story_trigger_manifest,
+        time=time,
+        tracked_proxy_branch_context_count=tracked_proxy_branch_context_count,
+        tracked_proxy_topology_class_counts=tracked_proxy_topology_class_counts,
+        tracked_proxy_topology_failures=tracked_proxy_topology_failures,
+        tracked_proxy_topology_route_count=tracked_proxy_topology_route_count,
+        tracked_proxy_topology_rows=tracked_proxy_topology_rows,
+        trigger_route_count=trigger_route_count,
+        unlinked=unlinked,
+        unlinked_definition_only=unlinked_definition_only,
+        unlinked_dialog_tree_containment=unlinked_dialog_tree_containment,
+        unlinked_dialog_tree_left_subtitle=unlinked_dialog_tree_left_subtitle,
+        unlinked_files_with_trigger_routes=unlinked_files_with_trigger_routes,
+        unlinked_non_mission_content=unlinked_non_mission_content,
+        unresolved_dialog_tree_containment=unresolved_dialog_tree_containment,
+        unresolved_dialog_tree_left_subtitle=unresolved_dialog_tree_left_subtitle,
+        unresolved_dialog_tree_story_playback=unresolved_dialog_tree_story_playback,
+        unresolved_timeline_containment=unresolved_timeline_containment,
+        variable_bridge_summary=variable_bridge_summary,
     )
-    case_contract_failures = case_contract_status.get("validationFailures") or []
-    if case_contract_failures:
-        failure = case_contract_failures[0]
-        lines.append(
-            "- first case-resolution failure: "
-            f"validator=`{failure.get('validator') or '-'}`, "
-            f"gate=`{failure.get('gate') or '-'}`, "
-            f"expected=`{failure.get('expected')!r}`, "
-            f"actual=`{failure.get('actual')!r}`, "
-            f"source=`{failure.get('sourceFile') or '-'}`"
-        )
-    for row in lua_playback_evidence["acceptedExactPlaybackCalls"]:
-        lines.append(
-            f"- admitted `{row['storyKey']}` from `{row['luaFile']}:{row['luaLine']}` "
-            f"(source SHA-256 `{row['luaSourceSha256']}`)"
-        )
-    for row in lua_playback_evidence["rejectedCaseMismatchCalls"]:
-        lines.append(
-            f"- rejected literal `{row['luaLiteral']}` for `{row['storyKey']}` "
-            f"via `{row['auditReport']}`"
-        )
-    if root_playback_alias_rows:
-        lines.extend([
-            "",
-            "## Exact CutsceneRoot playback aliases",
-            "",
-            "These rows prove root-to-TimelineAsset playback, not mission "
-            "ownership or relative Story order.",
-            "",
-            "| root Story key | played TimelineAsset Story key | native mapping |",
-            "| --- | --- | --- |",
-        ])
-        for row in root_playback_alias_rows:
-            lines.append(
-                f"| `{row['rootStoryKey']}` | "
-                f"`{row['playableAssetStoryKey']}` | "
-                f"`{row['nativeMappingId']}` |"
-            )
-    if native_playback_event_keys:
-        lines.extend([
-            "",
-            "## Unlinked exact-native playback event families",
-            "",
-            "One Story file can occur under more than one decoded native event family.",
-            "",
-            "| native event | unique unlinked Story files |",
-            "| --- | ---: |",
-        ])
-        for event_name, keys in sorted(
-            native_playback_event_keys.items(),
-            key=lambda item: (-len(item[1]), item[0]),
-        ):
-            lines.append(f"| `{event_name}` | {len(keys)} |")
-    if missionless_nodes:
-        lines.extend([
-            "",
-            "## Missionless original-data SubGame playback nodes",
-            "",
-            "These are exact SubGame/script/playback attachments, not mission-owned Story bindings.",
-            "",
-            "| SubGame | bound script | task ids | exact Story files | non-owning cross-references |",
-            "| --- | ---: | --- | --- | --- |",
-        ])
-        for node in missionless_nodes:
-            story_keys = ", ".join(f"`{row['key']}`" for row in node["storyFiles"])
-            task_ids = ", ".join(f"`{value}`" for value in node["mainTaskIds"]) or "-"
-            associations = ", ".join(
-                f"`{row['relation']} -> {row['targetId']}`"
-                for row in node.get("associations") or []
-            ) or "-"
-            lines.append(
-                f"| `{node['subGameId']}` | `{node['bindScriptId']}` | {task_ids} | "
-                f"{story_keys} | {associations} |"
-            )
-    if evidence_tier_counts:
-        lines.extend([
-            "",
-            "## Explicit evidence tiers",
-            "",
-            "| tier | evidence rows | unique Story files |",
-            "| --- | ---: | ---: |",
-        ])
-        for tier, row_count in sorted(evidence_tier_counts.items()):
-            lines.append(
-                f"| `{tier}` | {row_count} | {len(connected_keys_by_evidence_tier[tier])} |"
-            )
-    definition_classes = definition_only_classification["keysByClassification"]
-    if definition_classes:
-        lines.extend([
-            "",
-            "## Definition-only negative consumer classification",
-            "",
-            definition_only_classification["policy"],
-            "",
-            "| classification | files |",
-            "| --- | ---: |",
-        ])
-        for classification, keys in definition_classes.items():
-            lines.append(f"| `{classification}` | {len(keys)} |")
-    lines.extend([
-        "",
-        "The JSON report contains the complete unlinked inventory and unresolved native-evidence keys.",
-        "",
-    ])
-    (report_root / f"{stem}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
-    if tracked_proxy_topology_failures:
-        first = tracked_proxy_topology_failures[0]
-        raise RuntimeError(
-            f"validator={first['validator']} gate={first['gate']} "
-            f"mission={first['mission']} story={first['storyKey']} "
-            f"expected={first['expected']!r} actual={first['actual']!r} "
-            f"source={first['sourceFile']} "
-            f"sourceHashes={first['sourceHashes']!r} "
-            f"failures={len(tracked_proxy_topology_failures)}"
-        )
+    return story_binding_coverage_publisher.publish_report(
+        report,
+        report_root=report_root,
+        language=language,
+        kind_counts=kind_counts,
+        lua_playback_evidence=lua_playback_evidence,
+        root_playback_alias_rows=root_playback_alias_rows,
+        native_playback_event_keys=native_playback_event_keys,
+        missionless_nodes=missionless_nodes,
+        evidence_tier_counts=evidence_tier_counts,
+        connected_keys_by_evidence_tier=connected_keys_by_evidence_tier,
+        definition_only_classification=definition_only_classification,
+        tracked_proxy_topology_failures=tracked_proxy_topology_failures,
+        json_writer=write_json,
+    )
     return report
 
 
