@@ -63,8 +63,13 @@ archetypes are imported as labeled source kits rather than finished characters.
   result records, and `+0x20` writeback are now bounded; the shared fallback
   builder reaches the internal renderer-resource pool
   (`0x180555A30/0x180555D30 -> 0x1805592B0 -> 0x1805582A0`, 0x80-byte nodes).
-  This closes HGTree command-stream writer/callback and resource-pool ingress,
-  not the final backend draw/device consumer.
+  The resource callbacks then call record builders (`0x18106BEF0` /
+  `0x18106D020`) which install callback thunks `0x181060EA0` /
+  `0x181060EB0`; those enter `0x18107AE60` / `0x18107B3A0`, obtain the TLS
+  graphics context, walk renderer records, and invoke graphics-context vtable
+  slots. This closes the callback-built backend-facing boundary after the
+  resource pool, but not the concrete device/API implementation behind those
+  slots.
   A pinned direct-code xref census finds only `0x1805583B0` and the two retry
   sites in `0x1805592B0` calling the 0x80-byte node allocator; the population
   body contains only resource callbacks/allocator helpers, while the shared
@@ -657,10 +662,10 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Follow the callback-built resource nodes from `0x1805592B0` (reached by
-   `0x18107AD80`, `0x1810794D0`, and `0x181079320`) into the final backend
-   draw/device consumer, while keeping component 67's LOD/list role and the
-   retail culling survivor list separately bounded.
+1. Resolve the graphics-context vtable implementations used by
+   `0x18107AE60` / `0x18107B3A0` to the concrete device/API submission edge,
+   while keeping component 67's LOD/list role and the retail culling survivor
+   list separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
