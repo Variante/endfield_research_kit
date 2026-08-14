@@ -8,13 +8,13 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.story_builder import level_bindings
+from scripts.story_builder.codecs.leveldata import interactive_layout
 from scripts.story_builder.codecs.leveldata.radio_contexts import (
     parse_airwall_groups as parse_leveldata_airwall_groups,
     parse_function_area_radio_trigger as parse_level_function_area_radio_trigger_zone_entry,
 )
 from scripts.story_builder.level_bindings import (
     _find_exact_bytes_offsets,
-    _leveldata_interactive_final_record_boundary,
     _parse_leveldata_mission_host_name,
     build_leveldata_airwall_mission_radio_contexts,
     build_leveldata_interactive_narrative_story_contexts,
@@ -29,8 +29,6 @@ from scripts.story_builder.level_bindings import (
     build_npc_proxy_segment_script_host_index,
     find_levelscript_brief_data_entries,
     parse_leveldata_levelscript_brief_dictionary,
-    parse_leveldata_interactive_horn_dialog_records,
-    parse_leveldata_interactive_narrative_records,
     parse_level_interactive_narrative_mission_context,
     parse_levelscript_interactive_narrative_maps,
     parse_levelscript_brief_data_entry,
@@ -38,6 +36,38 @@ from scripts.story_builder.level_bindings import (
     resolve_levelscript_dynamic_property_string_list,
     match_levelscript_native_reading_popup_record,
 )
+
+
+def _leveldata_interactive_final_record_boundary(*args, **kwargs):
+    return interactive_layout.leveldata_interactive_final_record_boundary(
+        *args,
+        **kwargs,
+        brief_dictionary_parser=(
+            level_bindings.parse_leveldata_levelscript_brief_dictionary
+        ),
+        narrative_record_parser=(
+            level_bindings._parse_levelscript_interactive_narrative_record
+        ),
+        horn_record_parser=level_bindings._parse_leveldata_horn_dialog_record,
+    )
+
+
+def parse_leveldata_interactive_narrative_records(*args, **kwargs):
+    return interactive_layout.parse_leveldata_interactive_narrative_records(
+        *args,
+        **kwargs,
+        record_parser=(
+            level_bindings._parse_levelscript_interactive_narrative_record
+        ),
+    )
+
+
+def parse_leveldata_interactive_horn_dialog_records(*args, **kwargs):
+    return interactive_layout.parse_leveldata_interactive_horn_dialog_records(
+        *args,
+        **kwargs,
+        record_parser=level_bindings._parse_leveldata_horn_dialog_record,
+    )
 
 
 class LevelDataScriptHostTests(unittest.TestCase):
