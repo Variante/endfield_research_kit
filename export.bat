@@ -402,7 +402,8 @@ echo   "python scripts\export_full_from_game.py --help" to see them.
 echo Companion wrappers:
 echo   export_assets.bat  Assets and audio only, when Story is already current.
 echo   build_updates.bat  Build the Updates tab feed.
-echo   pack_webui.bat     Create split shareable WebUI zips.
+echo   python scripts\pack_webui.py
+echo                      Create split shareable WebUI zips.
 echo.
 endlocal
 exit /b 0
