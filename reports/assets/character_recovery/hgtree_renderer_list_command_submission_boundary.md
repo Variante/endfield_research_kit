@@ -485,6 +485,29 @@ claim.
     internal call (or in the runtime-indirect resource consumer), still
     fail-closed.
 
+25. The two apparent runtime consumers adjacent to this boundary are now
+    bounded as state/lifetime machinery rather than a proven renderer-list
+    submitter. `ScriptableRenderContext`'s no-copy wrappers at
+    `0x180158B30`/`0x180158B80` enter `0x180B3E5C0` and `0x180A95EB0`.
+    `B3E5C0` validates the native context, allocates/initializes a small
+    context-state object, and returns a 16-byte state record; `A95EB0`
+    allocates a `0x3c`-byte object, runs its virtual initialization methods,
+    and forwards the resulting object through `0x180763670`. Neither body
+    contains an opcode write, graphics-context vtable dispatch, Vulkan call,
+    or API-2 `+0xDE8` call. They therefore do not close the missing playback
+    edge.
+
+    The API-2 resource pool has the same negative shape. `0x180559B30` walks
+    bitmap-selected `0x80`-byte nodes and decrements their refcounts;
+    zero-ref nodes enter `0x1805598C0`, which invokes node callbacks stored at
+    `+0x30`/`+0x40`, clears record fields, and returns through
+    `0x1805586C0`. `0x1805586C0` is an owner/resource lifetime collector
+    (atomic counts, bitmap cleanup, and `0x18055AD70` release), not a direct
+    graphics or command-stream sink. An indirect callback could still hide a
+    runtime consumer, so this is a bounded fail-closed result rather than a
+    claim that the pool is unrelated; however, no direct device, opcode, or
+    API-2 submission edge is present in the inspected pool bodies.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.

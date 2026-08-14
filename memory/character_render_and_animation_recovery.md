@@ -739,7 +739,14 @@ only stable interpretation and priorities.
    texture command APIs); it emits no opcode, graphics call, or `+0xDE8`
    dispatch. The unresolved edge therefore remains after the internal call,
    in dynamic CommandBuffer/render-graph playback or the runtime-indirect
-   resource consumer.
+   resource consumer. The adjacent ScriptableRenderContext no-copy helpers
+   are now bounded as state construction (`0x180B3E5C0`/`0x180A95EB0`) rather
+   than playback, and the API-2 `0x80`-byte resource pool
+   (`0x180559B30 -> 0x1805598C0 -> 0x1805586C0`) is directly a
+   refcount/bitmap lifetime collector. Its callback fields remain an
+   indirect, unresolved possibility, but the inspected bodies contain no
+   direct opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep the
+   HGTree sink fail-closed after the internal call.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
