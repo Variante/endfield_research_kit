@@ -687,8 +687,11 @@ only stable interpretation and priorities.
    metadata/name boundary until the concrete nested type is recovered.
    The later F8F0 record loops call through shared cell `0x1821D3898`; its
    Vulkan resolver branches pass the string `vkUpdateDescriptorSetWithTemplate`,
-   so this is now a concrete descriptor-state update boundary (not yet a draw,
-   dispatch, or queue-submit proof). A file-backed fallback assignment to
+   so this is now a concrete descriptor-state update boundary. The API-2
+   vtable's adjacent `+0xDE8 -> 0x18083F1E0 -> 0x180843D60` path now proves
+   descriptor update -> `vkCmdDraw` -> `vkQueueSubmit` in the same backend
+   family; the remaining uncertainty is whether the HGTree `+0xE90` case takes
+   that sibling branch for the same receiver. A file-backed fallback assignment to
    `0x180861C20` is only a generic 32-byte record-copy helper, and loader order
    can overwrite the cell; capture or resolve that order before calling the
    fallback active. Keep component 67's LOD/list role and the retail culling

@@ -10,9 +10,11 @@ callbacks. The populated resource records then reach callback-built renderer
 records whose thunks enter graphics-context vtable loops. The separate
 CommandBuffer tree-list call is pinned to its GC-root and string-payload
 validation boundary. The later record loop is now pinned to Vulkan
-`vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, but concrete
-draw/dispatch/queue submission behind the vtable path remains unresolved, so
-this remains fail-closed and is not a retail frame-parity claim.
+`vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, and the
+same API-2 backend family has a concrete descriptor -> draw -> queue-submit
+sink. HGTree-specific receiver/branch ownership of that sink remains
+unresolved, so this remains fail-closed and is not a retail frame-parity
+claim.
 
 ## Source pins
 
@@ -171,7 +173,9 @@ this remains fail-closed and is not a retail frame-parity claim.
     backend variant, not evidence that the renderer callbacks themselves are
     device calls. The durable boundary is therefore now
     `HGTree callback -> graphics-context wrapper -> API-specific backend
-    resource/state method`; final device submission remains unresolved.
+    resource/state method`; a concrete draw/queue-submit sink is now proven in
+    the same API-2 family, but its HGTree-specific receiver/branch ownership
+    remains unresolved.
 
 13. The remaining API-2 slots on this route are now bounded as resource and
     descriptor plumbing rather than draw calls. Command-interpreter opcode
@@ -201,9 +205,10 @@ this remains fail-closed and is not a retail frame-parity claim.
     object behind that call is not present in the file-backed vtable, so it is
     recorded as an indirect resource/device boundary rather than promoted to
     a draw/dispatch claim. The durable current boundary is therefore
-    `HGTree callback -> API-2 resource/descriptor/registry methods`; the next
-    proof target is the runtime object/queue consumer after those records, with
-    API-4's deliberate no-op slots kept separate.
+    `HGTree callback -> API-2 resource/descriptor/registry methods`; item 17
+    proves the backend's concrete draw/queue-submit sink, while the next proof
+    target is the runtime receiver/branch that connects these records to that
+    sink. Keep API-4's deliberate no-op slots separate.
 
 14. The `+E90` branch was caller-audited to keep this boundary from being
     over-promoted. Four file-backed call sites were found (`0x180624349`,
@@ -274,9 +279,35 @@ this remains fail-closed and is not a retail frame-parity claim.
     handle, and a byte-offset-adjusted data pointer). Therefore the bounded
     post-record operation is now promoted to a concrete Vulkan descriptor
     update, while the earlier static copy assignment remains an initialization
-    fallback. It is backend descriptor state, not proof of draw/dispatch or
-    queue submission; resolve loader order or capture the runtime slot before
-    treating the copy helper as the active target.
+    fallback.
+
+17. The same API-2 vtable contains a concrete backend draw and submit sink.
+    At base `0x181DBC098`, the relevant entries are
+    `+0xDC0 -> 0x18083F680`, `+0xDE8 -> 0x18083F1E0`, and
+    `+0xE90 -> 0x180843BF0`. The native interpreter region that contains the
+    audited `+E90` caller (`0x1813AFEC3`) has an adjacent sibling case at
+    `0x1813AFED9` dispatching the same receiver's `+0xDE8` slot. The `+0xDE8`
+    target `0x18083F1E0` calls `0x180843D60`; inside that method:
+
+    ```text
+    0x1808445A6 -> 0x18083C6B0
+    0x18083D316  vkUpdateDescriptorSetWithTemplate
+    0x18083D329  vkCmdBindPipeline
+    0x18083D35D  vkCmdBindDescriptorSets
+    0x18083D37A  vkCmdDraw
+    0x180844A09  vkQueueSubmit
+    0x180844BD3  vkQueueSubmit (alternate branch)
+    ```
+
+    The draw register/stack setup matches Vulkan exactly: command buffer
+    `[rdi+0x28]`, graphics bind point `0`, pipeline `[rbx+0x2FF8]`, layout
+    `[rbx+0x2FF0]`, one descriptor set, and `vkCmdDraw(3, 1, 0, 0)`. The
+    submit branches pass queue `[rdi+0x2BC8]`, submit count `1`, a submit-info
+    record at `[rbp+0x170]`, and the fence at `[[rdi+0x2E28]+8]`. This is now
+    positive proof of the backend's descriptor -> draw -> queue-submit path.
+    The `+DE8` sibling is not proven to be an unconditional successor of the
+    HGTree `+E90` case, so the remaining gap is receiver/branch ownership, not
+    the existence of the concrete Vulkan sink.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -305,6 +336,11 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808558E0 0x180855AA0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843BF0 0x180843D40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F680 0x18083F8F0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181DBC098 0x181DBCF30
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AFEA0 0x1813AFF00
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F1E0 0x18083F230
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843D60 0x180844A20
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083C6B0 0x18083D3B0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18061FB60 0x18061FD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180624000 0x1806242B0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180861C20 0x180861C34
