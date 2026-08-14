@@ -124,10 +124,12 @@ then forwards `context+0x200` to `0x180e75000`. `0x1810d36b0` walks
 `this+0x38 + index*0x8c`, checks `record+0x74`, and routes active entries
 through `0x1810d4020 -> 0x1810d8d40 -> 0x1810ccd20`, where persistent resource
 records are cloned/copied. This is adjacent to the persistent per-draw sink,
-but the `context+0x110` object is not statically proven identical to the
-factory manager resolved by `SetEntitySharedData*`; no GPU API or dispatch is
-present in the chain. Keep it as a CPU/resource-maintenance candidate and
-retain the upload edge as runtime-indirect. Details are in
+and the alias is now closed: `0x1810d8c30` calls the same context helper and
+returns `[context+0x110]` for the `HGFactoryRenderManager.SetEntitySharedData*`
+wrappers. Thus this is a confirmed factory `0x8c` record to persistent
+resource-maintenance edge, not merely a matching layout. No GPU API or
+dispatch is present in the chain, so retain only the persistent-resource to
+GPU-upload edge as runtime-indirect. Details are in
 `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a

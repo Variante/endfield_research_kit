@@ -53,13 +53,17 @@ through the per-entry flag at `record+0x74` and routed through
 `0x1810ccd20` for the 0x80-byte resource-block copy. The terminal helper
 `0x1810c7a30` updates the companion resource list.
 
-This is a positive CPU/resource-maintenance edge adjacent to the persistent
-per-draw sink. It is not yet proof that `context+0x110` is the same object as
-the manager resolved by `HGFactoryRenderManager::SetEntitySharedData*`: the
-two paths expose compatible `+0x38`/`0x8c` shapes, but no static pointer alias
-has been recovered. None of these bodies directly calls ComputeBuffer,
-CommandBuffer, `_UploadBuffer`, or dispatch; the GPU upload edge therefore
-remains runtime-indirect and fail-closed.
+The pointer alias is now closed rather than inferred. The manager resolver
+`0x1810d8c30` calls the same `0x180fc5e60` and returns
+`[context+0x110]`; both `HGFactoryRenderManager::SetEntitySharedData*`
+internal-call wrappers use that resolver. Consequently the `this+0x38` array
+walk in `0x1810d36b0` is the same `manager+0x38 + index*0x8c` record family
+written by the factory setters. This proves a CPU-side factory-record to
+persistent-resource-maintenance edge, including the `0x1810ccd20` copy.
+
+None of these bodies directly calls ComputeBuffer, CommandBuffer,
+`_UploadBuffer`, or dispatch. The persistent resource to GPU upload edge
+therefore remains runtime-indirect and fail-closed.
 
 Therefore the current static boundary is:
 
