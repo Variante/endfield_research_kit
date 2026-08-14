@@ -142,6 +142,22 @@ because the expected exported `HGRenderPipelineAsset` JSON is absent; retain
 the hash-pinned snapshot and boundary in
 `reports/assets/character_recovery/gacha_scene_color_physical_lifetime.md`.
 
+The shared SceneMV/motion boundary is now source-closed for the isolated
+selected-character CharInfo/VFX scene. `HGRenderPathScene.OnPreRendering`
+creates a transient full-resolution `A2B10G10R10_UNormPack32` SceneMV target at
+`+0x1300` only when `HGCamera.enableMV` is true, clears it to
+`(0.5,0.5,0,0)`, and uses it as GBuffer/ForwardOpaque attachment 1; it is
+current-frame data, not a history texture. The native total order is now
+verified as GBuffer → ForwardOpaque character target-1 writers → main
+ForwardOnly → Distortion → Phase 1 (LightShaft/Parafin/DOF/MotionBlur) →
+after-DOF ForwardOnly → LensFlare → optional pre-TAAU blur → Phase 2. Sixteen
+Wulfa/Zhuang Fangyi skin, cloth, hair, and eye variants write packed motion to
+`SV_Target1`; selected VFX must consume that populated attachment. Camera
+previous constants and paired skin-matrix ranges are also source-pinned, while
+terrain/foliage target-1 enumeration, physical skin-buffer reuse, and a
+source-compatible lab MRT remain open. See
+`reports/assets/character_recovery/gacha_scene_mv_motion_contract.md`.
+
 The Gacha light cull-view boundary is now source-pinned independently of that
 missing pipeline-asset export. The installed fallback has
 `useFallbackLightCulling=false`, zero occlusion dimensions, and the normal
