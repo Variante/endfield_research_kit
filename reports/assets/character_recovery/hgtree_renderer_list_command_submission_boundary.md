@@ -204,6 +204,30 @@ frame-parity claim.
     proof target is the runtime object/queue consumer after those records, with
     API-4's deliberate no-op slots kept separate.
 
+14. The `+E90` branch was caller-audited to keep this boundary from being
+    over-promoted. Four file-backed call sites were found (`0x180624349`,
+    `0x18093B129`, `0x18093B6BB`, and `0x1813AFEC3`); each passes temporary
+    record/command data into `0x180843BF0`, which then enters the same
+    `0x18083F680` resource-table initializer. No static caller of the API-2
+    `+DC0` slot was found. In `0x18083F680`, the unresolved call is more
+    specifically:
+
+    ```text
+    rdi = [r8+8]
+    rsi = 0x18061FB00(rdi) = [[rdi+0x70]+8]
+    rcx = [[rdi+0x78]+0x208]
+    rdx = [rcx]                 ; runtime vtable
+    rax = [rdx+0x48](rcx)        ; 0x18083F71B
+    ```
+
+    The surrounding code then calls `0x18083F8F0`, copies four resource
+    records, and updates backend counters/arrays; neither that method nor the
+    `0x18061FB00/0x18061FB40` accessors contains a graphics-device call. The
+    `+0x48` receiver is therefore bounded as a runtime resource-subobject
+    interface, not yet a D3D/Vulkan/Metal queue or draw submission. The next
+    useful proof is to identify the heap-created vtable or its returned record
+    consumer, rather than treating the slot number alone as device evidence.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
