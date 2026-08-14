@@ -12,7 +12,8 @@ CommandBuffer tree-list call is pinned to its GC-root and string-payload
 validation boundary. The later record loop is now pinned to Vulkan
 `vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, and the
 same API-2 backend family has a concrete descriptor -> draw -> queue-submit
-sink. HGTree-specific receiver/branch ownership of that sink remains
+sink. The recorded HGTree receiver is now pinned to that API-2 backend;
+ownership/order of the branch that reaches the draw/submit sink remains
 unresolved, so this remains fail-closed and is not a retail frame-parity
 claim.
 
@@ -351,6 +352,28 @@ claim.
     and `0x27B6`). Thus `0x2730 -> 0x2731` is a separate native command-family
     candidate, not a recovered HGTree renderer-list order.
 
+19. The command-stream receiver is now pinned to the API-2 backend. The
+    backend/context creation path `0x180929430` calls `0x1809258C0` to create
+    the front-end context, obtains the selected backend from
+    `0x18072F7E0`, and at `0x180929540` writes that same pointer to
+    `[context+0x2700]+0x70` (the command-stream state receiver). The attach
+    call immediately following it, `0x180939C80`, stores the pointer at
+    `context+0x2708`; API id `2` gives that backend vtable
+    `0x181DBC098`. Thus the receiver read by `0x1813AEE90` is not a second
+    opaque object: it is the selected API-2 backend shared by immediate and
+    recorded paths.
+
+    The recorded HGTree wrapper opcodes now have concrete interpreter
+    consumers. The `0x27B6` case begins at `0x1813B92D0` and calls the
+    receiver's `+0x358` slot at `0x1813B92F8` (`0x1808351F0`). The `0x2734`
+    case begins at `0x1813AFFF7` and calls the same receiver's `+0xDA0` slot
+    at `0x1813B03DA` (`0x18083E720`). These are the exact recorded counterparts
+    of front-end `+0x380`/`+0xDA0`; the immediate branches already tail-dispatch
+    those slots directly. This closes front-end wrapper -> command record ->
+    API-2 backend receiver for both HGTree resource paths. It still does not
+    prove that either resource operation schedules the adjacent `+0xDE8`
+    draw/submit case; that branch/order ownership remains fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -393,4 +416,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1809258C0 0x180925C40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180931980 0x180931F30
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18092C320 0x18092C6DC
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180929430 0x1809295A5
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AFFF7 0x1813B03E2
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813B91F0 0x1813B9305
 ```
