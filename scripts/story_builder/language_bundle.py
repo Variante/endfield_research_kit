@@ -242,6 +242,13 @@ from .option_timeline_continuation import (
     classify_timeline_clip_option_index_routes,
     classify_zero_index_timeline_continuation,
 )
+from .option_branch_projection import (
+    all_option_response_risk_line_ids,
+    collect_local_scene_link_options,
+    expand_transparent_single_option_branch,
+    normalize_group_branch_convergence,
+    option_risk_line_ids,
+)
 from .option_projection import apply_source_hub_option_groups, attach_submenu_targets, dialog_recovery_methods
 from .option_following_line_projection import following_line_risk_for_group
 from .option_route_projection import (
@@ -3976,61 +3983,6 @@ def build_language_bundle(
         fallback_group_labels: list[str] = []
         group_details: list[dict] = []
         option_response_risks: list[dict] = []
-        def option_risk_line_ids(following_line_risk: dict, option_count: int) -> list[str]:
-            option_ids = [
-                str(option_id)
-                for option_id in (following_line_risk.get("optionIds") or [])
-                if str(option_id or "").strip()
-            ]
-            candidate_lines_by_option = following_line_risk.get("candidateLineIdsByOption")
-            if isinstance(candidate_lines_by_option, dict) and len(option_ids) == option_count:
-                mapped_line_ids: list[str] = []
-                for option_id in option_ids:
-                    mapped_value = candidate_lines_by_option.get(option_id)
-                    if isinstance(mapped_value, list):
-                        line_id = next(
-                            (
-                                str(value)
-                                for value in mapped_value
-                                if str(value or "") in valid_line_ids
-                            ),
-                            "",
-                        )
-                    else:
-                        line_id = str(mapped_value or "")
-                    if line_id not in valid_line_ids:
-                        break
-                    mapped_line_ids.append(line_id)
-                if len(mapped_line_ids) == option_count:
-                    return mapped_line_ids
-            candidate_line_ids = [
-                str(line_id)
-                for line_id in (following_line_risk.get("candidateLineIds") or [])
-                if line_id in valid_line_ids
-            ]
-            if len(candidate_line_ids) == option_count:
-                return candidate_line_ids
-            common_line_id = str(following_line_risk.get("commonContinuationLineId") or "")
-            if common_line_id in valid_line_ids:
-                return [common_line_id for _ in range(option_count)]
-            return []
-        def all_option_response_risk_line_ids(following_line_risk: dict) -> list[str]:
-            out: list[str] = []
-            def push(line_id: object) -> None:
-                value = str(line_id or "")
-                if value and value in valid_line_ids and value not in out:
-                    out.append(value)
-            for line_id in following_line_risk.get("candidateLineIds") or []:
-                push(line_id)
-            branch_lines_by_option = following_line_risk.get("branchLineIdsByOption")
-            if isinstance(branch_lines_by_option, dict):
-                for line_ids in branch_lines_by_option.values():
-                    if isinstance(line_ids, list):
-                        for line_id in line_ids:
-                            push(line_id)
-                    else:
-                        push(line_ids)
-            return out
         sorted_group_ids = sorted(groups_map)
         sorted_group_index = {group_id: idx for idx, group_id in enumerate(sorted_group_ids)}
         local_ordered_line_ids = [line_id for _idx, line_id in line_idxs if line_id in valid_line_ids]
@@ -4045,128 +3997,10 @@ def build_language_bundle(
         rendered_line_order_index = {
             line_id: idx for idx, line_id in enumerate(rendered_ordered_line_ids)
         }
-        local_scene_link_options_by_after: dict[str, list[dict]] = defaultdict(list)
-        seen_local_scene_link_options: set[tuple[str, str, tuple[str, ...]]] = set()
-        for link in build_dialog_tree_scene_link_payload(conv_key) or []:
-            after_id = str(link.get("after") or "")
-            if after_id not in valid_line_ids:
-                continue
-            for option in link.get("options") or []:
-                if not isinstance(option, dict):
-                    continue
-                path_line_ids = tuple(
-                    str(line_id)
-                    for line_id in (option.get("pathLineIds") or [])
-                    if str(line_id or "") in valid_line_ids
-                )
-                if not path_line_ids:
-                    continue
-                option_id = str(option.get("optionId") or "")
-                identity = (after_id, option_id, path_line_ids)
-                if identity in seen_local_scene_link_options:
-                    continue
-                seen_local_scene_link_options.add(identity)
-                local_scene_link_options_by_after[after_id].append(option)
-        def option_has_visible_table_text(option_id: str) -> bool:
-            text_value, _icon_value = dialog_option_signature_by_id.get(option_id, ("", ""))
-            return bool(text_value)
-        def hidden_single_option_path_after(after_id: str) -> tuple[str, list[str]]:
-            options_after = [
-                option
-                for option in local_scene_link_options_by_after.get(after_id, [])
-                if _dialog_tree_option_prefix(str(option.get("optionId") or "")) == conv_key
-            ]
-            if len(options_after) != 1:
-                return "", []
-            option = options_after[0]
-            option_id = str(option.get("optionId") or "")
-            if not option_id or option_has_visible_table_text(option_id):
-                return "", []
-            path_line_ids = [
-                str(line_id)
-                for line_id in (option.get("pathLineIds") or [])
-                if str(line_id or "") in valid_line_ids
-            ]
-            return option_id, path_line_ids
-        def expand_transparent_single_option_branch(branch_lines: list[str]) -> list[str]:
-            expanded: list[str] = []
-            expanded_after_ids: set[str] = set()
-            def append_line(line_id: str) -> None:
-                if line_id in valid_line_ids and line_id not in expanded:
-                    expanded.append(line_id)
-            for line_id in branch_lines:
-                append_line(line_id)
-            while expanded:
-                after_id = expanded[-1]
-                if after_id in expanded_after_ids:
-                    break
-                expanded_after_ids.add(after_id)
-                _option_id, next_path = hidden_single_option_path_after(after_id)
-                if not next_path:
-                    break
-                first_next = next_path[0]
-                start_index = rendered_line_order_index.get(after_id)
-                end_index = rendered_line_order_index.get(first_next)
-                if start_index is not None and end_index is not None and start_index < end_index:
-                    for line_id in rendered_ordered_line_ids[start_index + 1:end_index]:
-                        append_line(line_id)
-                before_count = len(expanded)
-                for line_id in next_path:
-                    append_line(line_id)
-                if len(expanded) == before_count:
-                    break
-            return expanded
-        def normalize_group_branch_convergence(group: dict, opts: list[dict], group_opt_ids: list[str]) -> dict:
-            if len(opts) < 2 or len(group_opt_ids) != len(opts):
-                return {}
-            paths: list[list[str]] = []
-            for opt in opts:
-                branch_lines = [
-                    str(line_id)
-                    for line_id in (opt.get("branchLines") or [])
-                    if str(line_id or "") in valid_line_ids
-                ]
-                if not branch_lines:
-                    return {}
-                paths.append(branch_lines)
-            min_length = min(len(path) for path in paths)
-            suffix_length = 0
-            while suffix_length < min_length:
-                candidate = paths[0][len(paths[0]) - suffix_length - 1]
-                if not all(path[len(path) - suffix_length - 1] == candidate for path in paths):
-                    break
-                suffix_length += 1
-            if suffix_length <= 0:
-                return {}
-            if any(len(path) <= suffix_length for path in paths):
-                return {}
-            common_suffix = paths[0][len(paths[0]) - suffix_length:]
-            branch_line_ids_by_option: dict[str, list[str]] = {}
-            for opt, opt_id, path in zip(opts, group_opt_ids, paths):
-                branch_specific_lines = path[:len(path) - suffix_length]
-                if not branch_specific_lines:
-                    return {}
-                opt["branchLines"] = branch_specific_lines
-                branch_line_ids_by_option[opt_id] = branch_specific_lines
-                opt.setdefault("_debug", {})["branchConvergence"] = {
-                    "mode": "commonSuffix",
-                    "commonLineIds": common_suffix,
-                }
-            return {
-                "code": "dialogTreeBranchConvergence",
-                "reason": "commonBranchSuffix",
-                "detail": (
-                    "Authored same-scene branch paths share a trailing line sequence; "
-                    "branchLines are trimmed to branch-specific lines and rendered as "
-                    "converging at the shared continuation."
-                ),
-                "after": group.get("after") or "",
-                "optionIds": group_opt_ids,
-                "branchLineIdsByOption": branch_line_ids_by_option,
-                "commonContinuationLineId": common_suffix[0],
-                "commonContinuationLineIds": common_suffix,
-                "source": "dialogTree",
-            }
+        local_scene_link_options_by_after = collect_local_scene_link_options(
+            build_dialog_tree_scene_link_payload(conv_key) or [],
+            valid_line_ids=valid_line_ids,
+        )
         trusted_group_after_cache: dict[int, tuple[str, dict]] = {}
         recovered_single_option_line_ids: set[str] = set()
         def previous_visible_line_id(line_id: str) -> str:
@@ -4358,7 +4192,18 @@ def build_language_bundle(
                     if lid in valid_line_ids
                 ]
                 if branch_lines:
-                    opt["branchLines"] = expand_transparent_single_option_branch(branch_lines)
+                    opt["branchLines"] = expand_transparent_single_option_branch(
+                        branch_lines,
+                        valid_line_ids=valid_line_ids,
+                        rendered_ordered_line_ids=rendered_ordered_line_ids,
+                        rendered_line_order_index=rendered_line_order_index,
+                        local_scene_link_options_by_after=(
+                            local_scene_link_options_by_after
+                        ),
+                        conversation_key=conv_key,
+                        dialog_option_signature_by_id=dialog_option_signature_by_id,
+                        dialog_tree_option_prefix=_dialog_tree_option_prefix,
+                    )
                     sources = [
                         source
                         for source in (tree_branch_sources.get(opt_id) or [])
@@ -4550,7 +4395,12 @@ def build_language_bundle(
                             "reason": "The corrected pre-scene option uses the only line span not covered by authored DialogTree branches.",
                             "lineIds": remaining_line_ids,
                         }
-            branch_convergence_risk = normalize_group_branch_convergence(group, opts, group_opt_ids)
+            branch_convergence_risk = normalize_group_branch_convergence(
+                group,
+                opts,
+                group_opt_ids,
+                valid_line_ids=valid_line_ids,
+            )
             dialog_tree_node_layout = {}
             if not any(opt.get("branchLines") for opt in opts):
                 dialog_tree_node_layout = (
@@ -4635,7 +4485,14 @@ def build_language_bundle(
                             **following_line_risk,
                         })
                     tag_code = "rawOptionIndexMatchedLine" if strong_raw_index_mapping else "inferredFollowingLine"
-                    for opt, line_id in zip(opts, option_risk_line_ids(following_line_risk, len(opts))):
+                    for opt, line_id in zip(
+                        opts,
+                        option_risk_line_ids(
+                            following_line_risk,
+                            len(opts),
+                            valid_line_ids=valid_line_ids,
+                        ),
+                    ):
                         tag = {
                             "code": tag_code,
                             "lineId": line_id,
@@ -4765,7 +4622,10 @@ def build_language_bundle(
                 "lineIds": _unique_preserve([
                     line_id
                     for risk in option_response_risks
-                    for line_id in all_option_response_risk_line_ids(risk)
+                    for line_id in all_option_response_risk_line_ids(
+                        risk,
+                        valid_line_ids=valid_line_ids,
+                    )
                     if line_id
                 ]),
             })
