@@ -77,6 +77,22 @@ render-path object's own `+0x110` input is a separate state field. This
 strengthens the negative split: common `+0xe8` resource selection is proven,
 while a static `manager+0x38`/`0x8c` to GPU binder upload edge is not.
 
+The V1/V2 GPUDriven split is also concrete. V1 wrappers call
+`0x1810f1980`, which selects `context+0xe8` entry `0`; V2 wrappers call
+`0x1810fe120`, which selects the same table entry with selector `1`. V2's
+render binder (`0x1810fb5a0`, reached by the managed
+`GPUDrivenRendererV2::BindBuffersForRendering` wrapper) reads its runtime
+resource descriptor block at `+0x88..+0xd0` and, for a command-stream target,
+emits the high-level resource-binding writer `0x1804cb1a0` (opcode `0x0d`).
+The immediate path uses `0x1805f84a0` for the same descriptor fields. V1/V2
+dispatch helpers (`0x1810f17e0`/`0x1810f1890`) instead reach
+`0x1805e7e10`, which invokes the graphics-context vtable slot `+0xab0`.
+This proves a positive resource-selection -> GPUDriven binding/dispatch chain,
+but the checked bodies never load the factory `context+0x110` record array or
+the `manager+0x38 + index*0x8c` records. The runtime descriptor `+0xd0` must
+therefore remain distinct from the factory channel-2 `+0xd0` until a stronger
+alias is found.
+
 Therefore the current static boundary is:
 
 ```text
@@ -86,6 +102,9 @@ ApplyPerDrawRender
 
 GPUDrivenRenderer / SetupGpuSceneUploadCs
   -> runtime resource/context slots
+  -> context+0xe8 selector 0/1
+  -> V2 resource descriptors -> opcode 0x0d writer
+  -> V1/V2 dispatch -> graphics-context vtable +0xab0
   -> context+0x110 FrameUpdateStep2 / CPU resource maintenance
   -> buffer/compute binding helpers
 
