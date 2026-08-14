@@ -1543,8 +1543,32 @@
                 "0x1812145af..0x18121487b"
               ]
             },
-            "interpretation": "0x18036ed60 is a generic dynamic-array resize/zero helper whose element stride is 0x54 and whose zeroed layout is five Vector4 lanes plus a dword at +0x50; 0x1804b69b9 is a generic element-copy helper. The remaining precise candidates consume the same stride for unrelated native data and only call math/formatting helpers. None directly calls GpuSceneDirtyUpdateCS, UploadPerDrawParams, the checked immediate-dispatch boundary, a GPU buffer upload, or the factory record consumer.",
-            "negative_gpu_edge": "The 0x54 literal is therefore a real generic 84-byte layout clue, but this bounded census does not identify it as the staging array's packer or as _UploadBuffer. Keep the shader-to-native edge fail-closed."
+            "interpretation": "0x18036ed60 is a generic dynamic-array resize/zero helper whose element stride is 0x54 and whose zeroed layout is five Vector4 lanes plus a dword at +0x50; 0x1804b69b9 is a generic element-copy helper. The two longer UnityPlayer bodies are real 0x54-to-0x100 native transforms, but their 0x100 destination accesses +0x00..+0x90 and their source/math fields rather than the factory staging lanes at +0xb0..+0xf0. None directly calls GpuSceneDirtyUpdateCS, UploadPerDrawParams, the checked immediate-dispatch boundary, a GPU buffer upload, or the factory record consumer.",
+            "negative_gpu_edge": "The 0x54 literal is therefore a real generic 84-byte layout clue, including an alternate native 0x54-to-0x100 record transform, but this bounded census does not identify it as the factory staging array's packer or as _UploadBuffer. Keep the shader-to-native edge fail-closed.",
+            "native_0x54_to_0x100_near_match_followup": {
+              "status": "real-0x54-to-0x100-near-match-not-factory-upload",
+              "report": "reports/assets/character_recovery/native_54_to_100_near_match_followup.md",
+              "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+              "functions": {
+                "0x1812117ec..0x181211c02": {
+                  "source": "r14 + index*0x54; reads and accumulates source fields +0x30..+0x50",
+                  "destination": "r12 + index*0x100; preserves +0x00..+0x30 into +0x60..+0x90 and updates +0x30/+0x34/+0x38",
+                  "direct_gpu_edge": false
+                },
+                "0x1812145af..0x181214888": {
+                  "source": "r14 + index*0x54; reads source +0x00..+0x50 and calls 0x18120b670/0x18120b470",
+                  "destination": "r12 + index*0x100; preserves +0x00..+0x30 into +0x60..+0x90 and updates +0x30..+0x38",
+                  "direct_gpu_edge": false
+                }
+              },
+              "factory_link_checks": {
+                "reads_manager_plus_0x38_index_times_0x8c": false,
+                "tests_dirty_record_plus_0x70": false,
+                "reads_or_writes_factory_staging_plus_0xb0_through_0xf0": false,
+                "calls_upload_per_draw_or_kernel_7": false
+              },
+              "boundary": "These bodies prove that 0x54 and 0x100 can coexist in native layouts, but they do not prove the factory 0x8c -> 0x100 -> 0x54 shader path. Keep GPU binding fail-closed until an indirect consumer reads the factory staging lanes and reaches _UploadBuffer."
+            }
           },
           "factory_prefix_layout_followup": {
             "status": "factory-range-prefix-store-census-no-upload-edge",
