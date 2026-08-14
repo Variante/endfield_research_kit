@@ -172,6 +172,38 @@ frame-parity claim.
     `HGTree callback -> graphics-context wrapper -> API-specific backend
     resource/state method`; final device submission remains unresolved.
 
+13. The remaining API-2 slots on this route are now bounded as resource and
+    descriptor plumbing rather than draw calls. Command-interpreter opcode
+    `0x27B6` reaches context slot `+0x358` at `0x1813B92F8`, which dispatches
+    to `0x1808351F0`. That method first enters `0x18083AA90`, allocates and
+    fills descriptor/record arrays through `0x18082F3C0` and
+    `0x181C9F9A0`, updates per-resource state through `0x1808558E0`, and
+    calls `0x18086F1F0`/`0x180839D50` for arena/record bookkeeping. Its body
+    has no direct graphics-device or draw/dispatch call.
+
+    The sibling callback's extra slots are likewise registry paths:
+
+    - `+0xB0 -> 0x180833470 -> 0x180822180`;
+    - `+0xC0 -> 0x180833630 -> 0x1808224F0`.
+
+    Both perform hash/page lookup and reference-counted record insertion, with
+    constructor callbacks at `0x1808205C0` and `0x180820220`; neither exposes
+    a device call. The shared `+0xDA0` target `0x18083E720` remains the same
+    array/record builder. The nearby `+0xDE0 -> 0x18083D3B0` path creates
+    0x44-byte resource descriptors and registers them through `0x18088B850`,
+    also without a direct device call.
+
+    One adjacent API-2 setup branch is a useful unresolved sink candidate but
+    is not statically reached from the HGTree callback body: `+0xE90 ->
+    0x180843BF0 -> 0x18083F680` initializes backend resource tables, and
+    `0x18083F71B` invokes a runtime object vtable slot `+0x48`. The concrete
+    object behind that call is not present in the file-backed vtable, so it is
+    recorded as an indirect resource/device boundary rather than promoted to
+    a draw/dispatch claim. The durable current boundary is therefore
+    `HGTree callback -> API-2 resource/descriptor/registry methods`; the next
+    proof target is the runtime object/queue consumer after those records, with
+    API-4's deliberate no-op slots kept separate.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -194,4 +226,9 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180829030 0x1808290A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083E720 0x18083EC40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180842370 0x180842650
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808351F0 0x180835EF0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180839D50 0x18083A0B0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808558E0 0x180855AA0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843BF0 0x180843D40
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F680 0x18083F8F0
 ```

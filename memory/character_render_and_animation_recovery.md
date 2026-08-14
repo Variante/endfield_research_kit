@@ -671,10 +671,14 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Follow the API-specific backend methods reached from
-   `0x18107AE60` / `0x18107B3A0` (`0x180842370` and
-   `0x18083E720`) to the concrete device/API submission edge, while keeping
-   component 67's LOD/list role and the retail culling survivor list
+1. Follow the API-2 resource/descriptor records after the HGTree callbacks to
+   their runtime object/queue consumer. The callback route now includes
+   `0x1808351F0` via interpreter opcode `0x27B6`, the registry paths
+   `0x180822180`/`0x1808224F0`, and the shared builder `0x18083E720`; these
+   remain pre-device layers. The adjacent setup path
+   `0x180843BF0 -> 0x18083F680` reaches an unresolved runtime vtable call at
+   `0x18083F71B` (`+0x48`) and is the next indirect-boundary candidate.
+   Keep component 67's LOD/list role and the retail culling survivor list
    separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
