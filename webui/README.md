@@ -163,10 +163,23 @@ same-name assets remain identity evidence until a typed consumer reaches a
 playback API. Fingerprint-locked native evidence fails closed after a client
 update.
 
+When native inputs are missing or mismatched, authored Audio rows remain
+visible; only build-locked callsites, mappings, and addresses disappear, with
+the unavailable state shown explicitly.
+
 Shared SFX/music and language voice stay in separate storage roots. Repeated
 media IDs preserve every physical occurrence and package provenance. Direct
 Story-line binding, authored context, Event-only relation, and unknown placement
 are mutually exclusive generated media states.
+
+The default purpose-priority sort and recovery filters put unknown-purpose
+Events/media ahead of partial and known-purpose records. A direct Story-line
+binding is a terminal known-purpose state and is not part of the investigation
+queue. Candidate player cards stay expanded and materialized unless more than
+20 candidates share the same playback group; larger groups start collapsed.
+Responsive enemy-voice contexts may show the fingerprint-locked
+`EnemyTriggerVoiceAction` voice-type-to-trigger-key mapping, while live branch
+selection and audibility remain unobserved.
 
 ## Mission Pipeline
 

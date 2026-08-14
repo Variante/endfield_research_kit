@@ -135,10 +135,44 @@ data flow reaches a typed playback API. Conditional and selector-based native
 paths preserve their branch condition, method, callsite, target binding, and
 binary fingerprints.
 
+Native Audio evidence is evaluated against the explicitly selected client:
+`global-metadata.dat` and its sibling `GameAssembly.dll` must both match the
+reviewed fingerprints. A missing or different client removes only native
+callsites, mappings, and addresses; authored table/component rows remain
+available and visibly carry the unavailable diagnostic.
+
 Responsive voice data retains every authored response position and tone
 substitution while leaving live response/tone choice unresolved. AnimationClip
 `TriggerVoice` callbacks remain distinct from ordinary audio callbacks and keep
 all compatible owners when animation identity is shared.
+
+`AIBark` is a separate high-level request layer. The current binary proves
+`BarkSystem.Bark(AIBarkType)` resolves a bark id through its runtime dictionary,
+then `AIBarkManager` reads the authored `AIBark` row and forwards its trigger
+key, bark voice type, and speaker type through
+`VoiceManager.PostAIBarkVoiceEvent` to `VoiceBarkProcessor.AIBark`. Generated
+responsive contexts carry the matching bark rows and fingerprint-locked method
+addresses. Enemy `common_attack`/`common_escape` voice definitions are not
+present in that trigger-key catalog and remain unresolved rather than being
+inferred from their names. Current CN coverage has 1,108 unique authored
+response ids: 1,069 are already terminal story-line matches, 25 more have
+direct decoded media, one resolves only through an exact Wwise Event, and 13
+`sentenceType=32`/`speaker=any` ids have no AudioDialog, AudioVoTone,
+AIBarkText, decoded-media, or current Wwise Event object. Those 13 remain
+explicit authored-response gaps rather than synthetic audio identities.
+
+Enemy response actions have a second exact native route. The current
+`EnemyTriggerVoiceAction` static dictionary maps voice types `0..4` only to
+`combat_alarm`, `combat_intobattle`, `combat_fighting`,
+`combat_outbattle_flee`, and `combat_kill`, then `OnExecute` passes the chosen
+key to `VoiceManager.ResponseOnEntity`. Fixed native callers additionally
+prove `combat_hurt_lowhp`, `combat_hurt_stun`, `combat_alarm_yell`,
+`defence_running`, `defence_reachcore`, and `combat_outbattle_flee` placements.
+Neither `common_attack` nor `common_escape` occurs in the action dictionary or
+the complete fixed-literal caller set. Two `common_attack` definitions do have
+exact ResponsiveDialog membership and are resolved at that authored trigger
+level; the other 34 `common_*` definitions remain a consumer-ownership gap
+rather than a semantic alias for combat/flee behavior.
 
 AudioDialog, responsive, and other patched tables merge StreamingAssets with
 Persistent overlays. Shared SFX/music and language voice stay separate. Same-id

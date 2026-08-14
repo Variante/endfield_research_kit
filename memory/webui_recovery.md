@@ -86,11 +86,42 @@ and conditional native consumers retain their method, callsite, target, and
 branch evidence. Selector and dictionary paths stay distinct from direct
 literal playback.
 
+Missing or mismatched installed native inputs never erase authored Audio rows.
+They suppress only build-locked callsites/mappings and expose a bounded
+unavailable diagnostic, so the page cannot silently present stale native
+addresses as current evidence.
+
+Responsive voice contexts also expose exact matching `AIBark` request rows and
+the fingerprint-locked native dispatch chain. The UI must keep the live
+AIBarkType-to-bark-id dictionary choice, probability/cooldown selection, and
+actual response branch unresolved; similarly named enemy voice definitions are
+not AIBark evidence unless their trigger key occurs in the authored table. The
+audio trigger catalog reports story-bound responses as resolved terminal,
+direct/Wwise-only responses separately, and missing configured response ids as
+non-playable authored gaps.
+
+Responsive rows whose trigger key is one of the five exact
+`EnemyTriggerVoiceAction` dictionary values now retain its numeric voice type
+and native mapping callsite. Separate fixed native response callers cover
+low-HP/stun, enemy battle-entry yell, patrol running, reach-core, and
+leave-battle flee. Two `common_attack` rows are already resolved by exact
+ResponsiveDialog membership; the other 34 `common_attack`/`common_escape` rows
+remain definition-only highest-priority unknown-purpose rows because neither
+exact native path names them.
+
 Exact Wwise graph traversal proves possible media leaves, not the live
 switch/random branch or audibility. String literals, definitions, lookup keys,
 and same-name assets remain identity-only until they reach a typed playback
 consumer. Shared media and language voice remain separate, and duplicate media
 IDs retain physical package provenance.
+
+The Audio view now uses purpose-priority ordering and explicit unknown,
+partial, known, and Story-line-terminal filters. Story-line binding ends
+purpose investigation for that media. Playback groups with at most 20
+candidates remain expanded and materialized; only groups above that threshold
+start collapsed. The runtime overview and responsive context rows expose the
+exact five-entry `EnemyTriggerVoiceAction` mapping without upgrading it to a
+live branch observation.
 
 ## Story and Mission Pipeline boundary
 
