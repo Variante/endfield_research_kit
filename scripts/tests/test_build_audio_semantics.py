@@ -1,4 +1,3 @@
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -6,12 +5,30 @@ from pathlib import Path
 from struct import pack
 from unittest.mock import patch
 
+from scripts import build_audio_semantics as audio_semantics
+from scripts.audio_semantics import (
+    authored_components,
+    event_projection,
+    event_summary,
+    identifiers,
+    interactive_components,
+    managed_literals,
+    native_evidence,
+    purpose,
+    responsive_voice,
+    table_contexts,
+    voice_requests,
+)
 
-SCRIPT = Path(__file__).resolve().parents[1] / "build_audio_semantics.py"
-SPEC = importlib.util.spec_from_file_location("build_audio_semantics_test", SCRIPT)
-audio_semantics = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-SPEC.loader.exec_module(audio_semantics)
+
+def validated_native_context() -> native_evidence.NativeAudioEvidence:
+    return native_evidence.NativeAudioEvidence(
+        Path("global-metadata.dat"),
+        Path("GameAssembly.dll"),
+        "validated",
+        native_evidence.EXPECTED_METADATA_SHA256,
+        native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+    )
 
 
 def mp_string(value: str | None) -> bytes:
@@ -189,18 +206,10 @@ class AudioSemanticDataTests(unittest.TestCase):
                 },
             ]
         }
-        with patch.object(Path, "is_file", return_value=True), patch.object(
-            audio_semantics,
-            "file_sha256",
-            side_effect=[
-                audio_semantics.MANAGED_AUDIO_CALLSITE_METADATA_SHA256,
-                audio_semantics.MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256,
-            ],
-        ):
-            contexts = audio_semantics.collect_native_voice_trigger_contexts(
-                audio_index,
-                Path("metadata"),
-            )
+        contexts = voice_requests.collect_native_voice_trigger_contexts(
+            audio_index,
+            validated_native_context(),
+        )
 
         self.assertEqual(list(contexts), ["eny_fixture_combat_hurt_break_sv"])
         context = contexts["eny_fixture_combat_hurt_break_sv"][0]
@@ -214,16 +223,23 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
 
     def test_native_voice_trigger_context_fails_closed_on_binary_drift(self) -> None:
-        with patch.object(Path, "is_file", return_value=True), patch.object(
-            audio_semantics,
-            "file_sha256",
-            side_effect=["different", audio_semantics.MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256],
-        ):
-            contexts = audio_semantics.collect_native_voice_trigger_contexts(
-                {"audioDialogWwiseEventAliases": []},
-                Path("metadata"),
-            )
+        contexts = voice_requests.collect_native_voice_trigger_contexts(
+            {"audioDialogWwiseEventAliases": []},
+            native_evidence.NativeAudioEvidence(
+                Path("metadata"), Path("GameAssembly.dll"), "mismatched"
+            ),
+        )
         self.assertEqual(contexts, {})
+
+    def test_native_voice_trigger_rows_include_hurt_and_enemy_ai_literals(self) -> None:
+        rows = native_evidence.NATIVE_VOICE_TRIGGER_ROWS
+        self.assertEqual(rows["combat_hurt_lowhp"]["consumerMethod"], "SendVoiceTriggerEventOnHurt")
+        self.assertEqual(rows["combat_hurt_lowhp"]["playbackInvocationVa"], "0x1846fd0ad")
+        self.assertEqual(rows["combat_hurt_stun"]["literalLoadVa"], "0x186d76116")
+        self.assertEqual(rows["combat_alarm_yell"]["consumerMethod"], "OnEnter")
+        self.assertEqual(rows["defence_running"]["additionalMethodIndex"], 43161)
+        self.assertEqual(rows["defence_reachcore"]["playbackInvocationVa"], "0x186b3d4b4")
+        self.assertEqual(rows["combat_outbattle_flee"]["methodIndex"], 42873)
 
     def test_builds_native_voice_trigger_catalog_row(self) -> None:
         rows = audio_semantics._build_native_voice_trigger_contexts([{
@@ -260,7 +276,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             export_root = root / "export"
-            clip_root = export_root / audio_semantics.ANIMATION_VOICE_CLIP_RELS[0]
+            clip_root = export_root / voice_requests.ANIMATION_VOICE_CLIP_RELS[0]
             clip_root.mkdir(parents=True)
             (clip_root / "A_monster_wgthorns_hit_mid_right_pBB4608B41849F22B.anim").write_text(
                 "\n".join((
@@ -296,23 +312,11 @@ class AudioSemanticDataTests(unittest.TestCase):
                     },
                 ]
             }
-            with patch.object(
-                audio_semantics,
-                "DEFAULT_GAME_ROOT",
-                root / "Endfield_Data",
-            ), patch.object(
-                audio_semantics,
-                "file_sha256",
-                side_effect=[
-                    audio_semantics.MANAGED_AUDIO_CALLSITE_METADATA_SHA256,
-                    audio_semantics.MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256,
-                ],
-            ):
-                contexts = audio_semantics.collect_animation_voice_trigger_contexts(
-                    export_root,
-                    audio_index,
-                    metadata_path,
-                )
+            contexts = voice_requests.collect_animation_voice_trigger_contexts(
+                export_root,
+                audio_index,
+                validated_native_context(),
+            )
 
         self.assertEqual(list(contexts), [
             "eny_0088_wgthorns_combat_hurt_light_sv",
@@ -346,7 +350,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(rows[0]["action"]["intParameter"], 3)
 
     def test_animation_voice_trigger_parser_does_not_promote_post_audio(self) -> None:
-        rows = audio_semantics._animation_voice_trigger_rows(b"\n".join((
+        rows = voice_requests._animation_voice_trigger_rows(b"\n".join((
             b"  m_Events:",
             b"  - time: 0.25",
             b"    functionName: PostAudioEvent",
@@ -1071,7 +1075,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "pptrs": pptrs or [],
                 }
 
-            event_hash = audio_semantics.audio_hash_generator_compute(
+            event_hash = identifiers.audio_hash_generator_compute(
                 "au_dlg_foley_stop_chr"
             )
             playable = object_row(
@@ -1162,7 +1166,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 / "json_by_type" / "MonoBehaviour"
             )
             raw_dir.mkdir(parents=True)
-            event_hash = audio_semantics.audio_hash_generator_compute("au_dialog_exact")
+            event_hash = identifiers.audio_hash_generator_compute("au_dialog_exact")
             playable = {
                 "recordType": "object",
                 "object": {"serializedFile": "CAB-compact", "pathId": 11},
@@ -1433,7 +1437,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertIn("cue_fixture_start", ownership["occurrencesByCue"])
             self.assertIn("cue_fixture_end", ownership["occurrencesByCue"])
             self.assertEqual(ownership["stats"]["exactTimelineCueCarriers"], 2)
-            cue_id = audio_semantics.audio_hash_generator_compute("cue_fixture_start")
+            cue_id = identifiers.audio_hash_generator_compute("cue_fixture_start")
             cue_semantics = {"cueDefinitions": {cue_id: {
                 "handlerCount": 1,
                 "directHandlerCount": 1,
@@ -1601,7 +1605,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 }],
             }],
         }
-        summary = audio_semantics.event_summary_row(row, "event_details/00.json")
+        summary = event_summary.event_summary_row(row, "event_details/00.json")
         self.assertEqual(
             summary["sourceKinds"],
             ["externalSourceCodec", "synthesizedSource"],
@@ -1630,7 +1634,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             }]},
         ]
 
-        counts = audio_semantics.annotate_media_playback_locations(media, events)
+        counts = purpose.annotate_media_playback_locations(media, events)
 
         self.assertEqual(
             [row["playbackLocationStatus"] for row in media],
@@ -1649,7 +1653,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(media[0]["purposeKnowledgeStatus"], "exactStoryLineBinding")
 
     def test_unresolved_event_records_scanned_bank_fingerprint_and_exact_hash(self) -> None:
-        rows, _, _ = audio_semantics.build_event_rows({
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": ["Au_Sfx_Fixture_Missing"],
             "events": [],
             "eventEvidence": [],
@@ -1662,7 +1666,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         row = rows[0]
         self.assertEqual(row["audioLibraryResolutionStatus"], "eventHashAbsentFromScannedBankSet")
-        self.assertEqual(row["authoredEventHash"], audio_semantics.audio_hash_generator_compute("Au_Sfx_Fixture_Missing"))
+        self.assertEqual(row["authoredEventHash"], identifiers.audio_hash_generator_compute("Au_Sfx_Fixture_Missing"))
         self.assertEqual(row["scannedBankPackageCount"], 5)
         self.assertEqual(row["scannedBankPackageFingerprint"], "a" * 64)
         self.assertEqual(row["purposeKnowledgeStatus"], "authoredContextKnown")
@@ -1670,7 +1674,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_anonymous_wwise_event_is_high_priority_unknown_use(self) -> None:
         event_hash = 0x12345678
-        rows, _, _ = audio_semantics.build_event_rows(
+        rows, _, _ = event_projection.build_event_rows(
             {
                 "eventNames": [],
                 "events": [],
@@ -1725,7 +1729,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             }],
         }
 
-        count = audio_semantics.annotate_shared_wwise_play_targets([known, anonymous])
+        count = purpose.annotate_shared_wwise_play_targets([known, anonymous])
 
         self.assertEqual(count, 1)
         self.assertEqual(anonymous["category"], "ui")
@@ -1760,7 +1764,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         }
 
         self.assertEqual(
-            audio_semantics.annotate_shared_wwise_play_targets([known, anonymous]),
+            purpose.annotate_shared_wwise_play_targets([known, anonymous]),
             0,
         )
         self.assertNotIn("audioLibraryPlaybackTargetStatus", anonymous)
@@ -1787,7 +1791,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             ],
         }
 
-        count = audio_semantics.annotate_shared_wwise_media_leaves([known, unknown])
+        count = purpose.annotate_shared_wwise_media_leaves([known, unknown])
 
         self.assertEqual(count, 1)
         self.assertEqual(
@@ -1817,13 +1821,13 @@ class AudioSemanticDataTests(unittest.TestCase):
         }
 
         self.assertEqual(
-            audio_semantics.annotate_shared_wwise_media_leaves([known, unknown]),
+            purpose.annotate_shared_wwise_media_leaves([known, unknown]),
             0,
         )
         self.assertNotIn("audioLibraryMediaLeafStatus", unknown)
 
     def test_managed_literal_without_wwise_object_or_consumer_is_not_an_event(self) -> None:
-        rows, _, _ = audio_semantics.build_event_rows({
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": ["au_music_", "au_real_missing"],
             "binaryManagedEventNames": ["au_music_"],
             "events": [],
@@ -1837,8 +1841,8 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_authored_event_name_joins_matching_raw_wwise_inventory(self) -> None:
         event_name = "au_sfx_levelscript_fixture"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
-        rows, _, banks = audio_semantics.build_event_rows({
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        rows, _, banks = event_projection.build_event_rows({
             # LevelScript/Timeline names are collected after the base audio
             # index and may exist only as semantic context keys.
             "eventNames": [],
@@ -1869,7 +1873,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_context_name_replaces_preexisting_hash_only_event_evidence(self) -> None:
         event_name = "au_music_levelscript_fixture"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
         hashed_key = f"hashed-event:0x{event_hash:08x}"
         evidence = {
             "eventId": hashed_key,
@@ -1883,7 +1887,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             "mediaIds": [],
             "traversalStatus": "complete",
         }
-        rows, _, _ = audio_semantics.build_event_rows({
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": [],
             "events": [],
             "eventEvidence": [evidence],
@@ -1916,7 +1920,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             "traversalStatus": "complete",
             "selectionObjectTypes": [9],
         }
-        rows, _, banks = audio_semantics.build_event_rows({
+        rows, _, banks = event_projection.build_event_rows({
             "eventNames": [],
             "events": [],
             "eventEvidence": [],
@@ -1948,7 +1952,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_hotfix_same_media_id_replacement_inherits_exact_event_relation(self) -> None:
         event_name = "au_music_main"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
         base_src = "/export_full/structured/Audio/shared/wwise/music/291650974.flac"
         hotfix_src = "/export_full/structured/Audio/shared/wwise/unknown/291650974.flac"
         audio_index = {
@@ -1991,11 +1995,11 @@ class AudioSemanticDataTests(unittest.TestCase):
             }],
         }
 
-        events, media_to_events, _ = audio_semantics.build_event_rows(
+        events, media_to_events, _ = event_projection.build_event_rows(
             audio_index, {event_name: [{"kind": "typedTableEvent"}]}
         )
         media = audio_semantics.build_media_rows(audio_index, media_to_events)
-        counts = audio_semantics.annotate_media_playback_locations(media, events)
+        counts = purpose.annotate_media_playback_locations(media, events)
 
         self.assertEqual(len(events[0]["media"]), 2)
         replacement = next(row for row in events[0]["media"] if row.get("hotfixMediaReplacement"))
@@ -2033,7 +2037,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         }
 
         media = audio_semantics.build_media_rows(audio_index, {})
-        counts = audio_semantics.annotate_media_playback_locations(media, [])
+        counts = purpose.annotate_media_playback_locations(media, [])
 
         self.assertEqual(counts["unknown"], 1)
         self.assertEqual(
@@ -2068,8 +2072,8 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_control_only_event_role_uses_serialized_action_type(self) -> None:
         event_name = "au_ui_fixture_control"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
-        rows, _, _ = audio_semantics.build_event_rows({
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": [event_name],
             "events": [],
             "eventEvidence": [],
@@ -2098,12 +2102,12 @@ class AudioSemanticDataTests(unittest.TestCase):
             rows[0]["playbackLocationStatus"],
             "libraryControlOnlyExternalCallerUnknown",
         )
-        summary = audio_semantics.event_summary_row(rows[0], "event_details/00.json")
+        summary = event_summary.event_summary_row(rows[0], "event_details/00.json")
         self.assertEqual(summary["playbackRole"], "controlOnly")
 
     def test_typed_timeline_audio_id_name_replaces_anonymous_control_event(self) -> None:
         event_name = "au_dlg_foley_stop_chr"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
         context = {
             "kind": "levelSequenceAudio",
             "authoredEventName": event_name,
@@ -2111,7 +2115,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 "exactTimelineDisplayNameHashEqualsSerializedAudioId"
             ),
         }
-        rows, _, _ = audio_semantics.build_event_rows({
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": [],
             "events": [],
             "eventEvidence": [],
@@ -2140,7 +2144,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
 
     def test_unlabeled_typed_nonplay_action_is_control_only(self) -> None:
-        profile = audio_semantics.wwise_event_action_profile([{
+        profile = event_projection.wwise_event_action_profile([{
             "actionEvidence": [{"actionType": 0x3102, "operation": "operation0x3100"}],
             "rootPlayActionCount": 0,
             "traversalStatus": "complete",
@@ -2157,8 +2161,8 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_complete_zero_action_event_is_known_empty_library_definition(self) -> None:
         event_name = "au_global_fixture_empty"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
-        rows, _, _ = audio_semantics.build_event_rows({
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": [event_name],
             "events": [],
             "eventEvidence": [],
@@ -2184,8 +2188,8 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_audio_dialog_alias_names_raw_wwise_inventory_without_duplicate_hash_row(self) -> None:
         event_name = "eny_fixture_combat_taunt_sv"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
-        rows, _, banks = audio_semantics.build_event_rows({
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        rows, _, banks = event_projection.build_event_rows({
             "eventNames": [event_name],
             "events": [],
             "eventEvidence": [],
@@ -2214,7 +2218,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_voice_table_alias_names_inventory_and_preserves_unobserved_route(self) -> None:
         event_name = "vo_fixture_narrating"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
         alias = {
             "eventHash": event_hash,
             "eventHashHex": f"0x{event_hash:08x}",
@@ -2245,7 +2249,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             }],
         }
         contexts = audio_semantics.voice_table_event_contexts(audio_index)
-        rows, _, banks = audio_semantics.build_event_rows(audio_index, contexts)
+        rows, _, banks = event_projection.build_event_rows(audio_index, contexts)
 
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["id"], event_name)
@@ -2260,7 +2264,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(banks[0]["namedEventCount"], 1)
 
     def test_cross_source_exact_alias_conflict_fails_closed(self) -> None:
-        rows = audio_semantics.exact_wwise_event_aliases({
+        rows = event_projection.exact_wwise_event_aliases({
             "audioDialogWwiseEventAliases": [{"eventHash": 123, "name": "vo_fixture_a"}],
             "voiceTableWwiseEventAliases": [{"eventHash": 123, "name": "vo_fixture_b"}],
         })
@@ -2268,7 +2272,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_typed_ui_table_context_preserves_lua_execution_boundary(self) -> None:
         event_name = "au_ui_fixture_video"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
         audio_index = {"typedUiTableWwiseEventAliases": [{
             "eventHash": event_hash,
             "eventHashHex": f"0x{event_hash:08x}",
@@ -2299,8 +2303,8 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_typed_ui_alias_names_raw_inventory_without_hash_duplicate(self) -> None:
         event_name = "au_ui_fixture_open"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
-        rows, _, _ = audio_semantics.build_event_rows({
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": [],
             "events": [],
             "eventEvidence": [],
@@ -2320,7 +2324,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_sns_voice_context_preserves_click_and_stop_boundary(self) -> None:
         event_name = "au_ui_event_sns_fixture_voice"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
         contexts = audio_semantics.sns_voice_event_contexts({
             "snsVoiceWwiseEventAliases": [{
                 "eventHash": event_hash,
@@ -2347,8 +2351,8 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_skill_id_dictionary_alias_names_event_without_trigger_context(self) -> None:
         event_name = "eny_fixture_skill_audio_identity"
-        event_hash = audio_semantics.audio_hash_generator_compute(event_name)
-        rows, _, _ = audio_semantics.build_event_rows({
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": [],
             "events": [],
             "eventEvidence": [],
@@ -2389,7 +2393,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             table_root = export_root / "structured/StreamingAssets/Table"
             table_root.mkdir(parents=True)
             event_name = "eny_fixture_combat_taunt_sv"
-            event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+            event_hash = identifiers.audio_hash_generator_compute(event_name)
             signed_hash = event_hash if event_hash < (1 << 31) else event_hash - (1 << 32)
             (table_root / "ResponsiveDialog.json").write_text(json.dumps({
                 "1": {"speakers": {"eny_fixture": {"triggers": {
@@ -2399,6 +2403,20 @@ class AudioSemanticDataTests(unittest.TestCase):
                         "weight": [100],
                     }
                 }}}}
+            }), encoding="utf-8")
+            (table_root / "AIBark.json").write_text(json.dumps({
+                "bark_battle_taunt": {"array": [{
+                    "barkId": "bark_battle_taunt",
+                    "barkOdd": [1],
+                    "delay": 0.0,
+                    "isEnabled": True,
+                    "isShuffle": True,
+                    "speakerType": 2,
+                    "triggerKey": ["combat_taunt"],
+                    "triggerOdd": 1,
+                    "type": 1,
+                    "voType": [0],
+                }]},
             }), encoding="utf-8")
             (table_root / "AudioVoTone.json").write_text(json.dumps({
                 str(signed_hash): {"toneList": [signed_hash]}
@@ -2415,7 +2433,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "durationKR": 0.0,
                 }
             }), encoding="utf-8")
-            contexts = audio_semantics.collect_responsive_voice_contexts(
+            contexts = responsive_voice.collect_responsive_voice_contexts(
                 export_root,
                 {"audioDialogWwiseEventAliases": [{
                     "eventHash": event_hash,
@@ -2423,6 +2441,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "name": event_name,
                     "sources": ["AudioDialog.json"],
                 }]},
+                native_context=validated_native_context(),
             )[event_name]
 
             self.assertEqual(
@@ -2442,22 +2461,139 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(response["speakerId"], "eny_fixture")
             self.assertEqual(response["responseWeight"], 100)
             self.assertEqual(response["playbackPlacementStatus"], "authoredPossibleTrigger")
+            self.assertEqual(response["aiBarkRuntimeStatus"], "exactAIBarkTableTriggerCandidate")
+            self.assertEqual(len(response["aiBarkRequests"]), 1)
+            bark = response["aiBarkRequests"][0]
+            self.assertEqual(bark["barkId"], "bark_battle_taunt")
+            self.assertEqual(bark["triggerKey"], "combat_taunt")
+            self.assertEqual(bark["barkType"], 1)
+            self.assertEqual(bark["barkVoTypes"], [0])
+            self.assertEqual(bark["barkSystemMethodVa"], "0x1841957b0")
+            self.assertEqual(bark["voicePostInvocationVa"], "0x184197735")
             tone = next(row for row in contexts if row["kind"] == "voiceToneVariant")
             self.assertEqual(tone["playbackPlacementStatus"], "selectionTransformOnly")
             composed = next(
                 row for row in contexts if row["kind"] == "responsiveDialogToneVariant"
             )
             self.assertEqual(composed["triggerKey"], "combat_taunt")
+            self.assertEqual(composed["aiBarkRequests"][0]["barkId"], "bark_battle_taunt")
             self.assertEqual(
                 composed["playbackPlacementStatus"],
                 "authoredPossibleTriggerViaToneTransform",
+            )
+
+    def test_ai_bark_catalog_does_not_infer_enemy_common_trigger_names(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            (table_root / "AIBark.json").write_text(json.dumps({
+                "bark_battle_start": {"array": [{
+                    "barkId": "bark_battle_start",
+                    "triggerKey": ["combat_intobattle"],
+                    "type": 1,
+                    "voType": [0],
+                }]},
+            }), encoding="utf-8")
+            rows = responsive_voice.collect_ai_bark_trigger_rows(
+                export_root,
+                native_context=validated_native_context(),
+            )
+            self.assertIn("combat_intobattle", rows)
+            self.assertNotIn("common_attack", rows)
+            self.assertNotIn("common_escape", rows)
+
+    def test_enemy_trigger_voice_action_maps_only_exact_native_dictionary_keys(self) -> None:
+        native = native_evidence.ENEMY_TRIGGER_VOICE_ACTION_NATIVE
+        mappings = {row["triggerKey"]: row for row in native["voiceTypes"]}
+        self.assertEqual(
+            {key: row["voiceType"] for key, row in mappings.items()},
+            {
+                "combat_alarm": 0,
+                "combat_intobattle": 1,
+                "combat_fighting": 2,
+                "combat_outbattle_flee": 3,
+                "combat_kill": 4,
+            },
+        )
+        self.assertNotIn("common_attack", mappings)
+        self.assertNotIn("common_escape", mappings)
+        self.assertEqual(native["playbackInvocationVa"], "0x186bc695e")
+
+    def test_responsive_voice_context_exposes_enemy_trigger_action_mapping(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            event_name = "eny_fixture_combat_fighting_sv"
+            event_hash = identifiers.audio_hash_generator_compute(event_name)
+            signed_hash = event_hash if event_hash < (1 << 31) else event_hash - (1 << 32)
+            (table_root / "ResponsiveDialog.json").write_text(json.dumps({
+                "1": {"speakers": {"eny_fixture": {"triggers": {
+                    "combat_fighting": {"response": [signed_hash], "weight": [100]}
+                }}}}
+            }), encoding="utf-8")
+            contexts = responsive_voice.collect_responsive_voice_contexts(
+                export_root,
+                {"audioDialogWwiseEventAliases": [{
+                    "eventHash": event_hash,
+                    "voiceId": signed_hash,
+                    "name": event_name,
+                }]},
+                native_context=validated_native_context(),
+            )[event_name]
+
+        response = next(row for row in contexts if row["kind"] == "responsiveDialogVoice")
+        self.assertEqual(response["enemyTriggerVoiceActionStatus"], "exactNativeVoiceTypeTriggerMapping")
+        self.assertEqual(response["enemyTriggerVoiceAction"]["voiceType"], 2)
+        self.assertEqual(response["enemyTriggerVoiceAction"]["mappingAddInvocationVa"], "0x186bc6aa4")
+
+    def test_ai_bark_catalog_keeps_missing_response_ids_as_authored_not_playable(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            (table_root / "AIBark.json").write_text(json.dumps({
+                "bark_idle": {"array": [{
+                    "barkId": "bark_idle",
+                    "triggerKey": ["explore_idletalk"],
+                    "type": 2,
+                    "voType": [0],
+                }]},
+            }), encoding="utf-8")
+            (table_root / "ResponsiveDialog.json").write_text(json.dumps({
+                "32": {"speakers": {"any": {"triggers": {
+                    "explore_idletalk": {
+                        "response": [101, 202],
+                        "weight": [1, 1],
+                    },
+                }}}},
+            }), encoding="utf-8")
+
+            catalog = responsive_voice.build_ai_bark_catalog(
+                export_root,
+                {"audioDialogWwiseEventAliases": []},
+                [{"audioDialogKey": 101, "storyLineBindingCount": 1}],
+                native_context=validated_native_context(),
+            )
+
+            self.assertEqual(catalog["counts"]["authoredBarkIds"], 1)
+            self.assertEqual(catalog["counts"]["uniqueResponseVoiceIds"], 2)
+            self.assertEqual(catalog["counts"]["exactStoryLineBoundVoiceIds"], 1)
+            self.assertEqual(catalog["counts"]["playableVoiceIds"], 1)
+            self.assertEqual(catalog["counts"]["unresolvedVoiceIds"], 1)
+            self.assertEqual(catalog["counts"]["unresolvedSentenceType32AnyVoiceIds"], 1)
+            self.assertEqual(catalog["unresolvedResponses"][0]["voiceId"], 202)
+            self.assertEqual(
+                catalog["unresolvedResponses"][0]["status"],
+                "authoredAIBarkResponseWithoutCurrentPlaybackObject",
             )
 
     def test_responsive_voice_contexts_merge_streaming_and_persistent_tables(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root) / "export_full"
             event_name = "chr_fixture_action_dodge_sv"
-            event_hash = audio_semantics.audio_hash_generator_compute(event_name)
+            event_hash = identifiers.audio_hash_generator_compute(event_name)
             signed_hash = event_hash if event_hash < (1 << 31) else event_hash - (1 << 32)
             for source, trigger_key in (
                 ("StreamingAssets", "action_dash_start"),
@@ -2475,7 +2611,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     }}}}
                 }), encoding="utf-8")
 
-            contexts = audio_semantics.collect_responsive_voice_contexts(
+            contexts = responsive_voice.collect_responsive_voice_contexts(
                 export_root,
                 {"audioDialogWwiseEventAliases": [{
                     "eventHash": event_hash,
@@ -2483,6 +2619,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "name": event_name,
                     "sources": ["AudioDialog.json"],
                 }]},
+                native_context=validated_native_context(),
             )[event_name]
 
         responses = [row for row in contexts if row["kind"] == "responsiveDialogVoice"]
@@ -2608,20 +2745,20 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_audio_hash_generator_matches_native_utf16_fnv1_without_trimming(self) -> None:
         self.assertEqual(
-            audio_semantics.audio_hash_generator_compute("au_cue_music_combat_boss_state1"),
+            identifiers.audio_hash_generator_compute("au_cue_music_combat_boss_state1"),
             0x8DD0B0C9,
         )
         self.assertEqual(
-            audio_semantics.audio_hash_generator_compute("AU_CUE_MUSIC_COMBAT_BOSS_STATE1"),
+            identifiers.audio_hash_generator_compute("AU_CUE_MUSIC_COMBAT_BOSS_STATE1"),
             0x8DD0B0C9,
         )
         self.assertEqual(
-            audio_semantics.audio_hash_generator_compute(" au_cue_music_combat_boss_state1"),
+            identifiers.audio_hash_generator_compute(" au_cue_music_combat_boss_state1"),
             0x7C6CA2E7,
         )
         self.assertNotEqual(
-            audio_semantics.audio_hash_generator_compute("\u00c9"),
-            audio_semantics.audio_hash_generator_compute("\u00e9"),
+            identifiers.audio_hash_generator_compute("\u00c9"),
+            identifiers.audio_hash_generator_compute("\u00e9"),
         )
 
     def test_direct_and_content_equivalent_media_keep_honest_counts(self) -> None:
@@ -2642,7 +2779,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "bankId": 9,
                 }],
             })
-        rows, _, _ = audio_semantics.build_event_rows({
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": ["au_sfx_same"],
             "events": media,
             "eventEvidence": [{
@@ -2677,7 +2814,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             "timingClass": "coDispatchWithAuthoredDelayDifference",
             "explicitDelayActionCount": 1,
         }
-        rows, _, _ = audio_semantics.build_event_rows({
+        rows, _, _ = event_projection.build_event_rows({
             "eventNames": ["au_music_fixture"],
             "events": [],
             "eventEvidence": [{
@@ -2736,7 +2873,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             },
         ]
 
-        compact = audio_semantics.compact_container_evidence(rows)
+        compact = event_projection.compact_container_evidence(rows)
 
         self.assertEqual(len(compact), 1)
         selector = compact[0]
@@ -2788,7 +2925,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             },
         ]
 
-        compact = audio_semantics.compact_container_evidence(rows)
+        compact = event_projection.compact_container_evidence(rows)
 
         self.assertEqual(len(compact), 1)
         policy = compact[0]
@@ -2858,7 +2995,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             },
         ]
 
-        compact = audio_semantics.compact_container_evidence(rows)
+        compact = event_projection.compact_container_evidence(rows)
 
         self.assertEqual(len(compact), 1)
         layer = compact[0]
@@ -2885,28 +3022,28 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertNotIn("layers", layer)
 
     def test_event_categories_preserve_unknowns(self) -> None:
-        self.assertEqual(audio_semantics.event_category("au_sfx_test"), "sfx")
-        self.assertEqual(audio_semantics.event_category("au_chr_test_attack"), "sfx")
-        self.assertEqual(audio_semantics.event_category("au_eny_test_hit"), "sfx")
-        self.assertEqual(audio_semantics.event_category("au_music_test"), "music")
-        self.assertEqual(audio_semantics.event_category("au_amb_wind"), "ambience")
-        self.assertEqual(audio_semantics.event_category("au_rtpc_speed"), "control")
-        self.assertEqual(audio_semantics.event_category("au_vibration_test"), "control")
-        self.assertEqual(audio_semantics.event_category(":au_music_test"), "music")
-        self.assertEqual(audio_semantics.event_category("au_ul_popup_close"), "ui")
-        self.assertEqual(audio_semantics.event_category("player_fol_cloth_fallover"), "sfx")
-        self.assertEqual(audio_semantics.event_category("unproven_name"), "unknown")
+        self.assertEqual(event_projection.event_category("au_sfx_test"), "sfx")
+        self.assertEqual(event_projection.event_category("au_chr_test_attack"), "sfx")
+        self.assertEqual(event_projection.event_category("au_eny_test_hit"), "sfx")
+        self.assertEqual(event_projection.event_category("au_music_test"), "music")
+        self.assertEqual(event_projection.event_category("au_amb_wind"), "ambience")
+        self.assertEqual(event_projection.event_category("au_rtpc_speed"), "control")
+        self.assertEqual(event_projection.event_category("au_vibration_test"), "control")
+        self.assertEqual(event_projection.event_category(":au_music_test"), "music")
+        self.assertEqual(event_projection.event_category("au_ul_popup_close"), "ui")
+        self.assertEqual(event_projection.event_category("player_fol_cloth_fallover"), "sfx")
+        self.assertEqual(event_projection.event_category("unproven_name"), "unknown")
 
     def test_audio_dialog_custom_event_hash_is_control_context(self) -> None:
         event_hash = 0x35B925DA
-        rows, _, _ = audio_semantics.build_event_rows(
+        rows, _, _ = event_projection.build_event_rows(
             {
                 "eventNames": [],
                 "events": [],
                 "eventEvidence": [],
             },
             {
-                audio_semantics.event_hash_context_key(event_hash): [
+                identifiers.event_hash_context_key(event_hash): [
                     {
                         "kind": "tableEventHash",
                         "table": "AudioDialogCustomEventTable",
@@ -3142,7 +3279,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             "unresolvedSharedGenericBody",
         )
         self.assertTrue(all(
-            audio_semantics.audio_hash_generator_compute(row["recoveredName"])
+            identifiers.audio_hash_generator_compute(row["recoveredName"])
             == row["groupId"]
             for row in music_groups.values()
             if row.get("recoveredName")
@@ -3218,21 +3355,30 @@ class AudioSemanticDataTests(unittest.TestCase):
                 for value, index in zip(values, data_indexes)
             )
             header = bytearray(32)
-            header[0:8] = pack("<II", audio_semantics.METADATA_MAGIC, 29)
+            header[0:8] = pack("<II", identifiers.METADATA_MAGIC, 29)
             header[8:24] = pack("<IiIi", 32, len(records), 32 + len(records), len(literal_data))
             path.write_bytes(bytes(header) + records + literal_data)
 
             self.assertEqual(
-                audio_semantics.collect_metadata_audio_literals(path),
+                identifiers.collect_metadata_audio_literals(path),
                 ["au_rtpc_fixture", "au_ui_confirm", "BARK_TEST"],
             )
-            contexts, event_names = audio_semantics.managed_literal_contexts(path)
+            unavailable_native = native_evidence.NativeAudioEvidence(
+                path,
+                None,
+                "missing",
+            )
+            contexts, event_names = managed_literals.collect_contexts(
+                path,
+                native_context=unavailable_native,
+            )
             self.assertEqual(event_names, ["au_ui_confirm", "BARK_TEST"])
             self.assertNotIn("au_rtpc_fixture", contexts)
-            matched_contexts, all_names = audio_semantics.managed_literal_contexts(
+            matched_contexts, all_names = managed_literals.collect_contexts(
                 path,
+                native_context=unavailable_native,
                 current_wwise_event_hashes={
-                    audio_semantics.audio_hash_generator_compute("au_ui_confirm")
+                    identifiers.audio_hash_generator_compute("au_ui_confirm")
                 },
             )
             self.assertEqual(all_names, ["au_ui_confirm", "BARK_TEST"])
@@ -3245,18 +3391,14 @@ class AudioSemanticDataTests(unittest.TestCase):
     def test_promotes_hash_locked_managed_audio_callsite(self) -> None:
         event_name = "au_int_campfire_recover"
         with patch.object(
-            audio_semantics,
+            identifiers,
             "collect_metadata_audio_literals",
             return_value=[event_name],
-        ), patch.object(Path, "is_file", return_value=True), patch.object(
-            audio_semantics,
-            "file_sha256",
-            side_effect=[
-                audio_semantics.MANAGED_AUDIO_CALLSITE_METADATA_SHA256,
-                audio_semantics.MANAGED_AUDIO_CALLSITE_GAMEASSEMBLY_SHA256,
-            ],
         ):
-            contexts, _ = audio_semantics.managed_literal_contexts(Path("metadata"))
+            contexts, _ = managed_literals.collect_contexts(
+                Path("metadata"),
+                native_context=validated_native_context(),
+            )
         context = contexts[event_name][0]
         self.assertEqual(context["kind"], "binaryManagedLiteralCallsite")
         self.assertEqual(context["consumerMethod"], "_LocalReqRecovery")
@@ -3302,7 +3444,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
 
     def test_managed_audio_callsite_catalog_keeps_exact_argument_contracts(self) -> None:
-        catalog = audio_semantics.MANAGED_AUDIO_CALLSITE_CONTEXTS
+        catalog = managed_literals.MANAGED_AUDIO_CALLSITE_CONTEXTS
         self.assertGreaterEqual(len(catalog), 134)
         self.assertEqual(
             catalog["au_ui_button_hyperlink"]["playbackParameter"],
@@ -3659,7 +3801,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "customMusicModeBaseState": 456,
                 }
             }), encoding="utf-8")
-            hashes = audio_semantics.collect_table_audio_event_hashes(root)
+            _names, hashes = table_contexts.collect_table_audio_events(root)
             self.assertEqual(hashes, {0xFFFFFFFF, 123, 0xFFFFFFFE})
 
     def test_table_contexts_do_not_flatten_voice_media_ids_into_events(self) -> None:
@@ -3681,7 +3823,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             streaming.write_text(json.dumps(payload), encoding="utf-8")
             persistent.write_text(json.dumps(payload), encoding="utf-8")
 
-            contexts = audio_semantics.collect_table_contexts(root)
+            contexts = table_contexts.collect_table_contexts(root)
 
             self.assertEqual(set(contexts), {"au_sfx_radio_transition"})
             self.assertEqual(len(contexts["au_sfx_radio_transition"]), 1)
@@ -3706,7 +3848,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 },
             }), encoding="utf-8")
 
-            contexts = audio_semantics.collect_table_contexts(root)
+            contexts = table_contexts.collect_table_contexts(root)
             self.assertEqual(set(contexts), {"au_sfx_remotecomm_fixture"})
             authored = contexts["au_sfx_remotecomm_fixture"][0]
             self.assertEqual(authored["kind"], "remoteCommonAudio")
@@ -3714,12 +3856,12 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(authored["voiceLinkStatus"], "separateRemoteCommonVoiceId")
             self.assertEqual(authored["voiceId"], "au_remotecomm_fixture_001")
 
-            rows, _, _ = audio_semantics.build_event_rows({
+            rows, _, _ = event_projection.build_event_rows({
                 "eventNames": ["au_sfx_remotecomm_fixture"],
                 "events": [],
                 "eventEvidence": [],
             }, contexts)
-            summary = audio_semantics.event_summary_row(rows[0], "event_details/00.json")
+            summary = event_summary.event_summary_row(rows[0], "event_details/00.json")
             self.assertEqual(summary["contextKinds"], ["remoteCommonAudio"])
             self.assertEqual(summary["contextGroups"], ["authoredConfig"])
             self.assertEqual(summary["triggerBindingStatuses"], ["exactRemoteCommonAudioId"])
@@ -3771,7 +3913,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 },
             }), encoding="utf-8")
 
-            semantics = audio_semantics.collect_audio_cue_semantics(root)
+            semantics = table_contexts.collect_audio_cue_semantics(root)
 
             self.assertEqual(set(semantics["eventContexts"]), {"au_music_direct", "au_music_level"})
             level = semantics["eventContexts"]["au_music_level"][0]
@@ -3784,7 +3926,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 {"au_trigger_behavior_operand", "au_trigger_condition_operand"},
             )
             self.assertEqual(
-                audio_semantics.collect_table_audio_event_names(root),
+                table_contexts.collect_table_audio_events(root)[0],
                 {"au_music_direct", "au_music_level"},
             )
 
@@ -3811,8 +3953,8 @@ class AudioSemanticDataTests(unittest.TestCase):
                 "listenerSpeedRtpcName": "au_rtpc_speed_fixture",
             }), encoding="utf-8")
 
-            cue_semantics = audio_semantics.collect_audio_cue_semantics(root)
-            controls = audio_semantics.collect_audio_global_control_semantics(root, cue_semantics)
+            cue_semantics = table_contexts.collect_audio_cue_semantics(root)
+            controls = table_contexts.collect_audio_global_control_semantics(root, cue_semantics)
 
             refs = {row["field"]: row for row in controls["audioGlobalMusicCueRefs"]}
             self.assertEqual(refs["musicCueCombatIn"]["definitionStatus"], "resolved")
@@ -3823,7 +3965,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             )
             derived = controls["eventContexts"]["au_music_fixture"][0]
             self.assertEqual(derived["globalMusicCueField"], "musicCueCombatIn")
-            contexts = audio_semantics.collect_table_contexts(root)
+            contexts = table_contexts.collect_table_contexts(root)
             self.assertIn("au_music_fixture", contexts)
             self.assertNotIn("#0xfffffffe", contexts)
 
@@ -4072,7 +4214,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 "enumValues": {"Collect": 14},
             }]}
 
-            contexts = audio_semantics.collect_table_contexts(root, runtime_model)
+            contexts = table_contexts.collect_table_contexts(root, runtime_model)
 
             collect = contexts["au_item_ore_collect"][0]
             self.assertEqual(collect["kind"], "interactiveAudioTrigger")
@@ -4089,7 +4231,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(state_in["stateDirection"], "enter")
             self.assertEqual(state_in["audioStateMask"], 512)
             self.assertEqual(
-                audio_semantics.collect_table_audio_event_names(root),
+                table_contexts.collect_table_audio_events(root)[0],
                 {"au_int_door_open", "au_item_ore_collect", "au_music_main", "au_sfx_init"},
             )
             component_root = root / "structured/StreamingAssets/Data/Json/Interactive/InteractiveData"
@@ -4126,7 +4268,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     },
                 }
 
-            component_contexts = audio_semantics.collect_interactive_component_contexts(
+            component_contexts = interactive_components.collect_interactive_component_contexts(
                 root,
                 decoder=decode_fixture,
                 table_decoder=decode_table_fixture,
@@ -4174,7 +4316,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             ))
             (component_root / "data_int_fixture_mover.json").write_bytes(component)
 
-            contexts = audio_semantics.collect_interactive_component_contexts(root)
+            contexts = interactive_components.collect_interactive_component_contexts(root)
 
             row = contexts[event_id][0]
             self.assertEqual(row["kind"], "interactiveComponentPropertyAudio")
@@ -4224,7 +4366,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 bytes(24) + property_map + bytes(8)
             )
 
-            contexts = audio_semantics.collect_interactive_component_contexts(root)
+            contexts = interactive_components.collect_interactive_component_contexts(root)
 
             row = contexts[event_id][0]
             self.assertEqual(row["kind"], "interactivePropertyMapAudio")
@@ -4260,7 +4402,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     },
                 }}
 
-            contexts = audio_semantics.collect_interactive_component_contexts(
+            contexts = interactive_components.collect_interactive_component_contexts(
                 root, decoder=decode_fixture
             )
 
@@ -4324,7 +4466,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     },
                 }}
 
-            contexts = audio_semantics.collect_interactive_component_contexts(
+            contexts = interactive_components.collect_interactive_component_contexts(
                 root, decoder=decode_fixture
             )
 
@@ -4390,7 +4532,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     }],
                 }}
 
-            contexts = audio_semantics.collect_interactive_component_contexts(
+            contexts = interactive_components.collect_interactive_component_contexts(
                 root, decoder=decode_fixture
             )
 
@@ -4431,7 +4573,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 "scalarsTruncated": True,
             }) + "\n", encoding="utf-8")
 
-            contexts = audio_semantics.collect_table_contexts(root)
+            contexts = table_contexts.collect_table_contexts(root)
 
             music = contexts["au_music_main"][0]
             self.assertEqual(music["semanticRole"], "gameplayMusicStartEvent")
@@ -4468,7 +4610,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             def unexpected_table_decode(_data: bytes) -> dict:
                 raise AssertionError("conflicting mirrors must fail closed before table decode")
 
-            contexts = audio_semantics.collect_interactive_component_contexts(
+            contexts = interactive_components.collect_interactive_component_contexts(
                 root,
                 decoder=decode_fixture,
                 table_decoder=unexpected_table_decode,
@@ -4517,7 +4659,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(launch["authoredSkillIds"], ["chr_test_skill"])
             self.assertEqual(launch["skillOwnershipStatus"], "projectileTemplateReferenceOnly")
             self.assertEqual(launch["runtimeActivationStatus"], "projectileLifecycleExecutionNotObserved")
-            rows, _, _ = audio_semantics.build_event_rows({"eventNames": [], "events": [], "eventEvidence": []}, contexts)
+            rows, _, _ = event_projection.build_event_rows({"eventNames": [], "events": [], "eventEvidence": []}, contexts)
             hashed = next(row for row in rows if row["hash"] == 0xFFFFFFFE)
             self.assertEqual(hashed["category"], "sfx")
             self.assertEqual(hashed["categoryEvidence"], "exactProjectileSoundField")
@@ -4809,7 +4951,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "properties": property_rows,
                 }]
 
-            semantics = audio_semantics.collect_physics_audio_semantics(
+            semantics = authored_components.collect_physics_audio_semantics(
                 export_root,
                 component_decoder=component_decoder,
                 table_decoder=table_decoder,
@@ -4835,7 +4977,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(rtpc["controlRole"], "movementVelocitySquared")
 
             with patch.object(
-                audio_semantics,
+                authored_components,
                 "collect_physics_audio_semantics",
                 return_value=semantics,
             ):
@@ -4891,7 +5033,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 template_path.parent.mkdir(parents=True, exist_ok=True)
                 template_path.write_bytes(b"prefix" + mp_string(controller_id) + b"suffix")
 
-            event_hash = audio_semantics.audio_hash_generator_compute("au_mv_event")
+            event_hash = identifiers.audio_hash_generator_compute("au_mv_event")
             signed_event_hash = event_hash if event_hash < 0x80000000 else event_hash - 0x100000000
             common = {
                 "modelAnimatorIndex": 0,
@@ -4973,7 +5115,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     },
                 }
 
-            semantics = audio_semantics.collect_model_view_state_audio_semantics(
+            semantics = authored_components.collect_model_view_state_audio_semantics(
                 export_root,
                 controller_decoder=controller_decoder,
                 table_decoder=table_decoder,
@@ -4985,7 +5127,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(semantics["stats"]["customAudioControlCount"], 1)
             self.assertEqual(len(semantics["rtpcParameters"]), 1)
             self.assertEqual(len(semantics["spatialControls"]), 1)
-            event = semantics["eventContexts"][audio_semantics.event_hash_context_key(event_hash)][0]
+            event = semantics["eventContexts"][identifiers.event_hash_context_key(event_hash)][0]
             self.assertEqual(event["modelAnimatorName"], "P_fixture")
             self.assertEqual(event["layerName"], "audioLayer")
             self.assertEqual(event["stateName"], "Rotating")
@@ -5003,7 +5145,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertNotIn("custom_portal", semantics["eventContexts"])
 
             with patch.object(
-                audio_semantics,
+                authored_components,
                 "collect_model_view_state_audio_semantics",
                 return_value=semantics,
             ):
@@ -5080,7 +5222,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["sourcePaths"], ["AnimationClip/UI_Generic.anim"])
 
     def test_decodes_and_aggregates_custom_footstep_parameters_exactly(self) -> None:
-        regular = audio_semantics.decode_custom_footstep_parameters(0x0D, 0.5)
+        regular = event_projection.decode_custom_footstep_parameters(0x0D, 0.5)
         self.assertEqual(regular["footSide"], "Right")
         self.assertEqual(regular["vfxType"], "Land")
         self.assertEqual(regular["playbackFilter"], "IsMaxWeight")
@@ -5089,7 +5231,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(regular["runtimeVfxWeightThreshold"], 0.5)
         self.assertEqual(regular["decodeStatus"], "exactCurrentBuild")
 
-        custom = audio_semantics.decode_custom_footstep_parameters(0x44, 0.375)
+        custom = event_projection.decode_custom_footstep_parameters(0x44, 0.375)
         self.assertEqual(custom["footSide"], "Left")
         self.assertEqual(custom["vfxType"], "Step")
         self.assertEqual(custom["playbackFilter"], "CustomWeight")
@@ -5097,16 +5239,16 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertFalse(custom["inactiveFloat"])
         self.assertEqual(custom["floatParameterStatus"], "customWeightThreshold")
 
-        variants = audio_semantics.aggregate_custom_footstep_parameter_variants([
+        variants = event_projection.aggregate_custom_footstep_parameter_variants([
             {"function": "OnCustomFootStep", "intParameter": 0x0D, "floatParameter": 0.5},
             {"function": "OnCustomFootStep", "intParameter": 0x0D, "floatParameter": 0.5},
             {"function": "OnCustomFootStep", "intParameter": 0x44, "floatParameter": 0.375},
             {"function": "PostAudioEvent", "intParameter": 0x0D, "floatParameter": 0.5},
         ])
         self.assertEqual([row["occurrenceCount"] for row in variants], [2, 1])
-        self.assertIsNone(audio_semantics.decode_custom_footstep_parameters(True, 0.5))
+        self.assertIsNone(event_projection.decode_custom_footstep_parameters(True, 0.5))
         self.assertEqual(
-            audio_semantics.decode_custom_footstep_parameters(0x02, 0.5)["decodeStatus"],
+            event_projection.decode_custom_footstep_parameters(0x02, 0.5)["decodeStatus"],
             "unsupportedMaskedValue",
         )
 
@@ -5182,7 +5324,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 export_root,
                 decode_file=decode_file,
                 cue_semantics={"cueDefinitions": {
-                    audio_semantics.audio_hash_generator_compute("au_cue_music_combat_boss_state1"): {
+                    identifiers.audio_hash_generator_compute("au_cue_music_combat_boss_state1"): {
                         "source": "structured/Persistent/Table/AudioCueTable.json",
                         "handlerCount": 1,
                         "directHandlerCount": 1,
@@ -5205,12 +5347,12 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["sourceRoot"], "Persistent")
             self.assertEqual(context["triggerRole"], "play")
             self.assertEqual(context["fields"]["stopOnRelease"]["value"], True)
-            self.assertEqual(audio_semantics.semantic_context_group(context["kind"]), "scripted")
+            self.assertEqual(event_summary.semantic_context_group(context["kind"]), "scripted")
             self.assertEqual(semantics["cueInvocations"][0]["cueName"], "au_cue_music_combat_boss_state1")
             self.assertEqual(semantics["cueInvocations"][0]["definitionStatus"], "resolved")
             self.assertEqual(
                 semantics["cueInvocations"][0]["cueId"],
-                audio_semantics.audio_hash_generator_compute("au_cue_music_combat_boss_state1"),
+                identifiers.audio_hash_generator_compute("au_cue_music_combat_boss_state1"),
             )
             self.assertEqual(semantics["cueInvocations"][0]["cueSignedId"], -1915703095)
             cue_context = semantics["eventContexts"]["au_music_cue_fixture"][0]
@@ -5776,6 +5918,40 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("catalog.levelEventAudioConditions", source)
         self.assertIn("authoredOccurrenceCount", source)
         self.assertNotIn("selected Wwise switch child", source)
+        self.assertIn("const PLAYER_COLLAPSE_THRESHOLD = 20", source)
+        self.assertIn("candidates.length > PLAYER_COLLAPSE_THRESHOLD", render_body)
+
+    def test_audio_frontend_prioritizes_unknown_purpose_and_exposes_enemy_action_mapping(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        purpose_body = source.split("function purposeRecoveryTag", 1)[1].split(
+            "function recordType", 1
+        )[0]
+        normalize_body = source.split("function normalizeRecord", 1)[1].split(
+            "function rebuildEventTaxonomy", 1
+        )[0]
+        evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
+            "function radioTableLineLabel", 1
+        )[0]
+
+        self.assertIn('priority === "resolvedTerminal"', purpose_body)
+        self.assertIn("storyLineBindingCount", purpose_body)
+        self.assertIn('priority === "highest"', purpose_body)
+        self.assertIn('"purposeStoryTerminal"', source)
+        self.assertIn("purposeTag", normalize_body)
+        self.assertIn('purposeUnknown: "Purpose unknown — investigate"', source)
+        self.assertIn("enemyTriggerVoiceActionCatalogSection", source)
+        self.assertIn("state.index?.triggerCatalog?.enemyTriggerVoiceAction", source)
+        self.assertIn("context?.enemyTriggerVoiceAction", evidence_body)
+        self.assertIn("enemyAction.voiceType", evidence_body)
+        self.assertIn("enemyAction.mappingAddInvocationVa", evidence_body)
+        self.assertIn('"purposeUnknownEvents"', (
+            Path(__file__).resolve().parents[1] / "build_audio_semantics.py"
+        ).read_text(encoding="utf-8"))
+        self.assertIn('"purposeStoryTerminalMedia"', (
+            Path(__file__).resolve().parents[1] / "build_audio_semantics.py"
+        ).read_text(encoding="utf-8"))
 
     def test_audio_frontend_keeps_event_type_and_media_purpose_separate(self) -> None:
         source = (

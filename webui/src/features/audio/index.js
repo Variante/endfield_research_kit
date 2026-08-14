@@ -99,6 +99,10 @@
       recoveryLibraryResolved: "Resolved to a Wwise Event object",
       recoveryLibraryUnresolved: "Unresolved to an audio-library object",
       recoveryTriggerNameUnknown: "Wwise Event object; authored trigger unknown",
+      purposeUnknown: "Purpose unknown — investigate",
+      purposePartial: "Partial purpose evidence",
+      purposeKnown: "Purpose known",
+      purposeStoryTerminal: "Story-line bound — terminal",
       scannedBankSet: "Scanned bank set",
       recoveryBoundary: "Recovery coverage",
       unresolvedEventBoundary: "This authored Event reference has a recovered trigger context, but no matching Wwise Event object was found in the current audio-library index. No media or playback branch is inferred.",
@@ -133,6 +137,7 @@
       levelSequenceGapContexts: "Ownership gaps",
       levelSequenceRuntimeBoundary: "Timeline runtime boundary",
       audioTriggerContextCatalog: "Authored trigger-context coverage",
+      enemyTriggerVoiceActionCatalog: "Enemy trigger-voice action mapping",
       contextAnimation: "Animation",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
@@ -313,8 +318,13 @@
       recoveryLibraryResolved: "\u5df2\u89e3\u6790\u5230 Wwise Event \u5bf9\u8c61",
       recoveryLibraryUnresolved: "\u672a\u89e3\u6790\u5230\u97f3\u9891\u5e93\u5bf9\u8c61",
       recoveryTriggerNameUnknown: "Wwise Event \u5bf9\u8c61\u5b58\u5728\uff0c\u521b\u4f5c\u89e6\u53d1\u672a\u77e5",
+      purposeUnknown: "\u7528\u9014\u672a\u77e5\uff0c\u4f18\u5148\u8c03\u67e5",
+      purposePartial: "\u4ec5\u6709\u90e8\u5206\u7528\u9014\u8bc1\u636e",
+      purposeKnown: "\u7528\u9014\u5df2\u77e5",
+      purposeStoryTerminal: "\u5df2\u7ed1\u5b9a\u5267\u60c5\u53f0\u8bcd\uff0c\u7ec8\u6001",
       scannedBankSet: "\u5df2\u626b\u63cf bank \u96c6\u5408",
       recoveryBoundary: "\u6062\u590d\u8986\u76d6",
+      enemyTriggerVoiceActionCatalog: "\u654c\u4eba\u8bed\u97f3\u89e6\u53d1\u52a8\u4f5c\u6620\u5c04",
       unresolvedEventBoundary: "\u8be5\u521b\u4f5c Event \u5f15\u7528\u6709\u5df2\u6062\u590d\u7684\u89e6\u53d1\u4e0a\u4e0b\u6587\uff0c\u4f46\u5f53\u524d\u97f3\u9891\u5e93\u7d22\u5f15\u4e2d\u6ca1\u6709\u627e\u5230\u5bf9\u5e94\u7684 Wwise Event \u5bf9\u8c61\u3002\u4e0d\u4f1a\u56e0\u6b64\u63a8\u65ad\u5a92\u4f53\u6216\u64ad\u653e\u5206\u652f\u3002",
       unknownLocationBoundary: "\u8be5\u6587\u4ef6\u5df2\u89e3\u7801\u4e14\u53ef\u5728\u6d4f\u89c8\u5668\u4e2d\u64ad\u653e\uff0c\u4f46\u6ca1\u6709\u6062\u590d\u51fa\u521b\u4f5c Event \u5173\u7cfb\u6216\u76f4\u63a5\u5bf9\u8bdd\u4f4d\u7f6e\u3002\u6587\u4ef6\u5b58\u5728\u4e8e\u97f3\u9891\u5305\u4e2d\u4e0d\u80fd\u8bf4\u660e\u6e38\u620f\u5728\u54ea\u91cc\u64ad\u653e\u5b83\u3002",
       eventOnlyLocationBoundary: "\u8be5\u6587\u4ef6\u53ef\u4ece Wwise Event \u5230\u8fbe\uff0c\u4f46\u8be5 Event \u6ca1\u6709\u5df2\u6062\u590d\u7684\u521b\u4f5c\u89e6\u53d1\u4e0a\u4e0b\u6587\u3002Event \u5173\u7cfb\u4e0d\u80fd\u786e\u5b9a\u5176\u73a9\u6cd5\u3001\u5267\u60c5\u3001\u52a8\u753b\u6216\u5173\u5361\u4f4d\u7f6e\u3002",
@@ -671,11 +681,24 @@
       libraryResolved: "recoveryLibraryResolved",
       libraryUnresolved: "recoveryLibraryUnresolved",
       triggerNameUnknown: "recoveryTriggerNameUnknown",
+      purposeUnknown: "purposeUnknown",
+      purposePartial: "purposePartial",
+      purposeKnown: "purposeKnown",
+      purposeStoryTerminal: "purposeStoryTerminal",
       directDialogMedia: "locationDirectDialogMedia",
       authoredEventContext: "locationAuthoredEventContext",
       eventRelationOnly: "locationEventRelationOnly",
       unknown: "locationUnknown",
     }[normalize(value)] || value);
+  }
+
+  function purposeRecoveryTag(record) {
+    const priority = normalize(record?.purposeInvestigationPriority);
+    if (priority === "resolvedTerminal" || Number(record?.storyLineBindingCount || 0) > 0) return "purposeStoryTerminal";
+    if (priority === "highest") return "purposeUnknown";
+    if (priority === "secondary") return "purposePartial";
+    if (priority === "resolved") return "purposeKnown";
+    return "";
   }
 
   function recordType(record, kind) {
@@ -826,6 +849,8 @@
     if (contexts.length) parts.push(contexts.map(taxonomyLabel).join(" + "));
     const relations = asArray(taxonomy.relationTags);
     if (relations.length) parts.push(relations.slice(0, 2).map(taxonomyLabel).join(" + "));
+    const purposeTag = purposeRecoveryTag(record);
+    if (purposeTag) parts.push(`${t("purposeStatus")}: ${recoveryLabel(purposeTag)}`);
     if (kind === "events") {
       const count = Number(record?.possibleMediaCount ?? record?.resolvedMediaCount ?? record?.mediaCount ?? record?.candidateCount)
         || asArray(record?.mediaIds).length
@@ -879,6 +904,8 @@
         context.semanticRole, context.confidence, context.animationOwnershipScope, context.possibleMediaScope,
         context.modelId, context.subTemplateId, context.triggerStateId, context.triggerStateName,
         context.triggerCustomState, context.ownerKind, context.stateDirection, context.audioStateMask, context.description,
+        context.enemyTriggerVoiceActionStatus,
+        ...Object.values(context.enemyTriggerVoiceAction || {}),
         context.authoredFieldRole, context.serializedFieldPath, context.componentName,
         context.authoredEventName, context.authoredEventNameEvidence,
         context.gameObjectName, ...asArray(context.hierarchyPath), context.serializedFile,
@@ -934,12 +961,14 @@
     const relationTags = recordRelationTags(raw, kind);
     const objectType = recordType(raw, kind);
     const taxonomy = { contextTags, relationTags, objectType };
+    const purposeTag = purposeRecoveryTag(raw);
     const recoveryTags = kind === "events"
       ? [
           raw.foundInWwise ? "libraryResolved" : "libraryUnresolved",
           ...(raw.eventIdentityStatus === "wwiseObjectWithoutRecoveredTriggerName" ? ["triggerNameUnknown"] : []),
+          ...(purposeTag ? [purposeTag] : []),
         ]
-      : [normalize(raw.playbackLocationStatus) || "unknown"];
+      : [normalize(raw.playbackLocationStatus) || "unknown", ...(purposeTag ? [purposeTag] : [])];
     return {
       raw,
       kind,
@@ -955,7 +984,10 @@
       meta: recordMeta(raw, kind, taxonomy),
       listMeta: recordMeta(raw, kind, taxonomy, { includeFileStats: false }),
       fileStats: recordFileStats(raw, kind),
-      search: searchText(raw, kind, taxonomy),
+      search: [
+        searchText(raw, kind, taxonomy),
+        ...recoveryTags.flatMap((value) => [value, recoveryLabel(value)]),
+      ].join("\n").toLowerCase(),
     };
   }
 
@@ -1783,6 +1815,13 @@
     }
     const recoveryCounts = state.index?.counts || {};
     const recoveryStats = [
+      [`${t("purposeUnknown")} / ${t("event")}`, recoveryCounts.purposeUnknownEvents],
+      [`${t("purposeUnknown")} / ${t("mediaItem")}`, recoveryCounts.purposeUnknownMedia],
+      [`${t("purposePartial")} / ${t("event")}`, recoveryCounts.purposePartialEvents],
+      [`${t("purposePartial")} / ${t("mediaItem")}`, recoveryCounts.purposePartialMedia],
+      [`${t("purposeKnown")} / ${t("event")}`, recoveryCounts.purposeKnownEvents],
+      [`${t("purposeKnown")} / ${t("mediaItem")}`, recoveryCounts.purposeKnownMedia],
+      [t("purposeStoryTerminal"), recoveryCounts.purposeStoryTerminalMedia],
       [t("recoveryLibraryUnresolved"), recoveryCounts.authoredEventsUnresolvedToWwise],
       [t("recoveryTriggerNameUnknown"), recoveryCounts.wwiseEventObjectsWithoutRecoveredAuthoredTrigger],
       [t("locationUnknown"), recoveryCounts.mediaPlaybackLocationUnknown],
@@ -1817,6 +1856,10 @@
     if (dialogLifecycleCoverage && typeof dialogLifecycleCoverage === "object") panel.appendChild(dialogLifecycleCatalogSection(dialogLifecycleCoverage));
     const triggerContextCatalog = state.index?.triggerContexts;
     if (triggerContextCatalog && typeof triggerContextCatalog === "object") panel.appendChild(triggerContextCatalogSection(triggerContextCatalog));
+    const enemyTriggerVoiceActionCatalog = state.index?.triggerCatalog?.enemyTriggerVoiceAction;
+    if (enemyTriggerVoiceActionCatalog && typeof enemyTriggerVoiceActionCatalog === "object") {
+      panel.appendChild(enemyTriggerVoiceActionCatalogSection(enemyTriggerVoiceActionCatalog));
+    }
     const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
     if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
     const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
@@ -2158,6 +2201,44 @@
     return section;
   }
 
+  function enemyTriggerVoiceActionCatalogSection(catalog) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("enemyTriggerVoiceActionCatalog");
+    section.appendChild(heading);
+    const facts = [
+      ["Consumer", [catalog.consumerType, catalog.consumerMethod].filter(Boolean).join(".")],
+      ["Method", [catalog.methodVa, catalog.methodIndex !== undefined ? `index ${catalog.methodIndex}` : ""].filter(Boolean).join(" / ")],
+      ["Playback", [catalog.playbackCall, catalog.playbackInvocationVa].filter(Boolean).join(" / ")],
+      ["Mappings", asArray(catalog.voiceTypes).length],
+    ].filter(([, value]) => value !== undefined && value !== null && value !== "");
+    if (facts.length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [label, value] of facts) grid.appendChild(statNode(label, typeof value === "number" ? formatNumber(value) : value));
+      section.appendChild(grid);
+    }
+    const mappings = asArray(catalog.voiceTypes).filter((row) => row && typeof row === "object");
+    if (mappings.length) {
+      const values = document.createElement("div");
+      values.className = "audio-chip-list";
+      for (const row of mappings) {
+        const chip = document.createElement("span");
+        chip.textContent = [
+          `voiceType ${row.voiceType ?? "?"} -> ${row.triggerKey || "?"}`,
+          row.literalLoadVa ? `literal ${row.literalLoadVa}` : "",
+          row.mappingAddInvocationVa ? `dictionary add ${row.mappingAddInvocationVa}` : "",
+        ].filter(Boolean).join(" / ");
+        values.appendChild(chip);
+      }
+      section.appendChild(values);
+    }
+    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
+    return section;
+  }
+
   function levelScriptRadioCatalogSection(catalog) {
     const section = document.createElement("div");
     section.style.marginTop = "14px";
@@ -2452,6 +2533,14 @@
       if (context?.runtimeRoute) parts.push(context.runtimeRoute);
       if (context?.runtimeSelectionStatus) parts.push(humanize(context.runtimeSelectionStatus));
       if (context?.playbackPlacementStatus) parts.push(humanize(context.playbackPlacementStatus));
+      const enemyAction = context?.enemyTriggerVoiceAction;
+      if (enemyAction && typeof enemyAction === "object") {
+        parts.push(`EnemyTriggerVoiceAction voice type ${enemyAction.voiceType ?? "?"} -> ${enemyAction.triggerKey || context.triggerKey || "?"}`);
+        if (enemyAction.literalLoadVa || enemyAction.mappingAddInvocationVa) {
+          parts.push(`native dictionary load ${enemyAction.literalLoadVa || "?"} / add ${enemyAction.mappingAddInvocationVa || "?"}`);
+        }
+      }
+      if (context?.enemyTriggerVoiceActionStatus) parts.push(humanize(context.enemyTriggerVoiceActionStatus));
     }
     if (kind === "abilityVoiceTriggerAction") {
       if (context?.configId) parts.push(`SkillData ${context.configId}`);
