@@ -21,6 +21,7 @@ from scripts.mission_pipeline import (
     post_playback_enrichment,
     post_playback_projection,
     quest_fork_arm_projection,
+    quest_payload_projection,
     quest_scope_projection,
     runtime_trace_projection,
     source_order_publication,
@@ -32,6 +33,32 @@ from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, s
 from scripts.story_builder.native_contracts import callserver_callback
 
 
+def _objective_row(*args, **kwargs):
+    return quest_payload_projection.objective_row(
+        *args,
+        **kwargs,
+        authority_classifier=pipeline.classify_authority,
+        condition_objects_projector=pipeline.condition_objects,
+        condition_tree_projector=pipeline.condition_tree,
+        get_const_projector=pipeline.get_const,
+        level_script_source_projector=pipeline.level_script_source_evidence,
+        level_script_dependency_projector=pipeline.level_script_task_dependencies,
+        json_loader=pipeline.read_json,
+        submit_item_table=pipeline.DEFAULT_SUBMIT_ITEM_TABLE,
+        tracking_info_projector=pipeline.tracking_info_row,
+        type_name_projector=pipeline.type_name,
+    )
+
+
+def _action_rows(value):
+    return quest_payload_projection.action_rows(
+        value,
+        compact_scalar_projector=pipeline.compact_scalar,
+        quest_action_triggers=pipeline.QUEST_ACTION_TRIGGERS,
+        type_name_projector=pipeline.type_name,
+    )
+
+
 def _build_mission(*args, **kwargs):
     return mission_payload_projection.build_mission(
         *args,
@@ -39,8 +66,8 @@ def _build_mission(*args, **kwargs):
         schema_version=pipeline.SCHEMA_VERSION,
         repo_root=pipeline.ROOT,
         case_studies=pipeline.CASE_STUDIES,
-        action_projector=pipeline.action_rows,
-        objective_projector=pipeline.objective_row,
+        action_projector=_action_rows,
+        objective_projector=_objective_row,
         task_dependency_validator=(
             pipeline.validate_level_script_task_dependency
         ),
@@ -666,7 +693,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "boundary": "fixture boundary",
         }
 
-        counts = pipeline.annotate_quest_action_dispatch(payload, contract)
+        self.assertFalse(hasattr(pipeline, "annotate_quest_action_dispatch"))
+        counts = quest_payload_projection.annotate_quest_action_dispatch(
+            payload,
+            contract,
+        )
 
         actions = payload["nodes"][0]["clientActions"]
         self.assertEqual(
@@ -5215,7 +5246,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         })
 
     def test_objective_retains_tracking_filter_without_creating_condition_edge(self):
-        row = pipeline.objective_row({
+        row = _objective_row({
             "description": {"key": "objective_tracking"},
             "condition": condition("GameConditionServerPlaceHolder"),
             "trackingInfoList": [{
@@ -5263,7 +5294,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             _taskId={"constValue": "task_fixture"},
         )
         task_condition["uniqueId"] = "condition_fixture"
-        row = pipeline.objective_row({
+        row = _objective_row({
             "description": {"key": "objective_fixture"},
             "condition": task_condition,
         }, 1, include_level_script_source_evidence=False)
@@ -5490,8 +5521,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 level_script_condition,
             ],
         )
-        previous_cache = pipeline._SUBMIT_ITEM_ROWS_CACHE
-        pipeline._SUBMIT_ITEM_ROWS_CACHE = {
+        previous_cache = quest_payload_projection._SUBMIT_ITEM_ROWS_CACHE
+        quest_payload_projection._SUBMIT_ITEM_ROWS_CACHE = {
             "submit_fixture": {
                 "submitId": "submit_fixture",
                 "paramData": [{
@@ -5504,13 +5535,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             },
         }
         try:
-            row = pipeline.objective_row(
+            row = _objective_row(
                 {"description": {"key": "fixture"}, "condition": combined},
                 1,
                 include_level_script_source_evidence=False,
             )
         finally:
-            pipeline._SUBMIT_ITEM_ROWS_CACHE = previous_cache
+            quest_payload_projection._SUBMIT_ITEM_ROWS_CACHE = previous_cache
 
         self.assertEqual(row["condition"]["children"][0]["facts"]["submissionId"], "submit_fixture")
         self.assertEqual(row["submissionChecks"], [{
