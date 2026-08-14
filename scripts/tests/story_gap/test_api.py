@@ -20,7 +20,7 @@ class SourceGapApiTests(unittest.TestCase):
             )
             with (
                 patch.object(
-                    api.core,
+                    api,
                     "build_partial_order_report",
                     return_value={"missions": []},
                 ),
@@ -35,31 +35,31 @@ class SourceGapApiTests(unittest.TestCase):
                     return_value={},
                 ),
                 patch.object(
-                    api.core,
+                    api,
                     "project_authored_story_content_keys",
                     return_value=({}, {"status": "active"}),
                 ),
                 patch.object(
-                    api.core,
+                    api,
                     "load_story_trigger_manifest_evidence",
                     return_value=({}, {"status": "active"}),
                 ),
                 patch.object(
-                    api.core,
+                    api,
                     "build_offline_exhaustion_index",
                     return_value=({}, {"status": "active"}),
                 ),
                 patch.object(
-                    api.core,
+                    api,
                     "build_quest_attachment_diagnostic_index",
                     return_value=({}, {"status": "active"}),
                 ),
                 patch.object(
-                    api.core,
+                    api,
                     "build_general_quest_attachment_boundary_index",
                     return_value=({}, {"validationFailures": []}),
                 ),
-                patch.object(api.core, "build_gap_report", return_value=report),
+                patch.object(api, "build_gap_report", return_value=report),
                 patch.object(api, "publish_gap_report", return_value=paths) as publish,
             ):
                 result = api.build_source_gap_queue(
