@@ -10,10 +10,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 
+from scripts.story_builder import mission_recovery as _mission_recovery
+from scripts.story_builder import source_story_partial_order as _source_story_partial_order
 from scripts.story_builder.source_gap import contracts as _contracts
 from scripts.story_builder.source_gap import attachment_evidence as _attachment_evidence
 from scripts.story_builder.source_gap import content_evidence as _content_evidence
-from scripts.story_builder.source_gap import core as _core
 from scripts.story_builder.source_gap import data as _data
 from scripts.story_builder.source_gap import foundation as _foundation
 from scripts.story_builder.source_gap import model as _model
@@ -32,7 +33,6 @@ class _GapQueueTestFacade:
     """Keep legacy white-box patches aligned with their new domain owner."""
 
     _modules = (
-        _core,
         _model,
         _offline_evidence,
         _content_evidence,
@@ -41,6 +41,8 @@ class _GapQueueTestFacade:
         _data,
         _foundation,
         _contracts,
+        _mission_recovery,
+        _source_story_partial_order,
     )
 
     def __init__(self) -> None:

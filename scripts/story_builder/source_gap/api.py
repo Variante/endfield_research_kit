@@ -5,8 +5,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from . import core
+from ..mission_recovery import natural_key
+from ..source_story_partial_order import (
+    build_report as build_partial_order_report,
+    load_mission_payload_with_variants,
+)
+from .attachment_evidence import (
+    build_general_quest_attachment_boundary_index,
+    build_quest_attachment_diagnostic_index,
+    load_story_trigger_manifest_evidence,
+)
+from .content_evidence import project_authored_story_content_keys
 from .foundation import read_json, safe_key
+from .model import build_gap_report
+from .offline_evidence import build_offline_exhaustion_index
 from .report import GapReportPaths, publish_gap_report
 from ..level_bindings import (
     build_levelscript_action_story_occurrences,
@@ -37,7 +49,7 @@ def build_source_gap_queue(
         ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
     )
 
-    partial_report = core.build_partial_order_report(language)
+    partial_report = build_partial_order_report(language)
     action_story_occurrences = build_levelscript_action_story_occurrences()
     native_playback_index = build_levelscript_native_story_playback_index()
     mission_dir = ROOT / "webui" / "data" / "lang" / language / "mission"
@@ -49,7 +61,7 @@ def build_source_gap_queue(
         path = mission_dir / f"{mission}.json"
         if not path.is_file():
             continue
-        mission_payloads[mission] = core.load_mission_payload_with_variants(
+        mission_payloads[mission] = load_mission_payload_with_variants(
             mission_dir,
             mission,
         )
@@ -63,7 +75,7 @@ def build_source_gap_queue(
             mission_payloads[mission] = payload
 
     project_authored_content, project_authored_status = (
-        core.project_authored_story_content_keys(
+        project_authored_story_content_keys(
             read_json(language_dir / "index.json", {}),
             language_dir / "conv",
         )
@@ -76,10 +88,10 @@ def build_source_gap_queue(
         / f"mission_pipeline_story_binding_coverage_{language}.json"
     )
     story_trigger_manifest, story_trigger_manifest_status = (
-        core.load_story_trigger_manifest_evidence(coverage_path, language)
+        load_story_trigger_manifest_evidence(coverage_path, language)
     )
     offline_exhaustion_index, offline_exhaustion_status = (
-        core.build_offline_exhaustion_index(
+        build_offline_exhaustion_index(
             partial_report,
             table_root,
             game_assembly_path=game_assembly,
@@ -87,11 +99,11 @@ def build_source_gap_queue(
             action_story_occurrences=action_story_occurrences,
         )
     )
-    quest_index, quest_status = core.build_quest_attachment_diagnostic_index(
+    quest_index, quest_status = build_quest_attachment_diagnostic_index(
         mission_payloads
     )
     general_index, general_status = (
-        core.build_general_quest_attachment_boundary_index(
+        build_general_quest_attachment_boundary_index(
             partial_report,
             mission_payloads,
             native_playback_index,
@@ -101,7 +113,7 @@ def build_source_gap_queue(
     quest_status["genericQuestAttachmentBoundaries"] = general_status
     quest_status["validatedQuestIds"] = sorted(
         quest_index,
-        key=core.natural_key,
+        key=natural_key,
     )
     general_failures = general_status.get("validationFailures") or []
     if general_failures:
@@ -110,7 +122,7 @@ def build_source_gap_queue(
         )
         quest_status["status"] = "inactive_generated_shape_validation_failed"
 
-    report = core.build_gap_report(
+    report = build_gap_report(
         partial_report,
         mission_payloads,
         mission_bundle_presence,
