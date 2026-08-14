@@ -65,6 +65,13 @@ archetypes are imported as labeled source kits rather than finished characters.
   (`0x180555A30/0x180555D30 -> 0x1805592B0 -> 0x1805582A0`, 0x80-byte nodes).
   This closes HGTree command-stream writer/callback and resource-pool ingress,
   not the final backend draw/device consumer.
+  A pinned direct-code xref census finds only `0x1805583B0` and the two retry
+  sites in `0x1805592B0` calling the 0x80-byte node allocator; the population
+  body contains only resource callbacks/allocator helpers, while the shared
+  `0x180555D30` helper has 110 unrelated callers. Thus the remaining target is
+  a later/runtime-indirect consumer of populated resource nodes, not another
+  allocator ingress. See
+  `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
   Separately, `DrawECSRendererList` tail-jumps to
   `CommandBuffer::AddDrawECSTreeRendererList`, native `0x1801719B0`, which
   roots local managed-pointer state through slot `0x1821BE708` and calls the
