@@ -780,6 +780,15 @@ only stable interpretation and priorities.
     resource/state work; HGTree-specific indirect-draw ownership, callback
     ordering, and queue submission remain fail-closed. See
    `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
+   The generic flush family is separately source-pinned: high-level opcode
+   `0x6A` (`0x1804CA0B0 -> 0x1804D178A`) and low-level opcode `0x27D5`
+   (`0x1813BB574 -> 0x1813B156A`) both dispatch API-2 `+0xF10`
+   (`0x18083F140`), which finalizes pending resource/state batches and enters
+   `0x180841C40`; `+0xDE8` (`0x18083F1E0`) also flushes and executes the master
+   list through `0x180843D60`. The direct opcode writers are generic pass or
+   resource functions, and no static HGTree handler emits either flush opcode
+   or `+0xF10`/`+0xDE8`; keep HGTree-specific ordering and final draw/queue
+   ownership fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
