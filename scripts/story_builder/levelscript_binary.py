@@ -11,6 +11,7 @@ from .codecs.levelscript import active_shapes as levelscript_active_shapes
 from .codecs.levelscript import boolean_getters as levelscript_boolean_getters
 from .codecs.levelscript import call_server as levelscript_call_server
 from .codecs.levelscript import compact_property_gate as levelscript_property_gate
+from .codecs.levelscript import control_flow_actions as levelscript_control_flow
 from .codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
 from .codecs.levelscript import entity_event_scope as levelscript_entity_event_scope
 from .codecs.levelscript import exit_custom_performance as levelscript_exit_performance
@@ -3807,122 +3808,6 @@ def _extract_tail_local_refs(payload: bytes) -> list[int]:
     return refs
 
 
-def _decode_split_action_refs(payload: bytes) -> list[int]:
-    """Decode the exact current-build ``Split.actions`` local-id list.
-
-    The installed ``SplitForMemoryPack`` formatter serializes one list.  Its
-    payload is therefore a u32 count followed by that many signed local action
-    ids.  Requiring the payload length to match exactly prevents arbitrary
-    scalar tails from being promoted into control-flow edges.
-    """
-    if len(payload) < 4:
-        return []
-    count = struct.unpack_from("<I", payload, 0)[0]
-    if count > 64 or len(payload) != 4 + count * 4:
-        return []
-    refs = [
-        struct.unpack_from("<i", payload, 4 + index * 4)[0]
-        for index in range(count)
-    ]
-    if any(ref < 0 or ref > 0x10000 for ref in refs):
-        return []
-    return refs
-
-
-def _decode_branch_sequence_action_refs(payload: bytes) -> list[int]:
-    """Decode the exact current-build ``Branch._idList`` action sequence.
-
-    The installed formatter serializes ``_idList`` as a u32 count followed by
-    signed local action ids. Original ``GameAssembly.dll`` method
-    ``Beyond.Gameplay.Actions.Branch.Execute`` schedules the entry at
-    ``m_index``, reserves the Branch action between non-final entries,
-    increments the index, and resets it after the final entry. The list is
-    therefore ordered continuation, not mutually exclusive branch arms.
-    """
-    refs = _decode_split_action_refs(payload)
-    if any(ref <= 0 for ref in refs):
-        return []
-    return refs
-
-
-def _decode_if_else_action_refs(payload: bytes) -> dict[str, Any]:
-    """Decode exact ``IfElseAction`` true/false action ids from its tail.
-
-    Current native setter order places the condition first, followed by the
-    false and true action ids.  Those final two signed ints are accepted only
-    when both are plausible same-file local ids; resolution still requires a
-    unique actionList row at the consumer.
-    """
-    if len(payload) < 8:
-        return {}
-    false_id, true_id = struct.unpack_from("<ii", payload, len(payload) - 8)
-    if any(ref < 0 or ref > 0x10000 for ref in (true_id, false_id)):
-        return {}
-    out = {
-        "trueActionLocalId": true_id,
-        "falseActionLocalId": false_id,
-    }
-    condition = payload[:-8]
-    if (
-        len(condition) == 14
-        and condition[:2] == b"\x04\x01"
-        and condition[6:] == b"\xff" * 8
-    ):
-        getter_id = struct.unpack_from("<i", condition, 2)[0]
-        if 0 <= getter_id <= 0x10000:
-            out["conditionGetterLocalId"] = getter_id
-    else:
-        inline_condition = _decode_bool_param(condition, 0)
-        if inline_condition is not None and inline_condition[1] == len(condition):
-            out["conditionParam"] = inline_condition[0]
-    return out
-
-
-def _decode_while_action(payload: bytes) -> dict[str, Any]:
-    """Decode exact ``WhileAction`` condition and loop-body action id.
-
-    The installed ``WhileActionForMemoryPack`` exposes generated setters for
-    ``_condition`` followed by ``_doID``. The first field is one authored
-    ``Param<bool>`` and the final field is the signed local action id.
-    """
-    condition = _decode_bool_param(payload, 0)
-    condition_action_local_id: int | None = None
-    if condition is not None:
-        condition_detail, cursor = condition
-    elif (
-        len(payload) >= 14
-        and payload[0] == 0x04
-        and payload[1] in (0, 1)
-        and payload[6:14] == b"\xff" * 8
-    ):
-        # Action-output parameters use the producing action id followed by
-        # source/path sentinels, as in `$27@result` conditions.
-        condition_action_local_id = struct.unpack_from("<i", payload, 2)[0]
-        if condition_action_local_id <= 0 or condition_action_local_id > 0x10000:
-            return {}
-        condition_detail = {
-            "value": bool(payload[1]),
-            "idRef": condition_action_local_id,
-            "paramSource": -1,
-            "path": None,
-        }
-        cursor = 14
-    else:
-        return {}
-    if cursor + 4 != len(payload):
-        return {}
-    do_action_local_id = struct.unpack_from("<i", payload, cursor)[0]
-    if do_action_local_id <= 0 or do_action_local_id > 0x10000:
-        return {}
-    out = {
-        "whileConditionParam": condition_detail,
-        "whileDoActionLocalId": do_action_local_id,
-    }
-    if condition_action_local_id is not None:
-        out["whileConditionActionLocalId"] = condition_action_local_id
-    return out
-
-
 def _decode_wait_for_seconds_in_trigger_volume_action(
     payload: bytes,
 ) -> dict[str, Any]:
@@ -5299,35 +5184,12 @@ def decode_levelscript_record_payload(
         if branch_refs:
             out["branchLocalRefs"] = branch_refs
             out["branchRole"] = "conditional-terminal-local-refs"
-    if semantic_key == (0x0495, 0x09):
-        split_refs = _decode_split_action_refs(payload)
-        if split_refs:
-            out["splitActionLocalIds"] = split_refs
-            out["branchLocalRefs"] = split_refs
-            out["branchRole"] = "typed-split-action-list"
-    if semantic_key == (0x002D, 0x09):
-        sequence_refs = _decode_branch_sequence_action_refs(payload)
-        if sequence_refs:
-            out["branchSequenceActionLocalIds"] = sequence_refs
-            out["sequenceLocalRefs"] = sequence_refs
-            out["sequenceRole"] = "typed-branch-ordered-action-list"
-    if semantic_key == (0x00FF, 0x0B):
-        if_else_refs = _decode_if_else_action_refs(payload)
-        if if_else_refs:
-            out.update(if_else_refs)
-            out["branchLocalRefs"] = list(dict.fromkeys(
-                ref
-                for field in ("trueActionLocalId", "falseActionLocalId")
-                for ref in [if_else_refs.get(field)]
-                if isinstance(ref, int)
-            ))
-            out["branchRole"] = "typed-if-else-actions"
-    if semantic_key == (0x0501, 0x0A):
-        while_action = _decode_while_action(payload)
-        if while_action:
-            out.update(while_action)
-            out["branchLocalRefs"] = [while_action["whileDoActionLocalId"]]
-            out["branchRole"] = "typed-while-action-body"
+    control_flow = levelscript_control_flow.decode_control_flow_action(
+        payload,
+        semantic_key,
+    )
+    if control_flow:
+        out.update(control_flow)
     switch_action = levelscript_switch_actions.decode_switch_action(
         payload,
         semantic_key,
