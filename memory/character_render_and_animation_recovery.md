@@ -165,6 +165,15 @@ coexist in other native layouts but does not identify the missing
 factory-to-`_UploadBuffer` pack. Keep that edge fail-closed; evidence is in
 `reports/assets/character_recovery/native_54_to_100_near_match_followup.md`.
 
+The next `+0x100` census adds three sibling UnityPlayer variant writers,
+`0x181758280`, `0x18175ba50`, and `0x181760960`, selected through the type
+dispatcher at `0x181757f8a`. They walk an unrelated `0x220` source family and
+emit CPU-side effect/record data; their apparent `+0xb0..+0xf0` fields are
+local output, with no factory `0x8c` record, dirty test, upload, or kernel-7
+edge. They are therefore additional false positives, not the missing
+`0x100`-to-`0x54` pack. See
+`reports/assets/character_recovery/native_100_stride_variant_followup.md`.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable

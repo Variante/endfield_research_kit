@@ -1619,6 +1619,26 @@
             },
             "interpretation": "This is a genuine 0x100-stride CPU record writer, but its +0x16c input layout, unrelated fields, and math/copy callees do not match the factory staging lanes at +0xb0..+0xf0. It is a bounded generic false positive, not the missing 0x100-to-0x54 pack or _UploadBuffer producer."
           },
+          "native_100_stride_variant_followup": {
+            "status": "unrelated-100-stride-variant-writers-no-factory-or-gpu-edge",
+            "report": "reports/assets/character_recovery/native_100_stride_variant_followup.md",
+            "unityplayer_sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+            "dispatcher": "0x181757f8a reads record +0xad and selects one of four sibling CPU variant bodies; no direct caller is present in the installed UnityPlayer image.",
+            "functions": {
+              "0x181758280..0x18175b9b0": "walks +0x38 count and +0x70 array with 0x220 source stride, emits 0x2c records, and serializes its own +0x100 destination family",
+              "0x18175ba50..0x1817604a1": "same CPU-side variant shape; +0x100 increments are local record output, not factory staging consumption",
+              "0x181760960..0x181763154": "same CPU-side variant shape; apparent +0xb0..+0xf0 accesses are local fields/copies"
+            },
+            "factory_link_checks": {
+              "reads_manager_plus_0x38_index_times_0x8c": false,
+              "tests_dirty_record_plus_0x70": false,
+              "reads_or_writes_factory_staging_plus_0xb0_through_0xf0": false,
+              "calls_upload_per_draw_or_kernel_7": false,
+              "calls_compute_buffer_or_command_buffer_api": false,
+              "calls_factory_consumer_0x1810d25c0": false
+            },
+            "boundary": "These bodies confirm another unrelated reuse of +0x100 and +0xb0..+0xf0 in native record families. They do not identify the factory 0x8c -> 0x100 -> 0x54 pack or the staging-to-GPU upload consumer; keep that edge fail-closed."
+          },
           "post_staging_direct_call_census": {
             "status": "whole-image-direct-call-negative-upload-consumer-open",
             "source": "Current installed GameAssembly.dll SHA-256 0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce and UnityPlayer.dll SHA-256 b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2; raw E8 rel32 scan over GameAssembly .text/il2cpp plus PData range attribution.",
