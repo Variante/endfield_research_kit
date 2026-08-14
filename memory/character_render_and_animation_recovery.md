@@ -684,9 +684,15 @@ only stable interpretation and priorities.
    adjacent resource helper `0x18061FB60` dispatches the same slot shape and
    consumes its return as a NUL-terminated metadata/name string; F8F0 does not
    consume F680's returned value as a handle. Treat this as a resource
-   metadata/name boundary until the concrete nested type is recovered, then
-   look for the actual queue or device consumer elsewhere. Keep component 67's
-   LOD/list role and the retail culling survivor list separately bounded.
+   metadata/name boundary until the concrete nested type is recovered.
+   The later F8F0 record loops call through shared cell `0x1821D3898`; its
+   Vulkan resolver branches pass the string `vkUpdateDescriptorSetWithTemplate`,
+   so this is now a concrete descriptor-state update boundary (not yet a draw,
+   dispatch, or queue-submit proof). A file-backed fallback assignment to
+   `0x180861C20` is only a generic 32-byte record-copy helper, and loader order
+   can overwrite the cell; capture or resolve that order before calling the
+   fallback active. Keep component 67's LOD/list role and the retail culling
+   survivor list separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
