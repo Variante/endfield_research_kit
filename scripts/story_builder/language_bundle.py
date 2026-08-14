@@ -259,6 +259,11 @@ from .option_route_projection import (
 )
 from .linked_reading_projection import append_linked_reading_content_lines
 from .sibling_scene_projection import sibling_scene_template_branch_for_group
+from .option_sibling_timeline_projection import (
+    foreign_timeline_option_definition_for_group,
+    option_signature_sequence,
+    sibling_scene_text_branch_for_group,
+)
 from .radio_continuation import build_radio_continuation_candidates
 from .reference_projection import (
     append_reference_line,
@@ -3654,235 +3659,6 @@ def build_language_bundle(
         # explicit option UI placement. Keep them out of authored option
         # anchoring unless an extracted option clip/node names the current
         # option ids directly.
-        def option_signature_sequence(option_ids: list[str]) -> list[tuple[str, str]]:
-            signatures: list[tuple[str, str]] = []
-            for opt_id in option_ids:
-                signature = dialog_option_signature_by_id.get(opt_id)
-                if not signature or not signature[0]:
-                    return []
-                signatures.append(signature)
-            return signatures
-        def option_signatures_compatible(left_ids: list[str], right_ids: list[str]) -> bool:
-            if len(left_ids) != len(right_ids) or not left_ids:
-                return False
-            for left_id, right_id in zip(left_ids, right_ids):
-                left_text, left_icon = dialog_option_signature_by_id.get(left_id, ("", ""))
-                right_text, right_icon = dialog_option_signature_by_id.get(right_id, ("", ""))
-                if not left_text or not right_text:
-                    return False
-                if left_icon and right_icon and left_icon != right_icon:
-                    return False
-                if left_text == right_text:
-                    continue
-                if left_text in right_text or right_text in left_text:
-                    continue
-                if not _sequence_similarity_at_least(left_text, right_text, 0.92):
-                    return False
-            return True
-        def dialog_line_text_signature(line_id: str) -> str:
-            row = dialogs.get(line_id)
-            if not isinstance(row, dict):
-                return ""
-            text_value = t((row.get("dialogText") or {}).get("id"))
-            return _option_text_signature(text_value)
-        def sibling_scene_text_branch_for_group(
-            group_opt_ids: list[str],
-            after_id: str,
-            sibling_anchor_record: dict | None,
-            group_id: int,
-        ) -> dict:
-            if (
-                not group_opt_ids
-                or len(group_opt_ids) < 2
-                or not after_id
-                or not sibling_anchor_record
-            ):
-                return {}
-            sibling_scenes = [
-                str(scene_key)
-                for scene_key in (sibling_anchor_record.get("siblingScenes") or [])
-                if str(scene_key or "").strip() and str(scene_key) != conv_key
-            ]
-            if not sibling_scenes:
-                return {}
-            local_line_ids = [line_id for _idx, line_id in line_idxs if line_id in valid_line_ids]
-            if after_id in local_line_ids:
-                local_candidate_line_ids = local_line_ids[local_line_ids.index(after_id) + 1:]
-            else:
-                local_candidate_line_ids = local_line_ids
-            if not local_candidate_line_ids:
-                return {}
-            local_signature_by_line_id = {
-                line_id: _option_text_signature(str(line.get("text") or ""))
-                for line in (lines or [])
-                if (line_id := str(line.get("id") or "")) in valid_line_ids
-            }
-            if not local_signature_by_line_id:
-                return {}
-            for sibling_scene in sibling_scenes:
-                sibling_opt_ids = dialog_option_group_ids_by_key.get((sibling_scene, group_id)) or []
-                if not option_signatures_compatible(group_opt_ids, sibling_opt_ids):
-                    continue
-                sibling_tree = load_dialog_tree(sibling_scene) or {}
-                sibling_branches = sibling_tree.get("branches") or {}
-                branch_line_ids_by_option: dict[str, list[str]] = {}
-                sibling_line_ids_by_option: dict[str, list[str]] = {}
-                used_local_line_ids: set[str] = set()
-                for local_opt_id, sibling_opt_id in zip(group_opt_ids, sibling_opt_ids):
-                    sibling_branch_line_ids = [
-                        str(line_id)
-                        for line_id in (sibling_branches.get(sibling_opt_id) or [])
-                        if str(line_id or "").strip()
-                    ]
-                    if not sibling_branch_line_ids:
-                        branch_line_ids_by_option = {}
-                        break
-                    mapped_line_ids: list[str] = []
-                    for sibling_line_id in sibling_branch_line_ids:
-                        sibling_signature = dialog_line_text_signature(sibling_line_id)
-                        if not sibling_signature:
-                            mapped_line_ids = []
-                            break
-                        matches = [
-                            local_line_id
-                            for local_line_id in local_candidate_line_ids
-                            if local_line_id not in used_local_line_ids
-                            and local_signature_by_line_id.get(local_line_id) == sibling_signature
-                        ]
-                        if len(matches) != 1:
-                            mapped_line_ids = []
-                            break
-                        mapped_line_id = matches[0]
-                        used_local_line_ids.add(mapped_line_id)
-                        mapped_line_ids.append(mapped_line_id)
-                    if not mapped_line_ids:
-                        branch_line_ids_by_option = {}
-                        break
-                    branch_line_ids_by_option[local_opt_id] = mapped_line_ids
-                    sibling_line_ids_by_option[local_opt_id] = sibling_branch_line_ids
-                if len(branch_line_ids_by_option) != len(group_opt_ids):
-                    continue
-                if len({tuple(line_ids) for line_ids in branch_line_ids_by_option.values()}) < 2:
-                    continue
-                sibling_option_ids_by_option = {
-                    local_opt_id: sibling_opt_id
-                    for local_opt_id, sibling_opt_id in zip(group_opt_ids, sibling_opt_ids)
-                }
-                source_bits = _unique_preserve([
-                    str(value)
-                    for value in (
-                        sibling_scene,
-                        sibling_tree.get("sourceKey") or "",
-                        sibling_tree.get("file") or "",
-                        sibling_anchor_record.get("timeline") or "",
-                    )
-                    if str(value or "").strip()
-                ])
-                return {
-                    "code": "siblingSceneTextBranches",
-                    "reason": "siblingSceneTextMatch",
-                    "detail": (
-                        "A sibling scene on the same dialog Timeline has authored "
-                        "SceneGraph option branches whose branch texts exactly "
-                        "match local lines after this fallback option anchor."
-                    ),
-                    "after": after_id,
-                    "optionIds": group_opt_ids,
-                    "branchLineIdsByOption": branch_line_ids_by_option,
-                    "siblingScene": sibling_scene,
-                    "siblingOptionIdsByOption": sibling_option_ids_by_option,
-                    "siblingBranchLineIdsByOption": sibling_line_ids_by_option,
-                    "source": "siblingSceneGraphText",
-                    "sources": source_bits,
-                }
-            return {}
-        def foreign_timeline_option_definition_for_group(
-            group_opt_ids: list[str],
-            sibling_text_risk: dict,
-        ) -> dict:
-            """Close local table-only options when the cinematic consumes foreign ids."""
-            if sibling_text_risk.get("code") != "siblingSceneTextBranches":
-                return {}
-            if any(opt_id in authored_option_ids for opt_id in group_opt_ids):
-                return {}
-            sibling_mapping = sibling_text_risk.get("siblingOptionIdsByOption") or {}
-            foreign_option_ids = [
-                str(sibling_mapping.get(opt_id) or "")
-                for opt_id in group_opt_ids
-            ]
-            if (
-                not all(foreign_option_ids)
-                or any(
-                    _dialog_tree_option_prefix(option_id) == conv_key
-                    for option_id in foreign_option_ids
-                )
-            ):
-                return {}
-            for finish_group in cinematic_finish_groups:
-                timeline_name = str(finish_group.get("timeline") or "")
-                finish_nums = [
-                    value
-                    for value in (finish_group.get("finishNums") or [])
-                    if isinstance(value, int) and not isinstance(value, bool)
-                ]
-                if not timeline_name or len(finish_nums) < 2:
-                    continue
-                for timeline in timeline_entries:
-                    entry_name = str(
-                        timeline.get("timeline")
-                        or timeline.get("sourceKey")
-                        or ""
-                    )
-                    if entry_name != timeline_name:
-                        continue
-                    rows_by_id = {
-                        str(row.get("id") or ""): row
-                        for row in (timeline.get("optionRows") or [])
-                        if isinstance(row, dict) and str(row.get("id") or "")
-                    }
-                    if any(opt_id in rows_by_id for opt_id in group_opt_ids):
-                        continue
-                    foreign_rows = [
-                        rows_by_id.get(option_id) or {}
-                        for option_id in foreign_option_ids
-                    ]
-                    if not all(foreign_rows):
-                        continue
-                    if not all(row.get("changeFinishNum") == 1 for row in foreign_rows):
-                        continue
-                    target_finish_nums = [
-                        row.get("targetFinishNum")
-                        for row in foreign_rows
-                    ]
-                    if set(target_finish_nums) != set(finish_nums):
-                        continue
-                    return {
-                        "code": "foreignTimelineOptionDefinitions",
-                        "reason": "cinematicConsumesForeignOptionIds",
-                        "detail": (
-                            "The local DialogTree launches this exact cinematic "
-                            "Timeline, but the Timeline consumes only sibling-scene "
-                            "option ids and maps them completely onto its authored "
-                            "finish numbers. The same-text local option rows are "
-                            "unconsumed table definitions, not missing local routes."
-                        ),
-                        "after": sibling_text_risk.get("after") or "",
-                        "optionIds": group_opt_ids,
-                        "foreignOptionIds": foreign_option_ids,
-                        "timeline": timeline_name,
-                        "finishNums": finish_nums,
-                        "targetFinishNums": target_finish_nums,
-                        "source": "dialogTimeline",
-                        "sources": _unique_preserve([
-                            str(finish_group.get("file") or ""),
-                            str(timeline.get("file") or ""),
-                            *[
-                                str(value)
-                                for value in (sibling_text_risk.get("sources") or [])
-                            ],
-                        ]),
-                    }
-            return {}
         def source_bits_for_options(option_ids: list[str], source_map: dict[str, object]) -> list[str]:
             source_bits: list[str] = []
             for opt_id in option_ids:
@@ -3929,7 +3705,10 @@ def build_language_bundle(
                 continue
             foreign_pre_groups[(scene_key, foreign_group_id)].append((foreign_index, foreign_opt_id))
         for group_id, group_opt_ids in group_option_ids_by_group.items():
-            local_signature = option_signature_sequence(group_opt_ids)
+            local_signature = option_signature_sequence(
+                group_opt_ids,
+                option_signatures_by_id=dialog_option_signature_by_id,
+            )
             if not local_signature:
                 continue
             after_matches: list[tuple[str, list[str], list[str]]] = []
@@ -3944,7 +3723,10 @@ def build_language_bundle(
                 anchors = {after for _idx, _opt_id, after in ordered_entries}
                 if len(anchors) != 1:
                     continue
-                if option_signature_sequence(foreign_ids) != local_signature:
+                if option_signature_sequence(
+                    foreign_ids,
+                    option_signatures_by_id=dialog_option_signature_by_id,
+                ) != local_signature:
                     continue
                 source_bits = source_bits_for_options(foreign_ids, tree_after_sources)
                 after_matches.append((next(iter(anchors)), foreign_ids, source_bits))
@@ -3958,7 +3740,10 @@ def build_language_bundle(
                 foreign_ids = complete_foreign_option_group(foreign_group_key, raw_entries)
                 if len(foreign_ids) != len(group_opt_ids):
                     continue
-                if option_signature_sequence(foreign_ids) != local_signature:
+                if option_signature_sequence(
+                    foreign_ids,
+                    option_signatures_by_id=dialog_option_signature_by_id,
+                ) != local_signature:
                     continue
                 source_bits = source_bits_for_options(foreign_ids, tree_pre_sources)
                 pre_matches.append((foreign_ids, source_bits))
@@ -4026,7 +3811,7 @@ def build_language_bundle(
                         dialog_option_group_keys_by_group_and_count
                     ),
                     option_group_ids_by_key=dialog_option_group_ids_by_key,
-                    option_signature_sequence=option_signature_sequence,
+                    option_signatures_by_id=dialog_option_signature_by_id,
                     dialog_line_text_signature=dialog_line_text_signature,
                     load_dialog_tree=load_dialog_tree,
                     option_text_signature=_option_text_signature,
@@ -4318,6 +4103,18 @@ def build_language_bundle(
                     if inferred_anchor_mode == "siblingTimelinePosition"
                     else None,
                     g,
+                    conversation_key=conv_key,
+                    line_indices=line_idxs,
+                    valid_line_ids=valid_line_ids,
+                    lines=lines,
+                    option_group_ids_by_key=dialog_option_group_ids_by_key,
+                    option_signatures_by_id=dialog_option_signature_by_id,
+                    dialog_rows=dialogs,
+                    translate=t,
+                    load_dialog_tree=load_dialog_tree,
+                    option_text_signature=_option_text_signature,
+                    sequence_similarity_at_least=_sequence_similarity_at_least,
+                    unique_preserve=_unique_preserve,
                 )
                 if not sibling_text_branch:
                     sibling_text_branch = sibling_scene_template_branch_for_group(
@@ -4332,7 +4129,7 @@ def build_language_bundle(
                             dialog_option_group_keys_by_group_and_count
                         ),
                         option_group_ids_by_key=dialog_option_group_ids_by_key,
-                        option_signature_sequence=option_signature_sequence,
+                        option_signatures_by_id=dialog_option_signature_by_id,
                         dialog_line_text_signature=dialog_line_text_signature,
                         load_dialog_tree=load_dialog_tree,
                         option_text_signature=_option_text_signature,
@@ -4350,6 +4147,12 @@ def build_language_bundle(
                         foreign_timeline_option_definition_for_group(
                             group_opt_ids,
                             sibling_text_branch,
+                            authored_option_ids=authored_option_ids,
+                            conversation_key=conv_key,
+                            cinematic_finish_groups=cinematic_finish_groups,
+                            timeline_entries=timeline_entries,
+                            dialog_tree_option_prefix=_dialog_tree_option_prefix,
+                            unique_preserve=_unique_preserve,
                         )
                         or sibling_text_branch
                     )

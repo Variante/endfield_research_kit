@@ -45,7 +45,7 @@ class SiblingSceneProjectionTests(unittest.TestCase):
                 ("local_scene", 7): local_option_ids,
                 ("sibling_scene", 7): sibling_option_ids,
             },
-            option_signature_sequence=lambda ids: [option_signatures[i] for i in ids],
+            option_signatures_by_id=option_signatures,
             dialog_line_text_signature=lambda line_id: dialog_signatures.get(line_id, ""),
             load_dialog_tree=lambda scene: {
                 "after": {option_id: sibling_after for option_id in sibling_option_ids},

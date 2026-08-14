@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from .option_sibling_timeline_projection import option_signature_sequence
+
 
 def sibling_scene_template_branch_for_group(
     group_option_ids: list[str],
@@ -14,7 +16,7 @@ def sibling_scene_template_branch_for_group(
     valid_line_ids: set[str],
     option_group_keys_by_group_and_count: dict[tuple[int, int], list[tuple[str, int]]],
     option_group_ids_by_key: dict[tuple[str, int], list[str]],
-    option_signature_sequence: Callable[[list[str]], list[tuple[str, str]]],
+    option_signatures_by_id: dict[str, tuple[str, str]],
     dialog_line_text_signature: Callable[[str], str],
     load_dialog_tree: Callable[[str], dict],
     option_text_signature: Callable[[str], str],
@@ -35,7 +37,10 @@ def sibling_scene_template_branch_for_group(
     }
     if not local_signature_by_line_id:
         return {}
-    local_option_signatures = option_signature_sequence(group_option_ids)
+    local_option_signatures = option_signature_sequence(
+        group_option_ids,
+        option_signatures_by_id=option_signatures_by_id,
+    )
     if not local_option_signatures:
         return {}
     sibling_group_keys = [
@@ -50,7 +55,10 @@ def sibling_scene_template_branch_for_group(
         sibling_option_ids = (
             option_group_ids_by_key.get((sibling_scene, group_id)) or []
         )
-        sibling_signatures = option_signature_sequence(sibling_option_ids)
+        sibling_signatures = option_signature_sequence(
+            sibling_option_ids,
+            option_signatures_by_id=option_signatures_by_id,
+        )
         if not sibling_signatures:
             continue
         compatible_positions = 0
