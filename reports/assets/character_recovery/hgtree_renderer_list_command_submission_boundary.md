@@ -10,15 +10,26 @@ callbacks. The HGTree handlers then reach the API-2 `+0xDA0`/`+0x380`
 resource/state wrappers. The neighboring `+0xDA8` callback has a real Vulkan
 indirect-draw implementation, but its concrete producer is now separated: the
 source-pinned `HGTerrainManager::RenderTerrain` command path, not a statically
-proven HGTree handler. The separate CommandBuffer tree-list call is pinned to
-its GC-root and string-payload validation boundary.
+proven HGTree handler. The managed CommandBuffer tree-list call has two
+parallel UnityPlayer registrations in the pinned image. The table-A
+implementation at `0x180064580` is the active global binding: it preserves the
+renderer-list id and writes the high-level command record. The table-B
+implementation at `0x1801719B0` is a duplicate validation-only body that
+roots/hash-checks a managed payload. The static image does not expose the
+runtime registration selector between these duplicate arrays. The maintained
+UnityPlayer binding audit uses table A as the global active function array
+(the same array maps the known `CullLights` binding to `0x1800FBCE0`); table B
+is a parallel alternate/class-local implementation. Table A is therefore the
+active command-writer path, while table B must not be used as its sink proof.
 The later record loop is also pinned to Vulkan
 `vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, and the same
 API-2 backend family has a concrete descriptor -> draw -> queue-submit sink.
 The recorded HGTree receiver and its callback-produced resource/state records
-are source-pinned. Managed tree-list playback, callback ordering, the
-HGTree-specific Vulkan draw consumer, and queue submission ownership remain
-unresolved; this is not yet a retail frame-parity claim.
+are source-pinned. Managed tree-list playback is now joined through the
+source-positive table-A command writer, high-level opcode `0x55`, low-level
+opcode `0x273B`, and API-2 `+0xEA8` callback queue. HGTree-specific Vulkan draw
+ownership, callback ordering, and queue submission remain unresolved; this is
+not yet a retail frame-parity claim.
 
 ## Source pins
 
@@ -85,30 +96,45 @@ unresolved; this is not yet a retail frame-parity claim.
 6. `HGTreeRender.DrawECSRendererList` (`GameAssembly 0x18B3FBFA4`) rejects a
    null command buffer, then tail-jumps to the resolved internal call
    `UnityEngine.Rendering.CommandBuffer::AddDrawECSTreeRendererList(System.UInt32)`.
-7. The current UnityPlayer CommandBuffer name/function tables map that call at
-   index 321 to `0x1801719B0`. The earlier `0x180149500` attribution was a
-   table-index error: that address is a Profiler entry, not the tree-list
-   internal call. The true tree body uses slot `0x1821BE708` twice for local
-   managed-pointer root writes. Static initialization at
-   `0x18077C050/0x18077C055` calls `0x1806898F0` with the string
-   `il2cpp_gc_wbarrier_set_field` (`0x181D9E7F8`) and writes the result into
-   that BSS slot, so it is not a renderer-list converter.
-8. After the two GC-barrier calls, `0x1801719B0` forwards the local wrapper to
-   `0x180A5C5C0`. That helper is shared by neighboring CommandBuffer draw
-   entry points; its checked body calls `0x180769E20` (string-payload
-   conversion/validation) and `0x18065C0C0`, returns a status, and emits only
-   an error path on failure. It contains no visible ComputeBuffer, dispatch,
-   graphics API, or command-stream opcode. This is a separate draw
-   validation boundary, not a proven downstream step from the creation cores.
-9. Therefore this pass closes the HGTree creation/resource-record boundary, the
-   concrete `+0xEA0 -> 0x273B -> callback` command-stream boundary, and the
-   callback-to-resource-pool ingress plus the separate CommandBuffer
-   GC-root/validation boundary without claiming final GPU submission. The next
-   bounded target is the consumer of the `0x1805592B0` resource nodes (and its
-   backend/device handoff), not `0x1821BE708` and not the unrelated Profiler
-   entry `0x180149500`.
+   The wrapper is reached by `HGRendererListUtils.DrawTreeECSRendererList`
+   (`0x189C0A130`), which loads `HGRenderGraphContext.cmd` from `+0x18` and
+   forwards the renderer-list id in `edx`.
+7. UnityPlayer contains two parallel function arrays for the same internal-call
+   name table (`0x1820D3DB0`). At global index 3467 the table-A array
+   (`0x1820CC000`) selects `0x180064580`; the parallel table-B array
+   (`0x1820D9520`) selects `0x1801719B0`. Table A preserves `edx`, obtains the
+   native command-buffer stream through `0x1804C7930`, and is therefore the
+   active command-writer implementation. Table B ignores `edx`, uses
+   the managed-root slot `0x1821BE708`, and enters the shared payload validator
+   `0x180A5C5C0`. Keep B as a duplicate validation boundary, not as the
+   renderer-list sink; the known global bindings establish table A as the
+   active array, while table B remains an alternate duplicate.
+8. Table-A `0x1804C7930` aligns the high-level stream cursor, writes dword
+   opcode `0x55`, then writes the forwarded renderer-list id. The high-level
+   interpreter `0x1804CE0A0` dispatches opcode `0x55` through table
+   `0x1804D19C8` to `0x1804CE4BD`, which reads the id and calls
+   `0x18106AAE0` with the global render context slot `+0xC0`.
+9. `0x18106AAE0` validates the renderer-list index, builds the renderer-list
+   state record, and calls the graphics context vtable `+0xEA0` with callback
+   `0x181060D70 -> 0x18107AB10`. The concrete context implementation
+   `0x1809324E0` records low-level opcode `0x273B`, callback pointer, size, and
+   the record payload. Correct low-level-table indexing is `opcode - 0x2711`;
+   `0x273B` lands at `0x1813B1110`, which invokes API-2 backend vtable `+0xEA8`
+   (`0x18083F530`) to queue the callback record.
+10. The queued `+0xEA8` records are consumed by the backend's later record loop
+    at `0x180844C4A-0x180844C6D`, which calls the stored callback. The HGTree
+    callback `0x18107AB10` assembles renderer state and reaches front-end
+    `+0xDA0` (`0x18083E720`) or fallback `+0x380`; these paths populate API-2
+    resource/command records and bind-state callbacks, but this pass has not
+    proven that this specific renderer-list record reaches the neighboring
+    `+0xDA8` indirect-draw branch or the separate `+0xDE8` draw/submit sink.
+11. Therefore this pass closes a positive managed-tree -> high-level opcode
+    `0x55` -> low-level opcode `0x273B` -> API-2 `+0xEA8` -> HGTree callback
+    route. The final renderer-list draw ownership and queue submission remain
+    fail-closed; table B's validation body and the unrelated ordinary
+    `Internal_DrawRendererList_Injected` route must not be substituted.
 
-10. A direct-code xref census against the pinned `UnityPlayer.dll` bounds this
+12. A direct-code xref census against the pinned `UnityPlayer.dll` bounds this
     pool further: `0x1805582A0` has only three direct callers in executable
     `.pdata` functions—`0x1805583B0` and the two retry sites inside
     `0x1805592B0`; `0x1805592B0` itself is reached from `0x180559240`,
@@ -123,7 +149,7 @@ unresolved; this is not yet a retail frame-parity claim.
     unresolved sink to a later consumer of the populated 0x80-byte records (or
     a runtime-indirect callback), rather than another missing allocator xref.
 
-11. The next callback edge is now bounded. The static resource callbacks do
+13. The next callback edge is now bounded. The static resource callbacks do
     not submit directly, but their terminal record builders do install the
     renderer callbacks consumed later by the resource system:
 
@@ -151,7 +177,7 @@ unresolved; this is not yet a retail frame-parity claim.
     remain the next target; component 67 and the separate CommandBuffer
     validation path stay out of this chain.
 
-12. The front-end/backend layering is now explicit. Setup
+14. The front-end/backend layering is now explicit. Setup
     `0x18072F3EB -> 0x180929430 -> 0x1809258C0` constructs the front-end
     context and `0x1807303B5 -> 0x180727EA0` stores that same pointer in the
     TLS slot read by `0x180725DC0`. The front-end stores the API-selected
@@ -195,7 +221,7 @@ unresolved; this is not yet a retail frame-parity claim.
     same API-2 family, but its HGTree-specific receiver/branch ownership
     remains unresolved.
 
-13. The remaining API-2 slots on this route are now bounded as resource and
+15. The remaining API-2 slots on this route are now bounded as resource and
     descriptor plumbing rather than draw calls. Front-end recording opcode
     `0x27B6` is interpreted by `0x1813B92F8`, whose receiver's backend slot
     `+0x358` dispatches to `0x1808351F0`. That method first enters `0x18083AA90`, allocates and
@@ -229,7 +255,7 @@ unresolved; this is not yet a retail frame-parity claim.
     target is the runtime receiver/branch that connects these records to that
     sink. Keep API-4's deliberate no-op slots separate.
 
-14. The `+E90` branch was caller-audited to keep this boundary from being
+16. The `+E90` branch was caller-audited to keep this boundary from being
     over-promoted. Four file-backed call sites were found (`0x180624349`,
     `0x18093B129`, `0x18093B6BB`, and `0x1813AFEC3`); each passes temporary
     record/command data into `0x180843BF0`, which then enters the same
@@ -253,7 +279,7 @@ unresolved; this is not yet a retail frame-parity claim.
     useful proof is to identify the heap-created vtable or its returned record
     consumer, rather than treating the slot number alone as device evidence.
 
-15. A neighboring resource helper provides a stronger semantic bound for this
+17. A neighboring resource helper provides a stronger semantic bound for this
     slot. `0x18061FB60` loads a resource object's `+0x208` subobject, dispatches
     its vtable `+0x48`, then treats the return value as a NUL-terminated byte
     string (`0x18061FC23` scans until `byte == 0`) and copies it into a small
@@ -273,7 +299,7 @@ unresolved; this is not yet a retail frame-parity claim.
     record builder`; the later record loop is a separate backend descriptor
     update path, not a consumer of this returned metadata value.
 
-16. The post-F8F0 indirect at `0x18083F89D` is a shared runtime dispatch cell,
+18. The post-F8F0 indirect at `0x18083F89D` is a shared runtime dispatch cell,
     not an opaque per-object graphics call. Its RIP slot is
     `0x1821D3898`, and the same cell is referenced by 28 resource/record call
     sites, including `0x180823FF5`, `0x180839E83`, `0x180840EBA`,
@@ -300,7 +326,7 @@ unresolved; this is not yet a retail frame-parity claim.
     update, while the earlier static copy assignment remains an initialization
     fallback.
 
-17. The same API-2 vtable contains a concrete backend draw and submit sink.
+19. The same API-2 vtable contains a concrete backend draw and submit sink.
     At base `0x181DBC098`, the relevant entries are
     `+0xDC0 -> 0x18083F680`, `+0xDE8 -> 0x18083F1E0`, and
     `+0xE90 -> 0x180843BF0`. The native interpreter region that contains the
@@ -328,7 +354,7 @@ unresolved; this is not yet a retail frame-parity claim.
     HGTree `+E90` case, so the remaining gap is receiver/branch ownership, not
     the existence of the concrete Vulkan sink.
 
-18. The interpreter cases now have an exact command-stream producer boundary.
+20. The interpreter cases now have an exact command-stream producer boundary.
     The dispatch table at `0x1813BB574` uses `opcode - 0x2711` as its index:
     `0x2730 -> 0x1813AFB6B`, `0x2731 -> 0x1813AFECF`, and
     `0x273B -> 0x1813B1110`. Case `0x2730` parses the variable-size record
@@ -355,7 +381,7 @@ unresolved; this is not yet a retail frame-parity claim.
     and `0x27B6`). Thus `0x2730 -> 0x2731` is a separate native command-family
     candidate, not a recovered HGTree renderer-list order.
 
-19. The command-stream receiver is now pinned to the API-2 backend. The
+21. The command-stream receiver is now pinned to the API-2 backend. The
     backend/context creation path `0x180929430` calls `0x1809258C0` to create
     the front-end context, obtains the selected backend from
     `0x18072F7E0`, and at `0x180929540` writes that same pointer to
@@ -377,118 +403,38 @@ unresolved; this is not yet a retail frame-parity claim.
     prove that either resource operation schedules the adjacent `+0xDE8`
     draw/submit case; that branch/order ownership remains fail-closed.
 
-20. The managed HGTree draw route is now pinned separately from that recorded
-    resource family. PData-scoped direct-call scanning of the pinned
-    `GameAssembly.dll` maps `HGRendererListUtils.DrawTreeECSRendererList`
-    (`0x189C0A130`, method index `288214`) to
-    `HGTreeRender.DrawECSRendererList` (`0x18B3FBFA4`) at
-    `0x189C0A165`. The helper loads the CommandBuffer from
-    `[context+0x18]`, forwards the renderer-list id in `edx`, and enters the
-    HGTree wrapper; that wrapper null-checks the command buffer and tail-jumps
-    to `CommandBuffer::AddDrawECSTreeRendererList`
-    (`0x18B3E3FE8`, method index `407629`). The UnityPlayer internal-call table
-    maps that name to native `0x1801719B0` (global internal-call index `3467`; a
-    previously used class-local table label was `321`).
+22. The managed draw edge is corrected by the duplicate-table audit above.
+    The six render callbacks remain valid callers of
+    `HGRendererListUtils.DrawTreeECSRendererList`, but the old attribution of
+    the name to `0x1801719B0` was incomplete: active table A's `0x180064580` preserves
+    the id and writes opcode `0x55`, while table B's `0x1801719B0` is only the
+    managed-root/hash validator. Do not report B as the active sink without a
+    while table B is only the alternate validation implementation.
+23. Ordinary `ScriptableRenderContext::ExecuteCommandBuffer` and
+    `Graphics::ExecuteCommandBuffer` remain real high-level playback routes:
+    `0x1800B6F40 -> 0x18052D730 -> 0x1804CDF70 -> 0x1804CE0A0`. The newly
+    recovered table-A tree writer now joins that interpreter at high-level
+    opcode `0x55`; this is stronger than the previous fail-closed statement
+    that no command writer existed after the managed call.
+24. The ordinary `Internal_DrawRendererList_Injected` route is still distinct:
+    table-A index 3463 resolves to `0x180062960`, while table-B's parallel
+    implementation is `0x1801713D0`. Its resource-state helper must not be
+    substituted for the tree-list route. The exact active table selector for
+    table A is the active global binding; table B is the alternate duplicate.
+25. The table-B body at `0x1801719B0` still uses
+    `0x1821BE708 -> 0x180A5C5C0 -> 0x180769E20 -> 0x18065C0C0` for managed
+    payload normalization and CRC/hash validation. This explains why the
+    earlier static scan saw no opcode, but it no longer bounds the complete
+    tree route: the source-positive table-A body records opcode `0x55`.
+26. The remaining HGTree sink question is now after the positive chain:
+    `DrawTreeECSRendererList -> 0x180064580 -> 0x1804C7930 -> 0x55 ->
+    0x18106AAE0 -> 0x1809324E0 -> 0x273B -> 0x18083F530 ->
+    0x18107AB10 -> 0x18083E720`. The route reaches API-2 resource/state
+    records and callbacks, but this pass has not joined them to `+0xDA8`
+    indirect draw or `+0xDE8` descriptor/draw/queue-submit. Keep the final
+    renderer-list draw and queue ownership fail-closed.
 
-    The same draw helper is directly called by six pinned render callbacks:
-    `HGPunctualLightShadowManager+<>c::<.cctor>b__49_0` (`0x189B56CCC`),
-    `GBufferPassConstructor+<>c::<.cctor>b__10_0` (`0x189BB6280`), both
-    `OnePassDeferredPassConstructor+<>c::<.cctor>b__33_0/1`
-    (`0x189BC526C`/`0x189BC5674`),
-    `HGShadowManager+<>c::<.cctor>b__104_3` (`0x189D2572C`), and
-    `HGASMManager+<>c::<.cctor>b__84_0` (`0x189D26464`). This is positive
-    evidence that the tree-list draw entry is used by real render passes.
-    Native `0x1801719B0` itself only performs the managed-root barrier and
-    string-payload/hash validation before returning; it exposes no direct
-    graphics call, `0x273x` opcode, or `+0xDE8` dispatch. Therefore the
-    `+0xDE8` API-2 sink remains a separate command-family candidate, while the
-    unresolved HGTree sink is the runtime CommandBuffer consumer/execution
-    edge after this internal call (and the runtime-indirect consumer of the
-    populated resource nodes).
-
-21. The next managed execution boundary is now addressable, but it does not
-    close the HGTree draw edge. The pinned UnityPlayer global internal-call
-    table uses name base `0x1820D3DB0` and function base `0x1820D9520`; its
-    entries are `ScriptableRenderContext::Submit_Internal_Injected` at
-    `0x1801572F0` (global index 3636),
-    `SubmitForRenderPassValidation_Internal_Injected` at `0x180157580`
-    (3637), and
-    `ExecuteCommandBuffer_Internal_Injected`/`Async`/`NoCopy`/`AsyncNoCopy`
-    at `0x1801587D0`/`0x180158980`/`0x180158B30`/`0x180158B80`
-    (3645-3648). The normal execute wrapper only validates the native context
-    through `0x18075E280` and reads/writes its `+0xE4` state; it has no direct
-    `0x273x`, `+0xDE8`, or graphics call. The no-copy variants enter
-    `0x180B3E5C0`/`0x180A95EB0`, which build native state through indirect
-    virtual/object calls, but still do not statically identify the API-2 draw
-    sink. The remaining target is therefore the dynamic command-buffer or
-    render-graph playback reached from these helpers, not another direct
-    `AddDrawECSTreeRendererList` producer.
-
-    This also removes a remaining alternative interpretation of the tree
-    internal call: native `0x1801719B0` never consumes its `edx` renderer-list
-    id, and its BSS call slot `0x1821BE708` has one executable writer only, at
-    `0x18077C055`, where static initialization resolves
-    `il2cpp_gc_wbarrier_set_field`. The tree path is therefore a fixed
-    managed-payload validation boundary, not a late-bound renderer-list
-    converter.
-
-22. The high-level Unity command-buffer playback sink can now be separated
-    from the ScriptableRenderContext wrappers above. In the class-local
-    UnityPlayer registration, the name pointer at `0x1820D5A90` is
-    `UnityEngine.Graphics::ExecuteCommandBuffer` and the paired function slot
-    at `0x1820D31E8` is native `0x1800B6F40` (the async sibling is
-    `0x1800B71D0`). `0x1800B6F40` roots the managed command-buffer payload
-    through the fixed `0x1821BE708` barrier slot, then calls
-    `0x18052D730`; that helper constructs the playback context, calls
-    `0x1804CDF70`, and its dispatch core enters the high-level opcode
-    interpreter `0x1804CE0A0`. The interpreter reads a dword opcode from the
-    byte stream and dispatches through a bounded `0x00..0x6F` jump table before
-    invoking the backend callbacks.
-
-    This closes a real CommandBuffer playback chain for ordinary Unity command
-    records, but it does not yet bind the HGTree path: `0x1801719B0` still has
-    no call to the high-level record writers, and no static reference from its
-    managed-payload validator to the interpreter or to API-2 `+0xDE8` exists.
-    Therefore the remaining HGTree question is whether its renderer-list
-    payload is consumed by this interpreter through an indirect object/table
-    callback, or by the separate `0x27xx` command family; both remain
-    fail-closed until a renderer-list-specific playback case is identified.
-
-23. The ordinary `CommandBuffer::Internal_DrawRendererList_Injected` route is
-    a distinct native path and must not be used as a proxy for HGTree tree
-    draws. The global UnityPlayer internal-call table maps index `3463` to
-    `0x1801713D0`; its two renderer/resource branches call `0x180A60190` at
-    `0x180171520` and `0x18017153F`. An exhaustive direct-xref scan of
-    `0x180A60190` finds only those two call sites. The helper performs
-    payload/object validation and indirect renderer/resource-state resolution
-    (including `0x180A50FA0`, `0x180A69570`, and `0x180A4A640` families), but
-    has no direct graphics call, command opcode write, or API-2 `+0xDE8`
-    dispatch. The HGTree `AddDrawECSTreeRendererList` body at `0x1801719B0`
-    has no call to this helper and remains the separate managed-payload
-    validation boundary described above. Thus ordinary `DrawRendererList`
-    resource resolution and HGTree tree-list submission are statically split;
-    neither one closes the missing renderer-list playback consumer.
-
-24. The remaining native helper in the tree internal-call body is now bounded
-    as a payload hash check, not a hidden renderer-list writer. At
-    `0x180171A07`, `AddDrawECSTreeRendererList` calls shared helper
-    `0x180A5C5C0`. That helper first rejects a null payload, uses
-    `0x180769E20` to normalize the inline/indirect byte span, then seeds an
-    accumulator with `0xffffffff` and calls `0x18065C0C0`. The latter is a
-    byte-at-a-time CRC loop over the bounded span; `A5C5C0` returns the
-    bitwise-not accumulator and only enters the ordinary error logger when the
-    validation flag is false. An exhaustive direct-xref scan finds the same
-    helper shared by unrelated command APIs (`Internal_DrawProcedural...`,
-    instanced/indirect mesh draws, occlusion/random-write/scissor commands,
-    `CopyTexture`, and `Blit_Identifier`) in addition to the HGTree entry.
-    Neither `A5C5C0` nor `65C0C0` writes a command opcode, touches the
-    graphics-context vtable, or dispatches API-2 `+0xDE8`. This closes the
-    apparent late-bound call in the tree body as generic managed-payload
-    validation and leaves the actual renderer-list playback edge after the
-    internal call (or in the runtime-indirect resource consumer), still
-    fail-closed.
-
-25. The two apparent runtime consumers adjacent to this boundary are now
+27. The two apparent runtime consumers adjacent to this boundary are now
     bounded as state/lifetime machinery rather than a proven renderer-list
     submitter. `ScriptableRenderContext`'s no-copy wrappers at
     `0x180158B30`/`0x180158B80` enter `0x180B3E5C0` and `0x180A95EB0`.
@@ -511,7 +457,7 @@ unresolved; this is not yet a retail frame-parity claim.
     claim that the pool is unrelated; however, no direct device, opcode, or
     API-2 submission edge is present in the inspected pool bodies.
 
-26. The resource-callback branch is now closed through the shared API-2 record
+28. The resource-callback branch is now closed through the shared API-2 record
     builder, but still not through the final draw sink. Both native HGTree
     callback handlers (`0x18107AE60` and `0x18107B3A0`) resolve the TLS context
     vtable and dispatch either `+0xDA0` or `+0x380`. In the pinned API-2 vtable
@@ -530,7 +476,7 @@ unresolved; this is not yet a retail frame-parity claim.
     consumer reaches it. Keep the HGTree playback edge fail-closed until the
     runtime-indirect record consumer or a capture binds these families.
 
-27. The 0x60-byte records created on the resource path now have bounded
+29. The 0x60-byte records created on the resource path now have bounded
     callback thunks, and their runtime slots are resolved to named Vulkan
     commands. The `+0xDA0` builder `0x18083E720` stores callback `0x180820580`
     at `0x18083EA2A`; that thunk jumps to `0x18082D6B0`, which compares
@@ -553,7 +499,7 @@ unresolved; this is not yet a retail frame-parity claim.
     `+0xDA8` implementation therefore remains a neighboring render-family
     control path until a runtime record join proves an HGTree producer.
 
-28. The indirect-slot names are source-pinned by Unity's Vulkan resolver
+30. The indirect-slot names are source-pinned by Unity's Vulkan resolver
     `0x180746620`, which passes each symbol string to `0x181CA0480` and stores
     the resolved function pointer in the corresponding BSS cell. The resolver
     maps `0x1821D3548/3568/3590/3598/35A0/35A8/35C0/35C8` to
@@ -566,7 +512,7 @@ unresolved; this is not yet a retail frame-parity claim.
     `python scratch\\reverse_engineering\\hgtree_component67_producers\\resolve_vulkan_function_slots.py`
     against the pinned UnityPlayer to reproduce the mapping.
 
-29. The neighboring indirect-draw control path is now source-identified rather
+31. The neighboring indirect-draw control path is now source-identified rather
     than inferred from slot proximity. HyperGryph table index 503 names
     `HGTerrainManager::RenderTerrain` and maps to `0x1801F4D40`; its wrapper
     calls `0x1811DDC50` (`0x1801F4DB3`), which writes a high-level `0x60`
@@ -601,6 +547,12 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AEE90 0x1813B12C0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181060D00 0x18107AD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A40
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180064580 0x180064620
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804C7930 0x1804C79D0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804CE4BD 0x1804CE4DF
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18106AAE0 0x18106ACB0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F530 0x18083F5D0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180844C3F 0x180844C80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801713D0 0x1801715C0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180A60190 0x180A6041C
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A60190

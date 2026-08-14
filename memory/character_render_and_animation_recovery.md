@@ -89,17 +89,21 @@ archetypes are imported as labeled source kits rather than finished characters.
   a later/runtime-indirect consumer of populated resource nodes, not another
   allocator ingress. See
   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
-  Separately, `DrawECSRendererList` tail-jumps to
-  `CommandBuffer::AddDrawECSTreeRendererList`, native `0x1801719B0`, which
-  roots local managed-pointer state through slot `0x1821BE708` and calls the
-  string-payload conversion/validation helper `0x180A5C5C0`. The earlier
-  `0x180149500` attribution was a CommandBuffer-table index error; that address
-  is a Profiler entry. Static initialization at `0x18077C050/0x18077C055`
-  resolves slot `0x1821BE708` to `il2cpp_gc_wbarrier_set_field`, not a
-  renderer-list converter. The separate CommandBuffer body exposes no
-  ComputeBuffer, dispatch, graphics API, or command-stream opcode; its final
-  dynamic consumer remains fail-closed. Keep component 67 as LOD/list state
-  rather than merging it with these handles. See
+  Separately, `DrawECSRendererList` is reached from
+  `HGRendererListUtils.DrawTreeECSRendererList` (`0x189C0A130`) and has two
+  parallel UnityPlayer internal-call implementations. The maintained
+  UnityPlayer binding audit identifies table A as the global active array (its
+  known `CullLights` entry maps to `0x1800FBCE0`); table B is the alternate
+  duplicate. The active table-A body `0x180064580` preserves the renderer-list id and writes high-level
+  opcode `0x55` through `0x1804C7930`; the high-level interpreter calls
+  `0x18106AAE0`, whose context `+0xEA0` records low-level `0x273B` and queues
+  callback `0x181060D70 -> 0x18107AB10` through API-2 `+0xEA8` (`0x18083F530`).
+  The parallel table-B body `0x1801719B0` roots local managed-pointer state
+  through slot `0x1821BE708` and calls `0x180A5C5C0` for payload/hash
+  validation; it is not the complete tree writer. The final HGTree
+  callback-to-`+0xDA8`/`+0xDE8` draw ownership remains fail-closed. Keep
+  component 67 as LOD/list state rather than merging it with these handles.
+  See
   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
 
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
@@ -712,22 +716,26 @@ only stable interpretation and priorities.
    `0x180861C20` is only a generic 32-byte record-copy helper, and loader order
    can overwrite the cell; capture or resolve that order before calling the
    fallback active. Keep component 67's LOD/list role and the retail culling
-   survivor list separately bounded. The managed draw edge is now separately
-   pinned: `HGRendererListUtils.DrawTreeECSRendererList` (`0x189C0A130`)
-   loads its CommandBuffer from context `+0x18` and calls
-   `HGTreeRender.DrawECSRendererList` (`0x18B3FBFA4`), which resolves to
-   `CommandBuffer::AddDrawECSTreeRendererList` (`0x18B3E3FE8`, UnityPlayer
-   `0x1801719B0`). Six named render callbacks call the tree helper. The native
-   internal-call body only roots/validates/hash-checks its managed payload and
-   exposes no direct `+0xDE8` or graphics call, so the API-2 `+0xDE8` sink is a
-   separate command-family candidate. The global internal-call table also
+   survivor list separately bounded. The managed draw edge is now positive
+   through the active global table-A binding: six named render
+    callbacks reach `HGRendererListUtils.DrawTreeECSRendererList`
+    (`0x189C0A130`) -> `HGTreeRender.DrawECSRendererList` (`0x18B3FBFA4`) ->
+    active table-A `CommandBuffer::AddDrawECSTreeRendererList` (`0x180064580`).
+    That body preserves the renderer-list id and calls `0x1804C7930`, which
+    writes high-level opcode `0x55`; the interpreter case `0x1804CE4BD` calls
+    `0x18106AAE0`, then context `+0xEA0` records low-level `0x273B`.
+    The parallel table-B body `0x1801719B0` remains only the managed-root/hash
+    validator and alternate duplicate; the global internal-call table also
    resolves `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
    to `0x1801587D0` (with async/no-copy siblings at `0x180158980`,
    `0x180158B30`, and `0x180158B80`); the normal wrapper only validates and
    updates native context state, while no-copy enters indirect helpers
-   `0x180B3E5C0`/`0x180A95EB0`. The remaining HGTree sink is therefore the
-   dynamic command-buffer/render-graph playback edge plus the
-   runtime-indirect resource-node consumer. Ordinary
+    `0x180B3E5C0`/`0x180A95EB0`. The remaining HGTree sink is now after the
+    positive `0x55 -> 0x273B -> +0xEA8` route: the callback
+    `0x18107AB10` queues through `0x18083F530`, is consumed by the backend
+    record loop at `0x180844C4A`, and reaches front-end `+0xDA0`/`+0x380`.
+    The dynamic command-buffer/render-graph playback and runtime-indirect
+    resource-node consumer still need to be joined to the final draw. Ordinary
    `CommandBuffer::Internal_DrawRendererList_Injected` is a separate route:
    UnityPlayer `0x1801713D0` resolves through `0x180A60190`'s indirect
    renderer/resource-state helper, while the HGTree body `0x1801719B0` never
@@ -736,19 +744,21 @@ only stable interpretation and priorities.
    The apparent late-bound helper in the native tree body is also bounded:
    `0x180A5C5C0 -> 0x180769E20 -> 0x18065C0C0` only normalizes a bounded
    managed payload and computes its CRC/hash (shared by unrelated draw and
-   texture command APIs); it emits no opcode, graphics call, or `+0xDE8`
-   dispatch. The unresolved edge therefore remains after the internal call,
-   in dynamic CommandBuffer/render-graph playback or the runtime-indirect
-   resource consumer. The adjacent ScriptableRenderContext no-copy helpers
+    texture command APIs); it emits no opcode, graphics call, or `+0xDE8`
+    dispatch. This negative result applies only to table B; the unresolved edge
+    now remains after the positive table-A command route, in dynamic
+    CommandBuffer/render-graph playback or the runtime-indirect resource
+    consumer. The adjacent ScriptableRenderContext no-copy helpers
    are now bounded as state construction (`0x180B3E5C0`/`0x180A95EB0`) rather
    than playback, and the API-2 `0x80`-byte resource pool
    (`0x180559B30 -> 0x1805598C0 -> 0x1805586C0`) is directly a
    refcount/bitmap lifetime collector. Its callback fields remain an
    indirect, unresolved possibility, but the inspected bodies contain no
-   direct opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep the
-   HGTree sink fail-closed after the internal call.
-   The latest callback trace separates the Vulkan command-recording identity
-   from HGTree ownership. Both native HGTree handlers dispatch API-2
+    direct opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep final
+    HGTree draw/queue ownership fail-closed after the positive command route.
+    The latest callback trace separates the Vulkan command-recording identity
+    from HGTree ownership. The table-A callback route reaches API-2
+    `+0xEA8 -> 0x18083F530 -> 0x18107AB10 -> +0xDA0/+0x380`; both native HGTree handlers dispatch API-2
    `+0xDA0`/`+0x380`, resolving to `0x18083E720`/`0x1808350E0`; their shared
    records use thunks `0x180820580 -> 0x18082D6B0` and
    `0x1808208F0 -> 0x18082E660`, whose resolver slots name buffer binds,
@@ -760,8 +770,9 @@ only stable interpretation and priorities.
    invokes callback `0x1811A5BD0 -> 0x1811AB1B0`, and the pass executor reaches
    `0x1804D4680 -> +0xDA8`. No static HGTree handler calls `+0xDA8`; therefore
    this is a generic Terrain control-path witness, not a retail HGTree draw
-   proof. Managed tree-list playback, HGTree-specific draw ownership,
-   callback ordering, and queue submission remain fail-closed. See
+    proof. Managed tree-list playback is now source-pinned through opcode
+    `0x55` and `0x273B`; HGTree-specific indirect-draw ownership, callback
+    ordering, and queue submission remain fail-closed. See
    `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
