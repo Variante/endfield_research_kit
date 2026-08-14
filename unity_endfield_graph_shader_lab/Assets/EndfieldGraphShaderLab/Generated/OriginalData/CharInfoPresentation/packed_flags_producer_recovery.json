@@ -1615,9 +1615,9 @@
               "constructor": "0x189b6aa28",
               "compute_buffer_constructor": "0x18b3d7374",
               "buffer_count": "0x80000",
-              "buffer_stride_bytes": 8,
+              "buffer_stride_bytes": 1,
               "set_data_call": "0x187af05e0 (ComputeBuffer.SetData<byte>)",
-              "interpretation": "ApplyPendingUpload uses a generic count-0x80000, stride-8 ComputeBuffer and is not the 84-byte _UploadBuffer path; its sole SetData caller is the pool's own loop."
+              "interpretation": "ApplyPendingUpload uses a generic count-0x80000, byte-stride-1 ComputeBuffer (constructor r8d=1, type immediate 8) and is not the 84-byte _UploadBuffer path; its sole SetData caller is the pool's own loop."
             },
             "tvm0_partition": {
               "entry": "0x1810d25c0..0x1810d26bf",
