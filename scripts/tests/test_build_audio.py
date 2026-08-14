@@ -1833,19 +1833,16 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertTrue(codec_row["sourceFlags"]["isLanguageSpecific"])
         self.assertTrue(codec_row["sourceFlags"]["nonCachable"])
         self.assertEqual(codec_row["parentId"], 900)
-        self.assertEqual(build_audio.hirc_sound_media_id(codec), 101)
 
         external_row = build_audio.hirc_v150_sound_source(external)
         self.assertEqual(external_row["sourceKind"], "externalSourceCodec")
         self.assertEqual(external_row["pluginName"], "Wwise External Source")
-        self.assertIsNone(build_audio.hirc_sound_media_id(external))
 
         synth_row = build_audio.hirc_v150_sound_source(synthesized)
         self.assertEqual(synth_row["sourceKind"], "synthesizedSource")
         self.assertEqual(synth_row["pluginParameterSize"], 3)
         self.assertEqual(synth_row["nodeBaseOffset"], 21)
         self.assertEqual(build_audio.hirc_object_parent_id(2, synthesized), 902)
-        self.assertIsNone(build_audio.hirc_sound_media_id(synthesized))
 
         objects = {
             1: {"type": 4, "data": bytes([2]) + pack("<II", 2, 3)},

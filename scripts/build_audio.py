@@ -19,29 +19,31 @@ from typing import Any
 
 if __package__:
     from .common import resolve_installed_game_data_root, sha256_file as file_sha256
-    from .build_audio_semantics import (
-        HIRC_OBJECT_TYPE_LABELS,
-        SELECTION_HIRC_TYPES,
-        build_audio_semantic_data,
-        collect_metadata_audio_literals,
-        collect_table_audio_event_hashes,
-        collect_table_audio_event_names,
+    from .audio_semantics.identifiers import (
         audio_hash_generator_compute,
+        collect_metadata_audio_literals,
         hashed_event_key,
         is_rtpc_parameter_name,
     )
-else:
-    from common import resolve_installed_game_data_root, sha256_file as file_sha256
-    from build_audio_semantics import (
-        HIRC_OBJECT_TYPE_LABELS,
+    from .audio_semantics.table_contexts import collect_table_audio_events
+    from .audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
+    from .build_audio_semantics import (
         SELECTION_HIRC_TYPES,
         build_audio_semantic_data,
-        collect_metadata_audio_literals,
-        collect_table_audio_event_hashes,
-        collect_table_audio_event_names,
+    )
+else:
+    from common import resolve_installed_game_data_root, sha256_file as file_sha256
+    from audio_semantics.identifiers import (
         audio_hash_generator_compute,
+        collect_metadata_audio_literals,
         hashed_event_key,
         is_rtpc_parameter_name,
+    )
+    from audio_semantics.table_contexts import collect_table_audio_events
+    from audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
+    from build_audio_semantics import (
+        SELECTION_HIRC_TYPES,
+        build_audio_semantic_data,
     )
 
 
@@ -1625,20 +1627,20 @@ def collect_buff_play_sound_actions(
     """
 
     if decoder is None:
-        try:
-            from game_data.memorypack.buff import (
-                BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
-                BUFF_PLAY_SOUND_ACTION_TAG,
-                consume_buff_play_sound_action,
-            )
-            from game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
-        except ImportError:  # Imported as scripts.build_audio from repository-root tests.
+        if __package__:
             from scripts.game_data.memorypack.buff import (
                 BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
                 BUFF_PLAY_SOUND_ACTION_TAG,
                 consume_buff_play_sound_action,
             )
             from scripts.game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
+        else:
+            from game_data.memorypack.buff import (
+                BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
+                BUFF_PLAY_SOUND_ACTION_TAG,
+                consume_buff_play_sound_action,
+            )
+            from game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
 
         member_count = BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS[BUFF_PLAY_SOUND_ACTION_TAG]
         signature = bytes([MEMORYPACK_UNION_WIDE_TAG]) + int(BUFF_PLAY_SOUND_ACTION_TAG).to_bytes(2, "little") + bytes([member_count])
@@ -3665,10 +3667,6 @@ def iter_akpk_bank_payloads_from_bytes(raw_data: bytes, label: str) -> list[tupl
     return banks
 
 
-def iter_akpk_bank_payloads(path: Path) -> list[tuple[int, bytes]]:
-    return iter_akpk_bank_payloads_from_bytes(path.read_bytes(), normalize_posix(path))
-
-
 def iter_akpk_media_ids_from_bytes(raw_data: bytes, label: str) -> list[int]:
     """Every WEM media id in an AKPK package (banks DIDX + sounds + externals sectors)."""
     data = decrypt_akpk_bytes(raw_data, label)
@@ -4110,15 +4108,6 @@ def hirc_v150_sound_source(data: bytes) -> dict[str, Any] | None:
     except (ValueError, OverflowError):
         return None
     return {**source, "nodeBaseOffset": node_base_offset, "parentId": parent_id}
-
-
-def hirc_sound_media_id(data: bytes) -> int | None:
-    """Return a fixed codec-media id; external/plugin sources are not media."""
-
-    source = hirc_v150_sound_source(data)
-    if not source or source.get("sourceKind") != "codecMedia":
-        return None
-    return int(source["sourceId"])
 
 
 def collect_hirc_decoded_sound_definitions(
@@ -7331,10 +7320,6 @@ def collect_audio_event_names(conv_dir: Path, export_root: Path) -> set[str]:
     return names
 
 
-def path_id_hex(path_id: int) -> str:
-    return f"{path_id & ((1 << 64) - 1):016X}"
-
-
 def mono_behaviour_json_by_path_id(export_root: Path) -> dict[int, Path]:
     root = (
         export_root
@@ -9156,9 +9141,10 @@ def build_audio(args: argparse.Namespace) -> int:
     conv_dir = args.webui_root / "data" / "lang" / language / "conv"
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
+    table_event_names, table_event_hashes = collect_table_audio_events(args.export_root)
     event_name_source_sets: dict[str, set[str]] = {
         "storyOrCoreAudioTable": collect_audio_event_names(conv_dir, args.export_root),
-        "typedAudioTableOrConfig": collect_table_audio_event_names(args.export_root),
+        "typedAudioTableOrConfig": table_event_names,
         "luaPostEvent": set(lua_post_event_names),
     }
     event_names = set().union(*event_name_source_sets.values())
@@ -9208,7 +9194,6 @@ def build_audio(args: argparse.Namespace) -> int:
     event_name_source_sets["gameplayReference"] = gameplay_event_names
     event_names.update(gameplay_event_names)
     projectile_event_hashes = projectile_sound_hashes(args.webui_root)
-    table_event_hashes = collect_table_audio_event_hashes(args.export_root)
     explicit_event_hashes = projectile_event_hashes | table_event_hashes
     explicit_event_names_by_hash = {
         event_hash: (
@@ -9462,6 +9447,7 @@ def build_audio(args: argparse.Namespace) -> int:
         export_root=args.export_root,
         webui_root=args.webui_root,
         metadata_path=metadata_path,
+        gameassembly_path=args.game_root.parent / "GameAssembly.dll",
         cutscene_events=cutscene_audio_events,
     )
 
