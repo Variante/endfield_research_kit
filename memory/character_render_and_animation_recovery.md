@@ -59,8 +59,12 @@ archetypes are imported as labeled source kits rather than finished characters.
   callbacks are `0x181060D90 -> 0x18107AD80`,
   `0x181060D20 -> 0x1810794D0`, and `0x181060D00 -> 0x181079320`.
   Interpreter table `0x1813BB574` maps `0x273B` to `0x1813B1110`, which
-  invokes those callback records. This closes the HGTree command-stream
-  writer/callback boundary, not the final backend draw/resource consumer.
+  invokes those callback records. Their 0x18-byte list items, 0x30-byte
+  result records, and `+0x20` writeback are now bounded; the shared fallback
+  builder reaches the internal renderer-resource pool
+  (`0x180555A30/0x180555D30 -> 0x1805592B0 -> 0x1805582A0`, 0x80-byte nodes).
+  This closes HGTree command-stream writer/callback and resource-pool ingress,
+  not the final backend draw/device consumer.
   Separately, `DrawECSRendererList` tail-jumps to
   `CommandBuffer::AddDrawECSTreeRendererList`, native `0x1801719B0`, which
   roots local managed-pointer state through slot `0x1821BE708` and calls the
