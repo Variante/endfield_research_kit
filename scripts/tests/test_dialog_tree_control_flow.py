@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import build_mission_pipeline_data as mission_pipeline
+from scripts.mission_pipeline import source_order_shells
 from scripts.story_builder import source_story_partial_order as partial_order
 from scripts.story_builder.dialog_tree_control_flow import (
     ContractError,
@@ -498,12 +498,12 @@ class DialogTreeControlFlowTests(unittest.TestCase):
                     family_spec=self.family(),
                     native_contract=self.native_contract(["yes", "no"]),
                 )
-            with patch.object(mission_pipeline, "ROOT", root):
-                strict_files = mission_pipeline._source_order_shell_related_files({
+            with patch.object(source_order_shells, "ROOT", root):
+                strict_files = source_order_shells._source_order_shell_related_files({
                     "mission": "fixture",
                     "branches": {"dialogTreeStaticPortControls": rows},
                 })
-                branch_files = mission_pipeline._story_branch_related_original_files({
+                branch_files = source_order_shells._story_branch_related_original_files({
                     "mission": "fixture",
                     "branches": {"dialogTreeStaticPortControls": rows},
                 })
