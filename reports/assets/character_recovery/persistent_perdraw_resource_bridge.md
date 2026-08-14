@@ -40,8 +40,9 @@ custom-per-draw payload.
 
 The factory dirty-record callback also reaches this resolver: at
 `0x1810d2fc4` and `0x1810d2fd9` it resolves two resource indices, then copies
-`0x80` bytes from the first resolved record to the second resolved record at
-`+0x80`. That is a second positive CPU-side resource edge, but the copy still
+`0x100` bytes from the first resolved record to the second resolved record,
+covering destination offsets `+0x00..+0xf0` in two `0x80`-byte Vector4
+passes. That is a second positive CPU-side resource edge, but the copy still
 does not identify a GPU buffer upload or dispatch.
 
 ## Boundary

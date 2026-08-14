@@ -50,7 +50,8 @@ through the per-entry flag at `record+0x74` and routed through
 `0x1810d8d40`, which reaches the persistent resolver family
 (`0x180424d60`, `0x180424ec0`, `0x180425030`, `0x1804251a0`,
 `0x180425310`, `0x180425480`, `0x1804258d0`, and `0x18033b740`) and then
-`0x1810ccd20` for the 0x80-byte resource-block copy. The terminal helper
+`0x1810ccd20` for the `0x100`-byte resource-block copy (two `0x80`-byte
+Vector4 passes). The terminal helper
 `0x1810c7a30` updates the companion resource list.
 
 The pointer alias is now closed rather than inferred. The manager resolver
