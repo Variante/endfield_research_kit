@@ -719,8 +719,14 @@ only stable interpretation and priorities.
    `0x1801719B0`). Six named render callbacks call the tree helper. The native
    internal-call body only roots/validates/hash-checks its managed payload and
    exposes no direct `+0xDE8` or graphics call, so the API-2 `+0xDE8` sink is a
-   separate command-family candidate; the remaining HGTree sink is the runtime
-   CommandBuffer execution edge and the runtime-indirect resource-node consumer.
+   separate command-family candidate. The global internal-call table also
+   resolves `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
+   to `0x1801587D0` (with async/no-copy siblings at `0x180158980`,
+   `0x180158B30`, and `0x180158B80`); the normal wrapper only validates and
+   updates native context state, while no-copy enters indirect helpers
+   `0x180B3E5C0`/`0x180A95EB0`. The remaining HGTree sink is therefore the
+   dynamic command-buffer/render-graph playback edge plus the
+   runtime-indirect resource-node consumer.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.

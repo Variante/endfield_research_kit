@@ -384,7 +384,8 @@ claim.
     HGTree wrapper; that wrapper null-checks the command buffer and tail-jumps
     to `CommandBuffer::AddDrawECSTreeRendererList`
     (`0x18B3E3FE8`, method index `407629`). The UnityPlayer internal-call table
-    maps that name to native `0x1801719B0` (table index `321`).
+    maps that name to native `0x1801719B0` (global internal-call index `3467`; a
+    previously used class-local table label was `321`).
 
     The same draw helper is directly called by six pinned render callbacks:
     `HGPunctualLightShadowManager+<>c::<.cctor>b__49_0` (`0x189B56CCC`),
@@ -401,6 +402,32 @@ claim.
     unresolved HGTree sink is the runtime CommandBuffer consumer/execution
     edge after this internal call (and the runtime-indirect consumer of the
     populated resource nodes).
+
+21. The next managed execution boundary is now addressable, but it does not
+    close the HGTree draw edge. The pinned UnityPlayer global internal-call
+    table uses name base `0x1820D3DB0` and function base `0x1820D9520`; its
+    entries are `ScriptableRenderContext::Submit_Internal_Injected` at
+    `0x1801572F0` (global index 3636),
+    `SubmitForRenderPassValidation_Internal_Injected` at `0x180157580`
+    (3637), and
+    `ExecuteCommandBuffer_Internal_Injected`/`Async`/`NoCopy`/`AsyncNoCopy`
+    at `0x1801587D0`/`0x180158980`/`0x180158B30`/`0x180158B80`
+    (3645-3648). The normal execute wrapper only validates the native context
+    through `0x18075E280` and reads/writes its `+0xE4` state; it has no direct
+    `0x273x`, `+0xDE8`, or graphics call. The no-copy variants enter
+    `0x180B3E5C0`/`0x180A95EB0`, which build native state through indirect
+    virtual/object calls, but still do not statically identify the API-2 draw
+    sink. The remaining target is therefore the dynamic command-buffer or
+    render-graph playback reached from these helpers, not another direct
+    `AddDrawECSTreeRendererList` producer.
+
+    This also removes a remaining alternative interpretation of the tree
+    internal call: native `0x1801719B0` never consumes its `edx` renderer-list
+    id, and its BSS call slot `0x1821BE708` has one executable writer only, at
+    `0x18077C055`, where static initialization resolves
+    `il2cpp_gc_wbarrier_set_field`. The tree path is therefore a fixed
+    managed-payload validation boundary, not a late-bound renderer-list
+    converter.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -420,6 +447,9 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181060D00 0x18107AD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A5C5C0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801572F0 0x180158C00
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180B3E5C0 0x180B3E699
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180A95EB0 0x180A95F37
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18072F7E0 0x18072F810
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180829030 0x1808290A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083E720 0x18083EC40
