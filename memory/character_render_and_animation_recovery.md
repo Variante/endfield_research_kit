@@ -240,7 +240,8 @@ is open, resolves a persistent destination through `0x1804255f0` and stores at
 array and `0x240`-stride resource records; this is not callback stack scratch.
 Managed `SetPerDrawData_*` channel helpers are direct users of this bridge.
 The factory dirty-record callback also calls the resolver at
-`0x1810d2fc4/2fd9` and copies an `0x80`-byte CPU resource block, but neither
+`0x1810d2fc4/2fd9` and copies an `0x100`-byte CPU resource block across
+`+0x00..+0xf0` in two `0x80`-byte Vector4 passes, but neither
 path names `_RTPerDrawParamsBuffer`, `UploadPerDrawParams`, or kernel 7. Keep
 this persistent CPU resource edge separate from the factory `+0x8c` record and
 the callback-local `+0x100` scratch. Details:
