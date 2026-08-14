@@ -174,6 +174,16 @@ edge. They are therefore additional false positives, not the missing
 `0x100`-to-`0x54` pack. See
 `reports/assets/character_recovery/native_100_stride_variant_followup.md`.
 
+The exact native `0x54` helpers are now classified as a separate false-positive
+family. `0x1800a5fe0`/`0x18067606c` copy five Vector4 lanes plus a trailing dword
+for indexed `StatusSingleEffect`/VFX and generic container data; their callers
+do not touch the factory `0x8c` record, `+0xb0..+0xf0` staging, or
+`GpuSceneDirtyUpdateCS.UploadPerDrawParams`. The shader source also puts its
+index dword first, so this is not the missing `_UploadBuffer` record. The
+factory `0x100 -> 0x54` pack, kernel-7 dispatch, and channel-2/resource `+0xd0`
+binding remain fail-closed. See
+`reports/assets/character_recovery/native_84_helpers_status_vfx_followup.md`.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable
