@@ -260,6 +260,7 @@ from .option_route_projection import (
 from .linked_reading_projection import append_linked_reading_content_lines
 from .sibling_scene_projection import sibling_scene_template_branch_for_group
 from .option_sibling_timeline_projection import (
+    dialog_line_text_signature,
     foreign_timeline_option_definition_for_group,
     option_signature_sequence,
     sibling_scene_text_branch_for_group,
