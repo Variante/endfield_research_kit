@@ -622,6 +622,33 @@ and final draw/queue ownership remain fail-closed.
     callback-to-state path is a distinct runtime edge; neither proves
     HGTree-specific indirect draw ordering or queue submission.
 
+36. The adjacent generic mesh-list wrappers are now mapped separately from
+    the tree-list wrapper. Metadata/body mapping pins
+    `HGMeshRender.DrawECSMeshRendererListWithSRPRendererList` to GameAssembly
+    `0x18B3FA1F8`; its body forwards the ECS id and copied SRP `RendererList`
+    to `CommandBuffer::AddDrawECSMeshRendererListWithSRPRendererList_Injected`
+    through `0x18B3E3F44`. `HGMeshRender.DrawECSRendererList` is the sibling
+    wrapper at `0x18B3FA224`, which enters the resolved
+    `CommandBuffer::AddDrawECSMeshRendererList` path at `0x18B3E3FA8`.
+    These wrappers only record the corresponding mesh/ECS command and contain
+    no flush, `+0xF10`, `+0xDE8`, or queue-submit edge. They are useful positive
+    CommandBuffer witnesses for the ordinary HGMesh family, but they do not
+    join the HGTree `0x55 -> 0x273B` callback route or prove HGTree final-draw
+    ownership.
+
+37. The resource-pool callback identity is now bounded on the actual table-A
+    HGTree ingress rather than left entirely indirect. The exact path is
+    `0x18107AB10 -> 0x180555D30 -> 0x1805573D0 -> 0x180559520 ->
+    0x1805592B0`. `0x1805573D0` supplies a callback tuple containing
+    `0x180557650` and `0x180557750`; `0x1805592B0` copies that tuple into the
+    node's `+0x30..+0x40` fields. Recycle/cleanup `0x1805598C0` invokes the
+    stored node callback. On this ingress `0x180557650` is only a contained-
+    object cleanup dispatcher and `0x180557750` is a field setter; neither
+    contains a front-vtable slot, command opcode, Vulkan call, draw, or queue
+    submission. This closes the AB10-to-pool-node callback identity for this
+    ingress. It does not classify unrelated producers of the shared pool, so
+    other node contexts remain fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -708,4 +735,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811AB1B0 0x1811AB7DB
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811D03A0 0x1811D06F8
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804D4680 0x1804D49A0
+python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --member-regex "^AddDrawECS.*" --body-target-regex "^AddDrawECS.*" --body-target-type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --all-images --include-all-members --body-context 1 --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.md
+python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.md
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x18B3E3F44 0x18B3E4028
 ```
