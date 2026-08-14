@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .codecs.levelscript import active_shapes as levelscript_active_shapes
+from .codecs.levelscript import boolean_getters as levelscript_boolean_getters
 from .codecs.levelscript import call_server as levelscript_call_server
 from .codecs.levelscript import compact_property_gate as levelscript_property_gate
 from .codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
@@ -19,6 +20,8 @@ from .codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
 from .codecs.levelscript.params import (
     DEFAULT_PARAM_TAIL as _DEFAULT_PARAM_TAIL,
     decode_constant_string_param as _decode_constant_string_param,
+    decode_bool_param as _decode_bool_param,
+    decode_i32_param as _decode_i32_param,
     decode_param_tail as _decode_param_tail,
 )
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
@@ -2381,31 +2384,6 @@ def _decode_constant_bool_param(
     return bool(payload[cursor + 1]), cursor + 14
 
 
-def _decode_i32_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
-    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
-        return None
-    value = struct.unpack_from("<i", payload, cursor + 1)[0]
-    tail = _decode_param_tail(payload, cursor + 5)
-    if tail is None:
-        return None
-    detail, end = tail
-    return {"value": value, **detail}, end
-
-
-def _decode_bool_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
-    if (
-        cursor + 2 > len(payload)
-        or payload[cursor] != 0x04
-        or payload[cursor + 1] not in (0, 1)
-    ):
-        return None
-    tail = _decode_param_tail(payload, cursor + 2)
-    if tail is None:
-        return None
-    detail, end = tail
-    return {"value": bool(payload[cursor + 1]), **detail}, end
-
-
 def _decode_float_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
     if cursor + 5 > len(payload) or payload[cursor] != 0x04:
         return None
@@ -2428,44 +2406,6 @@ def _decode_local_getter_ref(payload: bytes, cursor: int) -> tuple[int, int] | N
     if local_id < 0 or local_id > 0x10000:
         return None
     return local_id, cursor + 17
-
-
-def _decode_pure_bool_getter_ref(
-    payload: bytes,
-    cursor: int,
-) -> tuple[dict[str, Any], int] | None:
-    """Decode one exact ``PureGetter<bool>`` local-reference envelope.
-
-    Boolean getter combinators serialize their child nodes directly rather
-    than through the 17-byte ``Param<T>`` reference used by integer operands.
-    The installed formatter writes tag 04/00, the local getter id, and two
-    null i32 sentinels.  Constants remain distinguishable because their
-    ``idRef`` is -1.
-    """
-    if (
-        cursor + 14 > len(payload)
-        or payload[cursor : cursor + 2] != b"\x04\x00"
-        or payload[cursor + 6 : cursor + 14] != b"\xff" * 8
-    ):
-        return None
-    local_id = struct.unpack_from("<i", payload, cursor + 2)[0]
-    if local_id < 0 or local_id > 0x10000:
-        return None
-    return {
-        "operandKind": "localGetterRef",
-        "getterLocalId": local_id,
-    }, cursor + 14
-
-
-def _decode_bool_operand(
-    payload: bytes,
-    cursor: int,
-) -> tuple[dict[str, Any], int] | None:
-    """Decode a polymorphic boolean constant/path or local getter operand."""
-    getter_ref = _decode_pure_bool_getter_ref(payload, cursor)
-    if getter_ref is not None:
-        return getter_ref
-    return _decode_bool_param(payload, cursor)
 
 
 def _finish_getter_fields(
@@ -2546,87 +2486,6 @@ def _decode_levelscript_task_ptr_param(
         "taskKey": task_key,
         **detail,
     }, end
-
-
-def _decode_boolean_compare_getter(payload: bytes) -> dict[str, Any]:
-    comparer = _decode_i32_param(payload, 0)
-    if comparer is None:
-        return {}
-    value_a = _decode_bool_operand(payload, comparer[1])
-    if value_a is None:
-        return {}
-    value_b = _decode_bool_operand(payload, value_a[1])
-    if value_b is None:
-        return {}
-    comparer_raw = comparer[0]["value"]
-    return _finish_getter_fields(payload, value_b[1], {
-        "comparerRaw": comparer_raw,
-        "comparerName": {0: "Equal", 1: "NotEqual"}.get(comparer_raw, ""),
-        "valueA": value_a[0],
-        "valueB": value_b[0],
-        "payloadShape": "bool-comparer-two-polymorphic-bool-operands-exact-fields",
-    })
-
-
-def _decode_bool_binary_getter(
-    payload: bytes,
-    *,
-    operation: str,
-) -> dict[str, Any]:
-    value_a = _decode_pure_bool_getter_ref(payload, 0)
-    if value_a is None:
-        return {}
-    value_b = _decode_pure_bool_getter_ref(payload, value_a[1])
-    if value_b is None:
-        return {}
-    return _finish_getter_fields(payload, value_b[1], {
-        "operation": operation,
-        "valueA": value_a[0],
-        "valueB": value_b[0],
-        "payloadShape": "two-pure-bool-getter-refs-exact-fields",
-    })
-
-
-def _decode_bool_invert_getter(payload: bytes) -> dict[str, Any]:
-    value = _decode_pure_bool_getter_ref(payload, 0)
-    if value is None:
-        return {}
-    return _finish_getter_fields(payload, value[1], {
-        "operation": "Not",
-        "value": value[0],
-        "payloadShape": "one-pure-bool-getter-ref-exact-fields",
-    })
-
-
-def _decode_bool_multi_and_getter(payload: bytes) -> dict[str, Any]:
-    if len(payload) < 4:
-        return {}
-    count = struct.unpack_from("<I", payload, 0)[0]
-    if count == 0 or count > 256:
-        return {}
-    cursor = 4
-    values: list[dict[str, Any]] = []
-    for _index in range(count):
-        value = _decode_pure_bool_getter_ref(payload, cursor)
-        if value is None:
-            return {}
-        values.append(value[0])
-        cursor = value[1]
-    return _finish_getter_fields(payload, cursor, {
-        "operation": "All",
-        "values": values,
-        "payloadShape": "counted-pure-bool-getter-refs-exact-fields",
-    })
-
-
-def _decode_getter_bool(payload: bytes) -> dict[str, Any]:
-    value = _decode_bool_param(payload, 0)
-    if value is None:
-        return {}
-    return _finish_getter_fields(payload, value[1], {
-        "value": value[0],
-        "payloadShape": "one-bool-param-exact-fields",
-    })
 
 
 def _decode_interactive_check_state_getter(payload: bytes) -> dict[str, Any]:
@@ -5651,32 +5510,21 @@ def decode_levelscript_record_payload(
             )
             if mission_state_compare:
                 out["compareMissionState"] = mission_state_compare
-        elif semantic_key == (0x0004, 0x0A):
-            boolean_compare = _decode_boolean_compare_getter(getter_payload)
-            if boolean_compare:
-                out["booleanCompare"] = boolean_compare
-        elif semantic_key == (0x0006, 0x09):
-            boolean_and = _decode_bool_binary_getter(
-                getter_payload,
-                operation="And",
+        elif semantic_key in {
+            (0x0004, 0x0A),
+            (0x0006, 0x09),
+            (0x000A, 0x08),
+            (0x000B, 0x08),
+            (0x000D, 0x09),
+        }:
+            field_name, boolean_detail = (
+                levelscript_boolean_getters.decode_boolean_getter_fields(
+                    getter_payload,
+                    semantic_key,
+                )
             )
-            if boolean_and:
-                out["boolGetterAnd"] = boolean_and
-        elif semantic_key == (0x000A, 0x08):
-            boolean_invert = _decode_bool_invert_getter(getter_payload)
-            if boolean_invert:
-                out["boolGetterInvert"] = boolean_invert
-        elif semantic_key == (0x000B, 0x08):
-            boolean_all = _decode_bool_multi_and_getter(getter_payload)
-            if boolean_all:
-                out["boolGetterMultiAnd"] = boolean_all
-        elif semantic_key == (0x000D, 0x09):
-            boolean_or = _decode_bool_binary_getter(
-                getter_payload,
-                operation="Or",
-            )
-            if boolean_or:
-                out["boolGetterOr"] = boolean_or
+            if field_name and boolean_detail:
+                out[field_name] = boolean_detail
         elif semantic_key == (0x004E, 0x08):
             condition_result = _decode_get_condition_result_getter(
                 getter_payload
@@ -5707,9 +5555,14 @@ def decode_levelscript_record_payload(
             if lsm_completed:
                 out["getLsmIsCompleted"] = lsm_completed
         elif semantic_key == (0x017C, 0x08):
-            getter_bool = _decode_getter_bool(getter_payload)
-            if getter_bool:
-                out["getterBool"] = getter_bool
+            field_name, boolean_detail = (
+                levelscript_boolean_getters.decode_boolean_getter_fields(
+                    getter_payload,
+                    semantic_key,
+                )
+            )
+            if field_name and boolean_detail:
+                out[field_name] = boolean_detail
         elif semantic_key == (0x0184, 0x08):
             getter_int = _decode_getter_int(getter_payload)
             if getter_int:

@@ -4,6 +4,7 @@ import struct
 import unittest
 
 import scripts.story_builder.levelscript_binary as levelscript
+from scripts.story_builder.codecs.levelscript import boolean_getters
 
 
 PARAM_TAIL = struct.pack("<iii", -1, 0, -1)
@@ -33,7 +34,7 @@ def pure_bool_ref(local_id: int) -> bytes:
 
 class ReceiverValidationGetterTests(unittest.TestCase):
     def test_boolean_compare_accepts_polymorphic_getter_operand(self):
-        detail = levelscript._decode_boolean_compare_getter(
+        detail = boolean_getters.decode_boolean_compare(
             i32_param(0) + pure_bool_ref(12) + bool_param(False)
         )
         self.assertEqual("Equal", detail["comparerName"])
@@ -41,7 +42,7 @@ class ReceiverValidationGetterTests(unittest.TestCase):
         self.assertFalse(detail["valueB"]["value"])
 
     def test_boolean_combinators_decode_general_child_shapes(self):
-        binary = levelscript._decode_bool_binary_getter(
+        binary = boolean_getters.decode_binary(
             pure_bool_ref(3) + pure_bool_ref(8),
             operation="And",
         )
@@ -49,11 +50,11 @@ class ReceiverValidationGetterTests(unittest.TestCase):
         self.assertEqual(3, binary["valueA"]["getterLocalId"])
         self.assertEqual(8, binary["valueB"]["getterLocalId"])
 
-        inverted = levelscript._decode_bool_invert_getter(pure_bool_ref(5))
+        inverted = boolean_getters.decode_invert(pure_bool_ref(5))
         self.assertEqual("Not", inverted["operation"])
         self.assertEqual(5, inverted["value"]["getterLocalId"])
 
-        all_values = levelscript._decode_bool_multi_and_getter(
+        all_values = boolean_getters.decode_multi_and(
             struct.pack("<I", 3)
             + pure_bool_ref(1)
             + pure_bool_ref(2)
@@ -68,15 +69,15 @@ class ReceiverValidationGetterTests(unittest.TestCase):
     def test_boolean_combinators_fail_closed_on_bad_count_or_trailing_byte(self):
         self.assertEqual(
             {},
-            levelscript._decode_bool_multi_and_getter(struct.pack("<I", 0)),
+            boolean_getters.decode_multi_and(struct.pack("<I", 0)),
         )
         self.assertEqual(
             {},
-            levelscript._decode_bool_invert_getter(pure_bool_ref(5) + b"\x01"),
+            boolean_getters.decode_invert(pure_bool_ref(5) + b"\x01"),
         )
 
     def test_getter_bool_keeps_property_path(self):
-        detail = levelscript._decode_getter_bool(
+        detail = boolean_getters.decode_getter_bool(
             bool_param(False, source=100, path="03_01")
         )
         self.assertEqual("03_01", detail["value"]["path"])
