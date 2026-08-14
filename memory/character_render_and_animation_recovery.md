@@ -170,6 +170,19 @@ membership, shadow/CSM, ASM, irradiance, reflection contents, and original
 clustering kernels remain open; details and binding slots are in
 `reports/assets/character_recovery/gacha_light_global_publication_contract.md`.
 
+The HDPLS character-shadow resource route is now source-pinned. The current
+Persistent IFix table has 32 records and matches neither HDPLS wrapper gate
+`0x877` nor screen-resolve gate `0x890`, so the unpatched native route is the
+current static path. Its reflected 3,568-byte layout is requested/bound as
+`0xDE0` bytes; the selected consumer reads `uint4[56].y` at bytes 2560..3455.
+Active requests create a transient D16 `4096x2048` (request-grid-scaled)
+`_HDPLSTex` atlas, then a single-sample RGBA8 resolve publishes
+`_HDPLSScreenSpaceShadowMask`; inactive frames reset selectors and bind white
+textures. Atlas geometry, selector formulas, and publication/lifetime are
+closed, but live character/light rows, atlas pixels, and resolved mask pixels
+remain capture-only. See
+`reports/assets/character_recovery/hdpls_character_shadow_resource_contract.md`.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
