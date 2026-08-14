@@ -145,14 +145,18 @@ upload; durable details are in
 The first native consumer after that dirty-record edge is now bounded as
 well. UnityPlayer `0x1810d25c0..0x1810d3198` resolves each entity to the same
 `0x8c` record, checks `record+0x70`, and copies `record+0x00..+0x40` as five
-16-byte lanes into `output + entry*0x100 + 0xb0..+0xf0`. This closes the
-CPU-side `0x8c`-record -> `0x100`-stride staging step and preserves the exact
-80-byte shared per-draw payload width. It has no direct GPU upload, command
-recording, dispatch, or kernel-7 edge; the subsequent `0x100`-to-`0x54`
-`_UploadBuffer` conversion and channel-2 resource `+0xd0` binding remain
-fail-closed. Keep the numeric staging `+0xd0` lane separate from the
-renderer resource's channel-2 `+0xd0`; details are in
-`reports/assets/character_recovery/factory_record_to_100_staging_contract.md`.
+16-byte lanes into callback-local scratch at `entry*0x100 + 0xb0..+0xf0`.
+This preserves the exact 80-byte shared per-draw payload width, but it is not
+a persistent `0x100`-stride render staging allocation. The native internal-call
+table separately maps factory full/partial setters to `0x1810d9170` and
+`0x1810d91f0`, while GPU-driven buffer binders and `SetupGpuSceneUploadCs`
+resolve runtime resource/context slots without a static factory-record edge.
+The persistent `0x100`-to-`0x54` `_UploadBuffer` conversion, kernel-7 dispatch,
+and channel-2 resource `+0xd0` binding therefore remain fail-closed. Keep the
+numeric scratch `+0xd0` lane separate from the renderer resource's channel-2
+`+0xd0`; details are in
+`reports/assets/character_recovery/factory_record_to_100_staging_contract.md`
+and `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
 A bounded UnityPlayer follow-up found two genuine native near-matches,
 `0x1812117ec..0x181211c02` and `0x1812145af..0x181214888`, that walk a
