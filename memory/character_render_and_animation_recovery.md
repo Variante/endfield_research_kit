@@ -646,10 +646,10 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Follow the `0x273B` callback output records (`0x18107AD80`,
-   `0x1810794D0`, `0x181079320`) into the final backend draw/resource consumer,
-   while keeping component 67's LOD/list role and the retail culling survivor
-   list separately bounded.
+1. Follow the callback-built resource nodes from `0x1805592B0` (reached by
+   `0x18107AD80`, `0x1810794D0`, and `0x181079320`) into the final backend
+   draw/device consumer, while keeping component 67's LOD/list role and the
+   retail culling survivor list separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.

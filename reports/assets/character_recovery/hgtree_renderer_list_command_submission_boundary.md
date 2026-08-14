@@ -58,10 +58,25 @@ frame-parity claim.
    call the HGTree fallback record builders and copy the resulting record into
    the renderer-list state; no direct graphics API or final backend draw is
    visible in this callback boundary.
-5. `HGTreeRender.DrawECSRendererList` (`GameAssembly 0x18B3FBFA4`) rejects a
+5. The callback output layout is now bounded. The normal creation core appends
+   a 0x18-byte list item whose `-0x10` and `-0x08` fields point to the 0x98-byte
+   descriptor and 0x30-byte result records; `-0x18` is the completion status.
+   `0x18107AD80` (normal) and `0x1810794D0` (child) call
+   `0x181080730`, then copy its first 16-byte result into the result record at
+   `+0x20`. `0x181079320` (PreZ) uses the same builder and copies that result
+   into both linked result records. The builder allocates/copies the
+   per-renderer array (`count * 16` from `+0x48` into `+0x50`) and passes the
+   assembled record through `0x180555A30`/`0x180555D30`, an internal
+   renderer-resource pool/list path. Those helpers continue into the
+   `0x1805592B0 -> 0x1805582A0` resource-node allocator (0x80-byte node
+   stride), but the
+   inspected path still contains no explicit graphics API, draw, dispatch, or
+   device submission. This closes callback-to-resource-pool ingress while
+   leaving the final backend consumer unresolved.
+6. `HGTreeRender.DrawECSRendererList` (`GameAssembly 0x18B3FBFA4`) rejects a
    null command buffer, then tail-jumps to the resolved internal call
    `UnityEngine.Rendering.CommandBuffer::AddDrawECSTreeRendererList(System.UInt32)`.
-6. The current UnityPlayer CommandBuffer name/function tables map that call at
+7. The current UnityPlayer CommandBuffer name/function tables map that call at
    index 321 to `0x1801719B0`. The earlier `0x180149500` attribution was a
    table-index error: that address is a Profiler entry, not the tree-list
    internal call. The true tree body uses slot `0x1821BE708` twice for local
@@ -69,18 +84,19 @@ frame-parity claim.
    `0x18077C050/0x18077C055` calls `0x1806898F0` with the string
    `il2cpp_gc_wbarrier_set_field` (`0x181D9E7F8`) and writes the result into
    that BSS slot, so it is not a renderer-list converter.
-7. After the two GC-barrier calls, `0x1801719B0` forwards the local wrapper to
+8. After the two GC-barrier calls, `0x1801719B0` forwards the local wrapper to
    `0x180A5C5C0`. That helper is shared by neighboring CommandBuffer draw
    entry points; its checked body calls `0x180769E20` (string-payload
    conversion/validation) and `0x18065C0C0`, returns a status, and emits only
    an error path on failure. It contains no visible ComputeBuffer, dispatch,
    graphics API, or command-stream opcode. This is a separate draw
    validation boundary, not a proven downstream step from the creation cores.
-8. Therefore this pass closes the HGTree creation/resource-record boundary, the
+9. Therefore this pass closes the HGTree creation/resource-record boundary, the
    concrete `+0xEA0 -> 0x273B -> callback` command-stream boundary, and the
-   separate CommandBuffer GC-root/validation boundary without claiming final
-   GPU submission. The next bounded target is the callback output's backend
-   draw/resource consumer, not `0x1821BE708` and not the unrelated Profiler
+   callback-to-resource-pool ingress plus the separate CommandBuffer
+   GC-root/validation boundary without claiming final GPU submission. The next
+   bounded target is the consumer of the `0x1805592B0` resource nodes (and its
+   backend/device handoff), not `0x1821BE708` and not the unrelated Profiler
    entry `0x180149500`.
 
 The component-67 evidence remains separate: its 24-byte records feed native
