@@ -85,10 +85,15 @@ archetypes are imported as labeled source kits rather than finished characters.
   `0x1805583B0` and the two retry
   sites in `0x1805592B0` calling the 0x80-byte node allocator; the population
   body contains only resource callbacks/allocator helpers, while the shared
-  `0x180555D30` helper has 110 unrelated callers. Thus the remaining target is
-  a later/runtime-indirect consumer of populated resource nodes, not another
-  allocator ingress. See
-  `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
+   `0x180555D30` helper has 110 unrelated callers. Thus the remaining target is
+   a later/runtime-indirect consumer of populated resource nodes, not another
+   allocator ingress. On the concrete table-A `0x18107AB10` ingress, the pool
+   tuple is now bounded as `0x180557650` (contained-object cleanup dispatcher)
+   plus `0x180557750` (field setter), copied by `0x1805592B0` into node
+   `+0x30..+0x40` and invoked by `0x1805598C0`; this path has no graphics,
+   opcode, Vulkan, draw, or queue-submit operation. This does not classify
+   unrelated producers of the shared pool. See
+   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
   Separately, `DrawECSRendererList` is reached from
   `HGRendererListUtils.DrawTreeECSRendererList` (`0x189C0A130`) and has two
   parallel UnityPlayer internal-call implementations. The maintained
@@ -763,9 +768,11 @@ only stable interpretation and priorities.
    are now bounded as state construction (`0x180B3E5C0`/`0x180A95EB0`) rather
    than playback, and the API-2 `0x80`-byte resource pool
    (`0x180559B30 -> 0x1805598C0 -> 0x1805586C0`) is directly a
-   refcount/bitmap lifetime collector. Its callback fields remain an
-   indirect, unresolved possibility, but the inspected bodies contain no
-    direct opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep final
+   refcount/bitmap lifetime collector. On the specific `AB10 -> 0x180555D30`
+   ingress, its callback fields are the bounded cleanup/setter tuple
+   (`0x180557650`/`0x180557750`), not a graphics callback; unrelated pool
+   producers remain unresolved. The inspected bodies contain no direct
+    opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep final
     HGTree draw/queue ownership fail-closed after the positive command route.
     The latest callback trace separates the Vulkan command-recording identity
     from HGTree ownership. The table-A callback route reaches API-2
@@ -788,6 +795,11 @@ only stable interpretation and priorities.
     resource/state work; HGTree-specific indirect-draw ownership, callback
     ordering, and queue submission remain fail-closed. See
    `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
+   The neighboring generic HGMesh wrappers are also distinct: GameAssembly
+   `0x18B3FA1F8` records
+   `AddDrawECSMeshRendererListWithSRPRendererList_Injected` via `0x18B3E3F44`,
+   while `0x18B3FA224` enters the ordinary ECS-list command path via
+   `0x18B3E3FA8`; neither wrapper flushes or proves HGTree ownership.
    The generic flush family is separately source-pinned: high-level opcode
    `0x6A` (`0x1804CA0B0 -> 0x1804D178A`) and low-level opcode `0x27D5`
    (`0x1813BB574 -> 0x1813B156A`) both dispatch API-2 `+0xF10`
