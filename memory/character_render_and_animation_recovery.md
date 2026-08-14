@@ -156,6 +156,20 @@ own the exact selected list. The regenerated checker passes with current
 binary hashes; details are in
 `reports/assets/character_recovery/gacha_light_cull_survivor_contract.md`.
 
+The selected-light result's downstream HGRP publication chain is now also
+source-pinned. `UpdateLightCookieAtlas` precedes
+`LightCulling.PrepareCPUData`, which embeds cookie indices; then
+`LightCulling.SetupGlobalConstants` publishes the 32,864-byte
+`_LightDataBuffer` and 48-byte `_LightBinningConstants`.
+`LightCullingGPU.PrepareGPUData` and reflection clustering share one graph
+binning buffer, and the Binning pass publishes it as `_GlobalBinningBuffer`.
+M02 transparency only consumes these globals and does not rebuild them. The
+desktop cookie atlas is persistent 4096x4096, while cookie slots/CB and light
+constant buffers are rebuilt per frame. Exact selected rows, surviving cookie
+membership, shadow/CSM, ASM, irradiance, reflection contents, and original
+clustering kernels remain open; details and binding slots are in
+`reports/assets/character_recovery/gacha_light_global_publication_contract.md`.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
