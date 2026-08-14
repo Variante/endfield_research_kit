@@ -142,6 +142,36 @@ frame-parity claim.
     remain the next target; component 67 and the separate CommandBuffer
     validation path stay out of this chain.
 
+12. The callback slots now resolve to the graphics-context backend selected by
+    `0x18072F7E0`, rather than an unknown generic vtable. The context setup
+    `0x180929430` passes the requested graphics API id to that selector and
+    stores the returned object at `ctx+0x2708` in `0x180939C80`. For the
+    non-`4` path (the initialization caller at `0x180730281` explicitly uses
+    API id `2`), `0x180891210 -> 0x180829030` installs backend vtable
+    `0x181DBC098`. Its callback-relevant entries are concrete:
+
+    | context slot | backend target | bounded effect |
+    | --- | ---: | --- |
+    | `+0x210` | `0x1808539D0` | updates the backend state bit at `+0x2e48/+0xbc` |
+    | `+0x268` | `0x1808547C0 -> 0x180842370` | records/updates resource state through the backend context |
+    | `+0x280` | `0x180855200 -> 0x180842370` | same shared resource-state path with a different flag |
+    | `+0xC8` | `0x180853A00` | stores the current handle at `+0x2e48/+0x80` |
+    | `+0xD0` | `0x180854A30` | stores the current handle at `+0x2e48/+0x88` |
+    | `+0xD8` | `0x180853F90` | stores the current handle at `+0x2e48/+0x90` |
+    | `+0xE0` | `0x1808553B0` | stores handle/size state at `+0x2e48/+0x98/+0xc0` |
+    | `+0xDA0` | `0x18083E720` | builds resource arrays and copies records via `0x18082F3C0`/`0x181C9F9A0` |
+    | `+0x380` | `0x1808350E0 -> 0x18083E720` | alternate entry into the same resource-array builder |
+
+    These functions mutate backend resource/state structures and counters;
+    the inspected bodies still do not contain a direct D3D/Vulkan/Metal call
+    or a final draw/dispatch submission. The API-id `4` selector instead
+    returns `0x180925230`, whose vtable `0x181DCA338` leaves the callback
+    slots above at the deliberate no-op `0x180076890`; this is an explicit
+    backend variant, not evidence that the renderer callbacks themselves are
+    device calls. The durable boundary is therefore now
+    `HGTree callback -> graphics-context wrapper -> API-specific backend
+    resource/state method`; final device submission remains unresolved.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -160,4 +190,8 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181060D00 0x18107AD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A5C5C0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18072F7E0 0x18072F810
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180829030 0x1808290A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083E720 0x18083EC40
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180842370 0x180842650
 ```

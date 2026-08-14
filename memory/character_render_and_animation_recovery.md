@@ -68,9 +68,18 @@ archetypes are imported as labeled source kits rather than finished characters.
   `0x181060EB0`; those enter `0x18107AE60` / `0x18107B3A0`, obtain the TLS
   graphics context, walk renderer records, and invoke graphics-context vtable
   slots. This closes the callback-built backend-facing boundary after the
-  resource pool, but not the concrete device/API implementation behind those
-  slots.
-  A pinned direct-code xref census finds only `0x1805583B0` and the two retry
+  resource pool, but not the final device/API submission. The context's
+  backend is selected by `0x18072F7E0` and stored at `context+0x2708` by
+  `0x180939C80`: API id `2` uses vtable `0x181DBC098`, where the callback
+  slots resolve to concrete state/resource methods (`0x1808539D0`,
+  `0x180842370`, `0x180853A00`, `0x180854A30`, `0x180853F90`,
+  `0x1808553B0`, and the `0x18083E720` resource-array builder). API id `4`
+  uses vtable `0x181DCA338`, whose corresponding callback slots are deliberate
+  no-ops (`0x180076890`). The resolved methods mutate backend resource/state
+  records and counters but contain no direct graphics API or final draw call;
+  keep this API-specific backend boundary separate from component 67 and the
+  CommandBuffer validation route. A pinned direct-code xref census finds only
+  `0x1805583B0` and the two retry
   sites in `0x1805592B0` calling the 0x80-byte node allocator; the population
   body contains only resource callbacks/allocator helpers, while the shared
   `0x180555D30` helper has 110 unrelated callers. Thus the remaining target is
@@ -662,10 +671,11 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Resolve the graphics-context vtable implementations used by
-   `0x18107AE60` / `0x18107B3A0` to the concrete device/API submission edge,
-   while keeping component 67's LOD/list role and the retail culling survivor
-   list separately bounded.
+1. Follow the API-specific backend methods reached from
+   `0x18107AE60` / `0x18107B3A0` (`0x180842370` and
+   `0x18083E720`) to the concrete device/API submission edge, while keeping
+   component 67's LOD/list role and the retail culling survivor list
+   separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
