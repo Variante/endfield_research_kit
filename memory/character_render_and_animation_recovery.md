@@ -837,7 +837,13 @@ only stable interpretation and priorities.
    in a separate render-pass/command writer (`0x18092E350`/
    `0x18093AE10`), and the managed tree wrapper (`0x189C0A130`/
    `0x18B3FBFA4`) has no flush edge. The remaining HGTree ordering/final
-   draw/queue boundary therefore stays fail-closed.
+   draw/queue boundary therefore stays fail-closed. The latest handler census
+   confirms that `0x181060EA0/0x181060EB0` only rearrange arguments into
+   `0x18107AE60/0x18107B3A0`; the handlers consume a result object whose
+   `[result]` is the item array and `[result+8]` is the count, then dispatch
+   only `+0xDA0/+0x380`. Neither the handler range nor the pool worker's node
+   `+0x30` callback path statically consumes builder `outResult+0x10`, so the
+   runtime result-pair-to-final-draw join remains unresolved and fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
