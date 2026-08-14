@@ -185,6 +185,17 @@ false positive. `HGConstantBufferPool::.ctor` (`0x189b6aa28`) creates a
 dispatch, or resource `+0xd0` edge in its body. It therefore cannot supply the
 missing 84-byte factory upload; details are in
 `reports/assets/character_recovery/gpu_scene_constant_buffer_pool_contract.md`.
+
+The native `_RTPerDrawParamsBuffer` property-name path is also source-closed
+as a RayTracing false positive. UnityPlayer's property registry stores that ID
+at registry `+0x130c`, adjacent to `_RTMaterialLevelBuffer` and
+`_RTRAccelStruct`; the only direct field consumer copies these IDs into a
+RayTracing resource object and initializes its metadata. The checked bodies
+contain no factory `0x8c` record, `context+0x110`, `_UploadBuffer`, Compute/
+CommandBuffer dispatch, or kernel-7 edge. Do not promote this property name
+to evidence for character per-draw upload; details are in
+`reports/assets/character_recovery/rt_perdraw_property_false_positive.md`.
+
 The current protected `Gameplay.Beyond` IFix payload is now structurally
 bounded beyond its 32 target signatures: its 330-entry external-method table
 contains only factory LOD/quality references (`SetFactoryLodTier` and
