@@ -107,20 +107,50 @@ runtime command formats are now explicit: V1 rendering `0x2b`, V1 culling
 `0x57`, and V2 binding `0x0d`; none of these checked producers loads the
 factory `manager+0x38 + index*0x8c` record.
 
-The remaining indirect tail is now bounded without assigning it a static
-implementation. The culling/render command paths call `0x180725dc0` and then
-invoke the returned object's vtable slot `+0xea0` (the V2 tail also invokes a
-second slot `+0x850`). `0x180725dc0` reads the process TLS index at
-`0x182111300` and calls the runtime-resolved `TlsGetValue` import at
-`0x181cb0980`; its error path repeats the same TLS lookup. The on-disk import
-cell contains an RVA/name record rather than a callable code pointer, so the
-actual TLS object's vtable and its `+0xea0` implementation are not recoverable
-from this image alone. The nearby `0x180725f00` helper is only a 28-entry
-backend-name table (Direct3D/OpenGL/Vulkan/etc.), not that vtable. This makes
-the runtime boundary explicit: the `+0xea0` object is a per-thread graphics
-context, and the checked callers still contain no factory `+0x8c` record load;
-the factory-record-to-upload edge remains fail-closed rather than being
-inferred from the matching slot number.
+The TLS tail is now resolved for the installed graphics-context constructor.
+`0x180725dc0` reads the process TLS index at `0x182111300` and calls the
+runtime-resolved `TlsGetValue` import at `0x181cb0980`. The setter
+`0x180727ea0` stores the graphics-context pointer in `0x1821b9990`, calls
+`TlsSetValue` through `0x181cb0970`, and is reached from device/backend
+initialization at `0x1807303b5`. For the normal non-null backend path,
+`0x180929430` allocates the `0x2a00`-byte TLS context through
+`0x1809258c0`, whose constructor writes vtable `0x181dcb360`; therefore
+vtable `+0xea0` is the static function pointer `0x1809324e0`, and vtable
+`+0x850` is `0x180934850`. The alternate backend-state `0/5` branch still
+returns through `0x18072f7e0` and is kept conditional rather than conflated
+with this constructor.
+
+`0x1809324e0` is a command-stream encoder, not a factory-record consumer. It
+uses the context's `+0x2720` command arena and emits opcode `0x273b`, writing
+the caller's resource/payload arguments and optional aligned data. The
+`+0x850` implementation `0x180934850` emits opcode `0x2798`, updates the same
+arena's size marker, and increments the context counter at `+0x29bc`. Context
+binding at `0x180939c80` stores the selected backend object at `+0x2708`,
+copies backend capabilities, and fills `+0x1fd8/+0x1fe0`; it does not load the
+factory `context+0x110` record array or the `manager+0x38 + index*0x8c`
+records. The static tail is consequently recovered, while the
+factory-record-to-upload edge remains fail-closed.
+
+The command interpreter confirms where these records land. The large
+interpreter `0x1813aee90..0x1813bb9bc` subtracts `0x2711` from each command
+opcode and dispatches through jump table `0x1813bb574`; entries map `0x273b`
+to `0x1813b1110`, `0x2798` to `0x1813b55ea`, and the previously bounded `0x27ef`
+to `0x1813b805b`. Case `0x273b` parses the encoded pointer, byte count, and
+aligned payload, then invokes the function-pointer cell carried by the
+record. The V1 culling producer supplies the on-disk trampoline at
+`0x1810e6450` (an `E9` stub targeting `0x18115d810`); because the interpreter
+calls through the carried cell, this is recorded as a trampoline/payload link,
+not as a claim that the raw on-disk bytes are already the final callable slot.
+
+The trampoline target is a positive resource-side path: `0x18115d810` builds a
+small layout descriptor, obtains the global context via `0x180fc5e60`, and
+passes `context+0x190` to `0x1810e3b40`. That helper allocates or reuses several
+size/stride-specific buffer records through `0x1810e1ea0` and inserts/copies
+the resulting 0x80-byte rows through `0x1810e0a30`. None of
+`0x18115d810`, `0x1810e3b40`, `0x1810e1ea0`, or `0x1810e0a30` loads
+`context+0x110`, `manager+0x38`, or an `index*0x8c` factory record. This
+strengthens the resource-allocation side of the GPU tail while keeping the
+factory-record-to-upload alias unresolved.
 
 Therefore the current static boundary is:
 

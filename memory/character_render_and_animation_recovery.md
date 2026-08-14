@@ -145,15 +145,31 @@ culling records opcode `0x57` through `0x1804cd7d0`; both remain runtime
 resource paths without a factory-record load. Details are in
 `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
-The indirect GPUDriven tail is now bounded at its real runtime boundary:
-command paths call `0x180725dc0`, which reads the TLS index at
-`0x182111300` and resolves the per-thread graphics context through
-`TlsGetValue` (`0x181cb0980`), then invoke that object's vtable `+0xea0`
-(`+0x850` on the V2 follow-up). The adjacent `0x180725f00` table is only a
-backend-name table, and the import cell is an on-disk RVA/name record rather
-than a static code pointer. Therefore the `+0xea0` implementation cannot be
-claimed from this image; the checked callers still never load the factory
-`+0x8c` record, so the factory-record-to-GPU-upload edge remains fail-closed.
+The indirect GPUDriven tail is now resolved for the installed graphics-context
+constructor. `0x180725dc0` reads TLS index `0x182111300` and resolves the
+context through `TlsGetValue` (`0x181cb0980`); setter `0x180727ea0` stores the
+same pointer and calls `TlsSetValue` (`0x181cb0970`) during backend/device
+initialization at `0x1807303b5`. The normal `0x180929430` path allocates a
+`0x2a00`-byte context through `0x1809258c0`, writes vtable `0x181dcb360`, and
+thus resolves vtable `+0xea0` to `0x1809324e0` and `+0x850` to `0x180934850`.
+The former emits command-stream opcode `0x273b` through the context's
+`+0x2720` arena; the latter emits opcode `0x2798` and updates `+0x29bc`.
+Context binding `0x180939c80` stores backend state and capabilities but does
+not load factory `context+0x110` or `manager+0x38 + index*0x8c` records. The
+static TLS command tail is therefore recovered, while the factory-record to
+GPU-upload edge remains fail-closed; backend-state `0/5` construction remains
+an explicit alternate branch.
+
+The command-stream tail now has an interpreter-side mapping as well.
+`0x1813aee90..0x1813bb9bc` dispatches the `0x2711..0x2822` opcode range through
+`0x1813bb574`; `0x273b` lands at `0x1813b1110`, `0x2798` at `0x1813b55ea`,
+and `0x27ef` at `0x1813b805b`. The V1 culling `0x273b` record carries the
+`0x1810e6450` E9 trampoline targeting `0x18115d810`; that target obtains
+`context+0x190` and calls `0x1810e3b40`, which allocates/reuses buffer records
+through `0x1810e1ea0` and copies 0x80-byte rows via `0x1810e0a30`. These
+resource helpers still never load the factory `context+0x110` or
+`manager+0x38 + index*0x8c` records, so the recovered command/resource path
+does not yet prove the factory-to-upload alias.
 
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a
 false positive. `HGConstantBufferPool::.ctor` (`0x189b6aa28`) creates a
