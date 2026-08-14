@@ -747,6 +747,14 @@ only stable interpretation and priorities.
    indirect, unresolved possibility, but the inspected bodies contain no
    direct opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep the
    HGTree sink fail-closed after the internal call.
+   The latest callback trace closes one more boundary: both native HGTree
+   handlers dispatch API-2 `+0xDA0`/`+0x380`, resolving to
+   `0x18083E720`/`0x1808350E0`, and `0x1808350E0` immediately forwards to the
+   same `0x18083E720` `0x60`-byte record builder. Its downstream
+   `0x18083AA90` consumer remains allocation/copy/state-list logic with no
+   static `+0xDE8` or Vulkan edge. The positive `+0xDE8 -> 0x18083F1E0 ->
+   0x180843D60` Vulkan submission family is therefore still separate until a
+   runtime-indirect consumer or capture proves the join.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.

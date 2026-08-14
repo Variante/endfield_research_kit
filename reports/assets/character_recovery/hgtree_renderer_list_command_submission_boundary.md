@@ -508,6 +508,25 @@ claim.
     claim that the pool is unrelated; however, no direct device, opcode, or
     API-2 submission edge is present in the inspected pool bodies.
 
+26. The resource-callback branch is now closed through the shared API-2 record
+    builder, but still not through the final draw sink. Both native HGTree
+    callback handlers (`0x18107AE60` and `0x18107B3A0`) resolve the TLS context
+    vtable and dispatch either `+0xDA0` or `+0x380`. In the pinned API-2 vtable
+    at `0x181DBC098`, those slots are `0x18083E720` and `0x1808350E0`;
+    `0x1808350E0` is a thin payload wrapper that calls `0x18083E720` directly
+    (`0x18083513E`). The shared builder allocates/links the `0x60`-byte records
+    and calls `0x180839D50`; its downstream record consumer
+    `0x18083AA90` contains only direct allocation, copy, and state-list work,
+    with no static API-2 `+0xDE8`, Vulkan, or queue-submit call. The recorded
+    `0x27B6` route remains separate: its interpreter case dispatches backend
+    `+0x358` (`0x1808351F0`), whose inspected body likewise stays in record and
+    resource state machinery. The positive API-2 submission family remains
+    independently bounded as `+0xDE8 -> 0x18083F1E0 -> 0x180843D60` and the
+    previously identified Vulkan descriptor/draw/queue operations, but no
+    static edge from either HGTree callback branch or the shared record
+    consumer reaches it. Keep the HGTree playback edge fail-closed until the
+    runtime-indirect record consumer or a capture binds these families.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -569,4 +588,9 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180A5C5C0 0x180A5C650
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18065C0C0 0x18065C0F0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A5C5C0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18107AE60 0x18107BA18
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808350E0 0x180835230
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083AA90 0x18083C700
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F1E0 0x18083F230
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843D60 0x180844D00
 ```
