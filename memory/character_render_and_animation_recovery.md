@@ -67,18 +67,21 @@ archetypes are imported as labeled source kits rather than finished characters.
   `0x18106D020`) which install callback thunks `0x181060EA0` /
   `0x181060EB0`; those enter `0x18107AE60` / `0x18107B3A0`, obtain the TLS
   graphics context, walk renderer records, and invoke graphics-context vtable
-  slots. This closes the callback-built backend-facing boundary after the
-  resource pool, but not the final device/API submission. The context's
-  backend is selected by `0x18072F7E0` and stored at `context+0x2708` by
-  `0x180939C80`: API id `2` uses vtable `0x181DBC098`, where the callback
-  slots resolve to concrete state/resource methods (`0x1808539D0`,
-  `0x180842370`, `0x180853A00`, `0x180854A30`, `0x180853F90`,
-  `0x1808553B0`, and the `0x18083E720` resource-array builder). API id `4`
-  uses vtable `0x181DCA338`, whose corresponding callback slots are deliberate
-  no-ops (`0x180076890`). The resolved methods mutate backend resource/state
-  records and counters but contain no direct graphics API or final draw call;
-  keep this API-specific backend boundary separate from component 67 and the
-  CommandBuffer validation route. A pinned direct-code xref census finds only
+  slots. The TLS getter returns the front-end `0x2A00` context (`0x181DCB360`),
+  while the API-specific backend is stored at `context+0x2708`; the callback
+  calls therefore enter front-end wrappers first. For API id `2`, the
+  front-end `+0xDA0`/`+0x380` wrappers (`0x180931980`/`0x18092C320`) record
+  `0x2734`/`0x27B6` when enabled and tail-dispatch to backend
+  `+0xDA0`/`+0x380` (`0x18083E720`/`0x1808350E0`) otherwise. The backend
+  vtable is `0x181DBC098`, whose resource/state methods include
+  `0x1808539D0`, `0x180842370`, `0x180853A00`, `0x180854A30`,
+  `0x180853F90`, `0x1808553B0`, and the `0x18083E720` resource-array builder.
+  API id `4` uses vtable `0x181DCA338`, whose corresponding backend callback
+  slots are deliberate no-ops (`0x180076890`). The resolved methods mutate
+  backend resource/state records and counters but contain no direct graphics
+  API or final draw call; keep this front-end/backend boundary separate from
+  component 67 and the CommandBuffer validation route. A pinned direct-code
+  xref census finds only
   `0x1805583B0` and the two retry
   sites in `0x1805592B0` calling the 0x80-byte node allocator; the population
   body contains only resource callbacks/allocator helpers, while the shared
@@ -671,9 +674,11 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Follow the API-2 resource/descriptor records after the HGTree callbacks to
-   their runtime object/queue consumer. The callback route now includes
-   `0x1808351F0` via interpreter opcode `0x27B6`, the registry paths
+1. Follow the API-2 resource/descriptor records after the HGTree front-end
+   wrappers to their runtime object/queue consumer. The callback route now
+   enters front-end slots `+0xDA0`/`+0x380`, which record `0x2734`/`0x27B6` or
+   tail-dispatch to the selected API backend. It includes `0x1808351F0` via
+   interpreter opcode `0x27B6`, the registry paths
    `0x180822180`/`0x1808224F0`, and the shared builder `0x18083E720`; these
    remain pre-device layers. The adjacent setup path
    `0x180843BF0 -> 0x18083F680` reaches `0x18083F71B`, where
@@ -691,14 +696,13 @@ only stable interpretation and priorities.
    vtable's adjacent `+0xDE8 -> 0x18083F1E0 -> 0x180843D60` path now proves
    descriptor update -> `vkCmdDraw` -> `vkQueueSubmit` in the same backend
    family. The interpreter jump table `0x1813BB574` maps `0x2730` to the
-   HGTree/resource `+0xE90` case (`0x1813AFEC3`) and adjacent `0x2731` to the
-   same receiver's `+0xDE8` case (`0x1813AFED9`); native writers
-   `0x18093AE10` and `0x18092E350` record those literals under the shared
-   `object+0x2711` command-stream flag and use the same slots for their
-   immediate fallbacks. They are separate recorded opcodes, so this still does
-   not prove that every HGTree renderer list emits `0x2730` followed by
-   `0x2731`, but the remaining uncertainty is now runtime receiver/branch
-   ownership and ordering rather than opcode identity. A file-backed fallback assignment to
+   `+0xE90` case (`0x1813AFEC3`) and adjacent `0x2731` to the same receiver's
+   `+0xDE8` case (`0x1813AFED9`); native writers `0x18093AE10` and
+   `0x18092E350` record those literals under the shared `object+0x2711`
+   command-stream flag and use the same slots for their immediate fallbacks.
+   A static instruction census over the HGTree core and both callback handlers
+   finds no `+0x2A0`/`+0x3E8` call, so this remains a separate command-family
+   candidate rather than a recovered HGTree renderer-list order. A file-backed fallback assignment to
    `0x180861C20` is only a generic 32-byte record-copy helper, and loader order
    can overwrite the cell; capture or resolve that order before calling the
    fallback active. Keep component 67's LOD/list role and the retail culling

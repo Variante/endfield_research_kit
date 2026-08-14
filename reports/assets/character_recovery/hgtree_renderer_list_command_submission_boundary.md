@@ -135,23 +135,37 @@ claim.
     `0x181060EB0` does the same for `0x18107B3A0`. Both handlers first obtain
     the TLS graphics context through `0x180725DC0`, iterate the renderer
     record array, perform resource/material lookup, and invoke context vtable
-    slots. The main handler uses `+0x210`, `+0x268`, `+0x280`, `+0xC8`,
-    `+0xD8`, `+0xD0`, `+0xE0`, `+0xE8`, `+0xDA0`, and `+0x380`; the sibling
-    handler uses the analogous `+0x210`, `+0x268`, `+0x280`, `+0xC8`,
-    `+0xB0`, `+0xD8`, `+0xC0`, `+0xD0`, `+0xE0`, `+0xE8`, `+0xDA0`, and
-    `+0x380` slots. This is the first concrete callback-built
-    backend-facing boundary after the 0x80-byte resource nodes. The exact
-    implementations of those context slots and their final device/API calls
+    slots. The TLS getter returns the front-end `0x2A00` context constructed
+    by `0x1809258C0`, whose vtable is `0x181DCB360`; it does not return the
+    API-specific backend directly. The main handler uses `+0x210`, `+0x268`,
+    `+0x280`, `+0xC8`, `+0xD8`, `+0xD0`, `+0xE0`, `+0xE8`, `+0xDA0`, and
+    `+0x380`; the sibling handler uses the analogous `+0x210`, `+0x268`,
+    `+0x280`, `+0xC8`, `+0xB0`, `+0xD8`, `+0xC0`, `+0xD0`, `+0xE0`,
+    `+0xE8`, `+0xDA0`, and `+0x380` front-end slots. This is the first
+    concrete callback-built front-end boundary after the 0x80-byte resource
+    nodes. The exact front-end-to-backend dispatch and final device/API calls
     remain the next target; component 67 and the separate CommandBuffer
     validation path stay out of this chain.
 
-12. The callback slots now resolve to the graphics-context backend selected by
-    `0x18072F7E0`, rather than an unknown generic vtable. The context setup
-    `0x180929430` passes the requested graphics API id to that selector and
-    stores the returned object at `ctx+0x2708` in `0x180939C80`. For the
-    non-`4` path (the initialization caller at `0x180730281` explicitly uses
-    API id `2`), `0x180891210 -> 0x180829030` installs backend vtable
-    `0x181DBC098`. Its callback-relevant entries are concrete:
+12. The front-end/backend layering is now explicit. Setup
+    `0x18072F3EB -> 0x180929430 -> 0x1809258C0` constructs the front-end
+    context and `0x1807303B5 -> 0x180727EA0` stores that same pointer in the
+    TLS slot read by `0x180725DC0`. The front-end stores the API-selected
+    backend at `context+0x2708` (`0x180939C80`); for the initialization path
+    that passes API id `2`, `0x180891210 -> 0x180829030` installs backend
+    vtable `0x181DBC098`. The handler's resource slots are wrappers, not
+    direct API-2 calls. In particular:
+
+    | front-end slot | front-end wrapper | immediate (non-recording) backend dispatch |
+    | --- | ---: | ---: |
+    | `+0xDA0` | `0x180931980` | `context+0x2708` `+0xDA0 -> 0x18083E720` |
+    | `+0x380` | `0x18092C320` | `context+0x2708` `+0x380 -> 0x1808350E0` |
+
+    With recording enabled, `0x180931980` writes opcode `0x2734` and
+    `0x18092C320` writes opcode `0x27B6`; with recording disabled, both
+    wrappers tail-dispatch through the backend pointer. The other state/handle
+    slots follow the same front-end-wrapper shape. The API-2 backend entries
+    used after that dispatch are:
 
     | context slot | backend target | bounded effect |
     | --- | ---: | --- |
@@ -165,28 +179,29 @@ claim.
     | `+0xDA0` | `0x18083E720` | builds resource arrays and copies records via `0x18082F3C0`/`0x181C9F9A0` |
     | `+0x380` | `0x1808350E0 -> 0x18083E720` | alternate entry into the same resource-array builder |
 
-    These functions mutate backend resource/state structures and counters;
-    the inspected bodies still do not contain a direct D3D/Vulkan/Metal call
-    or a final draw/dispatch submission. The API-id `4` selector instead
-    returns `0x180925230`, whose vtable `0x181DCA338` leaves the callback
-    slots above at the deliberate no-op `0x180076890`; this is an explicit
-    backend variant, not evidence that the renderer callbacks themselves are
-    device calls. The durable boundary is therefore now
-    `HGTree callback -> graphics-context wrapper -> API-specific backend
-    resource/state method`; a concrete draw/queue-submit sink is now proven in
-    the same API-2 family, but its HGTree-specific receiver/branch ownership
+    These backend functions mutate resource/state structures and counters; the
+    inspected bodies still do not contain a direct D3D/Vulkan/Metal call or a
+    final draw/dispatch submission. The API-id `4` selector instead returns
+    `0x180925230`, whose backend vtable `0x181DCA338` leaves the corresponding
+    backend callback slots at the deliberate no-op `0x180076890`; this is an
+    explicit backend variant, not evidence that the front-end wrappers
+    themselves are device calls. The durable boundary is therefore now
+    `HGTree callback -> front-end wrapper -> API-specific backend
+    resource/state method`; a concrete draw/queue-submit sink is proven in the
+    same API-2 family, but its HGTree-specific receiver/branch ownership
     remains unresolved.
 
 13. The remaining API-2 slots on this route are now bounded as resource and
-    descriptor plumbing rather than draw calls. Command-interpreter opcode
-    `0x27B6` reaches context slot `+0x358` at `0x1813B92F8`, which dispatches
-    to `0x1808351F0`. That method first enters `0x18083AA90`, allocates and
+    descriptor plumbing rather than draw calls. Front-end recording opcode
+    `0x27B6` is interpreted by `0x1813B92F8`, whose receiver's backend slot
+    `+0x358` dispatches to `0x1808351F0`. That method first enters `0x18083AA90`, allocates and
     fills descriptor/record arrays through `0x18082F3C0` and
     `0x181C9F9A0`, updates per-resource state through `0x1808558E0`, and
     calls `0x18086F1F0`/`0x180839D50` for arena/record bookkeeping. Its body
     has no direct graphics-device or draw/dispatch call.
 
-    The sibling callback's extra slots are likewise registry paths:
+    The sibling callback's extra front-end slots are likewise registry paths
+    that tail-dispatch to the API-specific backend when recording is disabled:
 
     - `+0xB0 -> 0x180833470 -> 0x180822180`;
     - `+0xC0 -> 0x180833630 -> 0x1808224F0`.
@@ -329,7 +344,12 @@ claim.
     draw/submit operation are separate recorded opcodes in the same native
     command architecture. It does not yet prove that every HGTree renderer
     list emits `0x2730` followed by `0x2731`, so the receiver/branch ownership
-    and runtime ordering remain fail-closed.
+    and runtime ordering remain fail-closed. A pinned instruction census over
+    the normal HGTree creation core and both callback handlers finds no
+    indirect `+0x2A0` or `+0x3E8` call at all; those HGTree bodies instead use
+    front-end `+0xEA0`, `+0xDA0`, and `+0x380` (recording `0x273B`, `0x2734`,
+    and `0x27B6`). Thus `0x2730 -> 0x2731` is a separate native command-family
+    candidate, not a recovered HGTree renderer-list order.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -370,4 +390,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180823F80 0x180824040
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18093AE10 0x18093B150
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18092E350 0x18092E480
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1809258C0 0x180925C40
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180931980 0x180931F30
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18092C320 0x18092C6DC
 ```
