@@ -40,9 +40,37 @@ DURABLE = (
 
 VERTEX_HASH = "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155"
 PIXEL_HASH = "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f"
-PLUGIN_HASH = "fc5cdd483240ddc2588918749680bced61e49a83d53b5e34c208ab1b3f71fa6c"
+PLUGIN_HASH = "2cad1a83137e5d7ea10aa3d3e0cade65b4017a8b362554b8cdbff6ac3fd90eda"
 VALIDATOR_HASH = "3cc382f0fe0307051a5d9f53de50a9750406761ef5fc7ab56b89581f376fd9fd"
 KEYWORD = "ENDFIELD_ORIGINAL_DXBC_EXACT"
+
+EXPECTED_PLUGIN_EXPORTS = [
+    "EndfieldOriginalDxbcGetBlockedCount",
+    "EndfieldOriginalDxbcGetCallbackCount",
+    "EndfieldOriginalDxbcGetConfigureCount",
+    "EndfieldOriginalDxbcGetConstantBufferMask",
+    "EndfieldOriginalDxbcGetContractVersion",
+    "EndfieldOriginalDxbcGetDiagnosticArmed",
+    "EndfieldOriginalDxbcGetExactShaderBound",
+    "EndfieldOriginalDxbcGetFailureCount",
+    "EndfieldOriginalDxbcGetLastResult",
+    "EndfieldOriginalDxbcGetPixelSwapCount",
+    "EndfieldOriginalDxbcGetPluginLoadCount",
+    "EndfieldOriginalDxbcGetPostDrawShaderResourceMask",
+    "EndfieldOriginalDxbcGetRenderEventCount",
+    "EndfieldOriginalDxbcGetRenderEventFunc",
+    "EndfieldOriginalDxbcGetSamplerMask",
+    "EndfieldOriginalDxbcGetShaderResourceFailureMask",
+    "EndfieldOriginalDxbcGetShaderResourceFailureResult",
+    "EndfieldOriginalDxbcGetShaderResourceMask",
+    "EndfieldOriginalDxbcGetUnarmedCallbackCount",
+    "EndfieldOriginalDxbcGetVertexSwapCount",
+    "EndfieldOriginalDxbcSetDiagnosticArmed",
+    "EndfieldOriginalDxbcSetDiagnosticTexturePointers",
+    "UnityPluginLoad",
+    "UnityPluginUnload",
+    "UnityShaderCompilerExtEvent",
+]
 
 
 def sha256(data: bytes) -> str:
@@ -233,34 +261,9 @@ def main() -> int:
             "plugin does not contain exactly one selected PS blob",
             errors,
         )
-        expected_exports = [
-            "EndfieldOriginalDxbcGetBlockedCount",
-            "EndfieldOriginalDxbcGetCallbackCount",
-            "EndfieldOriginalDxbcGetConfigureCount",
-            "EndfieldOriginalDxbcGetConstantBufferMask",
-            "EndfieldOriginalDxbcGetContractVersion",
-            "EndfieldOriginalDxbcGetDiagnosticArmed",
-            "EndfieldOriginalDxbcGetExactShaderBound",
-            "EndfieldOriginalDxbcGetFailureCount",
-            "EndfieldOriginalDxbcGetLastResult",
-            "EndfieldOriginalDxbcGetPixelSwapCount",
-            "EndfieldOriginalDxbcGetPluginLoadCount",
-            "EndfieldOriginalDxbcGetPostDrawShaderResourceMask",
-            "EndfieldOriginalDxbcGetRenderEventCount",
-            "EndfieldOriginalDxbcGetRenderEventFunc",
-            "EndfieldOriginalDxbcGetSamplerMask",
-            "EndfieldOriginalDxbcGetShaderResourceMask",
-            "EndfieldOriginalDxbcGetUnarmedCallbackCount",
-            "EndfieldOriginalDxbcGetVertexSwapCount",
-            "EndfieldOriginalDxbcSetDiagnosticArmed",
-            "EndfieldOriginalDxbcSetDiagnosticTexturePointers",
-            "UnityPluginLoad",
-            "UnityPluginUnload",
-            "UnityShaderCompilerExtEvent",
-        ]
         try:
             check(
-                PE(blobs["plugin"]).exports() == expected_exports,
+                PE(blobs["plugin"]).exports() == EXPECTED_PLUGIN_EXPORTS,
                 "plugin export contract drift",
                 errors,
             )
@@ -309,7 +312,7 @@ def main() -> int:
         "SetGlobalConstantBuffer",
         "IssuePluginEvent",
         "ReadPixels",
-        "logical GBuffer in backend order t23=A, t24=B, t25=C",
+        "producer's logical GBuffer in t23=A, t24=B, t25=C order",
         "else if (slot == 23)",
         "texture = gbufferA",
         "else if (slot == 25)",

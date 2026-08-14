@@ -44,6 +44,16 @@ def passing_report() -> dict[str, object]:
 
 
 class LiveReportTests(unittest.TestCase):
+    def test_plugin_contract_includes_resource_failure_exports(self) -> None:
+        self.assertIn(
+            "EndfieldOriginalDxbcGetShaderResourceFailureMask",
+            MODULE.EXPECTED_PLUGIN_EXPORTS,
+        )
+        self.assertIn(
+            "EndfieldOriginalDxbcGetShaderResourceFailureResult",
+            MODULE.EXPECTED_PLUGIN_EXPORTS,
+        )
+
     def test_direct_runtime_activation_report_passes_without_compiler_callback(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "standalone_validation.json"
