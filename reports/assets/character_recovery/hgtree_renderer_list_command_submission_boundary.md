@@ -429,6 +429,28 @@ claim.
     managed-payload validation boundary, not a late-bound renderer-list
     converter.
 
+22. The high-level Unity command-buffer playback sink can now be separated
+    from the ScriptableRenderContext wrappers above. In the class-local
+    UnityPlayer registration, the name pointer at `0x1820D5A90` is
+    `UnityEngine.Graphics::ExecuteCommandBuffer` and the paired function slot
+    at `0x1820D31E8` is native `0x1800B6F40` (the async sibling is
+    `0x1800B71D0`). `0x1800B6F40` roots the managed command-buffer payload
+    through the fixed `0x1821BE708` barrier slot, then calls
+    `0x18052D730`; that helper constructs the playback context, calls
+    `0x1804CDF70`, and its dispatch core enters the high-level opcode
+    interpreter `0x1804CE0A0`. The interpreter reads a dword opcode from the
+    byte stream and dispatches through a bounded `0x00..0x6F` jump table before
+    invoking the backend callbacks.
+
+    This closes a real CommandBuffer playback chain for ordinary Unity command
+    records, but it does not yet bind the HGTree path: `0x1801719B0` still has
+    no call to the high-level record writers, and no static reference from its
+    managed-payload validator to the interpreter or to API-2 `+0xDE8` exists.
+    Therefore the remaining HGTree question is whether its renderer-list
+    payload is consumed by this interpreter through an indirect object/table
+    callback, or by the separate `0x27xx` command family; both remain
+    fail-closed until a renderer-list-specific playback case is identified.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -450,6 +472,10 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_ta
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801572F0 0x180158C00
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180B3E5C0 0x180B3E699
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180A95EB0 0x180A95F37
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1800B6F40 0x1800B6FC2
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052D730 0x18052D8E9
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804CDF70 0x1804CDFEB
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804CE0A0 0x1804CE406
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18072F7E0 0x18072F810
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180829030 0x1808290A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083E720 0x18083EC40
