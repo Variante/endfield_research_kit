@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from scripts.story_builder.option_sibling_timeline_projection import (
+    dialog_line_text_signature,
     foreign_timeline_option_definition_for_group,
     option_signature_sequence,
     option_signatures_compatible,
@@ -11,6 +12,14 @@ from scripts.story_builder.option_sibling_timeline_projection import (
 
 
 class OptionSiblingTimelineProjectionTests(unittest.TestCase):
+    def test_language_bundle_uses_projection_text_signature(self):
+        from scripts.story_builder import language_bundle
+
+        self.assertIs(
+            language_bundle.dialog_line_text_signature,
+            dialog_line_text_signature,
+        )
+
     def test_option_signatures_preserve_order_and_fail_closed(self) -> None:
         signatures = {
             "local_a": ("accept", "left"),
