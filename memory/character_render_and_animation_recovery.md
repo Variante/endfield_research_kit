@@ -84,6 +84,16 @@ direct `+0xab8` or low-level `0x27ef` call. Thus high-level records do reach
 the generic immediate-compute sink, but remain a separate stream from the
 native `0x27ef` record, and neither path identifies the factory channel-2 /
 kernel-7 upload producer.
+An expanded UnityPlayer direct-call census covers the two high-level writers:
+`0x1804cb1a0` (opcode `0x0d`) has 58 direct callsites in 20 PData bodies and
+`0x1804c73e0` (opcode `0x11`) has 42 callsites in 18 bodies, 27 unique bodies
+in the union. The bounded caller set has no direct call to the factory
+`0x8c`/`0x100` staging functions, the custom-resource resolver
+`0x1804255f0`, or the immediate dispatch helpers; the only known
+factory-adjacent bodies are the already-separated generic GPUDriven V1/V2
+binders (`0x1810eece0`, `0x1810fb5a0`). This closes the direct native writer
+surface as a factory producer while leaving virtual/table-dispatched callers
+and the channel-2 resource upload edge fail-closed.
 The native command-stream pair is now bounded for one dispatch opcode: writer
 `0x18092bed0..0x18092c123` stores opcode `0x27ef`, a resource/handle qword, and
 three 32-bit dispatch values (`0x18092bf54`, `0x18092bfb6`, `0x18092c00a`,
