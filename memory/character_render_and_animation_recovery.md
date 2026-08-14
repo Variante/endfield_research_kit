@@ -734,8 +734,13 @@ only stable interpretation and priorities.
     positive `0x55 -> 0x273B -> +0xEA8` route: the callback
     `0x18107AB10` queues through `0x18083F530`, is consumed by the backend
     record loop at `0x180844C4A`, and reaches front-end `+0xDA0`/`+0x380`.
-    The dynamic command-buffer/render-graph playback and runtime-indirect
-    resource-node consumer still need to be joined to the final draw. Ordinary
+    The `+0xDA0` records then pass through `context+0x2B60` -> master list
+    `context+0x2B50` (`0x180841C40`) and the `0x180843D60`/`0x1808200C0`
+    executors, which invoke `0x18082D6B0`/`0x18082E660` and named Vulkan
+    buffer/state commands when the backend flushes the lists. Static
+    HGTree-specific flush/order and dynamic command-buffer/render-graph
+    ownership of the final draw and runtime-indirect resource-node consumer
+    still need to be joined to the final draw. Ordinary
    `CommandBuffer::Internal_DrawRendererList_Injected` is a separate route:
    UnityPlayer `0x1801713D0` resolves through `0x180A60190`'s indirect
    renderer/resource-state helper, while the HGTree body `0x1801719B0` never
@@ -771,7 +776,8 @@ only stable interpretation and priorities.
    `0x1804D4680 -> +0xDA8`. No static HGTree handler calls `+0xDA8`; therefore
    this is a generic Terrain control-path witness, not a retail HGTree draw
     proof. Managed tree-list playback is now source-pinned through opcode
-    `0x55` and `0x273B`; HGTree-specific indirect-draw ownership, callback
+    `0x55` and `0x273B`, including runtime callback execution for Vulkan
+    resource/state work; HGTree-specific indirect-draw ownership, callback
     ordering, and queue submission remain fail-closed. See
    `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
 2. Validate representative paths against accepted retail captures.
