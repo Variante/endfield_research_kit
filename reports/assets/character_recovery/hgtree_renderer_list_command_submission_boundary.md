@@ -10,7 +10,9 @@ callbacks. The HGTree handlers then reach the API-2 `+0xDA0`/`+0x380`
 resource/state wrappers. The neighboring `+0xDA8` callback has a real Vulkan
 indirect-draw implementation, but its concrete producer is now separated: the
 source-pinned `HGTerrainManager::RenderTerrain` command path, not a statically
-proven HGTree handler. The managed CommandBuffer tree-list call has two
+proven HGTree handler. The HGTree `+0xDA0` path is now also closed through its
+runtime list consumer to Vulkan buffer/state commands, while its indirect draw
+ownership remains unproven. The managed CommandBuffer tree-list call has two
 parallel UnityPlayer registrations in the pinned image. The table-A
 implementation at `0x180064580` is the active global binding: it preserves the
 renderer-list id and writes the high-level command record. The table-B
@@ -25,7 +27,8 @@ The later record loop is also pinned to Vulkan
 `vkUpdateDescriptorSetWithTemplate` through a shared runtime slot, and the same
 API-2 backend family has a concrete descriptor -> draw -> queue-submit sink.
 The recorded HGTree receiver and its callback-produced resource/state records
-are source-pinned. Managed tree-list playback is now joined through the
+are source-pinned, including the runtime list executor that invokes the
+buffer/state callback thunks. Managed tree-list playback is now joined through
 source-positive table-A command writer, high-level opcode `0x55`, low-level
 opcode `0x273B`, and API-2 `+0xEA8` callback queue. HGTree-specific Vulkan draw
 ownership, callback ordering, and queue submission remain unresolved; this is
@@ -530,6 +533,24 @@ not yet a retail frame-parity claim.
     callbacks (`0x181060D90/0x181060D20/0x181060D00`) and their handlers still
     dispatch only `+0xDA0`/`+0x380`. Keep the HGTree draw edge fail-closed.
 
+32. The backend resource/state callback list now has a positive runtime
+    consumer. `0x18083E720` and its shared builder `0x180839D50` append
+    `0x180820580` and `0x1808208F0` records to the API-2 list at
+    `context+0x2B60`; `0x180841C40` wraps that list in a master-list node at
+    `context+0x2B50` and installs callback `0x1808200C0`. The `+0xDE8`
+    backend executor `0x180843D60` consumes the master list at
+    `0x180843F04-0x180843F21`, calling each node's callback. The
+    `0x1808200C0` callback then walks the `+0x2B60` records at
+    `0x1808200C0-0x1808200F0` and invokes their stored callbacks. When this
+    list is flushed, the records created by the HGTree `+0xDA0` family reach
+    `0x18082D6B0` (index/vertex-buffer binds) and `0x18082E660`
+    (depth/stencil/pipeline/descriptor state) through the named Vulkan
+    resolver slots. This proves the runtime callback executor and Vulkan
+    command recording for the API-2 resource/state family, but the static
+    image still does not prove HGTree-specific flush/order, selection of the
+    neighboring `+0xDA8` indirect draw, or ownership of the `+0xDE8`
+    queue-submit branch; keep final draw/submit ownership fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -577,6 +598,8 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AFEA0 0x1813AFF00
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F1E0 0x18083F230
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843D60 0x180844A20
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180841C40 0x180841D50
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808200C0 0x180820220
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083C6B0 0x18083D3B0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180820580 0x1808205A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18082D6B0 0x18082D7A0
