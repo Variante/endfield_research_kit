@@ -698,6 +698,22 @@ and final draw/queue ownership remain fail-closed.
     consumer that turns this callback-produced resource pair into the final
     HGTree draw remains unresolved; keep the boundary fail-closed.
 
+41. The handler-side field census closes the next tempting shortcut. The
+    thunks `0x181060EA0` and `0x181060EB0` only rearrange arguments and tail-jump
+    to `0x18107AE60`/`0x18107B3A0`; they do not invoke the pair's `+0x10` slot.
+    Inside both handlers, `rdx` is the result object itself: `[result]` is the
+    item-array pointer and `[result+8]` is the item count. The handlers walk
+    those records (0x60-byte stride), prepare front-end resource state, and
+    dispatch only `+0xDA0`/`+0x380`. A bounded indirect-call scan over
+    `0x181060000-0x181090000` found no builder-pair `+0x10` consumer; the only
+    matching calls are renderer-list cleanup branches in `0x18106AAE0`. The
+    pool worker `0x1805598C0` likewise invokes the node's `+0x30` callback
+    (`0x181065190`/`0x181067A70`), not the builder pair. Targeted generic API2
+    candidates are ordinary interface/resource-state vtable calls and do not
+    match this result-pair shape. No new static edge reaches `+0xDA8`,
+    `+0xDE8`, `+0xF10`, Vulkan, or queue submission; the runtime consumer that
+    joins the resource pair to the final HGTree draw remains unresolved.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
