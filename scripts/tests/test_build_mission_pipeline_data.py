@@ -30,7 +30,7 @@ from scripts.mission_pipeline import (
     story_trigger_route_projection,
 )
 from scripts.story_builder import dynamic_scene, level_bindings, mission_flow, source_links
-from scripts.story_builder.native_contracts import callserver_callback
+from scripts.story_builder.native_contracts import callserver_callback, ifix_patch
 
 
 def _objective_row(*args, **kwargs):
@@ -551,6 +551,19 @@ def condition(kind, **values):
 
 
 class MissionPipelineBuilderTests(unittest.TestCase):
+    @staticmethod
+    def reviewed_runtime_contract() -> dict:
+        with patch.object(
+            ifix_patch,
+            "check_installed_native_inputs",
+            return_value=SimpleNamespace(status="validated", detail="fixture"),
+        ):
+            audit = ifix_patch.load_ifix_patch_contract()
+        return pipeline.project_ifix_runtime_contract(
+            pipeline.RUNTIME_CONTRACT,
+            audit,
+        )
+
     def test_quest_fork_state_application_annotation_is_corpus_wide(self):
         payload = {
             "questTopology": {
@@ -5926,7 +5939,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
 
     def test_server_placeholder_contract_excludes_client_progress_callback(self):
-        contract = pipeline.RUNTIME_CONTRACT["serverPlaceholder"]
+        contract = self.reviewed_runtime_contract()["serverPlaceholder"]
         self.assertEqual(contract["conditionTypeFallback"], 2147483647)
         self.assertEqual(contract["clientOnlyConditionType"], 9999)
         self.assertEqual(contract["identityFields"], ["questId", "conditionId"])
@@ -6104,7 +6117,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("round-trip/correlation context", native["finding"])
 
     def test_recursive_protobuf_census_closes_role_scene_snapshots(self):
-        audit = pipeline.RUNTIME_CONTRACT["protobufIdentityCarrierAudit"]
+        audit = self.reviewed_runtime_contract()["protobufIdentityCarrierAudit"]
         self.assertEqual(audit["coverage"]["protoTypeDefinitions"], 3743)
         self.assertEqual(audit["coverage"]["registryMessageTypes"], 983)
         self.assertEqual(audit["coverage"]["fieldBearingRegistryMessageTypes"], 936)
@@ -6147,7 +6160,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("zero mission/quest + LevelScript/Story", native["finding"])
 
     def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
-        audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
+        audit = self.reviewed_runtime_contract()["airWallMissionRadioContext"]
         self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)
         self.assertEqual(audit["memoryPackSchema"]["airWallsMemberIndex"], 0)
         self.assertEqual(

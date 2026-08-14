@@ -1,0 +1,63 @@
+{
+  "schema": "ifixPatchNativeContract.v1",
+  "status": "validated",
+  "sources": {
+    "virtualPath": "Persistent VFS/Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
+    "patchBytes": 82021,
+    "patchSha256": "737134081E06371F13C073988547E887037FCCF2F57E1052BE35DD255D27BC21",
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "globalMetadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+  },
+  "fixedMethodSignaturesSha256": "8FD675E32CD89D3F78171A78FAE42BCB557554B98C70074600C491C2FA4C6ECE",
+  "fixedMethodSignatures": [
+    "Beyond.Gameplay.MapMarkDataMinigameBalloon::get_visibilityClientOnly()",
+    "Beyond.Gameplay.BlightMiasmaBrain::Release()",
+    "Beyond.Gameplay.BlightMiasmaBrain::_DisableBlightMiasma()",
+    "Beyond.Gameplay.RollingStoneController+RuntimeLauncher::_DetachAllRollingStones()",
+    "Beyond.Gameplay.MissionSystem::_DoPreWorkSpecialOrder(Beyond.Gameplay.MissionSystem+MissionHudDisplayOrderSpecial, System.Boolean&)",
+    "Beyond.Gameplay.MissionSystem+MissionHudDisplayOrderMission::BeforeDisplayStart(System.Boolean&)",
+    "Beyond.Gameplay.SnapshotSystem::_RemoveActionTimeScaleModifier(System.Int32, Beyond.Gameplay.SnapshotActionPlayState)",
+    "Beyond.Gameplay.Streaming.HGTerrainQuality::Apply()",
+    "Beyond.Gameplay.Audio.AudioManager::_ApplyGameSettings()",
+    "Beyond.Gameplay.Audio.AudioManager::_DoPreloadManagers(System.Collections.Generic.IList`1)",
+    "Beyond.Gameplay.AI.EnemySinglePatrolBehavior::OnInit()",
+    "Beyond.Gameplay.AI.CharacterPhotoSystem::SetMainCharPhotoMode(System.Boolean)",
+    "Beyond.Gameplay.Core.ChangeGeneralAbilityButton::ExecuteInternal(Beyond.Gameplay.Core.TargetHandleView)",
+    "Beyond.Gameplay.Core.CinematicTimelineManagerBase::DisableTimelineEffectDistanceLod(Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle)",
+    "Beyond.Gameplay.Core.CinematicTimelineManagerBase::_TimelineAsyncCompileProcess(Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle)",
+    "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::_ShouldDisableControlActivationForAsyncCompile(UnityEngine.Playables.PlayableDirector, UnityEngine.Timeline.ControlPlayableAsset)",
+    "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::_DisableSubDirectorControlActivationForTrack(UnityEngine.Playables.PlayableDirector, UnityEngine.Timeline.TrackAsset)",
+    "Beyond.Gameplay.Core.DialogManager::_DoPlayCinematicNode(Beyond.Gameplay.DialogCinematicActData)",
+    "Beyond.Gameplay.Core.InteractiveKickableComponent::PopUpFromReceiverParabolic(UnityEngine.Vector3, UnityEngine.Collider, System.Single)",
+    "Beyond.Gameplay.Core.InteractiveKickableReceiverComponent::_UpdatePerformState()",
+    "Beyond.Gameplay.Core.PlayerInteractPerformComponent::_BlockInteractOptionDisplay()",
+    "Beyond.Gameplay.Core.PlayerInteractPerformComponent::_RecoverInteractOptionDisplay()",
+    "Beyond.Gameplay.Core.SpaceShipGameLevel::_UnloadWhenReloadToVisitFriend()",
+    "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::_StartSNSUI()",
+    "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::_EndCinematicItemInQueue()",
+    "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::StartForceSNS(Beyond.Gameplay.Core.CinematicQueueManager+CinematicQueueItemHandle)",
+    "Beyond.Gameplay.Core.DynamicScene.DynamicSceneErosionSystem::_OnCoreDisappeared(System.UInt64)",
+    "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem::_StampLodInternalIndexForComp(System.UInt16, Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid&, Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp&)",
+    "Beyond.Gameplay.Core.DynamicScene.DynamicSceneWaterPipeSystem::_CheckUpSteamIsReady(System.UInt64)",
+    "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene::OnMapConfigChanged()"
+  ],
+  "classifications": {
+    "taskCompletionFixMatches": [],
+    "taskCompletionReferenceMatches": [],
+    "receiverOwnershipFixMatches": [],
+    "receiverOwnershipReferenceMatches": [],
+    "missionHudFixSignatures": [
+      "Beyond.Gameplay.MissionSystem::_DoPreWorkSpecialOrder(Beyond.Gameplay.MissionSystem+MissionHudDisplayOrderSpecial, System.Boolean&)",
+      "Beyond.Gameplay.MissionSystem+MissionHudDisplayOrderMission::BeforeDisplayStart(System.Boolean&)"
+    ],
+    "dialogCinematicFixSignatures": [
+      "Beyond.Gameplay.Core.CinematicTimelineManagerBase::DisableTimelineEffectDistanceLod(Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle)",
+      "Beyond.Gameplay.Core.CinematicTimelineManagerBase::_TimelineAsyncCompileProcess(Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle)",
+      "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::_ShouldDisableControlActivationForAsyncCompile(UnityEngine.Playables.PlayableDirector, UnityEngine.Timeline.ControlPlayableAsset)",
+      "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::_DisableSubDirectorControlActivationForTrack(UnityEngine.Playables.PlayableDirector, UnityEngine.Timeline.TrackAsset)",
+      "Beyond.Gameplay.Core.DialogManager::_DoPlayCinematicNode(Beyond.Gameplay.DialogCinematicActData)",
+      "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::_EndCinematicItemInQueue()",
+      "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::StartForceSNS(Beyond.Gameplay.Core.CinematicQueueManager+CinematicQueueItemHandle)"
+    ]
+  }
+}
