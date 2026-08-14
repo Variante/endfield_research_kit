@@ -6,8 +6,10 @@ The installed build now pins the HGTree creation cores through their concrete
 graphics-context and command-stream callback route. The dedicated HyperGryph
 wrappers build renderer/resource records, resolve vtable `+0xEA0`, and emit
 opcode `0x273B`; the interpreter dispatches that opcode to HGTree-specific
-callbacks. The separate CommandBuffer tree-list call is pinned to its GC-root
-and string-payload validation boundary. The final backend draw/resource sink
+callbacks. The populated resource records then reach callback-built renderer
+records whose thunks enter graphics-context vtable loops. The separate
+CommandBuffer tree-list call is pinned to its GC-root and string-payload
+validation boundary. Concrete device/API submission behind those vtable slots
 is still unresolved, so this remains fail-closed and is not a retail
 frame-parity claim.
 
@@ -113,6 +115,32 @@ frame-parity claim.
     cannot by itself identify a renderer submission edge. This narrows the
     unresolved sink to a later consumer of the populated 0x80-byte records (or
     a runtime-indirect callback), rather than another missing allocator xref.
+
+11. The next callback edge is now bounded. The static resource callbacks do
+    not submit directly, but their terminal record builders do install the
+    renderer callbacks consumed later by the resource system:
+
+    - `0x181065190` calls `0x18106BEF0`; its terminal continuation
+      `0x18106BE69 -> 0x18107A410` stores callback `0x181060EA0`.
+    - The sibling path through `0x18106C639 -> 0x1810795A0` stores callback
+      `0x181060EB0`.
+    - The alternate callback body `0x181067A70` calls `0x18106D020`; its
+      continuations `0x18106CFA7 -> 0x18107A720` and
+      `0x18106D769 -> 0x181079860` install the same `EA0/EB0` pair.
+
+    Thunk `0x181060EA0` remaps its arguments and jumps to `0x18107AE60`;
+    `0x181060EB0` does the same for `0x18107B3A0`. Both handlers first obtain
+    the TLS graphics context through `0x180725DC0`, iterate the renderer
+    record array, perform resource/material lookup, and invoke context vtable
+    slots. The main handler uses `+0x210`, `+0x268`, `+0x280`, `+0xC8`,
+    `+0xD8`, `+0xD0`, `+0xE0`, `+0xE8`, `+0xDA0`, and `+0x380`; the sibling
+    handler uses the analogous `+0x210`, `+0x268`, `+0x280`, `+0xC8`,
+    `+0xB0`, `+0xD8`, `+0xC0`, `+0xD0`, `+0xE0`, `+0xE8`, `+0xDA0`, and
+    `+0x380` slots. This is the first concrete callback-built
+    backend-facing boundary after the 0x80-byte resource nodes. The exact
+    implementations of those context slots and their final device/API calls
+    remain the next target; component 67 and the separate CommandBuffer
+    validation path stay out of this chain.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
