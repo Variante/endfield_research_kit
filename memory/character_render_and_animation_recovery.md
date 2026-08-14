@@ -680,9 +680,13 @@ only stable interpretation and priorities.
    `[[[rdi+0x78]+0x208]]` supplies a heap/runtime vtable and `+0x48` is
    invoked. Four static `+E90` callers feed this resource initializer, while
    no static `+DC0` caller was found. The receiver is therefore currently a
-   runtime resource-subobject interface, not proven device submission. Identify
-   its heap-created vtable or returned-record consumer next. Keep component
-   67's LOD/list role and the retail culling survivor list separately bounded.
+   runtime resource-subobject interface, not proven device submission. An
+   adjacent resource helper `0x18061FB60` dispatches the same slot shape and
+   consumes its return as a NUL-terminated metadata/name string; F8F0 does not
+   consume F680's returned value as a handle. Treat this as a resource
+   metadata/name boundary until the concrete nested type is recovered, then
+   look for the actual queue or device consumer elsewhere. Keep component 67's
+   LOD/list role and the retail culling survivor list separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
