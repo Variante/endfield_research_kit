@@ -145,6 +145,20 @@ culling records opcode `0x57` through `0x1804cd7d0`; both remain runtime
 resource paths without a factory-record load. Details are in
 `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
+The literal `0x100` record in the GPUDriven V2 renderer-list path is now
+separated from the factory staging scratch as well. The installed internal-call
+table maps `GPUDrivenRendererV2::CreateRendererList` and
+`CreateRendererListWithPreZ` to wrappers `0x1801e9680/0x1801e9770`, which call
+`0x1810fd1b0/0x1810fd7d0` after selecting V2 runtime resources through
+`0x1810fe120`. Those bodies read V2-owned descriptors from `object+0x50`, and
+`0x18041ed50` fills a CPU renderer-list record with runtime descriptor lanes
+`+0xc0..+0xf0`; the command path reaches vtable `+0xea0` and opcode `0x273b`.
+No factory `manager+0x38 + index*0x8c` record, `_UploadBuffer`/84-byte pack, or
+`UploadPerDrawParams` kernel-7 edge appears. Keep this genuine `0x100` record
+separate from both the callback-local factory scratch and the unresolved
+channel-2 upload resource. Details are in
+`reports/assets/character_recovery/gpudriven_v2_renderer_list_descriptor_boundary.md`.
+
 The indirect GPUDriven tail is now resolved for the installed graphics-context
 constructor. `0x180725dc0` reads TLS index `0x182111300` and resolves the
 context through `TlsGetValue` (`0x181cb0980`); setter `0x180727ea0` stores the
