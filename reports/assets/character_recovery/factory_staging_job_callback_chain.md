@@ -33,10 +33,12 @@ that the last indirect call has been fully resolved to the factory callback.
 
 The callback is now positively reachable through a table/job-system path
 rather than being an unreferenced pattern match. Its body still performs the
-known dirty-bit test and writes the five Vector4 lanes into the per-entry
-`+0x100` output record. The scheduler bodies contain no named
-`GpuSceneDirtyUpdateCS`, `_UploadBuffer`, ComputeBuffer upload, shader-buffer
-bind, or kernel-7 dispatch. The later consumer of the callback-produced
-`+0x100` array is therefore still an indirect/table-driven boundary; do not
-promote this registration edge to the missing `0x100 -> 0x54` pack or GPU
-binding.
+known dirty-bit test and writes five Vector4 lanes at `+0xb0..+0xf0`, but the
+base is `rbp-0x80` and the `+0x100` loop is callback-local stack scratch. The
+scratch is consumed by internal CPU/VFX/resource helpers; it is not a
+persistent render/GPU staging allocation. The scheduler bodies contain no
+named `GpuSceneDirtyUpdateCS`, `_UploadBuffer`, ComputeBuffer upload,
+shader-buffer bind, or kernel-7 dispatch. Do not promote this registration edge
+to the missing persistent `0x100 -> 0x54` pack or GPU binding. The corrected
+classification and the positive managed per-draw write-side bridge are recorded
+in `factory_record_to_100_staging_contract.md`.
