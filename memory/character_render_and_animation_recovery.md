@@ -105,6 +105,19 @@ boundary, but the record is not tied to factory channel-2/resource `+0xd0` or
 `UploadPerDrawParams` kernel 7, so the character upload edge remains
 fail-closed.
 
+The managed compute-shader surface is now separately bounded. In the installed
+GameAssembly, `ComputeShader.Internal_HGSetBuffer` (`0x18b3d75bc`) has exactly
+two direct callsites, both inside
+`MagicaCloth.PhysicsManagerMeshData::DispatchWriting[431943]`; that body also
+dispatches at `0x18b3d74a8` and sources its buffer IDs from MagicaCloth state.
+`ComputeShader.HGSetBuffer` (`0x18b3d75ac`) and the raw
+`Internal_SetBuffer`/`Internal_SetGraphicsBuffer` wrappers have no direct
+callsite. The GPU-scene setup wrapper (`0x1839454d0` -> UnityPlayer
+`0x1801ee4c0`) therefore has no static managed `ComputeBuffer`/`Dispatch` edge;
+its remaining resource/context bridge is runtime-indirect. Do not promote the
+MagicaCloth binding path to the character upload route. Details are in
+`reports/assets/character_recovery/gpu_scene_compute_buffer_callsite_census.md`.
+
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a
 false positive. `HGConstantBufferPool::.ctor` (`0x189b6aa28`) creates a
 `count=0x80000`, byte-stride-1, type-8 `ComputeBuffer` at `this+0x10`, while
