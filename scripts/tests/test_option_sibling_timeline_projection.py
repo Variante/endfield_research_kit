@@ -20,6 +20,17 @@ class OptionSiblingTimelineProjectionTests(unittest.TestCase):
             dialog_line_text_signature,
         )
 
+    def test_dialog_line_text_signature_uses_explicit_dependencies(self):
+        self.assertEqual(
+            dialog_line_text_signature(
+                "line_1",
+                dialog_rows={"line_1": {"dialogText": {"id": "text_1"}}},
+                translate=lambda text_id: {"text_1": "  Hello!  "}.get(text_id, ""),
+                option_text_signature=lambda text: text.strip().casefold(),
+            ),
+            "hello!",
+        )
+
     def test_option_signatures_preserve_order_and_fail_closed(self) -> None:
         signatures = {
             "local_a": ("accept", "left"),

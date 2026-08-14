@@ -3423,6 +3423,14 @@ def build_language_bundle(
         gaps where choices happen, and option groups `g=1`, `g=2`, `g=3`
         attach to those gaps in order.
         """
+        def current_dialog_line_text_signature(line_id: str) -> str:
+            return dialog_line_text_signature(
+                line_id,
+                dialog_rows=dialogs,
+                translate=t,
+                option_text_signature=_option_text_signature,
+            )
+
         tree_meta: dict = {}
         tree_after: dict[str, str] = {}
         tree_after_sources: dict[str, list[str]] = {}
@@ -3813,7 +3821,7 @@ def build_language_bundle(
                     ),
                     option_group_ids_by_key=dialog_option_group_ids_by_key,
                     option_signatures_by_id=dialog_option_signature_by_id,
-                    dialog_line_text_signature=dialog_line_text_signature,
+                    dialog_line_text_signature=current_dialog_line_text_signature,
                     load_dialog_tree=load_dialog_tree,
                     option_text_signature=_option_text_signature,
                     sequence_similarity_at_least=_sequence_similarity_at_least,
@@ -4131,7 +4139,7 @@ def build_language_bundle(
                         ),
                         option_group_ids_by_key=dialog_option_group_ids_by_key,
                         option_signatures_by_id=dialog_option_signature_by_id,
-                        dialog_line_text_signature=dialog_line_text_signature,
+                        dialog_line_text_signature=current_dialog_line_text_signature,
                         load_dialog_tree=load_dialog_tree,
                         option_text_signature=_option_text_signature,
                         sequence_similarity_at_least=_sequence_similarity_at_least,
