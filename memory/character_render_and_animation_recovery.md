@@ -93,14 +93,18 @@ archetypes are imported as labeled source kits rather than finished characters.
    `+0x30..+0x40` and invoked by `0x1805598C0`; this path has no graphics,
    opcode, Vulkan, draw, or queue-submit operation. This does not classify
    unrelated producers of the shared pool. A separate positive producer edge
-   is now bounded: `0x181080730` registers a pool record whose node callback
-   is `0x181065190` or `0x181067A70`; pool worker sites reach
-   `0x1805598C0`, which invokes that callback, and the callback builders
-   `0x18106BEF0`/`0x18106D020` write `outResult+8` plus callback thunks
-   `0x181060EA0`/`0x181060EB0`. This joins the shared pool to the previously
-   identified resource-callback producers, but does not yet establish
-   HGTree-specific draw ordering or final queue ownership. See
-   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
+  is now bounded: `0x181080730` registers a pool record whose node callback
+  is `0x181065190` or `0x181067A70`; pool worker sites reach
+  `0x1805598C0`, which invokes that callback, and the callback builders
+  `0x18106BEF0`/`0x18106D020` write `outResult+8` plus callback thunks
+  `0x181060EA0`/`0x181060EB0`. The focused consumer pass shows that
+  `0x180555D30 -> 0x1805573D0 -> 0x180559520 -> 0x1805592B0` is the 0x80-byte
+  node allocation path; the node's `+0x30` callback is invoked by the pool
+  worker, while no direct static read from the builder's `outResult+0x10`
+  reaches `+0xDA8`, `+0xDE8`, `+0xF10`, Vulkan, or queue submission. This
+  joins the shared pool to the resource-callback producers without claiming
+  final HGTree draw ownership. See
+  `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
   Separately, `DrawECSRendererList` is reached from
   `HGRendererListUtils.DrawTreeECSRendererList` (`0x189C0A130`) and has two
   parallel UnityPlayer internal-call implementations. The maintained

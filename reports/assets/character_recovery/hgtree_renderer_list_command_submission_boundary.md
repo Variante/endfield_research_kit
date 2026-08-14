@@ -681,6 +681,23 @@ and final draw/queue ownership remain fail-closed.
     final render-graph/command-buffer execution and HGTree-specific draw/queue
     ownership remain external to these callbacks and fail-closed.
 
+40. A focused consumer pass separates the callback pair produced by the
+    resource builders from the pool node callback. `0x18106BEF0` and
+    `0x18106D020` write `outResult+8` to the resource result returned by
+    `0x18107A410`/`0x181079860`, and `outResult+0x10` to
+    `0x181060EA0`/`0x181060EB0`; their callers pass that `outResult` through
+    the per-record `+0x10` slot. The shared record initializer
+    `0x181080730` instead copies its input pair into a new 0x98-byte record
+    (`+0x58/+0x60`) and registers it via `0x180555D30`.
+    `0x180555D30 -> 0x1805573D0 -> 0x180559520 -> 0x1805592B0` allocates an
+    0x80-byte pool node; the pool worker `0x1805598C0` invokes the node's
+    stored `+0x30` callback (`0x181065190` or `0x181067A70`), which rebuilds
+    the resource result and re-emits the builder pair. No direct static
+    read from the builder's `outResult+0x10` reaches API-2 `+0xDA8`,
+    `+0xDE8`, `+0xF10`, Vulkan, or queue submission. The exact runtime
+    consumer that turns this callback-produced resource pair into the final
+    HGTree draw remains unresolved; keep the boundary fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
