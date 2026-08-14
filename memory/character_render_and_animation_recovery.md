@@ -139,7 +139,10 @@ GPU upload surface. The V1/V2 distinction is now bounded too: V1 selects
 through `0x1804cb1a0` from runtime descriptor fields through `+0xd0`, while
 V1/V2 dispatch reaches graphics-context vtable slot `+0xab0`. Those runtime
 descriptor fields are not the factory channel-2 `+0xd0` without a proven
-alias. Details are in
+alias. V1's command formats are separately bounded: rendering records opcode
+`0x2b` through `0x1804cb730` after `0x180fd96c0` resource-index mapping, while
+culling records opcode `0x57` through `0x1804cd7d0`; both remain runtime
+resource paths without a factory-record load. Details are in
 `reports/assets/character_recovery/gpu_scene_native_icall_split.md`.
 
 The generic `HGConstantBufferPool` upload candidate is now source-closed as a

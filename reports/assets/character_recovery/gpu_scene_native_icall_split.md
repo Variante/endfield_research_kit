@@ -94,6 +94,19 @@ the `manager+0x38 + index*0x8c` records. The runtime descriptor `+0xd0` must
 therefore remain distinct from the factory channel-2 `+0xd0` until a stronger
 alias is found.
 
+The V1 command-record side is now bounded as a distinct format rather than
+being grouped with V2. V1 rendering (`0x1810ef150`) uses immediate helper
+`0x180fd96c0` or, for a command target, writer `0x1804cb730`, which records
+opcode `0x2b` and one qword payload. The immediate helper resolves resource
+IDs through its context metadata and appends the resulting index to dynamic
+resource tables before reaching `0x1805d5520`; it does not read factory
+records. V1 culling (`0x1810f2ab0`) uses immediate `0x1805f84a0` over runtime
+descriptor fields beginning at `+0x8c..+0xb0`, or command writer
+`0x1804cd7d0`, which records opcode `0x57` with a 0x20-byte payload. Thus the
+runtime command formats are now explicit: V1 rendering `0x2b`, V1 culling
+`0x57`, and V2 binding `0x0d`; none of these checked producers loads the
+factory `manager+0x38 + index*0x8c` record.
+
 Therefore the current static boundary is:
 
 ```text
