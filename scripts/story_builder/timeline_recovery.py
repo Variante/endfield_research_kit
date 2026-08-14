@@ -1966,14 +1966,6 @@ def _timeline_text_ids_from_payload(payload: dict) -> list[str]:
     return sorted(set(out))
 
 
-def _black_text_ids_from_payload(payload: dict) -> list[str]:
-    """Return serialized black-screen text ids from a Timeline playable asset."""
-    return [
-        text_id for text_id in _timeline_text_ids_from_payload(payload)
-        if text_id.startswith("black_")
-    ]
-
-
 def _timeline_payload_entries(payload: dict) -> list[tuple[str, dict]]:
     out: list[tuple[str, dict]] = []
     if not isinstance(payload, dict):
