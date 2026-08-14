@@ -95,6 +95,49 @@ def decode_bool_param(
     return {"value": bool(payload[cursor + 1]), **detail}, end
 
 
+def decode_float_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
+        return None
+    value = round(struct.unpack_from("<f", payload, cursor + 1)[0], 3)
+    tail = decode_param_tail(payload, cursor + 5)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"value": value, **detail}, end
+
+
+def decode_local_getter_ref(payload: bytes, cursor: int) -> tuple[int, int] | None:
+    if (
+        cursor + 17 > len(payload)
+        or payload[cursor : cursor + 5] != b"\x04\x00\x00\x00\x00"
+        or payload[cursor + 9 : cursor + 17] != b"\xff" * 8
+    ):
+        return None
+    local_id = struct.unpack_from("<i", payload, cursor + 5)[0]
+    if local_id < 0 or local_id > 0x10000:
+        return None
+    return local_id, cursor + 17
+
+
+def finish_getter_fields(
+    payload: bytes,
+    end: int,
+    detail: dict[str, Any],
+) -> dict[str, Any]:
+    """Accept exact subtype EOF or one proven outer-list u32 trailer."""
+    if end == len(payload):
+        return detail
+    if end + 4 != len(payload):
+        return {}
+    return {
+        **detail,
+        "trailingActionMapFramingU32": struct.unpack_from("<I", payload, end)[0],
+    }
+
+
 def decode_param_output(
     payload: bytes,
     cursor: int,
