@@ -113,7 +113,12 @@ and final draw/queue ownership remain fail-closed.
    `UnityEngine.Rendering.CommandBuffer::AddDrawECSTreeRendererList(System.UInt32)`.
    The wrapper is reached by `HGRendererListUtils.DrawTreeECSRendererList`
    (`0x189C0A130`), which loads `HGRenderGraphContext.cmd` from `+0x18` and
-   forwards the renderer-list id in `edx`.
+   forwards the renderer-list id in `edx`. The recovered source package
+   `tools/FractalMiner/Assets/Project/EndField/HGRP/packages/com.hg.render-pipelines/runtime/HG/Rendering/Runtime/HGRendererListUtils.cs`
+   shows the analogous `DrawECSRendererList` body forwarding
+   `context.fields.cmd` and `ecsRendererList` to
+   `UnityEngine::HyperGryph::HGMeshRender::DrawECSRendererList`; it contains
+   no flush or queue-submit call of its own.
 7. UnityPlayer contains two parallel function arrays for the same internal-call
    name table (`0x1820D3DB0`). At global index 3467 the table-A array
    (`0x1820CC000`) selects `0x180064580`; the parallel table-B array
@@ -137,9 +142,15 @@ and final draw/queue ownership remain fail-closed.
    `0x273B` lands at `0x1813B1110`, which invokes API-2 backend vtable `+0xEA8`
    (`0x18083F530`) to queue the callback record.
 10. The queued `+0xEA8` records are consumed by the backend's later record loop
-    at `0x180844C4A-0x180844C6D`, which calls the stored callback. The HGTree
-    callback `0x18107AB10` assembles renderer state and reaches front-end
-    `+0xDA0` (`0x18083E720`) or fallback `+0x380`; these paths populate API-2
+    at `0x180844C4A-0x180844C6D`, which calls the stored callback. The exact
+    `0x18107AB10` body reached by `0x181060D70` is a resource/list lifetime
+    callback: it calls `0x1806FCB10`, `0x180555A30`, `0x180555D30`,
+    `0x180555E50`, `0x180555720`, `0x180FCE6F0`, and `0x180555A80`; the
+    inspected `0x180FCE6F0` body performs resource refcount/cleanup work and
+    contains no front-vtable slot or graphics command. The callbacks that
+    actually reach front-end `+0xDA0`/`+0x380` are the resource-builder thunks
+    `0x181060EA0 -> 0x18107AE60` and `0x181060EB0 -> 0x18107B3A0`, installed
+    by `0x18106BEF0`/`0x18106D020`. Those handlers populate API-2
     resource/command records and bind-state callbacks, but this pass has not
     proven that this specific renderer-list record reaches the neighboring
     `+0xDA8` indirect-draw branch or the separate `+0xDE8` draw/submit sink.
@@ -444,10 +455,14 @@ and final draw/queue ownership remain fail-closed.
 26. The remaining HGTree sink question is now after the positive chain:
     `DrawTreeECSRendererList -> 0x180064580 -> 0x1804C7930 -> 0x55 ->
     0x18106AAE0 -> 0x1809324E0 -> 0x273B -> 0x18083F530 ->
-    0x18107AB10 -> 0x18083E720`. The route reaches API-2 resource/state
-    records and callbacks, but this pass has not joined them to `+0xDA8`
-    indirect draw or `+0xDE8` descriptor/draw/queue-submit. Keep the final
-    renderer-list draw and queue ownership fail-closed.
+    0x18107AB10`. The last callback is the resource/list lifetime boundary;
+    it does not statically dispatch front-end `+0xDA0`/`+0x380`. Those slots
+    are reached by the separately installed resource callbacks
+    `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0`, whose API-2 records
+    are then consumed by the backend resource-list executor. This pass has
+    not joined either branch to `+0xDA8` indirect draw or `+0xDE8`
+    descriptor/draw/queue-submit. Keep the final renderer-list draw and queue
+    ownership fail-closed.
 
 27. The two apparent runtime consumers adjacent to this boundary are now
     bounded as state/lifetime machinery rather than a proven renderer-list
@@ -595,6 +610,17 @@ and final draw/queue ownership remain fail-closed.
     callback edge. The managed `HGRendererListUtils.DrawTreeECSRendererList`
     wrapper (`0x189C0A130 -> 0x18B3FBFA4`) also contains no flush writer.
     Keep HGTree ordering, final draw, and queue ownership fail-closed.
+
+35. The callback identities are now explicitly separated. High-level opcode
+    `0x55` queues `0x181060D70 -> 0x18107AB10`, whose body is limited to
+    resource/list lifetime helpers and does not emit `+0xDA0`, `+0x380`,
+    `+0xDA8`, `+0xDE8`, `+0xF10`, or a direct graphics call. The front-end
+    resource/state callbacks are instead `0x181060EA0/0x181060EB0 ->
+    0x18107AE60/0x18107B3A0`, installed by the resource builders. This
+    correction tightens the fail-closed boundary: the positive tree command
+    route reaches a lifecycle/resource callback, while the later resource
+    callback-to-state path is a distinct runtime edge; neither proves
+    HGTree-specific indirect draw ordering or queue submission.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to

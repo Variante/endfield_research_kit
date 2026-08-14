@@ -98,6 +98,9 @@ archetypes are imported as labeled source kits rather than finished characters.
   opcode `0x55` through `0x1804C7930`; the high-level interpreter calls
   `0x18106AAE0`, whose context `+0xEA0` records low-level `0x273B` and queues
   callback `0x181060D70 -> 0x18107AB10` through API-2 `+0xEA8` (`0x18083F530`).
+  That callback is a resource/list lifetime boundary, not the front-end
+  `+0xDA0` handler; `+0xDA0/+0x380` are reached by the separately installed
+  resource callbacks `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0`.
   The parallel table-B body `0x1801719B0` roots local managed-pointer state
   through slot `0x1821BE708` and calls `0x180A5C5C0` for payload/hash
   validation; it is not the complete tree writer. The final HGTree
@@ -732,9 +735,12 @@ only stable interpretation and priorities.
    updates native context state, while no-copy enters indirect helpers
     `0x180B3E5C0`/`0x180A95EB0`. The remaining HGTree sink is now after the
     positive `0x55 -> 0x273B -> +0xEA8` route: the callback
-    `0x18107AB10` queues through `0x18083F530`, is consumed by the backend
-    record loop at `0x180844C4A`, and reaches front-end `+0xDA0`/`+0x380`.
-    The `+0xDA0` records then pass through `context+0x2B60` -> master list
+    `0x18107AB10` queues through `0x18083F530` and is consumed by the backend
+    record loop at `0x180844C4A`; its exact body is a resource/list lifetime
+    callback and does not dispatch front-end slots. The callbacks that reach
+    front-end `+0xDA0`/`+0x380` are the separately installed resource-builder
+    thunks `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0`. Their
+    `+0xDA0` records then pass through `context+0x2B60` -> master list
     `context+0x2B50` (`0x180841C40`) and the `0x180843D60`/`0x1808200C0`
     executors, which invoke `0x18082D6B0`/`0x18082E660` and named Vulkan
     buffer/state commands when the backend flushes the lists. Static
@@ -763,7 +769,9 @@ only stable interpretation and priorities.
     HGTree draw/queue ownership fail-closed after the positive command route.
     The latest callback trace separates the Vulkan command-recording identity
     from HGTree ownership. The table-A callback route reaches API-2
-    `+0xEA8 -> 0x18083F530 -> 0x18107AB10 -> +0xDA0/+0x380`; both native HGTree handlers dispatch API-2
+    `+0xEA8 -> 0x18083F530 -> 0x18107AB10`, which ends at the
+    resource/list lifetime boundary. The distinct resource-builder callbacks
+    `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0` dispatch API-2
    `+0xDA0`/`+0x380`, resolving to `0x18083E720`/`0x1808350E0`; their shared
    records use thunks `0x180820580 -> 0x18082D6B0` and
    `0x1808208F0 -> 0x18082E660`, whose resolver slots name buffer binds,
