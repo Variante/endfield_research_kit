@@ -34,6 +34,18 @@ opcode `0x273B`, and API-2 `+0xEA8` callback queue. HGTree-specific Vulkan draw
 ownership, callback ordering, and queue submission remain unresolved; this is
 not yet a retail frame-parity claim.
 
+The generic flush boundary is now source-pinned as well: high-level opcode
+`0x6A` is written by `0x1804CA0B0` and interpreted at `0x1804D178A`, where it
+dispatches API-2 `+0xF10` (`0x18083F140`); low-level opcode `0x27D5` maps to
+`0x1813B156A`, which dispatches the same slot. `+0xF10` closes pending
+resource/state batches and enters `0x180841C40`; API-2 `+0xDE8`
+(`0x18083F1E0`) also flushes and executes the master list through
+`0x180843D60`. These are concrete command-stream flush/execute sinks, but the
+inspected HGTree handlers still emit only `+0xDA0`/`+0x380`: no static HGTree
+edge emits `0x6A`, `0x27D5`, `+0xF10`, `+0xDA8`, or `+0xDE8`. Therefore the
+flush family is proven for the generic backend, while HGTree-specific ordering
+and final draw/queue ownership remain fail-closed.
+
 ## Source pins
 
 | Input | SHA-256 |
@@ -550,6 +562,22 @@ not yet a retail frame-parity claim.
     image still does not prove HGTree-specific flush/order, selection of the
     neighboring `+0xDA8` indirect draw, or ownership of the `+0xDE8`
     queue-submit branch; keep final draw/submit ownership fail-closed.
+
+33. The command-stream flush family is now bounded independently of the HGTree
+    producer. High-level writer `0x1804CA0B0` emits opcode `0x6A`; interpreter
+    table `0x1804D19C8` maps that entry to `0x1804D178A`, which calls API-2
+    `+0xF10` (`0x18083F140`). The low-level table `0x1813BB574` maps opcode
+    `0x27D5` to `0x1813B156A`, which calls the same `+0xF10` slot. The
+    implementation finalizes the pending resource/state records, invokes
+    `0x180841C40`, and clears the corresponding batch heads. API-2 `+0xDE8`
+    (`0x18083F1E0`) is a second explicit flush-and-execute sink: it calls
+    `0x180841C40` and then consumes the master list through `0x180843D60`.
+    Direct `0x6A` writers are found in generic pass/resource functions
+    (`0x181118AD0`, `0x18111A7D7`, `0x1811BE9BA`, `0x1811C7FFD`), while no
+    static HGTree handler or callback emits `0x6A`, `0x27D5`, `+0xF10`,
+    `+0xDA8`, or `+0xDE8`. This closes the generic flush/execute boundary but
+    not its HGTree-specific ordering or final draw/queue ownership; keep that
+    final edge fail-closed.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
