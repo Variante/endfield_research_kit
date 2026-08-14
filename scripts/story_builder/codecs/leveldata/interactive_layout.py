@@ -312,4 +312,3 @@ def leveldata_interactive_final_record_boundary(
         for row in candidates
     }
     return next(iter(unique.values())) if len(unique) == 1 else None
-
