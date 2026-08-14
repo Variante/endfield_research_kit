@@ -21,6 +21,14 @@ forwards the descriptor to `0x180559240`; the latter allocates/links the
 worker record and completion state. This closes the previously missing static
 registration edge from the factory setup to the `0x8c -> 0x100` callback.
 
+The worker-side handoff is also bounded. `0x180558440` selects a queue slot;
+its worker path reaches `0x18055865f -> 0x1805598c0`, where an indirect task
+entry is loaded from the queued slot and called with the scheduler context and
+item index. The remaining alias from the schedule descriptor's stored
+`0x1810d25c0` pointer to that final queued-slot field is not statically
+unique in this image, so this is an execution-boundary location, not a claim
+that the last indirect call has been fully resolved to the factory callback.
+
 ## What this does and does not prove
 
 The callback is now positively reachable through a table/job-system path
