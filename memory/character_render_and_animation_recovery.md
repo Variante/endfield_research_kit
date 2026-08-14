@@ -204,6 +204,21 @@ alias from that queued-slot field back to `0x1810d25c0` is not unique in the
 static image, so this remains an execution boundary rather than a fully
 resolved call. The scheduler still has no GPU upload/dispatch edge.
 
+The generic Renderer custom-per-draw path now has a separate positive
+persistent-resource sink. `Renderer.SetCustomPerDrawData_Injected`
+(`0x183e6e280 -> 0x1800fe590`) reaches UnityPlayer `0x180430680`, which writes
+five possible Vector4 lanes to the renderer cache and, when its resource gate
+is open, resolves a persistent destination through `0x1804255f0` and stores at
+`resolved+0xb0+index*0x10`. The resolver walks the global context's descriptor
+array and `0x240`-stride resource records; this is not callback stack scratch.
+Managed `SetPerDrawData_*` channel helpers are direct users of this bridge.
+The factory dirty-record callback also calls the resolver at
+`0x1810d2fc4/2fd9` and copies an `0x80`-byte CPU resource block, but neither
+path names `_RTPerDrawParamsBuffer`, `UploadPerDrawParams`, or kernel 7. Keep
+this persistent CPU resource edge separate from the factory `+0x8c` record and
+the callback-local `+0x100` scratch. Details:
+`reports/assets/character_recovery/persistent_perdraw_resource_bridge.md`.
+
 The callback's apparent `+0x100` destination is now downgraded from
 render-side staging to callback-local scratch: `0x1810d25e7` sets the base to
 `rbp-0x80`, `[rsp+0x68]` preserves it, and the five `+0xb0..+0xf0` lane stores
