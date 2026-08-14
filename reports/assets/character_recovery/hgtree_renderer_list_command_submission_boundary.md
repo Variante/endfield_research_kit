@@ -228,6 +228,25 @@ frame-parity claim.
     useful proof is to identify the heap-created vtable or its returned record
     consumer, rather than treating the slot number alone as device evidence.
 
+15. A neighboring resource helper provides a stronger semantic bound for this
+    slot. `0x18061FB60` loads a resource object's `+0x208` subobject, dispatches
+    its vtable `+0x48`, then treats the return value as a NUL-terminated byte
+    string (`0x18061FC23` scans until `byte == 0`) and copies it into a small
+    diagnostic/metadata record. The helper has 28 direct callers, including
+    the resource-descriptor assembly at `0x180624035`, `0x180624047`, and the
+    repeated sibling sites through `0x1806242A9`. This is an independent
+    resource-family witness, not a proof that the nested F680 receiver has the
+    identical concrete type, but it makes a name/key accessor much more likely
+    than a device method.
+
+    In F680, the returned `rax` is saved only as the third stack argument to
+    `0x18083F8F0`. The complete bounded body of F8F0 reads the first stack
+    argument (`[rbp+0x80]`) but never reads `[rbp+0x88]` or `[rbp+0x90]`, the
+    following two arguments. Thus this `+0x48` result is not consumed as a
+    queue, command list, or graphics handle on this path. The durable
+    interpretation is now `resource metadata/name preparation -> resource
+    record builder`; device submission remains a separate unresolved path.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -255,4 +274,6 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808558E0 0x180855AA0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843BF0 0x180843D40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083F680 0x18083F8F0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18061FB60 0x18061FD80
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180624000 0x1806242B0
 ```
