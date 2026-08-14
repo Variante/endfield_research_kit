@@ -747,19 +747,20 @@ only stable interpretation and priorities.
    indirect, unresolved possibility, but the inspected bodies contain no
    direct opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep the
    HGTree sink fail-closed after the internal call.
-   The latest callback trace closes one more boundary: both native HGTree
-   handlers dispatch API-2 `+0xDA0`/`+0x380`, resolving to
-   `0x18083E720`/`0x1808350E0`, and `0x1808350E0` immediately forwards to the
-   same `0x18083E720` `0x60`-byte record builder. Its downstream
-   `0x18083AA90` consumer remains allocation/copy/state-list logic with no
-   static `+0xDE8` or Vulkan edge. The positive `+0xDE8 -> 0x18083F1E0 ->
-   0x180843D60` Vulkan submission family is therefore still separate until a
-   runtime-indirect consumer or capture proves the join. The 0x60-byte record
-   callbacks are now bounded as `0x180820580 -> 0x18082D6B0`,
-   `0x1808208F0 -> 0x18082E660`, and `0x180820940 -> 0x18082E820`; all three
-   remain resource/state-only indirect callbacks with no direct `+0xDE8` or
-   Vulkan edge, so this does not justify promoting the HGTree path to a draw
-   route.
+   The latest callback trace closes the Vulkan command-recording identity on
+   the HGTree resource branch. Both native HGTree handlers dispatch API-2
+   `+0xDA0`/`+0x380`, resolving to `0x18083E720`/`0x1808350E0`; the shared
+   builder creates `0x60`-byte records whose thunks are
+   `0x180820580 -> 0x18082D6B0`, `0x1808208F0 -> 0x18082E660`, and
+   `0x180820940 -> 0x18082E820`. Unity's resolver `0x180746620` maps their
+   indirect cells to `vkCmdBindIndexBuffer`, `vkCmdBindVertexBuffers`,
+   `vkCmdSetDepthBias`, `vkCmdSetStencilReference`, `vkCmdBindPipeline`,
+   `vkCmdBindDescriptorSets`, and (on the `+0xDA8` sibling)
+   `vkCmdDrawIndexedIndirect`/`vkCmdDrawIndirect`. This proves a real Vulkan
+   command-recording route from callback-produced records. It still does not
+   prove managed tree-list playback, callback ordering, or queue submission;
+   keep those joins fail-closed until a runtime capture or stronger producer /
+   consumer edge binds them to the retail frame.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
