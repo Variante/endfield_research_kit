@@ -46,10 +46,13 @@ archetypes are imported as labeled source kits rather than finished characters.
   wrappers `0x1801D75A0/0x1801D7640/0x1801D76E0`, while
   `DrawECSRendererList` tail-jumps to
   `CommandBuffer::AddDrawECSTreeRendererList`, native `0x180149500`, which
-  reaches tree helper `0x180A16870`. This closes a renderer-list command
-  producer boundary, not the downstream GPU submission/resource edge; no
-  ComputeBuffer or dispatch appears in the checked bodies. Keep component 67
-  as LOD/list state rather than merging it with these opaque handles. See
+  reaches tree helper `0x180A16870`. The checked native tail is tree-record
+  state/LOD maintenance: `0x180A16870` walks `[+0xA0,+0xA8)`, calls
+  `0x180A2E500`, and resets `[+0x230]` to `[+0x228]`; it is not itself a
+  proven GPU submission or command opcode. The actual command/resource
+  consumer remains fail-closed, and no ComputeBuffer or dispatch appears in
+  the checked bodies. Keep component 67 as LOD/list state rather than
+  merging it with these opaque handles. See
   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
 
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
@@ -624,10 +627,10 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-1. Follow the newly pinned HGTree renderer-list command edge through
-   `0x180A16870` to the next native command-stream/GPU resource boundary,
-   while keeping component 67's LOD/list role and the retail culling survivor
-   list separately bounded.
+1. Follow the newly pinned HGTree state/list-maintenance edge through the
+   runtime-owned converter slot (`0x1821BE708`) and the later command-buffer
+   execution path, while keeping component 67's LOD/list role and the retail
+   culling survivor list separately bounded.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
