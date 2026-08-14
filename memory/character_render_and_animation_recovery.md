@@ -200,6 +200,19 @@ alias from that queued-slot field back to `0x1810d25c0` is not unique in the
 static image, so this remains an execution boundary rather than a fully
 resolved call. The scheduler still has no GPU upload/dispatch edge.
 
+The callback's apparent `+0x100` destination is now downgraded from
+render-side staging to callback-local scratch: `0x1810d25e7` sets the base to
+`rbp-0x80`, `[rsp+0x68]` preserves it, and the five `+0xb0..+0xf0` lane stores
+are consumed by internal CPU/VFX/resource helpers. The installed GameAssembly
+write-side path is nevertheless concrete: `ApplyPerDrawRender$BurstManaged`
+(`0x1869d8434`) -> `GlobalSharedData+PerDrawGlobalSetting.Apply`
+(`0x1869d5d30`) -> `PerDrawConfig.Apply` (`0x1869f3654`) -> wrappers
+`0x1840f30e0` (4-byte scalar) or `0x1876aaefc` (16-byte vector) ->
+`HGFactoryRenderManager.SetEntitySharedDataPartial` (`0x183d689c0`). This
+confirms a managed per-draw write into native shared-data records, not a GPU
+upload, `_UploadBuffer` pack, or kernel-7 binding. Details:
+`reports/assets/character_recovery/factory_record_to_100_staging_contract.md`.
+
 The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
 attachment boundary. `GBufferPassConstructor.ConstructPass` submits
 `SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable
