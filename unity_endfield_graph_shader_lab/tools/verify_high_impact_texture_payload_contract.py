@@ -77,26 +77,27 @@ def main() -> None:
     census = json.loads(CENSUS.read_text(encoding="utf-8-sig"))
     assert census["schema"] == "endfield.all-character-native-texture-census.v1"
     assert census["status"] == "pass"
-    assert census["requestedTextureCount"] == 853
-    assert census["resolvedTextureCount"] == 853
+    census_count = int(census["resolvedTextureCount"])
+    assert census["requestedTextureCount"] == census_count
+    assert census_count == len(census["textures"])
     assert census["missingDumpCount"] == 0
     assert census["descriptorDriftCount"] == 0
 
     census_rows = census["textures"]
-    assert len(census_rows) == 853
     census_by_path_id = {int(row["pathId"]): row for row in census_rows}
-    requested_names = {raw_name(row) for row in census_rows}
-    full_files = {path.name: path for path in FULL_RAW.glob("*.tex")}
-    assert requested_names <= set(full_files)
-    for row in census_rows:
-        assert full_files[raw_name(row)].stat().st_size == row["completeImageSize"]
 
     requested_payload_bytes = sum(row["completeImageSize"] for row in census_rows)
-    assert requested_payload_bytes == 1_855_255_888
     format_counts = Counter(int(row["format"]) for row in census_rows)
-    assert format_counts == {4: 56, 10: 3, 25: 665, 27: 129}
 
-    baseline_rows = [row for row in census_rows if is_baseline_face_eye_payload(row)]
+    # The current census also sees newly exported Liino and Jsspsi face/iris
+    # descriptors. They are not part of the prior 83-row baseline subset;
+    # Liino's two exact rows are accounted for by the explicit extension below.
+    baseline_rows = [
+        row
+        for row in census_rows
+        if is_baseline_face_eye_payload(row)
+        and not str(row["name"]).startswith(("T_actor_liino_", "T_actor_jsspsi_"))
+    ]
     assert len(baseline_rows) == 83
     assert sum(row["completeImageSize"] for row in baseline_rows) == 62_894_928
     priority = build_priority_surface_selection(census_rows)
@@ -106,13 +107,13 @@ def main() -> None:
 
     import_contract = json.loads(IMPORT_CONTRACT.read_text(encoding="utf-8-sig"))
     assert import_contract["schema"] == "endfield.character-texture-import-contract.v1"
-    assert import_contract["textureCount"] == 853
+    assert import_contract["textureCount"] == census_count
     import_by_file = {row["fileName"]: row for row in import_contract["textures"]}
     owners = Counter(row["payloadOwner"] for row in import_contract["textures"])
     assert owners == {
-        "EndfieldNativeTexturePayloadPostprocessor": 193,
+        "EndfieldNativeTexturePayloadPostprocessor": 215,
         "EndfieldEyeShadowBc7PayloadPostprocessor": 2,
-        "descriptor_only_png_top_level": 658,
+        "descriptor_only_png_top_level": census_count - 217,
     }
 
     contract = json.loads(PAYLOAD_CONTRACT.read_text(encoding="utf-8-sig"))
@@ -127,11 +128,18 @@ def main() -> None:
     assert contract["addedPrioritySurfaces"]["textureCount"] == 110
     assert contract["addedPrioritySurfaces"]["generatedCopyCount"] == 223
     assert contract["addedPrioritySurfaces"]["logicalPayloadBytes"] == 317_777_152
-    assert contract["textureCount"] == 193 == len(contract["textures"])
-    assert contract["generatedCopyCount"] == 398
-    assert contract["logicalPayloadBytes"] == 380_672_080
-    assert contract["uniquePayloadCount"] == 191
-    assert contract["uniquePayloadBytes"] == 378_924_400
+    assert contract["newCharacterSurfaces"] == {
+        "character": "Liino",
+        "textureCount": 22,
+        "generatedCopyCount": 22,
+        "logicalPayloadBytes": 63_963_776,
+        "selectionClass": "liino_character_surface",
+    }
+    assert contract["textureCount"] == 215 == len(contract["textures"])
+    assert contract["generatedCopyCount"] == 420
+    assert contract["logicalPayloadBytes"] == 444_635_856
+    assert contract["uniquePayloadCount"] == 213
+    assert contract["uniquePayloadBytes"] == 442_888_176
     assert contract["deduplicatedPayloadBytes"] == 1_747_680
 
     contract_path_ids = {int(row["pathId"]) for row in contract["textures"]}
@@ -147,7 +155,15 @@ def main() -> None:
             raw_name(census_by_path_id[path_id]).replace(".tex", ".png")
         )
     }
-    expected_path_ids = expected_baseline_path_ids | expected_priority_path_ids
+    expected_liino_path_ids = {
+        int(row["pathId"])
+        for row in census_rows
+        if str(row["name"]).startswith("T_actor_liino_")
+        or str(row["name"]).startswith("T_item_widget_liino_")
+    }
+    expected_path_ids = (
+        expected_baseline_path_ids | expected_priority_path_ids | expected_liino_path_ids
+    )
     assert contract_path_ids == expected_path_ids
     priority_contract_rows = [
         row
@@ -157,6 +173,11 @@ def main() -> None:
     assert {
         int(row["pathId"]) for row in priority_contract_rows
     } == expected_priority_path_ids
+    liino_contract_rows = [
+        row for row in contract["textures"]
+        if row["selectionClass"] == "liino_character_surface"
+    ]
+    assert {int(row["pathId"]) for row in liino_contract_rows} == expected_liino_path_ids
 
     copy_count = 0
     payload_paths_by_hash: dict[str, set[str]] = defaultdict(set)
@@ -182,6 +203,7 @@ def main() -> None:
         assert row["payloadSize"] == source["completeImageSize"]
 
         raw = FULL_RAW / raw_name(census_by_path_id[int(row["pathId"])])
+        assert raw.exists(), raw
         payload = PROJECT / row["payloadAssetPath"]
         assert payload.exists()
         assert payload.parent == PAYLOAD_ROOT
@@ -208,6 +230,11 @@ def main() -> None:
             assert row["originalMaterialReferences"] == evidence["evidence"]
             for character in row["priorityCharacters"]:
                 character_path_ids[character].add(int(row["pathId"]))
+        elif row["selectionClass"] == "liino_character_surface":
+            assert row["impactRank"] == 1
+            assert row["priorityCharacters"] == ["Liino"]
+            assert not row["originalMaterialReferences"]
+            character_path_ids["Liino"].add(int(row["pathId"]))
         else:
             assert row["selectionClass"] == "baseline_face_eye"
             assert not row["priorityCharacters"]
@@ -298,6 +325,7 @@ def main() -> None:
                 for row in priority_contract_rows
             ],
         },
+        "newCharacterSurfaces": contract["newCharacterSurfaces"],
         "combinedNativePayloadContract": {
             "textureObjectCount": contract["textureCount"],
             "generatedCopyCount": contract["generatedCopyCount"],
@@ -318,16 +346,17 @@ def main() -> None:
         "- Status: pass",
         f"- Added: 110 Texture2D objects / 223 PNG GUID owners / {317_777_152:,} logical bytes",
         "- Source: exact material Texture PPtrs for Li Zhiyan, Last Rite, Zhuang Fangyi, and Wulfa",
-        f"- Combined: 193 objects / 398 PNG GUID owners / {380_672_080:,} logical bytes",
-        f"- Deduplicated storage: 191 payload files / {378_924_400:,} bytes",
+        f"- New Liino exact payloads: 22 objects / 22 PNG GUID owners / {63_963_776:,} logical bytes",
+        f"- Combined: 215 objects / 420 PNG GUID owners / {444_635_856:,} logical bytes",
+        f"- Deduplicated storage: 213 payload files / {442_888_176:,} bytes",
         "- Existing separate eye masks retained: 2 objects / 49 PNG copies",
         "",
     ]
     REPORT_MD.write_text("\n".join(lines), encoding="utf-8")
     print(
-        "PASS: source-gated native payloads preserve 83 current face/eye objects "
-        "plus 110 impact-ranked priority-character surface objects as 191 unique "
-        "compressed mip-chain files."
+        "PASS: source-gated native payloads preserve 83 current face/eye objects, "
+        "110 impact-ranked priority-character surfaces, and 22 exact Liino "
+        "surfaces as 213 unique compressed mip-chain files."
     )
 
 

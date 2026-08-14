@@ -1,7 +1,7 @@
 # Liino Texture2D import contract refresh
 
-Status: source-closed descriptor/import coverage for the refreshed generated
-roster; exact compressed payload injection remains separately priority-gated.
+Status: source-closed descriptor/import coverage and exact native payload
+coverage for the refreshed generated roster's selected Liino surfaces.
 
 ## Evidence
 
@@ -15,10 +15,13 @@ the three Persistent `T_item_widget_liino_04_*` rows. Census SHA-256:
 The regenerated `character_texture_import_contract.json` now contains 897
 rows, with exact source offsets/object hashes, descriptor hashes, dimensions,
 format, mip count, color space, and importer profiles. Contract SHA-256:
-`02A89272F454A91E91F2CFB485E97F98706946D1C13E3AA3C1E916430DEC509C`.
-The existing 193-row native compressed-payload contract was re-pointed at this
-import contract; its payload bytes and generated-copy authorization remain
-unchanged (`398` copies). The native postprocessor's structural gate now
+`D8322676C26F4FE35179C2ABE722404682216423915E8F79EF3B51D4DB2A0284`.
+The exact native compressed-payload contract now points at this importer
+contract and contains 215 rows / 420 generated-copy owners, including a new
+22-row Liino selection. Payload contract SHA-256:
+`A4BB97C58C8784E85ECE85A4D2F8188BDC403E608082084BA7BFE5CB4A7E92A9`.
+Combined payload storage is 213 unique files / 442,888,176 bytes for
+444,635,856 logical bytes. The native postprocessor's structural gate now
 requires a positive count and `textures.Length == textureCount`, instead of the
 stale literal 853.
 
@@ -28,7 +31,10 @@ The contract covers Liino body, cloth, face, hair, iris, skill, and item-widget
 textures. Unity's `RefreshRecoveredCharacterMaterials` batch was run after the
 contract refresh; the generated Liino importer profiles now match the current
 native descriptor rows. The Liino eye-shadow material audit remains zero-failure
-at queue 2900.
+at queue 2900. AnimeStudio native Texture2D payload manifests were extracted
+for all 22 selected Liino rows (body, cloth, face, hair, iris, skill, and
+item-widget), with exact payload size/hash/layout checks and Playable PNG GUID
+and pixel-hash ownership.
 
 ## Validation
 
@@ -41,9 +47,10 @@ at queue 2900.
 - `scratch/reverse_engineering/eye_shadow_cluster_visibility/verify.py`:
   passed without its former stale-contract skip; runtime-input and chronology
   checks also pass.
+- Native payload verifier: 215 objects / 420 copies / 213 unique payload files;
+  Unity batch validator reports `passed=True` with 444,635,856 logical bytes.
 
 The post-refresh census reports zero descriptor drift across all generated
-copies. Exact compressed payloads for newly added Liino/Jsspsi priority
-surfaces are not silently invented: they remain outside the 193-row payload
-selection until their native payload ownership is explicitly selected and
-extracted.
+copies. The new Liino payload rows are source-manifest-gated; Jsspsi and other
+unselected priority surfaces remain outside the payload selection rather than
+being assigned guessed compressed bytes.

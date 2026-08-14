@@ -25,7 +25,7 @@ general gameplay-lighting implementation.
   including all 22 Liino-owned texture rows and three Persistent item-widget
   rows. Its source census resolves 897/897 AssetMap entries with 1,541
   generated copies; contract SHA-256 is
-  `02A89272F454A91E91F2CFB485E97F98706946D1C13E3AA3C1E916430DEC509C`.
+  `D8322676C26F4FE35179C2ABE722404682216423915E8F79EF3B51D4DB2A0284`.
 
 ## Closed shader/resource contract
 
@@ -56,9 +56,11 @@ The implementation is limited to the lab's isolated CharInfo path in
 The focused checker passes the hash-pinned fragment/decompile, native ownership
 tokens, current 31-rig/273-light scope, 29-renderer audit, runtime input
 verifier, face/eye/overlay chronology verifier, and the full refreshed
-material/import verifier. The native payload contract remains 193 rows and
-continues to gate exact compressed bytes separately; newly added Liino/Jsspsi
-priority surfaces are not assigned guessed payloads.
+material/import verifier. The exact native payload contract now covers 215
+objects / 420 generated PNG owners / 444,635,856 logical bytes (213 unique
+payload files / 442,888,176 bytes), including 22 source-manifest-gated Liino
+body/cloth/face/hair/iris/skill/item-widget rows. Jsspsi and other unselected
+priority surfaces remain descriptor-only; no payloads are guessed.
 
 The native `HGCullingSystem.CullLights` candidate producer for arbitrary
 gameplay scenes remains opaque. Live interleaving with unrelated scene lights,

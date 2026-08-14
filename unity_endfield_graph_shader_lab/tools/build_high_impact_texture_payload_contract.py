@@ -46,6 +46,33 @@ EXPECTED_BASELINE_LOGICAL_BYTES = 62_894_928
 EXPECTED_PRIORITY_TEXTURES = 110
 EXPECTED_PRIORITY_COPIES = 223
 EXPECTED_PRIORITY_LOGICAL_BYTES = 317_777_152
+LIINO_PAYLOAD_NAMES = {
+    "T_actor_liino_body_01_D",
+    "T_actor_liino_body_01_N",
+    "T_actor_liino_cloth_01_D",
+    "T_actor_liino_cloth_01_M",
+    "T_actor_liino_cloth_01_N",
+    "T_actor_liino_cloth_01_P",
+    "T_actor_liino_cloth_01_ST",
+    "T_actor_liino_face_01_D",
+    "T_actor_liino_hair_01_D",
+    "T_actor_liino_hair_01_HN",
+    "T_actor_liino_hair_01_P",
+    "T_actor_liino_hair_01_ST",
+    "T_actor_liino_iris_01_D",
+    "T_actor_liino_skill_01_D",
+    "T_actor_liino_skill_01_E",
+    "T_actor_liino_skill_01_M",
+    "T_actor_liino_skill_01_N",
+    "T_actor_liino_skill_01_P",
+    "T_item_widget_liino_01_E",
+    "T_item_widget_liino_04_D",
+    "T_item_widget_liino_04_N",
+    "T_item_widget_liino_04_P",
+}
+EXPECTED_LIINO_TEXTURES = 22
+EXPECTED_LIINO_COPIES = 22
+EXPECTED_LIINO_LOGICAL_BYTES = 63_963_776
 
 
 def sha256(path: Path) -> str:
@@ -91,8 +118,7 @@ def main() -> None:
         raise RuntimeError("unexpected source texture census schema")
     if (
         census.get("status") != "pass"
-        or census.get("requestedTextureCount") != 853
-        or census.get("resolvedTextureCount") != 853
+        or census.get("requestedTextureCount") != census.get("resolvedTextureCount")
         or census.get("missingDumpCount") != 0
     ):
         raise RuntimeError("source texture census is incomplete")
@@ -101,12 +127,16 @@ def main() -> None:
     if (
         import_contract.get("schema")
         != "endfield.character-texture-import-contract.v1"
-        or import_contract.get("textureCount") != 853
+        or import_contract.get("textureCount") != census.get("resolvedTextureCount")
     ):
         raise RuntimeError("character TextureImporter contract is incomplete")
     import_by_file = {row["fileName"]: row for row in import_contract["textures"]}
 
-    baseline = [row for row in census["textures"] if is_baseline_face_eye_payload(row)]
+    baseline = [
+        row for row in census["textures"]
+        if is_baseline_face_eye_payload(row)
+        and not str(row["name"]).startswith(("T_actor_liino_", "T_actor_jsspsi_"))
+    ]
     priority = build_priority_surface_selection(census["textures"])
     if len(baseline) != EXPECTED_SOURCE_BASELINE_TEXTURES:
         raise RuntimeError(
@@ -118,9 +148,17 @@ def main() -> None:
             f"expected {EXPECTED_SOURCE_PRIORITY_TEXTURES} priority textures, "
             f"found {len(priority)}"
         )
+    liino = [
+        row for row in census["textures"]
+        if row["name"] in LIINO_PAYLOAD_NAMES and current_generated_copies(
+            f"{row['name']}_p{int(row['pathId']) & ((1 << 64) - 1):016X}.png"
+        )
+    ]
+    if {row["name"] for row in liino} != LIINO_PAYLOAD_NAMES:
+        raise RuntimeError("current Liino native-payload selection is incomplete")
     selected = baseline + [
         row for row in census["textures"] if int(row["pathId"]) in priority
-    ]
+    ] + liino
     if len({int(row["pathId"]) for row in selected}) != len(selected):
         raise RuntimeError("baseline and priority payload selections overlap")
 
@@ -132,6 +170,7 @@ def main() -> None:
     class_totals = {
         "baseline_face_eye": Counter(),
         "priority_character_surface": Counter(),
+        "liino_character_surface": Counter(),
     }
     for source in selected:
         path_suffix = f"p{int(source['pathId']) & ((1 << 64) - 1):016X}"
@@ -206,7 +245,12 @@ def main() -> None:
         copies.sort(key=lambda row: row["assetPath"].casefold())
 
         path_id = int(source["pathId"])
-        if path_id in priority:
+        if source["name"] in LIINO_PAYLOAD_NAMES:
+            selection_class = "liino_character_surface"
+            impact_rank = 1
+            characters = ["Liino"]
+            evidence = []
+        elif path_id in priority:
             selection_class = "priority_character_surface"
             impact_rank = int(priority[path_id]["impactRank"])
             characters = priority[path_id]["characters"]
@@ -246,6 +290,7 @@ def main() -> None:
 
     baseline_totals = class_totals["baseline_face_eye"]
     priority_totals = class_totals["priority_character_surface"]
+    liino_totals = class_totals["liino_character_surface"]
     expected_totals = (
         (baseline_totals, EXPECTED_BASELINE_TEXTURES, EXPECTED_BASELINE_COPIES,
          EXPECTED_BASELINE_LOGICAL_BYTES, "baseline"),
@@ -257,6 +302,14 @@ def main() -> None:
         expected = (textures, copies, logical_bytes)
         if actual != expected:
             raise RuntimeError(f"{label} payload totals drifted: {actual} != {expected}")
+    actual_liino = (
+        liino_totals["textures"], liino_totals["copies"], liino_totals["logicalBytes"]
+    )
+    expected_liino = (
+        EXPECTED_LIINO_TEXTURES, EXPECTED_LIINO_COPIES, EXPECTED_LIINO_LOGICAL_BYTES
+    )
+    if actual_liino != expected_liino:
+        raise RuntimeError(f"Liino payload totals drifted: {actual_liino} != {expected_liino}")
 
     for stale in PAYLOAD_ASSET_ROOT.glob("*.bytes"):
         if stale.name not in expected_payload_names:
@@ -286,8 +339,9 @@ def main() -> None:
         "scope": (
             f"{baseline_totals['textures']} current face/iris/eye/emotion compressed "
             f"mip chains plus {priority_totals['textures']} current impact-ranked "
-            "body/cloth/hair/key-accessory chains derived from original material "
-            "Texture PPtrs for Li Zhiyan, Last Rite, Zhuang Fangyi, and Wulfa"
+            "body/cloth/hair/key-accessory chains and "
+            f"{liino_totals['textures']} exact Liino chains derived from original "
+            "material Texture PPtrs"
         ),
         "sourceReport": str(SOURCE_REPORT.resolve()),
         "sourceReportSha256": sha256(SOURCE_REPORT),
@@ -304,6 +358,13 @@ def main() -> None:
             "logicalPayloadBytes": priority_totals["logicalBytes"],
             "impactRankCounts": {str(key): rank_counts[key] for key in sorted(rank_counts)},
         },
+        "newCharacterSurfaces": {
+            "character": "Liino",
+            "textureCount": liino_totals["textures"],
+            "generatedCopyCount": liino_totals["copies"],
+            "logicalPayloadBytes": liino_totals["logicalBytes"],
+            "selectionClass": "liino_character_surface",
+        },
         "textureCount": len(rows),
         "generatedCopyCount": generated_copy_count,
         "logicalPayloadBytes": logical_payload_bytes,
@@ -312,10 +373,11 @@ def main() -> None:
         "deduplicatedPayloadBytes": logical_payload_bytes - unique_payload_bytes,
         "textures": rows,
         "boundary": (
-            "Selection is gated by the 853-object census and exact manifest material "
-            "PPtrs. It excludes the two separately owned eye-shadow masks, uncompressed "
-            "or single-mip textures, non-priority characters' residual surfaces, and "
-            "unreferenced broad-census payloads. Identical payload bytes are stored once."
+            "Selection is gated by the source-closed current census and exact native "
+            "manifest material PPtrs. It excludes the two separately owned eye-shadow "
+            "masks, uncompressed or single-mip textures, non-priority characters' "
+            "residual surfaces, and unreferenced broad-census payloads. Identical "
+            "payload bytes are stored once."
         ),
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

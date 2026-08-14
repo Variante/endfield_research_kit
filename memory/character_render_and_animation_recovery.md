@@ -272,9 +272,11 @@ Liino's two shared eye-shadow materials corrected to queue 2900 and zero audit
 failures. The refreshed current-data Texture2D census is now 897/897 resolved
 objects with 1,541 generated copies, and the import contract includes Liino's
 22 owned rows plus three Persistent item-widget rows. The Unity batch refresh
-and full material/import verifier pass with zero descriptor drift; the separate exact compressed-payload
-contract remains 193 rows and does not invent payloads for newly added priority
-surfaces. This remains an isolated producer path: the arbitrary-gameplay
+and full material/import verifier pass with zero descriptor drift. The exact
+native compressed-payload contract now covers 215 objects / 420 generated PNG
+owners / 444,635,856 logical bytes (213 unique payload files), including 22
+manifest-gated Liino body/cloth/face/hair/iris/skill/item-widget rows; Jsspsi
+and other unselected surfaces remain descriptor-only. This remains an isolated producer path: the arbitrary-gameplay
 `HGCullingSystem.CullLights` candidate producer, live unrelated-light/shadow
 state, and retail pixel parity are open. See
 `reports/assets/character_recovery/character_overlay_shadow_visibility_contract.md`
