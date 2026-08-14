@@ -99,6 +99,21 @@ frame-parity claim.
    backend/device handoff), not `0x1821BE708` and not the unrelated Profiler
    entry `0x180149500`.
 
+10. A direct-code xref census against the pinned `UnityPlayer.dll` bounds this
+    pool further: `0x1805582A0` has only three direct callers in executable
+    `.pdata` functions—`0x1805583B0` and the two retry sites inside
+    `0x1805592B0`; `0x1805592B0` itself is reached from `0x180559240`,
+    `0x180559520`, and `0x180559590`. The node allocator only selects an index
+    from the pool bitmap and returns `pool+8 + index*0x80`; the population path
+    writes status/flags, descriptor data, linkage, and refcount fields, then
+    invokes only resource callbacks/allocator helpers. No graphics-context
+    vtable call, command opcode writer, ComputeBuffer/dispatch helper, or
+    device-facing symbol appears in `0x1805592B0`/`0x180559520`'s direct call
+    set. `0x180555D30` is a shared resource-list helper with 110 callers, so it
+    cannot by itself identify a renderer submission edge. This narrows the
+    unresolved sink to a later consumer of the populated 0x80-byte records (or
+    a runtime-indirect callback), rather than another missing allocator xref.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
