@@ -115,6 +115,17 @@ also absent from this on-disk table. This strengthens the static negative but
 does not expose runtime wrapper-array slots or another loaded patch payload;
 the IFix route and factory-record-to-`_UploadBuffer` edge stay fail-closed.
 
+The installed `HGRenderPathDefaultDeferred` route is now pinned at the GBuffer
+attachment boundary. `GBufferPassConstructor.ConstructPass` submits
+`SceneColor`, neutral-cleared `SceneMV`, `GBufferA/B/C`, and writable
+`SceneDepth` in that order; the renderer-list uses LightMode `GBuffer` in the
+opaque `CommonOpaque` queue, while render-graph load/store remains automatic.
+`OnePassDeferred` independently preserves the same MRT order and adds
+`PreDepth`/`GBuffer`/`Decal` subpasses. This closes the source-side five-MRT
+contract needed by `HGRP/Lit` but not the physical `SceneColor` allocation or
+the channel-2 resource-to-descriptor upload. Durable details and hashes are in
+`reports/assets/character_recovery/gacha_room_gbuffer_rendergraph.md`.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
