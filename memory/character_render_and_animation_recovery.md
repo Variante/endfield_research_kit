@@ -449,9 +449,12 @@ native candidate core. Active `SceneLight6Rarity` rows initialize
 rows. The native point-sphere top-plane branch guarantees `Spot Light (20)` is
 absent (margin `81.4967041015625`), leaving an exact conditional order for the
 other eleven and an authored maximum of 11. Horizontal AABB planes, unrelated
-live lights, the 256-row input cap, and the runtime punctual-light cap still
-own the exact selected list. The regenerated checker passes with current
-binary hashes; details are in
+live lights, the 256-row input cap, and live camera/cull-view state still own
+the exact selected list. The desktop settings audit resolves
+`PunctualLightMaxCount=256`, while native `HGCullingSystem.CullLights` already
+receives `maxCount=256`, so the runtime settings cap adds no further
+truncation. The regenerated checkers pass with current binary hashes; details
+are in
 `reports/assets/character_recovery/gacha_light_cull_survivor_contract.md`.
 
 The selected-light result's downstream HGRP publication chain is now also
