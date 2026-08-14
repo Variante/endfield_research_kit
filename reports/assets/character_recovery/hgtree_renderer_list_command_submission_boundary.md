@@ -451,6 +451,21 @@ claim.
     callback, or by the separate `0x27xx` command family; both remain
     fail-closed until a renderer-list-specific playback case is identified.
 
+23. The ordinary `CommandBuffer::Internal_DrawRendererList_Injected` route is
+    a distinct native path and must not be used as a proxy for HGTree tree
+    draws. The global UnityPlayer internal-call table maps index `3463` to
+    `0x1801713D0`; its two renderer/resource branches call `0x180A60190` at
+    `0x180171520` and `0x18017153F`. An exhaustive direct-xref scan of
+    `0x180A60190` finds only those two call sites. The helper performs
+    payload/object validation and indirect renderer/resource-state resolution
+    (including `0x180A50FA0`, `0x180A69570`, and `0x180A4A640` families), but
+    has no direct graphics call, command opcode write, or API-2 `+0xDE8`
+    dispatch. The HGTree `AddDrawECSTreeRendererList` body at `0x1801719B0`
+    has no call to this helper and remains the separate managed-payload
+    validation boundary described above. Thus ordinary `DrawRendererList`
+    resource resolution and HGTree tree-list submission are statically split;
+    neither one closes the missing renderer-list playback consumer.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -468,6 +483,9 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AEE90 0x1813B12C0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181060D00 0x18107AD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A40
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801713D0 0x1801715C0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180A60190 0x180A6041C
+python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A60190
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x180A5C5C0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801572F0 0x180158C00
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180B3E5C0 0x180B3E699
