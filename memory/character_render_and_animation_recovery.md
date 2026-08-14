@@ -158,6 +158,23 @@ terrain/foliage target-1 enumeration, physical skin-buffer reuse, and a
 source-compatible lab MRT remain open. See
 `reports/assets/character_recovery/gacha_scene_mv_motion_contract.md`.
 
+The ordinary DefaultDeferred resolver boundary is now source-pinned. The
+selected route is a five-MRT producer (`SceneColor`, `SceneMV`, `GBufferA/B/C`)
+followed by a separate one-RT SceneColor resolver with read-only depth and
+GBuffer A/B/C as ordinary `Texture2D` SRVs; the matched Vulkan payload has no
+subpass image reads. Installed state enables screen-space shadow masking and
+disables the OnePass subpass bit. UnityPlayer's native best-match loop then
+selects the unique serialized pass-0 pair 96/97 (screen-shadow plus subpass)
+for the missing ordinary variant. Its nine-CB/25-SRV/structured-buffer ABI
+and static fallback values are mapped, while live light/bin, shadow/cookie,
+VisibilitySH, irradiance, AO/SSR, camera, and remaining frame contents remain
+open. The current standalone diagnostic is finite and binding-compatible only;
+the maintained isolated-diagnostic validator now accepts its direct-runtime
+`0/0/0` callback/swap mode after the current plugin hash and GBuffer-order token
+were refreshed. This does not establish retail numeric fidelity or justify
+enabling a lab draw.
+See `reports/assets/character_recovery/gacha_deferred_resolver_framebuffer_contract.md`.
+
 The Gacha light cull-view boundary is now source-pinned independently of that
 missing pipeline-asset export. The installed fallback has
 `useFallbackLightCulling=false`, zero occlusion dimensions, and the normal
