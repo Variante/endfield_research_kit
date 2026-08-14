@@ -183,6 +183,22 @@ closed, but live character/light rows, atlas pixels, and resolved mask pixels
 remain capture-only. See
 `reports/assets/character_recovery/hdpls_character_shadow_resource_contract.md`.
 
+V2 irradiance ownership is now source-pinned for the updated AnimeStudio
+exporter and unchanged installed game binaries. The Gacha Lua
+`Data/IrradianceVolume/PC/gacha/character` files feed the older
+`HGIrradianceVolumeManager.CreateGachaIV` path; they do not own M02's six V2
+clipmap globals. `HGIrradianceVolumeManagerV2.PipelineUpdateV2` renders the
+underlying scene's `m_defaultIV`, while `m_gachaIV` only gates update-center.
+The current Gacha room is a prefab overlay with no Scene object and no
+room-owned V2 IV payload: the installed VFS has 224 IV files across 60 chunks,
+83 current scene indexes, 12 legacy Gacha files, and zero room files. The six
+V2 clipmap slots, texture formats/dimensions, shader-global order, and missing
+map zero-texture fallback are closed; the selected scene index, streamed voxel
+contents, transient atlas dimensions, and live frame parameters remain open.
+Keep Gacha/M02 irradiance fail-closed and do not substitute legacy files or an
+arbitrary scene index. See
+`reports/assets/character_recovery/gacha_irradiance_scene_ownership_contract.md`.
+
 ## Evidence boundary
 
 Every production value must come from serialized data, installed native
