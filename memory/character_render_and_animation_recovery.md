@@ -163,14 +163,17 @@ remains unresolved and fail-closed.
 
 The latest exact-slot census closes a potential false positive around
 indirect draw: global `+0xDA8` sites are `0x180932245`, `0x1804D2A31`,
-`0x1804D492C`, and low-level `0x1813B057F`. The latter is the `0x2734`
-dispatch case (`0x1813BB574`), whereas HGTree's writer emits `0x273B`
+`0x1804D492C`, and low-level `0x1813B057F`. The `0x1813B057F` call is in a
+neighboring low-level case; the `0x2734` dispatch target
+(`0x1813BB574 -> 0x1813AFFF7`) reaches front `+0xDA0` at `0x1813B03DA`,
+while HGTree's writer emits `0x273B`
 (`0x1809324E0 -> 0x1813B1110 -> 0x181060D70`). The generic front-end
 writers for `0x2734`/`0x2743` are `0x180931980`/`0x1809318F0`, and the
-`+0xDA8` helper's recording twin writes `0x27B9`; none has a static HGTree
-edge. The high-level jump table maps opcode `0x55` only to `0x1804CE4BD`,
-not the owners of the other `+0xDA8` sites. Therefore indirect-draw, flush
-ordering, and queue ownership for HGTree remain unresolved and fail-closed.
+`+0xDA8` helper's recording twin writes `0x27B9`; no direct static HGTree
+callsite reaches the `+0xDA8` sites. The high-level jump table maps opcode
+`0x55` only to `0x1804CE4BD`, not the owners of the other `+0xDA8` sites.
+Therefore indirect-draw, flush ordering, and queue ownership for HGTree
+remain unresolved and fail-closed.
 
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
 model families with distinct containers, Animator identities, VFS sources, and
@@ -777,8 +780,14 @@ only stable interpretation and priorities.
    `+0xDA0` (`0x18083E720`). This closes the recorded front-end -> backend
    receiver edge. It includes the registry paths
    `0x180822180`/`0x1808224F0`, and the shared builder `0x18083E720`; these
-   remain pre-device layers. The adjacent setup path
-   `0x180843BF0 -> 0x18083F680` reaches `0x18083F71B`, where
+   remain pre-device layers. The opcode-`0x55` nested
+   `+0xDB0 -> 0x2735 -> API-2 +0xDB0` branch is now
+   bounded through `+0x2B60` and callback `0x180820660 -> 0x18082E3E0`,
+   including Vulkan dynamic-state/descriptor commands. The remaining
+   high-value question is which later flush invokes that list and whether a
+   draw/queue consumer follows; do not treat the state callback as final draw
+   ownership. The adjacent setup path `0x180843BF0 -> 0x18083F680` reaches
+   `0x18083F71B`, where
    `[[[rdi+0x78]+0x208]]` supplies a heap/runtime vtable and `+0x48` is
    invoked. Four static `+E90` callers feed this resource initializer, while
    no static `+DC0` caller was found. The receiver is therefore currently a
@@ -931,7 +940,8 @@ only stable interpretation and priorities.
    confirms that `0x181060EA0/0x181060EB0` only rearrange arguments into
    `0x18107AE60/0x18107B3A0`; the handlers consume a result object whose
    `[result]` is the item array and `[result+8]` is the count, then dispatch
-   only `+0xDA0/+0x380`. A full exact `call [register+0x10]` census in the
+   only `+0xDA0/+0x380` on their resource-callback tails. A full exact
+   `call [register+0x10]` census in the
    API-2/resource ranges finds only ordinary vtable release/destructor calls
    plus the known `0x18106AAE0` cleanup family; none consumes builder
    `outResult+0x10`. The pool's `0x1805594BD` callback is a caller-supplied
@@ -1079,6 +1089,22 @@ only stable interpretation and priorities.
    no-op `0x180076890` (the backend table's `+0xDE8` is
    `0x18083F1E0`), so generic `0x6A/0x27D5` flushing is not promoted to
    HGTree-specific ordering or draw ownership.
+   One nested path is now positively bounded: opcode-`0x55` handler branches
+   `0x18106A963` and `0x18106AB33` call front `+0xDB0` before their later
+   `+0xEA0` callback record. Front `+0xDB0` (`0x180930C00`) records low-level
+   `0x2735` (or immediate-dispatches its backend slot), and case
+   `0x1813B05B6` calls the receiver `+0xDB0`. API-2 `+0xDB0`
+   (`0x18083AA90`) stages `+0x2B68/+0x2B70` and appends a `+0x2B60` record
+   whose callback is `0x180820660 -> 0x18082E3E0`; its resolved cells include
+   `vkCmdSetDepthBias`, `vkCmdSetStencilReference`, `vkCmdBindPipeline`, and
+   `vkCmdBindDescriptorSets`. The adjacent helper `0x18082E760` uses
+   `vkCmdCopyImage`, but no pointer write in this trace attributes that helper
+   to the exact HGTree record. This is a positive HGTree-to-Vulkan
+   state/resource edge,
+   and the existing master-list executor can consume the same list after a
+   later flush, but neither `+0xDB0` nor `0x2735` contains `+0xDE8`, `+0xF10`,
+   `vkCmdDraw*`, or `vkQueueSubmit`; final draw/queue ownership therefore
+   remains fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
