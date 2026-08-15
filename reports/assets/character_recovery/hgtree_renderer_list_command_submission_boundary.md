@@ -700,13 +700,15 @@ and final draw/queue ownership remain fail-closed.
 
 41. The handler-side field census closes the next tempting shortcut. The
     thunks `0x181060EA0` and `0x181060EB0` only rearrange arguments and tail-jump
-    to `0x18107AE60`/`0x18107B3A0`; they do not invoke the pair's `+0x10` slot.
+    to `0x18107AE60`/`0x18107B3A0`; they do not invoke the builder pair's
+    `+0x10` slot themselves.
     Inside both handlers, `rdx` is the result object itself: `[result]` is the
     item-array pointer and `[result+8]` is the item count. The handlers walk
     those records (0x60-byte stride), prepare front-end resource state, and
     dispatch only `+0xDA0`/`+0x380`. A bounded indirect-call scan over
-    `0x181060000-0x181090000` found no builder-pair `+0x10` consumer; the only
-    matching calls are renderer-list cleanup branches in `0x18106AAE0`. The
+    `0x181060000-0x181090000` found no statically joined builder-pair `+0x10`
+    consumer; the matching calls are renderer-list fallback/cleanup branches
+    in `0x18106AAE0` and its siblings. The
     pool worker `0x1805598C0` likewise invokes the node's `+0x30` callback
     (`0x181065190`/`0x181067A70`), not the builder pair. Targeted generic API2
     candidates are ordinary interface/resource-state vtable calls and do not
@@ -720,8 +722,8 @@ and final draw/queue ownership remain fail-closed.
     candidates. The four sites in the HGTree-adjacent `0x18106AAE0` cleanup
     family (`0x18106AAC6`, `0x18106AC96`, `0x18106AE54`, `0x18106B014`) all
     load an object from `[rsi+0x10]`, pass its `[object+8]` context, and invoke
-    `[object+0x10]`; they are renderer-list/resource cleanup callbacks, not the
-    builder `outResult+0x10` slot. The analogous `0x18109EC12`/
+    `[object+0x10]`; they are real renderer-list/resource fallback callbacks,
+    but are not proven to consume the builder `outResult+0x10` slot. The analogous `0x18109EC12`/
     `0x18109EDDD` sites are the same per-slot cleanup pattern. The remaining
     `0x18082*`/`0x18084*`/`0x18085*`/`0x18086*` candidates are ordinary vtable
     release/destructor or container cleanup calls (their call target is loaded
@@ -834,9 +836,26 @@ and final draw/queue ownership remain fail-closed.
     (`0x18106BE92`) and `0x18106C6C0`'s shared tail
     (`0x18106CFC9-0x18106D003`) dereference argument 6 and write the pair at
     continuation `+0x8/+0x10`; they do not write task-context `+0x10`.
-    The earlier static negative boundary is unchanged: no consumer of the
-    generated pair reaches the HGTree handlers, API-2 draw callbacks, Vulkan,
-    or queue submission.
+    The earlier static negative boundary is unchanged in the narrower sense:
+    no *statically joined* consumer of the generated pair reaches the HGTree
+    handlers, API-2 draw callbacks, Vulkan, or queue submission.
+
+48. The previously broad indirect-call negative is now corrected with an
+    exact positive callback-consumer boundary. The high-level opcode-`0x55`
+    dispatch reaches `0x18106AAE0` (`0x1804CE4DA`), whose failure branch
+    reads the list entry's record at `[rsi+0x10]`, releases any record-owned
+    `+0x20` pair, then calls `[record+0x10]` with `record+8` as the context
+    (`0x18106AC65-0x18106AC96`). The same pattern exists at
+    `0x18106A910`, `0x18106ACB0`, and `0x18106AE70` (local sites
+    `0x18106AAC6`, `0x18106AC96`, `0x18106AE54`, and `0x18106B014`), plus
+    analogous `0x18109EC12`/`0x18109EDDD` cleanup paths. These are genuine
+    consumers of a renderer-list record callback slot and can therefore reach
+    `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0` when that slot is
+    populated. The async route still writes its returned pair to the list
+    record's `+0x20`, while its worker writes callback fields to a
+    continuation/work object; static object identity between that object and
+    `[rsi+0x10]` remains unproven. This closes the missing callback dispatch
+    site without claiming the final continuation-pair-to-draw join.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to

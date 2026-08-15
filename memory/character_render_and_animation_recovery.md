@@ -854,6 +854,16 @@ only stable interpretation and priorities.
    `mov [pair+0x10]`/`call reg` scan found only unrelated XR-audio, refcount,
    and tagged-generic families; no HGTree/API-2/Vulkan/queue consumer. The
    runtime result-pair-to-final-draw join remains unresolved and fail-closed.
+   The HGTree opcode-`0x55` fallback itself is now a confirmed indirect
+   callback consumer: `0x18106AAE0` and sibling handlers load
+   `[rsi+0x10]`, test/release its `+0x20` pair, and call `[record+0x10]`
+   with `[record+8]` (`0x18106AC65-0x18106AC96`, with sibling sites at
+   `0x18106AAC6`, `0x18106AE54`, and `0x18106B014`). This is a real
+   renderer-list callback dispatch into `0x181060EA0/0x181060EB0`, but the
+   static identity between that list-record callback slot and the async
+   worker's continuation object is still unproven; keep the final join
+   fail-closed rather than treating the new consumer as proof of draw
+   submission.
    The async task route is now bounded across all three worker selections, but
    they are not one implementation: `0x18107E2E0` queues
    `0x181065FD0`, `0x181066F40`, or `0x181064100` through `0x180555D30`, and
@@ -871,7 +881,7 @@ only stable interpretation and priorities.
    invokes only the node `+0x30` worker and optional `+0x40` index setter
    before retiring through `0x1805586C0`; `0x180557650` and `0x1805592B0`
    use holder cleanup/index callbacks, not the result-pair callback. No
-   static continuation consumer reaches the HGTree handler or
+   No statically joined continuation consumer reaches the HGTree handler or
    API-2/Vulkan/queue path. Keep the final edge unresolved and fail-closed;
    prioritize runtime inspection of the record at `+0x20`.
    The pool-context identity is now proven through the calling convention:
