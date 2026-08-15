@@ -1223,6 +1223,34 @@ identify the HGTree API-2 draw owner.
     `0x6A`/`0x27D5` packaging is present, but its producer ownership and
     execution ordering remain independent of the HGTree callback records.
 
+68. The managed `ScriptableRenderContext` consumer is now separated from the
+    API-2 HGTree flush by its exact native targets. The mapped GameAssembly
+    wrappers are `Submit` method 408015 -> `0x183DBB470`,
+    `Submit_Internal` 407993 -> `0x183DBB4E0`, and
+    `Submit_Internal_Injected` 408038 -> `0x183DBB540`; the corresponding
+    command-buffer entries are `ExecuteCommandBuffer` 408020 ->
+    `0x183339850`, `ExecuteCommandBufferNoCopy` 408022 -> `0x1834534C0`,
+    and `ExecuteCommandBufferNoCopy_Internal_Injected` 408045 ->
+    `0x1834535C0`. These GameAssembly bodies contain no direct call to the
+    API-2 `+0xDE8` target and resolve their UnityPlayer destinations through
+    separate lazy function-pointer globals. The resolved Submit path is
+    `0x1800B4A40 -> 0x1805385A0 -> 0x18052E0B0`: the first thunk loads the
+    native context handle, the second jumps into the submit consumer, and
+    `0x18052E0B0` iterates command entries through object fields
+    `+0x10030/+0x10040/+0x10128/+0x10168/+0x10178`, with record handling through
+    `0x18053D640`, `0x18052DD10`, and `0x1804CDF70`. It does not access the
+    API-2 pending-list fields `+0x2B60/+0x2B68/+0x2B70/+0x2E48` or call
+    `0x18083F1E0` (`+0xDE8`). A bounded field census found 66 candidate native
+    functions containing at least two tracked fields, but no function that
+    contains both the `+0x10030` submit-consumer family and the `+0x2B60`
+    API-2 pending-list family; direct `.text` xref scanning likewise finds
+    only `0x1800B4A43 -> 0x1805385A0 -> 0x18052E0B0` for that submit chain.
+    This is positive evidence that Submit/Execute consume a separate command
+    context and do not themselves prove the missing HGTree `+0xDE8` ordering
+    or Vulkan queue submission. Runtime attach was unavailable in this pass
+    (`WriteProcessMemory` access denied), so this boundary remains static
+    and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
