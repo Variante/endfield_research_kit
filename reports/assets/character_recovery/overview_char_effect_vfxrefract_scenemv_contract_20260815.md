@@ -104,7 +104,7 @@ _UseNearCameraFade=0, _RefractUVSpeed=(0,0,0,0)
 ## 原始 shader / PSO 边界
 
 AnimeStudio 导出的 VFXRefract LOD600 blob 声明 D3D11、Vulkan 各 334 个
-program entries。SubShader/Pass 的 source tag/state 为：
+program entries。SubShader/Pass 的转换文本为：
 
 ```text
 SubShader LOD 600
@@ -119,6 +119,12 @@ Pass "Refraction"
   ZTest Off, ZWrite Off, Cull Off
   outputs: SV_Target0 + SV_Target1
 ```
+
+这些 `Zero/Off` 是转换器对 property-bound `m_State` 字段的有损默认值，
+不是 live PSO。解析后的原始状态把 Target0/Target1 color blend、ZTest、
+ZWrite 和 Cull 分别绑定到材质属性；Target0/Target1 alpha blend 才分别固定为
+`Zero/One` 与 `One/One`。完整裁决见
+`overview_vfxrefract_live_state_boundary_20260815.md`。
 
 固定材质在 D3D11 的相关 program 是 `HG_ENABLE_MV + _USE_RBOFFSET` 变体，
 其 fragment DXBC snippet hash 为 `f905de094d0261d5`（shader blob 内
@@ -249,10 +255,11 @@ selected D3D11 program HG_ENABLE_MV + _USE_RBOFFSET
 - shader blob 有原始 D3D11/Vulkan program，但当前 lab 没有等价的 native
   HG renderer-list producer、SceneColor handle chain 和 explicit depth owner；
   因此不能仅替换 shader 文件就宣称 VFXRefract 已恢复。
-- 导出 shader pass 的固定 Blend 声明与 Material 保存的 dynamic blend 数值
-  同时存在；实现必须以 selected compiled pass/native state 的 source identity
-  gate 为准，不应擅自用 `_SrcBlend=5/_DstBlend=10` 覆盖或解释为普通 alpha
-  blend。这个 state-resolution 仍需 RenderDoc/native pass capture 闭合。
+- 解析后的 shader `m_State` 已证明 color blend、depth 与 cull 是材质属性绑定；
+  当前最窄状态使用 `_SrcBlend=5/_DstBlend=10`、
+  `_MVSrcColorBlend=3/_MVDstColorBlend=6`、`_ZTest=4`、`_ZWrite=0`、
+  `_CullMode=2`。最终 D3D12 PSO 及可能的 RenderStateBlock override 仍需
+  RenderDoc/native pass capture 闭合。
 - 需要在同一 gated build 上捕获：Material/Renderer 实例进入
   `PrepareTransparentPassData` 的 renderer list、Distortion subpass 的实际
   attachment descriptors、Target0/Target1 blend state、以及 `_SceneColorTexture`

@@ -38,6 +38,11 @@ the exact material.
 
 The material remains queue 3000 and uses the existing source-closed
 SceneColor/SceneMV Distortion compositor. It is not routed into after-DOF.
+Parsed shader `m_State` binds Target0/Target1 color blend, ZTest, ZWrite, and
+Cull to the material properties. The converted retail ShaderLab's `Zero/Off`
+lines are lossy defaults, not fixed live state; the lab therefore preserves
+`5/10`, `3/6`, `4`, `0`, and `2` respectively, with the parsed fixed alpha
+blend lanes `Zero/One` and `One/One`.
 
 ## Runtime ownership and spatial transform
 
@@ -72,16 +77,20 @@ keyword, and texture name and otherwise fails closed.
 - Unity `EndfieldCharInfoSharedEffectRuntimeVerifier.Verify` passed:
   two ParticleSystems, two renderers, exactly one visible trail renderer,
   exact stage transform, exact MRT shader/keyword, and successful teardown.
+- Unity `EndfieldCharInfoVFXRefractStateVerifier.Verify` passed the
+  property-bound MRT state and exact material values under D3D12.
 - A fresh isolated AnimatorController export restored 1,269 controller JSON
   files. The controller audit passed 31 main Overview controllers, 4 fixed and
   27 normalized handoffs, and 636 body/private-deco state compositions.
 
 ## Remaining boundary
 
-No D3D12 pixel capture of this exact Character Info trail exists yet. The
-runtime blend-state resolution, particle culling/sort tie, live `_VFXParams0`,
+No D3D12 pixel capture of this exact Character Info trail exists yet. The final
+PSO/RenderStateBlock override, particle culling/sort tie, live descriptors,
 and retail SceneColor alias must still be compared before claiming pixel
-parity. The common trail also does not own or explain the character-specific
+parity. The `_VFXParams0` producer is already source-closed to player-center
+XYZ plus `fmod(Time.time,1024)` in W. The common trail also does not own or
+explain the character-specific
 large visual layers in the retail recording; Li Zhiyan and Zhuang Fangyi's
 audited Overview AnimationEvents are audio-only, and Luoxi's character asset
 chain remains missing.
