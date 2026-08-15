@@ -236,6 +236,25 @@ input remains six `light_overview` rows plus eleven admitted rarity-6 room rows;
 target-frame carry-in, full `LightCullResult`, and final publication remain
 capture-only.
 
+The light/Volume activation epoch is now source-bounded and executable in the
+Zhuang Fangyi capture path. Lua instantiates the character prefab, constructs
+the helper, then creates `AdditionalLights/light_<charId>` and activates only
+`light_overview`; `InitLightFollower` runs once before the first
+`SampleToBeginning`. It next creates `CameraTracks/track_<charId>`, activates
+only `VolumeModifiers/volume_overview`, applies its modifier to the room Volume,
+sets the gacha layer, and only then samples the Directors. Native evidence
+separates initialization from motion: `InitCharLightFollower` stores the target
+and enables its custom tick, while continuous fixed-offset/parent following
+runs in `LateTick` after animation/Timeline sampling. The exact
+`UseDataOnVolume` copy-versus-live-binding body remains open. On character
+switch, Lua removes the TailTick owner and destroys the whole character root;
+Unity destruction is deferred to frame end. The lab capture now starts with its
+single operator-light publisher and character Volume gated closed, opens them
+immediately before `SampleToBeginning`, and closes them idempotently on failure,
+disable, destroy, or explicit end. Closing publishes zero light count/cluster/
+binning state and neutral character-volume globals without touching exposure
+history or creating a second Unity Light population.
+
 The native `HGRenderPath` slot roles are now corrected from the installed
 UnityPlayer registration: wrapper `+0x8` is the BeforeCulling setup
 (`0x1812fdb20` → `0x1813022d0`), `+0x10` is the Render forwarding wrapper
@@ -1203,9 +1222,9 @@ only stable interpretation and priorities.
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
    Actor/Effect plus exact empty Light/Others ordering is executable; next
    recover the non-empty Audio timing/event-media contract, both zero-delay
-   `TailTick` calls, the Lua-owned light/Volume activation epoch, and the
-   same-versus-next rendered-frame boundary, then bind actor-specific entrance
-   VFX without a global substitute.
+   `TailTick` calls, the exact `UseDataOnVolume` transfer contract, deferred
+   old-root destruction overlap, and the same-versus-next rendered-frame
+   boundary, then bind actor-specific entrance VFX without a global substitute.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.
