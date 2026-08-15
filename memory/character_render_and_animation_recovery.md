@@ -785,8 +785,11 @@ only stable interpretation and priorities.
    runtime resource-subobject interface, not proven device submission. An
    adjacent resource helper `0x18061FB60` dispatches the same slot shape and
    consumes its return as a NUL-terminated metadata/name string; F8F0 does not
-   consume F680's returned value as a handle. Treat this as a resource
-   metadata/name boundary until the concrete nested type is recovered.
+   consume F680's returned value as a handle. F8F0 has only three direct
+   callers (`0x18083F680`, `0x180840E00`, and `0x180846635`), all in the
+   generic API-2 resource cluster, with no HGTree callback caller. Treat this
+   as a resource metadata/name boundary until the concrete nested type is
+   recovered.
    The later F8F0 record loops call through shared cell `0x1821D3898`; its
    Vulkan resolver branches pass the string `vkUpdateDescriptorSetWithTemplate`,
    so this is now a concrete descriptor-state update boundary. The API-2
