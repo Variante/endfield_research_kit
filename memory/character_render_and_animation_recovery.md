@@ -861,9 +861,11 @@ only stable interpretation and priorities.
    non-empty dependency branch `0x181065FD0 -> 0x18106B5B0` invokes
    `0x18107A410` and stores `0x181060EA0` at continuation `+0x10`
    (`0x18106BE8B`). The other two workers call `0x18106C6C0` at
-   `0x1810678EC/0x181065056`, forward the same context `+0x10/+0x68`, and
-   reach its shared tail `0x18106CFA7`/`0x18106CFC9-0x18106D003`, which writes
-   the same `0x181060EA0` pair. The separate initial/sibling builders still
+   `0x1810678EC/0x181065056`, forward task-context `+0x10` as builder argument
+   5 and `+0x68` as builder argument 6, and reach its shared tail
+   `0x18106CFA7`/`0x18106CFC9-0x18106D003`, which writes the same
+   `0x181060EA0` pair through the object referenced by argument 6. The
+   separate initial/sibling builders still
    account for `0x181060EB0` (`0x18106BEF0`'s `0x18106C639` branch and
    `0x18106D020`'s `0x18106D769` tail). The pool worker `0x1805598C0`
    invokes only the node `+0x30` worker and optional `+0x40` index setter
@@ -878,9 +880,10 @@ only stable interpretation and priorities.
    `0x1805592B0`. That allocator saves incoming `r8` and copies the saved
    value to `node+0x28`; `0x1805598C0` then calls `node+0x30` with that field
    as `rcx`. The standard wrapper's callback tuple has a zero tail, so
-   `node+0x40` is null and no hidden setter consumes `context+0x10` after the
-   worker. The producer/pool identity is closed; the continuation-pair-to-
-   draw consumer remains unresolved and fail-closed.
+   `node+0x40` is null and no hidden setter consumes the task's `+0x10`
+   argument-5 record/input slot after the worker. The producer/pool identity
+   is closed; the continuation-pair-to-draw consumer remains unresolved and
+   fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
