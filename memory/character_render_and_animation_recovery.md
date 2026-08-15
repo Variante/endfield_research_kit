@@ -1034,6 +1034,22 @@ only stable interpretation and priorities.
    Execute/NoCopy/Submit boundary, but does not identify the HGTree-specific
    API-2 `+0xDA8` indirect-draw branch, `+0xDE8` flush order, or Vulkan queue
    owner; those remain fail-closed.
+   The RenderGraph command-buffer identity is now bounded below the pass
+   callbacks. `HGRenderGraph.ExecuteRenderGraph` (`0x189B2BA30`) calls
+   `ExecuteCompiledPass` (`0x189B2B62C`), which passes
+   `r8 = [this + 0x60]` to `PreRenderPassExecute` (`0x189B2E740`) and
+   `PostRenderPassExecute` (`0x189B2E4B4`), then invokes the compiled pass
+   through `HGRenderGraphPass.Execute` (`0x189B37D20`). The
+   `HGRenderGraphContext` layout is source-backed as `renderContext` then
+   `cmd`; native Pre loads `cmd = [rgContext + 0x18]`, passes
+   `&[rgContext + 0x10]`, and calls `ExecuteCommandBufferNoCopy` at
+   `0x189B2E8D4`. The six identified pass lambdas receive this same context
+   shape before calling `HGRendererListUtils.DrawTreeECSRendererList`, which
+   reads the same `context.fields.cmd`. Therefore HGTree `0x55 -> 0x273B`
+   records are placed in the command buffer RenderGraph prepares and executes
+   around the pass, and pipeline-level `Submit` remains its deferred consumer.
+   This closes command-buffer identity, but not HGTree-specific `+0xDA8`
+   selection, `+0xDE8` ordering, or queue ownership.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
