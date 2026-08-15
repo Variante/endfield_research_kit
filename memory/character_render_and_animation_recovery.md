@@ -1064,6 +1064,13 @@ only stable interpretation and priorities.
    HGTree pass lambdas, but the generic pass body still has no static
    `+DA8/+DE8/+F10`, Vulkan draw, or queue-submit edge; final HGTree draw and
    queue ownership remain fail-closed.
+   A full tail audit confirms both resource callbacks share that TLS front
+   context: `0x18107AE60` calls `+0xDA0/+0x380` at `0x18107B2F0/0x18107B31B`,
+   while `0x18107B3A0` makes the matching calls at `0x18107B960/0x18107B98E`.
+   Front vtable `0x181DCB360` records these as `0x2734/0x27B6` (or dispatches
+   immediately through `context+0x2708`); their consumers are backend
+   `+0xDA0/+0x358`, not the neighboring `+0xDA8/+0xDE8` draw/flush family.
+   This strengthens the fail-closed HGTree-specific draw/queue boundary.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.

@@ -1127,6 +1127,23 @@ identify the HGTree API-2 draw owner.
     itself contains no `+DA8`, `+DE8`, `+F10`, Vulkan draw, or queue-submit
     edge, so final HGTree draw/queue ownership remains fail-closed.
 
+63. A complete sibling-tail audit removes the remaining ambiguity about the
+    resource-callback receiver. Main handler `0x18107AE60` obtains the TLS
+    front context in `r14` through `0x180725DC0` and ends each populated item
+    at `0x18107B2F0` (`[r14->vtable+0xDA0]`) or `0x18107B31B`
+    (`[r14->vtable+0x380]`). Sibling handler `0x18107B3A0` obtains the same
+    context in `rsi` and has matching terminal calls at `0x18107B960` and
+    `0x18107B98E`. The constructor-pinned front vtable `0x181DCB360`
+    resolves these slots to `0x180931980` and `0x18092C320`; recording mode
+    emits `0x2734` and `0x27B6`, while immediate mode dispatches through
+    `context+0x2708` to the selected backend. The recorded consumers remain
+    separate: `0x2734 -> 0x1813AFFF7 -> backend +0xDA0` (`0x18083E720`)
+    and `0x27B6 -> 0x1813B92D0 -> backend +0x358` (`0x1808351F0`). Neither
+    sibling branch adds a static `+0xDA8`, `+0xDE8`, `+0xF10`, Vulkan draw,
+    or queue-submit edge. This confirms callback parity and tightens the
+    fail-closed boundary without promoting the adjacent indirect-draw family
+    to an HGTree owner.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
