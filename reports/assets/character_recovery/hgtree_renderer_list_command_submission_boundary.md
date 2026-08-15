@@ -980,6 +980,26 @@ and final draw/queue ownership remain fail-closed.
     its `0x273B` callback. The final HGTree record-to-draw/flush/queue join
     remains unresolved and fail-closed.
 
+56. The resource-ready branches of all three renderer-list creation cores are
+    now bounded and do not hide a draw call. `0x18107EE40` reaches
+    `context+0xEA0` with callback `0x181060D90` at `0x18107F13F`, then calls
+    `context+0x850` at `0x18107F150`; `0x18107FD22` does the same with
+    callback `0x181060D20` at `0x181080032/0x181080043`; and
+    `0x181080190` uses callback `0x181060D00` at
+    `0x1810805EE/0x1810805FF`. When the readiness predicate
+    `0x181057780` is false, each core instead calls the shared builder
+    `0x181080730` and copies its result pair. The `+0x850` front-vtable
+    implementation `0x180934850` only records low opcode `0x2798`, updates
+    the command counter, and calls `0x1806888E0`; it has no `+0xDA8`,
+    `+0xDE8`, `+0xF10`, or Vulkan draw edge. A direct-cell scan over the full
+    HGTree/creation range `0x181060000-0x181081000` finds no calls to the
+    resolver cells for `vkCmdDraw`, `vkCmdDrawIndexed`,
+    `vkCmdDrawIndirect`, or `vkCmdDrawIndexedIndirect`. The named indirect
+    draw calls remain confined to the neighboring API-2 `+0xDA8` thunk
+    (`0x180820940 -> 0x18082E820`, calls at `0x18082E91B/0x18082E933`), so
+    the renderer-record-to-draw/flush/queue edge remains unresolved and
+    fail-closed for HGTree.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -1085,6 +1105,11 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813B05B6 0x1813B0765
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804D27AB 0x1804D2AC1
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804D4705 0x1804D4990
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18107EE40 0x18107F1A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18107FD22 0x181080190
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181080190 0x181080730
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180934850 0x180934910
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180820940 0x18082E950
 python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --member-regex "^AddDrawECS.*" --body-target-regex "^AddDrawECS.*" --body-target-type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --all-images --include-all-members --body-context 1 --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.md
 python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.md
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x18B3E3F44 0x18B3E4028
