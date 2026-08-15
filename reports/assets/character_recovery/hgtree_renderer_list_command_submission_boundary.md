@@ -1050,6 +1050,24 @@ identify the HGTree API-2 draw owner.
     static edge from the HGTree callback-produced records to `+0xDE8`,
     `+0xF10`, or the final queue owner is established.
 
+59. The tempting API-2 resource bridge is now closed at the next static
+    boundary. The `+0xE90` implementation `0x180843BF0` calls `+0xDC0`
+    (`0x18083F680`), which invokes the nested runtime vtable `+0x48` at
+    `0x18083F71B` and passes its return as the third stack argument to
+    `0x18083F8F0`. The complete F8F0 body reads its first stack argument but
+    never reads that third argument; it instead allocates/looks up resource
+    records through `0x180879010`/`0x180839B00` and updates the shared
+    descriptor cell `0x1821D3898` (the Vulkan resolver path is
+    `vkUpdateDescriptorSetWithTemplate`). Direct-call census finds exactly
+    three F8F0 callers (`0x18083F680`, `0x180840E00`, and `0x180846635`),
+    all in the generic API-2 resource cluster, and no HGTree `0x18106*` or
+    `0x18107*` caller. Together with the sibling `0x18061FB60` helper that
+    consumes the same `+0x48` shape as a NUL-terminated metadata/name string,
+    this is evidence for a resource metadata/descriptor-preparation boundary,
+    not a final draw, flush, or queue-submit bridge. The HGTree-specific
+    record-to-draw/flush/queue join therefore remains unresolved and
+    fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
