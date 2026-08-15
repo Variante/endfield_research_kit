@@ -252,20 +252,30 @@ and enables its custom tick, while continuous fixed-offset/parent following
 runs in `LateTick` after animation/Timeline sampling. Pinned native evidence
 plus the recovered HGRP source closes `UseDataOnVolume` as a call-time snapshot:
 it resolves the destination Volume's instantiated profile, obtains its
-`HGCharacterVolume`, and copies value plus `overrideState` for all 32 character
-lighting fields. It stores no destination reference and has no Update/Tick path;
+`HGCharacterVolume`, and copies value plus `overrideState` for exactly 30
+`CharLightVolumeData` lighting parameters. It stores no destination reference
+and has no Update/Tick path;
 the modifier's half-second tween duration is separate state, not proof of a live
 binding. Current generated capture data preserves both serialized modifier
-parameters and resolved active overrides, but the lab publisher consumes the
-precomposed effective profile rather than replaying this raw 32-field snapshot,
-so that narrower representation gap remains explicit. On character
+parameters and the post-call destination snapshot. The previous generated
+composition incorrectly fell back to the base profile whenever an actor field
+had `overrideState=false`; native assignment overwrites both the value and state
+instead. The generator now models the complete base object followed by the exact
+30-field assignment and rejects missing or extra modifier fields. The lab keeps
+the 30 value/state pairs in a separate component and copies their values once at
+gacha `Begin`, before `SampleToBeginning`; delayed play and per-frame publishing
+do not retain or replay the modifier. Its compatibility publisher still does not
+implement Unity Volume-stack blending for 27 of those override selectors (three
+existing selectors are represented directly), so final composition of inactive
+parameters against lower-priority Volumes remains explicit. On character
 switch, Lua removes the TailTick owner and destroys the whole character root;
 Unity destruction is deferred to frame end. The lab capture now starts with its
 single operator-light publisher and character Volume gated closed, opens them
-immediately before `SampleToBeginning`, and closes them idempotently on failure,
-disable, destroy, or explicit end. Closing publishes zero light count/cluster/
-binning state and neutral character-volume globals without touching exposure
-history or creating a second Unity Light population.
+immediately before `SampleToBeginning`, and closes the runtime-owned publication
+idempotently on failure, disable, destroy, or explicit end. Closing restores the
+Volume component's pre-bind enabled state, publishes zero operator-light count/
+cluster/binning state, and does not touch exposure history or create a second
+Unity Light population.
 
 The native `HGRenderPath` slot roles are now corrected from the installed
 UnityPlayer registration: wrapper `+0x8` is the BeforeCulling setup
@@ -1233,9 +1243,9 @@ only stable interpretation and priorities.
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
    Actor/Effect plus exact empty Light/Others ordering is executable; next
-    recover the non-empty Audio timing/event-media contract, represent the raw
-    32-field `UseDataOnVolume` snapshot separately from the current precomposed
-    effective profile, resolve deferred old-root destruction overlap and the
+    recover the non-empty Audio timing/event-media contract, implement the
+    remaining Unity Volume-stack composition behind the recovered 30-field
+    snapshot, resolve deferred old-root destruction overlap and the
     same-versus-next rendered-frame
    boundary, then bind actor-specific entrance VFX without a global substitute.
 6. Add controller, grounding, facial, FX, and secondary systems behind

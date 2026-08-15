@@ -133,8 +133,10 @@ namespace EndfieldGraphShaderLab
         private EndfieldRecoveredEmptyGachaHelperPlayableAsset othersStructuralAsset;
         private EndfieldHGOperatorLightRig sourceBackedOperatorLightRig;
         private EndfieldHGRPCharacterLightingVolume sourceBackedCharacterLightingVolume;
+        private EndfieldRecoveredCharLightVolumeSnapshot sourceBackedVolumeSnapshot;
         private bool gateSourceBackedPresentation;
         private bool presentationLifecycleActive;
+        private bool boundCharacterLightingEnabled;
         private bool inLoopTrack;
         private double triggerOnceTime = -1.0;
         private Action triggerOnceCallback;
@@ -235,6 +237,7 @@ namespace EndfieldGraphShaderLab
             if (gateSourceBackedPresentation &&
                 (sourceBackedOperatorLightRig == null ||
                  sourceBackedCharacterLightingVolume == null ||
+                 sourceBackedVolumeSnapshot == null ||
                  sourceBackedOperatorLightRig.actorRoot == null ||
                  sourceBackedOperatorLightRig.normalLightCompatibilityScale != 0f ||
                  sourceBackedOperatorLightRig.rimLightCompatibilityScale != 0f))
@@ -245,6 +248,10 @@ namespace EndfieldGraphShaderLab
             try
             {
                 OpenSourceBackedPresentation();
+                if (!sourceBackedVolumeSnapshot.ApplyOnceTo(
+                        sourceBackedCharacterLightingVolume))
+                    throw new InvalidOperationException(
+                        "Recovered CharLightVolumeData snapshot could not be copied.");
                 EnsureDirectorStartCoordinator();
                 inLoopTrack = false;
                 directorStartCoordinator.SampleToBeginning();
@@ -271,8 +278,22 @@ namespace EndfieldGraphShaderLab
         {
             sourceBackedOperatorLightRig = operatorLightRig;
             sourceBackedCharacterLightingVolume = characterLightingVolume;
+            sourceBackedVolumeSnapshot = characterLightingVolume != null
+                ? characterLightingVolume.GetComponent<EndfieldRecoveredCharLightVolumeSnapshot>()
+                : null;
+            boundCharacterLightingEnabled = characterLightingVolume != null &&
+                characterLightingVolume.enabled;
             gateSourceBackedPresentation = true;
-            CloseSourceBackedPresentation();
+            presentationLifecycleActive = false;
+            if (sourceBackedOperatorLightRig != null)
+            {
+                sourceBackedOperatorLightRig.SetRecoveredGachaPublicationState(
+                    false,
+                    false,
+                    false);
+            }
+            if (sourceBackedCharacterLightingVolume != null)
+                sourceBackedCharacterLightingVolume.enabled = false;
         }
 
         public void EndRecoveredEffect()
@@ -308,7 +329,7 @@ namespace EndfieldGraphShaderLab
                     false);
             }
             if (sourceBackedCharacterLightingVolume != null)
-                sourceBackedCharacterLightingVolume.enabled = false;
+                sourceBackedCharacterLightingVolume.enabled = boundCharacterLightingEnabled;
         }
 
         public bool AdvanceRecoveredEffectStart(float scaledTime)
