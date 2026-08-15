@@ -1201,6 +1201,17 @@ namespace EndfieldGraphShaderLab
                     activeRig.GetComponent<EndfieldOverviewPlayback>();
                 if (overview != null)
                     overview.RestartOverviewFromSelection();
+
+                // Native PhaseCharInfo plays the scene-owned CharEffect only
+                // after ForceUpdateAnimator. Keep it outside actor/Gacha
+                // entrance-effect requests and replay the exact shared stage
+                // effect after the same Overview ownership edge.
+                EndfieldRecoveredCharInfoSharedEffect sharedEffect =
+                    GetComponent<EndfieldRecoveredCharInfoSharedEffect>();
+                if (sharedEffect == null)
+                    sharedEffect = gameObject.AddComponent<
+                        EndfieldRecoveredCharInfoSharedEffect>();
+                sharedEffect.PlayAfterOverviewAnimator(activeRig.transform);
             }
         }
 
