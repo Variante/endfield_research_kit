@@ -112,9 +112,12 @@ archetypes are imported as labeled source kits rather than finished characters.
   known `CullLights` entry maps to `0x1800FBCE0`); table B is the alternate
   duplicate. The active table-A body `0x180064580` preserves the renderer-list id and writes high-level
   opcode `0x55` through `0x1804C7930`; the high-level interpreter calls
-  `0x18106AAE0`, whose context `+0xEA0` records low-level `0x273B` and queues
-  callback `0x181060D70 -> 0x18107AB10` through API-2 `+0xEA8` (`0x18083F530`).
-  That callback is a resource/list lifetime boundary, not the front-end
+  `0x18106AAE0`, whose context `+0xEA0` records low-level `0x273B`; the
+  low-level interpreter entry `0x1813B1110` calls the parsed callback
+  `0x181060D70 -> 0x18107AB10` directly. The adjacent API-2 `+0xEA8`
+  (`0x18083F530`) belongs to the separate low-level `0x273C` case, not this
+  HGTree `0x273B` edge. That callback is a resource/list lifetime boundary,
+  not the front-end
   `+0xDA0` handler; `+0xDA0/+0x380` are reached by the separately installed
   resource callbacks `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0`.
   The parallel table-B body `0x1801719B0` roots local managed-pointer state
@@ -125,15 +128,25 @@ archetypes are imported as labeled source kits rather than finished characters.
   See
   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
 
+  Low-level dispatch indexing was rechecked: `0x1813BB574[0x273B-0x2711]`
+  lands at `0x1813B1110`, whose case calls the parsed HGTree callback directly
+  at `0x1813B12B0-0x1813B12B6`. API-2 `+0xEA8` (`0x18083F530`) is emitted by
+  the adjacent `0x273C` case at `0x1813B12BB`, not by HGTree `0x273B`.
+  A raw call-slot census also finds generic `+0xDE8`/`+0xF10` sites only
+  outside the HGTree handler range `0x181060000-0x181081000`. Indirect draw,
+  flush ordering, and queue-submit ownership therefore remain fail-closed
+  after the direct callback.
+
   The async record identity is now bounded more tightly: `0x18107E2E0`'s
   `0x18107E9C0` family allocates a 0x30-byte item record at `item+0x10` and a
   separate 0x98-byte task descriptor at `item+8`; all inspected callers copy
   the returned pair to a record's `+0x20`, while workers write callback fields
-  through task-context `+0x68`. A hash-pinned alias scan across the adjacent
-  HGTree UnityPlayer ranges found only unrelated vector, metadata, and
-  resource-state `+8/+0x10` writes, not an item-record callback-slot write.
-  The static continuation-pair-to-renderer-list join therefore remains
-  unresolved and fail-closed.
+  through task-context `+0x68`. The Windows x64 stack mapping now proves that
+  task-context `+0x68` contains the same arg5 renderer record, and the worker
+  writes its callback/result pair before the opcode-`0x55` fallback loads that
+  record's `+8/+0x10` fields. The record identity is therefore closed;
+  only its later indirect-draw/flush/queue ownership remains unresolved and
+  fail-closed.
 
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
 model families with distinct containers, Animator identities, VFS sources, and
@@ -760,10 +773,11 @@ only stable interpretation and priorities.
    `0x180158B30`, and `0x180158B80`); the normal wrapper only validates and
    updates native context state, while no-copy enters indirect helpers
     `0x180B3E5C0`/`0x180A95EB0`. The remaining HGTree sink is now after the
-    positive `0x55 -> 0x273B -> +0xEA8` route: the callback
-    `0x18107AB10` queues through `0x18083F530` and is consumed by the backend
-    record loop at `0x180844C4A`; its exact body is a resource/list lifetime
-    callback and does not dispatch front-end slots. The callbacks that reach
+    positive `0x55 -> 0x273B -> 0x1813B1110` direct-callback route: the
+    callback `0x18107AB10` is invoked by the parsed low-level `0x273B` case
+    and remains a resource/list lifetime callback that does not dispatch
+    front-end slots. API-2 `+0xEA8` is the adjacent low-level `0x273C` case,
+    not this HGTree route. The callbacks that reach
     front-end `+0xDA0`/`+0x380` are the separately installed resource-builder
     thunks `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0`. Their
     `+0xDA0` records then pass through `context+0x2B60` -> master list
@@ -796,9 +810,9 @@ only stable interpretation and priorities.
     opcode, graphics, Vulkan, or `+0xDE8` submission edge. Keep final
     HGTree draw/queue ownership fail-closed after the positive command route.
     The latest callback trace separates the Vulkan command-recording identity
-    from HGTree ownership. The table-A callback route reaches API-2
-    `+0xEA8 -> 0x18083F530 -> 0x18107AB10`, which ends at the
-    resource/list lifetime boundary. The distinct resource-builder callbacks
+    from HGTree ownership. The table-A callback route reaches low-level
+    `0x273B -> 0x1813B1110 -> 0x18107AB10`, which ends at the resource/list
+    lifetime boundary. The distinct resource-builder callbacks
     `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0` dispatch API-2
    `+0xDA0`/`+0x380`, resolving to `0x18083E720`/`0x1808350E0`; their shared
    records use thunks `0x180820580 -> 0x18082D6B0` and
