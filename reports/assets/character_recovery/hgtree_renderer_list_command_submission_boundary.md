@@ -785,9 +785,10 @@ and final draw/queue ownership remain fail-closed.
       (`0x18106BE8B`).
     - The other two selected workers call the shared builder
       `0x18106C6C0` at `0x1810678EC` (`0x181066F40`) and `0x181065056`
-      (`0x181064100`). They forward the same task context's `+0x10` and
-      `+0x68` as the builder's continuation/flag arguments; the shared
-      continuation (`0x18106CFA7`, tail `0x18106CFC9-0x18106D003`) writes the
+      (`0x181064100`). Their call sites forward task-context `+0x10` as
+      stack argument 5 and `+0x68` as stack argument 6; the latter is the
+      continuation object consumed by the shared tail
+      (`0x18106CFA7`, tail `0x18106CFC9-0x18106D003`), which writes the
       result pair and the same `0x181060EA0` thunk. This is a distinct
       implementation, not a second call to `0x18106B5B0`.
 
@@ -818,9 +819,24 @@ and final draw/queue ownership remain fail-closed.
     this route `0x180559520` also supplies a 24-byte node callback tuple whose
     tail is zero; `0x1805592B0` copies it to `node+0x30/+0x40`, making the
     optional `node+0x40` setter null. The worker therefore returns to the
-    generic retire path after writing `context+0x10`; this closes the
-    producer/pool identity edge but still leaves the continuation-pair-to-draw
-    consumer unresolved and fail-closed.
+    generic retire path after the builder writes through the object referenced
+    by task-context `+0x68`; task-context `+0x10` is only the forwarded
+    argument-5 record/input slot. This closes the producer/pool identity edge
+    but still leaves the continuation-pair-to-draw consumer unresolved and
+    fail-closed.
+
+47. The task-context offsets are now disambiguated from the continuation
+    object's offsets. In the `0x18107E9C0` failure path, the caller loads its
+    result/input record into task-context `+0x10` and the enclosing continuation
+    pointer into task-context `+0x68`, then `0x18107E2E0` queues the worker.
+    At `0x181066E10` and `0x1810678EC/0x181065056`, those fields become stack
+    arguments 5 and 6 respectively. `0x18106B5B0`'s tail
+    (`0x18106BE92`) and `0x18106C6C0`'s shared tail
+    (`0x18106CFC9-0x18106D003`) dereference argument 6 and write the pair at
+    continuation `+0x8/+0x10`; they do not write task-context `+0x10`.
+    The earlier static negative boundary is unchanged: no consumer of the
+    generated pair reaches the HGTree handlers, API-2 draw callbacks, Vulkan,
+    or queue submission.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
