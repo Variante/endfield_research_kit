@@ -789,6 +789,22 @@ and final draw/queue ownership remain fail-closed.
     unresolved and fail-closed; runtime inspection of the record at `+0x20`
     remains the next useful probe.
 
+46. The pool-context identity is now proven through the complete calling
+    convention rather than inferred from matching offsets. `0x18107E2E0`
+    passes its task context in `r9` to `0x180555D30`; that wrapper preserves
+    it in `rbp`, `0x1805573D0` forwards it as `r8`, and `0x180559520` keeps the
+    same `r8` when calling `0x1805592B0`. The latter saves incoming `r8` at
+    entry (`[rsp+0x18]`) and later copies that saved slot (`[rsp+0xAF0]`) to
+    `node+0x28` (`0x180559457`). `0x1805598C0` loads `node+0x28` into `rcx`
+    before calling `node+0x30` (`0x1805598E1-0x1805598F0`), so all three
+    `0x18107E2E0` worker selections receive the original task context. On
+    this route `0x180559520` also supplies a 24-byte node callback tuple whose
+    tail is zero; `0x1805592B0` copies it to `node+0x30/+0x40`, making the
+    optional `node+0x40` setter null. The worker therefore returns to the
+    generic retire path after writing `context+0x10`; this closes the
+    producer/pool identity edge but still leaves the continuation-pair-to-draw
+    consumer unresolved and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.

@@ -867,6 +867,15 @@ only stable interpretation and priorities.
    reaches the HGTree handler or API-2/Vulkan/queue path. Keep the final edge
    unresolved and fail-closed; prioritize runtime inspection of the record at
    `+0x20`.
+   The pool-context identity is now proven through the calling convention:
+   `0x18107E2E0` passes its task context in `r9` to `0x180555D30`, which
+   forwards it through `0x1805573D0` and `0x180559520` as `r8` into
+   `0x1805592B0`. That allocator saves incoming `r8` and copies the saved
+   value to `node+0x28`; `0x1805598C0` then calls `node+0x30` with that field
+   as `rcx`. The standard wrapper's callback tuple has a zero tail, so
+   `node+0x40` is null and no hidden setter consumes `context+0x10` after the
+   worker. The producer/pool identity is closed; the continuation-pair-to-
+   draw consumer remains unresolved and fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
