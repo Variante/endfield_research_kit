@@ -869,31 +869,31 @@ only stable interpretation and priorities.
    `[rsi+0x10]`, test/release its `+0x20` pair, and call `[record+0x10]`
    with `[record+8]` (`0x18106AC65-0x18106AC96`, with sibling sites at
    `0x18106AAC6`, `0x18106AE54`, and `0x18106B014`). This is a real
-   renderer-list callback dispatch into `0x181060EA0/0x181060EB0`, but the
-   static identity between that list-record callback slot and the async
-   worker's continuation object is still unproven; keep the final join
-   fail-closed rather than treating the new consumer as proof of draw
-   submission.
+   renderer-list callback dispatch into `0x181060EA0/0x181060EB0`. The static
+   identity is now proven: the async task's arg5 renderer record is copied to
+   task-descriptor `+0x68`, and the worker writes the callback/result pair back
+   to that same record before this fallback loads it.
    The async task route is now bounded across all three worker selections, but
    they are not one implementation: `0x18107E2E0` queues
-   `0x181065FD0`, `0x181066F40`, or `0x181064100` through `0x180555D30`, and
-   each caller copies the returned pair into a record's `+0x20`. The
-   non-empty dependency branch `0x181065FD0 -> 0x18106B5B0` invokes
-   `0x18107A410` and stores `0x181060EA0` at continuation `+0x10`
-   (`0x18106BE8B`). The other two workers call `0x18106C6C0` at
-   `0x1810678EC/0x181065056`, forward task-context `+0x10` as builder argument
-   5 and `+0x68` as builder argument 6, and reach its shared tail
-   `0x18106CFA7`/`0x18106CFC9-0x18106D003`, which writes the same
-   `0x181060EA0` pair through the object referenced by argument 6. The
+   `0x181065FD0`, `0x181066F40`, or `0x181064100` through `0x180555D30`.
+   Its Windows x64 arg5 is the renderer record; `0x18107E411` stores that
+   pointer at task-descriptor `+0x68`, so the non-empty dependency branch
+   `0x181065FD0 -> 0x18106B5B0` writes `[record+8]` and
+   `0x181060EA0` at `[record+0x10]` (`0x18106BEC9-0x18106BECD`). The other
+   two workers call `0x18106C6C0` at `0x1810678EC/0x181065056`, pass the same
+   descriptor `+0x68` record as builder argument 6, and reach its shared tail
+   `0x18106CFA7`/`0x18106CFC9-0x18106D003`, which writes the same record
+   fields. Each caller copies the returned pair into that record's `+0x20`.
+   The
    separate initial/sibling builders still
    account for `0x181060EB0` (`0x18106BEF0`'s `0x18106C639` branch and
    `0x18106D020`'s `0x18106D769` tail). The pool worker `0x1805598C0`
    invokes only the node `+0x30` worker and optional `+0x40` index setter
    before retiring through `0x1805586C0`; `0x180557650` and `0x1805592B0`
-   use holder cleanup/index callbacks, not the result-pair callback. No
-   No statically joined continuation consumer reaches the HGTree handler or
-   API-2/Vulkan/queue path. Keep the final edge unresolved and fail-closed;
-   prioritize runtime inspection of the record at `+0x20`.
+   use holder cleanup/index callbacks, not the result-pair callback. The
+   renderer-record-to-HGTree-handler edge is therefore statically joined;
+   only the handler's later indirect-draw/flush/queue ownership remains
+   unresolved and fail-closed.
    The pool-context identity is now proven through the calling convention:
    `0x18107E2E0` passes its task context in `r9` to `0x180555D30`, which
    forwards it through `0x1805573D0` and `0x180559520` as `r8` into
@@ -902,17 +902,17 @@ only stable interpretation and priorities.
    as `rcx`. The standard wrapper's callback tuple has a zero tail, so
    `node+0x40` is null and no hidden setter consumes the task's `+0x10`
    argument-5 record/input slot after the worker. The producer/pool identity
-   is closed; the continuation-pair-to-draw consumer remains unresolved and
-   fail-closed.
+   and record callback identity are closed; the handler's continuation into
+   final indirect draw/flush/queue remains unresolved and fail-closed.
    A hash-pinned constant-driven census over all 113,390 UnityPlayer functions
    finds only four direct writes of the known HGTree callback addresses into
    record-like `+0x10` slots: `0x18106BECD` and `0x18106D003` use
    `0x181060EA0`, while `0x18106C66B` and `0x18106D79B` use `0x181060EB0`.
    No callback-valued `+8` write appears. The `0x18107EE40` alias hit is only
    zero-initialization of a new 0x30-byte record, not a binding. This closes
-   the direct static callback-producer set; the continuation/work-object to
-   renderer-list-record identity and final draw/queue ownership remain
-   unresolved and fail-closed.
+   the direct static callback-producer set. The renderer-list record identity
+   is now proven by the arg5 → task `+0x68` mapping; final indirect-draw,
+   flush ordering, and queue ownership remain unresolved and fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
