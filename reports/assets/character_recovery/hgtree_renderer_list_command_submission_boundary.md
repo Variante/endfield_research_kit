@@ -45,11 +45,13 @@ dispatches API-2 `+0xF10` (`0x18083F140`); low-level opcode `0x27D5` maps to
 `0x1813B156A`, which dispatches the same slot. `+0xF10` closes pending
 resource/state batches and enters `0x180841C40`; API-2 `+0xDE8`
 (`0x18083F1E0`) also flushes and executes the master list through
-`0x180843D60`. These are concrete command-stream flush/execute sinks, but the
-inspected HGTree handlers still emit only `+0xDA0`/`+0x380`: no static HGTree
-edge emits `0x6A`, `0x27D5`, `+0xF10`, `+0xDA8`, or `+0xDE8`. Therefore the
-flush family is proven for the generic backend, while HGTree-specific ordering
-and final draw/queue ownership remain fail-closed.
+`0x180843D60`. These are concrete command-stream flush/execute sinks. The
+resource-callback tails still emit only `+0xDA0`/`+0x380`, but the opcode-`0x55`
+HGTree handler has a nested `+0xDB0` prelude that records low-level opcode
+`0x2735`; no static HGTree edge emits `0x6A`, `0x27D5`, `+0xF10`, `+0xDA8`,
+or `+0xDE8`. Therefore the flush family is proven for the generic backend,
+while HGTree-specific ordering and final draw/queue ownership remain
+fail-closed.
 
 The complete UnityPlayer internal-call table fixes the command-buffer class
 attribution used by this boundary. `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
@@ -987,20 +989,24 @@ identify the HGTree API-2 draw owner.
     (sibling high-level resource/format handlers), and `0x1813B057F` (the
     low-level command interpreter). The low-level dispatch table at
     `0x1813BB574` indexes by `opcode - 0x2711`: `0x2734` targets
-    `0x1813AFFF7`, whose body reaches `+0xDA8` at `0x1813B057F`; the next
-    `0x2735` case starts at `0x1813B05B6`. This is not the HGTree case:
+    `0x1813AFFF7`, whose body reaches front `+0xDA0` at `0x1813B03DA`; the
+    adjacent case's `+0xDA8` call is at `0x1813B057F`, and the next `0x2735`
+    case starts at `0x1813B05B6`. That `0x2735` case is the newly traced
+    HGTree nested `+0xDB0` prelude, not an indirect-draw case:
     HGTree's `+0xEA0` writer `0x1809324E0` emits `0x273B` at
     `0x18093255B`, and `0x273B` still resolves to `0x1813B1110` and the
     direct callback `0x181060D70 -> 0x18107AB10`. The separate generic
     front-end writer `0x180931980` emits `0x2734` and falls back to
     `+0xDA0`, while `0x1809318F0` emits `0x2743`/falls back to `+0xF18`;
-    neither has a static HGTree caller. Finally, the high-level command
+    neither has a direct HGTree static callsite (the resource callbacks reach
+    the former indirectly through their vtable). Finally, the high-level command
     jump table at `0x1804D19C8` maps opcode `0x55` only to `0x1804CE4BD`;
     neither `0x1804D27AB` nor `0x1804D4705` (the owners of the two generic
     `+0xDA8` sites) is a high-level opcode target. Thus the global `+0xDA8`
-    implementation and its `0x2734` producer are real indirect-draw/state
-    candidates, but no installed-image edge joins them to HGTree `0x55` or
-    its `0x273B` callback. The final HGTree record-to-draw/flush/queue join
+    implementation is a real indirect-draw/state candidate, while `0x2734` is
+    the distinct `+0xDA0` resource/state path; no installed-image edge joins
+    the `+0xDA8` case to HGTree `0x55` or its `0x273B` callback. The final
+    HGTree record-to-draw/flush/queue join
     remains unresolved and fail-closed.
 
 56. The resource-ready branches of all three renderer-list creation cores are
@@ -1165,6 +1171,27 @@ identify the HGTree API-2 draw owner.
     `0x6A`/`0x27D5` flush family remains a real backend sink, while no static
     edge assigns its ordering or execution to HGTree records.
 
+65. The opcode-`0x55` HGTree handler has a nested resource/state prelude that
+    was missing from the earlier `DA0/380` shorthand. Both success branches at
+    `0x18106A963` and `0x18106AB33` call the TLS front vtable `+0xDB0` before
+    allocating the later `+0xEA0` callback record. Front `+0xDB0`
+    (`0x180930C00`) records literal low-level opcode `0x2735` at
+    `0x180930C67` (or immediately dispatches the backend slot); low-level case
+    `0x1813B05B6` calls the receiver's `+0xDB0` and exits the interpreter.
+    API-2 `+0xDB0` (`0x18083AA90`) consumes the context's `+0x2B60` records,
+    stages `+0x2B68/+0x2B70`, and at `0x18083C1E8-0x18083C274` appends a
+    record whose callback is `0x180820660 -> 0x18082E3E0`. That callback
+    resolves to `vkCmdSetDepthBias`, `vkCmdSetStencilReference`,
+    `vkCmdBindPipeline`, and `vkCmdBindDescriptorSets`. The adjacent helper
+    `0x18082E760` issues `vkCmdCopyImage`, but no pointer write in this trace
+    attributes that helper to the exact HGTree record. The existing
+    `0x180841C40` master-list wrapper and `0x1808200C0` record walker use this
+    same `+0x2B60` list once a later flush invokes them. This is a positive
+    HGTree-to-Vulkan resource/state edge, but not a final draw/queue proof:
+    the `+0xDB0` body and `0x2735` handler contain no `+0xDE8`, `+0xF10`,
+    `vkCmdDraw*`, or `vkQueueSubmit`, so flush order and final ownership stay
+    fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -1228,6 +1255,10 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18082E660 0x18082E750
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180820940 0x180820960
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18082E820 0x18082E8A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180930C00 0x180930D10
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813B05B6 0x1813B0765
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083AA90 0x18083C280
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180820660 0x18082E810
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18061FB60 0x18061FD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180624000 0x1806242B0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180861C20 0x180861C34
