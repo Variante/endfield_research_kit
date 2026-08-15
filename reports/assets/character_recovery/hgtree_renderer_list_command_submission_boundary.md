@@ -1068,6 +1068,24 @@ identify the HGTree API-2 draw owner.
     record-to-draw/flush/queue join therefore remains unresolved and
     fail-closed.
 
+60. The managed render-pipeline boundary is now positively joined. The mapped
+    `HGRenderPipeline.Render(ScriptableRenderContext, List<Camera>)` body spans
+    GameAssembly `0x183455030-0x18345A6E4`; it directly calls
+    `ExecuteCommandBuffer` at `0x183457129` and `0x18345997B`, calls
+    `ExecuteCommandBufferNoCopy` at `0x183459502`, `0x1834595D4`, and
+    `0x183459614`, and calls `Submit` at `0x183459D69`. The six concrete pass
+    lambdas that call `HGRendererListUtils.DrawTreeECSRendererList` preserve
+    their render-graph context in `rsi`, `rbx`, `rdi`, or `r13` and pass that
+    same context as `rcx` to GameAssembly `0x189C0A130`, while passing their
+    renderer-list id in `edx`; the helper then reads `context.fields.cmd`
+    before forwarding to `HGTreeRender.DrawECSRendererList`. Thus HGTree's
+    table-A `0x55 -> 0x273B` records are recorded through the same managed
+    pass-command-buffer framework that the main Render method executes and
+    ultimately submits. This joins HGTree playback to the render-pipeline
+    Execute/NoCopy/Submit boundary, but it does not identify the HGTree-specific
+    API-2 `+0xDA8` indirect-draw branch, `+0xDE8` flush order, or Vulkan queue
+    owner; those remain fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -1188,4 +1206,11 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052E0B0 0x1805385A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052D818 0x18052DE10
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052E7D0 0x18052E957
+python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^HG\\.Rendering\\.Runtime\\.HGRenderPipeline$" --member-regex "^Render$" --body-target-regex "^Render$" --body-target-type-regex "^HG\\.Rendering\\.Runtime\\.HGRenderPipeline$" --all-images --include-all-members --body-context 2 --out scratch\\reverse_engineering\\hgtree_component67_producers\\hg_render_pipeline_render_metadata.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\hg_render_pipeline_render_metadata.md
+python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\hg_render_pipeline_render_metadata.json --out scratch\\reverse_engineering\\hgtree_component67_producers\\hg_render_pipeline_render_native_map.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\hg_render_pipeline_render_native_map.md
+python scratch\\reverse_engineering\\hgtree_component67_producers\\find_gameassembly_direct_calls.py 0x183339850 0x1834534C0 0x183DBB470 0x189C0A130
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x1834570D0 0x183457170
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x183459580 0x183459650
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x183459930 0x1834599B0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x183459D20 0x183459DB0
 ```
