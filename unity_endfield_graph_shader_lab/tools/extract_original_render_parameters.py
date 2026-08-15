@@ -54,6 +54,43 @@ NATIVE_ENVIRONMENT_PACKER = Path(
 )
 MATERIAL_AUDIT_ACTORS = {"wulfa", "zhuangfy"}
 
+# Exact SetCharLightVolumeData call order recovered from the pinned HGRP body.
+# These are the 30 CharLightVolumeData parameters copied into an already
+# instantiated HGCharacterVolume.  This is a snapshot assignment, not an
+# override-only merge.
+CHAR_LIGHT_VOLUME_DATA_FIELDS = (
+    "charMainLightControl",
+    "charMainLightMultiplier",
+    "charEnvLightMultiplier",
+    "charEnvShadowMultiplier",
+    "charMainLightSpecularMultiplier",
+    "charEyeBaseLightMultiplier",
+    "charEyeHighlightMultiplier",
+    "charEyeScatteringMultiplier",
+    "charMainLightRangeBias",
+    "charIgnoreMainLightShadow",
+    "charMainLightMode",
+    "charCameraFollowMainLightBias",
+    "charCustomMainLightDir",
+    "charMainLightOverrideColor",
+    "charSkinMainLightOverrideColor",
+    "charLightDialogMode",
+    "charShadowTintControl",
+    "charShadowTintColor",
+    "charSkinShadowTintColor",
+    "charAutoRimEnable",
+    "charAutoRimColor",
+    "charAutoRimDir",
+    "charAutoRimIntensity",
+    "charAutoRimWidth",
+    "charFaceRimEnable",
+    "charFaceRimIntensity",
+    "charFaceRimColor",
+    "charFaceRimDir",
+    "charIgnoreSceneAdditionalLights",
+    "charIgnoreSceneEnv",
+)
+
 
 class RecoveryError(RuntimeError):
     pass
@@ -270,27 +307,49 @@ def parameter_block(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return result
 
 
-def compose_active_overrides(
+def apply_use_data_on_volume_snapshot(
     base: dict[str, dict[str, Any]],
     modifier: dict[str, dict[str, Any]],
 ) -> dict[str, dict[str, Any]]:
-    """Compose only values which are active VolumeParameter overrides."""
+    """Model the exact call-time SetCharLightVolumeData assignment."""
 
-    result: dict[str, dict[str, Any]] = {}
-    for name in sorted(set(base) | set(modifier)):
-        base_value = base.get(name)
-        modifier_value = modifier.get(name)
-        if modifier_value and modifier_value["override_state"]:
-            result[name] = {
-                "value": modifier_value["value"],
-                "source": "actor_overview_modifier",
-            }
-        elif base_value and base_value["override_state"]:
-            result[name] = {
-                "value": base_value["value"],
-                "source": "charinfo_volume",
-            }
+    missing = sorted(set(CHAR_LIGHT_VOLUME_DATA_FIELDS) - set(modifier))
+    extra = sorted(set(modifier) - set(CHAR_LIGHT_VOLUME_DATA_FIELDS))
+    if missing or extra:
+        raise RecoveryError(
+            "CharLightVolumeData field contract mismatch: "
+            f"missing={missing}, extra={extra}"
+        )
+    result = {
+        name: {
+            "value": record["value"],
+            "override_state": bool(record["override_state"]),
+            "source": "charinfo_volume",
+        }
+        for name, record in base.items()
+    }
+    for name in CHAR_LIGHT_VOLUME_DATA_FIELDS:
+        record = modifier[name]
+        result[name] = {
+            "value": record["value"],
+            "override_state": bool(record["override_state"]),
+            "source": "actor_overview_modifier",
+        }
     return result
+
+
+def active_overrides(
+    snapshot: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    return {
+        name: {
+            "value": record["value"],
+            "override_state": True,
+            "source": record["source"],
+        }
+        for name, record in snapshot.items()
+        if record["override_state"]
+    }
 
 
 def discover_charinfo_base(repo_root: Path) -> tuple[Path, dict[str, Any], Path, dict[str, Any]]:
@@ -718,7 +777,10 @@ def extract(repo_root: Path) -> dict[str, Any]:
     characters: dict[str, Any] = {}
     for actor, (modifier_path, modifier, ancestry) in sorted(modifiers.items()):
         modifier_parameters = parameter_block(modifier["charLightVolumeData"])
-        resolved = compose_active_overrides(base_parameters, modifier_parameters)
+        post_snapshot = apply_use_data_on_volume_snapshot(
+            base_parameters, modifier_parameters
+        )
+        resolved = active_overrides(post_snapshot)
         metadata = modifier.get("$animestudio") or {}
         key = (str(metadata.get("type") or "MonoBehaviour"), int(metadata.get("pathId") or 0))
         modifier_entry = choose_asset_map_entry(
@@ -732,6 +794,7 @@ def extract(repo_root: Path) -> dict[str, Any]:
             ),
             "modifier_ancestry": ancestry,
             "modifier_serialized_parameters": modifier_parameters,
+            "post_use_data_on_volume": post_snapshot,
             "resolved_active_overrides": resolved,
             "materials": materials[actor],
         }

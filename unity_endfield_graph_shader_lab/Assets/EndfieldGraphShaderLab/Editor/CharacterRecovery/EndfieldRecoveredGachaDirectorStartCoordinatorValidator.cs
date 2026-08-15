@@ -138,6 +138,13 @@ namespace EndfieldGraphShaderLabEditor
                 lightRig.rimLightCompatibilityScale = 0f;
                 EndfieldHGRPCharacterLightingVolume lightingVolume =
                     cameraObject.AddComponent<EndfieldHGRPCharacterLightingVolume>();
+                EndfieldRecoveredCharLightVolumeSnapshot volumeSnapshot =
+                    cameraObject.AddComponent<EndfieldRecoveredCharLightVolumeSnapshot>();
+                volumeSnapshot.charMainLightMultiplier.value = 2.25f;
+                volumeSnapshot.charMainLightMultiplier.overrideState = false;
+                volumeSnapshot.charMainLightRangeBias.value = -0.35f;
+                volumeSnapshot.charMainLightRangeBias.overrideState = true;
+                lightingVolume.enabled = false;
                 EndfieldRecoveredZhuangfyGachaRuntime runtime =
                     root.AddComponent<EndfieldRecoveredZhuangfyGachaRuntime>();
                 runtime.autoStartRecoveredEffect = false;
@@ -159,6 +166,18 @@ namespace EndfieldGraphShaderLabEditor
                     lightRig.sourceBackedLightBinningMembership &&
                     !lightRig.sourceBackedIsolatedPunctualSoftShadowProducer,
                     "Begin did not open the exact clustered/binning presentation subset.");
+                Require(
+                    volumeSnapshot.ApplyCount == 1 &&
+                    Mathf.Approximately(lightingVolume.mainLightMultiplier, 2.25f) &&
+                    Mathf.Approximately(lightingVolume.mainLightRangeBias, -0.35f) &&
+                    lightingVolume.overrideMainLightRangeBias,
+                    "Begin did not copy the raw CharLightVolumeData snapshot exactly once.");
+                volumeSnapshot.charMainLightMultiplier.value = 3.5f;
+                runtime.AdvanceRecoveredEffectStart(10.25f);
+                Require(
+                    volumeSnapshot.ApplyCount == 1 &&
+                    Mathf.Approximately(lightingVolume.mainLightMultiplier, 2.25f),
+                    "Delayed play retained or replayed the raw Volume modifier source.");
                 runtime.actorLoopStartTime = 0.5;
                 int loopTransitions = 0;
                 int triggerCount = 0;
@@ -195,7 +214,7 @@ namespace EndfieldGraphShaderLabEditor
                     "Actor/Effect plus exact empty Light/Others admitted in source order; " +
                     "Audio missing; " +
                     "zero sample, two-stage play, TailTick state/callback, stop, " +
-                    "missing-asset rejection, and " +
+                    "missing-asset rejection, one-shot 30-field Volume snapshot, and " +
                     "source-backed lighting/Volume lifecycle passed.");
             }
             finally
