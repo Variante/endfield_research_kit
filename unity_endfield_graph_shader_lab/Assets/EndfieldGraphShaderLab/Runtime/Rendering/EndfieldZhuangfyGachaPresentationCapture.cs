@@ -438,7 +438,8 @@ namespace EndfieldGraphShaderLab
                 presentationUseOcclusionCulling =
                     presentationUseOcclusionCulling,
                 captureScopeLayer = SourceGachaLayer,
-                captureScopeGameObjectCount = captureScopeGameObjectCount,
+                captureScopeGameObjectCount =
+                    captureScopeRoot.GetComponentsInChildren<Transform>(true).Length,
                 everyCaptureScopeGameObjectLayerIsGacha =
                     EveryCaptureScopeGameObjectUsesGachaLayer(),
                 presentationViewport =
@@ -857,11 +858,12 @@ namespace EndfieldGraphShaderLab
 
         private void ValidatePresentationOutputContract()
         {
+            bool layersValid = EveryCaptureScopeGameObjectUsesGachaLayer();
             if (presentationCullingMask != SourceGachaCullingMask ||
                 presentationCamera.cullingMask != SourceGachaCullingMask ||
                 presentationUseOcclusionCulling ||
                 presentationCamera.useOcclusionCulling ||
-                !EveryCaptureScopeGameObjectUsesGachaLayer() ||
+                !layersValid ||
                 presentationCamera.rect != presentationViewport ||
                 presentationCamera.targetDisplay != presentationTargetDisplay ||
                 presentationCamera.clearFlags != presentationClearFlags ||
@@ -869,7 +871,22 @@ namespace EndfieldGraphShaderLab
                 presentationCamera.allowMSAA != presentationAllowMsaa)
             {
                 throw new InvalidOperationException(
-                    "Configured HG presentation Camera render/output fields changed during capture.");
+                    "Configured HG presentation Camera render/output fields changed during capture: " +
+                    $"culling expected/current=0x{presentationCullingMask:X8}/" +
+                    $"0x{presentationCamera.cullingMask:X8}, " +
+                    $"occlusion expected/current={presentationUseOcclusionCulling}/" +
+                    $"{presentationCamera.useOcclusionCulling}, " +
+                    $"scopeLayersValid={layersValid} " +
+                    $"({DescribeCaptureScopeLayerFailure()}), " +
+                    $"rect expected/current={presentationViewport}/{presentationCamera.rect}, " +
+                    $"display expected/current={presentationTargetDisplay}/" +
+                    $"{presentationCamera.targetDisplay}, " +
+                    $"clear expected/current={presentationClearFlags}/" +
+                    $"{presentationCamera.clearFlags}, " +
+                    $"HDR expected/current={presentationAllowHdr}/" +
+                    $"{presentationCamera.allowHDR}, " +
+                    $"MSAA expected/current={presentationAllowMsaa}/" +
+                    $"{presentationCamera.allowMSAA}.");
             }
         }
 
@@ -879,18 +896,49 @@ namespace EndfieldGraphShaderLab
                 return false;
             Transform[] transforms =
                 captureScopeRoot.GetComponentsInChildren<Transform>(true);
-            if (transforms.Length == 0 ||
-                (captureScopeGameObjectCount != 0 &&
-                 transforms.Length != captureScopeGameObjectCount))
-            {
+            if (transforms.Length == 0)
                 return false;
-            }
             foreach (Transform item in transforms)
             {
                 if (item.gameObject.layer != SourceGachaLayer)
                     return false;
             }
             return true;
+        }
+
+        private string DescribeCaptureScopeLayerFailure()
+        {
+            if (captureScopeRoot == null)
+                return "captureScopeRoot=null";
+            Transform[] transforms =
+                captureScopeRoot.GetComponentsInChildren<Transform>(true);
+            var mismatches = new List<string>();
+            foreach (Transform item in transforms)
+            {
+                if (item.gameObject.layer == SourceGachaLayer)
+                    continue;
+                mismatches.Add(
+                    $"{GetHierarchyPath(item)}:layer={item.gameObject.layer}");
+                if (mismatches.Count == 8)
+                    break;
+            }
+            return
+                $"expectedCount={captureScopeGameObjectCount}, " +
+                $"actualCount={transforms.Length}, " +
+                $"firstMismatches=[{string.Join(", ", mismatches)}]";
+        }
+
+        private static string GetHierarchyPath(Transform item)
+        {
+            var names = new List<string>();
+            Transform cursor = item;
+            while (cursor != null)
+            {
+                names.Add(cursor.name);
+                cursor = cursor.parent;
+            }
+            names.Reverse();
+            return string.Join("/", names);
         }
 
         private string BuildCameraDiagnostic()

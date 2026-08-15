@@ -56,6 +56,34 @@ namespace EndfieldGraphShaderLab
             Mathf.Approximately(fadeInDuration, 0f) &&
             Mathf.Approximately(fadeOutDuration, 0f);
 
+        public bool IsGachaRoomSourceClosed =>
+            IsSourceClosed &&
+            sceneId == "GachaRoom" &&
+            phaseName == "Env_gachaRoom_01" &&
+            phasePathId == 6627355437943792087L &&
+            phaseRawDataSha256 ==
+                "cc84bc63c3f0c8da08559282f04df1cb2a2056a6427848dd35a3e5f4624d5bb7" &&
+            directColorMode == 0 &&
+            autoExposureActive &&
+            autoExposureMode == 1 &&
+            Mathf.Approximately(manualEvCompensationManual, 0f) &&
+            Mathf.Approximately(lerpUpSpeed, 0.6f) &&
+            Mathf.Approximately(lerpDownSpeed, 0.6f);
+
+        public bool IsCharacterInfoSourceClosed =>
+            IsSourceClosed &&
+            sceneId == "CharacterInfo" &&
+            phaseName == "CharInfo_Env" &&
+            phasePathId == 1201129019072041203L &&
+            phaseRawDataSha256 ==
+                "f9d1384c29f1e54599cd55e5f9c5c6d7eb9bd6f678d9fd104c7c329e6f1a66f9" &&
+            directColorMode == 1 &&
+            !autoExposureActive &&
+            autoExposureMode == 0 &&
+            Mathf.Approximately(manualEvCompensationManual, 0f) &&
+            Mathf.Approximately(lerpUpSpeed, 0.6f) &&
+            Mathf.Approximately(lerpDownSpeed, 0.6f);
+
         public void ConfigureGachaRoom()
         {
             sceneId = "GachaRoom";
