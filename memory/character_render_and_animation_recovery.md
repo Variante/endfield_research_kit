@@ -202,6 +202,23 @@ general source-backed spawner, and the retail `Audio`, `Light`, `Others`,
 physical `ExternalCamera`, secondary-motion, and multi-Director ordering remain
 fail-closed.
 
+The Zhuang Fangyi gacha helper's multi-Director start protocol is now bounded
+more tightly from plaintext Lua, serialized Director/Timeline rows, and the
+pinned GameAssembly wrappers. Source order is `Actor`, `Audio`, `Effect`,
+`Light`, `Others`. `SampleToBeginning` performs `Stop -> time=0 -> Evaluate`
+for each role in that order. Delayed `PlayFromStart` first calls
+`RebuildGraph` for every collected Director, then walks the same order again
+for `time=0 -> Evaluate -> Play`; the zero-delay `TailTick` after each phase is
+still open. The lab now executes that two-pass protocol for the exact recovered
+Actor and Effect PlayableAssets and reports Audio/Light/Others as missing
+instead of synthesizing identity Directors. The individual native
+`Stop`/`set_time`/`Evaluate`/`RebuildGraph`/`Play` wrappers contain no hidden
+cross-Director or render-submit edge. Same-frame versus next-rendered-frame
+visibility therefore remains a runtime-capture question. The disabled
+`ExternalCamera` stays an animated Cinemachine data source; it is not promoted
+to the physical viewer Camera, and its exposure/history is not reset by the
+Director coordinator.
+
 The native `HGRenderPath` slot roles are now corrected from the installed
 UnityPlayer registration: wrapper `+0x8` is the BeforeCulling setup
 (`0x1812fdb20` → `0x1813022d0`), `+0x10` is the Render forwarding wrapper
@@ -1167,7 +1184,10 @@ only stable interpretation and priorities.
 5. Recover the Character Info selection clear/hide interval and the
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
-   then bind actor-specific entrance VFX without a global substitute.
+   Actor/Effect ordering is now executable; next recover the three missing
+   PlayableAssets/bindings, both zero-delay `TailTick` calls, and the
+   same-versus-next rendered-frame boundary, then bind actor-specific entrance
+   VFX without a global substitute.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.
