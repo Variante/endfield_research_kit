@@ -159,6 +159,21 @@ namespace EndfieldGraphShaderLabEditor
                     lightRig.sourceBackedLightBinningMembership &&
                     !lightRig.sourceBackedIsolatedPunctualSoftShadowProducer,
                     "Begin did not open the exact clustered/binning presentation subset.");
+                runtime.actorLoopStartTime = 0.5;
+                int loopTransitions = 0;
+                int triggerCount = 0;
+                runtime.LoopTrackChanged += _ => loopTransitions++;
+                runtime.SetRecoveredTriggerOnce(0.25, () => triggerCount++);
+                actor.time = 0.6;
+                runtime.TailTickRecoveredState();
+                runtime.TailTickRecoveredState();
+                Require(
+                    runtime.InLoopTrack && loopTransitions == 1 && triggerCount == 1,
+                    "Recovered TailTick did not enter loop and fire its callback exactly once.");
+                actor.time = 0.0;
+                runtime.TailTickRecoveredState();
+                Require(!runtime.InLoopTrack && loopTransitions == 2 && triggerCount == 1,
+                    "Recovered TailTick did not leave loop without repeating the callback.");
                 runtime.EndRecoveredEffect();
                 Require(
                     !lightingVolume.enabled &&
@@ -179,7 +194,8 @@ namespace EndfieldGraphShaderLabEditor
                     "Recovered gacha Director start coordinator validation passed: " +
                     "Actor/Effect plus exact empty Light/Others admitted in source order; " +
                     "Audio missing; " +
-                    "zero sample, two-stage play, stop, missing-asset rejection, and " +
+                    "zero sample, two-stage play, TailTick state/callback, stop, " +
+                    "missing-asset rejection, and " +
                     "source-backed lighting/Volume lifecycle passed.");
             }
             finally

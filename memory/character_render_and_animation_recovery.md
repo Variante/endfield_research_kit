@@ -208,8 +208,12 @@ pinned GameAssembly wrappers. Source order is `Actor`, `Audio`, `Effect`,
 `Light`, `Others`. `SampleToBeginning` performs `Stop -> time=0 -> Evaluate`
 for each role in that order. Delayed `PlayFromStart` first calls
 `RebuildGraph` for every collected Director, then walks the same order again
-for `time=0 -> Evaluate -> Play`; the zero-delay `TailTick` after each phase is
-still open. The lab executes that two-pass protocol for the exact recovered
+for `time=0 -> Evaluate -> Play`. The zero-delay `TailTick` after each phase is
+now closed from plaintext Lua: it ignores its delta argument, reads only the
+Actor Director time, toggles the loop-track state at the authored loop start,
+and fires one optional time callback exactly once. It has no camera, follower,
+VFX, Timeline, or render-refresh work. The lab executes that state machine and
+the two-pass protocol for the exact recovered
 Actor and Effect PlayableAssets. The complete object index closes both Light
 and Others as structural empty TimelineAssets: each has only its exact name and
 editor preview setting, with no tracks, clips, or bindings. The lab therefore
@@ -245,8 +249,16 @@ only `VolumeModifiers/volume_overview`, applies its modifier to the room Volume,
 sets the gacha layer, and only then samples the Directors. Native evidence
 separates initialization from motion: `InitCharLightFollower` stores the target
 and enables its custom tick, while continuous fixed-offset/parent following
-runs in `LateTick` after animation/Timeline sampling. The exact
-`UseDataOnVolume` copy-versus-live-binding body remains open. On character
+runs in `LateTick` after animation/Timeline sampling. Pinned native evidence
+plus the recovered HGRP source closes `UseDataOnVolume` as a call-time snapshot:
+it resolves the destination Volume's instantiated profile, obtains its
+`HGCharacterVolume`, and copies value plus `overrideState` for all 32 character
+lighting fields. It stores no destination reference and has no Update/Tick path;
+the modifier's half-second tween duration is separate state, not proof of a live
+binding. Current generated capture data preserves both serialized modifier
+parameters and resolved active overrides, but the lab publisher consumes the
+precomposed effective profile rather than replaying this raw 32-field snapshot,
+so that narrower representation gap remains explicit. On character
 switch, Lua removes the TailTick owner and destroys the whole character root;
 Unity destruction is deferred to frame end. The lab capture now starts with its
 single operator-light publisher and character Volume gated closed, opens them
@@ -1221,9 +1233,10 @@ only stable interpretation and priorities.
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
    Actor/Effect plus exact empty Light/Others ordering is executable; next
-   recover the non-empty Audio timing/event-media contract, both zero-delay
-   `TailTick` calls, the exact `UseDataOnVolume` transfer contract, deferred
-   old-root destruction overlap, and the same-versus-next rendered-frame
+    recover the non-empty Audio timing/event-media contract, represent the raw
+    32-field `UseDataOnVolume` snapshot separately from the current precomposed
+    effective profile, resolve deferred old-root destruction overlap and the
+    same-versus-next rendered-frame
    boundary, then bind actor-specific entrance VFX without a global substitute.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.

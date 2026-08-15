@@ -109,6 +109,7 @@ namespace EndfieldGraphShaderLab
         public PlayableDirector actorCameraDirector;
         public bool autoStartRecoveredEffect = true;
         public float scaledPlayDelaySeconds = 0.25f;
+        public double actorLoopStartTime = 10.7;
         public Transform exactRendererScopeRoot;
         public Renderer[] exactEligibleRenderers = Array.Empty<Renderer>();
         public EndfieldRecoveredEntityVFXDefinition[] definitions =
@@ -134,6 +135,13 @@ namespace EndfieldGraphShaderLab
         private EndfieldHGRPCharacterLightingVolume sourceBackedCharacterLightingVolume;
         private bool gateSourceBackedPresentation;
         private bool presentationLifecycleActive;
+        private bool inLoopTrack;
+        private double triggerOnceTime = -1.0;
+        private Action triggerOnceCallback;
+
+        public event Action<bool> LoopTrackChanged;
+
+        public bool InLoopTrack => inLoopTrack;
 
         public static bool IsNativeSampleActive(float weight)
         {
@@ -199,6 +207,7 @@ namespace EndfieldGraphShaderLab
         private void Update()
         {
             AdvanceRecoveredEffectStart(Time.time);
+            TailTickRecoveredState();
         }
 
         private void OnDisable()
@@ -237,7 +246,9 @@ namespace EndfieldGraphShaderLab
             {
                 OpenSourceBackedPresentation();
                 EnsureDirectorStartCoordinator();
+                inLoopTrack = false;
                 directorStartCoordinator.SampleToBeginning();
+                TailTickRecoveredState();
             }
             catch
             {
@@ -270,6 +281,8 @@ namespace EndfieldGraphShaderLab
             directorStartCoordinator?.StopAll();
             ResetAllEntityVFX();
             CloseSourceBackedPresentation();
+            triggerOnceTime = -1.0;
+            triggerOnceCallback = null;
         }
 
         private void OpenSourceBackedPresentation()
@@ -308,9 +321,37 @@ namespace EndfieldGraphShaderLab
                 actorCameraDirector.playableAsset == null)
                 return false;
             EnsureDirectorStartCoordinator();
+            inLoopTrack = false;
             directorStartCoordinator.PlayFromStart();
             DispatchSourceZeroStartEntityVFX();
+            TailTickRecoveredState();
             return true;
+        }
+
+        public void SetRecoveredTriggerOnce(double time, Action callback)
+        {
+            triggerOnceTime = time;
+            triggerOnceCallback = callback;
+        }
+
+        public void TailTickRecoveredState()
+        {
+            if (actorCameraDirector == null)
+                return;
+            double actorTime = actorCameraDirector.time;
+            bool nextLoopState = actorTime >= actorLoopStartTime;
+            if (nextLoopState != inLoopTrack)
+            {
+                inLoopTrack = nextLoopState;
+                LoopTrackChanged?.Invoke(inLoopTrack);
+            }
+            if (triggerOnceCallback != null && actorTime >= triggerOnceTime)
+            {
+                Action callback = triggerOnceCallback;
+                triggerOnceTime = -1.0;
+                triggerOnceCallback = null;
+                callback();
+            }
         }
 
         private void EnsureDirectorStartCoordinator()
