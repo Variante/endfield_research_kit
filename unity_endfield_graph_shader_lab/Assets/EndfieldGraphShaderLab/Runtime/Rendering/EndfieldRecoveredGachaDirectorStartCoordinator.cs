@@ -117,6 +117,14 @@ namespace EndfieldGraphShaderLab
             foreach (EndfieldRecoveredGachaDirectorBinding binding in admitted)
             {
                 SetAudioPlaybackArmed(binding, false);
+                if (binding.role == EndfieldRecoveredGachaDirectorRole.Audio)
+                {
+                    EndfieldRecoveredGachaAudioEmitter emitter =
+                        binding.director.GetComponent<
+                            EndfieldRecoveredGachaAudioEmitter>();
+                    if (emitter != null)
+                        emitter.StopRecoveredEvents();
+                }
                 binding.director.Stop();
             }
         }

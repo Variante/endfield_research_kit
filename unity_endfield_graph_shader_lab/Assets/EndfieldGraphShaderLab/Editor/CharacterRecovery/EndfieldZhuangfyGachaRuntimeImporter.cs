@@ -1754,6 +1754,11 @@ namespace EndfieldGraphShaderLabEditor
             GameObject characterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CharacterPrefabPath);
             Require(characterPrefab != null, "Missing Zhuangfy character prefab");
             var root = new GameObject("Zhuangfy_Gacha_Recovered");
+            EndfieldRecoveredEnvironmentPhaseSnapshot environmentPhase =
+                root.AddComponent<EndfieldRecoveredEnvironmentPhaseSnapshot>();
+            environmentPhase.ConfigureGachaRoom();
+            Require(environmentPhase.IsSourceClosed,
+                "GachaRoom priority-600 environment phase failed its source gate");
             GameObject actor = (GameObject)PrefabUtility.InstantiatePrefab(characterPrefab);
             actor.name = "Actor";
             actor.transform.SetParent(root.transform, false);
@@ -3037,6 +3042,21 @@ namespace EndfieldGraphShaderLabEditor
                 Dict(payload["actorCameraClip"]);
             EndfieldRecoveredZhuangfyGachaSource source = prefab.GetComponent<EndfieldRecoveredZhuangfyGachaSource>();
             EndfieldRecoveredZhuangfyGachaRuntime host = prefab.GetComponent<EndfieldRecoveredZhuangfyGachaRuntime>();
+            EndfieldRecoveredEnvironmentPhaseSnapshot environmentPhase =
+                prefab.GetComponent<EndfieldRecoveredEnvironmentPhaseSnapshot>();
+            Require(
+                environmentPhase != null && environmentPhase.IsSourceClosed &&
+                environmentPhase.sceneId == "GachaRoom" &&
+                environmentPhase.phaseName == "Env_gachaRoom_01" &&
+                environmentPhase.phasePathId == 6627355437943792087L &&
+                environmentPhase.priority == 600 &&
+                Approximately(environmentPhase.directEV100, 14.1) &&
+                Approximately(environmentPhase.directIntensityDividePi, 0.0) &&
+                Approximately(environmentPhase.indirectDiffuseFactor, 1.0) &&
+                Approximately(environmentPhase.indirectSpecularFactor, 1.0) &&
+                environmentPhase.autoExposureActive &&
+                environmentPhase.autoExposureMode == 1,
+                "Generated GachaRoom priority-600 environment snapshot changed");
             EndfieldRecoveredBaofaTimelineParticleHost[]
                 baofaTimelineHosts =
                     prefab.GetComponentsInChildren<
