@@ -55,12 +55,32 @@ class UseDataOnVolumeSnapshotTests(unittest.TestCase):
             self.assertEqual(snapshot[name]["override_state"], index % 2 == 0)
             self.assertEqual(snapshot[name]["source"], "actor_overview_modifier")
         self.assertEqual(snapshot["charGlobalAmbientParam1"]["value"]["z"], 3)
-        self.assertEqual(snapshot["charGlobalAmbientParam1"]["source"], "charinfo_volume")
+        self.assertEqual(
+            snapshot["charGlobalAmbientParam1"]["source"],
+            "char_override_profile_initial",
+        )
 
         active = MODULE.active_overrides(snapshot)
         self.assertIn(MODULE.CHAR_LIGHT_VOLUME_DATA_FIELDS[0], active)
         self.assertNotIn(MODULE.CHAR_LIGHT_VOLUME_DATA_FIELDS[1], active)
         self.assertIn("charGlobalAmbientParam1", active)
+
+        lower = {
+            MODULE.CHAR_LIGHT_VOLUME_DATA_FIELDS[1]: {
+                "value": 77,
+                "override_state": True,
+            }
+        }
+        composed = MODULE.compose_volume_layers(
+            ("gacha_room_priority_30000", lower),
+            ("actor_override_priority_30001", snapshot),
+        )
+        self.assertEqual(
+            composed[MODULE.CHAR_LIGHT_VOLUME_DATA_FIELDS[1]]["value"], 77
+        )
+        self.assertEqual(
+            composed[MODULE.CHAR_LIGHT_VOLUME_DATA_FIELDS[0]]["value"], 0
+        )
 
     def test_contract_rejects_missing_or_extra_fields(self) -> None:
         modifier = {

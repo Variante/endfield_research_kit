@@ -168,15 +168,17 @@ namespace EndfieldGraphShaderLabEditor
                     "Begin did not open the exact clustered/binning presentation subset.");
                 Require(
                     volumeSnapshot.ApplyCount == 1 &&
-                    Mathf.Approximately(lightingVolume.mainLightMultiplier, 2.25f) &&
+                    Mathf.Approximately(lightingVolume.mainLightMultiplier, 0.9f) &&
                     Mathf.Approximately(lightingVolume.mainLightRangeBias, -0.35f) &&
-                    lightingVolume.overrideMainLightRangeBias,
-                    "Begin did not copy the raw CharLightVolumeData snapshot exactly once.");
+                    lightingVolume.overrideMainLightRangeBias &&
+                    lightingVolume.ignoreSceneEnvironment,
+                    "Begin did not resolve GachaRoom priority 30000 then the raw " +
+                    "priority-30001 character snapshot exactly once.");
                 volumeSnapshot.charMainLightMultiplier.value = 3.5f;
                 runtime.AdvanceRecoveredEffectStart(10.25f);
                 Require(
                     volumeSnapshot.ApplyCount == 1 &&
-                    Mathf.Approximately(lightingVolume.mainLightMultiplier, 2.25f),
+                    Mathf.Approximately(lightingVolume.mainLightMultiplier, 0.9f),
                     "Delayed play retained or replayed the raw Volume modifier source.");
                 runtime.actorLoopStartTime = 0.5;
                 int loopTransitions = 0;

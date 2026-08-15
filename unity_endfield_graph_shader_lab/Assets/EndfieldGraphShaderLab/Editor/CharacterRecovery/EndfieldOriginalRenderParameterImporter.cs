@@ -151,7 +151,7 @@ namespace EndfieldGraphShaderLabEditor
             // raw 30-field record is authoritative for the native call either
             // way, so bake the same one-shot destination values after any
             // legacy active-only composition above.
-            if (!snapshot.ApplyOnceTo(volume))
+            if (!snapshot.ResolveGachaAuthoredStackOnceTo(volume))
                 return false;
 
             Dictionary<string, object> environment = Dict(Get(payload, "environment"));
