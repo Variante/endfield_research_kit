@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -35,6 +36,9 @@ namespace EndfieldGraphShaderLab
             [Tooltip("Generated prefab with an EndfieldRecoveredParticleEffectSource marker.")]
             public GameObject prefab;
 
+            [Tooltip("Exact existing actor-relative object path when the effect is already reconstructed as an animated item-widget object instead of a particle prefab.")]
+            public string existingActorObjectPath;
+
             [Tooltip("Optional exact mount path below the actor root. Empty means actor root.")]
             public string requiredMountPoint;
 
@@ -51,6 +55,9 @@ namespace EndfieldGraphShaderLab
             public string expectedEffectRoot;
 
             [Min(0f)]
+            public float expectedDelay;
+
+            [Min(0f)]
             public float expectedDuration;
         }
 
@@ -62,6 +69,10 @@ namespace EndfieldGraphShaderLab
 
         private readonly Dictionary<string, GameObject> activeEffects =
             new Dictionary<string, GameObject>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Coroutine> pendingEffects =
+            new Dictionary<string, Coroutine>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Coroutine> lifetimeEffects =
+            new Dictionary<string, Coroutine>(StringComparer.Ordinal);
 
         public Binding[] Bindings => bindings;
 
@@ -93,6 +104,29 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
+            if (!string.IsNullOrEmpty(binding.existingActorObjectPath))
+            {
+                if (binding.prefab != null)
+                {
+                    FailClosed(
+                        "invalid_existing_effect_binding",
+                        request.prefabName,
+                        "Existing-object binding also supplied a prefab.");
+                    return;
+                }
+                Transform existing = actorRoot == null
+                    ? null
+                    : actorRoot.Find(binding.existingActorObjectPath);
+                if (existing == null)
+                {
+                    FailClosed(
+                        "missing_existing_effect_object",
+                        request.prefabName,
+                        "Exact actor-relative item-widget object was not found.");
+                }
+                return;
+            }
+
             if (!TryValidateBinding(binding, request, out string reason))
             {
                 FailClosed("invalid_effect_binding", request.prefabName, reason);
@@ -107,6 +141,34 @@ namespace EndfieldGraphShaderLab
             }
 
             FinishOverviewEffect(request.prefabName);
+
+            if (binding.expectedDelay > 0f)
+            {
+                pendingEffects[request.prefabName] = StartCoroutine(
+                    SpawnAfterDelay(binding, request, mount));
+                return;
+            }
+
+            CreateEffect(binding, request, mount);
+        }
+
+        private IEnumerator SpawnAfterDelay(
+            Binding binding,
+            EndfieldOverviewEffectRequest request,
+            Transform mount)
+        {
+            yield return new WaitForSeconds(binding.expectedDelay);
+            pendingEffects.Remove(request.prefabName);
+            if (mount == null || !isActiveAndEnabled)
+                yield break;
+            CreateEffect(binding, request, mount);
+        }
+
+        private void CreateEffect(
+            Binding binding,
+            EndfieldOverviewEffectRequest request,
+            Transform mount)
+        {
 
             GameObject instance = Instantiate(binding.prefab, mount, false);
             instance.name = binding.prefab.name + "__OverviewRuntime";
@@ -123,6 +185,30 @@ namespace EndfieldGraphShaderLab
             instance.SetActive(true);
             foreach (ParticleSystem system in systems)
                 system.Play(true);
+
+            if (binding.expectedDuration > 0f)
+            {
+                lifetimeEffects[request.prefabName] = StartCoroutine(
+                    FinishAfterDuration(
+                        request.prefabName,
+                        instance,
+                        binding.expectedDuration));
+            }
+        }
+
+        private IEnumerator FinishAfterDuration(
+            string prefabName,
+            GameObject expectedInstance,
+            float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            lifetimeEffects.Remove(prefabName);
+            if (activeEffects.TryGetValue(prefabName, out GameObject instance) &&
+                instance == expectedInstance)
+            {
+                activeEffects.Remove(prefabName);
+                DestroyEffectInstance(instance);
+            }
         }
 
         public void FinishOverviewEffect(string prefabName)
@@ -130,10 +216,28 @@ namespace EndfieldGraphShaderLab
             if (string.IsNullOrEmpty(prefabName))
                 return;
 
+            if (pendingEffects.TryGetValue(prefabName, out Coroutine pending))
+            {
+                pendingEffects.Remove(prefabName);
+                if (pending != null)
+                    StopCoroutine(pending);
+            }
+            if (lifetimeEffects.TryGetValue(prefabName, out Coroutine lifetime))
+            {
+                lifetimeEffects.Remove(prefabName);
+                if (lifetime != null)
+                    StopCoroutine(lifetime);
+            }
+
             if (!activeEffects.TryGetValue(prefabName, out GameObject instance))
                 return;
 
             activeEffects.Remove(prefabName);
+            DestroyEffectInstance(instance);
+        }
+
+        private static void DestroyEffectInstance(GameObject instance)
+        {
             if (instance == null)
                 return;
 
@@ -214,10 +318,29 @@ namespace EndfieldGraphShaderLab
             if (requested.Length == 0)
                 return actorRoot;
 
-            Transform mount = actorRoot.Find(requested);
-            if (mount == null)
-                reason = "Exact mount path was not found below the actor root.";
-            return mount;
+            if (requested.IndexOf('/') >= 0)
+            {
+                Transform pathMount = actorRoot.Find(requested);
+                if (pathMount == null)
+                    reason = "Exact mount path was not found below the actor root.";
+                return pathMount;
+            }
+
+            Transform uniqueMount = null;
+            foreach (Transform candidate in actorRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if (!string.Equals(candidate.name, requested, StringComparison.Ordinal))
+                    continue;
+                if (uniqueMount != null)
+                {
+                    reason = "Mount name is not unique below the actor root.";
+                    return null;
+                }
+                uniqueMount = candidate;
+            }
+            if (uniqueMount == null)
+                reason = "Exact mount name was not found below the actor root.";
+            return uniqueMount;
         }
 
         private static bool TryValidateBinding(

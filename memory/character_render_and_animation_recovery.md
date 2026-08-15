@@ -254,23 +254,46 @@ replace `_SrcBlend=5/_DstBlend=10`, `_MVSrcColorBlend=3/_MVDstColorBlend=6`,
 player-center XYZ plus `fmod(Time.time,1024)` in W. A D3D12 pixel capture of
 the final PSO, survivor list, physical aliases, and live descriptors remains
 open, so this is executable source-closed structure, not yet pixel-parity
-proof. It also does not explain the character-specific
-large teal, purple, white-ribbon, or green-local effects seen in the retail
-capture.
+proof. The shared trail alone does not explain the character-specific layers;
+their separate controller owner follows below.
+
+An isolated Unity Direct3D12 replay now proves the generated shared trail is
+actually draw-admitted: at `0.125 s` it has 3,572 survivors and changes both
+the exact `B10G11R11_UFloatPack32` SceneColor and
+`A2B10G10R10_UNormPack32` SceneMV attachments. The diagnostic records the
+material state, descriptors, survivor rows, and GPU-readback hashes and labels
+itself `unity_command_buffer_replay_not_retail_capture`. This closes Unity MRT
+execution, not the retail camera's survivor list, RenderStateBlock override,
+physical aliases, live globals, or presentation pixels.
 
 A fresh isolated AnimeStudio broad load restored 1,269 StreamingAssets
 AnimatorController JSON files without changing the production wrapper scope.
 The audit again closes all 31 playable main Overview controllers, with four
 fixed-duration and 27 normalized-duration handoffs plus 636 controller-proven
-body/private-deco state compositions. Li Zhiyan and Zhuang Fangyi Overview
-start clips emit only their exact `PostAudioEvent`; their loop and private-deco
-Overview clips contain no VFX-spawn event. Luoxi still has no actor prefab,
-controller, clip, camera, or light join in this checkout. Character-specific
-Overview effects therefore remain unresolved rather than being inferred from
-the retail video. The full native verifier now reaches its generated-prefab
-gate and fails only because the current Viewer catalog has 30 prefabs and lacks
-Endminm; the earlier `transition_duration_fixed` exception was missing export
-input, not schema drift.
+body/private-deco state compositions. The earlier audio-only event census was
+not the actor-effect owner: controller `m_StateMachineBehaviours` resolve to
+`Gameplay.Beyond.AnimatorBehaviourPlayEffect`, whose `_effects[]` directly
+store `effectName + mountPoint`; 31 controllers contain 165 decoded records.
+Its exact Enter/Exit helper owns creation, removal, and immediate teardown.
+Zhuang Fangyi therefore has four source-owned Overview effects: `piaodai`,
+`_01`, `baofa`, and `finger_lightning`, the last mounted uniquely at
+`Bip001_R_Finger2Nub`. The lab now binds `piaodai` to its existing recovered
+animated prop and serializes the three exact particle-prefab bindings with
+their EffectSetting timing: `_01=0/8 s`, `baofa=6.1/3 s`, and
+`finger_lightning=4.4333334/2 s`. `_01` and `finger_lightning` pass the
+source-closed renderer gate; `baofa` remains deliberately non-executable
+because its `all/baofa` renderer still requires unrecovered
+`HGRP/Effect/VFXBaseV2` semantics. This remains independent of the Gacha
+Timeline owner even though the underlying effect assets are shared.
+
+The video identity join now closes 27 of 28 stable visible slots against exact
+localized names plus token-specific manifest/prefab evidence. In particular,
+the previously unresolved Luoxi/Rossi slot is `chr_0028_wulfa`; only the video
+label `伊玛` has no matching current CharacterTable/catalog actor and remains
+unresolved. Endminm's missing facial Avatar was recovered as
+`data_facemorph_avatar_endminm`, allowing its prefab to rebuild with 11 skinned
+meshes, 410 transforms, and 24 clips. The full native verifier now passes all
+31 actor prefabs, 4 fixed and 27 normalized handoffs, and 636 widget states.
 
 A frame-indexed audit places the first clear Zhuang Fangyi presentation at
 about video `102.8 s`; the preceding `102.5-102.7 s` corruption is a streaming/UI
@@ -278,21 +301,19 @@ transition and not VFX timing. Relative to that clear start, the white ribbon/
 shard silhouette is strongest around `0.3-2.3 s` and rapidly leaves the main
 outline by `2.3-2.8 s`; green hand/body-local energy persists around `0.3-3.1 s`,
 with a later local flare around `5.2-5.9 s` decaying by roughly `6.0-6.7 s`.
-The recording shows no defensible global exposure step. A full-video index now
-keeps every other visible segment as appearance-only evidence because only the
-`102.5-109.5 s` segment closes video identity to `chr_0030_zhuangfy`; no color,
-shape, or timing overlap is promoted to an owner. These intervals are retail
-visual acceptance bounds, not proof of effect asset identity, mount, particle
-seed, or exact lifetime.
+The recording shows no defensible global exposure step. A full-video identity
+index closes 27 of 28 stable slots, but no color, shape, or timing overlap is
+promoted to an effect owner without the corresponding controller/prefab chain.
+These intervals are retail visual acceptance bounds, not proof of particle
+seed or exact presentation-frame lifetime.
 
-The four Zhuang Fangyi request names do not license wholesale reuse of the
-GachaRoom effect Timeline. `piaodai` is the only immediate actor-local visual
-candidate (source interval 0-4.516667 s after 0.483333 s clip-in); `_01`,
-`baofa`, and `finger_lightning` retain only Gacha ownership. Independent
-`trail01` and `jianqiang` Control tracks are not implicit children of any
-Overview request. A future spawner must carry source domain, ownership gate,
-start/stop time, mount path, and local transform; the current immediate-request
-interface cannot safely represent those contracts.
+The four Zhuang Fangyi request names still do not license wholesale reuse of
+the GachaRoom Timeline: their Overview ownership comes specifically from the
+controller behaviour records. `trail01` and `jianqiang` remain Gacha-only
+because they are absent from that list. The Overview spawner now carries exact
+source domain, binding, delay/duration, unique mount resolution, and teardown;
+`piaodai` uses the already recovered animated actor prop rather than being
+misrepresented as a particle prefab.
 
 The Zhuang Fangyi gacha helper's multi-Director start protocol is now bounded
 more tightly from plaintext Lua, serialized Director/Timeline rows, and the
@@ -1422,15 +1443,16 @@ only stable interpretation and priorities.
    owner. The shared CharInfo `CharEffect/trail` is now generated and replayed
    with its selected `_USE_RBOFFSET` Distortion MRT branch and property-bound
    render state; next capture its D3D12 pixels and close final PSO overrides,
-   survivor ordering, physical aliases, and live descriptors. Separately trace
-   character-specific Overview effects beyond the now-negative
-   Animator/deco-event census, and
+   survivor ordering, physical aliases, and live descriptors. Generalize the
+   now-closed `AnimatorBehaviourPlayEffect._effects[]` owner path from Zhuang
+   Fangyi to the remaining controller records, preserving each exact prefab,
+   mount, delay, duration, and teardown contract; and
    keep Gacha-only and other queue-3005 materials fail-closed;
    use the measured early-ribbon, sustained green-local, and late-flare windows
    as visual acceptance bounds without promoting them to ownership evidence.
-   Repair the current missing `Endminm` viewer-catalog prefab before the next
-   shared-Viewer visual capture; generated Gacha-runtime validation itself is
-   green and must remain separable from that catalog repair.
+   use the now-complete 31-prefab Viewer catalog for the next shared-Viewer
+   visual capture; generated Gacha-runtime validation remains independently
+   green.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.

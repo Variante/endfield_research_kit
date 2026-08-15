@@ -4,8 +4,9 @@
 
 `videos/2026-08-15_10-32-32.mkv` 可以可靠地提供 Character Info 入场的
 时间和可见层验收条件，但不能单独证明 Unity prefab、材质、挂点、Timeline
-或 Lua/native producer。当前唯一完成“视频身份 → 角色源数据 → Animator/
-Prefab/clip”闭合的是 **庄方仪（`chr_0030_zhuangfy`）**，时间为视频绝对
+或 Lua/native producer。后续
+`video_actor_identity_join_20260815.md/json` 已将 28 个稳定槽位中的 27 个
+闭合到角色源数据；本报告仍专注庄方仪的逐帧效果层，时间为视频绝对
 `102.5–109.5 s`（约 `01:42.5–01:49.5`）。
 
 其它时间段下面只使用外观标签；这些标签不是角色 token，也不用于推导
@@ -55,8 +56,8 @@ owner。视频中可见的共同层和角色特有层必须分开记录：
 ```text
 body Overview animation       source-closed
 shared Character Info CharEffect source-closed
-Gacha piaodai/etc.             source-closed, but Gacha-only
-Overview-specific white/green VFX owner unresolved
+Overview piaodai/_01/baofa/finger owner closed by AnimatorBehaviourPlayEffect
+Overview executable visuals     piaodai + _01 + finger; baofa shader fail-closed
 ```
 
 ## 全片逐时段视觉层索引
@@ -76,7 +77,7 @@ Overview-specific white/green VFX owner unresolved
 | `64–73` | 双马尾红黑服 | 旋转展开、长发/披风/飘带 | 身体/布料层未 join |
 | `77–87` | 紫蓝猫耳 | 粉紫软光晕/粒子、窄幅 idle | 特效 owner 未解析 |
 | `88–101` | 白粉发与伴生物 | 粉色圆形/食物样伴生物、手部道具动作 | 伴生物 owner 未解析 |
-| `102.5–109.5` | **庄方仪** | 横向 glitch、白色带/碎片、绿色局部层、idle 衰减 | **身份与 body/controller 闭合；特效仅 shared + Gacha 交叉参考，Overview owner 未闭合** |
+| `102.5–109.5` | **庄方仪** | 横向 glitch、白色带/碎片、绿色局部层、idle 衰减 | **身份、body/controller 与四条 AnimatorBehaviourPlayEffect owner 均闭合；逐像素对应仍待 capture** |
 | `114–129` | 粉发与大型粉色球 | 大型伴生物悬浮/摆动、张臂/转身 | 伴生物 owner 未解析 |
 | `130–148` | 灰黑短发 | 主要是身体姿势、服装摆动，弱外部 VFX | 角色身份/owner 未 join |
 | `148–162` | 白发长外套男性 | 灰色几何/hologram 叠层、回到中性 idle | 几何层 owner 未解析 |
@@ -127,9 +128,10 @@ states`；完整 Viewer prefab catalog 仍有 Endminm 缺口（此前 verifier �
 4. 视频是屏幕录制，清场/横向 glitch/残影可能来自页面切换、流式边界、
    动画或后处理；不能直接解释为 RenderTexture 清屏、某个 shader pass
    或 prefab 生命周期。
-5. 除庄方仪外，本索引没有把某个观察槽位分配给洛茜或任何其它角色；
-   现有 source plan 中洛茜仍缺 playable prefab/controller/clip/camera/light
-   join，不从视频推导其身份。
+5. 本报告最初不分配庄方仪之外的身份；后续独立身份 join 已用 UI 名称、
+   localization、manifest/prefab 与外观特征闭合 27/28 个槽位，并确认
+   洛茜/Rossi 为 `chr_0028_wulfa`。以该后续报告为身份来源，仍不能据此
+   推导特效 owner。
 
 ## Unity 恢复使用方式
 
