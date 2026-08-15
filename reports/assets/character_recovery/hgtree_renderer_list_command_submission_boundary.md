@@ -1105,6 +1105,28 @@ identify the HGTree API-2 draw owner.
     still does not prove HGTree-specific `+0xDA8` selection, `+0xDE8` ordering,
     or queue ownership.
 
+62. The generic pass/delegate boundary is now recovered from the shipped
+    generic instantiation rather than inferred only from the decompiled source.
+    `HGRenderGraphBuilder.SetRenderFunc<PassData>` at `0x1876BCA9C` forwards
+    to its overload at `0x1876BC9C4`, which directly calls pass
+    `SetupSubpass` (`0x1884756FC`) and `SetupRenderFunc` (`0x1884755E0`).
+    `SetupRenderFunc` selects one of the four `SubpassDesc` slots at
+    `SubpassDesc+0x20/+0x40/+0x60/+0x80`; its helper `0x188475590` stores the
+    `RenderFunc` delegate, camera, and 16-byte custom payload into that
+    descriptor. The generic `HGRenderGraphPass<PassData>.ExecuteInternal`
+    body at `0x188474A4C` then calls `ExecuteSubpassRenderFunc`
+    (`0x188474E38`). That body iterates `m_subpasses` (`this+0xB0`), calls
+    `HGRenderGraph.InvokeOwnerCallback` (`0x189B2DA6C`) for each populated
+    descriptor, obtains the graph context through `get_HGContext`
+    (`0x189B3011C`), and invokes the stored delegate indirectly through its
+    method pointer with the pass `data` (`this+0xD0`) and that
+    `HGRenderGraphContext`. This is the concrete dynamic edge that reaches
+    the six pass lambdas already pinned to
+    `HGRendererListUtils.DrawTreeECSRendererList`; it explains why no direct
+    HGTree-to-`+DA8/+DE8` call appears in the pass body. The generic pass body
+    itself contains no `+DA8`, `+DE8`, `+F10`, Vulkan draw, or queue-submit
+    edge, so final HGTree draw/queue ownership remains fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -1238,4 +1260,10 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameasse
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x189B2E740 0x189B2EA6C
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x189B2E4B4 0x189B2E6C0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\find_gameassembly_direct_calls.py 0x1834534C0 0x189B37D20 0x189B2E740 0x189B2E4B4
+python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^HG\\.Rendering\\.RenderGraphModule\\.HGRenderGraphPass.*$" --member-regex "^(ExecuteInternal|ExecuteSubpassRenderFunc|BeginRenderPass|EndRenderPass|BeginSubpass|EndSubpass|SetupRenderFunc|SetupPreRenderPassFunc|SetupPostRenderPassFunc|Initialize|CreateRenderPass|HasRenderFunc)$" --body-target-regex "^(ExecuteInternal|ExecuteSubpassRenderFunc|BeginRenderPass|EndRenderPass|BeginSubpass|EndSubpass|SetupRenderFunc|SetupPreRenderPassFunc|SetupPostRenderPassFunc|Initialize|CreateRenderPass|HasRenderFunc)$" --body-target-type-regex "^HG\\.Rendering\\.RenderGraphModule\\.HGRenderGraphPass.*$" --all-images --include-all-members --body-context 2 --out scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphpass_exec_metadata.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphpass_exec_metadata.md
+python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphpass_exec_metadata.json --include-generic-instantiations --out scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphpass_exec_native_map.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphpass_exec_native_map.md
+python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^HG\\.Rendering\\.RenderGraphModule\\.HGRenderGraphBuilder$" --member-regex "^(SetRenderFunc|SetPreRenderPassFunc|SetPostRenderPassFunc|SetupRenderFunc|SetupSubpass)$" --body-target-regex "^(SetRenderFunc|SetPreRenderPassFunc|SetPostRenderPassFunc|SetupRenderFunc|SetupSubpass)$" --body-target-type-regex "^HG\\.Rendering\\.RenderGraphModule\\.HGRenderGraphBuilder$" --all-images --include-all-members --body-context 2 --out scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphbuilder_renderfunc_metadata.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphbuilder_renderfunc_metadata.md
+python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphbuilder_renderfunc_metadata.json --include-generic-instantiations --out scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphbuilder_renderfunc_native_map.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\hgrendergraphbuilder_renderfunc_native_map.md
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x188474A4C 0x188475350
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x188475590 0x1884756F9
 ```

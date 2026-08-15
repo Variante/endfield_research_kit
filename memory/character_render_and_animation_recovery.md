@@ -1050,6 +1050,20 @@ only stable interpretation and priorities.
    around the pass, and pipeline-level `Submit` remains its deferred consumer.
    This closes command-buffer identity, but not HGTree-specific `+0xDA8`
    selection, `+0xDE8` ordering, or queue ownership.
+   The generic pass/delegate edge is now concrete: builder
+   `SetRenderFunc<PassData>` (`0x1876BCA9C -> 0x1876BC9C4`) calls pass
+   `SetupSubpass`/`SetupRenderFunc` (`0x1884756FC`/`0x1884755E0`), whose
+   helper `0x188475590` stores the delegate, camera, and 16-byte payload in
+   descriptor slots `+0x20/+0x40/+0x60/+0x80`. Generic
+   `HGRenderGraphPass<PassData>.ExecuteInternal` (`0x188474A4C`) calls
+   `ExecuteSubpassRenderFunc` (`0x188474E38`); it iterates `m_subpasses`
+   (`this+0xB0`), invokes `HGRenderGraph.InvokeOwnerCallback` (`0x189B2DA6C`),
+   obtains `HGRenderGraphContext` via `get_HGContext` (`0x189B3011C`), and
+   invokes each stored delegate with pass `data` (`this+0xD0`) and that
+   context. This closes the dynamic delegate edge into the six identified
+   HGTree pass lambdas, but the generic pass body still has no static
+   `+DA8/+DE8/+F10`, Vulkan draw, or queue-submit edge; final HGTree draw and
+   queue ownership remain fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
