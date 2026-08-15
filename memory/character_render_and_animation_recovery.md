@@ -203,12 +203,12 @@ viewer now restarts each selected actor's exact generated Overview
 `start -> transition -> loop` chain, including its recovered entry offset and
 private item/deco bindings, instead of selecting an already-advanced resident
 animation. Re-selecting the same active row does not restart it. This closes
-the body/widget selection lifecycle only: entrance VFX requests have no
-general source-backed spawner. Only Dapan and Zhuang Fangyi currently carry
-recovered entrance-effect requests, and no `IEndfieldOverviewEffectSpawner`
-implementation consumes them in the shared Viewer. The physical
-`ExternalCamera`, secondary-motion, and final rendered-frame ordering remain
-fail-closed.
+the body/widget selection lifecycle only. A strict
+`IEndfieldOverviewEffectSpawner` now exists for explicitly bound generated
+particle prefabs, but the Dapan/Zhuang Fangyi request lists remain unbound
+because their proven owners are not Character Info. The shared Character Info
+effect uses its separate scene-owned path below. The physical `ExternalCamera`,
+secondary-motion, and final rendered-frame ordering remain fail-closed.
 
 The pinned native/Lua owner chain now closes the shared Character Info entry
 route more tightly: `CharInfoSwitchChar.Execute` emits the GUIDE event,
@@ -233,10 +233,37 @@ ParticleSystem/renderer PathIDs `8113670769548486403` and
 `5757248678484338435`. The renderer uses `M_UI_charChoose_12` PathID
 `4388811075012960551`, shader `HGRP/Effect/VFXRefract`, queue 3000, and exact
 texture `T_fx_mask_01_M` PathID `-7046954404783675798`. This closes ownership
-and resource identity but not HGRP shader execution or pixel parity, so the lab
-does not yet claim that the shared trail is rendered. It also does not explain
-the character-specific large teal, purple, white-ribbon, or green-local effects
-seen in the retail capture.
+and resource identity. The selected `HG_ENABLE_MV + _USE_RBOFFSET` fragment
+(DXBC hash `f905de094d0261d5`) is now implemented in the existing Distortion MRT
+shader as two SceneColor samples followed by the exact serialized channel-mask,
+max, and `_RBIntensity` combine. The generated prefab replays both complete
+ParticleSystem/renderer payloads; the root stays renderer-disabled with its
+null material PPtr, while only `trail` binds the exact queue-3000 material and
+texture. The shared Viewer reuses one scene-owned effect after the Overview
+Animator restart, under the serialized `SingleEffects` transform
+`position=(-0.3,0,0.05)`, `scale=(0.5,1,0.5)`. All four height buckets are
+local identity, so the lab preserves their proven spatial result without
+inventing a missing table height classification. Contract rebuild, Unity
+import, serialized-payload verification, resource admission, runtime play, and
+teardown all pass. A D3D12 pixel capture and the live retail blend/culling/VFX
+global comparison remain open, so this is executable source-closed structure,
+not yet pixel-parity proof. It also does not explain the character-specific
+large teal, purple, white-ribbon, or green-local effects seen in the retail
+capture.
+
+A fresh isolated AnimeStudio broad load restored 1,269 StreamingAssets
+AnimatorController JSON files without changing the production wrapper scope.
+The audit again closes all 31 playable main Overview controllers, with four
+fixed-duration and 27 normalized-duration handoffs plus 636 controller-proven
+body/private-deco state compositions. Li Zhiyan and Zhuang Fangyi Overview
+start clips emit only their exact `PostAudioEvent`; their loop and private-deco
+Overview clips contain no VFX-spawn event. Luoxi still has no actor prefab,
+controller, clip, camera, or light join in this checkout. Character-specific
+Overview effects therefore remain unresolved rather than being inferred from
+the retail video. The full native verifier now reaches its generated-prefab
+gate and fails only because the current Viewer catalog has 30 prefabs and lacks
+Endminm; the earlier `transition_duration_fixed` exception was missing export
+input, not schema drift.
 
 A frame-indexed audit places the first clear Zhuang Fangyi presentation at
 about video `102.8 s`; the preceding `102.5-102.7 s` corruption is a streaming/UI
@@ -1382,9 +1409,11 @@ only stable interpretation and priorities.
    direct-light/color/descriptor subset, close the narrow same-update old-root
    `LateTick`, Audio `ProcessFrame` flag/onset, and streamed-phase boundaries.
    Queue-3005 `baofa` Glow902 is now executable only under its exact Gacha
-   owner. Import the now source-closed shared CharInfo `CharEffect/trail` only
-   after its `VFXRefract` material execution is recovered; separately trace
-   character-specific Overview effects from Animator/deco/event consumers, and
+   owner. The shared CharInfo `CharEffect/trail` is now generated and replayed
+   with its selected `_USE_RBOFFSET` Distortion MRT branch; next capture its
+   D3D12 pixels and close live blend/culling/VFX-global state. Separately trace
+   character-specific Overview effects beyond the now-negative
+   Animator/deco-event census, and
    keep Gacha-only and other queue-3005 materials fail-closed;
    use the measured early-ribbon, sustained green-local, and late-flare windows
    as visual acceptance bounds without promoting them to ownership evidence.
