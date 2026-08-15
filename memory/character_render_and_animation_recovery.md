@@ -854,6 +854,15 @@ only stable interpretation and priorities.
    `mov [pair+0x10]`/`call reg` scan found only unrelated XR-audio, refcount,
    and tagged-generic families; no HGTree/API-2/Vulkan/queue consumer. The
    runtime result-pair-to-final-draw join remains unresolved and fail-closed.
+   A second async task route is now positively bounded: `0x18107E2E0` selects
+   `0x181065FD0` for a non-empty dependency, which calls `0x18106B5B0`; that
+   function invokes `0x18107A410`, writes the result count, and stores
+   `0x181060EA0` in the continuation pair's `+0x10` (`0x18106BE8B`). The pool
+   worker still only invokes the generic node worker/setter tuple
+   (`0x1805598C0`, `0x180555720/0x180557750`) before retiring through
+   `0x1805586C0`; no static continuation-object call reaches the HGTree
+   handler or the API-2/Vulkan/queue path. Keep that final edge unresolved and
+   fail-closed; prioritize runtime inspection of this continuation pair.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.

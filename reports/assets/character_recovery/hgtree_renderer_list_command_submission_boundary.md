@@ -753,6 +753,25 @@ and final draw/queue ownership remain fail-closed.
     `+0xDA8`/`+0xDE8`/`+0xF10`, Vulkan, or queue submission. Keep the
     post-callback result-pair-to-draw edge unresolved and fail-closed.
 
+44. A second async resource-task route now explains how the result thunk can
+    be regenerated after an upstream dependency. `0x18107E2E0` selects the
+    callback at `0x181065FD0` (the non-empty dependency branch at
+    `0x18107E492`) and queues it through `0x180555D30`. That callback calls
+    `0x18106B5B0` (`0x181066E10`); the latter invokes `0x18107A410`, writes the
+    generated result count at `result+8`, and stores the continuation pair at
+    `continuation+8` with `0x181060EA0` at `continuation+0x10`
+    (`0x18106BE8B`). This is a positive producer-to-continuation join, distinct
+    from the initial `0x181080730 -> 0x181065190/0x181067A70` route.
+    The pool path still remains generic: `0x1805598C0` invokes the node worker
+    callback at `node+0x30`, optionally calls the scheduler setter at
+    `node+0x40`, and then `0x1805586C0` retires the node. The helper tuple
+    (`0x180555720`, `0x180557650`, `0x180557750`) wraps caller-supplied
+    continuation state; no static call of the stored `0x181060EA0` reaches
+    `0x18107AE60`, API-2 `+0xDA0/+0xDE8/+0xF10`, Vulkan, or queue submission.
+    Therefore the continuation-object-to-HGTree-handler edge remains
+    unresolved and fail-closed, while this task route is now the highest-value
+    runtime probe target.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
