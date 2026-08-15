@@ -30,9 +30,12 @@ The recorded HGTree receiver and its callback-produced resource/state records
 are source-pinned, including the runtime list executor that invokes the
 buffer/state callback thunks. Managed tree-list playback is now joined through
 source-positive table-A command writer, high-level opcode `0x55`, low-level
-opcode `0x273B`, and API-2 `+0xEA8` callback queue. HGTree-specific Vulkan draw
-ownership, callback ordering, and queue submission remain unresolved; this is
-not yet a retail frame-parity claim.
+opcode `0x273B`, and API-2 `+0xEA8` callback queue. The asynchronous task's
+renderer-record identity is also statically joined: its arg5 record becomes
+task-descriptor `+0x68`, and the worker writes the callback/result pair back to
+that same 0x30-byte record before the opcode-`0x55` fallback invokes it.
+HGTree-specific indirect-draw selection, flush ordering, and queue submission
+remain unresolved; this is not yet a retail frame-parity claim.
 
 The generic flush boundary is now source-pinned as well: high-level opcode
 `0x6A` is written by `0x1804CA0B0` and interpreted at `0x1804D178A`, where it
@@ -888,10 +891,31 @@ and final draw/queue ownership remain fail-closed.
     `+0x10`, with no additional `+8` callback write. The broader alias hit in
     `0x18107EE40` is only zero-initialization of a newly allocated 0x30-byte
     record (`+8/+0x10/+0x18`), not a callback producer. This closes the
-    direct, statically recognizable callback producer set while leaving the
-    continuation/work-object to renderer-list-record identity unresolved and
-    fail-closed. The unresolved edge still requires a runtime record witness,
-    not a guessed draw/queue join.
+    direct, statically recognizable callback producer set. At this stage the
+    record identity was not yet interpreted correctly; the subsequent stack
+    mapping in item 52 supersedes that narrow identity conclusion while the
+    indirect-draw/flush/queue edge remains fail-closed.
+
+52. The previous continuation/record separation is corrected by the Windows
+    x64 stack mapping at `0x18107E2E0`. After its prologue, `[rsp+0xA0]` is
+    caller arg5 and `[rsp+0xA8]` is arg6. The initializer stores arg5 into the
+    task descriptor at `+0x68` (`0x18107E411`). In the primary E9C0 caller,
+    arg5 is the 0x30-byte renderer record
+    (`[rbx + index*24 - 8]`) and arg6 is a separate input/context pointer
+    (`0x18107EDE2-0x18107EDF1`); the sibling FC92 caller likewise passes its
+    record (`r14 = [r12+0x10]`) as arg5. Worker `0x181065FD0` reads descriptor
+    `+0x68` and passes it as builder arg6 to `0x18106B5B0`; its tail writes
+    `[record+8]` and `[record+0x10]` at `0x18106BEC9-0x18106BECD`. The other
+    two worker selections route through `0x18106C6C0` and its equivalent
+    arg6 tail, with the same record field semantics. The E2E0 caller then
+    copies the returned pair into that record's `+0x20`
+    (`0x18107EDF6-0x18107EDFE` or `0x18107FC97-0x18107FC9F`). Finally,
+    opcode-`0x55` fallback `0x18106AAE0` loads exactly `[rsi+0x10]`, releases
+    its `+0x20` pair, and calls `[record+0x10]` with `[record+8]`
+    (`0x18106AC65-0x18106AC96`). This statically joins the async result pair,
+    callback slot, and HGTree handler on one renderer record. Items 46-50's
+    claim that this was a distinct continuation/work object is superseded;
+    only the handler's indirect-draw/flush/queue ownership remains fail-closed.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
