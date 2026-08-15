@@ -33,8 +33,9 @@ durations, delays, the existing piaodai path, and uniqueness of the finger
 mount. Unity batch validation passed with the four serialized bindings.
 
 The separate runtime-admission verifier admits `_01` and
-`finger_lightning`. It rejects `baofa` because the exact `all/baofa` renderer
-(material PathID `98ef303a9f823d54`) still depends on unrecovered
-`HGRP/Effect/VFXBaseV2` behavior. The owner, mount, delay, duration, particle,
+`finger_lightning`. It rejects `baofa` because the exact
+`all/daoguang_light (1)` renderer (material PathID `6070151493152993176`,
+serialized as little-endian bytes `98ef303a9f823d54`) still depends on
+unrecovered `HGRP/Effect/VFXBaseV2` behavior. The owner, mount, delay, duration, particle,
 renderer, mesh, material, and shader identity are therefore preserved, but the
 visual is intentionally not spawned until that shader contract closes.

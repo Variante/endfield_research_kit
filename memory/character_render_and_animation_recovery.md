@@ -282,9 +282,24 @@ animated prop and serializes the three exact particle-prefab bindings with
 their EffectSetting timing: `_01=0/8 s`, `baofa=6.1/3 s`, and
 `finger_lightning=4.4333334/2 s`. `_01` and `finger_lightning` pass the
 source-closed renderer gate; `baofa` remains deliberately non-executable
-because its `all/baofa` renderer still requires unrecovered
-`HGRP/Effect/VFXBaseV2` semantics. This remains independent of the Gacha
+because its `all/daoguang_light (1)` renderer, material
+`M_fx_ui_zhuangfy_lightning_901` PathID `6070151493152993176`, still lacks a
+retail-equivalent `HGRP/Effect/VFXBaseV2` execution proof. Existing D3D12
+same-input probes use a transient compatibility shader, force both admission
+globals, and test nonzero coverage rather than retail pixel equality. The lab
+now validates the exact sole fail-closed renderer/material/shader tuple so it
+cannot silently drift or become admitted. This remains independent of the Gacha
 Timeline owner even though the underlying effect assets are shared.
+
+Across all 31 controllers, the 165 behaviour records contain 369 entries and
+304 unique effect names. The object index has exact-name evidence for 223
+unique names/288 entries; Unity currently materializes only the three
+standalone Zhuang Fangyi particle prefabs plus embedded `piaodai`. Of 228
+non-root mounts, 217 resolve uniquely, 11 are ambiguous, and none are missing.
+Camille (33 source-backed names) and Last Rite (16) are the cleanest next
+materialization batches; Li Zhiyan (`38-47 s`) and Wulfa (`48-55 s`) have the
+strongest next retail-video acceptance joins, while Dapan (`283-296 s`) is the
+low-VFX prop-animation regression target.
 
 The video identity join now closes 27 of 28 stable visible slots against exact
 localized names plus token-specific manifest/prefab evidence. In particular,
@@ -1445,8 +1460,11 @@ only stable interpretation and priorities.
    render state; next capture its D3D12 pixels and close final PSO overrides,
    survivor ordering, physical aliases, and live descriptors. Generalize the
    now-closed `AnimatorBehaviourPlayEffect._effects[]` owner path from Zhuang
-   Fangyi to the remaining controller records, preserving each exact prefab,
-   mount, delay, duration, and teardown contract; and
+   Fangyi to the remaining controller records, starting with Camille/Last Rite
+   for unambiguous source-backed materialization and Li Zhiyan/Wulfa for retail
+   visual acceptance, preserving each exact prefab, mount, delay, duration,
+   and teardown contract; recover full hierarchy/PPtr mounts before Pograni's
+   eight ambiguous entries; and
    keep Gacha-only and other queue-3005 materials fail-closed;
    use the measured early-ribbon, sustained green-local, and late-flare windows
    as visual acceptance bounds without promoting them to ownership evidence.
