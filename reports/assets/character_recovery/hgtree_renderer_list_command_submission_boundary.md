@@ -436,6 +436,19 @@ identify the HGTree API-2 draw owner.
     opaque object: it is the selected API-2 backend shared by immediate and
     recorded paths.
 
+    A vtable cross-check keeps the writer and backend identities separate.
+    The data table at `0x181DCB600` contains `0x18093AE10` at slot `+0x0`
+    and `0x18092E350` at slot `+0x148`; those are the two front/command-writer
+    methods that produce `0x2730`/`0x2731` and use the shared object fields
+    (`+0x2711`, `+0x2720`, `+0x2708`). The constructor at `0x1809258C0`
+    installs a different front-context table (`0x181DCB360`), whose `+0x148`
+    entry is `0x180728720`, while the API-2 backend table
+    `0x181DBC098 + 0xDE8` resolves to `0x18083F1E0`. Therefore
+    `0x18092E350`/`0x18093AE10` are command writers that immediately dispatch
+    into the backend's `+0xDE8`/`+0xE90`; they are not the backend draw/submit
+    implementations themselves. This removes a class/vtable conflation but
+    does not create an HGTree-specific writer edge.
+
     The recorded HGTree wrapper opcodes now have concrete interpreter
     consumers. The `0x27B6` case begins at `0x1813B92D0` and calls the
     receiver's `+0x358` slot at `0x1813B92F8` (`0x1808351F0`). The `0x2734`

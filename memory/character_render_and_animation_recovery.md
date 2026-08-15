@@ -1007,7 +1007,12 @@ only stable interpretation and priorities.
    through `0x1804CDF70`. This confirms that the HGTree writer's `0x55` record
    can be consumed through Submit as well as the direct Execute/NoCopy path,
    but does not turn the generic `0x6A -> +0xF10` flush or neighboring `+0xDE8`
-   master-list path into an HGTree-specific draw/queue proof.
+   master-list path into an HGTree-specific draw/queue proof. A vtable
+   cross-check separates the generic `0x2730`/`0x2731` writers from that
+   backend: `0x181DCB600 + 0x0/+0x148` contains
+   `0x18093AE10`/`0x18092E350`, while the API-2 backend table
+   `0x181DBC098 + 0xDE8` is `0x18083F1E0`; the writers immediately dispatch
+   into the backend slots but are not the backend draw/submit implementations.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
