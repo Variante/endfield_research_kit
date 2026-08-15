@@ -130,6 +130,10 @@ namespace EndfieldGraphShaderLab
         private PlayableDirector othersStructuralDirector;
         private EndfieldRecoveredEmptyGachaHelperPlayableAsset lightStructuralAsset;
         private EndfieldRecoveredEmptyGachaHelperPlayableAsset othersStructuralAsset;
+        private EndfieldHGOperatorLightRig sourceBackedOperatorLightRig;
+        private EndfieldHGRPCharacterLightingVolume sourceBackedCharacterLightingVolume;
+        private bool gateSourceBackedPresentation;
+        private bool presentationLifecycleActive;
 
         public static bool IsNativeSampleActive(float weight)
         {
@@ -199,16 +203,12 @@ namespace EndfieldGraphShaderLab
 
         private void OnDisable()
         {
-            delayedPlayPending = false;
-            directorStartCoordinator?.StopAll();
-            ResetAllEntityVFX();
+            EndRecoveredEffect();
         }
 
         private void OnDestroy()
         {
-            delayedPlayPending = false;
-            directorStartCoordinator?.StopAll();
-            ResetAllEntityVFX();
+            EndRecoveredEffect();
             if (lightStructuralAsset != null)
                 Destroy(lightStructuralAsset);
             if (othersStructuralAsset != null)
@@ -223,8 +223,27 @@ namespace EndfieldGraphShaderLab
                 actorCameraDirector.playableAsset == null ||
                 scaledPlayDelaySeconds < 0f)
                 return false;
-            EnsureDirectorStartCoordinator();
-            directorStartCoordinator.SampleToBeginning();
+            if (gateSourceBackedPresentation &&
+                (sourceBackedOperatorLightRig == null ||
+                 sourceBackedCharacterLightingVolume == null ||
+                 sourceBackedOperatorLightRig.actorRoot == null ||
+                 sourceBackedOperatorLightRig.normalLightCompatibilityScale != 0f ||
+                 sourceBackedOperatorLightRig.rimLightCompatibilityScale != 0f))
+            {
+                CloseSourceBackedPresentation();
+                return false;
+            }
+            try
+            {
+                OpenSourceBackedPresentation();
+                EnsureDirectorStartCoordinator();
+                directorStartCoordinator.SampleToBeginning();
+            }
+            catch
+            {
+                CloseSourceBackedPresentation();
+                throw;
+            }
             // Public Unity 2022 does not invoke custom EntityVFX ProcessFrame
             // here after Stop, while the retail helper enters SampleToBeginning
             // with its child graph already constructed. Dispatch only the exact
@@ -233,6 +252,50 @@ namespace EndfieldGraphShaderLab
             delayedPlayDeadline = scaledTime + scaledPlayDelaySeconds;
             delayedPlayPending = true;
             return true;
+        }
+
+        public void BindSourceBackedPresentation(
+            EndfieldHGOperatorLightRig operatorLightRig,
+            EndfieldHGRPCharacterLightingVolume characterLightingVolume)
+        {
+            sourceBackedOperatorLightRig = operatorLightRig;
+            sourceBackedCharacterLightingVolume = characterLightingVolume;
+            gateSourceBackedPresentation = true;
+            CloseSourceBackedPresentation();
+        }
+
+        public void EndRecoveredEffect()
+        {
+            delayedPlayPending = false;
+            directorStartCoordinator?.StopAll();
+            ResetAllEntityVFX();
+            CloseSourceBackedPresentation();
+        }
+
+        private void OpenSourceBackedPresentation()
+        {
+            if (!gateSourceBackedPresentation || presentationLifecycleActive)
+                return;
+            sourceBackedCharacterLightingVolume.enabled = true;
+            sourceBackedOperatorLightRig.SetRecoveredGachaPublicationState(
+                true,
+                true,
+                false);
+            presentationLifecycleActive = true;
+        }
+
+        private void CloseSourceBackedPresentation()
+        {
+            presentationLifecycleActive = false;
+            if (sourceBackedOperatorLightRig != null)
+            {
+                sourceBackedOperatorLightRig.SetRecoveredGachaPublicationState(
+                    false,
+                    false,
+                    false);
+            }
+            if (sourceBackedCharacterLightingVolume != null)
+                sourceBackedCharacterLightingVolume.enabled = false;
         }
 
         public bool AdvanceRecoveredEffectStart(float scaledTime)

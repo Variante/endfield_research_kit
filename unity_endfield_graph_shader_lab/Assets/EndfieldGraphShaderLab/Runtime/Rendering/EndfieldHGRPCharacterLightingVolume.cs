@@ -266,9 +266,13 @@ namespace EndfieldGraphShaderLab
             else
             {
                 Shader.SetGlobalFloat(CompatibilityActiveId, 0.0f);
+                Shader.SetGlobalFloat(CompatibilityInfluenceId, 0.0f);
                 Shader.SetGlobalFloat(RecoveredCharacterCubemapBoundId, 0.0f);
                 Shader.SetGlobalFloat(RecoveredDiffuseAuditModeId, 0.0f);
                 Shader.SetGlobalFloat(RecoveredShadowBlendOverrideId, -1.0f);
+                Shader.SetGlobalFloat(CharacterMainLightIntensityId, 1.0f);
+                for (int i = 0; i < CharacterParameterIds.Length; i++)
+                    Shader.SetGlobalVector(CharacterParameterIds[i], Vector4.zero);
             }
         }
 

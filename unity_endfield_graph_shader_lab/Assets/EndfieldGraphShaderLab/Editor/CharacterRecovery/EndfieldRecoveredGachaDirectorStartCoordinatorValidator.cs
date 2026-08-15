@@ -126,11 +126,61 @@ namespace EndfieldGraphShaderLabEditor
                 Require(rejectedIdentityDirector,
                     "A missing Audio PlayableAsset did not fail closed.");
 
+                int unityLightCountBefore =
+                    root.GetComponentsInChildren<Light>(true).Length;
+                GameObject cameraObject = new GameObject("PresentationCamera");
+                cameraObject.transform.SetParent(root.transform, false);
+                cameraObject.AddComponent<Camera>();
+                EndfieldHGOperatorLightRig lightRig =
+                    cameraObject.AddComponent<EndfieldHGOperatorLightRig>();
+                lightRig.actorRoot = root.transform;
+                lightRig.normalLightCompatibilityScale = 0f;
+                lightRig.rimLightCompatibilityScale = 0f;
+                EndfieldHGRPCharacterLightingVolume lightingVolume =
+                    cameraObject.AddComponent<EndfieldHGRPCharacterLightingVolume>();
+                EndfieldRecoveredZhuangfyGachaRuntime runtime =
+                    root.AddComponent<EndfieldRecoveredZhuangfyGachaRuntime>();
+                runtime.autoStartRecoveredEffect = false;
+                runtime.actorCameraDirector = actor;
+                runtime.director = effect;
+                runtime.BindSourceBackedPresentation(lightRig, lightingVolume);
+                Vector4 exposureBefore = Shader.GetGlobalVector("_ExposureParams");
+                Require(
+                    !lightingVolume.enabled &&
+                    !lightRig.sourceBackedClusteredNprLightLoop &&
+                    !lightRig.sourceBackedLightBinningMembership &&
+                    !lightRig.sourceBackedIsolatedPunctualSoftShadowProducer,
+                    "Binding did not close the recovered presentation lifecycle.");
+                Require(runtime.BeginRecoveredEffectStart(10f),
+                    "Recovered presentation lifecycle rejected exact direct references.");
+                Require(
+                    lightingVolume.enabled &&
+                    lightRig.sourceBackedClusteredNprLightLoop &&
+                    lightRig.sourceBackedLightBinningMembership &&
+                    !lightRig.sourceBackedIsolatedPunctualSoftShadowProducer,
+                    "Begin did not open the exact clustered/binning presentation subset.");
+                runtime.EndRecoveredEffect();
+                Require(
+                    !lightingVolume.enabled &&
+                    !lightRig.sourceBackedClusteredNprLightLoop &&
+                    !lightRig.sourceBackedLightBinningMembership &&
+                    !lightRig.sourceBackedIsolatedPunctualSoftShadowProducer &&
+                    Shader.GetGlobalInt("_EndfieldOperatorLightCount") == 0 &&
+                    Shader.GetGlobalFloat("_EndfieldRecoveredClusteredNprLightLoop") == 0f &&
+                    Shader.GetGlobalFloat("_EndfieldRecoveredLightBinningAvailable") == 0f,
+                    "End did not close all recovered presentation publication paths.");
+                Require(
+                    root.GetComponentsInChildren<Light>(true).Length == unityLightCountBefore,
+                    "Recovered presentation lifecycle created a duplicate Unity Light.");
+                Require(Shader.GetGlobalVector("_ExposureParams") == exposureBefore,
+                    "Recovered presentation lifecycle reset exposure history.");
+
                 Debug.Log(
                     "Recovered gacha Director start coordinator validation passed: " +
                     "Actor/Effect plus exact empty Light/Others admitted in source order; " +
                     "Audio missing; " +
-                    "zero sample, two-stage play, stop, and missing-asset rejection passed.");
+                    "zero sample, two-stage play, stop, missing-asset rejection, and " +
+                    "source-backed lighting/Volume lifecycle passed.");
             }
             finally
             {
