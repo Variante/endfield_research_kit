@@ -29,8 +29,10 @@ API-2 backend family has a concrete descriptor -> draw -> queue-submit sink.
 The recorded HGTree receiver and its callback-produced resource/state records
 are source-pinned, including the runtime list executor that invokes the
 buffer/state callback thunks. Managed tree-list playback is now joined through
-source-positive table-A command writer, high-level opcode `0x55`, low-level
-opcode `0x273B`, and API-2 `+0xEA8` callback queue. The asynchronous task's
+source-positive table-A command writer, high-level opcode `0x55`, and low-level
+opcode `0x273B` direct callback dispatch. The API-2 `+0xEA8` callback queue is
+an adjacent, separately decoded low-level case (`0x273C`), not part of the
+HGTree `0x273B` edge. The asynchronous task's
 renderer-record identity is also statically joined: its arg5 record becomes
 task-descriptor `+0x68`, and the worker writes the callback/result pair back to
 that same 0x30-byte record before the opcode-`0x55` fallback invokes it.
@@ -142,11 +144,10 @@ and final draw/queue ownership remain fail-closed.
    `0x181060D70 -> 0x18107AB10`. The concrete context implementation
    `0x1809324E0` records low-level opcode `0x273B`, callback pointer, size, and
    the record payload. Correct low-level-table indexing is `opcode - 0x2711`;
-   `0x273B` lands at `0x1813B1110`, which invokes API-2 backend vtable `+0xEA8`
-   (`0x18083F530`) to queue the callback record.
-10. The queued `+0xEA8` records are consumed by the backend's later record loop
-    at `0x180844C4A-0x180844C6D`, which calls the stored callback. The exact
-    `0x18107AB10` body reached by `0x181060D70` is a resource/list lifetime
+   `0x273B` lands at `0x1813B1110`, which parses the callback/record fields and
+   calls the callback pointer stored in its parsed command state at
+   `0x1813B12B0-0x1813B12B6`. It does not call API-2 `+0xEA8`.
+10. The exact `0x18107AB10` body reached by `0x181060D70` is a resource/list lifetime
     callback: it calls `0x1806FCB10`, `0x180555A30`, `0x180555D30`,
     `0x180555E50`, `0x180555720`, `0x180FCE6F0`, and `0x180555A80`; the
     inspected `0x180FCE6F0` body performs resource refcount/cleanup work and
@@ -158,8 +159,10 @@ and final draw/queue ownership remain fail-closed.
     proven that this specific renderer-list record reaches the neighboring
     `+0xDA8` indirect-draw branch or the separate `+0xDE8` draw/submit sink.
 11. Therefore this pass closes a positive managed-tree -> high-level opcode
-    `0x55` -> low-level opcode `0x273B` -> API-2 `+0xEA8` -> HGTree callback
-    route. The final renderer-list draw ownership and queue submission remain
+    `0x55` -> low-level opcode `0x273B` -> direct HGTree callback route. The
+    neighboring API-2 `+0xEA8` queue remains a separate low-level `0x273C`
+    case, not a proven continuation of HGTree `0x273B`. The final
+    renderer-list draw ownership and queue submission remain
     fail-closed; table B's validation body and the unrelated ordinary
     `Internal_DrawRendererList_Injected` route must not be substituted.
 
@@ -457,8 +460,8 @@ and final draw/queue ownership remain fail-closed.
     tree route: the source-positive table-A body records opcode `0x55`.
 26. The remaining HGTree sink question is now after the positive chain:
     `DrawTreeECSRendererList -> 0x180064580 -> 0x1804C7930 -> 0x55 ->
-    0x18106AAE0 -> 0x1809324E0 -> 0x273B -> 0x18083F530 ->
-    0x18107AB10`. The last callback is the resource/list lifetime boundary;
+    0x18106AAE0 -> 0x1809324E0 -> 0x273B -> 0x1813B1110 ->
+    0x181060D70 -> 0x18107AB10`. The last callback is the resource/list lifetime boundary;
     it does not statically dispatch front-end `+0xDA0`/`+0x380`. Those slots
     are reached by the separately installed resource callbacks
     `0x181060EA0/0x181060EB0 -> 0x18107AE60/0x18107B3A0`, whose API-2 records
@@ -917,6 +920,21 @@ and final draw/queue ownership remain fail-closed.
     claim that this was a distinct continuation/work object is superseded;
     only the handler's indirect-draw/flush/queue ownership remains fail-closed.
 
+53. The low-level dispatch table was rechecked to separate the adjacent API-2
+    queue case from HGTree's renderer-list callback. With index
+    `opcode - 0x2711`, `0x1813BB574[0x273B-0x2711]` resolves to
+    `0x1813B1110`; that case parses the callback pointer/record fields and
+    calls the parsed callback at `0x1813B12B0-0x1813B12B6`. The next table
+    entry, `0x273C`, resolves to `0x1813B12BB` and is the case that dispatches
+    API-2 vtable `+0xEA8` at `0x1813B13C5`. Therefore the earlier wording that
+    joined HGTree `0x273B` directly to `0x18083F530` was an opcode-indexing
+    error. The corrected positive chain ends at the direct HGTree callback
+    `0x181060D70 -> 0x18107AB10`; API-2 `+0xEA8`, indirect draw, flush, and
+    queue-submit ownership remain unjoined and fail-closed. A raw call-slot
+    census finds generic `+0xDE8` sites at `0x18092E450`/`0x1813AFED9` and
+    `+0xF10` sites at `0x1804D1791`/`0x1813B1574`, with no such call in the
+    HGTree handler range `0x181060000-0x181081000`.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -932,6 +950,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18072F300 0x1807303C0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1809324E0 0x180932780
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AEE90 0x1813B12C0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813B1080 0x1813B1480
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181060D00 0x18107AD80
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180064580 0x180064620
