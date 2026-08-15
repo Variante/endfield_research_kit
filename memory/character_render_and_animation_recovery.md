@@ -854,19 +854,24 @@ only stable interpretation and priorities.
    `mov [pair+0x10]`/`call reg` scan found only unrelated XR-audio, refcount,
    and tagged-generic families; no HGTree/API-2/Vulkan/queue consumer. The
    runtime result-pair-to-final-draw join remains unresolved and fail-closed.
-   The async task route is now bounded across all three worker selections:
-   `0x18107E2E0` queues `0x181065FD0`, `0x181066F40`, or `0x181064100` through
-   `0x180555D30`; each builds a resource/record result and its caller copies
-   the returned pair into a record's `+0x20`. The non-empty dependency branch
-   still calls `0x18106B5B0`, which invokes `0x18107A410`, writes the result
-   count, and stores `0x181060EA0` in the continuation pair's `+0x10`
-   (`0x18106BE8B`). The pool worker `0x1805598C0` invokes only the node
-   `+0x30` worker and optional `+0x40` index setter before retiring through
-   `0x1805586C0`; `0x180557650` and `0x1805592B0` use holder cleanup/index
-   callbacks, not the result-pair callback. No static continuation consumer
-   reaches the HGTree handler or API-2/Vulkan/queue path. Keep the final edge
-   unresolved and fail-closed; prioritize runtime inspection of the record at
-   `+0x20`.
+   The async task route is now bounded across all three worker selections, but
+   they are not one implementation: `0x18107E2E0` queues
+   `0x181065FD0`, `0x181066F40`, or `0x181064100` through `0x180555D30`, and
+   each caller copies the returned pair into a record's `+0x20`. The
+   non-empty dependency branch `0x181065FD0 -> 0x18106B5B0` invokes
+   `0x18107A410` and stores `0x181060EA0` at continuation `+0x10`
+   (`0x18106BE8B`). The other two workers call `0x18106C6C0` at
+   `0x1810678EC/0x181065056`, forward the same context `+0x10/+0x68`, and
+   reach its shared tail `0x18106CFA7`/`0x18106CFC9-0x18106D003`, which writes
+   the same `0x181060EA0` pair. The separate initial/sibling builders still
+   account for `0x181060EB0` (`0x18106BEF0`'s `0x18106C639` branch and
+   `0x18106D020`'s `0x18106D769` tail). The pool worker `0x1805598C0`
+   invokes only the node `+0x30` worker and optional `+0x40` index setter
+   before retiring through `0x1805586C0`; `0x180557650` and `0x1805592B0`
+   use holder cleanup/index callbacks, not the result-pair callback. No
+   static continuation consumer reaches the HGTree handler or
+   API-2/Vulkan/queue path. Keep the final edge unresolved and fail-closed;
+   prioritize runtime inspection of the record at `+0x20`.
    The pool-context identity is now proven through the calling convention:
    `0x18107E2E0` passes its task context in `r9` to `0x180555D30`, which
    forwards it through `0x1805573D0` and `0x180559520` as `r8` into
