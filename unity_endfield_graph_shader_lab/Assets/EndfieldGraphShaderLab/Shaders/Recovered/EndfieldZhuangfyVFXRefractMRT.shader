@@ -59,6 +59,10 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT"
         {
             Name "Refraction"
             Tags { "LightMode"="Distortion" }
+            // Parsed m_State binds the color blend factors, depth state, and
+            // culling to material properties. The converted retail ShaderLab
+            // prints their zero-valued parser defaults and is not the live
+            // PSO. Alpha factors remain the fixed parsed Zero/One and One/One.
             Blend 0 [_SrcBlend] [_DstBlend], Zero One
             Blend 1 [_MVSrcColorBlend] [_MVDstColorBlend], One One
             ColorMask RGBA 0

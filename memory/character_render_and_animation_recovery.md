@@ -245,9 +245,16 @@ Animator restart, under the serialized `SingleEffects` transform
 local identity, so the lab preserves their proven spatial result without
 inventing a missing table height classification. Contract rebuild, Unity
 import, serialized-payload verification, resource admission, runtime play, and
-teardown all pass. A D3D12 pixel capture and the live retail blend/culling/VFX
-global comparison remain open, so this is executable source-closed structure,
-not yet pixel-parity proof. It also does not explain the character-specific
+teardown all pass. Parsed shader `m_State` closes the formerly ambiguous
+fixed-function ownership: Target0/Target1 color blend, ZTest, ZWrite, and Cull
+are material-property-bound, while the alpha blend lanes remain fixed. The
+converted ShaderLab's `Zero/Off` text is only a lossy default and must not
+replace `_SrcBlend=5/_DstBlend=10`, `_MVSrcColorBlend=3/_MVDstColorBlend=6`,
+`_ZTest=4`, `_ZWrite=0`, and `_CullMode=2`. `_VFXParams0` is source-closed to
+player-center XYZ plus `fmod(Time.time,1024)` in W. A D3D12 pixel capture of
+the final PSO, survivor list, physical aliases, and live descriptors remains
+open, so this is executable source-closed structure, not yet pixel-parity
+proof. It also does not explain the character-specific
 large teal, purple, white-ribbon, or green-local effects seen in the retail
 capture.
 
@@ -271,9 +278,12 @@ transition and not VFX timing. Relative to that clear start, the white ribbon/
 shard silhouette is strongest around `0.3-2.3 s` and rapidly leaves the main
 outline by `2.3-2.8 s`; green hand/body-local energy persists around `0.3-3.1 s`,
 with a later local flare around `5.2-5.9 s` decaying by roughly `6.0-6.7 s`.
-The recording shows no defensible global exposure step. These intervals are
-retail visual acceptance bounds, not proof of effect asset identity, mount,
-particle seed, or exact lifetime.
+The recording shows no defensible global exposure step. A full-video index now
+keeps every other visible segment as appearance-only evidence because only the
+`102.5-109.5 s` segment closes video identity to `chr_0030_zhuangfy`; no color,
+shape, or timing overlap is promoted to an owner. These intervals are retail
+visual acceptance bounds, not proof of effect asset identity, mount, particle
+seed, or exact lifetime.
 
 The four Zhuang Fangyi request names do not license wholesale reuse of the
 GachaRoom effect Timeline. `piaodai` is the only immediate actor-local visual
@@ -1410,8 +1420,9 @@ only stable interpretation and priorities.
    `LateTick`, Audio `ProcessFrame` flag/onset, and streamed-phase boundaries.
    Queue-3005 `baofa` Glow902 is now executable only under its exact Gacha
    owner. The shared CharInfo `CharEffect/trail` is now generated and replayed
-   with its selected `_USE_RBOFFSET` Distortion MRT branch; next capture its
-   D3D12 pixels and close live blend/culling/VFX-global state. Separately trace
+   with its selected `_USE_RBOFFSET` Distortion MRT branch and property-bound
+   render state; next capture its D3D12 pixels and close final PSO overrides,
+   survivor ordering, physical aliases, and live descriptors. Separately trace
    character-specific Overview effects beyond the now-negative
    Animator/deco-event census, and
    keep Gacha-only and other queue-3005 materials fail-closed;
