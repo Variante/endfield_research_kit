@@ -746,6 +746,21 @@ terrain/foliage target-1 enumeration, physical skin-buffer reuse, and a
 source-compatible lab MRT remain open. See
 `reports/assets/character_recovery/gacha_scene_mv_motion_contract.md`.
 
+The Gacha `baofa` Glow902 transparent writer is now executable through its own
+source-closed queue-3005 SceneMV lane. The exact recovered owner is
+`P_fxui_zhuangfy_ui_overview_start_01_baofa/all/glow (2)`, active under the
+Gacha `baofa` Control window (`5.483333..9.4`); despite the prefab name, current
+evidence does not make it an Overview owner. Its original
+`HGRP/Effect/VFXBaseV2` material is premultiplied transparent (`One`,
+`OneMinusSrcAlpha`), front-culled, depth-read-only, and writes SceneColor plus
+SceneMV. Native order is main queue 3000, exact queue 3005, Distortion, then
+post processing, so the lab keeps queue 3005 out of both the ordinary
+transparent lane and after-post lane. A 13-frame D3D12 capture executed all
+four requesting frames with no missed request; the manifest SHA-256 is
+`8e71eb8119d960aad59a5d8a36039ab523d75dd45e4188c26fb2280dc5d20d9e`.
+See `reports/assets/character_recovery/glow902_native_scene_mv_queue_20260815.md`
+and `scratch/character_recovery/glow902_queue3005_capture/`.
+
 The ordinary DefaultDeferred resolver boundary is now source-pinned. The
 selected route is a five-MRT producer (`SceneColor`, `SceneMV`, `GBufferA/B/C`)
 followed by a separate one-RT SceneColor resolver with read-only depth and
@@ -1337,8 +1352,10 @@ only stable interpretation and priorities.
    Actor/Audio/Effect plus exact empty Light/Others ordering is executable; next
    connect the remaining individually proven phase fields beyond the now-live
    direct-light/color/descriptor subset, close the narrow same-update old-root
-   `LateTick`, Audio `ProcessFrame` flag/onset, and streamed-phase boundaries,
-   then prove an Overview-specific owner before implementing timed actor VFX;
+   `LateTick`, Audio `ProcessFrame` flag/onset, and streamed-phase boundaries.
+   Queue-3005 `baofa` Glow902 is now executable only under its exact Gacha
+   owner; next prove an Overview-specific owner before implementing any
+   Overview-timed actor VFX, and keep other queue-3005 materials fail-closed;
    use the measured early-ribbon, sustained green-local, and late-flare windows
    as visual acceptance bounds without promoting them to ownership evidence.
    Repair the current missing `Endminm` viewer-catalog prefab before the next

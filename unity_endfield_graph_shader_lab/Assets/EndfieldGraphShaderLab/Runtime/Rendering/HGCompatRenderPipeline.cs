@@ -26,6 +26,8 @@ namespace EndfieldGraphShaderLab
         public bool afterPostSceneMVLoadStoreNoClear { get; internal set; }
         public bool afterPostTarget0DescriptorClone { get; internal set; }
         public GraphicsFormat afterPostTarget0GraphicsFormat { get; internal set; }
+        public bool glow902Queue3005Requested { get; internal set; }
+        public bool glow902Queue3005Executed { get; internal set; }
     }
 
     /// <summary>
@@ -264,6 +266,8 @@ namespace EndfieldGraphShaderLab
             state.afterPostSceneMVLoadStoreNoClear = false;
             state.afterPostTarget0DescriptorClone = false;
             state.afterPostTarget0GraphicsFormat = GraphicsFormat.None;
+            state.glow902Queue3005Requested = false;
+            state.glow902Queue3005Executed = false;
         }
 
         internal static void ReportRecoveredSceneMVDescriptor(
@@ -282,6 +286,11 @@ namespace EndfieldGraphShaderLab
             state.sceneMVWrapMode = sceneMV.wrapMode;
             state.sceneMVMSAASamples = descriptor.msaaSamples;
             state.sceneMVBindMS = descriptor.bindMS;
+        }
+
+        internal static void ReportRecoveredGlow902Queue3005Lane()
+        {
+            LastRecoveredSceneMVDiagnostic.glow902Queue3005Executed = true;
         }
 
         internal static void ReportRecoveredSceneMVNeutralInitialization()
@@ -819,6 +828,8 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredSceneMVRequest recoveredSceneMVRequest =
                 recoveredSceneMVCompositor.CollectRequest(camera);
             ResetRecoveredSceneMVDiagnostic(recoveredSceneMVRequest.requested);
+            LastRecoveredSceneMVDiagnostic.glow902Queue3005Requested =
+                recoveredSceneMVRequest.hasGlow902Queue3005;
             RenderTexture recoveredSceneMV = null;
             string recoveredSceneMVFailure = recoveredSceneMVRequest.failure;
             bool useRecoveredSceneMV = false;
@@ -1591,15 +1602,60 @@ namespace EndfieldGraphShaderLab
                 recoveredSceneColorPingAllocated = true;
                 if (mainReady)
                     recoveredCurrentSceneColor = composedSceneColor;
+                if (mainReady && recoveredSceneMVRequest.hasGlow902Queue3005)
+                {
+                    DrawRenderers(
+                        context,
+                        camera,
+                        cullingResults,
+                        new RenderQueueRange(3001, 3004),
+                        SortingCriteria.CommonTransparent |
+                            SortingCriteria.RendererPriority,
+                        ordinaryTransparentLayerMask,
+                        TransparentShaderPasses);
+                    EndfieldRecoveredSceneColorHandle glow902Color;
+                    int glow902OutputIdentifier =
+                        recoveredCurrentSceneColor.identifier ==
+                            EndfieldRecoveredSceneMVCompositor.PingColorId
+                            ? CameraColorId
+                            : EndfieldRecoveredSceneMVCompositor.PingColorId;
+                    bool glow902Ready =
+                        recoveredSceneMVCompositor.CompositeGlow902Queue3005(
+                            context,
+                            camera,
+                            cullingResults,
+                            recoveredCurrentSceneColor,
+                            glow902OutputIdentifier,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth,
+                            recoveredPrimarySceneDepthFormat,
+                            ordinaryTransparentLayerMask,
+                            asset.dynamicBatching,
+                            asset.gpuInstancing,
+                            recoveredPreTransparentSceneColorReady,
+                            new RenderTargetIdentifier(
+                                RecoveredRefractionSceneColorId),
+                            out glow902Color,
+                            out compositorFailure);
+                    if (glow902Ready)
+                        recoveredCurrentSceneColor = glow902Color;
+                    else
+                        mainReady = false;
+                }
                 if (mainReady && recoveredSceneMVRequest.hasDistortion)
                 {
                     EndfieldRecoveredSceneColorHandle distortionColor;
+                    int distortionOutputIdentifier =
+                        recoveredCurrentSceneColor.identifier ==
+                            EndfieldRecoveredSceneMVCompositor.PingColorId
+                            ? CameraColorId
+                            : EndfieldRecoveredSceneMVCompositor.PingColorId;
                     bool distortionReady = recoveredSceneMVCompositor.CompositeDistortion(
                         context,
                         camera,
                         cullingResults,
                         recoveredCurrentSceneColor,
-                        CameraColorId,
+                        distortionOutputIdentifier,
                         false,
                         recoveredSceneMV,
                         recoveredPrimarySceneDepth,
@@ -1656,14 +1712,30 @@ namespace EndfieldGraphShaderLab
 
                 if (useRecoveredSceneMV)
                 {
-                    DrawRenderers(
-                        context,
-                        camera,
-                        cullingResults,
-                        new RenderQueueRange(3001, 3659),
-                        SortingCriteria.CommonTransparent | SortingCriteria.RendererPriority,
-                        ordinaryTransparentLayerMask,
-                        TransparentShaderPasses);
+                    if (recoveredSceneMVRequest.hasGlow902Queue3005)
+                    {
+                        DrawRenderers(
+                            context,
+                            camera,
+                            cullingResults,
+                            new RenderQueueRange(3006, 3659),
+                            SortingCriteria.CommonTransparent |
+                                SortingCriteria.RendererPriority,
+                            ordinaryTransparentLayerMask,
+                            TransparentShaderPasses);
+                    }
+                    else
+                    {
+                        DrawRenderers(
+                            context,
+                            camera,
+                            cullingResults,
+                            new RenderQueueRange(3001, 3659),
+                            SortingCriteria.CommonTransparent |
+                                SortingCriteria.RendererPriority,
+                            ordinaryTransparentLayerMask,
+                            TransparentShaderPasses);
+                    }
                     DrawRenderers(
                         context,
                         camera,
