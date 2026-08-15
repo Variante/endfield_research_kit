@@ -935,6 +935,28 @@ and final draw/queue ownership remain fail-closed.
     `+0xF10` sites at `0x1804D1791`/`0x1813B1574`, with no such call in the
     HGTree handler range `0x181060000-0x181081000`.
 
+54. The next callback boundary after the corrected `0x273B -> 0x18107AB10`
+    edge is now bounded. `0x18107AB10` registers pool callbacks
+    `0x1810865C0` and `0x1810685A0`. The former allocates a small metadata
+    object, initializes it through `0x18042C1B0`, and inserts it through
+    `0x181074F10`; its body has no API-2 draw/flush/queue slot or graphics
+    call. The latter is one logical resource worker split across chained
+    `.pdata` entries `0x1810685A0-0x1810685CD`, `0x1810685CD-0x1810685D5`,
+    `0x1810685D5-0x1810688BF`, `0x1810688BF-0x18106937E`,
+    `0x18106937E-0x1810693D3`, `0x1810693D3-0x18106949B`,
+    `0x18106949B-0x1810694C0`, and `0x1810694C0-0x1810694CC`.
+    Its complete direct-call census is resource/registry work
+    (`0x181060B30`, `0x1813ABD10`, bitset/format helpers, and allocation or
+    validation helpers) plus only indirect `+0xB0` and `+0xC0` interface calls.
+    The resolved `+0xB0/+0xC0` targets (`0x180833470/0x180833630`) are
+    atomic resource-handle operations that tail into `0x180822180/0x1808224F0`;
+    they do not record a command or call Vulkan. No instruction in either
+    callback body reaches API-2 `+0xDA8`, `+0xDE8`, `+0xF10`, `+0xEA8`, a
+    draw opcode, Vulkan, or queue submission. This closes the concrete
+    AB10-to-worker path as a resource/state boundary while leaving the
+    runtime consumer that turns the populated records into the final HGTree
+    draw unresolved and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -952,6 +974,11 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AEE90 0x1813B12C0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813B1080 0x1813B1480
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181060D00 0x18107AD80
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18107AB10 0x18107AC30
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1810865C0 0x1810866AD
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1810685A0 0x1810694CC
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180833470 0x180833650
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180822180 0x180822520
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1801719B0 0x180171A40
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180064580 0x180064620
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804C7930 0x1804C79D0

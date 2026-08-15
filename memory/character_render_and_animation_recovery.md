@@ -148,6 +148,19 @@ archetypes are imported as labeled source kits rather than finished characters.
   only its later indirect-draw/flush/queue ownership remains unresolved and
   fail-closed.
 
+The corrected `0x273B` callback now has one more bounded negative edge:
+`0x18107AB10` registers `0x1810865C0` and `0x1810685A0` as pool callbacks.
+`0x1810865C0` only initializes/inserts a metadata object through
+`0x18042C1B0`/`0x181074F10`. `0x1810685A0` is a chained-`.pdata` resource
+worker through `0x1810694CC`; its direct calls are resource/registry and
+bitset/format helpers, with only API-2 `+0xB0/+0xC0` interface calls. Those
+targets (`0x180833470/0x180833630 -> 0x180822180/0x1808224F0`) are atomic
+resource-handle operations, not command recording or Vulkan. Neither
+callback reaches `+0xDA8`, `+0xDE8`, `+0xF10`, `+0xEA8`, a draw opcode, or
+queue submission, so this concrete AB10-to-worker path is now classified as
+resource/state lifetime only; the runtime record-to-final-draw consumer
+remains unresolved and fail-closed.
+
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
 model families with distinct containers, Animator identities, VFS sources, and
 generated mesh GUID sets. Shared facial or animation bases do not merge their
