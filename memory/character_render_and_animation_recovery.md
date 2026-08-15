@@ -180,6 +180,28 @@ model families with distinct containers, Animator identities, VFS sources, and
 generated mesh GUID sets. Shared facial or animation bases do not merge their
 mesh ownership.
 
+Material identity is likewise PathID-scoped. Playable Chen has two exported
+materials named `M_actor_chen_body_01`; renderer PathID must win over a
+name-only lookup. The exact body material and hashed Texture2D fallback remove
+the unrelated body texture that previously appeared across Chen's legs.
+The canonical selectable viewer keeps only the active actor resident, centers
+each newly selected root on the shared CharInfo stage, and chains a state
+transition into its destination loop rather than leaving the transition pose
+active.
+
+The 4K/60 retail reference capture at
+`videos/2026-08-15_10-32-32.mkv` bounds the shared Character Info selection
+sequence across roughly 31 entries as previous-presentation clearing, actor
+entrance, character-owned action/VFX, effect decay, and settled idle. The
+resident viewer now restarts each selected actor's exact generated Overview
+`start -> transition -> loop` chain, including its recovered entry offset and
+private item/deco bindings, instead of selecting an already-advanced resident
+animation. Re-selecting the same active row does not restart it. This closes
+the body/widget selection lifecycle only: entrance VFX requests have no
+general source-backed spawner, and the retail `Audio`, `Light`, `Others`,
+physical `ExternalCamera`, secondary-motion, and multi-Director ordering remain
+fail-closed.
+
 The native `HGRenderPath` slot roles are now corrected from the installed
 UnityPlayer registration: wrapper `+0x8` is the BeforeCulling setup
 (`0x1812fdb20` → `0x1813022d0`), `+0x10` is the Render forwarding wrapper
@@ -1142,6 +1164,10 @@ only stable interpretation and priorities.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
-5. Add controller, grounding, facial, FX, and secondary systems behind
+5. Recover the Character Info selection clear/hide interval and the
+   `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
+   actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
+   then bind actor-specific entrance VFX without a global substitute.
+6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
-6. Upgrade representative non-playable families before broad parity claims.
+7. Upgrade representative non-playable families before broad parity claims.
