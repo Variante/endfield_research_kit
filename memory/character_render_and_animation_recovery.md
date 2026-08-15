@@ -1016,6 +1016,24 @@ only stable interpretation and priorities.
    `0x18093AE10`/`0x18092E350`, while the API-2 backend table
    `0x181DBC098 + 0xDE8` is `0x18083F1E0`; the writers immediately dispatch
    into the backend slots but are not the backend draw/submit implementations.
+
+   The managed render-pipeline boundary is now positively joined. The mapped
+   `HGRenderPipeline.Render(ScriptableRenderContext, List<Camera>)` body spans
+   GameAssembly `0x183455030-0x18345A6E4`; it directly calls
+   `ExecuteCommandBuffer` at `0x183457129` and `0x18345997B`, calls
+   `ExecuteCommandBufferNoCopy` at `0x183459502`, `0x1834595D4`, and
+   `0x183459614`, and calls `Submit` at `0x183459D69`. The six concrete pass
+   lambdas that call `HGRendererListUtils.DrawTreeECSRendererList` preserve
+   their render-graph context in `rsi`, `rbx`, `rdi`, or `r13` and pass that
+   same context as `rcx` to `0x189C0A130`, while passing their renderer-list id
+   in `edx`; the helper reads `context.fields.cmd` before forwarding to
+   `HGTreeRender.DrawECSRendererList`. Therefore the table-A HGTree
+   `0x55 -> 0x273B` records are recorded through the same managed
+   pass-command-buffer framework that the main Render method executes and
+   ultimately submits. This joins HGTree playback to the render-pipeline
+   Execute/NoCopy/Submit boundary, but does not identify the HGTree-specific
+   API-2 `+0xDA8` indirect-draw branch, `+0xDE8` flush order, or Vulkan queue
+   owner; those remain fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
