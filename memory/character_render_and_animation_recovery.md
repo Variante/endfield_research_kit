@@ -1105,6 +1105,15 @@ only stable interpretation and priorities.
    later flush, but neither `+0xDB0` nor `0x2735` contains `+0xDE8`, `+0xF10`,
    `vkCmdDraw*`, or `vkQueueSubmit`; final draw/queue ownership therefore
    remains fail-closed.
+   The list protocol is more specific than a generic “later flush”:
+   `0x180841C40` packages both working heads (`+0x2B58` and `+0x2B60`) into
+   master-list callbacks `0x180820210`/`0x1808200C0` only when `dl=1`, while
+   `dl=0` clears those working heads. API-2 `+0xF10` appends its own pending
+   record and calls `+0xC40` with `dl=1` (package only); `+0xDE8` calls
+   `+0xC40` with `dl=0` and then invokes `0x180843D60`, which walks the master
+   list and calls `0x1808200C0`. Thus the HGTree `+0xDB0` record needs a
+   separate packaging call before the execution call; neither step is emitted
+   by the inspected HGTree handlers or callbacks.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
