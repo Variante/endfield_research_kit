@@ -193,12 +193,20 @@ The 4K/60 retail reference capture at
 `videos/2026-08-15_10-32-32.mkv` bounds the shared Character Info selection
 sequence across roughly 31 entries as previous-presentation clearing, actor
 entrance, character-owned action/VFX, effect decay, and settled idle. The
+recording is Character Info/Overview rather than the blue GachaRoom presentation.
+Zhuang Fangyi's representative interval is `01:43.0-01:50.0`: horizontal
+glitch/dissolve, white ribbon sweep and turn, green cube/orb plus orbiting trails,
+then retained cube with frontal idle. Other entries range from strong teal or
+purple-red weapon trails to body-only entrances and prop-dominant actions, so a
+single global VFX substitute is contradicted by the capture.
 resident viewer now restarts each selected actor's exact generated Overview
 `start -> transition -> loop` chain, including its recovered entry offset and
 private item/deco bindings, instead of selecting an already-advanced resident
 animation. Re-selecting the same active row does not restart it. This closes
 the body/widget selection lifecycle only: entrance VFX requests have no
-general source-backed spawner, and the retail Audio payload, physical
+general source-backed spawner. Only Dapan and Zhuang Fangyi currently carry
+recovered entrance-effect requests, and no `IEndfieldOverviewEffectSpawner`
+implementation consumes them in the shared Viewer. The physical
 `ExternalCamera`, secondary-motion, and final rendered-frame ordering remain
 fail-closed.
 
@@ -217,10 +225,20 @@ the two-pass protocol for the exact recovered
 Actor and Effect PlayableAssets. The complete object index closes both Light
 and Others as structural empty TimelineAssets: each has only its exact name and
 editor preview setting, with no tracks, clips, or bindings. The lab therefore
-admits source-identified empty Light/Others helpers without inventing payloads;
-only Audio remains missing. Audio is non-empty and owns exact events
-`Au_Gcaha_zhuangfy_overview` and `Au_UI_Gacha_Chrshow_Light6`, but event-media
-resolution, clip timing, and runtime audio-frame evidence are not yet closed.
+admits source-identified empty Light/Others helpers without inventing payloads.
+Audio is now recovered as the fifth helper Director. Its source Timeline PathID
+is `6159943924586262679`: exact 2D seek-enabled events are
+`Au_Gcaha_zhuangfy_overview` at `[0,5]` and
+`Au_UI_Gacha_Chrshow_Light6` at `[7.75,10.1166666667]`; the serialized `Gcaha`
+typo is identity-bearing. Neither clip stops its event at clip end. Exact Wwise
+joins resolve them to media IDs `256896424` and `787269389` and verified decoded
+FLACs of 9.688 s and 5.287292 s, so playback overlaps from 7.75 to 9.688 s under
+zero-latency posting. The recovered Audio Playable remains silent during
+`SampleToBeginning` through an explicit arm gate, then arms only after the
+delayed `RebuildGraph -> time=0 -> Evaluate` pass and before `Play`; public Unity
+evaluation state alone does not distinguish the source helper's silent zero
+sample. Runtime Wwise onset/callback latency remains uncaptured, but Timeline
+identity, timing, flags, event hashes, media, and local playback are source-closed.
 The individual native
 `Stop`/`set_time`/`Evaluate`/`RebuildGraph`/`Play` wrappers contain no hidden
 cross-Director or render-submit edge. Same-frame versus next-rendered-frame
@@ -272,7 +290,19 @@ or extra modifier fields. The lab keeps the 30 raw value/state pairs as evidence
 and resolves the two known authored layers once at gacha `Begin`, before
 `SampleToBeginning`; it preserves lower-stack inputs for fields inactive in both
 layers, and delayed play or per-frame publishing does not replay the modifier.
-The remaining Volume gap is the runtime-variable lower world/phase registry.
+The lower environment registry is now bounded for both presentation scenes.
+GachaRoom registers one enabled global `HGEnvironmentVolume` at priority 600,
+manual factor 1, zero distance/fade, selecting the fully serialized
+`Env_gachaRoom_01` phase (PathID `6627355437943792087`); a priority-200 migrated
+row has a null phase and is not an additional environment. Character Info uses
+the same priority-600 registration shape but selects the distinct `CharInfo_Env`
+phase (PathID `1201129019072041203`). Current-gated native flow is
+`Register/_Register -> CompareTo` and
+`PipelineUpdate -> _InterpolateVolumesImpl -> HGEnvironmentPhase.Lerp/CopyFrom`,
+with camera-local interpolated phase, volume list/factors, and trigger position.
+The exact same-priority tie break, active-list mutation order, override trigger,
+and streamed phase replacement timing remain open; do not substitute one scene's
+phase for the other.
 
 On character switch, Lua detaches UI, clears timers, removes the TailTick owner,
 nils the helper, destroys the old character root, and creates the replacement on
@@ -1254,11 +1284,12 @@ only stable interpretation and priorities.
 5. Recover the Character Info selection clear/hide interval and the
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
-   Actor/Effect plus exact empty Light/Others ordering is executable; next
-   recover the non-empty Audio timing/event-media contract, recover lower
-   world/phase Volume-registry contributions for fields inactive in both known
-   gacha layers, close the narrow same-update old-root `LateTick` boundary, then
-   bind actor-specific entrance VFX without a global substitute.
+   Actor/Audio/Effect plus exact empty Light/Others ordering is executable; next
+   publish the scene-specific priority-600 environment phase through the lab's
+   existing environment consumers, close the narrow same-update old-root
+   `LateTick` and actual Wwise onset/callback boundaries, then implement a
+   source-backed Overview effect spawner for the two recovered actor-specific
+   request sets without a global substitute.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.

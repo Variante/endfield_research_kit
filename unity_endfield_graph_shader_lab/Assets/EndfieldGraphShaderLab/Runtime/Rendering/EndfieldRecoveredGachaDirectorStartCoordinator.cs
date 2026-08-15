@@ -45,8 +45,8 @@ namespace EndfieldGraphShaderLab
     /// <summary>
     /// Replays the source GachaCharTLHelper two-stage Director protocol for
     /// only the helper roles whose exact PlayableAssets are recovered.
-    /// Missing roles remain explicit; this class never creates identity or
-    /// name-inferred Directors for Audio, Light, or Others.
+    /// Missing roles remain explicit; callers must provide a source-identified
+    /// PlayableAsset and may not create name-inferred helper payloads.
     /// </summary>
     public sealed class EndfieldRecoveredGachaDirectorStartCoordinator
     {
@@ -88,6 +88,7 @@ namespace EndfieldGraphShaderLab
             // deliberately remains outside this coordinator.
             foreach (EndfieldRecoveredGachaDirectorBinding binding in admitted)
             {
+                SetAudioPlaybackArmed(binding, false);
                 binding.director.Stop();
                 binding.director.time = 0.0;
                 binding.director.Evaluate();
@@ -104,7 +105,9 @@ namespace EndfieldGraphShaderLab
             foreach (EndfieldRecoveredGachaDirectorBinding binding in admitted)
             {
                 binding.director.time = 0.0;
+                SetAudioPlaybackArmed(binding, false);
                 binding.director.Evaluate();
+                SetAudioPlaybackArmed(binding, true);
                 binding.director.Play();
             }
         }
@@ -112,7 +115,23 @@ namespace EndfieldGraphShaderLab
         public void StopAll()
         {
             foreach (EndfieldRecoveredGachaDirectorBinding binding in admitted)
+            {
+                SetAudioPlaybackArmed(binding, false);
                 binding.director.Stop();
+            }
+        }
+
+        private static void SetAudioPlaybackArmed(
+            EndfieldRecoveredGachaDirectorBinding binding,
+            bool armed)
+        {
+            if (binding.role != EndfieldRecoveredGachaDirectorRole.Audio ||
+                binding.director == null)
+                return;
+            EndfieldRecoveredGachaAudioEmitter emitter =
+                binding.director.GetComponent<EndfieldRecoveredGachaAudioEmitter>();
+            if (emitter != null)
+                emitter.PlaybackArmed = armed;
         }
 
         private static void Validate(EndfieldRecoveredGachaDirectorBinding[] bindings)

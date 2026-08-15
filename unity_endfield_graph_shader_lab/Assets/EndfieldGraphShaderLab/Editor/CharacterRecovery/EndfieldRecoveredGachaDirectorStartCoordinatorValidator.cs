@@ -32,6 +32,12 @@ namespace EndfieldGraphShaderLabEditor
                 ScriptableObject.CreateInstance<EndfieldGachaDirectorValidationPlayableAsset>();
             EndfieldGachaDirectorValidationPlayableAsset effectAsset =
                 ScriptableObject.CreateInstance<EndfieldGachaDirectorValidationPlayableAsset>();
+            EndfieldRecoveredGachaAudioPlayableAsset audioAsset =
+                ScriptableObject.CreateInstance<EndfieldRecoveredGachaAudioPlayableAsset>();
+            AudioClip overviewAudio = AudioClip.Create("256896424", 9688, 1, 1000, false);
+            AudioClip rarityAudio = AudioClip.Create("787269389", 5287, 1, 1000, false);
+            audioAsset.overviewClip = overviewAudio;
+            audioAsset.rarityClip = rarityAudio;
             EndfieldRecoveredEmptyGachaHelperPlayableAsset lightAsset =
                 ScriptableObject.CreateInstance<EndfieldRecoveredEmptyGachaHelperPlayableAsset>();
             EndfieldRecoveredEmptyGachaHelperPlayableAsset othersAsset =
@@ -39,6 +45,7 @@ namespace EndfieldGraphShaderLabEditor
             try
             {
                 PlayableDirector actor = CreateDirector(root, "Actor", actorAsset);
+                PlayableDirector audio = CreateDirector(root, "Audio", audioAsset);
                 PlayableDirector effect = CreateDirector(root, "Effect", effectAsset);
                 PlayableDirector light = CreateDirector(root, "Light", lightAsset);
                 PlayableDirector others = CreateDirector(root, "Others", othersAsset);
@@ -50,6 +57,12 @@ namespace EndfieldGraphShaderLabEditor
                             role = EndfieldRecoveredGachaDirectorRole.Effect,
                             sourceOrdinal = 2,
                             director = effect,
+                        },
+                        new EndfieldRecoveredGachaDirectorBinding
+                        {
+                            role = EndfieldRecoveredGachaDirectorRole.Audio,
+                            sourceOrdinal = 1,
+                            director = audio,
                         },
                         new EndfieldRecoveredGachaDirectorBinding
                         {
@@ -76,32 +89,69 @@ namespace EndfieldGraphShaderLabEditor
                         new[]
                         {
                             EndfieldRecoveredGachaDirectorRole.Actor,
+                            EndfieldRecoveredGachaDirectorRole.Audio,
                             EndfieldRecoveredGachaDirectorRole.Effect,
                             EndfieldRecoveredGachaDirectorRole.Light,
                             EndfieldRecoveredGachaDirectorRole.Others,
                         }),
                     "Admitted Directors are not in recovered source order.");
-                Require(
-                    coordinator.Missing.SequenceEqual(new[]
-                    {
-                        EndfieldRecoveredGachaDirectorRole.Audio,
-                    }),
-                    "Missing helper roles are not preserved fail closed.");
+                Require(!coordinator.Missing.Any(),
+                    "A source-closed helper role is still marked missing.");
 
                 coordinator.SampleToBeginning();
                 Require(
-                    actor.time == 0.0 && effect.time == 0.0 &&
+                    actor.time == 0.0 && audio.time == 0.0 && effect.time == 0.0 &&
                     light.time == 0.0 && others.time == 0.0,
                     "SampleToBeginning did not evaluate every admitted Director at zero.");
+                EndfieldRecoveredGachaAudioEmitter sampledEmitter =
+                    audio.GetComponent<EndfieldRecoveredGachaAudioEmitter>();
+                Require(sampledEmitter != null && sampledEmitter.PostCount == 0,
+                    "Paused Audio Timeline sampling posted a Wwise event.");
                 coordinator.PlayFromStart();
                 Require(
-                    actor.state == PlayState.Playing && effect.state == PlayState.Playing &&
+                    actor.state == PlayState.Playing && audio.state == PlayState.Playing &&
+                    effect.state == PlayState.Playing &&
                     actor.time == 0.0 && effect.time == 0.0 &&
                     light.time == 0.0 && others.time == 0.0,
                     "PlayFromStart did not start every admitted Director at zero.");
+                Require(
+                    audioAsset.duration ==
+                        EndfieldRecoveredGachaAudioPlayableAsset.RarityStart +
+                        EndfieldRecoveredGachaAudioPlayableAsset.RarityDuration &&
+                    EndfieldRecoveredGachaAudioPlayableAsset.OverviewEventName ==
+                        "Au_Gcaha_zhuangfy_overview" &&
+                    EndfieldRecoveredGachaAudioPlayableAsset.OverviewEventHash == 0xee2a8301u &&
+                    EndfieldRecoveredGachaAudioPlayableAsset.OverviewMediaId == 256896424u &&
+                    EndfieldRecoveredGachaAudioPlayableAsset.RarityEventHash == 0xe347da7du &&
+                    EndfieldRecoveredGachaAudioPlayableAsset.RarityMediaId == 787269389u,
+                    "Recovered Audio Timeline identity/timing contract changed.");
+
+                PlayableGraph audioGraph = PlayableGraph.Create("RecoveredGachaAudioValidation");
+                try
+                {
+                    Playable audioPlayable = audioAsset.CreatePlayable(audioGraph, audio.gameObject);
+                    sampledEmitter.PlaybackArmed = true;
+                    audioGraph.Play();
+                    audioGraph.Evaluate(0f);
+                    Require(sampledEmitter.PostCount == 1 &&
+                        sampledEmitter.LastEventHash == 0xee2a8301u &&
+                        sampledEmitter.LastMediaId == 256896424u,
+                        "Forward Audio playback did not post the exact overview event.");
+                    audioPlayable.SetTime(7.75);
+                    audioGraph.Evaluate(0f);
+                    Require(sampledEmitter.PostCount == 2 &&
+                        sampledEmitter.LastEventHash == 0xe347da7du &&
+                        sampledEmitter.LastMediaId == 787269389u,
+                        "Forward Audio playback did not post the exact rarity event.");
+                }
+                finally
+                {
+                    audioGraph.Destroy();
+                }
                 coordinator.StopAll();
                 Require(
-                    actor.state != PlayState.Playing && effect.state != PlayState.Playing &&
+                    actor.state != PlayState.Playing && audio.state != PlayState.Playing &&
+                    effect.state != PlayState.Playing &&
                     light.state != PlayState.Playing && others.state != PlayState.Playing,
                     "StopAll left an admitted Director playing.");
 
@@ -213,8 +263,8 @@ namespace EndfieldGraphShaderLabEditor
 
                 Debug.Log(
                     "Recovered gacha Director start coordinator validation passed: " +
-                    "Actor/Effect plus exact empty Light/Others admitted in source order; " +
-                    "Audio missing; " +
+                    "Actor/Audio/Effect plus exact empty Light/Others admitted in source order; " +
+                    "Audio event-media timing and silent zero sample passed; " +
                     "zero sample, two-stage play, TailTick state/callback, stop, " +
                     "missing-asset rejection, one-shot 30-field Volume snapshot, and " +
                     "source-backed lighting/Volume lifecycle passed.");
@@ -224,6 +274,9 @@ namespace EndfieldGraphShaderLabEditor
                 UnityEngine.Object.DestroyImmediate(root);
                 UnityEngine.Object.DestroyImmediate(actorAsset);
                 UnityEngine.Object.DestroyImmediate(effectAsset);
+                UnityEngine.Object.DestroyImmediate(audioAsset);
+                UnityEngine.Object.DestroyImmediate(overviewAudio);
+                UnityEngine.Object.DestroyImmediate(rarityAudio);
                 UnityEngine.Object.DestroyImmediate(lightAsset);
                 UnityEngine.Object.DestroyImmediate(othersAsset);
             }
