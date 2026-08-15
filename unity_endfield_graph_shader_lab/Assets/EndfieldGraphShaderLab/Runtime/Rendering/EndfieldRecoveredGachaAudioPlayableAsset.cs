@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -94,6 +95,15 @@ namespace EndfieldGraphShaderLab
                 previousTime = current;
             }
 
+            public override void OnGraphStop(Playable playable)
+            {
+                if (emitter != null)
+                    emitter.StopRecoveredEvents();
+                overviewPosted = false;
+                rarityPosted = false;
+                previousTime = -1.0;
+            }
+
             private void TryPost(
                 ref bool posted,
                 double previous,
@@ -128,11 +138,14 @@ namespace EndfieldGraphShaderLab
         [NonSerialized] private string lastEventName;
         [NonSerialized] private uint lastEventHash;
         [NonSerialized] private uint lastMediaId;
+        [NonSerialized] private int stopCount;
+        private readonly List<AudioSource> activeSources = new List<AudioSource>();
 
         public int PostCount => postCount;
         public string LastEventName => lastEventName;
         public uint LastEventHash => lastEventHash;
         public uint LastMediaId => lastMediaId;
+        public int StopCount => stopCount;
         public bool PlaybackArmed { get; set; }
 
         public void PostRecoveredEvent(
@@ -154,8 +167,26 @@ namespace EndfieldGraphShaderLab
             source.clip = clip;
             source.time = Mathf.Clamp((float)seekSeconds, 0f, clip.length);
             source.Play();
+            activeSources.Add(source);
             if (Application.isPlaying)
                 Destroy(source, clip.length - source.time + 0.1f);
+        }
+
+        public void StopRecoveredEvents()
+        {
+            bool stopped = false;
+            foreach (AudioSource source in activeSources)
+            {
+                if (source == null)
+                    continue;
+                source.Stop();
+                stopped = true;
+                if (Application.isPlaying)
+                    Destroy(source);
+            }
+            activeSources.Clear();
+            if (stopped)
+                stopCount++;
         }
     }
 }

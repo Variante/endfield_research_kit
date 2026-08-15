@@ -137,18 +137,27 @@ namespace EndfieldGraphShaderLabEditor
                         sampledEmitter.LastEventHash == 0xee2a8301u &&
                         sampledEmitter.LastMediaId == 256896424u,
                         "Forward Audio playback did not post the exact overview event.");
+                    audioPlayable.SetTime(5.0);
+                    audioGraph.Evaluate(0f);
+                    Require(sampledEmitter.PostCount == 1 &&
+                        sampledEmitter.StopCount == 0,
+                        "Audio clip end incorrectly stopped a stopEventAtClipEnd=false event.");
                     audioPlayable.SetTime(7.75);
                     audioGraph.Evaluate(0f);
                     Require(sampledEmitter.PostCount == 2 &&
                         sampledEmitter.LastEventHash == 0xe347da7du &&
                         sampledEmitter.LastMediaId == 787269389u,
                         "Forward Audio playback did not post the exact rarity event.");
+                    audioGraph.Stop();
+                    audioGraph.Evaluate(0f);
                 }
                 finally
                 {
                     audioGraph.Destroy();
                 }
                 coordinator.StopAll();
+                Require(sampledEmitter.StopCount == 1,
+                    "Audio graph stop did not stop its active playing IDs.");
                 Require(
                     actor.state != PlayState.Playing && audio.state != PlayState.Playing &&
                     effect.state != PlayState.Playing &&
@@ -197,6 +206,29 @@ namespace EndfieldGraphShaderLabEditor
                 lightingVolume.enabled = false;
                 EndfieldRecoveredZhuangfyGachaRuntime runtime =
                     root.AddComponent<EndfieldRecoveredZhuangfyGachaRuntime>();
+                EndfieldRecoveredEnvironmentPhaseSnapshot gachaEnvironment =
+                    root.AddComponent<EndfieldRecoveredEnvironmentPhaseSnapshot>();
+                gachaEnvironment.ConfigureGachaRoom();
+                GameObject charInfoEnvironmentObject =
+                    new GameObject("CharacterInfoEnvironmentContract");
+                charInfoEnvironmentObject.transform.SetParent(root.transform, false);
+                EndfieldRecoveredEnvironmentPhaseSnapshot charInfoEnvironment =
+                    charInfoEnvironmentObject.AddComponent<
+                        EndfieldRecoveredEnvironmentPhaseSnapshot>();
+                charInfoEnvironment.ConfigureCharacterInfo();
+                Require(
+                    gachaEnvironment.IsSourceClosed &&
+                    charInfoEnvironment.IsSourceClosed &&
+                    gachaEnvironment.phasePathId != charInfoEnvironment.phasePathId &&
+                    Mathf.Approximately(gachaEnvironment.directIntensityDividePi, 0f) &&
+                    Mathf.Approximately(
+                        charInfoEnvironment.directIntensityDividePi,
+                        2.7475471f) &&
+                    Mathf.Approximately(gachaEnvironment.indirectDiffuseFactor, 1f) &&
+                    Mathf.Approximately(
+                        charInfoEnvironment.indirectDiffuseFactor,
+                        0.28772247f),
+                    "Scene-specific priority-600 environment phases were conflated.");
                 runtime.autoStartRecoveredEffect = false;
                 runtime.actorCameraDirector = actor;
                 runtime.director = effect;

@@ -198,8 +198,8 @@ Zhuang Fangyi's representative interval is `01:43.0-01:50.0`: horizontal
 glitch/dissolve, white ribbon sweep and turn, green cube/orb plus orbiting trails,
 then retained cube with frontal idle. Other entries range from strong teal or
 purple-red weapon trails to body-only entrances and prop-dominant actions, so a
-single global VFX substitute is contradicted by the capture.
-resident viewer now restarts each selected actor's exact generated Overview
+single global VFX substitute is contradicted by the capture. The resident
+viewer now restarts each selected actor's exact generated Overview
 `start -> transition -> loop` chain, including its recovered entry offset and
 private item/deco bindings, instead of selecting an already-advanced resident
 animation. Re-selecting the same active row does not restart it. This closes
@@ -209,6 +209,15 @@ recovered entrance-effect requests, and no `IEndfieldOverviewEffectSpawner`
 implementation consumes them in the shared Viewer. The physical
 `ExternalCamera`, secondary-motion, and final rendered-frame ordering remain
 fail-closed.
+
+The four Zhuang Fangyi request names do not license wholesale reuse of the
+GachaRoom effect Timeline. `piaodai` is the only immediate actor-local visual
+candidate (source interval 0-4.516667 s after 0.483333 s clip-in); `_01`,
+`baofa`, and `finger_lightning` retain only Gacha ownership. Independent
+`trail01` and `jianqiang` Control tracks are not implicit children of any
+Overview request. A future spawner must carry source domain, ownership gate,
+start/stop time, mount path, and local transform; the current immediate-request
+interface cannot safely represent those contracts.
 
 The Zhuang Fangyi gacha helper's multi-Director start protocol is now bounded
 more tightly from plaintext Lua, serialized Director/Timeline rows, and the
@@ -239,6 +248,13 @@ delayed `RebuildGraph -> time=0 -> Evaluate` pass and before `Play`; public Unit
 evaluation state alone does not distinguish the source helper's silent zero
 sample. Runtime Wwise onset/callback latency remains uncaptured, but Timeline
 identity, timing, flags, event hashes, media, and local playback are source-closed.
+Current-gated native bodies refine the lifetime: `OnBehaviourPlay` and
+`PrepareFrame` only update required actions; `_DoPlayEvent` hashes the key and
+reaches `AudioAdapter._PostEvent`, `_TrySeek` requires an existing playing ID,
+and `OnGraphStop` calls `_TryStop` before an optional exit event. Thus a clip end
+with `_stopEventAtClipEnd=false` does not stop playback, while stopping or
+destroying the Audio graph does. The lab mirrors both edges and no longer lets
+the second media continue beyond the Audio Timeline graph lifetime by default.
 The individual native
 `Stop`/`set_time`/`Evaluate`/`RebuildGraph`/`Play` wrappers contain no hidden
 cross-Director or render-submit edge. Same-frame versus next-rendered-frame
@@ -303,6 +319,15 @@ with camera-local interpolated phase, volume list/factors, and trigger position.
 The exact same-priority tie break, active-list mutation order, override trigger,
 and streamed phase replacement timing remain open; do not substitute one scene's
 phase for the other.
+
+The generated Gacha runtime now carries this selection in
+`EndfieldRecoveredEnvironmentPhaseSnapshot`. It records the priority-600 holder,
+phase identity/hash, direct-light, indirect-factor, and exposure fields without
+publishing the entire phase as shader globals. This preserves two important
+fail-closed differences: Gacha `directIntensityDividePi=0` cannot reuse
+Character Info's `2.7475471`, and Gacha indirect factors `(1,1)` cannot silently
+replace Character Info's `(.28772247,.28772247)`. Sky/SH, fog, volumetrics, CSM,
+and punctual-shadow publication still require individual consumer evidence.
 
 On character switch, Lua detaches UI, clears timers, removes the TailTick owner,
 nils the helper, destroys the old character root, and creates the replacement on
@@ -1285,11 +1310,13 @@ only stable interpretation and priorities.
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
    Actor/Audio/Effect plus exact empty Light/Others ordering is executable; next
-   publish the scene-specific priority-600 environment phase through the lab's
-   existing environment consumers, close the narrow same-update old-root
-   `LateTick` and actual Wwise onset/callback boundaries, then implement a
-   source-backed Overview effect spawner for the two recovered actor-specific
-   request sets without a global substitute.
+   connect each admitted field of the scene-specific priority-600 snapshot to
+   its existing environment consumer, close the narrow same-update old-root
+   `LateTick`, Audio `ProcessFrame` flag/onset, and streamed-phase boundaries,
+   then prove an Overview-specific owner before implementing timed actor VFX.
+   Repair the current missing `Endminm` viewer-catalog prefab before the next
+   shared-Viewer visual capture; generated Gacha-runtime validation itself is
+   green and must remain separable from that catalog repair.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.
