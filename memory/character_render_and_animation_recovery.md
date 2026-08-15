@@ -209,10 +209,11 @@ interpreter: the recovered internal-call table maps
 GameAssembly census found 47 direct compute-buffer binding calls from eight
 named bodies and 35 texture-binding calls; they are built-in passes or
 CommandBuffer overload wrappers, with no factory/per-draw/character hits.
-The consumer is now bounded: the class-local UnityPlayer registration for
-`UnityEngine.Graphics::ExecuteCommandBuffer` resolves to `0x1800b6f40`, which
-reaches `0x18052d730` -> `0x1804cdf70` -> the high-level opcode interpreter
-`0x1804ce0a0`. Opcode `0x11` (`0x1804cf455`) resolves its
+The consumer is now bounded by the complete UnityPlayer internal-call table.
+`ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected` is table
+index `3645` -> `0x1800b6f40`, which reaches `0x18052d730` -> `0x1804cdf70`
+-> the high-level opcode interpreter `0x1804ce0a0`. Opcode `0x11`
+(`0x1804cf455`) resolves its
 resource handle and calls `0x1805e7a10`, which reaches graphics-context slot
 `+0xab8` at `0x1805e7a8b`; its indirect-dispatch branch calls
 `0x1805e7bc0` -> slot `+0xab0`. Opcode `0x0d` (`0x1804cf350`) resolves the
@@ -220,7 +221,15 @@ same record kind and calls `0x1805f84a0` for resource-state binding, with no
 direct `+0xab8` or low-level `0x27ef` call. Thus high-level records do reach
 the generic immediate-compute sink, but remain a separate stream from the
 native `0x27ef` record, and neither path identifies the factory channel-2 /
-kernel-7 upload producer.
+kernel-7 upload producer. The same table maps `Graphics::ExecuteCommandBuffer`
+at index `924` to `0x18005c0d0`; its inspected body resolves resource/object
+handles but has no direct interpreter edge. `Submit_Internal_Injected` is index
+`3636` -> `0x1800b4a40` -> `0x1805385a0` -> `0x18052e0b0`; the submit body
+iterates command records and contains a direct `0x1804cdf70` call for one
+record kind, making it a separate flush/submit candidate rather than proof of
+the API-2 draw owner. The async/no-copy entries resolve to distinct helpers
+(`0x18052d8f0`, `0x18052db50`, and `0x18052da20`) and must not be collapsed
+into the old state-only attribution.
 An expanded UnityPlayer direct-call census covers the two high-level writers:
 `0x1804cb1a0` (opcode `0x0d`) has 58 direct callsites in 20 PData bodies and
 `0x1804c73e0` (opcode `0x11`) has 42 callsites in 18 bodies, 27 unique bodies
@@ -791,12 +800,15 @@ only stable interpretation and priorities.
     writes high-level opcode `0x55`; the interpreter case `0x1804CE4BD` calls
     `0x18106AAE0`, then context `+0xEA0` records low-level `0x273B`.
     The parallel table-B body `0x1801719B0` remains only the managed-root/hash
-    validator and alternate duplicate; the global internal-call table also
-   resolves `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
-   to `0x1801587D0` (with async/no-copy siblings at `0x180158980`,
-   `0x180158B30`, and `0x180158B80`); the normal wrapper only validates and
-   updates native context state, while no-copy enters indirect helpers
-    `0x180B3E5C0`/`0x180A95EB0`. The remaining HGTree sink is now after the
+    validator and alternate duplicate. The complete UnityPlayer table instead
+    maps `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
+    (index `3645`) to `0x1800B6F40`, whose positive
+    `0x18052D730 -> 0x1804CDF70 -> 0x1804CE0A0` chain is the high-level
+    playback route. `Graphics::ExecuteCommandBuffer` is index `924` ->
+    `0x18005C0D0`; the inspected body is a separate resource/object path.
+    `Submit_Internal_Injected` is index `3636` -> `0x1800B4A40` ->
+    `0x1805385A0` -> `0x18052E0B0`, a separate command-record flush candidate
+    that still has no static HGTree/API-2 ownership proof. The remaining HGTree sink is now after the
     positive `0x55 -> 0x273B -> 0x1813B1110` direct-callback route: the
     callback `0x18107AB10` is invoked by the parsed low-level `0x273B` case
     and remains a resource/list lifetime callback that does not dispatch
@@ -810,14 +822,15 @@ only stable interpretation and priorities.
     buffer/state commands when the backend flushes the lists. Static
     HGTree-specific flush/order and dynamic command-buffer/render-graph
     ownership of the final draw and runtime-indirect resource-node consumer
-    still need to be joined to the final draw. CommandBuffer execution
-    attribution is now corrected: only `UnityEngine.Graphics::ExecuteCommandBuffer`
-    is proven to reach the high-level interpreter (`0x1800B6F40 ->
-    0x18052D730 -> 0x1804CDF70 -> 0x1804CE0A0`).
-    `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
-    (`0x1801587D0`) and its async/no-copy siblings are state validation or
-    state construction, not playback; do not use them as the missing HGTree
-    flush edge. The final render-graph/command-buffer owner remains
+    still need to be joined to the final draw. The main-table attribution is
+    now corrected: `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
+    (index `3645`, `0x1800B6F40`) is the proven high-level interpreter entry
+    (`0x18052D730 -> 0x1804CDF70 -> 0x1804CE0A0`). `Graphics::ExecuteCommandBuffer`
+    (index `924`, `0x18005C0D0`) is a separate resource/object body. The
+    `Submit_Internal_Injected` path (`0x1800B4A40 -> 0x1805385A0 ->
+    0x18052E0B0`) and async/no-copy helpers remain candidates for command-list
+    ordering, but do not yet prove HGTree API-2 draw ownership. The final
+    render-graph/command-buffer owner remains
     runtime-indirect and fail-closed. Ordinary
    `CommandBuffer::Internal_DrawRendererList_Injected` is a separate route:
    UnityPlayer `0x1801713D0` resolves through `0x180A60190`'s indirect
@@ -831,9 +844,11 @@ only stable interpretation and priorities.
     dispatch. This negative result applies only to table B; the unresolved edge
     now remains after the positive table-A command route, in dynamic
     CommandBuffer/render-graph playback or the runtime-indirect resource
-    consumer. The adjacent ScriptableRenderContext no-copy helpers
-   are now bounded as state construction (`0x180B3E5C0`/`0x180A95EB0`) rather
-   than playback, and the API-2 `0x80`-byte resource pool
+    consumer. The main-table no-copy entries are `0x1800B7440` ->
+   `0x18052DB50` and `0x1800B7AD0` -> `0x18052DA20`; the former has the same
+   ready-branch `0x1804CDF70` interpreter call, while the latter queues a
+   distinct record helper. They are not the previously cited `0x180158...`
+   state wrappers. The API-2 `0x80`-byte resource pool
    (`0x180559B30 -> 0x1805598C0 -> 0x1805586C0`) is directly a
    refcount/bitmap lifetime collector. On the specific `AB10 -> 0x180555D30`
    ingress, its callback fields are the bounded cleanup/setter tuple
