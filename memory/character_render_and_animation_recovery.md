@@ -1123,6 +1123,22 @@ only stable interpretation and priorities.
    `0x1813B156A -> +0xF10`; no static writer edge joins it to those owners or
    to HGTree. Keep generic packaging and HGTree callback execution as separate
    until a runtime trace proves the missing ordering bridge.
+   The managed `ScriptableRenderContext` Submit/Execute target audit now
+   separates the deferred command consumer from API-2 HGTree flush state.
+   GameAssembly maps `Submit`/`Submit_Internal`/`Submit_Internal_Injected` to
+   `0x183DBB470/0x183DBB4E0/0x183DBB540` and
+   `ExecuteCommandBuffer`/`NoCopy` to `0x183339850/0x1834534C0` (with the
+   injected NoCopy body at `0x1834535C0`); these wrappers lazy-resolve distinct
+   UnityPlayer targets. The resolved Submit chain is
+   `0x1800B4A40 -> 0x1805385A0 -> 0x18052E0B0`, whose command-consumer fields
+   are `+0x10030/+0x10040/+0x10128/+0x10168/+0x10178`, not API-2's
+   `+0x2B60/+0x2B68/+0x2B70/+0x2E48`. No tracked native function crossed both
+   field families in the bounded census, so HGTree command-buffer playback is
+   joined to Submit/Execute but the `+0xDE8` ordering and queue owner remain
+   fail-closed. Runtime attach was denied by `WriteProcessMemory` in this pass;
+   this conclusion is static. See
+   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`
+   item 68.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
