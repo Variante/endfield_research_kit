@@ -1192,6 +1192,21 @@ identify the HGTree API-2 draw owner.
     `vkCmdDraw*`, or `vkQueueSubmit`, so flush order and final ownership stay
     fail-closed.
 
+66. The pending-list protocol is now exact rather than just “a later flush.”
+    `0x180841C40` reads both working heads `context+0x2B58` and
+    `context+0x2B60`, appends master-list nodes with callbacks
+    `0x180820210` and `0x1808200C0`, and only when `dl=1` allocates replacement
+    working heads through `0x18088C6D0/0x18088CE50`; `dl=0` clears the two
+    working-head pointers instead. API-2 `+0xF10` (`0x18083F140`) adds its
+    own final `+0x2B60` record, clears `+0x2B68/+0x2B70`, and calls `+0xC40`
+    with `dl=1`, so it packages pending records but does not invoke their
+    callbacks. API-2 `+0xDE8` (`0x18083F1E0`) calls `+0xC40` with `dl=0` and
+    then invokes `0x180843D60` with `dl=1`; that executor walks the master
+    list and reaches `0x1808200C0`, which invokes the stored `+0x2B60`
+    callbacks. Therefore the HGTree `+0xDB0` record is executable only if a
+    separate packaging call occurs before the `+0xDE8` execution call. No
+    static HGTree handler/callback emits that packaging or execution pair.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
