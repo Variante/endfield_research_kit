@@ -904,6 +904,15 @@ only stable interpretation and priorities.
    argument-5 record/input slot after the worker. The producer/pool identity
    is closed; the continuation-pair-to-draw consumer remains unresolved and
    fail-closed.
+   A hash-pinned constant-driven census over all 113,390 UnityPlayer functions
+   finds only four direct writes of the known HGTree callback addresses into
+   record-like `+0x10` slots: `0x18106BECD` and `0x18106D003` use
+   `0x181060EA0`, while `0x18106C66B` and `0x18106D79B` use `0x181060EB0`.
+   No callback-valued `+8` write appears. The `0x18107EE40` alias hit is only
+   zero-initialization of a new 0x30-byte record, not a binding. This closes
+   the direct static callback-producer set; the continuation/work-object to
+   renderer-list-record identity and final draw/queue ownership remain
+   unresolved and fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
