@@ -44,6 +44,18 @@ ASSET_MAPS = (
     / "endfield_persistent_assets.json",
 )
 CHARINFO_DEPENDENCIES = Path("scratch/charinfo_playable_profiles/dependencies_json")
+GACHA_ROOM_FALLBACK_ROOT = Path(
+    "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/MonoBehaviour"
+)
+CHAR_OVERRIDE_FALLBACK_ROOT = Path(
+    "scratch/animestudio/gacha_char_override_profile/export/MonoBehaviour"
+)
+CHARINFO_FALLBACK_ROOT = Path(
+    "scratch/animestudio/charinfo_volume_profile/export/MonoBehaviour"
+)
+CHARINFO_ENVIRONMENT_FALLBACK_ROOT = Path(
+    "scratch/animestudio/charinfo_environment/export/MonoBehaviour"
+)
 NATIVE_CHARACTER_VOLUME = Path(
     "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/"
     "com.hg.render-pipelines/runtime/HG/Rendering/Runtime/HGCharacterVolume.cs"
@@ -324,7 +336,7 @@ def apply_use_data_on_volume_snapshot(
         name: {
             "value": record["value"],
             "override_state": bool(record["override_state"]),
-            "source": "charinfo_volume",
+            "source": "char_override_profile_initial",
         }
         for name, record in base.items()
     }
@@ -352,12 +364,35 @@ def active_overrides(
     }
 
 
+def compose_volume_layers(
+    *layers: tuple[str, dict[str, dict[str, Any]]],
+) -> dict[str, dict[str, Any]]:
+    """Resolve authored weight-one global layers in ascending priority order."""
+
+    result: dict[str, dict[str, Any]] = {}
+    for source, parameters in layers:
+        for name, record in parameters.items():
+            if record["override_state"]:
+                result[name] = {
+                    "value": record["value"],
+                    "override_state": True,
+                    "source": source,
+                }
+    return result
+
+
 def discover_charinfo_base(repo_root: Path) -> tuple[Path, dict[str, Any], Path, dict[str, Any]]:
     profile_candidates: list[tuple[Path, dict[str, Any]]] = []
-    for path in sorted((repo_root / MONOBEHAVIOUR_JSON_ROOT).glob("CharInfo_Volume_p*.json")):
-        data = load_json(path)
-        if data.get("m_Name") == "CharInfo_Volume":
-            profile_candidates.append((path, data))
+    for root in (
+        repo_root / MONOBEHAVIOUR_JSON_ROOT,
+        repo_root / CHARINFO_FALLBACK_ROOT,
+    ):
+        for path in sorted(root.glob("CharInfo_Volume_p*.json")):
+            data = load_json(path)
+            if data.get("m_Name") == "CharInfo_Volume":
+                profile_candidates.append((path, data))
+        if profile_candidates:
+            break
     if len(profile_candidates) != 1:
         raise RecoveryError(
             f"Expected one CharInfo_Volume profile; found {len(profile_candidates)}"
@@ -374,9 +409,44 @@ def discover_charinfo_base(repo_root: Path) -> tuple[Path, dict[str, Any], Path,
         raise RecoveryError(
             "CharInfo_Volume did not link exactly one HGCharacterVolume"
         )
-    volume_path = find_json_for_path_id(
-        repo_root / MONOBEHAVIOUR_JSON_ROOT, targets[0]
-    )
+    volume_path = find_json_for_path_id(profile_path.parent, targets[0])
+    volume = load_json(volume_path)
+    if volume.get("m_Name") != "HGCharacterVolume":
+        raise RecoveryError(f"Unexpected linked character volume: {volume_path}")
+    return profile_path, profile, volume_path, volume
+
+
+def discover_named_character_volume_profile(
+    repo_root: Path,
+    profile_name: str,
+    fallback_root: Path,
+) -> tuple[Path, dict[str, Any], Path, dict[str, Any]]:
+    roots = (repo_root / MONOBEHAVIOUR_JSON_ROOT, repo_root / fallback_root)
+    candidates: list[tuple[Path, dict[str, Any]]] = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for path in sorted(root.glob(f"{profile_name}_p*.json")):
+            data = load_json(path)
+            if data.get("m_Name") == profile_name:
+                candidates.append((path, data))
+        if candidates:
+            break
+    if len(candidates) != 1:
+        raise RecoveryError(
+            f"Expected one {profile_name} profile; found {len(candidates)}"
+        )
+    profile_path, profile = candidates[0]
+    targets = [
+        int(item.get("targetPathId") or 0)
+        for item in ((profile.get("$animestudio") or {}).get("pptrReferences") or [])
+        if isinstance(item, dict) and item.get("targetName") == "HGCharacterVolume"
+    ]
+    if len(targets) != 1:
+        raise RecoveryError(
+            f"{profile_name} did not link exactly one HGCharacterVolume"
+        )
+    volume_path = find_json_for_path_id(profile_path.parent, targets[0])
     volume = load_json(volume_path)
     if volume.get("m_Name") != "HGCharacterVolume":
         raise RecoveryError(f"Unexpected linked character volume: {volume_path}")
@@ -456,10 +526,16 @@ def discover_overview_modifiers(
 
 def discover_environment(repo_root: Path) -> tuple[Path, dict[str, Any]]:
     matches: list[tuple[Path, dict[str, Any]]] = []
-    for path in sorted((repo_root / MONOBEHAVIOUR_JSON_ROOT).glob("CharInfo_Env_p*.json")):
-        data = load_json(path)
-        if data.get("m_Name") == "CharInfo_Env":
-            matches.append((path, data))
+    for root in (
+        repo_root / MONOBEHAVIOUR_JSON_ROOT,
+        repo_root / CHARINFO_ENVIRONMENT_FALLBACK_ROOT,
+    ):
+        for path in sorted(root.glob("CharInfo_Env_p*.json")):
+            data = load_json(path)
+            if data.get("m_Name") == "CharInfo_Env":
+                matches.append((path, data))
+        if matches:
+            break
     if len(matches) != 1:
         raise RecoveryError(f"Expected one CharInfo_Env; found {len(matches)}")
     return matches[0]
@@ -749,6 +825,22 @@ def extract(repo_root: Path) -> dict[str, Any]:
     materials = {actor: [] for actor in actor_manifests}
     map_targets: set[tuple[str, int]] = set()
     profile_path, profile, base_path, base = discover_charinfo_base(repo_root)
+    (
+        gacha_profile_path,
+        gacha_profile,
+        gacha_base_path,
+        gacha_base,
+    ) = discover_named_character_volume_profile(
+        repo_root, "GachaRoom_Volume", GACHA_ROOM_FALLBACK_ROOT
+    )
+    (
+        override_profile_path,
+        override_profile,
+        override_base_path,
+        override_base,
+    ) = discover_named_character_volume_profile(
+        repo_root, "CharOverrideVolumeProfile", CHAR_OVERRIDE_FALLBACK_ROOT
+    )
     modifiers = discover_overview_modifiers(
         repo_root,
         actor_manifests,
@@ -759,6 +851,10 @@ def extract(repo_root: Path) -> dict[str, Any]:
     source_objects: list[tuple[str, Path, dict[str, Any]]] = [
         ("profile", profile_path, profile),
         ("base", base_path, base),
+        ("gacha_profile", gacha_profile_path, gacha_profile),
+        ("gacha_base", gacha_base_path, gacha_base),
+        ("char_override_profile", override_profile_path, override_profile),
+        ("char_override_base", override_base_path, override_base),
         ("environment", environment_path, environment),
     ]
     for actor, (path, data, _) in modifiers.items():
@@ -774,13 +870,18 @@ def extract(repo_root: Path) -> dict[str, Any]:
     attach_material_asset_map(materials, asset_map)
 
     base_parameters = parameter_block(base)
+    gacha_base_parameters = parameter_block(gacha_base)
+    override_base_parameters = parameter_block(override_base)
     characters: dict[str, Any] = {}
     for actor, (modifier_path, modifier, ancestry) in sorted(modifiers.items()):
         modifier_parameters = parameter_block(modifier["charLightVolumeData"])
         post_snapshot = apply_use_data_on_volume_snapshot(
-            base_parameters, modifier_parameters
+            override_base_parameters, modifier_parameters
         )
-        resolved = active_overrides(post_snapshot)
+        resolved = compose_volume_layers(
+            ("gacha_room_priority_30000", gacha_base_parameters),
+            ("actor_override_priority_30001", post_snapshot),
+        )
         metadata = modifier.get("$animestudio") or {}
         key = (str(metadata.get("type") or "MonoBehaviour"), int(metadata.get("pathId") or 0))
         modifier_entry = choose_asset_map_entry(
@@ -835,6 +936,32 @@ def extract(repo_root: Path) -> dict[str, Any]:
                 str(item.get("targetName")): int(item.get("targetPathId") or 0)
                 for item in (profile_metadata.get("pptrReferences") or [])
                 if isinstance(item, dict) and item.get("targetName")
+            },
+        },
+        "gacha_character_volume_stack": {
+            "gacha_room": {
+                "global": True,
+                "priority": 30000.0,
+                "weight": 1.0,
+                "profile_source": source_record(
+                    repo_root, gacha_profile_path, gacha_profile, None
+                ),
+                "character_volume_source": source_record(
+                    repo_root, gacha_base_path, gacha_base, None
+                ),
+                "serialized_parameters": gacha_base_parameters,
+            },
+            "char_override": {
+                "global": True,
+                "priority": 30001.0,
+                "weight": 1.0,
+                "profile_source": source_record(
+                    repo_root, override_profile_path, override_profile, None
+                ),
+                "character_volume_source": source_record(
+                    repo_root, override_base_path, override_base, None
+                ),
+                "serialized_parameters_before_use_data": override_base_parameters,
             },
         },
         "base_character_volume": {

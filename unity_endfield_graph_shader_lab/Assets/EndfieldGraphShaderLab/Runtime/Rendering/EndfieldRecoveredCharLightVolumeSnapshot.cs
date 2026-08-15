@@ -11,6 +11,10 @@ namespace EndfieldGraphShaderLab
     [AddComponentMenu("Endfield/Recovered/Character Light Volume Snapshot")]
     public sealed class EndfieldRecoveredCharLightVolumeSnapshot : MonoBehaviour
     {
+        public const long GachaRoomCharacterVolumePathId = -6994529406646053790L;
+        public const string GachaRoomCharacterVolumeRawSha256 =
+            "d5e8137d2efe5619582c28baad7c776d1bc866564ac33ff4d8d43aac9189866f";
+
         [Serializable] public sealed class BoolParameter
         {
             public bool value;
@@ -75,55 +79,122 @@ namespace EndfieldGraphShaderLab
         [NonSerialized] private int applyCount;
         public int ApplyCount => applyCount;
 
-        public bool ApplyOnceTo(EndfieldHGRPCharacterLightingVolume destination)
+        public bool ResolveGachaAuthoredStackOnceTo(
+            EndfieldHGRPCharacterLightingVolume destination)
         {
             if (destination == null)
                 return false;
 
-            // Preserve the native call order even though these are value types in the lab.
-            destination.manualCharacterLightControl = charMainLightControl.value;
-            destination.mainLightMultiplier = charMainLightMultiplier.value;
-            destination.environmentLightMultiplier = charEnvLightMultiplier.value;
-            destination.environmentShadowMultiplier = charEnvShadowMultiplier.value;
-            destination.mainLightSpecularMultiplier = charMainLightSpecularMultiplier.value;
-            destination.eyeBaseLightMultiplier = charEyeBaseLightMultiplier.value;
-            destination.eyeHighlightMultiplier = charEyeHighlightMultiplier.value;
-            destination.eyeScatteringMultiplier = charEyeScatteringMultiplier.value;
-            destination.mainLightRangeBias = charMainLightRangeBias.value;
-            destination.ignoreMainLightShadow = charIgnoreMainLightShadow.value;
-            destination.mainLightMode =
-                (EndfieldHGRPCharacterLightingVolume.CharacterLightMode)charMainLightMode.value;
-            destination.cameraFollowLightBias = charCameraFollowMainLightBias.value;
-            destination.customMainLightAngles = charCustomMainLightDir.value;
-            destination.mainLightOverrideColor = charMainLightOverrideColor.value;
-            destination.skinMainLightOverrideColor = charSkinMainLightOverrideColor.value;
-            destination.dialogueLightingMode = charLightDialogMode.value;
-            destination.shadowTintMode =
-                (EndfieldHGRPCharacterLightingVolume.CharacterShadowTintMode)
-                charShadowTintControl.value;
-            destination.shadowTintColor = charShadowTintColor.value;
-            destination.skinShadowTintColor = charSkinShadowTintColor.value;
-            destination.enableCharacterRim = charAutoRimEnable.value;
-            destination.characterRimColor = charAutoRimColor.value;
-            destination.characterRimDirection = charAutoRimDir.value;
-            destination.characterRimIntensity = charAutoRimIntensity.value;
-            destination.characterRimWidth = charAutoRimWidth.value;
-            destination.enableFaceRim = charFaceRimEnable.value;
-            destination.faceRimIntensity = charFaceRimIntensity.value;
-            destination.faceRimColor = charFaceRimColor.value;
-            destination.faceRimDirection = charFaceRimDir.value;
-            destination.ignoreSceneAdditionalLights = charIgnoreSceneAdditionalLights.value;
-            destination.ignoreSceneEnvironment = charIgnoreSceneEnv.value;
+            ApplyExactGachaRoomPriority30000Base(destination);
 
-            // The compatibility publisher does not implement Unity's Volume stack.
-            // Keep every recovered overrideState as evidence; expose only the three
-            // override selectors that the current publisher represents explicitly.
-            destination.overrideMainLightRangeBias = charMainLightRangeBias.overrideState;
-            destination.overrideMainLightColor = charMainLightOverrideColor.overrideState;
-            destination.overrideSkinMainLightColor =
-                charSkinMainLightOverrideColor.overrideState;
+            // SetCharLightVolumeData copied all 30 raw value/state pairs into the
+            // priority-30001 profile. VolumeManager then contributes only fields
+            // whose copied overrideState is true; inactive raw values remain
+            // preserved above but are not final stack values.
+            if (charMainLightControl.overrideState)
+                destination.manualCharacterLightControl = charMainLightControl.value;
+            if (charMainLightMultiplier.overrideState)
+                destination.mainLightMultiplier = charMainLightMultiplier.value;
+            if (charEnvLightMultiplier.overrideState)
+                destination.environmentLightMultiplier = charEnvLightMultiplier.value;
+            if (charEnvShadowMultiplier.overrideState)
+                destination.environmentShadowMultiplier = charEnvShadowMultiplier.value;
+            if (charMainLightSpecularMultiplier.overrideState)
+                destination.mainLightSpecularMultiplier = charMainLightSpecularMultiplier.value;
+            if (charEyeBaseLightMultiplier.overrideState)
+                destination.eyeBaseLightMultiplier = charEyeBaseLightMultiplier.value;
+            if (charEyeHighlightMultiplier.overrideState)
+                destination.eyeHighlightMultiplier = charEyeHighlightMultiplier.value;
+            if (charEyeScatteringMultiplier.overrideState)
+                destination.eyeScatteringMultiplier = charEyeScatteringMultiplier.value;
+            if (charMainLightRangeBias.overrideState)
+            {
+                destination.mainLightRangeBias = charMainLightRangeBias.value;
+                destination.overrideMainLightRangeBias = true;
+            }
+            if (charIgnoreMainLightShadow.overrideState)
+                destination.ignoreMainLightShadow = charIgnoreMainLightShadow.value;
+            if (charMainLightMode.overrideState)
+                destination.mainLightMode =
+                    (EndfieldHGRPCharacterLightingVolume.CharacterLightMode)
+                    charMainLightMode.value;
+            if (charCameraFollowMainLightBias.overrideState)
+                destination.cameraFollowLightBias = charCameraFollowMainLightBias.value;
+            if (charCustomMainLightDir.overrideState)
+                destination.customMainLightAngles = charCustomMainLightDir.value;
+            if (charMainLightOverrideColor.overrideState)
+            {
+                destination.mainLightOverrideColor = charMainLightOverrideColor.value;
+                destination.overrideMainLightColor = true;
+            }
+            if (charSkinMainLightOverrideColor.overrideState)
+            {
+                destination.skinMainLightOverrideColor = charSkinMainLightOverrideColor.value;
+                destination.overrideSkinMainLightColor = true;
+            }
+            if (charLightDialogMode.overrideState)
+                destination.dialogueLightingMode = charLightDialogMode.value;
+            if (charShadowTintControl.overrideState)
+                destination.shadowTintMode =
+                    (EndfieldHGRPCharacterLightingVolume.CharacterShadowTintMode)
+                    charShadowTintControl.value;
+            if (charShadowTintColor.overrideState)
+                destination.shadowTintColor = charShadowTintColor.value;
+            if (charSkinShadowTintColor.overrideState)
+                destination.skinShadowTintColor = charSkinShadowTintColor.value;
+            if (charAutoRimEnable.overrideState)
+                destination.enableCharacterRim = charAutoRimEnable.value;
+            if (charAutoRimColor.overrideState)
+                destination.characterRimColor = charAutoRimColor.value;
+            if (charAutoRimDir.overrideState)
+                destination.characterRimDirection = charAutoRimDir.value;
+            if (charAutoRimIntensity.overrideState)
+                destination.characterRimIntensity = charAutoRimIntensity.value;
+            if (charAutoRimWidth.overrideState)
+                destination.characterRimWidth = charAutoRimWidth.value;
+            if (charFaceRimEnable.overrideState)
+                destination.enableFaceRim = charFaceRimEnable.value;
+            if (charFaceRimIntensity.overrideState)
+                destination.faceRimIntensity = charFaceRimIntensity.value;
+            if (charFaceRimColor.overrideState)
+                destination.faceRimColor = charFaceRimColor.value;
+            if (charFaceRimDir.overrideState)
+                destination.faceRimDirection = charFaceRimDir.value;
+            if (charIgnoreSceneAdditionalLights.overrideState)
+                destination.ignoreSceneAdditionalLights =
+                    charIgnoreSceneAdditionalLights.value;
+            if (charIgnoreSceneEnv.overrideState)
+                destination.ignoreSceneEnvironment = charIgnoreSceneEnv.value;
             applyCount++;
             return true;
+        }
+
+        private static void ApplyExactGachaRoomPriority30000Base(
+            EndfieldHGRPCharacterLightingVolume destination)
+        {
+            // GachaRoom_Volume/HGCharacterVolume, global priority 30000,
+            // weight 1. Only its 14 active fields in the 30-field transfer
+            // domain are written. Lower world/default inputs remain untouched.
+            destination.enableCharacterRim = false;
+            destination.cameraFollowLightBias = new Vector2(32.0f, 10.0f);
+            destination.environmentLightMultiplier = 0.8f;
+            destination.environmentShadowMultiplier = 0.8f;
+            destination.ignoreMainLightShadow = true;
+            destination.ignoreSceneEnvironment = true;
+            destination.manualCharacterLightControl = true;
+            destination.mainLightMode =
+                EndfieldHGRPCharacterLightingVolume.CharacterLightMode.CameraFollow;
+            destination.mainLightMultiplier = 0.9f;
+            destination.mainLightOverrideColor = Color.white;
+            destination.overrideMainLightColor = true;
+            destination.mainLightRangeBias = -0.4f;
+            destination.overrideMainLightRangeBias = true;
+            destination.shadowTintColor =
+                new Color(0.7830188f, 0.8293082f, 1.0f, 1.0f);
+            destination.shadowTintMode =
+                EndfieldHGRPCharacterLightingVolume.CharacterShadowTintMode.CustomTintColor;
+            destination.skinShadowTintColor =
+                new Color(1.0f, 0.78114647f, 0.68490565f, 1.0f);
         }
     }
 }

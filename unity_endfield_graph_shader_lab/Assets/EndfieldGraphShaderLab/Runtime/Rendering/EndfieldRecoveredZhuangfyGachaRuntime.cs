@@ -248,7 +248,7 @@ namespace EndfieldGraphShaderLab
             try
             {
                 OpenSourceBackedPresentation();
-                if (!sourceBackedVolumeSnapshot.ApplyOnceTo(
+                if (!sourceBackedVolumeSnapshot.ResolveGachaAuthoredStackOnceTo(
                         sourceBackedCharacterLightingVolume))
                     throw new InvalidOperationException(
                         "Recovered CharLightVolumeData snapshot could not be copied.");

@@ -257,19 +257,31 @@ it resolves the destination Volume's instantiated profile, obtains its
 and has no Update/Tick path;
 the modifier's half-second tween duration is separate state, not proof of a live
 binding. Current generated capture data preserves both serialized modifier
-parameters and the post-call destination snapshot. The previous generated
-composition incorrectly fell back to the base profile whenever an actor field
-had `overrideState=false`; native assignment overwrites both the value and state
-instead. The generator now models the complete base object followed by the exact
-30-field assignment and rejects missing or extra modifier fields. The lab keeps
-the 30 value/state pairs in a separate component and copies their values once at
-gacha `Begin`, before `SampleToBeginning`; delayed play and per-frame publishing
-do not retain or replay the modifier. Its compatibility publisher still does not
-implement Unity Volume-stack blending for 27 of those override selectors (three
-existing selectors are represented directly), so final composition of inactive
-parameters against lower-priority Volumes remains explicit. On character
-switch, Lua removes the TailTick owner and destroys the whole character root;
-Unity destruction is deferred to frame end. The lab capture now starts with its
+parameters and the post-call destination snapshot. The authored gacha stack has
+two global, enabled, weight-one layers: `GachaRoom_Volume` at priority 30000 and
+`charOverrideVolume` at priority 30001. The room profile actively overrides 14
+of the 30 character-light fields; notably it sets `charIgnoreSceneEnv=true`,
+where the older Character Info profile differs. `UseDataOnVolume` copies all 30
+actor value/state pairs into the instantiated priority-30001 profile, but the
+Volume manager contributes only fields whose resulting `overrideState` is true.
+An inactive actor field is therefore a no-op at priority 30001 and falls through
+to the priority-30000 room value when active there, then to a lower world/phase
+Volume or the constructor default. The generator records both source layers,
+models the exact assignment, composes only active overrides, and rejects missing
+or extra modifier fields. The lab keeps the 30 raw value/state pairs as evidence
+and resolves the two known authored layers once at gacha `Begin`, before
+`SampleToBeginning`; it preserves lower-stack inputs for fields inactive in both
+layers, and delayed play or per-frame publishing does not replay the modifier.
+The remaining Volume gap is the runtime-variable lower world/phase registry.
+
+On character switch, Lua detaches UI, clears timers, removes the TailTick owner,
+nils the helper, destroys the old character root, and creates the replacement on
+a later timer/coroutine. There is no same rendered frame containing both actor
+roots. The shared priority-30001 profile can retain the old snapshot until the
+new character calls `UseDataOnVolume`, but that is retained data rather than a
+second Volume stack. A same-update old `LateTick` immediately before destruction
+remains a narrow scheduling boundary; it cannot produce a rendered dual actor.
+The lab capture now starts with its
 single operator-light publisher and character Volume gated closed, opens them
 immediately before `SampleToBeginning`, and closes the runtime-owned publication
 idempotently on failure, disable, destroy, or explicit end. Closing restores the
@@ -1243,11 +1255,10 @@ only stable interpretation and priorities.
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
    Actor/Effect plus exact empty Light/Others ordering is executable; next
-    recover the non-empty Audio timing/event-media contract, implement the
-    remaining Unity Volume-stack composition behind the recovered 30-field
-    snapshot, resolve deferred old-root destruction overlap and the
-    same-versus-next rendered-frame
-   boundary, then bind actor-specific entrance VFX without a global substitute.
+   recover the non-empty Audio timing/event-media contract, recover lower
+   world/phase Volume-registry contributions for fields inactive in both known
+   gacha layers, close the narrow same-update old-root `LateTick` boundary, then
+   bind actor-specific entrance VFX without a global substitute.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.

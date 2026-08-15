@@ -78,6 +78,13 @@ class OriginalRenderParameterExtractionTests(unittest.TestCase):
             self.assertEqual(snapshot["charMainLightMode"]["value"], 1)
             self.assertEqual(snapshot["charGlobalAmbientParam1"]["value"], {
                 "x": 0.15,
+                "y": 0.6,
+                "z": 1.0,
+                "w": 0.0,
+            })
+            resolved = record["resolved_active_overrides"]
+            self.assertEqual(resolved["charGlobalAmbientParam1"]["value"], {
+                "x": 0.15,
                 "y": 1.5,
                 "z": 0.5,
                 "w": 0.0,
@@ -108,8 +115,11 @@ class OriginalRenderParameterExtractionTests(unittest.TestCase):
             "charShadowTintColor",
         ):
             self.assertFalse(snapshot[name]["override_state"])
-            self.assertNotIn(name, active)
-        self.assertEqual(snapshot["charGlobalAmbientParam1"]["source"], "charinfo_volume")
+            self.assertEqual(active[name]["source"], "gacha_room_priority_30000")
+        self.assertEqual(
+            snapshot["charGlobalAmbientParam1"]["source"],
+            "char_override_profile_initial",
+        )
 
     def test_material_payload_is_deliberately_manifest_owned(self) -> None:
         self.assertEqual(
