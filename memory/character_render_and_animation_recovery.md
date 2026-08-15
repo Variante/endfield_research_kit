@@ -198,8 +198,8 @@ resident viewer now restarts each selected actor's exact generated Overview
 private item/deco bindings, instead of selecting an already-advanced resident
 animation. Re-selecting the same active row does not restart it. This closes
 the body/widget selection lifecycle only: entrance VFX requests have no
-general source-backed spawner, and the retail `Audio`, `Light`, `Others`,
-physical `ExternalCamera`, secondary-motion, and multi-Director ordering remain
+general source-backed spawner, and the retail Audio payload, physical
+`ExternalCamera`, secondary-motion, and final rendered-frame ordering remain
 fail-closed.
 
 The Zhuang Fangyi gacha helper's multi-Director start protocol is now bounded
@@ -209,15 +209,32 @@ pinned GameAssembly wrappers. Source order is `Actor`, `Audio`, `Effect`,
 for each role in that order. Delayed `PlayFromStart` first calls
 `RebuildGraph` for every collected Director, then walks the same order again
 for `time=0 -> Evaluate -> Play`; the zero-delay `TailTick` after each phase is
-still open. The lab now executes that two-pass protocol for the exact recovered
-Actor and Effect PlayableAssets and reports Audio/Light/Others as missing
-instead of synthesizing identity Directors. The individual native
+still open. The lab executes that two-pass protocol for the exact recovered
+Actor and Effect PlayableAssets. The complete object index closes both Light
+and Others as structural empty TimelineAssets: each has only its exact name and
+editor preview setting, with no tracks, clips, or bindings. The lab therefore
+admits source-identified empty Light/Others helpers without inventing payloads;
+only Audio remains missing. Audio is non-empty and owns exact events
+`Au_Gcaha_zhuangfy_overview` and `Au_UI_Gacha_Chrshow_Light6`, but event-media
+resolution, clip timing, and runtime audio-frame evidence are not yet closed.
+The individual native
 `Stop`/`set_time`/`Evaluate`/`RebuildGraph`/`Play` wrappers contain no hidden
 cross-Director or render-submit edge. Same-frame versus next-rendered-frame
 visibility therefore remains a runtime-capture question. The disabled
 `ExternalCamera` stays an animated Cinemachine data source; it is not promoted
 to the physical viewer Camera, and its exposure/history is not reset by the
 Director coordinator.
+
+The empty Light Timeline is also a negative ownership result: gacha lighting
+does not come from Timeline light curves. Installed Lua independently loads
+`AdditionalLights/light_<charId>.prefab`, activates only `light_overview`,
+initializes its follower components, loads `CameraTracks/track_<charId>.prefab`,
+and applies only `VolumeModifiers/volume_overview` to the room override Volume.
+The lab keeps one camera-local operator-light/HGRP publisher and does not create
+a second Unity-Light population. For Zhuang Fangyi the known authored culling
+input remains six `light_overview` rows plus eleven admitted rarity-6 room rows;
+target-frame carry-in, full `LightCullResult`, and final publication remain
+capture-only.
 
 The native `HGRenderPath` slot roles are now corrected from the installed
 UnityPlayer registration: wrapper `+0x8` is the BeforeCulling setup
@@ -1184,8 +1201,9 @@ only stable interpretation and priorities.
 5. Recover the Character Info selection clear/hide interval and the
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
-   Actor/Effect ordering is now executable; next recover the three missing
-   PlayableAssets/bindings, both zero-delay `TailTick` calls, and the
+   Actor/Effect plus exact empty Light/Others ordering is executable; next
+   recover the non-empty Audio timing/event-media contract, both zero-delay
+   `TailTick` calls, the Lua-owned light/Volume activation epoch, and the
    same-versus-next rendered-frame boundary, then bind actor-specific entrance
    VFX without a global substitute.
 6. Add controller, grounding, facial, FX, and secondary systems behind
