@@ -772,6 +772,23 @@ and final draw/queue ownership remain fail-closed.
     unresolved and fail-closed, while this task route is now the highest-value
     runtime probe target.
 
+45. The continuation route is now bounded across all three worker selections.
+    `0x18107E2E0` queues `0x181065FD0`, `0x181066F40`, or `0x181064100`
+    (selected at `0x18107E492/0x18107E49F/0x18107E4A6`) through the same
+    `0x180555D30` pool wrapper; each worker builds a resource/record result and
+    its caller copies the returned pair into a record's `+0x20`. The pool
+    worker `0x1805598C0` invokes only the node `+0x30` worker and optional
+    `+0x40` index setter before `0x1805586C0` retires the node. The helper
+    `0x180557650` invokes a holder's cleanup function only when its holder
+    pointer is present, while `0x1805592B0` uses its `+0x8/+0x10` holder
+    functions for allocation-failure cleanup and pool-index notification;
+    neither is the result-pair callback. A narrowed static scan of the entire
+    UnityPlayer image still finds no consumer that loads the generated pair's
+    `+0x10` and reaches `0x18107AE60/0x18107B3A0`, API-2 `+0xDA0/+0xDE8/+0xF10`,
+    Vulkan, or queue submission. The result-pair-to-draw edge therefore stays
+    unresolved and fail-closed; runtime inspection of the record at `+0x20`
+    remains the next useful probe.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
