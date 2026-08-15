@@ -1207,6 +1207,22 @@ identify the HGTree API-2 draw owner.
     separate packaging call occurs before the `+0xDE8` execution call. No
     static HGTree handler/callback emits that packaging or execution pair.
 
+67. A fresh owner census closes the remaining `0x6A`/`0x27D5` packaging
+    ambiguity without assigning it to HGTree. The only four direct calls to
+    the high-level `0x6A` writer `0x1804CA0B0` are inside native owners
+    `0x181117560-0x181118B2B`, `0x1811195E0-0x18111A7F9`,
+    `0x1811BDC37-0x1811C0112`, and `0x1811C772D-0x1811C9257`; their exact
+    call sites are `0x181118AD0`, `0x18111A7D7`, `0x1811BE9BA`, and
+    `0x1811C7FFD`. Disassembly of all four owners finds no direct call/jump to
+    the HGTree creation/callback family (`0x181060D00/D20/D70/D90/EA0/EB0`,
+    `0x18107AE60`, `0x18107B3A0`), front `+0xDB0/+0xEA0`, API-2 `+0xDB0`,
+    `+0xC40`, `+0xDE8`, `+0xF10`, or the master-list executor. The low
+    `0x27D5` case is a command-interpreter dispatch at `0x1813B156A` that
+    selects backend `+0xF10`; it has no static writer edge back to those four
+    owners or to HGTree. This makes the negative boundary stronger: generic
+    `0x6A`/`0x27D5` packaging is present, but its producer ownership and
+    execution ordering remain independent of the HGTree callback records.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
