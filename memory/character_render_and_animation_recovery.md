@@ -210,6 +210,34 @@ implementation consumes them in the shared Viewer. The physical
 `ExternalCamera`, secondary-motion, and final rendered-frame ordering remain
 fail-closed.
 
+The pinned native/Lua owner chain now closes the shared Character Info entry
+route more tightly: `CharInfoSwitchChar.Execute` emits the GUIDE event,
+`PhaseCharInfo.OnSelectCharChange` removes prior phase items and cancels
+pending loads, the async replacement is created, and
+`_SwitchCharacterControllerState(FromIndex, ToIndex, EnableSwitch)` drives the
+body plus private-deco Animators before `ForceUpdateAnimator`. `_PlayModelEffect`
+then reparents the scene-owned `charEffect` beneath
+`singleEffects/effect<height>`, resets its local transform, activates it, and
+calls `Play()`. This is a parameter-driven Animator route, not the Gacha
+PlayableDirector route; the misspelled `FromOveview` state remains an
+identity-bearing source fact. The viewer now also restores recovered Overview
+parameters and finishes spawned entrance effects whenever an old resident actor
+is disabled, matching the native remove/clear ownership boundary.
+
+The exact serialized shared effect in
+`assets/beyond/dynamicassets/gameplay/prefabs/charinfo/charinfochar.prefab`
+(`CAB-45edfbd38d2a68534810c905ce39aff4`) is a two-node hierarchy. Root
+`CharEffect` GameObject PathID `803616490075416323` has a disabled renderer;
+its sole child `trail` GameObject PathID `3013782730707986179` owns the enabled
+ParticleSystem/renderer PathIDs `8113670769548486403` and
+`5757248678484338435`. The renderer uses `M_UI_charChoose_12` PathID
+`4388811075012960551`, shader `HGRP/Effect/VFXRefract`, queue 3000, and exact
+texture `T_fx_mask_01_M` PathID `-7046954404783675798`. This closes ownership
+and resource identity but not HGRP shader execution or pixel parity, so the lab
+does not yet claim that the shared trail is rendered. It also does not explain
+the character-specific large teal, purple, white-ribbon, or green-local effects
+seen in the retail capture.
+
 A frame-indexed audit places the first clear Zhuang Fangyi presentation at
 about video `102.8 s`; the preceding `102.5-102.7 s` corruption is a streaming/UI
 transition and not VFX timing. Relative to that clear start, the white ribbon/
@@ -1354,8 +1382,10 @@ only stable interpretation and priorities.
    direct-light/color/descriptor subset, close the narrow same-update old-root
    `LateTick`, Audio `ProcessFrame` flag/onset, and streamed-phase boundaries.
    Queue-3005 `baofa` Glow902 is now executable only under its exact Gacha
-   owner; next prove an Overview-specific owner before implementing any
-   Overview-timed actor VFX, and keep other queue-3005 materials fail-closed;
+   owner. Import the now source-closed shared CharInfo `CharEffect/trail` only
+   after its `VFXRefract` material execution is recovered; separately trace
+   character-specific Overview effects from Animator/deco/event consumers, and
+   keep Gacha-only and other queue-3005 materials fail-closed;
    use the measured early-ribbon, sustained green-local, and late-flare windows
    as visual acceptance bounds without promoting them to ownership evidence.
    Repair the current missing `Endminm` viewer-catalog prefab before the next

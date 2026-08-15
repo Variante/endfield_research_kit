@@ -149,6 +149,16 @@ namespace EndfieldGraphShaderLab
             // Invalidate it so it cannot hide widgets from the next restart.
             playbackGeneration++;
             waitingForExit = false;
+            IsTransitioning = false;
+            IsLooping = false;
+
+            // PhaseCharInfo removes the previous PhaseCharItem and clears its
+            // AnimatorPlayEffectHelper before the replacement actor enters.
+            // Mirror that ownership boundary when a resident lab actor is
+            // disabled: no Overview parameter or spawned entrance effect may
+            // leak into its next selection.
+            RestoreRecoveredParameters();
+            FinishAllEntranceEffects();
         }
 
         private IEnumerator RestartAfterEnable()
@@ -361,6 +371,20 @@ namespace EndfieldGraphShaderLab
                 }
             }
             IsTransitioning = false;
+        }
+
+        private void FinishAllEntranceEffects()
+        {
+            if (entranceEffects == null || entranceEffects.Length == 0)
+                return;
+
+            foreach (MonoBehaviour behaviour in GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (!(behaviour is IEndfieldOverviewEffectSpawner spawner))
+                    continue;
+                foreach (EndfieldOverviewEffectRequest effect in entranceEffects)
+                    spawner.FinishOverviewEffect(effect.prefabName);
+            }
         }
 
         private void StartItemWidgets(Animation animation)
