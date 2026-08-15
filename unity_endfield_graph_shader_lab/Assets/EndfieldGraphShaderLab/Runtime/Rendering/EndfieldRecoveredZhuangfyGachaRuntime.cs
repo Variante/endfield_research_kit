@@ -126,6 +126,10 @@ namespace EndfieldGraphShaderLab
         private bool delayedPlayPending;
         private float delayedPlayDeadline;
         private EndfieldRecoveredGachaDirectorStartCoordinator directorStartCoordinator;
+        private PlayableDirector lightStructuralDirector;
+        private PlayableDirector othersStructuralDirector;
+        private EndfieldRecoveredEmptyGachaHelperPlayableAsset lightStructuralAsset;
+        private EndfieldRecoveredEmptyGachaHelperPlayableAsset othersStructuralAsset;
 
         public static bool IsNativeSampleActive(float weight)
         {
@@ -205,6 +209,10 @@ namespace EndfieldGraphShaderLab
             delayedPlayPending = false;
             directorStartCoordinator?.StopAll();
             ResetAllEntityVFX();
+            if (lightStructuralAsset != null)
+                Destroy(lightStructuralAsset);
+            if (othersStructuralAsset != null)
+                Destroy(othersStructuralAsset);
         }
 
         public bool BeginRecoveredEffectStart(float scaledTime)
@@ -246,6 +254,18 @@ namespace EndfieldGraphShaderLab
         {
             if (directorStartCoordinator != null)
                 return;
+            lightStructuralDirector = EnsureStructuralEmptyDirector(
+                EndfieldRecoveredGachaDirectorRole.Light,
+                "Light",
+                -5654231416230730172L,
+                "CAB-2e7efde638026cbecddde6018788eae0",
+                ref lightStructuralAsset);
+            othersStructuralDirector = EnsureStructuralEmptyDirector(
+                EndfieldRecoveredGachaDirectorRole.Others,
+                "Others",
+                3821394883651479761L,
+                "CAB-758541911c26bfe46db18814d7af3f90",
+                ref othersStructuralAsset);
             directorStartCoordinator = new EndfieldRecoveredGachaDirectorStartCoordinator(
                 new[]
                 {
@@ -261,7 +281,58 @@ namespace EndfieldGraphShaderLab
                         sourceOrdinal = 2,
                         director = director,
                     },
+                    new EndfieldRecoveredGachaDirectorBinding
+                    {
+                        role = EndfieldRecoveredGachaDirectorRole.Light,
+                        sourceOrdinal = 3,
+                        director = lightStructuralDirector,
+                    },
+                    new EndfieldRecoveredGachaDirectorBinding
+                    {
+                        role = EndfieldRecoveredGachaDirectorRole.Others,
+                        sourceOrdinal = 4,
+                        director = othersStructuralDirector,
+                    },
                 });
+        }
+
+        private PlayableDirector EnsureStructuralEmptyDirector(
+            EndfieldRecoveredGachaDirectorRole role,
+            string ownerName,
+            long sourcePathId,
+            string sourceSerializedFile,
+            ref EndfieldRecoveredEmptyGachaHelperPlayableAsset asset)
+        {
+            Transform owner = transform.Find(ownerName);
+            if (owner == null)
+            {
+                var ownerObject = new GameObject(ownerName);
+                ownerObject.transform.SetParent(transform, false);
+                owner = ownerObject.transform;
+            }
+            PlayableDirector helper = owner.GetComponent<PlayableDirector>();
+            if (helper == null)
+                helper = owner.gameObject.AddComponent<PlayableDirector>();
+            if (helper.playableAsset != null &&
+                !(helper.playableAsset is EndfieldRecoveredEmptyGachaHelperPlayableAsset))
+            {
+                throw new InvalidOperationException(
+                    $"Recovered empty {role} helper already owns an unvalidated PlayableAsset.");
+            }
+            if (asset == null)
+            {
+                asset = ScriptableObject.CreateInstance<
+                    EndfieldRecoveredEmptyGachaHelperPlayableAsset>();
+                asset.name = $"gacha_char_zhuangfy_{ownerName}";
+                asset.role = role;
+                asset.sourcePathId = sourcePathId;
+                asset.sourceSerializedFile = sourceSerializedFile;
+            }
+            helper.playOnAwake = false;
+            helper.timeUpdateMode = DirectorUpdateMode.GameTime;
+            helper.extrapolationMode = DirectorWrapMode.None;
+            helper.playableAsset = asset;
+            return helper;
         }
 
         private void DispatchSourceZeroStartEntityVFX()

@@ -32,10 +32,16 @@ namespace EndfieldGraphShaderLabEditor
                 ScriptableObject.CreateInstance<EndfieldGachaDirectorValidationPlayableAsset>();
             EndfieldGachaDirectorValidationPlayableAsset effectAsset =
                 ScriptableObject.CreateInstance<EndfieldGachaDirectorValidationPlayableAsset>();
+            EndfieldRecoveredEmptyGachaHelperPlayableAsset lightAsset =
+                ScriptableObject.CreateInstance<EndfieldRecoveredEmptyGachaHelperPlayableAsset>();
+            EndfieldRecoveredEmptyGachaHelperPlayableAsset othersAsset =
+                ScriptableObject.CreateInstance<EndfieldRecoveredEmptyGachaHelperPlayableAsset>();
             try
             {
                 PlayableDirector actor = CreateDirector(root, "Actor", actorAsset);
                 PlayableDirector effect = CreateDirector(root, "Effect", effectAsset);
+                PlayableDirector light = CreateDirector(root, "Light", lightAsset);
+                PlayableDirector others = CreateDirector(root, "Others", othersAsset);
                 var coordinator = new EndfieldRecoveredGachaDirectorStartCoordinator(
                     new[]
                     {
@@ -51,6 +57,18 @@ namespace EndfieldGraphShaderLabEditor
                             sourceOrdinal = 0,
                             director = actor,
                         },
+                        new EndfieldRecoveredGachaDirectorBinding
+                        {
+                            role = EndfieldRecoveredGachaDirectorRole.Light,
+                            sourceOrdinal = 3,
+                            director = light,
+                        },
+                        new EndfieldRecoveredGachaDirectorBinding
+                        {
+                            role = EndfieldRecoveredGachaDirectorRole.Others,
+                            sourceOrdinal = 4,
+                            director = others,
+                        },
                     });
 
                 Require(
@@ -59,28 +77,32 @@ namespace EndfieldGraphShaderLabEditor
                         {
                             EndfieldRecoveredGachaDirectorRole.Actor,
                             EndfieldRecoveredGachaDirectorRole.Effect,
-                        }),
-                    "Admitted Directors are not in recovered source order.");
-                Require(
-                    coordinator.Missing.SequenceEqual(
-                        new[]
-                        {
-                            EndfieldRecoveredGachaDirectorRole.Audio,
                             EndfieldRecoveredGachaDirectorRole.Light,
                             EndfieldRecoveredGachaDirectorRole.Others,
                         }),
+                    "Admitted Directors are not in recovered source order.");
+                Require(
+                    coordinator.Missing.SequenceEqual(new[]
+                    {
+                        EndfieldRecoveredGachaDirectorRole.Audio,
+                    }),
                     "Missing helper roles are not preserved fail closed.");
 
                 coordinator.SampleToBeginning();
-                Require(actor.time == 0.0 && effect.time == 0.0,
-                    "SampleToBeginning did not evaluate both Directors at zero.");
+                Require(
+                    actor.time == 0.0 && effect.time == 0.0 &&
+                    light.time == 0.0 && others.time == 0.0,
+                    "SampleToBeginning did not evaluate every admitted Director at zero.");
                 coordinator.PlayFromStart();
                 Require(
                     actor.state == PlayState.Playing && effect.state == PlayState.Playing &&
-                    actor.time == 0.0 && effect.time == 0.0,
-                    "PlayFromStart did not start both admitted Directors at zero.");
+                    actor.time == 0.0 && effect.time == 0.0 &&
+                    light.time == 0.0 && others.time == 0.0,
+                    "PlayFromStart did not start every admitted Director at zero.");
                 coordinator.StopAll();
-                Require(actor.state != PlayState.Playing && effect.state != PlayState.Playing,
+                Require(
+                    actor.state != PlayState.Playing && effect.state != PlayState.Playing &&
+                    light.state != PlayState.Playing && others.state != PlayState.Playing,
                     "StopAll left an admitted Director playing.");
 
                 bool rejectedIdentityDirector = false;
@@ -106,7 +128,8 @@ namespace EndfieldGraphShaderLabEditor
 
                 Debug.Log(
                     "Recovered gacha Director start coordinator validation passed: " +
-                    "Actor/Effect admitted in source order; Audio/Light/Others missing; " +
+                    "Actor/Effect plus exact empty Light/Others admitted in source order; " +
+                    "Audio missing; " +
                     "zero sample, two-stage play, stop, and missing-asset rejection passed.");
             }
             finally
@@ -114,6 +137,8 @@ namespace EndfieldGraphShaderLabEditor
                 UnityEngine.Object.DestroyImmediate(root);
                 UnityEngine.Object.DestroyImmediate(actorAsset);
                 UnityEngine.Object.DestroyImmediate(effectAsset);
+                UnityEngine.Object.DestroyImmediate(lightAsset);
+                UnityEngine.Object.DestroyImmediate(othersAsset);
             }
         }
 

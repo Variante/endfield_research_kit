@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.Playables;
 
 namespace EndfieldGraphShaderLab
@@ -20,6 +21,25 @@ namespace EndfieldGraphShaderLab
         public EndfieldRecoveredGachaDirectorRole role;
         public int sourceOrdinal;
         public PlayableDirector director;
+    }
+
+    /// <summary>
+    /// Compatibility representation of a source TimelineAsset that contains
+    /// no tracks, clips, or bindings. It preserves helper ownership and start
+    /// ordering without inventing a visual or audio payload.
+    /// </summary>
+    public sealed class EndfieldRecoveredEmptyGachaHelperPlayableAsset : PlayableAsset
+    {
+        public EndfieldRecoveredGachaDirectorRole role;
+        public long sourcePathId;
+        public string sourceSerializedFile;
+
+        public override double duration => 0.0;
+
+        public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)
+        {
+            return Playable.Create(graph);
+        }
     }
 
     /// <summary>
