@@ -810,7 +810,15 @@ only stable interpretation and priorities.
     buffer/state commands when the backend flushes the lists. Static
     HGTree-specific flush/order and dynamic command-buffer/render-graph
     ownership of the final draw and runtime-indirect resource-node consumer
-    still need to be joined to the final draw. Ordinary
+    still need to be joined to the final draw. CommandBuffer execution
+    attribution is now corrected: only `UnityEngine.Graphics::ExecuteCommandBuffer`
+    is proven to reach the high-level interpreter (`0x1800B6F40 ->
+    0x18052D730 -> 0x1804CDF70 -> 0x1804CE0A0`).
+    `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
+    (`0x1801587D0`) and its async/no-copy siblings are state validation or
+    state construction, not playback; do not use them as the missing HGTree
+    flush edge. The final render-graph/command-buffer owner remains
+    runtime-indirect and fail-closed. Ordinary
    `CommandBuffer::Internal_DrawRendererList_Injected` is a separate route:
    UnityPlayer `0x1801713D0` resolves through `0x180A60190`'s indirect
    renderer/resource-state helper, while the HGTree body `0x1801719B0` never
