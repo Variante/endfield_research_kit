@@ -1144,6 +1144,27 @@ identify the HGTree API-2 draw owner.
     fail-closed boundary without promoting the adjacent indirect-draw family
     to an HGTree owner.
 
+64. A direct-caller census separates the generic flush producers from the
+    HGTree callback family. The seven direct callers of API-2 `+0xF10`
+    (`0x18083F140`) are four `HGUtils` dispatch/compute paths in
+    `0x180FE1B60`/`0x180FE21FB`/`0x180FE26A0`/`0x180FE2B6C`, the UnityPlayer
+    per-draw/VAT/visibility batcher `0x181080C30`, the mesh-buffer path
+    `0x1810BD290`, and the Vulkan-resource path `0x18112FD00`. The
+    `0x181080C30` body is visibly
+    generic (`currPerDrawOffset`, VAT, visibility, and render-flag assertions)
+    and calls `+0xF10` only after building a batch; it does not consume an
+    HGTree callback or renderer-list record. The mesh-buffer and resource
+    siblings likewise expose vertex/normal/tangent/weight or `VK_SUCCESS` /
+    `GetResource` assertions rather than HGTree state. In the HGTree-specific
+    callback/create handlers (`0x181060D00`/`D20`/`D70`/`EA0`/`EB0`,
+    `0x18107AE60`, `0x18107B3A0`, and creation cores through `0x181080730`),
+    no static call reaches `+0xF10`, `+0xDE8`, or the master-list executor.
+    The backend vtable maps `0x181DBC098+0xDE8` to `0x18083F1E0`, but the
+    front vtable used by those HGTree callbacks maps
+    `0x181DCB360+0xDE8` to the no-op `0x180076890`. Thus the generic
+    `0x6A`/`0x27D5` flush family remains a real backend sink, while no static
+    edge assigns its ordering or execution to HGTree records.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
