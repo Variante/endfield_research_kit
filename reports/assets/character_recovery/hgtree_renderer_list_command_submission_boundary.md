@@ -772,11 +772,28 @@ and final draw/queue ownership remain fail-closed.
     unresolved and fail-closed, while this task route is now the highest-value
     runtime probe target.
 
-45. The continuation route is now bounded across all three worker selections.
-    `0x18107E2E0` queues `0x181065FD0`, `0x181066F40`, or `0x181064100`
-    (selected at `0x18107E492/0x18107E49F/0x18107E4A6`) through the same
-    `0x180555D30` pool wrapper; each worker builds a resource/record result and
-    its caller copies the returned pair into a record's `+0x20`. The pool
+45. The continuation route is now bounded across all three worker selections,
+    with their producer implementations separated. `0x18107E2E0` queues
+    `0x181065FD0`, `0x181066F40`, or `0x181064100` (selected at
+    `0x18107E492/0x18107E49F/0x18107E4A6`) through the same `0x180555D30`
+    pool wrapper; each worker builds a resource/record result and its caller
+    copies the returned pair into a record's `+0x20`.
+
+    - The non-empty dependency branch `0x181065FD0` calls `0x18106B5B0`,
+      whose `0x181066E10` path invokes `0x18107A410` and stores
+      `0x181060EA0` at the continuation pair's `+0x10`
+      (`0x18106BE8B`).
+    - The other two selected workers call the shared builder
+      `0x18106C6C0` at `0x1810678EC` (`0x181066F40`) and `0x181065056`
+      (`0x181064100`). They forward the same task context's `+0x10` and
+      `+0x68` as the builder's continuation/flag arguments; the shared
+      continuation (`0x18106CFA7`, tail `0x18106CFC9-0x18106D003`) writes the
+      result pair and the same `0x181060EA0` thunk. This is a distinct
+      implementation, not a second call to `0x18106B5B0`.
+
+    The `0x181060EB0` producer remains on the separate initial/sibling builder
+    routes (`0x18106BEF0`'s `0x18106C639` branch and `0x18106D020`'s
+    `0x18106D769` tail, called from `0x18106843E/0x1810684BD`). The pool
     worker `0x1805598C0` invokes only the node `+0x30` worker and optional
     `+0x40` index setter before `0x1805586C0` retires the node. The helper
     `0x180557650` invokes a holder's cleanup function only when its holder
@@ -891,6 +908,10 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811AB1B0 0x1811AB7DB
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1811D03A0 0x1811D06F8
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804D4680 0x1804D49A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_target_xrefs.py 0x18106C30E 0x18106C639 0x18106C6C0 0x18106CFA7 0x18106D020 --jobs 8
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181064FE0 0x1810650A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181067880 0x181067930
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18106C6C0 0x18106D120
 python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --member-regex "^AddDrawECS.*" --body-target-regex "^AddDrawECS.*" --body-target-type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --all-images --include-all-members --body-context 1 --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.md
 python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.md
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x18B3E3F44 0x18B3E4028
