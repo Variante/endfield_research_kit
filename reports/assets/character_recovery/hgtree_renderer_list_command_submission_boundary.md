@@ -878,6 +878,21 @@ and final draw/queue ownership remain fail-closed.
     within the inspected code ranges while retaining the runtime
     continuation-pair-to-draw join as unresolved and fail-closed.
 
+50. The callback producer side is now bounded with a narrower constant-driven
+    census. A hash-pinned Capstone scan of all 113,390 UnityPlayer functions
+    tracks RIP-relative values landing in the known HGTree callback ranges
+    (`0x181060D00/0x181060D20/0x181060D70/0x181060D90/0x181060EA0` families)
+    and reports only four callback-valued writes to record-like `+8/+0x10`
+    fields: `0x18106BECD` and `0x18106D003` write `0x181060EA0`, while
+    `0x18106C66B` and `0x18106D79B` write `0x181060EB0`; all four target
+    `+0x10`, with no additional `+8` callback write. The broader alias hit in
+    `0x18107EE40` is only zero-initialization of a newly allocated 0x30-byte
+    record (`+8/+0x10/+0x18`), not a callback producer. This closes the
+    direct, statically recognizable callback producer set while leaving the
+    continuation/work-object to renderer-list-record identity unresolved and
+    fail-closed. The unresolved edge still requires a runtime record witness,
+    not a guessed draw/queue join.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -927,6 +942,7 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180843D60 0x180844A20
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180841C40 0x180841D50
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1808200C0 0x180820220
+python scratch\\reverse_engineering\\hgtree_component67_producers\\scan_known_callback_slot_writes.py > scratch\\reverse_engineering\\hgtree_component67_producers\\known_callback_slot_writes_all.txt
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18083C6B0 0x18083D3B0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180820580 0x1808205A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18082D6B0 0x18082D7A0
