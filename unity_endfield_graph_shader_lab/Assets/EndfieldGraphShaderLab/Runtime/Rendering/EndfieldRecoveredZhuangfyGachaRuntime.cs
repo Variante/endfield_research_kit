@@ -127,6 +127,11 @@ namespace EndfieldGraphShaderLab
         private bool delayedPlayPending;
         private float delayedPlayDeadline;
         private EndfieldRecoveredGachaDirectorStartCoordinator directorStartCoordinator;
+        [Header("Recovered Audio helper")]
+        public AudioClip recoveredOverviewAudio;
+        public AudioClip recoveredRarityAudio;
+        private PlayableDirector audioDirector;
+        private EndfieldRecoveredGachaAudioPlayableAsset audioAsset;
         private PlayableDirector lightStructuralDirector;
         private PlayableDirector othersStructuralDirector;
         private EndfieldRecoveredEmptyGachaHelperPlayableAsset lightStructuralAsset;
@@ -248,7 +253,8 @@ namespace EndfieldGraphShaderLab
             try
             {
                 OpenSourceBackedPresentation();
-                if (!sourceBackedVolumeSnapshot.ResolveGachaAuthoredStackOnceTo(
+                if (gateSourceBackedPresentation &&
+                    !sourceBackedVolumeSnapshot.ResolveGachaAuthoredStackOnceTo(
                         sourceBackedCharacterLightingVolume))
                     throw new InvalidOperationException(
                         "Recovered CharLightVolumeData snapshot could not be copied.");
@@ -379,6 +385,7 @@ namespace EndfieldGraphShaderLab
         {
             if (directorStartCoordinator != null)
                 return;
+            audioDirector = EnsureRecoveredAudioDirector();
             lightStructuralDirector = EnsureStructuralEmptyDirector(
                 EndfieldRecoveredGachaDirectorRole.Light,
                 "Light",
@@ -402,6 +409,12 @@ namespace EndfieldGraphShaderLab
                     },
                     new EndfieldRecoveredGachaDirectorBinding
                     {
+                        role = EndfieldRecoveredGachaDirectorRole.Audio,
+                        sourceOrdinal = 1,
+                        director = audioDirector,
+                    },
+                    new EndfieldRecoveredGachaDirectorBinding
+                    {
                         role = EndfieldRecoveredGachaDirectorRole.Effect,
                         sourceOrdinal = 2,
                         director = director,
@@ -419,6 +432,39 @@ namespace EndfieldGraphShaderLab
                         director = othersStructuralDirector,
                     },
                 });
+        }
+
+        private PlayableDirector EnsureRecoveredAudioDirector()
+        {
+            Transform owner = transform.Find("Audio");
+            if (owner == null)
+            {
+                var ownerObject = new GameObject("Audio");
+                ownerObject.transform.SetParent(transform, false);
+                owner = ownerObject.transform;
+            }
+            PlayableDirector helper = owner.GetComponent<PlayableDirector>();
+            if (helper == null)
+                helper = owner.gameObject.AddComponent<PlayableDirector>();
+            if (helper.playableAsset != null &&
+                !(helper.playableAsset is EndfieldRecoveredGachaAudioPlayableAsset))
+            {
+                throw new InvalidOperationException(
+                    "Recovered Audio helper already owns an unvalidated PlayableAsset.");
+            }
+            if (audioAsset == null)
+            {
+                audioAsset = ScriptableObject.CreateInstance<
+                    EndfieldRecoveredGachaAudioPlayableAsset>();
+                audioAsset.name = "gacha_char_zhuangfy_Audio";
+            }
+            audioAsset.overviewClip = recoveredOverviewAudio;
+            audioAsset.rarityClip = recoveredRarityAudio;
+            helper.playOnAwake = false;
+            helper.timeUpdateMode = DirectorUpdateMode.GameTime;
+            helper.extrapolationMode = DirectorWrapMode.None;
+            helper.playableAsset = audioAsset;
+            return helper;
         }
 
         private PlayableDirector EnsureStructuralEmptyDirector(
