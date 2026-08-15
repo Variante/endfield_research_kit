@@ -58,8 +58,10 @@ is index `3645` -> `0x1800B6F40 -> 0x18052D730 -> 0x1804CDF70 ->
 `Graphics::ExecuteCommandBuffer` is index `924` -> `0x18005C0D0`; its inspected
 body is a separate resource/object path with no direct interpreter edge.
 `Submit_Internal_Injected` is index `3636` -> `0x1800B4A40 -> 0x1805385A0 ->
-0x18052E0B0`, a command-record flush candidate that includes an interpreter
-call for one record kind but does not identify the HGTree API-2 draw owner.
+0x18052E0B0`. Its type-2/type-3 deferred records reload command-buffer
+pointers from `context+0x10128` and call the same interpreter, so Submit is a
+concrete deferred consumer of the HGTree high-level buffer. It still does not
+identify the HGTree API-2 draw owner.
 
 ## Source pins
 
@@ -459,11 +461,11 @@ call for one record kind but does not identify the HGTree API-2 draw owner.
     `0x55`. `UnityEngine.Graphics::ExecuteCommandBuffer` is index `924` ->
     `0x18005C0D0`; the inspected body resolves resource/object handles and has
     no direct interpreter edge. `Submit_Internal_Injected` is index `3636` ->
-    `0x1800B4A40 -> 0x1805385A0 -> 0x18052E0B0`, a separate command-record
-    flush candidate whose body includes a `0x1804CDF70` call for one record
-    kind. The async/no-copy entries use distinct helpers and must be traced
-    separately; none of these observations yet prove the HGTree API-2 draw or
-    queue owner.
+    `0x1800B4A40 -> 0x1805385A0 -> 0x18052E0B0`; its type-2/type-3 records
+    reload deferred command-buffer pointers and call the same interpreter.
+    The async/no-copy entries use distinct helpers, so Submit is a concrete
+    deferred consumer but still does not prove the HGTree API-2 draw or queue
+    owner.
 24. The ordinary `Internal_DrawRendererList_Injected` route is still distinct:
     table-A index 3463 resolves to `0x180062960`, while table-B's parallel
     implementation is `0x1801713D0`. Its resource-state helper must not be
@@ -1015,11 +1017,25 @@ call for one record kind but does not identify the HGTree API-2 draw owner.
     `Graphics::ExecuteCommandBuffer` is index `924` -> `0x18005C0D0`, a
     separate resource/object body without a direct interpreter edge.
     `Submit_Internal_Injected` is index `3636` -> `0x1800B4A40 -> 0x1805385A0
-    -> 0x18052E0B0`; that body includes an interpreter call for one record
-    kind but does not statically identify the HGTree API-2 draw owner. The
+    -> 0x18052E0B0`; its type-2/type-3 records reload deferred command-buffer
+    pointers from `context+0x10128` and call the same interpreter, making it a
+    concrete deferred consumer rather than an unrelated state wrapper. The
     no-copy entries likewise use distinct helpers (`0x18052DB50` and
     `0x18052DA20`), so the final renderer-list draw/flush/queue owner remains
     runtime-indirect and fail-closed.
+
+58. The deferred Submit loop is now decoded rather than treated as an opaque
+    flush candidate. `0x18052E0B0` reads 16-byte records at `context+0x10030`,
+    dispatches their type through `0x18052F25C`, and maps type `2` to
+    `0x18052E869` and type `3` to `0x18052E8F7`. Both branches load
+    `context+0x10128[index]` and call `0x1804CDF70`; type 3 additionally passes
+    the buffer `+0x170` mode. The producers `0x18052D730`/`0x18052DB50` write
+    type 2, while `0x18052D8F0`/`0x18052DA20` write type 3. Therefore the
+    table-A HGTree writer (`0x180064580 -> 0x1804C7930`, opcode `0x55`) can be
+    consumed through Submit as well as direct Execute/NoCopy. The shared
+    interpreter also makes generic opcode `0x6A -> +0xF10` reachable, but no
+    static edge from the HGTree callback-produced records to `+0xDE8`,
+    `+0xF10`, or the final queue owner is established.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
@@ -1139,4 +1155,6 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_ra
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18005C0D0 0x18005C168
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052D730 0x18052D7B2
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052E0B0 0x1805385A0
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052D818 0x18052DE10
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18052E7D0 0x18052E957
 ```
