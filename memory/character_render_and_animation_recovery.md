@@ -1071,6 +1071,14 @@ only stable interpretation and priorities.
    immediately through `context+0x2708`); their consumers are backend
    `+0xDA0/+0x358`, not the neighboring `+0xDA8/+0xDE8` draw/flush family.
    This strengthens the fail-closed HGTree-specific draw/queue boundary.
+   A direct `+0xF10` caller census further separates ownership: the only
+   nearby `0x181080C30` caller is a generic per-draw/VAT/visibility batcher,
+   while the other callers are DispatchCompute, mesh-buffer, or generic
+   Vulkan-resource paths. None consumes an HGTree callback or renderer-list
+   record. The HGTree callback front vtable `0x181DCB360+0xDE8` resolves to
+   no-op `0x180076890` (the backend table's `+0xDE8` is
+   `0x18083F1E0`), so generic `0x6A/0x27D5` flushing is not promoted to
+   HGTree-specific ordering or draw ownership.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
