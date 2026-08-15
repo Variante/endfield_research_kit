@@ -857,6 +857,27 @@ and final draw/queue ownership remain fail-closed.
     `[rsi+0x10]` remains unproven. This closes the missing callback dispatch
     site without claiming the final continuation-pair-to-draw join.
 
+49. The record/continuation distinction is now also checked from the other
+    direction. `0x18107E2E0` has four direct caller families (`0x18107E9C0`,
+    `0x181079400`, `0x18107AA30`, and sibling `0x18107F885`). The first
+    allocates a distinct 0x30-byte item record at `item+0x10` and a separate
+    0x98-byte task descriptor at `item+8`; its returned pair is copied to the
+    item record's `+0x20`. The other three callers likewise copy the returned
+    pair to their enclosing resource record's `+0x20`. In every worker route,
+    pool dispatch preserves the task descriptor as the worker `rcx`, and the
+    producer writes callback fields through task-context `+0x68`; no caller
+    passes the E9C0 item record as that continuation argument.
+
+    A hash-pinned Capstone alias scan over 7,353 functions in the HGTree and
+    adjacent UnityPlayer ranges (`0x181050000-0x181320000`) found 18 simple
+    `mov reg,[base+0x10]` -> write `[reg+8/+0x10]` candidates. The only hit in
+    the worker range (`0x181065FD0` writing a vector capacity) and the 15 hits
+    in later ranges are dynamic arrays, metadata/hash tables, or generic
+    resource state; none is the E9C0 0x30-byte record, and none writes its
+    callback slot (`+8/+0x10`). This closes the static record-field search
+    within the inspected code ranges while retaining the runtime
+    continuation-pair-to-draw join as unresolved and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.

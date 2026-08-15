@@ -125,6 +125,16 @@ archetypes are imported as labeled source kits rather than finished characters.
   See
   `reports/assets/character_recovery/hgtree_renderer_list_command_submission_boundary.md`.
 
+  The async record identity is now bounded more tightly: `0x18107E2E0`'s
+  `0x18107E9C0` family allocates a 0x30-byte item record at `item+0x10` and a
+  separate 0x98-byte task descriptor at `item+8`; all inspected callers copy
+  the returned pair to a record's `+0x20`, while workers write callback fields
+  through task-context `+0x68`. A hash-pinned alias scan across the adjacent
+  HGTree UnityPlayer ranges found only unrelated vector, metadata, and
+  resource-state `+8/+0x10` writes, not an item-record callback-slot write.
+  The static continuation-pair-to-renderer-list join therefore remains
+  unresolved and fail-closed.
+
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
 model families with distinct containers, Animator identities, VFS sources, and
 generated mesh GUID sets. Shared facial or animation bases do not merge their
