@@ -161,6 +161,17 @@ queue submission, so this concrete AB10-to-worker path is now classified as
 resource/state lifetime only; the runtime record-to-final-draw consumer
 remains unresolved and fail-closed.
 
+The latest exact-slot census closes a potential false positive around
+indirect draw: global `+0xDA8` sites are `0x180932245`, `0x1804D2A31`,
+`0x1804D492C`, and low-level `0x1813B057F`. The latter is the `0x2734`
+dispatch case (`0x1813BB574`), whereas HGTree's writer emits `0x273B`
+(`0x1809324E0 -> 0x1813B1110 -> 0x181060D70`). The generic front-end
+writers for `0x2734`/`0x2743` are `0x180931980`/`0x1809318F0`, and the
+`+0xDA8` helper's recording twin writes `0x27B9`; none has a static HGTree
+edge. The high-level jump table maps opcode `0x55` only to `0x1804CE4BD`,
+not the owners of the other `+0xDA8` sites. Therefore indirect-draw, flush
+ordering, and queue ownership for HGTree remain unresolved and fail-closed.
+
 Generated mesh identity is source-scoped. Chen and Chenpast remain separate
 model families with distinct containers, Animator identities, VFS sources, and
 generated mesh GUID sets. Shared facial or animation bases do not merge their

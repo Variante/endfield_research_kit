@@ -957,6 +957,29 @@ and final draw/queue ownership remain fail-closed.
     runtime consumer that turns the populated records into the final HGTree
     draw unresolved and fail-closed.
 
+55. A complete hash-pinned exact-slot census now separates the remaining
+    `+0xDA8` consumers from HGTree's `0x273B` callback. The four call sites
+    are `0x180932245` (a generic record helper whose recording-mode twin
+    writes `0x27B9` at `0x180931FBD`), `0x1804D2A31` and `0x1804D492C`
+    (sibling high-level resource/format handlers), and `0x1813B057F` (the
+    low-level command interpreter). The low-level dispatch table at
+    `0x1813BB574` indexes by `opcode - 0x2711`: `0x2734` targets
+    `0x1813AFFF7`, whose body reaches `+0xDA8` at `0x1813B057F`; the next
+    `0x2735` case starts at `0x1813B05B6`. This is not the HGTree case:
+    HGTree's `+0xEA0` writer `0x1809324E0` emits `0x273B` at
+    `0x18093255B`, and `0x273B` still resolves to `0x1813B1110` and the
+    direct callback `0x181060D70 -> 0x18107AB10`. The separate generic
+    front-end writer `0x180931980` emits `0x2734` and falls back to
+    `+0xDA0`, while `0x1809318F0` emits `0x2743`/falls back to `+0xF18`;
+    neither has a static HGTree caller. Finally, the high-level command
+    jump table at `0x1804D19C8` maps opcode `0x55` only to `0x1804CE4BD`;
+    neither `0x1804D27AB` nor `0x1804D4705` (the owners of the two generic
+    `+0xDA8` sites) is a high-level opcode target. Thus the global `+0xDA8`
+    implementation and its `0x2734` producer are real indirect-draw/state
+    candidates, but no installed-image edge joins them to HGTree `0x55` or
+    its `0x273B` callback. The final HGTree record-to-draw/flush/queue join
+    remains unresolved and fail-closed.
+
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
 the managed HGTree wrapper or to the tree helper was established here.
@@ -1054,6 +1077,14 @@ python scratch\\reverse_engineering\\hgtree_component67_producers\\find_unity_ta
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181064FE0 0x1810650A0
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x181067880 0x181067930
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x18106C6C0 0x18106D120
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1809318F0 0x180931F30
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180931980 0x180931F30
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x180931F30 0x180932265
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1809324E0 0x180932780
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813AFFF7 0x1813B05B6
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1813B05B6 0x1813B0765
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804D27AB 0x1804D2AC1
+python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_unity_range.py 0x1804D4705 0x1804D4990
 python tools\\endfield-il2cpp\\catalog_option_flow_metadata.py --type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --member-regex "^AddDrawECS.*" --body-target-regex "^AddDrawECS.*" --body-target-type-regex "^UnityEngine\\.Rendering\\.CommandBuffer$" --all-images --include-all-members --body-context 1 --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.md
 python tools\\endfield-il2cpp\\map_body_targets_to_gameassembly.py --metadata "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat" --gameassembly "D:\\Program Files\\Endfield Game\\GameAssembly.dll" --catalog scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_targets.json --out scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.json --markdown scratch\\reverse_engineering\\hgtree_component67_producers\\commandbuffer_hgdraw_native_map.md
 python scratch\\reverse_engineering\\hgtree_component67_producers\\dump_gameassembly_range.py 0x18B3E3F44 0x18B3E4028
