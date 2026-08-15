@@ -892,7 +892,11 @@ namespace EndfieldGraphShaderLab
                     applyPostProcess,
                     useRecoveredPostSemantics,
                     recoveredSceneMVRequest.requested &&
-                    camera.GetComponent<EndfieldHGOperatorPresentation>() != null);
+                    camera.GetComponent<EndfieldHGOperatorPresentation>() is
+                        EndfieldHGOperatorPresentation exposurePresentation &&
+                    exposurePresentation.environmentPhaseSnapshot != null &&
+                    exposurePresentation.environmentPhaseSnapshot
+                        .IsGachaRoomSourceClosed);
             if (applyPostProcess)
             {
                 cameraColorDescriptor = CreateRecoveredSceneColorDescriptor(

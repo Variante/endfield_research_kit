@@ -210,6 +210,16 @@ implementation consumes them in the shared Viewer. The physical
 `ExternalCamera`, secondary-motion, and final rendered-frame ordering remain
 fail-closed.
 
+A frame-indexed audit places the first clear Zhuang Fangyi presentation at
+about video `102.8 s`; the preceding `102.5-102.7 s` corruption is a streaming/UI
+transition and not VFX timing. Relative to that clear start, the white ribbon/
+shard silhouette is strongest around `0.3-2.3 s` and rapidly leaves the main
+outline by `2.3-2.8 s`; green hand/body-local energy persists around `0.3-3.1 s`,
+with a later local flare around `5.2-5.9 s` decaying by roughly `6.0-6.7 s`.
+The recording shows no defensible global exposure step. These intervals are
+retail visual acceptance bounds, not proof of effect asset identity, mount,
+particle seed, or exact lifetime.
+
 The four Zhuang Fangyi request names do not license wholesale reuse of the
 GachaRoom effect Timeline. `piaodai` is the only immediate actor-local visual
 candidate (source interval 0-4.516667 s after 0.483333 s clip-in); `_01`,
@@ -328,6 +338,21 @@ fail-closed differences: Gacha `directIntensityDividePi=0` cannot reuse
 Character Info's `2.7475471`, and Gacha indirect factors `(1,1)` cannot silently
 replace Character Info's `(.28772247,.28772247)`. Sky/SH, fog, volumetrics, CSM,
 and punctual-shadow publication still require individual consumer evidence.
+The capture camera now owns an explicit phase reference and a hash-gated
+consumer. It applies the selected color mode, color/temperature, and the existing
+pitch/yaw-to-direction transform to the scene main light while leaving Unity
+light intensity neutral; it also disables the recovered source-main descriptor
+for Gacha's zero divide-pi value instead of retaining the Character Info
+descriptor. Native `UseDirLightDataFromEnvDirectly` is only a light-source
+selection gate and does not justify EV-to-lux conversion or broad shader-global
+publication. A standalone D3D12 capture after this correction passes all 13
+canonical frames: every frame is non-black, all hashes are distinct across 13
+samples, the source camera remains disabled, all 752 runtime scope objects retain
+Gacha layer 30, and four fail-closed material identities remain unchanged. The
+result is visibly recognizable and includes the early ribbon/cube composition,
+but the lab's blue isolated backdrop and current camera/pose composition still
+differ materially from the retail Character Info recording; this is evidence of
+working transport, not parity.
 
 On character switch, Lua detaches UI, clears timers, removes the TailTick owner,
 nils the helper, destroys the old character root, and creates the replacement on
@@ -1310,10 +1335,12 @@ only stable interpretation and priorities.
    `SampleToBeginning -> RebuildGraph -> Evaluate -> Play` ordering across the
    actor, `Audio`, `Light`, `Others`, and physical `ExternalCamera` Directors;
    Actor/Audio/Effect plus exact empty Light/Others ordering is executable; next
-   connect each admitted field of the scene-specific priority-600 snapshot to
-   its existing environment consumer, close the narrow same-update old-root
+   connect the remaining individually proven phase fields beyond the now-live
+   direct-light/color/descriptor subset, close the narrow same-update old-root
    `LateTick`, Audio `ProcessFrame` flag/onset, and streamed-phase boundaries,
-   then prove an Overview-specific owner before implementing timed actor VFX.
+   then prove an Overview-specific owner before implementing timed actor VFX;
+   use the measured early-ribbon, sustained green-local, and late-flare windows
+   as visual acceptance bounds without promoting them to ownership evidence.
    Repair the current missing `Endminm` viewer-catalog prefab before the next
    shared-Viewer visual capture; generated Gacha-runtime validation itself is
    green and must remain separable from that catalog repair.

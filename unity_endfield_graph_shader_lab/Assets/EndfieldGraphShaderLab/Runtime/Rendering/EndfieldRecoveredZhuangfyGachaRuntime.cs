@@ -440,6 +440,7 @@ namespace EndfieldGraphShaderLab
             if (owner == null)
             {
                 var ownerObject = new GameObject("Audio");
+                ownerObject.layer = gameObject.layer;
                 ownerObject.transform.SetParent(transform, false);
                 owner = ownerObject.transform;
             }
@@ -478,6 +479,7 @@ namespace EndfieldGraphShaderLab
             if (owner == null)
             {
                 var ownerObject = new GameObject(ownerName);
+                ownerObject.layer = gameObject.layer;
                 ownerObject.transform.SetParent(transform, false);
                 owner = ownerObject.transform;
             }
