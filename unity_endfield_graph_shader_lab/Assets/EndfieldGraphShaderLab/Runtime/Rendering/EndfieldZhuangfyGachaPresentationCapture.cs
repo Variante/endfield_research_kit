@@ -104,6 +104,8 @@ namespace EndfieldGraphShaderLab
             public int maximumSentinelPixelCount;
             public int minimumNonBlackPixelCount;
             public int distinctPngHashCount;
+            public bool glow902Queue3005Observed;
+            public bool everyRequestedGlow902Queue3005LaneExecuted;
             public int failClosedMaterialCount;
             public string initialFailClosedCensusSha256;
             public string finalFailClosedCensusSha256;
@@ -135,6 +137,8 @@ namespace EndfieldGraphShaderLab
             public int activeAddedMaterialRecords;
             public int appliedAddedMaterialRecords;
             public int activeDissolveReplacementMaterials;
+            public bool glow902Queue3005Requested;
+            public bool glow902Queue3005Executed;
             public string failClosedCensusSha256;
             public ParticleSystemRecord[] particleSystems =
                 Array.Empty<ParticleSystemRecord>();
@@ -425,6 +429,16 @@ namespace EndfieldGraphShaderLab
                     $"distinct PNG hashes={distinctFrameHashes}.");
                 yield break;
             }
+            if (!records.Any(record => record.glow902Queue3005Executed) ||
+                records.Any(record =>
+                    record.glow902Queue3005Requested &&
+                    !record.glow902Queue3005Executed))
+            {
+                Fail(
+                    "Source-closed Glow902 queue-3005 MRT lane was not observed " +
+                    "for every requesting canonical frame.");
+                yield break;
+            }
 
             var manifest = new CaptureManifest
             {
@@ -468,6 +482,11 @@ namespace EndfieldGraphShaderLab
                 minimumNonBlackPixelCount =
                     records.Min(record => record.nonBlackPixelCount),
                 distinctPngHashCount = distinctFrameHashes,
+                glow902Queue3005Observed = records.Any(record =>
+                    record.glow902Queue3005Executed),
+                everyRequestedGlow902Queue3005LaneExecuted = records.All(record =>
+                    !record.glow902Queue3005Requested ||
+                    record.glow902Queue3005Executed),
                 failClosedMaterialCount = finalCount,
                 initialFailClosedCensusSha256 = initialFailClosedCensusSha256,
                 finalFailClosedCensusSha256 = finalCensusSha256,
@@ -632,6 +651,8 @@ namespace EndfieldGraphShaderLab
                 captureScopeRoot.GetComponentsInChildren<ParticleSystem>(true);
             Renderer[] renderers =
                 captureScopeRoot.GetComponentsInChildren<Renderer>(true);
+            EndfieldRecoveredSceneMVDiagnosticState sceneMVDiagnostic =
+                HDRenderPipeline.LastRecoveredSceneMVDiagnostic;
             return new FrameRecord
             {
                 index = index,
@@ -664,6 +685,10 @@ namespace EndfieldGraphShaderLab
                 appliedAddedMaterialRecords = runtime.AppliedAddedMaterialRecordCount,
                 activeDissolveReplacementMaterials =
                     runtime.ActiveDissolveReplacementMaterialCount,
+                glow902Queue3005Requested =
+                    sceneMVDiagnostic.glow902Queue3005Requested,
+                glow902Queue3005Executed =
+                    sceneMVDiagnostic.glow902Queue3005Executed,
                 failClosedCensusSha256 = censusSha,
                 particleSystems =
                     index >= 6 && index <= 8
