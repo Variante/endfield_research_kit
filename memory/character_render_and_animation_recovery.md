@@ -1114,6 +1114,15 @@ only stable interpretation and priorities.
    list and calls `0x1808200C0`. Thus the HGTree `+0xDB0` record needs a
    separate packaging call before the execution call; neither step is emitted
    by the inspected HGTree handlers or callbacks.
+   A fresh owner census found exactly four direct `0x6A` writer call sites
+   (`0x181118AD0`, `0x18111A7D7`, `0x1811BE9BA`, `0x1811C7FFD`) in native
+   owners `0x181117560`, `0x1811195E0`, `0x1811BDC37`, and `0x1811C772D`.
+   None directly references the HGTree creation/callback family, front/API-2
+   `+0xDB0/+0xEA0`, `+0xC40`, `+0xDE8`, `+0xF10`, or the master-list executor.
+   The low `0x27D5` path is only the interpreter dispatch at
+   `0x1813B156A -> +0xF10`; no static writer edge joins it to those owners or
+   to HGTree. Keep generic packaging and HGTree callback execution as separate
+   until a runtime trace proves the missing ordering bridge.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
