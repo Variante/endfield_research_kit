@@ -951,6 +951,17 @@ only stable interpretation and priorities.
    the direct static callback-producer set. The renderer-list record identity
    is now proven by the arg5 → task `+0x68` mapping; final indirect-draw,
    flush ordering, and queue ownership remain unresolved and fail-closed.
+   The three renderer-list creation cores are also bounded on their
+   resource-ready branches: `0x18107EE40`, `0x18107FD22`, and `0x181080190`
+   call `context+0xEA0` with `0x181060D90/0x181060D20/0x181060D00`, then
+   `context+0x850`; the unavailable-resource branches call shared builder
+   `0x181080730`. Front `+0x850` (`0x180934850`) only records `0x2798` and
+   advances a command counter. A direct resolver-cell scan over
+   `0x181060000-0x181081000` finds no Vulkan draw call; named indirect draws
+   remain in the neighboring API-2 `+0xDA8` thunk
+   (`0x180820940 -> 0x18082E820`). This strengthens the negative boundary:
+   HGTree creation/callback code still has no static final draw, flush, or
+   queue-submit edge, so that join remains fail-closed.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
