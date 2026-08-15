@@ -442,12 +442,19 @@ and final draw/queue ownership remain fail-closed.
     the id and writes opcode `0x55`, while table B's `0x1801719B0` is only the
     managed-root/hash validator. Do not report B as the active sink without a
     while table B is only the alternate validation implementation.
-23. Ordinary `ScriptableRenderContext::ExecuteCommandBuffer` and
-    `Graphics::ExecuteCommandBuffer` remain real high-level playback routes:
-    `0x1800B6F40 -> 0x18052D730 -> 0x1804CDF70 -> 0x1804CE0A0`. The newly
-    recovered table-A tree writer now joins that interpreter at high-level
-    opcode `0x55`; this is stronger than the previous fail-closed statement
-    that no command writer existed after the managed call.
+23. The high-level playback route is specifically
+    `UnityEngine.Graphics::ExecuteCommandBuffer`, whose class-local
+    registration resolves to `0x1800B6F40 -> 0x18052D730 -> 0x1804CDF70 ->
+    0x1804CE0A0`; the table-A tree writer joins that interpreter at opcode
+    `0x55`. This must not be attributed to the similarly named
+    `ScriptableRenderContext` entry: its
+    `ExecuteCommandBuffer_Internal_Injected` registration resolves to
+    `0x1801587D0`, which only validates/updates native context state in the
+    inspected body. Its async/no-copy siblings (`0x180158980`,
+    `0x180158B30`, `0x180158B80`) likewise enter state-construction helpers,
+    not the high-level interpreter, API-2 draw, or Vulkan. The positive
+    `Graphics` route is therefore real, while the managed render-graph caller
+    that eventually flushes the HGTree records remains unresolved.
 24. The ordinary `Internal_DrawRendererList_Injected` route is still distinct:
     table-A index 3463 resolves to `0x180062960`, while table-B's parallel
     implementation is `0x1801713D0`. Its resource-state helper must not be
@@ -999,6 +1006,18 @@ and final draw/queue ownership remain fail-closed.
     (`0x180820940 -> 0x18082E820`, calls at `0x18082E91B/0x18082E933`), so
     the renderer-record-to-draw/flush/queue edge remains unresolved and
     fail-closed for HGTree.
+
+57. The command-buffer entry-point audit removes an attribution ambiguity at
+    the remaining playback boundary. The only inspected UnityPlayer body that
+    reaches the high-level command interpreter is the `Graphics` registration
+    at `0x1800B6F40`; `ScriptableRenderContext.ExecuteCommandBuffer_Internal_Injected`
+    at `0x1801587D0` is a context-state validation/update wrapper, and the
+    no-copy/async siblings do not write opcodes or dispatch API-2 `+0xDE8`.
+    Consequently the positive HGTree edge is `0x55 -> 0x273B -> callback`
+    inside the `Graphics` command-buffer playback family. This narrows, but
+    does not close, the final HGTree record-to-draw/flush/queue edge: the
+    render-graph/command-buffer owner that consumes the recorded callback and
+    orders the resource/state master list is still runtime-indirect.
 
 The component-67 evidence remains separate: its 24-byte records feed native
 LOD/culling list construction, but no direct static xref from the accessor to
