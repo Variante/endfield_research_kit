@@ -230,6 +230,18 @@ record kind, making it a separate flush/submit candidate rather than proof of
 the API-2 draw owner. The async/no-copy entries resolve to distinct helpers
 (`0x18052d8f0`, `0x18052db50`, and `0x18052da20`) and must not be collapsed
 into the old state-only attribution.
+The Submit record loop is now decoded: `0x18052e0b0` reads a 16-byte record
+array at `context+0x10030`, dispatches its type through the table at
+`0x18052f25c`, and maps type `2` to `0x18052e869` and type `3` to
+`0x18052e8f7`. Both cases load the deferred command-buffer pointer from
+`context+0x10128[index]` and call `0x1804cdf70` (type 3 supplies the buffer's
+`+0x170` mode field). The helpers `0x18052d730`/`0x18052db50` enqueue type 2,
+while `0x18052d8f0`/`0x18052da20` enqueue type 3. Thus `Submit` is a concrete
+deferred consumer of the same high-level command buffer that table-A
+`0x180064580 -> 0x1804c7930` writes; opcode `0x55` can reach the known HGTree
+callback there, and opcode `0x6A` can reach generic API-2 `+0xF10`. This still
+does not statically connect HGTree's callback-produced records to `+0xDE8`,
+`+0xF10`, or the final queue owner.
 An expanded UnityPlayer direct-call census covers the two high-level writers:
 `0x1804cb1a0` (opcode `0x0d`) has 58 direct callsites in 20 PData bodies and
 `0x1804c73e0` (opcode `0x11`) has 42 callsites in 18 bodies, 27 unique bodies
@@ -807,8 +819,11 @@ only stable interpretation and priorities.
     playback route. `Graphics::ExecuteCommandBuffer` is index `924` ->
     `0x18005C0D0`; the inspected body is a separate resource/object path.
     `Submit_Internal_Injected` is index `3636` -> `0x1800B4A40` ->
-    `0x1805385A0` -> `0x18052E0B0`, a separate command-record flush candidate
-    that still has no static HGTree/API-2 ownership proof. The remaining HGTree sink is now after the
+    `0x1805385A0` -> `0x18052E0B0`. Its type-2/type-3 records reload the
+    deferred command-buffer pointers from `context+0x10128` and call the same
+    high-level interpreter, making it a concrete deferred consumer rather than
+    an unrelated state wrapper. It still has no static HGTree/API-2 final-draw
+    ownership proof. The remaining HGTree sink is now after the
     positive `0x55 -> 0x273B -> 0x1813B1110` direct-callback route: the
     callback `0x18107AB10` is invoked by the parsed low-level `0x273B` case
     and remains a resource/list lifetime callback that does not dispatch
@@ -828,8 +843,9 @@ only stable interpretation and priorities.
     (`0x18052D730 -> 0x1804CDF70 -> 0x1804CE0A0`). `Graphics::ExecuteCommandBuffer`
     (index `924`, `0x18005C0D0`) is a separate resource/object body. The
     `Submit_Internal_Injected` path (`0x1800B4A40 -> 0x1805385A0 ->
-    0x18052E0B0`) and async/no-copy helpers remain candidates for command-list
-    ordering, but do not yet prove HGTree API-2 draw ownership. The final
+    0x18052E0B0`) is a concrete deferred consumer: its type-2/type-3 records
+    reload command-buffer pointers and call the same interpreter. It still
+    does not prove HGTree API-2 draw ownership. The final
     render-graph/command-buffer owner remains
     runtime-indirect and fail-closed. Ordinary
    `CommandBuffer::Internal_DrawRendererList_Injected` is a separate route:
@@ -985,6 +1001,13 @@ only stable interpretation and priorities.
    (`0x180820940 -> 0x18082E820`). This strengthens the negative boundary:
    HGTree creation/callback code still has no static final draw, flush, or
    queue-submit edge, so that join remains fail-closed.
+   The deferred Submit audit now closes the command-buffer consumer boundary:
+   record types `2`/`3` in `0x18052E0B0` reload the pointers queued by
+   `0x18052D730`/`0x18052D8F0`/`0x18052DB50`/`0x18052DA20` and execute them
+   through `0x1804CDF70`. This confirms that the HGTree writer's `0x55` record
+   can be consumed through Submit as well as the direct Execute/NoCopy path,
+   but does not turn the generic `0x6A -> +0xF10` flush or neighboring `+0xDE8`
+   master-list path into an HGTree-specific draw/queue proof.
 2. Validate representative paths against accepted retail captures.
 3. Extend texture/mip and material-variant recovery only where visible.
 4. Generalize animation from another exact Avatar/clip oracle.
