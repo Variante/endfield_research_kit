@@ -181,6 +181,8 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> controlAbi =
                 L.Dict(contract["effectAnimationControlAbi"]);
             Dictionary<string, object> controlMethods = L.Dict(controlAbi["methods"]);
+            Dictionary<string, object> installedPatch =
+                L.Dict(controlAbi["installedPatchState"]);
             Dictionary<string, object> manualEvaluate =
                 L.Dict(controlMethods["ManualEvaluate"]);
             Dictionary<string, object> syncProgress =
@@ -191,6 +193,10 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> manualUpdate =
                 L.Dict(instanceRoutes["ManualUpdateAnimation"]);
             Dictionary<string, object> lab = L.Dict(contract["labBoundary"]);
+            Dictionary<string, object> lodOwnership =
+                L.Dict(contract["effectLodRendererOwnership"]);
+            Dictionary<string, object> lodField = L.Dict(lodOwnership["managedField"]);
+            IList lodBindings = L.List(lodOwnership["serializedBindings"]);
             Type retailMixer = Type.GetType(
                 "UnityEngine.Animations.AdvancedAnimationMixerPlayable, UnityEngine.AnimationModule",
                 false);
@@ -198,7 +204,7 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(contract, "schema") ==
                     "endfield.lizhiyan-effect-animation-playable-topology.v1" &&
                 L.Str(contract, "status") ==
-                    "retail_topology_closed_editor_advanced_mixer_unavailable_visible_fail_closed" &&
+                    "retail_topology_and_installed_fallback_closed_editor_advanced_mixer_unavailable_visible_fail_closed" &&
                 !L.Bool(contract, "visibleAdmission") &&
                 L.Str(topology, "updateMode") == "GameTime" &&
                 Mathf.Abs(L.Float(topology, "timeScale") - 1.0f) < 0.000001f &&
@@ -223,15 +229,30 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(manualUpdate, "token") == "0x06005ADC" &&
                 L.Dict(manualUpdate["calls"]).Count == 1 &&
                 L.List(controlAbi["fallbackBodyFacts"]).Count == 7 &&
+                L.Long(installedPatch, "patchBytes") == 86926 &&
+                L.Long(installedPatch, "targetCount") == 32 &&
+                L.List(installedPatch["matchingTargets"]).Count == 0 &&
+                L.Str(installedPatch, "classification") ==
+                    "current_installed_persistent_patch_does_not_replace_effect_animation_chain" &&
+                L.Str(controlAbi, "effectiveBodyForInstalledSnapshot") ==
+                    "decoded_il2cpp_fallback_body" &&
                 L.Str(controlAbi, "liZhiyanCallerStatus") ==
                     "no_asset_specific_caller_proven_for_optional_time_controls" &&
+                L.Str(lodField, "fieldToken") == "0x04004F24" &&
+                L.Str(lodField, "fieldType") == "UnityEngine.Renderer" &&
+                lodBindings.Count == 3 &&
+                L.List(L.Dict(lodBindings[0])["rendererPathIDs"]).Count == 4 &&
+                L.List(L.Dict(lodBindings[1])["rendererPathIDs"]).Count == 3 &&
+                L.List(L.Dict(lodBindings[2])["rendererPathIDs"]).Count == 3 &&
+                L.Str(lodOwnership, "nativeJoinStatus") ==
+                    "managed_renderer_to_hgtree_survivor_record_unresolved_fail_closed" &&
                 retailMixer == null &&
                 typeof(UnityEngine.Animations.AnimationMixerPlayable) != null &&
                 !L.Bool(lab, "retailAdvancedMixerTypeExpectedInEditor") &&
                 !L.Bool(lab, "standardAnimationMixerPlayableIsExactSubstitute") &&
                 L.Str(lab, "driverStatus") ==
                     "exact_retail_mixer_type_unavailable_do_not_start_graph" &&
-                L.List(lab["blockedBy"]).Count == 5 &&
+                L.List(lab["blockedBy"]).Count == 4 &&
                 L.List(contract["nonClaims"]).Count == 3,
                 "Li Zhiyan retail EffectAnimation playable topology drifted");
         }

@@ -1,6 +1,6 @@
 {
   "schema": "endfield.lizhiyan-effect-animation-playable-topology.v1",
-  "status": "retail_topology_closed_editor_advanced_mixer_unavailable_visible_fail_closed",
+  "status": "retail_topology_and_installed_fallback_closed_editor_advanced_mixer_unavailable_visible_fail_closed",
   "visibleAdmission": false,
   "sources": {
     "nativeBodyTargets": {
@@ -14,6 +14,12 @@
       "bytes": 6832004,
       "sha256": "DA3C45020BBC0CA6EDA73448A7F069B77C2AD0D28177E829C44B9E583BA0B1E7",
       "objectType": "PinnedEffectInstanceBodyTargets"
+    },
+    "effectLifecycleBodyTargets": {
+      "path": "scratch/reverse_engineering/zhuangfy_lizi_lodfade_20260724/effect_lifecycle_native.json",
+      "bytes": 3878018,
+      "sha256": "5E3588020A9275266DA8DFFB76F5EDB5E5C6931EC3652AEB07DA6C5F64B0A5FD",
+      "objectType": "PinnedEffectLifecycleBodyTargets"
     },
     "ownerReport": {
       "path": "reports/assets/character_recovery/overview_effect_owner_animator_negative_20260815.md",
@@ -32,6 +38,12 @@
       "bytes": 307663,
       "sha256": "14C875115B8354C6A4066FC47C77E4912532016DEDEE829DAF700729FD8663F6",
       "objectType": "SiblingEffectContract"
+    },
+    "installedIfixState": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
+      "bytes": 19509,
+      "sha256": "CA4E750748A6D0664A0B0ABBED5F246116D239FB5A44AADA67AB98521CC2CBE9",
+      "objectType": "InstalledIfixPatchState"
     }
   },
   "retailEffectAnimationTopology": {
@@ -129,7 +141,20 @@
     "clipStopTimeSeconds": 6.366667
   },
   "effectAnimationControlAbi": {
-    "runtimePatchBoundary": "each listed method checks an IFix dispatch ID; the decoded IL2CPP fallback body does not prove the effective retail body when a patch is active",
+    "installedPatchState": {
+      "patchSha256": "BAA28AE497E64D94E152886622BBE5FB391199BCBF8366E2DF91591C9A9F172C",
+      "patchBytes": 86926,
+      "targetCount": 32,
+      "protectedTypes": [
+        "Beyond.Gameplay.EffectAnimation",
+        "Beyond.Gameplay.EffectInstance",
+        "Beyond.Gameplay.EffectLodCfg"
+      ],
+      "matchingTargets": [],
+      "classification": "current_installed_persistent_patch_does_not_replace_effect_animation_chain",
+      "evidenceBoundary": "proves the currently installed local Persistent VFS snapshot only; a later downloaded patch or live manager mutation remains outside offline evidence"
+    },
+    "effectiveBodyForInstalledSnapshot": "decoded_il2cpp_fallback_body",
     "methods": {
       "SetManual": {
         "token": "0x060059C7",
@@ -434,6 +459,62 @@
     },
     "liZhiyanCallerStatus": "no_asset_specific_caller_proven_for_optional_time_controls"
   },
+  "effectLodRendererOwnership": {
+    "managedField": {
+      "declaringType": "Beyond.Gameplay.EffectLodCfg",
+      "declaringTypeToken": "0x02000DB9",
+      "name": "renderer",
+      "fieldToken": "0x04004F24",
+      "fieldType": "UnityEngine.Renderer"
+    },
+    "lifecycle": {
+      "Play": {
+        "token": "0x06005C9E",
+        "va": "0x1834FC5E0"
+      },
+      "Stop": {
+        "token": "0x06005C9F",
+        "va": "0x18339BE80"
+      }
+    },
+    "serializedBindings": [
+      {
+        "effect": "P_fxui_lizhiyan_overview_start_01",
+        "effectSettingPathID": 2305038813790631653,
+        "rendererPathIDs": [
+          -1741348596941359387,
+          4708942470875150053,
+          8270785745755535077,
+          -6436609233402104091
+        ]
+      },
+      {
+        "effect": "P_fxui_lizhiyan_overview_start_02",
+        "effectSettingPathID": 3940221264379367585,
+        "rendererPathIDs": [
+          -6295135500902477663,
+          761294555274727585,
+          8727063177047822497
+        ]
+      },
+      {
+        "effect": "P_fxui_lizhiyan_overview_start_03",
+        "effectSettingPathID": 8184202388571141436,
+        "rendererPathIDs": [
+          5803225578291246396,
+          2656199819621283132,
+          -7969026351845493444
+        ]
+      }
+    ],
+    "provenBehavior": "EffectLodCfg.Play enables its configured Renderer and EffectLodCfg.Stop disables or resets the same managed lifecycle; each non-null lodSetting renderer is an exact serialized Li Zhiyan MeshRenderer PathID",
+    "nativeJoinStatus": "managed_renderer_to_hgtree_survivor_record_unresolved_fail_closed",
+    "remainingIdentityEdge": "a concrete UnityEngine.MeshRenderer pointer or instance id must be joined to the native entity/renderer index and one accepted 64-byte HGTree record",
+    "nonClaims": [
+      "native ECS component slot 67 is not EffectLodCfg.renderer",
+      "generic HGTree renderer-list creation does not assign a Li Zhiyan PathID to a draw"
+    ]
+  },
   "labBoundary": {
     "projectEditorVersion": "2022.3.62f3",
     "retailAdvancedMixerTypeExpectedInEditor": false,
@@ -443,7 +524,6 @@
     "blockedBy": [
       "retail AdvancedAnimationMixerPlayable is absent from stock Unity 2021/2022 editor AnimationModule assemblies",
       "standard AnimationMixerPlayable equivalence is not proven",
-      "active IFix payload state is not closed for EffectAnimation control methods",
       "asset-specific callers of optional time controls are not proven for these Li Zhiyan roots",
       "static renderer identity is not joined to a final draw"
     ]

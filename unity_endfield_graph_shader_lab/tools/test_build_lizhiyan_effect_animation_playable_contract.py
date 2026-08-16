@@ -26,6 +26,11 @@ def test_topology() -> None:
     ]
     assert contract["labBoundary"]["standardAnimationMixerPlayableIsExactSubstitute"] is False
     abi = contract["effectAnimationControlAbi"]
+    patch = abi["installedPatchState"]
+    assert patch["patchBytes"] == 86926
+    assert patch["targetCount"] == 32
+    assert patch["matchingTargets"] == []
+    assert abi["effectiveBodyForInstalledSnapshot"] == "decoded_il2cpp_fallback_body"
     assert abi["methods"]["ManualEvaluate"]["parameters"] == ["evaluateTime"]
     assert abi["methods"]["SyncProgress"]["parameters"] == ["progress"]
     assert abi["methods"]["SetManual"]["ifFixDispatchIds"] == ["0x64ca"]
@@ -37,6 +42,15 @@ def test_topology() -> None:
         "Play": ["0x19B"], "Stop": ["0x1DA"]
     }
     assert abi["liZhiyanCallerStatus"] == "no_asset_specific_caller_proven_for_optional_time_controls"
+    ownership = contract["effectLodRendererOwnership"]
+    assert ownership["managedField"]["fieldToken"] == "0x04004F24"
+    assert [row["rendererPathIDs"] for row in ownership["serializedBindings"]] == [
+        [-1741348596941359387, 4708942470875150053, 8270785745755535077,
+         -6436609233402104091],
+        [-6295135500902477663, 761294555274727585, 8727063177047822497],
+        [5803225578291246396, 2656199819621283132, -7969026351845493444],
+    ]
+    assert ownership["nativeJoinStatus"].endswith("unresolved_fail_closed")
     assert contract["visibleAdmission"] is False
 
 
